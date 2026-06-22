@@ -29,6 +29,8 @@ RUN uv sync --frozen --no-install-project --no-dev
 
 # Now copy project source and install the project itself
 COPY backend/app ./app
+COPY backend/alembic ./alembic
+COPY backend/alembic.ini ./alembic.ini
 RUN uv sync --frozen --no-dev
 
 
@@ -50,6 +52,8 @@ WORKDIR /app
 # Copy virtual env + app from builder
 COPY --from=builder --chown=cartorio:cartorio /build/.venv /app/.venv
 COPY --from=builder --chown=cartorio:cartorio /build/app /app/app
+COPY --from=builder --chown=cartorio:cartorio /build/alembic /app/alembic
+COPY --from=builder --chown=cartorio:cartorio /build/alembic.ini /app/alembic.ini
 
 # Fix shebangs: uv generates absolute paths like /build/.venv/bin/python
 # which DON'T exist in the runtime stage. Rewrite to /app/.venv/bin/python.
@@ -67,4 +71,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
         sys.exit(0 if r.status == 200 else 1)"
 
 # Default: 1 worker for MVP. Scale via Easypanel replicas for prod.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# CMD runs Alembic migrations THEN uvicorn. Migrations are idempotent
+# (Alembic no-ops if schema is already up-to-date).
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips '*'"]
