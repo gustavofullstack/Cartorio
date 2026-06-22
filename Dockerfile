@@ -51,6 +51,11 @@ WORKDIR /app
 COPY --from=builder --chown=cartorio:cartorio /build/.venv /app/.venv
 COPY --from=builder --chown=cartorio:cartorio /build/app /app/app
 
+# Fix shebangs: uv generates absolute paths like /build/.venv/bin/python
+# which DON'T exist in the runtime stage. Rewrite to /app/.venv/bin/python.
+RUN sed -i 's|#!/build|#!/app|g' /app/.venv/bin/* && \
+    sed -i 's|/build/.venv/bin/python|/app/.venv/bin/python|g' /app/.venv/bin/*
+
 USER cartorio
 
 EXPOSE 8000
