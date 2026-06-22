@@ -5,20 +5,32 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.api.v1.router import api_router
 from app.config import settings
-from app.db import engine
+from app.db import Base, engine
 from app.services.audit import AuditService
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Smoke test da conexao DB + audit na inicializacao."""
+    """Smoke test DB + create tables if missing + audit log init."""
+    # 1. Smoke test: confirm DB is reachable
     with engine.connect() as conn:
-        conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+        conn.execute(text("SELECT 1"))
+
+    # 2. Create all tables (idempotent — no-op if schema already exists).
+    # MVP-friendly: we don't have Alembic migrations set up yet, so we let
+    # SQLAlchemy create the schema from the model metadata. Safe because
+    # create_all() never drops or alters existing tables.
+    Base.metadata.create_all(bind=engine)
+
+    # 3. Audit log: write a startup entry (no-op if audit_log empty)
     AuditService.log_system_action("api.startup", {"version": "0.1.0", "env": settings.app_env})
+
     yield
+
     AuditService.log_system_action("api.shutdown", {})
 
 
