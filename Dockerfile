@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1.7
 # ============================================
 # Cartorio Backend - Multi-stage Dockerfile
-# ============================================
-# Stage 1: builder (uv sync --frozen)
-# Stage 2: runtime (slim Python 3.12)
+# Build context: REPO ROOT (Easypanel uses this path)
+# Docker image is built with:
+#   docker buildx build -f Dockerfile -t easypanel/cartorio/api .
+# So all COPY paths are RELATIVE TO REPO ROOT.
 # ============================================
 
 FROM python:3.12-slim AS builder
@@ -20,13 +21,14 @@ RUN pip install --no-cache-dir uv==0.5.11
 WORKDIR /build
 
 # Copy dependency manifests FIRST (better layer caching)
-COPY pyproject.toml uv.lock ./
+# pyproject.toml + uv.lock live in backend/ (subdir of repo root)
+COPY backend/pyproject.toml backend/uv.lock ./
 
-# Install deps into a virtual env (copy out to runtime stage)
+# Install deps into a virtual env
 RUN uv sync --frozen --no-install-project --no-dev
 
 # Now copy project source and install the project itself
-COPY app ./app
+COPY backend/app ./app
 RUN uv sync --frozen --no-dev
 
 
@@ -53,7 +55,7 @@ USER cartorio
 
 EXPOSE 8000
 
-# Health check (uses /health endpoint)
+# Health check (uses /health endpoint, no curl needed)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request, sys; \
         r = urllib.request.urlopen('http://localhost:8000/health', timeout=3); \
