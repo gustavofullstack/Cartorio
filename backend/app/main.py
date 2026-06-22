@@ -9,7 +9,8 @@ from sqlalchemy import text
 
 from app.api.v1.router import api_router
 from app.config import settings
-from app.db import Base, engine
+from app.db import engine
+from app.models.base import Base
 from app.services.audit import AuditService
 
 
