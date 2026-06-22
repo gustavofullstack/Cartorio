@@ -12,23 +12,34 @@ Premissa: cartorio medio brasileiro, ~200-300 atendimentos/dia, 1-3 tabelioes, e
 - [ ] DNS + HTTPS (cartorio.com.br → Caddy/Traefik)
 - [ ] Backup automatizado Postgres (snapshot diario, retencao 30d)
 
-## Fase 1 — MVP WhatsApp (Semana 3-6)
+## Fase 1 — MVP WhatsApp (Semana 3-8) — CORTE ESTRATEGICO CEO
 
-### Sprint 1 (sem 3-4)
+> **Decisão D3.1 (ceo-assistant)**: Sprint 1 faz SÓ consulta de emolumento.
+> Status protocolo Sprint 2. Criar protocolo só DEPOIS de 30 dias de shadow mode validado.
+> Motivo: ship rapido + validar com escreventes reais antes de bot ganhar write access.
+
+### Sprint 1 (sem 3-4) — SÓ CONSULTA EMOLUMENTO
 - [ ] Workflow n8n #1: msg WhatsApp → Evolution → OpenClaw → API regras → resposta
-- [ ] Endpoint `POST /api/v1/webhook/evolution` recebe e responde
-- [ ] Endpoint `GET /api/v1/protocolo/{numero}` consulta status
-- [ ] Endpoint `GET /api/v1/emolumento/calcular` (ja existe, falta polish)
-- [ ] LLM via LiteLLM (Claude Opus 4.5 primary, GPT-5.5 fallback)
-- [ ] PII scrubbing antes de chamar LLM
-- [ ] **Shadow mode**: bot sugere, humano faz, 30 dias de comparacao
+- [ ] Endpoint `GET /api/v1/emolumento/calcular` (ja existe, polish + deploy)
+- [ ] LLM via LiteLLM (Claude Opus 4.5 primary, GPT-5.5 fallback, Gemini/Llama como router de intencao barato)
+- [ ] PII scrubbing regex-only (latencia <5ms) ANTES de chamar LLM
+- [ ] Resposta template: "emolumento X custa R$ Y, prazo Z"
+- [ ] **KPI Sprint 1**: 100 consultas/dia, 0 erro de valor, 0 handoff humano
 
-### Sprint 2 (sem 5-6)
-- [ ] Endpoint `POST /api/v1/protocolo` cria protocolo a partir de conversa
+### Sprint 2 (sem 5-6) — STATUS PROTOCOLO + SHADOW MODE
+- [ ] Endpoint `GET /api/v1/protocolo/{numero}` consulta status
+- [ ] **Shadow mode**: bot sugere resposta, escrevente envia, comparacao automatica
+- [ ] HITL escalonado nivel 1 (read_only bot responde sozinho com confidence >= 0.85)
+- [ ] Dashboard escrevente mostra: msg recebida, intencao detectada, resposta sugerida, quem enviou
+- [ ] **KPI Sprint 2**: 95% das sugestoes aceitas sem edicao
+
+### Sprint 3 (sem 7-8) — CRIAR PROTOCOLO (so pos 30d shadow)
+- [ ] Endpoint `POST /api/v1/protocolo` cria via conversa (HITL nivel 2 - create_draft)
 - [ ] Endpoint `POST /api/v1/cliente` (consentimento LGPD obrigatorio)
 - [ ] Upload de documento (Supabase Storage) com hash SHA256
 - [ ] Notificacao proativa: "seu protocolo #X avancou pra em_andamento"
 - [ ] Dashboard basico pro escrevente (React admin)
+- [ ] **KPI Sprint 3**: 50% dos protocolos novos criados via bot (restante via balcao)
 
 ## Fase 2 — Compliance + Hardening (Semana 7-8)
 
