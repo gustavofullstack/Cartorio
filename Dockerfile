@@ -70,4 +70,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 # Note: app lifespan calls Base.metadata.create_all() to auto-create
 # tables on first start (idempotent). Alembic migrations can replace
 # this later.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# Sleep 30s before start to give the cartorio-network-monitor.sh
+# script time to connect this container to cartorio_supabase_default
+# (Swarm removes the bridge network on restart; monitor reconnects it).
+CMD ["sh", "-c", "sleep 30 && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips '*'"]
