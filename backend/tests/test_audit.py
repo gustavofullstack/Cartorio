@@ -1,6 +1,6 @@
 """Testes do audit log hash chain - seguranca do cartorio depende disso."""
 
-import pytest
+
 
 from app.models.audit_log import AuditLog
 from app.services.audit import AuditService
@@ -17,7 +17,7 @@ def test_log_creates_entry_with_hash(db_session, sample_payload):
     assert entry.id is not None
     assert len(entry.hash) == 64  # SHA256 hex
     assert entry.prev_hash is None  # primeira entrada
-    assert len(entry.hmac_signature) == 128  # SHA256 hex de 64 bytes
+    assert len(entry.hmac_signature) == 64  # SHA256 hexdigest
     db_session.commit()
 
 
@@ -78,7 +78,7 @@ def test_hmac_signature_changes_with_payload(db_session, sample_payload):
     e1 = AuditService.log(
         db_session, actor_id="u", action="a", resource="r", payload=sample_payload
     )
-    hmac1 = e1.hmac_signature
+    _hmac1 = e1.hmac_signature
     db_session.commit()
 
     # Re-log com mesmo payload mas timestamp diferente = HMAC diferente

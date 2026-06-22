@@ -67,7 +67,8 @@ class AuditService:
         last = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
         prev_hash = last.hash if last else None
 
-        timestamp = datetime.utcnow().isoformat(timespec="microseconds")
+        now = datetime.utcnow()
+        timestamp = now.isoformat(timespec="microseconds")
         new_hash = cls._compute_hash(prev_hash, payload, timestamp)
         hmac_sig = cls._compute_hmac(f"{new_hash}:{timestamp}:{actor_id}:{action}")
 
@@ -83,7 +84,7 @@ class AuditService:
             prev_hash=prev_hash,
             hash=new_hash,
             hmac_signature=hmac_sig,
-            timestamp=datetime.utcnow(),
+            timestamp=now,
         )
         db.add(entry)
         db.commit()

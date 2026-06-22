@@ -28,12 +28,12 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     "cpf": re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b"),
     "rg": re.compile(r"\b\d{1,2}\.?\d{3}\.?\d{3}-?[\dxX]\b"),
     "cnpj": re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?0001-?\d{2}\b"),
-    "phone_br": re.compile(r"\b\+?55?\s?\(?\d{2}\)?\s?9?\d{4}-?\d{4}\b"),
+    "cartao": re.compile(r"\b(?:\d[ -]*?){13,19}\b"),
+    "phone_br": re.compile(r"(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}[\s-]?\d{4}"),
     "email": re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
     "cep": re.compile(r"\b\d{5}-?\d{3}\b"),
     "pis": re.compile(r"\b\d{3}\.?\d{5}\.?\d{2}-?\d{2}\b"),
     "titulo_eleitor": re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b"),
-    "cartao": re.compile(r"\b(?:\d[ -]*?){13,19}\b"),
 }
 
 
