@@ -1,0 +1,48 @@
+"""Modelo Protocolo - representa uma solicitacao do cartorio."""
+
+from datetime import datetime
+from decimal import Decimal
+from sqlalchemy import ForeignKey, Numeric, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base, TimestampMixin
+
+
+class Protocolo(Base, TimestampMixin):
+    __tablename__ = "protocolos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    numero: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    cliente_id: Mapped[int] = mapped_column(ForeignKey("clientes.id"), index=True)
+
+    # Tipo: certidao_negativa, certidao_positiva, escritura_compra_venda,
+    #       procuracao, autenticacao, etc
+    tipo: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(
+        String(32), default="aberto", index=True
+    )  # aberto, em_andamento, aguardando_doc, concluido, cancelado, expirado
+
+    # Financeiro (snapshot da tabela de emolumentos na data do protocolo)
+    valor_base: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    valor_adicional: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    valor_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    tabela_referencia: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # Prazos
+    prazo_dias: Mapped[int | None] = mapped_column(nullable=True)
+    previsao_conclusao: Mapped[datetime | None] = mapped_column(nullable=True)
+    concluido_em: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    # PDF assinado
+    pdf_storage_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    pdf_hash_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    pdf_assinado_por: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Origem
+    canal_origem: Mapped[str] = mapped_column(String(32))  # whatsapp, telegram, web, balcao
+
+    cliente: Mapped["Cliente"] = relationship(back_populates="protocolos")  # type: ignore[name-defined]
+    documentos: Mapped[list["Documento"]] = relationship(back_populates="protocolo")  # type: ignore[name-defined]
+
+
+__all__ = ["Protocolo", "Base"]

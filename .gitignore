@@ -1,0 +1,42 @@
+# Ruff
+.ruff_cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+.coverage.*
+*.egg-info/
+dist/
+build/
+
+# Ambientes e segredos
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Banco local
+*.sqlite
+*.db
