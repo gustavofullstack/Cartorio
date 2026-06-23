@@ -24,6 +24,7 @@ from typing import Annotated
 import httpx
 import redis
 from fastapi import APIRouter, Depends, Form, HTTPException, Path, Query, Request
+from fastapi.responses import PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field  # noqa: F401  (usado nos schemas abaixo)
@@ -1940,3 +1941,44 @@ async def upload_documento(
         "uploaded_by": doc.uploaded_by,
         "uploaded_at": doc.created_at.isoformat() if doc.created_at else None,
     }
+
+
+# ============================================================================
+# Metrics Prometheus (open source, sem vendor)
+# ============================================================================
+
+
+@api_router.get(
+    "/metrics/prometheus",
+    tags=["meta"],
+    summary="Metrics em formato Prometheus (open source)",
+    description=(
+        "Endpoint para Prometheus scraper (ou Grafana Agent, Mimir, Thanos). "
+        "Formato text/plain, version 0.0.4. NAO requer auth (Prometheus scraper "
+        "nao tem como passar X-API-Key).\n\n"
+        "Metricas expostas:\n"
+        "- `cartorio_uptime_seconds` - gauge, tempo de vida do processo\n"
+        "- `cartorio_clientes_total` - gauge, total de clientes no DB\n"
+        "- `cartorio_protocolos_total{status=...}` - gauge por status\n"
+        "- `cartorio_audit_chain_length` - gauge, total entries no audit log\n"
+        "- `cartorio_http_requests_total` (in-process) - counter quando \n"
+        "  instrumentado no middleware\n\n"
+        "Open source: nenhuma chave de API de vendor, dados nao sao enviados "
+        "para terceiros. Pode ser auto-hospedado com Prometheus + Grafana."
+    ),
+    response_class=PlainTextResponse,
+    responses={
+        200: {
+            "description": "Metrics em formato Prometheus text/plain.",
+            "content": {"text/plain": {"example": "# TYPE cartorio_uptime_seconds gauge\ncartorio_uptime_seconds 3600.0\n"}},
+        },
+    },
+)
+async def get_metrics_prometheus(
+    db: Annotated[Session, Depends(get_db)],
+) -> PlainTextResponse:
+    """Renderiza metrics no formato Prometheus."""
+    from app.services.metrics import render_full_prometheus
+
+    output = render_full_prometheus(db)
+    return PlainTextResponse(content=output, media_type="text/plain; version=0.0.4; charset=utf-8")

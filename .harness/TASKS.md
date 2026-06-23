@@ -139,6 +139,12 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
   - **Por que importa mesmo assim (Lesson 7)**: daemon com loop infinito + TTY close + manual stop = silent death. systemd Restart=always NAO acorda se houve stop explicito. EVO perdeu network 3h, Swarm auto-recovery 4 crashes, mas daemon nao voltou sozinho
   - **Mitigacao aplicada AGORA (P0)**: cartorio-evo-health cron ja monitora (5min tick via `cartorio-highspeed`). Adiciona restart SE service inativo. Watchdog dedicado seria redundante ate Gustavo GO
   - **Ref**: `~/.mavis/agents/mavis/memory/MEMORY.md` Lesson 7 "Daemon silent death + systemd Restart=always eh armadilha"
+- [ ] **E1.S4.T2** Fix endpoint `GET /api/v1/health/backup` (router.py:752) — bug detectado 2026-06-23 19:01 BRT — owner: `cartorio-dev` — **P1 BACKLOG** (NAO bloqueador Sprint 3, cron `cartorio-backup-status` reporta `ok=false` 24/7 ate fix)
+  - **Root cause**: endpoint tenta `subprocess.run(["docker", "exec", "cartorio_api.1.", ...])` em container FastAPI onde (a) `docker` CLI nao existe, (b) nome do container truncado. Fallback local `os.path.isdir("/var/backups/cartorio")` falha pq path NAO esta montado no cartorio_api container. Resultado: retorna SEMPRE `{ok:false, file_count:0, dir_size:"?"}`
+  - **Backup REAL esta funcionando** (verificado 19:01 BRT): /var/backups/cartorio/cartorio_backup_20260623_161145.tar.gz (958K, 16:11 BRT), cron VPS-side `0 3 * * *` rodando, monitor `cartorio-backup-monitor.timer` 6h tick reportaria OK se endpoint FastAPI nao mascarasse o status. False positive de cron Mavis `cartorio-backup-status` (hourly)
+  - **Solucao recomendada**: **A) Volume mount** `/var/backups/cartorio` no compose do cartorio_api (mais simples, sem docker CLI). Alternativas: B) sidecar container com docker CLI, C) backup.sh escreve JSON metadata em `/var/log/cartorio-backup-status.json` que FastAPI le
+  - **N8N workflow #09 impact**: hoje dispara alerta Chatwoot falso toda hora. Ate fix, silenciar alarme ou adicionar gate `ok=false AND source=verified_failure` (NAO scale Gustavo — gate-discipline)
+  - **Investigado por**: Pietra mvs_c2508947 (D1) — msgId 2134 cross-ref mvs_9b3c9043
 
 ---
 

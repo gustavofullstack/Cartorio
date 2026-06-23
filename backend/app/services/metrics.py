@@ -1,0 +1,124 @@
+"""Service de metrics Prometheus (open source, sem vendor).
+
+Endpoint: GET /api/v1/metrics/prometheus (formato text/plain, version 0.0.4).
+
+Por que Prometheus e nao vendor:
+- Open source (Apache 2.0)
+- Formato text simples, sem SDK
+- Funciona com Grafana/Mimir/Thanos/etc (ecosistema padrao)
+- Sem lock-in (vendor migracao = 1 dia)
+- Sem dados enviados pra terceiros
+
+Metricas expostas (basico, suficiente pra cartorio):
+- cartorio_http_requests_total{endpoint, method, status} - counter
+- cartorio_http_request_duration_seconds{endpoint, method} - histogram
+- cartorio_protocolos_total{status} - gauge (snapshot)
+- cartorio_clientes_total - gauge
+- cartorio_audit_chain_length - gauge
+- cartorio_pii_blocks_total{type} - counter
+- cartorio_uptime_seconds - gauge
+"""
+from __future__ import annotations
+
+import time
+from typing import Any
+
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.models.audit_log import AuditLog
+from app.models.cliente import Cliente
+from app.models.protocolo import Protocolo
+
+
+# Storage em-memoria de metrics (sobrevive enquanto processo roda).
+# Para metricas persistentes, use Prometheus Pushgateway ou counter table.
+class MetricsStore:
+    """Singleton in-memory para metrics (reset a cada restart do processo)."""
+
+    def __init__(self) -> None:
+        # counters: {metric_name: {labels_hash: value}}
+        self.counters: dict[str, dict[str, int]] = {}
+        # histograms: {metric_name: {labels_hash: [bucket, count]}}
+        self.histograms: dict[str, dict[str, list[float]]] = {}
+        # gauges: {metric_name: value}
+        self.gauges: dict[str, float] = {}
+        self._started_at = time.time()
+
+    def inc_counter(self, name: str, labels: dict[str, str] | None = None, value: int = 1) -> None:
+        key = self._labels_key(labels)
+        self.counters.setdefault(name, {}).setdefault(key, 0)
+        self.counters[name][key] += value
+
+    def observe_histogram(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
+        key = self._labels_key(labels)
+        self.histograms.setdefault(name, {}).setdefault(key, [])
+        self.histograms[name][key].append(value)
+
+    def set_gauge(self, name: str, value: float) -> None:
+        self.gauges[name] = value
+
+    def _labels_key(self, labels: dict[str, str] | None) -> str:
+        if not labels:
+            return ""
+        return "|".join(f"{k}={v}" for k, v in sorted(labels.items()))
+
+    def render_prometheus(self) -> str:
+        """Renderiza tudo no formato text/plain do Prometheus."""
+        lines: list[str] = []
+        # Counters
+        for name, buckets in self.counters.items():
+            lines.append(f"# TYPE {name} counter")
+            for key, value in buckets.items():
+                label_str = f"{{{key}}}" if key else ""
+                lines.append(f"{name}{label_str} {value}")
+        # Histograms (formato simplificado: so soma + count + sum)
+        for name, buckets in self.histograms.items():
+            lines.append(f"# TYPE {name} summary")
+            for key, values in buckets.items():
+                label_str = f"{{{key}}}" if key else ""
+                lines.append(f"{name}_count{label_str} {len(values)}")
+                lines.append(f"{name}_sum{label_str} {sum(values):.6f}")
+        # Gauges
+        for name, value in self.gauges.items():
+            lines.append(f"# TYPE {name} gauge")
+            lines.append(f"{name} {value:.6f}")
+
+        # Uptime sempre
+        lines.append("# TYPE cartorio_uptime_seconds gauge")
+        lines.append(f"cartorio_uptime_seconds {time.time() - self._started_at:.6f}")
+        return "\n".join(lines) + "\n"
+
+
+# Singleton global
+store = MetricsStore()
+
+
+def collect_db_metrics(db: Session) -> dict[str, Any]:
+    """Coleta metrics do DB (gauge snapshot).
+
+    Chamado pelo endpoint /metrics/prometheus. Custoso, entao so roda quando
+    scrapado (nao em todo request).
+    """
+    metrics: dict[str, Any] = {}
+    # Total clientes
+    metrics["clientes_total"] = db.query(func.count(Cliente.id)).scalar() or 0
+    # Total protocolos por status
+    rows = (
+        db.query(Protocolo.status, func.count(Protocolo.id))
+        .group_by(Protocolo.status)
+        .all()
+    )
+    for status, count in rows:
+        metrics[f"protocolos_total{{status=\"{status}\"}}"] = count
+    # Audit chain length
+    metrics["audit_chain_length"] = db.query(func.count(AuditLog.id)).scalar() or 0
+    return metrics
+
+
+def render_full_prometheus(db: Session | None = None) -> str:
+    """Renderiza todos os metrics incluindo snapshot do DB."""
+    if db is not None:
+        for name, value in collect_db_metrics(db).items():
+            store.set_gauge(name, value)
+    return store.render_prometheus()

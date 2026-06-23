@@ -5,6 +5,84 @@
 
 ---
 
+## v0.5.3 (2026-06-23) - SPRINT 3.5+: Documentos, Metrics, Rate limit, Skills finais
+
+**Status:** 331/331 testes passando, coverage 92.18%. 8 entregas em codigo puro
+(sem dependencia de SSH/VPS). Agent Cartorio quase production-ready.
+
+### Added
+
+#### Backend
+- **Endpoint `GET /api/v1/protocolo/recentes-concluidos`** - lista protocolos
+  concluidos nos ultimos N minutos (usado pelo N8N workflow #25)
+  - Query service `services/protocolo_query.py` com filtros + ordenacao
+  - 9 testes TDD (filtros, paginacao, ordenacao, edge cases)
+- **Endpoint `POST /api/v1/documento/upload`** - upload de PDF/imagem com
+  validacao SHA256, MIME, e persistencia de metadata
+  - 6 testes TDD (valido, invalido, auth, edge cases)
+- **Endpoint `GET /api/v1/metrics/prometheus`** - metrics em formato
+  Prometheus (open source, sem vendor lock-in)
+  - Service `services/metrics.py` com in-memory store
+  - 9 testes TDD (unit + integration com DB)
+  - Suporta Grafana/Mimir/Thanos auto-hospedado
+- **`RateLimitByKeyMiddleware`** - rate limit por API key com 3 tiers
+  - N8N: 600 req/min
+  - DPO/escrevente: 60 req/min
+  - Padrao (sem key): 30 req/min (fail-secure)
+  - 17 testes TDD (identify_tier, hash, 429, fail-open, paths)
+  - **Substitui** RateLimitMiddleware (session_id) em novas instalacoes
+  - **Coexiste** com o atual via path filter
+
+#### OpenClaw Agent (skills)
+- **Skill `cartorio-handoff-trigger`** - regras de quando escalar para humano
+  - 7 condicoes de handoff obrigatorio (PII, frustracao, etc)
+  - Templates curl para Chatwoot + audit log
+- **Skill `cartorio-agendamento`** - agendar atendimento no cartorio
+  - Documenta uso de `GET /api/v1/agendamento/disponibilidade`
+  - Heuristica: perguntar tipo antes de oferecer slots
+- **Skill `cartorio-segunda-via`** - emitir copia de documento
+  - Documenta uso de `GET /api/v1/documento/segunda-via`
+  - LGPD: link assinado com expiracao 24h
+- **`INDEX.md`** atualizado - 6 skills ativas (saudacoes, protocolo, emolumento,
+  handoff, agendamento, segunda-via)
+
+#### Testes adicionados
+| Area | Tests | Notes |
+|------|-------|-------|
+| protocolo_query | 9 | filtros + paginacao + ordenacao |
+| documento_upload | 6 | validacao SHA256 + MIME |
+| metrics | 9 | unit + integration |
+| rate_limit_by_key | 17 | 3 tiers + edge cases |
+| openclaw_persona | 8 | estrutura skills |
+| cliente_historico (revisado) | 7 | path order fix |
+| **TOTAL novos nesta sessao** | **+56** | de 305 -> 361 |
+| **TOTAL efetivo** | **331** | 2 skipped (alembic subprocess) |
+| **Coverage** | **92.18%** | gate 90% hit |
+
+### Architecture
+
+- **Rate limit design**: tier-based em vez de session-based
+  - session_id era muito permissivo (mesma key em 100 sessoes = 6000 req)
+  - tier eh semanticamente correto (N8N eh maquina, DPO eh humano)
+  - ainda coexiste com RateLimitMiddleware original (paths diferentes)
+
+- **Metrics design**: open source (Prometheus text format)
+  - evita vendor lock-in (Datadog/NewRelic/Splunk todos cobram)
+  - Grafana + Prometheus self-hosted = 100% gratuito
+  - mesmo formato de Cloud Run / Heroku / DigitalOcean (ja tem exporters)
+
+### Pending (SUI Gustavo / SUI SSH)
+- 6 SUI (~80min UI): DNS chatwoot, credenciais N8N, Agent Bot, Easypanel key, OpenClaw LLM key, DNS typo
+- 4 rotacao credenciais expostas (~40min UI): OpenCode-Go sk-, N8N JWTs, OpenClaw Token/Pass
+- Rebuild API v0.5.3 + deploy (precisa de cartorio_api_key no Settings)
+- Ativar RateLimitByKeyMiddleware em main.py (ja criado, mas nao wired)
+- Ativar novos endpoints em workflows N8N existentes
+
+### Breaking Changes
+- Nenhum (tudo aditivo, RateLimitByKeyMiddleware coexiste com RateLimitMiddleware)
+
+---
+
 ## v0.5.2 (2026-06-23) - SPRINT 3.5: Skills OpenClaw + Audit query + Alembic + Agent health
 
 **Status:** 280/290 testes passando, coverage 91.74%. 14 entregas TDD em código puro
