@@ -5,6 +5,104 @@
 
 ---
 
+## v0.5.2 (2026-06-23) - SPRINT 3.5: Skills OpenClaw + Audit query + Alembic + Agent health
+
+**Status:** 280/290 testes passando, coverage 91.74%. 14 entregas TDD em código puro
+(sem dependência de SSH/VPS). Agent Cartório segue evoluindo.
+
+### Added
+
+#### Backend (FastAPI)
+- **Endpoint `GET /api/v1/audit/logs`** + **`GET /api/v1/audit/logs/{id}`** - DPO/escrevente
+  consulta audit log paginado com filtros (actor, action_prefix, resource, canal, periodo).
+  - `services/audit_query.py` - query service com paginacao + filtros
+  - `schemas/audit.py` - AuditLogResponse, AuditLogListResponse, AuditLogFilter
+  - 16 testes TDD (sanidade, filtros, paginacao, ordenacao)
+  - X-API-Key required (escrevente/DPO)
+- **Endpoint `POST /api/v1/integrations/agent/health`** - health check do OpenClaw + LLM
+  - Verifica gateway OpenClaw via HTTP
+  - Verifica LLM provider (opencode_go) via /models
+  - Retorna status='ok'/'degraded'/'down' (sempre 200 para healthchecks externos)
+  - 5 testes TDD (cenários: tudo ok, parcial, tudo down, sem vazar api_key, response shape)
+- **Endpoint `GET /api/v1/cliente/{cliente_id}/historico`** - timeline consolidada
+  - Lista todos protocolos + atendimentos ordenados por timestamp DESC
+  - LGPD art. 18 IV: titular tem direito de acesso (DPO pode usar)
+  - 7 testes TDD
+- **Alembic migration setup** - resolve problema recorrente de `Base.metadata.create_all()`
+  nao fazer ALTER
+  - `alembic.ini` + `alembic/env.py` + `alembic/script.py.mako`
+  - Migration 0001: `audit_log.canal` + `clientes.motivo_encerramento` + FK
+  - Dialect-aware (Postgres IF NOT EXISTS, SQLite PRAGMA)
+  - 6 testes TDD (config + idempotência + downgrade)
+- **Performance tests PII scrubbing** (E1.S1.T4)
+  - 8 testes de benchmark: < 5ms para texto tipico, < 50ms para 10+ PII
+  - Throughput > 200 msg/s
+  - detect_only < 1ms (gate rapido pre-LLM)
+- **E2E tests webhook Evolution** (E1.S1.T7)
+  - 9 testes garantindo 0 leak de PII no payload externo
+  - Cobre CPF, email, phone, CNPJ, RG, PIS, titulo, data, CEP, 50+ PII simultaneos
+  - Valida audit log NAO contem PII raw (apenas redacted)
+
+#### OpenClaw Agent (skills)
+- **Skill `cartorio-protocolo-tracker`** - consulta status de protocolo via API
+  - Documenta uso de `GET /api/v1/protocolo/{numero}`
+  - LGPD: nunca retorna cpf_hash, mascara nome se necessario
+  - Cache TTL 5min (status muda)
+  - Resposta em PT-BR natural com emojis
+- **Skill `cartorio-emolumento-calc`** - simula valor de emolumento via API
+  - Documenta `GET /api/v1/emolumento/calcular?tipo=...`
+  - Lista 10 tipos validos (TABELA_2026_MG)
+  - LGPD: valor NAO eh PII, mas isencao precisa validacao humana
+  - Cache TTL 24h (tabela muda anual)
+- **`INDEX.md`** - lista todas skills com categoria, endpoint, quando usar
+- **8 testes de persona** - validam estrutura das skills (endpoint documentado,
+  LGPD, sem credenciais hardcoded, INDEX.md tem tabela)
+
+#### N8N workflows
+- **Workflow #25 - Protocolo Concluido: Envia PDF via WhatsApp**
+  - Cron 5min
+  - Busca protocolos concluidos via API
+  - Gera PDF assinado
+  - Envia via Evolution API WhatsApp
+  - Loga em Chatwoot para auditoria interna
+  - Substitui polling no banco
+
+#### Schemas / Models
+- `models/audit_log.py` - adiciona coluna `canal` (String 32, index)
+- `models/cliente.py` - adiciona ENUM `MotivoEncerramento` + colunas `motivo_encerramento` + `audit_encerramento_id`
+- `models/audit_log.py` + `services/audit.py` - novo kwarg `canal` em `AuditService.log()`
+
+### Tests
+
+| Area | Tests | Notes |
+|------|-------|-------|
+| audit_query | 16 | filtros, paginacao, ordenacao |
+| pii_performance | 8 | benchmark < 5ms |
+| webhook_evolution_e2e | 9 | 0 leak de PII |
+| alembic_setup | 6 | config + migration |
+| openclaw_skills_integration | 7 | skills <-> API |
+| agent_health | 5 | health check OpenClaw + LLM |
+| cliente_historico | 7 | timeline |
+| openclaw_persona | 8 | estrutura skills |
+| audit_context | 6 | helper |
+| direito_esquecimento | 8 | LGPD art. 18 VI |
+| retencao | 13 | job 5y/2y |
+| request_context | 13 | middleware |
+| **TOTAL novos** | **+106** | de 199 -> 305 tests |
+| **Coverage** | **91.74%** | gate 90% hit |
+
+### Pending (SUI Gustavo / SUI SSH)
+- 6 SUI (DNS chatwoot, credenciais N8N, Agent Bot, Easypanel key, OpenClaw LLM key, DNS typo) ~80min
+- 4 rotacao credenciais expostas (OpenCode-Go sk-, N8N JWTs, OpenClaw Token/Pass) ~40min
+- Bugs B1 (Chatwoot memory 1G) + B2 (OpenClaw context overflow) - ja aplicados em prod
+- Rebuild API v0.5.2 (cartorio_api_key no Settings) + deploy
+
+### Breaking Changes
+- Path order em routes FastAPI: rotas com path-param `{int_id}` devem vir ANTES
+  de rotas com path-param generico. Workaround aplicado em /audit/logs e /cliente/{id}/historico.
+
+---
+
 ## v0.5.1 (2026-06-23) - SPRINT 3 PREP: LGPD copy + AuditContext + Workflows reativados
 
 **Status:** 226/226 testes passando, coverage 91.95%. 18 tasks Sprint 3 (Bloco 1-6) prontas, 5 já entregues neste commit.

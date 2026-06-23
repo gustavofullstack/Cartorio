@@ -26,6 +26,7 @@ import redis
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field  # noqa: F401  (usado nos schemas abaixo)
 
 from app.config import settings
 from app.db import get_db, session_scope
@@ -1657,3 +1658,120 @@ async def get_audit_log_endpoint(
         )
     return result
 
+
+
+# ============================================================================
+# LGPD - Historico completo do cliente (com timeline)
+# ============================================================================
+
+
+class ClienteHistoricoItem(BaseModel):
+    """Item de timeline do cliente."""
+
+    type: Annotated[str, Field(description="Tipo: 'protocolo' ou 'atendimento'.")]
+    id: Annotated[int, Field(description="ID interno.")]
+    numero: str | None = Field(default=None, description="Numero do protocolo (se aplicavel).")
+    status: str | None = Field(default=None, description="Status atual.")
+    titulo: str = Field(description="Descricao humana: 'Escritura compra e venda - em_andamento'.")
+    canal: str | None = Field(default=None, description="Canal de origem.")
+    timestamp: datetime.datetime = Field(description="Quando aconteceu.")
+
+
+class ClienteHistoricoResponse(BaseModel):
+    """Timeline consolidada do cliente (todos os protocolos + atendimentos)."""
+
+    cliente_id: int
+    cliente_nome: str
+    total_eventos: int
+    items: list[ClienteHistoricoItem] = Field(description="Eventos ordenados por timestamp DESC.")
+
+
+@api_router.get(
+    "/cliente/{cliente_id}/historico",
+    tags=["cliente"],
+    summary="Historico completo do cliente (timeline LGPD)",
+    description=(
+        "Retorna timeline consolidada de **todos** os protocolos + atendimentos "
+        "do cliente, ordenados por timestamp DESC.\n\n"
+        "LGPD art. 18 IV: titular tem direito de acesso aos dados sobre tratamento. "
+        "DPO pode usar este endpoint para atender solicitacao de titular. "
+        "Rate limit interno: 60 req/min (D4 - DPO dashboard).\n\n"
+        "Requer X-API-Key (DPO/escrevente)."
+    ),
+    response_model=ClienteHistoricoResponse,
+    responses={
+        200: {"description": "Timeline do cliente."},
+        401: {"description": "X-API-Key ausente."},
+        404: {"description": "Cliente nao encontrado."},
+    },
+)
+async def get_cliente_historico(
+    request: Request,
+    cliente_id: int,
+    db: Annotated[Session, Depends(get_db)],
+) -> ClienteHistoricoResponse:
+    """Timeline consolidada de todos os eventos do cliente."""
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
+        )
+
+    from app.models.atendimento import Atendimento
+    from app.models.cliente import Cliente
+    from app.models.protocolo import Protocolo
+
+    cliente = db.get(Cliente, cliente_id)
+    if cliente is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"erro": "CLIENTE_NOT_FOUND", "mensagem": f"Cliente {cliente_id} nao encontrado."},
+        )
+
+    items: list[ClienteHistoricoItem] = []
+
+    protocolos = (
+        db.query(Protocolo)
+        .filter(Protocolo.cliente_id == cliente_id)
+        .all()
+    )
+    for p in protocolos:
+        items.append(
+            ClienteHistoricoItem(
+                type="protocolo",
+                id=p.id,
+                numero=p.numero,
+                status=p.status,
+                titulo=f"{p.tipo} - {p.status}",
+                canal=p.canal_origem,
+                timestamp=p.created_at,
+            )
+        )
+
+    atendimentos = (
+        db.query(Atendimento)
+        .filter(Atendimento.cliente_id == cliente_id)
+        .all()
+    )
+    for a in atendimentos:
+        items.append(
+            ClienteHistoricoItem(
+                type="atendimento",
+                id=a.id,
+                numero=None,
+                status=a.status,
+                titulo=f"Atendimento via {a.canal or 'desconhecido'}",
+                canal=a.canal,
+                timestamp=a.iniciado_em,
+            )
+        )
+
+    items.sort(key=lambda x: x.timestamp, reverse=True)
+
+    return ClienteHistoricoResponse(
+        cliente_id=cliente_id,
+        cliente_nome=cliente.nome,
+        total_eventos=len(items),
+        items=items,
+    )
