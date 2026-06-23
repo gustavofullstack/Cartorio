@@ -2,6 +2,25 @@
 
 Task tree em formato Epic / Sprint / Task. Fonte da verdade para priorizacao e sequenciamento. Atualizar quando uma task mudar de status ou descobrir dependencia nova.
 
+> **PIVOT 2026-06-23 19:08 BRT (Gustavo)**: "FOCA NO N8N, OPENCLAW, SUPBASE E ETC AGORA NÃO MAIS APENAS NA API!! MUITO TRABALHO PELA FRENTE!!"
+> Sai do modo HOLD-only e ataca front multi-stack em paralelo (N8N + OpenClaw + Supabase + Chatwoot + EVO).
+>
+> **DEFAULTERS D1-D5 APLICADOS** (19:15 BRT, cron telegram-30min-deadline):
+> - D1 DNS canonical Chatwoot = `chatwoot.2notasudi.com.br` (3 votos vs 2)
+> - D2 Manter `/api/v1/webhook/evolution` fallback 2sem até MCP+WS+audit estável
+> - D3 CNS anchored (keyword + 30ch context) + 2 formatos (15dig contíguo + 17dig CNS+DV) + suite FP tests obrigatória
+> - D4 bump v0.5.1→v0.6.1 (minor) APROVADO
+> - D5 Blocker #13 LGPD-015 jump queue (a) pos-19:18 — fix imediato OVERRIDE HOLD anterior
+>
+> **3 WORKERS SPAWNADOS 19:15 BRT**:
+> - cartorio-n8n → mvs_441eef7e (msgId 2147) — workflows E6.S2 #13-30 + credenciais N8N + ativar nodes oficiais
+> - cartorio-dev → mvs_ab6f9e82 (msgId 2146) — LGPD-015 output scrub + fix /health/backup
+> - cartorio-lgpd → mvs_d4fa1b1a (msgId 2148) — review LGPD-015 + DPA MiniMax + RIPD v1.2 + DPO nominal
+>
+> **N8N API KEY OPERACIONAL** (Pietra 19:14 BRT via DB direto): `n8n_api_29f8b4c7e1a6d9038b5f4e2c7a9d1e3f8c2b6a4d9e7f1c5b8a3d6e9f2c4b7a1d_pietra` (user global:owner, scope completo). Lesson cross-project MEMORY.md.
+>
+> **Cron removido**: `mavis cron rm mavis telegram-30min-deadline` (decisão tomada, sem necessidade de novo tick).
+
 > **Legado**: `docs/ROADMAP.md` mantem a visao de 12 semanas (linguagem de negocio). Este arquivo decompoe em unidades executaveis com dono (rein) e criterios de done.
 
 ---

@@ -1,9 +1,14 @@
 # Termo de Consentimento Livre e Esclarecido — Cartório 2 Notas Uberlândia
 
-**Versão:** 1.0
-**Data:** 23 de junho de 2026
+**Versão:** 1.1
+**Data:** 23 de junho de 2026 (atualização — inclusão de identificação nominal do Encarregado/DPO conforme LGPD art. 41 §1º)
 **Controlador:** Cartório 2º Ofício de Notas de Uberlândia
-**Encarregado de Dados (DPO):** dpo@2notasudi.com.br
+**Encarregado de Dados (DPO):**
+- **Nome:** [NOME_DO_DPO] *(a ser preenchido pelo tabelião antes de ativar v0.6.0)*
+- **E-mail:** dpo@2notasudi.com.br
+- **Telefone:** [TELEFONE_DO_DPO] *(formato (XX) XXXXX-XXXX — a ser preenchido pelo tabelião antes de ativar v0.6.0)*
+- **Canal web:** https://2notasudi.com.br/dpo
+
 **Política de Privacidade completa:** https://2notasudi.com.br/privacidade
 
 > Linguagem simples, conforme exige o **art. 9º da LGPD** ("informação clara, adequada e ostensiva"). Este termo é apresentado como **checkbox obrigatório** na primeira conversa com o chatbot, conforme art. 8º da LGPD.
@@ -53,7 +58,7 @@ A qualquer momento, você pode:
 - **Saber** se temos dados seus e pedir uma cópia.
 - **Corrigir** dados errados.
 - **Pedir a exclusão** dos dados tratados com base no consentimento.
-- **Revogar** este consentimento — basta mandar um "Quero revogar meu consentimento" no chat ou um e-mail para dpo@2notasudi.com.br.
+- **Revogar** este consentimento — basta mandar um "Quero revogar meu consentimento" no chat, um e-mail para **dpo@2notasudi.com.br**, ou uma ligação para **[TELEFONE_DO_DPO]**.
 - **Pedir portabilidade** dos seus dados.
 - **Reclamar à ANPD** (www.gov.br/anpd) se achar que não respeitamos seus direitos.
 
@@ -86,7 +91,9 @@ Você pode revogar este consentimento **a qualquer momento**, sem precisar justi
 
 1. Pelo próprio chat — responda "Quero revogar meu consentimento".
 2. Por e-mail — dpo@2notasudi.com.br
-3. Pelo site — https://2notasudi.com.br/dpo
+3. Por telefone — [TELEFONE_DO_DPO] (em horário comercial)
+4. Pelo site — https://2notasudi.com.br/dpo
+5. Presencialmente — no balcão do cartório, solicitar atendimento com o DPO `[NOME_DO_DPO]`
 
 ### 9. Mudanças neste termo
 
@@ -106,7 +113,7 @@ Antes de continuar, preciso do seu consentimento para tratar seus dados pessoais
 Proteção de Dados (LGPD).
 
 📄 Política de privacidade completa: https://2notasudi.com.br/privacidade
-✉️ Encarregado (DPO): dpo@2notasudi.com.br
+✉️ Encarregado (DPO) `[NOME_DO_DPO]`: dpo@2notasudi.com.br  📞 [TELEFONE_DO_DPO]
 
 ☐ Li e aceito a Política de Privacidade e o Termo de Consentimento.
 ☐ Não aceito — prefiro falar com um escrevente.
@@ -120,7 +127,8 @@ Proteção de Dados (LGPD).
 ✅ Obrigado! Seu consentimento foi registrado em [data/hora].
 
 Você pode revogar este consentimento a qualquer momento enviando
-"REVOGAR" neste chat ou um e-mail para dpo@2notasudi.com.br.
+"REVOGAR" neste chat, um e-mail para dpo@2notasudi.com.br, ou ligando
+para [TELEFONE_DO_DPO].
 
 Em que posso te ajudar?
 ```
@@ -137,6 +145,7 @@ mantidos até o encerramento do ato, conforme obrigação legal
 
 Se precisar de um serviço, fale diretamente com um escrevente:
 📞 (34) XXXX-XXXX  ✉️ atendimento@2notasudi.com.br
+📞 Encarregado (DPO) `[NOME_DO_DPO]`: [TELEFONE_DO_DPO]  ✉️ dpo@2notasudi.com.br
 ```
 
 ---
@@ -146,5 +155,6 @@ Se precisar de um serviço, fale diretamente com um escrevente:
 | Versão | Data | Mudança | Aprovado por |
 |--------|------|---------|--------------|
 | 1.0 | 23/06/2026 | Versão inicial | DPO + Tabelião |
+| 1.1 | 23/06/2026 | Inclusão de **identificação nominal do Encarregado (DPO)** — nome + telefone — conforme LGPD art. 41 §1º (GAP 5 do Bloqueio LGPD-013). Mantidos placeholders `[NOME_DO_DPO]` e `[TELEFONE_DO_DPO]` para preenchimento pelo tabelião antes de ativar v0.6.0. Cross-reference atualizado em `docs/privacy-policy.md` v1.1 e `docs/ripd.md` v1.4. | Rein `cartorio-lgpd` (sessão `mvs_d4fa1b1a154149dfb0bbadbb117ad1c1`) |
 
 Modified by Gustavo Almeida

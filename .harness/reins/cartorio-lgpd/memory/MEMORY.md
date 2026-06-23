@@ -182,3 +182,53 @@ O gap padrao e sempre no BOUNDARY 2. O LLM pode ECOAR PII (memorizou padrao em d
 **Severidade tipica do gap:** P0 quando o output vai pro cliente final, P1 quando vai pra admin/operador, P2 quando vai so pra log interno.
 
 **Cross-project:** Esse pattern NAO e especifico de cartorio. Aparece em QUALQUER integracao LLM (OpenAI, Anthropic, OpenClaw, etc). Aplicar a udiapods-pii, futuros SaaS B2B com chatbot, etc.
+
+### N8N workflow LGPD review checklist — PII-tocando (2026-06-23)
+Type: checklist
+
+Contexto: cartorio-n8n (mvs_441eef7e) entregando workflows E6.S2 (10 creds + 18 WFs, 15 ativos). Workflows #13/15/17/19/20/23/27 classificados como PII-tocando.
+
+**Checklist obrigatorio (5 itens) — usar em TODO review de WF que move dado pessoal:**
+
+1. **Consent gate ANTES de chamar LLM/provider externo** (LGPD art. 7 I + 8)
+   - Node Function/IF verifica `{{$json.consent.granted}} == true` ANTES de chamar OpenCode-Go/DeepSeek/LiteLLM
+   - Se False → bloqueia, chama HITL, registra `LGPDBlockedResponse`
+   - Padrao copy juridica plugada: commit 116afe0
+
+2. **Scrub 3 camadas (input/pre-LLM/output)**
+   - Camada 1: input do webhook (pii.scrub no node Function)
+   - Camada 2: pre-LLM (regex 11+ tipos: CPF, RG, CNPJ, CNS, CNH, telefone, email, cartao, CEP, PIS, titulo, placa, data)
+   - Camada 3: output do LLM (scrub no response antes de persistir/enviar)
+   - Defense-in-depth — LLM pode ecoar PII memorizada de treino
+
+3. **Audit log com request_id + IP /24 truncado** (LGPD art. 37 + D5)
+   - Toda execucao grava `execution_entity` (N8N Postgres) com `payload_hash` (SHA-256) + `scrubbed_payload` + `pii_tokens`
+   - IP truncado /24 (IPv4) ou /48 (IPv6) para privacy-by-design
+   - Sem payload bruto em log
+
+4. **LGPDBlockedResponse copy juridica plugada** (commit 116afe0)
+   - Citacao art. + inciso + paragrafo
+   - Contato DPO (art. 41)
+   - Link politica privacidade
+   - Como remediar (consentimento=true ou DPO)
+   - Direito revogacao (art. 8 par 5)
+   - Status 422 (LGPDBlocked = precondicao semantica/regulatoria)
+
+5. **RequestContextMiddleware ativo**
+   - Captura request.client.host (fallback X-Forwarded-For se proxy)
+   - Persiste IP completo com retencao curta (2y)
+   - Canal/agent_id visiveis no audit
+
+**Workflows NAO-PII (gate mais leve):**
+- Backup, monitoramento, audit, FAQ-only: revisao basica de segredos + RLS + retencao
+
+**Severidade por gap:**
+- Ausencia consent gate em WF PII-tocando = BLOQUEIO P0
+- Scrub ausente em 1 das 3 camadas = BLOQUEIO P1 (revisar caso a caso)
+- Audit log sem IP /24 = P2 (privacy-by-design)
+- LGPDBlockedResponse copy errada = P2
+- RequestContextMiddleware off = P2
+
+**Cross-project:** esse checklist NAO e especifico de cartorio. Aplicavel a QUALQUER projeto com N8N/make.com/zapier + dado pessoal. Usar em udiapods se migrar para N8N.
+
+**Cross-ref:** review de cartorio-dev (LGPD-015) acelerado se este checklist ja estiver satisfeito — revisor sabe o que procurar.
