@@ -292,3 +292,118 @@ Modified by Gustavo Almeida
 **Follow-up Sprint 3**: Política formal de credenciais — quando rotacionar, quem aprova, onde guardar (Supabase Vault vs Hostinger Secret Manager). gatekeeper cartorio-lgpd.
 
 Modified by Gustavo Almeida
+
+## Sprint 23/06 13:30-14:00 BRT — Integração total + delegação com ground truth (2026-06-23)
+
+### Contexto
+Gustavo mandou mega prompt pedindo: TUDO integrado (API/N8N/Supabase/Redis/Evolution/Chatwoot/OpenClaw), com skills/tools/MCPs/plugins, MCP server+client em todos, Opencode-Go plugado em tudo, Tailscale subdomínios, prospecção, documentação versionada, research mercado. Estava puto ("PARECE QUE NADA FOI FEITO").
+
+### O que estava realmente feito (validado via SSH/API)
+- 12 containers Swarm UP, 7 domínios 200/401, Tailscale VPN OK
+- OpenClaw /health 200, MCP /mcp/mcp OK, Chatwoot conectado Supabase+Redis
+- 4 creds N8N criadas HOJE 13:48 (opencode-go-deepseek, supabase-postgres, cartorio-api-bearer, evolution-api-cartorio)
+- 11 workflows ativos (não 12), 5 duplicatas inativas
+
+### Lições críticas pra TODOS os reins
+1. **SEMPRE validar briefing via SSH/API antes de delegar** — o SESSION_SUMMARY pode estar parcialmente desatualizado. Workers têm ground truth e vão escalonar de volta com razão
+2. **Workflows N8N SEMPRE chamam API backend** — Postgres direto = bypass do audit chain = quebra LGPD by design
+3. **Prospecção é MANUAL via Telegram** (CEO Gustavo dispara, decisão TASKS.md E0.S0.5.T7) — bot seria spam + LGPD risk
+4. **feat:variables do N8N não licenciado** na instância atual — workaround permanente é $env.NOME
+5. **API keys em plain text no chat são vetor de leak** (logs, retries, scratchpad) — não ecoar de volta
+
+### Pendências escaladas pro Gustavo (4 decisões)
+1. Prospecção bot vs manual (CEO já decidiu manual, pode reverter)
+2. Postgres direto em workflow (se quiser, abrir ADR + review cartorio-lgpd)
+3. Upgrade licença N8N (feat:variables) — compra, não config
+4. Chatwoot super_admin password — criar via UI, não automatizar
+
+### Pendências técnicas escaladas (validei via SSH)
+5. OpenClaw /v1/chat POST 404 (decisão: investigar, esperar release, ou workaround)
+6. Tailscale subdomínios *.tail2fe279.ts.net não respondem (cartorio-devops vai gerar cert + Traefik router)
+
+### Ações tomadas
+- 3 workers spawnados (cartorio-dev, cartorio-n8n, cartorio-lgpd)
+- Briefings ajustados após validação SSH/API (evitou quebrar 4 coisas)
+- 2 workers escalaram STOP (cartorio-dev, cartorio-n8n) com razão — planos aprovados pós-ajuste
+- Docs criados/atualizados:
+  - docs/VERSIONAMENTO_PROJETO.md (índice rápido, 281 linhas) - LEIA PRIMEIRO
+  - docs/PROSPECCAO_MERCADO.md (pesquisa top 100 cartórios + template WhatsApp + KPI)
+  - .env.example (279 linhas, status real, proscpecção, MCP clients, memory refs)
+
+### Estado final dos 3 workers
+- cartorio-dev: executando opencode_go.py módulo dedicado + endpoint + refactor router
+- cartorio-n8n: executando bloco A+B+C+D (delete duplicatas + fix WF #07 + re-export JSONs + docs)
+- cartorio-lgpd: executando auditoria Opencode-Go + WFs NOVOS + RIPD v1.2
+
+Modified by Gustavo Almeida
+
+## cartorio-lgpd report 23/06 13:57 BRT — 8 blockers opencode_go.py (2026-06-23)
+
+### Auditoria crítica
+cartorio-lgpd identificou 8 blockers no `backend/app/integrations/opencode_go.py` ANTES do merge:
+- 2 CRÍTICOS: PII scrubbing INTERNO (não shift-the-burden), Audit log via AuditService (hash payload)
+- 3 ALTOS: DPA MiniMax assinado, teste regressão `tests/integration/test_opencode_go_no_pii.py`, fallback LiteLLM com mesmo scrubbing
+- 3 MÉDIOS: rate limit por sessão, alinhar docstring (deepseek-v4-flash vs MiniMax), corrigir inconsistência
+
+### Decisão sobre bloqueios
+- cartorio-dev VAI implementar 6 itens (PII interno, audit, consent gate, teste, rate limit, docstring) + ~4.5h adicionais
+- DPA MiniMax: NÃO é do cartorio-dev, escalado Gustavo + DPO (2-4 semanas negociação)
+- Fallback LiteLLM: pode ser TODO/placeholder
+
+### Entregas cartorio-lgpd
+- docs/ripd.md v1.2 (Tratamento 7 OpenCode-Go sub-processor, Tratamento 8 N8N ferramenta, riscos R13-R17)
+- docs/lgpd/opencode_go_audit.md v1.0
+- docs/lgpd/AUDITORIA_BLOCKERS.md vivo
+- docs/PENDENCIAS_SUI_2026-06-23.md v0.5.0 (L1-L4)
+- Validação Chatwoot no Supabase (DB chatwoot no Postgres, backup 4x/dia)
+
+### Decisão sobre WF-NOVO-01/02/03
+- SAÍRAM do sprint atual
+- WF-NOVO-02 (OpenCode-Go Router) SUBSTITUÍDO por opencode_go.py módulo dedicado + endpoint /integrations/opencode/test
+- WF-NOVO-01/03 vão pra sprint futuro (após decisão CEO sobre OpenClaw Tailscale + prospecção bot/manual)
+- Checklist de auditoria já preparado em docs/lgpd/AUDITORIA_BLOCKERS.md §2-§4
+
+### Pendências escaladas pro Gustavo (LGPD originou)
+- L1: DPA MiniMax assinado (2-4 semanas) — STAGING ONLY até assinar
+- P1: Encryption at-rest Postgres (pgcrypto + gpg) — sprint 2
+- L2: cartorio-dev alinha docstring vs opencode.json (5min)
+- L4: OpenClaw LLM key (Gustavo cria após L1)
+
+### Lesson reusável
+"ao auditar QUALQUER wrapper LLM API, SEMPRE exigir scrubbing interno + audit log. Docstring 'caller DEVE scrubar' é boa intenção mas na prática é falha."
+
+Modified by Gustavo Almeida
+
+---
+
+## 2026-06-23 — N8N workflow hardening (cartorio-n8n)
+
+### N8N license: `feat:variables` NÃO disponível
+- Instância Easypanel em `cartorio-n8n.dfgdxq.easypanel.host` NÃO tem licença para variables workspace-level (validado via `GET /api/v1/variables` → 401 "license does not allow").
+- **Workaround em uso**: `$env.NOME_DA_VARIAVEL` nos workflows, populado via `--env-add` no `docker service update cartorio_n8n`. Env vars atuais: `CARTORIO_API_KEY`, `CHATWOOT_BOT_TOKEN`, `CHATWOOT_ACCOUNT_ID`, `CHATWOOT_INBOX_ID`, `CHATWOOT_BASE_URL`, `CARTORIO_API_HEALTH_URL`, `EVOLUTION_HEALTH_URL`, `OPENCLAW_HEALTH_URL`, `CHATWOOT_HEALTH_URL`, `REDIS_HEALTH_URL`, `SUPABASE_HEALTH_URL`.
+- Upgrade é COMPRA (Gustavo), não config. Não tentar recriar feature via JS node.
+
+### N8N workflow re-export é one-shot via API
+- `GET /api/v1/workflows/{id}` retorna JSON compact single-line (não formatado).
+- Workflows em `infra/n8n-workflows/` antes ficavam em multi-line format (hand-crafted). Diff com N8N é gigante mas semântico é equivalente — não é bug, é só formatting.
+- Auditoria de secrets: `grep -rE 'sk-[a-zA-Z0-9]{15,}|eyJhbGciOi[A-Za-z0-9_-]{20,}|password.*:.*["'"'"'][^"'"'"']{8,}'` nos JSONs. Zero leaks em 2026-06-23 13:55 BRT (13/13 clean).
+
+### Regra de arquitetura: workflows SEMPRE chamam API backend
+- AGENTS.md cartorio-n8n: "Workflows n8n NAO acessam Postgres direto — sempre chamam endpoint FastAPI. Isso garante que toda operacao passe pelo audit_log."
+- Reforçada em sprint review 2026-06-23 — orchestrator aceitou a regra e removeu do briefing WF novos que pediriam Postgres direto.
+- Bypass = quebra do hash chain audit + LGPD by design. Toda exceção precisa de ADR + review cartorio-lgpd.
+
+### Workflow N8N #07 (Pesquisa Satisfação) — instanceName sensível
+- Evolution API node usa `instanceName=cartorio-2notas` (não `cartorio-evolution`). Match com container Evolution rodando.
+- Trocar este valor = mensagens vão pro limbo. Validar via `docker service ps cartorio_evolution-api` antes de qualquer edit.
+
+### Padrão de duplicação: 11_monitor_cartorio.js vs workflow #11
+- Existem DOIS artefatos pra "monitor cartório":
+  1. `infra/n8n-workflows/11_monitor_cartorio.js` + `11_monitor_cartorio_README.md` — script Node standalone (chamável de fora do N8N)
+  2. `infra/n8n-workflows/11-monitor-cartorio.json` — workflow N8N exportado (mesma lógica, gerenciado pelo N8N)
+- São complementares, NÃO canibalizam. Manter ambos até decisão em contrário.
+
+### Lesson reusável
+"Antes de executar briefing de parent/orchestrator, SEMPRE validar ground truth via API. Briefings podem estar desatualizados (ex: '0 credenciais' quando 4 já existem). 1 curl de 2s economiza 30min de retrabalho."
+
+Modified by Gustavo Almeida
