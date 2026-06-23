@@ -94,6 +94,17 @@ class Settings(BaseSettings):
     chatwoot_inbox_id: Optional[int] = None
 
     # ========================================================================
+    # Webhook signature secrets (HMAC-SHA256, opcional mas recomendado em prod)
+    # ========================================================================
+    chatwoot_webhook_secret: Optional[str] = None
+    evolution_webhook_secret: Optional[str] = None
+
+    # ========================================================================
+    # Stale detector (atendimento sem update > N min vira flag 'stale')
+    # ========================================================================
+    stale_threshold_minutes: int = 30
+
+    # ========================================================================
     # n8n (workflows)
     # ========================================================================
     n8n_base_url: str = "http://cartorio_n8n:5678"
