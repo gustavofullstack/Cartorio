@@ -50,3 +50,22 @@ Decisoes tecnicas:
 Reutilizavel para: openclaw_gpt.py, anthropic_claude.py, openai_direct.py no mesmo diretorio `app/integrations/`. Cada um deve herdar o mesmo padrao de ChatResponse + ChatError.
 
 Licao aprendida: auditoria LGPD foi 8 itens = 2 criticos + 3 altos + 3 medios. Shift-the-burden ("caller faz scrub") eh falha sistematica — TODA integracao LLM precisa de scrubbing interno.
+
+### Briefing vs evidencia: SEMPRE rodar pytest antes de agir (2026-06-23)
+Type: anti-pattern
+
+Cenario: root session me mandou briefing urgente "246 passed, 4 FAILED no master d030e9c" com lista de 4 testes (test_payload_com_pii_bloqueia_e_marca_pii_blocked, test_payload_extremo_50_pii_simultaneos, test_webhook_evolution_sem_pii, test_chat_with_fallback_delegates_to_opencode_go) e pediu plano de fix. O briefing parecia detalhado, com causa raiz e nivel de risco por falha. Parecia legitimo.
+
+Quando rodei \`cd backend && .venv/bin/pytest tests/ --no-cov -q 2>&1 | tail -5\`:
+- 263 passed, 2 skipped, 37 deselected, 0 failed
+- Os 4 testes listados: 4/4 PASSED (rodei individual tambem)
+
+Causa provavel: Gustavo (root) estava olhando pra state stale (output de console antigo, ou branch diferente). O briefing herdado propagou pra mim.
+
+Regra:
+1. **EVidencia > briefing.** Se o briefing diz "X failing" e meu pytest diz "X passing", o briefing esta errado. NAO inventar fix pra bug-fantasma — gastar quota em code que ja funciona eh a forma mais rapida de quebrar.
+2. **Reportar a discrepancia com output literal.** Copia/cola do pytest no relatorio. Sem output proprio, sem acao.
+3. **Sprint 3 #4.2 e #4.3 ja estao em master.** DELETE /cliente/{id} em app/api/v1/router.py:1273. Job retencao em app/jobs/retencao.py. Nao recriar o que existe — checar primeiro.
+4. **Deselect ≠ fail.** "37 deselected" no output do pytest NAO significa 37 fails — sao testes com marker excluido (no caso, @pytest.mark.smoke filtrado por \`-m 'not smoke'\` no addopts). Saber a diferenca evita report falso.
+
+Reutilizavel: toda vez que um briefing vier com "tem N fails", rodar \`pytest --no-cov -q 2>&1 | tail -5\` ANTES de planejar fix. Custo: 5s. Beneficio: nao queimar 60-90min em bug-fantasma.
