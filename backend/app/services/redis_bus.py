@@ -84,6 +84,8 @@ class RedisBus:
         try:
             client = await self._get_client()
             return bool(await client.ping())
+        except RedisBusError:
+            raise
         except RedisError:
             return False
         except Exception:  # noqa: BLE001

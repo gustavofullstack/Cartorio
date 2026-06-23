@@ -407,3 +407,46 @@ Modified by Gustavo Almeida
 "Antes de executar briefing de parent/orchestrator, SEMPRE validar ground truth via API. Briefings podem estar desatualizados (ex: '0 credenciais' quando 4 já existem). 1 curl de 2s economiza 30min de retrabalho."
 
 Modified by Gustavo Almeida
+
+---
+
+## ✅ Sprint 0 — Execução 2026-06-23 14:30-14:40 BRT (ZCode session)
+
+### Decisões travadas com Pietra
+- **Bancos**: Híbrido. cartorio-api (Python) usa Supabase. N8N/Evolution/Chatwoot/OpenClaw mantêm bancos próprios (schemas proprietários).
+- **Sprint 0 = Estabilidade** (Pietra aprovou).
+- **OpenCode-Go** primary LLM (key nunca ecoada em logs/chat — regra L3).
+
+### Entregas ZCode (8/12 tasks)
+| Tarefa | Arquivo | Status |
+|---|---|---|
+| T0.1 skill cross-session | `~/.zcode/skills/using-mavis-cross-session/SKILL.md` | ✅ |
+| T0.2 .env.example v0.6.0 | `backend/.env.example` | ✅ |
+| T0.3 runbook VPS | `docs/RUNBOOK_VPS.md` | ✅ |
+| T0.4 healthchecks | N8N/Evo/OpenClaw todos 200, API radar green | ✅ |
+| T0.5 workflows ACTIVE | **12/12 ACTIVE** (não 4) | ✅ |
+| T0.6 re-executar workflows | radar API: n8n online | ✅ |
+| T0.7-T0.8 cartorio-devops | Tailscale subdomínio (encaminhado) | ⏳ |
+| T0.9-T0.12 Pietra UI | `docs/SPRINT_0_TASKS_UI_PIETRA.md` | ⏳ |
+
+### Ground truth Sprint 0
+- 12/12 workflows N8N ACTIVE runtime (validado via API N8N)
+- API radar: `status: green` (database, redis, n8n, openclaw, evolution todos online)
+- 8/9 domínios públicos OK (chatwoot pendente DNS)
+- 12 containers `cartorio_*` UP 1/1 (validado via SSH cartorio)
+
+### Commits Sprint 0
+- `021bd39` docs(incident+plan): SSH stale IP + SUPER_PLANO v0.6.0
+- `a256fd3` feat(sprint-0): runbook + .env v0.6.0 + 4 tasks UI + validação
+- `85225c6` (anterior) feat: Redis bus + benchmark
+
+### Pendências UI Pietra (Sprint 0)
+- T0.9: DNS `chatwoot.2notasudi.com.br` (Hostinger/Cloudflare)
+- T0.10: Chatwoot Agent Bot (webhook → API)
+- T0.11: Easypanel API key regenerar
+- T0.12: Decisão typo `supbase` vs `supabase`
+
+### Lição reusável Sprint 0
+> "Briefing desatualizado: Pietra disse '4 workflows', API mostrou 12 ACTIVE. **SEMPRE curl ANTES de planejar**. 2s economiza 30min."
+
+Modified by ZCode (Pietra session 2026-06-23 14:40 BRT)
