@@ -210,3 +210,85 @@ Commit `3cdb65a` — feat(n8n): 4 workflows Sprint 1 - consulta, criar protocolo
 5. Commit com Conventional Commits + `Modified by Gustavo Almeida`
 
 Modified by Gustavo Almeida
+---
+
+## 2026-06-23 11:25 BRT — Sprint 1 ajustes pré-merge + ADR-010 + D4/D5/D6
+
+### Review cartorio-lgpd sobre commit e487081 (Sprint 1 backend — protocolo)
+
+**Veredito**: ✓ LGTM com 3 ajustes pré-merge (obrigatórios) + 4 ajustes Sprint 2 (escopo separado).
+
+**3 pré-merge (cartorio-dev implementa num commit único antes do merge)**:
+1. `LGPDBlockedResponse` copy jurídica defensável — citar art. + inciso + parágrafo + DPO + política + revogação
+2. Coluna `cliente.motivo_encerramento` (ENUM) — distinguir revogação vs retenção 5y vs exercício direito titular vs outros
+3. `RequestContextMiddleware` FastAPI — popular `consentimento_ip` + `consentimento_user_agent` + `consentimento_canal` + `consentimento_em` + `AuditService.request_ip`
+
+**4 Sprint 2**:
+- Job retenção diária `backend/app/jobs/retencao.py` (5 anos Provimento CNJ 74/2018 + LGPD art. 7 II para cliente COM protocolo)
+- Endpoint `DELETE /api/v1/cliente/{id}` (LGPD art. 18 VI)
+- Atualizar RIPD addendum Sprint 1
+- IP truncado /24 em output + retenção IP 2 anos
+
+**Cross-review**: cartorio-lgpd em standby, revisa PR pré-merge em ≤24h.
+
+---
+
+### ADR-010 — DB_HOST em Swarm = IP DIRETO, NUNCA alias DNS
+
+**Problema**: N8N usava `DB_POSTGRESDB_HOST=db`. Container reiniciou às 11:00 BRT (alguma ação do Gustavo). Swarm DNS não resolve alias `db` (definido só na rede Compose `cartorio_supabase_default`). Resultado: `getaddrinfo ENOTFOUND db` → 4 restarts em 36min → crash loop.
+
+**Fix**: `docker service update --env-rm DB_POSTGRESDB_HOST=db --env-add DB_POSTGRESDB_HOST=10.0.1.34 cartorio_n8n` (IP direto do container `cartorio_supabase-db-1`). Service converged em 26s. HTTP /healthz → 200 OK. DB ping recovered após 5 attempts em 15s.
+
+**Regra durável**: SEMPRE usar IP direto do banco em Swarm services. NÃO usar alias `db` ou nome do container — só funciona se a rede Compose e Swarm coincidirem (raro). Cross-project lesson: vale pra qualquer deploy Swarm + Compose híbrido.
+
+**Detecção**: healthcheck que valida `SELECT 1` antes de subir o app service. Se falhar 3x, alerta no Chatwoot inbox.
+
+---
+
+### D4 — Retenção cartório: 5y COM protocolo vs até-revogação SEM protocolo
+
+**Distinção crítica (LGPD art. 7 I vs II)**:
+
+| Cenário | Base legal | Retenção | Após |
+|---------|-----------|----------|------|
+| Cliente COM protocolo lavrado | LGPD art. 7 II (obrigação legal) + Provimento CNJ 74/2018 | 5 anos após o ato | ANONIMIZAR (cpf_hash=NULL, nome='ANONIMIZADO LGPD') |
+| Cliente SEM protocolo | LGPD art. 7 I (consentimento) | Até REVOGAÇÃO ou 5 anos (o que vier primeiro) | DELETAR (LGPD art. 16 + art. 18 VI) |
+
+**Por que 5 anos E não até-revogação para COM protocolo**: cartório tem OBRIGAÇÃO LEGAL de guarda do protocolo (Provimento 74 CNJ + legislação tributária). Hash + salt é pseudonimização (LGPD art. 5 XV), NÃO dado anonimizado → ainda vinculável a pessoa. Art. 16 LGPD fala em eliminação após cessada a finalidade → para cartório a finalidade cessa em 5 anos.
+
+**Job** (Sprint 2): `backend/app/jobs/retencao.py` diário. SELECT c.id, MAX(p.created_at) FROM clientes c LEFT JOIN protocolos p ON p.cliente_id=c.id GROUP BY c.id. Distingue COM/SEM. Audit log `cliente.anonymized` com motivo.
+
+---
+
+### D5 — IP é dado pessoal (LGPD art. 5 I)
+
+**Regras**:
+- **Armazenamento completo**: 2 anos (depois perde relevância operacional)
+- **Exibição output**: truncado /24 (IPv4) ou /48 (IPv6) — ex: `192.168.0.0/24`
+- **Origem do consentimento**: registrar IP completo no momento do consentimento (LGPD art. 37 + art. 8 §2º + GDPR art. 7º 1 como referência subsidiária)
+
+**Middleware**: `backend/app/middleware/request_context.py` (Sprint 2). Captura `request.client.host` com fallback X-Forwarded-For. Disponibiliza `request.state.client_ip` + `request.state.user_agent`. Schema Pydantic `ConsentimentoInfo` espelha com output truncado.
+
+---
+
+### D6 — AUTH inter-service N8N ↔ API via CARTORIO_API_KEY
+
+**Header**: `X-API-Key: <openssl rand hex 32>` (64 chars).
+**Onde setar**: `docker service update --env-add CARTORIO_API_KEY=<valor> cartorio_n8n` (mesmo valor na `cartorio_api`).
+**Rotação**: a cada 90 dias.
+**Workflows consumidores**: WF08 (audit verify) e WF09 (backup monitor) já esperam `$env.CARTORIO_API_KEY`. Pendente WF03 (handoff Chatwoot) que precisa de `CHATWOOT_BOT_TOKEN` (PENDING — Gustavo cria Agent Bot via UI).
+
+**Erro original**: container N8N não tinha `CARTORIO_API_KEY` no env → workflows 08/09 falhariam no primeiro cron (03:30 diário). Resolvido em 2026-06-23 11:25 BRT.
+
+---
+
+### Auditoria credenciais em workflows N8N (11:25 BRT)
+
+**Método**: SELECT classification regex em `workflow_entity.nodes::text` (11 workflows).
+**Resultado**: 11/11 LIMPOS. Workflows 08 e 09 usam `$env.CARTORIO_API_KEY` e `$env.CHATWOOT_BOT_TOKEN` corretamente. ZERO credenciais hardcoded.
+
+**LGPD art. 46 + art. 50 OK**. Cross-project lesson: auditar workflows JSON antes de qualquer restore de DB — restore de backup dumpa credenciais se tiver hardcoded.
+
+**Follow-up Sprint 3**: Política formal de credenciais — quando rotacionar, quem aprova, onde guardar (Supabase Vault vs Hostinger Secret Manager). gatekeeper cartorio-lgpd.
+
+Modified by Gustavo Almeida
