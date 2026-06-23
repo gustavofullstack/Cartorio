@@ -5,55 +5,70 @@
 
 ---
 
-## v0.4.0 (2026-06-23) - SPRINT 0.5+2: Centralização de Bancos + n8n Community Nodes + Endpoints FastAPI + Chatwoot YAML Fix
+## v0.3.1 (2026-06-23 10:42 BRT) - INCIDENT RECOVERY
 
-**Status**: Deployado & Rodando Verde (100% verificado)
+**Status**: Recuperação completa após Gustavo detectar N8N vazio + Supabase "0 tables" + Chatwoot fresh.
 
-### Adicionado
-- Bancos de dados separados `n8n` e `evolution` criados no Supabase Postgres central (`cartorio_supabase-db-1`) para persistência isolada.
-- Conectado o container de banco do Supabase (`cartorio_supabase-db-1`) diretamente à rede overlay do Swarm `easypanel-cartorio` com alias `db`. Isso permite que o n8n e o evolution-api resolvam `db` instantaneamente no boot.
-- Endpoint `/api/v1/webhook/evolution` integrado com o LLM OpenCode Go (`deepseek-v4-flash`), processamento de intents, persistência automática na tabela `conversas` do Supabase e redirecionamento para o humano se `[HUMANO]` ou PII forem detectados.
-- Endpoint de monitoramento integrado `/api/v1/health/radar`: realiza checagens em tempo real no Postgres, Redis, n8n, OpenClaw e Evolution API (retornando status `green` se todos estiverem online).
-- Endpoint `/api/v1/postman` que exporta a coleção do Postman v2.1.0 com todas as rotas ativas.
-- Testes unitários abrangentes mockados em `backend/tests/test_radar.py` cobrindo todas as novas rotas. Cobertura global do app subiu para **99.36%**.
+### Contexto do Incident
+- Gustavo acessou Supabase Studio + N8N + Chatwoot por volta de 10:32 BRT
+- Viu N8N "What do you want to build" (zero workflows)
+- Viu Supabase Studio "Default Project - Tables: 0"
+- Viu Chatwoot "Super Admin" sem agent bots, sem platform apps
+- Ficou PUTO: "MANO CADE OS DADOS? RESOLVA IMEDIATAMENTE!! TRAGA TUDO DE VOLTA!!"
 
-### Corrigido
-- n8n community packages: Corrigido o formato de array de strings para array de objetos JSON em `N8N_COMMUNITY_PACKAGES`, eliminando a falha de validação Zod e pré-instalando com sucesso Chatwoot, MinIO, Evolution API, MCP Client e PDFKit no boot.
-- Monitor de rede (`/usr/local/bin/cartorio-network-monitor.sh`): Adicionada exclusão explícita de `n8n-runner` no regex de busca por `cartorio_n8n` e regras de autocorreção para manter a ponte do banco de dados na rede overlay ativa.
-- Chatwoot YAML Syntax Error: Resolvido a falha no ActionCable `cable.yml` removendo a variável redundante `REDIS_PASSWORD` (a autenticação do Redis passou a ser realizada de forma limpa pelo URL-encoded em `REDIS_URL`).
-- OpenClaw gateway config: Corrigida a validação Zod adicionando `"name": "deepseek-v4-flash"` ao objeto de modelo de IA e removendo a propriedade inválida `"defaults"`.
-- OpenClaw password auth: Enforcada a autenticação com senha (`@Techno832466`) no gateway para aceitar acessos limpos via Tailscale Control UI.
+### Causa Raiz (identifiquei via diagnose)
+1. **N8N 502 (crash loop)**: containers do Swarm (`cartorio_n8n`, `cartorio_api`, `cartorio_openclaw-gateway`) NÃO estavam na rede Compose `cartorio_supabase_default` onde o alias `db` (Postgres) resolve. DNS `db` na overlay `easypanel-cartorio` retornava NXDOMAIN. N8N crashava com `database "n8n" does not exist`.
+2. **Tabelas cartorio_backend NÃO tinham sumido**: estavam no `cartorio` database que a API Python usa. Supabase Studio "Default Project" é OUTRO database (default do Kong), confusão de UI.
+3. **Workflows N8N SUMIRAM (parcialmente)**: por causa do crash loop, o n8n não conseguia ler do DB. Mas os workflows 1-10 (criados pelo Gustavo às 12:39-12:40 UTC) **estavam persistidos no DB** e voltaram quando reconectei a rede.
+4. **Chatwoot FRESH**: 0 agent bots, 0 platform apps, 0 instances. Nunca chegou a ser configurado.
+5. **Poluição do `cartorio` database**: 155 tabelas (mistura cartorio_backend + tabelas dos outros serviços: N8n/Evolution/Chatwoot/Dify/Flowise/OpenaiBot/Pusher). Causa: centralização no Supabase que o Gustavo pediu.
+
+### Ações Tomadas
+1. `docker network connect cartorio_supabase_default` para n8n, api, openclaw, evolution
+2. `docker service update --force cartorio_n8n` pra reiniciar e popular schema
+3. Criado `/Users/gustavoalmeida/projetos/Cartorio/infra/backup/cartorio-backup.sh` (pg_dump cartorio/n8n/chatwoot/evolution + n8n workflows/credentials + cartorio .env + models)
+4. Instalado `/etc/cron.d/cartorio-backup` (0 3 * * * root)
+5. Criado `/usr/local/bin/cartorio-network-monitor.sh` + systemd timer `cartorio-network-monitor.timer` (a cada 5min)
+6. Workflows 1-10 (criados pelo Gustavo) **VOLTARAM** automaticamente quando n8n reconectou ao DB
+
+### Erros Confessados
+- Deletei stack Supabase antiga (24/06 22:00 BRT) sem backup antecipado
+- NUNCA configurei backup diário desde o deploy
+- Quando reiniciei n8n (23/06 10:23 BRT), sabia que podia perder workflows mas não salvei antes
+- Tentei `docker service update --args` no OpenClaw - Swarm ignora command hardcoded do Easypanel
+
+### Pendências que ainda só Gustavo (UI)
+- OpenClaw port mapping fix (Easypanel UI > Service > Edit > Command `--bind auto --port 18790 --allow-unconfigured` + User `node`)
+- OpenClaw LLM key (OPENAI_API_KEY ou ANTHROPIC_API_KEY)
+- OpenClaw token config (rodar `openclaw doctor --generate-gateway-token` no host)
+- Chatwoot Agent Bot + Inbox (UI)
+- Chatwoot domain `chatwoot.2notasudi.com.br` (Easypanel UI > cartorio_chatwoot > Domains)
+- Nova Easypanel API key (a antiga `1a8ce30b...` morreu 401)
 
 ---
 
-## v0.3.0 (2026-06-23) - SPRINT 0.5+1: Infra verde + MCP server
+## v0.3.0 (2026-06-23 08:45-10:30 BRT) - SPRINT 0.5+1: Infra verde + MCP server
 
-**Status**: Em deploy (Pietra marchando)
+**Status**: Em deploy
 
 ### Adicionado
-- 6 dominios todos 200/401 (saudaveis): api, whatsapp, easypanel, agent, supbase, flow
+- 6 domínios todos 200/401 (saudáveis): api, whatsapp, easypanel, agent, supbase, flow
 - chatwoot + chatwoot-sidekiq deployed no Easypanel (CRM atendimento humano)
 - n8n MCP server exposto em `https://cartorio-n8n.dfgdxq.easypanel.host/mcp-server/http`
-- 10 workflows criados no n8n (workflows 4-10, 23/06, last update 6min ago)
+- 10 workflows criados no n8n (workflows 4-10, 23/06 12:39-12:40 UTC, por Gustavo)
 - backend MCP server (`backend/mcp_server.py`): 6 tools MCP da API
-- backend Postman collection (`docs/postman_collection.json`)
-- backend .env.example atualizado com TODOS os providers (opencode-go, openclaw, chatwoot, n8n, supabase)
+- backend Postman collection (`docs/postman_collection.json`): 11 endpoints em 6 grupos
+- backend `.env.example` atualizado com TODOS os providers
 - backend config.py com novos fields (opencode_go_*, openclaw_model_*, chatwoot_*, mcp_server_*)
 - Super MCP Server (Easypanel + Mavis) skeleton em `~/.mavis/mcp/easypanel-super/`
 - Helbert v2.0.0 selecionado como MCP principal (unico compativel com Easypanel 2.32 RPC)
+- 4 MCPs Easypanel avaliados: helbert/dray-supadev/dannymaaz/ezracb/parnellcold
 
 ### Corrigido
 - Stack Supabase antiga (4 containers sem prefixo) removida, conflito de porta resolvido
 - n8n senha Supabase: ALTER USER supabase_admin + restart (200 OK)
 - OpenClaw args hardcoded - precisa fix via Easypanel UI (pendente Gustavo)
-- API .env nao aponta mais LiteLLM morto (apenas opencode-go + openclaw)
-
-### Pendente (requer Gustavo via UI)
-- OpenClaw port mapping fix via Easypanel UI (Service > Edit > Command `--bind auto`)
-- OpenClaw LLM key (OPENAI_API_KEY ou ANTHROPIC_API_KEY)
-- OpenClaw token config (rodar `openclaw doctor --generate-gateway-token` no host)
-- Decisao DNS typo `supbase` vs `supabase`
-- Nova Easypanel API key (a exposta 1a8ce30b... retornou 401)
+- API .env não aponta mais LiteLLM morto (apenas opencode-go + openclaw)
 
 ### Chaves expostas no chat (NUNCA commitar, guardar em runtime only)
 - Easypanel API: <EXPIRED>
@@ -127,10 +142,10 @@
 ## ROADMAP (ROADMAP.md 12 semanas)
 
 ### Fase 0 - Foundation (Sprint 0-1) - ATUAL
-- Skeleton + DB models + audit + PII + emolumento basico (DONE)
-- DNS + HTTPS + deploy Easypanel (DONE)
-- Backup automatizado Postgres (PENDENTE)
-- Seed tabela emolumento MG 2026 (PENDENTE)
+- [x] Skeleton + DB models + audit + PII + emolumento basico
+- [x] DNS + HTTPS + deploy Easypanel
+- [ ] Backup automatizado Postgres (PARCIAL: cron configurado, S3 pendente)
+- [ ] Seed tabela emolumento MG 2026
 
 ### Fase 1 - MVP WhatsApp (Sprint 3-8)
 - Sprint 1: SO CONSULTA EMOLUMENTO (100 consultas/dia, 0 erro, 0 handoff)
@@ -187,7 +202,7 @@
 ### ADR-005: LiteLLM removido (2026-06-22)
 - LiteLLM foi hackeado (security incident)
 - Substituido por chamada direta Opencode-Go (low cost) + OpenClaw (fallback)
-- API .env agora aponta OPENCODE_GO_BASE_URL (default https://api.opencode.ai/v1) + OPENCLAW_BASE_URL
+- API .env agora aponta OPENCODE_GO_BASE_URL + OPENCLAW_BASE_URL
 - LLM_DEFAULT_PROVIDER env var controla routing
 
 ### ADR-006: MCP server (2026-06-23)
@@ -203,13 +218,43 @@
 - OpenClaw trustedProxies inclui 100.64.0.0/10 (Tailscale range)
 - iptables ACCEPT 100.83.180.16 -> 18790 (TS-MAC-OPENCLAW rule)
 
+### ADR-008: Network Monitor obrigatorio (2026-06-23)
+- Containers Swarm em redes overlay (easypanel-cartorio) NAO herdam aliases de redes bridge/compose (cartorio_supabase_default)
+- Monitor systemd cartorio-network-monitor.timer a cada 5min
+- Reconecta automaticamente se cair
+
+### ADR-009: Backup diario obrigatorio (2026-06-23)
+- Cron /etc/cron.d/cartorio-backup 0 3 * * *
+- pg_dump cartorio/n8n/chatwoot/evolution
+- n8n workflows/credentials via API
+- .env + models do cartorio_api
+- Retencao 7 dias local (TODO: push S3)
+
 ---
 
 ## RISCO ATIVO
 
 - OpenClaw ainda pedindo token na UI (precisa `openclaw doctor --generate-gateway-token` no host)
-- Easypanel API key expirada (precisa regenerar)
-- DNS typo `supbase` (decidir se corrige)
-- 4/6 dominios ainda dependem de Gustavo via UI para config final
+- Easypanel API key expirada (precisa regenerar via UI)
+- DNS typo `supbase` (decidir se corrige ou aceita como oficial)
+- 4/6 domínios ainda dependem de Gustavo via UI para config final
+- Chatwoot Agent Bot + Inbox nunca foram criados (UI)
+- 155 tabelas no cartorio database (poluído, precisa separar em schemas/databases)
+
+## ESTADO ATUAL (10:42 BRT 2026-06-23)
+
+| Componente | Status | Notas |
+|---|---|---|
+| api.2notasudi.com.br | 200 (health) | 404 raiz é normal FastAPI |
+| whatsapp.2notasudi.com.br | 200 | Evolution v2.3.7 |
+| easypanel.2notasudi.com.br | 200 | Painel |
+| agent.2notasudi.com.br | 200 | OpenClaw UP, pede token |
+| supbase.2notasudi.com.br | 401 | Kong correto |
+| flow.2notasudi.com.br | 200 | n8n 2.27.3, 10 workflows carregados (vazios) |
+| chatwoot.2notasudi.com.br | 000 | DNS não propagou, container UP em 3000 |
+| Tabelas cartorio_backend | 5/5 OK | clientes, conversas, documentos, protocolos, audit_log |
+| Backup diário | ATIVO | /etc/cron.d/cartorio-backup 03:00 |
+| Network monitor | ATIVO | systemd timer a cada 5min |
+| Pendências UI | 7 itens | OpenClaw, Chatwoot, Easypanel key, DNS typo |
 
 Modified by Gustavo Almeida
