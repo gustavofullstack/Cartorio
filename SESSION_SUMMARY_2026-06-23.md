@@ -197,4 +197,122 @@ Total estimado: ~47 min de UI para P0+P1.
 - Endpoints API adicionados: 5
 - Imagens Docker construidas: 1 (v0.4.1)
 
-Modified by Gustavo Almeida
+Modified by Gustavo Almeida / Mavis 2026-06-23
+
+---
+
+## SPRINT AUDITORIA AO VIVO 18:30-18:50 BRT (5a sessao)
+
+### 18:30 - Gustavo cola briefing gigante de novo (3a vez no dia)
+Bloqueado pelo loop: briefing diz "nada foi feito, ta tudo igual" mas curl mostra API 200 OK, radar GREEN, 5 dominios saudaveis. Parei pra fazer **auditoria real** em vez de obedecer cegamente.
+
+### 18:32 - Auditoria HTTP completa
+```
+api.2notasudi.com.br       → 200, 67ms  (v0.4.5)
+whatsapp.2notasudi.com.br  → 200, 275ms (Evolution API 2.3.7)
+easypanel.2notasudi.com.br → 200, 70ms
+agent.2notasudi.com.br     → 200, 120ms (OpenClaw gateway)
+supbase.2notasudi.com.br   → 401, 68ms  (esperado, sem auth)
+flow.2notasudi.com.br      → 503, 138ms (transitorio, retry = 200)
+```
+
+### 18:34 - N8N via API (X-N8N-API-KEY)
+**15 workflows ativos** (briefing antigo dizia 10):
+- #00 Error Handler Global (T25) v4
+- #01 Consulta Emolumento WhatsApp (v3)
+- #02 Criar Protocolo (LGPD)
+- #03 Handoff Humano (Chatwoot)
+- #04 Boas-Vindas + Consentimento LGPD
+- #04 Consulta Protocolo
+- #05 Agendamento Atendimento
+- #06 Segunda Via Documento
+- #07 Pesquisa Satisfacao (ainda pendente cred Evolution)
+- #08 Audit Verify Diario
+- #09 Monitor Backup Diario
+- #10 FAQ Bot
+- #11 Monitor Cartório (13 nodes, novo)
+- #12 Chatbot LLM End-to-End (PII + OpenCode-Go) (novo)
+- MCP - Server Tools (T22) v2
+
+### 18:35 - SSH Tailscale VPS (100.99.172.84)
+- 13 servicos Swarm UP (cartorio_api, chatwoot, evolution-api, n8n, n8n-runner, openclaw-gateway, redis, redis_dbgate, redis_rediscommander, easypanel, easypanel-traefik, vps_whoami)
+- Chatwoot reiniciando em loop (4 restarts em 2h, exit 1)
+- OpenClaw logs: provider=openai/deepseek-v4-flash, persona Cartório ja tem 6 arquivos (AGENT_CARTA, SYSTEM_PROMPT, api-tools-guide, MCP_INTEGRATION, agent_config_patch, integration-flow)
+
+### 18:36 - Backup mount perdido (BUG REAL)
+- `/api/v1/health/backup` retornava `[Errno 2] No such file or directory: 'docker'`
+- Causa: `docker service update --mount-add` da sprint 1.1 tinha sumido (Mounts: null no inspect)
+- **FIX APLICADO**: `docker service update --mount-add type=bind,source=/var/backups/cartorio,target=/var/backups/cartorio,readonly cartorio_api`
+- Validado: `/health/backup` agora retorna `ok: true, 0.9h, 7 tarballs, 38M`
+- ADRs: criar ADR-013 sobre backup mount durability
+
+### 18:42 - Chatwoot loop diagnostic
+- `nc -zv db 5432` → open (10.0.1.137)
+- Puma escuta 3000 OK
+- wget interno retorna HTML completo do dashboard
+- Restart a cada 1-2 min, exit 1
+- **Causa suspeita**: healthcheck do Swarm muito agressivo + Puma ainda inicializando
+- **NÃO corrigido**: precisa aumentar log verbosity ou ajustar healthcheck (sprint 2)
+
+### 18:45 - OpenClaw context overflow
+- Sessão `agent:main:main` 142 mensagens
+- 131073 tokens (budget 111072)
+- Auto-compactação falhou (compactionAttempts=0)
+- **NÃO corrigido**: precisa forçar compact ou ajustar threshold
+
+### 18:48 - Documentado em PENDENCIAS_SUI_2026-06-23.md
+- Adicionei secao "Auditoria ao Vivo" com 5 bugs reais + 30 tasks priorizadas (8 P0, 12 P1, 10 P2)
+- Substitui a lista antiga de 8 pendencias que estava desatualizada
+
+## ESTADO ATUAL (18:50 BRT 2026-06-23)
+
+### Funcionando (verificado agora)
+- API v0.4.5 deployed com 5 endpoints + 5 MCP servers (164 tools) + Radar GREEN
+- 15 workflows N8N ativos
+- Backup diario OK (38M, 7 tarballs, 0.9h atras)
+- Tailscale Mac↔VPS ativo
+- 5/6 dominios externos saudaveis (chatwoot.2notasudi.com.br ainda 000)
+- OpenClaw com persona Cartorio deployada, deepseek-v4-flash ativo
+- Evolution API 2.3.7, sem WhatsApp conectado (decisao)
+
+### Bugs abertos REAIS (sprint 2)
+1. **Chatwoot restart loop** (4 restarts em 2h, exit 1, healthcheck agresivo)
+2. **OpenClaw context overflow** (142 msgs, 131k tokens, compact falhou)
+3. **DNS chatwoot.2notasudi.com.br** faltando (PENDENCIA SUI #1)
+4. **Cred Evolution API no N8N** faltando (PENDENCIA SUI #2)
+5. **Backup mount durability** (precisa ADR explicando por que sumiu)
+
+### Pendencias SUI (UI only - Gustavo)
+Ver `docs/PENDENCIAS_SUI_2026-06-23.md` secao "Auditoria ao Vivo".
+3 itens P0 de UI: DNS chatwoot, cred Evolution, OpenClaw LLM key (depende DPA).
+
+## PROXIMOS PASSOS
+
+1. **Gustavo (UI)**: 3 itens P0 SUI (~17 min total)
+2. **Sprint 2 (Mavis)**: corrigir Chatwoot loop + OpenClaw overflow + endpoint webhook/chatwoot + webhook evolution + seed emolumento
+3. **Sprint 3 (Mavis)**: backup S3, encryption at-rest, DPA MiniMax, GitHub Actions
+4. **Sprint 4 (Mavis)**: Telegram bot, pesquisa mercado cartorios, Postman collection
+
+## METRICAS DA SESSAO TOTAL (08:45 - 18:50 BRT = 10h05min)
+
+- Mensagens Gustavo: ~15 (briefing repetido 3x + 1 pergunta especifica)
+- Comandos SSH executados: ~140
+- Comandos curl externos: ~25
+- Arquivos criados: 11 novos + 5 modificados
+- Workflows N8N criados via API: 7
+- Containers gerenciados: 23+
+- Incidents resolvidos AGORA: 1 (backup mount)
+- Incidents achados PENDENTES: 2 (chatwoot loop, openclaw overflow)
+- Bugs REAIS documentados: 5
+- Tasks REAIS priorizadas: 30 (8 P0 + 12 P1 + 10 P2)
+- Imagens Docker construidas: 1 (v0.4.1 — não rebuild nesta sessao)
+
+## APRENDIZADO SOBRE A METODOLOGIA
+
+1. **Briefing gigante repetido != realidade** — sempre validar via curl/ssh antes de agir
+2. **Auditoria > ação** — 5 min de curl economizou 5h de implementação redundante
+3. **30 tasks REAIS > 100 inventadas** — qualidade > quantidade, com critério de done
+4. **Loops de briefing** são sintoma de que a IA anterior estava obedecendo sem contexto — bloquear e oferecer relatorio do estado real
+5. **Tailscale + ssh = superpoder** — auditei VPS sem expor credenciais no chat
+
+Modified by Gustavo Almeida / Mavis 2026-06-23 18:50 BRT
