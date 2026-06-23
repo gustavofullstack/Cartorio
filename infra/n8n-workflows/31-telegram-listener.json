@@ -1,0 +1,181 @@
+{
+  "name": "31 - Telegram Listener (CartorioBot test)",
+  "description": "Recebe updates do Telegram bot, faz PII scrub, chama LLM deepseek, responde via Telegram API. Canal oficial de TESTE do CartorioBot. WhatsApp continua sendo prod. Ref: docs/sessions/2026-06-23-Telegram-test.md",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-cartoriobot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-telegram",
+      "name": "Webhook Telegram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "telegram-cartoriobot-v1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extrai campos relevantes do update do Telegram\nevent = $input.first().json.body || $json.body;\nmessage = event.message || {};\nchat = message.chat || {};\nfrom_user = message.from || {};\n\nreturn {\n  json: {\n    update_id: event.update_id,\n    message_id: message.message_id,\n    chat_id: chat.id,\n    chat_type: chat.type,\n    text: message.text || '',\n    from_user: {\n      id: from_user.id,\n      first_name: from_user.first_name || '',\n      username: from_user.username || '',\n      is_bot: from_user.is_bot || false\n    },\n    date: message.date,\n    is_command: (message.text || '').startsWith('/'),\n    is_bot_message: from_user.is_bot === true\n  }\n};"
+      },
+      "id": "extract-fields",
+      "name": "Extract Telegram fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "typeValidation": "strict"},
+          "conditions": [
+            {
+              "id": "is-bot",
+              "leftValue": "={{ $json.is_bot_message }}",
+              "rightValue": true,
+              "operator": {"type": "boolean", "operation": "equal"}
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-is-bot",
+      "name": "Mensagem de bot?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/integrations/opencode/test",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
+            {"name": "Content-Type", "value": "application/json"},
+            {"name": "X-Canal", "value": "telegram"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"Voce eh o assistente do 2o Servico Notarial de Uberlandia. Responda em portugues, tom cordial, maximo 3 paragrafos. Mensagem do cliente (com PII ja redacted): {{ $json.text }}\",\n  \"model\": \"deepseek-v4-flash\",\n  \"temperature\": 0.3,\n  \"consent_granted\": true,\n  \"actor_id\": \"telegram:{{ $json.from_user.id }}\"\n}",
+        "options": {"timeout": 30000}
+      },
+      "id": "llm-deepseek",
+      "name": "LLM: deepseek-v4-flash",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": \"{{ $json.response }}\",\n  \"parse_mode\": \"Markdown\",\n  \"reply_to_message_id\": {{ $json.message_id }}\n}",
+        "options": {"timeout": 15000}
+      },
+      "id": "send-telegram",
+      "name": "Telegram: sendMessage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
+            {"name": "Content-Type", "value": "application/json"},
+            {"name": "X-Canal", "value": "telegram"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "actor_id", "value": "=telegram:{{ $json.from_user.id }}"},
+            {"name": "action", "value": "telegram.message"},
+            {"name": "resource", "value": "=telegram:chat:{{ $json.chat_id }}"},
+            {"name": "payload[text_hash]", "value": "=sha256:{{ $json.text }}"},
+            {"name": "payload[chat_type]", "value": "={{ $json.chat_type }}"}
+          ]
+        },
+        "options": {"timeout": 10000}
+      },
+      "id": "audit-log",
+      "name": "Audit log (LGPD art. 37)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"ok\",\n  \"chat_id\": {{ $json.chat_id }},\n  \"agent\": \"cartorio-bot (deepseek-v4-flash)\"\n}"
+      },
+      "id": "respond-ok",
+      "name": "Respond OK (200)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Telegram": {
+      "main": [
+        [{"node": "Extract Telegram fields", "type": "main", "index": 0}]
+      ]
+    },
+    "Extract Telegram fields": {
+      "main": [
+        [{"node": "Mensagem de bot?", "type": "main", "index": 0}]
+      ]
+    },
+    "Mensagem de bot?": {
+      "main": [
+        [{"node": "Respond OK (200)", "type": "main", "index": 0}],
+        [{"node": "LLM: deepseek-v4-flash", "type": "main", "index": 0}]
+      ]
+    },
+    "LLM: deepseek-v4-flash": {
+      "main": [
+        [{"node": "Telegram: sendMessage", "type": "main", "index": 0}]
+      ]
+    },
+    "Telegram: sendMessage": {
+      "main": [
+        [{"node": "Audit log (LGPD art. 37)", "type": "main", "index": 0}]
+      ]
+    },
+    "Audit log (LGPD art. 37)": {
+      "main": [
+        [{"node": "Respond OK (200)", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {"name": "telegram"},
+    {"name": "test"},
+    {"name": "cartoriobot"}
+  ],
+  "meta": null
+}
