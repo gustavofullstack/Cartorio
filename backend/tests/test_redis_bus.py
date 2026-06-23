@@ -54,12 +54,6 @@ class TestRedisBusPing:
         bus = RedisBus(redis_url="")
         # Forca a config para vazia (nao herda de settings)
         bus._url = ""
-        print(f"DEBUG url={bus._url!r} client={bus._client!r}")
-        try:
-            result = await bus.ping()
-            print(f"DEBUG ping returned {result}")
-        except Exception as e:
-            print(f"DEBUG got exception {type(e).__name__}: {e}")
         with pytest.raises(RedisBusError):
             await bus.ping()
 
