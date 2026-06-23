@@ -1,0 +1,65 @@
+{
+  "name": "01 - Consulta Emolumento WhatsApp (v2)",
+  "nodes": [
+    {
+      "parameters": {"httpMethod": "POST", "path": "consulta-emolumento", "responseMode": "responseNode", "options": {}},
+      "id": "webhook-trigger",
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "consulta-emolumento-v1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// PII scrub + parse tipo do texto (defesa em profundidade)\nconst item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\n\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Detectar tipo de emolumento\nconst lower = scrubbed.toLowerCase();\nlet tipo = 'certidao_casamento';\nif (/casament/.test(lower)) tipo = 'certidao_casamento';\nelse if (/negativa/.test(lower)) tipo = 'certidao_negativa';\nelse if (/positiva/.test(lower)) tipo = 'certidao_positiva';\nelse if (/certid/.test(lower)) tipo = 'certidao_casamento';\nelse if (/compra.{0,3}venda|escritura.{0,3}compra/.test(lower)) tipo = 'escritura_compra_venda';\nelse if (/doaç|doacao/.test(lower)) tipo = 'escritura_doacao';\nelse if (/escritur/.test(lower)) tipo = 'escritura_compra_venda';\nelse if (/procur/.test(lower)) tipo = 'procuracao';\nelse if (/reconhec|firm/.test(lower)) tipo = 'reconhecimento_firma';\nelse if (/autent/.test(lower)) tipo = 'autenticacao';\n\nlet folhas = 1;\nconst fMatch = scrubbed.match(/(\\d+)\\s*(folha|pagina|p[áa]g)/i);\nif (fMatch) folhas = Math.min(Math.max(parseInt(fMatch[1]), 1), 1000);\n\nlet urgencia = /urg|urg[eê]ncia|hoje|r[áa]pido/i.test(scrubbed);\n\nreturn { json: { sender, raw, scrubbed, redactionCount, tipo, folhas, urgencia } };"
+      },
+      "id": "pii-scrub",
+      "name": "PII Scrubber + Parse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.2notasudi.com.br/api/v1/emolumento/calcular",
+        "sendQuery": true,
+        "queryParameters": {"parameters": [
+          {"name": "tipo", "value": "={{ $json.tipo }}"},
+          {"name": "folhas", "value": "={{ $json.folhas }}"},
+          {"name": "urgencia", "value": "={{ $json.urgencia }}"}
+        ]},
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [
+          {"name": "X-API-Key", "value": "cartorio-api-shared-secret-v1"}
+        ]},
+        "options": {"timeout": 10000}
+      },
+      "id": "api-emolumento",
+      "name": "API Emolumento (httpRequest + cred)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "credentials": {"httpHeaderAuth": {"id": "22Q8OUbeZ1bsGnlt", "name": "cartorio-api-bearer"}}
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"💰 {{ $json.tipo }} - R$ {{ $json.total }} (base R$ {{ $json.base }}, tabela {{ $json.tabela_referencia }})\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
+      },
+      "id": "respond-ok",
+      "name": "Respond com emolumento",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp": {"main": [[{"node": "PII Scrubber + Parse", "type": "main", "index": 0}]]},
+    "PII Scrubber + Parse": {"main": [[{"node": "API Emolumento (httpRequest + cred)", "type": "main", "index": 0}]]},
+    "API Emolumento (httpRequest + cred)": {"main": [[{"node": "Respond com emolumento", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1", "callerPolicy": "workflowsFromSameOwner"}
+}
