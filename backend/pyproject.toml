@@ -31,4 +31,7 @@ target-version = "py311"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90"
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90 -m 'not smoke'"
+markers = [
+    "smoke: integration tests against real infrastructure (requires SMOKE_TARGET=prod)",
+]
