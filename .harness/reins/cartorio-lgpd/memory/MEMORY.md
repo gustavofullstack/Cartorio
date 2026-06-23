@@ -140,3 +140,45 @@ TASK P0 BLOQUEADOR — DPA (Data Processing Agreement) com DeepSeek (sub-process
 **Quem implementa:** jurídico externo (contratação) + Gustavo (decisão) + DPO (assinatura) + cartorio-lgpd (revisão final).
 
 **Reference:** docs/ripd.md v1.3 (atualizado nesta sessão) + docs/lgpd/AUDITORIA_BLOCKERS.md (Bloqueio #6 e #7) + report 2035 do parent session.
+
+### LGPD LLM boundary pattern — sempre auditar boundary 2 (output), nao so 1 (input) (2026-06-23)
+Type: pattern
+
+Contexto: 3 integracoes LLM no cartorio backend (opencode_go.py, integrations.py, router.py via webhook_evolution). TODAS as 3 tinham scrubbing INTERNO no INPUT mas NENHUMA tinha scrubbing no OUTPUT (boundary 2). Resultado: Blocker #10 + #13 (P0) + #14 (P1).
+
+**Insight fundamental (reutilizavel em QUALQUER projeto com LLM):**
+Toda integracao LLM tem 2 boundaries:
+  BOUNDARY 1 (input):  text -> scrub() -> LLM request   [facil de implementar]
+  BOUNDARY 2 (output): LLM response -> ??? -> caller    [facil de ESQUECER]
+
+O gap padrao e sempre no BOUNDARY 2. O LLM pode ECOAR PII (memorizou padrao em dados de treino) mesmo se o input foi scrubbed. Se o caller nao scrubar o output, PII volta pro cliente final (WhatsApp, chat, etc).
+
+**Sinal verde (input scrubbed OK):**
+  - pii.scrub() chamado ANTES de httpx.post / requests.post / openai.ChatCompletion.create
+  - Docstring diz 'caller DEVE scrubar output tambem'
+  - Tem `pii_redacted_count` no request
+
+**Sinal vermelho (output NAO scrubbed, mesmo com input OK):**
+  - `resp.content` ou `response.content` atribuido direto a variavel que vai pra cliente
+  - `bot_response = llm_resp.content` sem scrub reverso
+  - Sem `output_pii_redacted_count` na response
+  - test verifica apenas input->request, NAO response->client
+
+**Acao de auditoria para QUALQUER projeto LLM (5 perguntas):**
+  Q1. Onde o `resp.content` / `llm_resp.content` / `response.content` e atribuido?
+  Q2. Esse valor vai direto pro cliente final (HTTP response, WebSocket message, fila, etc)?
+  Q3. Ha scrub() no output? (procure por padrao `scrub(llm_resp.content)` ou similar)
+  Q4. A response ao cliente tem flag `output_pii_redacted_count`?
+  Q5. Os testes verificam que output foi scrubbed? (mock LLM ecoando CPF -> assert response NAO contem CPF)
+
+**Especificacao do fix (defense-in-depth):**
+  Adicionar helper `scrub_llm_output(content: str) -> tuple[str, int]` em pii.py que:
+    1. Chama scrub(content)
+    2. Retorna (scrubbed_text, redaction_count)
+  Aplicar em TODO lugar onde `llm_resp.content` for atribuido (3 lugares no cartorio).
+  Adicionar campo `output_pii_redacted_count: int` em ChatResponse + OpenCodeTestResponse.
+  Adicionar audit log: `action='llm.output_scrubbed'` com payload {sender, output_pii_count, output_length}.
+
+**Severidade tipica do gap:** P0 quando o output vai pro cliente final, P1 quando vai pra admin/operador, P2 quando vai so pra log interno.
+
+**Cross-project:** Esse pattern NAO e especifico de cartorio. Aparece em QUALQUER integracao LLM (OpenAI, Anthropic, OpenClaw, etc). Aplicar a udiapods-pii, futuros SaaS B2B com chatbot, etc.

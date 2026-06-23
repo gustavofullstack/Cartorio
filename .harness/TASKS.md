@@ -145,6 +145,7 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 - [ ] **E2.T7** Pen-test basico (Burp Suite + OWASP top 10) — owner: `cartorio-lgpd` (coordena)
 - [ ] **E2.T8** Rate limiting (60 req/min/IP) — owner: `cartorio-dev`
 - [ ] **E2.T9** WAF Cloudflare — owner: `cartorio-n8n`
+- [ ] **LGPD-015** Output scrub boundary (defense-in-depth) — 3 call sites LLM (opencode_go.py:390, router.py:553, integrations.py:190) + 4-5 testes pytest + audit log `action='llm.output_scrubbed'`. Closes Blocker #10 P0 + #13 P0 + #14 P1 — owner: `cartorio-dev` (implementa) + review `cartorio-lgpd` — spec em `.harness/memory/llm-output-scrub-spec.md` — **BACKLOG** (aguarda Gustavo jump queue / override HOLD às 19:18 BRT)
 
 ---
 
@@ -694,5 +695,27 @@ Default se 30min sem resposta: D1=`chatwoot.2notasudi.com.br`, GO auditoria+rege
 **Bug técnico encontrado (Pietra)**: bot `@udiapods_bot` (que Gustavo usa no DM) não tem token exportado. Recovery das 17:43 BRT sobrescreveu `~/.mavis/credentials/mavis/telegram.json` com token do `@pietra_ceo_bot`. DM 6682284055 quebrado — Telegram ativo via grupo Pietra Squad (chat `-5006771024`) como fallback. Gustavo precisa re-bindar `@udiapods_bot` quando possível.
 
 **Workers status 18:34 BRT**: cartorio-dev (mvs_a3ed3f0b) **ONLINE**, aguardando Gustavo bater martelo OU reviver pós-quota-reset (~19:18 BRT). cartorio-n8n (mvs_bdaa1d486) **ONLINE em stand-by**, monitorando via `n8n-quota-reset-check` cron. cartorio-lgpd (mvs_3c841fe2) **OFFLINE** (404 not found).
+
+### 2026-06-23 18:51 BRT — Pietra (Mavis root)
+
+**LGPD-015 backlog criado** — output scrub boundary (3 call sites LLM).
+
+cartorio-lgpd (mvs_3c841fe) **VOLTOU** (estava OFFLINE no report anterior; era project-scoped agent `users-gustavoalmeida-projetos-cartorio--cartorio-lgpd` que aparece em `mavis agent list` SEM filtro mas não em `mavis agent list mavis`). Lesson em MEMORY.md "Project-scoped agents" 18:45 BRT.
+
+**Specs entregues por cartorio-lgpd (mvs_3c841fe) às 18:48 BRT**:
+- **SPEC #1**: patch mínimo `scrub()` no output (3 sites) — wrapper OU scrub() direto, decisão de design do cartorio-dev
+- **SPEC #2**: suite de testes pytest com 5 suítes (opencode_go, router webhook, integrations smoke, audit log, CNS anchored)
+- **Contrato (3 invariantes)**: nunca quebrar fluxo, `output_pii_redacted_count > 0` dispara audit log `llm.output_scrubbed`, count sempre visível na response
+
+**Sites afetados** (P0/P1 blockers):
+- SITE A: `backend/app/integrations/opencode_go.py:390` — Blocker #10 P0 (LGPD geral)
+- SITE B: `backend/app/api/v1/router.py:553` — Blocker #13 P0 (WhatsApp webhook + CNS art. 11)
+- SITE C: `backend/app/api/v1/integrations.py:190` — Blocker #14 P1 (smoke test interno)
+
+**Estimativa cartorio-lgpd**: 3h total (3 fixes + suite + review). CNS anchored (Suite E) é item separado, não bloqueia este PR.
+
+**Decisão Pietra**: spec salvo em `.harness/memory/llm-output-scrub-spec.md` para não perder no chat. Cartorio-dev (mvs_a3ed3f0b) em HOLD até 19:18 BRT. Quando Gustavo escolher (a) jump queue OU (b) override HOLD, mando brief consolidado a cartorio-dev. ACK enviado a cartorio-lgpd às 18:51 BRT (messageId 2104).
+
+**Cross-project lesson salva em agent memory** (MEMORY.md): "LLM output scrub gap pattern — Blocker #13 + #14" — reusável para QUALQUER projeto que use LLM. Pattern grep `llm_resp.content` + verificar scrub() ANTES de retornar/persistir.
 
 Modified by Gustavo Almeida

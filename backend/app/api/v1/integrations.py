@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
+import httpx
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel, Field
 
@@ -213,3 +214,95 @@ async def opencode_test(
                 "body_preview": (e.body or "")[:200],
             },
         )
+
+
+# ============================================================================
+# Endpoint: GET /integrations/agent/health
+# ============================================================================
+
+
+class AgentHealthResponse(BaseModel):
+    """Health check do OpenClaw Agent + LLM provider configurado."""
+
+    status: str = Field(
+        description="'ok' se openclaw alive + LLM provider respondendo, 'degraded' se parcial, 'down' se ambos off."
+    )
+    openclaw: dict[str, Any] = Field(
+        description="Status do OpenClaw gateway: alive, latency_ms, version."
+    )
+    llm_provider: dict[str, Any] = Field(
+        description="Status do LLM provider (opencode_go ou openclaw). Models available, ping latency."
+    )
+    timestamp: str = Field(description="ISO 8601 UTC do check.")
+
+
+@integrations_router.get(
+    "/integrations/agent/health",
+    tags=["meta"],
+    summary="Health check do OpenClaw Agent + LLM",
+    description=(
+        "Verifica se OpenClaw gateway esta alive + se o LLM provider "
+        "configurado esta respondendo. Retorna 200 sempre (com status='ok'/'degraded'/'down') "
+        "para que healthchecks externos (k8s livenessProbe) possam ler o body.\n\n"
+        "Latencia tipica: < 100ms quando tudo OK; ate 5s se OpenClaw ou LLM travados.\n\n"
+        "LGPD: nao envia dados pessoais, nao faz log de PII. Healthcheck seguro."
+    ),
+    response_model=AgentHealthResponse,
+)
+async def agent_health() -> AgentHealthResponse:
+    """Health check do OpenClaw + LLM provider (smoke test composto)."""
+    import datetime as _dt
+
+    # 1. OpenClaw gateway
+    openclaw_status: dict[str, Any] = {
+        "alive": False,
+        "latency_ms": None,
+        "version": None,
+        "error": None,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as ac:
+            r = await ac.get(f"{settings.openclaw_base_url}/health")
+        openclaw_status["alive"] = r.status_code == 200
+        # Headers em httpx sao case-insensitive no lookup
+        version = r.headers.get("x-openclaw-version") or r.headers.get("X-OpenClaw-Version")
+        if version:
+            openclaw_status["version"] = version
+    except (httpx.RequestError, httpx.TimeoutException) as e:
+        openclaw_status["error"] = f"{type(e).__name__}: {e}"
+
+    # 2. LLM provider (opencode_go - primary)
+    llm_status: dict[str, Any] = {
+        "provider": settings.llm_default_provider,
+        "model": settings.opencode_go_model,
+        "reachable": False,
+        "error": None,
+    }
+    if settings.opencode_go_api_key:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as ac:
+                # Ping via endpoint /models (OpenAI-compat)
+                r = await ac.get(
+                    f"{settings.opencode_go_base_url}/models",
+                    headers={"Authorization": f"Bearer {settings.opencode_go_api_key}"},
+                )
+            llm_status["reachable"] = r.status_code in (200, 401, 403)
+        except (httpx.RequestError, httpx.TimeoutException) as e:
+            llm_status["error"] = f"{type(e).__name__}: {e}"
+    else:
+        llm_status["error"] = "OPENCODE_GO_API_KEY nao configurado"
+
+    # 3. Status agregado
+    if openclaw_status["alive"] and llm_status["reachable"]:
+        status = "ok"
+    elif openclaw_status["alive"] or llm_status["reachable"]:
+        status = "degraded"
+    else:
+        status = "down"
+
+    return AgentHealthResponse(
+        status=status,
+        openclaw=openclaw_status,
+        llm_provider=llm_status,
+        timestamp=_dt.datetime.utcnow().isoformat() + "Z",
+    )

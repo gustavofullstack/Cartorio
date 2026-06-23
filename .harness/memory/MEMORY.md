@@ -621,3 +621,39 @@ Report vago tipo "tudo ok" ou "mantive hold" sem evidência = **kick + reabrir s
 > **Custo total: ~10s. Benefício: não queimar quota em merge quebrado + manter confiança no processo.**
 
 ### Modified by Mavis (Pietra session mvs_c2508947ba0f4a738139f90b9c3e75a8 — 2026-06-23 18:38 BRT)
+
+---
+
+## 2026-06-23 — LGPD-015 (LLM output scrub) + scrub completeness gate
+
+### Contexto
+3 gaps de output scrub detectados (Blocker #10, #13, #14):
+- SITE A `backend/app/integrations/opencode_go.py:390` (LGPD geral)
+- SITE B `backend/app/api/v1/router.py:553` (WhatsApp webhook + CNS art. 11)
+- SITE C `backend/app/api/v1/integrations.py:190` (Smoke test interno)
+
+Spec completa em `.harness/memory/llm-output-scrub-spec.md`. Backlog em `.harness/TASKS.md` (LGPD-015). HARD HOLD até 19:18 BRT (aguarda jump queue / override HOLD decisão Gustavo).
+
+### 🔒 GATE PRÉ-FIX OUTPUT SCRUB (cross-rein, cross-project)
+
+cartorio-lgpd (mvs_6699c48e) descobriu que `scrub()` tem **11 patterns** mas NÃO cobre CNS 15/17dig nem CNH 11dig. Fix de output com scrub incompleto = **TEATRO de compliance** (tests passing por design non-compliant).
+
+**REGRA**: Antes de QUALQUER fix de output scrub (LGPD-015 ou similar):
+1. `grep -n 'scrub\|pii\|sensitive\|detector' <repo> --include='*.py'`
+2. Listar TODOS os patterns do scrub() / detector (qtd + lista)
+3. Listar TODOS os PII relevantes do domínio (saúde, fin, ident, doc, bio)
+4. **patterns do detector >= set de PII?** Se NÃO = **BLOQUEIO pré-fix**
+5. Add pattern primeiro, DEPOIS aplica fix de output
+
+**Aplicabilidade**: cartório (LGPD-015 atual), udiapods AI support (futuro), qualquer LLM project novo. Lição cross-project salva em `~/.mavis/agents/mavis/memory/MEMORY.md` ("LLM scrub completeness gate").
+
+### Fila v2 (5 commits sequenciais após decisão Gustavo)
+1. **P0.4** CNS 15/17dig check-digit em `pii.py` (BLOQUEANTE LGPD art. 11)
+2. **P0.3** CNH 11dig check-digit em `pii.py` (BLOQUEANTE LGPD art. 11)
+3. **#13** output scrub `router.py:553` + `integrations.py:190` (usa `pii.py` completo)
+4. **P0.1** response shape `router.py:631-635` + 2 testes
+5. **P0.2** audit log `conversa.pii_blocked` `router.py:501-512`
+
+**Por que sequencial (não paralelo)**: 5 tasks tocam `router.py` OU `pii.py`. Merge conflicts em LGPD-touching code = Risco P0 que não vale ~30min de speedup. Paralelo só se Gustavo martelar (a) jump queue ou (b) override HOLD.
+
+### Modified by Mavis (Pietra session mvs_c2508947ba0f4a738139f90b9c3e75a8 — 2026-06-23 18:53 BRT)
