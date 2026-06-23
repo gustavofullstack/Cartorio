@@ -1,0 +1,122 @@
+{
+  "_comment": "Workflow 1 - Consulta Emolumento (Cartorio 2 Notas Uberlandia). Trigger: webhook POST /webhook/consulta-emolumento. Flux: PII scrub -> API /emolumento/calcular -> response. Owner: cartorio-n8n",
+  "name": "01 - Consulta Emolumento WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consulta-emolumento",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "consulta-emolumento-v1"
+    },
+    {
+      "parameters": {
+        "functionCode": "// PII scrubbing pre-LLM (defesa em profundidade)\nconst input = $input.first().json;\nconst raw = (input.body && input.body.message && input.body.message.text) || '';\nconst sender = (input.body && input.body.sender) || 'unknown';\n\n// Regex simples para CPF/RG/telefone/email\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\n\nlet scrubbed = raw;\nlet findings = [];\nlet redactionCount = 0;\n\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    findings.push({ type, count: matches.length });\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\nreturn { json: { sender, raw, scrubbed, findings, redactionCount } };"
+      },
+      "id": "pii-scrub",
+      "name": "PII Scrubber",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "handoff-pii",
+              "leftValue": "={{ $json.redactionCount }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-handoff",
+      "name": "PII detectada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.2notasudi.com.br/api/v1/emolumento/calcular",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "tipo",
+              "value": "={{ $json.scrubbed.match(/certid|escritur|procur|firma|autent|registr/i) ? $json.scrubbed.match(/certid/i) ? 'certidao' : $json.scrubbed.match(/escritur/i) ? 'escritura' : $json.scrubbed.match(/procur/i) ? 'procuracao' : $json.scrubbed.match(/firma/i) ? 'reconhecimento_firma' : $json.scrubbed.match(/autent/i) ? 'autenticacao' : 'certidao' : 'certidao' }}"
+            },
+            {"name": "folhas", "value": "1"},
+            {"name": "urgencia", "value": "false"}
+          ]
+        },
+        "options": {"timeout": 10000}
+      },
+      "id": "api-emolumento",
+      "name": "API Emolumento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Valor do emolumento: R$ {{ $json.total }} (base: R$ {{ $json.base }}, tabela {{ $json.tabela_referencia }}, válido até {{ $json.valido_ate }})\",\n  \"details\": {{ $json }}\n}"
+      },
+      "id": "respond-ok",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1140, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Recebi sua mensagem com dados sensíveis (CPF/RG/telefone/email detectados). Por segurança, vou transferir para um atendente humano. Aguarde um instante.\",\n  \"scrubbed\": \"{{ $json.scrubbed }}\",\n  \"findings\": {{ $json.findings }}\n}"
+      },
+      "id": "respond-handoff",
+      "name": "Handoff Humano",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 420]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp": {"main": [[{"node": "PII Scrubber", "type": "main", "index": 0}]]},
+    "PII Scrubber": {"main": [[{"node": "PII detectada?", "type": "main", "index": 0}]]},
+    "PII detectada?": {
+      "main": [
+        [{"node": "API Emolumento", "type": "main", "index": 0}],
+        [{"node": "Handoff Humano", "type": "main", "index": 0}]
+      ]
+    },
+    "API Emolumento": {"main": [[{"node": "Respond OK", "type": "main", "index": 0}]]}
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [{"name": "cartorio"}, {"name": "whatsapp"}, {"name": "sprint-1"}]
+}
