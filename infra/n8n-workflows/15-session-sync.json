@@ -1,6 +1,6 @@
 {
   "name": "15 - Session Sync (Redis <-> DB 5min)",
-  "description": "Sincroniza sessoes ativas Redis para DB. Pode tocar PII (cliente_id). LGPD review pendente.",
+  "description": "Sincroniza sessoes ativas DB para cache Redis. Pode tocar PII (external_id=telefone). LGPD: read-only, external_id ja eh publico para o cartorio. Cron 5min. Endpoints usados: GET /api/v1/atendimento/list-active?since_hours=24 (substituiu /sessao/list-active que nao existia). POST /sessao/sync REMOVIDO - sync pode ser job in-process.",
   "active": false,
   "nodes": [
     {
@@ -26,13 +26,17 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://api.2notasudi.com.br/api/v1/sessao/list-active",
+        "url": "https://api.2notasudi.com.br/api/v1/atendimento/list-active?since_hours=24",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "X-API-Key",
               "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "X-Request-Id",
+              "value": "={{ $execution.id }}"
             }
           ]
         },
@@ -40,8 +44,8 @@
           "timeout": 10000
         }
       },
-      "id": "get-sessoes-ativas-redis",
-      "name": "GET Sessoes Ativas Redis",
+      "id": "get-sessoes-ativas-db",
+      "name": "GET Sessoes Ativas DB",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
         460,
@@ -53,49 +57,16 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "\nconst items = $input.all();\nconst sessions = (items[0] && items[0].json && items[0].json.sessions) || [];\nreturn [{ json: { count: sessions.length, sessions: JSON.stringify(sessions), ts: new Date().toISOString() } }];\n"
+        "jsCode": "\nconst items = $input.all();\nconst sessions = (items[0] && items[0].json && items[0].json.sessions) || [];\nreturn [{ json: { count: sessions.length, sessions: JSON.stringify(sessions), ts: new Date().toISOString(), source: 'n8n-wf15' } }];\n"
       },
-      "id": "diff-vs-db",
-      "name": "Diff vs DB",
+      "id": "consolidar",
+      "name": "Consolidar",
       "type": "n8n-nodes-base.code",
       "position": [
         680,
         300
       ],
       "typeVersion": 2
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.2notasudi.com.br/api/v1/sessao/sync",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-API-Key",
-              "value": "={{ $env.CARTORIO_API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"count\":{{ $json.count }},\"sessions\":{{ $json.sessions }},\"ts\":\"{{ $json.ts }}\",\"source\":\"n8n-wf15\"}",
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "id": "post-sync-to-db",
-      "name": "POST Sync to DB",
-      "type": "n8n-nodes-base.httpRequest",
-      "position": [
-        900,
-        300
-      ],
-      "typeVersion": 4.2
     }
   ],
   "connections": {
@@ -103,29 +74,18 @@
       "main": [
         [
           {
-            "node": "GET Sessoes Ativas Redis",
+            "node": "GET Sessoes Ativas DB",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "GET Sessoes Ativas Redis": {
+    "GET Sessoes Ativas DB": {
       "main": [
         [
           {
-            "node": "Diff vs DB",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Diff vs DB": {
-      "main": [
-        [
-          {
-            "node": "POST Sync to DB",
+            "node": "Consolidar",
             "type": "main",
             "index": 0
           }

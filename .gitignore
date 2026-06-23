@@ -40,3 +40,6 @@ Thumbs.db
 # Banco local
 *.sqlite
 *.db
+
+# Local secrets — never commit
+.secrets/
