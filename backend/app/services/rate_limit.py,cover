@@ -1,0 +1,135 @@
+> """Rate limiting middleware para endpoints /integrations/*.
+  
+> LGPD + cost guard: cada sessao (ou IP anonimo) tem limite de N requisicoes/minuto
+> contra endpoints de integracao (que custam dinheiro: LLM tokens, Evolution send,
+> Chatwoot API, etc).
+  
+> Algoritmo: Redis INCR com TTL sliding window de 60s.
+> - Chave: `ratelimit:{session_id}:{minute_bucket}` ou `ratelimit:ip:{ip}:{minute_bucket}`
+> - Valor: contador de requests
+> - TTL: 60s (auto-expira bucket antigo)
+  
+> Se Redis offline -> fail-open (NAO bloqueia request, log warning).
+> LGPD: session_id pode ser hash SHA-256 (LGPD-safe) ou IP.
+> """
+  
+> from __future__ import annotations
+  
+> import hashlib
+> import logging
+> import time
+> from collections.abc import Awaitable, Callable
+  
+> import redis.asyncio as redis_async
+> from fastapi import Request, Response
+> from starlette.middleware.base import BaseHTTPMiddleware
+  
+> from app.config import settings
+  
+> logger = logging.getLogger(__name__)
+  
+  
+> class RateLimitMiddleware(BaseHTTPMiddleware):
+>     """Middleware de rate limiting para /integrations/* + /admin/api-key/*.
+  
+>     Args:
+>         app: FastAPI app.
+>         redis_url: URL do Redis. Se None, usa settings.redis_url.
+>         per_minute: Limite de requisicoes por minuto por chave.
+>         session_header: Header que carrega session_id (default X-Session-Id).
+>         paths_prefixes: Prefixos de path que devem ser rate-limited.
+>                         Default: /integrations/, /admin/
+>     """
+  
+>     DEFAULT_PATHS = ("/integrations/", "/admin/")
+  
+>     def __init__(
+>         self,
+>         app: Any,  # noqa: ANN401
+>         redis_url: str | None = None,
+>         per_minute: int = 60,
+>         session_header: str = "x-session-id",
+>         paths_prefixes: tuple[str, ...] = DEFAULT_PATHS,
+>     ) -> None:
+>         super().__init__(app)
+>         self._url = redis_url or settings.redis_url
+>         self._per_minute = per_minute
+>         self._session_header = session_header
+>         self._paths = paths_prefixes
+>         self._client: redis_async.Redis | None = None
+  
+>     async def _get_client(self) -> redis_async.Redis:
+!         if self._client is None:
+!             self._client = redis_async.from_url(
+!                 self._url,
+!                 socket_timeout=2.0,
+!                 socket_connect_timeout=2.0,
+!                 decode_responses=True,
+!             )
+!         return self._client
+  
+>     def _extract_key(self, request: Request) -> str:
+>         """Extrai chave de rate-limit. Hash pra LGPD."""
+!         session_id = request.headers.get(self._session_header)
+!         if session_id:
+!             h = hashlib.sha256(session_id.encode()).hexdigest()[:16]
+!             return f"ratelimit:session:{h}"
+          # Fallback: IP do client
+!         client_ip = request.client.host if request.client else "unknown"
+!         h = hashlib.sha256(client_ip.encode()).hexdigest()[:16]
+!         return f"ratelimit:ip:{h}"
+  
+>     def _should_limit(self, path: str) -> bool:
+>         return any(path.startswith(prefix) for prefix in self._paths)
+  
+>     async def dispatch(
+>         self,
+>         request: Request,
+>         call_next: Callable[[Request], Awaitable[Response]],
+>     ) -> Response:
+>         if not self._should_limit(request.url.path):
+>             return await call_next(request)
+  
+!         key = self._extract_key(request)
+!         bucket = int(time.time()) // 60
+!         redis_key = f"{key}:{bucket}"
+  
+!         try:
+!             client = await self._get_client()
+!             count = await client.incr(redis_key)
+!             if count == 1:
+!                 await client.expire(redis_key, 60)
+!             if count > self._per_minute:
+!                 logger.warning(
+!                     "rate_limit.exceeded key=%s count=%d path=%s",
+!                     key,
+!                     count,
+!                     request.url.path,
+!                 )
+!                 return Response(
+!                     content=(
+!                         f'{{"erro":"RATE_LIMITED","mensagem":"limite de '
+!                         f'{self._per_minute} req/min excedido","'
+!                         f'retry_after_seconds":{60 - (int(time.time()) % 60)}}}'
+!                     ),
+!                     status_code=429,
+!                     headers={
+!                         "Content-Type": "application/json",
+!                         "Retry-After": str(60 - (int(time.time()) % 60)),
+!                         "X-RateLimit-Limit": str(self._per_minute),
+!                         "X-RateLimit-Remaining": "0",
+!                     },
+!                 )
+!             response = await call_next(request)
+!             response.headers["X-RateLimit-Limit"] = str(self._per_minute)
+!             response.headers["X-RateLimit-Remaining"] = str(
+!                 max(0, self._per_minute - int(count))
+!             )
+!             return response
+!         except Exception as e:  # noqa: BLE001
+              # Fail-open: NAO bloqueia se Redis offline
+!             logger.warning("rate_limit.redis_unavailable err=%s (fail-open)", e)
+!             return await call_next(request)
+  
+  
+> __all__ = ["RateLimitMiddleware"]

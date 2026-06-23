@@ -1,0 +1,29 @@
+> """Integracao com OpenCode-Go (LLM provider low-cost primario).
+  
+> Opencode-Go expoe API compativel com OpenAI Chat Completions em
+> `{base_url}/chat/completions`. Usamos como provider primario (low-cost)
+> no webhook Evolution e em qualquer call LLM do cartorio.
+  
+> Provider secundario (fallback): OpenClaw gateway (ver app.config.settings).
+  
+> Uso:
+>     from app.integrations.opencode_go import chat, ChatError, ChatResponse
+  
+>     try:
+>         resp = await chat(
+>             messages=[{"role": "user", "content": "Ola"}],
+>             model=settings.opencode_go_model,
+>             api_key=settings.opencode_go_api_key,
+>             base_url=settings.opencode_go_base_url,
+>         )
+>         texto = resp.content
+>     except ChatError as e:
+          # e.status_code, e.body, e.kind para decisao (handoff humano?)
+>         texto = f"[erro LLM: {e}]"
+  
+> Decisao de design (refator 2026-06-23):
+> - Modulo dedicado em vez de httpx inline no router.py (SRP, testavel).
+> - API key injetada por param (testavel, sem dependencia implicita de settings).
+> - Mede latencia e captura tokens (necessarios para audit log de conversas).
+> - Excecao tipada (ChatError) para o caller distinguir timeout vs 4xx vs 5xx.
+> """
