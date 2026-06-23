@@ -1,0 +1,43 @@
+{
+  "_comment_purpose": "Traefik dynamic config patch for Tailscale-routed OpenClaw on the cartorio tailnet (tail2fe279.ts.net).",
+  "_comment_install": "Append 'http.routers', 'http.services' and 'tls.certificates' blocks to /etc/easypanel/traefik/config/main.yaml on the VPS. The file is auto-reloaded by Traefik's file provider. Tailscale cert files are mounted at /data/tailscale-vps-cartorio.{crt,key} (same path as the existing default-domain cert).",
+  "_comment_pre_reqs": [
+    "1. Tailscale HTTPS enabled in admin panel: https://login.tailscale.com/admin/dns (Enable HTTPS toggle).",
+    "2. tailscale cert vps-cartorio.tail2fe279.ts.net generated on VPS (writes to /root/ by default).",
+    "3. tailscaled running on VPS with HTTPSEnabled=true (tailscale status --json | jq .HTTPSEnabled).",
+    "4. Tailscale clients (Mac/iPhone) on the same tailnet auto-trust the cert (Tailscale root CA bundled in the OS).",
+    "5. The cartorio_openclaw-gateway service must be on the same Docker network as the easypanel-traefik (default overlay 'easypanel-cartorio' OR direct routing).",
+    "_comment_constraint": "Tailscale HTTPS allows ONLY the node's own hostname (vps-cartorio.tail2fe279.ts.net). True wildcard *.tail2fe279.ts.net is NOT supported by Tailscale native certs. Workarounds: (a) re-name VPS to 'router' and use router.tail2fe279.ts.net with sni routing; (b) bring your own CA + ACME; (c) use path-based routing on the single allowed hostname (recommended for now)."
+  ],
+  "http": {
+    "routers": {
+      "tailscale-openclaw-https": {
+        "rule": "Host(`vps-cartorio.tail2fe279.ts.net`) && PathPrefix(`/`)",
+        "service": "tailscale-openclaw",
+        "entryPoints": ["https"],
+        "priority": 100,
+        "tls": {}
+      }
+    },
+    "services": {
+      "tailscale-openclaw": {
+        "loadBalancer": {
+          "passHostHeader": true,
+          "servers": [
+            {
+              "url": "http://cartorio_openclaw-gateway:18789"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "tls": {
+    "certificates": [
+      {
+        "certFile": "/data/tailscale-vps-cartorio.crt",
+        "keyFile": "/data/tailscale-vps-cartorio.key"
+      }
+    ]
+  }
+}
