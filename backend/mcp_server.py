@@ -334,7 +334,7 @@ async def cartorio_saudacao() -> dict:
         "api_status": 200,
         "mcp_server": "cartorio-mcp-cabuloso v0.4.0",
         "app_name": settings.app_name if settings else "cartorio-api",
-        "app_version": settings.app_version if settings else "0.4.0",
+        "app_version": "0.4.0",
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "transport": "streamable_http",
         "lgpd_compliance": True,
