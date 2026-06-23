@@ -248,3 +248,32 @@ Padrao correto do harness Cartorio:
 Aplicacao universal (qualquer projeto LGPD/GDPR/CCPA B2B):
   - Quem revisa compliance NAO commita o codigo revisado
   - Quem audita NAO e
+
+### Multi-LLM sub-processor rule — TODOS STAGING ONLY ate DPA assinado (2026-06-23)
+Type: rule
+
+Regra cross-project pra QUALQUER projeto com multiplos sub-processors LLM externos.
+
+**Contexto:** Cartorio tem 4 sub-processors LLM:
+- DeepSeek (LGPD-014) — cliente final WhatsApp via OpenCode-Go gateway
+- OpenCode-Go — gateway tecnico (complementar a DeepSeek)
+- MiniMax (LGPD-015) — harness operacional (reins do Mavis runtime)
+- Evolution API (BR) — WhatsApp Business (sem跨境)
+
+**Regra de ferro (LEMBRAR):**
+Quando um projeto tem MAIS DE 1 sub-processor LLM, TODOS precisam de DPA assinado antes de qualquer caminho de producao com dado real. NAO basta assinar 1 — basta 1 sem DPA para o backend inteiro ficar STAGING ONLY.
+
+Razao juridica: LGPD art. 33 (transferencia internacional) aplicavel a CADA sub-processor individualmente. Se DeepSeek esta OK mas MiniMax nao esta, dado que passa por MiniMax (mesmo que minimamente) ja e跨境 irregular. Backend inteiro fica nao-conforme.
+
+**Aplicacao pratica (checklist pre-deploy):**
+- [ ] DPA DeepSeek assinado? (LGPD-014)
+- [ ] DPA OpenCode-Go assinado? (gateway)
+- [ ] DPA MiniMax assinado? (LGPD-015)
+- [ ] DPA Evolution API assinado? (BR, base legal art. 7 II)
+- [ ] Se qualquer um = PENDENTE: STAGING ONLY com dado sintetico
+- [ ] Cenario worst case: 1 DPA assinado, 3 pendentes = mesmo nivel de exposicao que 0 assinados (跨境 irregular cumulativa)
+
+**Cross-project:** aplicar a:
+- udiapods (se migrar pra multi-LLM): GPT-5.5 + Claude + Gemini providers
+- Qualquer SaaS B2B com OpenAI + Anthropic + open-source LLM em paralelo
+- Chatbots com fallback multi-provider (LiteLLM com 3+ backends)
