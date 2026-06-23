@@ -23,7 +23,7 @@ from typing import Annotated
 
 import httpx
 import redis
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Path, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field  # noqa: F401  (usado nos schemas abaixo)
@@ -1775,3 +1775,168 @@ async def get_cliente_historico(
         total_eventos=len(items),
         items=items,
     )
+
+
+# ============================================================================
+# N8N Workflow #25 - Protocolos concluidos recentemente
+# ============================================================================
+
+
+@api_router.get(
+    "/protocolo/recentes-concluidos",
+    tags=["protocolo"],
+    summary="Lista protocolos concluidos nos ultimos N minutos (N8N workflow #25)",
+    description=(
+        "Retorna protocolos com status='concluido' que foram atualizados nos ultimos "
+        "N minutos. Usado pelo workflow N8N #25 para disparar envio de PDF via WhatsApp.\n\n"
+        "Params:\n"
+        "- minutos: janela de tempo (default 10, suficiente para cron 5min)\n"
+        "- limit: maximo de items (default 50)\n\n"
+        "Requer X-API-Key (workflow N8N). Nao expoe PII (telefone = None por design)."
+    ),
+    responses={
+        200: {"description": "Lista de protocolos concluidos (pode ser vazia)."},
+        401: {"description": "X-API-Key ausente."},
+    },
+)
+async def get_protocolos_recentes_concluidos(
+    request: Request,
+    minutos: Annotated[int, Query(ge=1, le=1440, description="Janela em minutos (default 10).")] = 10,
+    limit: Annotated[int, Query(ge=1, le=200, description="Maximo de items (default 50).")] = 50,
+    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+) -> dict:
+    """Endpoint usado pelo N8N workflow #25 (protocolo concluido -> PDF WhatsApp)."""
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
+        )
+
+    from app.services.protocolo_query import listar_protocolos_recentes_concluidos
+
+    items = listar_protocolos_recentes_concluidos(db, minutos=minutos, limit=limit)
+    return {
+        "items": [item.to_dict() for item in items],
+        "total": len(items),
+        "janela_minutos": minutos,
+        "limit": limit,
+    }
+
+
+# ============================================================================
+# Documento upload (PDF assinado + hash SHA256)
+# ============================================================================
+
+
+@api_router.post(
+    "/documento/upload",
+    tags=["documento"],
+    summary="Upload de documento (PDF assinado) com hash SHA256",
+    description=(
+        "Recebe um arquivo (multipart/form-data), valida MIME type, calcula "
+        "SHA256, persiste metadata no DB, e retorna storage_path + hash.\n\n"
+        "Storage real: este endpoint apenas REGISTRA o documento. O arquivo em si "
+        "precisa ser enviado para Supabase Storage via /api/v1/documento/storage-upload "
+        "(Sprint 3.5+, a parte de storage). Aqui so persistimos o metadata + hash.\n\n"
+        "Validacao humana: documento juridico exige revisao de escrevente. O campo "
+        "`validado_por` fica NULL ate um escrevente revisar.\n\n"
+        "Requer X-API-Key (workflow N8N ou escrevente)."
+    ),
+    responses={
+        200: {"description": "Documento registrado."},
+        400: {"description": "Arquivo invalido (mime, tamanho, hash mismatch)."},
+        401: {"description": "X-API-Key ausente."},
+        404: {"description": "Protocolo nao encontrado."},
+    },
+)
+async def upload_documento(
+    request: Request,
+    protocolo_id: int = Form(..., description="ID do protocolo."),
+    tipo: str = Form(..., description="Tipo: rg, cpf, escritura, certidao, etc."),
+    storage_path: str = Form(..., description="Caminho no storage (Supabase Storage key)."),
+    mime_type: str = Form(..., description="application/pdf, image/jpeg, etc."),
+    hash_sha256: str = Form(..., description="SHA256 hex do arquivo (64 chars)."),
+    tamanho_bytes: int | None = Form(None, description="Tamanho em bytes (opcional)."),
+    uploaded_by: str = Form("sistema", description="Quem fez upload (nome/id)."),
+    uploaded_by_tipo: str = Form("sistema", description="cliente, escrevente, sistema."),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Registra metadata de documento uploaded."""
+    import hashlib as _hashlib
+    from app.models.documento import Documento
+    from app.models.protocolo import Protocolo
+
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
+        )
+
+    # Validacao basica
+    if len(hash_sha256) != 64 or not all(c in "0123456789abcdef" for c in hash_sha256.lower()):
+        raise HTTPException(
+            status_code=400,
+            detail={"erro": "INVALID_HASH", "mensagem": "hash_sha256 deve ser hex de 64 chars."},
+        )
+    if mime_type not in {"application/pdf", "image/jpeg", "image/png", "image/tiff"}:
+        raise HTTPException(
+            status_code=400,
+            detail={"erro": "INVALID_MIME", "mensagem": f"mime_type nao suportado: {mime_type}"},
+        )
+
+    # Verifica protocolo existe
+    protocolo = db.get(Protocolo, protocolo_id)
+    if protocolo is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"erro": "PROTOCOLO_NOT_FOUND", "mensagem": f"Protocolo {protocolo_id} nao existe."},
+        )
+
+    # Cria documento
+    doc = Documento(
+        protocolo_id=protocolo_id,
+        tipo=tipo,
+        storage_path=storage_path,
+        storage_provider="supabase",
+        tamanho_bytes=tamanho_bytes,
+        mime_type=mime_type,
+        hash_sha256=hash_sha256.lower(),
+        uploaded_by=uploaded_by,
+        uploaded_by_tipo=uploaded_by_tipo,
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+
+    # Audit log (LGPD art. 37)
+    AuditService.log(
+        db,
+        actor_id=f"upload:{uploaded_by}",
+        actor_type="sistema",
+        action="documento.upload",
+        resource=f"documento:{doc.id}",
+        payload={
+            "protocolo_id": protocolo_id,
+            "documento_id": doc.id,
+            "tipo": tipo,
+            "mime_type": mime_type,
+            "tamanho_bytes": tamanho_bytes,
+            "hash_sha256": hash_sha256,
+        },
+        **audit_kwargs(request),
+    )
+
+    return {
+        "id": doc.id,
+        "protocolo_id": doc.protocolo_id,
+        "tipo": doc.tipo,
+        "storage_path": doc.storage_path,
+        "storage_provider": doc.storage_provider,
+        "mime_type": doc.mime_type,
+        "tamanho_bytes": doc.tamanho_bytes,
+        "hash_sha256": doc.hash_sha256,
+        "uploaded_by": doc.uploaded_by,
+        "uploaded_at": doc.created_at.isoformat() if doc.created_at else None,
+    }

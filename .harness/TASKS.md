@@ -130,6 +130,16 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 - [ ] **E1.S3.T6** Endpoint `GET /api/v1/cliente/{id}/historico` (LGPD art. 18 IV — direito de acesso) — owner: `cartorio-dev` + review `cartorio-lgpd` — **BACKLOG 2026-06-23 18:38 BRT** (WIP preservado em `/tmp/sprint3-cliente-historico-wip.patch` + `stash@{0}` — cartorio-dev mvs_a3ed3f0b violou HOLD entre 18:31-18:33 BRT, código revertido per Pietra B', refazer pós-v0.6.1 com LGPD review ANTES de merge. PATCH CONTÉM bug de sintaxe em router.py:1673 `]` extra — fix antes de reapply)
 - **KPI Sprint 3**: 50% dos protocolos novos criados via bot (restante via balcao).
 
+### Sprint 4 — DEFERRED (pos-Sprint 3, nao bloqueador) — tracking only, NAO em master
+
+> Contexto 2026-06-23 19:00 BRT: cartorio-evo-network-fix.service morreu silenciosamente 3h, EVO restart loop recuperado sem watchdog externo. Mavis (Pietra mvs_9b3c9043) decidiu ADIAR watchdog pra Sprint 4 com cartorio-lgpd review. EVO UP 3h estavel, nao urgente, nao bloqueia Sprint 3 target (100 cons/dia, 0 erro valor, 0 handoff).
+
+- [ ] **E1.S4.T1** Watchdog externo `cartorio-evo-network-fix.service` (cron 5min, restart se inativo, Telegram GRUPO aviso, log append em `/var/log/cartorio-evo-network-fix-watchdog.log`) — owner: Mavis — **DEFERRED Sprint 4** (decisao Pietra mvs_9b3c9043 2026-06-23 19:00 BRT) — pre-requisito: Gustavo GO Sprint 4 + cartorio-lgpd review de impacto operacional
+  - **Por que nao Sprint 3**: melhoria operacional, nao bloqueador. Sprint 3 focado em 100 cons/dia + 0 erro valor + 0 handoff. Adicionar watchdog agora = ruido nas 4 marteladas Gustavo 19:05 BRT (D1-D4 + 6 SUI + Blocker #13)
+  - **Por que importa mesmo assim (Lesson 7)**: daemon com loop infinito + TTY close + manual stop = silent death. systemd Restart=always NAO acorda se houve stop explicito. EVO perdeu network 3h, Swarm auto-recovery 4 crashes, mas daemon nao voltou sozinho
+  - **Mitigacao aplicada AGORA (P0)**: cartorio-evo-health cron ja monitora (5min tick via `cartorio-highspeed`). Adiciona restart SE service inativo. Watchdog dedicado seria redundante ate Gustavo GO
+  - **Ref**: `~/.mavis/agents/mavis/memory/MEMORY.md` Lesson 7 "Daemon silent death + systemd Restart=always eh armadilha"
+
 ---
 
 ## EPIC E2 — Compliance + Hardening (Semana 7-8)

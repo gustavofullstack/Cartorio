@@ -69,3 +69,16 @@ Regra:
 4. **Deselect ≠ fail.** "37 deselected" no output do pytest NAO significa 37 fails — sao testes com marker excluido (no caso, @pytest.mark.smoke filtrado por \`-m 'not smoke'\` no addopts). Saber a diferenca evita report falso.
 
 Reutilizavel: toda vez que um briefing vier com "tem N fails", rodar \`pytest --no-cov -q 2>&1 | tail -5\` ANTES de planejar fix. Custo: 5s. Beneficio: nao queimar 60-90min em bug-fantasma.
+
+### Pydantic Settings singleton trap em testes (2026-06-23)
+Type: anti-pattern
+
+Contexto: test_cliente_historico.py (criado por mim/ZCode) tinha 5 fails, dos quais 4 eram "401 == 200" (esperava 200, recebia 401). Causa raiz: o test setava `os.environ.setdefault("CARTORIO_API_KEY", "test-key-12345")` mas `app/config.py` tem `settings = get_settings()` no module level. Esse singleton foi criado quando conftest.py carregou (ANTES do test file), e nesse momento CARTORIO_API_KEY NAO estava no env, entao `settings.cartorio_api_key = None`. O setdefault do test NAO recriava o singleton. `get_settings.cache_clear()` NAO ajuda — so afeta chamadas futuras de get_settings(), nao a variavel `settings` ja criada.
+
+Sintoma: tests que dependem de env vars que afetam `settings` recebem 401/403 mesmo passando o header/credencial certa.
+
+Fix correto: setar a env var em `tests/conftest.py` ANTES de `from app.config import get_settings`. O conftest carrega antes do test file, entao o singleton `settings` e criado com o valor correto. Outras opcoes: (a) `importlib.reload(app.config)` no test (hacky), (b) `pytest.MonkeyPatch.setattr(app.config.settings, "cartorio_api_key", ...)` (mais isolado mas verboso).
+
+Reutilizavel: QUALQUER projeto FastAPI + Pydantic Settings v2 com `settings = get_settings()` no module level. Verificar SEMPRE antes de debugar "auth 401 misteriosos" em tests.
+
+Licao: o conftest.py NAO e' so pra fixtures — e' tambem o unico lugar garantido de rodar antes do singleton ser criado. Trate conftest.py como bootstrap de env state.

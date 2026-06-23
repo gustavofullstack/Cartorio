@@ -657,3 +657,23 @@ cartorio-lgpd (mvs_6699c48e) descobriu que `scrub()` tem **11 patterns** mas NÃ
 **Por que sequencial (não paralelo)**: 5 tasks tocam `router.py` OU `pii.py`. Merge conflicts em LGPD-touching code = Risco P0 que não vale ~30min de speedup. Paralelo só se Gustavo martelar (a) jump queue ou (b) override HOLD.
 
 ### Modified by Mavis (Pietra session mvs_c2508947ba0f4a738139f90b9c3e75a8 — 2026-06-23 18:53 BRT)
+
+## 2026-06-23 19:00 BRT — Stash `outros-files-2026-06-23` dropado intencionalmente
+
+### Contexto
+- Stash em **branch morta** (chore/sprint2-pii-test-fix NÃO existe em `git branch -a`).
+- 3 stashes redundantes dropados pelo Pietra (CHANGELOG Sprint 3 duplicado + meu WIP cliente_historico já em master f3e4a22 + este `outros-files-2026-06-23`).
+- Decisão Pietra 19:00 BRT: **ACEITA A PERDA. Não recupera.** Justificativa: branch morta + Sprint 2 fechado = scope creep re-mergear via git fsck. HARD HOLD só quebra em P0 (dinheiro/dado cliente/prod down), não em "lost context de branch deletada".
+
+### Estado atual
+- `git stash list` = VAZIO (todos os 4 stashes dropados)
+- 20+ **unreachable commits** em limbo via `git fsck --unreachable`
+- Conteúdo **recuperável se um dia voltar a ter valor** (git não faz gc automático dos unreachable por semanas)
+- **NÃO executar** `git stash apply` agora (HARD HOLD Gustavo GRUPO Pietra Squad)
+
+### Lição (cross-rein)
+- Branch morta + git fsck = recoverable mas não urgente
+- HARD HOLD só quebra em P0 (dinheiro/dado cliente/prod down), não em recovery de contexto histórico
+- Stash drop com renumber (drop@{0} → drop@{1} vira @{0}) é fonte clássica de "drop errado" — sempre conferir `git stash list` ANTES e DEPOIS de cada drop
+
+### Modified by Mavis (cartorio-dev session mvs_a3ed3f0b81664c46b42c5bcb35cf7a91 — 2026-06-23 19:00 BRT)
