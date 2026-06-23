@@ -60,7 +60,7 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
     - `infra/backup/cartorio-backup.sh`: melhorado (128 linhas reescritas)
   - **Bloqueio flag (MSG #1474)**: worker rodou como `agent=general` (não como `cartorio-dev` rein project-scoped) — workaround documentado em memory. Cartorio-harness não encontrou o rein registrado como global agent.
   - **Próximo**: commit pelo cartorio-dev após smoke tests verdes. Revisão code-reviewer antes de merge.
-- [ ] **E1.S1.T3** Integracao LiteLLM (Claude Opus 4.5 primary, GPT-5.5 fallback, Gemini/Llama router intencao) — owner: `cartorio-dev`
+- [x] **E1.S1.T3** Integracao LLM via OpenCode-Go provider (deepseek-v4-flash primary) + 8 blockers LGPD resolvidos — owner: `cartorio-dev` + review `cartorio-lgpd` (cross-review retroativo via auditoria 8 blockers antes do merge 20036bb) — **DONE 2026-06-23 14:06 BRT em `01c26df`** (audit.py + pii.py ZERO modificacao; LGPD by design: scrub INTERNO defense-in-depth, consent gate, audit log SHA-256, rate limit Redis 60/min, fallback scaffold). LiteLLM multi-provider fica sprint 3.
 - [ ] **E1.S1.T4** PII scrubbing regex-only (latencia < 5ms) ANTES de chamar LLM — owner: `cartorio-dev` + review `cartorio-lgpd`
 - [x] **E1.S1.T5** Template de resposta WhatsApp: "emolumento X custa R$ Y, prazo Z" — owner: `cartorio-n8n` — done em `3cdb65a` (WF #1 happy path R$ 105.40 certidao_casamento, R$ 156.40 procuracao)
 - [x] **E1.S1.T6** Health check `/health` com smoke do hash chain — owner: `cartorio-dev` — `/health` 200 OK, `/api/v1/audit/verify` chain_ok=true last_valid_position=10
