@@ -1,0 +1,178 @@
+{
+  "name": "13 - OpenClaw Chat Bridge (PII scrub + API forward)",
+  "description": "Recebe msg do OpenClaw gateway, faz PII scrub inline (defense-in-depth), encaminha para API /webhook/evolution com X-API-Key auth.",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "openclaw-in",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "openclaw-webhook",
+      "name": "OpenClaw Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg",
+              "name": "message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "sender",
+              "name": "sender",
+              "value": "={{ $json.body.sender }}",
+              "type": "string"
+            },
+            {
+              "id": "canal",
+              "name": "canal",
+              "value": "={{ $json.body.canal || 'openclaw' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-openclaw-payload",
+      "name": "Extract OpenClaw Payload",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\nconst patterns = [\n  { label: 'email',    re: /\\b[\\w.+-]+@[\\w-]+\\.[\\w.-]+\\b/g },\n  { label: 'cpf',      re: /\\b\\d{3}\\.\\d{3}\\.\\d{3}-?\\d{2}\\b/g },\n  { label: 'rg',       re: /\\b\\d{1,2}\\.\\d{3}\\.?\\d{3}-?[\\dxX]\\b/g },\n  { label: 'phone_br', re: /(?:\\+?55\\s?)?\\(?\\d{2}\\)?\\s?9?\\d{4}[\\s-]?\\d{4}/g },\n  { label: 'cnpj',     re: /\\b\\d{2}\\.?\\d{3}\\.\\d{3}\\/\\d{4}-?\\d{2}\\b/g },\n  { label: 'placa',    re: /\\b[A-Z]{3}-?\\d[A-Z]\\d{2}\\b/g },\n];\nfor (const item of items) {\n  let m = (item.json.message || '').toString();\n  const findings = {}; let cnt = 0;\n  for (const p of patterns) {\n    const matches = m.match(p.re);\n    if (matches && matches.length) { findings[p.label] = matches.length; cnt += matches.length; m = m.replace(p.re, '[' + p.label.toUpperCase() + '_REDACTED]'); }\n  }\n  out.push({ json: { ...item.json, scrubbed: m, pii_blocked: cnt > 0, pii_redaction_count: cnt, pii_findings: findings, ts: new Date().toISOString() } });\n}\nreturn out;\n"
+      },
+      "id": "pii-scrubber-openclaw",
+      "name": "PII Scrubber OpenClaw",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/webhook/evolution",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"canal\":\"{{ $json.canal }}\",\"sender\":\"{{ $json.sender }}\",\"message\":\"{{ $json.scrubbed }}\",\"pii_blocked\":{{ $json.pii_blocked }},\"pii_redaction_count\":{{ $json.pii_redaction_count }},\"source\":\"openclaw\",\"ts\":\"{{ $json.ts }}\"}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "post-api-webhook-evolution",
+      "name": "POST API Webhook Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\":\"received\",\"sender\":\"{{ $json.sender }}\",\"scrubbed_by\":\"n8n-wf13\",\"pii_blocked\":{{ $json.pii_blocked }}}"
+      },
+      "id": "respond-openclaw",
+      "name": "Respond OpenClaw",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1120,
+        300
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "OpenClaw Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract OpenClaw Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract OpenClaw Payload": {
+      "main": [
+        [
+          {
+            "node": "PII Scrubber OpenClaw",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PII Scrubber OpenClaw": {
+      "main": [
+        [
+          {
+            "node": "POST API Webhook Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST API Webhook Evolution": {
+      "main": [
+        [
+          {
+            "node": "Respond OpenClaw",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "openclaw"
+    }
+  ]
+}

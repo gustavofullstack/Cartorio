@@ -1,0 +1,291 @@
+{
+  "name": "23 - LGPD Esqueci (DELETE cliente + cascade + audit)",
+  "description": "Cliente pede exclusao (LGPD art. 18 VI). Cascade: hard delete se sem protocolo, soft delete + retencao se tem.",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lgpd-esqueci",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "lgpd-esqueci-webhook",
+      "name": "LGPD Esqueci Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cliente_id",
+              "name": "cliente_id",
+              "value": "={{ $json.body.cliente_id }}",
+              "type": "string"
+            },
+            {
+              "id": "motivo",
+              "name": "motivo",
+              "value": "={{ $json.body.motivo || 'exercicio_direito_titular' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-cliente-id",
+      "name": "Extract Cliente ID",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.2notasudi.com.br/api/v1/cliente/{{ $json.cliente_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-cliente-(validar-consent)",
+      "name": "GET Cliente (validar consent)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-Pode Deletar?",
+              "leftValue": "={{ $json.pode_deletar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "pode-deletar?",
+      "name": "Pode Deletar?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.2notasudi.com.br/api/v1/cliente/{{ $('Extract Cliente ID').item.json.cliente_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "delete-cliente-(lgpd-art.-18-vi)",
+      "name": "DELETE Cliente (LGPD art. 18 VI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1120,
+        200
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.2notasudi.com.br/api/v1/cliente/{{ $('Extract Cliente ID').item.json.cliente_id }}/soft-delete",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"motivo\":\"{{ $(\"Extract Cliente ID\").item.json.motivo }}\",\"ts\":\"{{ $now }}\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-soft-delete",
+      "name": "POST Soft Delete",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1120,
+        400
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"action\":\"cliente.lgpd_delete\",\"actor\":\"n8n-wf23\",\"target\":\"{{ $(\"Extract Cliente ID\").item.json.cliente_id }}\",\"details\":{\"motivo\":\"{{ $(\"Extract Cliente ID\").item.json.motivo }}\",\"ts\":\"{{ $now }}\",\"wf\":\"n8n-wf23\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-audit-lgpd",
+      "name": "POST Audit LGPD",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1340,
+        300
+      ],
+      "typeVersion": 4.2
+    }
+  ],
+  "connections": {
+    "LGPD Esqueci Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Cliente ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Cliente ID": {
+      "main": [
+        [
+          {
+            "node": "GET Cliente (validar consent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Cliente (validar consent)": {
+      "main": [
+        [
+          {
+            "node": "Pode Deletar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pode Deletar?": {
+      "main": [
+        [
+          {
+            "node": "DELETE Cliente (LGPD art. 18 VI)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "POST Soft Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DELETE Cliente (LGPD art. 18 VI)": {
+      "main": [
+        [
+          {
+            "node": "POST Audit LGPD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST Soft Delete": {
+      "main": [
+        [
+          {
+            "node": "POST Audit LGPD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "lgpd"
+    },
+    {
+      "name": "cliente"
+    }
+  ]
+}

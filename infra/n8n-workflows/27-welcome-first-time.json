@@ -1,0 +1,156 @@
+{
+  "name": "27 - Welcome First Time (consentimento LGPD)",
+  "description": "Primeira msg do cliente -> apresenta bot + pede consentimento LGPD explicito (SIM/NAO/PARAR).",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "welcome-first",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "welcome-first-time",
+      "name": "Welcome First Time",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "telefone",
+              "name": "telefone",
+              "value": "={{ $json.body.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "nome",
+              "name": "nome",
+              "value": "={{ $json.body.nome || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-cliente",
+      "name": "Extract Cliente",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "instanceName": "cartorio-2notas",
+        "number": "={{ $json.telefone }}",
+        "text": "=Ola{{ $json.nome ? ' ' + $json.nome : '' }}! Bem-vindo ao Cartorio 2 Notas de Uberlandia. Antes de continuar, preciso do seu consentimento LGPD. Responda SIM para aceitar, NAO para recusar, PARAR para sair."
+      },
+      "id": "evolution-welcome",
+      "name": "Evolution Welcome",
+      "type": "n8n-nodes-evolution-api.evo-api",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://db.2notasudi.com.br/rest/v1/welcome_log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"telefone\":\"{{ $json.telefone }}\",\"ts\":\"{{ $now }}\",\"wf\":\"n8n-wf27\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-welcome-tracking",
+      "name": "POST Welcome Tracking",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 4.2
+    }
+  ],
+  "connections": {
+    "Welcome First Time": {
+      "main": [
+        [
+          {
+            "node": "Extract Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Cliente": {
+      "main": [
+        [
+          {
+            "node": "Evolution Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution Welcome": {
+      "main": [
+        [
+          {
+            "node": "POST Welcome Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "welcome"
+    },
+    {
+      "name": "lgpd"
+    }
+  ]
+}

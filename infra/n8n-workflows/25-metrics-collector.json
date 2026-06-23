@@ -1,0 +1,114 @@
+{
+  "name": "25 - Metrics Collector (1min Prometheus)",
+  "description": "Cron 1min coleta metricas locais N8N (uptime, memory) e envia para API /metrics/n8n.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "cron-1min",
+      "name": "Cron 1min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst items = $input.all();\nreturn [{ json: {\n  ts: new Date().toISOString(),\n  wf_id: 'n8n-wf25',\n  uptime_s: process.uptime(),\n  memory_mb: Math.round(process.memoryUsage().rss / 1024 / 1024),\n  n8n_exec_count: 0,  // n8n does not expose this; could pull from DB\n} }];\n"
+      },
+      "id": "collect-local-metrics",
+      "name": "Collect Local Metrics",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/metrics/n8n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "post-metrics-to-api",
+      "name": "POST Metrics to API",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 4.2
+    }
+  ],
+  "connections": {
+    "Cron 1min": {
+      "main": [
+        [
+          {
+            "node": "Collect Local Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Local Metrics": {
+      "main": [
+        [
+          {
+            "node": "POST Metrics to API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "metrics"
+    },
+    {
+      "name": "cron"
+    }
+  ]
+}

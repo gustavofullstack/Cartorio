@@ -1,0 +1,155 @@
+{
+  "name": "21 - Backup Status 5min (heartbeat + alerta)",
+  "description": "Cron 5min verifica /api/v1/health/backup. Se ok=false, alerta Chatwoot escrevente.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "cron-5min",
+      "name": "Cron 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/api/v1/health/backup",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-backup-status",
+      "name": "GET Backup Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-Backup OK?",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "backup-ok?",
+      "name": "Backup OK?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "conversation",
+        "operation": "create",
+        "accountId": 1,
+        "inboxId": 1,
+        "sourceId": "backup-status",
+        "additionalFields": {
+          "message": "BACKUP FAIL: status check retornou ok=false. Investigar imediatamente."
+        }
+      },
+      "id": "alerta-backup-falhou",
+      "name": "Alerta Backup Falhou",
+      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "position": [
+        900,
+        200
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Cron 5min": {
+      "main": [
+        [
+          {
+            "node": "GET Backup Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Backup Status": {
+      "main": [
+        [
+          {
+            "node": "Backup OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backup OK?": {
+      "main": [
+        [
+          {
+            "node": "Alerta Backup Falhou",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "backup"
+    },
+    {
+      "name": "cron"
+    }
+  ]
+}

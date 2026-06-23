@@ -1,0 +1,115 @@
+{
+  "name": "24 - Daily Cleanup 03:00 (sessoes > 24h Redis)",
+  "description": "Cron 03:00 chama /api/v1/admin/cleanup/daily que apaga sessoes Redis expiradas e roda pre-retention backup.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ],
+          "hour": 3
+        }
+      },
+      "id": "cron-daily-03:00",
+      "name": "Cron Daily 03:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/admin/cleanup/daily",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "post-daily-cleanup",
+      "name": "POST Daily Cleanup",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nreturn [{ json: { ...items[0].json, wf: 'n8n-wf24', ts: new Date().toISOString() } }];\n"
+      },
+      "id": "log-result",
+      "name": "Log Result",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "Cron Daily 03:00": {
+      "main": [
+        [
+          {
+            "node": "POST Daily Cleanup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST Daily Cleanup": {
+      "main": [
+        [
+          {
+            "node": "Log Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "cleanup"
+    },
+    {
+      "name": "cron"
+    }
+  ]
+}

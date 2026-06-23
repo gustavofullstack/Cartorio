@@ -1,0 +1,188 @@
+{
+  "name": "16 - Prospeccao Lead Enrichment (Tier A/B/C scoring)",
+  "description": "Recebe lead novo via webhook, calcula Tier A/B/C baseado em sinais publicos (ANOREG, GPTW, expansao geografica), grava no Supabase.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-novo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "lead-novo-webhook",
+      "name": "Lead Novo Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nome",
+              "name": "nome",
+              "value": "={{ $json.body.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "cartorio",
+              "name": "cartorio",
+              "value": "={{ $json.body.cartorio }}",
+              "type": "string"
+            },
+            {
+              "id": "cidade",
+              "name": "cidade",
+              "value": "={{ $json.body.cidade }}",
+              "type": "string"
+            },
+            {
+              "id": "uf",
+              "name": "uf",
+              "value": "={{ $json.body.uf }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-lead",
+      "name": "Extract Lead",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\nfor (const item of items) {\n  const r = (item.json.receita_anoreg || 0);\n  let tier = 'C';\n  if (r > 50000000) tier = 'A';\n  else if (r > 10000000) tier = 'B';\n  out.push({ json: { ...item.json, tier, score_at: new Date().toISOString(), source: 'n8n-wf16' } });\n}\nreturn out;\n"
+      },
+      "id": "score-tier",
+      "name": "Score Tier",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://db.2notasudi.com.br/rest/v1/prospeccao_leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"nome\":\"{{ $json.nome }}\",\"cartorio\":\"{{ $json.cartorio }}\",\"cidade\":\"{{ $json.cidade }}\",\"uf\":\"{{ $json.uf }}\",\"tier\":\"{{ $json.tier }}\",\"score_at\":\"{{ $json.score_at }}\",\"source\":\"n8n-wf16\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-lead-to-supabase",
+      "name": "POST Lead to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\":\"enriched\",\"tier\":\"{{ $json.tier }}\",\"cartorio\":\"{{ $json.cartorio }}\"}"
+      },
+      "id": "respond-enrichment",
+      "name": "Respond Enrichment",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1120,
+        300
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Lead Novo Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Lead": {
+      "main": [
+        [
+          {
+            "node": "Score Tier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Tier": {
+      "main": [
+        [
+          {
+            "node": "POST Lead to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST Lead to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Respond Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "prospeccao"
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "name": "17 - Prospeccao Send WhatsApp (Tier A/B)",
+  "description": "Dispara mensagem WhatsApp via Evolution API para leads Tier A/B. LGPD: opt-out keyword PARAR/SAIR obrigatorio.",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ],
+          "hour": 9
+        }
+      },
+      "id": "cron-daily-09:00",
+      "name": "Cron Daily 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://db.2notasudi.com.br/rest/v1/prospeccao_leads?status=eq.enriched&tier=in.(A,B)&limit=10",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-leads-prontos-para-envio",
+      "name": "GET Leads Prontos para Envio",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\nfor (const item of items) {\n  const l = item.json;\n  const msg = `Ola! Somos o Cartorio 2 Notas de Uberlandia, com solucao digital para cartorios. Vimos que o ${l.cartorio} em ${l.cidade}/${l.uf} tem perfil Tier ${l.tier}. Topa um piloto gratis 30 dias? Responda PARAR para sair.`;\n  out.push({ json: { ...l, mensagem: msg } });\n}\nreturn out;\n"
+      },
+      "id": "build-mensagem",
+      "name": "Build Mensagem",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "instanceName": "cartorio-2notas",
+        "number": "={{ $json.telefone }}",
+        "text": "={{ $json.mensagem }}"
+      },
+      "id": "evolution-send-whatsapp",
+      "name": "Evolution Send WhatsApp",
+      "type": "n8n-nodes-evolution-api.evo-api",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://db.2notasudi.com.br/rest/v1/prospeccao_tracking",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"lead_id\":\"{{ $json.id }}\",\"canal\":\"whatsapp\",\"status\":\"enviado\",\"ts\":\"{{ $now }}\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-tracking",
+      "name": "POST Tracking",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1120,
+        300
+      ],
+      "typeVersion": 4.2
+    }
+  ],
+  "connections": {
+    "Cron Daily 09:00": {
+      "main": [
+        [
+          {
+            "node": "GET Leads Prontos para Envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Leads Prontos para Envio": {
+      "main": [
+        [
+          {
+            "node": "Build Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Evolution Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution Send WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "POST Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "prospeccao"
+    },
+    {
+      "name": "evolution"
+    }
+  ]
+}

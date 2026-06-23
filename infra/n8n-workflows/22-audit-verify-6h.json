@@ -1,0 +1,162 @@
+{
+  "name": "22 - Audit Verify 6h (SHA256 chain check)",
+  "description": "Cron 6h verifica hash chain SHA256 do audit_log. Se chain_ok=false, alerta critico.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 360
+            }
+          ]
+        }
+      },
+      "id": "cron-6h",
+      "name": "Cron 6h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/verify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "post-audit-verify",
+      "name": "POST Audit Verify",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-Chain OK?",
+              "leftValue": "={{ $json.chain_ok }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "chain-ok?",
+      "name": "Chain OK?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "conversation",
+        "operation": "create",
+        "accountId": 1,
+        "inboxId": 1,
+        "sourceId": "audit-chain",
+        "additionalFields": {
+          "message": "AUDIT CHAIN QUEBRADA! Investigar imediatamente. last_valid_position={{ $json.last_valid_position }}"
+        }
+      },
+      "id": "alerta-audit-chain-quebrada",
+      "name": "Alerta Audit Chain Quebrada",
+      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "position": [
+        900,
+        200
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Cron 6h": {
+      "main": [
+        [
+          {
+            "node": "POST Audit Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST Audit Verify": {
+      "main": [
+        [
+          {
+            "node": "Chain OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chain OK?": {
+      "main": [
+        [
+          {
+            "node": "Alerta Audit Chain Quebrada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "audit"
+    },
+    {
+      "name": "cron"
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "name": "14 - OpenCode-Go LLM Fallback (direct OpenAI-compat)",
+  "description": "Se OpenClaw falha, chama OpenCode-Go diretamente via /v1/chat/completions. Nao toca PII (prompt vem ja scrubbed do caller).",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "openclaw-fallback",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "openclaw-fallback-trigger",
+      "name": "OpenClaw Fallback Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.body.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "session_id",
+              "name": "session_id",
+              "value": "={{ $json.body.session_id || 'n8n-fallback' }}",
+              "type": "string"
+            },
+            {
+              "id": "model",
+              "name": "model",
+              "value": "={{ $json.body.model || 'deepseek-v4-flash' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-prompt",
+      "name": "Extract Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.OPENCODE_GO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\":\"{{ $json.model }}\",\"messages\":[{\"role\":\"user\",\"content\":\"{{ $json.prompt }}\"}],\"max_tokens\":1024,\"temperature\":0.3}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "post-opencode-go-direct",
+      "name": "POST OpenCode-Go Direct",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\nfor (const item of items) {\n  const c = item.json.choices && item.json.choices[0];\n  out.push({ json: {\n    status: 'ok',\n    response: (c && c.message && c.message.content) || 'fallback_empty',\n    model: item.json.model || 'deepseek-v4-flash',\n    tokens_in: (item.json.usage && item.json.usage.prompt_tokens) || null,\n    tokens_out: (item.json.usage && item.json.usage.completion_tokens) || null,\n    latency_ms: (item.json.latency_ms) || null,\n    provider: 'opencode_go_direct',\n    session_id: $('Extract Prompt').item.json.session_id,\n  }});\n}\nreturn out;\n"
+      },
+      "id": "parse-opencode-response",
+      "name": "Parse OpenCode Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\":\"{{ $json.status }}\",\"response\":{{ JSON.stringify($json.response) }},\"model\":{{ JSON.stringify($json.model) }},\"provider\":{{ JSON.stringify($json.provider) }},\"tokens_in\":{{ $json.tokens_in || 0 }},\"tokens_out\":{{ $json.tokens_out || 0 }}}"
+      },
+      "id": "respond-opencode-go",
+      "name": "Respond OpenCode-Go",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1120,
+        300
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "OpenClaw Fallback Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Prompt": {
+      "main": [
+        [
+          {
+            "node": "POST OpenCode-Go Direct",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST OpenCode-Go Direct": {
+      "main": [
+        [
+          {
+            "node": "Parse OpenCode Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse OpenCode Response": {
+      "main": [
+        [
+          {
+            "node": "Respond OpenCode-Go",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "llm-fallback"
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "name": "18 - Prospeccao Follow-up D+7 (LGPD opt-out)",
+  "description": "Follow-up automatico D+7 para leads que nao responderam. LGPD opt-out keyword PARAR/SAIR.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ],
+          "hour": 10
+        }
+      },
+      "id": "cron-daily-10:00",
+      "name": "Cron Daily 10:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://db.2notasudi.com.br/rest/v1/prospeccao_leads?status=eq.enviado&enviado_at=lt.{{ $now.minus(7, 'days').toISO() }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-leads-enviados-d+7",
+      "name": "GET Leads Enviados D+7",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\nfor (const item of items) {\n  const l = item.json;\n  const msg = `Oi novamente! E o follow-up do contato de 7 dias atras. Posso reservar 15min essa semana? Responda PARAR para sair.`;\n  out.push({ json: { ...l, mensagem: msg, follow_up_n: (l.follow_up_n || 0) + 1 } });\n}\nreturn out;\n"
+      },
+      "id": "build-follow-up-d+7",
+      "name": "Build Follow-up D+7",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "instanceName": "cartorio-2notas",
+        "number": "={{ $json.telefone }}",
+        "text": "={{ $json.mensagem }}"
+      },
+      "id": "evolution-send-d+7",
+      "name": "Evolution Send D+7",
+      "type": "n8n-nodes-evolution-api.evo-api",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://db.2notasudi.com.br/rest/v1/prospeccao_tracking",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"lead_id\":\"{{ $json.id }}\",\"canal\":\"whatsapp\",\"status\":\"follow_up_d7\",\"follow_up_n\":{{ $json.follow_up_n }},\"ts\":\"{{ $now }}\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-follow-up-tracking",
+      "name": "POST Follow-up Tracking",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1120,
+        300
+      ],
+      "typeVersion": 4.2
+    }
+  ],
+  "connections": {
+    "Cron Daily 10:00": {
+      "main": [
+        [
+          {
+            "node": "GET Leads Enviados D+7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Leads Enviados D+7": {
+      "main": [
+        [
+          {
+            "node": "Build Follow-up D+7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Follow-up D+7": {
+      "main": [
+        [
+          {
+            "node": "Evolution Send D+7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution Send D+7": {
+      "main": [
+        [
+          {
+            "node": "POST Follow-up Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "prospeccao"
+    }
+  ]
+}

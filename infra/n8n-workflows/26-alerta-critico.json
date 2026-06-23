@@ -1,0 +1,154 @@
+{
+  "name": "26 - Alerta Critico (Telegram IM + Chatwoot)",
+  "description": "Recebe alerta critico via webhook, dispara Telegram IM imediato pro Gustavo + cria conversation Chatwoot.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alerta-critico",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "alerta-webhook",
+      "name": "Alerta Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "service",
+              "name": "service",
+              "value": "={{ $json.body.service }}",
+              "type": "string"
+            },
+            {
+              "id": "severity",
+              "name": "severity",
+              "value": "={{ $json.body.severity || 'critical' }}",
+              "type": "string"
+            },
+            {
+              "id": "msg",
+              "name": "message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-alerta",
+      "name": "Extract Alerta",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"chat_id\":\"{{ $env.TELEGRAM_GUSTAVO_CHAT_ID }}\",\"text\":\"🚨 [{{ $json.severity | upper }}] {{ $json.service }}: {{ $json.message }}\",\"parse_mode\":\"HTML\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-telegram-im",
+      "name": "POST Telegram IM",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "resource": "conversation",
+        "operation": "create",
+        "accountId": 1,
+        "inboxId": 1,
+        "sourceId": "alerta-critico",
+        "additionalFields": {
+          "message": "[{{ $('Extract Alerta').item.json.severity | upper }}] {{ $('Extract Alerta').item.json.service }}: {{ $('Extract Alerta').item.json.message }}"
+        }
+      },
+      "id": "chatwoot-critical",
+      "name": "Chatwoot Critical",
+      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Alerta Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Alerta": {
+      "main": [
+        [
+          {
+            "node": "POST Telegram IM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST Telegram IM": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot Critical",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "alerta"
+    }
+  ]
+}

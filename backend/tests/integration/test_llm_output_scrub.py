@@ -41,6 +41,8 @@ from app.config import get_settings  # noqa: E402
 
 get_settings.cache_clear()
 
+from app.main import app  # noqa: E402  (escopo modulo - NAO re-importar dentro de fixtures)
+
 
 # ============================================================================
 # Fixtures compartilhados
@@ -63,9 +65,9 @@ def client():
     import app.models.documento  # noqa: F401
     import app.models.protocolo  # noqa: F401
     import app.models.webhook_event  # noqa: F401
-    import app.db
-    import app.main as app_main_module
-    from app.main import app
+    import app.db  # noqa: E402  (re-atribui `app` no escopo local para o package)
+    import app.main as app_main_module  # noqa: E402
+    # NAO usar `from app.main import app` aqui dentro — sobrescreve o package
 
     test_engine = create_engine(
         "sqlite:///:memory:",

@@ -1,0 +1,265 @@
+{
+  "name": "30 - Health Deep Check 15min (todos endpoints)",
+  "description": "Cron 15min testa /health/radar, /health/integracoes, /health/backup. Alerta Chatwoot se algum != ok.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "cron-15min",
+      "name": "Cron 15min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/api/v1/health/radar",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "health-radar",
+      "name": "Health Radar",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        100
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/api/v1/health/integracoes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "health-integracoes",
+      "name": "Health Integracoes",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        250
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/api/v1/health/backup",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "health-backup",
+      "name": "Health Backup",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        400
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\nlet allOk = true;\nfor (const i of items) {\n  const j = i.json || {};\n  const ok = j.status === 'green' || j.ok === true;\n  if (!ok) allOk = false;\n  out.push({ json: { ...j, service: (j.service || 'api') } });\n}\nreturn [{ json: { all_ok: allOk, services: out, ts: new Date().toISOString() } }];\n"
+      },
+      "id": "aggregate",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        680,
+        250
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-All OK?",
+              "leftValue": "={{ $json.all_ok }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "all-ok?",
+      "name": "All OK?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        900,
+        250
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "conversation",
+        "operation": "create",
+        "accountId": 1,
+        "inboxId": 1,
+        "sourceId": "health-deep-check",
+        "additionalFields": {
+          "message": "Deep check falhou: {{ JSON.stringify($('Aggregate').item.json.services) }}"
+        }
+      },
+      "id": "deep-check-falhou",
+      "name": "Deep Check Falhou",
+      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "position": [
+        1120,
+        150
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Cron 15min": {
+      "main": [
+        [
+          {
+            "node": "Health Radar",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Health Integracoes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Health Backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health Radar": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health Integracoes": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health Backup": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "All OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All OK?": {
+      "main": [
+        [
+          {
+            "node": "Deep Check Falhou",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "health"
+    },
+    {
+      "name": "cron"
+    }
+  ]
+}

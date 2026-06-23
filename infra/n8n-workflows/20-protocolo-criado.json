@@ -1,0 +1,192 @@
+{
+  "name": "20 - Protocolo Criado (notify + audit)",
+  "description": "Protocolo novo -> notifica cliente WhatsApp + alerta escrevente Chatwoot + audit log.",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "protocolo-criado",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "protocolo-criado-webhook",
+      "name": "Protocolo Criado Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "numero",
+              "name": "numero",
+              "value": "={{ $json.body.numero }}",
+              "type": "string"
+            },
+            {
+              "id": "cliente_id",
+              "name": "cliente_id",
+              "value": "={{ $json.body.cliente_id }}",
+              "type": "string"
+            },
+            {
+              "id": "telefone",
+              "name": "telefone",
+              "value": "={{ $json.body.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "tipo",
+              "name": "tipo",
+              "value": "={{ $json.body.tipo }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-protocolo",
+      "name": "Extract Protocolo",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "instanceName": "cartorio-2notas",
+        "number": "={{ $json.telefone }}",
+        "text": "=Protocolo {{ $json.numero }} ({{ $json.tipo }}) criado. Acompanhe pelo nosso canal. Em ate 24h um escrevente ira analisar."
+      },
+      "id": "evolution-notifica-cliente",
+      "name": "Evolution Notifica Cliente",
+      "type": "n8n-nodes-evolution-api.evo-api",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "conversation",
+        "operation": "create",
+        "accountId": 1,
+        "inboxId": 1,
+        "sourceId": "protocolo-novo",
+        "additionalFields": {
+          "message": "Novo protocolo {{ $json.numero }} - {{ $json.tipo }} - cliente {{ $json.cliente_id }}"
+        }
+      },
+      "id": "chatwoot-escrevente",
+      "name": "Chatwoot Escrevente",
+      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"action\":\"protocolo.notificado\",\"actor\":\"n8n-wf20\",\"target\":\"{{ $json.numero }}\",\"details\":{\"cliente_id\":\"{{ $json.cliente_id }}\",\"tipo\":\"{{ $json.tipo }}\",\"ts\":\"{{ $now }}\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-audit-log",
+      "name": "POST Audit Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1120,
+        300
+      ],
+      "typeVersion": 4.2
+    }
+  ],
+  "connections": {
+    "Protocolo Criado Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Protocolo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Protocolo": {
+      "main": [
+        [
+          {
+            "node": "Evolution Notifica Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution Notifica Cliente": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot Escrevente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot Escrevente": {
+      "main": [
+        [
+          {
+            "node": "POST Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "protocolo"
+    }
+  ]
+}
