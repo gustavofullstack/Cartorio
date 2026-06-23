@@ -18,6 +18,18 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 - [x] **E0.S0.T5** Service `emolumento` com calculo de regras basicas — owner: `cartorio-dev`
 - [x] **E0.S0.T6** 22 testes pytest (audit + pii + emolumento), coverage >= 90% — owner: `cartorio-dev`
 
+## EPIC E0.7 — P0 INCIDENT SUPABASE (2026-06-23 14:24-14:48 BRT) ✅ RESOLVIDO
+- [x] **E0.7.P0.1** RCA descoberta: postmaster usa `/etc/postgresql/pg_hba.conf` (NÃO `/var/lib/postgresql/data/pg_hba.conf`). Trap do Supabase custom image. — owner: Mavis — done 14:48 BRT
+- [x] **E0.7.P0.2** Snapshot volume db-data (bind mount real em `/etc/easypanel/projects/cartorio/supabase/code/supabase/code/volumes/db/data`, 176MB, 31MB compressed) — owner: Mavis — done 14:42 BRT em `/var/backups/cartorio/db-data-snapshot-20260623_174230.tar.gz`
+- [x] **E0.7.P0.3** Fix pg_hba.conf: prepended trust rules (10.0.0.0/8, 172.16.0.0/12, 172.18.0.0/16) antes da catch-all scram-sha-256 — owner: Mavis — done 14:47 BRT
+- [x] **E0.7.P0.4** Restart db-1 + validar supavisor-1 sai do restart loop — owner: Mavis — done 14:48 BRT, supavisor-1 `Up 7s (healthy)`
+- [x] **E0.7.P0.5** Validar API endpoints: /api/v1/audit/verify 405 (POST only), /api/v1/atendimentos/ultimas-24h 200 OK (count=1), /api/v1/health/radar 200 OK (status=green) — owner: Mavis — done 14:50 BRT
+- [x] **E0.7.P0.6** N8N workflows verificação: 14 workflows ativos via API (`/api/v1/workflows?limit=100` com X-N8N-API-KEY header), incluindo MCP Server Tools T22 + Error Handler T25 — owner: Mavis — done 14:42 BRT
+
+**Ref**: Mavis memory lesson "Supabase pg_hba.conf trap" 2026-06-23 14:48 BRT, .harness/memory/MEMORY.md
+
+---
+
 ### Sprint 0.5 — Infra base
 - [ ] **E0.S0.5.T1** Rodar migrations Alembic em Supabase staging — owner: `cartorio-dev`
   - Done: schema completo no Postgres, tabelas criadas, indices em `cliente.cpf_hash` e `protocolo.numero`

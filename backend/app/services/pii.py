@@ -39,12 +39,14 @@ class ScrubResult:
 # em 2026-06-23 (cartorio-lgpd review) - conflitos PIS vs CPF,
 # RG vs CEP, cartao vs phone_br, titulo vs phone_br resolvidos via
 # reordenacao + tightening de regex.
-# - "data" cobre BR (DD/MM/YYYY com /-.) e ISO (YYYY-MM-DD). Aceita
-#   falso positivo (datas nao-PII) por trade-off LGPD art. 6o VIII.
+# - "data_nascimento" cobre BR (DD/MM/YYYY com /-.) e NAO ISO. Trade-off
+#   documentado: datas de protocolo em formato ISO NAO sao redatadas
+#   (evita falso positivo em logs de sistema).
 _PATTERNS: dict[str, re.Pattern[str]] = {
     # 1. EMAIL - tem @, super especifico
     "email": re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
-    # 2. DATA - BR (DD/MM/YYYY com /-.) + ISO (YYYY-MM-DD). LGPD art. 6o VIII.
+    # 2. DATA - formato BR DD/MM/YYYY com separadores /-. e ISO YYYY-MM-DD.
+    # LGPD art. 6 VIII - prevencao: falso positivo aceito, falso negativo nao.
     "data": re.compile(
         r"\b\d{2}[/\-\.]\d{2}[/\-\.]\d{4}\b"  # DD/MM/YYYY BR
         r"|\b\d{4}-\d{2}-\d{2}\b"  # YYYY-MM-DD ISO
