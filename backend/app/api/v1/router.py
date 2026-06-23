@@ -953,7 +953,7 @@ async def documento_segunda_via(
 
 
 # ============================================================================
-# Atendimentos recentes (v0.4.0) - N8N workflow #07
+# Atendimentos (v0.4.2) - registro de handoff humano + pesquisa satisfacao
 # ============================================================================
 
 
@@ -962,21 +962,228 @@ async def documento_segunda_via(
     tags=["atendimento"],
     summary="Listar atendimentos concluidos nas ultimas 24h (N8N workflow #07)",
     description=(
-        "Retorna lista de atendimentos concluidos nas ultimas 24h para envio "
-        "de pesquisa de satisfacao via Evolution API."
+        "Retorna lista de atendimentos concluidos nas ultimas 24h que ainda "
+        "nao receberam pesquisa de satisfacao. Usado pelo workflow N8N #07."
     ),
-    response_description="Lista de atendimentos com protocolo + telefone (LGPD-safe).",
+    response_description="Lista de atendimentos com id/canal/tipo.",
 )
 async def atendimentos_ultimas_24h() -> dict:
-    """Lista atendimentos concluidos recentes (placeholder)."""
-    # MVP: retorna lista vazia ate integracao com tabela de atendimentos
-    # Sprint 2: SELECT FROM public.atendimentos WHERE concluido_em > now() - 24h
+    """Lista atendimentos concluidos nas ultimas 24h (pesquisa satisfacao)."""
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import select
+    from app.models.atendimento import Atendimento
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    with session_scope() as db:
+        rows = db.execute(
+            select(Atendimento).where(
+                Atendimento.concluido_em >= cutoff,
+                Atendimento.pesquisa_enviada_em.is_(None),
+            ).order_by(Atendimento.concluido_em.desc()).limit(200)
+        ).scalars().all()
+
+        atendimentos = [
+            {
+                "id": a.id,
+                "protocolo_id": a.protocolo_id,
+                "canal": a.canal,
+                "external_id": a.external_id,
+                "tipo": a.tipo,
+                "concluido_em": a.concluido_em.isoformat() if a.concluido_em else None,
+            }
+            for a in rows
+        ]
+
     return {
         "window_hours": 24,
-        "count": 0,
-        "atendimentos": [],
-        "note": "Sprint 2 - integrar com tabela atendimentos quando criada",
+        "count": len(atendimentos),
+        "atendimentos": atendimentos,
     }
+
+
+@api_router.post(
+    "/atendimento/{atendimento_id}/pesquisa-enviada",
+    tags=["atendimento"],
+    summary="Marcar pesquisa de satisfacao como enviada (N8N workflow #07)",
+)
+async def marcar_pesquisa_enviada(atendimento_id: int) -> dict:
+    """Marca pesquisa_enviada_em = now() para evitar envio duplicado."""
+    from datetime import datetime, timezone
+    from sqlalchemy import select
+    from app.models.atendimento import Atendimento
+
+    with session_scope() as db:
+        a = db.execute(
+            select(Atendimento).where(Atendimento.id == atendimento_id)
+        ).scalar_one_or_none()
+        if a is None:
+            return {"ok": False, "error": "not_found"}
+        a.pesquisa_enviada_em = datetime.now(timezone.utc)
+    return {"ok": True, "atendimento_id": atendimento_id}
+
+
+@api_router.post(
+    "/atendimento",
+    tags=["atendimento"],
+    summary="Criar atendimento (handoff Chatwoot ou webhook externo)",
+    description=(
+        "Cria atendimento. Chamado pelo workflow #03 (handoff humano) ou "
+        "diretamente pela UI quando conversa e escalada."
+    ),
+)
+async def criar_atendimento(payload: dict) -> dict:
+    """Cria atendimento (handoff)."""
+    from datetime import datetime, timezone
+    from app.models.atendimento import Atendimento
+    from app.models.cliente import Cliente
+    from app.services.pii import hash_pii
+
+    canal = payload.get("canal", "whatsapp")
+    external_id = payload.get("external_id", "unknown")
+    tipo = payload.get("tipo", "duvida")
+    contexto = payload.get("contexto_scrubbed")
+    chatwoot_conv = payload.get("chatwoot_conversation_id")
+    chatwoot_inbox = payload.get("chatwoot_inbox_id")
+    chatwoot_agent = payload.get("chatwoot_agent_id")
+    protocolo_id = payload.get("protocolo_id")
+    cliente_cpf = payload.get("cliente_cpf")
+
+    cliente_id = None
+    if cliente_cpf:
+        cpf_hash = hash_pii(cliente_cpf, salt=settings.audit_hmac_key[:32])
+        with session_scope() as db:
+            cliente = db.execute(
+                select(Cliente).where(Cliente.cpf_hash == cpf_hash)
+            ).scalar_one_or_none()
+            if cliente is None and payload.get("cliente_nome"):
+                cliente = Cliente(
+                    cpf_hash=cpf_hash,
+                    nome=payload["cliente_nome"],
+                    consentimento_lgpd=True,
+                    consentimento_em=datetime.now(timezone.utc),
+                    consentimento_canal=canal,
+                )
+                db.add(cliente)
+                db.flush()
+                cliente_id = cliente.id
+            elif cliente:
+                cliente_id = cliente.id
+
+    with session_scope() as db:
+        a = Atendimento(
+            canal=canal,
+            external_id=external_id,
+            tipo=tipo,
+            contexto_scrubbed=contexto,
+            chatwoot_conversation_id=chatwoot_conv,
+            chatwoot_inbox_id=chatwoot_inbox,
+            chatwoot_agent_id=chatwoot_agent,
+            protocolo_id=protocolo_id,
+            cliente_id=cliente_id,
+            handoff_para_humano=True,
+            iniciado_em=datetime.now(timezone.utc),
+            status="em_atendimento",
+        )
+        db.add(a)
+        db.flush()
+        atendimento_id = a.id
+
+        AuditService.log(
+            db,
+            actor_id=external_id,
+            actor_type="bot",
+            action="atendimento.create",
+            resource=f"atendimento:{atendimento_id}",
+            payload={
+                "canal": canal,
+                "tipo": tipo,
+                "chatwoot_conversation_id": chatwoot_conv,
+                "protocolo_id": protocolo_id,
+                "pii_scrubbed": True,
+            },
+        )
+
+    return {"ok": True, "atendimento_id": atendimento_id}
+
+
+@api_router.post(
+    "/atendimento/{atendimento_id}/concluir",
+    tags=["atendimento"],
+    summary="Concluir atendimento (registra timestamp para pesquisa 24h)",
+)
+async def concluir_atendimento(atendimento_id: int, payload: dict | None = None) -> dict:
+    """Marca atendimento como concluido."""
+    from datetime import datetime, timezone
+    from sqlalchemy import select
+    from app.models.atendimento import Atendimento
+
+    nota = (payload or {}).get("nota")
+    comentario = (payload or {}).get("comentario")
+
+    with session_scope() as db:
+        a = db.execute(
+            select(Atendimento).where(Atendimento.id == atendimento_id)
+        ).scalar_one_or_none()
+        if a is None:
+            return {"ok": False, "error": "not_found"}
+        a.concluido_em = datetime.now(timezone.utc)
+        a.status = "concluido"
+        if nota is not None:
+            a.pesquisa_nota = nota
+        if comentario is not None:
+            a.pesquisa_comentario = comentario
+
+    return {"ok": True, "atendimento_id": atendimento_id}
+
+
+# ============================================================================
+# Chatwoot webhook (v0.4.2)
+# ============================================================================
+
+
+@api_router.post(
+    "/webhook/chatwoot",
+    tags=["webhook"],
+    summary="Webhook Chatwoot (eventos de conversa)",
+    description=(
+        "Recebe webhooks do Chatwoot. Quando uma conversa e marcada como "
+        "'resolved', o atendimento correspondente e concluido (aciona "
+        "workflow #07 pesquisa satisfacao 24h depois)."
+    ),
+)
+async def webhook_chatwoot(payload: dict) -> dict:
+    """Processa webhook do Chatwoot."""
+    event = payload.get("event") or payload.get("message_type") or "unknown"
+
+    if event == "conversation_status_changed":
+        conversation = payload.get("conversation", {})
+        status = payload.get("status") or conversation.get("status")
+        conv_id = conversation.get("id")
+        if status == "resolved" and conv_id:
+            from datetime import datetime, timezone
+            from sqlalchemy import select
+            from app.models.atendimento import Atendimento
+
+            with session_scope() as db:
+                a = db.execute(
+                    select(Atendimento).where(
+                        Atendimento.chatwoot_conversation_id == conv_id
+                    )
+                ).scalar_one_or_none()
+                if a and not a.concluido_em:
+                    a.concluido_em = datetime.now(timezone.utc)
+                    a.status = "concluido"
+
+                    AuditService.log(
+                        db,
+                        actor_id=f"chatwoot:{conv_id}",
+                        actor_type="agent",
+                        action="atendimento.concluido",
+                        resource=f"atendimento:{a.id}",
+                        payload={"chatwoot_conversation_id": conv_id},
+                    )
+
+    return {"ok": True, "event": event}
 
 
 # ============================================================================

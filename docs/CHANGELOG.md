@@ -69,6 +69,64 @@
 
 ---
 
+## v0.4.2 (2026-06-23 14:13-14:25 BRT) - SPRINT 1.2: SUPABASE FIX + EVOLUTION INSTANCE + ATENDIMENTOS
+
+**Status**: TODOS OS 11 workflows N8N ativos, Supabase 13/13 containers HEALTHY, Evolution instance `cartorio-2notas` criada, tabela `atendimentos` deployada + 4 endpoints novos.
+
+### Adicionado
+- **N8N credential `evolution-api-cartorio` criada** (id `adbzRn9sEZD7VZbs`):
+  - serverUrl: `http://cartorio_evolution-api:8080`
+  - apikey: `429683C4C977415CAAFCCE10F7D57E11` (Evolution env)
+- **Workflow N8N #07 SIMPLIFICADO E ATIVADO** (era o unico inativo):
+  - Cron 24h → GET atendimentos → Evolution sendText
+  - Usa instance `cartorio-2notas`
+  - **Agora: 11 de 11 workflows ativos**
+- **Evolution API instance `cartorio-2notas` criada**:
+  - instanceId: `fb70f0ec-c00c-4fa5-978f-153318db21e1`
+  - status: `connecting` (precisa scanear QR no Manager UI)
+- **Tabela `atendimentos` deployada** (backend/app/models/atendimento.py):
+  - Colunas: id, protocolo_id, cliente_id, canal, external_id, chatwoot_*, tipo, contexto_scrubbed, status, pesquisa_*, handoff_*
+  - Auto-criada via SQLAlchemy `Base.metadata.create_all()` no lifespan
+- **4 endpoints novos na API**:
+  - `POST /api/v1/atendimento` - cria atendimento (handoff Chatwoot)
+  - `POST /api/v1/atendimento/{id}/concluir` - marca concluido (trigger pesquisa 24h)
+  - `POST /api/v1/atendimento/{id}/pesquisa-enviada` - evita envio duplicado
+  - `POST /api/v1/webhook/chatwoot` - recebe eventos Chatwoot (conversation_status_changed → concluded)
+- **GET /api/v1/atendimentos/ultimas-24h** AGORA REAL:
+  - SELECT FROM public.atendimentos WHERE concluido_em >= now() - 24h AND pesquisa_enviada_em IS NULL
+  - Retorna lista para workflow #07 consumir
+
+### Corrigido (CRITICO)
+- **Supabase `POSTGRES_PASSWORD` estava como placeholder** (`your-super-secret-and-long-postgres-password`):
+  - Sintoma: `analytics-1 FATAL 28P01 invalid_password` + 5 containers em restart loop
+  - Causa: template Supabase original tinha placeholder, sobrescrevi `.env` em `/etc/easypanel/projects/cartorio/supabase/code/supabase/code/.env`
+  - Fix: `sed` substituindo placeholder por senha real `e999b7439deb35dfe05c33f265dae1ea` + `docker compose up -d`
+  - **Resultado: 13/13 containers HEALTHY**
+
+### Validado em Producao (2026-06-23 14:25 BRT)
+- Supabase compose: 13 containers, todos HEALTHY (analytics-1 finalmente conectou)
+- N8N: 11 workflows, **11 ativos** (era 10)
+- Evolution: instance `cartorio-2notas` criada, integration BAILEYS
+- API v0.4.2 deployed: `/atendimentos/ultimas-24h` retorna count=1 apos criar+concluir
+- POST /atendimento com payload completo → ID 1 criado
+- POST /atendimento/1/concluir → timestamp registrado
+
+### Pendente UI (Gustavo)
+1. **Scanear QR Code do WhatsApp** em `https://whatsapp.2notasudi.com.br/manager/instance/cartorio-2notas` para ativar a instance
+2. Configurar Chatwoot webhook pra apontar pra `https://api.2notasudi.com.br/api/v1/webhook/chatwoot`
+3. Criar Chatwoot Agent Bot `cartorio-bot` (UI Settings > Agent Bots)
+4. Decidir se corrige typo `supbase` → `supabase`
+
+### Decisoes (ADRs novos)
+- **ADR-013**: Tabela `atendimentos` modela estado de handoff humano (LGPD-safe via contexto_scrubbed). Substitui placeholder MVP.
+- **ADR-014**: Webhook Chatwoot responde a `conversation_status_changed: resolved` marcando atendimento como concluido. Dispara pesquisa 24h via workflow #07.
+
+### Erros confessados
+- Backup anterior deletou stack Supabase e nao sincronizou o `.env` novo com todos os containers (só os que precisavam naquele momento). Container analytics ficou com placeholder.
+- Tentei `POST /api/v1/credentials` N8N com schema errado (`baseUrl`/`apiKey` em vez de `server-url`/`apikey`). Erro 400 esperado, corrigido lendo o codigo do node instalado.
+
+---
+
 ## v0.4.1 (2026-06-23 11:02-14:10 BRT) - SPRINT 1.1: BACKUP + WORKFLOWS + ENDPOINTS
 
 **Status**: 10 de 11 workflows N8N ativos, API v0.4.1 deployed, backup diario validado, radar GREEN.
