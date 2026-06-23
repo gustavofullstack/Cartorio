@@ -1,0 +1,10 @@
+[Unit]
+Description=Cartorio Evolution Health Timer (roda a cada 5min)
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

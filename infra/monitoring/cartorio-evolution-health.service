@@ -1,0 +1,10 @@
+[Unit]
+Description=Cartorio Evolution Health Check
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/cartorio-evolution-health.sh cartorio-2notas
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cartorio-evolution-health
