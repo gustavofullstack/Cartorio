@@ -167,3 +167,62 @@ Gate activate=true para PII WFs: cartorio-dev PR LGPD-015 merged + cartorio-lgpd
 JSON sources canonicos em /Users/gustavoalmeida/projetos/Cartorio/infra/n8n-workflows/{NN}-{slug}.json. Todos com env refs $env.X (zero hardcoded secrets - auditoria limpa).
 
 Total n8n WFs: 37 (era 18 antes E6). Total ativos: 28 (era 15).
+
+### N8N 2.x user.settings.userActivated bloqueia login (2026-06-23 19:48 BRT) (2026-06-23)
+Type: pitfall
+
+SINTOMA: Usuario com credencial valida (bcrypt bate) NAO consegue logar em N8N. UI retorna erro generico 'Wrong username or password'. Password rotation NAO resolve.
+
+ROOT CAUSE: N8N 2.x cria user entity com settings = '{"userActivated": false}' na primeira instalacao. Login check exige userActivated=true. Easypanel install (e talvez outros auto-install) NAO chama setup completion endpoint → bloqueia PARA SEMPRE ate ajuste manual no DB.
+
+DIAGNOSTICO (SEM rotacionar password):
+```sql
+SELECT email, role::text, disabled, settings FROM "user" WHERE email = '<email>';
+-- bcrypt: python3 -c "import bcrypt; print(bcrypt.checkpw(b'<senha>', b'<hash>'))"
+-- Se settings.userActivated == false, esse eh o problema
+```
+
+FIX (sem restart, direto no Postgres):
+```sql
+UPDATE "user" SET settings = '{"userActivated": true}'::jsonb WHERE email = '<email>';
+```
+
+ALTERNATIVA via n8n CLI (requer restart):
+```bash
+docker exec cartorio_n8n n8n user:reset --email <email>  # reseta senha
+# OU abrir setup wizard: docker exec cartorio n8n start --tunnel  # NAO usar em prod
+```
+
+APLICABILIDADE: QUALQUER projeto N8N 2.x instalado via Easypanel/Docker. Cross-project lesson. Sempre rodar o SELECT antes de qualquer password rotation.
+
+REFERENCIA cartorio: Gustavo locked out 19:43 BRT. Pietra (parent session) diagnosticou via SSH+DB. Fix aplicado 19:48 BRT. Gustavo login OK.
+
+### N8N 2.27.3 + Easypanel restore cria user com email vazio (2026-06-23 22:46 BRT) (2026-06-23)
+Type: pitfall
+
+ROOT CAUSE COMPLETO (atualizado 22:46 BRT): Alem do bug userActivated, ha um bug MAIS GRAVE no combo N8N 2.27.3 + Easypanel restore: o user entity global:owner eh CRIADO COM CAMPO `email=''` (string vazia).
+
+SINTOMA: WHERE email='gustavomar.fullstack@gmail.com' AND password=bcrypt(...) nao retorna nada no login check → UI retorna 'Wrong username or password' para QUALQUER email/senha. Settings userActivated=true NAO BASTA.
+
+DIAGNOSTICO completo:
+```sql
+SELECT email, role::text, disabled, settings FROM "user" WHERE role::text='global:owner';
+-- Se email='' (string vazia), esse eh o bug
+```
+
+FIX:
+1. UPDATE user SET email='gustavomar.fullstack@gmail.com' WHERE email='' AND role::text='global:owner';
+2. UPDATE user SET settings='{"userActivated":true}'::jsonb WHERE email='gustavomar.fullstack@gmail.com';
+3. UPDATE user SET password=bcrypt('<nova-senha>') WHERE email='gustavomar.fullstack@gmail.com';
+4. Gustavo loga + rotaciona em Settings > Personal (NAO reusar @Techno832466 - vazou Telegram)
+
+WORKAROUND se Gustavo nao conseguir logar: API key pietra-orchestrator (global:owner) continua funcionando, mas NAO depende do user entity do DB.
+
+APLICABILIDADE: N8N 2.27.3 + Easypanel restore do volume n8n_data. Cross-project lesson.
+
+REFERENCIA cartorio: Gustavo locked-out 19:43 BRT. Diagnostico evoluiu:
+- 19:48 BRT: 1a hipoteses userActivated=false (fix parcial)
+- 22:46 BRT: 2a hipoteses email='' (root cause real, requer 3 SQL UPDATEs)
+Cron monitor proposto: SELECT email FROM user WHERE roleSlug='global:owner' AND email=''; alerta.
+
+JWT signing: 22/06 18:30 ate 19:48 BRT rodou com user fantasma (email vazio). JWTs de executions nesse intervalo sao problematicos. **Recomenda-se rotacionar N8N_JWT_SECRET** (env var) alem das senhas.
