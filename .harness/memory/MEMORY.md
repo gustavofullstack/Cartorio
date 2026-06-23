@@ -506,3 +506,48 @@ Modified by Gustavo Almeida
 > "Briefing desatualizado: Pietra disse '4 workflows', API mostrou 12 ACTIVE. **SEMPRE curl ANTES de planejar**. 2s economiza 30min."
 
 Modified by ZCode (Pietra session 2026-06-23 14:40 BRT)
+
+---
+
+## 🔀 Sessão paralela + branch switcher (2026-06-23 14:48 BRT)
+
+### Contexto
+Outra sessão (provavelmente spawned por Pietra via `mavis communication send`) descobriu um **P0 real**:
+
+**P0: supabase-admin SCRAM hash mismatch (dc31e44)**
+- supabase_admin auth falhando 178/min
+- supavisor-1 em restart loop
+- /api/v1/health/radar GREEN era TCP-only (false positive — design limitation)
+- RCA: SCRAM hash em `pg_authid` (gravado na initdb com senha `e999b7439deb35dfe05c33f265dae1ea`) NÃO sincronizou com `POSTGRES_PASSWORD` placeholder no env do serviço `db-1`
+- Artefatos: `docs/INCIDENT_2026-06-23_SUPABASE_AUTH.md` + `docs/adr/ADR-013-supabase-password-mismatch.md` + `infra/supabase/scripts/fix-admin-password.sh` (idempotente, dry-run)
+
+### Problema novo descoberto
+- Branch alternou sozinha de `chore/incidente-supabase-2026-06-23` pra `master` durante a sessão (talvez checkout automático de outra sessão)
+- Meus 3 commits iniciais (`021bd39`, `a256fd3`, `c80bc79`) ficaram em branches separadas
+- Pietra disse "USE A MASTER SEMPRE" → precisei fazer merge + cherry-pick
+
+### Ações ZCode
+1. ✅ `git merge --no-ff chore/incidente-supabase-2026-06-23` → commit `c54fb76` (Sprint 0 merge)
+2. ✅ `git cherry-pick 021bd39` → commit `e6a26c6` (INCIDENTE_SSH + SUPER_PLANO_v0.6.0)
+3. ✅ `git push origin master` → `master` 6 commits à frente de `origin/master`
+
+### Lição reusável (CRÍTICA — cross-project)
+> **"Pietra opera em múltiplas sessões paralelas. SEMPRE verificar branch atual + status antes de commit/push. Branch 'master' é o canônico — commits em branches temporárias se perdem se não mergeados."**
+>
+> Regra: **SEMPRE commit em `master`**. Branches temporárias (`chore/*`) só pra isolamento, merge IMEDIATO depois.
+
+### Estado final `master` (após push origin)
+```
+e6a26c6 docs(incident+plan): SSH stale IP + SUPER_PLANO v0.6.0            ← meu
+c54fb76 merge: Sprint 0                                                      ← meu merge
+56e6f6b feat: lead outreach + global n8n error handler + PII regex         ← outra
+dc31e44 docs(incident): P0 supabase-admin SCRAM hash mismatch               ← outra
+c0c95b4 feat: RateLimitMiddleware + RedisBus                                ← outra
+c80bc79 docs(memory): Sprint 0 execution 8/12 tasks                          ← meu
+a256fd3 feat(sprint-0): runbook + .env v0.6.0 + 4 tasks UI                   ← meu
+```
+
+### Próxima ação
+P0 SCRAM hash do Supabase precisa ser APLICADO (script é dry-run por default). Aguardar Pietra autorizar execução de `infra/supabase/scripts/fix-admin-password.sh` em prod.
+
+Modified by ZCode (Pietra session 2026-06-23 14:48 BRT)
