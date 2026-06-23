@@ -58,11 +58,11 @@ def client():
 
     # Patch o engine do app
     import app.db
-    import app.main
+    import app.main as app_main_module
     original_engine = app.db.engine
     original_session_scope = app.db.session_scope
     app.db.engine = test_engine
-    app.main.engine = test_engine
+    app_main_module.engine = test_engine
     TestSessionLocal = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
     from contextlib import contextmanager
 
@@ -81,12 +81,16 @@ def client():
     app.db.SessionLocal = TestSessionLocal
     app.db.session_scope = test_session_scope
 
+    # Captura app no momento de criar o TestClient (importante)
+    the_app = app_main_module.app
+
     try:
-        with TestClient(app) as c:
+        # NAO roda lifespan (que tenta conectar no Swarm 'db')
+        with TestClient(the_app) as c:
             yield c
     finally:
         app.db.engine = original_engine
-        app.main.engine = original_engine
+        app_main_module.engine = original_engine
         app.db.session_scope = original_session_scope
         Base.metadata.drop_all(test_engine)
 
