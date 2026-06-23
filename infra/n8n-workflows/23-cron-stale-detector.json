@@ -1,0 +1,125 @@
+{
+  "name": "23 - Cron Stale Detector (5min)",
+  "description": "Detecta atendimentos parados >30min e marca como 'stale'. Alerta Chatwoot quando ha stale.",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {"field": "minutes", "minutesInterval": 5}
+          ]
+        }
+      },
+      "id": "cron-5min",
+      "name": "Cron 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/cron/stale-detector",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"}
+          ]
+        },
+        "options": {"timeout": 30000}
+      },
+      "id": "post-stale",
+      "name": "POST /cron/stale-detector",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "typeValidation": "strict"},
+          "conditions": [
+            {
+              "id": "has-stale",
+              "leftValue": "={{ $json.marked_stale }}",
+              "rightValue": 0,
+              "operator": {"type": "number", "operation": "gt"}
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-stale",
+      "name": "Tem stale?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "api_access_token", "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "source_id", "value": "stale-detector"},
+            {"name": "message", "value": "=⚠️ Stale Detector: {{ $json.marked_stale }} atendimento(s) parado(s) há >30min marcados como stale. Total analisado: {{ $json.scanned }}."}
+          ]
+        },
+        "options": {"timeout": 10000}
+      },
+      "id": "alert-chatwoot",
+      "name": "Alerta Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/cron/stale-detector/log",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "scanned", "value": "={{ $json.scanned }}"},
+            {"name": "marked_stale", "value": "={{ $json.marked_stale }}"}
+          ]
+        },
+        "options": {"timeout": 5000}
+      },
+      "id": "log-ok",
+      "name": "Log OK",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 420]
+    }
+  ],
+  "connections": {
+    "Cron 5min": {
+      "main": [[{"node": "POST /cron/stale-detector", "type": "main", "index": 0}]]
+    },
+    "POST /cron/stale-detector": {
+      "main": [[{"node": "Tem stale?", "type": "main", "index": 0}]]
+    },
+    "Tem stale?": {
+      "main": [
+        [{"node": "Alerta Chatwoot", "type": "main", "index": 0}],
+        [{"node": "Log OK", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [{"name": "cron"}],
+  "meta": null
+}
