@@ -10,6 +10,7 @@ Cobre:
 - Formato ANO-SEQUENCIAL do numero (YYYY-NNNNN)
 - Idempotencia do cliente por cpf_hash
 """
+
 from __future__ import annotations
 
 import datetime
@@ -19,7 +20,7 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.models.audit_log import AuditLog
@@ -31,6 +32,7 @@ from app.models.protocolo import Protocolo
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def test_engine():
@@ -104,6 +106,7 @@ def cliente_existente(test_engine, test_session_factory):
 # GET /api/v1/protocolo/{numero}
 # ============================================================================
 
+
 def test_get_protocolo_existente_retorna_response_completo(client, cliente_existente):
     """Cenario 1: protocolo existente retorna 200 com historico + proxima_acao."""
     numero = cliente_existente["numero"]
@@ -132,7 +135,9 @@ def test_get_protocolo_existente_retorna_response_completo(client, cliente_exist
     assert data["historico"][0]["etapa"] == "criado"
 
     # Proxima acao descreve o HITL
-    assert "escrevente" in data["proxima_acao"].lower() or "validacao" in data["proxima_acao"].lower()
+    assert (
+        "escrevente" in data["proxima_acao"].lower() or "validacao" in data["proxima_acao"].lower()
+    )
 
 
 def test_get_protocolo_inexistente_retorna_404(client):
@@ -161,17 +166,20 @@ def test_get_protocolo_formato_invalido_retorna_422(client):
 def test_get_protocolo_grava_audit_log(client, cliente_existente, test_engine):
     """Cenario 4: consulta bem-sucedida grava entrada no audit log."""
     numero = cliente_existente["numero"]
-    antes = datetime.datetime.utcnow()
     resp = client.get(f"/api/v1/protocolo/{numero}")
     assert resp.status_code == 200
 
     SessionLocal = sessionmaker(bind=test_engine)
     with SessionLocal() as db:
-        entries = db.execute(
-            select(AuditLog)
-            .where(AuditLog.action == "protocolo.read")
-            .order_by(AuditLog.id.desc())
-        ).scalars().all()
+        entries = (
+            db.execute(
+                select(AuditLog)
+                .where(AuditLog.action == "protocolo.read")
+                .order_by(AuditLog.id.desc())
+            )
+            .scalars()
+            .all()
+        )
         assert len(entries) >= 1
         last = entries[0]
         assert last.actor_type == "user"
@@ -212,6 +220,7 @@ def test_get_protocolo_response_nao_contem_cpf_puro(client, cliente_existente):
 # ============================================================================
 # POST /api/v1/protocolo
 # ============================================================================
+
 
 def _payload_valido(**overrides) -> dict:
     """Helper: payload minimo valido para POST."""
@@ -255,9 +264,9 @@ def test_post_protocolo_sem_consentimento_retorna_lgpd_blocked(client, test_engi
     # E loga o bloqueio (LGPD art. 37 - registro de tratamento)
     SessionLocal = sessionmaker(bind=test_engine)
     with SessionLocal() as db:
-        blocked = db.query(AuditLog).filter(
-            AuditLog.action == "protocolo.create.lgpd_blocked"
-        ).all()
+        blocked = (
+            db.query(AuditLog).filter(AuditLog.action == "protocolo.create.lgpd_blocked").all()
+        )
         assert len(blocked) == 1
         assert blocked[0].payload["motivo"] == "consentimento_lgpd=false"
 
@@ -322,9 +331,7 @@ def test_post_protocolo_grava_audit_log_criacao(client, test_engine):
 
     SessionLocal = sessionmaker(bind=test_engine)
     with SessionLocal() as db:
-        entries = db.query(AuditLog).filter(
-            AuditLog.action == "protocolo.create"
-        ).all()
+        entries = db.query(AuditLog).filter(AuditLog.action == "protocolo.create").all()
         assert len(entries) == 1
         last = entries[0]
         assert last.actor_type == "bot"
@@ -406,10 +413,17 @@ def test_post_protocolo_tipos_validos_da_tabela(client):
     from app.services.emolumento import TIPOS_VALIDOS
 
     cpfs = [
-        "111.111.111-11", "222.222.222-22", "333.333.333-33",
-        "444.444.444-44", "555.555.555-55", "666.666.666-66",
-        "777.777.777-77", "888.888.888-88", "999.999.999-99",
-        "123.456.789-09", "987.654.321-00",
+        "111.111.111-11",
+        "222.222.222-22",
+        "333.333.333-33",
+        "444.444.444-44",
+        "555.555.555-55",
+        "666.666.666-66",
+        "777.777.777-77",
+        "888.888.888-88",
+        "999.999.999-99",
+        "123.456.789-09",
+        "987.654.321-00",
     ]
     tipos = sorted(TIPOS_VALIDOS)
     assert len(tipos) <= len(cpfs), "ajuste lista de cpfs para cobrir todos os tipos"

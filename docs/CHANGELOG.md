@@ -5,6 +5,70 @@
 
 ---
 
+## v0.4.0 (2026-06-23 11:00 BRT) - SPRINT 1: API Protocolo + LGPD Gate
+
+**Status**: Endpoints `/api/v1/protocolo` (GET/POST) implementados com LGPD by design, PII scrubbing, audit log imutavel, HITL DRAFT obrigatorio. Swagger PT-BR completo.
+
+### Features Entregues
+- **GET /api/v1/protocolo/{numero}** (formato ANO-SEQUENCIAL YYYY-NNNNN)
+  - Retorna status, etapa atual, historico, proxima acao, prazo estimado
+  - Audit log automatico da consulta (LGPD art. 37)
+  - 404 PROTOCOLO_NOT_FOUND estruturado se nao existir
+- **POST /api/v1/protocolo**
+  - Gate LGPD obrigatorio: `consentimento_lgpd=true` (senao 422 LGPD_BLOCKED)
+  - PII scrubbing: CPF hasheado (SHA256+salt) ANTES de persistir
+  - HITL DRAFT: protocolo nasce `status=DRAFT`, escrevente valida depois
+  - Snapshot emolumento no momento da criacao (regra: nunca recalcular)
+  - Numero gerado ANO-SEQUENCIAL (zero-padded)
+  - Idempotente por cpf_hash (reutiliza cliente)
+- **Schemas Pydantic v2** (`backend/app/schemas/protocolo.py`)
+  - ProtocoloCreateRequest, ProtocoloCreateResponse, ProtocoloResponse
+  - LGPDBlockedResponse, ProtocoloNotFoundResponse (erros estruturados)
+  - Exemplos e descriptions em todos os campos (PT-BR)
+- **Swagger UI PT-BR melhorado**
+  - Tags: meta, emolumento, protocolo, webhook, audit, health, dev, agendamento
+  - Summaries + descriptions + examples em TODOS os endpoints
+  - Response examples (200, 404, 422) documentados
+- **Testes pytest 90%+** (62 tests passed, coverage 91.08%)
+  - 18 testes novos em `test_protocolo_endpoint.py` (5+ GET, 12+ POST)
+  - Cenarios: 404, 422 formato invalido, LGPD_BLOCKED, PII hash, idempotencia,
+    audit log, ANO-SEQUENCIAL, snapshot emolumento, todos os tipos validos
+  - 6 testes radar/health ajustados pra mock deterministico de LLM
+
+### Compliance / Seguranca
+- Toda mutacao grava entrada no audit log (LGPD art. 37)
+- Toda consulta de protocolo tambem e logada (rastreabilidade)
+- CPF puro NUNCA persistido - apenas hash SHA256+salt
+- LGPD_BLOCKED estruturado quando consentimento=false
+- HITL DRAFT impede bot de pular validacao humana
+
+### Arquivos
+- `backend/app/schemas/__init__.py` (novo, 5L)
+- `backend/app/schemas/protocolo.py` (novo, ~420L)
+- `backend/app/api/v1/router.py` (+550L, +Swagger PT-BR)
+- `backend/tests/test_protocolo_endpoint.py` (novo, 425L)
+- `backend/tests/conftest.py` (+3L, bypass .env local com placeholders vazios)
+- `backend/tests/test_api.py` (+25L, mock LLM deterministico)
+- `backend/tests/test_radar.py` (+5L, espera 6 itens Postman)
+
+### Pendencias para cartorio-lgpd (review pre-merge)
+- Confirmar que LGPDBlockedResponse atende art. 7o, I e art. 18 LGPD
+- Validar politica de retencao dos hashes de CPF (5 anos? ate consentimento revogar?)
+- Validar texto de "consentimento_ip" - placeholder, em prod precisa pegar do request
+
+### Criterios de done atingidos
+- [x] Build verde (mypy 0 errors)
+- [x] pytest passa com coverage >= 90% (91.08%)
+- [x] ruff check (1 erro pre-existente em `health_backup` da Pietra, nao meu escopo)
+- [x] ruff format --check passa nos meus arquivos
+- [x] Toda mutacao grava entrada no audit_log (verificado nos testes)
+- [x] Toda saida para LLM tem scrubber (ja existia no webhook)
+- [x] Endpoint documentado no OpenAPI (FastAPI gera, docstring explica caso de uso)
+- [x] Mudanca em `audit` ou `pii` exige review do `cartorio-lgpd` (registrar no PR)
+- [ ] Mensagem de commit termina com `Modified by Gustavo Almeida` (autor foi `Pietra` - pedir ajuste)
+
+---
+
 ## v0.3.1 (2026-06-23 10:42 BRT) - INCIDENT RECOVERY
 
 **Status**: Recuperação completa após Gustavo detectar N8N vazio + Supabase "0 tables" + Chatwoot fresh.

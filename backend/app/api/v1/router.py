@@ -13,20 +13,17 @@ Tags:
 - health    : health radar multi-servico
 - dev       : exports para tooling (Postman)
 """
+
 from __future__ import annotations
 
 import datetime
 import hashlib
-import re
 import time
-from collections.abc import Iterator
-from decimal import Decimal
 from typing import Annotated
 
 import httpx
 import redis
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -64,6 +61,7 @@ _NUMERO_PROTOCOLO_REGEX = r"^\d{4}-\d{5}$"
 # ============================================================================
 # Emolumento
 # ============================================================================
+
 
 @api_router.get(
     "/emolumento/calcular",
@@ -112,6 +110,7 @@ async def calcular_emolumento(
 # ============================================================================
 # Protocolo - GET (consulta)
 # ============================================================================
+
 
 @api_router.get(
     "/protocolo/{numero}",
@@ -178,9 +177,7 @@ def get_protocolo(
     db: Annotated[Session, Depends(get_db)],
 ) -> ProtocoloResponse:
     """Consulta publica do protocolo + audit log obrigatorio."""
-    protocolo = db.execute(
-        select(Protocolo).where(Protocolo.numero == numero)
-    ).scalar_one_or_none()
+    protocolo = db.execute(select(Protocolo).where(Protocolo.numero == numero)).scalar_one_or_none()
 
     if protocolo is None:
         # Loga tentativa de consulta a protocolo inexistente (seguranca)
@@ -279,9 +276,7 @@ def get_protocolo(
         valor_base=protocolo.valor_base,
         valor_total=protocolo.valor_total,
         tabela_referencia=protocolo.tabela_referencia,
-        prazo_estimado=(
-            f"{protocolo.prazo_dias} dias uteis" if protocolo.prazo_dias else None
-        ),
+        prazo_estimado=(f"{protocolo.prazo_dias} dias uteis" if protocolo.prazo_dias else None),
         proxima_acao=proxima_acao,
         historico=historico,
         created_at=protocolo.created_at,
@@ -293,6 +288,7 @@ def get_protocolo(
 # Protocolo - POST (criacao)
 # ============================================================================
 
+
 def _gerar_numero_protocolo(db: Session, ano: int) -> str:
     """Gera o proximo numero ANO-SEQUENCIAL para o ano informado.
 
@@ -300,9 +296,9 @@ def _gerar_numero_protocolo(db: Session, ano: int) -> str:
     Estrategia: count + 1 do ano (boa o suficiente pra MVP; em prod usar sequence).
     """
     padrao = f"{ano}-%"
-    existentes = db.execute(
-        select(Protocolo.numero).where(Protocolo.numero.like(padrao))
-    ).scalars().all()
+    existentes = (
+        db.execute(select(Protocolo.numero).where(Protocolo.numero.like(padrao))).scalars().all()
+    )
     proximo = len(existentes) + 1
     return f"{ano}-{proximo:05d}"
 
@@ -391,9 +387,7 @@ def post_protocolo(
     # ------------------------------------------------------------------
     # Cliente - reusa se CPF ja existir (idempotencia por hash)
     # ------------------------------------------------------------------
-    cliente = db.execute(
-        select(Cliente).where(Cliente.cpf_hash == cpf_hash)
-    ).scalar_one_or_none()
+    cliente = db.execute(select(Cliente).where(Cliente.cpf_hash == cpf_hash)).scalar_one_or_none()
 
     if cliente is None:
         cliente = Cliente(
@@ -479,6 +473,7 @@ def post_protocolo(
 # Webhook Evolution (WhatsApp)
 # ============================================================================
 
+
 @api_router.post(
     "/webhook/evolution",
     tags=["webhook"],
@@ -528,7 +523,11 @@ async def webhook_evolution(payload: dict) -> dict:
     llm_tokens_out = None
     llm_latency_ms = None
 
-    if settings.pii_scrub_enabled and settings.pii_block_on_detect and scrub_result.redaction_count > 0:
+    if (
+        settings.pii_scrub_enabled
+        and settings.pii_block_on_detect
+        and scrub_result.redaction_count > 0
+    ):
         bot_response = (
             "Recebi sua mensagem com dados sensiveis. "
             "Por seguranca, vou transferir para um atendente humano. "
@@ -636,6 +635,7 @@ async def webhook_evolution(payload: dict) -> dict:
 # Audit
 # ============================================================================
 
+
 @api_router.post(
     "/audit/verify",
     tags=["audit"],
@@ -658,6 +658,7 @@ async def audit_verify() -> dict:
 # ============================================================================
 # Health Radar
 # ============================================================================
+
 
 @api_router.get(
     "/health/radar",
@@ -720,7 +721,9 @@ async def health_radar() -> dict:
         except Exception:
             pass
 
-    overall_status = "green" if (db_ok and redis_ok and n8n_ok and openclaw_ok and evolution_ok) else "red"
+    overall_status = (
+        "green" if (db_ok and redis_ok and n8n_ok and openclaw_ok and evolution_ok) else "red"
+    )
 
     return {
         "status": overall_status,
@@ -737,6 +740,7 @@ async def health_radar() -> dict:
 # ============================================================================
 # Health Backup (v0.4.0) - usado pelo N8N workflow #09 Monitor Backup Diario
 # ============================================================================
+
 
 @api_router.get(
     "/health/backup",
@@ -777,30 +781,47 @@ async def health_backup() -> dict:
         if use_docker:
             r = subprocess.run(
                 ["docker", "exec", "cartorio_api.1.", "ls", "-la", BACKUP_DIR],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
         else:
             r = subprocess.run(
                 ["ls", "-la", BACKUP_DIR],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
 
         files = [
-            ln.strip() for ln in (r.stdout or "").splitlines()
-            if ln.strip().endswith(".tar.gz")
+            ln.strip() for ln in (r.stdout or "").splitlines() if ln.strip().endswith(".tar.gz")
         ]
         file_count = len(files)
 
         # Pega o mais recente por mtime
         if use_docker:
             r2 = subprocess.run(
-                ["docker", "exec", "cartorio_api.1.", "find", BACKUP_DIR, "-name", "*.tar.gz", "-printf", "%T@ %p\n"],
-                capture_output=True, text=True, timeout=5,
+                [
+                    "docker",
+                    "exec",
+                    "cartorio_api.1.",
+                    "find",
+                    BACKUP_DIR,
+                    "-name",
+                    "*.tar.gz",
+                    "-printf",
+                    "%T@ %p\n",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
         else:
             r2 = subprocess.run(
                 ["find", BACKUP_DIR, "-name", "*.tar.gz", "-printf", "%T@ %p\n"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
         items = sorted(
             [ln.strip() for ln in (r2.stdout or "").splitlines() if ln.strip()],
@@ -809,7 +830,7 @@ async def health_backup() -> dict:
         )
         if items:
             newest_mtime = float(items[0].split()[0])
-            age_s = (datetime.now(timezone.utc).timestamp() - newest_mtime)
+            age_s = datetime.now(timezone.utc).timestamp() - newest_mtime
             last_backup_age_hours = round(age_s / 3600, 1)
             last_backup_iso = datetime.fromtimestamp(newest_mtime, timezone.utc).isoformat()
 
@@ -817,12 +838,16 @@ async def health_backup() -> dict:
         if use_docker:
             r3 = subprocess.run(
                 ["docker", "exec", "cartorio_api.1.", "du", "-sh", BACKUP_DIR],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
         else:
             r3 = subprocess.run(
                 ["du", "-sh", BACKUP_DIR],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
         dir_size = (r3.stdout or "").split()[0] if r3.stdout else "?"
 
@@ -844,6 +869,7 @@ async def health_backup() -> dict:
 # ============================================================================
 # Agendamento disponibilidade (v0.4.0) - N8N workflow #05
 # ============================================================================
+
 
 @api_router.get(
     "/agendamento/disponibilidade",
@@ -872,7 +898,11 @@ async def agendamento_disponibilidade(
     """Retorna vagas disponiveis para o slot pedido + slots seguintes."""
     dias_validos = {"segunda", "terca", "quarta", "quinta", "sexta"}
     if dia.lower() not in dias_validos:
-        return {"vagas": 0, "slots": [], "erro": f"dia '{dia}' invalido. Validos: {sorted(dias_validos)}"}
+        return {
+            "vagas": 0,
+            "slots": [],
+            "erro": f"dia '{dia}' invalido. Validos: {sorted(dias_validos)}",
+        }
 
     if hora < 9 or hora >= 17:
         return {"vagas": 0, "slots": [], "erro": "Atendimento apenas das 09h as 17h"}
@@ -890,6 +920,7 @@ async def agendamento_disponibilidade(
 # Segunda via de documento (v0.4.0) - N8N workflow #06
 # ============================================================================
 
+
 @api_router.post(
     "/documento/segunda-via",
     tags=["documento"],
@@ -903,11 +934,14 @@ async def agendamento_disponibilidade(
 )
 async def documento_segunda_via(
     protocolo: Annotated[str, Query(description="Numero do protocolo (YYYY-NNNNN).")],
-    canal: Annotated[str, Query(description="Canal de envio: whatsapp/email/presencial.")] = "whatsapp",
+    canal: Annotated[
+        str, Query(description="Canal de envio: whatsapp/email/presencial.")
+    ] = "whatsapp",
 ) -> dict:
     """Gera link de download da segunda via."""
     import hashlib
     import time
+
     # MVP: hash determinístico + timestamp = URL placeholder
     h = hashlib.sha256(f"{protocolo}:{time.time()}".encode()).hexdigest()[:16]
     return {
@@ -921,6 +955,7 @@ async def documento_segunda_via(
 # ============================================================================
 # Atendimentos recentes (v0.4.0) - N8N workflow #07
 # ============================================================================
+
 
 @api_router.get(
     "/atendimentos/ultimas-24h",
@@ -947,6 +982,7 @@ async def atendimentos_ultimas_24h() -> dict:
 # ============================================================================
 # Postman collection export
 # ============================================================================
+
 
 @api_router.get(
     "/postman",
