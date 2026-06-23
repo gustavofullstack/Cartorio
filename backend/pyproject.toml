@@ -24,6 +24,7 @@ dev = [
     "pytest-cov>=6.0.0",
     "ruff>=0.8.4",
     "mypy>=1.14.0",
+    "fakeredis>=2.26.0",
 ]
 
 [tool.ruff]
@@ -33,6 +34,7 @@ target-version = "py311"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90 -m 'not smoke'"
+asyncio_mode = "auto"
 markers = [
     "smoke: integration tests against real infrastructure (requires SMOKE_TARGET=prod)",
 ]
