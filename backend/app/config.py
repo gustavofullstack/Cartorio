@@ -113,6 +113,12 @@ class Settings(BaseSettings):
     n8n_webhook_secret: Optional[str] = None
 
     # ========================================================================
+    # Inter-service auth (API <-> N8N/Admin)
+    # Header X-API-Key. Rotacao 90d (ADR-017).
+    # =========================================================================
+    cartorio_api_key: Optional[str] = None
+
+    # ========================================================================
     # Supabase (acesso direto alem do DB)
     # ========================================================================
     supabase_url: str = "https://supbase.2notasudi.com.br"  # DNS typo original
