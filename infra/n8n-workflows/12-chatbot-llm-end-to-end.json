@@ -1,8 +1,5 @@
 {
   "name": "12 - Chatbot LLM End-to-End (PII + OpenCode-Go)",
-  "description": "Pipeline end-to-end: Evolution webhook -> PII scrub (local) -> API PII scrub + OpenCode-Go LLM (deepseek-v4-flash) -> resposta. Demonstra integracao real Evolution -> API -> OpenCode-Go com bloqueio automatico por PII.",
-  "active": true,
-  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -11,53 +8,64 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "webhook-evolution-trigger",
-      "name": "Webhook Evolution (WhatsApp)",
+      "id": "webhook-trigger",
+      "name": "Webhook Evolution",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [240, 300],
-      "webhookId": "chatbot-llm-v1"
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "// ============================================================\n// N8N PII Scrubber + Parser (espelho de backend/app/services/pii.py)\n// LGPD art. 6o VIII - prevencao: falso positivo aceito, falso\n// negativo NAO. Antes de chamar LLM externo, scrubber garante\n// que CPF/RG/CNPJ/cartao/etc NAO vao pra OpenCode-Go.\n// ============================================================\nconst item = $input.item.json;\nconst body = item.body || {};\n\n// Extrai mensagem do payload Evolution (formato canonico + fallback)\nconst rawText = (\n  (body.message && (body.message.text || body.message.conversation)) ||\n  body.text ||\n  body.raw ||\n  ''\n).toString();\n\nconst sender = body.sender || body.from || 'unknown';\nconst instance = body.instance || 'cartorio-2notas-uberlandia';\n\n// Regex calibrado (espelho de app/services/pii.py - P0 LGPD fix 2026-06-23).\n// Ordem importa: mais especifico primeiro.\nconst patterns = [\n  { label: 'email',       re: /\\b[\\w.+-]+@[\\w-]+\\.[\\w.-]+\\b/g },\n  { label: 'data',        re: /\\b\\d{2}[\\/\\-\\.]\\d{2}[\\/\\-\\.]\\d{4}\\b|\\b\\d{4}-\\d{2}-\\d{2}\\b/g },\n  { label: 'placa',       re: /\\b[A-Z]{3}-?\\d[A-Z]\\d{2}\\b|\\b[A-Z]{3}-?\\d{4}\\b/g },\n  { label: 'cnpj',        re: /\\b\\d{2}\\.?\\d{3}\\.?\\d{3}\\/?\\d{4}-?\\d{2}\\b/g },\n  { label: 'cpf',         re: /\\b\\d{3}\\.?\\d{3}\.\\d{3}-?\\d{2}\\b/g },\n  { label: 'pis',         re: /\\b\\d{3}\\.\\d{5}\\.\\d{3}\\b/g },\n  { label: 'rg',          re: /\\b\\d{1,2}\\.\\d{3}\\.?\\d{3}-?[\\dxX]\\b/g },\n  { label: 'titulo',      re: /\\b\\d{4}\\s?\\d{4}\\s?\\d{4}\\b/g },\n  { label: 'phone_br',    re: /(?:\\+?55\\s?)?\\(?\\d{2}\\)?\\s?9?\\d{4}[\\s-]?\\d{4}/g },\n  { label: 'cep',         re: /\\b\\d{5}-?\\d{3}\\b/g },\n  { label: 'cartao',      re: /\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b|\\b\\d{4}[\\s-]?\\d{6}[\\s-]?\\d{5}\\b/g }\n];\n\nlet scrubbed = rawText;\nconst findings = {};\nlet redactionCount = 0;\n\nfor (const { label, re } of patterns) {\n  const matches = scrubbed.match(re);\n  if (matches && matches.length) {\n    findings[label] = matches.length;\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(re, `[${label.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Bloqueio automatico: se QUALQUER PII detectado, NAO envia pro LLM\n// (handoff humano obrigatorio - LGPD art. 7o I + 46).\nconst blocked = redactionCount > 0;\n\nreturn [{\n  json: {\n    sender,\n    instance,\n    raw_length: rawText.length,\n    raw_excerpt: rawText.substring(0, 200),\n    scrubbed,\n    findings,\n    redaction_count: redactionCount,\n    blocked,\n    consent_granted: !blocked, // LGPD: so chama LLM se NAO bloqueado\n    timestamp: new Date().toISOString()\n  }\n}];\n"
-      },
-      "id": "pii-scrubber",
-      "name": "PII Scrubber (local, LGPD)",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [460, 300]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
+        "assignments": {
+          "assignments": [
             {
-              "id": "blocked-check",
-              "leftValue": "={{ $json.blocked }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
+              "id": "raw",
+              "name": "raw_text",
+              "value": "={{ $json.body.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "sender",
+              "name": "sender",
+              "value": "={{ $json.body.sender }}",
+              "type": "string"
+            },
+            {
+              "id": "instance",
+              "name": "instance",
+              "value": "={{ $json.body.instance || 'cartorio-2notas-uberlandia' }}",
+              "type": "string"
             }
-          ],
-          "combinator": "and"
+          ]
         },
         "options": {}
       },
-      "id": "if-pii-blocked",
-      "name": "If PII Blocked (handoff)?",
-      "type": "n8n-nodes-base.if",
+      "id": "set-fields",
+      "name": "Extract Message Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// PII scrubber (espelho de backend/app/services/pii.py)\nconst items = $input.all();\nconst out = [];\nconst patterns = [\n  { label: 'email',    re: /\\b[\\w.+-]+@[\\w-]+\\.[\\w.-]+\\b/g },\n  { label: 'data',     re: /\\b\\d{2}[\\/\\-\\.]\\d{2}[\\/\\-\\.]\\d{4}\\b|\\b\\d{4}-\\d{2}-\\d{2}\\b/g },\n  { label: 'placa',    re: /\\b[A-Z]{3}-?\\d[A-Z]\\d{2}\\b|\\b[A-Z]{3}-?\\d{4}\\b/g },\n  { label: 'cnpj',     re: /\\b\\d{2}\\.?\\d{3}\\.\\d{3}\\/\\d{4}-?\\d{2}\\b/g },\n  { label: 'cpf',      re: /\\b\\d{3}\\.\\d{3}\\.\\d{3}-?\\d{2}\\b/g },\n  { label: 'pis',      re: /\\b\\d{3}\\.\\d{5}\\.\\d{3}\\b/g },\n  { label: 'rg',       re: /\\b\\d{1,2}\\.\\d{3}\\.?\\d{3}-?[\\dxX]\\b/g },\n  { label: 'titulo',   re: /\\b\\d{4}\\s?\\d{4}\\s?\\d{4}\\b/g },\n  { label: 'phone_br', re: /(?:\\+?55\\s?)?\\(?\\d{2}\\)?\\s?9?\\d{4}[\\s-]?\\d{4}/g },\n  { label: 'cep',      re: /\\b\\d{5}-?\\d{3}\\b/g },\n  { label: 'cartao',   re: /\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b|\\b\\d{4}[\\s-]?\\d{6}[\\s-]?\\d{5}\\b/g }\n];\nfor (const item of items) {\n  const raw = (item.json.raw_text || '').toString();\n  let scrubbed = raw;\n  const findings = {};\n  let cnt = 0;\n  for (const p of patterns) {\n    const m = scrubbed.match(p.re);\n    if (m && m.length) {\n      findings[p.label] = m.length;\n      cnt += m.length;\n      scrubbed = scrubbed.replace(p.re, '[' + p.label.toUpperCase() + '_REDACTED]');\n    }\n  }\n  const blocked = cnt > 0;\n  out.push({\n    json: {\n      sender: item.json.sender || 'unknown',\n      instance: item.json.instance || 'cartorio-2notas-uberlandia',\n      scrubbed: scrubbed,\n      findings: findings,\n      redaction_count: cnt,\n      blocked: blocked,\n      consent_granted: !blocked,\n      timestamp: new Date().toISOString()\n    }\n  });\n}\nreturn out;\n"
+      },
+      "id": "pii-scrubber",
+      "name": "PII Scrubber",
+      "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -78,7 +86,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"prompt\": \"Voce eh o atendente virtual do Cartorio 2 Notas de Uberlandia. Responda em portugues, tom cordial, maximo 2 paragrafos. Mensagem do cliente: {{ $json.scrubbed }}\",\n  \"model\": \"deepseek-v4-flash\",\n  \"consent_granted\": {{ $json.consent_granted }},\n  \"session_id\": \"n8n-flow-12:{{ $json.sender }}\"\n}",
+        "jsonBody": "={\n  \"prompt\": \"Voce eh o atendente virtual do Cartorio 2 Notas de Uberlandia. Responda em portugues, tom cordial, maximo 2 paragrafos. Mensagem do cliente (com PII ja redacted): {{ $json.scrubbed }}\",\n  \"model\": \"deepseek-v4-flash\",\n  \"consent_granted\": {{ $json.consent_granted }},\n  \"session_id\": \"n8n-flow-12:{{ $json.sender }}\"\n}",
         "options": {
           "timeout": 30000,
           "response": {
@@ -89,113 +97,94 @@
         }
       },
       "id": "http-opencode",
-      "name": "API: OpenCode-Go (deepseek-v4-flash)",
+      "name": "HTTP: OpenCode-Go",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [900, 200]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "// ============================================================\n// Formata resposta do LLM + adiciona metadata LGPD-safe\n// ============================================================\nconst llm = $input.item.json;\nconst scrub = $('PII Scrubber (local, LGPD)').item.json;\n\nconst llmOk = llm.status === 'ok' && llm.response;\nconst resposta = llmOk\n  ? llm.response\n  : 'Desculpe, nao consegui processar sua mensagem agora. Um atendente humano ira retornar em instantes.';\n\nreturn [{\n  json: {\n    status: llmOk ? 'ok' : 'llm_error',\n    response: resposta,\n    sender: scrub.sender,\n    pii_blocked: scrub.blocked,\n    pii_findings: scrub.findings,\n    pii_redaction_count: scrub.redaction_count,\n    model: llm.model || 'deepseek-v4-flash',\n    tokens_in: llm.tokens_in || null,\n    tokens_out: llm.tokens_out || null,\n    latency_ms: llm.latency_ms || null,\n    needs_human_handoff: !llmOk || scrub.blocked,\n    provider: llm.config ? llm.config.provider : 'opencode_go',\n    timestamp: scrub.timestamp\n  }\n}];\n"
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const items = $input.all();\nconst out = [];\nfor (const item of items) {\n  const scrub = item.json;\n  const llm = (scrub.body && scrub.body.response) ? scrub.body : scrub;\n  let r;\n  if (scrub.blocked === true || scrub.redaction_count > 0) {\n    r = {\n      status: 'pii_blocked',\n      response: 'Detectei dados pessoais na sua mensagem (CPF, RG ou documento). Por questao de seguranca e conformidade com a LGPD, vou transferir seu atendimento para um escrevente humano. Aguarde.',\n      sender: scrub.sender,\n      pii_blocked: true,\n      pii_redaction_count: scrub.redaction_count,\n      needs_human_handoff: true,\n      model: null,\n      tokens_in: null,\n      tokens_out: null,\n      latency_ms: null,\n      provider: 'handoff_humano'\n    };\n  } else {\n    const ok = llm && llm.status === 'ok' && llm.response;\n    r = {\n      status: ok ? 'ok' : 'llm_error',\n      response: ok ? llm.response : 'Desculpe, nao consegui processar sua mensagem. Um atendente humano ira retornar.',\n      sender: scrub.sender,\n      pii_blocked: false,\n      pii_redaction_count: 0,\n      needs_human_handoff: !ok,\n      model: (llm && llm.model) || 'deepseek-v4-flash',\n      tokens_in: (llm && llm.tokens_in) || null,\n      tokens_out: (llm && llm.tokens_out) || null,\n      latency_ms: (llm && llm.latency_ms) || null,\n      provider: (llm && llm.config && llm.config.provider) || 'opencode_go'\n    };\n  }\n  out.push({ json: r });\n}\nreturn out;\n"
       },
-      "id": "format-response",
-      "name": "Format LLM Response",
+      "id": "decide",
+      "name": "Decide Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 200]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "// ============================================================\n// Resposta quando PII detectado: BLOQUEIA LLM, escuta para handoff\n// humano. NUNCA envia dado sensivel pra OpenCode-Go.\n// ============================================================\nconst scrub = $input.item.json;\n\nreturn [{\n  json: {\n    status: 'pii_blocked',\n    response: 'Detectei dados pessoais na sua mensagem (CPF, RG ou documento). Por questao de seguranca e conformidade com a LGPD, vou transferir seu atendimento para um escrevente humano. Por favor, aguarde alguns instantes.',\n    sender: scrub.sender,\n    pii_blocked: true,\n    pii_findings: scrub.findings,\n    pii_redaction_count: scrub.redaction_count,\n    needs_human_handoff: true,\n    model: null,\n    tokens_in: null,\n    tokens_out: null,\n    latency_ms: null,\n    provider: 'handoff_humano',\n    timestamp: scrub.timestamp\n  }\n}];\n"
-      },
-      "id": "format-handoff",
-      "name": "Format Handoff Response",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [900, 420]
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"{{ $json.status }}\",\n  \"response\": {{ JSON.stringify($json.response) }},\n  \"sender\": \"{{ $json.sender }}\",\n  \"pii_blocked\": {{ $json.pii_blocked }},\n  \"pii_findings\": {{ JSON.stringify($json.pii_findings) }},\n  \"pii_redaction_count\": {{ $json.pii_redaction_count }},\n  \"needs_human_handoff\": {{ $json.needs_human_handoff }},\n  \"model\": {{ $json.model ? '\"' + $json.model + '\"' : 'null' }},\n  \"tokens_in\": {{ $json.tokens_in || 'null' }},\n  \"tokens_out\": {{ $json.tokens_out || 'null' }},\n  \"latency_ms\": {{ $json.latency_ms || 'null' }},\n  \"provider\": {{ JSON.stringify($json.provider) }},\n  \"timestamp\": {{ JSON.stringify($json.timestamp) }}\n}"
+        "responseBody": "={\n  \"status\": \"{{ $json.status }}\",\n  \"response\": {{ JSON.stringify($json.response) }},\n  \"sender\": \"{{ $json.sender }}\",\n  \"pii_blocked\": {{ $json.pii_blocked }},\n  \"pii_redaction_count\": {{ $json.pii_redaction_count }},\n  \"needs_human_handoff\": {{ $json.needs_human_handoff }},\n  \"model\": {{ $json.model ? '\"' + $json.model + '\"' : 'null' }},\n  \"tokens_in\": {{ $json.tokens_in || 'null' }},\n  \"tokens_out\": {{ $json.tokens_out || 'null' }},\n  \"latency_ms\": {{ $json.latency_ms || 'null' }},\n  \"provider\": {{ JSON.stringify($json.provider) }}\n}"
       },
-      "id": "respond-webhook",
-      "name": "Respond to Webhook (Evolution)",
+      "id": "respond",
+      "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     }
   ],
   "connections": {
-    "Webhook Evolution (WhatsApp)": {
+    "Webhook Evolution": {
       "main": [
         [
           {
-            "node": "PII Scrubber (local, LGPD)",
+            "node": "Extract Message Fields",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "PII Scrubber (local, LGPD)": {
+    "Extract Message Fields": {
       "main": [
         [
           {
-            "node": "If PII Blocked (handoff)?",
+            "node": "PII Scrubber",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If PII Blocked (handoff)?": {
+    "PII Scrubber": {
       "main": [
         [
           {
-            "node": "API: OpenCode-Go (deepseek-v4-flash)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Format Handoff Response",
+            "node": "HTTP: OpenCode-Go",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "API: OpenCode-Go (deepseek-v4-flash)": {
+    "HTTP: OpenCode-Go": {
       "main": [
         [
           {
-            "node": "Format LLM Response",
+            "node": "Decide Response",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Format LLM Response": {
+    "Decide Response": {
       "main": [
         [
           {
-            "node": "Respond to Webhook (Evolution)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format Handoff Response": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook (Evolution)",
+            "node": "Respond",
             "type": "main",
             "index": 0
           }
@@ -206,43 +195,5 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner"
-  },
-  "staticData": null,
-  "meta": {
-    "description": "End-to-end chatbot: Evolution WhatsApp -> PII scrub (LGPD) -> OpenCode-Go deepseek-v4-flash via API FastAPI -> resposta. Bloqueia LLM se PII detectado (handoff humano obrigatorio). Cobre requisito do SUPER PLANO v0.6.0 Sprint 2 (OpenCode-Go plugado em TUDO).",
-    "credentials_used": [
-      "X-API-Key: cartorio-api-shared-secret-v1 (compartilhada API)",
-      "OpenCode-Go key: sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr (no .env da API)"
-    ],
-    "endpoints": {
-      "trigger": "POST https://flow.2notasudi.com.br/webhook/chatbot-llm",
-      "llm_proxy": "POST https://api.2notasudi.com.br/api/v1/integrations/opencode/test",
-      "evolution_gateway": "https://whatsapp.2notasudi.com.br (webhook Evolution)"
-    },
-    "models": {
-      "primary": "deepseek-v4-flash",
-      "provider": "opencode_go",
-      "base_url": "https://opencode.ai/zen/go/v1"
-    }
-  },
-  "versionCounter": 1,
-  "triggerCount": 1,
-  "tags": [
-    {
-      "name": "cartorio",
-      "id": "tag-cartorio"
-    },
-    {
-      "name": "lgpd",
-      "id": "tag-lgpd"
-    },
-    {
-      "name": "opencode-go",
-      "id": "tag-opencode-go"
-    },
-    {
-      "name": "sprint-2",
-      "id": "tag-sprint-2"
-    }
-  ]
+  }
 }

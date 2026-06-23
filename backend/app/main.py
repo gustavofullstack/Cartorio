@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import text
 
 from app.api.v1.router import api_router
+from app.api.v1.ws.atendimentos import ws_router
 from app.config import settings
 from app.db import engine
 from app.models.base import Base
@@ -421,3 +422,4 @@ async def redoc_html() -> HTMLResponse:
 
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(ws_router)  # WebSocket /ws/atendimentos (T2.API.T19)

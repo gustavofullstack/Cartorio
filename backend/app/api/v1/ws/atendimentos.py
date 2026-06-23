@@ -1,0 +1,122 @@
+"""Endpoint WebSocket /ws/atendimentos (T2.API.T19).
+
+Broadcast real-time para dashboard de atendimentos. Cada cliente conectado
+escuta o channel 'cartorio:atendimentos' e recebe mensagens publicadas por
+qualquer instancia da API (via Redis pub/sub do RedisBus).
+
+Arquitetura multi-replica:
+- Cliente conecta em uma replica da API (qualquer uma no Swarm).
+- A replica adiciona o client no ConnectionManager local.
+- Worker Redis subscribe local escuta 'cartorio:atendimentos' no Redis.
+- Mensagem publicada em QUALQUER replica -> Redis -> todos subscribers ->
+  broadcast local para clients conectados naquela replica.
+- Resultado: dashboard em tempo real independente de qual API publicou.
+
+LGPD: NAO persiste mensagens. Apenas forwarding. PII scrubbing deve ser
+feito ANTES de chamar publish/broadcast (ver app/services/pii.py).
+
+Audit: mensagens de protocolo/handoff geram audit log via AuditService
+no servico que chama publish (NAO no WebSocket endpoint).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+from typing import Any
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
+from app.services.redis_bus import RedisBus, get_bus
+from app.services.websocket_manager import ConnectionManager, get_manager
+
+logger = logging.getLogger(__name__)
+
+
+ws_router = APIRouter()
+
+
+async def _redis_listener_loop(
+    manager: ConnectionManager,
+    bus: RedisBus,
+    channel: str,
+) -> None:
+    """Task background: escuta RedisBus.subscribe e faz broadcast local.
+
+    Roda indefinidamente ate a conexao WebSocket fechar. Cancelamento
+    limpo via asyncio.CancelledError -> silencioso (logger.debug).
+    """
+    try:
+        async for msg in bus.subscribe(channel):
+            data = msg.get("data")
+            if not isinstance(data, dict):
+                continue
+            delivered = await manager.broadcast(channel, data)
+            logger.debug(
+                "ws.redis.broadcast channel=%s delivered=%d total_conns=%d",
+                channel,
+                delivered,
+                manager.total_connections(),
+            )
+    except asyncio.CancelledError:
+        logger.debug("ws.redis.listener.cancelled channel=%s", channel)
+        raise
+    except Exception as e:  # noqa: BLE001
+        logger.exception("ws.redis.listener.crashed channel=%s err=%s", channel, e)
+
+
+@ws_router.websocket("/ws/atendimentos")
+async def ws_atendimentos(websocket: WebSocket) -> None:
+    """WebSocket endpoint para dashboard de atendimentos.
+
+    Protocol:
+    1. Cliente conecta.
+    2. Server aceita + adiciona no manager (room=cartorio:atendimentos).
+    3. Server inicia background task: escuta Redis 'cartorio:atendimentos'.
+    4. Cliente recebe broadcasts (atendimentos novos, status updates, etc).
+    5. Cliente pode enviar mensagem qualquer (ex: ping). Server faz echo
+       com {"type":"pong"} pra manter conexao viva.
+    6. Cliente desconecta. Server limpa manager + cancela listener.
+    """
+    manager: ConnectionManager = get_manager()
+    bus: RedisBus = get_bus()
+    channel = "cartorio:atendimentos"
+
+    await websocket.accept()
+    manager.register(websocket, channel)
+
+    listener_task: asyncio.Task[None] | None = None
+    try:
+        listener_task = asyncio.create_task(
+            _redis_listener_loop(manager, bus, channel)
+        )
+        # Loop principal: le mensagens do cliente (ping/pong, comandos).
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                data = json.loads(raw)
+            except (TypeError, ValueError):
+                data = {"raw": raw}
+            # Echo pong pra keep-alive. Cliente pode mandar {"type":"ping"}.
+            msg_type = data.get("type") if isinstance(data, dict) else None
+            if msg_type == "ping":
+                await websocket.send_json({"type": "pong"})
+            else:
+                # Echo da mensagem (util pra debug no browser console)
+                await websocket.send_json({"type": "echo", "data": data})
+    except WebSocketDisconnect:
+        logger.debug("ws.disconnect channel=%s", channel)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("ws.error channel=%s err=%s", channel, type(e).__name__)
+    finally:
+        manager.unregister(websocket, channel)
+        if listener_task is not None:
+            listener_task.cancel()
+            try:
+                await listener_task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
+
+
+__all__ = ["ws_router", "ws_atendimentos"]
