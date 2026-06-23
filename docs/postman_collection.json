@@ -1,0 +1,281 @@
+{
+  "info": {
+    "name": "Cartorio 2 Notas Uberlandia",
+    "description": "API do cartorio 2 notas de Uberlandia com audit log imutavel (hash chain + HMAC), PII scrubbing em 3 camadas e human-in-the-loop obrigatorio em acoes juridicas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "0.3.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.2notasudi.com.br",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "",
+      "type": "string",
+      "description": "API key (futuro, Sprint 4)"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "Meta",
+      "item": [
+        {
+          "name": "Health (liveness)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Liveness probe. Retorna 200 se a API ta respondendo."
+          }
+        },
+        {
+          "name": "Ready (readiness)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ready",
+              "host": ["{{base_url}}"],
+              "path": ["ready"]
+            },
+            "description": "Readiness probe. Confirma DB e audit log inicializados."
+          }
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/docs",
+              "host": ["{{base_url}}"],
+              "path": ["docs"]
+            },
+            "description": "Documentacao interativa OpenAPI 3.1 (Swagger UI)."
+          }
+        },
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/openapi.json",
+              "host": ["{{base_url}}"],
+              "path": ["openapi.json"]
+            },
+            "description": "Spec OpenAPI 3.1 em JSON. Use para gerar clients."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Emolumento",
+      "item": [
+        {
+          "name": "Calcular emolumento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/emolumento/calcular?tipo=certidao&folhas=1&urgencia=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "emolumento", "calcular"],
+              "query": [
+                {"key": "tipo", "value": "certidao", "description": "certidao | escritura | procuracao | reconhecimento_firma | autenticacao | registro"},
+                {"key": "folhas", "value": "1", "description": "Numero de folhas"},
+                {"key": "urgencia", "value": "false", "description": "true adiciona 50%"}
+              ]
+            },
+            "description": "Calcula emolumento cartorario MG 2026. Publico, sem PII envolvida."
+          },
+          "response": [
+            {
+              "name": "Sucesso",
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"tipo\": \"certidao\",\n  \"folhas\": 1,\n  \"urgencia\": false,\n  \"base\": \"XX.XX\",\n  \"adicional_folhas\": \"0.00\",\n  \"adicional_urgencia\": \"0.00\",\n  \"total\": \"XX.XX\",\n  \"tabela_referencia\": \"MG-2026\",\n  \"valido_ate\": \"2026-12-31\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Evolution (WhatsApp) webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instance\": \"cartorio-2notas\",\n  \"sender\": \"5511999999999\",\n  \"message\": {\n    \"text\": \"Ola, gostaria de saber o valor de uma certidao\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhook/evolution",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "webhook", "evolution"]
+            },
+            "description": "Webhook do Evolution API. Recebe mensagem, aplica PII scrubbing, retorna resposta. Se PII detectado, faz handoff humano automatico (HITL)."
+          },
+          "response": [
+            {
+              "name": "Sucesso sem PII",
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"status\": \"ok\",\n  \"response\": \"Recebi sua mensagem. Em breve um atendente ira responder.\",\n  \"scrubbed\": \"Ola, gostaria de saber o valor de uma certidao\"\n}"
+            },
+            {
+              "name": "Sucesso com PII (handoff)",
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"status\": \"ok\",\n  \"response\": \"Recebi sua mensagem com dados sensiveis. Por seguranca, vou transferir para um atendente humano. Aguarde um instante.\",\n  \"scrubbed\": \"Meu CPF é [CPF_REDACTED], gostaria de protocolo\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "Verificar cadeia de audit log",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audit", "verify"]
+            },
+            "description": "Verifica integridade da cadeia de audit log (hash chain + HMAC). Cron diario as 03:00 verifica automaticamente. Use essa rota pra verificar manualmente."
+          },
+          "response": [
+            {
+              "name": "Cadeia integra",
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"chain_ok\": true,\n  \"last_valid_position\": 1234\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "OpenClaw Gateway",
+      "item": [
+        {
+          "name": "OpenClaw - Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer <OPENCLAW_GATEWAY_TOKEN>"}
+            ],
+            "url": {
+              "raw": "https://agent.2notasudi.com.br/",
+              "host": ["agent.2notasudi.com.br"],
+              "path": [""]
+            },
+            "description": "OpenClaw gateway. Healthcheck publico."
+          }
+        }
+      ]
+    },
+    {
+      "name": "n8n",
+      "item": [
+        {
+          "name": "n8n - Healthz",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://flow.2notasudi.com.br/healthz",
+              "host": ["flow.2notasudi.com.br"],
+              "path": ["healthz"]
+            },
+            "description": "n8n health probe. Retorna 200 com {status:ok} se saudavel."
+          }
+        },
+        {
+          "name": "n8n - Listar workflows",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "X-N8N-API-KEY", "value": "{{n8n_api_key}}"}
+            ],
+            "url": {
+              "raw": "https://flow.2notasudi.com.br/api/v1/workflows",
+              "host": ["flow.2notasudi.com.br"],
+              "path": ["api", "v1", "workflows"]
+            },
+            "description": "Lista todos os workflows do n8n. Requer API key."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Evolution API",
+      "item": [
+        {
+          "name": "Evolution - Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://whatsapp.2notasudi.com.br/manager/",
+              "host": ["whatsapp.2notasudi.com.br"],
+              "path": ["manager", ""]
+            },
+            "description": "Manager UI do Evolution API. POST /manager/login pra auth."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Supabase",
+      "item": [
+        {
+          "name": "Supabase - Auth health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://supbase.2notasudi.com.br/auth/v1/health",
+              "host": ["supbase.2notasudi.com.br"],
+              "path": ["auth", "v1", "health"]
+            },
+            "description": "Kong auth health. Retorna 401 sem API key (esperado, Supabase exige API key pra /auth/v1/health)."
+          }
+        },
+        {
+          "name": "Supabase - MCP (Antigravity config)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer <SUPABASE_ANON_KEY>"}
+            ],
+            "url": {
+              "raw": "https://supbase.2notasudi.com.br/mcp?features=docs,database,debugging,development",
+              "host": ["supbase.2notasudi.com.br"],
+              "path": ["mcp"],
+              "query": [
+                {"key": "features", "value": "docs,database,debugging,development"}
+              ]
+            },
+            "description": "MCP server do Supabase (configurado no Antigravity). Streaming HTTP."
+          }
+        }
+      ]
+    }
+  ]
+}
