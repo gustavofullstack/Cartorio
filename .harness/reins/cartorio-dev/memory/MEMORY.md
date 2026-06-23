@@ -187,3 +187,41 @@ duplicada, gera confusion em git log/blame).
 Licao: SEMPRE perguntar ao parent em qual branch commitar antes de
 agir. Se hook master-only + pre-requisito em feature branch: cherry-pick
 eh o unico caminho seguro.
+
+### Briefing stale: P0.1 review cego - cenario bf12203 (2026-06-23 19:50 BRT) (2026-06-23)
+Type: anti-pattern
+
+Cenario: root session me pingou pra cross-review de P0.1 (commit 3749fad + cherry-pick a7a4f8f). Briefing dizia:
+- "pytest tests/test_api.py tests/test_webhook_evolution_e2e.py: 22 passed, 0 failed"
+- "Master ahead of origin/master by 1 commit (3749fad)"
+- "a7a4f8f em fix branch identico a 3749fad em master (auto-merge em router.py clean)"
+
+Quando rodei pytest tests/ (full suite) em master bf12203:
+- 374 passed, 5 failed (nao 22 passed, 0 failed)
+- Os 5 fails: test_agent_health_quando_tudo_ok, test_agent_health_quando_openclaw_down, test_agent_health_nao_vaza_api_key, test_webhook_evolution_sem_pii, test_chat_with_fallback_delegates_to_opencode_go
+- TODOS pre-existing (verifiquei rodando em worktree detached HEAD 3749fad - mesmos 5 fails)
+- Master HEAD = bf12203, NAO 3749fad (5 commits ahead: d4507b0 + 882136c + b0a34d3 + 6e0afa5 + bf12203)
+- a7a4f8f != 3749fad no router.py: tem -65 linhas do list_active endpoint (af55bef, so em master)
+
+DISCOVERY CRITICO fora do escopo P0.1:
+- Commit bf12203 adicionou 6911 linhas de coverage data (pytest-cov output) como arquivos de codigo
+- 43 arquivos novos com suffix ",cover" (ex: backend/app/api/v1/router.py,cover = 2096 linhas)
+- Linhas comecam com "> " (covered) ou "! " (uncovered) - NAO e codigo fonte
+- Push pro origin/master ja feito (origin/master = bf12203)
+- Master poluido com lixo, precisa reverter
+
+Licao:
+1. Briefing stale e RECORRENTE (3o caso em <24h). SEMPRE rodar pytest + git log master -3 + git worktree add <hash> pra verificar estado real antes de aceitar briefing.
+2. "22 passed, 0 failed" pode ser subset especifico - rodar full suite pra confirmar.
+3. Briefing pode ter sido escrito quando master estava em 3749fad, mas master avançou 5 commits na janela de leitura. SEMPRE verificar `git log master -3 --oneline` E `git rev-parse HEAD` antes de aceitar.
+4. Cherry-pick "auto-merge clean" no briefing NAO significa identico - significa que o hunk especifico aplicou sem conflito. Outras mudancas paralelas (como list_active endpoint de af55bef) NAO sao incluidas no cherry-pick porque nao existiam no fix branch lineage. Verificar com `git diff <src> <dst> -- <file>`.
+5. Briefing pode estar cego pra regressoes laterais (bf12203). SEMPRE rodar `git log master -5 --oneline` + `git show <hash> --stat` pra detectar commits suspeitos.
+
+Reutilizavel: qualquer review request de outro agent. Protocolo obrigatorio antes de thumbs-up:
+a) `git rev-parse HEAD` + `git log master -3 --oneline` - confirma estado real
+b) `pytest tests/<affected_files> --no-cov -q --tb=no` - confirma contagem real
+c) `git worktree add /tmp/review-check <hash>` + pytest no worktree - confirma pre-existing flakes
+d) `git show <hash> --stat` em CADA commit no range do briefing - detecta regressao lateral
+e) Se briefing diz "X passing" e pytest diz "X failing", reportar com output literal antes de agir
+
+Custo do protocolo: ~30s. Beneficio: nao assinar review cego de regressao critica (como bf12203 +6911 linhas de cover files).

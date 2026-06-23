@@ -12,10 +12,7 @@ Skills disponíveis para o OpenClaw Agent (CartorioBot).
 | [cartorio-handoff-trigger.md](cartorio-handoff-trigger.md) | Handoff | Cliente precisa de escrevente humano | `POST /api/v1/audit/log` (registro) |
 | [cartorio-agendamento.md](cartorio-agendamento.md) | Agendamento | Cliente quer marcar horario | `GET /api/v1/agendamento/disponibilidade` |
 | [cartorio-segunda-via.md](cartorio-segunda-via.md) | Documento | Cliente quer copia de documento | `GET /api/v1/documento/segunda-via` |
-
-## Skills futuras (planejadas Sprint 3.5+)
-
-- `cartorio-pesquisa-satisfacao` - enviar pesquisa apos atendimento
+| [cartorio-pesquisa-satisfacao.md](cartorio-pesquisa-satisfacao.md) | Pesquisa | Cliente concluiu atendimento | `POST /api/v1/atendimento/{id}/pesquisa-enviada` |
 
 ## Como adicionar uma nova skill
 
