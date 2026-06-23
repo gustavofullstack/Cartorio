@@ -42,6 +42,13 @@ class ScrubResult:
 # - "data_nascimento" cobre BR (DD/MM/YYYY com /-.) e NAO ISO. Trade-off
 #   documentado: datas de protocolo em formato ISO NAO sao redatadas
 #   (evita falso positivo em logs de sistema).
+# - CNS e CNH adicionados em 2026-06-23 (P0.3 + P0.4 cartorio-lgpd
+#   audit): ambos sao ANCHORED em keyword ("CNS"/"SUS" para CNS;
+#   "CNH"/"carteira nacional de habilitacao"/"habilitacao"/
+#   "motorista" para CNH) para evitar falso positivo contra
+#   ISBN, OAB, CNJ, conta bancaria, CEP, etc. LGPD art. 11
+#   (CNS = dado sensivel saude) e art. 6 (CNH = identificacao
+#   pessoal) cobertos.
 _PATTERNS: dict[str, re.Pattern[str]] = {
     # 1. EMAIL - tem @, super especifico
     "email": re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
@@ -57,21 +64,52 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     ),
     # 4. CNPJ - 14 digitos com pontos/dash/separador opcionais (matriz ou filial)
     "cnpj": re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b"),
-    # 5. CPF - 11 digitos em formato 3-3-3-2 (3 grupos + verificador)
+    # 5. CNS (Cartao Nacional de Saude) - LGPD art. 11 BLOQUEANTE.
+    # ANCHORED em keyword: "CNS" / "SUS" / "cartao nacional de saude".
+    # Formato 1: 15 digitos contiguos (CNS provisorio / definitivo).
+    # Formato 2: 17 digitos (CNS + DV - modelo DATASUS).
+    # Formato 3: 3-4-4-4 com espacos ou pontos (DATASUS legivel).
+    # Context: ate 30 chars nao-digit entre keyword e numero (permite
+    # "meu CNS e 12345..." mas bloqueia matches long-distance).
+    # Anti-FP: SEM keyword, 15 digitos sozinho NAO matchea (pode ser
+    # ISBN, OAB, CNJ, hash, etc - FPs conhecidos de regex 15-digit).
+    # ORDEM CRITICA: CNS DEVE rodar ANTES de phone_br (senao phone_br
+    # come os primeiros 11 digitos do CNS de 15).
+    "cns": re.compile(
+        r"(?i)\b(?:CNS|SUS|cart[aã]o\s+nacional\s+de\s+sa[uú]de)\b"
+        r"[^\d\n]{0,30}?"
+        r"(?:\d{15}|\d{17}|\d{3}[\s.]?\d{4}[\s.]?\d{4}[\s.]?\d{4})\b"
+    ),
+    # 6. CNH (Carteira Nacional de Habilitacao) - LGPD art. 6.
+    # ANCHORED em keyword: "CNH" / "carteira nacional de habilitacao" /
+    # "habilitacao" / "motorista". Formato 1: 11 digitos contiguos.
+    # Formato 2: 9 digitos + DV (2 chars, com ou sem hifen/espaco).
+    # Context: ate 30 chars nao-digit entre keyword e numero.
+    # Anti-FP: SEM keyword, 11 digitos sozinho NAO matchea (colide
+    # com CPF; keyword desambigua).
+    # ORDEM CRITICA: CNH DEVE rodar ANTES de CPF (senao CPF come os
+    # 11 digitos da CNH primeiro).
+    "cnh": re.compile(
+        r"(?i)\b(?:CNH|carteira\s+nacional\s+de\s+habilita[çc][aã]o|"
+        r"habilita[çc][aã]o|motorista)\b"
+        r"[^\d\n]{0,30}?"
+        r"(?:\d{11}|\d{9}[\s.\-]?\d{2})\b"
+    ),
+    # 7. CPF - 11 digitos em formato 3-3-3-2 (3 grupos + verificador)
     "cpf": re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b"),
-    # 6. PIS - 11 digitos em formato 3-5-3 (3 grupos, sem verificador)
+    # 8. PIS - 11 digitos em formato 3-5-3 (3 grupos, sem verificador)
     # Diferenciado de CPF por ter 3 grupos em vez de 4.
     "pis": re.compile(r"\b\d{3}\.?\d{5}\.?\d{3}\b"),
-    # 7. RG - 7-9 digitos + verificador (digito ou X). EXIGE pelo menos
+    # 9. RG - 7-9 digitos + verificador (digito ou X). EXIGE pelo menos
     # um ponto para nao colidir com CEP.
     "rg": re.compile(r"\b\d{1,2}\.\d{3}\.?\d{3}-?[\dxX]\b"),
-    # 8. TITULO_ELEITOR - 12 digitos com espacos opcionais (3 grupos de 4)
+    # 10. TITULO_ELEITOR - 12 digitos com espacos opcionais (3 grupos de 4)
     "titulo_eleitor": re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b"),
-    # 9. PHONE_BR - telefone brasileiro 10-11 digitos
+    # 11. PHONE_BR - telefone brasileiro 10-11 digitos
     "phone_br": re.compile(r"(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}[\s-]?\d{4}"),
-    # 10. CEP - 8 digitos (5+3 com hifen opcional). Roda DEPOIS de RG.
+    # 12. CEP - 8 digitos (5+3 com hifen opcional). Roda DEPOIS de RG.
     "cep": re.compile(r"\b\d{5}-?\d{3}\b"),
-    # 11. CARTAO - cartao de credito 16 (Visa/MC) ou 15 (Amex) digitos.
+    # 13. CARTAO - cartao de credito 16 (Visa/MC) ou 15 (Amex) digitos.
     # Agrupamento explicito (4-4-4-4 ou 4-6-5) para nao colidir com phone.
     "cartao": re.compile(
         r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"

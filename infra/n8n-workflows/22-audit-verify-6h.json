@@ -89,23 +89,50 @@
     },
     {
       "parameters": {
-        "resource": "conversation",
-        "operation": "create",
-        "accountId": 1,
-        "inboxId": 1,
-        "sourceId": "audit-chain",
-        "additionalFields": {
-          "message": "AUDIT CHAIN QUEBRADA! Investigar imediatamente. last_valid_position={{ $json.last_valid_position }}"
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "={{ $json.source_id || $json.id || 'n8n-wf' }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.mensagem || $json.message || JSON.stringify($json) }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
         }
       },
       "id": "alerta-audit-chain-quebrada",
       "name": "Alerta Audit Chain Quebrada",
-      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         900,
         200
-      ],
-      "typeVersion": 1
+      ]
     }
   ],
   "connections": {

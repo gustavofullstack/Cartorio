@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import os
 import time
 from typing import Annotated
 
@@ -768,108 +769,86 @@ async def health_radar() -> dict:
     response_description="Status do backup: ok=true se ultimo < 26h, senao ok=false.",
 )
 async def health_backup() -> dict:
-    """Verifica idade e tamanho do backup diario."""
-    import os
-    import subprocess
+    """Verifica idade e tamanho do backup diario.
+
+    E1.S4.T2 (fix 2026-06-23): leitura DIRETA via `os.listdir` + `os.path.getmtime`.
+    NAO usa `subprocess` nem `docker exec` (privilegios desnecessarios).
+
+    Pre-requisito OPS (NAO codigo):
+      Volume mount do diretorio de backups no container cartorio_api.
+      Em Easypanel: Services > cartorio_api > Volumes > Mount:
+        Host: /var/backups/cartorio
+        Container: /var/backups/cartorio
+        Mode: read-only (recomendado)
+      Sem o mount, o diretorio nao existe no container e o endpoint
+      retorna ok=false com `error="No such directory"`.
+
+    Usado pelo N8N workflow #09 (Monitor Backup Diario) que alerta via
+    Chatwoot se backup falhou ou esta ausente ha > 26h.
+    """
     from datetime import datetime, timezone
 
     BACKUP_DIR = "/var/backups/cartorio"
-    last_backup_age_hours = None
+    last_backup_age_hours: float | None = None
     file_count = 0
-    dir_size = "0"
+    total_size_bytes = 0
     ok = False
-    last_backup_iso = None
+    last_backup_iso: str | None = None
+    error_msg: str | None = None
 
     try:
-        # Executa via docker exec se estiver rodando num container sem acesso direto
-        # Tenta local primeiro; fallback para SSH via Tailscale se falhar
-        if os.path.isdir(BACKUP_DIR):
-            base = BACKUP_DIR
-            use_docker = False
-        else:
-            # Estamos em container - tenta via docker exec no host
-            base = BACKUP_DIR
-            use_docker = True
+        if not os.path.isdir(BACKUP_DIR):
+            return {
+                "ok": False,
+                "error": f"Diretorio de backup nao acessivel: {BACKUP_DIR} (verificar volume mount)",
+                "file_count": 0,
+                "dir_size": "?",
+                "last_backup_age_hours": None,
+                "last_backup_iso": None,
+                "age_hours": None,
+            }
 
-        if use_docker:
-            r = subprocess.run(
-                ["docker", "exec", "cartorio_api.1.", "ls", "-la", BACKUP_DIR],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-        else:
-            r = subprocess.run(
-                ["ls", "-la", BACKUP_DIR],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
+        # Lista arquivos .tar.gz e calcula idade + tamanho
+        newest_mtime: float | None = None
+        for entry in os.listdir(BACKUP_DIR):
+            if not entry.endswith(".tar.gz"):
+                continue
+            full_path = os.path.join(BACKUP_DIR, entry)
+            try:
+                mtime = os.path.getmtime(full_path)
+                size = os.path.getsize(full_path)
+            except OSError:
+                # Arquivo sumiu entre listdir e stat (race) — pula
+                continue
+            file_count += 1
+            total_size_bytes += size
+            if newest_mtime is None or mtime > newest_mtime:
+                newest_mtime = mtime
 
-        files = [
-            ln.strip() for ln in (r.stdout or "").splitlines() if ln.strip().endswith(".tar.gz")
-        ]
-        file_count = len(files)
-
-        # Pega o mais recente por mtime
-        if use_docker:
-            r2 = subprocess.run(
-                [
-                    "docker",
-                    "exec",
-                    "cartorio_api.1.",
-                    "find",
-                    BACKUP_DIR,
-                    "-name",
-                    "*.tar.gz",
-                    "-printf",
-                    "%T@ %p\n",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-        else:
-            r2 = subprocess.run(
-                ["find", BACKUP_DIR, "-name", "*.tar.gz", "-printf", "%T@ %p\n"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-        items = sorted(
-            [ln.strip() for ln in (r2.stdout or "").splitlines() if ln.strip()],
-            key=lambda x: float(x.split()[0]),
-            reverse=True,
-        )
-        if items:
-            newest_mtime = float(items[0].split()[0])
-            age_s = datetime.now(timezone.utc).timestamp() - newest_mtime
+        if newest_mtime is not None:
+            now_ts = datetime.now(timezone.utc).timestamp()
+            age_s = now_ts - newest_mtime
             last_backup_age_hours = round(age_s / 3600, 1)
-            last_backup_iso = datetime.fromtimestamp(newest_mtime, timezone.utc).isoformat()
-
-        # Tamanho do diretorio
-        if use_docker:
-            r3 = subprocess.run(
-                ["docker", "exec", "cartorio_api.1.", "du", "-sh", BACKUP_DIR],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-        else:
-            r3 = subprocess.run(
-                ["du", "-sh", BACKUP_DIR],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-        dir_size = (r3.stdout or "").split()[0] if r3.stdout else "?"
-
-        ok = last_backup_age_hours is not None and last_backup_age_hours < 26
+            last_backup_iso = datetime.fromtimestamp(
+                newest_mtime, timezone.utc
+            ).isoformat()
+            ok = last_backup_age_hours < 26
 
     except Exception as e:
-        return {"ok": False, "error": str(e), "file_count": 0, "dir_size": "?"}
+        error_msg = f"{type(e).__name__}: {e}"
 
-    return {
+    # Humaniza tamanho: B / K / M / G
+    dir_size = "0"
+    if total_size_bytes >= 1024**3:
+        dir_size = f"{total_size_bytes / 1024**3:.1f}G"
+    elif total_size_bytes >= 1024**2:
+        dir_size = f"{total_size_bytes / 1024**2:.1f}M"
+    elif total_size_bytes >= 1024:
+        dir_size = f"{total_size_bytes / 1024:.1f}K"
+    elif total_size_bytes > 0:
+        dir_size = f"{total_size_bytes}B"
+
+    payload: dict = {
         "ok": ok,
         "last_backup_age_hours": last_backup_age_hours,
         "last_backup_iso": last_backup_iso,
@@ -877,6 +856,9 @@ async def health_backup() -> dict:
         "dir_size": dir_size,
         "age_hours": last_backup_age_hours,
     }
+    if error_msg:
+        payload["error"] = error_msg
+    return payload
 
 
 # ============================================================================

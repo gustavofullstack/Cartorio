@@ -87,40 +87,93 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "sendText",
-        "instanceName": "cartorio-2notas",
-        "number": "={{ $('Extract Cliente').item.json.telefone }}",
-        "text": "=Ola! Bem-vindo ao Cartorio 2 Notas de Uberlandia. Para continuar, confirme o consentimento LGPD: SIM. Para sair: PARAR."
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/cartorio-2notas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Extract Cliente').item.json.telefone }}"
+            },
+            {
+              "name": "text",
+              "value": "=Ola! Bem-vindo ao Cartorio 2 Notas de Uberlandia. Para continuar, confirme o consentimento LGPD: SIM. Para sair: PARAR."
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "evolution-boas-vindas",
       "name": "Evolution Boas-Vindas",
-      "type": "n8n-nodes-evolution-api.evo-api",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         900,
         200
-      ],
-      "typeVersion": 1
+      ]
     },
     {
       "parameters": {
-        "resource": "conversation",
-        "operation": "create",
-        "accountId": 1,
-        "inboxId": 1,
-        "sourceId": "cliente-sem-consent",
-        "additionalFields": {
-          "message": "Cliente {{ $('Extract Cliente').item.json.cliente_id }} sem consentimento. Necessario intervencao humana."
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "={{ $json.source_id || $json.id || 'n8n-wf' }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.mensagem || $json.message || JSON.stringify($json) }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
         }
       },
       "id": "chatwoot-sem-consent",
       "name": "Chatwoot Sem Consent",
-      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         900,
         400
-      ],
-      "typeVersion": 1
+      ]
     }
   ],
   "connections": {

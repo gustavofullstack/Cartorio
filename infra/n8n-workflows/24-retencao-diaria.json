@@ -7,7 +7,10 @@
       "parameters": {
         "rule": {
           "interval": [
-            {"field": "hours", "hoursInterval": 24}
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
           ]
         }
       },
@@ -15,7 +18,10 @@
       "name": "Cron Diario 02:00 BRT",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -24,23 +30,37 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
-            {"name": "X-Canal", "value": "cron"}
+            {
+              "name": "apikey",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "X-Canal",
+              "value": "cron"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {"name": "dry_run", "value": false}
+            {
+              "name": "dry_run",
+              "value": false
+            }
           ]
         },
-        "options": {"timeout": 60000}
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "post-retencao",
       "name": "POST /admin/retencao/run",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -49,24 +69,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "api_access_token", "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"},
-            {"name": "Content-Type", "value": "application/json"}
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {"name": "source_id", "value": "retencao-diaria"},
-            {"name": "message", "value": "=🗂️ Retencao Diaria (LGPD):\n• Escaneados: {{ $json.scanned }}\n• Soft delete 5y: {{ $json.soft_deleted_5y.length }}\n• Soft delete inativo: {{ $json.soft_deleted_inativo.length }}\n• Erros: {{ $json.errors.length }}\n• Duracao: {{ $json.duration_ms }}ms\n• Cutoff 5y: {{ $json.cutoff_5y }}\n• Cutoff inativo: {{ $json.cutoff_inativo }}"}
+            {
+              "name": "source_id",
+              "value": "retencao-diaria"
+            },
+            {
+              "name": "message",
+              "value": "=🗂️ Retencao Diaria (LGPD):\n• Escaneados: {{ $json.scanned }}\n• Soft delete 5y: {{ $json.soft_deleted_5y.length }}\n• Soft delete inativo: {{ $json.soft_deleted_inativo.length }}\n• Erros: {{ $json.errors.length }}\n• Duracao: {{ $json.duration_ms }}ms\n• Cutoff 5y: {{ $json.cutoff_5y }}\n• Cutoff inativo: {{ $json.cutoff_inativo }}"
+            }
           ]
         },
-        "options": {"timeout": 10000}
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "alert-chatwoot",
       "name": "Alerta Chatwoot",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 200]
+      "position": [
+        680,
+        200
+      ]
     },
     {
       "parameters": {
@@ -75,27 +112,51 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"}
+            {
+              "name": "apikey",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
           ]
         },
-        "options": {"timeout": 30000}
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "verify-audit",
       "name": "Verificar audit chain",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [680, 420]
+      "position": [
+        680,
+        420
+      ]
     }
   ],
   "connections": {
     "Cron Diario 02:00 BRT": {
-      "main": [[{"node": "POST /admin/retencao/run", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "POST /admin/retencao/run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /admin/retencao/run": {
       "main": [
         [
-          {"node": "Alerta Chatwoot", "type": "main", "index": 0},
-          {"node": "Verificar audit chain", "type": "main", "index": 0}
+          {
+            "node": "Alerta Chatwoot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Verificar audit chain",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
@@ -104,6 +165,13 @@
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "tags": [{"name": "cron"}, {"name": "lgpd"}],
+  "tags": [
+    {
+      "name": "cron"
+    },
+    {
+      "name": "lgpd"
+    }
+  ],
   "meta": null
 }

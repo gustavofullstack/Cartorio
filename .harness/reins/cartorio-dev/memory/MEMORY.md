@@ -70,6 +70,34 @@ Regra:
 
 Reutilizavel: toda vez que um briefing vier com "tem N fails", rodar \`pytest --no-cov -q 2>&1 | tail -5\` ANTES de planejar fix. Custo: 5s. Beneficio: nao queimar 60-90min em bug-fantasma.
 
+### Briefing stale anti-pattern - 2o caso (2026-06-23 19:22 BRT)
+Type: anti-pattern
+
+Briefing do parent session (mvs_840ea91043b6447ba0d4d215927d6c46) dizia:
+- master HEAD = 3b85746 (LGPD audit workflows)  <- ERRADO, real era 6d6d608
+- /tmp/cartorio-build/ NAO EXISTE - T19 WS ja merged  <- VERDADE
+- test_endpoint_registered_in_app PASSANDO (12/12)  <- VERDADE
+- 9 FAILURES REAIS em tests/integration/test_llm_output_scrub.py  <- ERRADO
+
+Realidade verificada:
+- master HEAD = 6d6d608 (working tree CLEAN)
+- test_llm_output_scrub.py: 14/14 PASSED em 0.57s
+- pytest tests/ completo: 345 passed, 2 skipped, 37 deselected, 0 failed
+
+A "feature" ja tinha sido entregue em 2 commits durante a janela do briefing:
+- 60a715f "feat: implement output PII scrubbing for LLM responses and add IP address truncation to audit logs for LGPD compliance."
+- 6d6d608 "feat: add output PII scrubbing tracking to integration models and propagate request context to OpenCode-Go, while updating RIPD documentation."
+
+Confirmado: parent session estava olhando para state STALE (provavelmente copy-paste de briefing anterior, ou memoria de contexto desatualizada). O briefing 60a715f ja entrega exatamente o que foi pedido.
+
+Licao:
+1. Briefing pode estar 2-3 commits atras. SEMPRE rodar `git log master -3 --oneline` e `pytest tests/<file> --no-cov -q` ANTES de qualquer acao.
+2. Working tree state pode mudar DURANTE a janela do briefing - parent pode ter commit feito enquanto eu lia. Re-verificar antes de reportar.
+3. Quando briefing pedir "fix de 9 fails em X" e master tem commit "feat: implement X", o briefing esta obsoleto.
+4. Reportar discrepancia com output literal do pytest e git log master. NUNCA inventar fix pra bug-fantasma.
+
+Reforco da regra anterior: este e o 2o caso em <24h. Padrao recorrente, NAO eh excecao.
+
 ### Pydantic Settings singleton trap em testes (2026-06-23)
 Type: anti-pattern
 
@@ -82,3 +110,37 @@ Fix correto: setar a env var em `tests/conftest.py` ANTES de `from app.config im
 Reutilizavel: QUALQUER projeto FastAPI + Pydantic Settings v2 com `settings = get_settings()` no module level. Verificar SEMPRE antes de debugar "auth 401 misteriosos" em tests.
 
 Licao: o conftest.py NAO e' so pra fixtures — e' tambem o unico lugar garantido de rodar antes do singleton ser criado. Trate conftest.py como bootstrap de env state.
+
+### "Theater of compliance" - tests verde != compliance real (2026-06-23)
+Type: anti-pattern
+
+Contexto: cartorio-dev Sprint 1.7 — output LLM scrub foi shipped em 60a715f + 6d6d608. Tests 14/14 verde em test_llm_output_scrub.py. POREM o test docstring documenta LIMITACOES explicitamente:
+
+  test_llm_output_scrub.py linhas 19-22:
+  'Limites documentados (NAO escopo desta entrega):
+   - CNH sem regex -> nao eh redacted (D3 backlog)
+   - CNS sem regex -> nao eh redacted (D3 backlog)'
+
+  Linhas 16-17:
+  'correcoes virao em D3 CNS-anchored'
+
+Realidade verificada:
+- scrub() em app/services/pii.py NAO tem CNS nem CNH (grep vazio)
+- output scrubber novo USA scrub() — portanto tambem nao pega CNS/CNH
+- LGPD art. 11 (dado sensivel saude) violado na boundary 2 (output do LLM)
+- Passa tests, falha na vida real = "theater of compliance"
+
+Sintoma: pytest verde + docstring dizendo "NAO escopo desta entrega" + backlog itemizado (D3). Trio classico de "compliance fake".
+
+Licao:
+1. **Pytest verde NAO garante compliance.** Test docstring pode DOCUMENTAR gaps explicitos ("NAO escopo desta entrega"). Antes de fechar ticket LGPD, ler docstring E backlog.
+2. **Procurar "TODO backlog" / "D3" / "NAO escopo" / "limitation" / "futura entrega"** em test docstrings. Saida de compliance theater quase sempre tem marker textual.
+3. **Verificar regex no scrub() ANTES de assumir cobertura.** `grep -E "CNH|CNS" app/services/pii.py` deve retornar matches. Se vazio = gap real.
+4. **Compliance gap != bug-fantasma.** Bug-fantasma eh "teste diz fail mas passa". Compliance gap eh "teste passa mas coverage eh intencionalmente incompleto e documentado". Ambos precisam ser reportados, mas o segundo NAO pode ser silenciado como "ja feito".
+
+Acao recomendada:
+- Antes de dar "LGPD-XXX done", SEMPRE: (a) ler test docstring, (b) grep regex do scrub(), (c) verificar backlog items referenciados, (d) confirmar com cartorio-lgpd se o gap esta aprovado formalmente.
+- Se gap for ART. 11 (saude) ou ART. 7 (consentimento) → P0 imediato, NAO deferir.
+- Documentar gaps em RIPD/MEMORY para que proxima sprint pegue.
+
+Reutilizavel: qualquer projeto com pipeline LGPD/HIPAA/PCI onde tests tem docstring "limitation" ou backlog deferido. Buscar marcadores: "NAO escopo", "D<X> backlog", "limitation", "future work", "will be addressed in", "TODO backlog".

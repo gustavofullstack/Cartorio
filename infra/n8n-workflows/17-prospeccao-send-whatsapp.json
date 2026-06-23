@@ -71,20 +71,46 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "sendText",
-        "instanceName": "cartorio-2notas",
-        "number": "={{ $json.telefone }}",
-        "text": "={{ $json.mensagem }}"
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/cartorio-2notas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.telefone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.mensagem }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "evolution-send-whatsapp",
       "name": "Evolution Send WhatsApp",
-      "type": "n8n-nodes-evolution-api.evo-api",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         900,
         300
-      ],
-      "typeVersion": 1
+      ]
     },
     {
       "parameters": {

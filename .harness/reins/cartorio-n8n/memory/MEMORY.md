@@ -105,3 +105,65 @@ ACAO pendente (apos Gustavo GO):
 3. WF #11 corrigir typo de URL hardcoded
 
 WF #00 Error Handler v4: node 'Alerta Chatwoot' aponta URL = https://api.2notasudi.com.br/api/v1/atendimento. BUG no nome - eh backend /atendimento, nao Chatwoot. Renomear node.
+
+### Pai/orquestrador pode ter contexto stale do master (2026-06-23)
+Type: pitfall
+
+Pai me pediu para commitar 18 workflows N8N (13-30) assumindo master = 3b85746 e arquivos como untracked. REALIDADE: master = 60a715f (avancou 4 commits alem de 3b85746), arquivos 13-30 JA FORAM COMMITADOS em 3713d10 (autor Pietra, 2026-06-23 19:21 BRT).
+
+REGRA: antes de aceitar tarefa de commit em massa, validar com 3 checks:
+1. `git status -uall <dir>` -> working tree realmente tem os arquivos untracked?
+2. `git ls-files <dir>` -> arquivos ja tracked?
+3. `git log master -5` -> master HEAD real confere com referencia do pai?
+
+Se working tree esta CLEAN e arquivos estao tracked, REPORTAR BLOCK com evidencia, NAO tentar git add (vai no-op silencioso) nem re-commit vazio. Pai provavelmente teve contexto pre-snapshot (handoff file stale).
+
+Em paralelo, validar JSON parse de cada arquivo (python3 -c "import json; json.load(open(f))") ANTES de qualquer commit. 22 arquivos do range 13-30 validados OK no caso 3713d10.
+
+### N8N public API strict schema quirks (2026-06-23)
+Type: pitfall
+
+POST /api/v1/workflows rejeita 'description', 'tags', 'active' no body:
+- "request/body must NOT have additional properties" (description)
+- "request/body/tags is read-only" (tags)
+- "request/body/active is read-only" (active)
+
+POST body minimo aceito: {name, nodes, connections, settings}.
+PATCH separado: /workflows/{id} com {description, tags} para setar depois.
+Activate: POST /workflows/{id}/activate SEM body (vazio {} OK).
+
+Regra: para criar WF via API, sempre POST minimo + PATCH tags/description + POST activate.
+
+### N8N Chatwoot/Evolution custom nodes nao aceitam activate (2026-06-23)
+Type: pitfall
+
+@devlikeapro/n8n-nodes-chatwoot.Chatwoot e n8n-nodes-evolution-api.evo-api dao erro 'Unrecognized node type' no POST /activate, mesmo estando listados nos installed types do n8n.
+
+A variant correta do Evolution (ja usada em WF 12 staging) eh n8n-nodes-evolution-api.evolutionApi. MAS testei em WF simples (TEST-EVO) e deu "Cannot publish workflow: Missing required credential: evolutionApi" - ou seja, nao testei activate ate o fim com essa variant.
+
+Workaround USADO em TODOS os 18 E6 WFs: substituir por httpRequest (mesmo padrao do WF 03 v1):
+- Chatwoot: POST https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations, header api_access_token={{ $env.CHATWOOT_BOT_TOKEN }}, body {source_id, message, inbox_id}
+- Evolution: POST {{ $env.EVOLUTION_API_URL }}/message/sendText/cartorio-2notas, header apikey={{ $env.EVOLUTION_API_KEY }}, body {number, text}
+
+Quando for migrar de httpRequest para node oficial (exigencia E6), TESTAR em staging primeiro com 1 WF de cada tipo antes de promover 18.
+
+### N8N IF node main[1] empty array bug (2026-06-23)
+Type: pitfall
+
+connections.<IF_NODE>.main[1] (false branch) com [] empty array da erro 'unknown_connection_target' no POST /workflows. Solucao: ou omitir a entrada, ou conectar a um NoOp node real.
+
+Achei em 25-protocolo-concluido-pdf.json (pre-existing, nao E6) que tem connections.Tem concluidos?.main[0][1].node = "Noop (sem concluidos)" mas o node "Noop (sem concluidos)" nao existe no nodes[] array.
+
+### E6 WFs criados (2026-06-23)
+Type: deliverable
+
+18 WFs E6.S2.T1-T18 criados em https://flow.2notasudi.com.br (N8N):
+- 11 ATIVOS (non-PII): #14, #16, #18, #21, #22, #24-daily, #25, #26, #28, #29, #30
+- 7 DRAFT (PII, LGPD review): #13, #15, #17, #19, #20, #23-lgpd-esqueci, #27
+- IDs salvos em scratchpad parent mvs_c2508947ba0f4a738139f90b9c3e75a8 (enviei Report 2)
+
+Gate activate=true para PII WFs: cartorio-dev PR LGPD-015 merged + cartorio-lgpd review (mvs_d4fa1b1a).
+
+JSON sources canonicos em /Users/gustavoalmeida/projetos/Cartorio/infra/n8n-workflows/{NN}-{slug}.json. Todos com env refs $env.X (zero hardcoded secrets - auditoria limpa).
+
+Total n8n WFs: 37 (era 18 antes E6). Total ativos: 28 (era 15).

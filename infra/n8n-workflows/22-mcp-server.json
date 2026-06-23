@@ -1,1 +1,71 @@
-{"updatedAt":"2026-06-23T17:37:51.910Z","createdAt":"2026-06-23T17:37:51.910Z","id":"kTZUoh8ejvGxT8m9","name":"MCP - Server Tools (T22) v2","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{},"id":"mcp-trigger-v2","name":"MCP Server Trigger","type":"@n8n/n8n-nodes-langchain.mcpTrigger","typeVersion":1,"position":[240,300],"webhookId":"67260601-4c9b-432f-9f97-f653ef1c51c8"}],"connections":{},"settings":{"executionOrder":"v1"},"staticData":null,"meta":null,"nodeGroups":[],"pinData":null,"versionId":"cc861e8f-6319-4442-a2d6-2782e9b884fb","activeVersionId":null,"versionCounter":1,"triggerCount":0,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T17:37:51.910Z","createdAt":"2026-06-23T17:37:51.910Z","role":"workflow:owner","workflowId":"kTZUoh8ejvGxT8m9","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[{"updatedAt":"2026-06-23T17:32:50.917Z","createdAt":"2026-06-23T17:32:50.917Z","id":"qIO7CBdOUpUxN8ZC","name":"cartorio"},{"updatedAt":"2026-06-23T17:32:53.182Z","createdAt":"2026-06-23T17:32:53.182Z","id":"MTDUkNciQitucnCo","name":"webhook"}],"activeVersion":null}
+{
+  "updatedAt": "2026-06-23T17:37:51.910Z",
+  "createdAt": "2026-06-23T17:37:51.910Z",
+  "id": "kTZUoh8ejvGxT8m9",
+  "name": "MCP - Server Tools (T22) v2",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "mcp-trigger-v2",
+      "name": "MCP Server Trigger",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "67260601-4c9b-432f-9f97-f653ef1c51c8"
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "cc861e8f-6319-4442-a2d6-2782e9b884fb",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T17:37:51.910Z",
+      "createdAt": "2026-06-23T17:37:51.910Z",
+      "role": "workflow:owner",
+      "workflowId": "kTZUoh8ejvGxT8m9",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-06-23T17:32:50.917Z",
+      "createdAt": "2026-06-23T17:32:50.917Z",
+      "id": "qIO7CBdOUpUxN8ZC",
+      "name": "cartorio"
+    },
+    {
+      "updatedAt": "2026-06-23T17:32:53.182Z",
+      "createdAt": "2026-06-23T17:32:53.182Z",
+      "id": "MTDUkNciQitucnCo",
+      "name": "webhook"
+    }
+  ],
+  "activeVersion": null
+}

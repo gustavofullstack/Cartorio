@@ -7,7 +7,10 @@
       "parameters": {
         "rule": {
           "interval": [
-            {"field": "minutes", "minutesInterval": 5}
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
           ]
         }
       },
@@ -15,7 +18,10 @@
       "name": "Cron 5min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -24,35 +30,58 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
-            {"name": "X-Canal", "value": "cron"}
+            {
+              "name": "apikey",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "X-Canal",
+              "value": "cron"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {"name": "minutos", "value": 10},
-            {"name": "limit", "value": 50}
+            {
+              "name": "minutos",
+              "value": 10
+            },
+            {
+              "name": "limit",
+              "value": 50
+            }
           ]
         },
-        "options": {"timeout": 30000}
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "buscar-concluidos",
       "name": "API: buscar concluidos",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {"caseSensitive": true, "typeValidation": "strict"},
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "tem-itens",
               "leftValue": "={{ $json.items.length }}",
               "rightValue": 0,
-              "operator": {"type": "number", "operation": "gt"}
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
             }
           ],
           "combinator": "and"
@@ -62,7 +91,10 @@
       "name": "Tem concluidos?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -73,7 +105,10 @@
       "name": "Split Out (1 item por vez)",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [900, 200]
+      "position": [
+        900,
+        200
+      ]
     },
     {
       "parameters": {
@@ -82,20 +117,31 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
-            {"name": "Content-Type", "value": "application/json"}
+            {
+              "name": "apikey",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"protocolo_id\": {{ $json.id }},\n  \"formato\": \"pdf\"\n}",
-        "options": {"timeout": 30000}
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "gerar-pdf",
       "name": "Gerar PDF assinado",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1120, 200]
+      "position": [
+        1120,
+        200
+      ]
     },
     {
       "parameters": {
@@ -104,20 +150,31 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}"},
-            {"name": "Content-Type", "value": "application/json"}
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"number\": \"{{ $('Split Out (1 item por vez)').item.json.cliente.telefone }}\",\n  \"text\": \"🎉 *Protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} CONCLUÍDO!*\\n\\nSua escritura/certidão está pronta.\\n\\n📎 PDF: {{ $json.url_pdf }}\\n\\nPode retirar no cartório (seg-sex 09h-17h) com RG e CPF.\\n\\nDúvidas? É só chamar aqui! 📜\"\n}",
-        "options": {"timeout": 30000}
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "enviar-whatsapp",
       "name": "Evolution: enviar PDF via WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1340, 200]
+      "position": [
+        1340,
+        200
+      ]
     },
     {
       "parameters": {
@@ -126,24 +183,41 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "api_access_token", "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"},
-            {"name": "Content-Type", "value": "application/json"}
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {"name": "source_id", "value": "protocolo-concluido-pdf"},
-            {"name": "message", "value": "=📬 PDF enviado para cliente: protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} (canal whatsapp, cliente {{ $('Split Out (1 item por vez)').item.json.cliente.nome }})."}
+            {
+              "name": "source_id",
+              "value": "protocolo-concluido-pdf"
+            },
+            {
+              "name": "message",
+              "value": "=📬 PDF enviado para cliente: protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} (canal whatsapp, cliente {{ $('Split Out (1 item por vez)').item.json.cliente.nome }})."
+            }
           ]
         },
-        "options": {"timeout": 10000}
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "log-chatwoot",
       "name": "Log Chatwoot (auditoria interna)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1560, 200]
+      "position": [
+        1560,
+        200
+      ]
     }
   ],
   "connections": {
@@ -172,8 +246,16 @@
     "Tem concluidos?": {
       "main": [
         [
-          {"node": "Split Out (1 item por vez)", "type": "main", "index": 0},
-          {"node": "Noop (sem concluidos)", "type": "main", "index": 0}
+          {
+            "node": "Split Out (1 item por vez)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Noop (sem concluidos)",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -216,9 +298,15 @@
     "callerPolicy": "workflowsFromSameOwner"
   },
   "tags": [
-    {"name": "cron"},
-    {"name": "pdf"},
-    {"name": "concluido"}
+    {
+      "name": "cron"
+    },
+    {
+      "name": "pdf"
+    },
+    {
+      "name": "concluido"
+    }
   ],
   "meta": null
 }

@@ -50,20 +50,46 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "sendText",
-        "instanceName": "cartorio-2notas",
-        "number": "={{ $json.telefone }}",
-        "text": "=Ola{{ $json.nome ? ' ' + $json.nome : '' }}! Bem-vindo ao Cartorio 2 Notas de Uberlandia. Antes de continuar, preciso do seu consentimento LGPD. Responda SIM para aceitar, NAO para recusar, PARAR para sair."
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/cartorio-2notas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.telefone }}"
+            },
+            {
+              "name": "text",
+              "value": "=Ola{{ $json.nome ? ' ' + $json.nome : '' }}! Bem-vindo ao Cartorio 2 Notas de Uberlandia. Antes de continuar, preciso do seu consentimento LGPD. Responda SIM para aceitar, NAO para recusar, PARAR para sair."
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "evolution-welcome",
       "name": "Evolution Welcome",
-      "type": "n8n-nodes-evolution-api.evo-api",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         680,
         300
-      ],
-      "typeVersion": 1
+      ]
     },
     {
       "parameters": {

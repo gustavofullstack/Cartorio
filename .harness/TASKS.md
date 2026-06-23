@@ -294,23 +294,23 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 
 ### Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks
 
-- [ ] **E6.S2.T1** WF #13: OpenClaw Chat Bridge (recebe msg OpenClaw → encaminha p/ API webhook) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T2** WF #14: Opencode-Go LLM Fallback (se OpenClaw falhar, chama Opencode-Go direto) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T3** WF #15: Session Sync (sincroniza sessão Redis ↔ DB a cada 5min) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T4** WF #16: Prospecção Lead Enrichment (enriquece lead novo com dados ANOREG/Google) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T5** WF #17: Prospecção Send WhatsApp (dispara mensagem inicial + tracking opt-out) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T6** WF #18: Prospecção Follow-up D+7 (automático se lead não respondeu) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T7** WF #19: Cliente Criado (novo cliente → boas-vindas LGPD → menu inicial) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T8** WF #20: Protocolo Criado (workflow emite protocolo provisório + notifica escrevente) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T9** WF #21: Backup Status 5min (cron rápido com heartbeat) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T10** WF #22: Audit Verify 6h (verifica chain SHA256) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T11** WF #23: LGPD Esqueci (cliente pede exclusão → DELETE cliente + cascade) — owner: `cartorio-n8n` + review `cartorio-lgpd`
-- [ ] **E6.S2.T12** WF #24: Daily Cleanup (roda 03:00, apaga sessões > 24h Redis + backup pre-retention) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T13** WF #25: Metrics Collector (envia Prometheus metrics p/ API) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T14** WF #26: Alerta Crítico (any service down → Telegram IM imediato) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T15** WF #27: Welcome First Time (primeira msg cliente → apresenta bot + pede consentimento) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T16** WF #28: Audit Snapshot (snapshot audit_log diário p/ S3 backup) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T17** WF #29: Rate Limit Reset (cron hourly reset counter Redis) — owner: `cartorio-n8n`
+- [x] **E6.S2.T1** WF #13: OpenClaw Chat Bridge — DONE 2026-06-23 19:21 BRT (commit 3713d10) (recebe msg OpenClaw → encaminha p/ API webhook) — owner: `cartorio-n8n`
+- [x] **E6.S2.T2** WF #14: Opencode-Go LLM Fallback — DONE 2026-06-23 19:21 BRT (commit 3713d10) (se OpenClaw falhar, chama Opencode-Go direto) — owner: `cartorio-n8n`
+- [x] **E6.S2.T3** WF #15: Session Sync — DONE 2026-06-23 19:21 BRT (commit 3713d10) (sincroniza sessão Redis ↔ DB a cada 5min) — owner: `cartorio-n8n`
+- [x] **E6.S2.T4** WF #16: Prospecção Lead Enrichment — DONE 2026-06-23 19:21 BRT (commit 3713d10) (enriquece lead novo com dados ANOREG/Google) — owner: `cartorio-n8n`
+- [x] **E6.S2.T5** WF #17: Prospecção Send WhatsApp — DONE 2026-06-23 19:21 BRT (commit 3713d10) (dispara mensagem inicial + tracking opt-out) — owner: `cartorio-n8n`
+- [x] **E6.S2.T6** WF #18: Prospecção Follow-up D+7 — DONE 2026-06-23 19:21 BRT (commit 3713d10) (automático se lead não respondeu) — owner: `cartorio-n8n`
+- [x] **E6.S2.T7** WF #19: Cliente Criado — DONE 2026-06-23 19:21 BRT (commit 3713d10) (novo cliente → boas-vindas LGPD → menu inicial) — owner: `cartorio-n8n`
+- [x] **E6.S2.T8** WF #20: Protocolo Criado — DONE 2026-06-23 19:21 BRT (commit 3713d10) (workflow emite protocolo provisório + notifica escrevente) — owner: `cartorio-n8n`
+- [x] **E6.S2.T9** WF #21: Backup Status 5min — DONE 2026-06-23 19:21 BRT (commit 3713d10) (cron rápido com heartbeat) — owner: `cartorio-n8n`
+- [x] **E6.S2.T10** WF #22: Audit Verify 6h — DONE 2026-06-23 19:21 BRT (commit 3713d10) (verifica chain SHA256) — owner: `cartorio-n8n`
+- [x] **E6.S2.T11** WF #23: LGPD Esqueci — DONE 2026-06-23 19:21 BRT (commit 3713d10) (cliente pede exclusão → DELETE cliente + cascade) — owner: `cartorio-n8n` + review `cartorio-lgpd`
+- [x] **E6.S2.T12** WF #24: Daily Cleanup — DONE 2026-06-23 19:21 BRT (commit 3713d10) (roda 03:00, apaga sessões > 24h Redis + backup pre-retention) — owner: `cartorio-n8n`
+- [x] **E6.S2.T13** WF #25: Metrics Collector — DONE 2026-06-23 19:21 BRT (commit 3713d10) (envia Prometheus metrics p/ API) — owner: `cartorio-n8n`
+- [x] **E6.S2.T14** WF #26: Alerta Crítico — DONE 2026-06-23 19:21 BRT (commit 3713d10) (any service down → Telegram IM imediato) — owner: `cartorio-n8n`
+- [x] **E6.S2.T15** WF #27: Welcome First Time — DONE 2026-06-23 19:21 BRT (commit 3713d10) (primeira msg cliente → apresenta bot + pede consentimento) — owner: `cartorio-n8n`
+- [x] **E6.S2.T16** WF #28: Audit Snapshot — DONE 2026-06-23 19:21 BRT (commit 3713d10) (snapshot audit_log diário p/ S3 backup) — owner: `cartorio-n8n`
+- [x] **E6.S2.T17** WF #29: Rate Limit Reset — DONE 2026-06-23 19:21 BRT (commit 3713d10) (cron hourly reset counter Redis) — owner: `cartorio-n8n`
 - [ ] **E6.S2.T18** WF #30: Health Deep Check (cron 15min, testa TODOS endpoints API + timeout 5s) — owner: `cartorio-n8n`
 - [ ] **E6.S2.T19** Credenciais N8N: criar `opencode-go-deepseek` (existe ✓) + `openclaw-gateway` (FALTA) + `chatwoot-api` (FALTA) + `redis-cartorio` (FALTA) — owner: `cartorio-n8n`
 - [ ] **E6.S2.T20** Workflow documentado em `infra/n8n-workflows/` (JSON export canônico) — owner: `cartorio-n8n`

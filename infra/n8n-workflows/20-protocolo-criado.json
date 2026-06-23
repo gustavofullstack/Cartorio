@@ -62,40 +62,93 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "sendText",
-        "instanceName": "cartorio-2notas",
-        "number": "={{ $json.telefone }}",
-        "text": "=Protocolo {{ $json.numero }} ({{ $json.tipo }}) criado. Acompanhe pelo nosso canal. Em ate 24h um escrevente ira analisar."
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/cartorio-2notas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.telefone }}"
+            },
+            {
+              "name": "text",
+              "value": "=Protocolo {{ $json.numero }} ({{ $json.tipo }}) criado. Acompanhe pelo nosso canal. Em ate 24h um escrevente ira analisar."
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "evolution-notifica-cliente",
       "name": "Evolution Notifica Cliente",
-      "type": "n8n-nodes-evolution-api.evo-api",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         680,
         300
-      ],
-      "typeVersion": 1
+      ]
     },
     {
       "parameters": {
-        "resource": "conversation",
-        "operation": "create",
-        "accountId": 1,
-        "inboxId": 1,
-        "sourceId": "protocolo-novo",
-        "additionalFields": {
-          "message": "Novo protocolo {{ $json.numero }} - {{ $json.tipo }} - cliente {{ $json.cliente_id }}"
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "={{ $json.source_id || $json.id || 'n8n-wf' }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.mensagem || $json.message || JSON.stringify($json) }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
         }
       },
       "id": "chatwoot-escrevente",
       "name": "Chatwoot Escrevente",
-      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         900,
         300
-      ],
-      "typeVersion": 1
+      ]
     },
     {
       "parameters": {

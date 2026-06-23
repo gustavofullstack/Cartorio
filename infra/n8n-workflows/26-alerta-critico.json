@@ -85,23 +85,50 @@
     },
     {
       "parameters": {
-        "resource": "conversation",
-        "operation": "create",
-        "accountId": 1,
-        "inboxId": 1,
-        "sourceId": "alerta-critico",
-        "additionalFields": {
-          "message": "[{{ $('Extract Alerta').item.json.severity | upper }}] {{ $('Extract Alerta').item.json.service }}: {{ $('Extract Alerta').item.json.message }}"
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "={{ $json.source_id || $json.id || 'n8n-wf' }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.mensagem || $json.message || JSON.stringify($json) }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
         }
       },
       "id": "chatwoot-critical",
       "name": "Chatwoot Critical",
-      "type": "@devlikeapro/n8n-nodes-chatwoot.Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         900,
         300
-      ],
-      "typeVersion": 1
+      ]
     }
   ],
   "connections": {

@@ -1,1 +1,314 @@
-{"updatedAt":"2026-06-23T13:54:21.683Z","createdAt":"2026-06-23T13:54:21.683Z","id":"OQRIOVHcOjpkQ0Of","name":"03 - Handoff Humano (Chatwoot)","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{"httpMethod":"POST","path":"handoff-human","responseMode":"responseNode","options":{}},"id":"webhook-trigger","name":"Webhook Handoff","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"handoff-human-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"// Normalizar payload + gerar source_id idempotente\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst text = (body.message && body.message.text) || '';\nconst reason = body.reason || 'unspecified';\nconst message_id = body.message_id || `${sender}-${Date.now()}`;\nconst instance = body.instance || 'unknown';\n\n// Inbox URL fallback (sempre retornado mesmo se Chatwoot falhar)\nconst inbox_url = `https://chatwoot.2notasudi.com.br/app/accounts/1/conversations?search=${encodeURIComponent(sender)}`;\n\nreturn { json: {\n  sender,\n  text,\n  reason,\n  message_id,\n  instance,\n  inbox_url,\n  payload: {\n    source_id: message_id,\n    contact: { phone_number: sender },\n    message: { content: text },\n    custom_attributes: {\n      handoff_reason: reason,\n      origin: 'cartorio-bot'\n    }\n  }\n}};"},"id":"normalize-payload","name":"Normalizar Payload","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"method":"POST","url":"=https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations","sendHeaders":true,"headerParameters":{"parameters":[{"name":"Content-Type","value":"application/json"},{"name":"X-Request-Source","value":"n8n-workflow-03"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify($json.payload) }}","options":{"timeout":15000,"response":{"response":{"responseFormat":"json"}},"allowUnauthorizedCerts":false}},"id":"chatwoot-conv","name":"Chatwoot Conversation","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[680,300],"onError":"continueErrorOutput","retryOnFail":false,"alwaysOutputData":true},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"handoff\",\n  \"response\": \"Transferi para um atendente humano. Acesse: {{ $('Normalizar Payload').item.json.inbox_url }}\",\n  \"chatwoot_status\": \"{{ $json.statusCode || 'unavailable' }}\",\n  \"sender\": \"{{ $('Normalizar Payload').item.json.sender }}\",\n  \"message_id\": \"{{ $('Normalizar Payload').item.json.message_id }}\",\n  \"reason\": \"{{ $('Normalizar Payload').item.json.reason }}\"\n}"},"id":"respond-ok","name":"Respond Handoff","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,300]}],"connections":{"Webhook Handoff":{"main":[[{"node":"Normalizar Payload","type":"main","index":0}]]},"Normalizar Payload":{"main":[[{"node":"Chatwoot Conversation","type":"main","index":0}]]},"Chatwoot Conversation":{"main":[[{"node":"Respond Handoff","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","saveExecutionProgress":true,"saveManualExecutions":true,"callerPolicy":"workflowsFromSameOwner"},"staticData":null,"meta":null,"nodeGroups":[],"pinData":null,"versionId":"27db47e8-0b05-42be-9179-4eec7c82b648","activeVersionId":"27db47e8-0b05-42be-9179-4eec7c82b648","versionCounter":1,"triggerCount":1,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T13:54:21.683Z","createdAt":"2026-06-23T13:54:21.683Z","role":"workflow:owner","workflowId":"OQRIOVHcOjpkQ0Of","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[],"activeVersion":{"updatedAt":"2026-06-23T13:54:21.683Z","createdAt":"2026-06-23T13:54:21.683Z","versionId":"27db47e8-0b05-42be-9179-4eec7c82b648","workflowId":"OQRIOVHcOjpkQ0Of","nodes":[{"parameters":{"httpMethod":"POST","path":"handoff-human","responseMode":"responseNode","options":{}},"id":"webhook-trigger","name":"Webhook Handoff","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"handoff-human-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"// Normalizar payload + gerar source_id idempotente\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst text = (body.message && body.message.text) || '';\nconst reason = body.reason || 'unspecified';\nconst message_id = body.message_id || `${sender}-${Date.now()}`;\nconst instance = body.instance || 'unknown';\n\n// Inbox URL fallback (sempre retornado mesmo se Chatwoot falhar)\nconst inbox_url = `https://chatwoot.2notasudi.com.br/app/accounts/1/conversations?search=${encodeURIComponent(sender)}`;\n\nreturn { json: {\n  sender,\n  text,\n  reason,\n  message_id,\n  instance,\n  inbox_url,\n  payload: {\n    source_id: message_id,\n    contact: { phone_number: sender },\n    message: { content: text },\n    custom_attributes: {\n      handoff_reason: reason,\n      origin: 'cartorio-bot'\n    }\n  }\n}};"},"id":"normalize-payload","name":"Normalizar Payload","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"method":"POST","url":"=https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations","sendHeaders":true,"headerParameters":{"parameters":[{"name":"Content-Type","value":"application/json"},{"name":"X-Request-Source","value":"n8n-workflow-03"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify($json.payload) }}","options":{"timeout":15000,"response":{"response":{"responseFormat":"json"}},"allowUnauthorizedCerts":false}},"id":"chatwoot-conv","name":"Chatwoot Conversation","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[680,300],"onError":"continueErrorOutput","retryOnFail":false,"alwaysOutputData":true},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"handoff\",\n  \"response\": \"Transferi para um atendente humano. Acesse: {{ $('Normalizar Payload').item.json.inbox_url }}\",\n  \"chatwoot_status\": \"{{ $json.statusCode || 'unavailable' }}\",\n  \"sender\": \"{{ $('Normalizar Payload').item.json.sender }}\",\n  \"message_id\": \"{{ $('Normalizar Payload').item.json.message_id }}\",\n  \"reason\": \"{{ $('Normalizar Payload').item.json.reason }}\"\n}"},"id":"respond-ok","name":"Respond Handoff","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,300]}],"connections":{"Webhook Handoff":{"main":[[{"node":"Normalizar Payload","type":"main","index":0}]]},"Normalizar Payload":{"main":[[{"node":"Chatwoot Conversation","type":"main","index":0}]]},"Chatwoot Conversation":{"main":[[{"node":"Respond Handoff","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T13:54:27.748Z","id":15,"workflowId":"OQRIOVHcOjpkQ0Of","versionId":"27db47e8-0b05-42be-9179-4eec7c82b648","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "updatedAt": "2026-06-23T13:54:21.683Z",
+  "createdAt": "2026-06-23T13:54:21.683Z",
+  "id": "OQRIOVHcOjpkQ0Of",
+  "name": "03 - Handoff Humano (Chatwoot)",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "handoff-human",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Handoff",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "handoff-human-v1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Normalizar payload + gerar source_id idempotente\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst text = (body.message && body.message.text) || '';\nconst reason = body.reason || 'unspecified';\nconst message_id = body.message_id || `${sender}-${Date.now()}`;\nconst instance = body.instance || 'unknown';\n\n// Inbox URL fallback (sempre retornado mesmo se Chatwoot falhar)\nconst inbox_url = `https://chatwoot.2notasudi.com.br/app/accounts/1/conversations?search=${encodeURIComponent(sender)}`;\n\nreturn { json: {\n  sender,\n  text,\n  reason,\n  message_id,\n  instance,\n  inbox_url,\n  payload: {\n    source_id: message_id,\n    contact: { phone_number: sender },\n    message: { content: text },\n    custom_attributes: {\n      handoff_reason: reason,\n      origin: 'cartorio-bot'\n    }\n  }\n}};"
+      },
+      "id": "normalize-payload",
+      "name": "Normalizar Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Request-Source",
+              "value": "n8n-workflow-03"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "id": "chatwoot-conv",
+      "name": "Chatwoot Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        300
+      ],
+      "onError": "continueErrorOutput",
+      "retryOnFail": false,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Transferi para um atendente humano. Acesse: {{ $('Normalizar Payload').item.json.inbox_url }}\",\n  \"chatwoot_status\": \"{{ $json.statusCode || 'unavailable' }}\",\n  \"sender\": \"{{ $('Normalizar Payload').item.json.sender }}\",\n  \"message_id\": \"{{ $('Normalizar Payload').item.json.message_id }}\",\n  \"reason\": \"{{ $('Normalizar Payload').item.json.reason }}\"\n}"
+      },
+      "id": "respond-ok",
+      "name": "Respond Handoff",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Handoff": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Payload": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot Conversation": {
+      "main": [
+        [
+          {
+            "node": "Respond Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "27db47e8-0b05-42be-9179-4eec7c82b648",
+  "activeVersionId": "27db47e8-0b05-42be-9179-4eec7c82b648",
+  "versionCounter": 1,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T13:54:21.683Z",
+      "createdAt": "2026-06-23T13:54:21.683Z",
+      "role": "workflow:owner",
+      "workflowId": "OQRIOVHcOjpkQ0Of",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-06-23T13:54:21.683Z",
+    "createdAt": "2026-06-23T13:54:21.683Z",
+    "versionId": "27db47e8-0b05-42be-9179-4eec7c82b648",
+    "workflowId": "OQRIOVHcOjpkQ0Of",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "handoff-human",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-trigger",
+        "name": "Webhook Handoff",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          240,
+          300
+        ],
+        "webhookId": "handoff-human-v1"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// Normalizar payload + gerar source_id idempotente\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst text = (body.message && body.message.text) || '';\nconst reason = body.reason || 'unspecified';\nconst message_id = body.message_id || `${sender}-${Date.now()}`;\nconst instance = body.instance || 'unknown';\n\n// Inbox URL fallback (sempre retornado mesmo se Chatwoot falhar)\nconst inbox_url = `https://chatwoot.2notasudi.com.br/app/accounts/1/conversations?search=${encodeURIComponent(sender)}`;\n\nreturn { json: {\n  sender,\n  text,\n  reason,\n  message_id,\n  instance,\n  inbox_url,\n  payload: {\n    source_id: message_id,\n    contact: { phone_number: sender },\n    message: { content: text },\n    custom_attributes: {\n      handoff_reason: reason,\n      origin: 'cartorio-bot'\n    }\n  }\n}};"
+        },
+        "id": "normalize-payload",
+        "name": "Normalizar Payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "X-Request-Source",
+                "value": "n8n-workflow-03"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.payload) }}",
+          "options": {
+            "timeout": 15000,
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "allowUnauthorizedCerts": false
+          }
+        },
+        "id": "chatwoot-conv",
+        "name": "Chatwoot Conversation",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          680,
+          300
+        ],
+        "onError": "continueErrorOutput",
+        "retryOnFail": false,
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Transferi para um atendente humano. Acesse: {{ $('Normalizar Payload').item.json.inbox_url }}\",\n  \"chatwoot_status\": \"{{ $json.statusCode || 'unavailable' }}\",\n  \"sender\": \"{{ $('Normalizar Payload').item.json.sender }}\",\n  \"message_id\": \"{{ $('Normalizar Payload').item.json.message_id }}\",\n  \"reason\": \"{{ $('Normalizar Payload').item.json.reason }}\"\n}"
+        },
+        "id": "respond-ok",
+        "name": "Respond Handoff",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          900,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Webhook Handoff": {
+        "main": [
+          [
+            {
+              "node": "Normalizar Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Normalizar Payload": {
+        "main": [
+          [
+            {
+              "node": "Chatwoot Conversation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chatwoot Conversation": {
+        "main": [
+          [
+            {
+              "node": "Respond Handoff",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Gustavo  Rodrigues",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-23T13:54:27.748Z",
+        "id": 15,
+        "workflowId": "OQRIOVHcOjpkQ0Of",
+        "versionId": "27db47e8-0b05-42be-9179-4eec7c82b648",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    ]
+  }
+}

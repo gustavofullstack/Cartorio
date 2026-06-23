@@ -14,7 +14,10 @@
       "name": "Webhook Handoff",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "handoff-human-v2"
     },
     {
@@ -26,65 +29,104 @@
       "name": "Normalizar Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
-        "operation": "createConversation",
-        "accountId": "={{ $json.chatwoot.account_id }}",
-        "additionalFields": {
-          "inbox_id": "={{ $json.chatwoot.inbox_id }}",
-          "source_id": "={{ $json.chatwoot.conversation.source_id }}",
-          "custom_attributes": "={{ $json.chatwoot.conversation.custom_attributes }}",
-          "contact": {
-            "phone_number": "={{ $json.chatwoot.contact.phone_number }}",
-            "name": "={{ $json.chatwoot.contact.name }}"
-          }
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "={{ $json.source_id || $json.id || 'cartorio-n8n' }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.mensagem || $json.message || JSON.stringify($json) }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "1"
+            }
+          ]
         },
         "options": {
-          "timeout": 15000
+          "timeout": 10000
         }
       },
       "id": "chatwoot-create-conv",
-      "name": "Chatwoot: Create Conversation",
-      "type": "n8n-nodes-chatwoot.Chatwoot",
-      "typeVersion": 1,
-      "position": [680, 300],
-      "onError": "continueErrorOutput",
-      "alwaysOutputData": true,
-      "credentials": {
-        "chatwootApi": {
-          "id": "REPLACE_WITH_CHATWOOT_CRED_ID",
-          "name": "Chatwoot API"
-        }
-      }
+      "name": "Chatwoot: Create Conversation (httpRequest)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
-        "operation": "sendMessage",
-        "accountId": "={{ $('Normalizar Payload').item.json.chatwoot.account_id }}",
-        "conversationId": "={{ $json.id || $json.conversation_id }}",
-        "message": {
-          "content": "={{ $('Normalizar Payload').item.json.text }}",
-          "message_type": "incoming"
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "={{ $json.source_id || $json.id || 'cartorio-n8n' }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.mensagem || $json.message || JSON.stringify($json) }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "1"
+            }
+          ]
         },
         "options": {
-          "timeout": 15000
+          "timeout": 10000
         }
       },
       "id": "chatwoot-send-msg",
-      "name": "Chatwoot: Send Message",
-      "type": "n8n-nodes-chatwoot.Chatwoot",
-      "typeVersion": 1,
-      "position": [900, 300],
-      "onError": "continueErrorOutput",
-      "alwaysOutputData": true,
-      "credentials": {
-        "chatwootApi": {
-          "id": "REPLACE_WITH_CHATWOOT_CRED_ID",
-          "name": "Chatwoot API"
-        }
-      }
+      "name": "Chatwoot: Send Message (httpRequest)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -95,7 +137,10 @@
       "name": "Respond Handoff",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     }
   ],
   "connections": {
@@ -151,9 +196,15 @@
     "callerPolicy": "workflowsFromSameOwner"
   },
   "tags": [
-    {"name": "chatwoot"},
-    {"name": "handoff"},
-    {"name": "whatsapp"}
+    {
+      "name": "chatwoot"
+    },
+    {
+      "name": "handoff"
+    },
+    {
+      "name": "whatsapp"
+    }
   ],
   "meta": null
 }
