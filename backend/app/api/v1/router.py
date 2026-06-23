@@ -47,11 +47,15 @@ from app.services.audit import AuditService
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
 
+# Integrations router (smoke test OpenCode-Go, etc)
+from app.api.v1.integrations import integrations_router  # noqa: E402
+
 # ============================================================================
 # Router com tags PT-BR para o Swagger/OpenAPI
 # ============================================================================
 
 api_router = APIRouter()
+api_router.include_router(integrations_router)
 
 
 # Regex do formato ANO-SEQUENCIAL (YYYY-NNNNN)
@@ -469,63 +473,42 @@ async def webhook_evolution(payload: dict) -> dict:
         handoff = True
         handoff_reason = "PII detectada"
     else:
-        # Chamar LLM
-        start_time = time.time()
+        # Chamar LLM via modulo dedicado (SRP - refator 2026-06-23).
+        # opencode_go.chat() encapsula httpx + tratamento de erro + latencia.
+        from app.integrations.opencode_go import ChatError, chat_with_settings
+
         try:
-            if settings.opencode_go_api_key and settings.opencode_go_api_key != "CHANGE_ME":
-                headers = {
-                    "Authorization": f"Bearer {settings.opencode_go_api_key}",
-                    "Content-Type": "application/json",
-                }
-                payload_data = {
-                    "model": settings.opencode_go_model,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": (
-                                "Voce e a Pietra, assistente de IA do Cartorio do 2o Oficio de "
-                                "Notas de Uberlandia. Ajude os clientes de forma prestativa, clara "
-                                "e objetiva. Se o cliente solicitar falar com um humano, ou se for "
-                                "necessario um especialista, inclua a palavra [HUMANO] na sua "
-                                "resposta para fazermos o redirecionamento. Nunca cometa erros "
-                                "legais nem invente regras; se nao souber ou for complexo, "
-                                "encaminhe para o humano com [HUMANO]."
-                            ),
-                        },
-                        {"role": "user", "content": scrub_result.text},
-                    ],
-                    "temperature": 0.2,
-                }
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    response = await client.post(
-                        f"{settings.opencode_go_base_url}/chat/completions",
-                        json=payload_data,
-                        headers=headers,
-                    )
-                    if response.status_code == 200:
-                        resp_json = response.json()
-                        bot_response = resp_json["choices"][0]["message"]["content"]
-                        usage = resp_json.get("usage", {})
-                        llm_tokens_in = usage.get("prompt_tokens")
-                        llm_tokens_out = usage.get("completion_tokens")
-                    else:
-                        bot_response = (
-                            "Desculpe, tive um problema de comunicacao com o meu cerebro de IA. "
-                            "Vou chamar um atendente humano para te ajudar. [HUMANO]"
-                        )
-                        handoff = True
-                        handoff_reason = f"LLM error status {response.status_code}"
-            else:
-                bot_response = "Recebi sua mensagem. Em breve um atendente ira responder."
-        except Exception as e:
+            llm_resp = await chat_with_settings(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Voce e a Pietra, assistente de IA do Cartorio do 2o Oficio de "
+                            "Notas de Uberlandia. Ajude os clientes de forma prestativa, clara "
+                            "e objetiva. Se o cliente solicitar falar com um humano, ou se for "
+                            "necessario um especialista, inclua a palavra [HUMANO] na sua "
+                            "resposta para fazermos o redirecionamento. Nunca cometa erros "
+                            "legais nem invente regras; se nao souber ou for complexo, "
+                            "encaminhe para o humano com [HUMANO]."
+                        ),
+                    },
+                    {"role": "user", "content": scrub_result.text},
+                ],
+            )
+            bot_response = llm_resp.content
+            llm_tokens_in = llm_resp.tokens_in
+            llm_tokens_out = llm_resp.tokens_out
+            llm_latency_ms = llm_resp.latency_ms
+        except ChatError as e:
             bot_response = (
                 "Desculpe, tive um problema de comunicacao com o meu cerebro de IA. "
                 "Vou chamar um atendente humano para te ajudar. [HUMANO]"
             )
             handoff = True
-            handoff_reason = f"LLM Exception: {str(e)}"
-
-        llm_latency_ms = int((time.time() - start_time) * 1000)
+            handoff_reason = f"LLM {e.kind}" + (
+                f" status {e.status_code}" if e.status_code else ""
+            )
+            llm_latency_ms = 0
 
         if "[HUMANO]" in bot_response:
             handoff = True
