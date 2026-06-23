@@ -23,7 +23,7 @@ from typing import Annotated
 
 import httpx
 import redis
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -429,7 +429,25 @@ async def webhook_evolution(payload: dict) -> dict:
 
     Recebe mensagem, aplica PII scrubbing, detecta intencao via LLM,
     retorna resposta. Audit log de TUDO.
+
+    Sprint 2: idempotencia via evolution_ingest (message_id) - replay nao duplica.
+    Mantem a logica inline de PII+LLM para nao quebrar o workflow #12 ativo.
     """
+    # Idempotency check (Sprint 2) - nao quebra se mensagem ja foi processada
+    from app.services.evolution_ingest import ingest_evolution_event
+
+    with session_scope() as db:
+        ingest_result = ingest_evolution_event(db, payload)
+        if ingest_result["status"] == "idempotent":
+            return {
+                "status": "idempotent",
+                "message_id": ingest_result.get("message_id"),
+                "info": "message already processed",
+            }
+        # Se rejected ou ignored, retorna sem processar LLM
+        if ingest_result["status"] in ("rejected", "ignored"):
+            return ingest_result
+
     raw_text = payload.get("message", {}).get("text", "") or ""
     sender = payload.get("sender", "unknown")
     instance = payload.get("instance", "")
@@ -1164,53 +1182,65 @@ async def obter_historico_atendimento(session_id: str) -> dict:
 
 
 # ============================================================================
-# Chatwoot webhook (v0.4.2)
+# Chatwoot webhook (v0.4.2) + Sprint 2 (HMAC + idempotency)
 # ============================================================================
 
 
 @api_router.post(
     "/webhook/chatwoot",
     tags=["webhook"],
-    summary="Webhook Chatwoot (eventos de conversa)",
+    summary="Webhook Chatwoot (HMAC + idempotency)",
     description=(
-        "Recebe webhooks do Chatwoot. Quando uma conversa e marcada como "
-        "'resolved', o atendimento correspondente e concluido (aciona "
-        "workflow #07 pesquisa satisfacao 24h depois)."
+        "Recebe webhooks do Chatwoot. Valida signature HMAC-SHA256 (se "
+        "CHATWOOT_WEBHOOK_SECRET configurado), deduplica por event_id, e "
+        "processa conversation_status_changed -> resolved marcando o "
+        "atendimento como concluido (workflow #07 pesquisa 24h depois)."
     ),
 )
-async def webhook_chatwoot(payload: dict) -> dict:
-    """Processa webhook do Chatwoot."""
-    event = payload.get("event") or payload.get("message_type") or "unknown"
+async def webhook_chatwoot(request: Request) -> dict:
+    """Processa webhook do Chatwoot com HMAC + idempotency (Sprint 2)."""
+    import json as _json
+    from app.services.chatwoot_handoff import process_chatwoot_event
 
-    if event == "conversation_status_changed":
-        conversation = payload.get("conversation", {})
-        status = payload.get("status") or conversation.get("status")
-        conv_id = conversation.get("id")
-        if status == "resolved" and conv_id:
-            from datetime import datetime, timezone
-            from sqlalchemy import select
-            from app.models.atendimento import Atendimento
+    raw_body = await request.body()
+    try:
+        payload = _json.loads(raw_body) if raw_body else {}
+    except Exception:
+        return {"status": "rejected", "reason": "invalid_json"}
 
-            with session_scope() as db:
-                a = db.execute(
-                    select(Atendimento).where(
-                        Atendimento.chatwoot_conversation_id == conv_id
-                    )
-                ).scalar_one_or_none()
-                if a and not a.concluido_em:
-                    a.concluido_em = datetime.now(timezone.utc)
-                    a.status = "concluido"
+    signature = request.headers.get("X-Chatwoot-Signature")
 
-                    AuditService.log(
-                        db,
-                        actor_id=f"chatwoot:{conv_id}",
-                        actor_type="agent",
-                        action="atendimento.concluido",
-                        resource=f"atendimento:{a.id}",
-                        payload={"chatwoot_conversation_id": conv_id},
-                    )
+    with session_scope() as db:
+        result = process_chatwoot_event(
+            db, payload, signature=signature, raw_body=raw_body
+        )
 
-    return {"ok": True, "event": event}
+    return result
+
+
+# ============================================================================
+# CRON stale detector (Sprint 2) - chamado pelo N8N workflow #23
+# ============================================================================
+
+
+@api_router.post(
+    "/cron/stale-detector",
+    tags=["cron"],
+    summary="CRON: marca atendimentos parados como stale (N8N workflow #23)",
+    description=(
+        "Chamado pelo workflow N8N #23 a cada 5min. Marca atendimentos com "
+        "updated_at > STALE_THRESHOLD_MINUTES como 'stale'. Idempotente."
+    ),
+)
+async def cron_stale_detector() -> dict:
+    """Roda stale detector."""
+    from app.services.stale_detector import mark_stale_atendimentos
+
+    with session_scope() as db:
+        result = mark_stale_atendimentos(
+            db, threshold_minutes=settings.stale_threshold_minutes
+        )
+    return result
 
 
 # ============================================================================
