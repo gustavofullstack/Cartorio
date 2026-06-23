@@ -69,6 +69,68 @@
 
 ---
 
+## v0.4.1 (2026-06-23 11:02-14:10 BRT) - SPRINT 1.1: BACKUP + WORKFLOWS + ENDPOINTS
+
+**Status**: 10 de 11 workflows N8N ativos, API v0.4.1 deployed, backup diario validado, radar GREEN.
+
+### Adicionado
+- **7 novos workflows N8N reais** (importados via API + salvos em `infra/n8n-workflows/`):
+  - #04 Consulta Protocolo (webhook POST /consulta-protocolo)
+  - #05 Agendamento Atendimento (POST /agendar-atendimento)
+  - #06 Segunda Via Documento (POST /segunda-via, requer credential Evolution API)
+  - #07 Pesquisa Satisfacao 24h (cron, requer credential Evolution API - PENDENTE)
+  - #08 Audit Verify Diario (cron 03:30, alerta Chatwoot se broken)
+  - #09 Monitor Backup Diario (cron 04:00, alerta Chatwoot se backup falhou)
+  - #10 FAQ Bot (POST /faq, KB local sem LLM)
+- **5 endpoints novos na API**:
+  - `GET /api/v1/health/backup` (para workflow #09)
+  - `GET /api/v1/agendamento/disponibilidade` (para workflow #05)
+  - `POST /api/v1/documento/segunda-via` (para workflow #06)
+  - `GET /api/v1/atendimentos/ultimas-24h` (para workflow #07 - placeholder MVP)
+  - `GET /mcp-servers` (lista 5 servers MCP registrados)
+- **Backup diario CORRIGIDO**:
+  - Script `infra/backup/cartorio-backup.sh` reescrito VPS-side (paths corretos)
+  - Cron `/etc/cron.d/cartorio-backup` corrigido (path Mac -> path VPS)
+  - N8N API key seguro em `/etc/cartorio-backup/n8n-api-key.env` (chmod 600)
+  - Volume `/var/backups/cartorio` montado readonly no service Swarm `cartorio_api` via `docker service update --mount-add`
+  - Backup validado: 2 arquivos .tar.gz, 3.3M, pg_dump de 4 DBs (cartorio/n8n/chatwoot/evolution) + workflows N8N + .env
+- **Documentacao**:
+  - `docs/ENV_PRODUCTION.md` - 13 secoes documentando todas as env vars de producao
+  - `infra/n8n-workflows/04-10` - 7 JSONs completos (entrada para backup + versionamento)
+- **Limpeza DB**:
+  - 23 tabelas de outros servicos (Chatwoot, Dify, Evoai, EvolutionBot, Flowise, etc) removidas do DB `cartorio` (cada servico tem DB proprio: chatwoot/evolution/n8n)
+  - Backend core (clientes, conversas, protocolos, documentos, audit_log) intacto
+- **Imagem Docker `easypanel/cartorio/api:v0.4.0`** construida e deployada via `docker service update`
+
+### Validado em Producao (2026-06-23 14:08 BRT)
+- `GET https://api.2notasudi.com.br/health` -> 200
+- `GET https://api.2notasudi.com.br/mcp-servers` -> 200 (5 servers)
+- `GET https://api.2notasudi.com.br/api/v1/health/radar` -> **GREEN** (5/5 servicos online)
+- `GET https://api.2notasudi.com.br/api/v1/health/backup` -> ok=true, 12min atras, 2 arquivos
+- `POST https://api.2notasudi.com.br/api/v1/documento/segunda-via` -> 200 (JSON com url_pdf)
+- N8N: 11 workflows (10 ativos, #07 pendente credential Evolution API - UI only)
+- Backup: cron 03:00 ativo, 2 backups retidos (7d window)
+- OpenClaw: respondendo via Tailscale `100.99.172.84:18789` (200 OK)
+- Chatwoot: DB conectado, 1 Account + 1 User (super_admin)
+
+### Pendencias SUI (UI Only - so Gustavo)
+1. **Workflow #07 (Pesquisa Satisfacao)**: requer credential Evolution API + instanceName. Criar via UI N8N > Credentials > New > EvolutionApi. URL: `http://cartorio_evolution-api:8080`, API key: pegar do .env da Evolution.
+2. **Chatwoot dominio custom**: `FRONTEND_URL=https://cartorio-chatwoot.dfgdxq.easypanel.host`. Adicionar `chatwoot.2notasudi.com.br` em Easypanel > cartorio_chatwoot > Domains. Atualizar env FRONTEND_URL.
+3. **DNS typo `supbase`**: decidir entre manter ou corrigir para `supabase` (afeta DNS, .env, todos clientes).
+4. **Chatwoot Agent Bot**: criar via UI super_admin > Agent Bots > New (nome `cartorio-bot`, URL webhook `https://api.2notasudi.com.br/api/v1/webhook/chatwoot` - endpoint nao existe ainda, criar na sprint 2).
+
+### Decisoes (ADR novos)
+- ADR-010: Cada servico (chatwoot/evolution/n8n) tem seu DB proprio no Supabase. Limpar tabelas duplicadas no `cartorio` DB.
+- ADR-011: Backup scripts vivem em `/usr/local/bin/` + `/etc/cartorio-backup/` (chmod 600). NAO em `/Users/gustavoalmeida/...` (path do Mac).
+- ADR-012: API exposta como MCP server via `backend/mcp_server.py` (FastMCP 6 tools). Descoberta via `GET /mcp-servers`.
+
+### Erros corrigidos (recap)
+- Backup cron apontava para path do Mac (`/Users/gustavoalmeida/...`) -> nunca rodou. Corrigido para VPS.
+- N8N workflows 2-10 eram placeholders vazios. Agora 7 deles sao workflows reais com conteudo.
+- DB `cartorio` tinha 113 tabelas (23 de outros servicos + 90 do N8N core que ficaram aqui em vez do DB `n8n`). 23 removidas; 90 do N8N ficam (risco de mexer agora).
+
+---
+
 ## v0.3.1 (2026-06-23 10:42 BRT) - INCIDENT RECOVERY
 
 **Status**: Recuperação completa após Gustavo detectar N8N vazio + Supabase "0 tables" + Chatwoot fresh.
@@ -296,29 +358,32 @@
 
 ---
 
-## RISCO ATIVO
+## RISCO ATIVO (v0.4.1 - 14:10 BRT 2026-06-23)
 
-- OpenClaw ainda pedindo token na UI (precisa `openclaw doctor --generate-gateway-token` no host)
-- Easypanel API key expirada (precisa regenerar via UI)
-- DNS typo `supbase` (decidir se corrige ou aceita como oficial)
-- 4/6 domínios ainda dependem de Gustavo via UI para config final
-- Chatwoot Agent Bot + Inbox nunca foram criados (UI)
-- 155 tabelas no cartorio database (poluído, precisa separar em schemas/databases)
+- Workflow #07 Pesquisa Satisfacao nao pode ativar sem credential Evolution API (SUI)
+- Chatwoot FRONTEND_URL ainda easypanel.host (falta adicionar dominio custom SUI)
+- Chatwoot Agent Bot `cartorio-bot` nao criado (SUI)
+- DNS typo `supbase` (decidir se mantem ou corrige)
+- 90 tabelas N8N core no DB `cartorio` em vez do DB `n8n` (separar com cuidado, nao mexer agora)
+- Easypanel API key regenerada? (verificar antes de qualquer operacao destrutiva)
 
-## ESTADO ATUAL (10:42 BRT 2026-06-23)
+## ESTADO ATUAL (14:10 BRT 2026-06-23)
 
 | Componente | Status | Notas |
 |---|---|---|
-| api.2notasudi.com.br | 200 (health) | 404 raiz é normal FastAPI |
+| api.2notasudi.com.br | 200 (v0.4.1) | 8 endpoints + Swagger + MCP |
 | whatsapp.2notasudi.com.br | 200 | Evolution v2.3.7 |
 | easypanel.2notasudi.com.br | 200 | Painel |
-| agent.2notasudi.com.br | 200 | OpenClaw UP, pede token |
+| agent.2notasudi.com.br | 200 | OpenClaw UP, Tailscale OK |
 | supbase.2notasudi.com.br | 401 | Kong correto |
-| flow.2notasudi.com.br | 200 | n8n 2.27.3, 10 workflows carregados (vazios) |
-| chatwoot.2notasudi.com.br | 000 | DNS não propagou, container UP em 3000 |
-| Tabelas cartorio_backend | 5/5 OK | clientes, conversas, documentos, protocolos, audit_log |
-| Backup diário | ATIVO | /etc/cron.d/cartorio-backup 03:00 |
+| flow.2notasudi.com.br | 200 | n8n 2.27.3, **11 workflows, 10 ativos** |
+| chatwoot.2notasudi.com.br | 000 (container UP em 3000) | falta dominio custom SUI |
+| Health Radar | **GREEN** | 5/5 servicos online |
+| Health Backup | ok=true | ultimo 12min atras, 2 arquivos |
+| Tabelas cartorio_backend | 5/5 OK | backend intacto (cleanup de 23 tabelas de outros servicos) |
+| Backup diário | ATIVO + validado | /etc/cron.d/cartorio-backup 03:00, 2 .tar.gz retidos |
 | Network monitor | ATIVO | systemd timer a cada 5min |
-| Pendências UI | 7 itens | OpenClaw, Chatwoot, Easypanel key, DNS typo |
+| MCP servers | 5 registrados | n8n/supabase/easypanel/openclaw/cartorio-api |
+| Pendências UI | 4 itens | Workflow #07 cred, Chatwoot dominio, DNS typo, Agent Bot |
 
 Modified by Gustavo Almeida
