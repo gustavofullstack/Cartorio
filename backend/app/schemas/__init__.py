@@ -1,0 +1,5 @@
+"""Schemas Pydantic do modulo API (Pydantic v2).
+
+Concentra os contratos de entrada/saida HTTP. Nunca retornar modelos
+SQLAlchemy direto no endpoint - sempre mapear pra schema.
+"""

@@ -12,6 +12,10 @@ from sqlalchemy.pool import StaticPool
 # Set test env BEFORE importing app modules
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["AUDIT_HMAC_KEY"] = "a" * 64  # 64 chars hex equivalente pra teste
+# .env local pode ter CHATWOOT_ACCOUNT_ID/INBOX_ID vazios (placeholders nao parseados
+# como int). Forca valores numericos via env vars, que tem precedencia sobre .env.
+os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
+os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
 
 from app.config import get_settings  # noqa: E402
 

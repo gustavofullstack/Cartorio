@@ -1,0 +1,71 @@
+{
+  "_comment": "Workflow 9 - Monitor Backup Diario. Roda 04:00 - le log do backup das 03:00 e alerta se falhou. v0.4.0. Owner: cartorio-n8n.",
+  "name": "09 - Monitor Backup Diario",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 4 * * *" }] }
+      },
+      "id": "cron-4am",
+      "name": "Cron 04:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/api/v1/health/backup",
+        "options": { "timeout": 10000 }
+      },
+      "id": "check-backup",
+      "name": "GET /health/backup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const r = $input.item.json;\nif (!r.ok || r.age_hours > 26) {\n  return { json: {\n    severity: 'critical',\n    message: `[BACKUP] Falhou ou ausente! Ultimo backup: ${r.last_backup_age_hours}h atras. Arquivos: ${r.file_count}. Diretorio: ${r.dir_size}.`,\n    payload: r\n  }};\n}\nreturn { json: {\n  severity: 'info',\n  message: `[BACKUP] OK - ultimo: ${r.age_hours}h atras, ${r.file_count} arquivos, ${r.dir_size}`,\n  payload: r\n}};"
+      },
+      "id": "check-result",
+      "name": "Check resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "api_access_token", "value": "={{ $env.CHATWOOT_BOT_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "source_id", "value": "backup-monitor" },
+            { "name": "message", "value": "={{ $json.message }}" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      },
+      "id": "alert",
+      "name": "Alerta Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Cron 04:00": { "main": [[{ "node": "GET /health/backup", "type": "main", "index": 0 }]] },
+    "GET /health/backup": { "main": [[{ "node": "Check resultado", "type": "main", "index": 0 }]] },
+    "Check resultado": { "main": [[{ "node": "Alerta Chatwoot", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "callerPolicy": "workflowsFromSameOwner" }
+}

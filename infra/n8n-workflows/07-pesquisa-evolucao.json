@@ -1,0 +1,82 @@
+{
+  "_comment": "Workflow 7 - Pesquisa de Satisfacao pos-atendimento. Envia pesquisa 24h apos cliente ser atendido. v0.4.0. Owner: cartorio-n8n.",
+  "name": "07 - Pesquisa Satisfacao",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 24 }] }
+      },
+      "id": "cron-24h",
+      "name": "Cron 24h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.2notasudi.com.br/api/v1/atendimentos/ultimas-24h",
+        "options": { "timeout": 10000 }
+      },
+      "id": "api-list",
+      "name": "GET atendimentos recentes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Para cada atendimento, monta mensagem de pesquisa (LGPD: sem PII)\nconst item = $input.item.json;\nconst atendimentos = item.atendimentos || [];\nconst messages = atendimentos.map(a => ({\n  json: {\n    atendimento_id: a.id,\n    protocolo: a.protocolo,\n    mensagem: `Ola! Seu atendimento no cartorio (protocolo ${a.protocolo}) foi concluido. Avalie de 1 a 5. Responda com o numero.`\n  }\n}));\nreturn messages;"
+      },
+      "id": "build-msgs",
+      "name": "Build messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://whatsapp.2notasudi.com.br/message/sendText/cartorio",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "number", "value": "={{ $json.telefone }}" },
+            { "name": "text", "value": "={{ $json.mensagem }}" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "id": "send-wa",
+      "name": "Evolution sendText",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/atendimento/{{ $json.atendimento_id }}/pesquisa-enviada",
+        "options": { "timeout": 5000 }
+      },
+      "id": "mark-sent",
+      "name": "Marca enviada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1140, 300]
+    }
+  ],
+  "connections": {
+    "Cron 24h": { "main": [[{ "node": "GET atendimentos recentes", "type": "main", "index": 0 }]] },
+    "GET atendimentos recentes": { "main": [[{ "node": "Build messages", "type": "main", "index": 0 }]] },
+    "Build messages": { "main": [[{ "node": "Evolution sendText", "type": "main", "index": 0 }]] },
+    "Evolution sendText": { "main": [[{ "node": "Marca enviada", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "callerPolicy": "workflowsFromSameOwner" }
+}

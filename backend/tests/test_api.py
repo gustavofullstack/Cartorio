@@ -73,16 +73,33 @@ def test_calcular_emolumento_tipo_invalido(client):
 
 
 def test_webhook_evolution_sem_pii(client):
-    payload = {
-        "message": {"text": "Ola, preciso de uma certidao"},
-        "sender": "user123",
-        "instance": "inst1",
+    """Webhook sem PII: bot responde sem alarme de handoff.
+
+    Ambiente local pode ter OPENCODE_GO_API_KEY real no .env, entao mockamos
+    o cliente HTTP para garantir resposta deterministica sem dependencia de rede.
+    """
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": "Posso te ajudar com sua certidao."}}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 8},
     }
-    resp = client.post("/api/v1/webhook/evolution", json=payload)
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "ok"
-    assert "atendente" in data["response"]
+
+    with patch("httpx.AsyncClient.post", new=AsyncMock(return_value=mock_response)):
+        payload = {
+            "message": {"text": "Ola, preciso de uma certidao"},
+            "sender": "user123",
+            "instance": "inst1",
+        }
+        resp = client.post("/api/v1/webhook/evolution", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ok"
+        # Resposta do bot mockado (sem [HUMANO])
+        assert "Posso te ajudar" in data["response"]
+        assert "[HUMANO]" not in data["response"]
 
 
 def test_webhook_evolution_com_pii(client):

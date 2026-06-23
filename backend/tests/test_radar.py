@@ -46,8 +46,14 @@ def test_postman_collection(client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["info"]["name"] == "Cartorio API"
-    assert len(data["item"]) == 5
+    # 6 endpoints: emolumento, consultar protocolo, criar protocolo,
+    # webhook evolution, audit verify, health radar
+    assert len(data["item"]) == 6
     assert data["variable"][0]["key"] == "base_url"
+    # Garante que os 2 novos endpoints do protocolo estao na colecao
+    item_names = {item["name"] for item in data["item"]}
+    assert "Consultar Protocolo" in item_names
+    assert "Criar Protocolo" in item_names
 
 
 @patch("app.db.engine.connect")
