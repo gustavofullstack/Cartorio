@@ -567,6 +567,29 @@ async def webhook_evolution(payload: dict) -> dict:
     except Exception:
         pass
 
+    # Save to Redis active session cache (ADR-014 - multi-tenant)
+    try:
+        import json
+        r_client = redis.from_url(settings.redis_url, socket_timeout=2.0)
+        redis_key = f"cartorio:sess:{sender}"
+        user_msg = json.dumps({
+            "role": "user",
+            "content": scrub_result.text,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        })
+        r_client.rpush(redis_key, user_msg)
+        if bot_response:
+            bot_msg = json.dumps({
+                "role": "assistant",
+                "content": bot_response,
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+            })
+            r_client.rpush(redis_key, bot_msg)
+        r_client.expire(redis_key, settings.redis_session_ttl_seconds)
+        r_client.close()
+    except Exception:
+        pass
+
     return {
         "status": "ok",
         "response": bot_response,
@@ -1077,6 +1100,67 @@ async def concluir_atendimento(atendimento_id: int, payload: dict | None = None)
             a.pesquisa_comentario = comentario
 
     return {"ok": True, "atendimento_id": atendimento_id}
+
+
+@api_router.get(
+    "/atendimento/{session_id}/historico",
+    tags=["atendimento"],
+    summary="Obter historico de atendimento (Redis + Supabase)",
+    description=(
+        "Busca o historico de mensagens de uma sessao (canal/telefone). "
+        "Consulta primeiro o cache quente no Redis e depois une/complementa "
+        "com o historico de longo prazo persistido no Supabase."
+    ),
+)
+async def obter_historico_atendimento(session_id: str) -> dict:
+    """Retorna o historico completo de mensagens para uma sessao."""
+    import json
+    from sqlalchemy import select
+    from app.models.conversa import Conversa
+
+    messages = []
+    
+    # 1. Tenta buscar do cache quente do Redis (ADR-014)
+    try:
+        r_client = redis.from_url(settings.redis_url, socket_timeout=2.0, decode_responses=True)
+        redis_key = f"cartorio:sess:{session_id}"
+        cached = r_client.lrange(redis_key, 0, -1)
+        r_client.close()
+        if cached:
+            for item in cached:
+                try:
+                    messages.append(json.loads(item))
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    # 2. Se cache estiver vazio ou para garantir dados historicos, consulta o PostgreSQL
+    if not messages:
+        try:
+            with session_scope() as db:
+                rows = db.execute(
+                    select(Conversa)
+                    .where(Conversa.external_id == session_id)
+                    .order_by(Conversa.created_at.asc())
+                ).scalars().all()
+
+                for row in rows:
+                    messages.append({
+                        "role": "user",
+                        "content": row.raw_message_scrubbed,
+                        "timestamp": row.created_at.isoformat() if row.created_at else None
+                    })
+                    if row.bot_response:
+                        messages.append({
+                            "role": "assistant",
+                            "content": row.bot_response,
+                            "timestamp": row.updated_at.isoformat() if row.updated_at else None
+                        })
+        except Exception:
+            pass
+
+    return {"session_id": session_id, "total": len(messages), "messages": messages}
 
 
 # ============================================================================
