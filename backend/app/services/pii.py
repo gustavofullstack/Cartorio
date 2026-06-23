@@ -15,6 +15,45 @@ LIMITACOES CONHECIDAS (LGPD cartorio-lgpd review 2026-06-23):
 - Datas DD/MM/YYYY sao SEMPRE redacted (incluindo datas nao-PII).
   Trade-off assumido: falsos positivos sao aceitaveis; falsos
   negativos nao. (LGPD art. 6o VIII - prevencao).
+
+========================================================================
+!! ORDEM CRITICA DOS PATTERNS - NAO REORDENAR SEM TESTAR TODOS !!
+========================================================================
+P0.5 docs 2026-06-23 (cartorio-dev): a ordem dos regex em _PATTERNS
+(dict insertion order) EH CRITICA porque scrub() processa em sequencia
+e cada match eh substituido ANTES do proximo pattern rodar. Risco real
+de regressao se alguem "limpar" a ordem por logica alfabetica.
+
+Conflitos documentados (resolveram via ordem + tightening):
+- CNS (15 dig) ANTES de phone_br (10+ dig loose): senao phone_br
+  engole os primeiros 10-11 digitos do CNS e deixa "12345" solto.
+  Confirmado por test_scrub_cns_15_digitos_contiguos_com_keyword.
+- CNH (11 dig) ANTES de cpf (11 dig): senao cpf engole os 11 digitos
+  da CNH primeiro. Keyword "CNH"/"habilitacao"/"motorista" desambigua,
+  mas cpf match SEM keyword continua sendo cpf.
+  Confirmado por test_scrub_cnh_11_digitos_contiguos_com_keyword.
+- PIS (3-5-3 grupos) ANTES de cpf (3-3-3-2 grupos): formato distinto
+  evita match ambiguo. Trade-off: PIS exige 3 grupos, CPF exige 4.
+- RG (7-9 dig com ponto) ANTES de cep (5-3 com hifen): RG exige
+  ponto, CEP nao - evita match de CEP puro como RG.
+- cartao (4-4-4-4 ou 4-6-5 agrupado) ANTES de phone_br loose: formato
+  agrupado eh mais especifico que phone.
+
+Testes que dependem desta ordem (NAO REMOVER):
+- tests/test_pii.py::test_scrub_cns_15_digitos_contiguos_com_keyword
+- tests/test_pii.py::test_scrub_cnh_11_digitos_contiguos_com_keyword
+- tests/test_pii.py::test_scrub_credit_card (4-4-4-4 vs phone loose)
+- tests/test_pii.py::test_scrub_rg_cnpj_phone_email (RG vs CEP)
+
+REGRA: ao adicionar novo pattern, perguntar:
+1. Colide com vizinho (mesmo N de digitos)? Adicionar ANTES do vizinho.
+2. Keyword-anchored (CNS, CNH) ou loose? Keyword antes de loose.
+3. Se trocar a ordem, rodar pytest tests/test_pii.py -v --tb=short
+   E verificar test_scrub_cep_puro_is_redacted,
+   test_scrub_isbn_is_not_redacted (FP tests).
+
+LGPD review desta ordem: cartorio-lgpd 2026-06-23 (Sprint 3 LGPD-015
+follow-up). Cross-review formal pre-merge em ADR-019 (P0.5).
 """
 
 from __future__ import annotations

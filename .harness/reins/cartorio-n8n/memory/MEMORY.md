@@ -168,6 +168,7 @@ JSON sources canonicos em /Users/gustavoalmeida/projetos/Cartorio/infra/n8n-work
 
 Total n8n WFs: 37 (era 18 antes E6). Total ativos: 28 (era 15).
 
+<<<<<<< Updated upstream
 ### N8N 2.x user.settings.userActivated bloqueia login (2026-06-23 19:48 BRT) (2026-06-23)
 Type: pitfall
 
@@ -263,3 +264,33 @@ REFERENCIA cartorio: Gustavo locked-out 19:43 BRT. Diagnostico evoluiu:
 - 19:46 BRT: 3a hip CORRETA = Gustavo esqueceu senha. Hash existe mas nao bate com @Techno832466
 
 LECCION CRITICA: SEMPRE verificar `password LIKE '$2%'` (bcrypt prefix) + bcrypt.checkpw ANTES de assumir bug de configuracao. A hipotese mais simples (esqueceu senha) eh 80% das vezes.
+=======
+### Lesson 17: meta-fail Pietra root violou Lesson 16 (password-in-chat) (2026-06-23 19:48 BRT) (2026-06-23)
+Type: pitfall
+
+CONTEXTO: Pietra root (mvs_9b3c9043) tentou resolver N8N locked-out postando senha temp + bcrypt hash em plaintext via mavis communication. Exatamente a regra que Lesson 16 documenta como 'password em chat = queimada'. Meta-fail durante incident response.
+
+CRED QUEIMADAS no incidente:
+1. N8N temp password 'GGwvY6NPvnSE4d186awIOhZ2' (plaintext 19:47 BRT, mvs_c2508947 thread)
+2. Bcrypt hash '\b\\.kzH0C/WJD/FkivjfMvbh7g5WoQA7MpS' (Mavis log permanente)
+3. DB Supabase password 'e999b7439deb35dfe05c33f265dae1ea' (plaintext 19:46 BRT)
+4. Redis password '@Techno832466' (plaintext anterior, ja queimada)
+5. (implicita) qualquer cred em /Users/gustavoalmeida/projetos/Cartorio/.secrets/ ate segunda ordem
+
+REGRA HARDENED:
+- DEFAULT: ZERO plaintext/hashes em canal logado, mesmo em incident response
+- SEMPRE gerar+aplicar via SSH + env var inject, NUNCA via mavis communication/scratchpad/commit message
+- CANAIS SEGUROS (one-time view, expira):
+  - 1Password share link
+  - Bitwarden Send
+  - SSH local + openssl rand + cat temp file + rm imediatamente
+  - Telegram DM com auto-delete 1min
+  - NUNCA mavis communication (logs permanentes)
+
+CROSS-LINK:
+- Lesson 14 (SQL+bcrypt path canonico para N8N reset) - usar via SSH, nao chat
+- Lesson 16 (password em chat = queimada) - mantida e expandida pra 'mesmo hash, mesmo prefixo, mesmo nome de variavel'
+- Lesson 17 (meta-fail documentado, NUNCA repetir)
+
+APLICABILIDADE: qualquer projeto, QUALQUER incident response. Cross-project lesson.
+>>>>>>> Stashed changes
