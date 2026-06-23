@@ -34,6 +34,10 @@
 
 ### Reactivated
 - Workflows N8N #22 (MCP Server Tools) + #23 (Cron Stale Detector 5min) - flag `active: false` → `active: true`. Estavam deployados, só a flag estava errada.
+- Workflows N8N v2 criados (Bloco 5, ADR-020):
+  - `12-chatbot-llm-mcp.json` - substitui `12-chatbot-llm-end-to-end.json`. Usa `n8n-nodes-mcp` v0.1.37 (`cartorio_chatbot_responder` tool call) em vez de httpRequest ad-hoc. Protocolo MCP 2025-03-26 padronizado.
+  - `03-handoff-human-chatwoot.json` - substitui `03-handoff-human.json`. Usa `n8n-nodes-chatwoot` v1.0.2 (createConversation + sendMessage) em vez de inbox URL fallback. Requer credencial `Chatwoot API` no N8N (Gustavo configura via SUI).
+- ADR-020: política de uso preferencial de nodes oficiais/community nodes N8N.
 
 ### Security
 - 100% das mutações auditadas agora carregam `request_id` UUIDv4 + `ip` (com XFF) + `user_agent` + `canal` (LGPD art. 37).
@@ -43,6 +47,14 @@
 ### Tests
 - 226/226 pytest passing, coverage 91.95% (gate 90% hit)
 - 27 testes novos: 13 RequestContextMiddleware + 6 audit_context + 8 direito_esquecimento + 13 retencao (compartilhados)
+
+### Workflows N8N (Sprint 3 Bloco 5)
+- Workflows v2 prontos para Gustavo importar via API N8N:
+  - `12-chatbot-llm-mcp.json` (substitui v1)
+  - `03-handoff-human-chatwoot.json` (substitui v1)
+- Workflows v1 (`12-chatbot-llm-end-to-end.json`, `03-handoff-human.json`) preservados no repo como referência até Gustavo confirmar migração no painel.
+- Credencial `Chatwoot API` precisa ser criada no N8N (SUI): Gustavo configura `baseUrl=https://chatwoot.2notasudi.com.br` + `apiAccessToken` (CHATWOOT_BOT_TOKEN).
+- `infra/n8n-workflows/README.md` atualizado com política de versionamento e tabela v1 vs v2.
 
 ### Sprints anteriores
 - v0.5.0 (2026-06-23 14:00 BRT) - Sprint 2: 3 services + idempotency + HMAC + cron stale

@@ -1,0 +1,159 @@
+{
+  "name": "03 - Handoff Humano (Chatwoot v2)",
+  "description": "Handoff humano: webhook -> normalizar payload -> Chatwoot node oficial (criar conversation + message) -> respond. Substitui o workflow v1 que usava httpRequest ad-hoc com inbox URL fallback. Requer credencial 'Chatwoot API' configurada no N8N (X-Canal=cron/dpo ou super_admin). Ref: ADR-020.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "handoff-human",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Handoff",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "handoff-human-v2"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Normalizar payload + gerar source_id idempotente\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst text = (body.message && body.message.text) || '';\nconst reason = body.reason || 'unspecified';\nconst message_id = body.message_id || `${sender}-${Date.now()}`;\nconst instance = body.instance || 'cartorio-2notas-uberlandia';\nconst canal = body.canal || 'whatsapp';\n\n// Inbox URL fallback (sempre retornado mesmo se Chatwoot falhar)\nconst inbox_url = `https://chatwoot.2notasudi.com.br/app/accounts/1/conversations?search=${encodeURIComponent(sender)}`;\n\nreturn { json: {\n  sender,\n  text,\n  reason,\n  message_id,\n  instance,\n  canal,\n  inbox_url,\n  // Campos consumidos pelo node Chatwoot (n8n-nodes-chatwoot v1.0.2)\n  // operation: createConversation + sendMessage\n  chatwoot: {\n    inbox_id: 0,  // ENV: CHATWOOT_INBOX_ID (default 0 em dev)\n    account_id: 0,  // ENV: CHATWOOT_ACCOUNT_ID\n    contact: {\n      phone_number: sender,\n      name: sender\n    },\n    conversation: {\n      source_id: message_id,\n      custom_attributes: {\n        handoff_reason: reason,\n        origin: 'cartorio-bot',\n        canal: canal\n      }\n    },\n    message: {\n      content: text,\n      message_type: 'incoming'\n    }\n  }\n}};"
+      },
+      "id": "normalize-payload",
+      "name": "Normalizar Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "createConversation",
+        "accountId": "={{ $json.chatwoot.account_id }}",
+        "additionalFields": {
+          "inbox_id": "={{ $json.chatwoot.inbox_id }}",
+          "source_id": "={{ $json.chatwoot.conversation.source_id }}",
+          "custom_attributes": "={{ $json.chatwoot.conversation.custom_attributes }}",
+          "contact": {
+            "phone_number": "={{ $json.chatwoot.contact.phone_number }}",
+            "name": "={{ $json.chatwoot.contact.name }}"
+          }
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "chatwoot-create-conv",
+      "name": "Chatwoot: Create Conversation",
+      "type": "n8n-nodes-chatwoot.Chatwoot",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "chatwootApi": {
+          "id": "REPLACE_WITH_CHATWOOT_CRED_ID",
+          "name": "Chatwoot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "accountId": "={{ $('Normalizar Payload').item.json.chatwoot.account_id }}",
+        "conversationId": "={{ $json.id || $json.conversation_id }}",
+        "message": {
+          "content": "={{ $('Normalizar Payload').item.json.text }}",
+          "message_type": "incoming"
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "chatwoot-send-msg",
+      "name": "Chatwoot: Send Message",
+      "type": "n8n-nodes-chatwoot.Chatwoot",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "chatwootApi": {
+          "id": "REPLACE_WITH_CHATWOOT_CRED_ID",
+          "name": "Chatwoot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Transferi para um atendente humano. Acesse: {{ $('Normalizar Payload').item.json.inbox_url }}\",\n  \"chatwoot_conversation_id\": {{ $('Chatwoot: Create Conversation').item.json.id || 'null' }},\n  \"chatwoot_message_status\": {{ JSON.stringify($('Chatwoot: Send Message').item.json.status || 'unavailable') }},\n  \"sender\": \"{{ $('Normalizar Payload').item.json.sender }}\",\n  \"message_id\": \"{{ $('Normalizar Payload').item.json.message_id }}\",\n  \"reason\": \"{{ $('Normalizar Payload').item.json.reason }}\",\n  \"canal\": \"{{ $('Normalizar Payload').item.json.canal }}\",\n  \"transport\": \"n8n-nodes-chatwoot-v1.0.2\"\n}"
+      },
+      "id": "respond-ok",
+      "name": "Respond Handoff",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Handoff": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Payload": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot: Create Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot: Create Conversation": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot: Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot: Send Message": {
+      "main": [
+        [
+          {
+            "node": "Respond Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {"name": "chatwoot"},
+    {"name": "handoff"},
+    {"name": "whatsapp"}
+  ],
+  "meta": null
+}

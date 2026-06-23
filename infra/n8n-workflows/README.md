@@ -8,26 +8,41 @@
 
 ## Conteúdo
 
-12 workflows ativos (exportados via `GET /api/v1/workflows/{id}` em 2026-06-23 13:55 BRT):
+**Workflows ativos em produção** (exportados via `GET /api/v1/workflows/{id}` em 2026-06-23 13:55 BRT, atualizados 2026-06-23 18:50 BRT no Sprint 0 audit):
 
-| Arquivo | Workflow | ID N8N | Trigger |
-|---------|----------|--------|---------|
-| `01-consulta-emolumento.json` | Consulta Emolumento WhatsApp (v2) | `bR7qIo3bFpG4zgxO` | Webhook POST `/webhook/consulta-emolumento` |
-| `02-criar-protocolo.json` | Criar Protocolo (LGPD) | `MzeYTSDouymzdpRw` | Webhook POST `/webhook/criar-protocolo` |
-| `03-handoff-human.json` | Handoff Humano (Chatwoot) | `OQRIOVHcOjpkQ0Of` | Webhook POST `/webhook/handoff-human` |
-| `04-boas-vindas-lgpd.json` | Boas-Vindas + Consentimento LGPD | `sDtkfOJ5BA7M73wB` | Webhook POST `/webhook/boas-vindas` |
-| `04-consulta-protocolo.json` | Consulta Protocolo | `iXWuZRYZLR3FYPYB` | Webhook POST `/webhook/consulta-protocolo` |
-| `05-agendamento.json` | Agendamento Atendimento | `UUW8ulDTxZUqBsci` | Webhook POST `/webhook/agendamento` |
-| `06-2-via-protocolo.json` | Segunda Via Documento | `ukbRUEudoX3SvsqD` | Webhook POST `/webhook/segunda-via` |
-| `07-pesquisa-evolucao.json` | Pesquisa Satisfação | `D9XJmlJRXZ3lavoa` | Cron 24h |
-| `08-audit-verify-diario.json` | Audit Verify Diário | `3rr2WFBCJZ16U4DH` | Cron 03:30 diário |
-| `09-backup-status.json` | Monitor Backup Diário | `pgtlDqGaMW1MGawt` | Cron 04:00 diário |
-| `10-faq-bot.json` | FAQ Bot | `jZhgQbJQ5z7atYfK` | Webhook POST `/webhook/faq` |
-| `11-monitor-cartorio.json` | Monitor Cartório (saúde 6 serviços) | `5ABAZCQVRLd7AmM5` | Cron 5min + Webhook POST `/webhook/monitor-cartorio` |
+| Arquivo | Workflow | ID N8N | Trigger | Notes |
+|---------|----------|--------|---------|-------|
+| `01-consulta-emolumento.json` | Consulta Emolumento WhatsApp (v2) | `bR7qIo3bFpG4zgxO` | Webhook POST `/webhook/consulta-emolumento` | |
+| `02-criar-protocolo.json` | Criar Protocolo (LGPD) | `MzeYTSDouymzdpRw` | Webhook POST `/webhook/criar-protocolo` | |
+| `03-handoff-human.json` | Handoff Humano (Chatwoot v1, httpRequest) | `OQRIOVHcOjpkQ0Of` | Webhook POST `/webhook/handoff-human` | v1 — em produção até Gustavo importar v2 |
+| `04-boas-vindas-lgpd.json` | Boas-Vindas + Consentimento LGPD | `sDtkfOJ5BA7M73wB` | Webhook POST `/webhook/boas-vindas` | |
+| `04-consulta-protocolo.json` | Consulta Protocolo | `iXWuZRYZLR3FYPYB` | Webhook POST `/webhook/consulta-protocolo` | |
+| `05-agendamento.json` | Agendamento Atendimento | `UUW8ulDTxZUqBsci` | Webhook POST `/webhook/agendamento` | |
+| `06-2-via-protocolo.json` | Segunda Via Documento | `ukbRUEudoX3SvsqD` | Webhook POST `/webhook/segunda-via` | |
+| `07-pesquisa-evolucao.json` | Pesquisa Satisfação | `D9XJmlJRXZ3lavoa` | Cron 24h | ⚠️ SUI: falta credencial Evolution no N8N |
+| `08-audit-verify-diario.json` | Audit Verify Diário | `3rr2WFBCJZ16U4DH` | Cron 03:30 diário | |
+| `09-backup-status.json` | Monitor Backup Diário | `pgtlDqGaMW1MGawt` | Cron 04:00 diário | |
+| `10-faq-bot.json` | FAQ Bot | `jZhgQbJQ5z7atYfK` | Webhook POST `/webhook/faq` | |
+| `11-monitor-cartorio.json` | Monitor Cartório (saúde 6 serviços) | `5ABAZCQVRLd7AmM5` | Cron 5min + Webhook POST `/webhook/monitor-cartorio` | |
+
+**Workflows v2 — Sprint 3 Bloco 5** (usando nodes oficiais, prontos pra Gustavo importar):
+
+| Arquivo | Workflow | Trigger | Diferença vs v1 |
+|---------|----------|---------|-----------------|
+| `03-handoff-human-chatwoot.json` | Handoff Humano (Chatwoot v2) | Webhook POST `/webhook/handoff-human` | Substitui httpRequest por `n8n-nodes-chatwoot` v1.0.2 (createConversation + sendMessage). Requer credencial `Chatwoot API` no N8N. |
+| `12-chatbot-llm-mcp.json` | Chatbot LLM End-to-End (MCP) | Webhook POST `/webhook/chatbot-llm` | Substitui httpRequest OpenCode-Go por `n8n-nodes-mcp` v0.1.37 (`cartorio_chatbot_responder` tool call). Protocolo MCP 2025-03-26. |
+| `22-mcp-server.json` | MCP Server Tools | `mcpTrigger` | **Reativado** (Sprint 3 prep): `active: true`. |
+| `23-cron-stale-detector.json` | Cron Stale Detector (5min) | Cron 5min | **Reativado** (Sprint 3 prep): `active: true`. |
+| `24-retencao-diaria.json` | Retenção Diária (LGPD 5y/2y) | Cron 02:00 diário | **Novo** (Sprint 3 Bloco 4.3). Chama `POST /api/v1/admin/retencao/run` + alerta Chatwoot + verifica audit chain. |
 
 Outros arquivos:
 - `01-consulta-emolumento-v2.json` — versão legada (multi-line format) preservada para git history.
 - `11_monitor_cartorio.js` + `11_monitor_cartorio_README.md` — **script Node standalone** com a mesma lógica do workflow N8N #11, para health-check fora do N8N (cron externo ou smoke test manual).
+
+**Política de versionamento (ADR-020):**
+- Workflows v1 ficam no repo até Gustavo confirmar migração no painel N8N.
+- Cada v2 adiciona sufixo (`-chatwoot`, `-mcp`) ou ID numérico (`24-`).
+- Gustavo decide via N8N UI qual fica ativo: import v2, deactivate v1, archive v1.
 
 ---
 
