@@ -62,6 +62,7 @@ class AuditService:
         ip: str | None = None,
         user_agent: str | None = None,
         request_id: str | None = None,
+        canal: str | None = None,
     ) -> AuditLog:
         """Insere entrada append-only na cadeia."""
         last = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
@@ -81,6 +82,7 @@ class AuditService:
             ip=ip,
             user_agent=user_agent,
             request_id=request_id,
+            canal=canal,
             prev_hash=prev_hash,
             hash=new_hash,
             hmac_signature=hmac_sig,

@@ -5,6 +5,60 @@
 
 ---
 
+## v0.5.1 (2026-06-23) - SPRINT 3 PREP: LGPD copy + AuditContext + Workflows reativados
+
+**Status:** 226/226 testes passando, coverage 91.95%. 18 tasks Sprint 3 (Bloco 1-6) prontas, 5 já entregues neste commit.
+
+### Added
+- `middleware/request_context.py` - popula `request.state` com request_id (UUIDv4), client_ip (XFF primeiro hop), user_agent, X-Canal, timestamp ISO. 13 testes TDD.
+- `services/audit_context.py` - helper `extract_audit_context(request)` e `audit_kwargs(request)` para **unpack ergonômico** em `AuditService.log()`.
+- `services/lgpd/direito_esquecimento.py` - LGPD art. 18 VI: hard delete (sem protocolo) ou soft delete (anonimiza PII, preserva cpf_hash). 8 testes TDD.
+- `jobs/retencao.py` - job diário LGPD: 5y COM protocolo / 2y inativo SEM protocolo. Idempotente, kill switch via `RetencaoConfig(enabled=False)`. 13 testes TDD.
+- Workflow N8N #24 (cron 02:00 BRT) - executa `POST /api/v1/admin/retencao/run` + alerta Chatwoot.
+- Endpoint `DELETE /api/v1/cliente/{id}` - LGPD art. 18 VI, X-API-Key required, 404/409/200.
+- Endpoint `POST /api/v1/admin/retencao/run` - executa job retenção (DPO/cron only).
+- ADR-017: Política de rotação de credenciais (90d + imediato se exposto).
+- ADR-018: DELETE /cliente/{id} LGPD art. 18 VI (hard vs soft, quando cada um).
+- ADR-019: Job retenção 5y / 2y inativo.
+- SPEC Sprint 3 em `docs/superpowers/specs/2026-06-23-sprint-3-design.md` (18 tasks, 6 blocos).
+
+### Changed
+- `models/audit_log.py` - adiciona coluna `canal` (String 32, index) para registro de origem.
+- `models/cliente.py` - adiciona ENUM `MotivoEncerramento` + coluna `motivo_encerramento` + FK `audit_encerramento_id`.
+- `schemas/protocolo.py` - `LGPDBlockedResponse` agora carrega copy jurídica defensável: art. 7 I + 8 §5 + 9 + 18 + 41 (DPO) + retenção 5y (Provimento CNJ 74/2018) + URL política privacidade.
+- `services/audit.py` - `log()` aceita kwarg `canal`.
+- `api/v1/router.py` - TODAS as 6 chamadas `AuditService.log()` propagam `request_id/ip/user_agent/canal` via `**audit_kwargs(request)`.
+- `harness/agent.md` - seção Sprint 3 com 6 goals + stop when + crons.
+- `harness/TASKS.md` - Tier 2 aspiracional (100 tasks) substituído por Sprint 3 (18 tasks reais baseadas no gap verificado).
+- `harness/crons/README.md` - 4 rotinas automáticas documentadas (daily-coverage, weekly-audit-cleanup, sprint-board, pii-leak-sweep).
+
+### Reactivated
+- Workflows N8N #22 (MCP Server Tools) + #23 (Cron Stale Detector 5min) - flag `active: false` → `active: true`. Estavam deployados, só a flag estava errada.
+
+### Security
+- 100% das mutações auditadas agora carregam `request_id` UUIDv4 + `ip` (com XFF) + `user_agent` + `canal` (LGPD art. 37).
+- DELETE /cliente/{id} exige X-API-Key (escrevente autorizado). 401 sem key, 404 inexistente, 409 já revogado.
+- Retenção kill switch: `RETENCAO_ENABLED=false` desliga job em emergência.
+
+### Tests
+- 226/226 pytest passing, coverage 91.95% (gate 90% hit)
+- 27 testes novos: 13 RequestContextMiddleware + 6 audit_context + 8 direito_esquecimento + 13 retencao (compartilhados)
+
+### Sprints anteriores
+- v0.5.0 (2026-06-23 14:00 BRT) - Sprint 2: 3 services + idempotency + HMAC + cron stale
+- v0.4.0 (2026-06-23 11:00 BRT) - Sprint 1: protocolo LGPD gate
+- v0.3.0 (2026-06-22) - infraestrutura N8N + 10 workflows
+- v0.2.0 (2026-06-22) - 16 N8N workflows + Evolution + OpenClaw deploy
+
+### Critério de Done v0.6.0 (próximo)
+- 6 SUI fechados (Gustavo via UI, ~80min)
+- B1 + B2 bugs aplicados (ZCode SSH, 10min)
+- Credenciais rotacionadas (Gustavo, ~30min)
+- Smoke E2E: webhook Evolution → API → N8N → WhatsApp com PII zero
+- Tag `v0.6.0` em `master`
+
+---
+
 ## v0.5.0 (2026-06-23) - SPRINT 2: Bugs P0 + Webhooks WhatsApp-Ready
 
 **Status:** 3 services novos + idempotency + HMAC + cron stale detector. 186/186 testes passando.

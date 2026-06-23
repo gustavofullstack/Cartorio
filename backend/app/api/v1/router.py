@@ -44,6 +44,7 @@ from app.schemas.protocolo import (
     StatusProtocolo,
 )
 from app.services.audit import AuditService
+from app.services.audit_context import audit_kwargs, extract_audit_context
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
 
@@ -220,6 +221,7 @@ def get_protocolo(
             "status": protocolo.status,
             "tipo": protocolo.tipo,
         },
+        **audit_kwargs(request),
     )
 
     # Constroi historico minimo a partir dos dados do protocolo.
@@ -342,6 +344,7 @@ def _gerar_numero_protocolo(db: Session, ano: int) -> str:
     },
 )
 def post_protocolo(
+    request: Request,
     payload: ProtocoloCreateRequest,
     db: Annotated[Session, Depends(get_db)],
 ) -> ProtocoloCreateResponse:
@@ -362,6 +365,7 @@ def post_protocolo(
                 "canal_origem": payload.canal_origem.value,
                 "motivo": "consentimento_lgpd=false",
             },
+            **audit_kwargs(request),
         )
         raise HTTPException(
             status_code=422,
@@ -430,7 +434,7 @@ def post_protocolo(
     ),
     response_description="Status do processamento + resposta do bot + texto scrubbed.",
 )
-async def webhook_evolution(payload: dict) -> dict:
+async def webhook_evolution(request: Request, payload: dict) -> dict:
     """Webhook do Evolution API (WhatsApp).
 
     Recebe mensagem, aplica PII scrubbing, detecta intencao via LLM,
@@ -466,6 +470,10 @@ async def webhook_evolution(payload: dict) -> dict:
 
     scrub_result = scrub(raw_text)
     with session_scope() as db:
+        # Garante que canal="whatsapp" mesmo se header X-Canal nao veio.
+        ctx = audit_kwargs(request)
+        if not ctx["canal"]:
+            ctx["canal"] = "whatsapp"
         AuditService.log(
             db,
             actor_id=sender,
@@ -477,6 +485,7 @@ async def webhook_evolution(payload: dict) -> dict:
                 "findings": scrub_result.findings,
                 "redaction_count": scrub_result.redaction_count,
             },
+            **ctx,
         )
 
     handoff = False
@@ -1024,7 +1033,7 @@ async def marcar_pesquisa_enviada(atendimento_id: int) -> dict:
         "diretamente pela UI quando conversa e escalada."
     ),
 )
-async def criar_atendimento(payload: dict) -> dict:
+async def criar_atendimento(request: Request, payload: dict) -> dict:
     """Cria atendimento (handoff)."""
     from datetime import datetime, timezone
     from app.models.atendimento import Atendimento
@@ -1094,6 +1103,7 @@ async def criar_atendimento(payload: dict) -> dict:
                 "protocolo_id": protocolo_id,
                 "pii_scrubbed": True,
             },
+            **audit_kwargs(request),
         )
 
     return {"ok": True, "atendimento_id": atendimento_id}
@@ -1250,6 +1260,178 @@ async def cron_stale_detector() -> dict:
             db, threshold_minutes=settings.stale_threshold_minutes
         )
     return result
+
+
+# ============================================================================
+# LGPD - Direito ao esquecimento (DELETE /cliente/{id})
+# ============================================================================
+
+
+@api_router.delete(
+    "/cliente/{cliente_id}",
+    tags=["cliente"],
+    summary="Direito ao esquecimento (LGPD art. 18 VI)",
+    description=(
+        "Encerra tratamento de dados pessoais do cliente.\n\n"
+        "- Cliente SEM protocolo: HARD DELETE (remove do DB).\n"
+        "- Cliente COM protocolo: SOFT DELETE (anonimiza PII, marca motivo_encerramento).\n"
+        "  Mantem integridade referencial dos atos cartorarios (Provimento CNJ 74/2018).\n\n"
+        "Requer `X-API-Key` (escrevente autorizado). Idempotente: 2a chamada = 409.\n\n"
+        "Ver ADR-018 para detalhes."
+    ),
+    responses={
+        200: {"description": "Cliente encerrado (hard ou soft)."},
+        404: {"description": "Cliente nao encontrado."},
+        409: {"description": "Cliente ja revogado (idempotencia)."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+async def delete_cliente(
+    request: Request,
+    cliente_id: int,
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    """Aplica direito ao esquecimento ao cliente (LGPD art. 18 VI)."""
+    from app.models.cliente import MotivoEncerramento
+    from app.services.lgpd.direito_esquecimento import (
+        ClienteJaRevogadoError,
+        ClienteNotFoundError,
+        direito_esquecimento,
+    )
+
+    # Auth: exige X-API-Key (escrevente autorizado)
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "erro": "UNAUTHORIZED",
+                "mensagem": "X-API-Key obrigatoria para DELETE /cliente/{id}.",
+            },
+        )
+
+    try:
+        result = direito_esquecimento(db, cliente_id)
+    except ClienteNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "CLIENTE_NOT_FOUND",
+                "mensagem": f"Cliente {cliente_id} nao encontrado.",
+                "detalhes": {"cliente_id": cliente_id},
+            },
+        )
+    except ClienteJaRevogadoError as e:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "erro": "CLIENTE_JA_REVOGADO",
+                "mensagem": str(e),
+                "detalhes": {"cliente_id": cliente_id},
+            },
+        )
+
+    # Audit log LGPD art. 37 (registro de operacao de tratamento)
+    audit = AuditService.log(
+        db,
+        actor_id=f"escrevente:{api_key[:8]}",
+        actor_type="bot",
+        action=f"cliente.delete.{result.tipo}",
+        resource=f"cliente:{cliente_id}",
+        payload={
+            "cliente_id": cliente_id,
+            "tipo": result.tipo,
+            "protocolos_ativos": result.protocolos_ativos,
+            "motivo": result.motivo.value,
+        },
+        **audit_kwargs(request),
+    )
+
+    return {
+        "status": "deleted",
+        "tipo": result.tipo,
+        "cliente_id": result.cliente_id,
+        "protocolos_ativos": result.protocolos_ativos,
+        "data_encerramento": result.data_encerramento.isoformat(),
+        "motivo": result.motivo.value,
+        "audit_id": audit.id,
+    }
+
+
+# ============================================================================
+# LGPD - Job retenção (admin)
+# ============================================================================
+
+
+@api_router.post(
+    "/admin/retencao/run",
+    tags=["admin"],
+    summary="Executa job de retenção LGPD (5y/2y)",
+    description=(
+        "Roda o job de retenção descrito em ADR-019. Aceita `dry_run=true` "
+        "para apenas contar sem aplicar mutações.\n\n"
+        "Requer `X-API-Key` + `X-Canal=cron` (ou X-Canal=dpo)."
+    ),
+    responses={
+        200: {"description": "Job executado (ou dry-run)."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+async def admin_run_retencao(
+    request: Request,
+    payload: dict | None = None,
+    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+) -> dict:
+    """Executa job de retenção (DPO/cron)."""
+    from app.jobs.retencao import RetencaoConfig, run_retencao
+    from app.services.audit_context import audit_kwargs
+
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
+        )
+
+    dry_run = bool((payload or {}).get("dry_run", False))
+    cfg = RetencaoConfig(enabled=not dry_run)
+
+    result = run_retencao(db, config=cfg)
+
+    # Audit log
+    AuditService.log(
+        db,
+        actor_id="system:retencao",
+        actor_type="system",
+        action="retencao.run",
+        resource="clientes",
+        payload={
+            "scanned": result.scanned,
+            "soft_deleted_5y": result.soft_deleted_5y,
+            "soft_deleted_inativo": result.soft_deleted_inativo,
+            "errors": result.errors,
+            "dry_run": dry_run,
+            "cutoff_5y": result.cutoff_5y.isoformat() if result.cutoff_5y else None,
+            "cutoff_inativo": (
+                result.cutoff_inativo.isoformat() if result.cutoff_inativo else None
+            ),
+            "duration_ms": result.duration_ms,
+        },
+        **audit_kwargs(request),
+    )
+
+    return {
+        "dry_run": dry_run,
+        "scanned": result.scanned,
+        "soft_deleted_5y": result.soft_deleted_5y,
+        "soft_deleted_inativo": result.soft_deleted_inativo,
+        "errors": result.errors,
+        "cutoff_5y": result.cutoff_5y.isoformat() if result.cutoff_5y else None,
+        "cutoff_inativo": (
+            result.cutoff_inativo.isoformat() if result.cutoff_inativo else None
+        ),
+        "duration_ms": result.duration_ms,
+    }
 
 
 # ============================================================================

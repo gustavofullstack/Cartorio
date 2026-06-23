@@ -35,6 +35,8 @@ class AuditLog(Base):
     ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
     request_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    canal: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    # whatsapp, telegram, web, balcao, email, n8n, cron, system
 
     # Hash chain - imutavel, append-only
     prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)

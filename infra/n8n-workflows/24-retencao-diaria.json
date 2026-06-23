@@ -1,0 +1,109 @@
+{
+  "name": "24 - Retencao Diaria (LGPD 5y/2y)",
+  "description": "Job diario de retencao LGPD: clientes COM protocolo > 5y ou SEM protocolo inativos > 2y sao anonimizados. Ver ADR-019.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {"field": "hours", "hoursInterval": 24}
+          ]
+        }
+      },
+      "id": "cron-diario",
+      "name": "Cron Diario 02:00 BRT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/admin/retencao/run",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
+            {"name": "X-Canal", "value": "cron"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "dry_run", "value": false}
+          ]
+        },
+        "options": {"timeout": 60000}
+      },
+      "id": "post-retencao",
+      "name": "POST /admin/retencao/run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "api_access_token", "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "source_id", "value": "retencao-diaria"},
+            {"name": "message", "value": "=🗂️ Retencao Diaria (LGPD):\n• Escaneados: {{ $json.scanned }}\n• Soft delete 5y: {{ $json.soft_deleted_5y.length }}\n• Soft delete inativo: {{ $json.soft_deleted_inativo.length }}\n• Erros: {{ $json.errors.length }}\n• Duracao: {{ $json.duration_ms }}ms\n• Cutoff 5y: {{ $json.cutoff_5y }}\n• Cutoff inativo: {{ $json.cutoff_inativo }}"}
+          ]
+        },
+        "options": {"timeout": 10000}
+      },
+      "id": "alert-chatwoot",
+      "name": "Alerta Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/verify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"}
+          ]
+        },
+        "options": {"timeout": 30000}
+      },
+      "id": "verify-audit",
+      "name": "Verificar audit chain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 420]
+    }
+  ],
+  "connections": {
+    "Cron Diario 02:00 BRT": {
+      "main": [[{"node": "POST /admin/retencao/run", "type": "main", "index": 0}]]
+    },
+    "POST /admin/retencao/run": {
+      "main": [
+        [
+          {"node": "Alerta Chatwoot", "type": "main", "index": 0},
+          {"node": "Verificar audit chain", "type": "main", "index": 0}
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [{"name": "cron"}, {"name": "lgpd"}],
+  "meta": null
+}

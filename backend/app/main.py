@@ -33,7 +33,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     Base.metadata.create_all(bind=engine)
 
     # 3. Audit log: write a startup entry (no-op if audit_log empty)
-    AuditService.log_system_action("api.startup", {"version": "0.5.0", "env": settings.app_env})
+    AuditService.log_system_action("api.startup", {"version": "0.5.1", "env": settings.app_env})
 
     yield
 
@@ -190,7 +190,7 @@ API_LICENSE_INFO = {
 app = FastAPI(
     title="Cartorio Backend API",
     description=API_DESCRIPTION,
-    version="0.5.0",
+    version="0.5.1",
     contact=API_CONTACT,
     license_info=API_LICENSE_INFO,
     openapi_tags=API_TAGS_METADATA,
@@ -230,7 +230,7 @@ app.add_middleware(
 @app.get("/health", tags=["meta"])
 def health() -> dict:
     """Liveness probe."""
-    return {"status": "ok", "service": settings.app_name, "version": "0.5.0"}
+    return {"status": "ok", "service": settings.app_name, "version": "0.5.1"}
 
 
 @app.get("/ready", tags=["meta"])
