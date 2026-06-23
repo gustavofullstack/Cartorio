@@ -576,4 +576,66 @@ Modified by Gustavo Almeida
 | COM-A | 10 | cartorio-comunicacao (orquestrador) |
 | **TOTAL** | **100** | **5 workers + orquestrador** |
 
+> **NOTA 2026-06-23**: Tier 2 acima (100 tasks) foi um plano aspiracional. O Sprint 0 spec provou que ~85% do que ele propunha já existia. Sprint 3 abaixo é o que **realmente falta** baseado no gap verificado.
+
+---
+
+## EPIC SPRINT-3 — WhatsApp Pilot Ready (v0.5.1 → v0.6.0)
+
+> Spec: `docs/superpowers/specs/2026-06-23-sprint-3-design.md` (DRAFT, aguardando aprovação Gustavo)
+> 18 tasks reais, baseadas no gap verificado em `docs/sessions/2026-06-23-progress-audit.md`.
+
+### Bloco 1 — SUI Gustavo (~80min UI, 0 código)
+- [ ] **S3.B1.T1** DNS `chatwoot.2notasudi.com.br` (Easypanel UI) — owner: Gustavo — 10min
+- [ ] **S3.B1.T2** Credencial Evolution API no N8N (N8N UI) — owner: Gustavo — 5min — destrava workflow #07
+- [ ] **S3.B1.T3** Agent Bot Chatwoot "Cartório Assistant" (Chatwoot UI) — owner: Gustavo — 30min
+- [ ] **S3.B1.T4** Regenerar Easypanel API key (exposta no chat) — owner: Gustavo — 2min
+- [ ] **S3.B1.T5** OpenClaw LLM key — owner: Gustavo — 2min — depende L1 LGPD
+- [ ] **S3.B1.T6** Decisão DNS typo `supbase` → `supabase` — owner: Gustavo — 15min
+
+### Bloco 2 — Bugs P0 (ZCode com SSH Gustavo, ~10min)
+- [ ] **S3.B2.T1** B1 Chatwoot: `docker service update --limit-memory 1G` (ADR-015) — owner: ZCode — 5min
+- [ ] **S3.B2.T2** B2 OpenClaw: YAML threshold 50 msgs + TTL 24h + `curl /compact` (ADR-016) — owner: ZCode — 5min
+
+### Bloco 3 — Segurança / rotação credenciais (Gustavo, ~30min)
+- [ ] **S3.B3.T1** Rotacionar OpenCode-Go `sk-` (foi exposta) — owner: Gustavo — 5min
+- [ ] **S3.B3.T2** Rotacionar N8N MCP HTTP JWT + N8N public API JWT — owner: Gustavo — 10min
+- [ ] **S3.B3.T3** Rotacionar OpenClaw Gateway Token + Password — owner: Gustavo — 10min
+- [ ] **S3.B3.T4** Rotacionar Redis default password + Supabase DB — owner: Gustavo — 15min
+
+### Bloco 4 — Backend débitos pré-merge (ZCode TDD, ~4h)
+- [ ] **S3.B4.T1** Audit log em 100% das mutações com request_id/ip/user_agent (hoje 1/6) — owner: ZCode + review `cartorio-lgpd` — 2h
+- [ ] **S3.B4.T2** `DELETE /api/v1/cliente/{id}` (LGPD art. 18 VI) — owner: ZCode + review `cartorio-lgpd` — 1.5h
+- [ ] **S3.B4.T3** Job retenção diária `app/jobs/retencao.py` (5y COM protocolo / até-revogação SEM, D4) — owner: ZCode + review `cartorio-lgpd` — 1h
+
+### Bloco 5 — Workflows N8N usando nodes oficiais (ZCode, ~1h)
+- [ ] **S3.B5.T1** Ativar `n8n-nodes-mcp` em workflow #12 (chatbot LLM) — owner: ZCode — 30min
+- [ ] **S3.B5.T2** Ativar `n8n-nodes-chatwoot` em workflow #03 (handoff humano) — owner: ZCode — 30min
+
+### Bloco 6 — Documentação (ZCode, ~30min)
+- [ ] **S3.B6.T1** Atualizar `docs/ENV_PRODUCTION.md` + `.env.example` com CARTORIO_API_KEY novo + tokens pós-rotação — owner: ZCode — 30min
+
+### Critério de Done Sprint 3 (v0.6.0 release-ready)
+- [ ] Todos 6 SUI do Bloco 1 fechados
+- [ ] B1 + B2 aplicados e estáveis por 24h
+- [ ] Credenciais rotacionadas (Bloco 3)
+- [ ] Audit log em 100% mutações com `request_id/ip/user_agent`
+- [ ] `DELETE /cliente/{id}` testado
+- [ ] Job retenção rodando 1 dia sem erro
+- [ ] Workflows #12 e #03 usando MCP Client + Chatwoot node
+- [ ] `.env` documentado com tokens rotacionados
+- [ ] 199+ tests passando, coverage ≥ 90%
+- [ ] Smoke E2E: webhook Evolution → API → N8N → WhatsApp com PII zero
+- [ ] Tag `v0.6.0` em `master`
+
+### ADRs a criar durante Sprint 3
+- [ ] **ADR-017** Rotação de credenciais (Bloco 3, padrão 90d)
+- [ ] **ADR-018** `DELETE /cliente/{id}` LGPD art. 18 VI (cascade vs soft delete)
+- [ ] **ADR-019** Job retenção 5y / até-revogação (D4)
+
+### Fora deste sprint (declarado)
+- Telegram bot, mobile RN, white-label, BI Looker/Metabase, LiteLLM HA, LLM local Llama 3.1 8B
+- Reescrever workflows N8N do zero, reescrever OpenClaw persona, criar 7 subdomínios
+- Reconsolidar DB (já feito, ADR-010)
+
 Modified by Gustavo Almeida

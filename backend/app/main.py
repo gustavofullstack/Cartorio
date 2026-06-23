@@ -16,6 +16,7 @@ from app.db import engine
 from app.models.base import Base
 from app.services.audit import AuditService
 from app.services.rate_limit import RateLimitMiddleware
+from app.middleware.request_context import RequestContextMiddleware
 
 
 @asynccontextmanager
@@ -206,6 +207,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request context (audit metadata): popula request.state com request_id,
+# client_ip, user_agent, canal e timestamp. LGPD art. 37 exige registro
+# de operacoes de tratamento. Deve vir ANTES de RateLimit pra que rate
+# limit tambem possa logar contexto se quiser.
+app.add_middleware(RequestContextMiddleware)
 
 # Rate limiting (T2.API.T21): protege /integrations/* + /admin/* contra
 # abuso e cost overrun (LLM tokens, Evolution send, Chatwoot API).

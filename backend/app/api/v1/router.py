@@ -170,6 +170,7 @@ async def calcular_emolumento(
     },
 )
 def get_protocolo(
+    request: Request,
     numero: Annotated[
         str,
         Path(
@@ -184,7 +185,9 @@ def get_protocolo(
     protocolo = db.execute(select(Protocolo).where(Protocolo.numero == numero)).scalar_one_or_none()
 
     if protocolo is None:
-        # Loga tentativa de consulta a protocolo inexistente (seguranca)
+        # Loga tentativa de consulta a protocolo inexistente (seguranca).
+        # request.state populado por RequestContextMiddleware (request_id,
+        # client_ip, user_agent) - LGPD art. 37 exige registro de operacoes.
         AuditService.log(
             db,
             actor_id="anonymous",
@@ -192,6 +195,9 @@ def get_protocolo(
             action="protocolo.read.not_found",
             resource=f"protocolo:{numero}",
             payload={"numero": numero, "result": "not_found"},
+            request_id=getattr(request.state, "request_id", None),
+            ip=getattr(request.state, "client_ip", None),
+            user_agent=getattr(request.state, "user_agent", None),
         )
         raise HTTPException(
             status_code=404,

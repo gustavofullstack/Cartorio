@@ -83,20 +83,97 @@ class ErrorResponse(BaseModel):
 
 
 class LGPDBlockedResponse(ErrorResponse):
-    """Erro especifico quando o cliente recusa consentimento LGPD."""
+    """Erro especifico quando o cliente recusa consentimento LGPD.
+
+    Copy juridica defensavel conforme:
+    - LGPD Lei 13.709/2018, art. 7o, I (consentimento como base legal)
+    - LGPD art. 8o, §5o (revogacao a qualquer tempo, sem custo)
+    - LGPD art. 9o (informacao ao titular)
+    - LGPD art. 18 (direitos do titular: confirmacao, acesso, correcao, etc)
+    - LGPD art. 41 (DPO - Encarregado de Protecao de Dados)
+    - Provimento CNJ 74/2018 (retencao minima 5 anos para atos cartorarios)
+
+    O cliente deve receber mensagem clara + caminho de revogacao + contato DPO.
+    """
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "erro": "LGPD_BLOCKED",
                 "mensagem": (
-                    "Consentimento obrigatorio. Conforme Lei 13.709/2018 (LGPD), "
-                    "o tratamento de dados pessoais exige consentimento explicito."
+                    "Para continuar, precisamos do seu consentimento explicito "
+                    "para tratamento dos dados pessoais deste atendimento, "
+                    "conforme Lei 13.709/2018 (LGPD), art. 7o, I. "
+                    "Voce pode revogar este consentimento a qualquer momento, "
+                    "sem custo, conforme art. 8o, §5o da mesma lei."
                 ),
-                "detalhes": {"consentimento_lgpd_aceito": False},
+                "detalhes": {
+                    "base_legal": "LGPD art. 7o, I (consentimento)",
+                    "revogacao": (
+                        "Responda REVOGAR a qualquer momento para cancelar este "
+                        "consentimento e apagar os dados coletados neste atendimento."
+                    ),
+                    "direitos_titular": (
+                        "Conforme LGPD art. 18, voce tem direito a: confirmacao "
+                        "da existencia de tratamento, acesso aos dados, correcao, "
+                        "anonimizacao, portabilidade, eliminacao e revogacao do "
+                        "consentimento. Para exercer, contate nosso DPO."
+                    ),
+                    "dpo_contato": "dpo@2notasudi.com.br",
+                    "politica_privacidade": "https://2notasudi.com.br/privacidade",
+                    "retencao_minima_legal": (
+                        "5 anos para atos cartorarios (Provimento CNJ 74/2018). "
+                        "Dados de atendimento sem protocolo: ate revogacao do consentimento."
+                    ),
+                    "consentimento_lgpd_aceito": False,
+                },
             }
         }
     )
+
+    # Campos estruturados para que o cliente receba mensagem + caminho de saida
+    base_legal: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Base legal que justifica a coleta (ex: 'LGPD art. 7o, I').",
+        ),
+    ]
+    revogacao: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Instrucao clara de como o titular pode revogar o consentimento.",
+        ),
+    ]
+    direitos_titular: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Lista dos direitos do titular conforme LGPD art. 18.",
+        ),
+    ]
+    dpo_contato: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Email do Encarregado de Protecao de Dados (DPO) - LGPD art. 41.",
+        ),
+    ]
+    politica_privacidade_url: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="URL da politica de privacidade completa do cartorio.",
+        ),
+    ]
+    retencao_minima_legal: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Periodo minimo de retencao por obrigao legal cartoraria.",
+        ),
+    ]
 
 
 class ProtocoloNotFoundResponse(ErrorResponse):

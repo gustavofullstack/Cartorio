@@ -1,7 +1,7 @@
 {
   "name": "23 - Cron Stale Detector (5min)",
   "description": "Detecta atendimentos parados >30min e marca como 'stale'. Alerta Chatwoot quando ha stale.",
-  "active": false,
+  "active": true,
   "nodes": [
     {
       "parameters": {

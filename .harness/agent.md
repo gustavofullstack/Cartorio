@@ -110,3 +110,51 @@ task chega
   - Mudanca em interface entre contextos (modelo de dados vs workflow vs compliance)
 
 Modified by Gustavo Almeida
+
+---
+
+## Sprint 3 — WhatsApp Pilot Ready (v0.5.1 → v0.6.0)
+
+> Spec: `docs/superpowers/specs/2026-06-23-sprint-3-design.md` (aprovação pendente Gustavo)
+
+### Meta
+Tudo o que falta para conectar 1 número real de WhatsApp e servir 1 cliente real do cartório sem cair.
+
+### Goal #1 — Fechar os 6 SUI (80min UI, 0 código)
+Só Gustavo consegue. ZCode não bloqueia aqui.
+- 1.1 DNS chatwoot.2notasudi.com.br (Easypanel UI)
+- 1.2 Credencial Evolution API no N8N (N8N UI)
+- 1.3 Agent Bot Chatwoot "Cartório Assistant"
+- 1.4 Regenerar Easypanel API key (exposta)
+- 1.5 OpenClaw LLM key (depende L1 LGPD)
+- 1.6 Decisão DNS typo `supbase` → `supabase`
+
+### Goal #2 — Aplicar 2 bugs P0 com ADR pronto
+- 2.1 B1 Chatwoot restart loop → `docker service update --limit-memory 1G` (ADR-015)
+- 2.2 B2 OpenClaw context overflow → threshold 50 msgs + TTL 24h + `curl /compact` (ADR-016)
+
+### Goal #3 — Rotação de credenciais expostas
+OpenCode-Go sk-, N8N JWTs (MCP + public), OpenClaw Token/Password, Redis default, Supabase DB.
+
+### Goal #4 — Débitos pré-merge backend (TDD)
+- 4.1 Audit log em 100% das mutações com request_id/ip/user_agent (1/6 hoje)
+- 4.2 DELETE /cliente/{id} (LGPD art. 18 VI)
+- 4.3 Job retenção 5y/até-revogação (D4)
+
+### Goal #5 — Workflows N8N usando nodes oficiais
+- 5.1 Ativar n8n-nodes-mcp em workflow #12
+- 5.2 Ativar n8n-nodes-chatwoot em workflow #03
+
+### Cron de monitoramento (ZCode roda automaticamente em cada sessão)
+- **daily-coverage**: `pytest --cov=app --cov-fail-under=90` (gate não pode baixar)
+- **weekly-audit-cleanup**: lembra de aplicar ADR-013 (mount backup watchdog) se DB-1 reiniciar
+- **sprint-board**: print status de 18 tasks Sprint 3, atualizar `.harness/TASKS.md`
+
+### Stop when (Sprint 3)
+- [ ] 6 SUI fechados (verificar com Gustavo)
+- [ ] B1 + B2 aplicados e estáveis por 24h
+- [ ] Credenciais rotacionadas e `.env` documentado
+- [ ] Audit log em 100% mutações
+- [ ] DELETE /cliente/{id} + job retenção deployados
+- [ ] Workflows #12 e #03 usando nodes oficiais
+- [ ] Tag `v0.6.0` em `master`
