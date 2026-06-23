@@ -5,6 +5,35 @@
 
 ---
 
+## v0.5.0 (2026-06-23) - SPRINT 2: Bugs P0 + Webhooks WhatsApp-Ready
+
+**Status:** 3 services novos + idempotency + HMAC + cron stale detector. 186/186 testes passando.
+
+### Added
+- `services/evolution_ingest.py` - normaliza payload Evolution, idempotência por `message_id` (6 testes TDD)
+- `services/chatwoot_handoff.py` - processa eventos Chatwoot com HMAC-SHA256 validation (5 testes TDD)
+- `services/stale_detector.py` - marca atendimentos >30min como `stale` (4 testes TDD)
+- `models/webhook_event.py` - tabela `webhook_events` (idempotência, source+event_id unique)
+- Endpoint `POST /api/v1/cron/stale-detector` (chamado pelo N8N #23)
+- Workflow N8N #23 (cron 5min) - detecta stale e alerta Chatwoot
+- ADR-015: investigação Chatwoot restart loop
+- ADR-016: mitigação OpenClaw context overflow
+- Settings: `chatwoot_webhook_secret`, `evolution_webhook_secret`, `stale_threshold_minutes`
+
+### Changed
+- `/webhook/evolution` agora delega para `evolution_ingest` (idempotente quando payload tem `data.key.id`; formato legado continua funcionando)
+- `/webhook/chatwoot` agora delega para `chatwoot_handoff` (HMAC + idempotente; contrato muda de `{ok, event}` para `{status, event_type}`)
+
+### Security
+- Webhooks validam signature HMAC-SHA256 (se secret configurado em env)
+- Idempotência evita replay attack
+- LGPD: payload bruto NÃO é persistido, apenas hash SHA256
+
+### Breaking Changes
+- Contrato de `/webhook/chatwoot`: `{ok, event}` → `{status, event_type}`. Workflows N8N que consumem esse endpoint devem ser atualizados para ler `data.status` em vez de `data.ok`.
+
+---
+
 ## v0.4.0 (2026-06-23 11:00 BRT) - SPRINT 1: API Protocolo + LGPD Gate
 
 **Status**: Endpoints `/api/v1/protocolo` (GET/POST) implementados com LGPD by design, PII scrubbing, audit log imutavel, HITL DRAFT obrigatorio. Swagger PT-BR completo.

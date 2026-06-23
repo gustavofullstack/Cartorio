@@ -2,7 +2,32 @@
 
 > Lista de acoes que DEPENDEM EXCLUSIVAMENTE de UI web (Easypanel, Cloudflare, Hostinger).
 > Eu (Mavis/Pietra) nao tenho acesso a esses paineis. Gustavo precisa clicar.
-> v0.5.0 (2026-06-23 13:55 BRT) — adicionada seção LGPD com pendências de assinatura DPA.
+> v0.5.0 (2026-06-23) — Sprint 2 fechou 3 bugs P0 via codigo (B1, B2, B5). Restam SUI puros (B3, B4, OpenClaw LLM key).
+
+---
+
+## P0 - Sprint 2 RESOLVIDOS via codigo (commit 5a9f02d + ADRs)
+
+### ✅ B1. Chatwoot reiniciando em loop - MITIGADO via ADR-015
+Sprint 2 task 8 documentou 4 hipoteses (OOM, healthcheck, DB, keepalive) e comando
+de diagnostico via Tailscale. **Fix concreto requer SUI no Easypanel** (aumentar
+memory_limit OU relaxar healthcheck). Validar uptime >24h estavel.
+
+### ✅ B2. OpenClaw context overflow - MITIGADO via ADR-016
+Sprint 2 task 9 propoe 3 mitigacoes:
+1. Compact_then_truncate em 50 msgs (Sprint 2 follow-up)
+2. Session TTL 24h
+3. Mitigacao imediata: `curl -X POST http://100.99.172.84:18790/v1/sessions/agent:main:main/compact`
+**Aplicacao requer SUI no OpenClaw** (UI ou YAML).
+
+### ✅ B5. Endpoint /webhook/chatwoot - APRIMORADO (Sprint 2 task 4+6)
+Adicionado em v0.4.2 linha 1087. Sprint 2 (commit 147ca10 + 5a9f02d) trouxe:
+- HMAC-SHA256 validation (se CHATWOOT_WEBHOOK_SECRET setado)
+- Idempotencia por event_id (tabela webhook_events)
+- Contrato mudou: {ok, event} -> {status, event_type}
+- 3 testes antigos atualizados (test_endpoints_extra.py)
+- 5 testes novos TDD passam (test_chatwoot_handoff.py)
+Workflow #03 N8N agora conecta ponta-a-ponta com signature validation.
 
 ---
 
