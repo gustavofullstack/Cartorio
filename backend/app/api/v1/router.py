@@ -534,9 +534,7 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
                         "pii_findings": scrub_result.findings,
                         "redaction_count": scrub_result.redaction_count,
                         "handoff_reason": handoff_reason,
-                        "blocked_at": datetime.datetime.now(
-                            datetime.timezone.utc
-                        ).isoformat(),
+                        "blocked_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     },
                     **ctx_pii,
                 )

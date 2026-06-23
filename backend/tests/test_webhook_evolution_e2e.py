@@ -259,9 +259,7 @@ def test_audit_log_pii_blocked_emitted(client) -> None:
     assert resp.status_code == 200
 
     with session_scope() as db:
-        entries = (
-            db.query(AuditLog).filter(AuditLog.action == "conversa.pii_blocked").all()
-        )
+        entries = db.query(AuditLog).filter(AuditLog.action == "conversa.pii_blocked").all()
         assert len(entries) >= 1, (
             "deve haver pelo menos 1 audit log com action=conversa.pii_blocked"
         )
