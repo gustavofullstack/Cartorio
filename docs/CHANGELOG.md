@@ -69,6 +69,32 @@
 
 ---
 
+## v0.4.3 (2026-06-23 15:00-15:05 BRT) - SPRINT 1.3: OPENCLAW VIA TAILSCALE
+
+**Status**: OpenClaw agora acessivel por 2 dominios: publico (`agent.2notasudi.com.br`) + Tailscale-only (`vps-cartorio.tail2fe279.ts.net`).
+
+### Adicionado
+- **Rota Traefik Tailscale-only para OpenClaw** em `/etc/easypanel/traefik/config/custom.yaml`:
+  - Rule: `HostRegexp(`(vps-cartorio|openclaw)\\.tail2fe279\\.ts\\.net`)`
+  - Service: `cartorio_openclaw-gateway-tailscale` -> `http://cartorio_openclaw-gateway:18789/`
+  - 2 routers (http + https com `tls: {}` sem certResolver = sem letsencrypt)
+  - **Resultado**: so quem ta na rede Tailscale consegue acessar OpenClaw pelo dominio privado
+- **MagicDNS `vps-cartorio.tail2fe279.ts.net` ja existe** (auto-gerado pelo Tailscale)
+- **MagicDNS `openclaw.tail2fe279.ts.net`** adicionado como target (ja funciona via mesma rota)
+
+### Validado em Producao
+- `GET https://vps-cartorio.tail2fe279.ts.net/` -> 200, HTML OpenClaw Control (10316 bytes)
+- `GET https://agent.2notasudi.com.br/` -> 200, mesmo HTML (10316 bytes)
+- Logs Traefik: `100.99.172.84 - - "GET / HTTP/1.1" 200` roteado via `tailscale-openclaw-http@file`
+
+### Decisao (ADR)
+- **ADR-015**: Dominio Tailscale MagicDNS (auto-TLS opcional, zero letsencrypt) usado para acesso admin/personalizado. Dominio publico (`*.2notasudi.com.br`) mantido para cliente final. Trade-off: Tailscale eh mais seguro mas exige usuario estar na rede privada.
+
+### Erro confessado
+- Tentei `Host(`a`, `b`)` (multiplos parametros) - Traefik aceita so 1. Corrigido pra `HostRegexp`.
+
+---
+
 ## v0.4.2 (2026-06-23 14:13-14:25 BRT) - SPRINT 1.2: SUPABASE FIX + EVOLUTION INSTANCE + ATENDIMENTOS
 
 **Status**: TODOS OS 11 workflows N8N ativos, Supabase 13/13 containers HEALTHY, Evolution instance `cartorio-2notas` criada, tabela `atendimentos` deployada + 4 endpoints novos.
