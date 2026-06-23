@@ -43,3 +43,7 @@ Thumbs.db
 
 # Local secrets — never commit
 .secrets/
+
+# pytest-cov annotation files (","-suffix bug seen in bf12203)
+,cover
+*.cover

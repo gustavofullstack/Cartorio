@@ -232,3 +232,19 @@ Contexto: cartorio-n8n (mvs_441eef7e) entregando workflows E6.S2 (10 creds + 18 
 **Cross-project:** esse checklist NAO e especifico de cartorio. Aplicavel a QUALQUER projeto com N8N/make.com/zapier + dado pessoal. Usar em udiapods se migrar para N8N.
 
 **Cross-ref:** review de cartorio-dev (LGPD-015) acelerado se este checklist ja estiver satisfeito — revisor sabe o que procurar.
+
+### SoD — LGPD reviewer NAO pode ser implementer (2026-06-23 19:58 BRT) (2026-06-23)
+Type: rule
+
+Aprendizado durante review de merge master vs fix branch no Cartorio. Ofereci fazer o merge como "cross-review final". Pietra (root) RECUSOU com理由 correto:
+
+LGPD reviewer (cartorio-lgpd) revisa implications LGPD. NAO pode implementar o que revisa. Quebra Separation of Duties (SoD) — mesmo papel nao pode ser gatekeeper + executor do mesmo PR.
+
+Padrao correto do harness Cartorio:
+  cartorio-lgpd → review cross LGPD implications (gatekeeper, NAO implementer)
+  cartorio-dev → implementa o merge (ownership implementation)
+  Mavis root → quality gate + escalacao D1 (decisao de produto/arquivo)
+
+Aplicacao universal (qualquer projeto LGPD/GDPR/CCPA B2B):
+  - Quem revisa compliance NAO commita o codigo revisado
+  - Quem audita NAO e

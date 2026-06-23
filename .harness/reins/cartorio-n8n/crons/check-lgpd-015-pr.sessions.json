@@ -2,15 +2,11 @@
   "sessions": [
     {
       "sessionId": "mvs_441eef7e5aeb4be4a94590c572afc61f",
-      "createdAt": 1782253800002
+      "createdAt": 1782255300002
     },
     {
       "sessionId": "mvs_441eef7e5aeb4be4a94590c572afc61f",
-<<<<<<< Updated upstream
-      "createdAt": 1782254700005
-=======
-      "createdAt": 1782255000002
->>>>>>> Stashed changes
+      "createdAt": 1782255600002
     }
   ]
 }
