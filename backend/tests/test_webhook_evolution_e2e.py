@@ -236,6 +236,103 @@ def test_audit_log_no_db_tem_pii_criptografado(client) -> None:
             )
 
 
+# ============================================================================
+# P0.2 - Audit log do BLOQUEIO (LGPD art. 37 + cartorio-lgpd audit 2026-06-23)
+# conversa.received registra DETECCAO de PII. conversa.pii_blocked registra
+# o BLOQUEIO (handoff acionado por causa de PII). Sem o segundo, nao temos
+# como provar conformidade em auditoria - "PII foi detectado" nao
+# significa "PII foi bloqueado".
+# ============================================================================
+
+
+def test_audit_log_pii_blocked_emitted(client) -> None:
+    """Quando PII eh detectado E bloqueado (handoff), DEVE haver entrada
+    separada no audit log com action=conversa.pii_blocked.
+
+    Compliance: distinguir deteccao de bloqueio em relatorios LGPD.
+    """
+    from app.db import session_scope
+    from app.models.audit_log import AuditLog
+
+    payload = _make_evolution_payload("Meu CPF eh 123.456.789-09")
+    resp = client.post("/api/v1/webhook/evolution", json=payload)
+    assert resp.status_code == 200
+
+    with session_scope() as db:
+        entries = (
+            db.query(AuditLog).filter(AuditLog.action == "conversa.pii_blocked").all()
+        )
+        assert len(entries) >= 1, (
+            "deve haver pelo menos 1 audit log com action=conversa.pii_blocked"
+        )
+        # Payload NAO pode ter o CPF integro
+        for entry in entries:
+            payload_str = str(entry.payload)
+            assert "123.456.789-09" not in payload_str, (
+                f"CPF integro vazou no pii_blocked log: {payload_str[:500]}"
+            )
+
+
+def test_audit_log_pii_blocked_carries_pii_findings(client) -> None:
+    """payload da entry conversa.pii_blocked DEVE incluir pii_findings
+    (dict com contagem por tipo) + redaction_count + handoff_reason.
+    """
+    from app.db import session_scope
+    from app.models.audit_log import AuditLog
+
+    payload = _make_evolution_payload("Meu CPF eh 123.456.789-09 e email x@y.com")
+    resp = client.post("/api/v1/webhook/evolution", json=payload)
+    assert resp.status_code == 200
+
+    with session_scope() as db:
+        entry = (
+            db.query(AuditLog)
+            .filter(AuditLog.action == "conversa.pii_blocked")
+            .order_by(AuditLog.id.desc())
+            .first()
+        )
+        assert entry is not None
+        p = entry.payload
+        assert "pii_findings" in p, f"pii_findings ausente: {p}"
+        assert isinstance(p["pii_findings"], dict)
+        assert p["pii_findings"].get("cpf", 0) >= 1
+        assert p["pii_findings"].get("email", 0) >= 1
+        assert p["redaction_count"] >= 2
+        assert p["handoff_reason"] == "PII detectada"
+        assert "blocked_at" in p
+
+
+def test_audit_log_pii_blocked_carries_request_metadata(client) -> None:
+    """entry conversa.pii_blocked DEVE carregar request metadata:
+    ip (truncado /24 via RequestContextMiddleware), user_agent, request_id.
+    LGPD art. 37 - audit log deve permitir rastreabilidade do request.
+    """
+    from app.db import session_scope
+    from app.models.audit_log import AuditLog
+
+    payload = _make_evolution_payload("Meu CPF eh 123.456.789-09")
+    resp = client.post(
+        "/api/v1/webhook/evolution",
+        json=payload,
+        headers={"User-Agent": "test-cartorio-2026-06-23"},
+    )
+    assert resp.status_code == 200
+
+    with session_scope() as db:
+        entry = (
+            db.query(AuditLog)
+            .filter(AuditLog.action == "conversa.pii_blocked")
+            .order_by(AuditLog.id.desc())
+            .first()
+        )
+        assert entry is not None
+        # Request metadata populated
+        assert entry.request_id is not None
+        assert entry.user_agent == "test-cartorio-2026-06-23"
+        # canal vem do header X-Canal ou default whatsapp
+        assert entry.canal == "whatsapp"
+
+
 def test_payload_extremo_50_pii_simultaneos(client) -> None:
     """50+ PII em 1 mensagem -> response NUNCA vaza."""
     # Concatena 5x cada PII sample

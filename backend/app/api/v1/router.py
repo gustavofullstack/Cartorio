@@ -514,6 +514,36 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
         )
         handoff = True
         handoff_reason = "PII detectada"
+        # P0.2 - LGPD art. 37 audit log: registrar o BLOQUEIO alem da
+        # deteccao (que ja eh logada em conversa.received na linha 483).
+        # Sem isso, compliance review nao distingue "PII detectado mas
+        # seguiu" de "PII detectado e bloqueado" - nao conseguimos provar
+        # que bloqueamos, so que detectamos.
+        try:
+            with session_scope() as db_pii:
+                ctx_pii = audit_kwargs(request)
+                if not ctx_pii["canal"]:
+                    ctx_pii["canal"] = "whatsapp"
+                AuditService.log(
+                    db_pii,
+                    actor_id=sender,
+                    actor_type="bot",
+                    action="conversa.pii_blocked",
+                    resource=f"whatsapp:{instance}",
+                    payload={
+                        "pii_findings": scrub_result.findings,
+                        "redaction_count": scrub_result.redaction_count,
+                        "handoff_reason": handoff_reason,
+                        "blocked_at": datetime.datetime.now(
+                            datetime.timezone.utc
+                        ).isoformat(),
+                    },
+                    **ctx_pii,
+                )
+        except Exception:
+            # Audit log falhou - NAO quebrar o fluxo principal.
+            # Conversa com handoff ja foi gravada (try/except la embaixo).
+            pass
     else:
         # Chamar LLM via modulo dedicado (SRP + LGPD by design - refator 2026-06-23).
         # opencode_go.chat() faz:

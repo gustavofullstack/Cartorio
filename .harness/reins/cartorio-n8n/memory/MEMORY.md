@@ -226,3 +226,40 @@ REFERENCIA cartorio: Gustavo locked-out 19:43 BRT. Diagnostico evoluiu:
 Cron monitor proposto: SELECT email FROM user WHERE roleSlug='global:owner' AND email=''; alerta.
 
 JWT signing: 22/06 18:30 ate 19:48 BRT rodou com user fantasma (email vazio). JWTs de executions nesse intervalo sao problematicos. **Recomenda-se rotacionar N8N_JWT_SECRET** (env var) alem das senhas.
+
+### N8N 2.27.3 Gustavo esqueceu senha — root cause real (2026-06-23 19:46 BRT) (2026-06-23)
+Type: pitfall
+
+CORRECAO ao memory entry anterior (22:46 BRT): email NAO esta vazio. Diagnostico REAL:
+
+USER TABLE (Postgres n8n database):
+- email = gustavomar.fullstack@gmail.com (EXISTE, NAO vazio)
+- role = global:owner
+- created 2026-06-22 19:27 UTC
+- lastActiveAt = 2026-06-23 (Gustavo TENTOU)
+- disabled = false, mfa = false
+- hash bcrypt presente (60 chars)
+- TOTAL users = 1 (so Gustavo)
+- @Techno832466 NAO bate com hash
+
+ENV N8N:
+- DB_TYPE=postgresdb OK
+- DB host=db (container cartorio_supabase-db-1)
+- DB_PASSWORD=e999b7439deb35dfe05c33f265dae1ea <-- **VAZOU NO CHAT 19:46 BRT, ROTACIONAR**
+- SEM N8N_USER/N8N_PASSWORD/N8N_BASIC_AUTH (usa user table)
+
+ACAO PROPOSTA por Pietra (aguardando GO Gustavo):
+1. openssl rand -base64 24 → senha temp
+2. UPDATE user SET password=bcrypt_hash WHERE email=gustavomar.fullstack@gmail.com
+3. Enviar via Telegram DM (canal seguro)
+4. Gustavo troca em Settings > Personal
+5. Rotacionar DB_PASSWORD (Sprint 3 Goal #3)
+
+APLICABILIDADE: N8N com user admin unico + password unknown. Cross-project lesson.
+
+REFERENCIA cartorio: Gustavo locked-out 19:43 BRT. Diagnostico evoluiu:
+- 19:48 BRT: 1a hip userActivated=false (fix parcial mas NAO root cause)
+- 22:46 BRT: 2a hip email vazio (INCORRETA — email existe)
+- 19:46 BRT: 3a hip CORRETA = Gustavo esqueceu senha. Hash existe mas nao bate com @Techno832466
+
+LECCION CRITICA: SEMPRE verificar `password LIKE '$2%'` (bcrypt prefix) + bcrypt.checkpw ANTES de assumir bug de configuracao. A hipotese mais simples (esqueceu senha) eh 80% das vezes.
