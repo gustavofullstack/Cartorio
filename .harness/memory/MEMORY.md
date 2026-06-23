@@ -376,6 +376,62 @@ Modified by Gustavo Almeida
 
 ---
 
+## 🚨 2026-06-23 14:14-14:30 BRT — Incidente SSH + Realinhamento (ZCode session)
+
+### Contexto
+Pietra reportou em mega-prompt: "NADA FUNCIONA, Supabase down, N8N sumiu, OpenClaw travado, Tailscale bloqueando". Estava puto e ameaçando refazer tudo do zero.
+
+### Ground truth (validado nesta sessão)
+- 12 containers `cartorio_*` UP 1/1 na VPS via `ssh cartorio` (alias correto)
+- 8/9 domínios públicos respondem (5×200, 1×401 esperado Supabase, 1×DNS-only Chatwoot)
+- Tailscale OK; SSH local tinha IP stale (`vps` → 100.120.250.91 que não existe mais; correto é `cartorio` → 100.99.172.84)
+- N8N UP, workflows no git (11 JSONs), 4 ACTIVE runtime
+- OpenClaw container UP, /v1/chat tem bug conhecido (upstream), falta LLM key (L4 bloqueada por L1 DPA)
+- "Centraliza tudo no Supabase / apaga outros bancos" = pedido **RECUSADO** nesta sessão (perderia schema/config de 3 serviços)
+
+### Causa raiz do "nada funciona"
+1. **SSH config com IP stale** — `vps` apontava pra IP Tailscale antigo. Operador usava `ssh vps` em vez de `ssh cartorio`.
+2. **Interpretação errada de status code** — Supabase 401 (Kong exige API key) foi lido como "down".
+3. **Loop destrutivo de briefing** — Pietra mandou 3 mega-prompts em loop mandando "apagar e refazer" sem validar ground truth.
+
+### Ação corretiva
+- Documentado em `docs/INCIDENTE_SSH_2026-06-23.md`
+- Plano gerado em `docs/SUPER_PLANO_v0.6.0.md` (100 tasks agrupadas em 6 sprints temáticas)
+- Pietra aprovou **Caminho C: Super plano + 100 tasks AGORA** + **Sprint 0 = Estabilidade**
+- Decisão arquitetural: **NÃO centralizar bancos no Supabase**. Manter bancos internos de N8N/Evo/Chatwoot. Supabase só pra dados de negócio do cartório.
+
+### Lição reusável (CRÍTICA — cross-project)
+> **"Antes de declarar 'sistema down', validar 3 ground truths:**
+> 1. **SSH conecta** com alias correto? (`ssh cartorio` NUNCA `ssh vps`)
+> 2. **Container UP**? (`docker service ls | grep cartorio`)
+> 3. **Domínio responde** com status esperado? (401 != down em APIs autenticadas)
+>
+> Se os 3 passam → sistema está no ar. Problema é de acesso local ou interpretação."
+
+### Regra nova (cross-project)
+> **SEMPRE usar `ssh cartorio` (alias específico, IP Tailscale real). NUNCA `ssh vps` (genérico, propenso a IP stale).**
+
+### Pendências escaladas (Pietra decide)
+- T0.9: DNS `chatwoot.2notasudi.com.br` (Hostinger/Cloudflare)
+- T0.10: Chatwoot Agent Bot (webhook)
+- T0.11: Easypanel API key regenerar
+- T0.12: Decidir typo `supbase` vs `supabase`
+
+### Pendências técnicas (cartorio-devops)
+- T0.7: Cert wildcard + Traefik router `*.tail2fe279.ts.net`
+- T0.8: Tailscale ACL tag `tag:cartorio`
+
+### Pendências L (LGPD)
+- L1: DPA MiniMax (juru 2-4 semanas) — STAGING ONLY
+- L4: OpenClaw LLM key (após L1)
+
+### Próxima ação
+Aguardar review do Pietra no `docs/SUPER_PLANO_v0.6.0.md`. Se aprovado, começar Sprint 0 (12 tasks, ~3 dias úteis).
+
+Modified by ZCode (Pietra session 2026-06-23 14:30 BRT)
+
+---
+
 ## 2026-06-23 — N8N workflow hardening (cartorio-n8n)
 
 ### N8N license: `feat:variables` NÃO disponível
