@@ -24,6 +24,13 @@ class ScrubResult:
 
 
 # Regex patterns calibrados pra formato brasileiro
+# Cobre 11 tipos: cpf, rg, cnpj, cartao, phone_br, email, cep, pis,
+# titulo_eleitor, placa_veiculo, data.
+#
+# NAO cobertos por regex (requerem NER / contexto):
+# - nome completo PF (formato varia, falsos positivos altissimos)
+# - endereco (logradouro + numero + bairro + cidade)
+# Cartorio usa HITL (escrevente valida) pra esses casos.
 _PATTERNS: dict[str, re.Pattern[str]] = {
     "cpf": re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b"),
     "rg": re.compile(r"\b\d{1,2}\.?\d{3}\.?\d{3}-?[\dxX]\b"),
@@ -34,6 +41,11 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     "cep": re.compile(r"\b\d{5}-?\d{3}\b"),
     "pis": re.compile(r"\b\d{3}\.?\d{5}\.?\d{2}-?\d{2}\b"),
     "titulo_eleitor": re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b"),
+    # Placa veiculo BR: Mercosul (ABC1D23) ou antiga (ABC1234)
+    "placa_veiculo": re.compile(r"\b[A-Z]{3}\d[A-Z]\d{2}\b|\b[A-Z]{3}\d{4}\b"),
+    # Data BR: dd/mm/yyyy (nasc, eventos) ou ISO yyyy-mm-dd
+    # Cuidado: pode casar datas de protocolo, mas e trade-off aceitavel
+    "data": re.compile(r"\b\d{2}/\d{2}/\d{4}\b|\b\d{4}-\d{2}-\d{2}\b"),
 }
 
 

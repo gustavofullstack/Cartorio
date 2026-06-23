@@ -67,3 +67,60 @@ def test_scrub_credit_card():
     r = scrub(text)
     assert "4111" not in r.text
     assert "cartao" in r.findings
+
+
+def test_scrub_placa_veiculo_mercosul():
+    """Placa Mercosul (ABC1D23) deve ser redatada."""
+    text = "minha placa é ABC1D23 e o carro é preto"
+    r = scrub(text)
+    assert "ABC1D23" not in r.text
+    assert "placa_veiculo" in r.findings
+    assert "[PLACA_VEICULO_REDACTED]" in r.text
+
+
+def test_scrub_placa_veiculo_antiga():
+    """Placa antiga (ABC1234) deve ser redatada."""
+    text = "placa ABC1234 encontrada no estacionamento"
+    r = scrub(text)
+    assert "ABC1234" not in r.text
+    assert "placa_veiculo" in r.findings
+
+
+def test_scrub_data_br():
+    """Data no formato dd/mm/yyyy deve ser redatada (LGPD: data nascimento = PII)."""
+    text = "nasci em 15/03/1985 e hoje é 23/06/2026"
+    r = scrub(text)
+    assert "15/03/1985" not in r.text
+    assert "data" in r.findings
+    assert r.findings["data"] == 2
+
+
+def test_scrub_data_iso():
+    """Data ISO (yyyy-mm-dd) deve ser redatada."""
+    text = "evento marcado para 2026-07-15"
+    r = scrub(text)
+    assert "2026-07-15" not in r.text
+    assert "data" in r.findings
+
+
+def test_scrub_combo_placa_e_data():
+    """Placa + data + cpf numa so mensagem devem ser todos redatados."""
+    text = "veiculo ABC1D23, cpf 123.456.789-09, nasc 01/01/1990"
+    r = scrub(text)
+    assert "ABC1D23" not in r.text
+    assert "123.456.789-09" not in r.text
+    assert "01/01/1990" not in r.text
+    assert "placa_veiculo" in r.findings
+    assert "cpf" in r.findings
+    assert "data" in r.findings
+
+
+def test_scrub_nao_redata_nome_pf_ou_endereco():
+    """Documenta limite: nome PF e endereco NAO sao detectados por regex.
+    Cobertura real vem do HITL (escrevente valida antes de agir)."""
+    text = "Sr. Joao da Silva, Rua das Flores 123, Sao Paulo"
+    r = scrub(text)
+    # Texto NAO e alterado (sem regex match)
+    assert r.text == text
+    assert r.findings == {}
+    assert r.redaction_count == 0
