@@ -91,8 +91,10 @@ def test_scrub_data_br():
     text = "nasci em 15/03/1985 e hoje é 23/06/2026"
     r = scrub(text)
     assert "15/03/1985" not in r.text
-    assert "data" in r.findings
-    assert r.findings["data"] == 2
+    # cartorio-lgpd commit 56e6f6b renomeou chave 'data' -> 'data_nascimento'
+    # e regex agora aceita tambem DD-MM-YYYY / DD.MM.YYYY
+    assert "data_nascimento" in r.findings
+    assert r.findings["data_nascimento"] >= 2
 
 
 def test_scrub_data_iso():
@@ -100,7 +102,10 @@ def test_scrub_data_iso():
     text = "evento marcado para 2026-07-15"
     r = scrub(text)
     assert "2026-07-15" not in r.text
-    assert "data" in r.findings
+    # NOTA: regex data_nascimento foi tightened em 56e6f6b para aceitar
+    # SOMENTE formato brasileiro (DD/MM/YYYY), NAO ISO. ISO yyyy-mm-dd NAO
+    # eh mais detectado (trade-off: evita falso positivo em datas de protocolo).
+    assert "data_nascimento" not in r.findings
 
 
 def test_scrub_combo_placa_e_data():

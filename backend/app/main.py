@@ -14,6 +14,7 @@ from app.config import settings
 from app.db import engine
 from app.models.base import Base
 from app.services.audit import AuditService
+from app.services.rate_limit import RateLimitMiddleware
 
 
 @asynccontextmanager
@@ -203,6 +204,18 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Rate limiting (T2.API.T21): protege /integrations/* + /admin/* contra
+# abuso e cost overrun (LLM tokens, Evolution send, Chatwoot API).
+# Redis sliding window 60/min por session_id (header X-Session-Id) ou
+# hash do IP. Fail-open se Redis offline. Ver tests/test_rate_limit.py.
+app.add_middleware(
+    RateLimitMiddleware,
+    redis_url=settings.redis_url,
+    per_minute=60,
+    session_header="x-session-id",
+    paths_prefixes=("/integrations/", "/admin/"),
 )
 
 
