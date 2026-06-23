@@ -5,6 +5,27 @@
 
 ---
 
+## v0.4.0 (2026-06-23) - SPRINT 0.5+2: Centralização de Bancos + n8n Community Nodes + Endpoints FastAPI + Chatwoot YAML Fix
+
+**Status**: Deployado & Rodando Verde (100% verificado)
+
+### Adicionado
+- Bancos de dados separados `n8n` e `evolution` criados no Supabase Postgres central (`cartorio_supabase-db-1`) para persistência isolada.
+- Conectado o container de banco do Supabase (`cartorio_supabase-db-1`) diretamente à rede overlay do Swarm `easypanel-cartorio` com alias `db`. Isso permite que o n8n e o evolution-api resolvam `db` instantaneamente no boot.
+- Endpoint `/api/v1/webhook/evolution` integrado com o LLM OpenCode Go (`deepseek-v4-flash`), processamento de intents, persistência automática na tabela `conversas` do Supabase e redirecionamento para o humano se `[HUMANO]` ou PII forem detectados.
+- Endpoint de monitoramento integrado `/api/v1/health/radar`: realiza checagens em tempo real no Postgres, Redis, n8n, OpenClaw e Evolution API (retornando status `green` se todos estiverem online).
+- Endpoint `/api/v1/postman` que exporta a coleção do Postman v2.1.0 com todas as rotas ativas.
+- Testes unitários abrangentes mockados em `backend/tests/test_radar.py` cobrindo todas as novas rotas. Cobertura global do app subiu para **99.36%**.
+
+### Corrigido
+- n8n community packages: Corrigido o formato de array de strings para array de objetos JSON em `N8N_COMMUNITY_PACKAGES`, eliminando a falha de validação Zod e pré-instalando com sucesso Chatwoot, MinIO, Evolution API, MCP Client e PDFKit no boot.
+- Monitor de rede (`/usr/local/bin/cartorio-network-monitor.sh`): Adicionada exclusão explícita de `n8n-runner` no regex de busca por `cartorio_n8n` e regras de autocorreção para manter a ponte do banco de dados na rede overlay ativa.
+- Chatwoot YAML Syntax Error: Resolvido a falha no ActionCable `cable.yml` removendo a variável redundante `REDIS_PASSWORD` (a autenticação do Redis passou a ser realizada de forma limpa pelo URL-encoded em `REDIS_URL`).
+- OpenClaw gateway config: Corrigida a validação Zod adicionando `"name": "deepseek-v4-flash"` ao objeto de modelo de IA e removendo a propriedade inválida `"defaults"`.
+- OpenClaw password auth: Enforcada a autenticação com senha (`@Techno832466`) no gateway para aceitar acessos limpos via Tailscale Control UI.
+
+---
+
 ## v0.3.0 (2026-06-23) - SPRINT 0.5+1: Infra verde + MCP server
 
 **Status**: Em deploy (Pietra marchando)
