@@ -106,6 +106,36 @@ curl -s -o /dev/null -w "HTTP=%{http_code} time=%{time_total}s cert_verify=%{ssl
 
 ---
 
+## 🔑 URL de Acesso com Autenticação
+
+O OpenClaw usa `--auth password` mas aceita **token via query string** (env var `OPENCLAW_GATEWAY_TOKEN`).
+
+**URL para bookmark (Mac, iPhone — qualquer máquina na tailnet):**
+
+```
+https://vps-cartorio.tail2fe279.ts.net/?token=fz1qzo2xka8n82rn62irscuqws75mm1e17mpsnxzqlp13z1p35skrbg2ck8yg8pg
+```
+
+**O que acontece:**
+1. Browser carrega o Control UI (HTML) → HTTP 200
+2. Dashboard JS lê `?token=xxx` da URL e usa no handshake WSS
+3. WSS conecta em `wss://vps-cartorio.tail2fe279.ts.net` com auth header
+4. Se token bater com `OPENCLAW_GATEWAY_TOKEN` no container → sessão estabelecida
+
+**Verificar token atual:**
+```bash
+ssh cartorio 'docker service inspect cartorio_openclaw-gateway --format "{{json .Spec.TaskTemplate.ContainerSpec.Env}}" | grep OPENCLAW_GATEWAY_TOKEN'
+```
+
+**Rotacionar token** (invalida sessão de todos os clients):
+```bash
+NEW_TOKEN=$(openssl rand -hex 32)
+docker service update --env-add "OPENCLAW_GATEWAY_TOKEN=$NEW_TOKEN" cartorio_openclaw-gateway
+# Update bookmark nos clients com o novo token
+```
+
+---
+
 ## 🛡️ Firewall + ACL Recomendadas (defesa em profundidade)
 
 1. **Tailscale ACL** (admin panel): permitir apenas o node `vps-cartorio` acessar `tag:cartorio-admin` clients. Bloquear demais.
