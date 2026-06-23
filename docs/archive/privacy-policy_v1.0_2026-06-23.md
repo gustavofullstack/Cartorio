@@ -1,15 +1,10 @@
-<!-- Modified by Gustavo Almeida (via cartorio-lgpd) -->
-
 # Política de Privacidade — Cartório 2 Notas Uberlândia
 
-**Versão:** 1.1
+**Versão:** 1.0
 **Data de entrada em vigor:** 23 de junho de 2026
-**Data da última atualização:** 23 de junho de 2026 (atualização — inclusão de identificação nominal do Encarregado/DPO + transferência internacional para China + atualização de CNS e CNH)
+**Data da última atualização:** 23 de junho de 2026
 **Controlador:** Cartório 2º Ofício de Notas de Uberlândia — 2 Notas Udi LTDA
-**Encarregado de Dados (DPO):**
-- **Nome:** `[NOME_DO_DPO]` *(a ser preenchido pelo tabelião antes de ativar v0.6.0)*
-- **E-mail:** dpo@2notasudi.com.br
-- **Telefone:** `[TELEFONE_DO_DPO]` *(formato (XX) XXXXX-XXXX — a ser preenchido pelo tabelião antes de ativar v0.6.0)*
+**Encarregado de Dados (DPO):** dpo@2notasudi.com.br
 
 > Este documento é parte do Programa de Conformidade LGPD do Cartório 2 Notas Uberlândia e descreve, de forma clara e acessível, como tratamos dados pessoais no chatbot WhatsApp/Telegram/Web e nos sistemas internos (API FastAPI, n8n, Evolution API, OpenClaw, Supabase). Elaborado em conformidade com a **Lei nº 13.709/2018 (LGPD)** e com o **Provimento CNJ nº 74/2018**.
 
@@ -19,13 +14,10 @@
 
 Cartório 2º Ofício de Notas de Uberlândia, pessoa jurídica de direito público delegado, registrado sob CNPJ nº XX.XXX.XXX/0001-XX, com sede em Uberlândia/MG. Atuamos como **controlador** dos dados pessoais coletados pelo chatbot e pelos sistemas operacionais do cartório, nos termos do art. 5º, VI, da LGPD.
 
-Para qualquer dúvida sobre este documento, entre em contato com o nosso Encarregado de Dados (DPO), designado conforme **LGPD art. 41 §1º**:
+Para qualquer dúvida sobre este documento, entre em contato com o nosso Encarregado de Dados (DPO):
 
-- **Nome:** `[NOME_DO_DPO]` *(placeholder — preenchimento pelo tabelião obrigatório antes de ativar v0.6.0)*
 - **E-mail:** dpo@2notasudi.com.br
-- **Telefone:** `[TELEFONE_DO_DPO]` *(placeholder — preenchimento pelo tabelião obrigatório antes de ativar v0.6.0)*
 - **Canal web:** https://2notasudi.com.br/dpo
-- **Atendimento presencial:** balcão do cartório, mediante agendamento
 - **Prazo de resposta:** até 15 (quinze) dias úteis, conforme LGPD art. 18 §5º
 
 ---
@@ -36,15 +28,13 @@ Coletamos apenas os dados estritamente necessários para a finalidade declarada,
 
 | Categoria | Exemplos | Finalidade |
 |-----------|----------|-----------|
-| Identificação | Nome completo, CPF (hasheado), RG (hasheado), CNPJ (hasheado), **CNS (Cartão Nacional de Saúde — dado sensível LGPD art. 5º II)**, **CNH (Carteira Nacional de Habilitação)** | Identificar partes em protocolo notarial |
+| Identificação | Nome completo, CPF (hasheado), RG (hasheado), CNPJ (hasheado) | Identificar partes em protocolo notarial |
 | Contato | Telefone (WhatsApp/Telegram), e-mail | Responder solicitações e enviar notificações |
 | Conteúdo da conversa | Texto, áudio (transcrito), imagens (descrição) | Executar o serviço solicitado |
 | Dados do ato | Tipo de ato, valor, partes envolvidas, documentos | Cumprir obrigação legal (Provimento CNJ 74/2018) |
 | Metadados técnicos | Endereço IP, agente do navegador, identificador de sessão | Segurança, auditoria (LGPD art. 37) e prevenção a fraude |
 
-**Importante:** números brutos de CPF, RG, CNPJ, CNS, CNH, cartão de crédito, telefone e e-mail são **automaticamente mascarados** antes de qualquer chamada a modelos de linguagem (LLM) externos (PII scrubbing em 3 camadas: input do usuário, pre-LLM, output do LLM). Apenas hashes SHA-256 com salt por cliente são armazenados no banco de dados, jamais os valores originais em texto claro fora do campo específico do ato (LGPD art. 46).
-
-> **Detecção específica de CNS (Cartão Nacional de Saúde):** por se tratar de **dado sensível** (LGPD art. 5º II — dado sobre saúde), o identificador CNS é detectado por padrão **ancorado** (palavra-chave como "CNS", "SUS", "saúde" + 30 caracteres de contexto) e em **2 formatos** (15 dígitos ou 17 dígitos com DV). Sem keyword âncora, a string de 15 dígitos isolada **não** é tratada como CNS — mitigação de falso positivo contra protocolo/CNPJ/CPF.
+**Importante:** números brutos de CPF, RG, CNPJ, cartão de crédito, telefone e e-mail são **automaticamente mascarados** antes de qualquer chamada a modelos de linguagem (LLM) externos. Apenas hashes SHA-256 com salt por cliente são armazenados no banco de dados, jamais os valores originais em texto claro fora do campo específico do ato (LGPD art. 46).
 
 ---
 
@@ -84,9 +74,7 @@ Compartilhamos dados pessoais **apenas** quando estritamente necessário:
 | Corregedoria Geral de Justiça (MG) | Prestação de contas, fiscalização | Obrigação legal (LGPD art. 7º II) |
 | Poder Judiciário e MP | Citação, intimação, requisição | Obrigação legal (LGPD art. 7º II) |
 | Receita Federal / SEFAZ | Retenção de impostos, DOI, DIMOB | Obrigação legal |
-| OpenClaw / LiteLLM (Claude, GPT) | Apenas dados **scrubbed** (mascarados) | Consentimento + operador (LGPD art. 39) |
-| **OpenCode-Go / DeepSeek** (sub-processor LLM low-cost, **China**) | Apenas dados **scrubbed** (PII scrubbing 3 camadas) — **exige DPA assinado, em tramitação** | Consentimento específico + execução de contrato + operador (LGPD art. 33 II + art. 39) |
-| N8N (ferramenta de automação self-hosted) | Operacionalizar workflows do chatbot | Execução de contrato (LGPD art. 7º V) — **NÃO é sub-processor, é ferramenta operada pelo controlador** |
+| OpenClaw / LLM (Claude, GPT) | Apenas dados **scrubbed** (mascarados) | Consentimento + operador (LGPD art. 39) |
 | Fornecedores de infraestrutura (Hostinger, Supabase, Cloudflare) | Operação e segurança | Execução de contrato (LGPD art. 7º V) |
 | Autoridade Nacional de Proteção de Dados (ANPD) | Notificação de incidente, requisição | Obrigação legal (LGPD art. 48) |
 
@@ -151,20 +139,13 @@ Em caso de incidente de segurança que possa acarretar risco ou dano relevante, 
 
 ## 9. Transferência internacional
 
-Dados pessoais podem ser transferidos a operadores internacionais, com as salvaguardas do **LGPD art. 33**:
+Dados pessoais podem ser transferidos a operadores internacionais (OpenAI, Anthropic, Cloudflare, Hostinger) sediados nos EUA e União Europeia, sempre com:
 
-| Operador | País | Mecanismo de transferência (LGPD art. 33) | Status |
-|----------|------|-------------------------------------------|--------|
-| OpenAI (ChatGPT) | EUA | Cláusulas-padrão contratuais (art. 33, II) + DPA template público | Em uso |
-| Anthropic (Claude) | EUA | Cláusulas-padrão contratuais (art. 33, II) + DPA template público | Em uso |
-| **DeepSeek (via OpenCode-Go gateway)** | **China (sem adequação ANPD)** | **Cláusulas-padrão contratuais (art. 33, II) + consentimento específico do titular (art. 33, I) + DPA em tramitação jurídica** | **STAGING ONLY até DPA assinado** |
-| Cloudflare | EUA | Adequação GDPR (art. 33, I) + cláusulas-padrão | Em uso |
-| Hostinger (VPS) | EUA/EU | Adequação GDPR (art. 33, I) + cláusulas-padrão | Em uso |
-| Supabase | EUA | Adequação GDPR (art. 33, I) + cláusulas-padrão | Em uso |
+- Cláusulas contratuais específicas (LGPD art. 33, II);
+- Garantia de adequação ao GDPR (LGPD art. 33, I) quando aplicável;
+- Registro da transferência no nosso inventário de tratamento.
 
-> **Atenção especial — China (DeepSeek via OpenCode-Go):** A República Popular da China **não possui adequação** reconhecida pela ANPD. Por isso, a transferência ocorre **exclusivamente** sob (i) **consentimento específico e destacado** do titular para esta finalidade (apresentado no termo de consentimento — `docs/consent.md` Item 3) e (ii) **cláusulas contratuais específicas** firmadas em **Data Processing Agreement (DPA)** com o operador, que está em fase de **tramitação jurídica**. Sem DPA assinado, **nenhum dado real de cliente é enviado** — apenas dados sintéticos em ambiente de homologação (STAGING ONLY). Detalhes no RIPD vigente — Tratamento 7.
-
-**Importante:** dados enviados a LLMs externos (qualquer país) são **sempre scrubbed** em 3 camadas (CPF, RG, CNPJ, CNS, CNH, telefone, e-mail, cartão mascarados). Apenas dados não sensíveis e não identificáveis chegam a esses operadores.
+**Importante:** dados enviados a LLMs externos são **sempre scrubbed** (CPF, RG, CNPJ, telefone, e-mail mascarados). Apenas dados não sensíveis e não identificáveis chegam a esses operadores.
 
 ---
 
@@ -182,31 +163,9 @@ O chatbot **não se destina** a crianças menores de 12 anos (LGPD art. 14). Par
 
 ## 12. Encarregado de Dados (DPO)
 
-**Identificação completa (LGPD art. 41 §1º):**
-
-- **Nome:** `[NOME_DO_DPO]` *(placeholder — preenchimento pelo tabelião obrigatório antes de ativar v0.6.0)*
-- **E-mail:** dpo@2notasudi.com.br
-- **Telefone:** `[TELEFONE_DO_DPO]` *(placeholder — preenchimento pelo tabelião obrigatório antes de ativar v0.6.0)*
-- **Canal web:** https://2notasudi.com.br/dpo
-- **Atendimento presencial:** balcão do cartório, mediante agendamento
-
-**Atribuições (LGPD art. 41 §2º):**
-
-1. Aceitar reclamações e comunicações dos titulares, prestar esclarecimentos e adotar providências.
-2. Receber comunicações da ANPD e adotar as medidas cabíveis.
-3. Orientar os colaboradores do cartório e os operadores contratados sobre as práticas de proteção de dados pessoais.
-4. Executar a Política de Privacidade e o RIPD do cartório.
-5. Coordenar a resposta a incidentes de segurança que envolvam dados pessoais.
-6. Ser o ponto de contato entre o controlador, os titulares e a ANPD.
-
-**Identificação publicada também em:**
-
-- Site do cartório (footer de todas as páginas): https://2notasudi.com.br
-- Mensagem inicial do chatbot (canal WhatsApp, Telegram, Web)
-- Termo de consentimento (`docs/consent.md`)
-- Avisos de privacidade impressos disponíveis no balcão
-
-**Decisão:** o DPO é designado por ato do Tabelião e exerce função **independente** dos demais setores do cartório, com acesso direto à administração para reportar incidentes e solicitar medidas.
+**E-mail:** dpo@2notasudi.com.br
+**Canal web:** https://2notasudi.com.br/dpo
+**Atribuições:** LGPD art. 41 §2º — aceitar reclamações, prestar esclarecimentos, receber comunicações da ANPD, orientar colaboradores, executar a política de privacidade.
 
 ---
 
@@ -226,23 +185,11 @@ Esta política pode ser revisada periodicamente para refletir mudanças operacio
 
 Mudanças materiais serão comunicadas com **antecedência razoável** pelo chatbot e por e-mail, solicitando novo consentimento quando exigido por lei.
 
-**Histórico de versões desta política:**
-
-| Versão | Data | Mudança | Aprovado por |
-|--------|------|---------|--------------|
-| 1.0 | 23/06/2026 | Versão inicial | DPO + Tabelião |
-| 1.1 | 23/06/2026 | (a) Identificação nominal do DPO (LGPD art. 41 §1º); (b) Inclusão de CNS como dado sensível (LGPD art. 5º II) e CNH; (c) Inclusão de DeepSeek (China) com mecanismo art. 33, II; (d) Detalhamento da PII scrubbing 3 camadas; (e) Inclusão de N8N como ferramenta self-hosted. Pendente: preenchimento de `[NOME_DO_DPO]` e `[TELEFONE_DO_DPO]` antes da ativação v0.6.0 (LGPD-013). | Rein `cartorio-lgpd` (sessão `mvs_d4fa1b1a154149dfb0bbadbb117ad1c1`) |
-
 ---
 
 ## 15. Vigência
 
-Esta versão (**v1.1**) entra em vigor em **23 de junho de 2026** e permanece válida até ser substituída por versão posterior. A v1.0 permanece arquivada em `docs/archive/privacy-policy_v1.0_2026-06-23.md` para fins de auditoria e prova de consentimento anterior.
-
-> **IMPORTANTE — placeholders pendentes antes de ativar v0.6.0:**
-> - `[NOME_DO_DPO]` — preencher com nome completo do Encarregado
-> - `[TELEFONE_DO_DPO]` — preencher com telefone formato (XX) XXXXX-XXXX
-> - Status: GAP 5 (LGPD-013) — bloqueia ativação da v0.6.0 até preenchimento.
+Esta versão entra em vigor em **23 de junho de 2026** e permanece válida até ser substituída por versão posterior.
 
 ---
 
