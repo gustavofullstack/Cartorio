@@ -21,11 +21,11 @@ RUN pip install --no-cache-dir uv==0.5.11
 WORKDIR /build
 
 # Copy dependency manifests FIRST (better layer caching)
-# pyproject.toml + uv.lock live in backend/ (subdir of repo root)
-COPY backend/pyproject.toml backend/uv.lock ./
+# pyproject.toml lives in backend/ (subdir of repo root)
+COPY backend/pyproject.toml ./
 
-# Install deps into a virtual env
-RUN uv sync --frozen --no-install-project --no-dev
+# Install deps into a virtual env (allow lock regeneration since we just added fastmcp)
+RUN uv sync --no-install-project --no-dev
 
 # Now copy project source and install the project itself
 # mcp_server.py lives in backend/ root (not backend/app/), so copy whole backend
