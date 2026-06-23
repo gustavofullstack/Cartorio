@@ -28,7 +28,10 @@ COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-install-project --no-dev
 
 # Now copy project source and install the project itself
+# mcp_server.py lives in backend/ root (not backend/app/), so copy whole backend
 COPY backend/app ./app
+COPY backend/mcp_server.py ./mcp_server.py
+COPY backend/pyproject.toml ./
 RUN uv sync --frozen --no-dev
 
 
@@ -47,9 +50,10 @@ RUN groupadd -r cartorio && useradd -r -g cartorio cartorio
 
 WORKDIR /app
 
-# Copy virtual env + app from builder
+# Copy virtual env + app + mcp_server from builder
 COPY --from=builder --chown=cartorio:cartorio /build/.venv /app/.venv
 COPY --from=builder --chown=cartorio:cartorio /build/app /app/app
+COPY --from=builder --chown=cartorio:cartorio /build/mcp_server.py /app/mcp_server.py
 
 # Fix shebangs: uv generates absolute paths like /build/.venv/bin/python
 # which DON'T exist in the runtime stage. Rewrite to /app/.venv/bin/python.

@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cartorio Backend API - MCP Tools Description",
+  "description": "Lista canonica de tools MCP expostas pelo Cartorio Backend API via /mcp (protocolo MCP 2025-03-26). Esta descricao complementa o OpenAPI em /openapi.json e permite que clients MCP (Claude, Cursor, OpenCode, Zed, Antigravity) descubram tools sem precisar fazer round-trip HTTP.",
+  "version": "0.4.0",
+  "server": {
+    "name": "cartorio-mcp-cabuloso",
+    "version": "0.4.0",
+    "protocol_version": "2025-03-26",
+    "transport": "http",
+    "url": "https://api.2notasudi.com.br/mcp/mcp",
+    "auth": {
+      "type": "none_optional",
+      "note": "API publica para emolumento e protocolo. Endpoints sensiveis (audit verify, webhook) usam X-API-Key compartilhado com n8n."
+    }
+  },
+  "tools": [
+    {
+      "name": "cartorio_calcular_emolumento",
+      "description": "Calcula emolumento cartorario oficial MG 2026 + adicionais por folha (5% a partir da 2a) + adicional de urgencia (50%). NAO envolve PII - pode ser consumido publicamente.",
+      "category": "calculo",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "certidao_negativa",
+              "certidao_positiva",
+              "certidao_casamento",
+              "escritura_compra_venda",
+              "escritura_doacao",
+              "procuracao",
+              "autenticacao",
+              "reconhecimento_firma",
+              "registro_nascimento",
+              "registro_obito"
+            ],
+            "description": "Tipo do ato cartorario (TABELA_2026_MG)."
+          },
+          "folhas": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 1,
+            "description": "Quantidade de folhas (adicional de 5% a partir da 2a)."
+          },
+          "urgencia": {
+            "type": "boolean",
+            "default": false,
+            "description": "Se true, aplica acrescimo de 50% por urgencia."
+          }
+        },
+        "required": ["tipo"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "tipo": {"type": "string"},
+          "folhas": {"type": "integer"},
+          "urgencia": {"type": "boolean"},
+          "base": {"type": "string", "description": "Valor base em BRL."},
+          "adicional_folhas": {"type": "string"},
+          "adicional_urgencia": {"type": "string"},
+          "total": {"type": "string"},
+          "tabela_referencia": {"type": "string"},
+          "valido_ate": {"type": "string", "format": "date"}
+        }
+      },
+      "example": {
+        "input": {"tipo": "certidao_casamento", "folhas": 2, "urgencia": false},
+        "output": {
+          "tipo": "certidao_casamento",
+          "folhas": 2,
+          "urgencia": false,
+          "base": "105.40",
+          "adicional_folhas": "5.27",
+          "adicional_urgencia": "0.00",
+          "total": "110.67",
+          "tabela_referencia": "TABELA_2026_MG",
+          "valido_ate": "2026-12-31"
+        }
+      }
+    },
+    {
+      "name": "cartorio_consultar_protocolo",
+      "description": "Consulta status atual de um protocolo pelo numero ANO-SEQUENCIAL. Retorna status, etapa, valor total, prazo estimado. Toda consulta e registrada no audit log (LGPD art. 37).",
+      "category": "consulta",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "numero": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{5}$",
+            "description": "Numero do protocolo (ex: 2026-00001)."
+          }
+        },
+        "required": ["numero"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "numero": {"type": "string"},
+          "status": {"type": "string", "enum": ["DRAFT", "aberto", "em_andamento", "aguardando_doc", "concluido", "cancelado", "expirado"]},
+          "etapa_atual": {"type": "string"},
+          "tipo": {"type": "string"},
+          "canal_origem": {"type": "string"},
+          "valor_base": {"type": "string", "nullable": true},
+          "valor_total": {"type": "string", "nullable": true},
+          "prazo_estimado": {"type": "string", "nullable": true},
+          "proxima_acao": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "cartorio_criar_protocolo",
+      "description": "Cria um novo protocolo em modo DRAFT (HITL obrigatorio). REQUER consentimento LGPD explicito - sem isso, retorna LGPD_BLOCKED. Cliente SEMPRE recebera handoff humano para validacao.",
+      "category": "criacao",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "tipo": {"type": "string", "description": "Tipo do ato (deve estar na tabela de emolumentos)."},
+          "cliente_cpf": {"type": "string", "pattern": "^\\d{11}$|^\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}$", "description": "CPF do cliente (11 digitos, com ou sem pontuacao)."},
+          "cliente_nome": {"type": "string", "minLength": 3, "maxLength": 255, "description": "Nome completo."},
+          "consentimento_lgpd": {"type": "boolean", "description": "OBRIGATORIO ser True."},
+          "canal_origem": {"type": "string", "enum": ["whatsapp", "telegram", "web", "balcao", "email"], "default": "web"}
+        },
+        "required": ["tipo", "cliente_cpf", "cliente_nome", "consentimento_lgpd"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "enum": ["criado", "erro"]},
+          "numero": {"type": "string", "pattern": "^\\d{4}-\\d{5}$"},
+          "protocolo_id": {"type": "integer"},
+          "estado": {"type": "string"},
+          "proxima_acao": {"type": "string"},
+          "cliente_id": {"type": "integer"}
+        }
+      }
+    },
+    {
+      "name": "cartorio_gerar_segunda_via",
+      "description": "Gera link de download da segunda via de um documento associado a um protocolo. v0.4.0 MVP: retorna URL placeholder. Sprint 2: integracao com storage Supabase para PDF real.",
+      "category": "documento",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "protocolo": {"type": "string", "pattern": "^\\d{4}-\\d{5}$", "description": "Numero do protocolo."},
+          "canal": {"type": "string", "enum": ["whatsapp", "email", "presencial"], "default": "whatsapp"}
+        },
+        "required": ["protocolo"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "url_pdf": {"type": "string", "format": "uri"},
+          "validade_horas": {"type": "integer"},
+          "protocolo": {"type": "string"},
+          "canal": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "cartorio_audit_verify",
+      "description": "Verifica integridade da cadeia de audit log (hash chain SHA256 + HMAC). Retorna chain_ok (bool), last_valid_position, total_entries. Recomendado rodar diariamente via cron (AUDIT_VERIFY_CRON).",
+      "category": "auditoria",
+      "input_schema": {"type": "object", "properties": {}},
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "chain_ok": {"type": "boolean"},
+          "last_valid_position": {"type": "integer"},
+          "total_entries": {"type": "integer"}
+        }
+      }
+    },
+    {
+      "name": "cartorio_saudacao",
+      "description": "Health check do Cartorio API. Publico, sem PII.",
+      "category": "meta",
+      "input_schema": {"type": "object", "properties": {}},
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "api_status": {"type": "integer"},
+          "api_body": {"type": "object"},
+          "mcp_server": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "super_server_info",
+      "description": "Meta info do MCP server (versao, contagem de tools, endpoints relacionados).",
+      "category": "meta",
+      "input_schema": {"type": "object", "properties": {}},
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "version": {"type": "string"},
+          "tools_count": {"type": "integer"},
+          "backend": {"type": "string"},
+          "docs": {"type": "string"},
+          "lgpd_compliance": {"type": "boolean"},
+          "protocolo_mcp": {"type": "string"},
+          "tools": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  ],
+  "tags_resumo": {
+    "emolumento": ["cartorio_calcular_emolumento"],
+    "protocolo": ["cartorio_consultar_protocolo", "cartorio_criar_protocolo"],
+    "documento": ["cartorio_gerar_segunda_via"],
+    "audit": ["cartorio_audit_verify"],
+    "meta": ["cartorio_saudacao", "super_server_info"]
+  },
+  "lgpd_compliance": {
+    "consentimento_obrigatorio": ["cartorio_criar_protocolo"],
+    "pii_scrub_ativo": true,
+    "hitl_nivel_2": ["cartorio_criar_protocolo"],
+    "retencao_audit_dias": 1825,
+    "retencao_conversas_dias": 365,
+    "dpo_email": "dpo@2notasudi.com.br"
+  },
+  "configuracao_cliente": {
+    "url": "https://api.2notasudi.com.br/mcp/mcp",
+    "auth_header": "X-API-Key: <CARTORIO_API_KEY>",
+    "exemplo_mcp_config": {
+      "mcpServers": {
+        "cartorio-api": {
+          "url": "https://api.2notasudi.com.br/mcp/mcp",
+          "type": "http",
+          "headers": {
+            "X-API-Key": "<CARTORIO_API_KEY>"
+          }
+        }
+      }
+    }
+  }
+}

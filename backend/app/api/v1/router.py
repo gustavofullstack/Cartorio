@@ -379,93 +379,26 @@ def post_protocolo(
         )
 
     # ------------------------------------------------------------------
-    # PII scrubbing - hasheia CPF ANTES de persistir. CPF puro nunca toca o DB.
-    # Salt vem do settings (placeholder em dev - em prod vem de secret manager).
+    # Logica core extraida para app.services.protocolo.criar_protocolo_svc
+    # (refator: reusado tambem pela tool MCP cartorio_criar_protocolo).
     # ------------------------------------------------------------------
-    cpf_hash = hash_pii(payload.cliente_cpf, salt=settings.audit_hmac_key[:32])
-
-    # ------------------------------------------------------------------
-    # Cliente - reusa se CPF ja existir (idempotencia por hash)
-    # ------------------------------------------------------------------
-    cliente = db.execute(select(Cliente).where(Cliente.cpf_hash == cpf_hash)).scalar_one_or_none()
-
-    if cliente is None:
-        cliente = Cliente(
-            cpf_hash=cpf_hash,
-            nome=payload.cliente_nome,
-            consentimento_lgpd=True,
-            consentimento_em=datetime.datetime.now(datetime.timezone.utc),
-            consentimento_canal=payload.canal_origem.value,
-        )
-        db.add(cliente)
-        db.flush()  # garante cliente.id
-    else:
-        # Atualiza consentimento (re-confirmacao) - LGPD exige registro da data.
-        cliente.consentimento_lgpd = True
-        cliente.consentimento_em = datetime.datetime.now(datetime.timezone.utc)
-        cliente.consentimento_canal = payload.canal_origem.value
-
-    # ------------------------------------------------------------------
-    # Snapshot de emolumento no momento da criacao (regra: nunca recalcular).
-    # ------------------------------------------------------------------
-    calc = calcular_emolumento_svc(payload.tipo, folhas=1, urgencia=False)
-
-    # ------------------------------------------------------------------
-    # Numero ANO-SEQUENCIAL
-    # ------------------------------------------------------------------
-    ano_atual = datetime.datetime.now(datetime.timezone.utc).year
-    numero = _gerar_numero_protocolo(db, ano_atual)
-
-    protocolo = Protocolo(
-        numero=numero,
-        cliente_id=cliente.id,
+    from app.services.protocolo import criar_protocolo_svc
+    result = criar_protocolo_svc(
+        db,
         tipo=payload.tipo,
-        status=StatusProtocolo.DRAFT.value,  # HITL: nunca EM_ANDAMENTO direto.
-        valor_base=calc.base,
-        valor_adicional=calc.adicional_folhas + calc.adicional_urgencia,
-        valor_total=calc.total,
-        tabela_referencia=calc.tabela_referencia,
-        prazo_dias=5,  # placeholder - regra por tipo vem do emolumento service
+        cliente_cpf=payload.cliente_cpf,
+        cliente_nome=payload.cliente_nome,
+        consentimento_lgpd=payload.consentimento_lgpd,
         canal_origem=payload.canal_origem.value,
     )
-    db.add(protocolo)
-    db.flush()
-
-    # ------------------------------------------------------------------
-    # Audit log - OBRIGATORIO em toda mutacao.
-    # ------------------------------------------------------------------
-    AuditService.log(
-        db,
-        actor_id="bot",
-        actor_type="bot",
-        action="protocolo.create",
-        resource=f"protocolo:{protocolo.id}",
-        payload={
-            "numero": protocolo.numero,
-            "tipo": protocolo.tipo,
-            "canal_origem": protocolo.canal_origem,
-            "cliente_id": cliente.id,
-            "cpf_hash": cpf_hash,  # hash, nao o CPF puro
-            "valor_total": str(protocolo.valor_total),
-            "status": protocolo.status,
-            "consentimento_lgpd": True,
-            "pii_scrubbed": True,
-        },
-    )
-
-    db.commit()
-    db.refresh(protocolo)
 
     return ProtocoloCreateResponse(
-        status="criado",
-        numero=protocolo.numero,
-        protocolo_id=protocolo.id,
-        estado=StatusProtocolo(protocolo.status),
-        proxima_acao=(
-            "Aguardando validacao humana do escrevente. "
-            "O protocolo NAO sera processado ate confirmacao no painel admin."
-        ),
-        cliente_id=cliente.id,
+        status=result["status"],
+        numero=result["numero"],
+        protocolo_id=result["protocolo_id"],
+        estado=StatusProtocolo(result["estado"]),
+        proxima_acao=result["proxima_acao"],
+        cliente_id=result["cliente_id"],
     )
 
 
