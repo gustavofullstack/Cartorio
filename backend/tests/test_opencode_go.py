@@ -404,8 +404,7 @@ async def test_chat_scrubs_multiple_pii_types():
                 {
                     "role": "user",
                     "content": (
-                        "Meu CPF 123.456.789-09, email joao@test.com "
-                        "e telefone (34) 99999-9999"
+                        "Meu CPF 123.456.789-09, email joao@test.com e telefone (34) 99999-9999"
                     ),
                 }
             ],
@@ -454,7 +453,7 @@ async def test_chat_scrub_is_idempotent():
 
         # Caller ja fez scrub
         pre_scrubbed = scrub("Meu CPF 123.456.789-09").text  # vira "Meu CPF [CPF_REDACTED]"
-        result = await chat(
+        await chat(
             messages=[{"role": "user", "content": pre_scrubbed}],
             model="deepseek-v4-flash",
             api_key="sk-test",

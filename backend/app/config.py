@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     opencode_go_api_key: Optional[str] = None
     opencode_go_base_url: str = "https://api.opencode.ai/v1"  # placeholder
     opencode_go_model: str = "deepseek-v4-flash"
+    opencode_go_rate_limit_per_minute: Optional[int] = None  # None = sem rate limit
 
     openclaw_base_url: str = "http://cartorio_openclaw-gateway:18790"
     openclaw_api_key: Optional[str] = None

@@ -27,9 +27,10 @@ LGPD: ambos providers devem ter:
 - Consent gate
 - Rate limit
 """
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session

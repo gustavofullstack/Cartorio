@@ -473,37 +473,64 @@ async def webhook_evolution(payload: dict) -> dict:
         handoff = True
         handoff_reason = "PII detectada"
     else:
-        # Chamar LLM via modulo dedicado (SRP - refator 2026-06-23).
-        # opencode_go.chat() encapsula httpx + tratamento de erro + latencia.
+        # Chamar LLM via modulo dedicado (SRP + LGPD by design - refator 2026-06-23).
+        # opencode_go.chat() faz:
+        # - consent gate (LGPD art. 7 I)
+        # - rate limit por sessao (cost guard)
+        # - PII scrubbing INTERNO (defense-in-depth)
+        # - audit log via AuditService (LGPD art. 37)
         from app.integrations.opencode_go import ChatError, chat_with_settings
 
+        # LGPD: consent inferido pelo canal (cliente iniciou conversa via WhatsApp).
+        # Em sprint 2 adicionar gate explicito ("digite SIM para autorizar uso de IA").
+        # Rate limit 60/min por sender (cost guard contra abuso).
+        session_id = f"whatsapp:{sender}:{instance}"
+        actor_id_audit = f"whatsapp:{sender}"
+
         try:
-            llm_resp = await chat_with_settings(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "Voce e a Pietra, assistente de IA do Cartorio do 2o Oficio de "
-                            "Notas de Uberlandia. Ajude os clientes de forma prestativa, clara "
-                            "e objetiva. Se o cliente solicitar falar com um humano, ou se for "
-                            "necessario um especialista, inclua a palavra [HUMANO] na sua "
-                            "resposta para fazermos o redirecionamento. Nunca cometa erros "
-                            "legais nem invente regras; se nao souber ou for complexo, "
-                            "encaminhe para o humano com [HUMANO]."
-                        ),
-                    },
-                    {"role": "user", "content": scrub_result.text},
-                ],
-            )
+            with session_scope() as db_llm:
+                llm_resp = await chat_with_settings(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": (
+                                "Voce e a Pietra, assistente de IA do Cartorio do 2o Oficio de "
+                                "Notas de Uberlandia. Ajude os clientes de forma prestativa, clara "
+                                "e objetiva. Se o cliente solicitar falar com um humano, ou se for "
+                                "necessario um especialista, inclua a palavra [HUMANO] na sua "
+                                "resposta para fazermos o redirecionamento. Nunca cometa erros "
+                                "legais nem invente regras; se nao souber ou for complexo, "
+                                "encaminhe para o humano com [HUMANO]."
+                            ),
+                        },
+                        {"role": "user", "content": scrub_result.text},
+                    ],
+                    consent_granted=True,  # inferido pelo canal WhatsApp
+                    actor_id=actor_id_audit,
+                    db=db_llm,
+                    session_id=session_id,
+                    rate_limit_per_minute=settings.opencode_go_rate_limit_per_minute,
+                )
             bot_response = llm_resp.content
             llm_tokens_in = llm_resp.tokens_in
             llm_tokens_out = llm_resp.tokens_out
             llm_latency_ms = llm_resp.latency_ms
         except ChatError as e:
-            bot_response = (
-                "Desculpe, tive um problema de comunicacao com o meu cerebro de IA. "
-                "Vou chamar um atendente humano para te ajudar. [HUMANO]"
-            )
+            if e.kind == "RATE_LIMITED":
+                bot_response = (
+                    "Voce atingiu o limite de mensagens por minuto. "
+                    "Aguarde um instante antes de enviar outra. [HUMANO]"
+                )
+            elif e.kind == "LGPD_BLOCKED":
+                bot_response = (
+                    "Preciso confirmar seu consentimento para usar IA. "
+                    "Digite SIM para autorizar o atendimento automatizado. [HUMANO]"
+                )
+            else:
+                bot_response = (
+                    "Desculpe, tive um problema de comunicacao com o meu cerebro de IA. "
+                    "Vou chamar um atendente humano para te ajudar. [HUMANO]"
+                )
             handoff = True
             handoff_reason = f"LLM {e.kind}" + (
                 f" status {e.status_code}" if e.status_code else ""

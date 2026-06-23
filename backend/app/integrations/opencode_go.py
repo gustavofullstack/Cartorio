@@ -49,13 +49,14 @@ Decisao de design (refator 2026-06-23):
 - API key injetada por param (testavel, sem dependencia implicita de settings).
 - Excecao tipada (ChatError) com kind estendido (LGPD_BLOCKED, RATE_LIMITED).
 """
+
 from __future__ import annotations
 
 import asyncio
 import hashlib
 import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -299,15 +300,13 @@ async def chat(
     # ---- Validacao de config ----
     if not api_key or api_key.strip() == "":
         raise ChatError(
-            "API key do OpenCode-Go nao configurada. "
-            "Defina OPENCODE_GO_API_KEY no .env da VPS.",
+            "API key do OpenCode-Go nao configurada. Defina OPENCODE_GO_API_KEY no .env da VPS.",
             kind=ChatErrorKind.CONFIG,
         )
 
     if not base_url or base_url.strip() == "":
         raise ChatError(
-            "Base URL do OpenCode-Go nao configurada. "
-            "Defina OPENCODE_GO_BASE_URL no .env da VPS.",
+            "Base URL do OpenCode-Go nao configurada. Defina OPENCODE_GO_BASE_URL no .env da VPS.",
             kind=ChatErrorKind.CONFIG,
         )
 
@@ -329,9 +328,7 @@ async def chat(
     # ---- Rate limit (BLOCKER 7) ----
     if rate_limit_per_minute is not None and session_id and redis_url:
         # Roda sync em thread para nao bloquear event loop
-        await asyncio.to_thread(
-            _check_rate_limit, session_id, rate_limit_per_minute, redis_url
-        )
+        await asyncio.to_thread(_check_rate_limit, session_id, rate_limit_per_minute, redis_url)
 
     # ---- PII scrubbing INTERNO (BLOCKER 1, defense-in-depth) ----
     scrubbed_messages, pii_redacted_count = _scrub_messages(messages)
