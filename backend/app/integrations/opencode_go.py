@@ -78,13 +78,16 @@ class ChatResponse:
     """Resposta de uma chamada de chat completion.
 
     Attributes:
-        content: Texto gerado pelo modelo (choices[0].message.content).
+        content: Texto gerado pelo modelo (choices[0].message.content) JA SCRUBBED
+                 no boundary 2 (LGPD-015). Caller NAO precisa scrubbar de novo.
         model: Modelo usado (echo da request ou do response).
         tokens_in: Prompt tokens consumidos (None se API nao retornou usage).
         tokens_out: Completion tokens consumidos (None se API nao retornou usage).
         latency_ms: Latencia da chamada em milissegundos.
         finish_reason: Razao de parada (stop/length/content_filter/etc).
-        pii_redacted_count: Total de PII scrubbed ANTES de enviar (defense-in-depth).
+        pii_redacted_count: Total de PII scrubbed ANTES de enviar (defense-in-depth, input).
+        output_pii_redacted_count: Total de PII scrubbed NO OUTPUT (boundary 2, LGPD-015).
+                                   Se > 0, audit log action='llm.output_scrubbed' eh gerado.
         raw: Response bruto da API (para debug, NAO usar em producao - LGPD).
     """
 
@@ -95,6 +98,7 @@ class ChatResponse:
     latency_ms: int
     finish_reason: str | None = None
     pii_redacted_count: int = 0
+    output_pii_redacted_count: int = 0
     raw: dict[str, Any] | None = None
 
 
@@ -175,6 +179,41 @@ def _scrub_messages(messages: list[dict[str, str]]) -> tuple[list[dict[str, str]
         total_redacted += result.redaction_count
 
     return scrubbed, total_redacted
+
+
+# ============================================================================
+# IP truncation (LGPD D5 — IP truncado em /24 no audit log)
+# ============================================================================
+
+
+def _truncate_ip_to_24(ip: str) -> str:
+    """Trunca IP em /24 (zero últimos 3 octetos) para audit log LGPD.
+
+    LGPD D5: IP completo eh PII (pode identificar pessoa). Para audit log,
+    truncamos em /24 (rede) — preserva util de geo/ASR sem expor host.
+
+    Examples:
+        >>> _truncate_ip_to_24("192.168.1.123")
+        '192.168.1.0/24'
+        >>> _truncate_ip_to_24("2001:db8::1")  # IPv6
+        '2001:db8::/32'
+        >>> _truncate_ip_to_24("unknown")
+        'unknown'
+    """
+    if not ip or ip == "unknown":
+        return ip or "unknown"
+    # IPv4
+    if "." in ip and ":" not in ip:
+        parts = ip.split(".")
+        if len(parts) == 4:
+            return f"{parts[0]}.{parts[1]}.{parts[2]}.0/24"
+    # IPv6 (truncado em /32)
+    if ":" in ip:
+        # Pega primeiros 2 grupos (32 bits)
+        groups = ip.split(":")
+        if len(groups) >= 2:
+            return f"{groups[0]}:{groups[1]}::/32"
+    return ip  # formato nao reconhecido, retorna como veio
 
 
 # ============================================================================
@@ -261,6 +300,8 @@ async def chat(
     session_id: str | None = None,
     rate_limit_per_minute: int | None = None,
     redis_url: str | None = None,
+    request_id: str | None = None,
+    client_ip: str | None = None,
 ) -> ChatResponse:
     """Chama OpenCode-Go Chat Completions com LGPD compliance.
 
@@ -400,6 +441,14 @@ async def chat(
     tokens_in = usage.get("prompt_tokens")
     tokens_out = usage.get("completion_tokens")
 
+    # ---- Output PII scrubbing (LGPD-015, BOUNDARY 2, defense-in-depth) ----
+    # Caller NAO precisa scrubbar. Wrapper garante. LLM ecoa trechos do
+    # contexto (CPF, email, etc) e isso NUNCA pode chegar ao usuario final
+    # ou ao log de conversa.
+    scrub_result = scrub(content)
+    output_pii_redacted_count = scrub_result.redaction_count
+    safe_content = scrub_result.text
+
     # ---- Audit log LGPD art. 37 (BLOCKER 2) ----
     if db is not None:
         request_hash = _hash_payload(payload)
@@ -443,14 +492,49 @@ async def chat(
             # Em prod, considerar dead-letter queue
             pass
 
+        # ---- Audit log do OUTPUT scrub (LGPD-015 + LGPD art. 37) ----
+        # Se o LLM ecoou PII no output, gera entrada SEPARADA no audit
+        # com request_id (LGPD art. 37) + IP truncado em /24 (D5).
+        if output_pii_redacted_count > 0:
+            ip_truncated = _truncate_ip_to_24(client_ip or "unknown")
+            output_audit_payload = {
+                "provider": "opencode_go",
+                "model": model,
+                "redacted_count": output_pii_redacted_count,
+                "output_length": len(safe_content),
+                "session_id": session_id,
+            }
+            try:
+                await asyncio.to_thread(
+                    _audit_log_sync,
+                    db,
+                    actor_id=actor_id,
+                    action="llm.output_scrubbed",
+                    resource="llm:opencode_go",
+                    payload=output_audit_payload,
+                )
+                # Atualiza tambem a entrada de ip/request_id — via query direta
+                from app.models.audit_log import AuditLog
+
+                last_entry = (
+                    db.query(AuditLog).order_by(AuditLog.id.desc()).first()
+                )
+                if last_entry and last_entry.action == "llm.output_scrubbed":
+                    last_entry.request_id = request_id
+                    last_entry.ip = ip_truncated
+                    db.commit()
+            except Exception:
+                pass
+
     return ChatResponse(
-        content=content,
+        content=safe_content,
         model=data.get("model", model),
         tokens_in=tokens_in,
         tokens_out=tokens_out,
         latency_ms=latency_ms,
         finish_reason=finish_reason,
         pii_redacted_count=pii_redacted_count,
+        output_pii_redacted_count=output_pii_redacted_count,
         raw=None,  # NAO retornar raw por padrao (LGPD: response pode ter PII eco)
     )
 
@@ -470,6 +554,8 @@ async def chat_with_settings(
     db: "Session | None" = None,
     session_id: str | None = None,
     rate_limit_per_minute: int | None = None,
+    request_id: str | None = None,
+    client_ip: str | None = None,
 ) -> ChatResponse:
     """Wrapper que le settings do app.config.
 
@@ -494,4 +580,6 @@ async def chat_with_settings(
         session_id=session_id,
         rate_limit_per_minute=rate_limit_per_minute,
         redis_url=settings.redis_url,
+        request_id=request_id,
+        client_ip=client_ip,
     )

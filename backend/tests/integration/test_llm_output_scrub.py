@@ -24,7 +24,6 @@ Limites documentados (NAO escopo desta entrega):
 from __future__ import annotations
 
 import os
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -40,8 +39,6 @@ os.environ.setdefault("CARTORIO_API_KEY", "test-key-12345")
 from app.config import get_settings  # noqa: E402
 
 get_settings.cache_clear()
-
-from app.main import app  # noqa: E402  (escopo modulo - NAO re-importar dentro de fixtures)
 
 
 # ============================================================================
@@ -97,8 +94,12 @@ def client():
     app.db.SessionLocal = TestSessionLocal
     app.db.session_scope = test_session_scope
 
+    # `app` no escopo local foi re-atribuido para o package via `import app.db`.
+    # Usar `app_main_module.app` (FastAPI instance) explicitamente.
+    fastapi_app = app_main_module.app
+
     try:
-        with TestClient(app) as c:
+        with TestClient(fastapi_app) as c:
             yield c
     finally:
         app.db.engine = original_engine

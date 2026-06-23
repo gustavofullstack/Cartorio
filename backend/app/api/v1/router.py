@@ -527,6 +527,10 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
         session_id = f"whatsapp:{sender}:{instance}"
         actor_id_audit = f"whatsapp:{sender}"
 
+        # LGPD-015: request_id + client_ip do request.state (RequestContextMiddleware)
+        # Propagados para o wrapper opencode_go para audit log de output scrub.
+        ctx_llm = audit_kwargs(request)
+
         try:
             with session_scope() as db_llm:
                 llm_resp = await chat_with_settings(
@@ -550,6 +554,8 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
                     db=db_llm,
                     session_id=session_id,
                     rate_limit_per_minute=settings.opencode_go_rate_limit_per_minute,
+                    request_id=ctx_llm.get("request_id"),
+                    client_ip=ctx_llm.get("client_ip"),
                 )
             bot_response = llm_resp.content
             llm_tokens_in = llm_resp.tokens_in

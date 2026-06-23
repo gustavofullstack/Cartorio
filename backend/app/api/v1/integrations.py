@@ -86,11 +86,12 @@ class OpenCodeTestResponse(BaseModel):
     Attributes:
         status: 'ok' ou 'erro'.
         model: Modelo usado.
-        response: Texto gerado pelo modelo (None se erro).
+        response: Texto gerado pelo modelo (None se erro). LGPD-015: ja vem scrubbed.
         tokens_in: Prompt tokens.
         tokens_out: Completion tokens.
         latency_ms: Latencia da chamada.
-        pii_redacted_count: Total de PII scrubbed ANTES de enviar (defense-in-depth).
+        pii_redacted_count: Total de PII scrubbed ANTES de enviar (defense-in-depth, input).
+        output_pii_redacted_count: Total de PII scrubbed NO OUTPUT do LLM (LGPD-015, boundary 2).
         config: Configuracao usada (sem expor API key).
         erro: Detalhes do erro se status='erro'.
     """
@@ -102,6 +103,7 @@ class OpenCodeTestResponse(BaseModel):
     tokens_out: int | None = None
     latency_ms: int
     pii_redacted_count: int = 0
+    output_pii_redacted_count: int = 0
     config: dict[str, Any]
     erro: dict[str, Any] | None = None
 
@@ -193,6 +195,7 @@ async def opencode_test(
             tokens_out=resp.tokens_out,
             latency_ms=resp.latency_ms,
             pii_redacted_count=resp.pii_redacted_count,
+            output_pii_redacted_count=resp.output_pii_redacted_count,
             config=config_public,
             erro=None,
         )
@@ -206,6 +209,7 @@ async def opencode_test(
             tokens_out=None,
             latency_ms=0,
             pii_redacted_count=0,
+            output_pii_redacted_count=0,
             config=config_public,
             erro={
                 "kind": e.kind,
