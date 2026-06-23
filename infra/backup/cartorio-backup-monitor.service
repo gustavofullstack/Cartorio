@@ -1,0 +1,11 @@
+[Unit]
+Description=Cartorio Backup Monitor (verifica se backup diario rodou)
+After=cron.service
+RequiresMountsFor=/var/backups/cartorio
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/cartorio-backup-monitor.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cartorio-backup-monitor
