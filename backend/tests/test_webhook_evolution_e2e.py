@@ -10,6 +10,7 @@ NAO vaza nenhum PII no payload EXTERNO.
 
 Esses testes sao o fecho do E1.S1.T7 (TDD do happy path com PII zero).
 """
+
 from __future__ import annotations
 
 import os
@@ -23,13 +24,11 @@ from app.config import get_settings  # noqa: E402
 
 get_settings.cache_clear()
 
-from unittest.mock import patch  # noqa: E402
 
 from fastapi.testclient import TestClient  # noqa: E402
 import pytest  # noqa: E402
 
 # Imports do app precisam vir DEPOIS do env setup
-from app.main import app  # noqa: E402
 
 
 @pytest.fixture
@@ -59,6 +58,7 @@ def client():
     # Patch o engine do app
     import app.db
     import app.main as app_main_module
+
     original_engine = app.db.engine
     original_session_scope = app.db.session_scope
     app.db.engine = test_engine
@@ -93,6 +93,7 @@ def client():
         app_main_module.engine = original_engine
         app.db.session_scope = original_session_scope
         Base.metadata.drop_all(test_engine)
+
 
 # PII que DEVE ser detectado e removido
 PII_SAMPLES = {
@@ -168,7 +169,10 @@ def test_payload_com_apenas_texto_sem_pii(client) -> None:
 
 
 def test_payload_com_pii_bloqueia_e_marca_pii_blocked(client) -> None:
-    """Quando PII eh detectado, response NAO vaza o CPF e o scrubbed mostra o label."""
+    """Quando PII eh detectado, response NAO vaza o CPF, scrubbed mostra
+    o label redacted, E o signal de bloqueio eh explicito no response
+    (pii_blocked=True, needs_human_handoff=True) - P0.1 LGPD shape.
+    """
     payload = _make_evolution_payload("Meu CPF eh 123.456.789-09")
     resp = client.post("/api/v1/webhook/evolution", json=payload)
     assert resp.status_code == 200
@@ -179,6 +183,10 @@ def test_payload_com_pii_bloqueia_e_marca_pii_blocked(client) -> None:
     # Scrubbed deve mostrar o label de redacted (se campo existe)
     if "scrubbed" in body:
         assert "[CPF_REDACTED]" in body["scrubbed"]
+    # P0.1 LGPD response shape - flags explicitos de bloqueio
+    assert body.get("pii_blocked") is True, f"pii_blocked deveria ser True; body={body}"
+    assert body.get("needs_human_handoff") is True
+    assert body.get("handoff_reason") == "PII detectada"
 
 
 def test_response_nao_expoe_payload_bruto(client) -> None:
@@ -218,11 +226,7 @@ def test_audit_log_no_db_tem_pii_criptografado(client) -> None:
     from app.models.audit_log import AuditLog
 
     with session_scope() as db:
-        entries = (
-            db.query(AuditLog)
-            .filter(AuditLog.action == "conversa.received")
-            .all()
-        )
+        entries = db.query(AuditLog).filter(AuditLog.action == "conversa.received").all()
         assert len(entries) >= 1, "deve haver pelo menos 1 audit log"
         # O payload.scrubbed NAO pode ter o CPF integro
         for entry in entries:
@@ -245,9 +249,7 @@ def test_payload_extremo_50_pii_simultaneos(client) -> None:
 
 def test_payload_com_unicode_emoji_e_pii(client) -> None:
     """Texto com emoji/unicode + PII -> PII removido, resto preservado."""
-    payload = _make_evolution_payload(
-        "Ola bom dia! 👋 CPF 123.456.789-09 obrigado 🙂"
-    )
+    payload = _make_evolution_payload("Ola bom dia! 👋 CPF 123.456.789-09 obrigado 🙂")
     resp = client.post("/api/v1/webhook/evolution", json=payload)
     assert resp.status_code == 200
     body = resp.json()

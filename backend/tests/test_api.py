@@ -58,7 +58,9 @@ def test_ready_endpoint(client):
 
 
 def test_calcular_emolumento_valido(client):
-    resp = client.get("/api/v1/emolumento/calcular?tipo=escritura_compra_venda&folhas=3&urgencia=true")
+    resp = client.get(
+        "/api/v1/emolumento/calcular?tipo=escritura_compra_venda&folhas=3&urgencia=true"
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert "total" in data
@@ -77,6 +79,9 @@ def test_webhook_evolution_sem_pii(client):
 
     Ambiente local pode ter OPENCODE_GO_API_KEY real no .env, entao mockamos
     o cliente HTTP para garantir resposta deterministica sem dependencia de rede.
+
+    P0.1 - response shape deve incluir pii_blocked=False e
+    needs_human_handoff=False explicitamente (LGPD compliance signal).
     """
     from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -100,9 +105,20 @@ def test_webhook_evolution_sem_pii(client):
         # Resposta do bot mockado (sem [HUMANO])
         assert "Posso te ajudar" in data["response"]
         assert "[HUMANO]" not in data["response"]
+        # P0.1 LGPD response shape - sem PII = sem handoff
+        assert data["pii_blocked"] is False
+        assert data["needs_human_handoff"] is False
+        assert data["handoff_reason"] is None
 
 
 def test_webhook_evolution_com_pii(client):
+    """P0.1 - Webhook COM PII: response deve marcar pii_blocked=True e
+    needs_human_handoff=True com handoff_reason='PII detectada'.
+
+    Garante que o signal de bloqueio eh explicito no response (LGPD
+    compliance - cartorio-n8n e integradores precisam saber que PII
+    foi detectada sem precisar inferir do texto).
+    """
     payload = {
         "message": {"text": "Meu CPF 123.456.789-09 esta correto?"},
         "sender": "user456",
@@ -113,6 +129,10 @@ def test_webhook_evolution_com_pii(client):
     data = resp.json()
     assert "transferir" in data["response"]
     assert "123.456.789-09" not in data["scrubbed"]
+    # P0.1 LGPD response shape - com PII = handoff explicito
+    assert data["pii_blocked"] is True
+    assert data["needs_human_handoff"] is True
+    assert data["handoff_reason"] == "PII detectada"
 
 
 def test_webhook_evolution_payload_vazio(client):
@@ -165,14 +185,14 @@ def test_db_session_scope_rollback(test_engine, test_session_factory):
 
 def test_atendimento_historico_redis_and_db(client):
     from unittest.mock import MagicMock, patch
-    
+
     # Mock Redis client
     mock_redis = MagicMock()
     mock_redis.lrange.return_value = [
         '{"role": "user", "content": "Ola da fila do Redis", "timestamp": "2026-06-23T19:00:00Z"}',
-        '{"role": "assistant", "content": "Olá do Bot!", "timestamp": "2026-06-23T19:00:05Z"}'
+        '{"role": "assistant", "content": "Olá do Bot!", "timestamp": "2026-06-23T19:00:05Z"}',
     ]
-    
+
     with patch("redis.from_url", return_value=mock_redis):
         resp = client.get("/api/v1/atendimento/user123/historico")
         assert resp.status_code == 200
@@ -187,11 +207,11 @@ def test_atendimento_historico_db_fallback(client):
     from unittest.mock import MagicMock, patch
     from app.models.conversa import Conversa
     from app.db import session_scope
-    
+
     # Mock Redis to return empty list (trigger fallback to DB)
     mock_redis = MagicMock()
     mock_redis.lrange.return_value = []
-    
+
     # Save a dummy conversa in SQLite test DB
     with session_scope() as db:
         conversa = Conversa(
@@ -202,7 +222,7 @@ def test_atendimento_historico_db_fallback(client):
             bot_response="Resposta do Bot DB",
         )
         db.add(conversa)
-        
+
     with patch("redis.from_url", return_value=mock_redis):
         resp = client.get("/api/v1/atendimento/user_db/historico")
         assert resp.status_code == 200
@@ -211,4 +231,3 @@ def test_atendimento_historico_db_fallback(client):
         assert data["total"] == 2
         assert data["messages"][0]["content"] == "Mensagem do DB"
         assert data["messages"][1]["content"] == "Resposta do Bot DB"
-

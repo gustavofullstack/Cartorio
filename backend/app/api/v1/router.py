@@ -48,7 +48,7 @@ from app.schemas.protocolo import (
 )
 from app.schemas.audit import AuditLogFilter, AuditLogListResponse, AuditLogResponse
 from app.services.audit import AuditService
-from app.services.audit_context import audit_kwargs, extract_audit_context
+from app.services.audit_context import audit_kwargs
 from app.services.audit_query import get_audit_log_by_id, list_audit_logs
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
@@ -402,6 +402,7 @@ def post_protocolo(
     # (refator: reusado tambem pela tool MCP cartorio_criar_protocolo).
     # ------------------------------------------------------------------
     from app.services.protocolo import criar_protocolo_svc
+
     result = criar_protocolo_svc(
         db,
         tipo=payload.tipo,
@@ -579,9 +580,7 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
                     "Vou chamar um atendente humano para te ajudar. [HUMANO]"
                 )
             handoff = True
-            handoff_reason = f"LLM {e.kind}" + (
-                f" status {e.status_code}" if e.status_code else ""
-            )
+            handoff_reason = f"LLM {e.kind}" + (f" status {e.status_code}" if e.status_code else "")
             llm_latency_ms = 0
 
         if "[HUMANO]" in bot_response:
@@ -617,20 +616,25 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
     # Save to Redis active session cache (ADR-014 - multi-tenant)
     try:
         import json
+
         r_client = redis.from_url(settings.redis_url, socket_timeout=2.0)
         redis_key = f"cartorio:sess:{sender}"
-        user_msg = json.dumps({
-            "role": "user",
-            "content": scrub_result.text,
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
-        })
+        user_msg = json.dumps(
+            {
+                "role": "user",
+                "content": scrub_result.text,
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            }
+        )
         r_client.rpush(redis_key, user_msg)
         if bot_response:
-            bot_msg = json.dumps({
-                "role": "assistant",
-                "content": bot_response,
-                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
-            })
+            bot_msg = json.dumps(
+                {
+                    "role": "assistant",
+                    "content": bot_response,
+                    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                }
+            )
             r_client.rpush(redis_key, bot_msg)
         r_client.expire(redis_key, settings.redis_session_ttl_seconds)
         r_client.close()
@@ -641,6 +645,19 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
         "status": "ok",
         "response": bot_response,
         "scrubbed": scrub_result.text[:200],
+        # P0.1 - LGPD response shape (cartorio-lgpd audit 2026-06-23):
+        # explicit flags para o cliente (e para integradores como
+        # cartorio-n8n) saberem se PII foi detectado e se handoff
+        # humano foi acionado. Substitui o "status: ok" generico que
+        # escondia o signal de bloqueio. Valores:
+        # - pii_blocked: True se scrub() redatou >= 1 PII
+        # - needs_human_handoff: True se handoff foi acionado (PII
+        #   detectada, LLM error, ou [HUMANO] na resposta)
+        # - handoff_reason: motivo do handoff ("PII detectada",
+        #   "LLM RATE_LIMITED", "Solicitado pelo bot/cliente")
+        "pii_blocked": scrub_result.redaction_count > 0,
+        "needs_human_handoff": handoff,
+        "handoff_reason": handoff_reason,
     }
 
 
@@ -684,7 +701,6 @@ async def audit_verify() -> dict:
     ),
     response_description="Status por servico + status agregado.",
 )
-
 async def health_radar() -> dict:
     """Verifica conexoes de todos os servicos da suite."""
     from app.db import engine
@@ -829,9 +845,7 @@ async def health_backup() -> dict:
             now_ts = datetime.now(timezone.utc).timestamp()
             age_s = now_ts - newest_mtime
             last_backup_age_hours = round(age_s / 3600, 1)
-            last_backup_iso = datetime.fromtimestamp(
-                newest_mtime, timezone.utc
-            ).isoformat()
+            last_backup_iso = datetime.fromtimestamp(newest_mtime, timezone.utc).isoformat()
             ok = last_backup_age_hours < 26
 
     except Exception as e:
@@ -935,7 +949,6 @@ async def documento_segunda_via(
 ) -> dict:
     """Gera link de download da segunda via."""
     import hashlib
-    import time
 
     # MVP: hash determinístico + timestamp = URL placeholder
     h = hashlib.sha256(f"{protocolo}:{time.time()}".encode()).hexdigest()[:16]
@@ -970,12 +983,19 @@ async def atendimentos_ultimas_24h() -> dict:
 
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
     with session_scope() as db:
-        rows = db.execute(
-            select(Atendimento).where(
-                Atendimento.concluido_em >= cutoff,
-                Atendimento.pesquisa_enviada_em.is_(None),
-            ).order_by(Atendimento.concluido_em.desc()).limit(200)
-        ).scalars().all()
+        rows = (
+            db.execute(
+                select(Atendimento)
+                .where(
+                    Atendimento.concluido_em >= cutoff,
+                    Atendimento.pesquisa_enviada_em.is_(None),
+                )
+                .order_by(Atendimento.concluido_em.desc())
+                .limit(200)
+            )
+            .scalars()
+            .all()
+        )
 
         atendimentos = [
             {
@@ -1030,8 +1050,6 @@ async def criar_atendimento(request: Request, payload: dict) -> dict:
     """Cria atendimento (handoff)."""
     from datetime import datetime, timezone
     from app.models.atendimento import Atendimento
-    from app.models.cliente import Cliente
-    from app.services.pii import hash_pii
 
     canal = payload.get("canal", "whatsapp")
     external_id = payload.get("external_id", "unknown")
@@ -1149,7 +1167,7 @@ async def obter_historico_atendimento(session_id: str) -> dict:
     from app.models.conversa import Conversa
 
     messages = []
-    
+
     # 1. Tenta buscar do cache quente do Redis (ADR-014)
     try:
         r_client = redis.from_url(settings.redis_url, socket_timeout=2.0, decode_responses=True)
@@ -1169,24 +1187,32 @@ async def obter_historico_atendimento(session_id: str) -> dict:
     if not messages:
         try:
             with session_scope() as db:
-                rows = db.execute(
-                    select(Conversa)
-                    .where(Conversa.external_id == session_id)
-                    .order_by(Conversa.created_at.asc())
-                ).scalars().all()
+                rows = (
+                    db.execute(
+                        select(Conversa)
+                        .where(Conversa.external_id == session_id)
+                        .order_by(Conversa.created_at.asc())
+                    )
+                    .scalars()
+                    .all()
+                )
 
                 for row in rows:
-                    messages.append({
-                        "role": "user",
-                        "content": row.raw_message_scrubbed,
-                        "timestamp": row.created_at.isoformat() if row.created_at else None
-                    })
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": row.raw_message_scrubbed,
+                            "timestamp": row.created_at.isoformat() if row.created_at else None,
+                        }
+                    )
                     if row.bot_response:
-                        messages.append({
-                            "role": "assistant",
-                            "content": row.bot_response,
-                            "timestamp": row.updated_at.isoformat() if row.updated_at else None
-                        })
+                        messages.append(
+                            {
+                                "role": "assistant",
+                                "content": row.bot_response,
+                                "timestamp": row.updated_at.isoformat() if row.updated_at else None,
+                            }
+                        )
         except Exception:
             pass
 
@@ -1287,9 +1313,7 @@ async def webhook_chatwoot(request: Request) -> dict:
     signature = request.headers.get("X-Chatwoot-Signature")
 
     with session_scope() as db:
-        result = process_chatwoot_event(
-            db, payload, signature=signature, raw_body=raw_body
-        )
+        result = process_chatwoot_event(db, payload, signature=signature, raw_body=raw_body)
 
     return result
 
@@ -1313,9 +1337,7 @@ async def cron_stale_detector() -> dict:
     from app.services.stale_detector import mark_stale_atendimentos
 
     with session_scope() as db:
-        result = mark_stale_atendimentos(
-            db, threshold_minutes=settings.stale_threshold_minutes
-        )
+        result = mark_stale_atendimentos(db, threshold_minutes=settings.stale_threshold_minutes)
     return result
 
 
@@ -1349,7 +1371,6 @@ async def delete_cliente(
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
     """Aplica direito ao esquecimento ao cliente (LGPD art. 18 VI)."""
-    from app.models.cliente import MotivoEncerramento
     from app.services.lgpd.direito_esquecimento import (
         ClienteJaRevogadoError,
         ClienteNotFoundError,
@@ -1484,9 +1505,7 @@ async def admin_run_retencao(
         "soft_deleted_inativo": result.soft_deleted_inativo,
         "errors": result.errors,
         "cutoff_5y": result.cutoff_5y.isoformat() if result.cutoff_5y else None,
-        "cutoff_inativo": (
-            result.cutoff_inativo.isoformat() if result.cutoff_inativo else None
-        ),
+        "cutoff_inativo": (result.cutoff_inativo.isoformat() if result.cutoff_inativo else None),
         "duration_ms": result.duration_ms,
     }
 
@@ -1648,11 +1667,17 @@ async def list_audit_logs_endpoint(
             pattern="^(user|system|bot|escrevente|tabeliao)$",
         ),
     ] = None,
-    action_prefix: Annotated[str | None, Query(description="Filtrar por prefixo de action.")] = None,
+    action_prefix: Annotated[
+        str | None, Query(description="Filtrar por prefixo de action.")
+    ] = None,
     resource: Annotated[str | None, Query(description="Filtrar por resource exato.")] = None,
     canal: Annotated[str | None, Query(description="Filtrar por canal.")] = None,
-    since: Annotated[datetime.datetime | None, Query(description="Entries >= since (ISO 8601).")] = None,
-    until: Annotated[datetime.datetime | None, Query(description="Entries <= until (ISO 8601).")] = None,
+    since: Annotated[
+        datetime.datetime | None, Query(description="Entries >= since (ISO 8601).")
+    ] = None,
+    until: Annotated[
+        datetime.datetime | None, Query(description="Entries <= until (ISO 8601).")
+    ] = None,
     page: Annotated[int, Query(ge=1, description="Pagina (1-indexed).")] = 1,
     page_size: Annotated[int, Query(ge=1, le=200, description="Tamanho da pagina.")] = 50,
     db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
@@ -1662,7 +1687,10 @@ async def list_audit_logs_endpoint(
     if not api_key or api_key != settings.cartorio_api_key:
         raise HTTPException(
             status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria para consultar audit log."},
+            detail={
+                "erro": "UNAUTHORIZED",
+                "mensagem": "X-API-Key obrigatoria para consultar audit log.",
+            },
         )
 
     filter_ = AuditLogFilter(
@@ -1707,10 +1735,12 @@ async def get_audit_log_endpoint(
     if result is None:
         raise HTTPException(
             status_code=404,
-            detail={"erro": "AUDIT_LOG_NOT_FOUND", "mensagem": f"Audit log {log_id} nao encontrado."},
+            detail={
+                "erro": "AUDIT_LOG_NOT_FOUND",
+                "mensagem": f"Audit log {log_id} nao encontrado.",
+            },
         )
     return result
-
 
 
 # ============================================================================
@@ -1772,23 +1802,21 @@ async def get_cliente_historico(
         )
 
     from app.models.atendimento import Atendimento
-    from app.models.cliente import Cliente
     from app.models.protocolo import Protocolo
 
     cliente = db.get(Cliente, cliente_id)
     if cliente is None:
         raise HTTPException(
             status_code=404,
-            detail={"erro": "CLIENTE_NOT_FOUND", "mensagem": f"Cliente {cliente_id} nao encontrado."},
+            detail={
+                "erro": "CLIENTE_NOT_FOUND",
+                "mensagem": f"Cliente {cliente_id} nao encontrado.",
+            },
         )
 
     items: list[ClienteHistoricoItem] = []
 
-    protocolos = (
-        db.query(Protocolo)
-        .filter(Protocolo.cliente_id == cliente_id)
-        .all()
-    )
+    protocolos = db.query(Protocolo).filter(Protocolo.cliente_id == cliente_id).all()
     for p in protocolos:
         items.append(
             ClienteHistoricoItem(
@@ -1802,11 +1830,7 @@ async def get_cliente_historico(
             )
         )
 
-    atendimentos = (
-        db.query(Atendimento)
-        .filter(Atendimento.cliente_id == cliente_id)
-        .all()
-    )
+    atendimentos = db.query(Atendimento).filter(Atendimento.cliente_id == cliente_id).all()
     for a in atendimentos:
         items.append(
             ClienteHistoricoItem(
@@ -1854,7 +1878,9 @@ async def get_cliente_historico(
 )
 async def get_protocolos_recentes_concluidos(
     request: Request,
-    minutos: Annotated[int, Query(ge=1, le=1440, description="Janela em minutos (default 10).")] = 10,
+    minutos: Annotated[
+        int, Query(ge=1, le=1440, description="Janela em minutos (default 10).")
+    ] = 10,
     limit: Annotated[int, Query(ge=1, le=200, description="Maximo de items (default 50).")] = 50,
     db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> dict:
@@ -1916,7 +1942,6 @@ async def upload_documento(
     db: Session = Depends(get_db),
 ) -> dict:
     """Registra metadata de documento uploaded."""
-    import hashlib as _hashlib
     from app.models.documento import Documento
     from app.models.protocolo import Protocolo
 
@@ -1944,7 +1969,10 @@ async def upload_documento(
     if protocolo is None:
         raise HTTPException(
             status_code=404,
-            detail={"erro": "PROTOCOLO_NOT_FOUND", "mensagem": f"Protocolo {protocolo_id} nao existe."},
+            detail={
+                "erro": "PROTOCOLO_NOT_FOUND",
+                "mensagem": f"Protocolo {protocolo_id} nao existe.",
+            },
         )
 
     # Cria documento
@@ -2022,7 +2050,11 @@ async def upload_documento(
     responses={
         200: {
             "description": "Metrics em formato Prometheus text/plain.",
-            "content": {"text/plain": {"example": "# TYPE cartorio_uptime_seconds gauge\ncartorio_uptime_seconds 3600.0\n"}},
+            "content": {
+                "text/plain": {
+                    "example": "# TYPE cartorio_uptime_seconds gauge\ncartorio_uptime_seconds 3600.0\n"
+                }
+            },
         },
     },
 )
