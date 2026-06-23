@@ -21,9 +21,16 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 ### Sprint 0.5 — Infra base
 - [ ] **E0.S0.5.T1** Rodar migrations Alembic em Supabase staging — owner: `cartorio-dev`
   - Done: schema completo no Postgres, tabelas criadas, indices em `cliente.cpf_hash` e `protocolo.numero`
-- [ ] **E0.S0.5.T2** DNS + HTTPS (cartorio.com.br → Caddy/Traefik no Easypanel) — owner: `cartorio-n8n`
-- [ ] **E0.S0.5.T3** Backup automatizado Postgres (snapshot diario, retencao 30d) — owner: `cartorio-lgpd` (compliance de retencao) + `cartorio-n8n` (execucao)
+- [x] **E0.S0.5.T2** DNS + HTTPS (cartorio.com.br → Caddy/Traefik no Easypanel) — owner: `cartorio-n8n` — Traefik LetsEncrypt DNS-01 ativo, 6/6 dominios verdes
+- [~] **E0.S0.5.T3** Backup automatizado Postgres (snapshot diario, retencao 30d) — owner: `cartorio-lgpd` (compliance de retencao) + `cartorio-n8n` (execucao) — script + cron instalados, sem S3 ainda
 - [ ] **E0.S0.5.T4** Seed inicial de `tabela_emolumento` MG 2026 — owner: `cartorio-dev`
+- [x] **E0.S0.5.T5** Atualizar `.env` com todas API keys (Opencode-Go DeepSeek-v4 flash + OpenClaw + N8N + Evolution + Supabase) — owner: Mavis — done 2026-06-23
+- [x] **E0.S0.5.T6** Prospecção top 30 cartórios BR com scoring Tier A/B/C — owner: `ceo-assistant` (prospecção) + Mavis (orquestração) — done 2026-06-23, doc `docs/leads/cartorios-br-top30.md`
+- [~] **E0.S0.5.T7** Roteiro LGPD-safe de abordagem (3 variantes: WhatsApp curto / e-mail institucional / LinkedIn tabelião) — owner: `cartorio-lgpd` — em andamento via worker spawn `general` (mvs_c6c4d15d2a8443d68c4f78d80e27696a) ativo desde 10:46
+  - **SPEC CEO (addendum 2026-06-23)**: 5 critérios obrigatórios em todas as 11 copies — (1) SINAL ESPECÍFICO por cartório, (2) LGPD-safe (zero dado PF, opt-out em rodapé), (3) CTA claro (15min + 2 opções concretas), (4) Tom PT-BR natural (sem juridiquês), (5) Piloto 30 dias grátis. Detalhe em MSG #1490 pro cartorio-lgpd.
+  - **Protocolo 2 batches (2026-06-23)**: Batch 1 = 5 prioritários (CEO revisa triagem), Batch 2 = 15 restantes + 11 modelos (só após sign-off batch 1)
+  - **Estrutura esperada**: 11 arquivos em `/docs/leads/roteiros/{whatsapp,email,linkedin}/` (5+3+3). Top 5 WhatsApp personalizados com sinais já preenchidos; outros 6 com placeholders.
+  - **Owner review**: `ceo-assistant` (idle, aguardando entrega bloco-a-bloco) + `cartorio-harness` (validação LGPD-compliance final)
 
 ---
 
@@ -32,14 +39,20 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 > Decisao D3.1 (ceo-assistant): Sprint 1 faz SÓ consulta de emolumento. Status protocolo so no Sprint 2. Criar protocolo so apos 30 dias de shadow mode.
 
 ### Sprint 1 (sem 3-4) — SO CONSULTA EMOLUMENTO
-- [ ] **E1.S1.T1** Workflow n8n #1: msg WhatsApp -> Evolution -> OpenClaw -> API regras -> resposta — owner: `cartorio-n8n`
-- [ ] **E1.S1.T2** Endpoint `GET /api/v1/emolumento/calcular` polish + OpenAPI documentado — owner: `cartorio-dev`
+- [x] **E1.S1.T1** Workflow n8n #1: msg WhatsApp -> Evolution -> OpenClaw -> API regras -> resposta — owner: `cartorio-n8n` — done em `3cdb65a` (WF bR7qIo3bFpG4zgxO, /webhook/consulta-emolumento, 200 OK, valores reais MG 2026)
+- [ ] **E1.S1.T2** Endpoint `GET /api/v1/emolumento/calcular` polish + OpenAPI documentado — owner: `cartorio-dev` — em andamento (worker spawn `general` ativo desde 10:46)
 - [ ] **E1.S1.T3** Integracao LiteLLM (Claude Opus 4.5 primary, GPT-5.5 fallback, Gemini/Llama router intencao) — owner: `cartorio-dev`
 - [ ] **E1.S1.T4** PII scrubbing regex-only (latencia < 5ms) ANTES de chamar LLM — owner: `cartorio-dev` + review `cartorio-lgpd`
-- [ ] **E1.S1.T5** Template de resposta WhatsApp: "emolumento X custa R$ Y, prazo Z" — owner: `cartorio-n8n`
-- [ ] **E1.S1.T6** Health check `/health` com smoke do hash chain — owner: `cartorio-dev`
+- [x] **E1.S1.T5** Template de resposta WhatsApp: "emolumento X custa R$ Y, prazo Z" — owner: `cartorio-n8n` — done em `3cdb65a` (WF #1 happy path R$ 105.40 certidao_casamento, R$ 156.40 procuracao)
+- [x] **E1.S1.T6** Health check `/health` com smoke do hash chain — owner: `cartorio-dev` — `/health` 200 OK, `/api/v1/audit/verify` chain_ok=true last_valid_position=10
 - [ ] **E1.S1.T7** Teste E2E: webhook Evolution -> resposta WhatsApp com PII zero no payload externo — owner: `cartorio-dev`
 - **KPI Sprint 1**: 100 consultas/dia, 0 erro de valor, 0 handoff humano.
+
+### Sprint 1 — Bonus workflows (cartorio-n8n Sprint 1 deliverable) ✅ done em `3cdb65a`
+- [x] **E1.S1.WF2** Workflow n8n #2: criar protocolo (LGPD_BLOCKED sem consent, provisional CART-2026-XXXXXX com consent) — `MzeYTSDouymzdpRw` /webhook/criar-protocolo — backend 404 (Sprint 3 E1.S3.T1 pendente)
+- [x] **E1.S1.WF3** Workflow n8n #3: handoff humano Chatwoot com inbox URL fallback — `OQRIOVHcOjpkQ0Of` /webhook/handoff-human
+- [x] **E1.S1.WF4** Workflow n8n #4: boas-vindas + LGPD (novo cliente LGPD text, recorrente menu numerado) — `sDtkfOJ5BA7M73wB` /webhook/boas-vindas
+- [ ] **E1.S1.WF3.BOT** Chatwoot Agent Bot (Cartorio Assistant) — PENDING Gustavo UI: precisa super_admin credentials no https://cartorio-chatwoot.dfgdxq.easypanel.host/super_admin/agent_bots; CHATWOOT_API_KEY vazio em backend/.env (WF3 usa inbox URL fallback enquanto isso)
 
 ### Sprint 2 (sem 5-6) — STATUS PROTOCOLO + SHADOW MODE
 - [ ] **E1.S2.T1** Endpoint `GET /api/v1/protocolo/{numero}` — owner: `cartorio-dev`
