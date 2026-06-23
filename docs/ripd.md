@@ -84,6 +84,44 @@
 | Retenção | 5 anos (LGPD art. 37) |
 | Compartilhamento | Apenas ANPD em caso de incidente (LGPD art. 48) |
 
+### 2.5. Tratamento 5 — Logs de webhook com PII scrubbed (workflows N8N)
+
+> **Novo tratamento identificado em 23/06/2026** durante rollout dos 11 workflows N8N do chatbot (webhooks WhatsApp/Telegram/Web, integração com OpenClaw e Chatwoot).
+
+| Item | Descrição |
+|------|-----------|
+| Finalidade | Depurar, rastrear e auditar execuções dos workflows N8N que intermediam conversas entre canais e o backend; possibilitar reprodução de incidentes e cálculo de emolumentos; cumprir boa prática de observabilidade. |
+| Base legal | **LGPD art. 7º V** — *execução de contrato* (prestação do serviço notarial solicitada pelo titular via canal) + LGPD art. 6º, IX (princípio da necessidade) e art. 46 (medidas de segurança) |
+| Categorias de titulares | Clientes do chatbot, escreventes, operadores do sistema |
+| Categorias de dados | Timestamp, ID do workflow, ID da execução, canal de origem, nome do agente, hash SHA-256 do payload (com PII scrubbed: CPF, RG, CNPJ, telefone, e-mail, cartão, CEP, PIS, título de eleitor substituídos por tokens `[PII:cpf]`, `[PII:phone]`, etc.), status (success/error), latência |
+| Dados sensíveis | **Não tratados** — PII scrubbing em 3 camadas (input do webhook, pre-LLM, output) garante que dado identificável jamais chega ao log |
+| Origem | Webhook recebido pelo workflow N8N (Evolution API, Telegram Bot API, Chatwoot) |
+| Operações | Coleta automática a cada execução, normalização, hashing do payload, indexação em Postgres do N8N, retenção 365d, expurgo automático via job diário |
+| Ferramentas | N8N v1+ (Postgres backend em `cartorio_postgres`), tabela `execution_entity` com colunas `payload_hash`, `scrubbed_payload`, `pii_tokens` |
+| Retenção | **365 dias** (mesma janela do tratamento 1 — base legal execução de contrato não exige prazo maior; passado o prazo, dados viram risco sem benefício) |
+| Compartilhamento | Nenhum operador externo. Acesso restrito a DPO + tabelião via console N8N autenticado. ANPD somente em incidente (LGPD art. 48). |
+| Mitigação específica | (a) PII scrubbing em 3 camadas antes da persistência; (b) `payload_hash` (SHA-256 + salt) para detectar adulteração; (c) ausência de payload bruto em log — só `scrubbed_payload` + `pii_tokens`; (d) job de expurgo diário `DELETE FROM execution_entity WHERE finished_at < NOW() - INTERVAL '365 days'`; (e) teste de regressão que falha se log contiver CPF/RG bruto (regex `\d{3}\.\d{3}\.\d{3}-\d{2}` etc.) |
+
+### 2.6. Tratamento 6 — Mensagens de boas-vindas com consentimento LGPD
+
+> **Novo tratamento identificado em 23/06/2026** com a ativação do `workflow-welcome-message` no N8N, que envia mensagem inicial com política de privacidade e termo de consentimento e armazena aceite no Supabase.
+
+| Item | Descrição |
+|------|-----------|
+| Finalidade | (i) Apresentar o serviço do chatbot; (ii) colher consentimento explícito (LGPD art. 8º) para tratamento subsequente dos dados do titular; (iii) cumprir dever de informação (LGPD art. 9º); (iv) produzir prova de consentimento em caso de fiscalização ou exercício de direitos. |
+| Base legal | **LGPD art. 7º I** — *consentimento* do titular, coletado de forma livre, informada, inequívoca e específica (LGPD art. 8º); revogável a qualquer momento, sem custo (LGPD art. 8º, §5º) |
+| Categorias de titulares | Qualquer pessoa que inicia conversa com o chatbot (canal WhatsApp, Telegram, Web) |
+| Categorias de dados | Telefone (ou ID Telegram, ou session_id Web), timestamp do aceite, IP, user-agent, hash do texto da política/termo apresentado, versão da política, versão do termo, canal, idioma (pt-BR), opt-in flag (true/false), opt-out timestamp, withdrawal_method (mensagem, painel, e-mail ao DPO) |
+| Dados sensíveis | Não tratados |
+| Origem | Coleta direta (titular responde "Aceito" / "Não aceito" no chat) |
+| Operações | Coleta no webhook do workflow → INSERT em `consent_log` (Supabase) com `payload_hash` (SHA-256); aceite vira flag `consent.granted=true` no perfil do cliente; revogação atualiza `consent.revoked_at` e bloqueia novas coletas |
+| Ferramentas | N8N (`workflow-welcome-message`), Supabase `consent_log` table com RLS (apenas DPO e tabelião leem), API `/consent/revoke` no FastAPI para revogação |
+| Retenção | **Indeterminada** — mantida enquanto titular não revogar; necessário para provar consentimento em eventual fiscalização (ANPD) ou contestação judicial, e para atender LGPD art. 37 (registro de operações). Apagada em até 30 dias após revogação explícita (LGPD art. 18, VI — eliminação de dados pessoais) |
+| Compartilhamento | Nenhum operador externo. ANPD em caso de fiscalização. Poder Judiciário em caso de ação judicial. |
+| Mitigação específica | (a) Opt-in affirmative (não pré-marcado); (b) texto da política versionada + hash SHA-256 (prova do que foi apresentado); (c) revogação self-service via comando `revogar` no chat, painel `/privacidade`, e e-mail ao DPO; (d) bloqueio de novas coletas após revogação (gate no FastAPI); (e) revisão anual do texto do termo; (f) cópia do termo arquivada em storage imutável do cartório (não Supabase) por 5 anos para prova; (g) DPO publica relatório trimestral de consentimentos ativos vs revogados |
+
+> **Atenção DPO:** o tratamento 6 produz **evidência probatória** — é a base de toda a legitimidade do chatbot. Sua retenção indeterminada é decisão consciente (prova), não descuido. O expurgo pós-revogação (30 dias) é obrigatório. Cruzar com Tratamento 5 (logs) — se o titular revogar, todas as execuções de webhook relacionadas devem ser anonimizadas (substituir `phone` por hash irreversível) no job diário.
+
 ---
 
 ## 3. Necessidade e proporcionalidade
@@ -271,6 +309,7 @@ Atendidos conforme Política de Privacidade (https://2notasudi.com.br/privacidad
 | Versão | Data | Mudança | Autor |
 |--------|------|---------|-------|
 | 1.0 | 23/06/2026 | Versão inicial | Rein `cartorio-lgpd` |
+| 1.1 | 23/06/2026 | Adicionados Tratamentos 5 (logs de webhook com PII scrubbed — N8N, art. 7º V, retenção 365d) e 6 (mensagens de boas-vindas com consentimento — Supabase, art. 7º I, retenção indeterminada até revogação) | Rein `cartorio-lgpd` (sessão `mvs_6a65b10ee18e42f18ed2b071bb65d6ed`) |
 
 ---
 
@@ -282,5 +321,8 @@ Atendidos conforme Política de Privacidade (https://2notasudi.com.br/privacidad
 - `docs/leads/roteiros/` — 3 variantes táticas (WhatsApp curto, e-mail institucional, LinkedIn tabelião)
 - `backend/app/services/pii.py` — Implementação do PII scrubber
 - `backend/app/services/audit.py` — Implementação do audit log
+- `infra/n8n/workflows/` — 11 workflows N8N do chatbot (origem dos logs do Tratamento 5)
+- `infra/n8n/workflows/welcome-message.json` — Workflow de boas-vindas + consentimento (Tratamento 6)
+- `supabase/migrations/2026-06-23_consent_log.sql` — Tabela `consent_log` com RLS
 
 Modified by Gustavo Almeida
