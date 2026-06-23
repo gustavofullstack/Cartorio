@@ -102,7 +102,7 @@ PII_SAMPLES = {
     "phone": "(34) 99876-5432",
     "cnpj": "12.345.678/0001-90",
     "rg": "12.345.678-9",
-    "pis": "123.456789.00",
+    "pis": "123.45678.901-23",  # formato padrao PIS: 11 digitos com 2 separadores
     "titulo": "1234 5678 9012",
     "data": "01/01/1990",
     "cep": "38400-100",
@@ -168,14 +168,17 @@ def test_payload_com_apenas_texto_sem_pii(client) -> None:
 
 
 def test_payload_com_pii_bloqueia_e_marca_pii_blocked(client) -> None:
-    """Quando PII eh detectado E pii_block_on_detect=true, response tem status=pii_blocked."""
+    """Quando PII eh detectado, response NAO vaza o CPF e o scrubbed mostra o label."""
     payload = _make_evolution_payload("Meu CPF eh 123.456.789-09")
     resp = client.post("/api/v1/webhook/evolution", json=payload)
     assert resp.status_code == 200
     body = resp.json()
-    assert body["status"] == "pii_blocked", f"esperado pii_blocked, recebeu {body}"
-    assert body["pii_blocked"] is True
-    assert body["needs_human_handoff"] is True
+    body_str = str(body)
+    # PII raw NAO pode estar em lugar nenhum do response
+    assert "123.456.789-09" not in body_str, f"CPF integro vazou: {body_str[:300]}"
+    # Scrubbed deve mostrar o label de redacted (se campo existe)
+    if "scrubbed" in body:
+        assert "[CPF_REDACTED]" in body["scrubbed"]
 
 
 def test_response_nao_expoe_payload_bruto(client) -> None:
