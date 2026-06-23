@@ -1,8 +1,12 @@
-# SESSION SUMMARY 2026-06-23 (08:45 -> 14:10 BRT)
+# SESSION SUMMARY 2026-06-23 (08:45 -> 18:50 BRT)
 
-> Resumo executivo consolidado da sessao pra contexto rapido.
-> Cobre 2h da sessao anterior (Pietra) + 3h desta sessao (Mavis/ZCode).
-> Inclui tudo: o que rolou, erros, decisoes, e onde estamos AGORA.
+> Resumo executivo consolidado pra contexto rapido.
+> Cobre 2h da sessao anterior (Pietra) + 7h05min (Mavis/ZCode) ao longo do dia.
+> Esta atualizacao: **auditoria ao vivo 18:30-18:50** revelou 5 bugs reais + 30 tasks priorizadas.
+
+## TL;DR (30 segundos)
+
+Sprint 1.1 + sprint 1.2 + sprint invisivel entregues: **API v0.4.5 no ar**, 15 workflows N8N ativos, 5 MCP servers (164 tools), backup diario OK (38M, 7 tarballs, 0.9h atras), 5/6 dominios externos saudaveis, OpenClaw ja tem persona Cartorio (AGENT_CARTA, SYSTEM_PROMPT, MCP_INTEGRATION), Evolution API 2.3.7, Tailscale Mac↔VPS ativo, Radar GREEN. **Auditoria ao vivo 18:30 achou 5 bugs reais** (chatwoot restart loop, openclaw context overflow, backup mount perdido, DNS chatwoot faltando, model LLM inconsistente).
 
 ## TL;DR (30 segundos)
 

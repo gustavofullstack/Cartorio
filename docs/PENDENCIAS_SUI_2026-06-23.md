@@ -184,4 +184,112 @@
 | L3 | Encryption at-rest Postgres | P1 | 2.5h | Não (sprint 2) |
 | L4 | OpenClaw LLM key | P2 | 2 min | Após L1 |
 
-Modified by Gustavo Almeida
+---
+
+# Auditoria ao Vivo 18:30-18:50 BRT (2026-06-23) — Achados REAIS
+
+> Estado verificado via curl + ssh Tailscale 100.99.172.84. Esta sessão **NÃO é repetição** do briefing gigante — é snapshot técnico do que está rodando AGORA e dos bugs REAIS que precisam de fix.
+
+## ✅ Funcionando AGORA (verificado)
+
+| Componente | Status | Evidência |
+|---|---|---|
+| **API FastAPI** | v0.4.5, 200 OK | `curl https://api.2notasudi.com.br/health` → 200, 67ms |
+| **Radar de saúde** | GREEN 5/5 | database/redis/n8n/openclaw/evolution todos online |
+| **5 MCP servers** | 164 tools expostas | `GET /mcp-servers` retorna 7+50+30+57+20=164 tools |
+| **N8N workflows** | **15 ativos** (não 10) | Via API `X-N8N-API-KEY`. Novos: #11 Monitor Cartório, #12 Chatbot LLM End-to-End (PII + OpenCode-Go) |
+| **Backup diário** | **CORRIGIDO NESTA SESSÃO** | Mount `/var/backups/cartorio` re-aplicado, 7 tarballs, 38M, último 0.9h |
+| **OpenClaw** | Online, deepseek-v4-flash ativo | Logs mostram provider=openai/deepseek-v4-flash, persona Cartório já tem AGENT_CARTA.md, SYSTEM_PROMPT.md, api-tools-guide.md, MCP_INTEGRATION.md |
+| **Evolution API** | v2.3.7, 200 OK | "Welcome to the Evolution API" |
+| **Tailscale** | Mac ↔ VPS ativos | 100.83.180.16 ↔ 100.99.172.84 diret connection |
+| **Domínios externos** | 5/6 OK (1 PENDENTE) | api/whatsapp/easypanel/agent/flow → 200, supbase → 401, **chatwoot → 000 (DNS não existe)** |
+
+## 🐛 Bugs REAIS achados nesta sessão (NÃO estavam no briefing)
+
+### B1. Backup mount perdido (CORRIGIDO)
+- `docker service update --mount-add` feito na sprint 1.1 tinha sido revertido por algum restart posterior
+- Sintoma: `/health/backup` retornava `[Errno 2] No such file or directory: 'docker'`
+- Fix aplicado: re-adicionado bind mount readonly no `cartorio_api` service
+- **Validado**: endpoint agora retorna `ok: true, 0.9h, 7 tarballs, 38M`
+- ⚠️ **Causa raiz investigar**: por que o mount sumiu? Alguém fez `docker service update` sem `--mount-add` depois? Documentar no ADR-013.
+
+### B2. Chatwoot reiniciando em loop (NÃO corrigido ainda)
+- Container `cartorio_chatwoot.1` reinicia a cada 1-2 min
+- Puma sobe e escuta porta 3000 OK
+- Depois recebe SIGTERM e morre (exit 1)
+- **Mas**: HTTP interno responde 200 com HTML completo, então restart é por algo no shutdown/keepalive
+- 4 restarts nas últimas 2h, todos Failed exit 1
+- Possível causa: healthcheck do Swarm + Puma não responde rápido o suficiente, ou OOM
+- **Ação**: aumentar verbosidade do log + checar OOM (`docker inspect` memory limit), depois considerar relaxar healthcheck
+
+### B3. OpenClaw context overflow (NÃO corrigido)
+- Sessão `agent:main:main` acumulou 142 mensagens
+- Provider: `openai/deepseek-v4-flash` retornou "Context overflow: prompt too large"
+- Auto-compactação ativou (attempt 1/3) mas `compactionAttempts=0` mostra que falhou
+- Tokens observados: 131073 (acima do budget de 111072)
+- **Ação**: forçar compactação manual da sessão ou aumentar threshold, depois auditar uso real
+
+### B4. `chatwoot.2notasudi.com.br` sem DNS público (PENDENTE SUI)
+- Container responde, mas domínio retorna NXDOMAIN
+- Único subdomínio dos 6 mapeados que ainda não tem DNS/SSL/Traefik
+- **Ação UI**: Easypanel UI > Services > `cartorio_chatwoot` > Domains > Add `chatwoot.2notasudi.com.br` + ajustar `FRONTEND_URL`
+
+### B5. Workflows N8N mais avançados que o briefing dizia (sprint 1.2 + sprint 2 invisível)
+- Briefing antigo falava "10 workflows simples"
+- Real: **15 workflows**, incluindo #11 (Monitor Cartório, 13 nodes) e #12 (Chatbot LLM End-to-End PII + OpenCode-Go, 6 nodes)
+- Workflows estão robustos, mas ainda faltam credentials Evolution API em #07 (PESQUISA SATISFAÇÃO) — ponto da sprint 1.1, ainda pendente
+
+## 📋 Tasks REAIS priorizadas (Sprint 2)
+
+### P0 — bloqueiam features em produção (8 tasks)
+
+1. **Corrigir loop de restart do Chatwoot** — investigar OOM, ajustar healthcheck, validar uptime >24h estável
+2. **Resolver context overflow do OpenClaw** — forçar compactação, ajustar `compact_then_truncate` threshold
+3. **Adicionar DNS público `chatwoot.2notasudi.com.br`** (SUI - Gustavo via UI Easypanel)
+4. **Adicionar credential `evolution-api-cartorio` no N8N** (SUI - Gustavo via UI flow.2notasudi.com.br)
+5. **Endpoint `POST /api/v1/webhook/chatwoot` para handoff humano** — workflow #03 (HANDOFF HUMANO) referencia mas endpoint não existe
+6. **Webhook Evolution-API → N8N workflow de entrada** — quando cliente mandar msg, precisa acionar workflow de atendimento
+7. **Webhook N8N → Evolution-API → WhatsApp para resposta** — output dos workflows precisa voltar ao WhatsApp
+8. **CRON N8N `Handoff Stale Detector`** — conversas paradas >30min devem ser escaladas
+
+### P1 — importantes, não bloqueiam (12 tasks)
+
+9. **Seed tabela `atendimentos` no DB cartorio** com placeholders para popular radar
+10. **Seed tabela `emolumento_mg_2026`** com valores oficiais da tabela mineira
+11. **Endpoint `GET /api/v1/atendimento/{session_id}/historico`** — expor histórico completo (Redis + Supabase)
+12. **Endpoint `POST /api/v1/webhook/evolution`** — recebe evento de mensagem do WhatsApp
+13. **Criar domínio público `vps.2notasudi.com.br`** (proxy reverso Hostinger) — mascarar IP público
+14. **Migrar `.env` do repo para `.env.example` com placeholders + script `setup-env.sh`**
+15. **GitHub Actions CI/CD** — lint + test + build + deploy ao merge na master
+16. **ADR-013: Backup mount durability** — documentar por que mount sumiu + estratégia
+17. **ADR-014: Multi-tenant sessão Redis** — chave `cartorio:sess:{phone}` com TTL 24h
+18. **OpenClaw persona files aplicados ao agent** (já tem no repo, falta confirmar deploy)
+19. **OpenClaw auto-compact configurado para `compact_then_truncate` em >50 msgs**
+20. **Chatwoot Agent Bot criado** (cartorio-bot) com webhook URL + bot type Webhook
+
+### P2 — nice-to-have, sprint 3+ (10 tasks)
+
+21. **Backup S3 com rclone** (B2 ou Cloudflare R2)
+22. **Encryption at-rest Postgres** (pgcrypto nas colunas sensíveis)
+23. **DPA MiniMax/OpenCode-Go assinado** (LGPD, 2-4 semanas)
+24. **Telegram bot de notificações** (deploy, build, status)
+25. **Pesquisa de mercado de cartórios** (5 melhores do Brasil, padrões de automação)
+26. **MCP server da Evolution API próprio** (wrapper com rate limit + auth)
+27. **MCP server do Chatwoot próprio** (CRUD accounts, inboxes, agents)
+28. **MCP server do Redis próprio** (sessions, keys, health)
+29. **Resolver DNS typo `supbase` → `supabase`** (decisão SUI)
+30. **Gerar coleção Postman da API** (exporta do Swagger)
+
+## 🧠 Estado de Memória (ciclo "Salvar na Memória")
+
+- **API version**: 0.4.5
+- **Workflows N8N**: 15 ativos (sprint 1.1 + invisíveis)
+- **MCP servers**: 5 servers, 164 tools (7+50+30+57+20)
+- **Backup dir**: 38M, 7 tarballs, último 0.9h
+- **OpenClaw LLM**: openai/deepseek-v4-flash (provider já configurado)
+- **Tailscale**: 100.83.180.16 ↔ 100.99.172.84 ativo
+- **Último deploy API**: rolling restart em 18:36 BRT (mount re-aplicado)
+- **Bugs abertos**: Chatwoot loop restart, OpenClaw context overflow, DNS chatwoot faltando
+- **Pendências SUI**: 3 (DNS chatwoot, cred Evolution, OpenClaw LLM key — depende de DPA)
+
+Modified by Gustavo Almeida / Mavis 2026-06-23 18:50 BRT
