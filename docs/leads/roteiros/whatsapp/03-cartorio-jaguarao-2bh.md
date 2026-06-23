@@ -1,6 +1,15 @@
-# WhatsApp — 2º Tabelionato de Notas de BH (Cartório Jaguarao)
+# BACKUP WhatsApp (fallback 7d úteis) — 2º Tabelionato de Notas de BH (Cartório Jaguarao)
 
-**Canal**: E-mail institucional — contato@cartorionotas.com.br (preferencial, conforme briefing CEO)
+> **ATENÇÃO — Este arquivo é o BACKUP WhatsApp. Canal primário é E-MAIL.**
+>
+> O briefing CEO priorizou e-mail como canal preferencial para o Cartório Jaguarao (Tier A, score 9.0). Este roteiro WhatsApp deve ser usado **SOMENTE** se o e-mail retornar sem resposta após 7 dias úteis.
+>
+> **Canal primário (usar PRIMEIRO):** [`../email/01-institucional-tier-a.md`](../email/01-institucional-tier-a.md) — E-mail institucional: `contato@cartorionotas.com.br`
+>
+> **Regra de fallback:** enviar WhatsApp alternativo apenas após 7 dias úteis sem resposta do e-mail. Registrar no CRM o motivo do fallback (data do e-mail + data do WhatsApp).
+
+**Canal**: BACKUP WhatsApp Business — fallback 7d úteis (e-mail é o canal primário)
+**Canal primário**: e-mail institucional — `contato@cartorionotas.com.br` (ver `email/01-institucional-tier-a.md`)
 **Tier**: A — Score 9.0
 **Quem envia**: Gustavo Almeida
 **Base legal LGPD**: art. 7º I (consentimento) + art. 9º (informação clara) + art. 18 IX (opt-out)

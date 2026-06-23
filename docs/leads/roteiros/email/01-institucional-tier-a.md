@@ -6,6 +6,7 @@
 **Base legal LGPD**: art. 7º I (consentimento) + art. 9º (informação clara) + art. 18 IX (opt-out)
 **Compliance**: dado institucional público apenas; rodapé com opt-out e link política de privacidade
 **Data do roteiro**: 23/06/2026
+**Verificação CEO (5/5)**: 23/06/2026 — Sinal ✓ LGPD ✓ CTA ✓ Tom ✓ Piloto 30d ✓ (checklist CEO abaixo)
 
 ---
 
