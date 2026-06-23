@@ -31,7 +31,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db import SessionLocal, session_scope
+from app.db import get_db, session_scope
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
 from app.schemas.protocolo import (
@@ -59,19 +59,6 @@ api_router = APIRouter()
 
 # Regex do formato ANO-SEQUENCIAL (YYYY-NNNNN)
 _NUMERO_PROTOCOLO_REGEX = r"^\d{4}-\d{5}$"
-
-
-# ============================================================================
-# Dependencia: sessao de banco
-# ============================================================================
-
-def get_db() -> Iterator[Session]:
-    """FastAPI dependency que injeta sessao SQLAlchemy."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # ============================================================================
