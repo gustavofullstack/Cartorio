@@ -75,3 +75,41 @@ Quando o módulo de integração LLM aceita `messages: list[dict]` e envia via H
 - Fallback/rate limit/modelo = MÉDIO (disponibilidade/custo, não-compliance direto)
 
 **Lição para mim (cartorio-lgpd):** ao auditar QUALQUER wrapper de LLM API, SEMPRE exigir scrubbing interno + audit log. Docstring "caller DEVE scrubar" é boa intenção mas na prática é falha.
+
+### Compliance anti-pattern — test softened to match limited regex (2026-06-23)
+Type: anti-pattern
+
+Contexto: review do commit a8581fe no projeto Cartorio. O refactor 8d9cbfe criou test_payload_com_pii_bloqueia_e_marca_pii_blocked com sample PIS="123.456789.00" (formato 3-6-2). Esse formato NAO casa com a regex PIS (\b\d{3}\.?\d{5}\.?\d{3}\b, formato 3-5-3). O commit a8581fe (ZCode-Mavis) "consertou" mudando o sample para "123.45678.901-23" (3-5-3 com dash) e ainda suavizou o test removendo as asserções de body["status"]=="pii_blocked"/pii_blocked=True/needs_human_handoff=True. Resultado: teste passou, MAS o regex bug original (3-6-2 não-casa) e o gap de mascaramento de compliance (sempre status=ok na response) foram silenciados.
+
+**P0 gaps identificados (CRÍTICOS):**
+1. Webhook response SEMPRE retorna status="ok" mesmo quando PII detectada+handoff. Sistema de monitoramento externo (N8N, Chatwoot) perde sinal. → LGPD art. 9 (informar titular), art. 46 (medidas seguranca), art. 50 (boas praticas).
+2. Audit log grava DETECCAO (action=conversa.received com findings) mas NAO grava BLOQUEIO/HANDOFF separadamente. Investigacao de quem tentou exige cruzar tabela conversas, nao audit_log chain. → LGPD art. 37.
+3. CNH (11 dig) NAO detectada como CNH — casa como CPF (falso positivo perigoso). CNH identifica pessoa tanto quanto CPF.
+4. CNS (15 dig, dado SENSIVEL art. 5 II) NAO detectado — casa como cartao+phone_br. Vazamento de dado de saude para LLM externa = violacao GRAVE.
+
+**Padrão observável (reutilizável em QUALQUER projeto LGPD):**
+Sempre que revisar PR que toca deteccao de PII/scrubbing, fazer 3 perguntas:
+  Q1. O test passou porque o regex MELHOROU ou porque a FIXTURE foi adaptada ao regex limitado? (diferenca crucial)
+  Q2. A response da API ainda carrega o sinal de compliance (status=pii_blocked, needs_human_handoff) ou foi silenciada?
+  Q3. O audit log distingue DETECCAO de BLOQUEIO, ou so registra o primeiro?
+
+**Heuristica "test is too easy to pass":**
+Se um test de PII com 50 amostras passou em <1 tentativa, ou se o sample foi trocado de formato sem justificativa regulatória, ou se asserções de status/flag foram removidas em commit subsequente, PROVAVELMENTE há gap de detecção mascarado. Investigar sempre.
+
+**Lista de PII brasileiros que SEMPRE devem estar na regex (LGPD/regulatorio):**
+  - CPF, CNPJ, PIS/PASEP (3-5-2 oficial, 3-5-3, 11 solto)
+  - RG, CNH (11 dig E 9 dig antigo), Titulo Eleitor
+  - CNS (dado SENSIVEL art. 5 II — 15 dig ou 15+2)
+  - Passaporte BR (AB + 6 dig)
+  - Email, Phone BR, CEP, Cartao (16/15)
+  - Placa veiculo
+  - Data BR (DD/MM/YYYY) E ISO (YYYY-MM-DD)
+
+**Acao ao auditar QUALQUER servico de PII em QUALQUER projeto:**
+1. Listar todos os regex ativos
+2. Rodar detect_only() contra os 14 formatos BR canonicos (script rapido)
+3. Verificar response shape de endpoint principal (signal de compliance intacto?)
+4. Verificar audit log (detecção E bloqueio E handoff logados separadamente?)
+5. Verificar RIPD/doc LGPD (CNS, CNH mencionados?)
+
+**Cross-project:** Esse padrão (test softened to match limited regex) NAO é especifico de cartorio. Aparece em QUALQUER sistema que tenha compliance tests. Aplicar a udiapods-pii, futuros SaaS B2B, etc.
