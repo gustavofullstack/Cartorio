@@ -1194,6 +1194,70 @@ async def obter_historico_atendimento(session_id: str) -> dict:
 
 
 # ============================================================================
+# List active sessions (Sprint 3 follow-up E1.S4.T1 - WF #15 Session Sync)
+# ============================================================================
+
+
+@api_router.get(
+    "/atendimento/list-active",
+    tags=["atendimento"],
+    summary="Lista sessoes ativas (ultimas N horas)",
+    description=(
+        "Retorna lista de sessoes com atividade recente, agrupadas por "
+        "external_id + canal. Usado pelo N8N workflow #15 (Session Sync) "
+        "que sincroniza Redis cache quente com DB. "
+        "Substitui o proposto GET /sessao/list-active (que nunca existiu) "
+        "com path alinhado aos demais /atendimento/*. "
+        "Read-only, sem PII nova exposta (external_id ja eh publico para o cartorio)."
+    ),
+    response_description="Lista de sessoes ativas com external_id, canal e last_activity.",
+)
+async def listar_sessoes_ativas(
+    since_hours: Annotated[
+        int,
+        Query(
+            ge=1,
+            le=168,  # max 7 dias
+            description="Janela de tempo em horas (default 24h, max 7 dias).",
+        ),
+    ] = 24,
+) -> dict:
+    """Lista sessoes ativas nas ultimas N horas.
+
+    Retorna sessoes unicas por (external_id, canal) com last_activity = MAX(updated_at).
+    Ordenado por atividade mais recente primeiro.
+    """
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import func
+    from app.models.conversa import Conversa
+
+    with session_scope() as db:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=since_hours)
+        # GROUP BY external_id + canal, MAX(updated_at) = last_activity
+        rows = (
+            db.query(
+                Conversa.external_id,
+                Conversa.canal,
+                func.max(Conversa.updated_at).label("last_activity"),
+            )
+            .filter(Conversa.updated_at >= cutoff)
+            .group_by(Conversa.external_id, Conversa.canal)
+            .order_by(func.max(Conversa.updated_at).desc())
+            .all()
+        )
+
+    sessions = [
+        {
+            "external_id": r.external_id,
+            "canal": r.canal,
+            "last_activity": r.last_activity.isoformat() if r.last_activity else None,
+        }
+        for r in rows
+    ]
+    return {"count": len(sessions), "sessions": sessions, "since_hours": since_hours}
+
+
+# ============================================================================
 # Chatwoot webhook (v0.4.2) + Sprint 2 (HMAC + idempotency)
 # ============================================================================
 
