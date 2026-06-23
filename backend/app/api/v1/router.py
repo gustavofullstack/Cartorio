@@ -431,22 +431,25 @@ async def webhook_evolution(payload: dict) -> dict:
     retorna resposta. Audit log de TUDO.
 
     Sprint 2: idempotencia via evolution_ingest (message_id) - replay nao duplica.
-    Mantem a logica inline de PII+LLM para nao quebrar o workflow #12 ativo.
+    Mantem a logica inline de PII+LLM para nao quebrar o workflow #12 ativo
+    e formato legado (pre-Sprint 1.2) que ainda usa payload {message, sender, instance}.
     """
-    # Idempotency check (Sprint 2) - nao quebra se mensagem ja foi processada
+    # Idempotency check (Sprint 2) - so se payload tem formato novo
+    # (data.key.id). Formato legado e ignorado silenciosamente.
     from app.services.evolution_ingest import ingest_evolution_event
 
-    with session_scope() as db:
-        ingest_result = ingest_evolution_event(db, payload)
-        if ingest_result["status"] == "idempotent":
-            return {
-                "status": "idempotent",
-                "message_id": ingest_result.get("message_id"),
-                "info": "message already processed",
-            }
-        # Se rejected ou ignored, retorna sem processar LLM
-        if ingest_result["status"] in ("rejected", "ignored"):
-            return ingest_result
+    if payload.get("data", {}).get("key", {}).get("id"):
+        with session_scope() as db:
+            ingest_result = ingest_evolution_event(db, payload)
+            if ingest_result["status"] == "idempotent":
+                return {
+                    "status": "idempotent",
+                    "message_id": ingest_result.get("message_id"),
+                    "info": "message already processed",
+                }
+            if ingest_result["status"] == "rejected":
+                return ingest_result
+            # accepted: continua processamento abaixo
 
     raw_text = payload.get("message", {}).get("text", "") or ""
     sender = payload.get("sender", "unknown")

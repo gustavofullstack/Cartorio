@@ -342,14 +342,15 @@ def test_concluir_atendimento_inexistente(client):
 
 
 def test_webhook_chatwoot_evento_desconhecido(client):
-    """Evento desconhecido retorna ok=True sem acao."""
+    """Evento desconhecido retorna ignored sem acao (Sprint 2 contrato)."""
     resp = client.post(
         "/api/v1/webhook/chatwoot",
         json={"event": "unknown_event", "foo": "bar"},
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert data["ok"] is True
+    # Sprint 2: chatwoot_handoff retorna {status, event} em vez de {ok, event}
+    assert data["status"] == "ignored"
     assert data["event"] == "unknown_event"
 
 
@@ -369,6 +370,7 @@ def test_webhook_chatwoot_conversation_resolved(client, test_engine):
         aid = a.id
 
     payload = {
+        "id": "evt-resolved-42",
         "event": "conversation_status_changed",
         "status": "resolved",
         "conversation": {"id": 42, "status": "resolved"},
@@ -376,7 +378,9 @@ def test_webhook_chatwoot_conversation_resolved(client, test_engine):
     resp = client.post("/api/v1/webhook/chatwoot", json=payload)
     assert resp.status_code == 200
     data = resp.json()
-    assert data["ok"] is True
+    # Sprint 2: contrato mudou para {status: "processed", event_type: ...}
+    assert data["status"] == "processed"
+    assert data["event_type"] == "conversation_status_changed"
 
     with SessionLocal() as s:
         a = s.get(Atendimento, aid)
@@ -385,8 +389,9 @@ def test_webhook_chatwoot_conversation_resolved(client, test_engine):
 
 
 def test_webhook_chatwoot_conversation_status_changed_other(client):
-    """conversation_status_changed com status != resolved: nao faz nada."""
+    """conversation_status_changed com status != resolved: processa mas nao conclui."""
     payload = {
+        "id": "evt-other-99",
         "event": "conversation_status_changed",
         "status": "open",
         "conversation": {"id": 99, "status": "open"},
@@ -394,4 +399,7 @@ def test_webhook_chatwoot_conversation_status_changed_other(client):
     resp = client.post("/api/v1/webhook/chatwoot", json=payload)
     assert resp.status_code == 200
     data = resp.json()
-    assert data["ok"] is True
+    # Processa o evento (status open), mas nao marca atendimento como concluido
+    # pois status != resolved
+    assert data["status"] == "processed"
+    assert data["event_type"] == "conversation_status_changed"
