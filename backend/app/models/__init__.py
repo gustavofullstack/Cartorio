@@ -7,6 +7,7 @@ from app.models.cliente import Cliente
 from app.models.conversa import Conversa
 from app.models.documento import Documento
 from app.models.protocolo import Protocolo
+from app.models.webhook_event import WebhookEvent
 
 __all__ = [
     "Atendimento",
@@ -17,4 +18,5 @@ __all__ = [
     "Documento",
     "Protocolo",
     "TimestampMixin",
+    "WebhookEvent",
 ]
