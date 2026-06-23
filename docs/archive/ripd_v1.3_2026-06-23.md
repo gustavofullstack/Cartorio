@@ -1,14 +1,9 @@
-<!-- Modified by Gustavo Almeida (via cartorio-lgpd) -->
-
 # Relatório de Impacto à Proteção de Dados Pessoais (RIPD) — Cartório 2 Notas Uberlândia
 
-**Versão:** 1.4
-**Data:** 23 de junho de 2026 (atualização — inclusão de **identificação nominal do DPO** (LGPD art. 41 §1º — GAP 5 / LGPD-013); inclusão de **CNS como dado sensível** detectado por regex anchored (LGPD art. 5º II — GAP 4 / LGPD-009); reforço da **transferência internacional para China** (DeepSeek via OpenCode-Go — art. 33, II + art. 33, I — GAP 1 / LGPD-007); abertura do **DPA DeepSeek** (LGPD-011/LGPD-014) com template anexo; inclusão de riscos R18–R19 e mitigações correspondentes; cross-ref com `docs/archive/` para prova de consentimento anterior)
+**Versão:** 1.3
+**Data:** 23 de junho de 2026 (atualização — correção de inconsistência documental OpenCode-Go/DeepSeek vs MiniMax, atualização de Bloqueios #5/#10/#11/#12 do AUDITORIA_BLOCKERS.md, abertura LGPD-014 para DPA)
 **Controlador:** Cartório 2º Ofício de Notas de Uberlândia
-**Encarregado de Dados (DPO):**
-- **Nome:** `[NOME_DO_DPO]` *(placeholder — preenchimento pelo tabelião obrigatório antes de ativar v0.6.0 — GAP 5 / LGPD-013)*
-- **E-mail:** dpo@2notasudi.com.br
-- **Telefone:** `[TELEFONE_DO_DPO]` *(placeholder — preenchimento pelo tabelião obrigatório antes de ativar v0.6.0)*
+**Encarregado de Dados (DPO):** dpo@2notasudi.com.br
 **Base normativa:** LGPD Lei 13.709/2018 art. 38; Resolução CD/ANPD nº 4/2023 (RIPD); Provimento CNJ 74/2018
 
 > Documento elaborado conforme **Resolução CD/ANPD nº 4/2023**, que disciplina a hipótese de elaboração de Relatório de Impacto à Proteção de Dados Pessoais. Este RIPD descreve o tratamento de dados pessoais realizado pelo chatbot do Cartório 2 Notas Uberlândia (WhatsApp/Telegram/Web) e pelos sistemas operacionais internos (API FastAPI, n8n, Evolution API, OpenClaw, Supabase).
@@ -22,8 +17,8 @@
 | Controlador | Cartório 2º Ofício de Notas de Uberlândia |
 | CNPJ | XX.XXX.XXX/0001-XX |
 | Endereço | Uberlândia/MG |
-| Encarregado (DPO) | `[NOME_DO_DPO]` · dpo@2notasudi.com.br · `[TELEFONE_DO_DPO]` (versão 1.4 — placeholder para preenchimento pre-v0.6.0) |
-| Operadores principais | Supabase (Postgres + Storage), Hostinger (VPS), Cloudflare (CDN/WAF), OpenAI / Anthropic (LLM via LiteLLM), **OpenCode-Go / DeepSeek (sub-processor LLM low-cost, baseado na China — sem adequação ANPD, exige DPA LGPD-011/014 — versão 1.3)**, Evolution API (WhatsApp), **N8N (ferramenta de automação de workflows self-hosted, NÃO sub-processor — versão 1.3)** |
+| Encarregado (DPO) | dpo@2notasudi.com.br |
+| Operadores principais | Supabase (Postgres + Storage), Hostinger (VPS), Cloudflare (CDN/WAF), OpenAI / Anthropic (LLM via LiteLLM), **OpenCode-Go / MiniMax (sub-processor LLM, dado anonimizado)** (versão 1.2), Evolution API (WhatsApp), **N8N (ferramenta de automação de workflows, exige DPA — versão 1.2)** |
 
 ---
 
@@ -36,10 +31,10 @@
 | Finalidade | Responder dúvidas sobre emolumentos, status de protocolo, agendamento de serviços notariais. |
 | Base legal | LGPD art. 7º I (consentimento) + art. 7º V (exercício regular de direitos) |
 | Categorias de titulares | Clientes do cartório, cidadãos em geral, escreventes |
-| Categorias de dados | Nome, telefone, conteúdo da conversa (texto, áudio, imagem), metadados técnicos (IP, user-agent), **CNS (Cartão Nacional de Saúde — detectado por padrão anchored: palavra-chave âncora + 30 caracteres de contexto + 2 formatos 15dig/17dig — versão 1.4)**, **CNH (Carteira Nacional de Habilitação — versão 1.4)** |
-| Dados sensíveis | **CNS** (dado sobre saúde — LGPD art. 5º II) **é tratado** se o titular enviar via WhatsApp/Telegram/Web. Mitigação: (a) detecção anchored evita falso-positivo contra protocolo/CNPJ/CPF; (b) PII scrubbing em 3 camadas (input do webhook, pre-LLM, output) garante que CNS jamais chega a LLM externo; (c) audit log registra CNS detectado com `payload_hash` (sem valor bruto); (d) retenção 365 dias, mesmo prazo de conversa. |
+| Categorias de dados | Nome, telefone, conteúdo da conversa (texto, áudio, imagem), metadados técnicos (IP, user-agent) |
+| Dados sensíveis | Não tratados |
 | Origem | Coleta direta (titular envia pelo WhatsApp/Telegram/Web) |
-| Operações | Coleta, armazenamento, leitura, transmissão a LLM externo (com scrubbing 3 camadas), pseudonimização, anonimização após retenção |
+| Operações | Coleta, armazenamento, leitura, transmissão a LLM externo (com scrubbing), pseudonimização, anonimização após retenção |
 | Ferramentas | Evolution API → OpenClaw → API FastAPI → Supabase |
 | Retenção | 365 dias (LGPD art. 16) |
 | Compartilhamento | OpenAI/Anthropic (apenas dados scrubbed), corregedoria, Receita Federal |
@@ -130,8 +125,6 @@
 ### 2.7. Tratamento 7 — Sub-processamento LLM via OpenCode-Go / DeepSeek
 
 > **Atualização 2026-06-23 (versão 1.3 — auditoria cartorio-lgpd):** correção de inconsistência documental. O modelo roteado para **dados de cliente** é `deepseek-v4-flash` via gateway **OpenCode-Go** (compat OpenAI Chat Completions), conforme `backend/app/config.py:71` e docstring `backend/app/integrations/opencode_go.py:9-13`. A referência anterior a "MiniMax-M2.7/M3" em `.harness/reins/*/opencode/opencode.json` é configuração do **Mavis runtime** (orquestrador Pietra/Harness), **NÃO** do LLM que processa dados de cliente. DeepSeek = empresa chinesa, **país sem adequação ANPD** (LGPD art. 33 exige mecanismo específico — consentimento destacado + cláusula contratual padrão ou similar).
->
-> **Atualização 2026-06-23 (versão 1.4 — auditoria cartorio-lgpd):** DPA em fase final de modelagem — **template anexo** em `docs/lgpd/dpa_deepseek_template.md` com 15 cláusulas obrigatórias (identificação partes, objeto+finalidade, base legal art. 33 II, tipos dados, duração, 8 obrigações operador art. 39, notificação ≤24h, sub-processadores, transferência internacional art. 33 IX + SCC, direitos titular art. 18, auditoria, devolução/eliminação ≤30d, responsabilidade solidária art. 42, lei BR + foro Uberlândia, rescisão). Status: **STAGING ONLY até DPA assinado**. Estimativa jurídica externa (Doneda/Patricia Peck): 8-16h parecer + 2-6 semanas negociação.
 
 | Item | Descrição |
 |------|-----------|
@@ -144,7 +137,7 @@
 | Operações | (1) Anonimização local; (2) Chamada HTTPS POST ao endpoint OpenCode-Go; (3) Recebimento de resposta; (4) Re-hidratação LOCAL apenas se resposta trouxer referência a token (e mesmo assim, lookup no banco, não no provider) |
 | Ferramentas | **Sub-processor**: **DeepSeek** (modelo `deepseek-v4-flash`) acessado via **OpenCode-Go** gateway (compat OpenAI Chat Completions, baseURL `https://api.opencode.ai/v1` em `config.py:70`). **API key**: armazenada no `.env` da VPS (não versionado) — NUNCA no código. **NÃO CONFUNDIR** com MiniMax-M2.7/M3 que é config do Mavis runtime. |
 | Retenção | OpenCode-Go é **stateless**: nenhuma instrução é persistida pelo provider além do necessário para SLA e billing (conforme política do provider). Auditoria é feita LOCALMENTE pelo audit_log do FastAPI. |
-| Compartilhamento | **DeepSeek via OpenCode-Go** (sub-processor chinês) — **exige DPA** (Data Processing Agreement) conforme LGPD art. 33 (transferência internacional para país sem adequação ANPD — China) + art. 39 (operador). **Template DPA com 15 cláusulas obrigatórias** em `docs/lgpd/dpa_deepseek_template.md` (versão 1.4). Mecanismo duplo: (a) art. 33, II — cláusulas-padrão contratuais (SCC); (b) art. 33, I — consentimento específico e destacado do titular (apresentado em `docs/consent.md` Item 3 — versão 1.1). Cláusulas críticas: não treinar modelos com nossos dados; não compartilhar com terceiros; não sub-contratar sem aprovação; notificar incidentes em ≤24h (mais restritivo que art. 48); permitir auditoria; LGPD compliance total. **Ver checklist completo em `docs/lgpd/AUDITORIA_BLOCKERS.md` (Bloqueio #6).** |
+| Compartilhamento | **DeepSeek via OpenCode-Go** (sub-processor chinês) — **exige DPA** (Data Processing Agreement) conforme LGPD art. 33 (transferência internacional para país sem adequação ANPD) + art. 39 (operador). Cláusulas obrigatórias: (a) não treinar modelos com nossos dados; (b) não compartilhar com terceiros; (c) não sub-contratar sem aprovação; (d) notificar incidentes em ≤24h (mais restritivo que art. 48); (e) permitir auditoria; (f) LGPD compliance total. **Ver checklist completo em `docs/lgpd/AUDITORIA_BLOCKERS.md` (Bloqueio #6).** |
 | Mitigação específica | (a) **PII scrubbing em 3 camadas OBRIGATÓRIO** antes de enviar (input do usuário, pre-LLM, output) — **NOTA 2026-06-23:** camada OUTPUT ainda **parcial** (Bloqueio #10 do AUDITORIA_BLOCKERS; ver `backend/app/integrations/opencode_go.py:390`); (b) **lista de campos permitidos** documentada em `docs/lgpd/opencode_go_audit.md`; (c) teste de regressão que falha se payload bruto chegar ao provider (`backend/tests/integration/test_opencode_go_no_pii.py` — 8 testes); (d) audit log de toda chamada com hash do payload enviado + hash do payload recebido (LGPD art. 37) — **NOTA:** hash atual é SHA-256 sem HMAC (Bloqueio #11); (e) rate limit por sessão para evitar abuso — **NOTA:** sem tratamento de falha Redis (Bloqueio #12); (f) fallback para OpenClaw/LiteLLM com scrubbing idêntico se OpenCode-Go estiver offline — **NOTA:** atualmente é placeholder (Bloqueio #5). |
 | **Status do DPA** | **PENDENTE — BLOQUEIO ATIVO** — DeepSeek (chines, sem adequação ANPD) deve assinar DPA com cláusulas LGPD antes de ir para produção. Sem DPA assinado, ambiente é **STAGING ONLY** e dado nenhum de cliente real pode circular. Responsável: Gustavo + DPO. **Alternativa estratégica em avaliação:** trocar provedor primário para OpenAI ou Anthropic (DPA template público, país com adequação ANPD, custo +10-30x). Ver LGPD-014 no backlog. |
 
@@ -201,13 +194,11 @@ Aplicamos o princípio da **minimização** (LGPD art. 6º, VIII):
 | R10 | Backups sem criptografia acessíveis | Confidencialidade | Baixa | Alto | Médio |
 | R11 | Vazamento via screenshot/print | Confidencialidade | Alta | Baixo | Médio |
 | R12 | Bug em job de retenção apaga dado necessário | Integridade | Baixa | Alto | Médio |
-| **R13** | **OpenCode-Go / DeepSeek usar dado enviado para treinar modelo** | **Confidencialidade/Conformidade** | **Média** | **Alto** | **Alto** |
-| **R14** | **OpenCode-Go / DeepSeek sofrer incidente e vazar dado anonimizado** | **Confidencialidade** | **Baixa** | **Médio** | **Médio** |
+| **R13** | **OpenCode-Go / MiniMax usar dado enviado para treinar modelo** | **Confidencialidade/Conformidade** | **Média** | **Alto** | **Alto** |
+| **R14** | **OpenCode-Go / MiniMax sofrer incidente e vazar dado anonimizado** | **Confidencialidade** | **Baixa** | **Médio** | **Médio** |
 | **R15** | **Workflow N8N novo gravar PII bruto por falha de scrubbing** | **Confidencialidade** | **Média** | **Alto** | **Alto** |
 | **R16** | **Credenciais N8N expostas em log ou backup sem criptografia** | **Confidencialidade** | **Baixa** | **Alto** | **Médio** |
-| **R17** | **DPA com DeepSeek/OpenCode não assinado e dado real enviado** | **Conformidade** | **Média** | **Alto** | **Alto** |
-| **R18** | **CNS (dado sensível art. 5º II) ecoado pelo LLM e devolvido ao cliente sem scrubbing de output** (boundary 2 — Blocker #10/#13) | **Confidencialidade/Conformidade** | **Média** | **Alto** | **Alto** |
-| **R19** | **DPO nominal incompleto** (placeholders `[NOME_DO_DPO]` e `[TELEFONE_DO_DPO]` ainda sem preenchimento — LGPD art. 41 §1º) | **Conformidade** | **Alta** | **Médio** | **Alto** |
+| **R17** | **DPA com MiniMax/OpenCode não assinado e dado real enviado** | **Conformidade** | **Média** | **Alto** | **Alto** |
 
 ---
 
@@ -306,36 +297,14 @@ Aplicamos o princípio da **minimização** (LGPD art. 6º, VIII):
 | PR review obrigatório pelo `cartorio-lgpd` para todo workflow novo com PII | Implementado (processo) |
 | Telemetria N8N desabilitada | Implementado |
 
-### R17 — DPA com DeepSeek
+### R17 — DPA com MiniMax
 
 | Medida | Status |
 |--------|--------|
-| Gerar draft DPA com base no modelo ANPD + 15 cláusulas obrigatórias | **TEMPLATE PRONTO** — `docs/lgpd/dpa_deepseek_template.md` (versão 1.4) |
-| Revisão jurídica externa (Doneda/Patricia Peck) | **PENDENTE** — responsável Gustavo |
-| Coleta de assinaturas com DeepSeek (negociação 2-6 semanas) | **PENDENTE** |
-| Armazenar DPA assinado em `docs/lgpd/dpa_deepseek.pdf` (renomeado de `dpa_minimax.pdf` para refletir provedor real — versão 1.3) | **PENDENTE** |
-| Sem DPA assinado: ambiente **STAGING ONLY**, dado sintético | **ATIVO** |
-| Alternativa estratégica: trocar para OpenAI/Anthropic (DPA template público, país com adequação) | **EM AVALIAÇÃO** — Gustavo decide |
-
-### R18 — CNS ecoado pelo LLM no output (defense-in-depth boundary 2)
-
-| Medida | Status |
-|--------|--------|
-| PII scrubbing no OUTPUT (chamar `pii.scrub()` em `llm_resp.content` antes de devolver ao cliente) | **EM ANDAMENTO** — PR `LGPD-015` do cartorio-dev (3 call sites: opencode_go.py:390, router.py:554, integrations.py:191) |
-| Campo `output_pii_redacted_count` em `ChatResponse` e `OpenCodeTestResponse` | **PLANEJADO** — parte do LGPD-015 |
-| Audit log `action='llm.output_scrubbed'` quando `output_pii_redacted_count > 0` | **PLANEJADO** — parte do LGPD-015 |
-| Suite de testes pytest falha se LLM ecoar CNS | **PLANEJADO** — parte do LGPD-015 |
-| CNS anchored (palavra-chave + 30ch + 2 formatos 15dig/17dig) na regex de output | **ESPEC PRONTO** — D3 do escopo, aguardando cartorio-dev implementar após LGPD-015 merge |
-
-### R19 — DPO nominal incompleto (placeholders pendentes)
-
-| Medida | Status |
-|--------|--------|
-| Inclusão de campos Nome + Email + Telefone no cabeçalho do RIPD, consent.md, privacy-policy.md | **CONCLUÍDO** — versão 1.4 deste RIPD, consent v1.1, privacy v1.1 |
-| Placeholders `[NOME_DO_DPO]` e `[TELEFONE_DO_DPO]` com nota explícita de preenchimento pre-v0.6.0 | **CONCLUÍDO** |
-| Preenchimento dos placeholders pelo tabelião | **PENDENTE** — Gustavo aciona sprint 3 onboarding ou D4 dedicado |
-| Atualização do site footer (cartorio-n8n tem essa task E6.T2) | **PENDENTE** — cross-coord com cartorio-n8n |
-| Backup v1.0 de consent.md e privacy-policy.md em `docs/archive/` (prova de consentimento anterior) | **CONCLUÍDO** — `consent_v1.0_2026-06-23.md` + `privacy-policy_v1.0_2026-06-23.md` |
+| Gerar draft DPA com base no modelo ANPD | **PENDENTE** — responsável Gustavo + DPO |
+| Coletar assinaturas até DD/MM/AAAA | **PENDENTE** |
+| Armazenar DPA assinado em `docs/lgpd/dpa_minimax.pdf` | **PENDENTE** |
+| Sem DPA assinado: ambiente STAGING ONLY, dado sintético | **ATIVO** |
 
 ---
 
@@ -422,31 +391,19 @@ Atendidos conforme Política de Privacidade (https://2notasudi.com.br/privacidad
 | 1.0 | 23/06/2026 | Versão inicial | Rein `cartorio-lgpd` |
 | 1.1 | 23/06/2026 | Adicionados Tratamentos 5 (logs de webhook com PII scrubbed — N8N, art. 7º V, retenção 365d) e 6 (mensagens de boas-vindas com consentimento — Supabase, art. 7º I, retenção indeterminada até revogação) | Rein `cartorio-lgpd` (sessão `mvs_6a65b10ee18e42f18ed2b071bb65d6ed`) |
 | 1.2 | 23/06/2026 | Adicionados Tratamentos 7 (OpenCode-Go / MiniMax como **sub-processor** LLM com DPA pendente — art. 7º V + art. 7º VI, BLOQUEIO ATIVO até assinatura) e 8 (N8N como **ferramenta de automação** self-hosted — art. 7º V + art. 7º II). Adicionados riscos R13–R17 e respectivas mitigações. Atualização da lista de operadores principais. | Rein `cartorio-lgpd` (sessão `mvs_f7a29511daec40b7995718801be1a2c5`) |
-| 1.3 | 23/06/2026 | **Correção crítica de inconsistência documental**: provedor real = DeepSeek (chinês) via OpenCode-Go, NÃO MiniMax. Docstring do `opencode_go.py` linha 9-13 é a fonte da verdade. Atualização dos Bloqueios #5/#10/#11/#12 do AUDITORIA_BLOCKERS.md. Abertura LGPD-014 para DPA. | Rein `cartorio-lgpd` (sessão `mvs_3c841fe2622b4755bcd39d89333d4037`) |
-| **1.4** | 23/06/2026 | **(a) Identificação nominal do DPO** (LGPD art. 41 §1º — placeholders `[NOME_DO_DPO]` e `[TELEFONE_DO_DPO]` em cabeçalho, seção 1 + cross-ref consent v1.1 e privacy v1.1) — **GAP 5 / LGPD-013**. **(b) CNS como dado sensível** (LGPD art. 5º II) incluído em Tratamento 1 — Categorias de dados + Detecção anchored (palavra-chave + 30ch + 2 formatos 15dig/17dig) — **GAP 4 / LGPD-009**. **(c) Reforço da transferência internacional para China** em Tratamento 7 — mecanismo duplo art. 33, II (SCC) + art. 33, I (consentimento específico) cross-ref consent Item 3 — **GAP 1 / LGPD-007**. **(d) Anexo `docs/lgpd/dpa_deepseek_template.md`** com 15 cláusulas obrigatórias (LGPD-011/LGPD-014) — substituindo placeholder textual anterior. **(e) Riscos R18 (CNS ecoado pelo LLM no output) + R19 (DPO placeholder pendente)** adicionados ao Quadro de Riscos (seção 4) com mitigações correspondentes (seção 5). **(f) Anexos** atualizados com `docs/archive/` (prova de consentimento anterior v1.0) + dpa_deepseek_template.md. Backup v1.3 salvo em `docs/archive/ripd_v1.3_2026-06-23.md`. | Rein `cartorio-lgpd` (sessão `mvs_d4fa1b1a154149dfb0bbadbb117ad1c1`) |
 
 ---
 
 ## 11. Anexos
 
-- `docs/privacy-policy.md` — Política de Privacidade (v1.1 — 23/06/2026)
-- `docs/archive/privacy-policy_v1.0_2026-06-23.md` — Backup v1.0 (prova de consentimento anterior)
-- `docs/consent.md` — Termo de Consentimento (v1.1 — 23/06/2026)
-- `docs/archive/consent_v1.0_2026-06-23.md` — Backup v1.0 (prova de consentimento anterior)
-- `docs/lgpd/dpa_deepseek_template.md` — **Template DPA DeepSeek** (15 cláusulas obrigatórias — versão 1.4) — **NOVO nesta versão**
-- `docs/lgpd/AUDITORIA_BLOCKERS.md` — Documento vivo de bloqueios ativos LGPD
-- `docs/lgpd/opencode_go_audit.md` — Auditoria técnica da integração OpenCode-Go
+- `docs/privacy-policy.md` — Política de Privacidade
+- `docs/consent.md` — Termo de Consentimento
 - `docs/prospeccao-roteiro.md` — Roteiro de Prospecção LGPD-safe
 - `docs/leads/roteiros/` — 3 variantes táticas (WhatsApp curto, e-mail institucional, LinkedIn tabelião)
-- `backend/app/services/pii.py` — Implementação do PII scrubber (versão 1.4: CNS anchored pendente — D3)
+- `backend/app/services/pii.py` — Implementação do PII scrubber
 - `backend/app/services/audit.py` — Implementação do audit log
-- `backend/app/integrations/opencode_go.py` — Wrapper LLM com PII scrubbing interno, consent gate, audit log
-- `backend/app/api/v1/router.py` — Webhook Evolution com scrub 3 camadas (output em PR LGPD-015)
-- `backend/app/api/v1/integrations.py` — Smoke test OpenCode-Go (output scrub em PR LGPD-015)
-- `infra/n8n-workflows/` — 11+ workflows N8N do chatbot (origem dos logs do Tratamento 5)
-- `infra/n8n-workflows/welcome-message.json` — Workflow de boas-vindas + consentimento (Tratamento 6)
+- `infra/n8n/workflows/` — 11 workflows N8N do chatbot (origem dos logs do Tratamento 5)
+- `infra/n8n/workflows/welcome-message.json` — Workflow de boas-vindas + consentimento (Tratamento 6)
 - `supabase/migrations/2026-06-23_consent_log.sql` — Tabela `consent_log` com RLS
 
----
-
-**Nota final:** Este RIPD é documento vivo. Revisões são publicadas em `docs/ripd.md` (versão atual) e versões anteriores ficam acessíveis via histórico git (commit hashes). Backups físicos em `docs/archive/` (v1.0 de consent + privacy) são mantidos como prova de consentimento anterior em caso de auditoria ou fiscalização.
+Modified by Gustavo Almeida
