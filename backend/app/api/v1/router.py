@@ -43,8 +43,10 @@ from app.schemas.protocolo import (
     ProtocoloResponse,
     StatusProtocolo,
 )
+from app.schemas.audit import AuditLogFilter, AuditLogListResponse, AuditLogResponse
 from app.services.audit import AuditService
 from app.services.audit_context import audit_kwargs, extract_audit_context
+from app.services.audit_query import get_audit_log_by_id, list_audit_logs
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
 
@@ -673,6 +675,7 @@ async def audit_verify() -> dict:
     ),
     response_description="Status por servico + status agregado.",
 )
+
 async def health_radar() -> dict:
     """Verifica conexoes de todos os servicos da suite."""
     from app.db import engine
@@ -1561,3 +1564,96 @@ async def postman_collection() -> dict:
             }
         ],
     }
+
+
+@api_router.get(
+    "/audit/logs",
+    tags=["audit"],
+    summary="Lista audit logs paginados (LGPD art. 37)",
+    description=(
+        "Consulta audit log com filtros. Apenas DPO/escrevente autorizado (X-API-Key). "
+        "LGPD art. 37: titular tem direito de acesso aos dados sobre tratamento. "
+        "Rate limit interno: 60 req/min (D4 - DPO dashboard).\n\n"
+        "Filtros (todos opcionais, AND entre si):\n"
+        "- actor_id, actor_type, action_prefix, resource, canal\n"
+        "- since, until (ISO 8601)\n"
+        "- page (1-indexed, default 1), page_size (default 50, max 200)"
+    ),
+    responses={
+        200: {"model": AuditLogListResponse, "description": "Lista paginada de audit logs."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+async def list_audit_logs_endpoint(
+    request: Request,
+    actor_id: Annotated[str | None, Query(description="Filtrar por actor_id exato.")] = None,
+    actor_type: Annotated[
+        str | None,
+        Query(
+            description="Filtrar por tipo (user, system, bot, escrevente, tabeliao).",
+            pattern="^(user|system|bot|escrevente|tabeliao)$",
+        ),
+    ] = None,
+    action_prefix: Annotated[str | None, Query(description="Filtrar por prefixo de action.")] = None,
+    resource: Annotated[str | None, Query(description="Filtrar por resource exato.")] = None,
+    canal: Annotated[str | None, Query(description="Filtrar por canal.")] = None,
+    since: Annotated[datetime.datetime | None, Query(description="Entries >= since (ISO 8601).")] = None,
+    until: Annotated[datetime.datetime | None, Query(description="Entries <= until (ISO 8601).")] = None,
+    page: Annotated[int, Query(ge=1, description="Pagina (1-indexed).")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=200, description="Tamanho da pagina.")] = 50,
+    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+) -> AuditLogListResponse:
+    """Lista audit logs paginados (DPO/escrevente)."""
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria para consultar audit log."},
+        )
+
+    filter_ = AuditLogFilter(
+        actor_id=actor_id,
+        actor_type=actor_type,  # type: ignore[arg-type]
+        action_prefix=action_prefix,
+        resource=resource,
+        canal=canal,
+        since=since,
+        until=until,
+        page=page,
+        page_size=page_size,
+    )
+    return list_audit_logs(db, filter_)
+
+
+@api_router.get(
+    "/audit/logs/{log_id}",
+    tags=["audit"],
+    summary="Busca 1 entry de audit log por ID",
+    description="Retorna AuditLog individual. Apenas DPO/escrevente (X-API-Key).",
+    responses={
+        200: {"model": AuditLogResponse, "description": "Entry encontrada."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+        404: {"description": "Entry nao encontrada."},
+    },
+)
+async def get_audit_log_endpoint(
+    request: Request,
+    log_id: int,
+    db: Annotated[Session, Depends(get_db)],
+) -> AuditLogResponse:
+    """Retorna 1 entry de audit log por ID."""
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
+        )
+
+    result = get_audit_log_by_id(db, log_id)
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"erro": "AUDIT_LOG_NOT_FOUND", "mensagem": f"Audit log {log_id} nao encontrado."},
+        )
+    return result
+

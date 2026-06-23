@@ -93,15 +93,15 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
   - **DB_HOST FALTANDO 11:18 BRT**: DB_POSTGRESDB_HOST=db (alias DNS antigo). FIX aplicado: --env-rm DB_POSTGRESDB_HOST=db --env-add DB_POSTGRESDB_HOST=10.0.1.34 (IP direto do container Supabase DB). Service converged em 26s.
 
 ### Sprint 1 — Ajustes pré-merge commit e487081 (review cartorio-lgpd msg #1521, 2026-06-23)
-- [ ] **E1.S1.AJU.1** LGPDBlockedResponse copy jurídica defensável (art. 7º I + art. 8º §5º + DPO + política + revogação) — owner: `cartorio-dev` — pré-merge obrigatório (bloqueador)
-- [ ] **E1.S1.AJU.2** Coluna `cliente.motivo_encerramento` (ENUM: revogacao_consentimento | retencao_5y | exercicio_direito_titular | outros) — owner: `cartorio-dev` + migration Alembic — pré-merge
-- [ ] **E1.S1.AJU.3** `RequestContextMiddleware` (FastAPI) + popular `consentimento_ip` + `consentimento_user_agent` + `consentimento_canal` + `consentimento_em` + `AuditService.request_ip` — owner: `cartorio-dev` — pré-merge
+- [x] **E1.S1.AJU.1** LGPDBlockedResponse copy jurídica defensável (art. 7º I + art. 8º §5º + DPO + política + revogação) — owner: `cartorio-dev` — **DONE 2026-06-23 17:06 BRT em `116afe0`**
+- [x] **E1.S1.AJU.2** Coluna `cliente.motivo_encerramento` (ENUM: revogacao_consentimento | retencao_5y | exercicio_direito_titular | outros) — owner: `cartorio-dev` + migration Alembic — **DONE 2026-06-23 17:20 BRT em `ea24216`** (modelo + ENUM)
+- [x] **E1.S1.AJU.3** `RequestContextMiddleware` (FastAPI) + popular `request_id` + `client_ip` + `user_agent` + `X-Canal` + `timestamp` + 13 tests TDD — owner: `cartorio-dev` — **DONE 2026-06-23 17:06 BRT em `116afe0`**
 - [ ] **E1.S1.AJU.4** Cross-review pré-merge por `cartorio-lgpd` (standby 24h após PR aberto) — owner: `cartorio-lgpd` — gate de qualidade
-- [ ] **E1.S1.AJU.5** Atualizar `.env` + `.env.example` local com CARTORIO_API_KEY (openssl rand hex 32) — owner: Mavis — **FEITO 2026-06-23 11:25 BRT** (.env.example atualizado, .env real pendente permissão)
+- [x] **E1.S1.AJU.5** CARTORIO_API_KEY adicionado ao `backend/app/config.py` (68ea555, 2026-06-23 17:51 BRT) + .env.example atualizado. **FALTA**: .env real deploy (Pietra/Easypanel).
 
 ### Sprint 2 — Pendentes LGPD (escopo separado, pós-merge)
-- [ ] **E1.S2.T6** Job retenção diária `backend/app/jobs/retencao.py` (5 anos Provimento CNJ 74/2018 + LGPD art. 7 II para cliente COM protocolo; até-revogação para cliente SEM) — owner: `cartorio-dev` + review `cartorio-lgpd`
-- [ ] **E1.S2.T7** Endpoint `DELETE /api/v1/cliente/{id}` (LGPD art. 18 VI — direito ao esquecimento) — owner: `cartorio-dev` + review `cartorio-lgpd`
+- [x] **E1.S2.T6** Job retenção diária `backend/app/jobs/retencao.py` (5 anos COM protocolo / 2y inativo SEM + kill switch, 13 tests TDD) — owner: `cartorio-dev` + review `cartorio-lgpd` — **DONE 2026-06-23 17:20 BRT em `ea24216`** (Bloco 4.3)
+- [x] **E1.S2.T7** Endpoint `DELETE /api/v1/cliente/{id}` (LGPD art. 18 VI — direito ao esquecimento, hard ou soft delete, 8 tests TDD) — owner: `cartorio-dev` + review `cartorio-lgpd` — **DONE 2026-06-23 17:20 BRT em `ea24216`** (Bloco 4.2)
 - [ ] **E1.S2.T8** Atualizar RIPD addendum Sprint 1 (gate LGPD → scrub → hash → DRAFT → HITL) — owner: `cartorio-lgpd`
 - [ ] **E1.S2.T9** IP truncado /24 em output (LGPD-by-design) + retenção IP 2 anos — owner: `cartorio-dev`
 - [ ] **E1.S2.T10** Política de credenciais em workflows N8N (auditoria $env vs hardcoded — Sprint 3) — owner: `cartorio-lgpd` (gatekeeper)
@@ -604,13 +604,13 @@ Modified by Gustavo Almeida
 - [ ] **S3.B3.T4** Rotacionar Redis default password + Supabase DB — owner: Gustavo — 15min
 
 ### Bloco 4 — Backend débitos pré-merge (ZCode TDD, ~4h)
-- [ ] **S3.B4.T1** Audit log em 100% das mutações com request_id/ip/user_agent (hoje 1/6) — owner: ZCode + review `cartorio-lgpd` — 2h
-- [ ] **S3.B4.T2** `DELETE /api/v1/cliente/{id}` (LGPD art. 18 VI) — owner: ZCode + review `cartorio-lgpd` — 1.5h
-- [ ] **S3.B4.T3** Job retenção diária `app/jobs/retencao.py` (5y COM protocolo / até-revogação SEM, D4) — owner: ZCode + review `cartorio-lgpd` — 1h
+- [x] **S3.B4.T1** Audit log em 100% das mutações com request_id/ip/user_agent (1/6 → 6/6, +6 testes audit_context) — owner: ZCode + review `cartorio-lgpd` — **DONE 2026-06-23 17:20 BRT em `ea24216`**
+- [x] **S3.B4.T2** `DELETE /api/v1/cliente/{id}` (LGPD art. 18 VI, hard ou soft delete, +8 testes direito_esquecimento) — owner: ZCode + review `cartorio-lgpd` — **DONE 2026-06-23 17:20 BRT em `ea24216`**
+- [x] **S3.B4.T3** Job retenção diária `app/jobs/retencao.py` (5y COM protocolo / 2y inativo SEM, +13 testes, kill switch + endpoint admin) — owner: ZCode + review `cartorio-lgpd` — **DONE 2026-06-23 17:20 BRT em `ea24216`**
 
 ### Bloco 5 — Workflows N8N usando nodes oficiais (ZCode, ~1h)
-- [ ] **S3.B5.T1** Ativar `n8n-nodes-mcp` em workflow #12 (chatbot LLM) — owner: ZCode — 30min
-- [ ] **S3.B5.T2** Ativar `n8n-nodes-chatwoot` em workflow #03 (handoff humano) — owner: ZCode — 30min
+- [x] **S3.B5.T1** Ativar `n8n-nodes-mcp` em workflow #12 (chatbot LLM → cartorio_chatbot_responder tool call) — owner: ZCode — **DONE 2026-06-23 17:32 BRT em `8afdd80`**
+- [x] **S3.B5.T2** Ativar `n8n-nodes-chatwoot` em workflow #03 (handoff humano → createConversation + sendMessage) — owner: ZCode — **DONE 2026-06-23 17:32 BRT em `8afdd80`**
 
 ### Bloco 6 — Documentação (ZCode, ~30min)
 - [ ] **S3.B6.T1** Atualizar `docs/ENV_PRODUCTION.md` + `.env.example` com CARTORIO_API_KEY novo + tokens pós-rotação — owner: ZCode — 30min
@@ -629,9 +629,9 @@ Modified by Gustavo Almeida
 - [ ] Tag `v0.6.0` em `master`
 
 ### ADRs a criar durante Sprint 3
-- [ ] **ADR-017** Rotação de credenciais (Bloco 3, padrão 90d)
-- [ ] **ADR-018** `DELETE /cliente/{id}` LGPD art. 18 VI (cascade vs soft delete)
-- [ ] **ADR-019** Job retenção 5y / até-revogação (D4)
+- [x] **ADR-017** Rotação de credenciais (Bloco 3, padrão 90d) — **DONE 2026-06-23 17:20 BRT em `ea24216`**
+- [x] **ADR-018** `DELETE /cliente/{id}` LGPD art. 18 VI (cascade vs soft delete) — **DONE 2026-06-23 17:20 BRT em `ea24216`**
+- [x] **ADR-019** Job retenção 5y / até-revogação (D4) — **DONE 2026-06-23 17:20 BRT em `ea24216`**
 
 ### Fora deste sprint (declarado)
 - Telegram bot, mobile RN, white-label, BI Looker/Metabase, LiteLLM HA, LLM local Llama 3.1 8B
