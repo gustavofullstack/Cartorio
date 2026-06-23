@@ -136,6 +136,44 @@ docker service update --env-add "OPENCLAW_GATEWAY_TOKEN=$NEW_TOKEN" cartorio_ope
 
 ---
 
+## 📱 Device Pairing (1 vez por navegador)
+
+A primeira conexão de cada browser/device precisa de **aprovação manual** no host. Sem isso, o dashboard mostra "Pareamento de dispositivo necessário" com um `requestId`.
+
+**Fluxo:**
+1. Usuário abre `https://vps-cartorio.tail2fe279.ts.net/?token=...`
+2. Dashboard JS tenta WSS handshake → OpenClaw retorna `code=1008 pairing required: device is not approved yet (requestId: <uuid>)`
+3. UI exibe o `requestId`
+4. Admin roda na VPS:
+   ```bash
+   ssh cartorio 'docker exec $(docker ps -q --filter "name=cartorio_openclaw-gateway") openclaw devices list --json'
+   # Identifica o requestId (JSON tem full UUID, table CLI trunca)
+   ssh cartorio 'docker exec $(docker ps -q --filter "name=cartorio_openclaw-gateway") openclaw devices approve <REQUEST_ID>'
+   ```
+5. Browser recarrega (`Cmd+R`) e o WSS handshake passa
+
+**Atalho (auto-approve):** o OpenClaw v0.4.0 auto-aprova devices que ja foram pareados uma vez (logs mostram `device pairing auto-approved`). So o primeiro handshake exige aprovação manual.
+
+**Ver devices pareados (full UUIDs via JSON):**
+```bash
+ssh cartorio 'docker exec $(docker ps -q --filter "name=cartorio_openclaw-gateway") openclaw devices list --json' | python3 -c "
+import json, sys
+d = json.loads(sys.stdin.read())
+print('pending:', len(d.get('pending', [])))
+print('paired: ', len(d.get('paired', [])))
+for p in d.get('paired', []):
+    print(f'  {p[\"deviceId\"][:24]}... scopes={p.get(\"scopes\", [])}')
+"
+```
+
+**Revogar acesso de um device:**
+```bash
+ssh cartorio 'docker exec $(docker ps -q --filter "name=cartorio_openclaw-gateway") openclaw devices clear'
+# CUIDADO: isso revoga TODOS os devices. Para revogar so um, use a API interna.
+```
+
+---
+
 ## 🛡️ Firewall + ACL Recomendadas (defesa em profundidade)
 
 1. **Tailscale ACL** (admin panel): permitir apenas o node `vps-cartorio` acessar `tag:cartorio-admin` clients. Bloquear demais.
