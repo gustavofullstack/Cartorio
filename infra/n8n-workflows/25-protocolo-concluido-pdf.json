@@ -1,0 +1,224 @@
+{
+  "name": "25 - Protocolo Concluido: Envia PDF via WhatsApp",
+  "description": "Quando um protocolo muda para status=concluido, busca o PDF assinado e envia via Evolution API para o cliente. Roda a cada 5 min (cron) varrendo transicoes recentes. Substitui o polling no banco. Ref: ADR-020.",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {"field": "minutes", "minutesInterval": 5}
+          ]
+        }
+      },
+      "id": "cron-5min",
+      "name": "Cron 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/protocolo/recentes-concluidos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
+            {"name": "X-Canal", "value": "cron"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "minutos", "value": 10},
+            {"name": "limit", "value": 50}
+          ]
+        },
+        "options": {"timeout": 30000}
+      },
+      "id": "buscar-concluidos",
+      "name": "API: buscar concluidos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "typeValidation": "strict"},
+          "conditions": [
+            {
+              "id": "tem-itens",
+              "leftValue": "={{ $json.items.length }}",
+              "rightValue": 0,
+              "operator": {"type": "number", "operation": "gt"}
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "tem-itens",
+      "name": "Tem concluidos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "id": "split-itens",
+      "name": "Split Out (1 item por vez)",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/documento/segunda-via",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"protocolo_id\": {{ $json.id }},\n  \"formato\": \"pdf\"\n}",
+        "options": {"timeout": 30000}
+      },
+      "id": "gerar-pdf",
+      "name": "Gerar PDF assinado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://whatsapp.2notasudi.com.br/message/sendText/{{ $env.EVOLUTION_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Split Out (1 item por vez)').item.json.cliente.telefone }}\",\n  \"text\": \"🎉 *Protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} CONCLUÍDO!*\\n\\nSua escritura/certidão está pronta.\\n\\n📎 PDF: {{ $json.url_pdf }}\\n\\nPode retirar no cartório (seg-sex 09h-17h) com RG e CPF.\\n\\nDúvidas? É só chamar aqui! 📜\"\n}",
+        "options": {"timeout": 30000}
+      },
+      "id": "enviar-whatsapp",
+      "name": "Evolution: enviar PDF via WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "api_access_token", "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "source_id", "value": "protocolo-concluido-pdf"},
+            {"name": "message", "value": "=📬 PDF enviado para cliente: protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} (canal whatsapp, cliente {{ $('Split Out (1 item por vez)').item.json.cliente.nome }})."}
+          ]
+        },
+        "options": {"timeout": 10000}
+      },
+      "id": "log-chatwoot",
+      "name": "Log Chatwoot (auditoria interna)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 200]
+    }
+  ],
+  "connections": {
+    "Cron 5min": {
+      "main": [
+        [
+          {
+            "node": "API: buscar concluidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API: buscar concluidos": {
+      "main": [
+        [
+          {
+            "node": "Tem concluidos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem concluidos?": {
+      "main": [
+        [
+          {"node": "Split Out (1 item por vez)", "type": "main", "index": 0},
+          {"node": "Noop (sem concluidos)", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Split Out (1 item por vez)": {
+      "main": [
+        [
+          {
+            "node": "Gerar PDF assinado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar PDF assinado": {
+      "main": [
+        [
+          {
+            "node": "Evolution: enviar PDF via WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution: enviar PDF via WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Log Chatwoot (auditoria interna)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {"name": "cron"},
+    {"name": "pdf"},
+    {"name": "concluido"}
+  ],
+  "meta": null
+}

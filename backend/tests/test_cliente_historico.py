@@ -107,6 +107,8 @@ def _make_atendimento(db, cliente_id, canal="whatsapp"):
     a = Atendimento(
         cliente_id=cliente_id,
         canal=canal,
+        external_id="test-external-id-001",  # NOT NULL no model
+        tipo="duvida",  # NOT NULL no model
         status="em_atendimento",
         iniciado_em=datetime.now(timezone.utc).replace(tzinfo=None),
     )
@@ -163,7 +165,7 @@ def test_historico_ordenado_por_timestamp_desc(client):
         for i, days_ago in enumerate([10, 0, 5]):
             p = Protocolo(
                 cliente_id=cid,
-                numero=f"2026-00{i:03d}",
+                numero=f"2026-{i:04d}",
                 tipo="escritura_compra_venda",
                 status="concluido",
                 canal_origem="web",

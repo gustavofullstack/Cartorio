@@ -64,3 +64,44 @@ Regra: quando audit LGPD apontar gap de signal, SEMPRE mapear (1) quem produz o 
 Regra: o test test_payload_com_pii_bloqueia_e_marca_pii_blocked (tests/test_webhook_evolution_e2e.py:170) ja espera pii_blocked no response. Fix do router.py:631 (~10 linhas) recupera o contrato do test.
 
 Regra: o PII Scrubber JS do N8N diverge do backend em 1 label — backend usa 'placa_veiculo', N8N usa 'placa'. Backend eh a fonte de verdade. Se for comparar findings, normalizar.
+
+### Live N8N vs arquivos locais infra/n8n-workflows (2026-06-23)
+Type: pitfall
+
+OS ARQUIVOS em infra/n8n-workflows/ sao STAGING/TEMPLATES (id=null). NAO sao o que esta em prod. O prod eh o export via `n8n export:workflow --all`.
+
+Diferencas criticas descobertas:
+- WF #12 ativa no N8N = WuQAi2ttarGGdPyD ('12 - Chatbot LLM End-to-End (PII + OpenCode-Go)') que USA httpRequest 'POST api/integrations/opencode/test'. NAO usa MCP.
+- Arquivo local 12-chatbot-llm-mcp.json (com drift 'placa'->'placa_veiculo') eh STAGING que NUNCA foi deployed. Servidor MCP kTZUoh8ejvGxT8m9 tem SO trigger, sem tools.
+- WF #03 ativa no N8N (OQRIOVHcOjpkQ0Of) USA httpRequest 'POST chatwoot.2notasudi.com.br/...'. Arquivo local 03-handoff-human-chatwoot.json (com node oficial n8n-nodes-chatwoot.Chatwoot) eh STAGING nao deployed.
+
+Regra: ANTES de editar QUALQUER arquivo em infra/n8n-workflows/, validar qual WF ID eh o de prod (via n8n export:workflow --id=X --pretty). Editar staging pensando que eh prod = mudanca nunca chega em prod.
+
+Regra: Master real = dff1bb9 (avancou 4 commits alem de d030e9c). SEMPRE `git log --oneline -5 master` antes de comitar pra confirmar referencia. d030e9c NAO eh master.
+
+Regra: quando LGPD-by-design alignment pedido (ex: drift de label), ESPERAR plano cross-rein (ex: router.py fix) ser mergeado em master primeiro. Alinhar com referencia nao-commitada = rework.
+
+### Chatwoot typo + credential no N8N (2026-06-23)
+Type: configuration
+
+Estado real em prod (15 WFs ativos):
+- URL 'chatwoot.2notasudi.com.br' hardcoded em 3 WFs ativos: #03, #08, #09
+- URL 'chat.2notasudi.com.br' hardcoded em 1 WF ativo: #11 (TYPO)
+- Credencial 'chatwoot-api' (qGyW9nc36pWXo7ow) EXISTE mas NAO eh usada por NENHUM WF ativo. So WF #11-ENHANCED INATIVA referencia.
+- Credencial cadastrada como tipo httpHeaderAuth GENERICA, NAO como ChatWootApi (do node @devlikeapro). Perdeu campo 'url' requerido pelo node oficial.
+- @devlikeapro/n8n-nodes-chatwoot esta INSTALADA no container mas ZERO WFs ativos usam.
+
+DNS externo (Cloudflare):
+- api.2notasudi.com.br -> 187.77.236.77 (RESOLVE)
+- chatwoot.2notasudi.com.br -> NXDOMAIN (esperado, DNS pendente - cartorio-lgpd review)
+- chat.2notasudi.com.br -> NXDOMAIN
+- DNS interno Docker Swarm resolve via service name (roteamento interno Easypanel/Traefik).
+
+DECISAO canonica: 'chatwoot.2notasudi.com.br' (3 votos vs 1). WF #11 deve ser corrigido.
+
+ACAO pendente (apos Gustavo GO):
+1. Re-cadastrar credencial 'chatwoot-api' como tipo ChatWootApi com campo url=chatwoot.2notasudi.com.br
+2. Migrar WF #03, #08, #09, #11 para usar node oficial n8n-nodes-chatwoot (substituindo httpRequest)
+3. WF #11 corrigir typo de URL hardcoded
+
+WF #00 Error Handler v4: node 'Alerta Chatwoot' aponta URL = https://api.2notasudi.com.br/api/v1/atendimento. BUG no nome - eh backend /atendimento, nao Chatwoot. Renomear node.

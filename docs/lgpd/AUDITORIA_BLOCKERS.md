@@ -148,13 +148,49 @@
 
 ---
 
+## 🚫 BLOQUEIO ATIVO #7 — Output LLM não é scrubbed (P0 — descoberto 2026-06-23)
+
+**O que foi auditado:** `backend/app/integrations/opencode_go.py:388-397` — extração de `content = choice["message"]["content"]` do response do provider.
+
+**Quem auditou:** Rein `cartorio-lgpd` (sessão `mvs_3c841fe2622b4755bcd39d89333d4037`) em 23/06/2026 18:39.
+
+**Estado:** Output do LLM é retornado em `ChatResponse.content` SEM chamar `pii.scrub()` novamente. O `content` então é persistido em `conversas.bot_response` e enviado ao cliente via WhatsApp.
+
+**Consequência:** Se o LLM ecoar PII (mesmo que a request tenha ido scrubbed — o LLM pode ter memorizado padrão de CPF/CNS em dados de treino), o cliente recebe o PII de volta no WhatsApp. **Pior caso:** se CNS (dado sensível art. 5 II) for ecoado, dado sensível chega ao titular e ao log de conversa, violando LGPD art. 11 (base legal específica) + art. 46 (medidas de segurança) + a promessa de "PII scrubbing em 3 camadas" feita em `docs/ripd.md:175`.
+
+**Quem resolve:** `cartorio-dev`.
+
+**Bloqueio LGPD:** Merge **NÃO AUTORIZADO** até correção:
+- [ ] **🔴 CRÍTICO**: Chamar `scrub(content)` imediatamente após `content = choice["message"]["content"]` (linha 390 do opencode_go.py)
+- [ ] **🔴 CRÍTICO**: Adicionar `output_pii_redacted_count` ao `ChatResponse` (separado de `pii_redacted_count` da request)
+- [ ] **🟠 ALTO**: Adicionar teste em `test_opencode_go_no_pii.py`: input com CNS, mock LLM que ecoa CNS, assert que `ChatResponse.content` retornado NÃO contém CNS
+- [ ] **🟡 MÉDIO**: Atualizar `ripd.md:175` para explicitar que a 3ª camada (output scrub) é defense-in-depth contra LLM ecoando PII
+
+**Severidade agregada LGPD:** CRÍTICA — replica o gap CNS do `pii.py` no boundary de saída. Se deploy acontecer sem este fix, qualquer cliente que enviar CNS via WhatsApp recebe o próprio CNS de volta, dopando a métrica "incidente de segurança LGPD" e podendo gerar autuação direta da ANPD.
+
+---
+
+## ⚠️ PENDÊNCIA #8 — Auditoria opencode_go pós-correção dos 8 originais (LGPD-014 + outros 3)
+
+> **Atualização 2026-06-23 18:39** — auditoria completa do `opencode_go.py` (497 linhas) revelou que dos 8 blockers originais (fechados em commit `01c26df`), 4 NOVOS blockers foram identificados:
+
+- **#9 [P1] Audit log swallow exception** — `opencode_go.py:441-444`. Se `AuditService.log()` falhar (DB down, hash chain corrompido), exceção é silenciosamente engolida. Viola LGPD art. 50 (boas práticas — observabilidade). Solução: dead-letter queue (Redis ou tabela `audit_dead_letter` no Postgres) + alerta N8N.
+- **#10 [P0] Output LLM não scrubbed** — ver Bloco #7 acima.
+- **#11 [P2] Hash sem HMAC** — `opencode_go.py:239-242` usa SHA-256 simples. Inconsistente com `audit.py:48-50` que usa HMAC. Reusar `AuditService._compute_hmac()`.
+- **#12 [P2] Rate limit sem tratamento de falha Redis** — `opencode_go.py:195-210` não trata `redis.RedisError`. Se Redis off, fluxo cai. Solução: try/except + fail-open (permitir com warning) + alerta N8N.
+
+E re-confirmado que **Bloqueio #6 (DPA MiniMax/DeepSeek)** continua PENDENTE — nenhum arquivo DPA no repo (`docs/lgpd/dpa_*.pdf` inexistente).
+
+---
+
 ## Próximos passos
 
-1. `cartorio-dev` entrega `backend/app/integrations/opencode_go.py` → eu audito em ≤24h
+1. `cartorio-dev` entrega `backend/app/integrations/opencode_go.py` com fix do Blocker #10 (output scrub) → eu audito em ≤24h
 2. `cartorio-n8n` entrega WF-NOVO-01/02/03 → eu audito em ≤24h
 3. `cartorio-dev` entrega migrations Chatwoot → eu audito em ≤24h
-4. Gustavo/DPO fecha DPA com MiniMax → remove bloqueio #6
-5. Re-run do checklist de auditoria pós-correção
+4. Gustavo/DPO fecha DPA com **DeepSeek** (chines) OU troca provedor para OpenAI/Anthropic (DPA template, país com adequação) → remove Bloqueio #6
+5. Sprint 4: implementar Bloqueios #5 (fallback real), #9 (dead-letter queue), #11 (HMAC), #12 (Redis fail-open)
+6. Re-run do checklist de auditoria pós-correção
 
 **Cron configurado** para me lembrar em 4h caso dependências ainda não tenham chegado.
 

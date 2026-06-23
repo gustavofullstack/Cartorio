@@ -1,7 +1,7 @@
 # Relatório de Impacto à Proteção de Dados Pessoais (RIPD) — Cartório 2 Notas Uberlândia
 
-**Versão:** 1.2
-**Data:** 23 de junho de 2026 (atualização — inclusão de OpenCode-Go como sub-processor e N8N como ferramenta de automação)
+**Versão:** 1.3
+**Data:** 23 de junho de 2026 (atualização — correção de inconsistência documental OpenCode-Go/DeepSeek vs MiniMax, atualização de Bloqueios #5/#10/#11/#12 do AUDITORIA_BLOCKERS.md, abertura LGPD-014 para DPA)
 **Controlador:** Cartório 2º Ofício de Notas de Uberlândia
 **Encarregado de Dados (DPO):** dpo@2notasudi.com.br
 **Base normativa:** LGPD Lei 13.709/2018 art. 38; Resolução CD/ANPD nº 4/2023 (RIPD); Provimento CNJ 74/2018
@@ -122,9 +122,9 @@
 
 > **Atenção DPO:** o tratamento 6 produz **evidência probatória** — é a base de toda a legitimidade do chatbot. Sua retenção indeterminada é decisão consciente (prova), não descuido. O expurgo pós-revogação (30 dias) é obrigatório. Cruzar com Tratamento 5 (logs) — se o titular revogar, todas as execuções de webhook relacionadas devem ser anonimizadas (substituir `phone` por hash irreversível) no job diário.
 
-### 2.7. Tratamento 7 — Sub-processamento LLM via OpenCode-Go / MiniMax
+### 2.7. Tratamento 7 — Sub-processamento LLM via OpenCode-Go / DeepSeek
 
-> **Novo tratamento identificado em 23/06/2026 (versão 1.2)** com a integração planejada do **OpenCode-Go** como gateway de modelos LLM (MiniMax-M2.7/M3) configurado em `.harness/reins/*/opencode/opencode.json` (provider `minimax`, baseURL `https://agent.minimax.io/mavis/api/v1/llm/v1`).
+> **Atualização 2026-06-23 (versão 1.3 — auditoria cartorio-lgpd):** correção de inconsistência documental. O modelo roteado para **dados de cliente** é `deepseek-v4-flash` via gateway **OpenCode-Go** (compat OpenAI Chat Completions), conforme `backend/app/config.py:71` e docstring `backend/app/integrations/opencode_go.py:9-13`. A referência anterior a "MiniMax-M2.7/M3" em `.harness/reins/*/opencode/opencode.json` é configuração do **Mavis runtime** (orquestrador Pietra/Harness), **NÃO** do LLM que processa dados de cliente. DeepSeek = empresa chinesa, **país sem adequação ANPD** (LGPD art. 33 exige mecanismo específico — consentimento destacado + cláusula contratual padrão ou similar).
 
 | Item | Descrição |
 |------|-----------|
@@ -135,13 +135,13 @@
 | Dados sensíveis | Não tratados (PII scrubbing obrigatório antes do envio) |
 | Origem | Backend FastAPI (`backend/app/services/pii.py::scrub()`) — saída do scrubber |
 | Operações | (1) Anonimização local; (2) Chamada HTTPS POST ao endpoint OpenCode-Go; (3) Recebimento de resposta; (4) Re-hidratação LOCAL apenas se resposta trouxer referência a token (e mesmo assim, lookup no banco, não no provider) |
-| Ferramentas | **Sub-processor**: MiniMax / OpenCode-Go (modelos MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M3). **API key**: armazenada no `.env` do OpenCode (não versionado) — NUNCA no código. |
+| Ferramentas | **Sub-processor**: **DeepSeek** (modelo `deepseek-v4-flash`) acessado via **OpenCode-Go** gateway (compat OpenAI Chat Completions, baseURL `https://api.opencode.ai/v1` em `config.py:70`). **API key**: armazenada no `.env` da VPS (não versionado) — NUNCA no código. **NÃO CONFUNDIR** com MiniMax-M2.7/M3 que é config do Mavis runtime. |
 | Retenção | OpenCode-Go é **stateless**: nenhuma instrução é persistida pelo provider além do necessário para SLA e billing (conforme política do provider). Auditoria é feita LOCALMENTE pelo audit_log do FastAPI. |
-| Compartilhamento | OpenCode-Go / MiniMax (sub-processor) — **exige DPA** (Data Processing Agreement) com cláusulas de: (a) não treinar modelos com nossos dados; (b) não compartilhar com terceiros; (c) notificar incidentes em ≤72h; (d) permitir auditoria; (e) LGPD compliance total (provider é empresa BR/China-bound, verificar adequação LGPD art. 33). |
-| Mitigação específica | (a) **PII scrubbing em 3 camadas OBRIGATÓRIO** antes de enviar (input do usuário, pre-LLM, output); (b) **lista de campos permitidos** documentada em `docs/lgpd/opencode_go_audit.md` (campo-branco/negativo); (c) teste de regressão que falha se payload bruto chegar ao provider (`tests/integration/test_opencode_go_no_pii.py`); (d) audit log de toda chamada com hash do payload enviado + hash do payload recebido (LGPD art. 37); (e) rate limit por sessão para evitar abuso; (f) fallback para LiteLLM (OpenAI/Anthropic) com scrubbing idêntico se OpenCode-Go estiver offline. |
-| **Status do DPA** | **PENDENTE** — MiniMax deve assinar DPA com cláusulas LGPD antes de ir para produção. Sem DPA assinado, ambiente é **STAGING ONLY** e dado nenhum de cliente real pode circular. Responsável: Gustavo + DPO. |
+| Compartilhamento | **DeepSeek via OpenCode-Go** (sub-processor chinês) — **exige DPA** (Data Processing Agreement) conforme LGPD art. 33 (transferência internacional para país sem adequação ANPD) + art. 39 (operador). Cláusulas obrigatórias: (a) não treinar modelos com nossos dados; (b) não compartilhar com terceiros; (c) não sub-contratar sem aprovação; (d) notificar incidentes em ≤24h (mais restritivo que art. 48); (e) permitir auditoria; (f) LGPD compliance total. **Ver checklist completo em `docs/lgpd/AUDITORIA_BLOCKERS.md` (Bloqueio #6).** |
+| Mitigação específica | (a) **PII scrubbing em 3 camadas OBRIGATÓRIO** antes de enviar (input do usuário, pre-LLM, output) — **NOTA 2026-06-23:** camada OUTPUT ainda **parcial** (Bloqueio #10 do AUDITORIA_BLOCKERS; ver `backend/app/integrations/opencode_go.py:390`); (b) **lista de campos permitidos** documentada em `docs/lgpd/opencode_go_audit.md`; (c) teste de regressão que falha se payload bruto chegar ao provider (`backend/tests/integration/test_opencode_go_no_pii.py` — 8 testes); (d) audit log de toda chamada com hash do payload enviado + hash do payload recebido (LGPD art. 37) — **NOTA:** hash atual é SHA-256 sem HMAC (Bloqueio #11); (e) rate limit por sessão para evitar abuso — **NOTA:** sem tratamento de falha Redis (Bloqueio #12); (f) fallback para OpenClaw/LiteLLM com scrubbing idêntico se OpenCode-Go estiver offline — **NOTA:** atualmente é placeholder (Bloqueio #5). |
+| **Status do DPA** | **PENDENTE — BLOQUEIO ATIVO** — DeepSeek (chines, sem adequação ANPD) deve assinar DPA com cláusulas LGPD antes de ir para produção. Sem DPA assinado, ambiente é **STAGING ONLY** e dado nenhum de cliente real pode circular. Responsável: Gustavo + DPO. **Alternativa estratégica em avaliação:** trocar provedor primário para OpenAI ou Anthropic (DPA template público, país com adequação ANPD, custo +10-30x). Ver LGPD-014 no backlog. |
 
-> **Atenção crítica DPO:** este tratamento tem risco **Alto** se o DPA não for assinado. A policy do OpenCode/MiniMax declara uso de dados para melhoria do serviço; sem contrato formal, **não podemos enviar dado anonimizado real**. Até lá, ambiente de desenvolvimento usa dados sintéticos. **BLOQUEIO ATIVO** na auditoria de PR até DPA estar em `docs/lgpd/dpa_minimax.pdf`.
+> **Atenção crítica DPO:** este tratamento tem risco **Alto** se o DPA não for assinado. A política do OpenCode/DeepSeek declara uso de dados para melhoria do serviço; sem contrato formal, **não podemos enviar dado anonimizado real**. Até lá, ambiente de desenvolvimento usa dados sintéticos. **BLOQUEIO ATIVO** na auditoria de PR até DPA estar em `docs/lgpd/dpa_deepseek.pdf` (arquivo renomeado de `dpa_minimax.pdf` para refletir provedor real).
 
 ### 2.8. Tratamento 8 — N8N como ferramenta de automação de workflows
 

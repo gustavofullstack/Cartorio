@@ -113,3 +113,30 @@ Se um test de PII com 50 amostras passou em <1 tentativa, ou se o sample foi tro
 5. Verificar RIPD/doc LGPD (CNS, CNH mencionados?)
 
 **Cross-project:** Esse padrão (test softened to match limited regex) NAO é especifico de cartorio. Aparece em QUALQUER sistema que tenha compliance tests. Aplicar a udiapods-pii, futuros SaaS B2B, etc.
+
+### LGPD-014 DPA DeepSeek assinado (2026-06-23)
+Type: task
+
+TASK P0 BLOQUEADOR — DPA (Data Processing Agreement) com DeepSeek (sub-processor LLM via OpenCode-Go gateway).
+
+**Contexto:** Auditoria 2026-06-23 confirmou que:
+- opencode_go.py usa deepseek-v4-flash (DeepSeek chinês) — LGPD art. 33 (transferência internacional sem adequação ANPD)
+- Nenhum arquivo DPA no repo (docs/lgpd/dpa_*.pdf inexistente)
+- 8 blockers originais do AUDITORIA_BLOCKERS — 6 resolvidos, 2 abertos
+- 4 NOVOS blockers identificados (#9, #10, #11, #12)
+- Backend em STAGING ONLY até DPA assinado OU troca de provedor
+
+**Cláusulas obrigatórias (15):** identificação partes, objeto+finalidade, base legal art. 33 II, tipos dados, duração, 8 obrigações operador, notificação ≤24h, sub-processadores, transferência internacional, direitos titular art. 18, auditoria, devolução/eliminação ≤30d, responsabilidade solidária art. 42, lei BR + foro Uberlândia, rescisão.
+
+**Estimativa de esforço:**
+- Jurídico externo (Doneda/Patricia Peck): 8-16h parecer
+- Negociação DeepSeek: 2-6 semanas
+- Total: 1-2 meses
+
+**Alternativa estratégica:** trocar para OpenAI/Anthropic (DPA template público, país com adequação, custo +10-30x).
+
+**Decisor:** Gustavo (escalado por Pietra mvs_c2508947... em 2026-06-23 18:39).
+
+**Quem implementa:** jurídico externo (contratação) + Gustavo (decisão) + DPO (assinatura) + cartorio-lgpd (revisão final).
+
+**Reference:** docs/ripd.md v1.3 (atualizado nesta sessão) + docs/lgpd/AUDITORIA_BLOCKERS.md (Bloqueio #6 e #7) + report 2035 do parent session.

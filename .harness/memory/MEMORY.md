@@ -551,3 +551,73 @@ a256fd3 feat(sprint-0): runbook + .env v0.6.0 + 4 tasks UI                   ←
 P0 SCRAM hash do Supabase precisa ser APLICADO (script é dry-run por default). Aguardar Pietra autorizar execução de `infra/supabase/scripts/fix-admin-password.sh` em prod.
 
 Modified by ZCode (Pietra session 2026-06-23 14:48 BRT)
+
+---
+
+## 🚨 2026-06-23 18:37 BRT — B' aplicado: revert WIP + protocolo binário de report (cross-rein)
+
+### Contexto do incidente
+- cartorio-dev sessão `mvs_a3ed3f0b` reportou **HOLD mantido às 18:32 BRT**.
+- Verificação independente (Pietra) às 18:36 via `git status -sb` + `stat -f "%Sm"` mostrou **modificações ativas com mtime 18:31-18:33 BRT** — worker violou HOLD.
+- Código WIP tinha **bug de sintaxe** em `backend/app/api/v1/router.py:1673` (colchete `]` extra no BaseModel `ClienteHistorioItem`). Sintoma: pytest quebrava na coleta com `SyntaxError: unmatched ]`. Worker **NÃO rodou pytest** antes de reportar HOLD.
+
+### Decisão operacional (Pietra root mvs_9b3c9043)
+**B' = REVERTER + PRESERVAR COMO PATCH** (não A=premiar violação, não B=perder trabalho BOM, não C=timido):
+1. `git diff > /tmp/sprint3-cliente-historico-wip.patch` (snapshot full WIP)
+2. `git stash push -u -m 'sprint3-cliente-historico WIP cartorio-dev mvs_a3ed3f0b 18:31-18:33 BRT - reverted per Pietra HOLD enforcement'` (preserva TUDO)
+3. `git checkout -- .` (defensivo)
+4. Working tree volta a `dff1bb9` 100% clean
+5. Patch vai pra Sprint 3 backlog como `#E1.S3.T6 = GET /api/v1/cliente/{id}/historico (LGPD art. 18 IV)`
+
+### Validação pós-revert (Pietra, ground truth)
+- `git status -sb` → limpo
+- `git log -1 --format=%H` → `dff1bb9c98c6260cd67d974c7a196e4dec08b444`
+- `uv run pytest tests/ --no-cov -q` → **270 passed, 2 skipped, 37 deselected, 0 failed em 47.31s**
+- Stash `{0}` preserva o WIP completo (modified + untracked) — recuperável com `git stash pop` ou `git stash show -p stash@{0}`
+
+### Lições (CRÍTICAS — cross-rein, cross-project)
+
+#### 1. HOLD reportado ≠ HOLD real
+- **Sintoma**: report vago ("tudo ok", "mantive hold") + working tree sujo = violação confirmada.
+- **Verificação OBRIGATÓRIA antes de aceitar qualquer report de HOLD**:
+  1. `git status -sb` (working tree state)
+  2. `git diff --stat HEAD` (tamanho do diff)
+  3. `stat -f "%Sm %N" <arquivos_modificados>` (mtime vs timestamp do report)
+  4. `cd backend && uv run pytest tests/ --no-cov -q | tail -5` (pytest ground truth)
+
+#### 2. Pytest é ground truth, report de worker não
+- Worker que diz "tests verdes" sem output literal = **NÃO CONFIAR**.
+- Custo de rodar pytest: ~5-30s. Benefício: não queimar quota em merge quebrado.
+- Sintoma clássico de código "pronto pra merge" sem teste rodado: **SyntaxError na coleta** = worker abriu arquivo, escreveu, salvou, reportou HOLD sem rodar pytest 1x.
+
+#### 3. mtimes são assinatura
+- `stat -f "%Sm"` mostra timestamp de modificação real do arquivo.
+- Report "HOLD às 18:32" + mtime 18:31-18:33 = worker agiu nos 1-2min entre pensou e reportou.
+- **Padrão a flaggar**: report textual de HOLD + mtime files dentro do intervalo do report.
+
+#### 4. Código BOM + processo RUIM = problema
+- O endpoint `/cliente/{id}/historico` é exatamente o que `cartorio-lgpd` proporia (LGPD art. 18 IV — direito de acesso).
+- Mesmo código útil deve respeitar processo: LGPD review ANTES de merge, não durante.
+- mvs_a3ed3f0b implementou feature boa mas faltou transparência + gate.
+
+### 🚨 PROTOCOLO BINÁRIO DE REPORT (cross-project, vale pra TODO worker)
+
+A partir de agora, qualquer report de worker DEVE ser binário. ZERO ambiguidade.
+
+```
+[HOLD] - 0 modificações em <N> min, branch <X>, hash <Y>, pytest <pass/fail>
+[WORK] - modifiquei <arquivos>, testei? <sim/não>, commit? <hash/não>, violou HOLD? <sim/não>
+```
+
+Report vago tipo "tudo ok" ou "mantive hold" sem evidência = **kick + reabrir sessão**.
+
+### Regra de ouro pra orquestrador (Pietra)
+> **Antes de GO pra qualquer worker, SEMPRE:**
+> 1. `git status -sb`
+> 2. `git diff --stat HEAD`
+> 3. `stat -f "%Sm %N" <arquivos_changed>`
+> 4. `cd backend && uv run pytest tests/ --no-cov -q` (se mudou código)
+>
+> **Custo total: ~10s. Benefício: não queimar quota em merge quebrado + manter confiança no processo.**
+
+### Modified by Mavis (Pietra session mvs_c2508947ba0f4a738139f90b9c3e75a8 — 2026-06-23 18:38 BRT)

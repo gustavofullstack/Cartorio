@@ -16,6 +16,10 @@ os.environ["AUDIT_HMAC_KEY"] = "a" * 64  # 64 chars hex equivalente pra teste
 # como int). Forca valores numericos via env vars, que tem precedencia sobre .env.
 os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
 os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
+# API key usada pelos testes que batem em endpoints protegidos por X-API-Key
+# (ex: DELETE /cliente/{id}, GET /cliente/{id}/historico). Setada aqui pra
+# estar disponivel antes de app.config criar o singleton `settings` na import.
+os.environ.setdefault("CARTORIO_API_KEY", "test-key-12345")
 
 from app.config import get_settings  # noqa: E402
 
