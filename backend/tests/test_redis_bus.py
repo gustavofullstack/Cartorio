@@ -169,3 +169,104 @@ class TestRedisBusSingleton:
         a = get_bus()
         b = get_bus()
         assert a is b
+
+
+class TestRedisBusErrorPaths:
+    """Error path coverage complement (commit test(redis_bus): error paths)."""
+
+    async def test_publish_wraps_unexpected_exception(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Erro generico no publish vira RedisBusError."""
+        from redis.exceptions import ConnectionError as RedisConnError
+
+        bus = RedisBus()
+
+        class BrokenClient:
+            async def publish(self, channel: str, msg: str) -> int:
+                raise RedisConnError("simulated network down")
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(BrokenClient()))
+        with pytest.raises(RedisBusError) as exc_info:
+            await bus.publish(CHANNEL_ATENDIMENTOS, {"x": 1})
+        assert "publish falhou" in str(exc_info.value)
+
+    async def test_subscribe_wraps_unexpected_exception(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Erro no subscribe vira RedisBusError."""
+        from redis.exceptions import ConnectionError as RedisConnError
+
+        bus = RedisBus()
+
+        class BrokenPubSub:
+            async def subscribe(self, *channels: str) -> None:
+                raise RedisConnError("simulated network down")
+
+            async def aclose(self) -> None:
+                pass
+
+        class BrokenClient:
+            def pubsub(self) -> BrokenPubSub:
+                return BrokenPubSub()
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(BrokenClient()))
+        gen = bus.subscribe(CHANNEL_ATENDIMENTOS)
+        with pytest.raises(RedisBusError):
+            async for _ in gen:
+                pass
+
+    async def test_pattern_subscribe_wraps_unexpected_exception(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Erro no pattern_subscribe vira RedisBusError."""
+        from redis.exceptions import ConnectionError as RedisConnError
+
+        bus = RedisBus()
+
+        class BrokenPubSub:
+            async def psubscribe(self, pattern: str) -> None:
+                raise RedisConnError("simulated network down")
+
+            async def aclose(self) -> None:
+                pass
+
+        class BrokenClient:
+            def pubsub(self) -> BrokenPubSub:
+                return BrokenPubSub()
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(BrokenClient()))
+        gen = bus.pattern_subscribe("cartorio:*")
+        with pytest.raises(RedisBusError):
+            async for _ in gen:
+                pass
+
+    async def test_close_idempotent(self, fake_redis: None) -> None:
+        """close() chamado 2x nao levanta erro."""
+        bus = RedisBus()
+        await bus.close()
+        await bus.close()  # idempotent
+
+    async def test_ping_returns_false_on_redis_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """ping() retorna False (nao raise) quando Redis offline."""
+        from redis.exceptions import ConnectionError as RedisConnError
+
+        bus = RedisBus()
+
+        class BrokenClient:
+            async def ping(self) -> bool:
+                raise RedisConnError("redis down")
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(BrokenClient()))
+        assert await bus.ping() is False
+
+
+def _async_return(value: object) -> Any:
+    """Helper: cria async callable que retorna value."""
+
+    async def _coro() -> object:
+        return value
+
+    return _coro
