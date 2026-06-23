@@ -7,6 +7,14 @@
 Trocadudos: nunca eh 100%. Por isso bot usa human-in-the-loop
 em qualquer acao que dependa de PII real. Este servico eh defesa
 em profundidade, nao bala de prata.
+
+LIMITACOES CONHECIDAS (LGPD cartorio-lgpd review 2026-06-23):
+- NAO detecta: nome completo, endereco livre, naturalidade.
+  Esses campos exigem contexto semantico que regex nao alcança.
+  Mitigacao: PII scrubbing em 3 camadas + HITL obrigatorio + retencao 365d.
+- Datas DD/MM/YYYY sao SEMPRE redacted (incluindo datas nao-PII).
+  Trade-off assumido: falsos positivos sao aceitaveis; falsos
+  negativos nao. (LGPD art. 6o VIII - prevencao).
 """
 
 from __future__ import annotations
@@ -23,29 +31,24 @@ class ScrubResult:
     redaction_count: int = 0
 
 
-# Regex patterns calibrados pra formato brasileiro
-# Cobre 11 tipos: cpf, rg, cnpj, cartao, phone_br, email, cep, pis,
-# titulo_eleitor, placa_veiculo, data.
-#
-# NAO cobertos por regex (requerem NER / contexto):
-# - nome completo PF (formato varia, falsos positivos altissimos)
-# - endereco (logradouro + numero + bairro + cidade)
-# Cartorio usa HITL (escrevente valida) pra esses casos.
+# Regex patterns calibrados pra formato brasileiro.
+# ATENCAO LGPD: CNPJ pattern aceita QUALQUER filial (0001 a 9999),
+# nao apenas matriz. Fix aplicado em 2026-06-23 (cartorio-lgpd review).
 _PATTERNS: dict[str, re.Pattern[str]] = {
     "cpf": re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b"),
     "rg": re.compile(r"\b\d{1,2}\.?\d{3}\.?\d{3}-?[\dxX]\b"),
-    "cnpj": re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?0001-?\d{2}\b"),
+    "cnpj": re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b"),
     "cartao": re.compile(r"\b(?:\d[ -]*?){13,19}\b"),
     "phone_br": re.compile(r"(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}[\s-]?\d{4}"),
     "email": re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
     "cep": re.compile(r"\b\d{5}-?\d{3}\b"),
     "pis": re.compile(r"\b\d{3}\.?\d{5}\.?\d{2}-?\d{2}\b"),
     "titulo_eleitor": re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b"),
-    # Placa veiculo BR: Mercosul (ABC1D23) ou antiga (ABC1234)
-    "placa_veiculo": re.compile(r"\b[A-Z]{3}\d[A-Z]\d{2}\b|\b[A-Z]{3}\d{4}\b"),
-    # Data BR: dd/mm/yyyy (nasc, eventos) ou ISO yyyy-mm-dd
-    # Cuidado: pode casar datas de protocolo, mas e trade-off aceitavel
-    "data": re.compile(r"\b\d{2}/\d{2}/\d{4}\b|\b\d{4}-\d{2}-\d{2}\b"),
+    # Data em formato brasileiro DD/MM/YYYY (ou DD-MM-YYYY / DD.MM.YYYY).
+    # LGPD art. 6 VIII - prevencao: falso positivo aceito, falso negativo nao.
+    "data_nascimento": re.compile(r"\b\d{2}[/\-\.]\d{2}[/\-\.]\d{4}\b"),
+    # Placa Mercosul (ABC1D23) e placa antiga (ABC-1234 / ABC1234).
+    "placa_veiculo": re.compile(r"\b[A-Z]{3}-?\d[A-Z]\d{2}\b|\b[A-Z]{3}-?\d{4}\b"),
 }
 
 
