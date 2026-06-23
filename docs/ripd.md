@@ -1,7 +1,7 @@
 # Relatório de Impacto à Proteção de Dados Pessoais (RIPD) — Cartório 2 Notas Uberlândia
 
-**Versão:** 1.0
-**Data:** 23 de junho de 2026
+**Versão:** 1.2
+**Data:** 23 de junho de 2026 (atualização — inclusão de OpenCode-Go como sub-processor e N8N como ferramenta de automação)
 **Controlador:** Cartório 2º Ofício de Notas de Uberlândia
 **Encarregado de Dados (DPO):** dpo@2notasudi.com.br
 **Base normativa:** LGPD Lei 13.709/2018 art. 38; Resolução CD/ANPD nº 4/2023 (RIPD); Provimento CNJ 74/2018
@@ -18,7 +18,7 @@
 | CNPJ | XX.XXX.XXX/0001-XX |
 | Endereço | Uberlândia/MG |
 | Encarregado (DPO) | dpo@2notasudi.com.br |
-| Operadores principais | Supabase (Postgres + Storage), Hostinger (VPS), Cloudflare (CDN/WAF), OpenAI / Anthropic (LLM), Evolution API (WhatsApp) |
+| Operadores principais | Supabase (Postgres + Storage), Hostinger (VPS), Cloudflare (CDN/WAF), OpenAI / Anthropic (LLM via LiteLLM), **OpenCode-Go / MiniMax (sub-processor LLM, dado anonimizado)** (versão 1.2), Evolution API (WhatsApp), **N8N (ferramenta de automação de workflows, exige DPA — versão 1.2)** |
 
 ---
 
@@ -122,6 +122,48 @@
 
 > **Atenção DPO:** o tratamento 6 produz **evidência probatória** — é a base de toda a legitimidade do chatbot. Sua retenção indeterminada é decisão consciente (prova), não descuido. O expurgo pós-revogação (30 dias) é obrigatório. Cruzar com Tratamento 5 (logs) — se o titular revogar, todas as execuções de webhook relacionadas devem ser anonimizadas (substituir `phone` por hash irreversível) no job diário.
 
+### 2.7. Tratamento 7 — Sub-processamento LLM via OpenCode-Go / MiniMax
+
+> **Novo tratamento identificado em 23/06/2026 (versão 1.2)** com a integração planejada do **OpenCode-Go** como gateway de modelos LLM (MiniMax-M2.7/M3) configurado em `.harness/reins/*/opencode/opencode.json` (provider `minimax`, baseURL `https://agent.minimax.io/mavis/api/v1/llm/v1`).
+
+| Item | Descrição |
+|------|-----------|
+| Finalidade | Roteamento de inferência de modelos de linguagem (LLM) para o chatbot — raciocínio, classificação de intenção, sumarização — sem hospedar modelo próprio no curto prazo. |
+| Base legal | **LGPD art. 7º V** (execução de contrato — prestação do serviço notarial) + **art. 7º VI** (interesse público, quando aplicável) — **NUNCA** art. 7º I (consentimento) isolado, pois o titular não consente especificamente com este sub-processor. |
+| Categorias de titulares | Clientes do chatbot (dados anonimizados) |
+| Categorias de dados | **Apenas dados PII-scrubbed** (texto com CPF/RG/CNPJ/telefone/email/cartão/CEP/PIS/título/placa/data substituídos por tokens `[CPF_REDACTED]` etc.). **Nenhum dado pessoal bruto** chega ao OpenCode-Go. |
+| Dados sensíveis | Não tratados (PII scrubbing obrigatório antes do envio) |
+| Origem | Backend FastAPI (`backend/app/services/pii.py::scrub()`) — saída do scrubber |
+| Operações | (1) Anonimização local; (2) Chamada HTTPS POST ao endpoint OpenCode-Go; (3) Recebimento de resposta; (4) Re-hidratação LOCAL apenas se resposta trouxer referência a token (e mesmo assim, lookup no banco, não no provider) |
+| Ferramentas | **Sub-processor**: MiniMax / OpenCode-Go (modelos MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M3). **API key**: armazenada no `.env` do OpenCode (não versionado) — NUNCA no código. |
+| Retenção | OpenCode-Go é **stateless**: nenhuma instrução é persistida pelo provider além do necessário para SLA e billing (conforme política do provider). Auditoria é feita LOCALMENTE pelo audit_log do FastAPI. |
+| Compartilhamento | OpenCode-Go / MiniMax (sub-processor) — **exige DPA** (Data Processing Agreement) com cláusulas de: (a) não treinar modelos com nossos dados; (b) não compartilhar com terceiros; (c) notificar incidentes em ≤72h; (d) permitir auditoria; (e) LGPD compliance total (provider é empresa BR/China-bound, verificar adequação LGPD art. 33). |
+| Mitigação específica | (a) **PII scrubbing em 3 camadas OBRIGATÓRIO** antes de enviar (input do usuário, pre-LLM, output); (b) **lista de campos permitidos** documentada em `docs/lgpd/opencode_go_audit.md` (campo-branco/negativo); (c) teste de regressão que falha se payload bruto chegar ao provider (`tests/integration/test_opencode_go_no_pii.py`); (d) audit log de toda chamada com hash do payload enviado + hash do payload recebido (LGPD art. 37); (e) rate limit por sessão para evitar abuso; (f) fallback para LiteLLM (OpenAI/Anthropic) com scrubbing idêntico se OpenCode-Go estiver offline. |
+| **Status do DPA** | **PENDENTE** — MiniMax deve assinar DPA com cláusulas LGPD antes de ir para produção. Sem DPA assinado, ambiente é **STAGING ONLY** e dado nenhum de cliente real pode circular. Responsável: Gustavo + DPO. |
+
+> **Atenção crítica DPO:** este tratamento tem risco **Alto** se o DPA não for assinado. A policy do OpenCode/MiniMax declara uso de dados para melhoria do serviço; sem contrato formal, **não podemos enviar dado anonimizado real**. Até lá, ambiente de desenvolvimento usa dados sintéticos. **BLOQUEIO ATIVO** na auditoria de PR até DPA estar em `docs/lgpd/dpa_minimax.pdf`.
+
+### 2.8. Tratamento 8 — N8N como ferramenta de automação de workflows
+
+> **Novo tratamento identificado em 23/06/2026 (versão 1.2)** com a operacionalização de 11+ workflows N8N (WhatsApp/Telegram/Web research, emolumento, protocolo, handoff humano, boas-vindas, FAQ, audit, backup, monitoramento).
+
+| Item | Descrição |
+|------|-----------|
+| Finalidade | Orquestração de fluxos assíncronos entre canais de atendimento (WhatsApp/Telegram/Web), backend FastAPI, Supabase, OpenClaw, Chatwoot e sub-processors (OpenCode-Go). |
+| Base legal | **LGPD art. 7º V** (execução de contrato — operacionalizar o serviço contratado pelo titular) + **art. 7º II** (cumprimento de obrigação legal quando o workflow materializa um dever do cartório, ex.: protocolar ato) |
+| Categorias de titulares | Clientes do chatbot, escreventes, operadores do sistema |
+| Categorias de dados | Em trânsito: payload do webhook (PII), contexto da execução, resultado. Em repouso: `execution_entity` do N8N (Postgres backend) com `payload_hash` (SHA-256) + `scrubbed_payload` + `pii_tokens` (sem dado bruto). |
+| Dados sensíveis | Não tratados (PII scrubbing aplicado antes da persistência) |
+| Origem | Webhooks Evolution/Telegram/Web, execuções agendadas (cron interno do N8N) |
+| Operações | Recepção → PII scrubbing 3 camadas → roteamento → chamada a API/backend → resposta → log com payload hasheado |
+| Ferramentas | **N8N** (ferramenta de automação) — software open-source self-hosted em container `cartorio_n8n`, banco Postgres `cartorio_postgres`. **Não é sub-processor** — é ferramenta operada pelo próprio controlador. |
+| Retenção | **365 dias** para `execution_entity` (já documentada em Tratamento 5); credenciais e segredos geridos pelo N8N Credentials store (criptografados em repouso com chave mestra do cartório) |
+| Compartilhamento | N8N Software GmbH (editor do N8N) recebe telemetria opcional (anonimizada) — **desabilitada** por padrão na nossa instalação. Caso seja habilitada no futuro, exige revisão RIPD. |
+| Mitigação específica | (a) N8N self-hosted — dados não saem da VPS do cartório; (b) Credentials store com criptografia em repouso (chave mestra rotacionada trimestralmente); (c) Postgres backend isolado em VLAN interna; (d) backup criptografado do banco N8N junto com backup geral (Sprint 2 — S3/B2); (e) workflows revisados pelo `cartorio-lgpd` antes de ir para produção (gating via PR); (f) tabelas `execution_entity`, `credentials_entity` e `workflow_entity` com RLS habilitado (apenas DPO + tabelião leem `execution_entity`). |
+| **Status do contrato** | N8N é open-source self-hosted — não há contrato comercial. Aplicam-se apenas as obrigações de boas práticas (LGPD art. 50) e a licença N8N (Sustainable Use License — não redistribuir como SaaS). |
+
+> **Atenção DPO:** N8N é o **coração operacional** do chatbot. Toda mensagem de cliente passa por ele. Por isso (a) é self-hosted (não terceiriza dado), (b) tem PII scrubbing em 3 camadas **antes** de qualquer persistência ou chamada externa, e (c) é auditado em cada workflow novo (PR review obrigatório pelo `cartorio-lgpd` quando workflow envolve dado pessoal).
+
 ---
 
 ## 3. Necessidade e proporcionalidade
@@ -152,6 +194,11 @@ Aplicamos o princípio da **minimização** (LGPD art. 6º, VIII):
 | R10 | Backups sem criptografia acessíveis | Confidencialidade | Baixa | Alto | Médio |
 | R11 | Vazamento via screenshot/print | Confidencialidade | Alta | Baixo | Médio |
 | R12 | Bug em job de retenção apaga dado necessário | Integridade | Baixa | Alto | Médio |
+| **R13** | **OpenCode-Go / MiniMax usar dado enviado para treinar modelo** | **Confidencialidade/Conformidade** | **Média** | **Alto** | **Alto** |
+| **R14** | **OpenCode-Go / MiniMax sofrer incidente e vazar dado anonimizado** | **Confidencialidade** | **Baixa** | **Médio** | **Médio** |
+| **R15** | **Workflow N8N novo gravar PII bruto por falha de scrubbing** | **Confidencialidade** | **Média** | **Alto** | **Alto** |
+| **R16** | **Credenciais N8N expostas em log ou backup sem criptografia** | **Confidencialidade** | **Baixa** | **Alto** | **Médio** |
+| **R17** | **DPA com MiniMax/OpenCode não assinado e dado real enviado** | **Conformidade** | **Média** | **Alto** | **Alto** |
 
 ---
 
@@ -225,6 +272,39 @@ Aplicamos o princípio da **minimização** (LGPD art. 6º, VIII):
 | Backups diários criptografados, retenção 30d | Implementado (Sprint 0.5.T3) |
 | Política de tela limpa em ambiente de trabalho | Política |
 | Teste do job de retenção em staging antes de prod | Procedimento |
+
+### R13, R14 — OpenCode-Go / MiniMax sub-processor (versão 1.2)
+
+| Medida | Status |
+|--------|--------|
+| PII scrubbing em 3 camadas ANTES de enviar ao OpenCode-Go | Implementado em `backend/app/services/pii.py` |
+| DPA (Data Processing Agreement) com MiniMax assinado | **PENDENTE** — BLOQUEIO ATIVO |
+| Cláusula contratual proibindo treinamento com nossos dados | Em negociação |
+| Audit log de toda chamada (hash do payload enviado + recebido) | Planejado (Sprint integração) |
+| Teste de regressão: payload bruto NÃO chega ao provider | Planejado |
+| Fallback LiteLLM (OpenAI/Anthropic) com scrubbing idêntico | Planejado |
+| Política de retenção do provider verificada e documentada | Em revisão |
+
+### R15, R16 — N8N como ferramenta de automação (versão 1.2)
+
+| Medida | Status |
+|--------|--------|
+| N8N self-hosted (não terceiriza dado) | Implementado |
+| Credentials store com criptografia em repouso | Implementado |
+| Postgres backend isolado em VLAN interna | Implementado (infra) |
+| Backup criptografado do banco N8N | Planejado (Sprint 2 — S3/B2) |
+| RLS habilitado em `execution_entity`, `credentials_entity`, `workflow_entity` | Planejado |
+| PR review obrigatório pelo `cartorio-lgpd` para todo workflow novo com PII | Implementado (processo) |
+| Telemetria N8N desabilitada | Implementado |
+
+### R17 — DPA com MiniMax
+
+| Medida | Status |
+|--------|--------|
+| Gerar draft DPA com base no modelo ANPD | **PENDENTE** — responsável Gustavo + DPO |
+| Coletar assinaturas até DD/MM/AAAA | **PENDENTE** |
+| Armazenar DPA assinado em `docs/lgpd/dpa_minimax.pdf` | **PENDENTE** |
+| Sem DPA assinado: ambiente STAGING ONLY, dado sintético | **ATIVO** |
 
 ---
 
@@ -310,6 +390,7 @@ Atendidos conforme Política de Privacidade (https://2notasudi.com.br/privacidad
 |--------|------|---------|-------|
 | 1.0 | 23/06/2026 | Versão inicial | Rein `cartorio-lgpd` |
 | 1.1 | 23/06/2026 | Adicionados Tratamentos 5 (logs de webhook com PII scrubbed — N8N, art. 7º V, retenção 365d) e 6 (mensagens de boas-vindas com consentimento — Supabase, art. 7º I, retenção indeterminada até revogação) | Rein `cartorio-lgpd` (sessão `mvs_6a65b10ee18e42f18ed2b071bb65d6ed`) |
+| 1.2 | 23/06/2026 | Adicionados Tratamentos 7 (OpenCode-Go / MiniMax como **sub-processor** LLM com DPA pendente — art. 7º V + art. 7º VI, BLOQUEIO ATIVO até assinatura) e 8 (N8N como **ferramenta de automação** self-hosted — art. 7º V + art. 7º II). Adicionados riscos R13–R17 e respectivas mitigações. Atualização da lista de operadores principais. | Rein `cartorio-lgpd` (sessão `mvs_f7a29511daec40b7995718801be1a2c5`) |
 
 ---
 

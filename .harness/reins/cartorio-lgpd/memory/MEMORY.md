@@ -42,3 +42,36 @@ Cada caminho tem obrigação regulatória diferente. Sem distinção, vira caixa
   - 422: request OK sintaticamente, mas falha de precondição SEMÂNTICA/REGULATÓRIA ← LGPD_BLOCKED entra aqui
   - 412: precondição de header falhou (não usar)
 LGPDBlocked = 422. Audit log da tentativa bloqueada (LGPD art. 37 — registro de tratamento).
+
+### Auditoria opencode_go.py — 8 blockers LGPD identificados (2026-06-23)
+Type: pattern
+
+Contexto: PR do cartorio-dev entrega `backend/app/integrations/opencode_go.py` (250 linhas, wrapper HTTP p/ OpenCode-Go LLM). Auditoria revelou 8 blockers — 2 CRÍTICOS, 3 ALTOS, 3 MÉDIOS.
+
+**Padrão observável (reutilizável em QUALQUER integração LLM/wrapper):**
+
+Quando o módulo de integração LLM aceita `messages: list[dict]` e envia via HTTP sem scrubbar internamente, é SEMPRE shift-the-burden. Toda função de integração LLM DEVE:
+1. Chamar `pii.scrub()` em cada `message["content"]` internamente (defense-in-depth)
+2. Gravar `AuditService.log()` com hash do payload (request + response) — LGPD art. 37
+3. Validar `consent.granted=true` antes de chamar — LGPD art. 7º I
+4. Ter fallback para provider alternativo (LiteLLM) com mesmo scrubbing
+5. Ter teste de regressão (`test_*_no_pii.py`) com mock httpx que falha se payload bruto chegar
+6. Ter rate limit por sessão/usuário
+7. Docstring + RIPD + opencode.json devem declarar o MESMO modelo (não deepseek vs minimax)
+
+**Sinal verde (manter, não exigir mudança):**
+- Bearer auth via header (não query string)
+- Timeout 30s
+- Não loga payload bruto
+- `raw=None` por padrão (response pode ecoar PII)
+- Erros tipados sem leak
+- Docstring dizendo que caller DEVE scrubar (intenção boa, mas insuficiente sem scrubbing interno)
+
+**Severidade de cada gap:**
+- PII scrubbing interno = CRÍTICO (não ALTO) porque é a ÚNICA barreira real contra leak
+- Audit log = ALTO (LGPD art. 37 explícito)
+- Consent gate = ALTO (LGPD art. 7º I explícito)
+- Teste de regressão = ALTO (sem teste, refactor futuro regride)
+- Fallback/rate limit/modelo = MÉDIO (disponibilidade/custo, não-compliance direto)
+
+**Lição para mim (cartorio-lgpd):** ao auditar QUALQUER wrapper de LLM API, SEMPRE exigir scrubbing interno + audit log. Docstring "caller DEVE scrubar" é boa intenção mas na prática é falha.

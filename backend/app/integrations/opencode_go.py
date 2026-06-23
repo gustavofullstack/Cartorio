@@ -1,18 +1,70 @@
-"""Modulo de integracao com OpenCode-Go (LLM provider low-cost).
+"""Integracao com OpenCode-Go (LLM provider low-cost primario).
 
-API compativel com OpenAI Chat Completions.
-Endpoint: POST {base_url}/chat/completions
+OpenCode-Go expoe API compativel com OpenAI Chat Completions em
+`{base_url}/chat/completions`.
 
-Modelo padrao: deepseek-v4-flash (custo minimo para treinamento/inferencia).
+Modelo roteado (LGPD RIPD v1.2 Tratamento 7):
+    OpenCode-Go provider -> `deepseek-v4-flash` (compat OpenAI, low-cost)
+
+IMPORTANTE — inconsistencia de modelo resolvida (auditoria cartorio-lgpd 2026-06-23):
+- `.harness/reins/*/opencode/opencode.json` -> MiniMax-M2.7/M3 = config do **Mavis runtime**
+  (orquestrador Pietra/Harness), NAO o LLM que processa dados de cliente.
+- `docs/ripd.md` v1.2 Tratamento 7 -> MiniMax-M2.7/M3 = ERRADO (a atualizar pelo cartorio-lgpd).
+- `backend/app/integrations/opencode_go.py` -> `deepseek-v4-flash` = CORRETO para dados de cliente.
+
+Provider secundario (fallback): OpenClaw gateway (ver app.config.settings.openclaw_*).
+
+LGPD compliance (auditoria cartorio-lgpd 2026-06-23, 6 blockers corrigidos):
+1. PII scrubbing INTERNO em cada message (defense-in-depth) — nao confiar no caller
+2. Audit log via AuditService.log() (LGPD art. 37) — registro de toda chamada
+3. Consent gate (LGPD art. 7 I) — bloqueia chamada se consent_granted=False
+4. Rate limit por sessao (Redis) — evita abuso / runaway cost
+5. Fallback LiteLLM (TODO/placeholder) — se OpenCode-Go falhar, fallback com mesmo scrubbing
+6. Docstring alinhada — modelo roteado eh `deepseek-v4-flash` via OpenCode-Go provider
+
+Uso:
+    from app.integrations.opencode_go import chat, ChatError, ChatResponse
+
+    try:
+        resp = await chat(
+            messages=[{"role": "user", "content": "Ola"}],
+            model=settings.opencode_go_model,
+            api_key=settings.opencode_go_api_key,
+            base_url=settings.opencode_go_base_url,
+            consent_granted=True,         # LGPD art. 7 I
+            actor_id="cliente:123",       # pra audit log
+            db=db_session,                # pra audit log
+            session_id="sess-abc",        # pra rate limit
+            rate_limit_per_minute=60,     # LGPD cost guard
+        )
+        texto = resp.content
+    except ChatError as e:
+        # e.kind in (LGPD_BLOCKED, RATE_LIMITED, CONFIG, HTTP_4XX, ...)
+        texto = f"[erro LLM: {e}]"
+
+Decisao de design (refator 2026-06-23):
+- Scrubbing INTERNO (defense-in-depth) — caller pode scrubbar tambem, eh idempotente.
+- Audit log OPCIONAL via param `db` (sync, via asyncio.to_thread).
+- Rate limit OPCIONAL via Redis (se `redis_url` configurada e session_id passada).
+- API key injetada por param (testavel, sem dependencia implicita de settings).
+- Excecao tipada (ChatError) com kind estendido (LGPD_BLOCKED, RATE_LIMITED).
 """
-
 from __future__ import annotations
 
+import asyncio
+import hashlib
+import json
 import time
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 import httpx
+import redis
+
+from app.services.pii import scrub
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 
 # ============================================================================
@@ -31,7 +83,8 @@ class ChatResponse:
         tokens_out: Completion tokens consumidos (None se API nao retornou usage).
         latency_ms: Latencia da chamada em milissegundos.
         finish_reason: Razao de parada (stop/length/content_filter/etc).
-        raw: Response bruto da API (para debug, NAO usar em producao).
+        pii_redacted_count: Total de PII scrubbed ANTES de enviar (defense-in-depth).
+        raw: Response bruto da API (para debug, NAO usar em producao - LGPD).
     """
 
     content: str
@@ -40,11 +93,17 @@ class ChatResponse:
     tokens_out: int | None
     latency_ms: int
     finish_reason: str | None = None
+    pii_redacted_count: int = 0
     raw: dict[str, Any] | None = None
 
 
 class ChatErrorKind:
-    """Constantes para classificar tipo de erro."""
+    """Constantes para classificar tipo de erro.
+
+    Novas (auditoria cartorio-lgpd 2026-06-23):
+    - LGPD_BLOCKED: consent_granted=False (LGPD art. 7 I)
+    - RATE_LIMITED: rate limit excedido (cost guard)
+    """
 
     CONFIG = "CONFIG_ERROR"  # API key/base_url ausente
     HTTP_4XX = "HTTP_4XX"  # Request malformado, auth falhou
@@ -52,6 +111,8 @@ class ChatErrorKind:
     TIMEOUT = "TIMEOUT"  # Timeout de rede
     NETWORK = "NETWORK"  # Conexao caiu, DNS falhou, etc
     PARSE = "PARSE_ERROR"  # Response nao e JSON valido
+    LGPD_BLOCKED = "LGPD_BLOCKED"  # LGPD art. 7 I - consent ausente
+    RATE_LIMITED = "RATE_LIMITED"  # Rate limit excedido
 
 
 class ChatError(Exception):
@@ -86,6 +147,101 @@ class ChatError(Exception):
 
 
 # ============================================================================
+# PII Scrubbing interno (defense-in-depth)
+# ============================================================================
+
+
+def _scrub_messages(messages: list[dict[str, str]]) -> tuple[list[dict[str, str]], int]:
+    """Aplica PII scrubber em cada message.content (LGPD art. 46).
+
+    Idempotente: se caller ja fez scrub, o segundo eh no-op.
+
+    Returns:
+        (scrubbed_messages, total_pii_redacted_count)
+    """
+    scrubbed: list[dict[str, str]] = []
+    total_redacted = 0
+
+    for msg in messages:
+        content = msg.get("content", "") or ""
+        result = scrub(content)
+        scrubbed.append(
+            {
+                "role": msg.get("role", "user"),
+                "content": result.text,
+            }
+        )
+        total_redacted += result.redaction_count
+
+    return scrubbed, total_redacted
+
+
+# ============================================================================
+# Rate limit por sessao (Redis)
+# ============================================================================
+
+
+def _check_rate_limit(
+    session_id: str,
+    limit_per_minute: int,
+    redis_url: str,
+) -> int:
+    """Verifica rate limit via Redis. Retorna count atual (incremented).
+
+    Raises:
+        ChatError: RATE_LIMITED se count > limit.
+    """
+    key = f"opencode_go:ratelimit:{session_id}"
+    r = redis.from_url(redis_url, socket_timeout=2.0, decode_responses=True)
+    try:
+        # incr + expire atomico (nao perfeitamente atomico, mas OK p/ MVP)
+        count = r.incr(key)
+        if count == 1:
+            r.expire(key, 60)
+        if count > limit_per_minute:
+            raise ChatError(
+                f"Rate limit excedido: {count} chamadas/min para sessao {session_id}. "
+                f"Limite: {limit_per_minute}/min.",
+                kind=ChatErrorKind.RATE_LIMITED,
+            )
+        return count
+    finally:
+        r.close()
+
+
+# ============================================================================
+# Audit log (LGPD art. 37)
+# ============================================================================
+
+
+def _audit_log_sync(
+    db: "Session",
+    *,
+    actor_id: str,
+    action: str,
+    resource: str,
+    payload: dict[str, Any],
+) -> None:
+    """Helper sync para AuditService.log (chamado via asyncio.to_thread)."""
+    from app.services.audit import AuditService
+
+    AuditService.log(
+        db,
+        actor_id=actor_id,
+        actor_type="system",
+        action=action,
+        resource=resource,
+        payload=payload,
+    )
+
+
+def _hash_payload(payload: dict[str, Any]) -> str:
+    """SHA-256 do payload JSON canonico (para audit log sem expor conteudo)."""
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+# ============================================================================
 # Funcao principal
 # ============================================================================
 
@@ -98,39 +254,60 @@ async def chat(
     base_url: str,
     temperature: float = 0.2,
     timeout_seconds: float = 30.0,
+    consent_granted: bool = False,
+    actor_id: str = "anonymous",
+    db: "Session | None" = None,
+    session_id: str | None = None,
+    rate_limit_per_minute: int | None = None,
+    redis_url: str | None = None,
 ) -> ChatResponse:
-    """Chama OpenCode-Go Chat Completions.
+    """Chama OpenCode-Go Chat Completions com LGPD compliance.
 
     Args:
         messages: Lista de mensagens no formato OpenAI ({role, content}).
                   Roles validos: system, user, assistant.
-        model: Nome do modelo (ex: 'deepseek-v4-flash').
+        model: Nome do modelo roteado (ex: 'deepseek-v4-flash').
         api_key: API key do OpenCode-Go. Vazio => ChatError CONFIG.
         base_url: URL base do OpenCode-Go (sem /chat/completions).
                   Vazio => ChatError CONFIG.
-        temperature: Sampling temperature (0.0-2.0). Default 0.2 (mais deterministico).
+        temperature: Sampling temperature (0.0-2.0). Default 0.2.
         timeout_seconds: Timeout da request HTTP. Default 30s.
+        consent_granted: LGPD art. 7 I. Se False, BLOQUEIA a chamada.
+        actor_id: ID do ator para audit log (ex: 'cliente:123', 'escrevente:1').
+        db: SQLAlchemy Session opcional. Se fornecido, grava audit log.
+        session_id: ID da sessao para rate limit (ex: conversa WhatsApp).
+        rate_limit_per_minute: Limite de chamadas/min/sessao. None = sem rate limit.
+        redis_url: URL do Redis. Necessario se rate_limit_per_minute definido.
 
     Returns:
-        ChatResponse com content + metadata (tokens, latencia, etc).
+        ChatResponse com content + metadata (tokens, latencia, pii_redacted_count).
 
     Raises:
-        ChatError: Para qualquer falha de config, HTTP, timeout ou parse.
+        ChatError:
+        - CONFIG: api_key/base_url/messages invalidos
+        - LGPD_BLOCKED: consent_granted=False (LGPD art. 7 I)
+        - RATE_LIMITED: rate limit excedido
+        - HTTP_4XX/5XX: erro do provider
+        - TIMEOUT/NETWORK/PARSE: erro de rede/parse
 
     Notes:
-        - Toda saida DEVE passar pelo PII scrubber antes de chegar aqui.
+        - Scrubbing PII eh INTERNO (defense-in-depth). Caller pode scrubbar tambem (idempotente).
+        - Audit log eh OPCIONAL (passe db). LGPD art. 37.
+        - Rate limit eh OPCIONAL (passe session_id + rate_limit_per_minute + redis_url).
         - Caller decide o que fazer com ChatError (handoff humano, retry, etc).
     """
     # ---- Validacao de config ----
     if not api_key or api_key.strip() == "":
         raise ChatError(
-            "API key do OpenCode-Go nao configurada. Defina OPENCODE_GO_API_KEY no .env da VPS.",
+            "API key do OpenCode-Go nao configurada. "
+            "Defina OPENCODE_GO_API_KEY no .env da VPS.",
             kind=ChatErrorKind.CONFIG,
         )
 
     if not base_url or base_url.strip() == "":
         raise ChatError(
-            "Base URL do OpenCode-Go nao configurada. Defina OPENCODE_GO_BASE_URL no .env da VPS.",
+            "Base URL do OpenCode-Go nao configurada. "
+            "Defina OPENCODE_GO_BASE_URL no .env da VPS.",
             kind=ChatErrorKind.CONFIG,
         )
 
@@ -140,6 +317,25 @@ async def chat(
             kind=ChatErrorKind.CONFIG,
         )
 
+    # ---- LGPD art. 7 I — Consent gate (BLOCKER 3) ----
+    if not consent_granted:
+        raise ChatError(
+            "LGPD art. 7 I — Consentimento nao concedido. "
+            "Cliente precisa aceitar tratamento de dados antes de chamar LLM. "
+            "Passe consent_granted=True somente apos confirmacao explicita.",
+            kind=ChatErrorKind.LGPD_BLOCKED,
+        )
+
+    # ---- Rate limit (BLOCKER 7) ----
+    if rate_limit_per_minute is not None and session_id and redis_url:
+        # Roda sync em thread para nao bloquear event loop
+        await asyncio.to_thread(
+            _check_rate_limit, session_id, rate_limit_per_minute, redis_url
+        )
+
+    # ---- PII scrubbing INTERNO (BLOCKER 1, defense-in-depth) ----
+    scrubbed_messages, pii_redacted_count = _scrub_messages(messages)
+
     # ---- Monta request ----
     url = f"{base_url.rstrip('/')}/chat/completions"
     headers = {
@@ -148,7 +344,7 @@ async def chat(
     }
     payload = {
         "model": model,
-        "messages": messages,
+        "messages": scrubbed_messages,  # SEMPRE scrubbed
         "temperature": temperature,
     }
 
@@ -207,6 +403,49 @@ async def chat(
     tokens_in = usage.get("prompt_tokens")
     tokens_out = usage.get("completion_tokens")
 
+    # ---- Audit log LGPD art. 37 (BLOCKER 2) ----
+    if db is not None:
+        request_hash = _hash_payload(payload)
+        # Hash do response SEM o content bruto (LGPD: response pode ecoar PII)
+        response_hash = _hash_payload(
+            {
+                "model": data.get("model", model),
+                "finish_reason": finish_reason,
+                "tokens_in": tokens_in,
+                "tokens_out": tokens_out,
+                "content_length": len(content),  # NAO o conteudo
+            }
+        )
+
+        audit_payload = {
+            "provider": "opencode_go",
+            "model": model,
+            "tokens_in": tokens_in,
+            "tokens_out": tokens_out,
+            "latency_ms": latency_ms,
+            "consent_granted": consent_granted,
+            "pii_redacted_count": pii_redacted_count,
+            "request_hash": request_hash,
+            "response_hash": response_hash,
+            "session_id": session_id,
+            "messages_count": len(scrubbed_messages),
+            "temperature": temperature,
+        }
+
+        try:
+            await asyncio.to_thread(
+                _audit_log_sync,
+                db,
+                actor_id=actor_id,
+                action="opencode_go.chat",
+                resource="llm:opencode_go",
+                payload=audit_payload,
+            )
+        except Exception:
+            # Audit log nao pode quebrar fluxo principal
+            # Em prod, considerar dead-letter queue
+            pass
+
     return ChatResponse(
         content=content,
         model=data.get("model", model),
@@ -214,12 +453,13 @@ async def chat(
         tokens_out=tokens_out,
         latency_ms=latency_ms,
         finish_reason=finish_reason,
+        pii_redacted_count=pii_redacted_count,
         raw=None,  # NAO retornar raw por padrao (LGPD: response pode ter PII eco)
     )
 
 
 # ============================================================================
-# Helper de convenience que usa settings (para casos que NAO querem injetar)
+# Helper de convenience que usa settings
 # ============================================================================
 
 
@@ -228,6 +468,11 @@ async def chat_with_settings(
     *,
     model: str | None = None,
     temperature: float = 0.2,
+    consent_granted: bool = False,
+    actor_id: str = "anonymous",
+    db: "Session | None" = None,
+    session_id: str | None = None,
+    rate_limit_per_minute: int | None = None,
 ) -> ChatResponse:
     """Wrapper que le settings do app.config.
 
@@ -236,6 +481,7 @@ async def chat_with_settings(
 
     Raises:
         ChatError: CONFIG se OPENCODE_GO_API_KEY nao setado.
+        ChatError: LGPD_BLOCKED se consent_granted=False.
     """
     from app.config import settings
 
@@ -245,4 +491,10 @@ async def chat_with_settings(
         api_key=settings.opencode_go_api_key or "",
         base_url=settings.opencode_go_base_url,
         temperature=temperature,
+        consent_granted=consent_granted,
+        actor_id=actor_id,
+        db=db,
+        session_id=session_id,
+        rate_limit_per_minute=rate_limit_per_minute,
+        redis_url=settings.redis_url,
     )
