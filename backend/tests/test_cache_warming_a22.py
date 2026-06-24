@@ -1,9 +1,10 @@
 """Testes A22 — Cache warming cron 06:00 BRT."""
 from __future__ import annotations
 
+import dataclasses
 from unittest.mock import MagicMock, patch
 
-from app.services.cache_warming import TIPOS_PRINCIPAIS, VALORES_TIPICOS, warm_emolumento_cache
+from app.services.cache_warming import FOLHAS_TIPICAS, TIPOS_PRINCIPAIS, warm_emolumento_cache
 
 
 def test_tipos_principais_contem_escritura_e_certidao() -> None:
@@ -13,37 +14,50 @@ def test_tipos_principais_contem_escritura_e_certidao() -> None:
     assert "procuracao" in TIPOS_PRINCIPAIS
 
 
-def test_valores_tipicos_cobrem_faixa_real() -> None:
-    """Valores tipicos cobrem 10k a 1M (90% dos casos)."""
-    assert min(VALORES_TIPICOS) <= 10_000.0
-    assert max(VALORES_TIPICOS) >= 1_000_000.0
+def test_folhas_tipicas_cobrem_faixa_real() -> None:
+    """Folhas tipicas cobrem 1 a 10 (90% dos casos reais)."""
+    assert min(FOLHAS_TIPICAS) == 1
+    assert max(FOLHAS_TIPICAS) == 10
+    assert len(FOLHAS_TIPICAS) >= 3
 
 
 def test_warm_emolumento_cache_com_mock() -> None:
-    """warm roda todos tipos*valores com funcao mockada."""
-    mock_func = MagicMock(return_value={"valor_base": 100.0, "valor_total": 108.0})
+    """warm roda todos tipos*folhas com funcao mockada que retorna dataclass-like."""
+    @dataclasses.dataclass
+    class FakeCalculo:
+        tipo: str = "x"
+        folhas: int = 1
+        urgencia: bool = False
+        base: float = 0.0
+        adicional_folhas: float = 0.0
+        adicional_urgencia: float = 0.0
+        total: float = 0.0
+        tabela_referencia: str = "TABELA_2026_MG"
+        valido_ate: str = "2026-12-31"
+
+    mock_func = MagicMock(return_value=FakeCalculo())
     with patch("app.services.emolumento_cache.set_cached") as mock_set:
         result = warm_emolumento_cache(emolumento_func=mock_func)
-    # 8 tipos * 6 valores = 48
-    assert result["cached"] == len(TIPOS_PRINCIPAIS) * len(VALORES_TIPICOS)
+    # 8 tipos * 4 folhas = 32
+    assert result["cached"] == len(TIPOS_PRINCIPAIS) * len(FOLHAS_TIPICAS)
     assert result["errors"] == 0
-    assert mock_func.call_count == len(TIPOS_PRINCIPAIS) * len(VALORES_TIPICOS)
-    assert mock_set.call_count == len(TIPOS_PRINCIPAIS) * len(VALORES_TIPICOS)
+    assert mock_func.call_count == len(TIPOS_PRINCIPAIS) * len(FOLHAS_TIPICAS)
+    assert mock_set.call_count == len(TIPOS_PRINCIPAIS) * len(FOLHAS_TIPICAS)
 
 
 def test_warm_emolumento_cache_com_erros() -> None:
     """warm continua mesmo se algumas chamadas falham."""
-    def fake_calc(tipo_documento, valor):
-        if valor == 50_000.0:
+    def fake_calc(tipo, *, folhas=1, urgencia=False):
+        if folhas == 2:
             raise RuntimeError("simulado")
         return {"valor_total": 108.0}
 
     with patch("app.services.emolumento_cache.set_cached"):
         result = warm_emolumento_cache(emolumento_func=fake_calc)
-    # 8 tipos * 1 erro cada (valor 50k) = 8 errors
+    # 8 tipos * 1 erro cada (folhas=2) = 8 errors
     assert result["errors"] == 8
-    # 8*6 - 8 = 40 sucessos
-    assert result["cached"] == (len(TIPOS_PRINCIPAIS) * len(VALORES_TIPICOS)) - 8
+    # 8*4 - 8 = 24 sucessos
+    assert result["cached"] == (len(TIPOS_PRINCIPAIS) * len(FOLHAS_TIPICAS)) - 8
 
 
 def test_warm_retorna_duracao_ms() -> None:

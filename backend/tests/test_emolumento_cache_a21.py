@@ -44,16 +44,17 @@ def test_get_cached_redis_offline_retorna_none() -> None:
 
 
 def test_set_cached_sucesso() -> None:
-    """set_cached retorna True se salvou."""
+    """set_cached retorna True se salvou (chama r.set com ex=TTL)."""
     with patch("app.services.emolumento_cache._get_redis_client") as mock_get:
         r = MagicMock()
-        r.setex.return_value = True
+        r.set.return_value = True
         mock_get.return_value = r
         result = set_cached("escritura", 100000.0, {"valor_total": 108.0})
     assert result is True
-    r.setex.assert_called_once()
-    args = r.setex.call_args
-    assert args[0][1] == 86400  # TTL
+    r.set.assert_called_once()
+    # kwargs: r.set(key, value, ex=CACHE_TTL_SECONDS)
+    kwargs = r.set.call_args.kwargs
+    assert kwargs["ex"] == 86400  # TTL 24h
 
 
 def test_invalidate_tudo() -> None:
