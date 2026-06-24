@@ -1124,3 +1124,33 @@ Type: incident + lesson
 **Lição cross-project Lesson 58**: Workflow refactor com DB UPDATE (Lesson 50) + HTTP endpoint novo = janela de race condition onde cache N8N pode ter executions stale antes de propagar. SEMPRE monitorar 5min pós-refactor antes de declarar GREEN total. Se >1 execution error após UPDATE: NÃO assumir cache, validar com curl real.
 
 **Ref**: cartorio-n8n peer mvs_b3f037cf485a4e21b899476eacaceff2 msg 2809→2810 (Pietra root mvs_410a1b1266d64830b9dfa31973fdd9fe QUALITY GATE ✓ + WARN handling + cred leak registry). Cross-project Lesson 58 complementa Lesson 50 (N8N API auth DB UPDATE) com janela race condition pós-UPDATE.
+
+### SQUAD D D01-D05 DPAs + gates verdes — 2026-06-24 14:25 BRT
+Type: sprint progress + compliance
+
+**SQUAD D LGPD Compliance 5/25 completos** (D01-D05):
+- D01 DPA MiniMax (LGPD-015): template existente, 25k bytes
+- D02 DPA Evolution API (LGPD-013): template existente, 16k bytes
+- D03 DPA Opencode-Go / DeepSeek (LGPD-014): template existente, 13k bytes
+- D04 DPA Cloudflare (LGPD-018): **NOVO template criado** (este sprint, ~5k bytes)
+- D05 DPA Hostinger VPS (LGPD-019): **NOVO template criado** (este sprint, ~6k bytes)
+- DPA_INDEX.md: catalogo unificado
+
+**Bloqueios identificados:**
+- LGPD-013/014/015/018/019: assinatura Gustavo + DPO + contrapartes
+- Pendencia D24: DPO a designar formalmente (ver SQUAD D continuacao)
+- Pendencia geral: escritorio de advocacia externo para revisão juridica
+
+**Gates backend 100% verdes (3 fixes triviais):**
+- 0becf28 chore(env): Opencode-Go + OpenClaw thinking_enabled flags
+- 2f196c5 fix(backend): 2 erros ruff triviais (F401, F541)
+- a19ce57 fix(backend): cache_warming kwargs errados
+- 2a62245 feat(metrics): endpoint /metrics JSON N8N-friendly
+- 938b8a7 docs(memory): Sprint 4 SQUAD B/C lessons + WF#25 Lesson 58
+
+**Total sessão 2026-06-24**: 6 commits + 1 Jules paralelo (7e9e417 style ruff).
+**Status SQUAD A**: 12/25 | **B**: 5/25 | **C**: 5/25 | **D**: 5/25 = **27/100** tasks.
+
+**Proximo foco**: SQUAD D D6-D12 (direitos titular) OU SQUAD A A13-A25 (backend resiliência) - decidir com Gustavo.
+
+Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD D 5/25
