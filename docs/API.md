@@ -1,217 +1,222 @@
 # API — Cartório Chatbot
 
-> Documentação completa dos endpoints HTTP do backend FastAPI.
+> **34 endpoints REST + 4 MCP tools + 16 N8N workflows + 6 webhooks.**
 > Base URL prod: `https://api.2notasudi.com.br`
 > OpenAPI/Swagger: `https://api.2notasudi.com.br/docs`
 > ReDoc: `https://api.2notasudi.com.br/redoc`
-> Versão: 0.5.4 (master @ b370895)
+> Versão: 0.6.0 (master)
 
-## Auth
+---
 
-Todos os endpoints `/api/v1/*` exigem header `X-API-Key: <CARTORIO_API_KEY>` (exceto webhooks Evolution/Chatwoot que usam HMAC).
+## Autenticação
 
-Webhooks (Evolution + Chatwoot) usam header `X-Signature: <hmac_sha256(body, AUDIT_HMAC_KEY)>`.
+**3 modos de auth**:
 
-Endpoints `/admin/*` + `/audit/*` exigem role DPO/escrevente (validado por `X-API-Key` no allowlist).
+| Tipo | Header | Uso |
+|---|---|---|
+| X-API-Key | `X-API-Key: <64hex>` | Endpoints internos + admin + DPO |
+| HMAC SHA256 | `X-Signature: sha256=<hex>` | Webhooks externos (Evolution, Chatwoot) |
+| Idempotency-Key | `Idempotency-Key: <uuid>` | POST idempotente (Redis SETNX 24h) |
 
-## Tags + Endpoints (31 total)
+### Como gerar X-API-Key
+```bash
+openssl rand -hex 32  # 64 chars hex
+```
 
-### Meta (4 endpoints — sem auth)
+### Como calcular HMAC SHA256
+```bash
+BODY='{"event":"message","data":{"key":{"id":"abc123"}}}'
+SECRET="<AUDIT_HMAC_KEY>"
+SIG=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
+curl -X POST https://api.2notasudi.com.br/api/v1/webhook/chatwoot \
+  -H "Content-Type: application/json" \
+  -H "X-Signature: sha256=$SIG" \
+  -d "$BODY"
+```
+
+### Rate limiting
+- `X-RateLimit-Limit: 60`
+- `X-RateLimit-Remaining: 42`
+- `X-RateLimit-Reset: <epoch>`
+
+Sliding window 60 req/min/IP. Se excedido: `429 Too Many Requests`.
+
+### Versionamento
+- `/api/v1/*` — estável
+- `/api/v2/*` — alpha (sunset 2027)
+
+---
+
+## Endpoints (34 total)
+
+### Health (8 — sem auth)
 
 | Método | Path | Summary |
 |---|---|---|
-| GET | `/health` | Health check (FastAPI) |
-| GET | `/ready` | Readiness (deps UP) |
 | GET | `/` | Root info |
-| GET | `/mcp-servers` | Lista MCP servers disponíveis |
+| GET | `/health` | FastAPI default |
+| GET | `/health/live` | Liveness |
+| GET | `/health/ready` | Readiness (DB+Redis) |
+| GET | `/health/db` | DB latência |
+| GET | `/health/redis` | Redis check |
+| GET | `/health/llm` | LLM provider |
+| GET | `/health/radar` | 7 serviços paralelo |
+
+```bash
+curl -s https://api.2notasudi.com.br/api/v1/health/live
+# {"status":"alive","service":"cartorio-api","version":"0.6.0"}
+```
 
 ### Emolumento (1)
 
-| Método | Path | Summary |
-|---|---|---|
-| GET | `/api/v1/emolumento/calcular` | Calcula emolumento + adicionais (5% folha, 50% urgencia). Snapshot tabela oficial MG 2026. |
+```bash
+curl -s "https://api.2notasudi.com.br/api/v1/emolumento/calcular?tipo_documento=escritura&valor=150000" \
+  -H "X-API-Key: $CARTORIO_API_KEY"
+# {"valor_base":1500.00,"valor_total":1620.00,"tabela_referencia":"TABELA_2026_MG","valido_ate":"2026-12-31"}
+```
 
-### Protocolo (3)
+### Protocolo (5)
 
-| Método | Path | Summary |
-|---|---|---|
-| GET | `/api/v1/protocolo/{numero}` | Consulta protocolo por número |
-| POST | `/api/v1/protocolo` | Criar protocolo (HITL DRAFT obrigatório) |
-| GET | `/api/v1/protocolo/recentes-concluidos` | Lista concluídos últimos N min (N8N #25) |
+```bash
+curl -X POST https://api.2notasudi.com.br/api/v1/protocolo/criar-api \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $CARTORIO_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "cliente_id": "uuid-cliente-1234",
+    "tipo_documento": "escritura_compra_venda",
+    "valor_ato": 150000.00,
+    "consent_granted": true,
+    "actor_id": "escrevente-001"
+  }'
+# {"protocolo_id":"uuid-...","numero":"CART-2026-000123","status":"draft","hitl_required":true}
 
-### Webhook (2)
+curl -s "https://api.2notasudi.com.br/api/v1/protocolo/CART-2026-000123" \
+  -H "X-API-Key: $CARTORIO_API_KEY"
+```
 
-| Método | Path | Summary |
-|---|---|---|
-| POST | `/api/v1/webhook/evolution` | Webhook WhatsApp (Evolution API) — HMAC + idempotency |
-| POST | `/api/v1/webhook/chatwoot` | Webhook Chatwoot (handoff) — HMAC + idempotency |
+### Cliente (4)
 
-### Audit (3) — DPO/escrevente
+```bash
+# LGPD direito portabilidade
+curl -s "https://api.2notasudi.com.br/api/v1/cliente/uuid-1234/export?formato=json" \
+  -H "X-API-Key: $CARTORIO_API_KEY" -o cliente-1234-export.json
+```
 
-| Método | Path | Summary |
-|---|---|---|
-| POST | `/api/v1/audit/verify` | Verificar integridade hash chain SHA256+HMAC |
-| GET | `/api/v1/audit/logs` | Lista audit logs paginados (LGPD art. 37) |
-| GET | `/api/v1/audit/logs/{log_id}` | Busca 1 entry por ID |
+### Documento (3)
 
-### Health (2)
+```bash
+curl -X POST https://api.2notasudi.com.br/api/v1/documento/upload \
+  -H "X-API-Key: $CARTORIO_API_KEY" \
+  -F "file=@/path/to/cpf.pdf" \
+  -F "cliente_id=uuid-1234" \
+  -F "tipo_documento=rg"
+```
 
-| Método | Path | Summary |
-|---|---|---|
-| GET | `/api/v1/health/radar` | Health radar multi-serviço (API+N8N+EVO+CW+OCL+SUP+RED) |
-| GET | `/api/v1/health/backup` | Status do backup diário (N8N #09) |
+### Atendimento (5)
+- POST `/atendimento` — cria
+- GET `/atendimento/{id}` — busca
+- POST `/atendimento/{id}/concluir` — encerra
+- POST `/atendimento/{id}/pesquisa-enviada` — marca pesquisa
+- GET `/atendimento/{id}/pesquisa` — resultado
 
-### Agendamento (1)
+### Cron (1)
 
-| Método | Path | Summary |
-|---|---|---|
-| GET | `/api/v1/agendamento/disponibilidade` | Consultar slots livres (N8N #05) |
+```bash
+curl -X POST https://api.2notasudi.com.br/api/v1/cron/stale-detector \
+  -H "X-API-Key: $CARTORIO_API_KEY"
+# {"stale_count":3,"atendimentos":["uuid1","uuid2","uuid3"]}
+```
 
-### Documento (2)
+### Webhooks (3)
 
-| Método | Path | Summary |
-|---|---|---|
-| POST | `/api/v1/documento/segunda-via` | Emitir segunda via PDF (N8N #06) |
-| POST | `/api/v1/documento/upload` | Upload PDF assinado com hash SHA256 |
+| Método | Path | Auth | Summary |
+|---|---|---|---|
+| POST | `/webhook/evolution` | HMAC | WhatsApp (idempotente) |
+| POST | `/webhook/chatwoot` | HMAC | Chatwoot (handoff) |
+| POST | `/webhook/telegram` | (interno) | Telegram bot |
 
-### Atendimento (6)
+### DLQ (2)
 
-| Método | Path | Summary |
-|---|---|---|
-| GET | `/api/v1/atendimentos/ultimas-24h` | Lista concluídos últimas 24h (N8N #07) |
-| POST | `/api/v1/atendimento/{id}/pesquisa-enviada` | Marcar pesquisa NPS enviada |
-| POST | `/api/v1/atendimento` | Criar atendimento (handoff Chatwoot ou webhook externo) |
-| POST | `/api/v1/atendimento/{id}/concluir` | Concluir atendimento (registra timestamp) |
-| GET | `/api/v1/atendimento/{session_id}/historico` | Histórico (Redis + Supabase) |
-| GET | `/api/v1/atendimento/list-active` | Lista sessões ativas (últimas N horas) |
+```bash
+curl -X POST https://api.2notasudi.com.br/api/v1/dlq/evolution/enqueue \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $CARTORIO_API_KEY" \
+  -d '{
+    "payload": {"message_id":"abc","scrubbed_text":"oi"},
+    "actor_id": "sistema",
+    "next_retry_at": "2026-06-25T00:00:00Z"
+  }'
+```
 
-### CRON (1)
+### Admin (5)
 
-| Método | Path | Summary |
-|---|---|---|
-| POST | `/api/v1/cron/stale-detector` | Marca atendimentos parados como stale (N8N #23) |
+```bash
+# Pausar bot (HITL universal)
+curl -X POST https://api.2notasudi.com.br/api/v1/admin/agent/pause \
+  -H "X-API-Key: $CARTORIO_API_KEY" \
+  -d '{"reason":"manutencao","duration_minutes":30}'
+```
 
-### Cliente (2)
+### Integrations (2)
+- POST `/integrations/opencode/test`
+- POST `/integrations/evolution/test`
 
-| Método | Path | Summary |
-|---|---|---|
-| DELETE | `/api/v1/cliente/{id}` | Direito ao esquecimento (LGPD art. 18 VI) |
-| GET | `/api/v1/cliente/{id}/historico` | Histórico completo (timeline LGPD) |
+### Audit (2)
 
-### Admin (1)
+```bash
+# Verificar integridade hash chain
+curl -s https://api.2notasudi.com.br/api/v1/audit/verify \
+  -H "X-API-Key: $CARTORIO_API_KEY"
+# {"ok":true,"last_valid_position":12453,"chain_length":12453}
+```
 
-| Método | Path | Summary |
-|---|---|---|
-| POST | `/api/v1/admin/retencao/run` | Job retenção LGPD (5y COM / até-revogação SEM) |
+---
 
-### Dev (1)
+## MCP Server (4 tools)
 
-| Método | Path | Summary |
-|---|---|---|
-| GET | `/api/v1/postman` | Exporta coleção Postman v2.1.0 |
+Exposto via `/mcp` (protocolo 2025-03-26):
 
-### Metrics (1)
+| Tool | Descrição |
+|---|---|
+| `criar_protocolo` | Cria protocolo DRAFT (HITL) |
+| `consultar_protocolo` | Busca por número ou ID |
+| `calcular_emolumento` | Calcula valor MG 2026 |
+| `consultar_audit` | Busca log auditoria (DPO) |
 
-| Método | Path | Summary |
-|---|---|---|
-| GET | `/api/v1/metrics/prometheus` | Metrics em formato Prometheus |
-
-### Integrações (2)
-
-| Método | Path | Summary |
-|---|---|---|
-| POST | `/api/v1/integrations/opencode/test` | Smoke test OpenCode-Go LLM provider |
-| GET | `/api/v1/integrations/agent/health` | Health do OpenClaw gateway |
+---
 
 ## WebSocket (1)
 
-| Método | Path | Summary |
-|---|---|---|
-| WS | `/ws/atendimentos` | Real-time dashboard (broadcaster Redis pub/sub channel `cartorio:atendimentos`) |
-
-## Schemas principais (Pydantic v2)
-
-- `EmolumentoCalculo` (input): tipo, folhas, urgente, isencao
-- `ProtocoloResponse` (output): numero, cliente_id, ato, valor_snapshot, status, created_at
-- `AuditLog` (output): id, action, actor, payload_hash, prev_hash, hmac, timestamp
-- `Atendimento` (output): id, cliente_id, canal, instance_name, session_id, status, last_msg_at
-- `Cliente` (output): id, cpf_hash, nome, consent_at, consent_ip, retencao_5y
-
-## Validações e LGPD
-
-- **PII scrub**: input passa por `pii.scrub()` ANTES de LLM call. Output também passa (3 sites: opencode_go.py:390, router.py:553, integrations.py:190).
-- **Audit log**: toda mutação grava `audit_log` (append-only + SHA256 chain + HMAC).
-- **Consentimento**: armazenado `consent_at`, `consent_ip`, `consent_user_agent`, `consent_canal`.
-- **Retenção**: 5y cliente COM protocolo (Provimento 74 CNJ + LGPD art. 7 II) / até-revogação cliente SEM (LGPD art. 7 I).
-- **IP**: armazenado completo 2y, exibido truncado /24 (LGPD art. 5 I).
-- **Webhook idempotency**: Redis SETNX com TTL 5min, rejeita replay.
-- **Dead-letter queue**: Redis para webhooks falhados, retry 3x exp backoff.
-
-## Erros (códigos)
-
-| Código | Significado |
-|---|---|
-| 200 | OK |
-| 400 | Validation error (Pydantic) |
-| 401 | Missing/invalid X-API-Key |
-| 403 | Role insuficiente (DPO/escrevente only) |
-| 404 | Recurso não encontrado |
-| 409 | Conflict (protocolo duplicado, consent já revogado) |
-| 422 | LGPD blocked (PII sem consent) |
-| 429 | Rate limit (60 req/min/IP) |
-| 500 | Internal error (audit log obrigatório) |
-| 502 | Dependência upstream down (N8N/EVO/CW) |
-
-## Variáveis de ambiente principais (`.env`)
-
-```
-DATABASE_URL=postgresql+psycopg://supabase_admin:$PG_PWD@db:5432/cartorio
-REDIS_URL=redis://default:$REDIS_PWD@cartorio_redis:6379/0
-AUDIT_HMAC_KEY=<openssl rand hex 32>
-CARTORIO_API_KEY=<openssl rand hex 32>  # mesmo valor no N8N
-EVOLUTION_API_KEY=<token Evolution>
-OPENCLAW_API_KEY=<token OpenClaw>
-N8N_WEBHOOK_SECRET=<hmac N8N>
-OPENCODE_GO_API_KEY=<sk-...>
+```javascript
+const ws = new WebSocket('wss://api.2notasudi.com.br/api/v1/ws/atendimentos');
+ws.onmessage = (e) => JSON.parse(e.data);
 ```
 
-## Workflows N8N que chamam esta API
+---
 
-- WF #01: `/webhook/consulta-emolumento` → `GET /emolumento/calcular`
-- WF #02: `/webhook/criar-protocolo` → `POST /protocolo`
-- WF #03: `/webhook/handoff-human` → cria atendimento + aciona Chatwoot
-- WF #04: `/webhook/boas-vindas` → LGPD consent capture
-- WF #07: pesquisa satisfação (NPS) → `POST /atendimento/{id}/pesquisa-enviada`
-- WF #08: audit verify diário 06:00 → `POST /audit/verify`
-- WF #09: backup monitor 04:00 → `GET /health/backup`
-- WF #22: audit verify 6h
-- WF #23: stale detector → `POST /cron/stale-detector`
-- WF #25: metrics collector → `GET /metrics/prometheus`
+## Response shapes (RFC 7807)
 
-## MCP Server
+```json
+{
+  "type": "https://api.2notasudi.com.br/errors/lgpd-blocked",
+  "title": "LGPD Block",
+  "status": 422,
+  "detail": "Cliente nao concedeu consentimento",
+  "request_id": "uuid-...",
+  "timestamp": "2026-06-24T13:23:45Z"
+}
+```
 
-A API expõe um MCP server em `/mcp/mcp` (FastMCP 3.x, 14 tools). Tools disponíveis:
-- calcular_emolumento
-- criar_protocolo
-- buscar_protocolo
-- criar_agendamento
-- listar_horarios
-- gerar_segunda_via
-- enviar_pesquisa
-- consultar_cpf_hash
-- criar_handoff
-- validar_consent
-- upload_storage
-- enviar_whatsapp
-- criar_chatwoot_contact
-- audit_verify
+---
 
-## Status
+## LGPD nos responses
 
-- **Master HEAD**: b370895 (mega plano de melhoria - 100 tasks)
-- **Testes**: 382 passed, 92.22% coverage
-- **Lint**: ruff 0 erros
-- **Typecheck**: mypy 0 erros
-- **OpenAPI auto-gerado**: /docs + /redoc
+**NUNCA** retornamos PII puro. Sempre:
+- `cpf_hash` (SHA256+salt) em vez de CPF
+- `***.***.***-**` em logs
+- `consent_granted: false` bloqueia resposta
 
-Modified by Mavis (Pietra root mvs_410a1b1266d64830b9dfa31973fdd9fe — 2026-06-24 10:30 BRT)
+---
+
+Modified by ZCode/Mavis + Gustavo Almeida — 2026-06-24
