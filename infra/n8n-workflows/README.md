@@ -8,22 +8,49 @@
 
 ## Conteúdo
 
+## Índice Mestre (16+ workflows ativos)
+
 **Workflows ativos em produção** (exportados via `GET /api/v1/workflows/{id}` em 2026-06-23 13:55 BRT, atualizados 2026-06-23 18:50 BRT no Sprint 0 audit):
 
-| Arquivo | Workflow | ID N8N | Trigger | Notes |
-|---------|----------|--------|---------|-------|
-| `01-consulta-emolumento.json` | Consulta Emolumento WhatsApp (v2) | `bR7qIo3bFpG4zgxO` | Webhook POST `/webhook/consulta-emolumento` | |
-| `02-criar-protocolo.json` | Criar Protocolo (LGPD) | `MzeYTSDouymzdpRw` | Webhook POST `/webhook/criar-protocolo` | |
-| `03-handoff-human.json` | Handoff Humano (Chatwoot v1, httpRequest) | `OQRIOVHcOjpkQ0Of` | Webhook POST `/webhook/handoff-human` | v1 — em produção até Gustavo importar v2 |
-| `04-boas-vindas-lgpd.json` | Boas-Vindas + Consentimento LGPD | `sDtkfOJ5BA7M73wB` | Webhook POST `/webhook/boas-vindas` | |
-| `04-consulta-protocolo.json` | Consulta Protocolo | `iXWuZRYZLR3FYPYB` | Webhook POST `/webhook/consulta-protocolo` | |
-| `05-agendamento.json` | Agendamento Atendimento | `UUW8ulDTxZUqBsci` | Webhook POST `/webhook/agendamento` | |
-| `06-2-via-protocolo.json` | Segunda Via Documento | `ukbRUEudoX3SvsqD` | Webhook POST `/webhook/segunda-via` | |
-| `07-pesquisa-evolucao.json` | Pesquisa Satisfação | `D9XJmlJRXZ3lavoa` | Cron 24h | ⚠️ SUI: falta credencial Evolution no N8N |
-| `08-audit-verify-diario.json` | Audit Verify Diário | `3rr2WFBCJZ16U4DH` | Cron 03:30 diário | |
-| `09-backup-status.json` | Monitor Backup Diário | `pgtlDqGaMW1MGawt` | Cron 04:00 diário | |
-| `10-faq-bot.json` | FAQ Bot | `jZhgQbJQ5z7atYfK` | Webhook POST `/webhook/faq` | |
-| `11-monitor-cartorio.json` | Monitor Cartório (saúde 6 serviços) | `5ABAZCQVRLd7AmM5` | Cron 5min + Webhook POST `/webhook/monitor-cartorio` | |
+| # | Arquivo | Workflow | ID N8N | Trigger | Integrações |
+|---|---------|----------|--------|---------|-------------|
+| 01 | `01-consulta-emolumento.json` | Consulta Emolumento WhatsApp (v2) | `bR7qIo3bFpG4zgxO` | Webhook POST `/webhook/consulta-emolumento` | API Cartorio, Audit |
+| 02 | `02-criar-protocolo.json` | Criar Protocolo (LGPD) | `MzeYTSDouymzdpRw` | Webhook POST `/webhook/criar-protocolo` | API Cartorio, PII, LGPD |
+| 03 | `03-handoff-human.json` | Handoff Humano (Chatwoot v1) | `OQRIOVHcOjpkQ0Of` | Webhook POST `/webhook/handoff-human` | Chatwoot, API Cartorio |
+| 04 | `04-boas-vindas-lgpd.json` | Boas-Vindas + Consentimento LGPD | `sDtkfOJ5BA7M73wB` | Webhook POST `/webhook/boas-vindas` | API Cartorio, LGPD |
+| 05 | `04-consulta-protocolo.json` | Consulta Protocolo | `iXWuZRYZLR3FYPYB` | Webhook POST `/webhook/consulta-protocolo` | API Cartorio, PII |
+| 06 | `05-agendamento.json` | Agendamento Atendimento | `UUW8ulDTxZUqBsci` | Webhook POST `/webhook/agendamento` | API Cartorio, PII |
+| 07 | `06-2-via-protocolo.json` | Segunda Via Documento | `ukbRUEudoX3SvsqD` | Webhook POST `/webhook/segunda-via` | API Cartorio, PII |
+| 08 | `07-pesquisa-evolucao.json` | Pesquisa Satisfação | `D9XJmlJRXZ3lavoa` | Cron 24h | API Cartorio, Evolution |
+| 09 | `08-audit-verify-diario.json` | Audit Verify Diário | `3rr2WFBCJZ16U4DH` | Cron 03:30 diário | API Cartorio, Chatwoot |
+| 10 | `09-backup-status.json` | Monitor Backup Diário | `pgtlDqGaMW1MGawt` | Cron 04:00 diário | API Cartorio, Chatwoot |
+| 11 | `10-faq-bot.json` | FAQ Bot | `jZhgQbJQ5z7atYfK` | Webhook POST `/webhook/faq` | FAQ KB |
+| 12 | `11-monitor-cartorio.json` | Monitor Cartório (saúde 6 serviços) | `5ABAZCQVRLd7AmM5` | Cron 5min + Webhook | API, Evolution, OpenClaw, Supabase, Chatwoot, Redis |
+| 13 | `12-chatbot-llm-mcp.json` | Chatbot LLM End-to-End (MCP) | - | Webhook POST `/webhook/chatbot-llm` | MCP, PII, OpenCode-Go |
+| 14 | `14-opencode-go-fallback.json` | OpenCode-Go LLM Fallback | - | Webhook POST `/webhook/opencode-fallback` | OpenCode-Go, PII |
+| 15 | `23-cron-stale-detector.json` | Cron Stale Detector | - | Cron 5min | API Cartorio, Chatwoot |
+| 16 | `24-retencao-diaria.json` | Retenção Diária (LGPD 5y/2y) | - | Cron 02:00 diário | API Cartorio, Chatwoot, Audit |
+| 17 | `25-protocolo-concluido-pdf.json` | Protocolo Concluido: Envia PDF | - | Cron 5min | API Cartorio, Evolution, Chatwoot |
+| 18 | `30-health-deep-check.json` | Health Deep Check 15min | - | Cron 15min | API, Integracoes, Backup |
+| 19 | `31-telegram-listener.json` | Telegram Listener (CartorioBot) | - | Webhook POST `/webhook/telegram` | Telegram, deepseek-v4-flash, Audit |
+| 20 | `22-mcp-server.json` | MCP Server Tools v2 | `kTZUoh8ejvGxT8m9` | mcpTrigger | MCP tools |
+| 21 | `00-error-handler.json` | Error Handler Global v4 | `4IS5oiLyHWGhtb8g` | errorTrigger | Chatwoot API |
+
+### Mapa visual de fluxos (alto nivel)
+
+```mermaid
+flowchart LR
+    Cliente[Cliente WhatsApp] -->|mensagem| Evo[Evolution API]
+    Evo -->|webhook| T25[Webhook WFs 01-12, 27, 31]
+    T25 --> API[API Cartorio]
+    Cron[Cron WFs 7-11, 15-18] --> API
+    T27[Sprint 3 WFs 16, 17, 18] --> API
+    API --> CW[Chatwoot]
+    API --> EV[Evolution]
+    API --> SU[Supabase]
+    API --> RD[Redis]
+    T00[00 Error Handler] -.->|erros| CW
+```
 
 **Workflows v2 — Sprint 3 Bloco 5** (usando nodes oficiais, prontos pra Gustavo importar):
 
