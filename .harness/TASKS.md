@@ -842,12 +842,25 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 - Suite completa: 669 passed + 2 skipped + 37 deselected (10 warnings, todos esperados)
 - Ruff check + mypy strict: 0 errors
 - Workflow 25 vai parar de dar 404 a partir do proximo tick (1min)
-- Workflows 21/26/30/31 ainda em investigacao (B0.2)
+- Workflows 21/26/30/31 ainda em investigacao (B0.2) — ver B0.2 abaixo
+
+**B0.2 ✅ DONE 2026-06-24 15:18 BRT** (commit `5bdfb7a feat(api): add GET /api/v1/health/integracoes endpoint`):
+- Investigacao workflows 21/26/30/31 identificou:
+  - **WF 30 (Health Deep Check 15min)**: chamava `/api/v1/health/integracoes` que NAO EXISTIA (404) — **FIX**
+  - **WF 21 (Backup Status 5min)**: chama `/health/backup` (existe) + Chatwoot conversations (depende DNS)
+  - **WF 26 (Alerta Critico)**: chama Telegram + Chatwoot (depende DNS)
+  - **WF 31 (Telegram Listener)**: chama `/integrations/opencode/test` (existe, POST, sem auth requerida) + Telegram + `/audit/verify` (existe). Header `apikey` (084c39...) eh ignorado pela API mas nao bloqueia (endpoint publico)
+- Endpoint `GET /api/v1/health/integracoes` criado: testa 8 integracoes em paralelo (DB, Redis, N8N, OpenClaw, Evolution, Chatwoot, Supabase, OpenCode-Go) com latencia_ms + status_code + erro por servico
+- 9 tests novos (test_health_integracoes.py): shape canonico, database online, redis offline em test, latencia, status_code, erro, checked_at, zero PII
+- Suite completa: **678 passed** + 2 skipped + 37 deselected
+- Ruff check OK + mypy strict 0 errors
+- WF 30 vai parar de dar 404 no proximo tick (15min)
+- WF 21/26/31: dependem de DNS do Chatwoot (RESOLVIDO PARCIAL ontem 14:57 BRT - Traefik router OK, DNS Hostinger pendente SUI Gustavo)
 
 ## SPRINT 3 — TOP 10 NOVAS TASKS (ver `.harness/PLAN_GIGANTE_2026-06-24.md`)
 
 - [x] **B0.1** POST /api/v1/metrics/n8n (cartorio-dev, 1h) — ✅ DONE 15:08 BRT commit `38679ea`
-- [ ] **B0.2** Investigar erros workflows 21/26/30/31 (cartorio-n8n, 2h) — owner cartorio-n8n
+- [x] **B0.2** Investigar erros workflows 21/26/30/31 (cartorio-n8n, 2h) — ✅ DONE 15:18 BRT commit `5bdfb7a` (análise + fix WF 30)
 - [ ] **D0.1** Criar 5 tabelas core no schema public Supabase (cartorio-dev, 3h)
 - [ ] **D0.2** Supabase Realtime para conversas ativas (cartorio-dev, 2h)
 - [ ] **D0.3** pgmq queues (cartorio-dev, 2h)
