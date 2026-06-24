@@ -1,0 +1,1129 @@
+[
+  {
+    "id": "E6.S0.T1",
+    "sprint": "Sprint E6.S0 — Orquestração + agent team ATIVADO",
+    "description": "Ativar agent `cartorio-zcode` (compat ZCODE-AGENT-MINIMAX-M3, M3 thinking)",
+    "status": "done",
+    "owner": "Mavis — done 2026-06-23 14:18"
+  },
+  {
+    "id": "E6.S0.T2",
+    "sprint": "Sprint E6.S0 — Orquestração + agent team ATIVADO",
+    "description": "Ativar agent `cartorio-highspeed` (compat MINIMAX-M7-HIGHSPEED, M3 highspeed)",
+    "status": "done",
+    "owner": "Mavis — done 2026-06-23 14:18"
+  },
+  {
+    "id": "E6.S0.T3",
+    "sprint": "Sprint E6.S0 — Orquestração + agent team ATIVADO",
+    "description": "Responder cartorio-lgpd BATCH 2 review (consent.md + copy 11 variantes + auditoria 32 testes PII)",
+    "status": "done",
+    "owner": "Mavis — done 2026-06-23 14:14"
+  },
+  {
+    "id": "E6.S0.T4",
+    "sprint": "Sprint E6.S0 — Orquestração + agent team ATIVADO",
+    "description": "Verificar status real N8N (12 WFs ON, 4 creds, 26 execs reais)",
+    "status": "done",
+    "owner": "Mavis — done 2026-06-23 14:16"
+  },
+  {
+    "id": "E6.S0.T5",
+    "sprint": "Sprint E6.S0 — Orquestração + agent team ATIVADO",
+    "description": "Verificar agents globais disponíveis",
+    "status": "done",
+    "owner": "Mavis — done 2026-06-23 14:16"
+  },
+  {
+    "id": "E6.S0.T6",
+    "sprint": "Sprint E6.S0 — Orquestração + agent team ATIVADO",
+    "description": "Verificar .env.example (279 linhas, Opencode-Go + OpenClaw + Tailscale + LGPD completos)",
+    "status": "done",
+    "owner": "Mavis — done 2026-06-23 14:17"
+  },
+  {
+    "id": "E6.S1.T1",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Adicionar tabela `config_runtime` (key, value, updated_at, updated_by) no DB",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T2",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Seed `config_runtime` com `llm.default_provider=opencode_go`, `llm.default_model=deepseek-v4-flash`, `llm.fallback_model=deepseek-v4-flash`",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T3",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Adicionar tabela `sessao_cliente` (id UUID, cliente_id FK, canal, instance_name, session_data JSONB, created_at, last_active_at, closed_at)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T4",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Migration Alembic p/ tabelas `config_runtime` + `sessao_cliente`",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T5",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `GET /api/v1/config/{key}` (lê config_runtime com cache Redis 60s TTL)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T6",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `POST /api/v1/config/{key}` (admin only, atualiza + invalida cache)",
+    "status": "pending",
+    "owner": "cartorio-dev` + review `cartorio-lgpd` (audit)"
+  },
+  {
+    "id": "E6.S1.T7",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Service `config` com fallback env → DB → hardcoded (defense-in-depth)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T8",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `GET /api/v1/sessao/{cliente_id}` (lê sessão ativa do Redis ou DB)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T9",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `POST /api/v1/sessao` (cria/atualiza sessão Redis + DB)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T10",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `DELETE /api/v1/sessao/{id}` (fecha sessão, mantém histórico no DB)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T11",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Service `sessao` com Redis (sessão ativa 24h TTL) + DB (histórico permanente até retenção)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T12",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Cache Redis para `tabela_emolumento` (TTL 24h, invalidar via cron diário)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T13",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Rate limit Redis 60 req/min/IP (LGPD mitigation)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T14",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Audit log middleware FastAPI (request_id, ip, user_agent, timestamp)",
+    "status": "pending",
+    "owner": "cartorio-dev` + review `cartorio-lgpd"
+  },
+  {
+    "id": "E6.S1.T15",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `GET /api/v1/health/radar` com latência por serviço",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T16",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `GET /api/v1/health/integracoes` (N8N + EVO + CW + OCL + SUP + RED status)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T17",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `POST /api/v1/webhook/evolution` (entrada principal WhatsApp, integridade HMAC)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T18",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `POST /api/v1/webhook/chatwoot` (handoff humano recebe do N8N)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T19",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `POST /api/v1/webhook/openclaw` (eventos do gateway OpenClaw)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T20",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Validação HMAC em todos os webhooks (header `X-Signature` com AUDIT_HMAC_KEY)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T21",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Idempotência webhook (Redis SETNX com TTL 5min, rejeita replay)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T22",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Dead-letter queue Redis para webhooks falhados (retry 3x exp backoff)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T23",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `GET /api/v1/dlq/list` (admin only, ver webhooks falhados)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T24",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Endpoint `POST /api/v1/dlq/retry/{id}` (admin only, reprocessar)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S1.T25",
+    "sprint": "Sprint E6.S1 — API + DB + Redis (camada central) — 25 tasks",
+    "description": "Testes integração: 25 endpoints novos + 100% coverage",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S2.T1",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #13: OpenClaw Chat Bridge — DONE 2026-06-23 19:21 BRT (commit 3713d10) (recebe msg OpenClaw → encaminha p/ API webhook)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T2",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #14: Opencode-Go LLM Fallback — DONE 2026-06-23 19:21 BRT (commit 3713d10) (se OpenClaw falhar, chama Opencode-Go direto)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T3",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #15: Session Sync — DONE 2026-06-23 19:21 BRT (commit 3713d10) (sincroniza sessão Redis ↔ DB a cada 5min)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T4",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #16: Prospecção Lead Enrichment — DONE 2026-06-23 19:21 BRT (commit 3713d10) (enriquece lead novo com dados ANOREG/Google)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T5",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #17: Prospecção Send WhatsApp — DONE 2026-06-23 19:21 BRT (commit 3713d10) (dispara mensagem inicial + tracking opt-out)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T6",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #18: Prospecção Follow-up D+7 — DONE 2026-06-23 19:21 BRT (commit 3713d10) (automático se lead não respondeu)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T7",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #19: Cliente Criado — DONE 2026-06-23 19:21 BRT (commit 3713d10) (novo cliente → boas-vindas LGPD → menu inicial)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T8",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #20: Protocolo Criado — DONE 2026-06-23 19:21 BRT (commit 3713d10) (workflow emite protocolo provisório + notifica escrevente)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T9",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #21: Backup Status 5min — DONE 2026-06-23 19:21 BRT (commit 3713d10) (cron rápido com heartbeat)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T10",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #22: Audit Verify 6h — DONE 2026-06-23 19:21 BRT (commit 3713d10) (verifica chain SHA256)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T11",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #23: LGPD Esqueci — DONE 2026-06-23 19:21 BRT (commit 3713d10) (cliente pede exclusão → DELETE cliente + cascade)",
+    "status": "done",
+    "owner": "cartorio-n8n` + review `cartorio-lgpd"
+  },
+  {
+    "id": "E6.S2.T12",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #24: Daily Cleanup — DONE 2026-06-23 19:21 BRT (commit 3713d10) (roda 03:00, apaga sessões > 24h Redis + backup pre-retention)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T13",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #25: Metrics Collector — DONE 2026-06-23 19:21 BRT (commit 3713d10) (envia Prometheus metrics p/ API)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T14",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #26: Alerta Crítico — DONE 2026-06-23 19:21 BRT (commit 3713d10) (any service down → Telegram IM imediato)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T15",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #27: Welcome First Time — DONE 2026-06-23 19:21 BRT (commit 3713d10) (primeira msg cliente → apresenta bot + pede consentimento)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T16",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #28: Audit Snapshot — DONE 2026-06-23 19:21 BRT (commit 3713d10) (snapshot audit_log diário p/ S3 backup)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T17",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #29: Rate Limit Reset — DONE 2026-06-23 19:21 BRT (commit 3713d10) (cron hourly reset counter Redis)",
+    "status": "done",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T18",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "WF #30: Health Deep Check (cron 15min, testa TODOS endpoints API + timeout 5s)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T19",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "Credenciais N8N: criar `opencode-go-deepseek` (existe ✓) + `openclaw-gateway` (FALTA) + `chatwoot-api` (FALTA) + `redis-cartorio` (FALTA)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S2.T20",
+    "sprint": "Sprint E6.S2 — N8N Workflows (12→20 workflows) — 20 tasks",
+    "description": "Workflow documentado em `infra/n8n-workflows/` (JSON export canônico)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S3.T1",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Investigar `/v1/chat POST 404` no OpenClaw (decisão: patch local, esperar release, ou workaround)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S3.T2",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Patch local OpenClaw com rota `/v1/chat` funcional (se factível em <2h)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S3.T3",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Workaround: WF #14 chama Opencode-Go direto se OpenClaw 404",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S3.T4",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "OpenClaw config: provider `opencode_go` + modelo `deepseek-v4-flash`",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S3.T5",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "OpenClaw plugins: ativar `evolution-api`, `supabase`, `audit-log`",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S3.T6",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "OpenClaw agent \"Pietra Cartório\" prompt LGPD-aware (system prompt com scrub interno + audit)",
+    "status": "pending",
+    "owner": "cartorio-zcode` + review `cartorio-lgpd"
+  },
+  {
+    "id": "E6.S3.T7",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Opencode-Go API key rotacionada (90d policy)",
+    "status": "pending",
+    "owner": "Mavis + Gustavo"
+  },
+  {
+    "id": "E6.S3.T8",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Opencode-Go fallback configurado (mesmo modelo, mesma key, retry 2x)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S3.T9",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "LiteLLM gateway (FUTURO sprint 3 — placeholder scaffold)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S3.T10",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Model registry em `config_runtime` (deepseek-v4-flash + future Claude/GPT)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S3.T11",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Endpoint `GET /api/v1/llm/models` (lista modelos disponíveis + provider)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S3.T12",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Endpoint `POST /api/v1/llm/test` (smoke test de cada provider)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S3.T13",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Health check LLM providers (cron hourly: Opencode-Go + OpenClaw + LiteLLM)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S3.T14",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "Alerta se qualquer LLM provider offline > 5min",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S3.T15",
+    "sprint": "Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks",
+    "description": "DPA MiniMax assinado (escalado Gustavo — bloqueia prod até assinar)",
+    "status": "pending",
+    "owner": "Gustavo + DPO"
+  },
+  {
+    "id": "E6.S4.T1",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Evolution Manager UI acessível em `https://whatsapp.2notasudi.com.br/manager`",
+    "status": "pending",
+    "owner": "Gustavo UI"
+  },
+  {
+    "id": "E6.S4.T2",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Evolution instance `cartorio-2notas` provisionada (deixar criada, NÃO conectar número ainda)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T3",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Evolution webhook registrado apontando p/ N8N `/webhook/evo-in`",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T4",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Evolution eventos escutados: `messages.upsert`, `messages.update`, `connection.update`",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T5",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Chatwoot Agent Bot \"Cartorio Assistant\" (criado no UI pelo Gustavo)",
+    "status": "pending",
+    "owner": "Gustavo UI"
+  },
+  {
+    "id": "E6.S4.T6",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Chatwoot inbox provisionada (WhatsApp + Web + Telegram channels)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T7",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Chatwoot custom domain `chat.2notasudi.com.br` ativo (DNS OK ✓)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T8",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Chatwoot Agent Bot handoff rules (transfer to human > 0.7 confidence LLM)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T9",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Chatwoot super_admin password criado via UI",
+    "status": "pending",
+    "owner": "Gustavo UI"
+  },
+  {
+    "id": "E6.S4.T10",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Chatwoot Canned Responses p/ FAQs cartorários (50+ templates)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T11",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Chatwoot Macros para handoff humano → escrevente (10 macros)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T12",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase tabela `prospeccao_leads` (id, nome, cartorio, cidade, uf, status, ultimo_contato, opt_out)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S4.T13",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase tabela `cliente_sessao` (sincronizada com Redis)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S4.T14",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase Realtime habilitado p/ tabela `conversa` (live updates no dashboard)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S4.T15",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase Storage bucket `documentos` (privado, signed URL 24h)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S4.T16",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase Edge Function `prospeccao-webhook` (recebe eventos do N8N)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S4.T17",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase backup automático 4x/dia (DB chatwoot validado ✓, DB cartorio PENDENTE)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S4.T18",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase RLS policies em `cliente`, `protocolo`, `documento` (somente owner pode ler)",
+    "status": "pending",
+    "owner": "cartorio-dev` + review `cartorio-lgpd"
+  },
+  {
+    "id": "E6.S4.T19",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase Kong gateway rate limit (100 req/min/API key)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S4.T20",
+    "sprint": "Sprint E6.S4 — Evolution API + Chatwoot + Supabase — 20 tasks",
+    "description": "Supabase secrets: rotacionar `SUPABASE_SERVICE_ROLE_KEY` (90d policy)",
+    "status": "pending",
+    "owner": "Mavis + Gustavo"
+  },
+  {
+    "id": "E6.S5.T1",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "MCP server da API (✓ existe `/mcp/mcp` FastMCP 3.x, 14 tools) — manter",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S5.T2",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "MCP server do N8N (✓ existe `/mcp-server/http`, 30 tools) — manter",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S5.T3",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "MCP server do Supabase (configurar via Antigravity Supabase MCP)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S5.T4",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "MCP server do Easypanel (helbertparanhos/easypanel-mcp-server community)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S5.T5",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "MCP server do OpenClaw (expor gateway OpenClaw via MCP)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S5.T6",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "MCP server do Redis (redis-mcp-server community)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S5.T7",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "MCP client config global `~/.mavis/mcp/clients/cartorio-mcp-config.json` (6 servers)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S5.T8",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "MCP client integrado no Claude Desktop / Cursor / OpenClaw",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S5.T9",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "N8N MCP client node (✓ instalado n8n-nodes-mcp v0.1.37) — usar nos WFs",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S5.T10",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "N8N Evolution API node (✓ instalado v1.0.4) — usar em todos WFs WhatsApp",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S5.T11",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "N8N Chatwoot node (✓ instalado v1.0.2) — usar em handoff humano",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S5.T12",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "N8N MinIO node (✓ instalado v1.3.0) — usar em backup PDFs",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S5.T13",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "N8N PdfKit node (✓ instalado v0.1.2) — usar em geração certidões",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S5.T14",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "Skills Mavis: criar `cartorio-orchestrator` skill (roteador de tasks multi-rein)",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S5.T15",
+    "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
+    "description": "Skills Mavis: criar `cartorio-mcp` skill (wrapper MCP client global)",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S6.T1",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "Gerar certs Tailscale para `*.tail2fe279.ts.net` (`tailscale cert` na VPS)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S6.T2",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "Traefik routers para `api.tail2fe279.ts.net`, `n8n.tail2fe279.ts.net`, `agent.tail2fe279.ts.net`, `whatsapp.tail2fe279.ts.net`, `chat.tail2fe279.ts.net`, `supabase.tail2fe279.ts.net`",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S6.T3",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "DNS Cloudflare wildcard `*.tail2fe279.ts.net` (Tailscale MagicDNS auto)",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S6.T4",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "OpenClaw gateway bind 0.0.0.0:18789 (já está ✓) — manter",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S6.T5",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "VPS firewall: aceitar Tailscale 100.64.0.0/10 em todas portas internas",
+    "status": "pending",
+    "owner": "cartorio-zcode"
+  },
+  {
+    "id": "E6.S6.T6",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "Mac firewall: aceitar Tailscale 100.64.0.0/10 para SSH local",
+    "status": "pending",
+    "owner": "Gustavo"
+  },
+  {
+    "id": "E6.S6.T7",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "Easypanel domínio custom `easypanel.2notasudi.com.br` (✓ OK) — manter",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S6.T8",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "Domínio `flow.2notasudi.com.br` (N8N com domínio próprio, opcional sprint 3)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S6.T9",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "Monitor cert expiry (Tailscale + Cloudflare) com alerta 30d antes",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S6.T10",
+    "sprint": "Sprint E6.S6 — Tailscale + Domínios + SSL — 10 tasks",
+    "description": "Backup VPS-side scripts em `/usr/local/bin/` + keyfile em `/etc/cartorio-backup/` (✓ já OK) — manter",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S7.T1",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-api-health` (5min tick, GET /health, alerta Telegram se != 200)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T2",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-radar` (5min tick, GET /health/radar, alerta se != GREEN)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T3",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-n8n-health` (5min tick, GET /healthz N8N)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T4",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-evo-health` (5min tick, GET / Evolution)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T5",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-cw-health` (10min tick, GET /api/v1/accounts Chatwoot)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T6",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-ocl-health` (5min tick, GET /health OpenClaw)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T7",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-redis-health` (10min tick, PING Redis, maxmemory check)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T8",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-supabase-health` (10min tick, GET /auth/v1/health)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T9",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-llm-health` (15min tick, smoke Opencode-Go + OpenClaw)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T10",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-backup-status` (hourly, GET /api/v1/health/backup)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T11",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-audit-verify` (daily 03:30, GET /api/v1/audit/verify)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T12",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-cert-expiry` (daily 09:00, monitor Tailscale + Cloudflare cert)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T13",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-prospeccao-daily` (daily 08:00, sumariza leads do dia)",
+    "status": "pending",
+    "owner": "cartorio-highspeed"
+  },
+  {
+    "id": "E6.S7.T14",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-morning-brief` (daily 07:30, IM Telegram c/ status completo)",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S7.T15",
+    "sprint": "Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks",
+    "description": "Cron `cartorio-weekly-summary` (Sunday 23:00, resumo sprint p/ Gustavo)",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S8.T1",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "Top 100 cartórios SP scoring Tier A/B/C (✓ já 30 prontos)",
+    "status": "pending",
+    "owner": "ceo-assistant"
+  },
+  {
+    "id": "E6.S8.T2",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "Disparo Vampre PRIMEIRO (sinal >R$ 90M/ano, terça 30/06)",
+    "status": "pending",
+    "owner": "Gustavo"
+  },
+  {
+    "id": "E6.S8.T3",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "Disparo Amaral 5BH + Herrera 1Salvador + Londrina (Tier A Wave 1)",
+    "status": "pending",
+    "owner": "Gustavo"
+  },
+  {
+    "id": "E6.S8.T4",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "Tracking planilha `docs/leads/tracking.csv` (cartorio | data_envio | canal | status)",
+    "status": "pending",
+    "owner": "Gustavo"
+  },
+  {
+    "id": "E6.S8.T5",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "WF #16 enrichment auto + WF #17 send WhatsApp (Wave 2 escalável)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S8.T6",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "WF #18 follow-up D+7 automático (LGPD opt-out keyword PARAR/SAIR)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S8.T7",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "Dashboard prospecção React (cartorio | status | próximo follow-up)",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S8.T8",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "KPI prospecção: 10 leads Tier A → 5 reuniões → 2 pilotos 30d",
+    "status": "pending",
+    "owner": "ceo-assistant"
+  },
+  {
+    "id": "E6.S8.T9",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "Runbook escrevente (como receber handoff Chatwoot + LGPD checklist)",
+    "status": "pending",
+    "owner": "cartorio-lgpd"
+  },
+  {
+    "id": "E6.S8.T10",
+    "sprint": "Sprint E6.S8 — Prospecção + Operação Real — 10 tasks",
+    "description": "Onboarding cartório piloto (Kick-off + treinamento + dashboard)",
+    "status": "pending",
+    "owner": "Gustavo"
+  },
+  {
+    "id": "E6.S9.T1",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "BATCH 2 LGPD review (consent + copy 11 variantes + auditoria PII)",
+    "status": "pending",
+    "owner": "cartorio-lgpd` — sprint 2026-06-23 14:14+"
+  },
+  {
+    "id": "E6.S9.T2",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "RIPD v1.2 (Tratamento 7 OpenCode-Go + Tratamento 8 N8N ferramenta + R13-R17)",
+    "status": "pending",
+    "owner": "cartorio-lgpd"
+  },
+  {
+    "id": "E6.S9.T3",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "Auditoria opencode_go.py (8 blockers identificados em commit 2c9ff79)",
+    "status": "pending",
+    "owner": "cartorio-lgpd"
+  },
+  {
+    "id": "E6.S9.T4",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "DPA MiniMax assinado (escalado Gustavo — STAGING ONLY até assinar)",
+    "status": "pending",
+    "owner": "Gustavo + DPO"
+  },
+  {
+    "id": "E6.S9.T5",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "Encryption at-rest Postgres (pgcrypto + gpg key rotacionada)",
+    "status": "pending",
+    "owner": "cartorio-dev` + review `cartorio-lgpd"
+  },
+  {
+    "id": "E6.S9.T6",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "Consent explícito no webhook Evolution (\"digite SIM para continuar\")",
+    "status": "pending",
+    "owner": "cartorio-dev` + review `cartorio-lgpd"
+  },
+  {
+    "id": "E6.S9.T7",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "Logs de acesso LGPD art. 37 (request_id + IP truncado /24 + user_agent + timestamp)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S9.T8",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "Pen-test OWASP top 10 (Burp Suite + Zap)",
+    "status": "pending",
+    "owner": "cartorio-lgpd` (coordena)"
+  },
+  {
+    "id": "E6.S9.T9",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "DPO designado + contato publicado no site/chat",
+    "status": "pending",
+    "owner": "cartorio-lgpd` + `cartorio-n8n` (UI)"
+  },
+  {
+    "id": "E6.S9.T10",
+    "sprint": "Sprint E6.S9 — LGPD Final + Compliance (batch 2 + futuro) — 10 tasks",
+    "description": "Auditoria ANPD readiness checklist (15 itens)",
+    "status": "pending",
+    "owner": "cartorio-lgpd"
+  },
+  {
+    "id": "E6.S10.T1",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Conectar número real WhatsApp via Evolution QR (scan pelo Gustavo)",
+    "status": "pending",
+    "owner": "Gustavo"
+  },
+  {
+    "id": "E6.S10.T2",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Smoke test E2E: msg WhatsApp → Evolution → N8N → API → resposta → WhatsApp",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S10.T3",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Teste PII real: cliente envia CPF → scrub → LLM (zero dado bruto no provider)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S10.T4",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Teste HITL: cliente pede isenção → bot responde \"vou transferir p/ escrevente\"",
+    "status": "pending",
+    "owner": "cartorio-n8n"
+  },
+  {
+    "id": "E6.S10.T5",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Teste sessão: cliente volta 3 dias depois → sessão recuperada (Redis ou DB)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.S10.T6",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "KPI Sprint 1: 100 consultas/dia, 0 erro de valor, 0 handoff humano",
+    "status": "pending",
+    "owner": "Mavis monitora"
+  },
+  {
+    "id": "E6.S10.T7",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Go-live: anunciar p/ top 100 cartórios (prospecção fase 2)",
+    "status": "pending",
+    "owner": "Gustavo"
+  },
+  {
+    "id": "E6.S10.T8",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Monitor prod 7x24 (radar + alertas Telegram)",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S10.T9",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Retrospectiva 30 dias (métricas + LGPD + custos)",
+    "status": "pending",
+    "owner": "Mavis"
+  },
+  {
+    "id": "E6.S10.T10",
+    "sprint": "Sprint E6.S10 — Conexão WhatsApp Real (ÚLTIMA ETAPA) — 10 tasks",
+    "description": "Sprint 2 planejamento (consulta protocolo + shadow mode)",
+    "status": "pending",
+    "owner": "Mavis + Gustavo"
+  },
+  {
+    "id": "E6.SMETA.T1",
+    "sprint": "Sprint E6.SMETA — Ad-hoc + melhorias contínuas — 5 tasks",
+    "description": "Melhorar cobertura testes de 95.61% → 98%",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.SMETA.T2",
+    "sprint": "Sprint E6.SMETA — Ad-hoc + melhorias contínuas — 5 tasks",
+    "description": "Reduzir latência `/api/v1/emolumento/calcular` p/ < 50ms (cache Redis)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.SMETA.T3",
+    "sprint": "Sprint E6.SMETA — Ad-hoc + melhorias contínuas — 5 tasks",
+    "description": "OpenAPI completo + Postman collection (✓ já existe) — manter atualizado",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.SMETA.T4",
+    "sprint": "Sprint E6.SMETA — Ad-hoc + melhorias contínuas — 5 tasks",
+    "description": "Swagger UI customizado com auth demo (sandbox cartorário)",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  },
+  {
+    "id": "E6.SMETA.T5",
+    "sprint": "Sprint E6.SMETA — Ad-hoc + melhorias contínuas — 5 tasks",
+    "description": "CI/CD: GitHub Actions ruff + mypy + pytest + deploy Easypanel",
+    "status": "pending",
+    "owner": "cartorio-dev"
+  }
+]
