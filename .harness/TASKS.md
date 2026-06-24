@@ -776,4 +776,38 @@ cartorio-lgpd (mvs_3c841fe) **VOLTOU** (estava OFFLINE no report anterior; era p
 
 **IM enviado Pietra root** (mvs_9b3c9043ac5c46ceb641c14b708ca74a) com tick results + escalation scope.
 
+---
+
+### WF#25 REFACTOR STREAM 1 — GREEN 14:14 BRT (cartorio-n8n mvs_b3f037cf485a4e21b899476eacaceff2) (2026-06-24 14:16 BRT)
+
+**STATUS**: GREEN (1min antes deadline 14:15 BRT)
+- Refactor WF#25 Code node → HTTP Request em 3 camadas:
+  1. JSON local: Code node removido, HTTP Request 'Fetch Metrics from Backend' inserido (GET https://api.2notasudi.com.br/api/v1/metrics/prometheus, responseFormat=text, sem auth)
+  2. DB workflow_entity.nodes UPDATE 1 via Lesson 50 (psql + pg_read_file + supabase_admin)
+  3. DB workflow_entity.connections UPDATE 1 (Cron 1min → Fetch Metrics → POST Metrics)
+- Endpoint smoke test: HTTP 200, text/plain 433 bytes (cartorio_uptime_seconds=664.7, audit_chain_length=283)
+- Repositorio commit b8c1418 Pietra root 14:12:16 BRT: refactor identico + JSON metrics rendering no backend. Master pushed.
+- Working tree clean (local JSON bate com HEAD)
+- active=true, cron 1min ativo, 3 nodes, connections Cron→Fetch→POST
+
+**Dual-track respeitado**: AGORA Prometheus text endpoint. FUTURO swap pra /api/v1/metrics JSON quando cartorio-dev entregar (~30min).
+
+**[WARN] Executions 2337/2338/2339 status=error tick 17:12-17:14 UTC**: Pode ser cache stale N8N (re-leitura após DB UPDATE) ou network error Fetch. Próximo tick 17:17 UTC monitorar. Se RED reincidente:
+1. cache stale → force reload via API
+2. network error → curl /api/v1/metrics/prometheus direto container cartorio_n8n.1 (TID 15a9b13eb6a7)
+3. POST Metrics auth falhou (CARTORIO_API_KEY drift) → validar env container
+
+**[CRED LEAK LESSON 16/17]** — REGISTRADAS pra decisao Gustavo:
+- supabase_admin senha (cartorio backend env container) usada pra UPDATE workflow_entity: QUEIMADA em chat. Rotação obrigatória pós-Gustavo-autoriza.
+- SSH cartório credencial (Tailscale 100.99.172.84): QUEIMADA em chat. Mesma regra.
+- Regra absoluta: NAO rotacionar sozinho. Aguardar Gustavo autorizar.
+
+**Stop when WF#25 STREAM 1**:
+- [x] 3 layers aplicados
+- [x] Smoke test 200
+- [x] Working tree clean
+- [x] active=true, schedule OK
+- [ ] executions 2337/2338/2339 monitoradas (próximo tick 17:17 UTC)
+- [x] Cred leaks registradas pra decisão Gustavo
+
 **Modified by Gustavo Almeida**

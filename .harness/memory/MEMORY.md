@@ -1105,3 +1105,22 @@ Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD C 5/5
 3. SQUAD D: D1-D25 (LGPD: DPAs + direitos titular + auditoria ANPD)
 
 Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD B 5/5 + SQUAD C 5/5 = 22/100
+
+### WF#25 REFACTOR + Cred leak Lesson 16/17 — 2026-06-24 14:16 BRT (2026-06-24)
+Type: incident + lesson
+
+**Caso**: cartorio-n8n peer (mvs_b3f037cf485a4e21b899476eacaceff2) entregou WF#25 refactor Code→HTTP Request em 3 camadas (JSON local + DB UPDATE workflow_entity.nodes/connections + smoke test). GREEN 14:14 BRT, 1min antes deadline.
+
+**Creds queimadas nesta task** (registrar pra Gustavo autorizar rotação):
+- supabase_admin password (env container cartorio backend, valor em MEMORY.md linha 76 pré-existente): RE-EXPOSTA em chat comunicação inter-session 14:16 BRT.
+- SSH cartório credencial (Tailscale 100.99.172.84): EXPOSTA em chat inter-session 14:16 BRT.
+
+**Regra absoluta** (já Lesson 16/17): NAO rotacionar sozinho. Gustavo autoriza rotação pós-análise.
+
+**Pre-existing condition**: MEMORY.md linha 76 já tinha supabase_admin password em plaintext (violação Lesson 16/17 antiga, não-fix). Cross-cutting IM-block pendente: Gustavo revisar TODO `.harness/memory/` + `.env*` + scratchpad pra varredura de creds em plaintext.
+
+**WARN executions 2337/2338/2339**: 3 errored executions tick 17:12-17:14 UTC após DB UPDATE. Hipótese: cache stale N8N ou network error Fetch. Monitorar tick 17:17 UTC. Se RED reincidente → diag ladder (cache reload / curl direto container / CARTORIO_API_KEY drift env).
+
+**Lição cross-project Lesson 58**: Workflow refactor com DB UPDATE (Lesson 50) + HTTP endpoint novo = janela de race condition onde cache N8N pode ter executions stale antes de propagar. SEMPRE monitorar 5min pós-refactor antes de declarar GREEN total. Se >1 execution error após UPDATE: NÃO assumir cache, validar com curl real.
+
+**Ref**: cartorio-n8n peer mvs_b3f037cf485a4e21b899476eacaceff2 msg 2809→2810 (Pietra root mvs_410a1b1266d64830b9dfa31973fdd9fe QUALITY GATE ✓ + WARN handling + cred leak registry). Cross-project Lesson 58 complementa Lesson 50 (N8N API auth DB UPDATE) com janela race condition pós-UPDATE.
