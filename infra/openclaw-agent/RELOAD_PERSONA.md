@@ -71,3 +71,38 @@ Ou, no chat, envie: `"Quem é você?"` e veja se responde como **CartórioBot** 
 - **Para:** CartórioBot persona (SOUL.md 4786 bytes, contexto cartório + LGPD + Tabela MG 2026)
 - **Trigger:** Gustavo abriu OpenClaw Control UI, viu que o agent não tinha identidade
 - **Pendência:** Old sessions (`agent:main:heartbeat-recov` 4h, `Main Session` 2m) ainda usam persona antiga até fechar
+
+---
+
+## Arquivos de persona (atualizado 2026-06-24)
+
+- `SOUL.md` - proposito existencial (4786 bytes)
+- `IDENTITY.md` - quem sou, tools, limites (2155 bytes)
+- `USER.md` - sobre Gustavo (2415 bytes)
+- `TOOLS.md` - notas tecnicas (4161 bytes)
+- `GOALS.md` - objetivos do agent
+- `AGENTS.md` - **NOVO 2026-06-24** - regras operacionais (thinkings, contexto 1M, modelo deepseek-v4-flash)
+- `TELEGRAM.md` - **NOVO 2026-06-24** - bot Telegram 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q
+
+## Contexto 1M (NAO 131k)
+
+OpenClaw UI pode mostrar "131.1k tokens" mas o **modelo real (deepseek-v4-flash) suporta 1M de contexto**. O que aparece na UI e' tokens consumidos NA sessao atual, NAO o maximo do modelo.
+
+Para garantir contexto maximo:
+```bash
+openclaw config set max_context_tokens 1000000
+openclaw config set max_output_tokens 8192
+```
+
+## Thinkings ADAPTATIVO
+
+Thinkings (raciocinio explicito) liga automaticamente para:
+- keywords: "calcular", "validar", "analisar", "debug", "LGPD", "PII", "erro", "exception"
+- complexidade do prompt > 0.7
+- tarefas de decisao critica (handoff, validacao juridica)
+
+Para saudacoes e FAQ, fica desligado (economia de tokens).
+
+Ver `AGENTS.md` para detalhes de implementacao.
+
+Modified by ZCode/Mavis - 2026-06-24
