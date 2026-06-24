@@ -186,6 +186,73 @@ def hash_pii(value: str, salt: str) -> str:
 
 
 # ============================================================================
+# IP truncation (LGPD art. 5 II + D5 — IP truncado em /24 no OUTPUT do audit)
+#
+# Decisao arquitetural (cartorio-lgpd cross-review 2026-06-24):
+# - PRESERVAR IP COMPLETO em audit_log.ip (acesso restrito DPO via /audit/replay)
+# - TRUNCAR IP em audit_log.ip_truncated (output default, exposto em queries normais)
+# - Helper UNICO: ip_truncate() — qualquer caller que precisar truncar usa aqui.
+#
+# Justificativa LGPD-by-design:
+# - IP individual eh dado pessoal (LGPD art. 5 II) — difuso mas reconhecido
+# - /24 preserva subnet pra forensics (identificar range de attack, geo/ASN)
+#   sem tornar IP individual dado titular.
+# - IPv6: /32 (16 bits = 1 grupo) preserva rede mas mascara host
+# - DPO precisa do IP completo em incidente (forensics) — por isso coluna separada
+# ============================================================================
+
+
+def ip_truncate(ip: str | None) -> str | None:
+    """Trunca IP em /24 (IPv4) ou /32 (IPv6) para uso em output/audit_truncated.
+
+    Args:
+        ip: IP em formato texto (IPv4 ou IPv6). Pode ser None ou invalido.
+
+    Returns:
+        - IPv4 valido: "192.168.1.0/24" (ultimo octeto zerado + mascara /24)
+        - IPv6 valido: "2001:db8::/32" (2 primeiros grupos + ::/32)
+        - IP invalido ou None: None (caller trata como 'unknown')
+
+    Examples:
+        >>> ip_truncate("192.168.1.123")
+        '192.168.1.0/24'
+        >>> ip_truncate("2001:db8::1")
+        '2001:db8::/32'
+        >>> ip_truncate("unknown")
+        None
+        >>> ip_truncate(None)
+        None
+
+    LGPD: use em campos de OUTPUT. Para preservar IP completo com acesso
+    restrito (DPO forensics), use audit_log.ip sem truncar.
+    """
+    if not ip or not isinstance(ip, str):
+        return None
+
+    ip = ip.strip()
+    if not ip:
+        return None
+
+    # IPv4 (4 grupos decimais separados por .)
+    if "." in ip and ":" not in ip:
+        parts = ip.split(".")
+        if len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
+            return f"{parts[0]}.{parts[1]}.{parts[2]}.0/24"
+        return None
+
+    # IPv6 (grupos hexadecimais separados por :)
+    if ":" in ip:
+        groups = ip.split(":")
+        # Pega primeiros 2 grupos nao-vazios
+        non_empty = [g for g in groups if g]
+        if len(non_empty) >= 2:
+            return f"{non_empty[0]}:{non_empty[1]}::/32"
+        return None
+
+    return None
+
+
+# ============================================================================
 # CNS - validacao de check-digit (DV) via Modulo 11
 # Manual tecnico DATASUS / Ministerio da Saude (CADSUS).
 # Camada EXTRA de validacao alem do regex CNS. NAO substitui o regex;
