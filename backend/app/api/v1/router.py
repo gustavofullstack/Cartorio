@@ -723,9 +723,9 @@ async def audit_verify() -> dict:
     tags=["health"],
     summary="Health radar multi-servico",
     description=(
-        "Verifica conectividade de **todos** os servicos da suite em paralelo: "
-        "PostgreSQL, Redis, n8n, OpenClaw gateway, Evolution API. Retorna "
-        "status individual por servico + status agregado (`green` se todos online)."
+        "Verifica conectividade de **todos** os 7 servicos da suite em paralelo: "
+        "PostgreSQL, Redis, n8n, OpenClaw gateway, Evolution API, Chatwoot, Supabase. "
+        "Retorna status individual por servico + status agregado (`green` se todos online)."
     ),
     response_description="Status por servico + status agregado.",
 )
@@ -752,10 +752,12 @@ async def health_radar() -> dict:
     except Exception:
         pass
 
-    # 3. n8n, OpenClaw, Evolution API (via httpx)
+    # 3. n8n, OpenClaw, Evolution API, Chatwoot, Supabase (via httpx)
     n8n_ok = False
     openclaw_ok = False
     evolution_ok = False
+    chatwoot_ok = False
+    supabase_ok = False
 
     async with httpx.AsyncClient(timeout=3.0) as client:
         try:
@@ -779,8 +781,40 @@ async def health_radar() -> dict:
         except Exception:
             pass
 
+        # Chatwoot - checa /api/v1/accounts (pode ser 401 sem auth, mas se responde eh online)
+        if settings.chatwoot_base_url:
+            try:
+                resp = await client.get(
+                    f"{settings.chatwoot_base_url}/api/v1/accounts",
+                    headers={"api_access_token": settings.chatwoot_api_key or ""},
+                )
+                # 200 = OK com auth, 401 = online mas sem auth valida
+                if resp.status_code in (200, 401, 403):
+                    chatwoot_ok = True
+            except Exception:
+                pass
+
+        # Supabase - checa /auth/v1/health (sempre retorna 200 se online)
+        if settings.supabase_url:
+            try:
+                resp = await client.get(f"{settings.supabase_url}/auth/v1/health")
+                if resp.status_code == 200:
+                    supabase_ok = True
+            except Exception:
+                pass
+
     overall_status = (
-        "green" if (db_ok and redis_ok and n8n_ok and openclaw_ok and evolution_ok) else "red"
+        "green"
+        if (
+            db_ok
+            and redis_ok
+            and n8n_ok
+            and openclaw_ok
+            and evolution_ok
+            and chatwoot_ok
+            and supabase_ok
+        )
+        else "red"
     )
 
     return {
@@ -791,6 +825,8 @@ async def health_radar() -> dict:
             "n8n": "online" if n8n_ok else "offline",
             "openclaw": "online" if openclaw_ok else "offline",
             "evolution": "online" if evolution_ok else "offline",
+            "chatwoot": "online" if chatwoot_ok else "offline",
+            "supabase": "online" if supabase_ok else "offline",
         },
     }
 
