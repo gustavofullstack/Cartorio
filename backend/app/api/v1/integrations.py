@@ -310,3 +310,188 @@ async def agent_health() -> AgentHealthResponse:
         llm_provider=llm_status,
         timestamp=_dt.datetime.utcnow().isoformat() + "Z",
     )
+
+
+# ============================================================================
+# Endpoint: POST /integrations/outbox/dispatch  (webhook Supabase -> fila)
+# ============================================================================
+# Adicionado 2026-06-24 (commit f6aac74 criou a trigger; este endpoint processa)
+# - Recebe webhook do Supabase quando INSERT em outbox_messages
+# - Autenticado por X-API-Key (header)
+# - Busca a mensagem do DB, executa handler da queue, atualiza status
+# - Idempotente: se status==done, retorna 200 sem reprocessar
+# - Backoff 5min em falha (next_retry_at)
+
+import datetime as _dt
+import hashlib
+import hmac
+import json
+import logging
+import uuid as _uuid
+
+from fastapi import Header, Request
+from sqlalchemy import select
+
+from app.db import session_scope
+from app.models.outbox_message import OutboxMessage, OutboxQueue, OutboxStatus
+
+_log = logging.getLogger("integrations.outbox")
+
+_VALID_QUEUES = {q.value for q in OutboxQueue}  # {"evolution","chatwoot","telegram","outbox"}
+
+
+async def _dispatch_evolution(payload: dict) -> None:
+    """Envia mensagem via Evolution API (WhatsApp)."""
+    if not settings.evolution_api_key:
+        raise RuntimeError("EVOLUTION_API_KEY nao configurado")
+    number = payload.get("number") or payload.get("to")
+    text = payload.get("text") or payload.get("message")
+    if not number or not text:
+        raise ValueError("payload evolution precisa de 'number' e 'text'")
+    instance = payload.get("instance") or settings.evolution_instance
+    url = f"{settings.evolution_base_url.rstrip('/')}/message/sendText/{instance}"
+    async with httpx.AsyncClient(timeout=15.0) as ac:
+        r = await ac.post(
+            url,
+            headers={"apikey": settings.evolution_api_key, "Content-Type": "application/json"},
+            json={"number": number, "text": text},
+        )
+    if r.status_code >= 400:
+        raise RuntimeError(f"evolution HTTP {r.status_code}: {r.text[:200]}")
+
+
+async def _dispatch_chatwoot(payload: dict) -> None:
+    """Placeholder - integracao Chatwoot sera implementada em Sprint 2."""
+    _log.info("chatwoot dispatch (placeholder): %s", json.dumps(payload)[:200])
+    # TODO Sprint 2: POST %s/api/v1/accounts/%s/conversations ...
+
+
+async def _dispatch_telegram(payload: dict) -> None:
+    """Envia mensagem via Telegram Bot API."""
+    bot_token = payload.get("bot_token") or getattr(settings, "telegram_bot_token", None)
+    chat_id = payload.get("chat_id")
+    text = payload.get("text") or payload.get("message")
+    if not bot_token or not chat_id or not text:
+        raise ValueError("payload telegram precisa de 'bot_token','chat_id','text'")
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    async with httpx.AsyncClient(timeout=15.0) as ac:
+        r = await ac.post(url, json={"chat_id": chat_id, "text": text})
+    if r.status_code >= 400:
+        raise RuntimeError(f"telegram HTTP {r.status_code}: {r.text[:200]}")
+
+
+async def _dispatch_outbox(payload: dict) -> None:
+    """Queue generica - apenas loga (test mode)."""
+    _log.info("outbox (test mode) payload: %s", json.dumps(payload)[:200])
+
+
+_DISPATCHERS = {
+    OutboxQueue.EVOLUTION: _dispatch_evolution,
+    OutboxQueue.CHATWOOT: _dispatch_chatwoot,
+    OutboxQueue.TELEGRAM: _dispatch_telegram,
+    OutboxQueue.OUTBOX: _dispatch_outbox,
+}
+
+
+@integrations_router.post(
+    "/integrations/outbox/dispatch",
+    tags=["meta"],
+    summary="Despachar mensagem do outbox (webhook Supabase)",
+    description=(
+        "Recebe webhook do Supabase quando ha INSERT em `outbox_messages`. "
+        "Autenticado por `X-API-Key` (header). Busca a mensagem do DB, "
+        "executa o handler da queue (`evolution|chatwoot|telegram|outbox`), "
+        "atualiza o status para `done` ou `failed` (com `attempts++`).\n\n"
+        "Payload esperado:\n"
+        "```json\n"
+        '{"event":"INSERT","table":"outbox_messages","outbox_id":"<uuid>",'
+        '"queue":"evolution","payload":{...},"attempts":0}\n'
+        "```\n\n"
+        "Resposta: `{\"status\":\"done|failed\",\"attempts\":N,\"error\":\"...\"}`."
+    ),
+)
+async def outbox_dispatch(
+    request: Request,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+) -> dict:
+    """Webhook Supabase -> processa outbox_message por queue."""
+    # 1. Auth X-API-Key (se settings.cartorio_api_key configurado, valida; senao skip)
+    expected = settings.cartorio_api_key
+    if expected:
+        if not x_api_key or not hmac.compare_digest(x_api_key, expected):
+            raise HTTPException(
+                status_code=401,
+                detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key ausente ou invalida."},
+                headers={"WWW-Authenticate": "ApiKey"},
+            )
+
+    # 2. Parse body
+    try:
+        body = await request.json()
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail={"erro": "BAD_JSON", "mensagem": str(e)[:200]},
+        )
+
+    outbox_id_raw = body.get("outbox_id") or body.get("record", {}).get("id")
+    queue_raw = body.get("queue") or body.get("record", {}).get("queue")
+    payload = body.get("payload") or body.get("record", {}).get("payload") or {}
+    attempts_in = int(body.get("attempts") or 0)
+
+    if not outbox_id_raw or not queue_raw:
+        raise HTTPException(
+            status_code=422,
+            detail={"erro": "MISSING_FIELDS", "mensagem": "outbox_id e queue sao obrigatorios"},
+        )
+    if queue_raw not in _VALID_QUEUES:
+        raise HTTPException(
+            status_code=422,
+            detail={"erro": "INVALID_QUEUE", "queue": queue_raw, "valid": sorted(_VALID_QUEUES)},
+        )
+
+    # 3. Busca outbox_message do DB
+    try:
+        outbox_uuid = _uuid.UUID(str(outbox_id_raw))
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"erro": "INVALID_UUID", "outbox_id": outbox_id_raw})
+
+    with session_scope() as db:
+        msg = db.execute(
+            select(OutboxMessage).where(OutboxMessage.id == outbox_uuid)
+        ).scalar_one_or_none()
+
+        if msg is None:
+            raise HTTPException(
+                status_code=404,
+                detail={"erro": "OUTBOX_NOT_FOUND", "outbox_id": outbox_id_raw},
+            )
+
+        # Idempotencia: ja done? retorna 200 sem reprocessar
+        if msg.status == OutboxStatus.DONE:
+            return {"status": "done", "attempts": msg.attempts, "idempotent": True}
+
+        # Marca processing
+        msg.status = OutboxStatus.PROCESSING
+        db.flush()
+
+        # 4. Despacha por queue
+        queue_enum = OutboxQueue(queue_raw)
+        dispatcher = _DISPATCHERS[queue_enum]
+        try:
+            await dispatcher(payload if isinstance(payload, dict) else {})
+            msg.status = OutboxStatus.DONE
+            msg.attempts = (msg.attempts or 0) + 1
+            msg.last_error = None
+            result = {"status": "done", "attempts": msg.attempts, "error": None}
+        except Exception as e:
+            err = f"{type(e).__name__}: {e}"[:500]
+            _log.exception("outbox dispatch failed id=%s queue=%s", outbox_id_raw, queue_raw)
+            msg.status = OutboxStatus.FAILED
+            msg.attempts = (msg.attempts or 0) + 1
+            msg.last_error = err
+            # next_retry_at: +5min para backoff simples
+            msg.next_retry_at = _dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(minutes=5)
+            result = {"status": "failed", "attempts": msg.attempts, "error": err}
+
+    return result
