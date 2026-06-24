@@ -22,6 +22,7 @@ import hmac
 import json
 import os
 import time
+import logging
 from typing import Annotated, Any
 
 import httpx
@@ -64,6 +65,8 @@ from app.api.v1.integrations import integrations_router  # noqa: E402
 # ============================================================================
 # Router com tags PT-BR para o Swagger/OpenAPI
 # ============================================================================
+
+logger = logging.getLogger(__name__)
 
 api_router = APIRouter()
 api_router.include_router(integrations_router)
@@ -870,7 +873,7 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
             )
             db.add(conversa)
     except Exception:
-        pass
+        logger.exception("Falha ao salvar conversa no banco (best-effort)")
 
     # Save to Redis active session cache (ADR-014 - multi-tenant)
     try:

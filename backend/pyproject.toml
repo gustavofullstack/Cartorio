@@ -18,6 +18,10 @@ dependencies = [
     "opentelemetry-api>=1.42.1",
     "opentelemetry-sdk>=1.42.1",
     "opentelemetry-instrumentation-fastapi>=0.63b1",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-asyncio>=1.4.0",
+    "fakeredis>=2.36.2",
 ]
 
 [project.optional-dependencies]
