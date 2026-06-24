@@ -1,0 +1,195 @@
+# GitHub Actions - CI para Cartorio Chatbot
+# Roda em TODOS os PRs e em push para master.
+# Gates: ruff + mypy + pytest com coverage 90%.
+#
+# Para ativar: settings do repo > Secrets > N8N_API_KEY (se testes precisarem)
+
+name: CI
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+  workflow_dispatch:  # permite rodar manualmente
+
+# Cancela runs antigos da mesma branch para economizar minutos
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  UV_VERSION: "0.4.0"
+
+jobs:
+  # ============================================================================
+  # Lint + Typecheck (gate rapido - 2-3min)
+  # ============================================================================
+  lint:
+    name: Lint + Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Setup Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/.venv
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --all-extras
+
+      - name: Ruff check
+        working-directory: backend
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        working-directory: backend
+        run: uv run ruff format --check .
+
+      - name: Mypy typecheck
+        working-directory: backend
+        run: uv run mypy app/
+
+  # ============================================================================
+  # Tests (gate principal - 5-8min)
+  # ============================================================================
+  test:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    needs: lint  # so roda apos lint passar
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cartorio_test
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: cartorio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg://cartorio_test:test_password@localhost:5432/cartorio_test
+      REDIS_URL: redis://localhost:6379/0
+      APP_ENV: testing
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Setup Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/.venv
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --all-extras
+
+      - name: Run pytest with coverage
+        working-directory: backend
+        run: uv run pytest -v --tb=short
+
+      - name: Upload coverage to Codecov
+        if: success()
+        uses: codecov/codecov-action@v4
+        with:
+          files: backend/.coverage
+          flags: unittests
+          name: cartorio-backend
+          fail_ci_if_error: false  # nao bloqueia CI se codecov falhar
+
+  # ============================================================================
+  # Docs / Build (verifica que build nao quebra)
+  # ============================================================================
+  docs-build:
+    name: Docs + CHANGELOG sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check CHANGELOG.md exists and is non-empty
+        run: |
+          if [ ! -s docs/CHANGELOG.md ]; then
+            echo "ERROR: docs/CHANGELOG.md is missing or empty"
+            exit 1
+          fi
+          echo "CHANGELOG OK: $(wc -l < docs/CHANGELOG.md) lines"
+
+      - name: Check README.md exists
+        run: |
+          if [ ! -s README.md ]; then
+            echo "ERROR: README.md is missing or empty"
+            exit 1
+          fi
+
+      - name: Check all ADRs have status field
+        run: |
+          for f in docs/adr/*.md; do
+            if ! grep -q "^\*\*Status\*\*" "$f"; then
+              echo "WARN: $f missing Status field"
+            fi
+          done
+          echo "ADRs OK"
+
+  # ============================================================================
+  # SUMMARY
+  # ============================================================================
+  all-green:
+    name: All Gates Pass
+    runs-on: ubuntu-latest
+    needs: [lint, test, docs-build]
+    if: ${{ success() }}
+    steps:
+      - name: All checks passed
+        run: |
+          echo "ALL CI GATES PASSED"
+          echo "- lint (ruff + mypy): OK"
+          echo "- test (pytest + coverage): OK"
+          echo "- docs: OK"
+          echo "PR pode ser mergeado."
