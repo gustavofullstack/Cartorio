@@ -442,3 +442,10 @@ async def redoc_html() -> HTMLResponse:
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(ws_router)  # WebSocket /ws/atendimentos (T2.API.T19)
+
+# Telegram bot webhook (CartorioBot)
+# Rota final: /api/v1/telegram/webhook
+# (telegram.py ja tem prefix="/telegram" no router)
+from app.api.v1.telegram import router as telegram_router  # noqa: E402
+
+app.include_router(telegram_router, prefix="/api/v1")
