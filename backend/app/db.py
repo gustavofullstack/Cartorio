@@ -10,9 +10,18 @@ from app.config import settings
 
 _is_sqlite = settings.database_url.startswith("sqlite")
 
-_engine_kwargs: dict = {"pool_pre_ping": True}
+# A15: Connection pool tuning — pool_size=20, max_overflow=10, pre_ping, recycle 1h
+_engine_kwargs: dict = {
+    "pool_pre_ping": True,
+    "pool_recycle": 3600,  # 1h — evita conexao morta em pgBouncer/load balancer
+}
 if not _is_sqlite:
-    _engine_kwargs.update(pool_size=10, max_overflow=20)
+    # Em SQLite (testes) nao ha pool — pool_size e ignorado
+    _engine_kwargs.update(
+        pool_size=20,
+        max_overflow=10,
+        pool_timeout=30,  # 30s para adquirir conexao
+    )
 _engine_kwargs["echo"] = settings.app_env == "development"
 
 engine = create_engine(settings.database_url, **_engine_kwargs)
