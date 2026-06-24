@@ -20,6 +20,7 @@ import datetime
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 from typing import Annotated, Any
@@ -60,6 +61,8 @@ from app.services.pii import hash_pii, scrub
 
 # Integrations router (smoke test OpenCode-Go, etc)
 from app.api.v1.integrations import integrations_router  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # Router com tags PT-BR para o Swagger/OpenAPI
@@ -897,8 +900,8 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
             r_client.rpush(redis_key, bot_msg)
         r_client.expire(redis_key, settings.redis_session_ttl_seconds)
         r_client.close()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error("Failed to save session to Redis cache", exc_info=e)
 
     return {
         "status": "ok",
