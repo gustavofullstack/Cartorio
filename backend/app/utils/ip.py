@@ -25,11 +25,12 @@ def truncate_ip(ip: str | None, mask: int = 24) -> str | None:
 
     Args:
         ip: IP em formato texto (IPv4 ou IPv6). Pode ser None ou invalido.
-        mask: Tamanho do prefixo para IPv4 (default 24). Ignorado para IPv6
-              (sempre /32, justificado em LGPD-by-design acima).
+        mask: Tamanho do prefixo para IPv4 (default 24). Apenas multiplos
+              de 8 sao suportados (8, 16, 24, 32). Nao-multiplos sao
+              arredondados para baixo (defesa). Ignorado para IPv6.
 
     Returns:
-        - IPv4 valido: "192.168.1.0/24" (ultimo octeto zerado + mascara /mask).
+        - IPv4 valido: "192.168.1.0/24" (octetos truncados + mascara /mask).
         - IPv6 valido: "2001:db8::/32" (2 primeiros grupos + ::/32).
         - IP invalido ou None: None (caller trata como 'unknown').
 
@@ -61,17 +62,18 @@ def truncate_ip(ip: str | None, mask: int = 24) -> str | None:
     if "." in ip and ":" not in ip:
         parts = ip.split(".")
         if len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
-            # mask deve estar em [8, 32] razoavel; clamp em 24 para seguranca
-            if mask < 8 or mask > 32:
-                mask = 24
-            # Calcula quantos octetos manter
+            # mask deve estar em [8, 32] E multiplo de 8. Caso contrario,
+            # arredonda para o multiplo de 8 mais proximo abaixo (defesa).
+            if mask < 8:
+                mask = 8
+            elif mask > 32:
+                mask = 32
+            # Arredonda para multiplo de 8 abaixo
+            mask = (mask // 8) * 8
+            if mask == 0:
+                mask = 8
             octets_to_keep = mask // 8
-            if octets_to_keep == 0:
-                octets_to_keep = 1
-            elif octets_to_keep > 4:
-                octets_to_keep = 4
             kept = ".".join(parts[:octets_to_keep])
-            # Completa com .0 ate 4 octetos
             zeros_needed = 4 - octets_to_keep
             return f"{kept}{'.0' * zeros_needed}/{mask}"
         return None
