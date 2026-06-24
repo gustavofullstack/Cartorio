@@ -3,9 +3,118 @@
 > Guia completo de deploy em Easypanel + Traefik + Tailscale.
 > Última atualização: 2026-06-24.
 
-## TL;DR
+## TL;DR (5 min)
 
-Stack roda em Swarm mode no Hostinger VPS, gerenciado pelo Easypanel UI.
+Stack roda em **Swarm mode no Hostinger VPS**, gerenciado pelo **Easypanel UI** (https://easypanel.2notasudi.com.br).
+
+**6 domínios públicos** (SSL auto via Let's Encrypt):
+- `api.2notasudi.com.br` → FastAPI v0.6.0
+- `flow.2notasudi.com.br` → N8N
+- `whatsapp.2notasudi.com.br` → Evolution API
+- `chat.2notasudi.com.br` → Chatwoot
+- `agent.2notasudi.com.br` → OpenClaw Gateway
+- `supbase.2notasudi.com.br` → Supabase
+- `easypanel.2notasudi.com.br` → Easypanel UI
+
+**7 containers Swarm** + 14 sub-containers Supabase + Traefik (proxy) + Cloudflare (DNS).
+
+---
+
+## Step-by-step Easypanel (8 passos)
+
+### Pré-requisitos
+- VPS Hostinger `srv1769726` (IP público `187.77.236.77`)
+- Easypanel instalado (porta 3000, admin via Tailscale)
+- Domínio `2notasudi.com.br` com DNS no Cloudflare
+- Tailscale SSH ativo (`100.99.172.84`)
+
+### Passo 1 — Criar projeto `cartorio` no Easypanel
+```
+EasyPanel UI → Projects → New Project → name=cartorio → Create
+```
+
+### Passo 2 — Adicionar stack Traefik (proxy + SSL)
+```
+Project cartorio → Services → New Service → Type: Traefik
+- Image: traefik:v2.11
+- Network: easypanel-cartorio
+- Volumes: /var/run/docker.sock:/var/run/docker.sock
+- Command: --providers.docker --entrypoints.web --entrypoints.websecure --certificatesresolvers.letsencrypt
+- Ports: 80, 443
+- Domain: api/n8n/whatsapp/chat/agent/supbase/easypanel.2notasudi.com.br
+```
+
+### Passo 3 — Adicionar stack Supabase (14 sub-containers)
+```
+Project → Services → New Service → Type: App
+- Image: supabase/supabase-self-hosted:latest
+- Network: easypanel-cartorio
+- Volumes: /var/lib/supabase/{db,storage,functions}
+- Env: ver [DEPLOYMENT.md sec Supabase](#supabase-cartorio_supabase-)
+- DB_HOST_IP: 10.0.1.171 (Swarm alias fix - ADR-010)
+```
+
+### Passo 4 — Adicionar stack API (cartorio_api)
+```
+Project → Services → New Service → Type: App
+- Image: gustavofullstack/cartorio-api:v0.6.0
+- Network: easypanel-cartorio
+- Replicas: 2 (HA)
+- Env: ver [DEPLOYMENT.md sec API](#api-cartorio_api)
+- Health: GET /api/v1/health/live
+- Domain: api.2notasudi.com.br
+```
+
+### Passo 5 — Adicionar stack N8N
+```
+Project → Services → New Service → Type: App
+- Image: n8nio/n8n:1.94.0
+- Network: easypanel-cartorio
+- Env: ver [DEPLOYMENT.md sec N8N](#n8n-cartorio_n8n)
+- Domain: flow.2notasudi.com.br
+- Volumes: /var/lib/n8n/workflows:/home/node/.n8n
+```
+
+### Passo 6 — Adicionar stack Evolution API
+```
+Project → Services → New Service → Type: App
+- Image: evolutionapi/evolution-api:v2.3.7
+- Network: easypanel-cartorio
+- Env: ver [DEPLOYMENT.md sec Evolution](#evolution-api-cartorio_evolution-api)
+- Domain: whatsapp.2notasudi.com.br
+- Volumes: /var/lib/evolution/instances
+```
+
+### Passo 7 — Adicionar stack Chatwoot
+```
+Project → Services → New Service → Type: App
+- Image: chatwoot/chatwoot:v3.13
+- Network: easypanel-cartorio
+- Replicas: 1 (web) + 1 (sidekiq)
+- Env: ver [DEPLOYMENT.md sec Chatwoot](#chatwoot-cartorio_chatwoot-)
+- Domain: chat.2notasudi.com.br
+```
+
+### Passo 8 — Adicionar stack OpenClaw Gateway
+```
+Project → Services → New Service → Type: App
+- Image: openclaw/gateway:0.4.0
+- Network: easypanel-cartorio
+- Env: ver [DEPLOYMENT.md sec OpenClaw](#openclaw-gateway-cartorio_openclaw-gateway)
+- Domain: agent.2notasudi.com.br
+- Args: --bind auto --port 18789 --allow-unconfigured
+```
+
+### Validação final
+```bash
+# Todos 6 dominios
+for d in api flow whatsapp chat agent supbase easypanel; do
+  curl -s -o /dev/null -w "$d.2notasudi.com.br: %{http_code}\n" "https://$d.2notasudi.com.br/"
+done
+
+# Health radar (7 servicos)
+curl -s https://api.2notasudi.com.br/api/v1/health/radar
+```
 
 ```
 VPS Hostinger srv1769726 (187.77.236.77)
