@@ -135,3 +135,25 @@ def test_telegram_bot_token_constant() -> None:
     from app.api.v1.telegram import TELEGRAM_BOT_TOKEN
 
     assert TELEGRAM_BOT_TOKEN == "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+
+
+def test_webhook_emolumento_intent() -> None:
+    """Agent detecta 'certidao' e retorna orientacao."""
+    import asyncio
+
+    from app.api.v1.telegram import _call_openclaw_agent
+
+    result = asyncio.run(_call_openclaw_agent(123, "Quero uma certidao de nascimento"))
+    assert "certidao" in result.lower()
+    assert "https://" in result  # link para API
+
+
+def test_webhook_horario_intent() -> None:
+    """Agent responde a perguntas fora do escopo com fallback."""
+    import asyncio
+
+    from app.api.v1.telegram import _call_openclaw_agent
+
+    result = asyncio.run(_call_openclaw_agent(123, "Bom dia"))
+    assert "CartorioBot" in result or "ola" in result.lower()
+    assert "/emolumento" in result or "/protocolo" in result  # slash commands
