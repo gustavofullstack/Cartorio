@@ -831,20 +831,31 @@ cartorio-lgpd (mvs_3c841fe) **VOLTOU** (estava OFFLINE no report anterior; era p
 
 ## ERROS N8N (workflow 25 — Metrics Collector)
 
-POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found**. Endpoint NÃO EXISTE. Workflows 21, 26, 30, 31 também com erro — investigar em B0.2.
+POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(workflow 21, 26, 30, 31 também com erro — investigar em B0.2)~~
+
+**B0.1 ✅ DONE 2026-06-24 15:08 BRT** (commit `38679ea feat: add metrics ingestion endpoint for N8N integration`):
+- Endpoint `POST /api/v1/metrics/n8n` criado com auth `X-API-Key` (mesmo gate dos demais endpoints admin)
+- Payload flexivel: canonico (counters/gauges/uptime_seconds/workflows_active/memory_rss_mb), prometheus_raw (parse linha-a-linha), ou unknown (aceito, LGPD-by-design)
+- Cada counter/gauge registrado no `MetricsStore` com label `source=n8n` (isola de metrics internas)
+- Audit log `action=metrics.n8n_received` (LGPD art. 37, sem PII)
+- 14 tests novos (test_metrics_n8n.py): auth, payload canonico, prometheus_raw, unknown, audit log, label source=n8n, helpers
+- Suite completa: 669 passed + 2 skipped + 37 deselected (10 warnings, todos esperados)
+- Ruff check + mypy strict: 0 errors
+- Workflow 25 vai parar de dar 404 a partir do proximo tick (1min)
+- Workflows 21/26/30/31 ainda em investigacao (B0.2)
 
 ## SPRINT 3 — TOP 10 NOVAS TASKS (ver `.harness/PLAN_GIGANTE_2026-06-24.md`)
 
-- **B0.1** POST /api/v1/metrics/n8n (cartorio-dev, 1h)
-- **B0.2** Investigar erros workflows 21/26/30/31 (cartorio-n8n, 2h)
-- **D0.1** Criar 5 tabelas core no schema public Supabase (cartorio-dev, 3h)
-- **D0.2** Supabase Realtime para conversas ativas (cartorio-dev, 2h)
-- **D0.3** pgmq queues (cartorio-dev, 2h)
-- **A0.1** Audit log 100% mutações (cartorio-dev, 4h)
-- **A0.2** DELETE /cliente/{id} (cartorio-dev + cartorio-lgpd review, 3h)
-- **C0.1** Job retenção 5y/até-revogação (cartorio-lgpd, 2h)
-- **B0.3** Ativar n8n-nodes-mcp (#12) + n8n-nodes-chatwoot (#03) (cartorio-n8n, 2h)
-- **G0.1** Rotação credenciais expostas (cartorio-dev, 4h) — OpenCode-Go ✅ FEITO nova key
+- [x] **B0.1** POST /api/v1/metrics/n8n (cartorio-dev, 1h) — ✅ DONE 15:08 BRT commit `38679ea`
+- [ ] **B0.2** Investigar erros workflows 21/26/30/31 (cartorio-n8n, 2h) — owner cartorio-n8n
+- [ ] **D0.1** Criar 5 tabelas core no schema public Supabase (cartorio-dev, 3h)
+- [ ] **D0.2** Supabase Realtime para conversas ativas (cartorio-dev, 2h)
+- [ ] **D0.3** pgmq queues (cartorio-dev, 2h)
+- [ ] **A0.1** Audit log 100% mutações (cartorio-dev, 4h)
+- [ ] **A0.2** DELETE /cliente/{id} (cartorio-dev + cartorio-lgpd review, 3h)
+- [ ] **C0.1** Job retenção 5y/até-revogação (cartorio-lgpd, 2h)
+- [ ] **B0.3** Ativar n8n-nodes-mcp (#12) + n8n-nodes-chatwoot (#03) (cartorio-n8n, 2h)
+- [~] **G0.1** Rotação credenciais expostas (cartorio-dev, 4h) — OpenCode-Go ✅ FEITO nova key; demais NÃO rotacionar (Lesson 68 canônica)
 
 ## LIÇÕES MEMORIZADAS
 

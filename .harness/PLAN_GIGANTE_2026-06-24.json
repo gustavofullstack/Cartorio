@@ -42,7 +42,7 @@
     "D_supabase": {"owner": "cartorio-dev+lgpd", "count": 25, "done": 5, "tasks": "D01..D25"}
   },
   "top10_sprint3": [
-    {"id": "B0.1", "title": "POST /api/v1/metrics/n8n endpoint", "owner": "cartorio-dev", "deps": [], "why": "corrige erro recorrente workflow 25 (1 erro/min)", "estimate_h": 1},
+    {"id": "B0.1", "title": "POST /api/v1/metrics/n8n endpoint", "owner": "cartorio-dev", "deps": [], "why": "corrige erro recorrente workflow 25 (1 erro/min)", "estimate_h": 1, "status": "DONE", "done_at": "2026-06-24T15:08BRT", "commit": "38679ea", "tests": "669 passed + 14 novos", "lint": "ruff OK + mypy strict 0 errors", "lesson": "Lesson 69"},
     {"id": "B0.2", "title": "Investigar erros workflows 21,26,30,31", "owner": "cartorio-n8n", "deps": ["B0.1"], "why": "4 workflows com erro recente, suspeita endpoints faltando", "estimate_h": 2},
     {"id": "D0.1", "title": "Criar 5 tabelas core no schema public Supabase", "owner": "cartorio-dev", "deps": [], "why": "schema public VAZIO, dados vivem em extensões", "estimate_h": 3, "tables": ["cliente","conversa","protocolo","documento","emolumento","audit_log"]},
     {"id": "D0.2", "title": "Supabase Realtime para conversas ativas", "owner": "cartorio-dev", "deps": ["D0.1"], "why": "frontend sem push, polling custoso", "estimate_h": 2},
