@@ -51,6 +51,7 @@ from app.schemas.protocolo import (
     StatusProtocolo,
 )
 from app.schemas.audit import AuditLogFilter, AuditLogListResponse, AuditLogResponse
+from app.schemas.metrics import MetricsResponse
 from app.services.audit import AuditService
 from app.services.audit_context import audit_kwargs
 from app.services.audit_query import get_audit_log_by_id, list_audit_logs
@@ -2652,6 +2653,63 @@ async def get_metrics_prometheus(
 
     output = render_full_prometheus(db)
     return PlainTextResponse(content=output, media_type="text/plain; version=0.0.4; charset=utf-8")
+
+
+@api_router.get(
+    "/metrics",
+    tags=["meta"],
+    summary="Metrics em formato JSON (N8N-friendly)",
+    description=(
+        "Endpoint para N8N workflows e integracoes que precisam consumir "
+        "metrics estruturados (substitui Code nodes quebrados por sandbox "
+        "JS do N8N 2.27 - Lesson 49).\n\n"
+        "Mesmo modelo de auth do `/metrics/prometheus`: NAO requer X-API-Key "
+        "(scrapers e workflows internos nao tem como passar header). "
+        "Aceita header se fornecido (forward-compat com futuras rotas "
+        "protegidas).\n\n"
+        "Metricas expostas (Sprint 4 STREAM 1 - 2026-06-24):\n"
+        "- `clientes_total` (int) - total de clientes ativos no DB\n"
+        "- `protocolos_total` (dict[status, int]) - count de protocolos por status\n"
+        "- `audit_chain_length` (int) - entries no audit log (LGPD art. 37)\n"
+        "- `uptime_seconds` (float) - tempo de vida do processo backend\n"
+        "- `counters` (dict) - contadores in-process (http_requests, pii_blocks)\n"
+        "- `gauges` (dict) - gauges in-process (dlq_depth, etc)\n\n"
+        "LGPD: NAO expoe PII (cpf, rg, telefone, email). Apenas contadores "
+        "agregados e snapshots de contagens de tabela. Pode ser consumido "
+        "publicamente."
+    ),
+    response_model=MetricsResponse,
+    response_description="Metrics estruturados em JSON.",
+    responses={
+        200: {
+            "description": "Metrics em JSON estruturado.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "clientes_total": 42,
+                        "protocolos_total": {"aberto": 5, "concluido": 12},
+                        "audit_chain_length": 1847,
+                        "uptime_seconds": 3600.5,
+                        "counters": {
+                            "cartorio_http_requests_total": {
+                                "endpoint=/api/v1/protocolo/{numero}|method=GET|status=200": 142
+                            }
+                        },
+                        "gauges": {"dlq_depth": {"queue=evolution": 0}},
+                    }
+                }
+            },
+        },
+    },
+)
+async def get_metrics_json(
+    db: Annotated[Session, Depends(get_db)],
+) -> MetricsResponse:
+    """Renderiza metrics em JSON estruturado (N8N-friendly)."""
+    from app.services.metrics import render_metrics_json
+
+    data = render_metrics_json(db)
+    return MetricsResponse(**data)
 # ---------------------------------------------------------------------------
 # DLQ (Dead Letter Queue) - A2 endpoints
 # ---------------------------------------------------------------------------
