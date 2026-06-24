@@ -1,0 +1,151 @@
+{
+  "name": "07 - Pesquisa Satisfacao",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "cron-24h",
+      "name": "Cron 24h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.2notasudi.com.br/api/v1/atendimentos/ultimas-24h",
+        "options": {
+          "timeout": 10000
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "cartorio-api-shared-secret-v1"
+            }
+          ]
+        }
+      },
+      "id": "api-list",
+      "name": "GET atendimentos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "22Q8OUbeZ1bsGnlt",
+          "name": "cartorio-api-bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "instanceName": "cartorio-2notas",
+        "remoteJid": "5511999999999@s.whatsapp.net",
+        "message": "Ola! Seu atendimento no cartorio foi concluido. Avalie de 1 a 5."
+      },
+      "id": "send-wa",
+      "name": "Evolution sendText",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "evolutionApi": {
+          "id": "adbzRn9sEZD7VZbs",
+          "name": "evolution-api-cartorio"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron 24h": {
+      "main": [
+        [
+          {
+            "node": "GET atendimentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET atendimentos": {
+      "main": [
+        [
+          {
+            "node": "Evolution sendText",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "4IS5oiLyHWGhtb8g",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:Cron 24h": {
+      "recurrenceRules": [
+        0
+      ]
+    }
+  },
+  "tags": [
+    {
+      "updatedAt": "2026-06-23T17:32:50.917Z",
+      "createdAt": "2026-06-23T17:32:50.917Z",
+      "id": "qIO7CBdOUpUxN8ZC",
+      "name": "cartorio"
+    },
+    {
+      "updatedAt": "2026-06-23T17:32:51.789Z",
+      "createdAt": "2026-06-23T17:32:51.789Z",
+      "id": "HUYtJw4h0nbPh5eK",
+      "name": "cron"
+    },
+    {
+      "updatedAt": "2026-06-23T17:32:52.791Z",
+      "createdAt": "2026-06-23T17:32:52.791Z",
+      "id": "5r2mHpR7j5lzrEu7",
+      "name": "pesquisa"
+    }
+  ],
+  "meta": {
+    "exportedAt": "2026-06-24T10:26:00-03:00",
+    "exportedBy": "cartorio-n8n-reun",
+    "sessionId": "mvs_3fb892d492d7489caf3c78f1e621ea6d",
+    "workflowId": "D9XJmlJRXZ3lavoa",
+    "lastUpdated": "2026-06-23T23:05:05.350Z",
+    "credentials_used": [
+      "cartorio-api-bearer (httpHeaderAuth)",
+      "evolution-api-cartorio (evolutionApi)"
+    ],
+    "m2_task": "M2.2 - WF #07 Evolution cred (NO-OP: cred already exists and is bound)",
+    "cron_schedule": "every 24h",
+    "note": "Active workflow from N8N instance. runtime error 2026-06-24 04:00:30 (\"Could not get parameter operation\") documented in AUDIT_2026-06-24.md issue C.2",
+    "versionId": "9619d292-cfe6-4b09-91fe-e333a36cb3a5"
+  }
+}
