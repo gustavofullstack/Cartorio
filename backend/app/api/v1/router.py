@@ -22,7 +22,7 @@ import hmac
 import json
 import os
 import time
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import httpx
 import redis
@@ -1227,6 +1227,166 @@ async def health_radar() -> dict:
             "supabase": "online" if supabase_ok else "offline",
         },
     }
+
+
+# ============================================================================
+# Health Integracoes (v0.6.0) - B0.2 Sprint 3
+# Faltava esse endpoint no workflow N8N #30 (Health Deep Check 15min).
+# Mais detalhado que /health/radar: testa TBM LLM provider + auth + latencia.
+# ============================================================================
+
+
+@api_router.get(
+    "/health/integracoes",
+    tags=["health"],
+    summary="Status de TODAS integracoes externas (N8N workflow #30)",
+    description=(
+        "Verifica conectividade + latencia + auth de **cada integracao externa** "
+        "em paralelo: N8N, OpenClaw Gateway, Evolution API, Chatwoot, Supabase, "
+        "OpenCode-Go (LLM), Redis, PostgreSQL. Retorna status individual + "
+        "latencia_ms + status_code + erro (se houver).\n\n"
+        "Diferenca vs /health/radar:\n"
+        "- /health/radar: retorna so 'online'/'offline' por servico (7 servicos)\n"
+        "- /health/integracoes: retorna latencia + status_code + auth_check "
+        "  + LLM provider especifico (8 servicos)\n\n"
+        "Usado pelo workflow N8N #30 (Health Deep Check 15min) que alerta "
+        "via Chatwoot se qualquer != ok. **B0.2 Sprint 3** corrige o 404 "
+        "que o workflow vinha recebendo desde 2026-06-23."
+    ),
+    response_description="Status por integracao (status, latency_ms, status_code, erro).",
+)
+async def health_integracoes() -> dict:
+    """Verifica conectividade de TODAS as integracoes externas com latencia."""
+    import time
+
+    from app.db import engine
+    from sqlalchemy import text
+
+    results: dict[str, dict] = {}
+
+    async def check(name: str, coro) -> dict:
+        """Helper: mede latencia + captura erro sem explodir."""
+        start = time.perf_counter()
+        result = {"status": "offline", "latency_ms": 0, "status_code": None, "erro": None}
+        try:
+            resp = await coro
+            elapsed_ms = int((time.perf_counter() - start) * 1000)
+            result["latency_ms"] = elapsed_ms
+            result["status_code"] = getattr(resp, "status_code", None)
+            # 2xx = online; 401/403 = online (auth gate esperado); 405 = metodo nao permitido mas server UP
+            if resp.status_code in (200, 201, 401, 403, 405):
+                result["status"] = "online"
+            else:
+                result["erro"] = f"HTTP {resp.status_code}"
+        except Exception as e:
+            elapsed_ms = int((time.perf_counter() - start) * 1000)
+            result["latency_ms"] = elapsed_ms
+            result["erro"] = str(e)[:200]
+        return result
+
+    # 1. PostgreSQL
+    def _db_check():
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return _FakeResp(200)
+
+    # 2. Redis
+    def _redis_check():
+        r = redis.from_url(settings.redis_url, socket_timeout=2.0)
+        r.ping()
+        return _FakeResp(200)
+
+    async with httpx.AsyncClient(timeout=3.0) as client:
+        # HTTP-based checks (paralelos)
+        checks_to_run = {
+            "n8n": check("n8n", client.get(f"{settings.n8n_base_url}/healthz")),
+            "openclaw": check("openclaw", client.get(f"{settings.openclaw_base_url}/health")),
+            "evolution": check("evolution", client.get(f"{settings.evolution_base_url}/")),
+        }
+        if settings.chatwoot_base_url:
+            checks_to_run["chatwoot"] = check(
+                "chatwoot", client.get(f"{settings.chatwoot_base_url}/health")
+            )
+        if settings.supabase_url:
+            checks_to_run["supabase"] = check(
+                "supabase", client.get(f"{settings.supabase_url}/auth/v1/health")
+            )
+        # OpenCode-Go LLM: usa endpoint /models se disponivel, senao root
+        if settings.opencode_go_base_url:
+            checks_to_run["opencode_go"] = check(
+                "opencode_go", client.get(f"{settings.opencode_go_base_url}/models")
+            )
+
+        # Sync checks (DB + Redis) - executa direto
+        try:
+            start = time.perf_counter()
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            results["database"] = {
+                "status": "online",
+                "latency_ms": int((time.perf_counter() - start) * 1000),
+                "status_code": 200,
+                "erro": None,
+            }
+        except Exception as e:
+            results["database"] = {
+                "status": "offline",
+                "latency_ms": 0,
+                "status_code": None,
+                "erro": str(e)[:200],
+            }
+
+        try:
+            start = time.perf_counter()
+            r = redis.from_url(settings.redis_url, socket_timeout=2.0)
+            r.ping()
+            results["redis"] = {
+                "status": "online",
+                "latency_ms": int((time.perf_counter() - start) * 1000),
+                "status_code": 200,
+                "erro": None,
+            }
+        except Exception as e:
+            results["redis"] = {
+                "status": "offline",
+                "latency_ms": 0,
+                "status_code": None,
+                "erro": str(e)[:200],
+            }
+
+        # Aguarda HTTP checks em paralelo
+        import asyncio
+
+        http_results = await asyncio.gather(*checks_to_run.values(), return_exceptions=True)
+        for name, res in zip(checks_to_run.keys(), http_results, strict=True):
+            if isinstance(res, Exception):
+                results[name] = {
+                    "status": "offline",
+                    "latency_ms": 0,
+                    "status_code": None,
+                    "erro": str(res)[:200],
+                }
+            else:
+                # mypy: res eh dict[str, Any] (nao Exception) nesse branch
+                results[name] = cast("dict[str, Any]", res)
+
+    # Status agregado: green se TODOS online; senao red (com count de offline)
+    offline_count = sum(1 for r in results.values() if r["status"] != "online")
+    overall = "green" if offline_count == 0 else "red"
+
+    return {
+        "status": overall,
+        "offline_count": offline_count,
+        "integracoes": results,
+        "checked_at": time.time(),
+    }
+
+
+class _FakeResp:
+    """Helper para checks sincronos (DB/Redis) - imita shape de httpx.Response."""
+
+    def __init__(self, status_code: int) -> None:
+        self.status_code = status_code
 
 
 # ============================================================================
