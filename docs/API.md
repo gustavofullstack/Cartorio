@@ -255,3 +255,13 @@ Modified by ZCode/Mavis + Gustavo Almeida — 2026-06-24
 
 - **31 - Telegram Listener (CartorioBot test)** v2 (id `x1N2xJ1WZ83dmxC6`) — bot `@test_cartorio_bot` conectado, E2E HTTP 200 13s, audit chain 384 entries
 - **EVO-IN - Evolution Webhook Inbound** (id `I4LkReuiurPBS9VN`) — recebe 5 eventos da Evolution, repassa para `/api/v1/webhook/evolution`
+
+---
+
+## Documentação OpenAPI
+
+- Swagger UI: https://api.2notasudi.com.br/docs
+- ReDoc: https://api.2notasudi.com.br/redoc
+- OpenAPI JSON: https://api.2notasudi.com.br/openapi.json
+- Postman Collection: [POSTMAN_COLLECTION.json](./POSTMAN_COLLECTION.json) (50 paths, 80+ endpoints)
+- Postman Guide: [POSTMAN_GUIDE.md](./POSTMAN_GUIDE.md)
