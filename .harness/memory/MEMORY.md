@@ -1074,3 +1074,34 @@ Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD A 12/25
 3. Sprint 5-7: 75 tasks docs/N8N/LGPD
 
 Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD C 5/5
+
+---
+
+## 2026-06-24 — Sprint 4 SQUAD B (N8N docs - 5/5 ✅)
+
+### 5 docs/scripts finalizados
+- B1 README: 88d5558 (Indice Mestre 21 WFs + diagrama de fluxos mermaid)
+- B2 diagramas: (5 .mmd + README indice) - renderiza no GitHub
+- B3 CHANGELOG: 07e467e (9 WFs versionados, 3 breaking changes globais)
+- B4 backup: 9170907 (scripts/backup_n8n_workflows.sh, bash, gzip, 7d retencao)
+- B5 migration: (MIGRATION.md + migra-workflows-v1-to-v2.sh bash 6 passos)
+
+### Padroes estabelecidos
+- Mermaid .mmd files em infra/n8n-workflows/diagrams/
+- Semver (major.minor) com breaking changes documentados
+- Scripts bash idempotentes com pre-checks (N8N_API_KEY, jq, curl)
+- Log em /var/log/cartorio-* (separado por operacao)
+- Cron 04:00 BRT para backup diario (low traffic)
+
+### Total Sprint 4
+- 22 tasks finalizadas (12 SQUAD A + 5 SQUAD B + 5 SQUAD C)
+- 10 commits SQUAD C + B + memory + task-bank
+- 624 pytest passing (mantido)
+- 0 mypy / 0 ruff errors (mantido)
+
+### Proximos passos
+1. SQUAD A: A13-A25 (13 tasks backend restantes: dead man's switch, backup, pool, slow log, materialized view, triggers, soft delete, locks, cache, OpenAPI validate, versioning, RFC 7807)
+2. SQUAD B: B6-B15 (N8N polish: error handler global, retry, timeout, metrics, alertes, test runner, templates)
+3. SQUAD D: D1-D25 (LGPD: DPAs + direitos titular + auditoria ANPD)
+
+Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD B 5/5 + SQUAD C 5/5 = 22/100
