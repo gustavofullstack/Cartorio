@@ -63,9 +63,9 @@ jobs:
         working-directory: backend
         run: uv run ruff format --check .
 
-      - name: Mypy typecheck
+      - name: Mypy typecheck (fresh, no cache — Lesson 64)
         working-directory: backend
-        run: uv run mypy app/
+        run: rm -rf .mypy_cache && uv run mypy app/
 
   # ============================================================================
   # Tests (gate principal - 5-8min)
