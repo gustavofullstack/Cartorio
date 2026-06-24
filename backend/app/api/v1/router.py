@@ -51,7 +51,7 @@ from app.schemas.protocolo import (
     StatusProtocolo,
 )
 from app.schemas.audit import AuditLogFilter, AuditLogListResponse, AuditLogResponse
-from app.schemas.metrics import MetricsResponse
+from app.schemas.metrics import MetricsResponse, N8nMetricsIngest, N8nMetricsIngestResponse
 from app.services.audit import AuditService
 from app.services.audit_context import audit_kwargs
 from app.services.audit_query import get_audit_log_by_id, list_audit_logs
@@ -2718,6 +2718,243 @@ async def get_metrics_json(
 
     data = render_metrics_json(db)
     return MetricsResponse(**data)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/metrics/n8n (B0.1 - Sprint 3)
+# Recebe metrics do workflow N8N #25 (Metrics Collector, cron 1min).
+# Corrige 404 que ocorria a cada 1min desde 2026-06-23 (Lesson 55).
+# ---------------------------------------------------------------------------
+
+
+@api_router.post(
+    "/metrics/n8n",
+    tags=["meta"],
+    summary="Ingest metrics do N8N (auth X-API-Key)",
+    description=(
+        "Endpoint de ingestao para o workflow N8N #25 (Metrics Collector). "
+        "Substitui o 404 que o workflow vinha recebendo a cada 1min desde "
+        "2026-06-23 (Lesson 55 - workflow mal projetado pra chamar endpoint "
+        "que nao existia).\n\n"
+        "**Auth**: header `X-API-Key` (mesmo gate dos demais endpoints admin "
+        "do cartorio). Sem auth = 401.\n\n"
+        "**Payload flexivel**: aceita shape canonico (counters/gauges/"
+        "uptime_seconds), texto Prometheus cru (caso Code node do N8N tenha "
+        "passado string direto), ou qualquer JSON (modo `unknown` para "
+        "telemetria). Cada counter/gauges eh registrado no MetricsStore com "
+        "label `source=n8n` pra distinguir de metrics internas do backend.\n\n"
+        "**Audit log**: action=`metrics.n8n_received`, actor_type=`n8n`, "
+        "payload inclui `payload_kind`, contagens ingeridas, tamanho em "
+        "bytes (LGPD art. 37 - logs de acesso).\n\n"
+        "**LGPD**: NAO expoe PII. Soh agregados (uptime, memory counters, "
+        "workflows_active). Audit log registra apenas tamanho + shape."
+    ),
+    status_code=200,
+    response_model=N8nMetricsIngestResponse,
+    responses={
+        200: {"description": "Metrics recebidas e processadas (ou logged como unknown)."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+async def post_metrics_n8n(
+    request: Request,
+    payload: N8nMetricsIngest,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    db: Session = Depends(get_db),
+) -> N8nMetricsIngestResponse:
+    """Ingere metrics vindas do N8N workflow #25.
+
+    Detecta shape do payload e ingere no MetricsStore com label `source=n8n`.
+    Se shape nao bate (desconhecido), loga no audit mas retorna 200 pra nao
+    quebrar o cron (workflow continua funcionando mesmo se a API evoluir).
+    """
+    from app.services.metrics import store as metrics_store
+
+    api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
+
+    # Serializa payload pra log (size, kind)
+    payload_dict = payload.model_dump(exclude_none=True)
+    metrics_size_bytes = len(json.dumps(payload_dict, default=str).encode("utf-8"))
+
+    counters_ingested = 0
+    gauges_ingested = 0
+    payload_kind = "unknown"
+
+    # Detecta shape: canonical > prometheus_raw > unknown
+    has_canonical = bool(
+        payload.counters is not None
+        or payload.gauges is not None
+        or payload.uptime_seconds is not None
+        or payload.workflows_active is not None
+        or payload.memory_rss_mb is not None
+    )
+
+    if has_canonical:
+        payload_kind = "canonical"
+
+        # Counters: {name: {labels_key: int}} -> inc com label source=n8n
+        if payload.counters:
+            for name, buckets in payload.counters.items():
+                for labels_key, value in buckets.items():
+                    # Parse labels_key "k=v|k=v" -> dict
+                    extra_labels = _parse_labels_key_safe(labels_key)
+                    extra_labels["source"] = "n8n"
+                    metrics_store.inc_counter(name, labels=extra_labels, value=value)
+                    counters_ingested += 1
+
+        # Gauges: suporta escalar E dict-com-labels
+        if payload.gauges:
+            for name, val_or_map in payload.gauges.items():
+                if isinstance(val_or_map, dict):
+                    for labels_key, value in val_or_map.items():
+                        extra_labels = _parse_labels_key_safe(labels_key)
+                        extra_labels["source"] = "n8n"
+                        metrics_store.set_gauge(name, float(value), labels=extra_labels)
+                        gauges_ingested += 1
+                else:
+                    metrics_store.set_gauge(
+                        "n8n_gauge", float(val_or_map), labels={"name": name, "source": "n8n"}
+                    )
+                    gauges_ingested += 1
+
+        # Campos canonicos dedicados (facilitam Grafana queries)
+        if payload.uptime_seconds is not None:
+            metrics_store.set_gauge(
+                "n8n_uptime_seconds",
+                float(payload.uptime_seconds),
+                labels={"source": "n8n"},
+            )
+            gauges_ingested += 1
+        if payload.workflows_active is not None:
+            metrics_store.set_gauge(
+                "n8n_workflows_active",
+                float(payload.workflows_active),
+                labels={"source": "n8n"},
+            )
+            gauges_ingested += 1
+        if payload.memory_rss_mb is not None:
+            metrics_store.set_gauge(
+                "n8n_memory_rss_mb",
+                float(payload.memory_rss_mb),
+                labels={"source": "n8n"},
+            )
+            gauges_ingested += 1
+
+    elif isinstance(payload.raw, str) and _looks_like_prometheus(payload.raw):
+        payload_kind = "prometheus_raw"
+        # Parse simples: linhas "metric_name{labels} value"
+        counters_ingested, gauges_ingested = _ingest_prometheus_text(
+            payload.raw, metrics_store
+        )
+
+    else:
+        # unknown: aceito, logado para investigacao. NUNCA 422 (workflow ja roda em prod).
+        payload_kind = "unknown"
+
+    # Audit log LGPD art. 37 (sem PII)
+    AuditService.log(
+        db,
+        actor_id="n8n_workflow_25",
+        actor_type="n8n",
+        action="metrics.n8n_received",
+        resource="metrics:n8n:ingest",
+        payload={
+            "payload_kind": payload_kind,
+            "counters_ingested": counters_ingested,
+            "gauges_ingested": gauges_ingested,
+            "metrics_size_bytes": metrics_size_bytes,
+        },
+        **audit_kwargs(request),
+    )
+
+    return N8nMetricsIngestResponse(
+        received=True,
+        payload_kind=payload_kind,
+        counters_ingested=counters_ingested,
+        gauges_ingested=gauges_ingested,
+        metrics_size_bytes=metrics_size_bytes,
+    )
+
+
+def _parse_labels_key_safe(labels_key: str) -> dict[str, str]:
+    """Parse seguro de 'k=v|k=v' -> dict. Falha silenciosa (sem PII explodir)."""
+    if not labels_key:
+        return {}
+    result: dict[str, str] = {}
+    for item in labels_key.split("|"):
+        if "=" in item:
+            k, v = item.split("=", 1)
+            # LGPD defense: limita tamanho pra nao logar valor PII gigante
+            if len(v) <= 64:
+                result[k] = v
+    return result
+
+
+def _looks_like_prometheus(text: str) -> bool:
+    """Heuristica: linha comeca com nome de metrica + '{' ou numero no final."""
+    if not text:
+        return False
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip() and not ln.startswith("#")]
+    if not lines:
+        return False
+    sample = lines[0]
+    # Formato: metric_name{label="val"} 42.0  OR  metric_name 42.0
+    return " " in sample and not sample.startswith("{")
+
+
+def _ingest_prometheus_text(text: str, metrics_store: Any) -> tuple[int, int]:
+    """Ingere texto Prometheus cru no MetricsStore com label source=n8n.
+
+    Formatos reconhecidos (subset minimo do Prometheus exposition format):
+    - metric_name 42.0
+    - metric_name{label="val"} 42.0
+    - metric_name{label="val",label2="val2"} 42.0
+    - HELP/TYPE comment lines (ignorados)
+
+    Retorna (counters_ingested, gauges_ingested). Heuristica: se o nome termina
+    com _total eh counter; senao eh gauge. Suficiente pra metricas de processo
+    (uptime, memory, requests).
+    """
+    counters = 0
+    gauges = 0
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        # Split em "name{labels} value" ou "name value"
+        if "{" in line and "}" in line:
+            name_part, rest = line.split("{", 1)
+            labels_part, value_part = rest.split("}", 1)
+            name = name_part.strip()
+            # Parse labels
+            labels: dict[str, str] = {"source": "n8n"}
+            for pair in labels_part.split(","):
+                if "=" in pair:
+                    k, v = pair.split("=", 1)
+                    v = v.strip().strip('"').strip("'")
+                    if len(v) <= 64:
+                        labels[k.strip()] = v
+            value_str = value_part.strip().split()[0] if value_part.strip() else "0"
+        else:
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+            name = parts[0]
+            value_str = parts[1]
+            labels = {"source": "n8n"}
+        try:
+            value = float(value_str)
+        except (ValueError, TypeError):
+            continue
+        # Heuristica: _total ou _count => counter
+        if name.endswith("_total") or name.endswith("_count"):
+            metrics_store.inc_counter(name, labels=labels, value=int(value))
+            counters += 1
+        else:
+            metrics_store.set_gauge(name, value, labels=labels)
+            gauges += 1
+    return counters, gauges
 
 
 # ---------------------------------------------------------------------------
