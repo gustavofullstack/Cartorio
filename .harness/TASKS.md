@@ -855,7 +855,31 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 - [ ] **A0.2** DELETE /cliente/{id} (cartorio-dev + cartorio-lgpd review, 3h)
 - [ ] **C0.1** Job retenção 5y/até-revogação (cartorio-lgpd, 2h)
 - [ ] **B0.3** Ativar n8n-nodes-mcp (#12) + n8n-nodes-chatwoot (#03) (cartorio-n8n, 2h)
-- [~] **G0.1** Rotação credenciais expostas (cartorio-dev, 4h) — OpenCode-Go ✅ FEITO nova key; demais NÃO rotacionar (Lesson 68 canônica)
+- [x] **G0.1** Credenciais expostas — DOCUMENTADAS, NÃO rotacionadas (Lesson 68 canônica MAXIMA PRIORIDADE — NUNCA rotacionar)
+  - **Decisão Gustavo 2026-06-24 14:50 BRT + 15:01 BRT (reforço 3x)**: NUNCA rotacionar chaves. Tratar como QUEIMADA-DOCUMENTADA. Únicos com acesso = Gustavo + Pietra, risco aceito.
+  - **Inventário controlado em `.env`** (linhas 119-122 marca seção dedicada): OpenCode-Go (rotacionada 24/06 ✅ única exceção autorizada), N8N JWTs, OpenClaw Token/Password, Redis default, Supabase DB, MiniMax Coding Plan, Telegram Bot, Jules API, Render API/MCP, Linear API
+  - **Mitigação aplicada**: monitoramento de uso anômalo + status aceito (não-rotacionar)
+  - **Se sair do controle** → PAGE Gustavo IMEDIATO via Telegram `6682284055`. NÃO rotacionar sozinho.
+  - **Esta regra SUPERSEDE** qualquer guidance anterior sobre rotação (incluindo Goal #3 antiga do Sprint 3)
+  - **Ref**: Lesson 68 MAXIMA PRIORIDADE em MEMORY.md (3 entradas reforçando)
+
+- [x] **TASK 1 — OpenClaw 1M context via minimax-m3** (Pietra root, 14:55-15:08 BRT)
+  - **Problema**: OpenClaw usava deepseek-v4-flash (131k context) — Gustavo reclamava "modelo 1M context travado em 131k"
+  - **Root cause**: OpenCode Go API = `/zen/go/v1/` (NÃO `/zen/v1/`); minimax-m3 É o modelo 1M no subset Go
+  - **Fix aplicado openclaw.json no VPS**:
+    - minimax-m3 PRIMARY (contextWindow=1048576 = 1M, thinking adaptive, cost $0)
+    - deepseek-v4-flash + minimax-m2.7 como fallback (131k)
+    - REMOVIDO anthropic-claude-sonnet-4.5 (NOT SUPPORTED em `/zen/go/v1/`)
+    - gateway.mode = local
+    - commands.ownerAllowFrom = ["telegram:6682284055"] (Gustavo)
+  - **Backup criado**: `openclaw.json.bak-pre-m3-fix-20260624-180200` (3824 bytes)
+  - **Container OpenClaw recriado**: `cartorio_openclaw-gateway.1.g6nq4icp2shxtur4flnrjshdr` Up 2 min (healthy)
+  - **Health check**: `GET /health` = `{"ok":true,"status":"live"}` ✅
+  - **`doctor --fix` regeneração**: ✅ VALIDADO 15:10 BRT — preserva minimax-m3 + fallback (config 4021 bytes, regenerou bak 2002 bytes sem quebrar)
+  - **Thinking mode API testado**: `{"type":"adaptive"}` (NÃO "enabled" — esse dá erro "invalid thinking.type")
+  - **Custo**: $0 (minimax-m3 free tier)
+  - **Smoke test real chat**: pendente — Gustavo via Control UI ou Telegram bot @test_cartorio_bot (manual, brief授权)
+  - **Ref**: Lesson 67 em MEMORY.md (cross-project pattern OpenCode Go + OpenClaw config schema)
 
 ## LIÇÕES MEMORIZADAS
 
