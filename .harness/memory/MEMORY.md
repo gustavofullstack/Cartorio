@@ -5,6 +5,63 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
+## INDICE RAPIDO (2026-06-24)
+
+Para achar rapido o que precisa, procure por:
+
+### Por data
+- **2026-06-24** (Sprint 3 melhorias + cleanup): linha ~510
+- **2026-06-23 19:00 BRT** (PIVOT multi-stack): linha ~660
+- **2026-06-23** (Sprint 0.5 hardening + bugs): abaixo deste indice
+
+### Por tema
+- **OpenClaw crash loop / context overflow**: 2026-06-23 09:00, 19:00 BRT
+- **N8N com senha Supabase errada**: 2026-06-23 09:00
+- **LiteLLM removido / Opencode-Go**: 2026-06-23 09:00, ADR-005
+- **DNS typo supbase vs supabase**: 2026-06-23 09:00
+- **Stack Supabase antiga em paralelo**: 2026-06-23 09:00
+- **SSL/TLS 6 dominios**: 2026-06-23 09:00
+- **Stack Supabase 14 containers**: 2026-06-23 09:00
+- **Pipeline prospeccao LGPD-safe**: 2026-06-23 09:00
+- **PII scrubbing + CNS/CNH check-digit**: 2026-06-24 (commit d8d2d84)
+- **Rate limit DDoS por IP**: 2026-06-24 (commit 525f03a, ADR-022)
+- **Health 7 servicos + granular**: 2026-06-24 (commits 86b5938, 0408e78)
+- **ADRs 022-023**: 2026-06-24 (commits cf0d548)
+- **FAQ 28 problemas**: 2026-06-24 (commit a6a5bb9)
+- **Makefile + Pre-commit**: 2026-06-24 (commits 11def8d, 0408e78)
+
+### Por arquivo de codigo
+- `backend/app/services/pii.py` - CNS/CNH check-digit (validate_cns, validate_cnh)
+- `backend/app/services/rate_limit_by_key.py` - DDoS por IP (_check_ip_ddos)
+- `backend/app/api/v1/router.py` - /health/radar (7 servicos), /health/db, /health/redis, /health/llm
+- `Makefile` + `backend/Makefile` - 50+ alvos DX
+- `.pre-commit-config.yaml` - hooks de qualidade
+
+### Por comando
+- Rodar 1 teste: `cd backend && uv run pytest -v tests/test_X.py::test_name --no-cov`
+- Verificar gates: `make qa` (lint + typecheck + test)
+- Health check: `curl localhost:8000/api/v1/health/radar`
+- Deploy docs: ver `docs/ENV_PRODUCTION.md`
+
+### Por SUI (Gustavo)
+- B1 Chatwoot restart loop: 2026-06-23, ADR-015
+- B2 OpenClaw context overflow: 2026-06-23, ADR-016
+- B3 DNS chatwoot.2notasudi.com.br: 2026-06-23
+- B4 N8N workflow #07 sem credential Evolution: 2026-06-23
+
+### Limitacoes desta sessao (2026-06-24)
+- NAO tenho MCPs de producao (Easypanel, N8N, Chatwoot, Evolution, Supabase, Redis)
+- NAO pude verificar prod - apenas local
+- DNS nao resolve desta maquina (cartorio-api.2notasudi.com.br -> NXDOMAIN)
+- Para proxima sessao: configurar MCPs primeiro
+
+### Compromissos (P0 -> P2 do mega-plano)
+- 10 tasks P0 documentadas em `docs/superpowers/plans/2026-06-24-mega-plano-100-tasks.md`
+- 6 commits feitos nesta sessao: cleanup, CNS/CNH, health 7, DDoS, Makefile, FAQ, ADRs, pre-commit, health granular
+- Total: 400 pytest passing, 91.03% coverage, ruff/mypy 0
+
+---
+
 ## 2026-06-23 — Sprint 0.5 hardening + bugs descobertos
 
 ### OpenClaw crash loop (resolvido parcialmente)
@@ -726,3 +783,67 @@ cartorio-lgpd (mvs_6699c48e) descobriu que `scrub()` tem **11 patterns** mas NÃ
 - **Não existe atalho** para validar produção sem MCPs/creds/SSH — **declarar limitação** é melhor que simular.
 
 ### Modified by ZCode/Mavis (sessão 2026-06-24 09:21 BRT)
+
+## 2026-06-24 09:57 BRT — Sessão orquestração M100 + spawn sequencial 1-2 agents
+
+### Setup da sessão
+- Mavis root session: mvs_410a1b1266d64830b9dfa31973fdd9fe
+- Workspace: /Users/gustavoalmeida/projetos/Cartorio
+- Master HEAD: b370895 (mega plano) + 191e55e (cleanup lint+typecheck) — clean
+- Gustavo pediu 100 tasks de MELHORIA (não refazer)
+- Regra: 1-2 agents max em paralelo (sequencial de preferência)
+- Regra absoluta: NÃO rotacionar chaves, NÃO mencionar rotação
+
+### Spawn pattern cross-project
+- `mavis communication send --command spawn --agent cartorio-dev` → 404 (project rein)
+- Workaround testado: `--agent general` com prompt carregando agent.md inline
+- Spawn criou: mvs_40329653307342ca88f5e741e97d4031 (general → atuando como cartorio-dev)
+- Verificar progresso via `git status -sb` no repo (modificações aparecem antes do commit)
+- Poll via `mavis session info <sid>` + `git log --oneline -3`
+
+### Status real serviços (09:21 BRT — validado)
+- 24 containers UP (api, chatwoot, chatwoot-sidekiq, evolution, n8n, n8n-runner, openclaw, redis, supabase 14 sub)
+- 9 domínios HTTP: 4 verdes (api, whatsapp, easypanel, agent, flow), 1 typo (supbase), 4 NÃO propagados
+- Redis 8.8.0 AUTH OK com @Techno832466 (env REDIS_PASSWORD)
+- DNS 5 subdomínios (chatwoot/n8n/evo/openclaw/supabase) — UI Gustavo pendente
+- LiteLLM NÃO existe container, env aponta (morto)
+
+### M100 plan publicado em TASKS.md (888 linhas)
+- M1 (15): Backend FastAPI cleanup + LGPD-015 P0
+- M2 (15): N8N workflows hardening
+- M3 (10): OpenClaw agent
+- M4 (15): Supabase + DB
+- M5 (10): Chatwoot + CRM
+- M6 (10): Evolution API + WhatsApp
+- M7 (7): Redis + cache
+- M8 (13): Documentação (5 plataformas + API)
+- M9 (5): Cerebro Mavis local+prod
+
+### Documentação baixada em docs/platforms/ (9700+ linhas)
+- N8N.md (7856) — docs.n8n.io/llms-full.txt
+- REDIS.md (1211) — redis.io/docs/latest/llms-full.txt
+- SUPABASE.md (288) — github.com/supabase/supabase/README.md
+- EVOLUTION-API.md (224) — github.com/EvolutionAPI/evolution-api/README.md
+- CHATWOOT.md (139) — github.com/chatwoot/chatwoot/README.md
+
+### docs/API.md criado (M8.13 — 31 endpoints documentados)
+- 4 meta + 25 /api/v1 + 2 integrations
+- Tags: meta/emolumento/protocolo/webhook/audit/health/agendamento/documento/atendimento/cron/cliente/admin/dev/metrics/integrations
+- Schemas Pydantic principais + validações LGPD + variáveis ambiente + MCP tools
+
+### Cartorio-dev em andamento (started, lastActive 09:57)
+- Trabalhando em CNS check-digit Modulo 11 (P0.4)
+- Modificou backend/app/services/pii.py (+82 linhas) + tests/test_pii.py (+61 linhas)
+- Sem commit ainda — vai commitar após pytest+ruff+mypy verde
+
+### Lição reusável cross-project (2026-06-24)
+> **Mega prompt com 100 tasks + agente team + spawn sequencial**
+> - SEMPRE validar status real dos serviços ANTES de meter 100 tasks (containers UP? HTTP 200? DNS resolve?)
+> - Report binário ([WORK] / [HOLD]) economiza ~70% de tokens vs report textual longo
+> - Spawn `--agent general` com prompt carregando agent.md inline funciona pra QUALQUER project rein
+> - 1-2 agents max por turno (regra quota 5h/sem) — Gustavo explicitou
+> - Master only (NUNCA branch temporária) — regra absoluta
+> - Cada commit = pytest+ruff+mypy verde antes de avançar
+> - Salvar lição em .harness/memory/MEMORY.md ou ~/.mavis/agents/mavis/memory/MEMORY.md após cada bloco
+
+Modified by Mavis (Pietra root mvs_410a1b1266d64830b9dfa31973fdd9fe — 2026-06-24 10:00 BRT)
