@@ -60,6 +60,7 @@ def test_postman_collection(client):
 @patch("redis.from_url")
 @patch("httpx.AsyncClient.get")
 def test_health_radar_all_green(mock_get, mock_redis_from_url, mock_db_connect, client):
+    from app.config import settings
     # Mock DB connection
     mock_conn = MagicMock()
     mock_db_connect.return_value.__enter__.return_value = mock_conn
@@ -69,10 +70,14 @@ def test_health_radar_all_green(mock_get, mock_redis_from_url, mock_db_connect, 
     mock_r.ping.return_value = True
     mock_redis_from_url.return_value = mock_r
 
-    # Mock HTTPX gets for n8n, openclaw, evolution API
+    # Mock HTTPX gets for n8n, openclaw, evolution API, chatwoot, supabase
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_get.return_value = mock_response
+
+    # ensure the settings for chatwoot and supabase are set to hit the code paths
+    settings.chatwoot_base_url = "http://chatwoot"
+    settings.supabase_url = "http://supabase"
 
     resp = client.get("/api/v1/health/radar")
     assert resp.status_code == 200
@@ -83,6 +88,8 @@ def test_health_radar_all_green(mock_get, mock_redis_from_url, mock_db_connect, 
     assert data["services"]["n8n"] == "online"
     assert data["services"]["openclaw"] == "online"
     assert data["services"]["evolution"] == "online"
+    assert data["services"]["chatwoot"] == "online"
+    assert data["services"]["supabase"] == "online"
 
 
 @patch("app.db.engine.connect")
