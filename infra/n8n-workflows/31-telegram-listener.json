@@ -86,10 +86,10 @@
         "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            {"name": "chat_id", "value": "={{ $json.body.message.chat.id }}"},
+            {"name": "chat_id", "value": "={{ $('Extract Telegram fields').first().json.chat_id }}"},
             {"name": "text", "value": "={{ $json.response }}"},
             {"name": "parse_mode", "value": "Markdown"},
-            {"name": "reply_to_message_id", "value": "={{ $json.body.message.message_id }}"}
+            {"name": "reply_to_message_id", "value": "={{ $('Extract Telegram fields').first().json.message_id }}"}
           ]
         },
         "options": {"timeout": 15000}
