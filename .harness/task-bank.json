@@ -7,12 +7,46 @@
   "stats": {
     "total_tasks": 100,
     "p0_done": 3,
+    "p0_done_commits": ["d8d2d84 (CNS+CNH check-digit)", "86b5938 (health 7 servicos)"],
     "p0_total": 10,
     "p1_done": 1,
+    "p1_done_commits": ["653e15d (GitHub Actions CI)"],
     "p1_total": 30,
-    "p2_done": 12,
+    "p2_done": 17,
+    "p2_done_commits": [
+      "525f03a (DDoS rate limit por IP)",
+      "0408e78 (health granular + pre-commit)",
+      "9cf0d75 (correlation ID W3C)",
+      "3a9112a (onboarding)",
+      "1eb58f6 (scripts uteis)",
+      "e2db6e9 (runbook 10 cenarios)",
+      "a6a5bb9 (FAQ 28 problemas)",
+      "11def8d (Makefile 50+ alvos)",
+      "0289a97 (data flow PII)",
+      "506f96d (editorconfig)",
+      "41fe350 (PR template)",
+      "36776f5 (C4 diagrams)",
+      "3ae3228 (API Quick Reference)",
+      "cba0b8a (ADRs README)",
+      "3911a23 (task-bank.json)",
+      "6a64c5d/39962d5/c4de7f7/376013e/2ad84bc (5 platform docs)"
+    ],
+    "sessao_3plus_commits": [
+      "db9c998 (Telegram endpoint + 9 tests + OpenClaw AGENTS.md + TELEGRAM.md)",
+      "68e141d (MEMORY SESSAO 3+)",
+      "4dcb209 (PII bench - p99 0.021ms, 200x melhor que SLA 5ms)"
+    ],
     "p2_total": 60,
-    "completion_pct": 16
+    "completion_pct": 21,
+    "key_metrics": {
+      "pytest_passing": 472,
+      "coverage_pct": 90,
+      "ruff_errors": 0,
+      "mypy_errors": 0,
+      "commits_session": 27,
+      "platform_docs": 5,
+      "adrs": 24
+    }
   },
   "p0": [
     {"id": "P0.1", "title": "DNS chatwoot.2notasudi.com.br", "owner": "SUI", "status": "pending"},
