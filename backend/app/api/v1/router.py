@@ -58,6 +58,11 @@ from app.services.audit_query import get_audit_log_by_id, list_audit_logs
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
 
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 # Integrations router (smoke test OpenCode-Go, etc)
 from app.api.v1.integrations import integrations_router  # noqa: E402
 
@@ -1142,8 +1147,8 @@ async def health_radar() -> dict:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
             db_ok = True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Health check falhou para DB: {e}")
 
     # 2. Redis
     redis_ok = False
@@ -1151,8 +1156,8 @@ async def health_radar() -> dict:
         r = redis.from_url(settings.redis_url, socket_timeout=2.0)
         r.ping()
         redis_ok = True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Health check falhou para Redis: {e}")
 
     # 3. n8n, OpenClaw, Evolution API, Chatwoot, Supabase (via httpx)
     n8n_ok = False
@@ -1166,22 +1171,22 @@ async def health_radar() -> dict:
             resp = await client.get(f"{settings.n8n_base_url}/healthz")
             if resp.status_code == 200:
                 n8n_ok = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Health check falhou para n8n: {e}")
 
         try:
             resp = await client.get(f"{settings.openclaw_base_url}/health")
             if resp.status_code == 200:
                 openclaw_ok = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Health check falhou para OpenClaw: {e}")
 
         try:
             resp = await client.get(f"{settings.evolution_base_url}/")
             if resp.status_code == 200:
                 evolution_ok = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Health check falhou para Evolution API: {e}")
 
         # Chatwoot - checa /health diretamente (retorna 200 {"status": "woot"})
         if settings.chatwoot_base_url:
@@ -1189,8 +1194,8 @@ async def health_radar() -> dict:
                 resp = await client.get(f"{settings.chatwoot_base_url}/health")
                 if resp.status_code in (200, 201, 401, 403):
                     chatwoot_ok = True
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Health check falhou para Chatwoot: {e}")
 
         # Supabase - checa /auth/v1/health (pode retornar 200, 401 ou 405 via Kong auth gate se acessado de fora)
         if settings.supabase_url:
@@ -1198,8 +1203,8 @@ async def health_radar() -> dict:
                 resp = await client.get(f"{settings.supabase_url}/auth/v1/health")
                 if resp.status_code in (200, 401, 405):
                     supabase_ok = True
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Health check falhou para Supabase: {e}")
 
     overall_status = (
         "green"
