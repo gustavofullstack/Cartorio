@@ -1,0 +1,7 @@
+flowchart LR
+    A([Webhook POST /criar-protocolo]) --> B[PII Scrub + LGPD Check]
+    B --> C{LGPD bloqueado?}
+    C -->|sim| D[Respond LGPD_BLOCKED]
+    C -->|nao| E[POST /protocolo API]
+    E --> F[Audit Log]
+    F --> G[Respond Created]

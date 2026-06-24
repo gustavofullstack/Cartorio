@@ -1,0 +1,5 @@
+flowchart LR
+    A([Webhook POST /handoff-human]) --> B[Normalizar Payload]
+    B --> C[Chatwoot Conversation]
+    C --> D[Chatwoot sendMessage]
+    D --> E[Respond Handoff]

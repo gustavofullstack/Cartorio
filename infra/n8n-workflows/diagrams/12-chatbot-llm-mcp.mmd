@@ -1,0 +1,6 @@
+flowchart LR
+    A([Webhook Evolution POST /chatbot-llm]) --> B[Extract Message]
+    B --> C[PII Scrub]
+    C --> D[MCP cartorio_chatbot_responder]
+    D --> E[Decide Response]
+    E --> F[Respond Evolution]

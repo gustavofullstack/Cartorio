@@ -1,0 +1,6 @@
+flowchart LR
+    A([Webhook POST /consulta-emolumento]) --> B[PII Scrub]
+    B --> C[Parse Tipo Documento]
+    C --> D[API Emolumento<br/>GET /calcular]
+    D --> E[Audit Log]
+    E --> F[Respond JSON]

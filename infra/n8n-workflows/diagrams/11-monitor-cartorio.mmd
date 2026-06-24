@@ -1,0 +1,11 @@
+flowchart LR
+    A([Cron 5min + Webhook]) --> B[Check API]
+    A --> C[Check Evolution]
+    A --> D[Check OpenClaw]
+    A --> E[Check Supabase]
+    A --> F[Check Chatwoot]
+    A --> G[Check Redis]
+    B & C & D & E & F & G --> H[Combine Results]
+    H --> I{Has outage?}
+    I -->|sim| J[Alerta Chatwoot]
+    I -->|nao| K[Log OK]
