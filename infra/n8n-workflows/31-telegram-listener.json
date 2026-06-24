@@ -102,7 +102,7 @@
     },
     {
       "parameters": {
-        "method": "GET",
+        "method": "POST",
         "url": "https://api.2notasudi.com.br/api/v1/audit/verify",
         "sendHeaders": true,
         "headerParameters": {
@@ -110,6 +110,9 @@
             {"name": "apikey", "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"}
           ]
         },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
         "options": {"timeout": 10000}
       },
       "id": "audit-log",
