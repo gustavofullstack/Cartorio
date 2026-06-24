@@ -9,8 +9,6 @@ Cobre:
 
 from __future__ import annotations
 
-import time
-from unittest.mock import patch
 
 import pytest
 
@@ -31,7 +29,6 @@ def fresh_store():
 
 def test_counter_pii_blocked_incrementa_em_cada_scrub(fresh_store):
     """Cada chamada a scrub() com PII detectado incrementa o counter."""
-    from app.services.pii import scrub
 
     # Aplica scrub que detecta CPF
     fresh_store.inc_counter(

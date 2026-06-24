@@ -9,13 +9,16 @@ Por que Prometheus e nao vendor:
 - Sem lock-in (vendor migracao = 1 dia)
 - Sem dados enviados pra terceiros
 
-Metricas expostas (basico, suficiente pra cartorio):
+Metricas expostas (A1+A2):
 - cartorio_http_requests_total{endpoint, method, status} - counter
 - cartorio_http_request_duration_seconds{endpoint, method} - histogram
 - cartorio_protocolos_total{status} - gauge (snapshot)
 - cartorio_clientes_total - gauge
 - cartorio_audit_chain_length - gauge
-- cartorio_pii_blocks_total{type} - counter
+- cartorio_pii_blocks_total{type} - counter (legacy)
+- pii_blocked_total{tipo_scrub, channel} - counter (A2 LGPD)
+- scrub_latency_ms{tipo_scrub, result} - summary (A2 LGPD)
+- dlq_depth{queue} - gauge (A2 LGPD)
 - cartorio_uptime_seconds - gauge
 """
 from __future__ import annotations
@@ -31,63 +34,162 @@ from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
 
 
-# Storage em-memoria de metrics (sobrevive enquanto processo roda).
-# Para metricas persistentes, use Prometheus Pushgateway ou counter table.
 class MetricsStore:
-    """Singleton in-memory para metrics (reset a cada restart do processo)."""
+    """Singleton in-memory para metrics (reset a cada restart do processo).
+
+    Cardinalidade de labels eh controlada via enums:
+    - tipo_scrub: cpf | rg | telefone | email | cns | cnh | none
+    - channel:    whatsapp | telegram | web | api
+    - result:     blocked | allowed
+    - queue:      evolution | chatwoot | telegram | outbox
+    SEM session_id / cpf_value / user_email / request_id (explodem cardinalidade
+    OU vazam PII).
+    """
 
     def __init__(self) -> None:
-        # counters: {metric_name: {labels_hash: value}}
+        # counters: {metric_name: {labels_key: value}}
         self.counters: dict[str, dict[str, int]] = {}
-        # histograms: {metric_name: {labels_hash: [bucket, count]}}
+        # histograms: {metric_name: {labels_key: [observations]}}
         self.histograms: dict[str, dict[str, list[float]]] = {}
-        # gauges: {metric_name: value}
-        self.gauges: dict[str, float] = {}
+        # gauges: {metric_name: scalar OR {labels_key: value}}
+        self.gauges: dict[str, Any] = {}
+        # registry para idempotencia do factory (chave -> handle)
+        self._metric_registry: dict[str, _MetricHandle] = {}
         self._started_at: float = time.time()
 
-    def inc_counter(self, name: str, labels: dict[str, str] | None = None, value: int = 1) -> None:
+    def inc_counter(
+        self, name: str, labels: dict[str, str] | None = None, value: int = 1
+    ) -> None:
         key = self._labels_key(labels)
         self.counters.setdefault(name, {}).setdefault(key, 0)
         self.counters[name][key] += value
 
-    def observe_histogram(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
+    def observe_histogram(
+        self, name: str, value: float, labels: dict[str, str] | None = None
+    ) -> None:
         key = self._labels_key(labels)
         self.histograms.setdefault(name, {}).setdefault(key, [])
         self.histograms[name][key].append(value)
 
-    def set_gauge(self, name: str, value: float) -> None:
-        self.gauges[name] = value
+    def set_gauge(
+        self, name: str, value: float, labels: dict[str, str] | None = None
+    ) -> None:
+        """Store gauge. With labels -> dict[labels_key, value]. Without -> scalar."""
+        if labels:
+            key = self._labels_key(labels)
+            existing = self.gauges.get(name)
+            if not isinstance(existing, dict):
+                old = existing
+                self.gauges[name] = {}
+                if old is not None:
+                    self.gauges[name][""] = old
+            self.gauges[name][key] = value
+        else:
+            self.gauges[name] = value
+
+    def _make_metric_or_skip_test(self, name: str, metric_type: str) -> "_MetricHandle":
+        """Factory idempotente (A2 best practice).
+
+        - Mesmo nome+type -> retorna mesma referencia (idempotente).
+        - Nome diferente -> retorna nova referencia (nao colapsa).
+        """
+        if metric_type not in ("counter", "histogram", "gauge"):
+            raise ValueError(f"metric_type invalido: {metric_type!r}")
+        registry_key = f"{metric_type}:{name}"
+        existing = self._metric_registry.get(registry_key)
+        if existing is None:
+            handle = _MetricHandle(name=name, metric_type=metric_type, store=self)
+            self._metric_registry[registry_key] = handle
+            return handle
+        return existing
+
+    def track_scrub_latency(
+        self, tipo_scrub: str, result: str, duration_ms: float
+    ) -> None:
+        """Helper A2: histogram scrub_latency_ms{tipo_scrub,result}."""
+        self._make_metric_or_skip_test("scrub_latency_ms", "histogram")
+        self.observe_histogram(
+            "scrub_latency_ms",
+            duration_ms,
+            labels={"tipo_scrub": tipo_scrub, "result": result},
+        )
+
+    def inc_pii_blocked(self, tipo_scrub: str, channel: str) -> None:
+        """Helper A2: counter pii_blocked_total{tipo_scrub,channel}."""
+        self._make_metric_or_skip_test("pii_blocked_total", "counter")
+        self.inc_counter(
+            "pii_blocked_total",
+            labels={"tipo_scrub": tipo_scrub, "channel": channel},
+        )
+
+    def set_dlq_depth(self, queue: str, depth: int) -> None:
+        """Helper A2: gauge dlq_depth{queue}."""
+        self._make_metric_or_skip_test("dlq_depth", "gauge")
+        self.set_gauge("dlq_depth", float(depth), labels={"queue": queue})
 
     def _labels_key(self, labels: dict[str, str] | None) -> str:
         if not labels:
             return ""
         return "|".join(f"{k}={v}" for k, v in sorted(labels.items()))
 
+    def _parse_labels_key(self, key: str) -> dict[str, str]:
+        if not key:
+            return {}
+        return dict(item.split("=", 1) for item in key.split("|") if "=" in item)
+
+    def _labels_render(self, labels: dict[str, str] | None) -> str:
+        """Render labels no formato Prometheus text (key="value",...)."""
+        if not labels:
+            return ""
+        return ",".join(f'{k}="{v}"' for k, v in sorted(labels.items()))
+
     def render_prometheus(self) -> str:
-        """Renderiza tudo no formato text/plain do Prometheus."""
+        """Renderiza tudo no formato text/plain do Prometheus (version 0.0.4)."""
         lines: list[str] = []
+
         # Counters
-        counters: dict[str, dict[str, int]] = cast("dict[str, dict[str, int]]", self.counters)
+        counters: dict[str, dict[str, int]] = cast(
+            "dict[str, dict[str, int]]", self.counters
+        )
         for name, buckets in counters.items():  # type: ignore[assignment]
             lines.append(f"# TYPE {name} counter")
             for key, value in buckets.items():
-                label_str = f"{{{key}}}" if key else ""
+                label_dict = self._parse_labels_key(key)
+                label_str = (
+                    "{" + self._labels_render(label_dict) + "}" if label_dict else ""
+                )
                 lines.append(f"{name}{label_str} {int(value)}")
-        # Histograms (formato simplificado: so soma + count + sum)
+
+        # Histograms (formato simplificado: count + sum, suficiente p/ cartorio)
         histograms: dict[str, dict[str, list[float]]] = cast(
             "dict[str, dict[str, list[float]]]", self.histograms
         )
         for name, buckets in histograms.items():  # type: ignore[assignment]
             lines.append(f"# TYPE {name} summary")
             for key, values in buckets.items():  # type: ignore[assignment]
-                label_str = f"{{{key}}}" if key else ""
+                label_dict = self._parse_labels_key(key)
+                label_str = (
+                    "{" + self._labels_render(label_dict) + "}" if label_dict else ""
+                )
                 lines.append(f"{name}_count{label_str} {len(values)}")  # type: ignore[arg-type]
-                lines.append(f"{name}_sum{label_str} {sum(values):.6f}")  # type: ignore[call-overload,arg-type]
-        # Gauges
-        gauges: dict[str, float] = cast("dict[str, float]", self.gauges)
-        for name, value in gauges.items():  # type: ignore[assignment]
+                lines.append(
+                    f"{name}_sum{label_str} {sum(values):.6f}"  # type: ignore[call-overload,arg-type]
+                )
+
+        # Gauges (suporta escalar E dict-com-labels)
+        for name, val_or_map in self.gauges.items():  # type: ignore[assignment]
             lines.append(f"# TYPE {name} gauge")
-            lines.append(f"{name} {value:.6f}")
+            if isinstance(val_or_map, dict):
+                for key, value in val_or_map.items():  # type: ignore[union-attr]
+                    label_dict = self._parse_labels_key(key)
+                    label_str = (
+                        "{" + self._labels_render(label_dict) + "}"
+                        if label_dict
+                        else ""
+                    )
+                    lines.append(f"{name}{label_str} {float(value):.6f}")
+            else:
+                lines.append(f"{name} {float(val_or_map):.6f}")  # type: ignore[arg-type]
 
         # Uptime sempre
         lines.append("# TYPE cartorio_uptime_seconds gauge")
@@ -99,24 +201,40 @@ class MetricsStore:
 store = MetricsStore()
 
 
-def collect_db_metrics(db: Session) -> dict[str, Any]:
-    """Coleta metrics do DB (gauge snapshot).
+class _MetricHandle:
+    """Handle leve retornado por _make_metric_or_skip_test.
 
-    Chamado pelo endpoint /metrics/prometheus. Custoso, entao so roda quando
-    scrapado (nao em todo request).
+    - Mesmo nome+type -> mesma instancia (idempotente via _metric_registry).
+    - Nome diferente -> instancia nova (handles distintos).
+    Usado apenas como token de identidade; metodos de fato ficam no store pai.
     """
+
+    __slots__ = ("name", "metric_type", "store", "_id")
+
+    _counter: int = 0
+
+    def __init__(self, name: str, metric_type: str, store: MetricsStore) -> None:
+        _MetricHandle._counter += 1
+        self._id = _MetricHandle._counter
+        self.name = name
+        self.metric_type = metric_type
+        self.store = store
+
+    def __repr__(self) -> str:
+        return f"_MetricHandle(name={self.name!r}, type={self.metric_type!r}, id={self._id})"
+
+
+def collect_db_metrics(db: Session) -> dict[str, Any]:
+    """Coleta metrics do DB (gauge snapshot). Chamado pelo endpoint /metrics/prometheus."""
     metrics: dict[str, Any] = {}
-    # Total clientes
     metrics["clientes_total"] = db.query(func.count(Cliente.id)).scalar() or 0
-    # Total protocolos por status
     rows = (
         db.query(Protocolo.status, func.count(Protocolo.id))
         .group_by(Protocolo.status)
         .all()
     )
     for status, count in rows:
-        metrics[f"protocolos_total{{status=\"{status}\"}}"] = count
-    # Audit chain length
+        metrics[f'protocolos_total{{status="{status}"}}'] = count
     metrics["audit_chain_length"] = db.query(func.count(AuditLog.id)).scalar() or 0
     return metrics
 

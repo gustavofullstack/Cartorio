@@ -158,16 +158,49 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
 
 
 def scrub(text: str) -> ScrubResult:
-    """Detecta e mascara PII. Retorna texto scrubbed + contagem de cada tipo."""
+    """Detecta e mascara PII. Retorna texto scrubbed + contagem de cada tipo.
+
+    A2: instrumenta counter `pii_blocked_total{tipo_scrub,channel}` e
+    histogram `scrub_latency_ms{tipo_scrub,result}` quando PII detectado.
+    Channel default 'api'.
+
+    Lookup do store eh DINAMICO (via modulo) para permitir reset em tests
+    via `app.services.metrics.store = new_store`.
+    """
+    import time
+
+    from app.services import metrics as metrics_mod
+
+    metrics_store = metrics_mod.store
+
     findings: dict[str, int] = {}
     out = text
     total = 0
+    start = time.perf_counter()
     for label, pattern in _PATTERNS.items():
         matches = pattern.findall(out)
         if matches:
             findings[label] = len(matches)
             total += len(matches)
             out = pattern.sub(f"[{label.upper()}_REDACTED]", out)
+    duration_ms = (time.perf_counter() - start) * 1000.0
+
+    # A2 metricas: instrumentar counter + histogram
+    if total > 0:
+        for tipo_scrub in findings.keys():
+            metrics_store.inc_pii_blocked(tipo_scrub=tipo_scrub, channel="api")
+        metrics_store.track_scrub_latency(
+            tipo_scrub=",".join(sorted(findings.keys())),
+            result="blocked",
+            duration_ms=duration_ms,
+        )
+    else:
+        metrics_store.track_scrub_latency(
+            tipo_scrub="none",
+            result="allowed",
+            duration_ms=duration_ms,
+        )
+
     return ScrubResult(text=out, findings=findings, redaction_count=total)
 
 

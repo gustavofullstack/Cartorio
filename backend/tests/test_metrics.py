@@ -112,7 +112,7 @@ def test_store_render_prometheus_basico() -> None:
     s.set_gauge("cartorio_clientes", 42)
     output = s.render_prometheus()
     assert "# TYPE cartorio_requests counter" in output
-    assert 'cartorio_requests{endpoint=/a} 1' in output
+    assert 'cartorio_requests{endpoint="/a"} 1' in output
     assert "# TYPE cartorio_clientes gauge" in output
     assert "cartorio_clientes 42.000000" in output
     assert "# TYPE cartorio_uptime_seconds gauge" in output

@@ -122,7 +122,7 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 - [x] **E1.S2.T6** Job retenção diária `backend/app/jobs/retencao.py` (5 anos COM protocolo / 2y inativo SEM + kill switch, 13 tests TDD) — owner: `cartorio-dev` + review `cartorio-lgpd` — **DONE 2026-06-23 17:20 BRT em `ea24216`** (Bloco 4.3)
 - [x] **E1.S2.T7** Endpoint `DELETE /api/v1/cliente/{id}` (LGPD art. 18 VI — direito ao esquecimento, hard ou soft delete, 8 tests TDD) — owner: `cartorio-dev` + review `cartorio-lgpd` — **DONE 2026-06-23 17:20 BRT em `ea24216`** (Bloco 4.2)
 - [ ] **E1.S2.T8** Atualizar RIPD addendum Sprint 1 (gate LGPD → scrub → hash → DRAFT → HITL) — owner: `cartorio-lgpd`
-- [ ] **E1.S2.T9** IP truncado /24 em output (LGPD-by-design) + retenção IP 2 anos — owner: `cartorio-dev`
+- [x] **E1.S2.T9** IP truncado /24 em output (LGPD-by-design) + retenção IP 2 anos — owner: `cartorio-dev` — **T9-CRIT-FIX DONE 2026-06-24 12:26 BRT em `549b362` (8/13 issues, 515 tests, LGPD-APPROVED com 5 caveats, tag `lgpd-review-approved-2026-06-24-t9`)**
 - [ ] **E1.S2.T10** Política de credenciais em workflows N8N (auditoria $env vs hardcoded — Sprint 3) — owner: `cartorio-lgpd` (gatekeeper)
 
 ## EPIC E0 — Decisões arquiteturais ADICIONAIS (2026-06-23 11:25 BRT)
