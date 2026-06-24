@@ -19,6 +19,8 @@ from app.services.rate_limit import RateLimitMiddleware
 from app.services.rate_limit_by_key import RateLimitByKeyMiddleware
 from app.services.tracing import init_tracing
 from app.middleware.request_context import RequestContextMiddleware
+from app.middleware.idempotency import IdempotencyMiddleware
+from app.services.idempotency_store import RedisIdempotencyStore
 
 
 @asynccontextmanager
@@ -217,6 +219,17 @@ app.add_middleware(
 # de operacoes de tratamento. Deve vir ANTES de RateLimit pra que rate
 # limit tambem possa logar contexto se quiser.
 app.add_middleware(RequestContextMiddleware)
+
+# A6 — Idempotency-Key middleware (POST com header Idempotency-Key).
+# Cacheia responses por 24h no Redis (SETNX) para evitar mutacoes duplicadas.
+# LGPD: cache armazena apenas o response, sem PII. Chave = hash do header.
+# Fail-open se Redis offline.
+app.add_middleware(
+    IdempotencyMiddleware,
+    store=RedisIdempotencyStore(),
+    paths_prefixes=("/api/v1/",),
+    ttl_seconds=86400,
+)
 
 # Rate limiting por API key (T2.API.T22): protege /api/v1/* com 3 tiers
 # (N8N 600/min, DPO 60/min, padrao 30/min). Coexiste com RateLimitMiddleware
