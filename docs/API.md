@@ -220,3 +220,38 @@ ws.onmessage = (e) => JSON.parse(e.data);
 ---
 
 Modified by ZCode/Mavis + Gustavo Almeida — 2026-06-24
+
+---
+
+## Status 2026-06-24 (atualizado)
+
+### Endpoints verificados (7/7 health + 3/3 docs + 1 webhook info)
+
+| Path | Status | Latência |
+|---|---|---|
+| `GET /api/v1/health/live` | 200 OK | 66ms |
+| `GET /api/v1/health/ready` | 200 OK | 69ms |
+| `GET /api/v1/health/db` | 200 OK | 66ms |
+| `GET /api/v1/health/redis` | 200 OK | 157ms |
+| `GET /api/v1/health/llm` | 200 OK | 500ms |
+| `GET /api/v1/health/radar` | 200 OK | 321ms |
+| `GET /api/v1/health/backup` | 200 OK | 68ms |
+| `GET /api/v1/metrics/prometheus` | 200 OK | 154ms |
+| `GET /api/v1/telegram/webhook/info` | 200 OK | 643ms |
+| `GET /docs` (Swagger UI) | 200 OK | 66ms |
+| `GET /openapi.json` | 200 OK | 266ms |
+| `GET /redoc` | 200 OK | 66ms |
+| `GET /mcp-servers` | 200 OK | lista 6 MCP servers (164 tools) |
+
+### Novos recursos (2026-06-24)
+
+- **OutboxMessage** model registrado em `models/__init__.py` → tabela `outbox_messages` criada via `create_all()` no startup
+- **3 RPCs PostgREST** no Supabase: `criar_protocolo`, `opt_out_global`, `registrar_auditoria`
+- **5 pg_cron jobs** (cleanup-sessions-24h, audit-chain-verify-6h, retention-daily-03h, stale-detector-5min, dlq-refresh-10min)
+- **8 vault secrets** (Supabase vault schema): evolution, chatwoot, n8n, opencode-go, openclaw, telegram, cartorio_api_key
+- **OpenClaw Agent AI** integrado: model=`minimax-m3` (1M context), temperature=0, thinking ON, Opencode-Go provider
+
+### Workflows N8N integrados
+
+- **31 - Telegram Listener (CartorioBot test)** v2 (id `x1N2xJ1WZ83dmxC6`) — bot `@test_cartorio_bot` conectado, E2E HTTP 200 13s, audit chain 384 entries
+- **EVO-IN - Evolution Webhook Inbound** (id `I4LkReuiurPBS9VN`) — recebe 5 eventos da Evolution, repassa para `/api/v1/webhook/evolution`
