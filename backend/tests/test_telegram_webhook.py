@@ -130,11 +130,12 @@ def test_webhook_handles_telegram_api_failure(client: TestClient, telegram_updat
     pass  # SKIP: coberto por test_handles_agent_failure
 
 
-def test_telegram_bot_token_constant() -> None:
-    """Token do bot esta hardcoded (NAO rotacionar)."""
+def test_telegram_bot_token_loaded() -> None:
+    """Token do bot eh carregado via variaveis de ambiente."""
     from app.api.v1.telegram import TELEGRAM_BOT_TOKEN
+    from app.config import settings
 
-    assert TELEGRAM_BOT_TOKEN == "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+    assert TELEGRAM_BOT_TOKEN == settings.telegram_bot_token
 
 
 def test_webhook_emolumento_intent() -> None:

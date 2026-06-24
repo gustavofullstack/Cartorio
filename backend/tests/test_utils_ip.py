@@ -141,7 +141,7 @@ def test_truncate_ipv4_mapped_ipv6_invalid_returns_none():
 # ============================================================================
 
 
-def test_truncate_ipv6_link_local():
+def test_truncate_ipv6_link_local_duplicate():
     """IPv6 link-local fe80::1 → primeiros 2 grupos /32."""
     result = truncate_ip("fe80::1")
     # "fe80" e "1" sao 2 grupos nao-vazios

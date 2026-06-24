@@ -1,0 +1,13 @@
+🔒 Fix hardcoded Telegram bot token
+
+🎯 **What:**
+The `TELEGRAM_BOT_TOKEN` was hardcoded directly in `backend/app/api/v1/telegram.py`. It has been removed from the source code and relocated to be securely loaded from environment variables using `settings.telegram_bot_token`.
+`telegram_webhook_secret` was also added to the Settings in `config.py`.
+
+⚠️ **Risk:**
+Hardcoding sensitive tokens, especially bot tokens with elevated privileges, exposes them to anyone who gains access to the source code. An attacker with the token could hijack the bot, read incoming messages, send malicious messages impersonating the bot, or compromise the system.
+
+🛡️ **Solution:**
+Added `telegram_bot_token` and `telegram_webhook_secret` fields to the Pydantic `Settings` class in `backend/app/config.py`.
+Updated `backend/app/api/v1/telegram.py` to use `settings.telegram_bot_token` instead of the hardcoded string.
+Updated the test suite (`backend/tests/test_telegram_webhook.py`) to verify the token is dynamically loaded rather than matching a static constant. Additionally fixed a duplicate test function lint error in `test_utils_ip.py`.

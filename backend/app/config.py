@@ -97,6 +97,8 @@ class Settings(BaseSettings):
     # Webhook signature secrets (HMAC-SHA256, opcional mas recomendado em prod)
     # ========================================================================
     chatwoot_webhook_secret: Optional[str] = None
+    telegram_webhook_secret: Optional[str] = None
+    telegram_bot_token: Optional[str] = None
     evolution_webhook_secret: Optional[str] = None
 
     # ========================================================================
