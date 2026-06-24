@@ -538,7 +538,10 @@ def post_protocolo_criar_api(
     # ------------------------------------------------------------------
     # LGPD gate: cliente NAO pode ter revogado consentimento
     # ------------------------------------------------------------------
-    if cliente.motivo_encerramento and cliente.motivo_encerramento.value == "revogacao_consentimento":
+    if (
+        cliente.motivo_encerramento
+        and cliente.motivo_encerramento.value == "revogacao_consentimento"
+    ):
         AuditService.log(
             db,
             actor_id="api_key",
@@ -581,14 +584,12 @@ def post_protocolo_criar_api(
     # ------------------------------------------------------------------
     ano_atual = datetime.datetime.now(datetime.timezone.utc).year
     prefixo = f"CART-{ano_atual}-"
-    ultimo = (
-        db.execute(
-            select(Protocolo.numero)
-            .where(Protocolo.numero.like(f"{prefixo}%"))
-            .order_by(Protocolo.numero.desc())
-            .limit(1)
-        ).scalar_one_or_none()
-    )
+    ultimo = db.execute(
+        select(Protocolo.numero)
+        .where(Protocolo.numero.like(f"{prefixo}%"))
+        .order_by(Protocolo.numero.desc())
+        .limit(1)
+    ).scalar_one_or_none()
     if not ultimo:
         seq = 1
     else:
@@ -962,6 +963,7 @@ async def audit_verify() -> dict:
 async def health_live() -> dict:
     """Liveness probe: processo Python vivo?"""
     from app import __version__  # type: ignore[attr-defined]
+
     return {"status": "alive", "service": "cartorio-api", "version": __version__}
 
 
@@ -996,6 +998,7 @@ async def health_ready() -> JSONResponse:
     if redis_url:
         try:
             import redis  # type: ignore[import-untyped]
+
             r = redis.Redis.from_url(redis_url, socket_connect_timeout=2)
             r.ping()
             checks["redis"] = {"status": "online"}
@@ -1061,6 +1064,7 @@ async def health_redis() -> JSONResponse:
     start = time.time()
     try:
         import redis.asyncio as redis_async_lib
+
         r = redis_async_lib.from_url(settings.redis_url, socket_timeout=2.0)
         await r.ping()
         await r.close()
@@ -1411,7 +1415,9 @@ async def documento_segunda_via(
 
     # MVP: hash determinístico + timestamp = URL placeholder
     h = hashlib.sha256(f"{protocolo}:{time.time()}".encode()).hexdigest()[:16]
-    url_pdf = f"https://supbase.2notasudi.com.br/storage/v1/object/sign/documentos/{protocolo}-{h}.pdf"
+    url_pdf = (
+        f"https://supbase.2notasudi.com.br/storage/v1/object/sign/documentos/{protocolo}-{h}.pdf"
+    )
 
     # LGPD art. 37: audit log obrigatorio em toda mutacao (A01)
     try:
@@ -1918,7 +1924,9 @@ async def cron_stale_detector(request: Request) -> dict:
                 action="cron.stale_detector.run",
                 resource="cron:stale_detector",
                 payload={
-                    "marked_count": result.get("marked_count", 0) if isinstance(result, dict) else 0,
+                    "marked_count": result.get("marked_count", 0)
+                    if isinstance(result, dict)
+                    else 0,
                     "threshold_minutes": settings.stale_threshold_minutes,
                 },
                 **audit_kwargs(request),
@@ -2710,6 +2718,8 @@ async def get_metrics_json(
 
     data = render_metrics_json(db)
     return MetricsResponse(**data)
+
+
 # ---------------------------------------------------------------------------
 # DLQ (Dead Letter Queue) - A2 endpoints
 # ---------------------------------------------------------------------------
@@ -2723,9 +2733,7 @@ class DLQEnqueueRequest(BaseModel):
     unica para manter audit chain consistente).
     """
 
-    payload: dict[str, Any] = Field(
-        ..., description="Mensagem ja scrubbed (sem PII)."
-    )
+    payload: dict[str, Any] = Field(..., description="Mensagem ja scrubbed (sem PII).")
     actor_id: str = Field(..., min_length=1, max_length=128)
 
 
@@ -2805,9 +2813,7 @@ def post_dlq_enqueue(
         resource=f"dlq:{queue}:{msg.id}",
         payload={
             "queue": queue_enum.value,
-            "actor_id_hash": hash_pii(
-                body.actor_id, salt=settings.audit_hmac_key[:32]
-            ),
+            "actor_id_hash": hash_pii(body.actor_id, salt=settings.audit_hmac_key[:32]),
             "payload_size_bytes": len(json.dumps(body.payload, default=str)),
         },
         **audit_kwargs(request),

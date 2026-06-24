@@ -1,4 +1,5 @@
 """Testes do service de metrics Prometheus."""
+
 from __future__ import annotations
 
 import os
@@ -44,6 +45,7 @@ def client():
 
     import app.db
     import app.main as app_main_module
+
     original_engine = app.db.engine
     original_session_scope = app.db.session_scope
     app.db.engine = test_engine
@@ -142,7 +144,9 @@ def test_collect_db_metrics_retorna_contagens(client) -> None:
         db.add(Cliente(cpf_hash="h1", nome="A", consentimento_lgpd=True))
         db.add(Cliente(cpf_hash="h2", nome="B", consentimento_lgpd=True))
         db.add(Protocolo(cliente_id=1, numero="X1", tipo="rg", status="aberto", canal_origem="web"))
-        db.add(Protocolo(cliente_id=1, numero="X2", tipo="rg", status="concluido", canal_origem="web"))
+        db.add(
+            Protocolo(cliente_id=1, numero="X2", tipo="rg", status="concluido", canal_origem="web")
+        )
         db.commit()
 
     with session_scope() as db:

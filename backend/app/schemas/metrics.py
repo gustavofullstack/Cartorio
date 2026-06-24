@@ -4,6 +4,7 @@ Usado pelo endpoint GET /api/v1/metrics (JSON estruturado para N8N).
 
 LGPD: este schema NAO expoe PII. Apenas contadores e gauges agregados.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -23,9 +24,7 @@ class MetricsResponse(BaseModel):
     - gauges: dict - gauges in-process (dlq_depth, cartorio_uptime_seconds, etc)
     """
 
-    clientes_total: int = Field(
-        ..., ge=0, description="Total de clientes ativos no DB."
-    )
+    clientes_total: int = Field(..., ge=0, description="Total de clientes ativos no DB.")
     protocolos_total: dict[str, int] = Field(
         ..., description="Count de protocolos agrupados por status."
     )

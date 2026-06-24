@@ -21,6 +21,7 @@ Metricas expostas (A1+A2):
 - dlq_depth{queue} - gauge (A2 LGPD)
 - cartorio_uptime_seconds - gauge
 """
+
 from __future__ import annotations
 
 import time
@@ -57,9 +58,7 @@ class MetricsStore:
         self._metric_registry: dict[str, _MetricHandle] = {}
         self._started_at: float = time.time()
 
-    def inc_counter(
-        self, name: str, labels: dict[str, str] | None = None, value: int = 1
-    ) -> None:
+    def inc_counter(self, name: str, labels: dict[str, str] | None = None, value: int = 1) -> None:
         key = self._labels_key(labels)
         self.counters.setdefault(name, {}).setdefault(key, 0)
         self.counters[name][key] += value
@@ -71,9 +70,7 @@ class MetricsStore:
         self.histograms.setdefault(name, {}).setdefault(key, [])
         self.histograms[name][key].append(value)
 
-    def set_gauge(
-        self, name: str, value: float, labels: dict[str, str] | None = None
-    ) -> None:
+    def set_gauge(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
         """Store gauge. With labels -> dict[labels_key, value]. Without -> scalar."""
         if labels:
             key = self._labels_key(labels)
@@ -103,9 +100,7 @@ class MetricsStore:
             return handle
         return existing
 
-    def track_scrub_latency(
-        self, tipo_scrub: str, result: str, duration_ms: float
-    ) -> None:
+    def track_scrub_latency(self, tipo_scrub: str, result: str, duration_ms: float) -> None:
         """Helper A2: histogram scrub_latency_ms{tipo_scrub,result}."""
         self._make_metric_or_skip_test("scrub_latency_ms", "histogram")
         self.observe_histogram(
@@ -148,16 +143,12 @@ class MetricsStore:
         lines: list[str] = []
 
         # Counters
-        counters: dict[str, dict[str, int]] = cast(
-            "dict[str, dict[str, int]]", self.counters
-        )
+        counters: dict[str, dict[str, int]] = cast("dict[str, dict[str, int]]", self.counters)
         for name, buckets in counters.items():  # type: ignore[assignment]
             lines.append(f"# TYPE {name} counter")
             for key, value in buckets.items():
                 label_dict = self._parse_labels_key(key)
-                label_str = (
-                    "{" + self._labels_render(label_dict) + "}" if label_dict else ""
-                )
+                label_str = "{" + self._labels_render(label_dict) + "}" if label_dict else ""
                 lines.append(f"{name}{label_str} {int(value)}")
 
         # Histograms (formato simplificado: count + sum, suficiente p/ cartorio)
@@ -168,9 +159,7 @@ class MetricsStore:
             lines.append(f"# TYPE {name} summary")
             for key, values in buckets.items():  # type: ignore[assignment]
                 label_dict = self._parse_labels_key(key)
-                label_str = (
-                    "{" + self._labels_render(label_dict) + "}" if label_dict else ""
-                )
+                label_str = "{" + self._labels_render(label_dict) + "}" if label_dict else ""
                 lines.append(f"{name}_count{label_str} {len(values)}")  # type: ignore[arg-type]
                 lines.append(
                     f"{name}_sum{label_str} {sum(values):.6f}"  # type: ignore[call-overload,arg-type]
@@ -182,11 +171,7 @@ class MetricsStore:
             if isinstance(val_or_map, dict):
                 for key, value in val_or_map.items():  # type: ignore[union-attr]
                     label_dict = self._parse_labels_key(key)
-                    label_str = (
-                        "{" + self._labels_render(label_dict) + "}"
-                        if label_dict
-                        else ""
-                    )
+                    label_str = "{" + self._labels_render(label_dict) + "}" if label_dict else ""
                     lines.append(f"{name}{label_str} {float(value):.6f}")
             else:
                 lines.append(f"{name} {float(val_or_map):.6f}")  # type: ignore[arg-type]
@@ -228,11 +213,7 @@ def collect_db_metrics(db: Session) -> dict[str, Any]:
     """Coleta metrics do DB (gauge snapshot). Chamado pelo endpoint /metrics/prometheus."""
     metrics: dict[str, Any] = {}
     metrics["clientes_total"] = db.query(func.count(Cliente.id)).scalar() or 0
-    rows = (
-        db.query(Protocolo.status, func.count(Protocolo.id))
-        .group_by(Protocolo.status)
-        .all()
-    )
+    rows = db.query(Protocolo.status, func.count(Protocolo.id)).group_by(Protocolo.status).all()
     for status, count in rows:
         metrics[f'protocolos_total{{status="{status}"}}'] = count
     metrics["audit_chain_length"] = db.query(func.count(AuditLog.id)).scalar() or 0
