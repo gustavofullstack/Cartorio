@@ -1,0 +1,209 @@
+{
+  "meta": {
+    "date": "2026-06-24",
+    "branch": "master",
+    "head": "26a135b",
+    "owner_session": "zcode-minimax-m3",
+    "format_version": "1.0",
+    "total_tasks": 100,
+    "squads": 10,
+    "per_squad": 10
+  },
+  "squads": {
+    "A": {
+      "name": "Supabase Real",
+      "priority": 1,
+      "owner_rein": "cartorio-dev",
+      "blocker_for": ["B", "C", "E", "F", "G", "H", "I"],
+      "tasks": [
+        {"id": "A01", "title": "Listar todas tabelas reais via supabase-cli ou SQL direto (vs Alembic models)", "estimate_min": 15, "deps": []},
+        {"id": "A02", "title": "Versionar schema SQL em infra/supabase/migrations/ (alembic+sql lado a lado)", "estimate_min": 60, "deps": ["A01"]},
+        {"id": "A03", "title": "Criar tabelas faltantes: webhook_event, outbox_message, conversa, atendimento_link, cpf_cnpj_validator, lgpd_consent_log, opt_out_log, evolution_instance, n8n_run_log, chatwoot_conversation_meta, telegram_chat_meta", "estimate_min": 90, "deps": ["A02"]},
+        {"id": "A04", "title": "Criar RPCs (PostgREST functions) para: criar_protocolo, calcular_emolumento, registrar_auditoria, opt_out_global, lgpd_direito_<X> (anonimizar/corrigir/opor/portar/esquecer)", "estimate_min": 120, "deps": ["A03"]},
+        {"id": "A05", "title": "Ativar pg_cron para: stale_detector (5min), retention (diario 03:00 BRT), audit_chain_verify (6h), dlq_refresh (10min), outbox_flush (1min)", "estimate_min": 45, "deps": ["A03"]},
+        {"id": "A06", "title": "Ativar Database Webhooks: insert em outbox → POST /api/v1/integrations/outbox/dispatch; update em protocolo → POST /api/v1/webhook/n8n/protocolo-status", "estimate_min": 60, "deps": ["A03", "A05"]},
+        {"id": "A07", "title": "Configurar Vault: 7 secrets (EVOLUTION_API_KEY, CHATWOOT_API_KEY, N8N_API_KEY, OPENCLAW_API_KEY, OPENCODE_GO_API_KEY, RENDER_API_KEY, JULES_API_KEY) e migrar consumers para vault.get_secret()", "estimate_min": 90, "deps": ["A03"]},
+        {"id": "A08", "title": "Ativar GraphQL endpoint (pg_graphql) e documentar schema para N8N e frontend futuro", "estimate_min": 30, "deps": ["A02"]},
+        {"id": "A09", "title": "Criar Realtime channels: atendimento, conversa, lgpd_consent → emitidos via WS /ws/atendimentos (já existe) e novo /ws/agent", "estimate_min": 45, "deps": ["A03"]},
+        {"id": "A10", "title": "Backup automatizado: snapshot db-data diário (já existe) + WAL archiving + restore drill mensal (1º domingo)", "estimate_min": 60, "deps": ["A03"]}
+      ]
+    },
+    "B": {
+      "name": "Evolution API",
+      "priority": 2,
+      "owner_rein": "cartorio-dev",
+      "blocker_for": ["H"],
+      "tasks": [
+        {"id": "B01", "title": "Health-check: GET /instance/connectionState/cartorio-2notas + log de últimas 100 mensagens (inbound/outbound/error)", "estimate_min": 15, "deps": []},
+        {"id": "B02", "title": "Configurar 2 webhooks oficiais (messages.upsert + messages.update + connection.update + qrcode.updated) com HMAC EVOLUTION_WEBHOOK_SECRET", "estimate_min": 30, "deps": ["B01"]},
+        {"id": "B03", "title": "Adicionar retry+DLQ no consumer evolution_ingest.py (3 tentativas, exponential backoff, persistente em outbox_message)", "estimate_min": 60, "deps": ["A03"]},
+        {"id": "B04", "title": "Implementar send_message API helper com idempotency-key (Redis SETNX 24h) e métricas prometheus (latency, success_rate)", "estimate_min": 45, "deps": ["I03"]},
+        {"id": "B05", "title": "Criar Evolution client (httpx async) em backend/app/integrations/evolution/ com mock e suite de testes (mock webhook payload)", "estimate_min": 60, "deps": ["B04"]},
+        {"id": "B06", "title": "Mapear eventos Evolution → filas N8N: messages.upsert → 'whatsapp.inbound' (N8N), connection.update → 'whatsoff.health' (Chatwoot+N8N+API)", "estimate_min": 30, "deps": ["A05"]},
+        {"id": "B07", "title": "Validar presença de 1 instância (cartorio-2notas) — se > 1, criar mapping de instance → inbox Chatwoot", "estimate_min": 15, "deps": ["B01"]},
+        {"id": "B08", "title": "Testar reconnect após restart Evolution (5 cenários: kill -9, network blip, Easypanel redeploy, API restart, container OOM)", "estimate_min": 60, "deps": ["B07"]},
+        {"id": "B09", "title": "Documentação completa Evolution API v2: env vars, endpoints consumidos, eventos tratados, idempotência, error handling, exemplos curl", "estimate_min": 90, "deps": ["B05"]},
+        {"id": "B10", "title": "OpenAPI/Postman collection export com auth + exemplos para todos endpoints Evolution usados (criar_atendimento, send_text, send_media, send_audio, mark_read, presence, group_*)", "estimate_min": 60, "deps": ["B05"]}
+      ]
+    },
+    "C": {
+      "name": "N8N Workflows",
+      "priority": 2,
+      "owner_rein": "cartorio-n8n",
+      "blocker_for": ["E", "F"],
+      "tasks": [
+        {"id": "C01", "title": "Audit: listar TODOS os 33+ workflows, status (active/inactive), última execução, success_rate, avg_duration", "estimate_min": 30, "deps": []},
+        {"id": "C02", "title": "Ativar 00-error-handler e validar captura de TODAS exceções (webhook + schedule + manual)", "estimate_min": 30, "deps": ["C01"]},
+        {"id": "C03", "title": "Migrar 12 Code nodes JS problemáticos para N8N nodes nativos (Set, IF, Switch, Function Item)", "estimate_min": 90, "deps": ["C01"]},
+        {"id": "C04", "title": "Testar 01-consulta-emolumento end-to-end: enviar mensagem Evolution mockada → confirmar DB row + reply WhatsApp", "estimate_min": 45, "deps": ["B05", "C01"]},
+        {"id": "C05", "title": "Testar 02-criar-protocolo: idempotência (mesma request 2x → 1 protocolo), validação PII, fallback Opencode-Go se OpenClaw down", "estimate_min": 60, "deps": ["C04", "A03"]},
+        {"id": "C06", "title": "Testar 03-handoff-human-chatwoot: criar conversa Chatwoot, atribuir agent, pausar OpenClaw, validar reply humano", "estimate_min": 45, "deps": ["H03"]},
+        {"id": "C07", "title": "Testar 12-chatbot-llm-end-to-end + 12-chatbot-llm-mcp + 13-openclaw-chat-bridge: latency budget <3s p95, fallback chain OpenClaw→Opencode-Go→OpenAI→Anthropic", "estimate_min": 90, "deps": ["E01", "E05"]},
+        {"id": "C08", "title": "Criar/ativar workflow 'supabase-outbox-dispatch' (consumer de outbox_message via polling 30s) — drenar para Chatwoot/N8N/Evolution", "estimate_min": 60, "deps": ["A06"]},
+        {"id": "C09", "title": "Ativar n8n-runner com auth token e validar execução de workflows pesados (chatbot-llm) sem travar UI", "estimate_min": 30, "deps": []},
+        {"id": "C10", "title": "Backup diário automático de TODOS workflows (script + cron + restore drill)", "estimate_min": 60, "deps": ["C01"]}
+      ]
+    },
+    "D": {
+      "name": "LGPD Compliance",
+      "priority": 1,
+      "owner_rein": "cartorio-lgpd",
+      "blocker_for": ["F", "H"],
+      "tasks": [
+        {"id": "D01", "title": "Auditar 5 services LGPD novos untracked (anonimizacao, correcao, oposicao, opt_out_bot, portabilidade) + 1 já commitado (esquecimento) = 6 direitos PF Art. 18", "estimate_min": 60, "deps": []},
+        {"id": "D02", "title": "Criar tests pytest para os 6 direitos (happy path + edge cases + LGPD compliance theater markers = 0)", "estimate_min": 120, "deps": ["D01"]},
+        {"id": "D03", "title": "Implementar UI/telegram comandos para o titular exercer direitos: /anonimizar <protocolo>, /corrigir, /opor, /optout, /portabilidade, /esquecer", "estimate_min": 90, "deps": ["D02", "F05"]},
+        {"id": "D04", "title": "Criar tabela lgpd_consent_log + RPC + insert automático em todo atendimento novo (consentimento explícito Lei 13.709/2018 art. 7º)", "estimate_min": 60, "deps": ["A03"]},
+        {"id": "D05", "title": "Criar tabela opt_out_log + RPC opt_out_global + bot_listener para keywords (sair, parar, cancelar, descadastrar, off) em PT-BR + EN", "estimate_min": 60, "deps": ["A03"]},
+        {"id": "D06", "title": "Opt-out HONRA o pedido: bloqueio de N8N+Evolution+Chatwoot+OpenClaw+prospecção para o número (Redis SET optout:<phone> com TTL indefinido)", "estimate_min": 45, "deps": ["D05", "I03"]},
+        {"id": "D07", "title": "DPA Cloudflare + Hostinger (já commitados) — adicionar DPA Sentry, DPA MiniMax (LLM), DPA Anthropic fallback, DPA OpenAI fallback", "estimate_min": 60, "deps": []},
+        {"id": "D08", "title": "Atualizar RIPD v1.2 com novos agentes (Evolution, Chatwoot, OpenClaw), novo DPO (nominal), novos fluxos (prospecção, opt-out)", "estimate_min": 90, "deps": ["D07"]},
+        {"id": "D09", "title": "Política de retenção: conversas 90d, audit_log 5 anos (LGPD art. 37/38), outbox 7d pós-dispatched, opt_out permanente", "estimate_min": 45, "deps": ["A05"]},
+        {"id": "D10", "title": "Documentar LGPD-AUDIT-2026-06-25 com: 6 direitos cobertos, 4 DPAs, RIPD v1.2, retenção, opt-out, PII scrub stats", "estimate_min": 60, "deps": ["D01", "D02", "D07", "D08", "D09"]}
+      ]
+    },
+    "E": {
+      "name": "OpenClaw Agent",
+      "priority": 1,
+      "owner_rein": "cartorio-dev",
+      "blocker_for": ["C", "F"],
+      "tasks": [
+        {"id": "E01", "title": "Verificar runtime: gateway /v1/agents/cartorio-agent responde, THINKING_ENABLED propagado, modelo primário deepseek-v4-flash, fallback chain funcional", "estimate_min": 30, "deps": []},
+        {"id": "E02", "title": "Auditar persona workspace: IDENTITY/SOUL/GOALS/AGENTS/USER/TOOLS/TELEGRAM — remover emojis, garantir tom sério/direto/curto", "estimate_min": 60, "deps": []},
+        {"id": "E03", "title": "Criar/atualizar skills (7 já existem + 6 novos dos direitos LGPD) = 13 skills", "estimate_min": 90, "deps": ["D01"]},
+        {"id": "E04", "title": "Harness fortíssimo em system prompt: instruir uso SEMPRE de {MCPs, tools, plugins, skills, hooks} da sessão; contexto preso; funções fortes p/ não errar", "estimate_min": 60, "deps": ["E02"]},
+        {"id": "E05", "title": "Configurar fallback chain: OpenClaw deepseek-v4-flash → Opencode-Go deepseek-v4-flash → OpenAI gpt-4o-mini → Anthropic claude-haiku", "estimate_min": 45, "deps": ["E01"]},
+        {"id": "E06", "title": "Latency budget: p50<1s, p95<3s, p99<5s. Adicionar métricas prometheus: llm_call_duration_seconds, llm_fallback_total, llm_thinking_tokens", "estimate_min": 30, "deps": ["E01"]},
+        {"id": "E07", "title": "Memory persistente cross-session (já tem pasta `memory/`) — validar RAG sobre docs/leads, docs/platforms, .harness/memory", "estimate_min": 45, "deps": ["E04"]},
+        {"id": "E08", "title": "Crash-loop check: restart policy, healthcheck, log rotation (max 100MB x 5 files), sentry integration", "estimate_min": 30, "deps": []},
+        {"id": "E09", "title": "Validar Telegram bot @CartorioBot (TEST) responde comandos: /start /protocolo /emolumento /agendar /humano /optout /ajuda", "estimate_min": 45, "deps": ["F05"]},
+        {"id": "E10", "title": "Documentação OpenClaw completa: persona files, skills, hooks, memory schema, env vars, deploy, debug", "estimate_min": 90, "deps": ["E01", "E02", "E03", "E04", "E05"]}
+      ]
+    },
+    "F": {
+      "name": "Telegram Bot",
+      "priority": 1,
+      "owner_rein": "cartorio-dev",
+      "blocker_for": [],
+      "tasks": [
+        {"id": "F01", "title": "Health-check: webhook /api/v1/webhook/telegram recebe updates, retorna 200 em <500ms", "estimate_min": 15, "deps": []},
+        {"id": "F02", "title": "Setar webhook via Telegram Bot API: getWebhookInfo + setWebhook com secret_token = TELEGRAM_WEBHOOK_SECRET", "estimate_min": 15, "deps": []},
+        {"id": "F03", "title": "Verificar token 8859206262:AAH... registrado em 1 só local (sem leak em .env.example, .secrets/telegram.env, openclaw TELEGRAM.md)", "estimate_min": 15, "deps": []},
+        {"id": "F04", "title": "Comandos /start, /help, /optout implementados e testados end-to-end com bot @CartorioBot", "estimate_min": 45, "deps": ["F02", "D05"]},
+        {"id": "F05", "title": "Integração bot ↔ OpenClaw: mensagem → /api/v1/integrations/openclaw/test → reply com thinking ON visível em /api/v1/audit/logs", "estimate_min": 60, "deps": ["E01", "F02"]},
+        {"id": "F06", "title": "Retry+DLQ: se OpenClaw timeout/erro, retry 3x com backoff; se persistir, enviar mensagem fallback 'Estou com instabilidade, tente em 1min'", "estimate_min": 45, "deps": ["F05", "A03"]},
+        {"id": "F07", "title": "Rate-limit por chat_id (Redis sliding window 30 msg/min, DDoS 100 msg/min) — não saturar OpenClaw", "estimate_min": 30, "deps": ["F05", "I04"]},
+        {"id": "F08", "title": "Persistir chat history (Redis TTL 24h) + sumarização >2k tokens via OpenClaw próprio", "estimate_min": 45, "deps": ["F05", "I02"]},
+        {"id": "F09", "title": "Bot pessoal (@MavisPietraBot) configurado e funcional para Gustavo usar como canal de controle", "estimate_min": 30, "deps": []},
+        {"id": "F10", "title": "Documentação Telegram bot: tokens (em .secrets), webhook, comandos, OpenClaw bridge, LGPD optout, testes E2E", "estimate_min": 60, "deps": ["F04", "F05", "F06", "F07"]}
+      ]
+    },
+    "G": {
+      "name": "API FastAPI",
+      "priority": 1,
+      "owner_rein": "cartorio-dev",
+      "blocker_for": [],
+      "tasks": [
+        {"id": "G01", "title": "Rodar pytest full suite: validar 263+ passed, 0 failed, coverage ≥90%", "estimate_min": 30, "deps": []},
+        {"id": "G02", "title": "Testar 8 health endpoints (/live, /ready, /db, /redis, /llm, /radar, /backup) com curl — todos 200 verde", "estimate_min": 30, "deps": []},
+        {"id": "G03", "title": "Testar 3 webhooks (evolution, chatwoot, telegram) com payloads mock + HMAC validation", "estimate_min": 60, "deps": ["B05"]},
+        {"id": "G04", "title": "Testar 5 endpoints atendimento (ultimas-24h, criar, concluir, historico, list-active)", "estimate_min": 45, "deps": ["G02"]},
+        {"id": "G05", "title": "Testar 6 endpoints LGPD (5 novos untracked + 1 esquecimento) end-to-end", "estimate_min": 90, "deps": ["D02"]},
+        {"id": "G06", "title": "Testar endpoints /metrics, /metrics/prometheus, /postman", "estimate_min": 30, "deps": []},
+        {"id": "G07", "title": "Testar endpoints /cron, /admin/retencao, /dlq/*", "estimate_min": 30, "deps": []},
+        {"id": "G08", "title": "Testar WS /ws/atendimentos com cliente wscat (connect, send, ping/pong, close)", "estimate_min": 30, "deps": ["A09"]},
+        {"id": "G09", "title": "Adicionar rate-limit por API key (Redis sliding window 100 req/min) + DDoS por IP (já tem)", "estimate_min": 45, "deps": ["I04"]},
+        {"id": "G10", "title": "Documentação API completa: OpenAPI 3.1 (auto), Postman v2.1 collection (10 endpoints principais), exemplos curl em docs/API.md", "estimate_min": 90, "deps": ["G03", "G04", "G05", "G06", "G07"]}
+      ]
+    },
+    "H": {
+      "name": "Chatwoot CRM",
+      "priority": 2,
+      "owner_rein": "cartorio-dev",
+      "blocker_for": [],
+      "tasks": [
+        {"id": "H01", "title": "Health-check: GET /api/v1/accounts com CHATWOOT_API_KEY + GET /api/v1/accounts/{id}/inboxes", "estimate_min": 15, "deps": []},
+        {"id": "H02", "title": "Criar inbox Evolution (canal whatsapp_baileys) se ainda não existir, mapear instance 'cartorio-2notas'", "estimate_min": 30, "deps": ["B07", "H01"]},
+        {"id": "H03", "title": "Validar handoff: OpenClaw marca conversa como 'pending' no Chatwoot, humano assume, OpenClaw para de responder", "estimate_min": 45, "deps": ["C06", "H02"]},
+        {"id": "H04", "title": "Custom attributes: protocolo, emolumento_total, lgpd_consent_id, opt_out_flag em conversation/contact", "estimate_min": 45, "deps": ["A03"]},
+        {"id": "H05", "title": "Automações: 'se mensagem contém X → assign agent', 'se opt-out → close+tag', 'se protocolo criado → send template'", "estimate_min": 60, "deps": ["H04"]},
+        {"id": "H06", "title": "Reports/dashboards: atendimentos/dia, tempo médio, opt-outs, LGPD direitos exercidos", "estimate_min": 60, "deps": ["H04"]},
+        {"id": "H07", "title": "Bot agent @CartorioBot: configurar como 'bot agent' que pode assumir conversas via API", "estimate_min": 30, "deps": ["H02"]},
+        {"id": "H08", "title": "Testar webhook Chatwoot (messages.created, conversation.status_changed, contact.updated)", "estimate_min": 30, "deps": ["G03"]},
+        {"id": "H09", "title": "DNS: garantir chat.2notasudi.com.br → CNAME cartorio_chatwoot:3000 (Traefik cert)", "estimate_min": 15, "deps": []},
+        {"id": "H10", "title": "Documentação Chatwoot completa: env, inbox, agents, automations, handoff, custom attrs, reports", "estimate_min": 90, "deps": ["H01", "H02", "H03", "H04", "H05"]}
+      ]
+    },
+    "I": {
+      "name": "Redis",
+      "priority": 1,
+      "owner_rein": "cartorio-dev",
+      "blocker_for": ["B", "D", "F", "G"],
+      "tasks": [
+        {"id": "I01", "title": "Health-check: PING, INFO server, INFO clients, INFO memory — 256MB+ disponível, conexões <100", "estimate_min": 15, "deps": []},
+        {"id": "I02", "title": "Configurar maxmemory-policy=allkeys-lru, maxmemory 1GB, save 60 1000 (RDB), appendonly yes (AOF everysec)", "estimate_min": 30, "deps": ["I01"]},
+        {"id": "I03", "title": "Camadas separadas por DB: 0=cache, 1=queue, 2=lock, 3=rate-limit, 4=session, 5=idempotência, 6=métricas, 7=DLQ/outbox", "estimate_min": 45, "deps": ["I01"]},
+        {"id": "I04", "title": "Sliding window rate-limit: lib sliding_window.py — testado 1k req/s, 0 false-positives em <100ms", "estimate_min": 60, "deps": ["I03"]},
+        {"id": "I05", "title": "Redlock para locks distribuídos: criar_atendimento, registrar_pagamento, opt_out_global (5s TTL)", "estimate_min": 30, "deps": ["I03"]},
+        {"id": "I06", "title": "Stream consumer para outbox (XADD/XREADGROUP) — substituir polling por event-driven", "estimate_min": 60, "deps": ["A06", "I03"]},
+        {"id": "I07", "title": "Métricas Redis: hit_rate, miss_rate, evictions, connected_clients, blocked_clients, slowlog (>1ms)", "estimate_min": 30, "deps": ["I01"]},
+        {"id": "I08", "title": "Backup AOF/RDB automático para S3 ou volume (cron 6h) + restore drill semanal", "estimate_min": 60, "deps": ["I02"]},
+        {"id": "I09", "title": "Sentinel ou Cluster? — para single-VPS, single instance + AOF basta; documentar path para HA futuro", "estimate_min": 15, "deps": ["I01"]},
+        {"id": "I10", "title": "Documentação Redis completa: 7 DBs, naming conventions, key TTLs, libs (cache, queue, lock, sliding, idemp, metrics), examples", "estimate_min": 60, "deps": ["I03", "I04", "I05", "I06", "I07", "I08"]}
+      ]
+    },
+    "J": {
+      "name": "Infra DevOps CI/CD",
+      "priority": 1,
+      "owner_rein": "cartorio-dev",
+      "blocker_for": [],
+      "tasks": [
+        {"id": "J01", "title": "Traefik health-check: 6 domínios verdes (chat.2notasudi.com.br, n8n.2notasudi.com.br, api.2notasudi.com.br, supabase.2notasudi.com.br, evo.2notasudi.com.br, openclaw.2notasudi.com.br)", "estimate_min": 15, "deps": []},
+        {"id": "J02", "title": "Tailscale: nodes cartorio-vps + macbook + iphone conectados, ACL allow cartorio@100.99.172.84", "estimate_min": 15, "deps": []},
+        {"id": "J03", "title": "Easypanel: 14 containers healthy, restart policy unless-stopped, log rotation 50MBx5", "estimate_min": 30, "deps": []},
+        {"id": "J04", "title": "Backup systemd: cartorio-backup.service+timer ativos, último backup <24h, restore drill mensal", "estimate_min": 30, "deps": []},
+        {"id": "J05", "title": "Monitoring: cartorio-evolution-health timer 5min, /api/v1/health/radar, sentry.io ingestion", "estimate_min": 30, "deps": []},
+        {"id": "J06", "title": "CI GitHub Actions: lint+typecheck+pytest gate 90% verde em PRs + master", "estimate_min": 30, "deps": []},
+        {"id": "J07", "title": "Render.com: deploys em prod + preview auto-corrigidos por Jules", "estimate_min": 30, "deps": []},
+        {"id": "J08", "title": "Linear.com: 4 projects (Squad A/B/C/D) + 100 tasks criadas (esta task!), updates via API", "estimate_min": 45, "deps": []},
+        {"id": "J09", "title": "Jules (Gemini 3.1 Pro): corrigir config worktree/branch (auto-merge to master + delete branch)", "estimate_min": 15, "deps": []},
+        {"id": "J10", "title": "Documentação infra completa: VPS, Easypanel, Traefik, Tailscale, backup, monitoring, CI, Render, Linear, Jules, OpenCode Zen/Qwen", "estimate_min": 120, "deps": ["J01", "J02", "J03", "J04", "J05", "J06", "J07", "J08", "J09"]}
+      ]
+    }
+  },
+  "execution": {
+    "rule": "1-2 agents paralelos MÁXIMO, sequencial por padrão",
+    "turn_sequence": [
+      "A01→A10 (Squad A desbloqueia todo o resto)",
+      "I01→I10 (paralelo a A, Redis tbm bloqueia B/D/F/G)",
+      "B01→B10 (Evolution depende de A03)",
+      "D01→D10 (LGPD depende de A03, I03)",
+      "E01→E10 (OpenClaw depende de A)",
+      "F01→F10 (Telegram depende de E, D)",
+      "C01→C10 (N8N depende de B, D, E, F)",
+      "G01→G10 (API testing paralelo com tudo)",
+      "H01→H10 (Chatwoot depende de B)",
+      "J01→J10 (DevOps paralelo desde o início)"
+    ]
+  }
+}
