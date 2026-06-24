@@ -5,8 +5,8 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.openapi.docs import get_redoc_html
+from fastapi.responses import HTMLResponse
 from sqlalchemy import text
 
 from app.api.v1.router import api_router
@@ -434,7 +434,7 @@ async def custom_swagger_ui_html() -> HTMLResponse:
 async def redoc_html() -> HTMLResponse:
     """ReDoc com branding institucional."""
     return get_redoc_html(
-        openapi_url=app.openapi_url,
+        openapi_url=app.openapi_url or "/openapi.json",
         title=app.title + " - ReDoc",
         redoc_favicon_url="https://2notasudi.com.br/favicon.ico",
     )

@@ -17,7 +17,6 @@ get_settings.cache_clear()
 import pytest  # noqa: E402
 
 from app.services.rate_limit_by_key import (  # noqa: E402
-    ApiKeyTier,
     RateLimitByKeyMiddleware,
     TIER_POLICIES,
     _hash_api_key,
@@ -172,7 +171,7 @@ async def test_middleware_fail_open_quando_redis_offline() -> None:
         side_effect=OSError("connection refused"),
     ):
         call_next = AsyncMock(return_value=MagicMock(headers={}))
-        response = await mw.dispatch(request, call_next)
+        await mw.dispatch(request, call_next)
 
     # Fail-open: passa pro next
     call_next.assert_called_once()

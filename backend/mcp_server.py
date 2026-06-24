@@ -33,14 +33,14 @@ from typing import Any
 # Adiciona backend/ ao path para importar app.*
 sys.path.insert(0, str(Path(__file__).parent))
 
-from fastmcp import FastMCP, Context
+from fastmcp import FastMCP
 
 # Reusa o settings do backend
 try:
-    from app.config import settings
+    from app.config import Settings, settings  # noqa: F401
 except ImportError:
     # Fallback se rodar fora do venv
-    settings = None
+    settings = None  # type: ignore[assignment]
 
 
 # ============================================================================
@@ -352,7 +352,6 @@ async def cartorio_saudacao() -> dict:
 )
 async def super_server_info() -> dict:
     """Meta info do MCP server."""
-    import asyncio
     tools_list = await mcp.list_tools()
     return {
         "name": "cartorio-mcp-cabuloso",

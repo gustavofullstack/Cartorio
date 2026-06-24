@@ -179,7 +179,7 @@ def test_filtro_por_periodo(db_session) -> None:
     db_session.commit()
 
     # Forca timestamps bem separados (1h entre cada)
-    from datetime import datetime, timezone
+    from datetime import timezone
 
     base = datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc).replace(tzinfo=None)
     db_session.query(AuditLog).filter(AuditLog.id == e1.id).update(
@@ -211,7 +211,7 @@ def test_filtro_since_apenas(db_session) -> None:
     _log(db_session)
     db_session.commit()
 
-    from datetime import datetime, timezone
+    from datetime import timezone
 
     base = datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc).replace(tzinfo=None)
     db_session.query(AuditLog).filter(AuditLog.id == e1.id).update(

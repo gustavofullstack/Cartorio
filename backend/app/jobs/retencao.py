@@ -18,7 +18,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Literal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session

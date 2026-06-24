@@ -12,7 +12,6 @@ import pytest
 from fakeredis import aioredis as fakeredis_async
 
 from app.services.redis_bus import (
-    CHANNEL_ALERTAS,
     CHANNEL_ATENDIMENTOS,
     CHANNEL_PROTOCOLOS,
     RedisBus,

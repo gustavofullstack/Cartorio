@@ -1,11 +1,18 @@
 """Modelo Cliente - NUNCA armazenar CPF/telefone em texto puro, apenas hash."""
 
+from __future__ import annotations
+
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, Enum as SAEnum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.protocolo import Protocolo
 
 
 class MotivoEncerramento(str, enum.Enum):

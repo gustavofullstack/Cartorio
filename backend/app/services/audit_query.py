@@ -12,9 +12,6 @@ em Sprint 4 com auditoria de leitura sensivel).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Literal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session

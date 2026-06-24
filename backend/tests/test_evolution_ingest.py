@@ -7,10 +7,8 @@ Cobre:
 - Rejeicao de payload malformado (sem data)
 """
 
-import hashlib
 from unittest.mock import MagicMock
 
-import pytest
 from sqlalchemy.orm import Session
 
 from app.models.webhook_event import WebhookEvent

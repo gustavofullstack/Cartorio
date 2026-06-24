@@ -21,9 +21,9 @@ Metricas expostas (basico, suficiente pra cartorio):
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import func, select
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.audit_log import AuditLog
@@ -43,7 +43,7 @@ class MetricsStore:
         self.histograms: dict[str, dict[str, list[float]]] = {}
         # gauges: {metric_name: value}
         self.gauges: dict[str, float] = {}
-        self._started_at = time.time()
+        self._started_at: float = time.time()
 
     def inc_counter(self, name: str, labels: dict[str, str] | None = None, value: int = 1) -> None:
         key = self._labels_key(labels)
@@ -67,20 +67,25 @@ class MetricsStore:
         """Renderiza tudo no formato text/plain do Prometheus."""
         lines: list[str] = []
         # Counters
-        for name, buckets in self.counters.items():
+        counters: dict[str, dict[str, int]] = cast("dict[str, dict[str, int]]", self.counters)
+        for name, buckets in counters.items():  # type: ignore[assignment]
             lines.append(f"# TYPE {name} counter")
             for key, value in buckets.items():
                 label_str = f"{{{key}}}" if key else ""
-                lines.append(f"{name}{label_str} {value}")
+                lines.append(f"{name}{label_str} {int(value)}")
         # Histograms (formato simplificado: so soma + count + sum)
-        for name, buckets in self.histograms.items():
+        histograms: dict[str, dict[str, list[float]]] = cast(
+            "dict[str, dict[str, list[float]]]", self.histograms
+        )
+        for name, buckets in histograms.items():  # type: ignore[assignment]
             lines.append(f"# TYPE {name} summary")
-            for key, values in buckets.items():
+            for key, values in buckets.items():  # type: ignore[assignment]
                 label_str = f"{{{key}}}" if key else ""
-                lines.append(f"{name}_count{label_str} {len(values)}")
-                lines.append(f"{name}_sum{label_str} {sum(values):.6f}")
+                lines.append(f"{name}_count{label_str} {len(values)}")  # type: ignore[arg-type]
+                lines.append(f"{name}_sum{label_str} {sum(values):.6f}")  # type: ignore[call-overload,arg-type]
         # Gauges
-        for name, value in self.gauges.items():
+        gauges: dict[str, float] = cast("dict[str, float]", self.gauges)
+        for name, value in gauges.items():  # type: ignore[assignment]
             lines.append(f"# TYPE {name} gauge")
             lines.append(f"{name} {value:.6f}")
 

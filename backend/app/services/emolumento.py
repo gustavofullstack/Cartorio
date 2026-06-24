@@ -71,7 +71,8 @@ def calcular(
     total = base + adicional_folhas + adicional_urgencia
 
     # Arredondamento bancario
-    quantize = lambda d: d.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    def quantize(d: Decimal) -> Decimal:
+        return d.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     return CalculoEmolumento(
         tipo=tipo,

@@ -88,7 +88,6 @@ def test_alembic_upgrade_head_em_sqlite_com_schema() -> None:
     A migration eh idempotente (IF NOT EXISTS) entao nao falha em prod
     onde as colunas ja existem.
     """
-    import os
     from sqlalchemy import create_engine
     from app.models.base import Base
 
@@ -140,7 +139,6 @@ def test_alembic_upgrade_head_em_sqlite_com_schema() -> None:
     reason=("Postgres-only: depende de alembic upgrade rodar (ver skip do test acima).")
 )
 def test_alembic_current_retorna_revision_apos_upgrade() -> None:
-    import os
     from sqlalchemy import create_engine
     from app.models.base import Base
     import app.models  # noqa: F401

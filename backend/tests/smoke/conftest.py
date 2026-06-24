@@ -6,7 +6,6 @@ Le credenciais de env vars - nunca commita secrets.
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator
 
 import pytest
 

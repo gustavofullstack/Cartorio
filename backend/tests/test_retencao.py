@@ -18,7 +18,6 @@ from sqlalchemy.orm import sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
 from app.jobs.retencao import RetencaoConfig, run_retencao  # noqa: E402
-from app.models.atendimento import Atendimento  # noqa: E402
 from app.models.base import Base  # noqa: E402
 from app.models.cliente import Cliente, MotivoEncerramento  # noqa: E402
 from app.models.protocolo import Protocolo  # noqa: E402

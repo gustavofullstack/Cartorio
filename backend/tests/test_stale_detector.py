@@ -9,7 +9,6 @@ filtro WHERE seja respeitado de verdade.
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
 
 from app.models.atendimento import Atendimento
 from app.services.stale_detector import mark_stale_atendimentos

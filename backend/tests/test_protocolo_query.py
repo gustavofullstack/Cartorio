@@ -24,7 +24,6 @@ from app.models.base import Base  # noqa: E402
 from app.models.cliente import Cliente  # noqa: E402
 from app.models.protocolo import Protocolo  # noqa: E402
 from app.services.protocolo_query import (  # noqa: E402
-    ProtocoloRecente,
     listar_protocolos_recentes_concluidos,
 )
 

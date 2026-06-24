@@ -11,7 +11,6 @@ import hashlib
 import hmac
 from unittest.mock import MagicMock
 
-import pytest
 
 from app.models.atendimento import Atendimento
 from app.models.webhook_event import WebhookEvent

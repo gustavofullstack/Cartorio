@@ -677,3 +677,52 @@ cartorio-lgpd (mvs_6699c48e) descobriu que `scrub()` tem **11 patterns** mas NÃ
 - Stash drop com renumber (drop@{0} → drop@{1} vira @{0}) é fonte clássica de "drop errado" — sempre conferir `git stash list` ANTES e DEPOIS de cada drop
 
 ### Modified by Mavis (cartorio-dev session mvs_a3ed3f0b81664c46b42c5bcb35cf7a91 — 2026-06-23 19:00 BRT)
+
+---
+
+## 2026-06-24 — Auditoria local + cleanup lint/typecheck (VERIFICADO via comandos)
+
+### Estado verificado do backend Python (esta sessão)
+- **pytest**: 382 passed, 2 skipped, 37 deselected — **92.22% coverage** (gate 90% OK)
+- **ruff check**: All checks passed! (zero erros)
+- **mypy app/**: Success, no issues found in 44 source files (zero erros)
+- **6 warnings pytest** = deprecations de libs externas (FastAPI httpx2, OpenTelemetry SelectableGroups) + 2 RuntimeWarning em `tests/test_rate_limit_by_key.py:155-156` (coroutine não awaited em mock — não afeta prod)
+
+### Bugs corrigidos nesta sessão (commit individual — feito mas NÃO commitado)
+1. `backend/app/services/rate_limit.py:24` — adicionado `from typing import Any` (uso em `__init__`)
+2. `backend/app/services/metrics.py:46` — anotado `self._started_at: float`
+3. `backend/app/services/metrics.py:74-85` — adicionado `cast` + `# type: ignore` em loops de `counters.items()`, `histograms.items()`, `gauges.items()` (mypy inferência cascata quebrava)
+4. `backend/app/main.py:437` — `app.openapi_url` (pode ser None) → `app.openapi_url or "/openapi.json"`
+5. `backend/mcp_server.py:40-44` — adicionado `# type: ignore[assignment]` no fallback de `settings = None`
+6. `backend/app/services/emolumento.py:74` — `lambda d: d.quantize(...)` → `def quantize(d: Decimal) -> Decimal` (E731)
+7. `backend/app/models/cliente.py`, `documento.py`, `protocolo.py` — adicionado `from __future__ import annotations` + `if TYPE_CHECKING: ...` para resolver forward refs (F821)
+8. `backend/tests/test_rate_limit_by_key.py:174` — `response = await ...` → `await ...` (F841)
+
+### Limitação CRÍTICA descoberta nesta sessão
+- **NÃO tenho MCPs configurados** para Easypanel, N8N, Chatwoot, Evolution, Supabase, Redis nesta sessão.
+- MCPs disponíveis: apenas `chrome-bridge` e `udiapods-api`.
+- **NÃO POSSO VERIFICAR PRODUÇÃO** (DNS não resolve de onde estou — `nslookup cartorio-api.2notasudi.com.br` retorna NXDOMAIN).
+- Decisão: declaração honesta em vez de fingir que testei.
+
+### Pendências SUI (continuam de 2026-06-23, não mexido)
+- B3 DNS `chatwoot.2notasudi.com.br` (Easypanel UI)
+- B4 Workflow #07 sem credential Evolution (N8N UI)
+- B1 Chatwoot restart loop (rodar diag ADR-015)
+- B2 OpenClaw context overflow (threshold + TTL)
+- ADRs 015, 016, 017 (draft) ainda em `docs/adr/017-*.md`
+
+### Para próximas sessões — checklist de MCPs a configurar (SUI Gustavo)
+- [ ] MCP Easypanel (URL: `https://easypanel.2notasudi.com.br`, API key)
+- [ ] MCP N8N (`https://flow.2notasudi.com.br`, API key)
+- [ ] MCP Chatwoot (`https://chat.2notasudi.com.br`, access_token)
+- [ ] MCP Evolution API (`https://whatsapp.2notasudi.com.br`, instance key)
+- [ ] MCP Supabase (`https://supbase.2notasudi.com.br`, service_role)
+- [ ] MCP Redis (`redis://187.77.236.77:1001`, password)
+- [ ] SSH Tailscale (`ssh pietra@tail2fe279.ts.net` ou similar)
+
+### Lição (cross-rein)
+- **`mypy` em código com inferência cascata em dicts aninhados**: anote explicitamente OU use `cast("TipoExato", self.attr)`. Iterar em `self.dict.items()` sem anotar o tipo do dict pai faz mypy inferir `int` em vez de `list[float]`.
+- **Forward references em modelos SQLAlchemy circulares** (cliente ↔ protocolo ↔ documento): `from __future__ import annotations` + `if TYPE_CHECKING: from app.models.x import X` é a forma padrão (não usar `# type: ignore[name-defined]` no Mapped).
+- **Não existe atalho** para validar produção sem MCPs/creds/SSH — **declarar limitação** é melhor que simular.
+
+### Modified by ZCode/Mavis (sessão 2026-06-24 09:21 BRT)

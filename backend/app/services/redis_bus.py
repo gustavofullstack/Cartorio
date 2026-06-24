@@ -24,7 +24,6 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import redis.asyncio as redis_async
-import redis.asyncio.client
 
 from app.config import settings
 
