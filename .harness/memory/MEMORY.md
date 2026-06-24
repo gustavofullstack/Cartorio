@@ -1037,3 +1037,40 @@ Modified by ZCode/Mavis - 2026-06-24 sessao 3+ parte 4
 3. SQUAD C: C1-C5 (Root docs: README, ARCHITECTURE, API, DB, DEPLOY)
 
 Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD A 12/25
+
+---
+
+## 2026-06-24 — Sprint 4 SQUAD C (docs raiz - 5/5 ✅)
+
+### 5 docs finalizados
+- C1 README: 8592984 (190+/47-, badges + quickstart + 7 servicos prod + diagrama)
+- C2 ARCHITECTURE: 4325d2a (253+/100-, C4 4 niveis + 24 ADRs + 5 decisoes criticas)
+- C3 API.md: 045d937 (170+/165-, 34 endpoints + 10+ curl + auth 3 modos)
+- C4 DB.md: 8094748 (302+, ER diagram mermaid + 10 models + 3 migrations + indices CHECK)
+- C5 DEPLOYMENT: 6ff9993 (111+/2-, 8 steps Easypanel + 6 dominios)
+
+### Padroes estabelecidos
+- Documentos PT-BR com mermaid diagrams (C4 + ER + sequence)
+- Tabelas de referencia com link para arquivos (ADRs, models, migrations)
+- 3 modos de auth (X-API-Key + HMAC + Idempotency-Key) sempre documentados
+- LGPD em todos docs (PII nunca, hash, cpf_hash, mask)
+- Validacao final em todo deploy (for loop + health radar)
+
+### Chaves salvas globalmente
+- ~/.mavis/secrets/cartorio-global.env (chmod 600)
+  - Telegram, MiniMax, Jules, Render, Linear + 8 URLs cartorio
+- /Users/gustavoalmeida/projetos/Cartorio/.secrets/linear.env (Linear API)
+- Reaproveita: telegram.env, n8n.env, render.env, jules.env ja existentes
+
+### Skill criada
+- /Users/gustavoalmeida/.zcode/skills/prompt-cartorio/SKILL.md
+  - Prompt-mestre ativavel via /prompt-cartorio
+  - Contem: identidade, stack, 100 tasks, padroes, workflow, restricoes, comandos
+  - Cross-platform (MiniMax, ZCode, Jules, OpenCode, OpenClaw)
+
+### Proximos passos (Sprint 4 continuacao)
+1. SQUAD B: B1-B5 (N8N docs/workflows - 16 workflows documentar)
+2. SQUAD A: A13-A25 (13 tasks backend restantes)
+3. Sprint 5-7: 75 tasks docs/N8N/LGPD
+
+Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD C 5/5
