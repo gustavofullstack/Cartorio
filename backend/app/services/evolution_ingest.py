@@ -17,8 +17,10 @@ webhook_events.payload_hash (auditoria, sem dado pessoal).
 from __future__ import annotations
 
 import hashlib
+import hmac
 import logging
-from typing import Any
+import os
+from typing import Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -28,7 +30,40 @@ from app.models.webhook_event import WebhookEvent
 log = logging.getLogger(__name__)
 
 
-def ingest_evolution_event(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
+def validate_evolution_signature(raw_body: bytes, signature: Optional[str]) -> bool:
+    """Valida HMAC-SHA256 do body do webhook Evolution.
+
+    Retorna True se:
+    - Signature corresponde ao HMAC-SHA256(raw_body, EVOLUTION_WEBHOOK_SECRET), ou
+    - Secret NAO esta configurado (dev mode - loga warning).
+
+    Retorna False se:
+    - Secret configurado mas signature ausente, ou
+    - Signature fornecida mas nao corresponde (timing-safe via hmac.compare_digest).
+
+    Suporta formato `sha256=<hex>` (estilo GitHub/Stripe) alem do hex puro.
+    """
+    # Le env var dinamicamente (NAO usa settings cache) - permite teste monkeypatch
+    secret = os.getenv("EVOLUTION_WEBHOOK_SECRET") or ""
+    if not secret:
+        log.warning("evolution webhook: EVOLUTION_WEBHOOK_SECRET nao configurado, dev mode")
+        return True
+    if not signature:
+        return False
+    # Strip prefix "sha256=" se presente
+    sig_hex = signature
+    if sig_hex.startswith("sha256="):
+        sig_hex = sig_hex[len("sha256=") :]
+    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, sig_hex)
+
+
+def ingest_evolution_event(
+    db: Session,
+    payload: dict[str, Any],
+    raw_body: Optional[bytes] = None,
+    signature: Optional[str] = None,
+) -> dict[str, Any]:
     """Normaliza e processa um evento do Evolution API.
 
     Returns:
@@ -37,6 +72,13 @@ def ingest_evolution_event(db: Session, payload: dict[str, Any]) -> dict[str, An
         - reason: string descritiva se nao accepted
         - event_type, message_id, sender, text, instance (se accepted)
     """
+    # A8: validar HMAC signature se raw_body fornecido
+    if raw_body is not None and not validate_evolution_signature(raw_body, signature):
+        log.warning(
+            "evolution_ingest: signature invalida (len=%d)", len(signature or "")
+        )
+        return {"status": "rejected", "reason": "invalid_signature"}
+
     event = payload.get("event", "")
     instance = payload.get("instance", "")
 
