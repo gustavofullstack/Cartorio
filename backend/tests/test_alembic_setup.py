@@ -50,11 +50,16 @@ def test_script_py_mako_existe() -> None:
 
 def test_migration_0001_existe_e_tem_estrutura() -> None:
     versions = BACKEND / "alembic" / "versions"
-    files = list(versions.glob("*.py"))
+    files = sorted(versions.glob("*.py"))
     assert files, "deve haver pelo menos 1 migration"
-    # Pega a migration 0001
-    m0001 = next((f for f in files if "0001" in f.name), None)
-    assert m0001 is not None, "migration 0001 deve existir"
+    # Pega a PRIMEIRA migration (a de 2026_06_23_0001 — a do canal + motivo_encerramento).
+    # Outras migrations podem ter "0001" no nome mas sao revisions diferentes
+    # (ex: 2026_06_24_0001). Pegamos a primeira por data de revision.
+    m0001 = next(
+        (f for f in files if "revision: str = \"2026_06_23_0001\"" in f.read_text()),
+        None,
+    )
+    assert m0001 is not None, "migration 0001 (2026_06_23_0001) deve existir"
     content = m0001.read_text()
     # Estrutura obrigatoria
     assert 'revision: str = "2026_06_23_0001"' in content
