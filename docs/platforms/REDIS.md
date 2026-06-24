@@ -1,3 +1,80 @@
+# Redis — Cartório 2º Ofício
+
+> **In-memory data store** (cache + queue + rate-limit + session).
+> Imagem: `redis:7.x`. Auth: `@Techno832466`.
+
+## Status atual (2026-06-24)
+
+| Campo | Valor |
+|---|---|
+| Container | `cartorio_redis` |
+| Up time | 25h (healthy) |
+| Endereço interno | `redis://default:@Techno832466@cartorio_redis:6379/0` |
+| Endereço host | `redis://187.77.236.77:1001` (porta host) |
+| Versão | 7.x |
+| Auth | `@Techno832466` (env REDIS_PASSWORD) |
+| Ping | PONG OK <10ms |
+| DBs lógicas | 7 separadas: cache, queue, lock, rate, session, idemp, metrics |
+| Pendência | maxmemory-policy + AOF everysec + HA sentinel (Squad I02/I08/I09) |
+
+## Endpoints consumidos
+
+Redis não tem HTTP REST — clientes conectam via protocolo RESP.
+
+| Comando | DB | Uso |
+|---|---|---|
+| `SET key val EX 60 NX` | cache (0) | TTL automático, idempotência |
+| `INCR ratelimit:apikey:X` | rate (3) | Rate-limit sliding window |
+| `XADD outbox:events * data Y` | queue (1) | Stream producer (outbox dispatch) |
+| `XREADGROUP GROUP g c COUNT N STREAMS s` | queue (1) | Stream consumer |
+| `SET lock:resource X NX EX 5` | lock (2) | Redlock distribuído |
+| `HSET session:user:X token Y` | session (4) | Session storage |
+| `SETNX idemp:msg:X 1 EX 86400` | idemp (5) | Idempotency key (24h) |
+| `ZADD metrics:latency:X Y` | metrics (6) | Métricas prometheus |
+
+**Auth**: `AUTH @Techno832466` na conexão.
+
+## Integrações ativas
+
+- **API FastAPI** → cache de responses, session storage, idempotency, rate-limit
+- **N8N** → credentials para nodes Redis, rate-limit em workflows
+- **Telegram bot** → rate-limit por chat_id (Redis sliding window, F07)
+- **Supabase** → NÃO usa direto (DB é Postgres); outbox dispatch usa Redis Streams
+- **OpenClaw** → cache LLM responses + session storage (DB 5)
+- **Evolution/Chatwoot** → idempotency-key send_message (B04) + rate-limit webhook
+
+## Tabelas / Schemas / Workflows
+
+- **7 DBs lógicas** (0-6) separadas por concern (cache/queue/lock/rate/session/idemp/metrics)
+- **N8N workflows** com nodes Redis: `monitor-cartorio`, `alerta-critico`, `lead-novo`
+- **API FastAPI** módulos: `app/core/redis.py` (client), `app/middleware/rate_limit.py` (sliding window), `app/services/idempotency.py` (SETNX 24h)
+
+## Problemas conhecidos + fixes aplicados
+
+- **`maxmemory-policy` não configurado** → allkeys-lru (Squad I02, pendente)
+- **AOF/RDB backup** não automatizado → fix Squad I08 (backup 6h + restore drill)
+- **Sem HA** (sentinel/cluster) → single point of failure (Squad I09, documentar)
+- **Sliding window rate-limit** (Squad I04) → não implementado, usar INCR+EXPIRE simples
+- **Redlock distribuído** (Squad I05) → não implementado (lock simples SETNX)
+- **Stream consumer outbox** (Squad I06) → XADD/XREADGROUP não em uso ainda
+
+## Próximas tasks (Squad I do plan 2026-06-24)
+
+- **I01** Health-check: PING/INFO (done)
+- **I02** maxmemory-policy=allkeys-lru, 1GB, AOF everysec
+- **I03** 7 DBs separadas (cache/queue/lock/rate/session/idemp/metrics)
+- **I04** Sliding window rate-limit 1k req/s
+- **I05** Redlock distribuídos 5s TTL
+- **I06** Stream consumer outbox (XADD/XREADGROUP)
+- **I07** Métricas Redis: hit_rate, evictions, slowlog
+- **I08** Backup AOF/RDB 6h + restore drill semanal
+- **I09** HA path (sentinel/cluster) documentado
+- **I10** Documentação Redis 7 DBs completa
+
+Ver plano completo: `.harness/reins/cartorio-dev/tasks/2026-06-24-plan.json` (Squad I).
+
+---
+
 # Redis 7.x - Quick Reference
 
 > **20 comandos mais usados (String, Hash, List, Set, Stream, Pub/Sub).**
@@ -272,5 +349,3 @@ DEBUG SLEEP 5  # bloqueia Redis por 5s
 - Cliente Python: https://redis-py.readthedocs.io/
 - HTML oficial: `docs/platforms/REDIS_OFFICIAL_DOCS.html`
 - Integração: `backend/app/services/rate_limit.py`, `rate_limit_by_key.py`, `redis_bus.py`
-
-Modified by ZCode/Mavis - 2026-06-24

@@ -1,3 +1,78 @@
+# N8N — Cartório 2º Ofício
+
+> **Workflow engine** (visual, 400+ integrações, self-hosted).
+> Imagem: `n8nio/n8n:latest`. Community node: `n8n-nodes-chatwoot`.
+
+## Status atual (2026-06-24)
+
+| Campo | Valor |
+|---|---|
+| Container | `cartorio_n8n` |
+| Up time | 31s (recém-restart por OOM) |
+| URL pública | `https://flow.2notasudi.com.br` (Traefik) |
+| URL EasyPanel | `https://cartorio-n8n.dfgdxq.easypanel.host` |
+| Versão | 1.x |
+| Workflows totais | 33 |
+| Workflows ativos | 32 + 1 novo (evo-in, id `I4LkReuiurPBS9VN`) |
+| N8N-Runner | Up 5min (queue mode) |
+| Webhook Telegram | `/webhook/telegram-cartoriobot` (200, 1.56s) |
+| Webhook evo-in | `/webhook/evo-in` (200, 5 eventos) |
+| API key | JWT `eyJhbGci...TWMpHt_jmsfoITKI7hA_gZwy54RA5P3nNwe_yAPCjD4` |
+| Memory limits | OOM loop (restart silencioso, 7x em 2h) — fix pendente |
+
+## Endpoints consumidos
+
+| Método | Path | Auth | Descrição |
+|---|---|---|---|
+| GET | `/healthz` | none | Healthcheck |
+| POST | `/webhook/{path}` | varies | Webhook trigger (Telegram, evo-in, chatwoot-events, etc) |
+| POST | `/api/v1/workflows` | bearer N8N_API_KEY | CRUD workflows via API |
+| GET | `/api/v1/executions` | bearer N8N_API_KEY | Lista execuções |
+| POST | `/api/v1/workflows/{id}/activate` | bearer | Ativa/desativa workflow |
+
+**Auth**: N8N_API_KEY (JWT) para API REST. Webhooks: headerAuth, basicAuth ou none.
+
+## Integrações ativas
+
+- **Evolution** → workflow `evo-in` (I4LkReuiurPBS9VN) recebe webhooks WhatsApp
+- **Chatwoot** → workflows `chatwoot-events`, `handoff-human`, `bot-agent`
+- **API FastAPI** → workflows chamam `/api/v1/*` (criar-protocolo, consulta-emolumento, lgpd-*)
+- **Supabase** → nodes Supabase (insert/select/update) em workflows
+- **Redis** → credentials para rate-limit + cache
+- **OpenClaw** → workflow `openclaw-bridge` chama LLM gateway
+
+## Tabelas / Schemas / Workflows
+
+- **33 workflows totais** (32 ativos) — lista em `infra/n8n-workflows/*.json`
+- **Webhooks ativos** (17): boas-vindas, faq, monitor-cartorio, criar-protocolo, agendar-atendimento, consulta-protocolo, segunda-via, openclaw-fallback, consulta-emolumento, lead-novo, chatbot-llm, telegram-cartoriobot, handoff-human, alerta-critico, welcome-first, lgpd-esqueci, evo-in
+- **Credential** `cartorio-api-key` (id `ADNkyTP2e6uYskUZ`) — headerAuth para chamar API FastAPI
+- **N8N DB interno**: SQLite (single-instance) + tabelas N8N próprias no DB `cartorio` (NÃO ideal — polui schema public)
+
+## Problemas conhecidos + fixes aplicados
+
+- **Restart loop OOM** → memory limits insuficientes. Fix pendente: aumentar `N8N_MEMORY_LIMIT`
+- **N8N bloqueia `$env` em expressions** (`N8N_BLOCK_ENV_ACCESS_IN_NODE=true`) → usar **credentials** (id `ADNkyTP2e6uYskUZ` = `cartorio-api-key`)
+- **N8N criou tabelas próprias no DB cartorio** → poluição schema public. Fix futuro: DB separado
+- **Webhook evo-in criado com 3 versões** (template → header→credential → body simples) → última versão funcional
+- **Telegram last_error "Read timeout expired"** → N8N reiniciou durante teste, agora 200 OK
+
+## Próximas tasks (Squad C do plan 2026-06-24)
+
+- **C01** Audit: 33+ workflows, status, success_rate
+- **C02** Ativar 00-error-handler
+- **C03** Migrar 12 Code nodes JS problemáticos → nativos
+- **C04** Testar 01-consulta-emolumento E2E
+- **C05** Testar 02-criar-protocolo (idempotência+PII+fallback)
+- **C06** Testar 03-handoff-human-chatwoot
+- **C07** Testar 12/13 (chatbot-llm + openclaw-bridge) latency <3s p95
+- **C08** Criar/ativar supabase-outbox-dispatch
+- **C09** Ativar n8n-runner com auth
+- **C10** Backup diário + restore drill
+
+Ver plano completo: `.harness/reins/cartorio-dev/tasks/2026-06-24-plan.json` (Squad C).
+
+---
+
 # N8N 1.x - Quick Reference (Cartorio)
 
 > **10 nodes + expressions + credentials para integracao Chatwoot + Supabase + HTTP.**
@@ -253,5 +328,3 @@ n8n-nodes-chatwoot
 - Workflows do projeto: `infra/n8n-workflows/*.json`
 - Estado: `infra/` (config Easypanel)
 - Integrações com API: `backend/app/api/v1/integrations.py`
-
-Modified by ZCode/Mavis - 2026-06-24

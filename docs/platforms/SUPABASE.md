@@ -1,3 +1,86 @@
+# Supabase — Cartório 2º Ofício
+
+> **Backend-as-a-Service** (Postgres + Auth + Storage + Realtime + Edge).
+> Self-hosted (LGPD). 14 containers. DB: `cartorio`.
+
+## Status atual (2026-06-24)
+
+| Campo | Valor |
+|---|---|
+| Containers | 14 (Kong, Studio, DB, Auth, Storage, Realtime, Functions, etc) |
+| Up time | 23h (todos healthy) |
+| URL pública | `https://supbase.2notasudi.com.br` (typo histórico) |
+| URL EasyPanel | `https://cartorio-supabase.dfgdxq.easypanel.host` |
+| Kong | `:8000` → 401 (esperado, sem JWT) |
+| Studio | `:3000` → 307 (auth redirect) |
+| DB | `cartorio` (Postgres 15) |
+| DB tabelas | 133 (121 antigas + 11 Sprint 3 + 1 metadata) |
+| RPCs | 3 (criar_protocolo, opt_out_global, registrar_auditoria) |
+| Extensões DB `postgres` | 5 (pg_cron, pg_net, pgmq, pg_graphql, supabase_vault) |
+| Versão cliente | supabase-py 2.x |
+| Pendência | pg_cron jobs + vault secrets no DB cartorio + DNS público |
+
+## Endpoints consumidos
+
+| Método | Path | Auth | Descrição |
+|---|---|---|---|
+| GET | `:8000/` | none | Kong root (401 esperado) |
+| POST | `:8000/rest/v1/{table}` | bearer JWT/service_role | PostgREST CRUD |
+| POST | `:8000/auth/v1/token` | anon | Login (signInWithPassword) |
+| POST | `:8000/realtime/v1/*` | bearer | WebSocket subscriptions |
+| POST | `:8000/storage/v1/object/*` | bearer | Upload/download |
+| POST | `:8000/functions/v1/*` | bearer | Edge functions (Deno) |
+| POST | `:8000/rpc/{fn_name}` | bearer | Chama RPC (Postgres function) |
+
+**Auth**: JWT user (anon + authenticated) ou `service_role` key (backend bypassa RLS).
+
+## Integrações ativas
+
+- **API FastAPI** → service_role key para CRUD (bypassa RLS)
+- **N8N** → credential Supabase API (host + service_role) para nodes nativos
+- **OpenClaw** → tool `supabase` (queries RLS) + tool `audit-log` (RPC `registrar_auditoria`)
+- **Redis** → NÃO integra direto; outbox dispatch usa Redis Streams (Squad I06)
+- **Chatwoot** → NÃO integra direto (independente)
+- **Evolution** → NÃO integra direto (webhook vai pra N8N → API → Supabase)
+
+## Tabelas / Schemas / Workflows
+
+- **133 tabelas** no schema `public`:
+  - 121 antigas (Sprint 0-2: atendimentos, clientes, emolumentos, sessoes_chat, agendamentos, etc)
+  - 11 novas Sprint 3 (`webhook_event`, `outbox_messages`, `conversa`, `atendimento_link`, `cpf_cnpj_validator`, `lgpd_consent_log`, `opt_out_log`, `evolution_instance`, `n8n_run_log`, `chatwoot_conversation_meta`, `telegram_chat_meta`)
+  - 1 metadata (`alembic_version = 2026_06_24_0001`)
+- **3 RPCs** criadas: `criar_protocolo`, `opt_out_global`, `registrar_auditoria`
+- **5 extensões** habilitadas no DB `postgres` (NÃO no `cartorio`): pg_cron, pg_net, pgmq, pg_graphql, supabase_vault
+- **Migration file**: `infra/supabase/migrations/2026_06_24_0001-supabase-real-rollout.sql`
+
+## Problemas conhecidos + fixes aplicados
+
+- **Dockerfile NÃO copia `alembic/`** → prod usa `Base.metadata.create_all()` no lifespan, NÃO Alembic
+- **Model `outbox_messages` faltava** → fix `aab3774` (registrado em `models/__init__.py`)
+- **N8N criou tabelas próprias no DB cartorio** → poluição schema public (separar DB no futuro)
+- **`cpf_cnpj_validator.py` é só util** (NÃO model SQLAlchemy) → mover pra Sprint 4
+- **Tabelas sem model** (`emolumentos`, `sessoes_chat`, `agendamentos`) → Sprint 0 antigo, ainda válido
+- **pg_cron jobs pendentes** (stale_detector 5min, retention 03:00, audit_verify 6h, dlq 10min, outbox 1min) → Squad A05
+- **Vault secrets pendentes** (7: EVOLUTION/CHATWOOT/N8N/OPENCLAW/OPENCODE-GO/RENDER/JULES) → Squad A07
+- **DNS `supabase.2notasudi.com.br` não resolve** → criar A record Cloudflare (Squad J01)
+
+## Próximas tasks (Squad A do plan 2026-06-24)
+
+- **A01** Listar tabelas reais (done)
+- **A02** Versionar schema SQL em `infra/supabase/migrations/` (done)
+- **A03** Criar tabelas faltantes (done 11/11)
+- **A04** Criar RPCs: criar_protocolo, calcular_emolumento, registrar_auditoria, opt_out_global, lgpd_direito_<X> (3/5 done)
+- **A05** Ativar pg_cron: stale_detector 5min, retention 03:00, audit_verify 6h, dlq_refresh 10min, outbox_flush 1min
+- **A06** Ativar Database Webhooks: outbox→dispatch, protocolo→n8n
+- **A07** Vault: 7 secrets + migrar consumers
+- **A08** Ativar pg_graphql e documentar schema
+- **A09** Realtime channels: atendimento, conversa, lgpd_consent
+- **A10** Backup automatizado: snapshot diário + WAL + restore drill
+
+Ver plano completo: `.harness/reins/cartorio-dev/tasks/2026-06-24-plan.json` (Squad A).
+
+---
+
 # Supabase - Quick Reference (Python)
 
 > **8 comandos prioritarios + RLS + service_role vs anon.**
@@ -245,5 +328,3 @@ O backend FastAPI atual usa **SQLAlchemy direto** (sync) para Supabase via `post
 - Plataforma prod: https://supbase.2notasudi.com.br
 - README oficial: `docs/platforms/SUPABASE_OFFICIAL_README.md`
 - Integração: `backend/app/integrations/` (a criar)
-
-Modified by ZCode/Mavis - 2026-06-24
