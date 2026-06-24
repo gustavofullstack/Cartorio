@@ -1,0 +1,109 @@
+# Pre-commit hooks - qualidade automatica antes de cada commit.
+# Instalar: pip install pre-commit && pre-commit install
+# Rodar manualmente: pre-commit run --all-files
+# Pular 1 vez: git commit --no-verify
+
+# Veja https://pre-commit.com para detalhes.
+# Cada hook roda em ISOLAMENTO. Se um falha, o commit NAO acontece.
+
+repos:
+  # ============================================================================
+  # Arquivos locais - formatacao e seguranca
+  # ============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: "Trim trailing whitespace"
+        # Ignorar Markdown (formatacao com 2 espacos = quebra de linha intencional)
+        args: [--markdown-linebreak-ext=md]
+        exclude: ^(docs/.*\.md|.*\.md)$
+
+      - id: end-of-file-fixer
+        name: "Fix EOF (newline no final)"
+
+      - id: check-yaml
+        name: "Validate YAML"
+        # .pre-commit-config.yaml tem o campo 'args:' que pode ter formato especial
+        exclude: ^(\.pre-commit-config\.yaml|\.github/.*\.yml|docker-compose.*\.yml)$
+
+      - id: check-toml
+        name: "Validate TOML"
+
+      - id: check-json
+        name: "Validate JSON"
+
+      - id: check-added-large-files
+        name: "Bloquear arquivos >500KB"
+        args: [--maxkb=500]
+        # Binarios (imagens, modelos ML, etc) nao sao bloqueados por este hook
+        exclude: ^(docs/.*\.(png|jpg|gif|svg)|infra/.*\.(png|jpg))$
+
+      - id: check-merge-conflict
+        name: "Bloquear marcadores de merge conflict"
+
+      - id: detect-private-key
+        name: "Bloquear chaves privadas (SSH, RSA, AWS, etc)"
+
+      - id: no-commit-to-branch
+        name: "Bloquear commit direto em master/main"
+        args: [--branch=master, --branch=main]
+
+  # ============================================================================
+  # Python - backend
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: "ruff check (lint)"
+        entry: bash -c 'cd backend && uv run ruff check .'
+        language: system
+        types: [python]
+        pass_filenames: false
+        # Roda em TODOS os arquivos Python, nao so nos modificados
+        always_run: true
+
+      - id: ruff-format
+        name: "ruff format (auto-format)"
+        entry: bash -c 'cd backend && uv run ruff format --check .'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
+      - id: mypy
+        name: "mypy (typecheck)"
+        entry: bash -c 'cd backend && uv run mypy app/'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        # mypy pode ser lento - rodar so em pre-push (NAO pre-commit)
+        stages: [manual]
+
+      - id: pytest-fast
+        name: "pytest rapido (gate minimo)"
+        entry: bash -c 'cd backend && uv run pytest -q --tb=line --no-cov -x'
+        language: system
+        types: [python]
+        pass_filenames: false
+        # Rodar pre-push (NAO pre-commit) - pytest pode ser lento
+        stages: [manual]
+
+  # ============================================================================
+  # Convencoes
+  # ============================================================================
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        name: "Conventional Commits (feat/fix/docs/test/refactor/chore/perf)"
+        # Argumentos: tipos permitidos
+        args: []
+        stages: [commit-msg]
+
+# Configuracao global
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+# Fail-fast: para no primeiro hook que falhar
+fail_fast: true

@@ -25,7 +25,7 @@ from typing import Annotated
 import httpx
 import redis
 from fastapi import APIRouter, Depends, Form, HTTPException, Path, Query, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field  # noqa: F401  (usado nos schemas abaixo)
@@ -719,13 +719,117 @@ async def audit_verify() -> dict:
 
 
 @api_router.get(
+    "/health/db",
+    tags=["health"],
+    summary="Health check granular: PostgreSQL",
+    description=(
+        "Verifica conectividade com PostgreSQL via SQLAlchemy `SELECT 1`. "
+        "Retorna 200 com `{status: 'online', latency_ms: ...}` se OK, "
+        "ou 503 com `{status: 'offline', error: ...}` se falhar."
+    ),
+    response_description="Status do banco + latencia em ms.",
+)
+async def health_db() -> JSONResponse:
+    """Health check granular do PostgreSQL."""
+    from app.db import engine
+    from sqlalchemy import text
+
+    start = time.time()
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        latency_ms = round((time.time() - start) * 1000, 2)
+        return JSONResponse(
+            status_code=200,
+            content={"status": "online", "service": "postgresql", "latency_ms": latency_ms},
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "offline", "service": "postgresql", "error": str(e)},
+        )
+
+
+@api_router.get(
+    "/health/redis",
+    tags=["health"],
+    summary="Health check granular: Redis",
+    description=(
+        "Verifica conectividade com Redis via PING. "
+        "Retorna 200 com `{status: 'online', latency_ms: ...}` se OK, "
+        "ou 503 com `{status: 'offline', error: ...}` se falhar."
+    ),
+    response_description="Status do Redis + latencia em ms.",
+)
+async def health_redis() -> JSONResponse:
+    """Health check granular do Redis."""
+
+    start = time.time()
+    try:
+        import redis.asyncio as redis_async_lib
+        r = redis_async_lib.from_url(settings.redis_url, socket_timeout=2.0)
+        await r.ping()
+        await r.close()
+        latency_ms = round((time.time() - start) * 1000, 2)
+        return JSONResponse(
+            status_code=200,
+            content={"status": "online", "service": "redis", "latency_ms": latency_ms},
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "offline", "service": "redis", "error": str(e)},
+        )
+
+
+@api_router.get(
+    "/health/llm",
+    tags=["health"],
+    summary="Health check granular: LLM provider (Opencode-Go / OpenClaw)",
+    description=(
+        "Verifica conectividade com o provider LLM primario (Opencode-Go) "
+        "via GET na URL base. Retorna 200 se responde (qualquer status), "
+        "ou 503 se falha de conexao."
+    ),
+    response_description="Status do LLM provider.",
+)
+async def health_llm() -> JSONResponse:
+    """Health check granular do LLM provider primario."""
+
+    primary = settings.opencode_go_base_url or settings.openclaw_base_url
+    if not primary:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "offline", "service": "llm", "error": "No LLM provider configured"},
+        )
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(primary)
+            return JSONResponse(
+                status_code=200 if resp.status_code < 500 else 503,
+                content={
+                    "status": "online" if resp.status_code < 500 else "degraded",
+                    "service": "llm",
+                    "provider": "opencode_go" if settings.opencode_go_base_url else "openclaw",
+                    "http_status": resp.status_code,
+                },
+            )
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "offline", "service": "llm", "error": str(e)},
+        )
+
+
+@api_router.get(
     "/health/radar",
     tags=["health"],
     summary="Health radar multi-servico",
     description=(
         "Verifica conectividade de **todos** os 7 servicos da suite em paralelo: "
         "PostgreSQL, Redis, n8n, OpenClaw gateway, Evolution API, Chatwoot, Supabase. "
-        "Retorna status individual por servico + status agregado (`green` se todos online)."
+        "Retorna status individual por servico + status agregado (`green` se todos online). "
+        "Para checks granulares use `/health/db`, `/health/redis`, `/health/llm`."
     ),
     response_description="Status por servico + status agregado.",
 )
