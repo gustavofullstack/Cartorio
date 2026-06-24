@@ -1,0 +1,77 @@
+# EditorConfig - https://editorconfig.org
+# Padroniza formatacao entre editores (VSCode, PyCharm, Vim, etc)
+# Cada dev nao precisa configurar manualmente; seu editor le este arquivo.
+
+root = true
+
+# ============================================================================
+# Default (todos os arquivos)
+# ============================================================================
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ============================================================================
+# Python (backend/)
+# ============================================================================
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+# pyproject.toml controla formatacao real (ruff + black-compatible)
+# Use `make format` para formatar automaticamente.
+
+# ============================================================================
+# JavaScript / TypeScript / JSON (frontend N8N custom nodes, etc)
+# ============================================================================
+[*.{js,jsx,ts,tsx,mjs,cjs}]
+indent_size = 2
+
+[*.json]
+indent_size = 2
+
+# package.json e tsconfig.json tem regras proprias - respeitar
+
+# ============================================================================
+# YAML (N8N workflows, GitHub Actions, docker-compose)
+# ============================================================================
+[*.{yml,yaml}]
+indent_size = 2
+
+# ============================================================================
+# Markdown
+# ============================================================================
+[*.md]
+# Trim trailing whitespace EXCETO 2 espacos que indicam quebra de linha em MD
+trim_trailing_whitespace = false
+# Markdown nao tem indentacao critica, mas usamos 2 para listas aninhadas
+indent_size = 2
+
+# ============================================================================
+# Shell scripts
+# ============================================================================
+[*.sh]
+indent_size = 2
+
+# ============================================================================
+# Makefile (TABS obrigatorios para recipes!)
+# ============================================================================
+[Makefile]
+indent_style = tab
+
+# ============================================================================
+# SQL (migrations Alembic)
+# ============================================================================
+[*.sql]
+indent_size = 2
+
+# ============================================================================
+# Lock files (NAO MEXER)
+# ============================================================================
+[{uv.lock,package-lock.json,yarn.lock}]
+# Lock files sao gerados automaticamente, nao devem ser editados manualmente
+insert_final_newline = unset
+trim_trailing_whitespace = unset
