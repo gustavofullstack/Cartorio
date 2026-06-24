@@ -1,0 +1,79 @@
+{
+  "$schema": "https://cartorio.com/schemas/task-bank-v1.json",
+  "version": "1.0.0",
+  "updated_at": "2026-06-24",
+  "project": "cartorio-chatbot",
+  "purpose": "Banco de tasks compact para uso entre agents (sub-agents, sprints, contexts). Formato JSON economiza ~70% de tokens vs Markdown.",
+  "stats": {
+    "total_tasks": 100,
+    "p0_done": 3,
+    "p0_total": 10,
+    "p1_done": 1,
+    "p1_total": 30,
+    "p2_done": 12,
+    "p2_total": 60,
+    "completion_pct": 16
+  },
+  "p0": [
+    {"id": "P0.1", "title": "DNS chatwoot.2notasudi.com.br", "owner": "SUI", "status": "pending"},
+    {"id": "P0.2", "title": "N8N workflow #07 credential Evolution", "owner": "SUI", "status": "pending"},
+    {"id": "P0.3", "title": "Chatwoot restart loop fix (ADR-015)", "owner": "DO", "status": "pending"},
+    {"id": "P0.4", "title": "OpenClaw context overflow fix (ADR-016)", "owner": "DO", "status": "pending"},
+    {"id": "P0.5", "title": "CNS check-digit (LGPD art. 11)", "owner": "BE", "status": "done", "commit": "d8d2d84"},
+    {"id": "P0.6", "title": "CNH check-digit", "owner": "BE", "status": "done", "commit": "d8d2d84"},
+    {"id": "P0.7", "title": "Output PII scrub router.py:553 + integrations.py:190", "owner": "BE", "status": "pending"},
+    {"id": "P0.8", "title": "Response shape pii_blocked+handoff (router.py:631)", "owner": "BE", "status": "pending"},
+    {"id": "P0.9", "title": "Audit log conversa.pii_blocked (LGPD art. 37)", "owner": "BE", "status": "pending"},
+    {"id": "P0.10", "title": "Healthcheck /health/radar 7 servicos", "owner": "BE", "status": "done", "commit": "86b5938"}
+  ],
+  "p1": [
+    {"id": "P1.BE.1", "title": "Encryption at-rest Postgres (L3 LGPD)", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.2", "title": "MCP server Evolution (#26)", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.3", "title": "MCP server Chatwoot (#27)", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.4", "title": "MCP server Redis (#28)", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.5", "title": "Endpoint /admin/agent/pause (HITL)", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.6", "title": "Retry async com backoff (Evolution send)", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.7", "title": "Dead letter queue (DLQ)", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.8", "title": "Metrics DLQ depth (Prometheus)", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.9", "title": "OpenAPI spec validada", "owner": "BE", "status": "pending"},
+    {"id": "P1.BE.10", "title": "Teste E2E /cron/stale-detector em staging", "owner": "BE", "status": "pending"},
+    {"id": "P1.N8N.1", "title": "Telegram bot de notificacoes (#24)", "owner": "N8N", "status": "pending"},
+    {"id": "P1.N8N.2", "title": "Pesquisa mercado cartorios (#25)", "owner": "N8N", "status": "pending"},
+    {"id": "P1.N8N.3", "title": "Backup diario Supabase", "owner": "N8N", "status": "pending"},
+    {"id": "P1.N8N.4", "title": "Sync audit log analytics", "owner": "N8N", "status": "pending"},
+    {"id": "P1.N8N.5", "title": "LGPD direito esquecimento auto", "owner": "N8N", "status": "pending"},
+    {"id": "P1.N8N.6", "title": "Test runner 16 workflows N8N", "owner": "N8N", "status": "pending"},
+    {"id": "P1.N8N.7", "title": "Documentar 16 workflows", "owner": "N8N", "status": "pending"},
+    {"id": "P1.N8N.8", "title": "Ativar UI workflow #31 Telegram", "owner": "N8N", "status": "pending"},
+    {"id": "P1.LG.1", "title": "DPA Evolution API v1.0", "owner": "LG", "status": "pending"},
+    {"id": "P1.LG.2", "title": "DPA MiniMax (LLM)", "owner": "LG", "status": "pending"},
+    {"id": "P1.LG.3", "title": "DPA Opencode-Go", "owner": "LG", "status": "pending"},
+    {"id": "P1.LG.4", "title": "Direito esquecimento via chat", "owner": "LG", "status": "pending"},
+    {"id": "P1.LG.5", "title": "Consentimento explicito WhatsApp", "owner": "LG", "status": "pending"},
+    {"id": "P1.LG.6", "title": "Retencao configuravel por tipo", "owner": "LG", "status": "pending"},
+    {"id": "P1.DO.1", "title": "GitHub Actions CI", "owner": "DO", "status": "done", "commit": "653e15d"},
+    {"id": "P1.DO.2", "title": "GitHub Actions CD (build image)", "owner": "DO", "status": "pending"},
+    {"id": "P1.DO.3", "title": "Easypanel auto-deploy from registry", "owner": "DO", "status": "pending"},
+    {"id": "P1.DO.4", "title": "Backup automatico N8N workflows", "owner": "DO", "status": "pending"},
+    {"id": "P1.DO.5", "title": "Grafana dashboard (requests, pii_blocks, DLQ)", "owner": "DO", "status": "pending"},
+    {"id": "P1.DO.6", "title": "Alertmanager P0 events -> Telegram", "owner": "DO", "status": "pending"}
+  ],
+  "p2_done": [
+    "P2.BE.5", "P2.BE.7", "P2.BE.8",
+    "P2.MX.1", "P2.MX.4", "P2.MX.5", "P2.MX.6", "P2.MX.7", "P2.MX.8", "P2.MX.9", "P2.MX.10",
+    "P2.DC.6", "P2.DC.7", "P2.DC.8", "P2.DC.9", "P2.DC.10", "P2.DC.11", "P2.DC.13", "P2.DC.14",
+    "P2.LG.3"
+  ],
+  "delegation": {
+    "BE": "Backend (FastAPI, SQLAlchemy, LGPD code)",
+    "N8N": "Workflows N8N + Evolution/Chatwoot integration",
+    "LG": "LGPD compliance (RIPD, DPA, audit)",
+    "DO": "DevOps (CI/CD, deploy, monitoring)",
+    "SUI": "Sole User Intervention (Gustavo UI/SSH only)"
+  },
+  "git_status": {
+    "branch": "master",
+    "commits_session": 25,
+    "ahead_origin": 25
+  }
+}
