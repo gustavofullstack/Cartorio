@@ -1,6 +1,6 @@
 """Testes do PII scrubbing - LGPD compliance."""
 
-from app.services.pii import detect_only, hash_pii, scrub
+from app.services.pii import detect_only, hash_pii, scrub, validate_cnh, validate_cns
 
 
 def test_scrub_cpf_with_and_without_punctuation():
@@ -346,3 +346,142 @@ def test_scrub_extremo_50_pii_com_cns_cnh():
     # (phone foi omitido do fixture porque phone_br loose nao matcheia
     # 0 0000-0000; manter escopo focado em CNS+CNH+CPF+email)
     assert r.redaction_count == 40
+
+
+# ============================================================================
+# CNS - validacao de check-digit (DV unico) - Modulo 11 com pesos fixos 15..1
+# Camada extra ao regex CNS. Manual tecnico DATASUS / CADSUS.
+# CNS = 15 digitos + 1 DV = 16 digitos totais.
+# ============================================================================
+
+
+def test_cns_validate_dv_valido():
+    """CNS 16 digitos com DV correto retorna True.
+
+    Exemplo da documentacao: 898 0007 6473 5600 + DV 0.
+    CNS de teste amplamente referenciado: 8980007647356000.
+    """
+    assert validate_cns("8980007647356000") is True
+
+
+def test_cns_validate_dv_invalido():
+    """CNS com DV incorreto (deveria ser 0, foi declarado 1) retorna False."""
+    # 8980007647356001 -> DV=1 (deveria ser 0)
+    assert validate_cns("8980007647356001") is False
+
+
+def test_cns_validate_15_digitos_sem_dv():
+    """CNS com 15 digitos sem DV NAO eh confiavel -> False."""
+    assert validate_cns("898000764735600") is False
+
+
+def test_cns_validate_16_digitos_com_formatacao_3_4_4_4_1():
+    """CNS com formatacao 3-4-4-4 e DV separado: caller normaliza antes."""
+    # 898 0007 6473 5600 0 -> apos re.sub(r'\\D', '', ...) = 8980007647356000
+    import re
+
+    raw = "898 0007 6473 5600 0"
+    normalized = re.sub(r"\D", "", raw)
+    assert validate_cns(normalized) is True
+
+
+def test_cns_validate_provisorio_inicia_com_8():
+    """CNS provisorio (inicia com 8) com DV correto -> True."""
+    # 8*15+0*14+...+0*1 = 120, 120 % 11 = 10, DV = 11-10 = 1
+    assert validate_cns("8000000000000001") is True
+
+
+def test_cns_validate_definitivo_inicia_com_1():
+    """CNS definitivo (inicia com 1) com DV correto -> True."""
+    # 1*15 = 15, 15 % 11 = 4, DV = 11-4 = 7
+    assert validate_cns("1000000000000007") is True
+
+
+def test_cns_validate_entrada_vazia():
+    """Entrada vazia -> False (sem dado, sem CNS)."""
+    assert validate_cns("") is False
+
+
+def test_cns_validate_nao_digit():
+    """Entrada com caracteres nao-decimais -> False."""
+    assert validate_cns("898000764735600a") is False
+    assert validate_cns("898.000.764.735.600.0") is False  # caller deve normalizar
+
+
+def test_cns_validate_tamanho_invalido():
+    """Tamanhos != 15 e != 16 -> False."""
+    assert validate_cns("123") is False
+    assert validate_cns("12345678901234567") is False  # 17
+    assert validate_cns("123456789012345678") is False  # 18
+
+
+# ============================================================================
+# CNH (Carteira Nacional de Habilitacao) - validacao de check-digit
+# Formato: 9 digitos base + 2 DV = 11 digitos totais.
+# Algoritmo Modulo 11 com pesos ciclicos 2..9 (direita para esquerda).
+# Camada extra ao regex CNH.
+# ============================================================================
+
+
+def test_cnh_validate_dv_valido():
+    """CNH 11 digitos com DV1+DV2 corretos retorna True.
+
+    Exemplo calculado: base 123456789 + DV1=7 + DV2=8 = 12345678978.
+    Soma: 1*2+2*3+...+9*2 = 202. 202 % 11 = 4. DV1 = 11-4 = 7.
+    Recalculo com DV1 incluido: DV2 = 8.
+    """
+    assert validate_cnh("12345678978") is True
+
+
+def test_cnh_validate_dv_invalido():
+    """CNH com DV1 incorreto (deveria ser 7, foi declarado 6) retorna False."""
+    # 12345678968 -> DV1=6 (deveria ser 7)
+    assert validate_cnh("12345678968") is False
+
+
+def test_cnh_validate_dv2_invalido():
+    """CNH com DV2 incorreto (deveria ser 8, foi declarado 9) retorna False."""
+    # 12345678979 -> DV1=7 ok, DV2=9 (deveria ser 8)
+    assert validate_cnh("12345678979") is False
+
+
+def test_cnh_validate_9_digitos_sem_dv():
+    """CNH com 9 digitos sem DV NAO eh confiavel -> False."""
+    assert validate_cnh("123456789") is False
+
+
+def test_cnh_validate_11_digitos_com_formatacao():
+    """CNH com formatacao: caller normaliza antes."""
+    import re
+
+    raw = "1234 5678 978"  # 9+2 = 11 com espacos
+    normalized = re.sub(r"\D", "", raw)
+    assert validate_cnh(normalized) is True
+
+
+def test_cnh_validate_todos_digitos_iguais():
+    """CNH classica 111111111 com DVs calculados -> True."""
+    from app.services.pii import _cnh_dv1, _cnh_dv2
+
+    base = "111111111"
+    dv1 = _cnh_dv1(base)
+    dv2 = _cnh_dv2(base + str(dv1))
+    assert validate_cnh(base + str(dv1) + str(dv2)) is True
+
+
+def test_cnh_validate_entrada_vazia():
+    """Entrada vazia -> False (sem dado, sem CNH)."""
+    assert validate_cnh("") is False
+
+
+def test_cnh_validate_nao_digit():
+    """Entrada com caracteres nao-decimais -> False."""
+    assert validate_cnh("1234567897a") is False
+    assert validate_cnh("123.456.789-78") is False  # caller deve normalizar
+
+
+def test_cnh_validate_tamanho_invalido():
+    """Tamanhos != 9 e != 11 -> False."""
+    assert validate_cnh("123") is False
+    assert validate_cnh("1234567890") is False  # 10
+    assert validate_cnh("123456789012") is False  # 12

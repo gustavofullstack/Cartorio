@@ -183,3 +183,150 @@ def hash_pii(value: str, salt: str) -> str:
     Nao confundir com criptografia - hash nao eh reversivel.
     """
     return hashlib.sha256(f"{salt}:{value}".encode("utf-8")).hexdigest()
+
+
+# ============================================================================
+# CNS - validacao de check-digit (DV) via Modulo 11
+# Manual tecnico DATASUS / Ministerio da Saude (CADSUS).
+# Camada EXTRA de validacao alem do regex CNS. NAO substitui o regex;
+# so eh chamada quando o regex ja matcheou.
+#
+# Algoritmo (confirmado por implementacao de referencia):
+# - CNS = 15 digitos + 1 DV = 16 digitos totais
+# - Pesos FIXOS decrescentes: 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+#   aplicados da posicao 1 (peso 15) ate posicao 15 (peso 1)
+# - Soma = soma(digito[i] * peso[i])
+# - DV = 11 - (soma mod 11)
+# - Se DV >= 10, DV = 0 (regra de overflow)
+#
+# Classificacao do CNS:
+# - Provisorio: 1o digito = 8 ou 9
+# - Definitivo: 1o digito = 1, 2, 3, 4, 5 ou 6
+# ============================================================================
+
+
+_CNS_PESOS: tuple[int, ...] = (15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+
+
+def _cns_mod11(first15: str) -> int:
+    """Aplica Modulo 11 sobre os 15 primeiros digitos do CNS.
+
+    Retorna DV calculado: 11 - (soma mod 11), ou 0 se resultado >= 10.
+    """
+    soma = sum(int(d) * p for d, p in zip(first15, _CNS_PESOS, strict=True))
+    resto = soma % 11
+    dv = 11 - resto
+    return 0 if dv >= 10 else dv
+
+
+def _cns_dv(first15: str) -> int:
+    """Calcula DV (digito verificador unico) do CNS a partir dos 15 primeiros digitos.
+
+    Levanta ValueError se entrada nao tiver 15 digitos decimais.
+    """
+    if len(first15) != 15 or not first15.isdigit():
+        raise ValueError("CNS primeiros 15 digitos invalidos")
+    return _cns_mod11(first15)
+
+
+def validate_cns(cns_digits: str) -> bool:
+    """Valida check-digit (DV) de um CNS ja normalizado (so digitos).
+
+    Regras de aceite:
+    - 16 digitos: valida DV (pos 16) via Modulo 11 com pesos fixos 15..1.
+    - 15 digitos: retorna False (CNS sem DV NAO eh confiavel - pode ser
+      ISBN/processo/OAB; caller deve re-promptar usuario).
+    - Outros tamanhos ou nao-digitos: retorna False.
+
+    Caller deve pre-normalizar a entrada removendo espacos/pontos
+    (ex.: re.sub(r'\\D', '', cns)) antes de chamar esta funcao.
+
+    Referencia: Manual tecnico DATASUS / Ministerio da Saude (CADSUS).
+    """
+    if not cns_digits or not cns_digits.isdigit():
+        return False
+    if len(cns_digits) == 15:
+        return False
+    if len(cns_digits) != 16:
+        return False
+    first15 = cns_digits[:15]
+    dv_declarado = int(cns_digits[15])
+    dv_calculado = _cns_dv(first15)
+    return dv_calculado == dv_declarado
+
+
+# ============================================================================
+# CNH (Carteira Nacional de Habilitacao) - validacao de check-digit (DV1 + DV2)
+# Formato: 9 digitos base + 2 DV = 11 digitos totais.
+# Algoritmo publico: Modulo 11 com pesos ciclicos 2..9 (direita para esquerda).
+# Fonte: implementacoes open source validadas (tiimgreen/validar-cnh,
+# jcassio0/validarCNPJ-CPF-CNH). Nao ha publicacao oficial DENATRAN.
+#
+# Camada EXTRA ao regex CNH. NAO substitui o regex cnh em _PATTERNS.
+# ============================================================================
+
+
+def _cnh_mod11(digitos: str) -> int:
+    """Aplica Modulo 11 sobre uma string de digitos decimais.
+
+    Pesos ciclicos 2..9, do mais a direita (peso 2) ate o mais a
+    esquerda. Retorna DV calculado: se (soma mod 11) < 2, DV = 0;
+    senao DV = 11 - (soma mod 11).
+    """
+    soma = 0
+    n = len(digitos)
+    for i, ch in enumerate(digitos):
+        dist = n - 1 - i
+        peso = (dist % 8) + 2  # ciclo 2..9 (8 valores)
+        soma += int(ch) * peso
+    resto = soma % 11
+    return 0 if resto < 2 else 11 - resto
+
+
+def _cnh_dv1(first9: str) -> int:
+    """Calcula DV1 (posicao 10) da CNH a partir dos 9 primeiros digitos.
+
+    Levanta ValueError se entrada nao tiver 9 digitos decimais.
+    """
+    if len(first9) != 9 or not first9.isdigit():
+        raise ValueError("CNH primeiros 9 digitos invalidos")
+    return _cnh_mod11(first9)
+
+
+def _cnh_dv2(first10: str) -> int:
+    """Calcula DV2 (posicao 11) da CNH a partir dos 10 primeiros digitos (9 + DV1).
+
+    Levanta ValueError se entrada nao tiver 10 digitos decimais.
+    """
+    if len(first10) != 10 or not first10.isdigit():
+        raise ValueError("CNH primeiros 10 digitos (9 + DV1) invalidos")
+    return _cnh_mod11(first10)
+
+
+def validate_cnh(cnh_digits: str) -> bool:
+    """Valida check-digit (DV1 + DV2) de uma CNH ja normalizada (so digitos).
+
+    Regras de aceite:
+    - 11 digitos: valida DV1 (pos 10) e DV2 (pos 11) via Modulo 11.
+    - 9 digitos: retorna False (CNH sem DV NAO eh confiavel).
+    - Outros tamanhos ou nao-digitos: retorna False.
+
+    Caller deve pre-normalizar a entrada removendo espacos/pontos
+    (ex.: re.sub(r'\\D', '', cnh)) antes de chamar esta funcao.
+
+    Referencia: algoritmo publico, validado por implementacoes open source.
+    """
+    if not cnh_digits or not cnh_digits.isdigit():
+        return False
+    if len(cnh_digits) == 9:
+        return False
+    if len(cnh_digits) != 11:
+        return False
+    first9 = cnh_digits[:9]
+    dv1_declarado = int(cnh_digits[9])
+    dv2_declarado = int(cnh_digits[10])
+    dv1_calculado = _cnh_dv1(first9)
+    if dv1_calculado != dv1_declarado:
+        return False
+    dv2_calculado = _cnh_dv2(first9 + str(dv1_calculado))
+    return dv2_calculado == dv2_declarado
