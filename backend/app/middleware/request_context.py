@@ -107,7 +107,10 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         request.state.correlation_id = request_id
 
         # Log estruturado do request (inclui correlation_id)
+        # T9-MED-10: loga IP TRUNCADO (/24 ou /32), nao IP full (LGPD-by-design D5).
         import logging
+
+        from app.utils.ip import truncate_ip
 
         logger = logging.getLogger("cartorio.request")
         logger.info(
@@ -115,8 +118,8 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             request.method,
             request.url.path,
             request_id,
-            client_ip or "unknown",
-            canal or "unknown",
+            truncate_ip(client_ip) or "unknown",
+            canal,
         )
 
         response = await call_next(request)

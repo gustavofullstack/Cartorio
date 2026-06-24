@@ -181,39 +181,9 @@ def _scrub_messages(messages: list[dict[str, str]]) -> tuple[list[dict[str, str]
     return scrubbed, total_redacted
 
 
-# ============================================================================
-# IP truncation (LGPD D5 — IP truncado em /24 no audit log)
-# ============================================================================
-
-
-def _truncate_ip_to_24(ip: str) -> str:
-    """Trunca IP em /24 (zero últimos 3 octetos) para audit log LGPD.
-
-    LGPD D5: IP completo eh PII (pode identificar pessoa). Para audit log,
-    truncamos em /24 (rede) — preserva util de geo/ASR sem expor host.
-
-    Examples:
-        >>> _truncate_ip_to_24("192.168.1.123")
-        '192.168.1.0/24'
-        >>> _truncate_ip_to_24("2001:db8::1")  # IPv6
-        '2001:db8::/32'
-        >>> _truncate_ip_to_24("unknown")
-        'unknown'
-    """
-    if not ip or ip == "unknown":
-        return ip or "unknown"
-    # IPv4
-    if "." in ip and ":" not in ip:
-        parts = ip.split(".")
-        if len(parts) == 4:
-            return f"{parts[0]}.{parts[1]}.{parts[2]}.0/24"
-    # IPv6 (truncado em /32)
-    if ":" in ip:
-        # Pega primeiros 2 grupos (32 bits)
-        groups = ip.split(":")
-        if len(groups) >= 2:
-            return f"{groups[0]}:{groups[1]}::/32"
-    return ip  # formato nao reconhecido, retorna como veio
+# IP truncation (LGPD D5) — removido T9-CRIT-2.
+# Helper centralizado em app.utils.ip.truncate_ip() — UNICA fonte da verdade.
+# Call sites que usavam _truncate_ip_to_24() foram migrados.
 
 
 # ============================================================================
@@ -261,6 +231,8 @@ def _audit_log_sync(
     action: str,
     resource: str,
     payload: dict[str, Any],
+    request_id: str | None = None,
+    client_ip: str | None = None,
 ) -> None:
     """Helper sync para AuditService.log (chamado via asyncio.to_thread)."""
     from app.services.audit import AuditService
@@ -272,6 +244,8 @@ def _audit_log_sync(
         action=action,
         resource=resource,
         payload=payload,
+        request_id=request_id,
+        ip=client_ip,
     )
 
 
@@ -496,7 +470,6 @@ async def chat(
         # Se o LLM ecoou PII no output, gera entrada SEPARADA no audit
         # com request_id (LGPD art. 37) + IP truncado em /24 (D5).
         if output_pii_redacted_count > 0:
-            ip_truncated = _truncate_ip_to_24(client_ip or "unknown")
             output_audit_payload = {
                 "provider": "opencode_go",
                 "model": model,
@@ -512,17 +485,12 @@ async def chat(
                     action="llm.output_scrubbed",
                     resource="llm:opencode_go",
                     payload=output_audit_payload,
+                    request_id=request_id,
+                    client_ip=client_ip,
+                    # T9-CRIT-1: NAO overwrite last_entry.ip=ip_truncated.
+                    # IP FULL preservado em audit_log.ip (DPO forensics);
+                    # ip_truncated eh gerado automaticamente por AuditService.log().
                 )
-                # Atualiza tambem a entrada de ip/request_id — via query direta
-                from app.models.audit_log import AuditLog
-
-                last_entry = (
-                    db.query(AuditLog).order_by(AuditLog.id.desc()).first()
-                )
-                if last_entry and last_entry.action == "llm.output_scrubbed":
-                    last_entry.request_id = request_id
-                    last_entry.ip = ip_truncated
-                    db.commit()
             except Exception:
                 pass
 

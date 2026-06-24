@@ -479,9 +479,13 @@ async def test_output_scrub_creates_audit_log_with_request_id_and_ip_truncation(
         assert scrub_entry.request_id == "req-test-001", (
             f"LGPD-015: request_id ausente/errado no audit: {scrub_entry.request_id}"
         )
-        # D5: IP truncado em /24
-        assert scrub_entry.ip == "192.168.1.0/24", (
-            f"LGPD-015: IP nao truncado em /24: {scrub_entry.ip}"
+        # D5 (T9-CRIT-1): IP FULL preservado em .ip (DPO forensics),
+        # IP truncado em .ip_truncated (output default).
+        assert scrub_entry.ip == "192.168.1.123", (
+            f"T9-CRIT-1: IP FULL nao preservado: {scrub_entry.ip}"
+        )
+        assert scrub_entry.ip_truncated == "192.168.1.0/24", (
+            f"D5: IP truncado ausente/errado: {scrub_entry.ip_truncated}"
         )
         # Payload deve ter count + length (NAO o conteudo bruto)
         assert scrub_entry.payload["redacted_count"] >= 1

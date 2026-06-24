@@ -94,9 +94,9 @@ def test_truncate_ipv6_link_local():
 
 
 def test_truncate_ipv6_loopback():
-    """IPv6 loopback: ::1 → 0:1::/32 (T9-MED-9: comportamento deterministico)."""
+    """IPv6 loopback: ::1 → 1:0::/32 (T9-MED-9: comportamento deterministico)."""
     result = truncate_ip("::1")
-    # 1 grupo nao-vazio ("1") → retorna "1:0::/32"
+    # 1 grupo nao-vazio ("1") → retorna "1:0::/32" (preserva primeiros 32 bits)
     assert result == "1:0::/32"
 
 
@@ -141,11 +141,6 @@ def test_truncate_ipv4_mapped_ipv6_invalid_returns_none():
 # ============================================================================
 
 
-def test_truncate_ipv6_link_local():
-    """IPv6 link-local fe80::1 → primeiros 2 grupos /32."""
-    result = truncate_ip("fe80::1")
-    # "fe80" e "1" sao 2 grupos nao-vazios
-    assert result == "fe80:1::/32"
 
 
 def test_truncate_ipv6_unique_local():

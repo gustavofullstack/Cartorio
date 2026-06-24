@@ -419,6 +419,81 @@ def test_exception_handler_500_quando_nao_esperado(client, test_engine):
     assert scrubbed["detail"]["erro"] == "INTERNAL_ERROR"
 
 
+def test_endpoint_protocolo_sem_consent_lgpd_audit_blocked(client, test_engine, valid_payload):
+    """POST /api/v1/protocolo sem consentimento grava audit 'lgpd_blocked'."""
+    payload = {**valid_payload, "consentimento_lgpd": False}
+    resp = client.post("/api/v1/protocolo", json=payload)
+    assert resp.status_code == 422
+
+    SessionLocal = sessionmaker(bind=test_engine)
+    with SessionLocal() as db:
+        entries = db.query(AuditLog).filter_by(
+            action="protocolo.create.lgpd_blocked"
+        ).all()
+        assert len(entries) >= 1
+        entry = entries[0]
+        assert entry.payload["motivo"] == "consentimento_lgpd=false"
+
+
+def test_endpoint_protocolo_tipo_invalido_retorna_422(client, valid_payload):
+    """POST /api/v1/protocolo com tipo invalido retorna 422 TIPO_INVALIDO."""
+    payload = {**valid_payload, "tipo": "tipo_inexistente"}
+    resp = client.post("/api/v1/protocolo", json=payload)
+    assert resp.status_code == 422
+    detail = resp.json()["detail"]
+    assert detail["erro"] == "TIPO_INVALIDO"
+    assert "tipos_validos" in detail["detalhes"]
+
+
+def test_endpoint_protocolo_criar_api_sem_api_key(client):
+    """POST /api/v1/protocolo/criar-api sem X-API-Key retorna 401."""
+    resp = client.post(
+        "/api/v1/protocolo/criar-api",
+        json={"cliente_id": 1, "ato": "escritural", "valor_snapshot": "100.00", "hitl_draft": True},
+    )
+    assert resp.status_code == 401
+
+
+def test_endpoint_protocolo_get_inexistente_404(client):
+    """GET /api/v1/protocolo/{numero} com numero inexistente retorna 404."""
+    resp = client.get("/api/v1/protocolo/2099-99999")
+    assert resp.status_code == 404
+    detail = resp.json()["detail"]
+    assert detail["erro"] == "PROTOCOLO_NOT_FOUND"
+
+
+def test_endpoint_atendimento_criar(client, test_engine):
+    """POST /api/v1/atendimento cria atendimento + grava audit."""
+    payload = {
+        "canal": "whatsapp",
+        "external_id": "5511999999999",
+        "tipo": "duvida",
+        "contexto_scrubbed": "Cliente perguntou sobre certidao",
+    }
+    resp = client.post("/api/v1/atendimento", json=payload)
+    assert resp.status_code == 200, resp.text
+
+    SessionLocal = sessionmaker(bind=test_engine)
+    with SessionLocal() as db:
+        entries = db.query(AuditLog).filter_by(action="atendimento.create").all()
+        assert len(entries) >= 1
+
+
+def test_endpoint_health_endpoint(client):
+    """GET /health retorna 200 (health check basico)."""
+    resp = client.get("/health")
+    assert resp.status_code in (200, 503)  # pode falhar se DB offline
+
+
+def test_endpoint_metrics_prometheus(client):
+    """GET /api/v1/metrics/prometheus retorna 200 text Prometheus."""
+    resp = client.get("/api/v1/metrics/prometheus")
+    assert resp.status_code == 200
+    assert "text/plain" in resp.headers.get("content-type", "")
+    # Conteudo minimo Prometheus
+    assert "cartorio" in resp.text.lower() or "# HELP" in resp.text
+
+
 # ============================================================================
 # Test: 100% mutações cobertas (sanity check)
 # ============================================================================
