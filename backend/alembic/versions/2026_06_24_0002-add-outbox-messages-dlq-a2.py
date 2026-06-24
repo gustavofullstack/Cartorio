@@ -56,7 +56,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "payload",
-            sa.dialects.postgresql.JSONB().with_variant(sa.Text(), "sqlite"),
+            sa.JSON().with_variant(sa.dialects.postgresql.JSONB(), "postgresql"),
             nullable=False,
         ),
         sa.Column(

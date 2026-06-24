@@ -19,13 +19,14 @@ from __future__ import annotations
 import datetime
 import hashlib
 import hmac
+import json
 import os
 import time
-from typing import Annotated
+from typing import Annotated, Any
 
 import httpx
 import redis
-from fastapi import APIRouter, Depends, Form, HTTPException, Path, Query, Request
+from fastapi import APIRouter, Depends, Form, Header, HTTPException, Path, Query, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -501,8 +502,8 @@ def _verify_api_key(x_api_key: str | None) -> None:
 def post_protocolo_criar_api(
     request: Request,
     payload: ProtocoloApiCreateRequest,
-    x_api_key: Annotated[str | None, "Header X-API-Key"] = None,  # type: ignore[assignment]
-    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    db: Session = Depends(get_db),
 ) -> ProtocoloApiCreateResponse:
     """Cria protocolo DRAFT via API autenticada.
 
@@ -944,6 +945,70 @@ async def audit_verify() -> dict:
 # ============================================================================
 # Health Radar
 # ============================================================================
+
+
+@api_router.get(
+    "/health/live",
+    tags=["health"],
+    summary="Liveness probe (sem dependencias externas)",
+    description=(
+        "Liveness probe padrao Kubernetes/Portainer. Retorna 200 se o processo "
+        "esta vivo. NAO consulta DB/Redis/LLM (sem deps = sem falso negativo). "
+        "Usado pelo container orchestrator pra decidir restart."
+    ),
+    response_description="200 com {status: alive}.",
+)
+async def health_live() -> dict:
+    """Liveness probe: processo Python vivo?"""
+    from app import __version__  # type: ignore[attr-defined]
+    return {"status": "alive", "service": "cartorio-api", "version": __version__}
+
+
+@api_router.get(
+    "/health/ready",
+    tags=["health"],
+    summary="Readiness probe (verifica dependencias criticas)",
+    description=(
+        "Readiness probe padrao Kubernetes/Portainer. Retorna 200 se todas as "
+        "dependencias criticas (DB, Redis) estao saudaveis. Retorna 503 com "
+        "detalhes se alguma dep cair. Usado pelo load balancer pra decidir roteamento."
+    ),
+    response_description="200 ready / 503 not_ready.",
+)
+async def health_ready() -> JSONResponse:
+    """Readiness probe: DB + Redis respondendo?"""
+    from app.db import engine
+    from sqlalchemy import text
+
+    checks: dict[str, dict] = {}
+
+    # Check DB
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        checks["db"] = {"status": "online"}
+    except Exception as e:
+        checks["db"] = {"status": "offline", "error": str(e)[:200]}
+
+    # Check Redis (se configurado)
+    redis_url = getattr(settings, "redis_url", None)
+    if redis_url:
+        try:
+            import redis  # type: ignore[import-untyped]
+            r = redis.Redis.from_url(redis_url, socket_connect_timeout=2)
+            r.ping()
+            checks["redis"] = {"status": "online"}
+        except Exception as e:
+            checks["redis"] = {"status": "offline", "error": str(e)[:200]}
+
+    all_ok = all(c.get("status") == "online" for c in checks.values())
+    return JSONResponse(
+        status_code=200 if all_ok else 503,
+        content={
+            "status": "ready" if all_ok else "not_ready",
+            "checks": checks,
+        },
+    )
 
 
 @api_router.get(
@@ -2587,3 +2652,142 @@ async def get_metrics_prometheus(
 
     output = render_full_prometheus(db)
     return PlainTextResponse(content=output, media_type="text/plain; version=0.0.4; charset=utf-8")
+# ---------------------------------------------------------------------------
+# DLQ (Dead Letter Queue) - A2 endpoints
+# ---------------------------------------------------------------------------
+
+
+class DLQEnqueueRequest(BaseModel):
+    """Payload para enqueue de mensagem na DLQ.
+
+    A2: LGPD-by-design - `payload` deve chegar ja scrubbed pelo caller
+    (escravo de services/pii.py). Endpoint NAO re-scrub (responsabilidade
+    unica para manter audit chain consistente).
+    """
+
+    payload: dict[str, Any] = Field(
+        ..., description="Mensagem ja scrubbed (sem PII)."
+    )
+    actor_id: str = Field(..., min_length=1, max_length=128)
+
+
+class DLQEnqueueResponse(BaseModel):
+    id: str
+    queue: str
+    status: str
+    created_at: datetime.datetime
+
+
+@api_router.post(
+    "/dlq/{queue}/enqueue",
+    tags=["dlq"],
+    summary="Enfileirar mensagem na DLQ (auth X-API-Key)",
+    description=(
+        "Enfileira mensagem na **Dead Letter Queue** para reprocessamento "
+        "assincrono. Usado quando integracao externa (WhatsApp Evolution, "
+        "Chatwoot, Telegram) falhou entrega.\n\n"
+        "**Auth**: header `X-API-Key` (escrevente autorizado).\n\n"
+        "**LGPD**: payload DEVE chegar **ja scrubbed** pelo caller. "
+        "Cardinalidade do label `queue` eh enum-fixa (4 valores max).\n\n"
+        "**Audit log**: action=`dlq.enqueued`, actor_type=`api`, payload com "
+        "`{queue, actor_id_hash, payload_size_bytes}`."
+    ),
+    status_code=201,
+    response_model=DLQEnqueueResponse,
+    responses={
+        401: {"description": "X-API-Key ausente ou invalida."},
+        422: {"description": "Payload vazio, queue invalida ou PII detectado."},
+    },
+)
+def post_dlq_enqueue(
+    request: Request,
+    queue: str,
+    body: DLQEnqueueRequest,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    db: Session = Depends(get_db),
+) -> DLQEnqueueResponse:
+    """Enfileira mensagem na DLQ (LGPD-safe)."""
+    from app.services.dlq import enqueue as dlq_enqueue
+    from app.models.outbox_message import OutboxQueue
+
+    api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
+
+    try:
+        queue_enum = OutboxQueue(queue)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "erro": "QUEUE_INVALIDA",
+                "mensagem": (
+                    f"Queue '{queue}' invalida. Valores aceitos: "
+                    f"{', '.join(q.value for q in OutboxQueue)}."
+                ),
+                "detalhes": {"queue_recebida": queue},
+            },
+        ) from e
+
+    if not body.payload:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "erro": "PAYLOAD_VAZIO",
+                "mensagem": "Payload nao pode ser vazio.",
+            },
+        )
+
+    msg = dlq_enqueue(db, queue_enum, body.payload)
+
+    AuditService.log(
+        db,
+        actor_id=body.actor_id,
+        actor_type="api",
+        action="dlq.enqueued",
+        resource=f"dlq:{queue}:{msg.id}",
+        payload={
+            "queue": queue_enum.value,
+            "actor_id_hash": hash_pii(
+                body.actor_id, salt=settings.audit_hmac_key[:32]
+            ),
+            "payload_size_bytes": len(json.dumps(body.payload, default=str)),
+        },
+        **audit_kwargs(request),
+    )
+
+    return DLQEnqueueResponse(
+        id=str(msg.id),
+        queue=msg.queue.value,
+        status=msg.status.value,
+        created_at=msg.created_at,
+    )
+
+
+@api_router.post(
+    "/dlq/refresh-gauges",
+    tags=["dlq"],
+    summary="Refresh DLQ depth gauges (auth X-API-Key)",
+    description=(
+        "Forca refresh do gauge `dlq_depth{queue}` baseado em SELECT COUNT "
+        "do DB. Util apos deploy/migration ou operacao manual.\n\n"
+        "**Auth**: header `X-API-Key`.\n"
+    ),
+    status_code=200,
+    responses={
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+def post_dlq_refresh_gauges(
+    request: Request,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    db: Session = Depends(get_db),
+) -> dict[str, int]:
+    """Refresh DLQ depth gauges from DB."""
+    from app.services.dlq import depth, _update_depth_gauge
+
+    api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
+
+    _update_depth_gauge(db)
+    counts = depth(db)
+    return {q.value: cnt for q, cnt in counts.items()}

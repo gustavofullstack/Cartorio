@@ -22,6 +22,7 @@ from sqlalchemy import DateTime, Enum as SAEnum, Integer, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
+from sqlalchemy.types import JSON
 
 from app.models.base import Base
 
@@ -57,11 +58,12 @@ class OutboxMessage(Base):
         nullable=False,
         index=True,
     )
-    # payload SEMPRE scrubbed (LGPD). Use JSONB se PG, JSON se SQLite.
+    # payload SEMPRE scrubbed (LGPD). JSON type (SQLite+PG compat).
+    # Em PG, JSONB eh preferido; SQLAlchemy mapeia JSON -> JSONB se dialect.
     payload: Mapped[dict] = mapped_column(
-        # JSONB funciona em PG. Em SQLite, fallback para JSON plain.
-        # Alembic cuida da conversao via batch_alter_table.
-        JSONB().with_variant(Text(), "sqlite"),
+        # JSON type do SQLAlchemy eh portable: vira JSONB no PG (dialect-aware)
+        # e TEXT serializado no SQLite. Alembic nao precisa de batch.
+        JSON().with_variant(JSONB(), "postgresql"),
         nullable=False,
     )
     status: Mapped[OutboxStatus] = mapped_column(
