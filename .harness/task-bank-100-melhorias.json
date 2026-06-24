@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "updated_at": "2026-06-24",
   "purpose": "100 melhorias incrementais (Sprint 4-7) em formato compact p/ usar entre agents. Complementa E6 em TASKS.md. NADA REFAZER, APENAS MELHORAR.",
-  "stats": {"total": 100, "squads": 4, "parallel_max": 2, "p_mode": "sequential com 1-2 paralelos"},
+  "stats": {"total": 100, "squads": 4, "parallel_max": 2, "p_mode": "sequential com 1-2 paralelos", "done_2026_06_24": {"squad_a": "12/25 (A1-A12)", "squad_b": "5/25 (B1-B5)", "squad_c": "5/25 (C1-C5)", "squad_d": "0/25"}},
   "SQUAD_A_API_DB_HARDENING": {
     "owner": "cartorio-dev",
     "count": 25,
