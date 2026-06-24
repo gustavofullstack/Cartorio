@@ -64,7 +64,16 @@ class AuditService:
         request_id: str | None = None,
         canal: str | None = None,
     ) -> AuditLog:
-        """Insere entrada append-only na cadeia."""
+        """Insere entrada append-only na cadeia.
+
+        LGPD-by-design (D5, cartorio-lgpd review 2026-06-24):
+        - `ip` recebe IP COMPLETO (acesso restrito DPO via /audit/replay).
+        - `ip_truncated` eh gerado AUTOMATICAMENTE via utils.ip.truncate_ip()
+          (IPv4 → /24, IPv6 → /32). Default output em queries/metricas.
+        Caller NAO precisa passar `ip_truncated` — eh derivado de `ip`.
+        """
+        from app.utils.ip import truncate_ip
+
         last = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
         prev_hash = last.hash if last else None
 
@@ -80,6 +89,7 @@ class AuditService:
             resource=resource,
             payload=payload,
             ip=ip,
+            ip_truncated=truncate_ip(ip),  # LGPD D5 — output /24 ou /32
             user_agent=user_agent,
             request_id=request_id,
             canal=canal,

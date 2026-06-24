@@ -33,6 +33,12 @@ class AuditLog(Base):
 
     # Contexto
     ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    # LGPD-by-design (D5): ip eh dado pessoal (LGPD art. 5 II). Acesso RESTRITO a DPO
+    # via endpoint /audit/replay (role-gated). NAO expor em /metrics, logs de
+    # aplicacao, ou queries normais. Usar ip_truncated para esses casos.
+    ip_truncated: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    # LGPD D5 output: IP truncado em /24 (IPv4) ou /32 (IPv6). Preserva subnet
+    # para forensics sem expor host individual. Index para queries por range.
     user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
     request_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     canal: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
