@@ -1,51 +1,45 @@
 {
-  "name": "26 - Alerta Critico (Telegram IM + Chatwoot)",
+  "name": "27 - Welcome First Time (consentimento LGPD)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "alerta-critico",
+        "path": "welcome-first",
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "alerta-webhook",
-      "name": "Alerta Webhook",
+      "id": "welcome-first-time",
+      "name": "Welcome First Time",
       "type": "n8n-nodes-base.webhook",
       "position": [
         240,
         300
       ],
       "typeVersion": 2.1,
-      "webhookId": "febde5c5-878c-4d27-abad-de9e035fdcbe"
+      "webhookId": "c8519f12-1d83-4fca-ace4-4066d09d3fa1"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "service",
-              "name": "service",
-              "value": "={{ $json.body.service }}",
+              "id": "telefone",
+              "name": "telefone",
+              "value": "={{ $json.body.telefone }}",
               "type": "string"
             },
             {
-              "id": "severity",
-              "name": "severity",
-              "value": "={{ $json.body.severity || 'critical' }}",
-              "type": "string"
-            },
-            {
-              "id": "msg",
-              "name": "message",
-              "value": "={{ $json.body.message }}",
+              "id": "nome",
+              "name": "nome",
+              "value": "={{ $json.body.nome || '' }}",
               "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "extract-alerta",
-      "name": "Extract Alerta",
+      "id": "extract-cliente",
+      "name": "Extract Cliente",
       "type": "n8n-nodes-base.set",
       "position": [
         460,
@@ -56,46 +50,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/cartorio-2notas",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "name": "X-Request-Id",
-              "value": "={{ $execution.id }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"chat_id\":\"{{ $env.TELEGRAM_GUSTAVO_CHAT_ID }}\",\"text\":\"🚨 [{{ $json.severity | upper }}] {{ $json.service }}: {{ $json.message }}\",\"parse_mode\":\"HTML\"}",
-        "options": {
-          "timeout": 10000
-        }
-      },
-      "id": "post-telegram-im",
-      "name": "POST Telegram IM",
-      "type": "n8n-nodes-base.httpRequest",
-      "position": [
-        680,
-        300
-      ],
-      "typeVersion": 4.2
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "api_access_token",
-              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -111,16 +72,12 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "source_id",
-              "value": "={{ $json.source_id || $json.id || 'n8n-wf' }}"
+              "name": "number",
+              "value": "={{ $json.telefone }}"
             },
             {
-              "name": "message",
-              "value": "={{ $json.mensagem || $json.message || JSON.stringify($json) }}"
-            },
-            {
-              "name": "inbox_id",
-              "value": "1"
+              "name": "text",
+              "value": "=Ola{{ $json.nome ? ' ' + $json.nome : '' }}! Bem-vindo ao Cartorio 2 Notas de Uberlandia. Antes de continuar, preciso do seu consentimento LGPD. Responda SIM para aceitar, NAO para recusar, PARAR para sair."
             }
           ]
         },
@@ -128,25 +85,66 @@
           "timeout": 10000
         }
       },
-      "id": "chatwoot-critical",
-      "name": "Chatwoot Critical",
+      "id": "evolution-welcome",
+      "name": "Evolution Welcome",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        900,
+        680,
         300
       ]
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "https://db.2notasudi.com.br/rest/v1/welcome_log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Request-Id",
+              "value": "={{ $execution.id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"telefone\":\"{{ $json.telefone }}\",\"ts\":\"{{ $now }}\",\"wf\":\"n8n-wf27\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-welcome-tracking",
+      "name": "POST Welcome Tracking",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "{\"status\":\"ack\",\"workflow\":\"26-alerta-critico\",\"received\":true}",
+        "responseBody": "{\"status\":\"welcome_sent\",\"workflow\":\"27-welcome-first\",\"received\":true}",
         "options": {
           "responseCode": 200
         }
       },
-      "id": "respond-alerta",
-      "name": "Respond Alerta",
+      "id": "respond-welcome",
+      "name": "Respond Welcome",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
@@ -156,44 +154,44 @@
     }
   ],
   "connections": {
-    "Alerta Webhook": {
+    "Welcome First Time": {
       "main": [
         [
           {
-            "node": "Extract Alerta",
+            "node": "Extract Cliente",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract Alerta": {
+    "Extract Cliente": {
       "main": [
         [
           {
-            "node": "POST Telegram IM",
+            "node": "Evolution Welcome",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "POST Telegram IM": {
+    "Evolution Welcome": {
       "main": [
         [
           {
-            "node": "Chatwoot Critical",
+            "node": "POST Welcome Tracking",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Chatwoot Critical": {
+    "POST Welcome Tracking": {
       "main": [
         [
           {
-            "node": "Respond Alerta",
+            "node": "Respond Welcome",
             "type": "main",
             "index": 0
           }
@@ -213,12 +211,12 @@
     "exportedAt": "2026-06-24T10:33:00-03:00",
     "exportedBy": "cartorio-n8n-reun",
     "sessionId": "mvs_3fb892d492d7489caf3c78f1e621ea6d",
-    "workflowId": "2nSa2sw60lh6lhpb",
-    "lastUpdated": "2026-06-24T13:32:29.055Z",
-    "credentials_used": "(none - $env.TELEGRAM_BOT_TOKEN, $env.EVOLUTION_API_URL via httpRequest)",
-    "m2_task": "M2.5 - patch WF26: added Respond to Webhook node (HTTP 500 -> 200)",
-    "cron_schedule": "(cron variant?)",
-    "note": "Pre-fix: HTTP 500 \"No Respond to Webhook node found\". Post-fix: HTTP 200. Upstream env vars still failing (C.1 P0 - awaiting Gustavo GO).",
-    "versionId": "2aa4f58a-1c8e-48cb-a029-bca21b27d70d"
+    "workflowId": "NlGoGgAlY9ln8T0s",
+    "lastUpdated": "2026-06-24T13:32:29.207Z",
+    "credentials_used": "(none - $env.EVOLUTION_API_URL via httpRequest)",
+    "m2_task": "M2.5 - patch WF27: added Respond to Webhook node (HTTP 500 -> 200)",
+    "cron_schedule": "",
+    "note": "Pre-fix: HTTP 500. Post-fix: HTTP 200. Upstream env var EVOLUTION_API_URL still failing (C.1 P0).",
+    "versionId": "ca20832e-3e17-4627-833d-93a0e66ba9ab"
   }
 }
