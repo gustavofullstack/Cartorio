@@ -10,6 +10,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 Para achar rapido o que precisa, procure por:
 
 ### Por data
+- **2026-06-24** (Sprint 4 SQUAD A — observabilidade+seguranca): linha ~510
 - **2026-06-24** (Sprint 3 melhorias + cleanup): linha ~510
 - **2026-06-23 19:00 BRT** (PIVOT multi-stack): linha ~660
 - **2026-06-23** (Sprint 0.5 hardening + bugs): abaixo deste indice
@@ -993,3 +994,46 @@ Novos arquivos:
 - .harness/task-bank.json (atualizado)
 
 Modified by ZCode/Mavis - 2026-06-24 sessao 3+ parte 4
+
+---
+
+## 2026-06-24 — Sprint 4 SQUAD A (observabilidade + seguranca)
+
+### 12/25 tasks finalizadas, 624 pytest passing
+- A1: audit log 100% mutacoes (b8b5a57 pre-existente)
+- A2: Prometheus metrics (ef85b94) - pii_blocked_total, scrub_latency_ms, dlq_depth
+- A3: OpenTelemetry tracing (039b24a) - llm_span, db_span, W3C propagation
+- A4: Sentry + PII scrubber (7c3a149) - before_send hook, send_default_pii=False
+- A5: /health/live + /health/ready (c053b75) - K8s probes standard
+- A6: Idempotency-Key Redis SETNX TTL 24h (3269409) - middleware
+- A7: Rate limit Redis sliding window 60 req/min/IP (904c66a) - ZADD/ZCOUNT
+- A8: HMAC validation webhooks (e1da773) - chatwoot + evolution
+- A9: Encryption at-rest pgcrypto + Fernet (6b12c38) - encrypt_pii/decrypt_pii
+- A10: CPF/CNPJ validators DV (f1ca3fb) - Receita Federal algorithm
+- A11: Mask PII em logs (f1ca3fb) - MaskingFilter LGPD art. 46
+- A12: DLQ retry 3x exp backoff (35591b5, 77cd98b) - 1min/5min/15min
+
+### Padroes estabelecidos nesta sessao
+- **TDD strict**: RED -> GREEN -> commit individual
+- **PII 3 camadas**: app/services/pii.py (logica) + sentry before_send (erro) + log_masker (log)
+- **Migrations Alembic idempotentes**: `inspector.get_table_names()` antes de criar
+- **Servicos opcionais**: tracing/sentry NoOp quando env var ausente
+- **__version__ canonical em app/__init__.py** (0.6.0)
+
+### Gotchas descobertos
+- `Annotated[str | None, "Header X-API-Key"]` em FastAPI NAO funciona (string em vez de Header()). Usar `Annotated[str | None, Header(alias="X-API-Key")] = None`.
+- OpenTelemetry exporter OTLP precisa ser import lazy (try/except) - mypy strict reclama de import-not-found.
+- Agent subagente de 600s (10min) da conta para 4 tasks de seguranca sequenciais.
+
+### Limitacoes desta sessao
+- A10 DB CHECK constraint nao aplicada (so validator Python) - follow-up
+- A6 Idempotency cacheia response inteiro (mitigacao: cachear so hash)
+- A7 sliding window fail-open se Redis offline (intencional)
+- A8 HMAC opcional (recomendado em prod)
+
+### Proximos passos (Sprint 4 continuacao)
+1. SQUAD A: A13-A25 (13 tasks: dead man's switch, backup, pool, slow log, materialized view, triggers, soft delete, locks, cache, OpenAPI validate, versioning, RFC 7807)
+2. SQUAD B: B1-B5 (N8N docs/workflows)
+3. SQUAD C: C1-C5 (Root docs: README, ARCHITECTURE, API, DB, DEPLOY)
+
+Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD A 12/25
