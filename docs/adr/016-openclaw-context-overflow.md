@@ -1,8 +1,16 @@
 # ADR-016: OpenClaw context overflow (sessão agente:cartorio:main)
 
 **Data:** 2026-06-23
-**Status:** Mitigação proposta (aplicação requer SUI no OpenClaw)
+**Status:** RESOLVIDA 2026-06-24 03:15 BRT (schema legado substituído por ADR-021)
 **Sprint:** Sprint 2, task 9
+
+> **ATUALIZAÇÃO 2026-06-24:** schema proposto nesta ADR é PRÉ-2026.6.x e
+> não existe no OpenClaw 2026.6.10 rodando na VPS. Mapeamento para o
+> schema moderno + lições aprendidas + pipeline de validação pré-deploy:
+> ver **ADR-021**. Aplicação concreta foi feita via `openclaw config
+> patch --stdin --dry-run` (3 iterações incrementais) durante cron
+> `reapply-b2-openclaw` 24/06 00:00 BRT. Container UP, HTTP 200, sem
+> context overflow.
 
 ## Contexto
 
