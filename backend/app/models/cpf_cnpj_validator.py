@@ -72,7 +72,7 @@ def mask_cnpj(value: str) -> str:
     digits = _only_digits(value)
     if len(digits) != 14:
         return "[MASKED:cnpj]"
-    return f"**.***.***/****-**"
+    return "**.***.***/****-**"
 
 
 __all__ = [
