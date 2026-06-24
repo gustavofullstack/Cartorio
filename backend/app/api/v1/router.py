@@ -1113,24 +1113,20 @@ async def health_radar() -> dict:
         except Exception:
             pass
 
-        # Chatwoot - checa /api/v1/accounts (pode ser 401 sem auth, mas se responde eh online)
+        # Chatwoot - checa /health diretamente (retorna 200 {"status": "woot"})
         if settings.chatwoot_base_url:
             try:
-                resp = await client.get(
-                    f"{settings.chatwoot_base_url}/api/v1/accounts",
-                    headers={"api_access_token": settings.chatwoot_api_key or ""},
-                )
-                # 200 = OK com auth, 401 = online mas sem auth valida
-                if resp.status_code in (200, 401, 403):
+                resp = await client.get(f"{settings.chatwoot_base_url}/health")
+                if resp.status_code in (200, 201, 401, 403):
                     chatwoot_ok = True
             except Exception:
                 pass
 
-        # Supabase - checa /auth/v1/health (sempre retorna 200 se online)
+        # Supabase - checa /auth/v1/health (pode retornar 200, 401 ou 405 via Kong auth gate se acessado de fora)
         if settings.supabase_url:
             try:
                 resp = await client.get(f"{settings.supabase_url}/auth/v1/health")
-                if resp.status_code == 200:
+                if resp.status_code in (200, 401, 405):
                     supabase_ok = True
             except Exception:
                 pass
@@ -1338,6 +1334,7 @@ async def agendamento_disponibilidade(
     response_description="URL do PDF + validade em horas.",
 )
 async def documento_segunda_via(
+    request: Request,
     protocolo: Annotated[str, Query(description="Numero do protocolo (YYYY-NNNNN).")],
     canal: Annotated[
         str, Query(description="Canal de envio: whatsapp/email/presencial.")
@@ -1348,8 +1345,29 @@ async def documento_segunda_via(
 
     # MVP: hash determinístico + timestamp = URL placeholder
     h = hashlib.sha256(f"{protocolo}:{time.time()}".encode()).hexdigest()[:16]
+    url_pdf = f"https://supbase.2notasudi.com.br/storage/v1/object/sign/documentos/{protocolo}-{h}.pdf"
+
+    # LGPD art. 37: audit log obrigatorio em toda mutacao (A01)
+    try:
+        with session_scope() as db:
+            AuditService.log(
+                db,
+                actor_id="api",
+                actor_type="api",
+                action="documento.segunda_via.emitida",
+                resource=f"protocolo:{protocolo}",
+                payload={
+                    "canal": canal,
+                    "url_pdf_expires_hours": 24,
+                },
+                **audit_kwargs(request),
+            )
+    except Exception:
+        # Audit eh best-effort; NAO quebra a operacao principal
+        pass
+
     return {
-        "url_pdf": f"https://supbase.2notasudi.com.br/storage/v1/object/sign/documentos/{protocolo}-{h}.pdf",
+        "url_pdf": url_pdf,
         "validade_horas": 24,
         "protocolo": protocolo,
         "canal": canal,
@@ -1417,7 +1435,7 @@ async def atendimentos_ultimas_24h() -> dict:
     tags=["atendimento"],
     summary="Marcar pesquisa de satisfacao como enviada (N8N workflow #07)",
 )
-async def marcar_pesquisa_enviada(atendimento_id: int) -> dict:
+async def marcar_pesquisa_enviada(request: Request, atendimento_id: int) -> dict:
     """Marca pesquisa_enviada_em = now() para evitar envio duplicado."""
     from datetime import datetime, timezone
     from sqlalchemy import select
@@ -1428,8 +1446,34 @@ async def marcar_pesquisa_enviada(atendimento_id: int) -> dict:
             select(Atendimento).where(Atendimento.id == atendimento_id)
         ).scalar_one_or_none()
         if a is None:
+            # LGPD art. 37: audit log de tentativa falhada (A01)
+            try:
+                AuditService.log(
+                    db,
+                    actor_id="api",
+                    actor_type="api",
+                    action="atendimento.pesquisa_enviada.not_found",
+                    resource=f"atendimento:{atendimento_id}",
+                    payload={"result": "not_found"},
+                    **audit_kwargs(request),
+                )
+            except Exception:
+                pass
             return {"ok": False, "error": "not_found"}
         a.pesquisa_enviada_em = datetime.now(timezone.utc)
+        # LGPD art. 37: audit log de mutacao bem-sucedida (A01)
+        try:
+            AuditService.log(
+                db,
+                actor_id="api",
+                actor_type="api",
+                action="atendimento.pesquisa_enviada",
+                resource=f"atendimento:{atendimento_id}",
+                payload={"timestamp_envio": a.pesquisa_enviada_em.isoformat()},
+                **audit_kwargs(request),
+            )
+        except Exception:
+            pass
     return {"ok": True, "atendimento_id": atendimento_id}
 
 
@@ -1521,7 +1565,11 @@ async def criar_atendimento(request: Request, payload: dict) -> dict:
     tags=["atendimento"],
     summary="Concluir atendimento (registra timestamp para pesquisa 24h)",
 )
-async def concluir_atendimento(atendimento_id: int, payload: dict | None = None) -> dict:
+async def concluir_atendimento(
+    request: Request,
+    atendimento_id: int,
+    payload: dict | None = None,
+) -> dict:
     """Marca atendimento como concluido."""
     from datetime import datetime, timezone
     from sqlalchemy import select
@@ -1535,6 +1583,19 @@ async def concluir_atendimento(atendimento_id: int, payload: dict | None = None)
             select(Atendimento).where(Atendimento.id == atendimento_id)
         ).scalar_one_or_none()
         if a is None:
+            # LGPD art. 37: audit log de tentativa falhada (A01)
+            try:
+                AuditService.log(
+                    db,
+                    actor_id="api",
+                    actor_type="api",
+                    action="atendimento.concluir.not_found",
+                    resource=f"atendimento:{atendimento_id}",
+                    payload={"result": "not_found"},
+                    **audit_kwargs(request),
+                )
+            except Exception:
+                pass
             return {"ok": False, "error": "not_found"}
         a.concluido_em = datetime.now(timezone.utc)
         a.status = "concluido"
@@ -1542,6 +1603,22 @@ async def concluir_atendimento(atendimento_id: int, payload: dict | None = None)
             a.pesquisa_nota = nota
         if comentario is not None:
             a.pesquisa_comentario = comentario
+        # LGPD art. 37: audit log de mutacao bem-sucedida (A01)
+        try:
+            AuditService.log(
+                db,
+                actor_id="api",
+                actor_type="api",
+                action="atendimento.concluir",
+                resource=f"atendimento:{atendimento_id}",
+                payload={
+                    "concluido_em": a.concluido_em.isoformat(),
+                    "tem_pesquisa": nota is not None or comentario is not None,
+                },
+                **audit_kwargs(request),
+            )
+        except Exception:
+            pass
 
     return {"ok": True, "atendimento_id": atendimento_id}
 
@@ -1704,12 +1781,44 @@ async def webhook_chatwoot(request: Request) -> dict:
     try:
         payload = _json.loads(raw_body) if raw_body else {}
     except Exception:
+        # LGPD art. 37: audit log de tentativa com payload invalido (A01)
+        try:
+            with session_scope() as db:
+                AuditService.log(
+                    db,
+                    actor_id="chatwoot",
+                    actor_type="webhook",
+                    action="webhook.chatwoot.invalid_json",
+                    resource="webhook:chatwoot",
+                    payload={"body_size": len(raw_body)},
+                    **audit_kwargs(request),
+                )
+        except Exception:
+            pass
         return {"status": "rejected", "reason": "invalid_json"}
 
     signature = request.headers.get("X-Chatwoot-Signature")
 
     with session_scope() as db:
         result = process_chatwoot_event(db, payload, signature=signature, raw_body=raw_body)
+        # LGPD art. 37: audit log de webhook processado (A01)
+        try:
+            AuditService.log(
+                db,
+                actor_id="chatwoot",
+                actor_type="webhook",
+                action="webhook.chatwoot.received",
+                resource="webhook:chatwoot",
+                payload={
+                    "event_type": payload.get("event") if isinstance(payload, dict) else None,
+                    "result_status": result.get("status") if isinstance(result, dict) else None,
+                    "result_action": result.get("action") if isinstance(result, dict) else None,
+                },
+                **audit_kwargs(request),
+            )
+        except Exception:
+            # Audit eh best-effort; NAO quebra o webhook
+            pass
 
     return result
 
@@ -1728,12 +1837,28 @@ async def webhook_chatwoot(request: Request) -> dict:
         "updated_at > STALE_THRESHOLD_MINUTES como 'stale'. Idempotente."
     ),
 )
-async def cron_stale_detector() -> dict:
+async def cron_stale_detector(request: Request) -> dict:
     """Roda stale detector."""
     from app.services.stale_detector import mark_stale_atendimentos
 
     with session_scope() as db:
         result = mark_stale_atendimentos(db, threshold_minutes=settings.stale_threshold_minutes)
+        # LGPD art. 37: audit log de cron executado (A01)
+        try:
+            AuditService.log(
+                db,
+                actor_id="cron",
+                actor_type="system",
+                action="cron.stale_detector.run",
+                resource="cron:stale_detector",
+                payload={
+                    "marked_count": result.get("marked_count", 0) if isinstance(result, dict) else 0,
+                    "threshold_minutes": settings.stale_threshold_minutes,
+                },
+                **audit_kwargs(request),
+            )
+        except Exception:
+            pass
     return result
 
 
