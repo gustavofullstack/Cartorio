@@ -32,7 +32,22 @@ class AuditLogResponse(BaseModel):
         default_factory=dict,
         description="Estado serializado (before/after quando aplicavel).",
     )
-    ip: str | None = Field(default=None, description="IP do cliente (com XFF, primeiro hop).")
+    ip: str | None = Field(
+        default=None,
+        description=(
+            "IP COMPLETO do cliente (com XFF, primeiro hop). "
+            "DADO PESSOAL (LGPD art. 5 II). Acesso restrito via role-gate 'dpo'. "
+            "Para tier != 'dpo', campo vem como null e usar ip_truncated."
+        ),
+    )
+    ip_truncated: str | None = Field(
+        default=None,
+        description=(
+            "IP truncado em /24 (IPv4) ou /32 (IPv6). LGPD D5. "
+            "Para logs de aplicacao, /metrics, e queries normais. "
+            "Preserva subnet para forensics sem expor host."
+        ),
+    )
     user_agent: str | None = Field(default=None, description="User-Agent do request.")
     request_id: str | None = Field(default=None, description="ID unico do request (UUIDv4).")
     canal: str | None = Field(

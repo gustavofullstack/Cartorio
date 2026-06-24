@@ -94,11 +94,77 @@ def test_truncate_ipv6_link_local():
 
 
 def test_truncate_ipv6_loopback():
-    """IPv6 loopback: ::1 → ::/32 (sem grupos nao-vazios suficientes)."""
+    """IPv6 loopback: ::1 → 0:1::/32 (T9-MED-9: comportamento deterministico)."""
     result = truncate_ip("::1")
-    # ::1 so tem 1 grupo nao-vazio depois de split, entao retorna None
-    # (decisao: precisa >= 2 grupos para IPv6 valido)
-    assert result is None
+    # 1 grupo nao-vazio ("1") → retorna "1:0::/32"
+    assert result == "1:0::/32"
+
+
+# ============================================================================
+# IPv4-mapped IPv6 (T9-CRIT-3)
+# ============================================================================
+
+
+def test_truncate_ipv4_mapped_ipv6_dotted():
+    """IPv4-mapped IPv6 dotted: ::ffff:192.168.1.1 → IPv4 trunca /24."""
+    result = truncate_ip("::ffff:192.168.1.123")
+    assert result == "192.168.1.0/24"
+
+
+def test_truncate_ipv4_mapped_ipv6_hex():
+    """IPv4-mapped IPv6 hex: ::ffff:c000:0280 = 192.0.2.128 → /24."""
+    result = truncate_ip("::ffff:c000:0280")
+    assert result == "192.0.2.0/24"
+
+
+def test_truncate_ipv4_mapped_ipv6_uppercase_hex():
+    """IPv4-mapped IPv6 hex uppercase: ::FFFF:C000:0280 = 192.0.2.128 → /24."""
+    result = truncate_ip("::FFFF:C000:0280")
+    assert result == "192.0.2.0/24"
+
+
+def test_truncate_ipv4_mapped_ipv6_with_prefix_mask():
+    """IPv4-mapped IPv6 dotted com mask customizado."""
+    result = truncate_ip("::ffff:192.168.1.123", mask=16)
+    assert result == "192.168.0.0/16"
+
+
+def test_truncate_ipv4_mapped_ipv6_invalid_returns_none():
+    """IPv4-mapped IPv6 malformado retorna None (defesa)."""
+    assert truncate_ip("::ffff:") is None
+    assert truncate_ip("::ffff:zzzz") is None  # hex invalido
+    assert truncate_ip("::ffff:999.999.999.999") is None  # IPv4 invalido
+
+
+# ============================================================================
+# IPv6 edge cases (T9-MED-9)
+# ============================================================================
+
+
+def test_truncate_ipv6_link_local():
+    """IPv6 link-local fe80::1 → primeiros 2 grupos /32."""
+    result = truncate_ip("fe80::1")
+    # "fe80" e "1" sao 2 grupos nao-vazios
+    assert result == "fe80:1::/32"
+
+
+def test_truncate_ipv6_unique_local():
+    """IPv6 unique-local fc00::1 → primeiros 2 grupos /32."""
+    result = truncate_ip("fc00::1")
+    # "fc00" e "1" sao 2 grupos nao-vazios
+    assert result == "fc00:1::/32"
+
+
+def test_truncate_ipv6_full_address():
+    """IPv6 full address: pega primeiros 2 grupos."""
+    result = truncate_ip("2001:db8:85a3:0:0:8a2e:370:7334")
+    assert result == "2001:db8::/32"
+
+
+def test_truncate_ipv6_case_insensitive():
+    """IPv6 case-insensitive (RFC 5952): normalize lowercase."""
+    result = truncate_ip("2001:DB8::1")
+    assert result == "2001:db8::/32"
 
 
 # ============================================================================

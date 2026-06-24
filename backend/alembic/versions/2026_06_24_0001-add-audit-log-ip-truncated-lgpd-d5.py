@@ -62,8 +62,9 @@ def upgrade() -> None:
             )
             # Backfill das rows existentes (se houver)
             # UPDATE audit_log SET ip_truncated = <truncate(ip)> WHERE ip IS NOT NULL
-            # Usa SQL puro porque truncate_ip() eh Python, nao SQL.
-            # Helper SQL: split_part para IPv4 /24, simplificado para IPv6.
+            # T9-HIGH-4+HIGH-5: SQL puro usando split_part (PostgreSQL/SQLite compat).
+            # NAO usa REVERSE() (PG 16+ only, falha em SQLite/PG<16).
+            # NAO usa SUBSTR+POSITION com 1 grupo (pega so 1, nao 2).
             op.execute(
                 sa.text(
                     """
@@ -71,11 +72,15 @@ def upgrade() -> None:
                     SET ip_truncated = CASE
                         WHEN ip IS NULL THEN NULL
                         WHEN ip LIKE '%.%.%.%' AND ip NOT LIKE '%:%' THEN
-                            -- IPv4: pega primeiros 3 octetos + '.0/24'
-                            SUBSTR(ip, 1, LENGTH(ip) - POSITION('.' IN REVERSE(ip))) || '0/24'
+                            -- IPv4: primeiros 3 octetos + '.0/24'
+                            -- split_part(ip, '.', N) retorna o N-esimo grupo
+                            split_part(ip, '.', 1) || '.' ||
+                            split_part(ip, '.', 2) || '.' ||
+                            split_part(ip, '.', 3) || '.0/24'
                         WHEN ip LIKE '%:%' THEN
-                            -- IPv6: simplificado, pega primeiros 2 grupos + '::/32'
-                            SUBSTR(ip, 1, POSITION(':' IN ip || ':') - 1) || '::/32'
+                            -- IPv6: primeiros 2 grupos + '::/32'
+                            split_part(ip, ':', 1) || ':' ||
+                            split_part(ip, ':', 2) || '::/32'
                         ELSE NULL
                     END
                     WHERE ip_truncated IS NULL AND ip IS NOT NULL
