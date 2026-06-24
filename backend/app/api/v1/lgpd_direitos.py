@@ -16,12 +16,12 @@ Padrao:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db  # type: ignore
+from app.db import get_db
 from app.config import settings
 from app.services.audit import AuditService  # type: ignore
 from sqlalchemy import select
@@ -54,6 +54,7 @@ def _cliente_existe(db: Session, cliente_id: int) -> bool:
     """Retorna True se cliente existe no DB."""
     try:
         from app.models.cliente import Cliente
+
         result = db.execute(select(Cliente).where(Cliente.id == cliente_id))
         return result.scalar_one_or_none() is not None
     except Exception:
