@@ -231,3 +231,11 @@ def test_atendimento_historico_db_fallback(client):
         assert data["total"] == 2
         assert data["messages"][0]["content"] == "Mensagem do DB"
         assert data["messages"][1]["content"] == "Resposta do Bot DB"
+
+def test_custom_swagger_ui_html(client):
+    """Testa se o Swagger UI customizado é retornado corretamente no /docs."""
+    response = client.get("/docs")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "text/html; charset=utf-8"
+    assert "Cartorio Backend API - Swagger UI" in response.text
+    assert "Swagger UI" in response.text
