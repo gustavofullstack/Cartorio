@@ -861,7 +861,11 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 
 - [x] **B0.1** POST /api/v1/metrics/n8n (cartorio-dev, 1h) — ✅ DONE 15:08 BRT commit `38679ea`
 - [x] **B0.2** Investigar erros workflows 21/26/30/31 (cartorio-n8n, 2h) — ✅ DONE 15:18 BRT commit `5bdfb7a` (análise + fix WF 30)
-- [ ] **D0.1** Criar 5 tabelas core no schema public Supabase (cartorio-dev, 3h)
+- [x] **D0.1** 5 tabelas core no schema public Supabase — ✅ ALREADY DONE (verificado 15:20 BRT via SSH + psql)
+  - 6 tabelas JA existem: audit_log (358 rows), clientes (1), conversas (92), protocolos (1), documentos (0), emolumentos (0)
+  - PLAN_GIGANTE estava desatualizado — schema public nao estava VAZIO (soh tem 30+ tabelas N8N: agents_*, ai_builder_*, _prisma_migrations)
+  - Alembic configurado com 3 migrations: 23/06 (audit_log canal + cliente encerramento), 24/06 D5 (audit_log IP truncated LGPD) + D6 (outbox messages DLQ)
+  - Proxima: seed emolumentos MG 2026 (E0.S0.5.T4 - WIP) + aplicar migrations Alembic remanescentes
 - [ ] **D0.2** Supabase Realtime para conversas ativas (cartorio-dev, 2h)
 - [ ] **D0.3** pgmq queues (cartorio-dev, 2h)
 - [ ] **A0.1** Audit log 100% mutações (cartorio-dev, 4h)
