@@ -1,0 +1,58 @@
+{
+  "_comment": "Backup do OpenClaw gateway config APOS T4.9 (fix /v1/chat 404). Hot-reloaded no container cartorio_openclaw-gateway.1 em 2026-06-24 15:13 BRT. NUNCA commitar este arquivo com secrets. Local original: /home/node/.openclaw/openclaw.json (dentro do container OpenClaw).",
+  "_deploy_target": "docker exec cartorio_openclaw-gateway.1.tqxnlervgljz1engzubpkpzuo sh -c 'cat > /home/node/.openclaw/openclaw.json <<EOF ... EOF'",
+  "_rollback": "cp /home/node/.openclaw/openclaw.json.pre-t4.9-1782314031 /home/node/.openclaw/openclaw.json",
+  "_backup_inside_container": "/home/node/.openclaw/openclaw.json.pre-t4.9-1782314031",
+  "gateway": {
+    "controlUi": {
+      "allowedOrigins": [
+        "*"
+      ]
+    },
+    "trustedProxies": [
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "100.64.0.0/10",
+      "192.168.0.0/16"
+    ],
+    "http": {
+      "endpoints": {
+        "chatCompletions": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "compaction": {
+        "keepRecentTokens": 2048,
+        "maxActiveTranscriptBytes": "50mb",
+        "truncateAfterCompaction": true
+      }
+    }
+  },
+  "meta": {
+    "lastTouchedVersion": "2026.6.10",
+    "lastTouchedAt": "2026-06-24T03:08:39.935Z"
+  },
+  "_t49_pendencies": {
+    "_comment": "Itens que ainda precisam ser resolvidos para o chat funcionar de ponta a ponta",
+    "1_agent_provider": {
+      "issue": "agents/main/agent.json tem provider='openai' mas model='deepseek-v4-flash' (que so existe em opencode-go). OpenClaw tenta api.openai.com/v1/responses e recebe 401.",
+      "fix_suggested": "Alterar provider='opencode-go' em /home/node/.openclaw/agents/main/agent/agent.json (hot-reload nao pega agent.json, requer restart do agente ou recriar sessao)",
+      "blocked_by": "aguarda decisao Gustavo + coordenacao com cartorio-dev para nao quebrar testes de integracao OpenCode-Go ja existentes no backend"
+    },
+    "2_env_var": {
+      "issue": "OPENCODE_GO_API_KEY nao esta no env do container OpenClaw. Existe em /home/node/.openclaw/workspace/.env.production e em backend/.env.example (chave sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr).",
+      "fix_suggested": "Set OPENCODE_GO_API_KEY=<key> no Easypanel env do servico cartorio_openclaw-gateway e docker service update",
+      "blocked_by": "SUI Gustavo (Easypanel UI) - Gustavo tem poder de injecao",
+      "key_value": "sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr"
+    },
+    "3_context_1m": {
+      "issue": "AGENTS.md documenta max_context_tokens=1000000 mas openclaw.json NAO define. OpenClaw esta usando default (provavelmente 131k).",
+      "fix_suggested": "Adicionar agents.defaults.modelContextWindow=1000000 (ou similar) ao openclaw.json",
+      "blocked_by": "depende Gustavo decidir se 1M context e prioridade agora ou depois do Sprint 3"
+    }
+  }
+}
