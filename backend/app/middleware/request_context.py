@@ -54,9 +54,8 @@ def _extract_client_ip(request: Request) -> str | None:
     return None
 
 
-def _generate_or_propagate_request_id(request: Request) -> str:
-    """Se cliente mandou X-Request-Id valido, usa. Senao, gera UUIDv4."""
-    incoming = request.headers.get("x-request-id")
+def _generate_or_propagate_request_id(incoming: str | None) -> str:
+    """Se cliente mandou X-Request-Id ou X-Correlation-Id valido, usa. Senao, gera UUIDv4."""
     if incoming and 8 <= len(incoming) <= 128:
         return incoming
     return str(uuid.uuid4())
@@ -87,7 +86,12 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        request_id = _generate_or_propagate_request_id(request)
+        # Correlation ID: aceita X-Request-Id, X-Correlation-Id OU gera novo
+        # X-Correlation-Id e' o padrao W3C (https://www.w3.org/TR/correlation-id/)
+        incoming = request.headers.get("x-request-id") or request.headers.get(
+            "x-correlation-id"
+        )
+        request_id = _generate_or_propagate_request_id(incoming)
         client_ip = _extract_client_ip(request)
         user_agent = request.headers.get("user-agent")
         canal = request.headers.get("x-canal")
@@ -99,10 +103,38 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         request.state.user_agent = user_agent
         request.state.canal = canal
         request.state.timestamp_iso = timestamp_iso
+        # Tambem disponivel como atributo do request.state.correlation_id
+        request.state.correlation_id = request_id
+
+        # Log estruturado do request (inclui correlation_id)
+        import logging
+
+        logger = logging.getLogger("cartorio.request")
+        logger.info(
+            "request.start method=%s path=%s correlation_id=%s client_ip=%s canal=%s",
+            request.method,
+            request.url.path,
+            request_id,
+            client_ip or "unknown",
+            canal or "unknown",
+        )
 
         response = await call_next(request)
+
         # Ecoa no response pra tracing distribuido (curl -i mostra)
         response.headers["X-Request-Id"] = request_id
+        response.headers["X-Correlation-Id"] = request_id  # W3C standard
+
+        # Log do fim do request
+        logger.info(
+            "request.end method=%s path=%s status=%d correlation_id=%s duration_ms=%.2f",
+            request.method,
+            request.url.path,
+            response.status_code,
+            request_id,
+            (datetime.utcnow() - datetime.fromisoformat(timestamp_iso)).total_seconds()
+            * 1000,
+        )
         return response
 
 
