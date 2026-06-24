@@ -30,6 +30,12 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# A7: sliding window rate limit (60 req/min/IP) - camada adicional
+from app.services.sliding_window import (  # noqa: E402
+    RedisSlidingWindowStore,
+    sliding_window_check,
+)
+
 
 # ============================================================================
 # Tipos
@@ -125,6 +131,8 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         self._paths = paths_prefixes
         self._ddos_per_minute = ddos_per_minute
         self._client: redis_async.Redis | None = None
+        # A7: sliding window store compartilhado
+        self._sliding_store: RedisSlidingWindowStore = RedisSlidingWindowStore(self._url)
 
     async def _get_client(self) -> redis_async.Redis | None:
         if self._client is None:
@@ -204,6 +212,27 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
             allowed=allowed, current=current, limit=limit, retry_after=retry_after
         )
 
+    async def _check_sliding_window(self, client_ip: str) -> RateLimitResult:
+        """A7: sliding window log algorithm (60 req/min/IP).
+
+        Camada 1.5 — roda DEPOIS do DDoS fixed-window e ANTES do per-tier.
+        Usa ZSET no Redis para sliding window real (sem boundary attack).
+        Fail-open se Redis offline.
+        """
+        ip_hash = _hash_api_key(f"sliding:ip:{client_ip}")
+        result = await sliding_window_check(
+            self._sliding_store,  # type: ignore[arg-type]
+            key=f"sliding:ip:{ip_hash}",
+            limit=self._ddos_per_minute,
+            window_s=60,
+        )
+        return RateLimitResult(
+            allowed=result.allowed,
+            current=result.current,
+            limit=result.limit,
+            retry_after=result.retry_after,
+        )
+
     async def dispatch(
         self,
         request: Request,
@@ -218,7 +247,7 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         if not client_ip or client_ip == "unknown":
             client_ip = request.client.host if request.client else "unknown"
 
-        # Camada 1: DDoS protection (limite absoluto por IP)
+        # Camada 1: DDoS protection (limite absoluto por IP, fixed window)
         ip_result = await self._check_ip_ddos(client_ip)
         if not ip_result.allowed:
             logger.warning(
@@ -236,6 +265,29 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
                     "Retry-After": str(ip_result.retry_after),
                     "X-RateLimit-Limit": str(ip_result.limit),
                     "X-RateLimit-Remaining": "0",
+                },
+                media_type="application/json",
+            )
+
+        # Camada 1.5: A7 sliding window real (sem boundary attack)
+        sliding_result = await self._check_sliding_window(client_ip)
+        if not sliding_result.allowed:
+            logger.warning(
+                "rate_limit.sliding: ip=%s current=%d limit=%d path=%s",
+                client_ip, sliding_result.current, sliding_result.limit, request.url.path,
+            )
+            return Response(
+                content=(
+                    f'{{"erro":"RATE_LIMITED_SLIDING","mensagem":"Limite sliding window '
+                    f'{sliding_result.limit} req/min por IP. Tente em '
+                    f'{sliding_result.retry_after}s."}}'
+                ),
+                status_code=429,
+                headers={
+                    "Retry-After": str(sliding_result.retry_after),
+                    "X-RateLimit-Limit": str(sliding_result.limit),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Algorithm": "sliding-window",
                 },
                 media_type="application/json",
             )
