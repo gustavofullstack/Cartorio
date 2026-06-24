@@ -52,10 +52,10 @@ def set_cached(tipo_documento: str, valor: float, payload: dict) -> bool:
     if r is None:
         return False
     try:
-        r.setex(
+        r.set(
             _cache_key(tipo_documento, valor),
-            CACHE_TTL_SECONDS,
             json.dumps(payload, default=str),
+            ex=CACHE_TTL_SECONDS,
         )
         return True
     except Exception as e:

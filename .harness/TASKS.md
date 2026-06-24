@@ -753,4 +753,27 @@ cartorio-lgpd (mvs_3c841fe) **VOLTOU** (estava OFFLINE no report anterior; era p
 
 **Cross-project lesson salva em agent memory** (MEMORY.md): "LLM output scrub gap pattern — Blocker #13 + #14" — reusável para QUALQUER projeto que use LLM. Pattern grep `llm_resp.content` + verificar scrub() ANTES de retornar/persistir.
 
-Modified by Gustavo Almeida
+### 2026-06-24 14:00 BRT — Harness (cron n8n-runner-watchdog tick 14:00)
+
+**STATUS RED REINCIDENTE Lesson 44** — esperado durante refactor window. Probes:
+- MAIN_TID=15a9b13eb6a7 (/cartorio_n8n.1.nzdgts5zs8n7840bs7767kqji) UP 47min
+  TCP_5679=OK TCP_5678=OK N8N_PROC_COUNT=3
+- RUNNER_TID=b9eb8f60798f (/cartorio_n8n-runner.1.73gdh1srekhyfr22ybn5e8tny) UP 41min
+- IDLE_COUNT_5MIN=7 (>= 2 RED REINCIDENTE Lesson 44)
+- Last 3 idle timestamps: 16:59:23 / 17:00:16 / 17:01:16 UTC (= 13:59-14:01 BRT) AO VIVO
+- RestartCount=0 (Docker level), launcher recicla runner subprocess
+
+**ROUTING CONFLICT RESOLUTION** — Pietra root autorizou 13:59 BRT opcao (C) refactor via cartorio-dev (mvs_099d358c7f044e6bab6a3be1ac180e39). cartorio-dev REJEITOU 14:00 BRT por escopo:
+- Task = editar JSON WF#25 + UPDATE workflow_entity + smoke test N8N. ZERO backend code.
+- AGENTS.md explicito: "Workflows n8n, JSON export -> cartorio-n8n"
+
+**DECISAO HARNESS**: ACEITO rejeição. Re-roteamento:
+- WF#25 refactor (Code→HTTP Request) → cartorio-n8n (mvs_b3f037cf485a4e21b899476eacaceff2) deadline 14:15 BRT
+- Parallel: cartorio-dev verifica /api/v1/metrics endpoint existence (offer <2min, scope backend)
+- Se endpoint missing: nova task cartorio-dev separada (criar Pydantic + GET + tests)
+
+**Lesson canonica salva**: Lesson 53 — routing conflict pattern em harness (cartorio-dev rejeitar + re-rotear via AGENTS.md scope rule). Cross-project aplicavel a QUALQUER multi-agent orchestrator com reins especializados.
+
+**IM enviado Pietra root** (mvs_9b3c9043ac5c46ceb641c14b708ca74a) com tick results + escalation scope.
+
+**Modified by Gustavo Almeida**

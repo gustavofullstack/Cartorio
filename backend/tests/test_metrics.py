@@ -186,3 +186,99 @@ def test_render_full_prometheus_sem_db() -> None:
     """render_full_prometheus(db=None) ainda funciona (sem DB snapshot)."""
     output = render_full_prometheus(db=None)
     assert "cartorio_uptime_seconds" in output
+
+
+# ============================================================================
+# Endpoint JSON: GET /api/v1/metrics
+# ============================================================================
+#
+# Spec (Sprint 4 / STREAM 1 cartorio-dev 2026-06-24):
+# - Retorna JSON estruturado para consumo em N8N workflows (Code node-free).
+# - Mesmo modelo de auth do /prometheus (sem auth - usado por scrapers).
+# - Reusa collect_db_metrics(db) + adiciona in-process (uptime, http_requests).
+# - NUNCA expoe PII (cpf, rg, etc). Apenas contadores e gauges.
+
+
+def test_endpoint_metrics_json_retorna_200_com_shape(client) -> None:
+    """GET /api/v1/metrics retorna 200 + JSON com campos canonicos."""
+    resp = client.get("/api/v1/metrics")
+    assert resp.status_code == 200
+    assert "application/json" in resp.headers["content-type"]
+    body = resp.json()
+    # Shape canonico: top-level keys presentes
+    assert "clientes_total" in body
+    assert "protocolos_total" in body  # dict por status
+    assert "audit_chain_length" in body
+    assert "uptime_seconds" in body
+    assert isinstance(body["protocolos_total"], dict)
+    assert isinstance(body["uptime_seconds"], (int, float))
+    assert body["uptime_seconds"] >= 0
+
+
+def test_endpoint_metrics_json_sem_auth(client) -> None:
+    """GET /api/v1/metrics NAO exige X-API-Key (igual /prometheus)."""
+    # Sem header de auth - deve retornar 200
+    resp = client.get("/api/v1/metrics")
+    assert resp.status_code == 200
+    # Header errado tambem nao bloqueia (auth eh opcional)
+    resp = client.get("/api/v1/metrics", headers={"X-API-Key": "qualquer"})
+    assert resp.status_code == 200
+
+
+def test_endpoint_metrics_json_com_auth_opcional(client) -> None:
+    """GET /api/v1/metrics aceita X-API-Key (forward-compat) mas NAO exige."""
+    headers = {"X-API-Key": "test-key-12345"}
+    resp = client.get("/api/v1/metrics", headers=headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "uptime_seconds" in body
+
+
+def test_endpoint_metrics_json_db_vazio(client) -> None:
+    """DB sem clientes/protocolos retorna zeros (sem KeyError)."""
+    # Sem adicionar dados - DB vazio
+    resp = client.get("/api/v1/metrics")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["clientes_total"] == 0
+    assert body["protocolos_total"] == {}  # dict vazio, sem status
+    assert body["audit_chain_length"] == 0
+
+
+def test_endpoint_metrics_json_inclui_contagens_db(client) -> None:
+    """Endpoint inclui contagens reais do DB (clientes + protocolos)."""
+    from app.db import session_scope
+    from app.models.cliente import Cliente
+    from app.models.protocolo import Protocolo
+
+    with session_scope() as db:
+        db.add(Cliente(cpf_hash="h1", nome="A", consentimento_lgpd=True))
+        db.add(Cliente(cpf_hash="h2", nome="B", consentimento_lgpd=True))
+        db.add(Cliente(cpf_hash="h3", nome="C", consentimento_lgpd=True))
+        db.add(Cliente(cpf_hash="h4", nome="D", consentimento_lgpd=True))
+        db.add(
+            Protocolo(
+                cliente_id=1,
+                numero="X1",
+                tipo="rg",
+                status="aberto",
+                canal_origem="web",
+            )
+        )
+        db.add(
+            Protocolo(
+                cliente_id=1,
+                numero="X2",
+                tipo="rg",
+                status="concluido",
+                canal_origem="web",
+            )
+        )
+        db.commit()
+
+    resp = client.get("/api/v1/metrics")
+    body = resp.json()
+    assert body["clientes_total"] == 4
+    assert body["protocolos_total"].get("aberto") == 1
+    assert body["protocolos_total"].get("concluido") == 1
+    assert body["audit_chain_length"] >= 0  # pode ter entries de session_scope

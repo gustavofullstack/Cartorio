@@ -245,3 +245,61 @@ def render_full_prometheus(db: Session | None = None) -> str:
         for name, value in collect_db_metrics(db).items():
             store.set_gauge(name, value)
     return store.render_prometheus()
+
+
+def render_metrics_json(db: Session | None = None) -> dict[str, Any]:
+    """Renderiza metrics como dict JSON (consumivel por N8N workflows).
+
+    Shape canonico (Sprint 4 STREAM 1 - 2026-06-24):
+    - clientes_total: int
+    - protocolos_total: dict[status, int] - separa prefixo 'protocolos_total{status="..."}'
+      para dict puro
+    - audit_chain_length: int
+    - uptime_seconds: float
+    - counters: dict[str, dict[labels_key, int]] - contadores in-process
+    - gauges: dict[str, dict | scalar] - gauges in-process
+
+    LGPD: NAO expoe PII. Apenas contadores agregados.
+    """
+    # Snapshot do DB (gauge values)
+    db_snapshot: dict[str, Any] = {}
+    if db is not None:
+        db_snapshot = collect_db_metrics(db)
+
+    # Processa db_snapshot -> campos canonicos
+    clientes_total = int(db_snapshot.get("clientes_total", 0))
+    audit_chain_length = int(db_snapshot.get("audit_chain_length", 0))
+
+    # protocolos_total: prefix 'protocolos_total{status="..."}' -> dict puro
+    protocolos_total: dict[str, int] = {}
+    for key, value in db_snapshot.items():
+        if key.startswith('protocolos_total{status="') and key.endswith('"}'):
+            # Extrai status entre 'protocolos_total{status="' e '"}'
+            status = key[len('protocolos_total{status="') : -len('"}')]
+            protocolos_total[status] = int(value)
+
+    # In-process metrics (counters e gauges)
+    # Counters: {name: {labels_key: int}} -> {name: {labels_key: int}}
+    counters: dict[str, dict[str, int]] = {}
+    for name, buckets in store.counters.items():
+        counters[name] = dict(buckets)
+
+    # Gauges: suporta scalar E dict-com-labels -> normaliza pra JSON
+    gauges: dict[str, Any] = {}
+    for name, val_or_map in store.gauges.items():
+        if isinstance(val_or_map, dict):
+            gauges[name] = dict(val_or_map)
+        else:
+            gauges[name] = float(val_or_map)
+
+    # Uptime sempre presente (reusa logica do render_prometheus)
+    uptime_seconds = float(time.time() - store._started_at)
+
+    return {
+        "clientes_total": clientes_total,
+        "protocolos_total": protocolos_total,
+        "audit_chain_length": audit_chain_length,
+        "uptime_seconds": uptime_seconds,
+        "counters": counters,
+        "gauges": gauges,
+    }

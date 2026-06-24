@@ -25,21 +25,6 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "javaScript",
-        "jsCode": "\nconst items = $input.all();\nreturn [{ json: {\n  ts: new Date().toISOString(),\n  wf_id: 'n8n-wf25',\n  uptime_s: process.uptime(),\n  memory_mb: Math.round(process.memoryUsage().rss / 1024 / 1024),\n  n8n_exec_count: 0,  // n8n does not expose this; could pull from DB\n} }];\n"
-      },
-      "id": "collect-local-metrics",
-      "name": "Collect Local Metrics",
-      "type": "n8n-nodes-base.code",
-      "position": [
-        460,
-        300
-      ],
-      "typeVersion": 2
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "https://api.2notasudi.com.br/api/v1/metrics/n8n",
         "sendHeaders": true,
@@ -70,6 +55,32 @@
         300
       ],
       "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/api/v1/metrics/prometheus",
+        "sendHeaders": false,
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "fetch-metrics-from-backend",
+      "name": "Fetch Metrics from Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        580,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "retryOnFail": false,
+      "alwaysOutputData": true
     }
   ],
   "connections": {
@@ -77,14 +88,14 @@
       "main": [
         [
           {
-            "node": "Collect Local Metrics",
+            "node": "Fetch Metrics from Backend",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Collect Local Metrics": {
+    "Fetch Metrics from Backend": {
       "main": [
         [
           {
