@@ -144,7 +144,36 @@ Type: pitfall
 
 **Bonus (pratica que funcionou hoje)**:
 - Pingar Pietra root ANTES de agir (mesmo achando que briefing eh legitimo) — levou 4min mas desbloqueou tudo
-- Ler scratchpad da Pietra root (1 cross-check de contexto, 27649 bytes riquíssimos)
+- Ler scratchpad da Pietra root (1 cross-check de contexto, 27649 bytes riquissimos)
 - Endpoint smoke test ANTES de editar (curl /api/v1/metrics/prometheus — 200 OK, content-type=text/plain, 433 bytes)
+- UPDATE nodes + connections SEPARADAMENTE (Lesson 50 pattern)
+- Backup nodes ANTES do UPDATE (rollback path)
+
+### N8N cache invalidation - canon workflow para refactor (2026-06-24)
+Type: lesson
+
+**Lesson 49+50+51+54 bundle canon**: refactor Code node em N8N 2.x requer 5 passos SENAO cache stale persiste:
+
+1. **DB UPDATE** `workflow_entity.nodes` (Lesson 50)
+2. **DB UPDATE** `workflow_entity.connections` (separado de nodes)
+3. **INSERT** nova `workflow_history` row com nodes novos + novo versionId
+4. **DB UPDATE** `workflow_entity.activeVersionId` = novo versionId
+5. **Restart Swarm** `docker service update --force cartorio_n8n` E `cartorio_n8n-runner`
+
+**Lesson 51 (N8N_BLOCK_ENV_ACCESS_IN_NODE)**: N8N 2.x tem env var `N8N_BLOCK_ENV_ACCESS_IN_NODE=true` (default security). Bloqueia acesso a $env.X em HTTP Request nodes. Workaround:
+- Opcao A: setar `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` no container env + restart
+- Opcao B: usar N8N credential type ao inves de env var
+- Hardcode NAO recomendado (Lesson 16/17)
+
+**Lesson 52 (cache invalidação workflow completo)**: APOS restart, validar via `tail -10 n8nEventLog.log` que o `node.started` event mostra o node NOVO (nao o antigo). Se ainda mostra node antigo, cache nao foi invalidado.
+
+**Caso real 14:00-17:42 BRT 24/06 (WF#25 Metrics Collector)**:
+- Primeiro DB UPDATE (nodes + connections) nao bastou
+- Primeiro restart cartorio_n8n nao bastou
+- INSERT workflow_history + UPDATE activeVersionId + 2o restart cartorio_n8n-runner NAO bastou
+- SOLUCAO: restart --force cartorio_n8n APOS 3-4min (cache expiry interno do N8N scheduler ~2-3min)
+- Total: 3h30 de debug para descobrir sequencia canonica
+
+**Regra**: sempre rodar 5 passos EM ORDEM + validar via event log + levar 5-10min pra N8N re-escalar cache.
 - UPDATE nodes + connections SEPARADAMENTE (Lesson 50 pattern)
 - Backup nodes ANTES do UPDATE (rollback path)
