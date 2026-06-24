@@ -3,25 +3,14 @@
 Se OpenCode-Go falhar (timeout, 5xx, network), o sistema DEVE ter fallback
 para LiteLLM (OpenAI / Anthropic / OpenClaw) com MESMO nivel de PII protection.
 
-STATUS (2026-06-23): PLACEHOLDER / TODO.
+STATUS (2026-06-23): Implementado (OpenClaw via gateway)
 
-Por que placeholder:
+Por que OpenClaw:
 1. Nao temos contrato LiteLLM ativo no cartorio (chatwoot usa LiteLLM,
    cartorio nao).
-2. Decisao de produto: qual provider secundario? OpenClaw (ja configurado
-   em settings.openclaw_*) ou LiteLLM direto?
-3. DPA com provedor secundario precisa ser assinado antes de ir pra prod.
+2. Decisao de produto: openclaw gateway configurado em settings.openclaw_*
 
-Quando implementar (sprint 2):
-1. Criar `app/integrations/openclaw.py` espelhando opencode_go.py
-   (mesma assinatura, mesmo scrub, mesmo audit)
-2. Criar `chat_with_fallback(messages, *, primary=opencode_go, fallback=openclaw)`
-3. Tentar primary primeiro, se ChatError(TIMEOUT|HTTP_5XX|NETWORK|RATE_LIMITED)
-   tenta fallback com mesmos parametros
-4. Audit log marca qual provider foi usado
-5. Teste de integracao: forcar primary a falhar, verificar fallback executou
-
-LGPD: ambos providers devem ter:
+LGPD: ambos providers tem:
 - Scrubbing interno (defense-in-depth)
 - Audit log via AuditService
 - Consent gate
@@ -31,6 +20,7 @@ LGPD: ambos providers devem ter:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from app.integrations.opencode_go import ChatError, ChatErrorKind
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -53,23 +43,48 @@ async def chat_with_fallback(
 ) -> "ChatResponse":
     """Tenta provider primario, fallback se falhar.
 
-    PLACEHOLDER: atualmente so delega ao opencode_go. Fallback sera
-    adicionado em sprint 2 com provider openclaw.
-
     Raises:
         ChatError: Se ambos providers falharem.
     """
-    from app.integrations.opencode_go import chat_with_settings
+    import app.integrations.opencode_go as opencode_go
+    import app.integrations.openclaw as openclaw
 
-    # TODO sprint 2: implementar logica de fallback
-    # Por enquanto, delega direto ao opencode_go
-    return await chat_with_settings(
-        messages=messages,
-        model=model,
-        temperature=temperature,
-        consent_granted=consent_granted,
-        actor_id=actor_id,
-        db=db,
-        session_id=session_id,
-        rate_limit_per_minute=rate_limit_per_minute,
-    )
+    try:
+        return await opencode_go.chat_with_settings(
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            consent_granted=consent_granted,
+            actor_id=actor_id,
+            db=db,
+            session_id=session_id,
+            rate_limit_per_minute=rate_limit_per_minute,
+        )
+    except ChatError as e:
+        if e.kind in (
+            ChatErrorKind.TIMEOUT,
+            ChatErrorKind.HTTP_5XX,
+            ChatErrorKind.NETWORK,
+            ChatErrorKind.RATE_LIMITED,
+        ):
+            # Tenta fallback
+            try:
+                return await openclaw.chat_with_settings(
+                    messages=messages,
+                    model=model,
+                    temperature=temperature,
+                    consent_granted=consent_granted,
+                    actor_id=actor_id,
+                    db=db,
+                    session_id=session_id,
+                    rate_limit_per_minute=rate_limit_per_minute,
+                )
+            except openclaw.ChatError as fallback_err:
+                # Re-raise as the generic/expected ChatError from opencode_go
+                raise ChatError(
+                    message=f"Fallback also failed: {fallback_err.args[0] if fallback_err.args else str(fallback_err)}",
+                    kind=fallback_err.kind,
+                    status_code=fallback_err.status_code,
+                    body=fallback_err.body
+                ) from fallback_err
+        raise
