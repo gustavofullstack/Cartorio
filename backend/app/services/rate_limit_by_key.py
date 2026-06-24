@@ -117,11 +117,13 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         redis_url: str | None = None,
         api_key_header: str = "x-api-key",
         paths_prefixes: tuple[str, ...] = DEFAULT_PATHS,
+        ddos_per_minute: int = 100,
     ) -> None:
         super().__init__(app)  # type: ignore[arg-type]
         self._url = redis_url or settings.redis_url
         self._api_key_header = api_key_header
         self._paths = paths_prefixes
+        self._ddos_per_minute = ddos_per_minute
         self._client: redis_async.Redis | None = None
 
     async def _get_client(self) -> redis_async.Redis | None:
@@ -170,6 +172,38 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
             retry_after=retry_after,
         )
 
+    async def _check_ip_ddos(self, client_ip: str) -> RateLimitResult:
+        """Defesa DDoS: limite ABSOLUTO por IP (independente de API key).
+
+        Limite: 100 req/min por IP. Se um atacante rotacionar API keys
+        ou nao usar key nenhuma, este limite o segura antes do limite
+        por tier.
+        """
+        client = await self._get_client()
+        if client is None:
+            return RateLimitResult(allowed=True, current=0, limit=0, retry_after=0)
+
+        ip_hash = _hash_api_key(f"ip:{client_ip}")
+        now_minute = int(time.time() // 60)
+        redis_key = f"ratelimit:ip:{ip_hash}:{now_minute}"
+        limit = self._ddos_per_minute
+
+        try:
+            pipe = client.pipeline()
+            pipe.incr(redis_key)
+            pipe.expire(redis_key, 60)
+            current, _ = await pipe.execute()
+        except redis_async.RedisError as e:
+            logger.warning("rate_limit: Redis error em IP DDoS check, fail-open: %s", e)
+            return RateLimitResult(allowed=True, current=0, limit=0, retry_after=0)
+
+        current = int(current)
+        allowed = current <= limit
+        retry_after = 60 - (int(time.time()) % 60) if not allowed else 0
+        return RateLimitResult(
+            allowed=allowed, current=current, limit=limit, retry_after=retry_after
+        )
+
     async def dispatch(
         self,
         request: Request,
@@ -179,7 +213,34 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         if self._paths and not any(request.url.path.startswith(p) for p in self._paths):
             return await call_next(request)
 
-        # Identifica API key
+        # Extrai IP do cliente (defesa DDoS - roda ANTES do rate limit por key)
+        client_ip = request.headers.get("x-forwarded-for", "unknown").split(",")[0].strip()
+        if not client_ip or client_ip == "unknown":
+            client_ip = request.client.host if request.client else "unknown"
+
+        # Camada 1: DDoS protection (limite absoluto por IP)
+        ip_result = await self._check_ip_ddos(client_ip)
+        if not ip_result.allowed:
+            logger.warning(
+                "rate_limit.ddos: ip=%s current=%d limit=%d path=%s",
+                client_ip, ip_result.current, ip_result.limit, request.url.path,
+            )
+            return Response(
+                content=(
+                    f'{{"erro":"RATE_LIMITED_DDOS","mensagem":"Limite absoluto de '
+                    f'{ip_result.limit} req/min por IP atingido. Tente em '
+                    f'{ip_result.retry_after}s."}}'
+                ),
+                status_code=429,
+                headers={
+                    "Retry-After": str(ip_result.retry_after),
+                    "X-RateLimit-Limit": str(ip_result.limit),
+                    "X-RateLimit-Remaining": "0",
+                },
+                media_type="application/json",
+            )
+
+        # Identifica API key (camada 2: rate limit por tier)
         api_key = request.headers.get(self._api_key_header)
         if api_key:
             tier = identify_tier(api_key)
@@ -187,7 +248,6 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         else:
             tier = "padrao"
             # Hash anonimo: IP do cliente (LGPD-safe, nao reversivel)
-            client_ip = request.headers.get("x-forwarded-for", "unknown").split(",")[0].strip()
             key_hash = _hash_api_key(f"ip:{client_ip}")
 
         result = await self._check(key_hash, tier)
