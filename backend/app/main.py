@@ -17,12 +17,15 @@ from app.models.base import Base
 from app.services.audit import AuditService
 from app.services.rate_limit import RateLimitMiddleware
 from app.services.rate_limit_by_key import RateLimitByKeyMiddleware
+from app.services.tracing import init_tracing
 from app.middleware.request_context import RequestContextMiddleware
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Smoke test DB + create tables if missing + audit log init."""
+    """Smoke test DB + create tables if missing + audit log init + tracing init (A3)."""
+    # 0. OpenTelemetry tracing init (A3 — squad A)
+    init_tracing("cartorio-api")
     # 1. Smoke test: confirm DB is reachable
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
