@@ -465,3 +465,9 @@ app.include_router(ws_router)  # WebSocket /ws/atendimentos (T2.API.T19)
 from app.api.v1.telegram import router as telegram_router  # noqa: E402
 
 app.include_router(telegram_router, prefix="/api/v1")
+
+# LGPD direitos do titular (Art. 18) - 5 endpoints + 1 ja em router.py
+# Adicionado 2026-06-24 (anonimizar, corrigir, oposicao, optout, portabilidade)
+from app.api.v1.lgpd_direitos import lgpd_router  # noqa: E402
+
+app.include_router(lgpd_router, prefix="/api/v1")
