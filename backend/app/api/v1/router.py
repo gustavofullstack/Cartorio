@@ -20,6 +20,7 @@ import datetime
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 from typing import Annotated, Any
@@ -60,6 +61,8 @@ from app.services.pii import hash_pii, scrub
 
 # Integrations router (smoke test OpenCode-Go, etc)
 from app.api.v1.integrations import integrations_router  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # Router com tags PT-BR para o Swagger/OpenAPI
@@ -769,10 +772,9 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
                     },
                     **ctx_pii,
                 )
-        except Exception:
-            # Audit log falhou - NAO quebrar o fluxo principal.
-            # Conversa com handoff ja foi gravada (try/except la embaixo).
-            pass
+        except Exception as e:
+            logger.warning("Audit log falhou ao registrar bloqueio de PII: %s", str(e), exc_info=True)
+            # NAO quebrar o fluxo principal; conversa com handoff ja foi gravada (try/except la embaixo).
     else:
         # Chamar LLM via modulo dedicado (SRP + LGPD by design - refator 2026-06-23).
         # opencode_go.chat() faz:
