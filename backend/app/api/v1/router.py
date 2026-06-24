@@ -423,6 +423,231 @@ def post_protocolo(
 
 
 # ============================================================================
+# POST /api/v1/protocolo/criar-api (Sprint 3 E1.S3.T1 — M1.8 + LGPD P0 #1)
+#
+# Endpoint autenticado por X-API-Key, usado por integracoes externas
+# (N8N WF #2 criar-protocolo, sistemas do escritorio, etc).
+#
+# Diferencas vs POST /api/v1/protocolo principal:
+# - Auth: X-API-Key header (vs public + LGPD gate)
+# - Identifica cliente por ID interno (vs CPF + nome)
+# - Recebe valor_snapshot ja calculado pelo caller (vs calcular internamente)
+# - Numero do protocolo formato CART-YYYY-XXXXXX (vs YYYY-NNNNN)
+# - Audit log action="protocolo.created" (vs "protocolo.create")
+# - LGPD: rejeita clientes com motivo_encerramento = REVOGACAO_CONSENTIMENTO
+# ============================================================================
+
+
+def _verify_api_key(x_api_key: str | None) -> None:
+    """Valida X-API-Key contra settings.cartorio_api_key.
+
+    Levanta HTTPException 401 se ausente ou incorreta. Constante-time
+    comparison via hashlib.compare_digest para evitar timing attacks.
+    """
+    expected = settings.cartorio_api_key
+    if not expected:
+        # API key nao configurada no .env - bloqueia por seguranca
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "erro": "API_KEY_NOT_CONFIGURED",
+                "mensagem": (
+                    "Endpoint protegido por X-API-Key mas chave nao configurada no servidor."
+                ),
+            },
+        )
+    if not x_api_key or not hmac.compare_digest(x_api_key, expected):
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "erro": "UNAUTHORIZED",
+                "mensagem": "X-API-Key ausente ou invalida.",
+            },
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+
+
+@api_router.post(
+    "/protocolo/criar-api",
+    tags=["protocolo"],
+    summary="Criar protocolo via API (auth X-API-Key, HITL DRAFT obrigatorio)",
+    description=(
+        "Cria protocolo em modo **DRAFT** autenticado por **header X-API-Key**. "
+        "Diferente do POST /api/v1/protocolo principal (public + LGPD gate), este "
+        "endpoint eh usado por integracoes externas autorizadas: N8N WF #2 "
+        "criar-protocolo, sistemas do escritorio, etc.\n\n"
+        "**Auth**: header `X-API-Key` com mesmo valor de `CARTORIO_API_KEY` no .env.\n\n"
+        "**Identificacao**: por `cliente_id` (FK clientes.id). Cliente precisa existir "
+        "e NAO pode ter `motivo_encerramento = REVOGACAO_CONSENTIMENTO`.\n\n"
+        "**Snapshot**: caller envia `valor_snapshot` ja calculado. Regra do projeto: "
+        "nunca recalcular protocolo antigo.\n\n"
+        "**HITL**: `hitl_draft` DEVE ser True (default). Backend rejeita "
+        "`hitl_draft=False` com 422.\n\n"
+        "**Audit log**: action=`protocolo.created`, actor_type=`api`, payload com "
+        "`{cliente_id_hash, ato, valor, hitl_draft}`."
+    ),
+    status_code=201,
+    response_model=ProtocoloApiCreateResponse,
+    response_description="Protocolo criado em modo DRAFT (CART-YYYY-XXXXXX).",
+    responses={
+        401: {"description": "X-API-Key ausente ou invalida."},
+        404: {"description": "Cliente nao encontrado."},
+        422: {"description": "LGPD bloqueado (revogacao) ou payload invalido."},
+    },
+)
+def post_protocolo_criar_api(
+    request: Request,
+    payload: ProtocoloApiCreateRequest,
+    x_api_key: Annotated[str | None, "Header X-API-Key"] = None,  # type: ignore[assignment]
+    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+) -> ProtocoloApiCreateResponse:
+    """Cria protocolo DRAFT via API autenticada.
+
+    Auth: X-API-Key header.
+    LGPD: rejeita cliente com motivo_encerramento = REVOGACAO_CONSENTIMENTO.
+    HITL: hitl_draft DEVE ser True (rejeitado senao).
+    """
+    # ------------------------------------------------------------------
+    # Auth: X-API-Key
+    # ------------------------------------------------------------------
+    api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
+
+    # ------------------------------------------------------------------
+    # Validacao cliente existe
+    # ------------------------------------------------------------------
+    cliente = db.execute(
+        select(Cliente).where(Cliente.id == payload.cliente_id)
+    ).scalar_one_or_none()
+
+    if cliente is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "CLIENTE_NOT_FOUND",
+                "mensagem": f"Cliente {payload.cliente_id} nao encontrado.",
+                "detalhes": {"cliente_id_consultado": payload.cliente_id},
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # LGPD gate: cliente NAO pode ter revogado consentimento
+    # ------------------------------------------------------------------
+    if cliente.motivo_encerramento and cliente.motivo_encerramento.value == "revogacao_consentimento":
+        AuditService.log(
+            db,
+            actor_id="api_key",
+            actor_type="api",
+            action="protocolo.created.lgpd_blocked",
+            resource=f"cliente:{cliente.id}",
+            payload={
+                "motivo": "cliente.revogacao_consentimento",
+                "ato": payload.ato.value,
+                "valor": str(payload.valor_snapshot),
+                "cliente_id_hash": hash_pii(str(cliente.id), salt=settings.audit_hmac_key[:32]),
+            },
+            **audit_kwargs(request),
+        )
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "erro": "LGPD_BLOCKED",
+                "mensagem": (
+                    f"Cliente {cliente.id} revogou consentimento LGPD. "
+                    "Conforme Lei 13.709/2018, art. 18, VI, novos protocolos "
+                    "nao podem ser criados para este cliente."
+                ),
+                "detalhes": {
+                    "cliente_id": cliente.id,
+                    "motivo_encerramento": cliente.motivo_encerramento.value,
+                    "revogacao_em": (
+                        cliente.updated_at.isoformat() if cliente.updated_at else None
+                    ),
+                    "direitos_titular": (
+                        "Cliente pode reabrir atendimento criando novo consentimento. "
+                        "DPO: dpo@2notasudi.com.br"
+                    ),
+                },
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # Gerar numero CART-YYYY-XXXXXX (sequencial por ano)
+    # ------------------------------------------------------------------
+    ano_atual = datetime.datetime.now(datetime.timezone.utc).year
+    prefixo = f"CART-{ano_atual}-"
+    ultimo = (
+        db.execute(
+            select(Protocolo.numero)
+            .where(Protocolo.numero.like(f"{prefixo}%"))
+            .order_by(Protocolo.numero.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+    )
+    if not ultimo:
+        seq = 1
+    else:
+        try:
+            seq = int(ultimo.split("-")[2]) + 1
+        except (IndexError, ValueError):
+            seq = 1
+    numero_protocolo = f"{prefixo}{seq:06d}"
+
+    # ------------------------------------------------------------------
+    # Persistir protocolo (status SEMPRE DRAFT - HITL obrigatorio)
+    # ------------------------------------------------------------------
+    protocolo = Protocolo(
+        numero=numero_protocolo,
+        cliente_id=cliente.id,
+        tipo=payload.ato.value,
+        status="DRAFT",  # HITL: nunca EM_ANDAMENTO
+        valor_base=payload.valor_snapshot,
+        valor_total=payload.valor_snapshot,
+        tabela_referencia="API_SNAPSHOT",
+        prazo_dias=5,
+        canal_origem="api",
+    )
+    db.add(protocolo)
+    db.flush()  # obtem protocolo.id para audit log
+
+    # ------------------------------------------------------------------
+    # Audit log - LGPD art. 37: registrar CRIACAO (OBRIGATORIO)
+    # ------------------------------------------------------------------
+    cliente_id_hash = hash_pii(str(cliente.id), salt=settings.audit_hmac_key[:32])
+    audit_entry = AuditService.log(
+        db,
+        actor_id="api_key",
+        actor_type="api",
+        action="protocolo.created",
+        resource=f"protocolo:{protocolo.id}",
+        payload={
+            "numero": numero_protocolo,
+            "ato": payload.ato.value,
+            "valor": str(payload.valor_snapshot),
+            "hitl_draft": payload.hitl_draft,
+            "cliente_id_hash": cliente_id_hash,
+            "canal_origem": "api",
+            "observacoes_present": payload.observacoes is not None,
+        },
+        **audit_kwargs(request),
+    )
+    db.commit()
+    db.refresh(protocolo)
+
+    # ------------------------------------------------------------------
+    # Response
+    # ------------------------------------------------------------------
+    return ProtocoloApiCreateResponse(
+        protocolo=numero_protocolo,
+        cliente_id=cliente.id,
+        status="draft",
+        audit_id=str(audit_entry.id).zfill(32),  # hex-like id para compat
+        created_at=protocolo.created_at,
+        created_by="api",
+    )
+
+
+# ============================================================================
 # Webhook Evolution (WhatsApp)
 # ============================================================================
 
