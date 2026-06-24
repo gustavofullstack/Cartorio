@@ -69,6 +69,11 @@ def upgrade() -> None:
         sa.Column("attempts", sa.Integer, nullable=False, server_default="0"),
         sa.Column("last_error", sa.Text, nullable=True),
         sa.Column(
+            "next_retry_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
             nullable=False,
@@ -87,6 +92,11 @@ def upgrade() -> None:
         "ix_outbox_queue_status",
         "outbox_messages",
         ["queue", "status"],
+    )
+    op.create_index(
+        "ix_outbox_next_retry_at",
+        "outbox_messages",
+        ["next_retry_at"],
     )
 
 

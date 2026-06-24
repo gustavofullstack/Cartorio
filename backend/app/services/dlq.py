@@ -5,11 +5,17 @@ Chatwoot rate limit, etc) para reprocessamento assincrono.
 
 Instrumentacao A2:
 - `dlq_depth{queue}` gauge - atualizado em cada enqueue/mark_done/mark_failed
+
+Retry policy A12:
+- 3 tentativas max com exponential backoff: 1min, 5min, 15min.
+- Apos 3 falhas, mensagem vai para FAILED (mark_dead).
+- next_retry_at eh timestamp UTC ate quando NAO deve reprocessar.
 """
 
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import func, select
@@ -17,6 +23,79 @@ from sqlalchemy.orm import Session
 
 from app.models.outbox_message import OutboxMessage, OutboxQueue, OutboxStatus
 from app.services.metrics import store as metrics_store
+
+
+# A12: retry policy — 3 tentativas, backoff 1min/5min/15min
+MAX_ATTEMPTS = 3
+BACKOFF_SCHEDULE_SECONDS: tuple[int, ...] = (60, 300, 900)  # 1min, 5min, 15min
+
+
+def should_retry(msg: OutboxMessage) -> bool:
+    """Retorna True se a mensagem ainda pode ser reprocessada.
+
+    Logica: attempts < MAX_ATTEMPTS. Caller deve checar tambem next_retry_at
+    para respeitar o backoff schedule.
+    """
+    return msg.attempts < MAX_ATTEMPTS
+
+
+def compute_next_retry_at(attempts: int) -> datetime:
+    """Calcula proximo timestamp permitido pra retry (UTC).
+
+    attempts=0 (acabou de falhar a 1a vez) -> +1min
+    attempts=1 (acabou de falhar a 2a vez) -> +5min
+    attempts=2 (acabou de falhar a 3a vez) -> +15min
+    attempts>=3 -> retorna timestamp atual (ja passou de tudo, caller deve
+    chamar mark_dead).
+    """
+    if attempts >= len(BACKOFF_SCHEDULE_SECONDS):
+        return datetime.now(tz=timezone.utc)
+    delta = BACKOFF_SCHEDULE_SECONDS[attempts]
+    return datetime.now(tz=timezone.utc) + timedelta(seconds=delta)
+
+
+def is_retry_due(msg: OutboxMessage, now: datetime | None = None) -> bool:
+    """Verifica se o backoff schedule permite retry agora.
+
+    Returns:
+        True se (next_retry_at IS NULL) OR (next_retry_at <= now).
+    """
+    if msg.next_retry_at is None:
+        return True
+    now = now or datetime.now(tz=timezone.utc)
+    return msg.next_retry_at <= now
+
+
+def retry_or_dead(
+    db: Session,
+    msg: OutboxMessage,
+    error: str,
+) -> OutboxStatus:
+    """Decide entre retry (mark_failed) ou dead (mark_dead) baseado em attempts.
+
+    Returns:
+        Novo status (PENDING se vai retry, FAILED se morreu).
+
+    Side effects:
+        - Se retry: msg.attempts += 1, next_retry_at = compute_next_retry_at(attempts).
+        - Se dead: msg.status = FAILED.
+        - Atualiza gauge dlq_depth.
+    """
+    if should_retry(msg):
+        # Ainda da pra tentar
+        msg.attempts += 1
+        msg.last_error = error
+        msg.next_retry_at = compute_next_retry_at(msg.attempts)
+        msg.status = OutboxStatus.PENDING
+        db.commit()
+    else:
+        # Esgotou tentativas
+        msg.status = OutboxStatus.FAILED
+        msg.last_error = error
+        msg.next_retry_at = None
+        db.commit()
+    _update_depth_gauge(db)
+    return msg.status
 
 
 def enqueue(
