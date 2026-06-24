@@ -20,7 +20,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Extrai campos relevantes do update do Telegram\nevent = $input.first().json.body || $json.body;\nmessage = event.message || {};\nchat = message.chat || {};\nfrom_user = message.from || {};\n\nreturn {\n  json: {\n    update_id: event.update_id,\n    message_id: message.message_id,\n    chat_id: chat.id,\n    chat_type: chat.type,\n    text: message.text || '',\n    from_user: {\n      id: from_user.id,\n      first_name: from_user.first_name || '',\n      username: from_user.username || '',\n      is_bot: from_user.is_bot || false\n    },\n    date: message.date,\n    is_command: (message.text || '').startsWith('/'),\n    is_bot_message: from_user.is_bot === true\n  }\n};"
+        "jsCode": "// Extrai campos relevantes do update do Telegram\n// N8N 2.x Code node: $input JÁ É o item, $json é o shortcut\n// O webhook body vem em $json.body (NÃO em $json)\nconst item = $json || $input.json || {};\nconst body = item.body || item || {};\nconst message = body.message || {};\nconst chat = message.chat || {};\nconst from_user = message.from || {};\n\nreturn {\n  json: {\n    update_id: body.update_id,\n    message_id: message.message_id,\n    chat_id: chat.id,\n    chat_type: chat.type,\n    text: message.text || '',\n    from_user: {\n      id: from_user.id,\n      first_name: from_user.first_name || '',\n      username: from_user.username || '',\n      is_bot: from_user.is_bot || false\n    },\n    date: message.date,\n    is_command: (message.text || '').startsWith('/'),\n    is_bot_message: from_user.is_bot === true\n  }\n};"
       },
       "id": "extract-fields",
       "name": "Extract Telegram fields",
@@ -56,7 +56,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
+            {"name": "apikey", "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"},
             {"name": "Content-Type", "value": "application/json"},
             {"name": "X-Canal", "value": "telegram"}
           ]
@@ -75,7 +75,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "url": "=https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/sendMessage",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -83,8 +83,15 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"chat_id\": {{ $json.chat_id }},\n  \"text\": \"{{ $json.response }}\",\n  \"parse_mode\": \"Markdown\",\n  \"reply_to_message_id\": {{ $json.message_id }}\n}",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {"name": "chat_id", "value": "={{ $('Extract Telegram fields').item.json.chat_id }}"},
+            {"name": "text", "value": "={{ $json.response }}"},
+            {"name": "parse_mode", "value": "Markdown"},
+            {"name": "reply_to_message_id", "value": "={{ $('Extract Telegram fields').item.json.message_id }}"}
+          ]
+        },
         "options": {"timeout": 15000}
       },
       "id": "send-telegram",
@@ -100,7 +107,7 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "={{ $env.CARTORIO_API_KEY }}"},
+            {"name": "apikey", "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"},
             {"name": "Content-Type", "value": "application/json"},
             {"name": "X-Canal", "value": "telegram"}
           ]
