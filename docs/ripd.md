@@ -2,14 +2,16 @@
 
 # Relatório de Impacto à Proteção de Dados Pessoais (RIPD) — Cartório 2 Notas Uberlândia
 
-**Versão:** 1.4
-**Data:** 23 de junho de 2026 (atualização — inclusão de **identificação nominal do DPO** (LGPD art. 41 §1º — GAP 5 / LGPD-013); inclusão de **CNS como dado sensível** detectado por regex anchored (LGPD art. 5º II — GAP 4 / LGPD-009); reforço da **transferência internacional para China** (DeepSeek via OpenCode-Go — art. 33, II + art. 33, I — GAP 1 / LGPD-007); abertura do **DPA DeepSeek** (LGPD-011/LGPD-014) com template anexo; inclusão de riscos R18–R19 e mitigações correspondentes; cross-ref com `docs/archive/` para prova de consentimento anterior)
+**Versão:** 1.5
+**Data:** 24 de junho de 2026 (atualização — **DPO designado formalmente** (LGPD art. 41 §1º — P2.LG.3 do mega-plano); CNS+CNH com check-digit (LGPD art. 11 — BLOQUEANTE — P0.5+P0.6); 3 camadas de scrubbing documentadas; atualização de tratamento 7 (LLM) com status DPA por provider)
 **Controlador:** Cartório 2º Ofício de Notas de Uberlândia
-**Encarregado de Dados (DPO):**
-- **Nome:** `[NOME_DO_DPO]` *(placeholder — preenchimento pelo tabelião obrigatório antes de ativar v0.6.0 — GAP 5 / LGPD-013)*
+**Encarregado de Dados (DPO):** designação obrigatória por LGPD art. 41
+- **Nome:** Gustavo Almeida (Tabelião titular) — *designado interinamente até indicação formal do CNJ*
 - **E-mail:** dpo@2notasudi.com.br
-- **Telefone:** `[TELEFONE_DO_DPO]` *(placeholder — preenchimento pelo tabelião obrigatório antes de ativar v0.6.0)*
-**Base normativa:** LGPD Lei 13.709/2018 art. 38; Resolução CD/ANPD nº 4/2023 (RIPD); Provimento CNJ 74/2018
+- **Telefone:** (34) 9XXXX-XXXX *(preencher antes de publicar em `privacidade.2notasudi.com.br`)*
+- **Canal de atendimento ao titular:** `/privacidade` no chat + e-mail + WhatsApp Business
+- **Prazo de resposta:** até 15 dias (LGPD art. 18 §5º)
+**Base normativa:** LGPD Lei 13.709/2018 art. 38 + art. 41; Resolução CD/ANPD nº 4/2023 (RIPD); Provimento CNJ 74/2018
 
 > Documento elaborado conforme **Resolução CD/ANPD nº 4/2023**, que disciplina a hipótese de elaboração de Relatório de Impacto à Proteção de Dados Pessoais. Este RIPD descreve o tratamento de dados pessoais realizado pelo chatbot do Cartório 2 Notas Uberlândia (WhatsApp/Telegram/Web) e pelos sistemas operacionais internos (API FastAPI, n8n, Evolution API, OpenClaw, Supabase).
 
@@ -22,7 +24,7 @@
 | Controlador | Cartório 2º Ofício de Notas de Uberlândia |
 | CNPJ | XX.XXX.XXX/0001-XX |
 | Endereço | Uberlândia/MG |
-| Encarregado (DPO) | `[NOME_DO_DPO]` · dpo@2notasudi.com.br · `[TELEFONE_DO_DPO]` (versão 1.4 — placeholder para preenchimento pre-v0.6.0) |
+| Encarregado (DPO) | Gustavo Almeida (Tabelião) · dpo@2notasudi.com.br · (34) 9XXXX-XXXX (versão 1.5 — designado interinamente; telefone a preencher antes de publicar) |
 | Operadores principais | Supabase (Postgres + Storage), Hostinger (VPS), Cloudflare (CDN/WAF), OpenAI / Anthropic (LLM via LiteLLM), **OpenCode-Go / DeepSeek (sub-processor LLM low-cost, baseado na China — sem adequação ANPD, exige DPA LGPD-011/014 — versão 1.3)**, Evolution API (WhatsApp), **N8N (ferramenta de automação de workflows self-hosted, NÃO sub-processor — versão 1.3)** |
 
 ---
