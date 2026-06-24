@@ -225,3 +225,42 @@ d) `git show <hash> --stat` em CADA commit no range do briefing - detecta regres
 e) Se briefing diz "X passing" e pytest diz "X failing", reportar com output literal antes de agir
 
 Custo do protocolo: ~30s. Beneficio: nao assinar review cego de regressao critica (como bf12203 +6911 linhas de cover files).
+
+### Briefing stale + ZCode auto-commit pattern (Sprint 4 STREAM 1) (2026-06-24)
+Type: anti-pattern
+
+Cenario: parent delegou STREAM 1 (criar /api/v1/metrics JSON endpoint). 
+Implementei schema + service + endpoint + 5 tests via TDD. Tudo GREEN (14/14).
+Apos terminar, descubro que:
+
+1. origin/master JÁ TINHA commit b8c1418 com schema + service + tests + N8N workflow
+   (MAS SEM router endpoint — commited por outro agent que esqueceu o router.py)
+2. Commit 2a62245 foi feito por "ZCode/Mavis <mavis@cartorio.local>" (NAO por mim)
+   commitando MINHAS alteracoes uncommitted como "feat(metrics): endpoint /metrics JSON N8N-friendly"
+3. Mensagem terminava com "Modified by ZCode/Mavis" (NAO "Modified by Gustavo Almeida" per AGENTS.md)
+4. Working tree foi resetado pra match origin/master durante o processo
+
+Licao:
+1. Briefing stale agora eh REGRA nao excecao. SEMPRE antes de TDD:
+   a) git fetch origin && git log origin/master -3 --oneline
+   b) pytest tests/<affected_file> --no-cov -q
+   c) Procurar "feat: implement X" em git log -3 --oneline. Se existe, briefing obsoleto.
+2. ZCode/Mavis pode auto-commitar WIP uncommitted. Working tree state NAO eh confiavel
+   entre sessoes. Depois de `git status --short`, SEMPRE `git log master -3 --oneline`
+   pra ver se alguem commitou pra mim.
+3. Se descobre que origin tem o trabalho parcial, NAO descartar — comparar com seu trabalho.
+   Se identico, fazer cherry-pick ou pull fast-forward. Se melhor/mais completo, manter.
+4. Coverage 87.99% < 90% gate eh PRE-EXISTING (A22 cache_warming + outros 88 files 
+   com format drift). NAO eh responsabilidade do STREAM 1 task fechar. Reportar gap.
+5. ruff format --check falha em 92 files pre-existentes. Minha contribuicao: 4 files 
+   (schema + service + router + test). Aplicar format nos meus files only e commit
+   como style fix separado.
+
+Reutilizavel: qualquer task cartorio-dev onde outro agent (ZCode, Pietra root, peer 
+session) pode ter commitado pre-requisito ou paralelo. Protocolo obrigatorio ANTES
+de qualquer TDD:
+a) git fetch origin
+b) git log origin/master -3 --oneline  
+c) git rev-parse HEAD (verifica se houve reset mid-session)
+d) pytest tests/<file> --no-cov -q
+e) git status --short + git diff backend/app/<my_domain>/ --stat
