@@ -231,3 +231,15 @@ def test_atendimento_historico_db_fallback(client):
         assert data["total"] == 2
         assert data["messages"][0]["content"] == "Mensagem do DB"
         assert data["messages"][1]["content"] == "Resposta do Bot DB"
+
+def test_root_endpoint(client):
+    resp = client.get("/")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "service" in data
+    assert "version" in data
+    assert "docs" in data
+    assert "redoc" in data
+    assert "openapi" in data
+    assert "mcp" in data
+    assert "mcp_servers" in data
