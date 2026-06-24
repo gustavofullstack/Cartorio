@@ -51,30 +51,6 @@ class RetencaoResult:
     duration_ms: int = 0
 
 
-def _last_activity_at(db: Session, cliente_id: int, cliente: Cliente) -> datetime | None:
-    """Retorna a data da ultima atividade conhecida do cliente.
-
-    Considera: max(updated_at) de cliente + protocolo + atendimento.
-    Retorna None se nao houver NENHUM updated_at (cliente recem-criado).
-    NUNCA usa created_at pois isso nao representa atividade do titular.
-    """
-    candidates: list[datetime] = [cliente.updated_at]
-
-    p = db.execute(
-        select(func.max(Protocolo.updated_at)).where(Protocolo.cliente_id == cliente_id)
-    ).scalar()
-    if p is not None:
-        candidates.append(p)
-
-    a = db.execute(
-        select(func.max(Atendimento.updated_at)).where(Atendimento.cliente_id == cliente_id)
-    ).scalar()
-    if a is not None:
-        candidates.append(a)
-
-    return max(candidates)
-
-
 def _apply_soft_delete(
     db: Session,
     cliente: Cliente,
@@ -142,17 +118,43 @@ def run_retencao(
     soft_inativo: list[int] = []
     errors: list[str] = []
 
+    # Pre-calcula max(updated_at) e count para Protocolo de todos os clientes
+    protocolo_stats = db.execute(
+        select(
+            Protocolo.cliente_id,
+            func.count(Protocolo.id),
+            func.max(Protocolo.updated_at)
+        ).group_by(Protocolo.cliente_id)
+    ).all()
+    protocolo_counts = {row[0]: row[1] for row in protocolo_stats}
+    protocolo_max_dates = {row[0]: row[2] for row in protocolo_stats}
+
+    # Pre-calcula max(updated_at) para Atendimento de todos os clientes
+    atendimento_stats = db.execute(
+        select(
+            Atendimento.cliente_id,
+            func.max(Atendimento.updated_at)
+        ).group_by(Atendimento.cliente_id)
+    ).all()
+    atendimento_max_dates = {row[0]: row[1] for row in atendimento_stats}
+
     for cliente in clientes_ativos:
         try:
-            last_activity = _last_activity_at(db, cliente.id, cliente)
+            candidates: list[datetime] = [cliente.updated_at]
+
+            p_max = protocolo_max_dates.get(cliente.id)
+            if p_max is not None:
+                candidates.append(p_max)
+
+            a_max = atendimento_max_dates.get(cliente.id)
+            if a_max is not None:
+                candidates.append(a_max)
+
+            last_activity = max(candidates)
 
             # Politica 1: cliente COM protocolo + ultimo protocolo > 5y
             # Detecta: existe protocolo E max(updated_at) < cutoff_5y
-            count_protocolos = (
-                db.query(func.count(Protocolo.id))
-                .filter(Protocolo.cliente_id == cliente.id)
-                .scalar()
-            ) or 0
+            count_protocolos = protocolo_counts.get(cliente.id, 0)
             if count_protocolos > 0 and last_activity is not None and last_activity < cutoff_5y:
                 _apply_soft_delete(
                     db,
