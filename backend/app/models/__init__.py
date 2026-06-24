@@ -6,6 +6,7 @@ from app.models.base import Base, TimestampMixin
 from app.models.cliente import Cliente
 from app.models.conversa import Conversa
 from app.models.documento import Documento
+from app.models.outbox_message import OutboxMessage
 from app.models.protocolo import Protocolo
 from app.models.webhook_event import WebhookEvent
 
@@ -16,6 +17,7 @@ __all__ = [
     "Cliente",
     "Conversa",
     "Documento",
+    "OutboxMessage",
     "Protocolo",
     "TimestampMixin",
     "WebhookEvent",
