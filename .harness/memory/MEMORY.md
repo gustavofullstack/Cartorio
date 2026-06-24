@@ -909,3 +909,87 @@ Endpoint backend: `POST /api/v1/telegram/webhook`
 - Test `test_webhook_handles_telegram_api_failure` foi simplificado para skip (coberto por test_handles_agent_failure)
 
 Modified by ZCode/Mavis - 2026-06-24 sessao 3+
+
+---
+
+## 2026-06-24 — SESSAO 3+ (Parte 4: Ferramentas multi-agente)
+
+### Jules (Google Gemini 3.1 Pro) - API key disponivel
+
+**API**: `AQ.Ab8RN6K26NJ3FFYfkXpT3-_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ`
+**NAO ROTACIONAR** - Gustavo + ZCode unicos com acesso.
+
+**5 MCPs integrados** (via Jules):
+- **Linear** - project management
+- **Stitch** - UI/UX design (Figma-like)
+- **Context7** - docs atualizadas de bibliotecas
+- **v0** - gerador UI React/Vue
+- **Render** - deploy previews + auto-fix build errors
+
+**Tasks ideais para Jules**:
+- UI/UX (telas, mockups, componentes)
+- Refactor grande (migrar 100+ arquivos)
+- Doc generation (50+ paginas)
+- Build errors em Render (auto-fix)
+
+**Tasks NAO ideais**:
+- LGPD-by-design (PII scrubber, audit log)
+- Backend critico (rate limit, middleware)
+- N8N workflow complexos
+- Anything que precise contexto 1M
+
+### Outras ferramentas de AI disponiveis
+
+- **OpenCode Zen** (https://opencode.ai/zen/) - modelos gratuitos/low-cost
+  - DeepSeek-v4-flash (ja em uso)
+  - Outros modelos free tier para tasks simples
+- **Qwen Coder** (Alibaba) - free tier
+  - Para docs, code review, refactor simples
+- **Jules** (Google) - pago, AGI-level
+  - Para UI/UX, refactor grande
+- **MiniMax** (eu) - coding plan
+  - Para backend, LGPD, integracoes
+
+### Comparacao AI agents (multi-provider strategy)
+
+| Provider | Modelo | Custo | Uso ideal |
+|---|---|---|---|
+| MiniMax | MiniMax-M3 | Coding plan (subscription) | Backend, LGPD, integracao |
+| Jules | Gemini 3.1 Pro | Pago (Google) | UI/UX, refactor grande |
+| OpenCode Zen | DeepSeek-v4-flash | Free/low-cost | Docs, code review |
+| Qwen Coder | Qwen2.5-Coder | Free tier | Docs, comments, simple refactor |
+
+### Regra de selecao de provider
+
+1. **LGPD, backend, integracao** -> MiniMax (eu)
+2. **UI/UX, refactor grande, design** -> Jules
+3. **Docs, comments, code review** -> OpenCode Zen ou Qwen Coder
+4. **Build errors em Render** -> Jules (com Render MCP)
+5. **Sync com Linear** -> Jules (com Linear MCP)
+
+### Benchmarks PII (commit 4dcb209)
+
+- p50: 0.012ms
+- p95: 0.015ms
+- **p99: 0.021ms** (200x melhor que SLA 5ms)
+- Throughput: 205,100 calls/sec
+- Conclusao: PII scrubber NAO e gargalo
+
+### Tasks done SESSAO 3+ (consolidado ate 2026-06-24)
+
+Total: 30+ commits em SESSAO 3+, 21% do mega-plano.
+
+Crescimento de testes:
+- 382 -> 508 (+126 testes, +33%)
+
+Novos arquivos:
+- backend/app/api/v1/telegram.py (endpoint Telegram)
+- backend/tests/test_telegram_webhook.py (9 tests)
+- backend/tests/test_pii_bench.py (7 tests perf)
+- docs/platforms/{EVOLUTION_API,N8N,CHATWOOT,SUPABASE,REDIS,JULES}.md
+- docs/architecture/sequence-pii-flow.md
+- docs/lgpd/dpa_quarterly_review.md
+- infra/openclaw-agent/workspace/{AGENTS,TELEGRAM}.md
+- .harness/task-bank.json (atualizado)
+
+Modified by ZCode/Mavis - 2026-06-24 sessao 3+ parte 4
