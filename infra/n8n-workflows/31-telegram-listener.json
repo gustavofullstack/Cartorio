@@ -86,10 +86,10 @@
         "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            {"name": "chat_id", "value": "={{ $('Extract Telegram fields').item.json.chat_id }}"},
+            {"name": "chat_id", "value": "={{ $json.body.message.chat.id }}"},
             {"name": "text", "value": "={{ $json.response }}"},
             {"name": "parse_mode", "value": "Markdown"},
-            {"name": "reply_to_message_id", "value": "={{ $('Extract Telegram fields').item.json.message_id }}"}
+            {"name": "reply_to_message_id", "value": "={{ $json.body.message.message_id }}"}
           ]
         },
         "options": {"timeout": 15000}
@@ -102,30 +102,18 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://api.2notasudi.com.br/api/v1/audit/log",
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/verify",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"},
-            {"name": "Content-Type", "value": "application/json"},
-            {"name": "X-Canal", "value": "telegram"}
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {"name": "actor_id", "value": "=telegram:{{ $json.from_user.id }}"},
-            {"name": "action", "value": "telegram.message"},
-            {"name": "resource", "value": "=telegram:chat:{{ $json.chat_id }}"},
-            {"name": "payload[text_hash]", "value": "=sha256:{{ $json.text }}"},
-            {"name": "payload[chat_type]", "value": "={{ $json.chat_type }}"}
+            {"name": "apikey", "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"}
           ]
         },
         "options": {"timeout": 10000}
       },
       "id": "audit-log",
-      "name": "Audit log (LGPD art. 37)",
+      "name": "Audit chain verify",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [1340, 300]
@@ -166,10 +154,10 @@
     },
     "Telegram: sendMessage": {
       "main": [
-        [{"node": "Audit log (LGPD art. 37)", "type": "main", "index": 0}]
+        [{"node": "Audit chain verify", "type": "main", "index": 0}]
       ]
     },
-    "Audit log (LGPD art. 37)": {
+    "Audit chain verify": {
       "main": [
         [{"node": "Respond OK (200)", "type": "main", "index": 0}]
       ]
