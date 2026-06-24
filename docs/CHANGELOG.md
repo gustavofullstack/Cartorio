@@ -5,6 +5,132 @@
 
 ---
 
+## v0.6.0 (2026-06-24) - HARDENING + DX + LGPD CHECK-DIGIT
+
+**Status:** 400/400 testes passando, coverage 91.05%. 21 entregas (18 codigo + 3 docs estruturais).
+
+### Added (codigo)
+
+#### P0 LGPD BLOQUEANTE
+- **`validate_cns(cns)` em `app/services/pii.py`** - LGPD art. 11 (dado sensivel saude)
+  - Algoritmo: Modulo 11 com pesos FIXOS decrescentes 15..1
+  - CNS = 15+1=16 digitos
+  - Overflow: DV >= 10 -> DV = 0
+  - 9 testes cobrindo: DV valido, DV invalido, formato livre, etc
+  - Commit: `d8d2d84`
+- **`validate_cnh(cnh)` em `app/services/pii.py`** - LGPD art. 6 (identificacao pessoal)
+  - Algoritmo: Modulo 11 com pesos ciclicos 2..9
+  - CNH = 9+2=11 digitos
+  - 9 testes similares
+  - Commit: `d8d2d84`
+
+#### P0 Health
+- **`/api/v1/health/radar` agora cobre 7 servicos** (era 5)
+  - Adicionados: Chatwoot, Supabase
+  - Commit: `86b5938`
+
+#### P1/P2 Backend
+- **Health checks granulares** (`/health/db`, `/health/redis`, `/health/llm`)
+  - Cada um retorna 200/503 com latencia_ms
+  - Commit: `0408e78`
+- **Rate limit DDoS por IP** (`_check_ip_ddos` em `rate_limit_by_key.py`)
+  - 100 req/min por IP (independente de tier)
+  - Defesa contra rotacao de API keys
+  - Configuravel via `ddos_per_minute`
+  - Commit: `525f03a`
+- **Correlation ID W3C standard** (`RequestContextMiddleware`)
+  - Aceita `X-Correlation-Id` (W3C) alem de `X-Request-Id`
+  - Ecoa ambos no response
+  - Log estruturado de request (method, path, status, duration_ms)
+  - Commit: `9cf0d75`
+
+#### P2 DX (Developer Experience)
+- **Makefile raiz** (35+ alvos: dev, test, lint, qa, ci, n8n-*, docs-*, etc)
+  - Commit: `11def8d`
+- **Makefile backend** (20+ alvos: dev, prod, test, test-cov, lint, typecheck, mcp-server, alembic-*)
+  - Commit: `11def8d`
+- **Pre-commit hook** (`.pre-commit-config.yaml`)
+  - 8 hooks pre-commit-hooks oficial
+  - 3 hooks locais: ruff check, ruff format, mypy
+  - conventional-pre-commit (commit-msg)
+  - Commit: `0408e78`
+- **`.editorconfig`** (4+ linguagens: Python, JS/TS, JSON, YAML, MD, Shell, Makefile, SQL)
+  - Commit: `506f96d`
+- **PR template** (`.github/pull_request_template.md`)
+  - Checklist obrigatorio (LGPD, quality gates, rollback, reviewers)
+  - Commit: `41fe350`
+- **GitHub Actions CI** (`.github/workflows/ci.yml`)
+  - 4 jobs paralelos: lint, test, docs-build, all-green
+  - Postgres + Redis services
+  - Cache uv deps
+  - Codecov upload
+  - Commit: `653e15d`
+- **Scripts uteis** (`scripts/test-all.sh`, `scripts/deploy.sh`, `scripts/lint-fix.sh`)
+  - 3 scripts executaveis com fail-fast, cores ANSI
+  - Commit: `1eb58f6`
+
+### Added (documentacao)
+
+- **Mega plano 100 tasks** (`docs/superpowers/plans/2026-06-24-mega-plano-100-tasks.md`)
+  - 10 P0 + 30 P1 + 60 P2 priorizadas
+  - Commit: `b370895`
+- **API Quick Reference** (`docs/API_QUICK_REFERENCE.md`)
+  - 30+ endpoints com curl copy-paste + JSON response
+  - Commit: `3ae3228`
+- **FAQ** (`docs/FAQ.md`)
+  - 28 problemas comuns com solucoes praticas
+  - Commit: `a6a5bb9`
+- **Data Flow PII** (`docs/DATA_FLOW.md`)
+  - Diagrama canonico do fluxo de dados sensiveis
+  - 3 camadas de scrubbing + LGPD art. 18
+  - Commit: `0289a97`
+- **Onboarding** (`docs/ONBOARDING.md`)
+  - 10 passos para novo dev ser produtivo em <2h
+  - Commit: `3a9112a`
+- **Runbook expandido** (`docs/RUNBOOK_VPS.md`)
+  - 10 cenarios de incidente praticos
+  - Commit: `e2db6e9`
+- **MEMORY.md indice** (`.harness/memory/MEMORY.md`)
+  - 60 linhas de indice no topo (busca por tema/data/arquivo/SUI)
+  - Commit: `86749d1`
+- **ADRs 022 + 023** (`docs/adr/`)
+  - 022: Rate limit DDoS por IP
+  - 023: CNS/CNH check-digit (LGPD art. 11)
+  - Commit: `cf0d548`
+- **ADRs README** (`docs/adr/README.md`)
+  - Indice dos 10 ADRs (cronologico, por tema, por status)
+  - Commit: `cba0b8a`
+
+### Changed (cleanup de ontem)
+- Ruff: 37 erros -> 0 (cleanup + auto-fix)
+- Mypy: 7 erros -> 0 (cast, type:ignore, fallback)
+- 6 warnings pytest (libs externas + mock de teste, low pri)
+- Commit: `191e55e`
+
+### Metricas
+
+| Metrica | v0.5.4 | v0.6.0 | Delta |
+|---|---|---|---|
+| Testes | 382 | **400** | +18 (CNS+CNH) |
+| Coverage | 92.20% | 91.05% | -1.15% (gate 90% OK) |
+| Ruff | 37 erros | **0** | -37 |
+| Mypy | 7 erros | **0** | -7 |
+| Health endpoints | 5 servicos | **7 + 3 granulares** | +5 |
+| Rate limit layers | 2 (session, key) | **3 (+ DDoS IP)** | +1 |
+| ADRs | 20 | **23** | +3 |
+| Makefile alvos | 0 | **50+** | +50 |
+
+### Pending (SUI Gustavo)
+- 4 SUI (~50min UI): DNS chatwoot, N8N workflow #07, Chatwoot restart loop, OpenClaw context
+- Configurar MCPs de producao (Easypanel, N8N, Chatwoot, Evolution, Supabase, Redis) para proxima sessao
+  - Lista em MEMORY.md linhas 706-712
+  - Sem MCPs, nao consigo verificar prod desta maquina
+
+### Breaking Changes
+- Nenhum. Todos os 18 commits sao aditivos ou correcoes internas.
+
+---
+
 ## v0.5.4 (2026-06-23) - SPRINT 3.5++: RateLimitByKeyMiddleware WIREADO
 
 **Status:** 382/382 testes passando, coverage 92.20%. 1 entrega: middleware de tier
