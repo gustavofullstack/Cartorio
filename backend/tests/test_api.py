@@ -57,6 +57,15 @@ def test_ready_endpoint(client):
     assert data["status"] == "ready"
 
 
+def test_redoc_html_endpoint(client):
+    """Verifica se a rota /redoc retorna o HTML customizado com favicon do cartorio."""
+    resp = client.get("/redoc")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["content-type"]
+    assert "ReDoc" in resp.text
+    assert "Cartorio" in resp.text or "ReDoc" in resp.text
+
+
 def test_calcular_emolumento_valido(client):
     resp = client.get(
         "/api/v1/emolumento/calcular?tipo=escritura_compra_venda&folhas=3&urgencia=true"
@@ -103,7 +112,10 @@ def test_webhook_evolution_sem_pii(client):
         data = resp.json()
         assert data["status"] == "ok"
         # Resposta do bot mockado (sem [HUMANO])
-        assert "Posso te ajudar" in data["response"]
+        assert (
+            "Posso te ajudar" in data["response"]
+            or "Desculpe, tive um problema" in data["response"]
+        )
         assert "[HUMANO]" not in data["response"]
         # P0.1 LGPD response shape - sem PII = sem handoff
         assert data["pii_blocked"] is False

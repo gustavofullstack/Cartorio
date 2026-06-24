@@ -41,3 +41,8 @@ asyncio_mode = "auto"
 markers = [
     "smoke: integration tests against real infrastructure (requires SMOKE_TARGET=prod)",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.1.0",
+]
