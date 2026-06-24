@@ -20,6 +20,7 @@ import datetime
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 from typing import Annotated, Any
@@ -33,6 +34,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field  # noqa: F401  (usado nos schemas abaixo)
 
 from app.config import settings
+
 from app.db import get_db, session_scope
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
@@ -57,6 +59,8 @@ from app.services.audit_context import audit_kwargs
 from app.services.audit_query import get_audit_log_by_id, list_audit_logs
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
+
+logger = logging.getLogger(__name__)
 
 # Integrations router (smoke test OpenCode-Go, etc)
 from app.api.v1.integrations import integrations_router  # noqa: E402
@@ -1865,8 +1869,8 @@ async def webhook_chatwoot(request: Request) -> dict:
                     payload={"body_size": len(raw_body)},
                     **audit_kwargs(request),
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Falha ao gravar audit log: %s", e)
         return {"status": "rejected", "reason": "invalid_json"}
 
     signature = request.headers.get("X-Chatwoot-Signature")
