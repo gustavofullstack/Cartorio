@@ -21,6 +21,7 @@ import hashlib
 import hmac
 import json
 import os
+import logging
 import time
 from typing import Annotated, Any
 
@@ -72,6 +73,7 @@ api_router.include_router(integrations_router)
 # Regex do formato ANO-SEQUENCIAL (YYYY-NNNNN)
 _NUMERO_PROTOCOLO_REGEX = r"^\d{4}-\d{5}$"
 
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # Emolumento
@@ -1142,8 +1144,8 @@ async def health_radar() -> dict:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
             db_ok = True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Health check failed for Database: %s", e)
 
     # 2. Redis
     redis_ok = False
@@ -1151,8 +1153,8 @@ async def health_radar() -> dict:
         r = redis.from_url(settings.redis_url, socket_timeout=2.0)
         r.ping()
         redis_ok = True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Health check failed for Redis: %s", e)
 
     # 3. n8n, OpenClaw, Evolution API, Chatwoot, Supabase (via httpx)
     n8n_ok = False
@@ -1166,22 +1168,22 @@ async def health_radar() -> dict:
             resp = await client.get(f"{settings.n8n_base_url}/healthz")
             if resp.status_code == 200:
                 n8n_ok = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Health check failed for n8n: %s", e)
 
         try:
             resp = await client.get(f"{settings.openclaw_base_url}/health")
             if resp.status_code == 200:
                 openclaw_ok = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Health check failed for OpenClaw: %s", e)
 
         try:
             resp = await client.get(f"{settings.evolution_base_url}/")
             if resp.status_code == 200:
                 evolution_ok = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Health check failed for Evolution API: %s", e)
 
         # Chatwoot - checa /health diretamente (retorna 200 {"status": "woot"})
         if settings.chatwoot_base_url:
@@ -1189,8 +1191,8 @@ async def health_radar() -> dict:
                 resp = await client.get(f"{settings.chatwoot_base_url}/health")
                 if resp.status_code in (200, 201, 401, 403):
                     chatwoot_ok = True
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Health check failed for Chatwoot: %s", e)
 
         # Supabase - checa /auth/v1/health (pode retornar 200, 401 ou 405 via Kong auth gate se acessado de fora)
         if settings.supabase_url:
@@ -1198,8 +1200,8 @@ async def health_radar() -> dict:
                 resp = await client.get(f"{settings.supabase_url}/auth/v1/health")
                 if resp.status_code in (200, 401, 405):
                     supabase_ok = True
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Health check failed for Supabase: %s", e)
 
     overall_status = (
         "green"
