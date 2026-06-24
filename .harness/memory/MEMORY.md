@@ -1154,3 +1154,75 @@ Type: sprint progress + compliance
 **Proximo foco**: SQUAD D D6-D12 (direitos titular) OU SQUAD A A13-A25 (backend resiliência) - decidir com Gustavo.
 
 Modified by ZCode/Mavis - 2026-06-24 Sprint 4 SQUAD D 5/25
+
+---
+
+## 2026-06-24 14:50 BRT — Cross-check prod (Pietra sessão mvs_6663ee57...)
+
+### Status real cross-checked (SSH cartorio + curl)
+9 serviços Cartório + 1 bot Telegram = todos UP:
+
+| Serviço | Container | HTTP externo | Status |
+|---------|-----------|--------------|--------|
+| API | cartorio_api (Swarm, healthy) | api.2notasudi.com.br/api/v1/health/live → 200 | ✅ |
+| Chatwoot | cartorio_chatwoot + sidekiq (Swarm, running) | (via N8N) | ✅ |
+| Evolution API | cartorio_evolution-api (Swarm, running) | whatsapp.2notasudi.com.br → 200 | ✅ |
+| N8N | cartorio_n8n (2.24.0) + n8n-runner (2.24.0) | flow.2notasudi.com.br → 200 | ✅ |
+| OpenClaw Gateway | cartorio_openclaw-gateway (Swarm, healthy) | agent.2notasudi.com.br → 200 | ✅ |
+| Supabase | 10 containers compose (todos healthy, db-1 Up 23h) | supbase.2notasudi.com.br → 401 (auth needed, OK) | ✅ |
+| Redis | cartorio_redis 8.8 (Swarm, running) | interno | ✅ |
+| EasyPanel | easypanel + easypanel-traefik (3.6.7) | easypanel.2notasudi.com.br | ✅ |
+| Telegram Bot | @test_cartorio_bot (id 8859206262) | getMe 200 | ⚠️ **webhook_url VAZIO** |
+
+### Decisões aplicadas nesta sessão
+
+1. **NÃO rotacionar chaves** (Gustavo explícito 5x no prompt). `backend/.env` linhas 119-122 já documentam status "QUEIMADAS mas aceitas". Atualizei `.harness/agent.md` Goal #3 pra refletir decisão.
+2. **OpenCode-Go thinking=true** (linha 44 .env) já ativo — peer claim "thinking desativado" era STALE.
+3. **OpenClaw thinking=true** (linha 50 .env) já ativo.
+
+### Problemas descobertos
+- **P0 Telegram webhook vazio**: `getWebhookInfo` retornou `webhook_url: ""`. Bot existe mas não recebe mensagens. Decisão de produto = escalar pra Gustavo (pra qual URL setar: N8N? API? Evolution?).
+- **Divergência bot username**: `.env` linha 133 diz `CartorioAssistantBot`, bot real é `@test_cartorio_bot`. Renomear ou aceitar?
+- **MEMORY.md seção "Limitacoes" linha 53-57** desatualizado: "NAO tenho MCPs de producao" — agora verifiquei tudo via SSH+curl.
+
+### Próxima ação (alinhamento com Gustavo)
+Pergunta objetiva: pra qual URL setar o Telegram webhook?
+- Opção A: `https://flow.2notasudi.com.br/webhook/telegram-bot` (via N8N)
+- Opção B: `https://api.2notasudi.com.br/api/v1/webhook/telegram` (via API)
+- Opção C: criar novo WF N8N dedicado
+
+Depois disso, retomar SQUAD A A13-A25 (13 tasks restantes backend resiliência) OU SQUAD D D6-D12 (direitos titular LGPD).
+
+Modified by Pietra/Mavis - 2026-06-24 14:50 BRT cross-check prod
+
+### CHATWOOT DNS_LOST + Traefik router missing 2026-06-24 14:55 BRT (Pietra root) (2026-06-24)
+Type: incident + fix
+
+**Caso**: cartorio-radar tick 14:50 detectou chatwoot.2notasudi.com.br NXDOMAIN. Confirmação: 1.1.1.1, 8.8.8.8, 9.9.9.9 todos VAZIOS. Container cartorio_chatwoot UP 17h, responde 200 via IP direto 187.77.236.77:3000.
+
+**Causa raiz (DUPLA, maior que a cron reportou)**:
+1. DNS provider é HOSTINGER (não Cloudflare como o radar disse) — cartorio-context memory linha 15 já documenta isso. Registro chatwoot.2notasudi.com.br NUNCA foi adicionado no painel Hostinger (ou foi removido).
+2. **Mais grave**: o service cartorio_chatwoot NÃO tinha Traefik router configurado. Os 6 subdominios funcionando (api, flow, whatsapp, agent, easypanel, supbase) têm router no main.yaml. Chatwoot não tinha. docker service inspect mostrou labels `{}` — mas é o mesmo padrão dos outros (Easypanel gera routers em main.yaml, não em labels). Significa: o serviço foi deployado pelo Easypanel mas o router nunca foi escrito, OR foi escrito e depois perdeu (verificar com Easypanel UI). Suspeita: deploy parcial.
+
+**Fix Pietra root 14:55-14:58 BRT**:
+1. Backup: /etc/easypanel/traefik/config/custom.yaml.bak-pre-chatwoot-20260624-175500
+2. Patch custom.yaml (chatwoot-http + chatwoot-https + chatwoot-service)
+3. YAML validado (python yaml.safe_load OK)
+4. SIGHUP Traefik (container 40d88e91d774)
+5. Traefik logs confirmam router carregado, tentou ACME → falhou com NXDOMAIN (exato: DNS missing)
+
+**PENDENTE SUI Gustavo (2min)**:
+- Painel Hostinger → 2notasudi.com.br → DNS records → adicionar:
+  - A: chatwoot → 187.77.236.77
+  - AAAA: chatwoot → 2a02:4780:6e:cd40::1
+- Letsencrypt gera cert em <60s, chatwoot vira https://chatwoot.2notasudi.com.br funcional
+
+**Lição canônica (cross-project)**:
+1. **DNS provider mismatch**: cron/agent SEMPRE verificar nameservers ANTES de assumir Cloudflare. cartorio é Hostinger, udiapods pode ser outro.
+2. **Traefik dual config**: Easypanel escreve main.yaml, custom.yaml é extensível. Service sem router em main.yaml E sem custom.yaml = porta-morto mesmo com container UP.
+3. **ACME NXDOMAIN signal**: quando letsencrypt log mostra "NXDOMAIN looking up A/AAAA" significa que o config Traefik ESTÁ ok, falta SÓ DNS. Fix é 100% externo (painel DNS).
+4. **Detecção dupla**: container respondendo via IP direto + DNS_LOST = roteamento/config ausente, NÃO container morto.
+5. **YAML append trap**: `cat >>` insere no final, pode quebrar estrutura se não for no lugar certo. Usar python yaml.safe_load pra editar in-place.
+6. **SIGHUP Traefik vs restart**: SIGHUP recarrega config sem downtime. Restart derruba connections.
+
+**Ref**: tick 14:50-14:58 BRT 24/06 cartorio-harness root. Cross-project: serve pra QUALQUER projeto com Traefik + DNS externo + Easypanel/Portainer.

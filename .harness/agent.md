@@ -133,8 +133,23 @@ Só Gustavo consegue. ZCode não bloqueia aqui.
 - 2.1 B1 Chatwoot restart loop → `docker service update --limit-memory 1G` (ADR-015)
 - 2.2 B2 OpenClaw context overflow → threshold 50 msgs + TTL 24h + `curl /compact` (ADR-016)
 
-### Goal #3 — Rotação de credenciais expostas
-OpenCode-Go sk-, N8N JWTs (MCP + public), OpenClaw Token/Password, Redis default, Supabase DB.
+### Goal #3 — Credenciais expostas: DOCUMENTADAS + NÃO rotacionadas (decisão Gustavo 2026-06-24 14:50 BRT)
+
+**DECISÃO**: NÃO rotacionar. Chaves queimadas no chat marcadas como tal em `backend/.env` linhas 119-122. Gustavo (root) + Pietra (root agent) são únicos com acesso. Mitigação aplicada: monitoramento de uso anômalo (criar task) + Vault Global MacBook (próxima task do squad).
+
+**Inventário chaves queimadas (rastreáveis, em `.env`/`.secrets/`)**:
+- OpenCode-Go sk- (atualizada para nova chave Gustavo 24/06)
+- N8N JWTs (MCP + public)
+- OpenClaw Token/Password
+- Redis default
+- Supabase DB
+- MiniMax Coding Plan (linha 126)
+- Telegram Bot (linha 132)
+- Jules API (linha 137)
+- Render API geral + MCP (linhas 141/143)
+- Linear API (linha 147)
+
+**Se sair do nosso controle → rotacionar IMEDIATO**. Por enquanto: status aceito.
 
 ### Goal #4 — Débitos pré-merge backend (TDD)
 - 4.1 Audit log em 100% das mutações com request_id/ip/user_agent (1/6 hoje)

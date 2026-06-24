@@ -813,3 +813,45 @@ cartorio-lgpd (mvs_3c841fe) **VOLTOU** (estava OFFLINE no report anterior; era p
 - [x] Cred leaks registradas pra decisão Gustavo
 
 **Modified by Gustavo Almeida**
+---
+
+# UPDATE 2026-06-24 14:50 BRT (Pietra — diagnóstico real)
+
+## STATUS VALIDADO AGORA (via SSH Tailscale 100.99.172.84)
+
+- **API v0.5.4**: ✅ healthy, /health e /api/v1/health 200
+- **N8N 2.x**: ✅ 33 workflows ativos, 1+ erros recentes (ver §ERROS-N8N)
+- **N8N-runner**: ✅ up (idle 1/min = working-as-designed Lesson 57)
+- **Chatwoot + Sidekiq**: ✅ UP, Account.count=1
+- **Evolution API 2.3.7**: ✅ UP, Welcome OK
+- **OpenClaw 2026.6.10**: ✅ **FIXED 14:43 BRT** — nova API key OpenCode-Go, thinking ON, 7 skills habilitadas (backup em `/home/node/.openclaw/openclaw.json.pre-fix-2026-06-24T14-37`)
+- **Redis 8.8**: ✅ PONG, 1744 keys, auth URL-encoded `@Techno832466`
+- **Supabase PG 15.8**: ✅ 15 schemas, **schema public VAZIO** (zero tabelas custom)
+- **Telegram @test_cartorio_bot**: ✅ ativo, webhook via N8N workflow 31
+
+## ERROS N8N (workflow 25 — Metrics Collector)
+
+POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found**. Endpoint NÃO EXISTE. Workflows 21, 26, 30, 31 também com erro — investigar em B0.2.
+
+## SPRINT 3 — TOP 10 NOVAS TASKS (ver `.harness/PLAN_GIGANTE_2026-06-24.md`)
+
+- **B0.1** POST /api/v1/metrics/n8n (cartorio-dev, 1h)
+- **B0.2** Investigar erros workflows 21/26/30/31 (cartorio-n8n, 2h)
+- **D0.1** Criar 5 tabelas core no schema public Supabase (cartorio-dev, 3h)
+- **D0.2** Supabase Realtime para conversas ativas (cartorio-dev, 2h)
+- **D0.3** pgmq queues (cartorio-dev, 2h)
+- **A0.1** Audit log 100% mutações (cartorio-dev, 4h)
+- **A0.2** DELETE /cliente/{id} (cartorio-dev + cartorio-lgpd review, 3h)
+- **C0.1** Job retenção 5y/até-revogação (cartorio-lgpd, 2h)
+- **B0.3** Ativar n8n-nodes-mcp (#12) + n8n-nodes-chatwoot (#03) (cartorio-n8n, 2h)
+- **G0.1** Rotação credenciais expostas (cartorio-dev, 4h) — OpenCode-Go ✅ FEITO nova key
+
+## LIÇÕES MEMORIZADAS
+
+- Lesson 58: chaves em chat = queimadas MAS user "não rotacionar" = seguir + warning
+- Lesson 57: N8N idle restart = working-as-designed (não escalonar)
+- Lesson 56: anti-spam pós-IM-CRITICAL
+- Lesson 47: TID-resolved probe canônico
+- Lesson 44: watchdog n8n-runner baseline
+
+Modified by Gustavo Almeida (Pietra orquestrou)

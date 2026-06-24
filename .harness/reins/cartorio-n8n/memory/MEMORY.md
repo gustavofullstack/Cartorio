@@ -175,5 +175,44 @@ Type: lesson
 - Total: 3h30 de debug para descobrir sequencia canonica
 
 **Regra**: sempre rodar 5 passos EM ORDEM + validar via event log + levar 5-10min pra N8N re-escalar cache.
+
+### N8N_BLOCK_ENV_ACCESS_IN_NODE (Lesson 51) + POST endpoint 404 (Lesson 55) (2026-06-24)
+Type: lesson
+
+**Lesson 51 (env access blocked)**: N8N 2.x tem env var N8N_BLOCK_ENV_ACCESS_IN_NODE=true (default security). Bloqueia acesso a \$env.X em HTTP Request nodes (e talvez outros).
+
+Sintoma: HTTP Request node com header `={{ $env.CARTORIO_API_KEY }}` retorna:
+'If you need access please contact the administrator to remove the environment variable N8N_BLOCK_ENV_ACCESS_IN_NODE'
+
+Workaround:
+- Opcao A: `docker service update --env-add N8N_BLOCK_ENV_ACCESS_IN_NODE=false cartorio_n8n` + restart (~30s downtime)
+- Opcao B: usar N8N credential type (mais robusto, requer UPDATE workflow_history nodes)
+- Opcao C: hardcode API key (NAO recomendado Lesson 16/17)
+
+**Lesson 55 (backend POST 404 - workflow mal projetado)**: Workflow "metrics collector" foi planejado pra coletar metricas locais + POST pro backend. Porem backend nunca implementou endpoint POST /metrics/n8n (404).
+
+Sintoma: HTTP Request node POST https://api.2notasudi.com.br/api/v1/metrics/n8n retorna 404 'The resource you are requesting could not be found'
+
+Workaround canonico: REMOVER POST node + sua connection (WF vira 'metrics reader' via GET, sem necessidade de endpoint ingest).
+Alternativa: criar endpoint POST backend (escopo 2-4h cartorio-dev).
+
+**Caso real WF#25 (14:42-14:52 BRT 24/06)**:
+- Lesson 51 BYPASS: env var false + restart ~30s
+- Lesson 55 BYPASS: UPDATE nodes (remover POST) + UPDATE connections + INSERT workflow_history v3 + UPDATE activeVersionId + restart
+- Resultado: exec #2414 + #2415 SUCCESS consecutivos (15min total, vs 3h30 anterior)
+
+**Regra canonica N8N workflow debug** (resumida):
+1. Validate endpoint (curl smoke test ANTES de editar WF)
+2. UPDATE nodes + connections + activeVersionId + workflow_history (5 tabelas separadas)
+3. Restart (docker service update --force)
+4. Wait 5-10min (N8N cache expiry)
+5. Validate via `n8nEventLog.log` node.started event (NAO via execution_data lastNodeExecuted)
+6. Se ainda error: 3 lessons check - Lesson 49 (Code sandbox), 51 (env access), 55 (POST 404)
+
+**Backup ANTES de UPDATE** (rollback path):
+```bash
+ssh cartorio "docker exec \$DB_CONTAINER psql -U supabase_admin -d n8n -t -A -c \"SELECT nodes::text FROM workflow_entity WHERE id = '\$WF_ID'\" > /tmp/rollback-nodes.json
+ssh cartorio "docker exec \$DB_CONTAINER psql -U supabase_admin -d n8n -t -A -c \"SELECT connections::text FROM workflow_entity WHERE id = '\$WF_ID'\" > /tmp/rollback-connections.json
+```
 - UPDATE nodes + connections SEPARADAMENTE (Lesson 50 pattern)
 - Backup nodes ANTES do UPDATE (rollback path)
