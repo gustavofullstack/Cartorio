@@ -16,6 +16,7 @@ from app.db import engine
 from app.models.base import Base
 from app.services.audit import AuditService
 from app.services.rate_limit import RateLimitMiddleware
+from app.services.rate_limit_by_key import RateLimitByKeyMiddleware
 from app.middleware.request_context import RequestContextMiddleware
 
 
@@ -33,7 +34,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     Base.metadata.create_all(bind=engine)
 
     # 3. Audit log: write a startup entry (no-op if audit_log empty)
-    AuditService.log_system_action("api.startup", {"version": "0.5.1", "env": settings.app_env})
+    AuditService.log_system_action("api.startup", {"version": "0.5.4", "env": settings.app_env})
 
     yield
 
@@ -190,7 +191,7 @@ API_LICENSE_INFO = {
 app = FastAPI(
     title="Cartorio Backend API",
     description=API_DESCRIPTION,
-    version="0.5.1",
+    version="0.5.4",
     contact=API_CONTACT,
     license_info=API_LICENSE_INFO,
     openapi_tags=API_TAGS_METADATA,
@@ -214,6 +215,17 @@ app.add_middleware(
 # limit tambem possa logar contexto se quiser.
 app.add_middleware(RequestContextMiddleware)
 
+# Rate limiting por API key (T2.API.T22): protege /api/v1/* com 3 tiers
+# (N8N 600/min, DPO 60/min, padrao 30/min). Coexiste com RateLimitMiddleware
+# antigo (paths diferentes: /integrations/* + /admin/*). Fail-open se Redis
+# offline. Ver tests/test_rate_limit_by_key.py. CHANGELOG v0.5.4.
+app.add_middleware(
+    RateLimitByKeyMiddleware,
+    redis_url=settings.redis_url,
+    api_key_header="x-api-key",
+    paths_prefixes=("/api/v1/",),
+)
+
 # Rate limiting (T2.API.T21): protege /integrations/* + /admin/* contra
 # abuso e cost overrun (LLM tokens, Evolution send, Chatwoot API).
 # Redis sliding window 60/min por session_id (header X-Session-Id) ou
@@ -230,7 +242,7 @@ app.add_middleware(
 @app.get("/health", tags=["meta"])
 def health() -> dict:
     """Liveness probe."""
-    return {"status": "ok", "service": settings.app_name, "version": "0.5.1"}
+    return {"status": "ok", "service": settings.app_name, "version": "0.5.4"}
 
 
 @app.get("/ready", tags=["meta"])

@@ -5,6 +5,37 @@
 
 ---
 
+## v0.5.4 (2026-06-23) - SPRINT 3.5++: RateLimitByKeyMiddleware WIREADO
+
+**Status:** 382/382 testes passando, coverage 92.20%. 1 entrega: middleware de tier
+que ja existia (commit f63f704) agora ativado em `main.py`.
+
+### Added
+- **`RateLimitByKeyMiddleware` ativado em `main.py`** - ja existia desde v0.5.3
+  mas estava `imported` sem `add_middleware`. Agora protege `/api/v1/*` com 3 tiers:
+  - N8N (`n8n-...` prefix ou >64 chars): 600 req/min
+  - DPO/escrevente (`dpo-`, `escrevente-`, `admin-` prefix): 60 req/min
+  - Padrao (sem X-API-Key, fail-secure via IP): 30 req/min
+- Bump versao `0.5.1` -> `0.5.4` (4 locais: startup audit log, FastAPI app, /health, /)
+- **Coexiste** com `RateLimitMiddleware` antigo (paths diferentes):
+  - `RateLimitByKeyMiddleware`: `/api/v1/*` (toda a API publica)
+  - `RateLimitMiddleware`: `/integrations/*` + `/admin/*` (paths sensiveis)
+
+### Changed
+- `backend/app/main.py`: importacao adicionada (linha 19), middleware inserido
+  ANTES do antigo `RateLimitMiddleware` (ordem de execucao: primeiro key, depois session).
+
+### Pending (SUI Gustavo / SUI SSH)
+- 6 SUI (~80min UI): DNS chatwoot, credenciais N8N, Agent Bot, Easypanel key, OpenClaw LLM key, DNS typo
+- 4 rotacao credenciais expostas (~40min UI): OpenCode-Go sk-, N8N JWTs, OpenClaw Token/Pass
+- Rebuild API v0.5.4 + deploy (precisa de `cartorio_api_key` no Settings)
+
+### Breaking Changes
+- Nenhum. Headers `X-RateLimit-Limit` + `X-RateLimit-Remaining` adicionados em todas
+  responses `/api/v1/*`. Clientes que nao checavam headers nao quebram.
+
+---
+
 ## v0.5.3 (2026-06-23) - SPRINT 3.5+: Documentos, Metrics, Rate limit, Skills finais
 
 **Status:** 331/331 testes passando, coverage 92.18%. 8 entregas em codigo puro
