@@ -48,6 +48,30 @@ class CanalOrigem(str, Enum):
     EMAIL = "email"
 
 
+class AtoProtocolar(str, Enum):
+    """Ato juridico objeto do protocolo.
+
+    Catalogo inicial cobre atos mais comuns do cartorio do 2o Oficio de
+    Notas de Uberlandia. Valores sincronizados com TIPOS_VALIDOS em
+    app.services.emolumento para manter consistencia de pricing.
+    """
+
+    ESCRITURAL = "escritural"
+    PROCURACAO = "procuracao"
+    CERTIDAO_CASAMENTO = "certidao_casamento"
+    CERTIDAO_NASCIMENTO = "certidao_nascimento"
+    CERTIDAO_OBITO = "certidao_obito"
+    DIVORCIO = "divorcio"
+    ESCRITURA_COMPRA_VENDA = "escritura_compra_venda"
+    ESCRITURA_DOACAO = "escritura_doacao"
+    AUTENTICACAO = "autenticacao"
+    RECONHECIMENTO_FIRMA = "reconhecimento_firma"
+    REGISTRO_NASCIMENTO = "registro_nascimento"
+    REGISTRO_OBITO = "registro_obito"
+    CERTIDAO_NEGATIVA = "certidao_negativa"
+    CERTIDAO_POSITIVA = "certidao_positiva"
+
+
 class EtapaHistorico(str, Enum):
     """Etapas que aparecem no historico do protocolo."""
 
@@ -485,13 +509,155 @@ class ProtocoloCreateResponse(BaseModel):
     ]
 
 
+# ============================================================================
+# Schemas para POST /api/v1/protocolo/criar-api (Sprint 3 E1.S3.T1 — M1.8)
+#
+# Endpoint autenticado por X-API-Key, usado por integracoes externas
+# (N8N WF #2 criar-protocolo, sistemas do escritorio, etc).
+# ============================================================================
+
+
+class ProtocoloApiCreateRequest(BaseModel):
+    """Payload de entrada para POST /api/v1/protocolo/criar-api.
+
+    Caller envia valor_snapshot ja calculado. Backend apenas persiste
+    como snapshot (regra do projeto: nunca recalcular protocolo antigo).
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "cliente_id": 1,
+                "ato": "escritural",
+                "valor_snapshot": "150.50",
+                "observacoes": "Cliente pediu urgencia",
+                "hitl_draft": True,
+            }
+        }
+    )
+
+    cliente_id: Annotated[
+        int,
+        Field(
+            gt=0,
+            description="ID interno do cliente (FK clientes.id). Cliente precisa existir.",
+        ),
+    ]
+    ato: Annotated[
+        AtoProtocolar,
+        Field(
+            description="Tipo do ato juridico. Catalogo em AtoProtocolar enum.",
+            examples=["escritural"],
+        ),
+    ]
+    valor_snapshot: Annotated[
+        Decimal,
+        Field(
+            gt=Decimal("0"),
+            max_digits=10,
+            decimal_places=2,
+            description=(
+                "Valor do emolumento em reais, ja calculado pelo caller. "
+                "Snapshot obrigatorio. Deve ser > 0."
+            ),
+            examples=["150.50"],
+        ),
+    ]
+    observacoes: Annotated[
+        str | None,
+        Field(
+            default=None,
+            max_length=500,
+            description="Observacoes opcionais (max 500 chars).",
+        ),
+    ]
+    hitl_draft: Annotated[
+        bool,
+        Field(
+            default=True,
+            description=(
+                "DEVE ser True. Backend REJEITA hitl_draft=False com 422 "
+                "(HITL obrigatorio)."
+            ),
+        ),
+    ]
+
+    @field_validator("hitl_draft")
+    @classmethod
+    def _hitl_deve_ser_true(cls, v: bool) -> bool:
+        """HITL obrigatorio - hitl_draft DEVE ser True (regra do projeto).
+
+        Bot/integracao NUNCA pula validacao humana do escrevente.
+        """
+        if not v:
+            raise ValueError(
+                "hitl_draft DEVE ser True. Regra HITL do projeto: protocolo "
+                "nunca nasce em EM_ANDAMENTO direto."
+            )
+        return v
+
+
+class ProtocoloApiCreateResponse(BaseModel):
+    """Resposta do POST /api/v1/protocolo/criar-api.
+
+    Numero formato: CART-YYYY-XXXXXX (CART + 4 ano + 6 seq).
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "protocolo": "CART-2026-000001",
+                "cliente_id": 1,
+                "status": "draft",
+                "audit_id": "9f1b7e44-5e0a-4b8e-a2c1-1e7c9f4d0a01",
+                "created_at": "2026-06-24T10:30:00.000000",
+                "created_by": "api",
+            }
+        }
+    )
+
+    protocolo: Annotated[
+        str,
+        Field(
+            pattern=r"^CART-\d{4}-\d{6}$",
+            description="Numero do protocolo gerado (CART-YYYY-XXXXXX).",
+            examples=["CART-2026-000001"],
+        ),
+    ]
+    cliente_id: Annotated[
+        int,
+        Field(description="ID do cliente (FK clientes.id)."),
+    ]
+    status: Annotated[
+        Literal["draft"],
+        Field(description="Sempre 'draft' (HITL obrigatorio ate escrevente validar)."),
+    ]
+    audit_id: Annotated[
+        str,
+        Field(
+            description="UUID da entrada no audit_log (action=protocolo.created).",
+        ),
+    ]
+    created_at: Annotated[
+        datetime,
+        Field(description="Timestamp UTC de criacao do protocolo."),
+    ]
+    created_by: Annotated[
+        Literal["api"],
+        Field(description="Sempre 'api' (endpoint autenticado por X-API-Key)."),
+    ]
+
+
 __all__ = [
+    "AtoProtocolar",
     "CanalOrigem",
     "ClienteResumo",
     "ErrorResponse",
     "EtapaHistorico",
     "HistoricoEtapa",
     "LGPDBlockedResponse",
+    "ProtocoloApiCreateRequest",
+    "ProtocoloApiCreateResponse",
     "ProtocoloCreateRequest",
     "ProtocoloCreateResponse",
     "ProtocoloNotFoundResponse",

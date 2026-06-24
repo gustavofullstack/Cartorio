@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import hmac
 import os
 import time
 from typing import Annotated
@@ -40,6 +41,8 @@ from app.schemas.protocolo import (
     EtapaHistorico,
     HistoricoEtapa,
     LGPDBlockedResponse,
+    ProtocoloApiCreateRequest,
+    ProtocoloApiCreateResponse,
     ProtocoloCreateRequest,
     ProtocoloCreateResponse,
     ProtocoloNotFoundResponse,
