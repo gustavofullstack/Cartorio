@@ -52,11 +52,7 @@
     "3_context_1m": {
       "issue": "AGENTS.md documenta max_context_tokens=1000000 mas openclaw.json NAO define. OpenClaw esta usando default (provavelmente 131k).",
       "fix_suggested": "Adicionar agents.defaults.modelContextWindow=1000000 (ou similar) ao openclaw.json",
-      "blocked_by": "depende Gustavo decidir se 1M context e prioridade agora ou depois do Sprint 3",
-      "status": "DONE 2026-06-24 15:18 BRT",
-      "fix_applied": "models.providers.openai.models[deepseek-v4-flash].contextWindow: 131072 -> 1048576; idem minimax-m2.7 (minimax-m3 ja era 1048576). ADICIONADO agents.defaults.thinking {enabled: adaptive, max_thinking_tokens: 8000, triggers: keywords+complexity_threshold 0.7}.",
-      "deployed_via": "docker exec + python3 in-place (config em volume cartorio_openclaw-gateway_config - persiste entre restarts)",
-      "validation": "JSON OK + curl /health {ok:true,status:live} + grep confirma contextWindow 1048576"
+      "blocked_by": "depende Gustavo decidir se 1M context e prioridade agora ou depois do Sprint 3"
     }
   }
 }

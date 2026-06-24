@@ -866,6 +866,12 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
   - PLAN_GIGANTE estava desatualizado — schema public nao estava VAZIO (soh tem 30+ tabelas N8N: agents_*, ai_builder_*, _prisma_migrations)
   - Alembic configurado com 3 migrations: 23/06 (audit_log canal + cliente encerramento), 24/06 D5 (audit_log IP truncated LGPD) + D6 (outbox messages DLQ)
   - Proxima: seed emolumentos MG 2026 (E0.S0.5.T4 - WIP) + aplicar migrations Alembic remanescentes
+- [x] **T4.9 #3** OpenClaw context 1M + thinking adaptive — ✅ DONE 15:18 BRT (config em volume + sem restart)
+  - models.providers.openai.models[deepseek-v4-flash].contextWindow: 131072 → 1048576
+  - models.providers.openai.models[minimax-m2.7].contextWindow: 131072 → 1048576 (minimax-m3 ja era 1M)
+  - ADICIONADO agents.defaults.thinking = adaptive (max_thinking_tokens=8000, triggers keywords+complexity_threshold=0.7)
+  - Validacao: JSON OK + curl /health {ok:true,status:live}
+  - Snapshot local atualizado em infra/openclaw-agent/gateway-config-snapshot-t49.json
 - [ ] **D0.2** Supabase Realtime para conversas ativas (cartorio-dev, 2h)
 - [ ] **D0.3** pgmq queues (cartorio-dev, 2h)
 - [ ] **A0.1** Audit log 100% mutações (cartorio-dev, 4h)
