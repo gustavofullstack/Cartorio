@@ -3421,6 +3421,52 @@ async def admin_validate_n8n_wfs(request: Request) -> dict:
     }
 
 
+# ============================================================================
+# LGPD Relatorio ANPD (D9)
+# ============================================================================
+
+
+@api_router.get(
+    "/admin/lgpd/relatorio-anual",
+    tags=["admin"],
+    summary="Relatorio anual ANPD (LGPD art. 38) - D9",
+    description=(
+        "Gera relatorio anual exigido pela ANPD. Contem 12 secoes: "
+        "titulares, operacoes, direitos titular (art. 18), incidentes "
+        "seguranca (art. 48), tipos dados, finalidades, medidas seguranca, "
+        "encarregado DPO, base legal, transferencias, observacoes + "
+        "hash_anchor SHA256 (LGPD art. 37 integridade). "
+        "Query params: ?ano=2026&format=json|markdown. Requer X-API-Key."
+    ),
+    response_description="Relatorio ANPD estruturado (JSON ou Markdown).",
+)
+async def admin_lgpd_relatorio_anual(
+    request: Request,
+    ano: int = 2026,
+    format: str = "json",  # type: ignore[assignment]
+    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+) -> JSONResponse:
+    """Gera relatorio ANPD (D9)."""
+    from app.services.lgpd_relatorio import gerar_relatorio_anual, render_markdown
+
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
+        )
+
+    rel = gerar_relatorio_anual(db, ano=ano)
+
+    if format == "markdown":
+        md = render_markdown(rel)
+        return JSONResponse(
+            status_code=200,
+            content={"relatorio_markdown": md, "hash_anchor": rel["hash_anchor"]},
+        )
+    return JSONResponse(status_code=200, content=rel)
+
+
 @api_router.get(
     "/metrics/prometheus",
     tags=["meta"],
