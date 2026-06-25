@@ -1086,6 +1086,52 @@ async def health_redis() -> JSONResponse:
 
 
 @api_router.get(
+    "/health/audit",
+    tags=["health"],
+    summary="Health check granular: audit log (dead man's switch A23)",
+    description=(
+        "Verifica se o audit_log esta vivo. Retorna 200 com `alive=true` se "
+        "ultima entrada <= 1h, 200 com `alive=false` se > 1h, ou 503 se cold "
+        "start (tabela vazia). Usado por cron externo para alertar se o "
+        "audit log parar (LGPD art. 37 - continuidade da auditoria)."
+    ),
+    response_description="Status do audit log + timestamp do ultimo registro.",
+)
+async def health_audit(
+    db: Annotated[Session, Depends(get_db)],
+) -> JSONResponse:
+    """Dead man's switch A23: detecta se audit_log parou de receber entries."""
+    from app.services.dead_mans_switch import (
+        check_audit_log_alive,
+        send_alert,
+    )
+
+    result = check_audit_log_alive(db)
+
+    # 503 apenas se cold_start (app inicializou mas nada gravou)
+    # alive=False eh alerta operacional mas NAO derruba health
+    status_code = 503 if result["cold_start"] else 200
+
+    payload = {
+        "status": "alive" if result["alive"] else "dead" if not result["cold_start"] else "cold_start",
+        "alive": result["alive"],
+        "cold_start": result["cold_start"],
+        "last_seen": result["last_seen"].isoformat() if result["last_seen"] else None,
+        "seconds_since_last": result["seconds_since_last"],
+        "threshold_seconds": 3600,  # 1h
+    }
+
+    # Se morto, envia alerta (log por enquanto; Telegram em Sprint 5)
+    if not result["alive"] and not result["cold_start"]:
+        send_alert(
+            f"Audit log dead: last_seen={payload['last_seen']} "
+            f"seconds_since_last={payload['seconds_since_last']}"
+        )
+
+    return JSONResponse(status_code=status_code, content=payload)
+
+
+@api_router.get(
     "/health/llm",
     tags=["health"],
     summary="Health check granular: LLM provider (Opencode-Go / OpenClaw)",
