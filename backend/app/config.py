@@ -175,6 +175,17 @@ class Settings(BaseSettings):
     mcp_server_port: int = 8100
     mcp_api_key: Optional[str] = None  # Bearer token pra clients MCP
 
+    # ========================================================================
+    # JWT (A24 API v2) — usado por /api/v2/* alem de X-API-Key v1
+    # HS256 com secret em env. Validade 60min access + 7d refresh.
+    # FAIL-FAST: secret DEVE ter min 32 chars (HMAC-SHA256 requirement).
+    # ========================================================================
+    jwt_secret: Optional[str] = None  # FAIL-FAST no service: precisa ter min 32 chars se usado
+    jwt_algorithm: Literal["HS256"] = "HS256"
+    jwt_access_ttl_minutes: int = 60
+    jwt_refresh_ttl_days: int = 7
+    jwt_issuer: str = "cartorio-api"
+
 
 @lru_cache
 def get_settings() -> Settings:
