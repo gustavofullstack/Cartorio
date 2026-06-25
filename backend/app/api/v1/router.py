@@ -4709,3 +4709,38 @@ def post_dlq_refresh_gauges(
     _update_depth_gauge(db)
     counts = depth(db)
     return {q.value: cnt for q, cnt in counts.items()}
+
+
+@api_router.get(
+    "/admin/pool",
+    tags=["admin", "observability"],
+    summary="Pool de conexoes do DB (A15)",
+    description=(
+        "Retorna estatisticas em tempo real do SQLAlchemy connection pool:\n"
+        "- backend: 'sqlite' (sem pool) ou 'postgresql' (com pool)\n"
+        "- pool_size: tamanho base\n"
+        "- max_overflow: maximo de conexoes extras alem do pool\n"
+        "- checked_out: conexoes em uso no momento\n"
+        "- overflow: conexoes alem do pool_size\n"
+        "- total_capacity: capacidade maxima (pool_size + max_overflow)\n"
+        "- utilization_pct: 0-100% de utilizacao\n\n"
+        "Util para monitorar saturacao do pool e detectar leaks.\n"
+        "Requer `X-API-Key` (admin / DPO)."
+    ),
+    response_description="Stats do pool em JSON.",
+    responses={
+        200: {"description": "Stats retornados."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+def get_admin_pool(
+    request: Request,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+) -> dict[str, Any]:
+    """GET /api/v1/admin/pool — exibe stats do connection pool (A15)."""
+    from app.db import get_pool_stats
+
+    api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
+
+    return get_pool_stats()

@@ -39,20 +39,19 @@ def decode_cursor(cursor: str) -> dict[str, Any]:
     return json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
 
 
-def decode_cursor_safe(cursor: str, key: str) -> int | None:
-    """Decodifica cursor de forma fail-soft, retornando o valor de `key` se int.
+def decode_cursor_safe(cursor: str, key: str) -> Any | None:
+    """Decodifica cursor de forma fail-soft, retornando o valor de `key`.
 
     Args:
         cursor: cursor opaque.
-        key: chave esperada no payload (ex: 'id_after').
+        key: chave esperada no payload (ex: 'id_after', 'tipo_after').
 
     Returns:
-        int valor da chave, ou None se cursor invalido.
+        valor da chave (int | str | etc) ou None se cursor invalido.
     """
     try:
         decoded = decode_cursor(cursor)
-        val = decoded.get(key)
-        return int(val) if val is not None else None
+        return decoded.get(key)
     except (ValueError, KeyError, TypeError) as e:
         logger.warning("cursor decode falhou: %s — fail-soft para primeira pagina", e)
         return None

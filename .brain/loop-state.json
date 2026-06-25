@@ -1,10 +1,10 @@
 {
-  "session_id": "2026-06-25-pietra-3",
-  "session_start": "2026-06-25T15:30:00Z",
-  "current_squad": "CLEAN+A26",
-  "last_squad_completed": "CLEAN+A26",
-  "last_task": "A26-notif-cache",
-  "last_commit": "28a30d8",
+  "session_id": "2026-06-25-zcode-4",
+  "session_start": "2026-06-25T15:40:00Z",
+  "current_squad": "CLEAN",
+  "last_squad_completed": "CLEAN",
+  "last_task": "CLEAN-fix-gates",
+  "last_commit": "e37665a",
   "next_action": "A13-A25 backend hardening (13 tasks) + B6-B15 N8N polish",
   "gates": {
     "mypy": 0,
