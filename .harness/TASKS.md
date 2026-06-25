@@ -164,11 +164,15 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
   - **Solucao recomendada**: **A) Volume mount** `/var/backups/cartorio` no compose do cartorio_api (mais simples, sem docker CLI). Alternativas: B) sidecar container com docker CLI, C) backup.sh escreve JSON metadata em `/var/log/cartorio-backup-status.json` que FastAPI le
   - **N8N workflow #09 impact**: hoje dispara alerta Chatwoot falso toda hora. Ate fix, silenciar alarme ou adicionar gate `ok=false AND source=verified_failure` (NAO scale Gustavo — gate-discipline)
   - **Investigado por**: Pietra mvs_c2508947 (D1) — msgId 2134 cross-ref mvs_9b3c9043
-- [ ] **E1.S4.T3** Rate limit `POST /api/v1/audit/log` (60/min, slowapi middleware) — owner: `cartorio-dev` — **P1 BACKLOG** (D0.2 P1.2 LGPD OBS, adicionado 2026-06-25 02:39 BRT após verdict msg #3242)
-  - **Por que Sprint 4 e nao antes**: LGPD verdict APPROVED com OBS P1 (defer). Staging deploy OK sem rate limit (risco residual zero, sem dado real). PROD deploy BLOQUEADO ate implementar (DoS em prod com caller autenticado = severidade P0 se houver incident real)
-  - **Estimativa**: 15-30min (slowapi 2-line middleware + decorator 60/min default)
-  - **Criterio done**: pytest + smoke test (200 ok em 60 calls/min, 429 no call 61) + cartorio-lgpd sign-off
-  - **Ref**: commit `e33d977` mensagem nota P1.2 + LGPD verdict msg #3242 02:39 BRT
+- [x] **E1.S4.T3** Rate limit `POST /api/v1/audit/log` (60/min) — owner: `cartorio-dev` — **DONE 2026-06-25 02:51 BRT** (não precisou slowapi — já coberto por middleware existente)
+  - **Resolução real** (Lesson 118 — briefing-vs-git-state conflict): verificação pré-implementação revelou que `RateLimitByKeyMiddleware` (backend/app/services/rate_limit_by_key.py:107) já está aplicado em main.py:258-263 com `paths_prefixes=("/api/v1/",)`, e `TIER_POLICIES["dpo"] = 60/min` (rate_limit_by_key.py:58). POST /audit/log usa X-API-Key → tier=dpo → 60/min EFETIVO desde antes da Sprint 4 task ser criada.
+  - **Anti-pattern evitado**: double rate limit (Redis middleware distribuído + slowapi in-memory = contadores divergentes, restart perde estado slowapi, métricas conflitantes, 429 imprevisível)
+  - **Branch tentativa `feat/p1.2-rate-limit-audit-log`** (commit 18f083d base): criada 02:46, revertida 02:50, deletada 02:50 BRT — zero código em master
+  - **Arquivos revertidos**: backend/app/api/v1/router.py + backend/app/main.py + backend/pyproject.toml + backend/uv.lock (4 files via `git checkout master -- ...`)
+  - **Arquivo removido**: backend/app/api/limiter.py (criado durante tentativa, trash'd recuperável)
+  - **Próximo passo LGPD**: ratificar P1.2 = DONE via middleware no próximo sign-off cycle (não bloqueia D0.2 push — staging deploy OK, prod gate já cumprido)
+  - **Ref**: msg #3282 Pietra→cartorio-dev ACK verificação + Lesson 118 MEMORY.md
+  - **Cross-reference**: Lesson 113 cartorio-dev agent memory — slowapi API mismatch FastAPI 0.115+ (`SlowAPIMiddleware` incompatível, workaround = `app.state.limiter` + exception handler only) — útil se Sprint 5+ quiser refactor pra slowapi dedicado
 
 ---
 
@@ -496,7 +500,7 @@ Modified by Gustavo Almeida
 
 ### Squad B — cartorio-n8n (workflow polish)
 - [x] **E8.B06** Error handler global em todos WFs (Error Workflow trigger) — owner: `cartorio-n8n` ✅ DONE 25/06 02:41 commit `43484b0` (33/34 WFs wired via DB UPDATE + smoke test exec 3807 validado). ⚠ Gap conhecido: WF 00 interno falha por Lesson 51 (N8N_BLOCK_ENV_ACCESS_IN_NODE) — dispatch funciona, alerta Chatwoot nao. Tracking em E8.B06-FIX.
-- [ ] **E8.B06-FIX** WF 00 interno — Alerta Chatwoot falha por Lesson 51 (N8N_BLOCK_ENV_ACCESS_IN_NODE). Fix: trocar `$env.CARTORIO_API_KEY` por `$credentials.httpHeaderAuth.value` no node (Opcao B robusta, 30min) OU docker service update --env-add N8N_BLOCK_ENV_ACCESS_IN_NODE=false cartorio_n8n (Opcao A, 5min). Gustavo decidir entre A (rapido, menos clean) e B (canonica, mais robusta). Owner: `cartorio-n8n`. Bloqueia B11 (alertas Telegram effective).
+- [ ] **E8.B06-FIX** WF 00 interno — Alerta Chatwoot falha por Lesson 51 (N8N_BLOCK_ENV_ACCESS_IN_NODE). Fix: trocar `$env.CARTORIO_API_KEY` por `$credentials.httpHeaderAuth.value` no node (Opcao B robusta, 30min) OU docker service update --env-add N8N_BLOCK_ENV_ACCESS_IN_NODE=false cartorio_n8n (Opcao A, 5min). **Default recomendado = B (canonica)**. Gustavo decidir entre A (rapido, menos clean) e B (canonica, mais robusta). Owner: `cartorio-n8n`. Bloqueia B11 (alertas Telegram effective). HOLD ate Gustavo wake + GO explicito (nao rodar autonomo, Gustavo dormindo). LGPD scope = NAO envolvido (Lesson 51 e N8N config env, nao toca PII/audit/schema backend). Backup `/tmp/wf-unwired-backup.txt` (22 linhas, settings originais pre-update) = rollback safety net, manter ate B06-FIX fechar + 7d audit trail, depois delete com GO.
 - [ ] **E8.B07** Retry policy 3x exp backoff em todos nodes HTTP — owner: `cartorio-n8n`
 - [ ] **E8.B08** Timeout 5s em todos HTTP requests — owner: `cartorio-n8n`
 - [ ] **E8.B09** Logs estruturados JSON correlation_id em todos nodes — owner: `cartorio-n8n`

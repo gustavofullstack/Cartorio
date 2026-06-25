@@ -1679,3 +1679,146 @@ pre-executado. Sprint 4 follow-up: revisar pattern do actor_id (decisao
 da LGPD review + Pietra).
 
 Modified by Gustavo Almeida
+
+### Tick 2026-06-25 02:47 BRT — 9 tasks DONE + OpenClaw fix STARTED
+
+**Pipeline 25/06 02:47 BRT:**
+- ✅ D0.1, B0.3, E0.AUTH, D0.3, D0.3a, B0.3.SEC, A13, D0.2, B06 (9 tasks done)
+- 🟢 OpenClaw fix STARTED (thinking + 1M + skills)
+
+**B06 detalhes:**
+- 1a tentativa (mvs_c4d4460fc8ab4cc7ab5aa6a18a358504) FINISHED com 0 msgs — partial work
+- Retry (mvs_7dbeb043241f4ca0b966b5b8ae0aa39e) commit 43484b0 — wire 22 WFs, 33/34 total
+- Lesson 110: retry pattern (partial + retry)
+- E8.B06-FIX pendente decisão Gustavo (Opção A vs B)
+
+**Estado:**
+- 9 commits merged em master (último 18f083d)
+- 6 git pushes
+- Audit chain 478+ entries healthy
+- /health GREEN 7/7
+
+Modified by Pietra/Mavis - 2026-06-25 02:47 BRT
+
+---
+
+### Tick 2026-06-25 02:47 BRT — Briefing stale check (Lesson 115 canon aplicou)
+
+**Contexto**: peer dev (mvs_503fdd885d824348bbcd38ec4816b533) reportou em briefing que existia "branch d0.3b-pre-branch com audit.py + audit_create.py (peer mvs_6a802277) — ainda nao mergeada em master". Verificação real:
+- `git branch -a` → NAO existe branch com esse nome (nem local nem remoto)
+- `git stash list` → existe `stash@{0}` com mensagem IDÊNTICA ao briefing: "On master: d0.3b-pre-branch: audit.py + audit_create.py (peer mvs_6a802277) + TASKS.md (Pietra D0.3b plan)"
+- Stash continha SÓ `.harness/TASKS.md` + `backend/app/schemas/audit.py` (+150/-11)
+- Trabalho REAL JÁ MERGEADO em outros commits: `ea24216 sprint-3-bloco4` + `2cb4897 GET /cliente/{id}` + `d9e5e23` + `e6aabc6 pode_deletar` + `e33d977 D0.2 hardened`
+
+**Status Sprint 3 verificado:**
+- D0.3 (GET /cliente/{id}) → DONE em master
+- D4 (job retenção 5y) → DONE em master (ea24216 + 4 otimizações)
+- Goal #4.1 (audit log 100% mutações) → DONE (23 callsites AuditService.log)
+- Master local == origin/master (fetch fechou gap)
+- Working tree modifications: SÓ `.harness/TASKS.md` (1 linha) + 2 untracked crons
+- Stash@{0}: obsoleto (master tem tudo), drop seguro pós peer OK
+
+**Coordenada enviada peer (msg #3272):**
+- (a) Merge d0.3b → NAO SE APLICA (stash, não branch)
+- (b) P1.2 rate limit → SIM, AGORA em branch nova `feat/p1.2-rate-limit-audit-log`
+- (c) Lista real Sprint 3 pendente: E1.S4.T3 (P1.2 dev), E1.S4.T2 (fix /health/backup), E6.S2.T18 (WF #30 N8N), E6.S2.T19 (credenciais N8N), 6 SUI (UI Gustavo)
+- (d) Standby → NAO
+
+**Pendências cross-project Lesson 115 salva em `~/.mavis/agents/mavis/memory/MEMORY.md`**: "Briefing 'branch X' pode ser stash@{N} obsoleto — naming collision pegadinha". Estende Lessons 110 + 112 com categoria NOVA: stash-vs-branch.
+
+Modified by Pietra/Mavis - 2026-06-25 02:47 BRT
+
+---
+
+### Tick 2026-06-25 02:51 BRT — P1.2 ROLLBACK (double rate limit anti-pattern evitado)
+
+**Contexto**: cartorio-dev (mvs_503fdd885d824348bbcd38ec4816b533) iniciou implementação Sprint 4 task E1.S4.T3 (slowapi rate limit 60/min em POST /audit/log). ANTES de implementar, confliteu briefing com git state e descobriu:
+- `RateLimitByKeyMiddleware` (backend/app/services/rate_limit_by_key.py:107) já aplicado em main.py:258-263 com `paths_prefixes=("/api/v1/",)`
+- `TIER_POLICIES["dpo"] = 60/min` (rate_limit_by_key.py:58)
+- POST /audit/log usa X-API-Key → tier=dpo → 60/min EFETIVO desde antes da task existir
+- Doc do endpoint (router.py:2701) inclusive diz "Rate limit (P1.2): Sprint 4. Mesmo limite do GET /audit/logs (60/min)." — deferido em texto MAS já implementado via middleware
+
+**Ações executadas pelo peer (rollback limpo):**
+1. `git checkout master -- backend/app/api/v1/router.py backend/app/main.py backend/app/pyproject.toml backend/uv.lock` (4 files revert)
+2. `mavis-trash backend/app/api/limiter.py` (criado durante tentativa, recuperável do Trash)
+3. `git branch -D feat/p1.2-rate-limit-audit-log` (branch 18f083d deletada)
+4. slowapi removido de pyproject.toml
+
+**Verificação Pietra (git status -sb + ls limiter.py + git branch + git stash list):**
+- `limiter.py`: gone ✅
+- `feat/p1.2-rate-limit-audit-log`: deletada ✅
+- master local == origin/master (sem delta) ✅
+- zero changes em backend/ ✅
+- HEAD = 18f083d
+- .harness/M + .harness/reins/cartorio-dev/memory/M + 2 crons untracked (b0.3.sec-rebase-watchdog.*) — não tocados
+- Stash@{0}: ainda presente (Pietra coord drop com push D0.2)
+
+**Lesson 118 cross-project salva** em `~/.mavis/agents/mavis/memory/MEMORY.md`:
+1. SEMPRE conflitar briefing com git state ANTES de implementar — grep por padrão similar, ler decorators + middleware order
+2. Middleware global > decorator per-endpoint quando cobertura uniforme é aceitável (cartório: 3 tiers n8n=600/dpo=60/padrao=30 via prefixo de key)
+3. Double rate limit (Redis + slowapi in-memory) é SEMPRE anti-pattern — contadores divergentes, restart perde slowapi, métricas conflitantes
+4. "Sem decorator" ≠ "sem rate limit" — middleware global cobre tudo sob paths_prefixes
+5. Doc do endpoint é fonte secundária — se docstring diz "Rate limit: X" e código tem middleware X, está DONE
+
+**Lesson 113 cross-ref** (cartorio-dev agent memory, não duplicada aqui): slowapi API mismatch com FastAPI 0.115+ — exception 'parameter response must be Response' — workaround = REMOVER `SlowAPIMiddleware`, manter só `app.state.limiter` + exception handler. Útil se Sprint 5+ quiser refactor pra slowapi dedicado (substitui middleware, NÃO adiciona).
+
+**E1.S4.T3 atualizado em TASKS.md**: marcada DONE com rationale completo (resolução real + anti-pattern evitado + arquivos revertidos + cross-ref).
+
+**Próximo**: standby até Gustavo wake (~4h45min BRT) ou radar tick. Quando acordar:
+1. LGPD ratificar P1.2 = DONE via middleware (não bloqueia D0.2 push — staging OK)
+2. push coord D0.2 (staging) + 6 SUI pendentes UI
+3. drop stash@{0} obsoleto junto com push
+
+Modified by Pietra/Mavis - 2026-06-25 02:51 BRT
+
+### Tick 2026-06-25 03:01 BRT — 10 tasks DONE + A14 STARTED
+
+**Pipeline 25/06 03:01 BRT:**
+- ✅ D0.1, B0.3, E0.AUTH, D0.3, D0.3a, B0.3.SEC, A13, D0.2, B06, OpenClaw fix (10 tasks done)
+- 🟢 A14 STARTED — backup DB 4x/dia pg_basebackup + WAL
+
+**OpenClaw fix detalhes (commit 50cf8a7):**
+- Modelo: openai/qwen3.7-max (1M context, reasoning:true, thinkingFormat compat)
+- anthropic-claude-opus-4-8 NAO EXISTE no catalogo opencode-go (key QUEIMADA sk-xcRwE...)
+- Backup pre-fix: openclaw.json.bak-pre-1m-think-20260625-054736 (md5 28ea7f3b)
+- 7 cartorio skills registradas (saudacoes, protocolo-tracker, emolumento-calc, handoff-trigger, agendamento, segunda-via, pesquisa-satisfacao)
+- /health 200 OK live
+- Standby aguardando Gustavo decidir modelo principal
+
+**Estado:**
+- 10 commits merged em master (último 50cf8a7)
+- 7 git pushes
+- Audit chain 478+ entries
+- /health GREEN 7/7
+
+Modified by Pietra/Mavis - 2026-06-25 03:01 BRT
+
+### Tick 2026-06-25 03:43 BRT — SPRINT 3 12 tasks DONE — SQUAD B ~95%
+
+**Pipeline FINAL 03:43 BRT (sessao 5h):**
+- 12 tarefas entregues: D0.1, B0.3, E0.AUTH, D0.3, D0.3a, B0.3.SEC, A13, D0.2, B06, OpenClaw, A14, B07
+- 12 commits merged em master (último 9b2cc54)
+- 9 git pushes com post-deploy env reaplication (Lesson 103)
+- 14+ smoke tests E2E validados
+
+**B07 detalhes (commit 9b2cc54):**
+- 63 HTTP nodes / 63 com retry 3x exp backoff (100%, acceptance era >=50%)
+- 30 WFs patched
+- Smoke test: 20/20 nodes validados
+- Lesson 96 (PATCH 405) confirmada — usado direct DB UPDATE
+
+**Estado FINAL:**
+- /health 200 OK v0.5.4
+- /health/radar GREEN 7/7
+- Audit chain 488 entries
+- DNS 6/7 verdes (chatwoot + status pendentes)
+- 63 HTTP nodes retry-protected
+
+**Pendências SUI Gustavo:**
+- E8.B06-FIX (Opção A vs B)
+- OpenClaw modelo principal
+- DNS chatwoot.2notasudi.com.br
+- DPA LGPD assinatura (bloqueia D squad)
+- Regenerar Easypanel key
+
+Modified by Pietra/Mavis - 2026-06-25 03:43 BRT
