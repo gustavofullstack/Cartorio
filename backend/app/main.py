@@ -555,3 +555,8 @@ app.include_router(telegram_router, prefix="/api/v1")
 from app.api.v1.lgpd_direitos import lgpd_router  # noqa: E402
 
 app.include_router(lgpd_router, prefix="/api/v1")
+
+# API v2 (alpha) - sunset 2027-12-31 (A24 SQUAD A versionamento)
+from app.api.v2 import api_v2_router  # noqa: E402
+
+app.include_router(api_v2_router, prefix="/api/v2")
