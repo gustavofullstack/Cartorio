@@ -2496,6 +2496,130 @@ async def get_cliente(
 
 
 # ============================================================================
+# LGPD - Direito de correção PATCH /cliente/{id} (art. 18 III)
+# ============================================================================
+
+
+class ClienteCorrecaoRequest(BaseModel):
+    """Schema para correcao de dados do cliente (LGPD art. 18 III).
+
+    Apenas campos NAO-PII ou fornecidos pelo titular podem ser corrigidos.
+    CPF hash e hash de telefone sao IMUTAVEIS (identificador unico + PII).
+    """
+
+    model_config = ConfigDict(extra="forbid")  # rejeita campos desconhecidos
+
+    nome: Annotated[
+        str | None,
+        Field(None, min_length=2, max_length=255, description="Nome corrigido do titular."),
+    ] = None
+    email: Annotated[
+        str | None,
+        Field(None, max_length=255, description="Email corrigido do titular."),
+    ] = None
+
+
+@api_router.patch(
+    "/cliente/{cliente_id}",
+    tags=["cliente"],
+    summary="Direito de correcao (LGPD art. 18 III)",
+    description=(
+        "Permite ao titular corrigir dados pessoais incompletos/desatualizados.\n\n"
+        "- Campos permitidos: `nome`, `email`.\n"
+        "- Campos IMUTAVEIS: `cpf_hash` (identificador unico), `telefone_hash` (PII).\n"
+        "- Toda correcao eh audit-logged (LGPD art. 37).\n"
+        "- Cliente encerrado (LGPD art. 18 VI) nao pode ser corrigido (410 Gone).\n\n"
+        "Requer `X-API-Key` (escrevente/DPO autorizado)."
+    ),
+    responses={
+        200: {"description": "Dados corrigidos com sucesso."},
+        400: {"description": "Nenhum campo valido enviado para correcao."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+        404: {"description": "Cliente nao encontrado."},
+        410: {"description": "Cliente encerrado (LGPD art. 18 VI)."},
+    },
+)
+async def patch_cliente(
+    request: Request,
+    cliente_id: Annotated[int, Path(ge=1, description="ID interno do cliente.")],
+    body: ClienteCorrecaoRequest,
+    db: Annotated[Session, Depends(get_db)],
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> dict:
+    """Corrige dados cadastrais do titular (LGPD art. 18 III)."""
+    from app.utils.pii_sanitizer import hash_pii as hash_pii_fn
+
+    cliente = db.get(Cliente, cliente_id)
+    if cliente is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "CLIENTE_NOT_FOUND",
+                "mensagem": f"Cliente {cliente_id} nao encontrado.",
+            },
+        )
+
+    # Cliente encerrado nao pode ser corrigido
+    if cliente.motivo_encerramento is not None:
+        raise HTTPException(
+            status_code=410,
+            detail={
+                "erro": "CLIENTE_ENCERRADO",
+                "mensagem": f"Cliente {cliente_id} foi encerrado (LGPD art. 18 VI). "
+                "Correcao nao permitida apos revogacao.",
+                "motivo": cliente.motivo_encerramento.value,
+            },
+        )
+
+    # Coleta campos que foram enviados (nao-None) para correcao
+    campos_alterados: dict[str, tuple[str | None, str | None]] = {}
+
+    if body.nome is not None and body.nome != cliente.nome:
+        campos_alterados["nome"] = (cliente.nome, body.nome)
+        cliente.nome = body.nome
+
+    if body.email is not None and body.email != cliente.email:
+        campos_alterados["email"] = (cliente.email, body.email)
+        cliente.email = body.email
+
+    if not campos_alterados:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "erro": "SEM_CAMPOS_VALIDOS",
+                "mensagem": "Nenhum campo valido enviado para correcao. "
+                "Campos permitidos: nome, email.",
+                "campos_recebidos": body.model_dump(exclude_none=True),
+            },
+        )
+
+    db.flush()  # persiste alteracoes antes do audit
+
+    # Audit log LGPD art. 37 (registro de correcao de dado pessoal)
+    audit = AuditService.log(
+        db,
+        actor_id=f"escrevente:{_api_key[:8]}",
+        actor_type="bot",
+        action="cliente.update.correcao",
+        resource=f"cliente:{cliente_id}",
+        payload={
+            "cliente_id": cliente_id,
+            "campos_alterados": list(campos_alterados.keys()),
+            "justificativa": "LGPD art. 18 III - direito de correcao do titular",
+        },
+        **audit_kwargs(request),
+    )
+
+    return {
+        "status": "corrected",
+        "cliente_id": cliente_id,
+        "campos_alterados": list(campos_alterados.keys()),
+        "audit_id": audit.id,
+        "mensagem": f"Dados corrigidos via LGPD art. 18 III. {len(campos_alterados)} campo(s) alterado(s).",
+    }
+
+
+# ============================================================================
 # LGPD - Job retenção (admin)
 # ============================================================================
 

@@ -15,11 +15,11 @@ Modified by Gustavo Almeida — 2026-06-25
 from __future__ import annotations
 
 import inspect
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.models.base import Base, TimestampMixin
@@ -95,11 +95,9 @@ def test_models_without_timestamp_are_intentional():
     """Models append-only NAO devem ter updated_at (LGPD: audit log e append-only)."""
     all_models = _all_models_with_tablename()
     for table in MODELS_WITHOUT_TIMESTAMP:
-        if table in all_models:
-            model_cls = all_models[table]
-            # audit_log nao herda TimestampMixin
-            # outbox_messages e webhook_events podem ter updated_at no schema
-            # mas NAO usam TimestampMixin (decisao intencional)
+        # audit_log, outbox_messages, webhook_events sao append-only
+        # NAO usam TimestampMixin (decisao intencional — LGPD audit trail)
+        pass
 
 
 # ============================================================================

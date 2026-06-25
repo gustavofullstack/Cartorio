@@ -547,16 +547,16 @@ Modified by Gustavo Almeida
 - [ ] **E8.C25** Status page pública 90d uptime + incidents + maintenance — owner: `cartorio-zcode`
 
 ### Squad D — cartorio-lgpd (compliance)
-- [ ] **E8.D06** Direito acesso GET /cliente/{id}/historico (finalizar WIP) — owner: `cartorio-lgpd` + `cartorio-dev`
-- [ ] **E8.D07** Direito correção PATCH /cliente/{id} com audit — owner: `cartorio-lgpd` + `cartorio-dev`
+- [x] **E8.D06** Direito acesso GET /cliente/{id}/historico — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `router.py:3154` (timeline consolidada protocolos+atendimentos, response model ClienteHistoricoResponse, LGPD art. 18 IV)
+- [x] **E8.D07** Direito correção PATCH /cliente/{id} com audit — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE 25/06 10:35 BRT** — `router.py` endpoint `patch_cliente` (LGPD art. 18 III, campos: nome/email, valida 404/410/400, audit log art. 37, schema `ClienteCorrecaoRequest` com `extra="forbid"`)
 - [ ] **E8.D08** Direito anonimização POST /cliente/{id}/anonimizar — owner: `cartorio-lgpd` + `cartorio-dev`
-- [ ] **E8.D09** Direito portabilidade GET /cliente/{id}/export JSON+CSV+PDF — owner: `cartorio-lgpd` + `cartorio-dev`
-- [ ] **E8.D10** Direito revogação DELETE /cliente/{id} cascade (refinar) — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D09** Direito portabilidade GET /cliente/{id}/export JSON+CSV+PDF — owner: `cartorio-lgpd` + `cartorio-dev` (relatório ANPD existe em `router.py:3584`)
+- [x] **E8.D10** Direito revogação DELETE /cliente/{id} cascade — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `router.py:2314` (hard/soft delete, service layer em `services/lgpd/direito_esquecimento.py`, LGPD art. 18 VI)
 - [ ] **E8.D11** Direito oposição POST /cliente/{id}/opar — owner: `cartorio-lgpd` + `cartorio-dev`
 - [ ] **E8.D12** Direito não-automação POST /cliente/{id}/opt-out-bot só humano — owner: `cartorio-lgpd` + `cartorio-dev`
-- [ ] **E8.D13** Logs acesso LGPD art. 37 (request_id+IP truncado+UA+ts) — owner: `cartorio-lgpd` + `cartorio-dev`
-- [ ] **E8.D14** Retenção configurável por tipo (5y/protocolo, até-revog/sem, 2y/conversa) — owner: `cartorio-lgpd` + `cartorio-dev`
-- [ ] **E8.D15** Encriptação at-rest pgcrypto + in-transit TLS 1.3 obrigatório — owner: `cartorio-lgpd` + `cartorio-dev`
+- [x] **E8.D13** Logs acesso LGPD art. 37 (request_id+IP truncado+UA+ts) — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `RequestContextMiddleware` + `AuditService.log` em todos endpoints, IP truncado /24, request_id UUID
+- [x] **E8.D14** Retenção configurável por tipo (5y/protocolo, até-revog/sem, 2y/conversa) — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `backend/app/jobs/retencao.py` (13 tests TDD, configurável via env vars)
+- [ ] **E8.D15** Encriptação at-rest pgcrypto + in-transit TLS 1.3 obrigatório — owner: `cartorio-lgpd` + `cartorio-dev` (TLS 1.3 via Traefik, pgcrypto pendente)
 
 Modified by Pietra/Mavis - 2026-06-25 00:02 BRT
 ---
