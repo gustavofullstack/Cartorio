@@ -588,6 +588,198 @@ CANNED_MANUTENCAO = CannedResponse(
 
 
 # ============================================================================
+# 11. CERTIDOES EXTRAS (5 templates adicionais)
+# ============================================================================
+
+CANNED_CERTIDAO_NASCIMENTO = CannedResponse(
+    short_code="certidao_nascimento",
+    content=(
+        "👶 **Certidão de Nascimento (2ª via)**\n\n"
+        "Documentos necessários:\n"
+        "• Nome completo do registrado\n"
+        "• Data de nascimento\n"
+        "• Nome completo dos pais\n"
+        "• Município de registro\n\n"
+        "Valor: GRATUITO (1ª via) | 2ª via consultar valores vigentes\n"
+        "Prazo: até 5 dias úteis"
+    ),
+    tags=("certidao", "nascimento", "servico"),
+)
+
+CANNED_CERTIDAO_OBITO = CannedResponse(
+    short_code="certidao_obito",
+    content=(
+        "🕊️ **Certidão de Óbito (2ª via)**\n\n"
+        "Documentos necessários:\n"
+        "• Nome completo do falecido\n"
+        "• Data do falecimento\n"
+        "• CPF (se houver)\n\n"
+        "Valor: GRATUITO\n"
+        "Prazo: até 3 dias úteis\n\n"
+        "Nossos sentimentos à família."
+    ),
+    tags=("certidao", "obito", "servico"),
+)
+
+CANNED_CERTIDAO_PROTESTO = CannedResponse(
+    short_code="certidao_protesto",
+    content=(
+        "📋 **Certidão de Protesto**\n\n"
+        "Para emitir certidão de protesto:\n\n"
+        "• Nome completo\n"
+        "• CPF/CNPJ\n"
+        "• Período de consulta (últimos 5 anos)\n\n"
+        "Valor: R$ 65,40\n"
+        "Prazo: 24h úteis"
+    ),
+    tags=("certidao", "protesto", "servico"),
+)
+
+CANNED_CERTIDAO_DISTRAT = CannedResponse(
+    short_code="certidao_distrato",
+    content=(
+        "📄 **Distrato / Cancelamento**\n\n"
+        "Para distrato de contrato, é necessário:\n\n"
+        "• Contrato original (cópia)\n"
+        "• Documentos das partes (RG, CPF)\n"
+        "• Justificativa por escrito\n\n"
+        "Valor: R$ 187,30\n"
+        "Comparecer presencialmente."
+    ),
+    tags=("certidao", "distrato", "servico"),
+)
+
+CANNED_CERTIDAO_TEOR = CannedResponse(
+    short_code="certidao_teor",
+    content=(
+        "📑 **Certidão de Teor (Inteiro Teor)**\n\n"
+        "Cópia fiel do documento original arquivado.\n\n"
+        "Valor: R$ 45,80 por folha\n"
+        "Prazo: até 2 dias úteis"
+    ),
+    tags=("certidao", "teor", "servico"),
+)
+
+
+# ============================================================================
+# 12. TESTAMENTOS E PROCURAÇÕES ESPECIAIS (4 templates adicionais)
+# ============================================================================
+
+CANNED_TESTAMENTO = CannedResponse(
+    short_code="testamento",
+    content=(
+        "📜 **Testamento**\n\n"
+        "Modalidades:\n"
+        "• Testamento público (lavrado em cartório)\n"
+        "• Testamento cerrado (escrito pelo testador)\n"
+        "• Testamento particular (escrito e assinado pelo testador)\n\n"
+        "Valor: consultar tabela MG vigente\n"
+        "Comparecer presencialmente com 2 testemunhas."
+    ),
+    tags=("testamento", "servico"),
+)
+
+CANNED_PROCURACAO_JUDICIAL = CannedResponse(
+    short_code="procuracao_judicial",
+    content=(
+        "⚖️ **Procuração Judicial (Ad Judicia)**\n\n"
+        "Para representação em processos judiciais:\n\n"
+        "• Outorgante: RG, CPF, comprovante residência\n"
+        "• Outorgado: advogado com OAB ativa\n"
+        "• Especificar poderes (substabelecimento, etc)\n\n"
+        "Valor: R$ 245,80\n"
+        "Prazo: mesmo dia."
+    ),
+    tags=("procuracao", "judicial", "servico"),
+)
+
+CANNED_PROCURACAO_PREVIDENCIARIA = CannedResponse(
+    short_code="procuracao_previdenciaria",
+    content=(
+        "🏛️ **Procuração Previdenciária**\n\n"
+        "Para representação junto ao INSS:\n\n"
+        "• Outorgante: RG, CPF, comprovante residência, NIS\n"
+        "• Outorgado: advogado ou preposto\n\n"
+        "Valor: R$ 198,60\n"
+        "Prazo: 24h."
+    ),
+    tags=("procuracao", "previdenciaria", "servico"),
+)
+
+CANNED_SUBSTABELECIMENTO = CannedResponse(
+    short_code="substabelecimento",
+    content=(
+        "✍️ **Substabelecimento de Procuração**\n\n"
+        "Para transferir poderes a outro advogado:\n\n"
+        "• Procuração original (com poderes para substabelecer)\n"
+        "• Documentos do novo outorgado (RG, CPF, OAB)\n\n"
+        "Valor: R$ 132,40\n"
+        "Comparecer presencialmente."
+    ),
+    tags=("procuracao", "substabelecimento", "servico"),
+)
+
+
+# ============================================================================
+# 13. NEGÓCIOS JURÍDICOS DIVERSOS (4 templates adicionais)
+# ============================================================================
+
+CANNED_USUFRUTO = CannedResponse(
+    short_code="usufruto",
+    content=(
+        "🏡 **Constituição de Usufruto**\n\n"
+        "Documentos:\n"
+        "• RG e CPF do nu-proprietário e usufrutuário\n"
+        "• Matrícula atualizada do imóvel\n"
+        "• Certidão negativa de débitos\n\n"
+        "Valor: R$ 2.876,40 (base)\n"
+        "Comparecer presencialmente."
+    ),
+    tags=("escritura", "usufruto", "servico"),
+)
+
+CANNED_HIPOTECA = CannedResponse(
+    short_code="hipoteca",
+    content=(
+        "🏦 **Constituição de Hipoteca**\n\n"
+        "Documentos:\n"
+        "• RG, CPF e estado civil do devedor e cônjuge\n"
+        "• Matrícula atualizada do imóvel\n"
+        "• Certidão negativa de débitos\n"
+        "• Contrato de dívida (se houver)\n\n"
+        "Valor: R$ 3.245,80 (base)"
+    ),
+    tags=("escritura", "hipoteca", "servico"),
+)
+
+CANNED_PENHOR = CannedResponse(
+    short_code="penhor",
+    content=(
+        "💎 **Constituição de Penhor**\n\n"
+        "Modalidades:\n"
+        "• Penhor legal (albergueiro, hospedeiro)\n"
+        "• Penhor convencional\n"
+        "• Penhor industrial / mercantil / agrícola\n\n"
+        "Documentos variam conforme modalidade. Agendar atendimento."
+    ),
+    tags=("escritura", "penhor", "servico"),
+)
+
+CANNED_CONVENCAO_CONDOMINIO = CannedResponse(
+    short_code="convencao_condominio",
+    content=(
+        "🏢 **Convenção de Condomínio**\n\n"
+        "Para registrar convenção nova ou alteração:\n\n"
+        "• Convenção aprovada em assembleia (ata + lista presença)\n"
+        "• Documentos do síndico (RG, CPF)\n"
+        "• CNPJ do condomínio\n\n"
+        "Valor: R$ 1.876,20 (base)"
+    ),
+    tags=("escritura", "condominio", "servico"),
+)
+
+
+# ============================================================================
 # CATALOGO COMPLETO
 # ============================================================================
 
@@ -641,6 +833,22 @@ CANNED_RESPONSES: tuple[CannedResponse, ...] = (
     CANNED_PRAZO_VENCENDO,
     CANNED_FERIADO,
     CANNED_MANUTENCAO,
+    # 11. Certidoes extras (5)
+    CANNED_CERTIDAO_NASCIMENTO,
+    CANNED_CERTIDAO_OBITO,
+    CANNED_CERTIDAO_PROTESTO,
+    CANNED_CERTIDAO_DISTRAT,
+    CANNED_CERTIDAO_TEOR,
+    # 12. Testamentos e procuracoes especiais (4)
+    CANNED_TESTAMENTO,
+    CANNED_PROCURACAO_JUDICIAL,
+    CANNED_PROCURACAO_PREVIDENCIARIA,
+    CANNED_SUBSTABELECIMENTO,
+    # 13. Negocios juridicos diversos (4)
+    CANNED_USUFRUTO,
+    CANNED_HIPOTECA,
+    CANNED_PENHOR,
+    CANNED_CONVENCAO_CONDOMINIO,
 )
 
 
