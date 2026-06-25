@@ -144,3 +144,194 @@ def test_settings_cartorio_api_key_validation_len_64() -> None:
         # Restore valid value pra outros tests
         os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
         get_settings.cache_clear()
+
+
+# ============================================================================
+# Tests: P1.1 (LGPD review) — hex pattern strict
+# ============================================================================
+
+
+def test_settings_cartorio_api_key_validation_pattern_hex() -> None:
+    """Validacao strict: cartorio_api_key DEVE ser hex lowercase 64 chars.
+
+    Defesa em profundidade P1.1 (LGPD review 2026-06-25): uppercase, espacos,
+    ou chars nao-hex DEVEM falhar Settings() no startup.
+    """
+    import os
+    from pydantic import ValidationError
+
+    # Uppercase hex NAO passa (regex so aceita [a-f0-9])
+    os.environ["CARTORIO_API_KEY"] = "A" * 64
+
+    try:
+        get_settings.cache_clear()
+        with pytest.raises(ValidationError) as exc_info:
+            get_settings()
+        assert any(
+            "pattern" in str(e.get("msg", "")).lower()
+            or "string should match pattern" in str(e.get("msg", "")).lower()
+            for e in exc_info.value.errors()
+        )
+    finally:
+        os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
+        get_settings.cache_clear()
+
+
+def test_settings_cartorio_api_key_pattern_aceita_hex_lowercase() -> None:
+    """Pattern aceita hex lowercase real (com mix de a-f e 0-9)."""
+    import os
+
+    # Hex realista: 0-9 e a-f mixados
+    real_hex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    os.environ["CARTORIO_API_KEY"] = real_hex
+
+    try:
+        get_settings.cache_clear()
+        s = get_settings()
+        assert s.cartorio_api_key == real_hex
+    finally:
+        os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
+        get_settings.cache_clear()
+
+
+# ============================================================================
+# Tests: P0.2 (LGPD review) — AuditService.log() chamado em auth failure
+# ============================================================================
+
+
+def test_audit_service_log_chamado_em_401_missing(client: TestClient, monkeypatch) -> None:
+    """Falha de auth (401 missing) DEVE gravar audit log (LGPD art. 37 + P0.2).
+
+    Compliance theater fix: a docstring promete, mas a implementacao DEVE
+    chamar AuditService.log(). Mock do AuditService.log verifica a chamada.
+    """
+    from unittest.mock import MagicMock, patch
+
+    # Track chamadas via mock. O AuditService.log eh chamado dentro de uma
+    # session_scope() separada, entao mockamos o metodo estatico.
+    mock_log = MagicMock()
+
+    with patch("app.api.deps.AuditService") as mock_service:
+        mock_service.log = mock_log
+
+        resp = client.get(
+            "/protected",
+            headers={"x-request-id": "test-req-001", "user-agent": "pytest-agent"},
+        )
+
+    assert resp.status_code == 401
+    # AuditService.log foi chamado pelo menos 1x (fail de missing)
+    assert mock_log.call_count >= 1
+    call_kwargs = mock_log.call_args.kwargs
+    assert call_kwargs["actor_id"] == "anonymous"
+    assert call_kwargs["actor_type"] == "unauthorized"
+    assert call_kwargs["action"] == "auth.failed"
+    assert call_kwargs["resource"] == "/protected"
+    payload = call_kwargs["payload"]
+    assert payload["endpoint"] == "/protected"
+    assert payload["reason"] == "missing"
+    assert payload["key_fingerprint"] == "missing"
+    assert call_kwargs["request_id"] == "test-req-001"
+    assert call_kwargs["user_agent"] == "pytest-agent"
+
+
+def test_audit_service_log_chamado_em_401_invalid(client: TestClient, monkeypatch) -> None:
+    """Falha de auth (401 invalid key) DEVE gravar audit log com key_fingerprint."""
+    from unittest.mock import MagicMock, patch
+
+    wrong_key = "b" * 64
+    mock_log = MagicMock()
+
+    with patch("app.api.deps.AuditService") as mock_service:
+        mock_service.log = mock_log
+
+        resp = client.get("/protected", headers={"X-API-Key": wrong_key})
+
+    assert resp.status_code == 401
+    assert mock_log.call_count >= 1
+    call_kwargs = mock_log.call_args.kwargs
+    assert call_kwargs["actor_type"] == "unauthorized"
+    payload = call_kwargs["payload"]
+    assert payload["reason"] == "invalid"
+    # fingerprint NAO eh a chave em si — eh hash[:8]
+    assert payload["key_fingerprint"] != wrong_key
+    assert len(payload["key_fingerprint"]) == 8  # sha256[:8]
+
+
+def test_audit_service_log_chamado_em_503_config_missing(monkeypatch) -> None:
+    """Falha de config (503 CARTORIO_API_KEY None) DEVE gravar audit log.
+
+    Safety net: mesmo quando settings desserializa com chave vazia/None
+    (bug hipotetico), ainda logamos a falha. Aqui forjamos o caminho.
+    """
+    from unittest.mock import MagicMock, patch
+
+    from app.api.deps import require_cartorio_api_key
+    from fastapi import FastAPI, Depends
+    from fastapi.testclient import TestClient
+
+    def protected(api_key: str = Depends(require_cartorio_api_key)) -> dict:
+        return {"status": "ok"}
+
+    test_app = FastAPI()
+    test_app.get("/protected", dependencies=[Depends(require_cartorio_api_key)])(
+        protected
+    )
+    test_client = TestClient(test_app)
+
+    # Mock settings.cartorio_api_key = None pra forcar o caminho 503
+    with patch("app.api.deps.AuditService") as mock_service:
+        mock_log = MagicMock()
+        mock_service.log = mock_log
+        with patch("app.api.deps.get_settings") as mock_get_settings:
+            mock_settings = MagicMock()
+            mock_settings.cartorio_api_key = None
+            mock_get_settings.return_value = mock_settings
+
+            resp = test_client.get("/protected", headers={"X-API-Key": "anything"})
+
+    assert resp.status_code == 503
+    assert mock_log.call_count >= 1
+    call_kwargs = mock_log.call_args.kwargs
+    payload = call_kwargs["payload"]
+    assert payload["reason"] == "config_missing"
+
+
+def test_audit_service_log_NAO_chamado_em_200_sucesso(client: TestClient) -> None:
+    """Sucesso (200 com key correta) NAO deve gravar audit de auth.failed.
+
+    Audit de auth SUCESSO eh responsabilidade do handler (ex: n8n_workflow_25
+    loga seu proprio audit ao executar). Nosso gate so loga FALHAS.
+    """
+    from unittest.mock import MagicMock, patch
+
+    mock_log = MagicMock()
+    with patch("app.api.deps.AuditService") as mock_service:
+        mock_service.log = mock_log
+
+        resp = client.get("/protected", headers={"X-API-Key": TEST_CARTORIO_API_KEY})
+
+    assert resp.status_code == 200
+    # NAO foi chamado audit de auth (sucesso nao gera log de falha)
+    for call in mock_log.call_args_list:
+        kwargs = call.kwargs
+        if kwargs.get("action") == "auth.failed":
+            pytest.fail(f"audit de auth.failed nao deve rodar em 200: {kwargs}")
+
+
+def test_audit_log_failure_nao_mascara_401(client: TestClient) -> None:
+    """Se o DB cair durante audit log, 401 ORIGINAL ainda retorna.
+
+    Defesa em profundidade: o try/except dentro de _audit_auth_failure
+    garante que erros de audit NAO vazem pro cliente como 500.
+    """
+    from unittest.mock import patch
+
+    with patch("app.api.deps.AuditService.log") as mock_log:
+        mock_log.side_effect = RuntimeError("DB offline")
+
+        resp = client.get("/protected")
+
+    # 401 ainda retorna (NAO vira 500 por causa de audit failure)
+    assert resp.status_code == 401
+    assert resp.json()["detail"]["erro"] == "UNAUTHORIZED"

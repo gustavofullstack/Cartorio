@@ -1545,3 +1545,27 @@ Gustavo pediu continuidade. Mandei o prompt cartorio + 100 tasks. Sprint focada 
 - Cross-project lesson 50: workflow N8N API auth DB UPDATE (race condition)
 - Cross-project lesson 58: cache stale apos UPDATE (monitorar 5min)
 - Cross-project lesson 92: bug raiz DB (migration BASE antes de aditivos)
+
+### Tick 2026-06-25 01:00 BRT — D0.1+B0.3+E0.AUTH ✅ + D0.3 STARTED
+- **D0.1** ✅ FINISHED 00:00 BRT (commit ebb66f7) — Migration BASE 9 tabelas
+- **B0.3** ✅ FINISHED 00:13 BRT — WF 23 LGPD ATIVADO + WF 31 dup DELETADO + 34 ON total. Finding CRÍTICO: AUTH GAP CARTORIO_API_KEY
+- **E0.AUTH** ✅ FINISHED 00:43 BRT (commit ee8bd35) — 21 files / 299+/49- lines. deps.py::require_cartorio_api_key + Field(min_length=64, max_length=64) FAIL-FAST + 7 tests. Triplet drift validado (backend/.env + N8N + API + VPS .env fingerprint dffe2d03).
+- **git push origin master 465f208** OK — Easypanel webhook rolling restart 3 containers.
+- **Smoke test E2E ✅✅✅** (00:55 BRT): NO AUTH 401, WRONG AUTH 401, CORRECT AUTH 200. Auth gate ENFORCED pós-rebuild.
+- **D0.3** STARTED 00:57 BRT (cartorio-dev mvs_42e990ec26714455a5d0fd1e4ecfc4c9). GET /cliente/{id} LGPD-safe + corrigir WF 23 LGPD URLs (→ /historico). Budget 90min.
+- ZCode em paralelo commitou SQUAD A 13 commits (12/25 done) — Sprint 5 progresso.
+
+### Pipeline 25/06 01:00 BRT (1-2 agents por vez)
+- D0.3 (cartorio-dev) ativo — GET /cliente/{id} LGPD-safe
+- Pós D0.3: A13 dead man's switch (cartorio-dev)
+- Pós A13: OpenClaw thinking+1M+skills (cartorio-zcode) ou D0.2 POST /audit/log (cartorio-dev)
+
+### Total sessão 24-25/06
+- 4 agentes spawned (D0.1, B0.3, E0.AUTH, D0.3)
+- 3 finished + 1 ativo
+- ~50+ tool calls paralelos
+- 3 commits merged ao master (ebb66f7, ee8bd35, 465f208)
+- 1 git push (rebuild Easypanel OK)
+- Smoke test E2E 401/401/200
+
+Modified by Pietra/Mavis - 2026-06-25 01:00 BRT

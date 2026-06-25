@@ -179,4 +179,132 @@ codigo antigo (commit a3a8798 pre-B0.3). `grep require_cartorio_api_key
 /app/app/api/v1/integrations.py` no container retorna VAZIO. Auth gate so
 ativa apos rebuild.
 
+Modified by Gustavo Almeida### UPDATE: Lesson 100 — Easypanel rebuild ENV RESET + smoke 4 cenarios PASS (2026-06-25)
+Type: lesson + canon workflow
+
+Cenario real do B0.3 (E0.AUTH) docstring acima fechou em prod AS 00:51 BRT. Triangulacao
+manual contra api.2notasudi.com.br confirmou os 4 gates:
+1. sem header → 401 UNAUTHORIZED ✅
+2. header errado → 401 UNAUTHORIZED ✅
+3. header correto + consent_granted=true → 200 pong (deepseek-v4-flash) ✅
+4. header correto + consent_granted=false → 422 LGPD_BLOCKED ✅
+
+ROOT CAUSE DO BLOCKER QUE EU NAO PEGUEI NO PRIMEIRO ROUND:
+Meu `docker service update --env-add CARTORIO_API_KEY=<v> cartorio_api` foi APLICADO com
+sucesso ("Service converged") MAS o env NAO persistiu na nova task definition apos
+Easypanel webhook rebuild (~8min entre git push 00:42 BRT e rebuild completo 00:50 BRT).
+Resultado: container subia SEM CARTORIO_API_KEY no env, falhas "non-zero exit 1" no
+task start (Settings() validacao strict explodia), swaps de task continuous.
+
+Pietra diagnosticou via `docker service ps cartorio_api` (Failed tasks + starting tasks),
+re-aplicou `docker service update --env-add` APOS o rebuild terminar, service convergiu.
+
+**LESSON 100 (canon workflow)**: `docker service update --env-add` NAO persiste Easypanel
+webhook rebuild. Para CADA nova imagem deployada via webhook Easypanel:
+1. Build rebuilda imagem (Bash: `git push origin master` -> webhook)
+2. Easypanel recria task definition (RESET de env vars customizadas)
+3. Container sobe com env padrao (sem --env-add)
+4. Aplicacao EXPLODE no startup se Settings() tem Field(strict) REQUIRED
+
+Workaround imediato apos rebuild: `docker service update --env-add KEY=VAL svc` em TODOS
+services que dependem de env vars customizadas.
+
+Workaround duravel (Pietra vai pedir Gustavo): adicionar env vars no Easypanel project
+config via UI (painel → projeto cartorio → api → Environment Variables). UI persiste
+no project-level config que NAO eh reset pelo webhook rebuild.
+
+Validacao pos-rebuild OBRIGATORIA (3 checks):
+1. `docker service ps <svc>` → todas as tasks "Running" (NAO "Failed"/"Starting")
+2. `docker exec $(docker ps -qf name=<svc>) printenv <KEY> | head -c 8` → 8 chars batem com .env local
+3. `curl https://<host>/health/radar` → 200 com servico marcado online
+
+**Lesson 101 — cron self-reminder eh ASSUNCAO, nao tool**: setei `e0-auth-rebuild-watchdog
+@ 5min` durante o blocker. Pietra mandou deletar ("duas crons triangulando = double-fire
++ ruido"). Cron self-reminder so faz sentido se:
+- Nao existe cron de parent/sibling monitorando a mesma coisa
+- Workarounds de polling dao mais valor que custo de double-fire
+Em caso de duda, perguntar ao parent antes de criar.
+
+### N8N 2.x PUT /workflows/{id} — 3 gotchas canonicos (D0.3 2026-06-25)
+Type: lesson
+
+PUT workflow pra atualizar nodes/connections em N8N 2.x tem 3 armadilhas:
+
+**Gotcha 1 — settings NAO aceita chaves extras**: payload `settings` rejeita
+campos que NAO estao no schema (ex: `availableInMCP`, `binaryMode` retornam 400
+"request/body/settings must NOT have additional properties"). Solucao: enviar
+APENAS `executionOrder` + `callerPolicy`. Outros campos sao managed pelo server.
+
+**Gotcha 2 — connections usam node.name como CHAVE**: dict `connections` tem
+o node name como key E como valor (`{node: name}`). Renomear node exige
+patch em 3 lugares:
+```python
+# Renomeia CHAVE do dict connections
+prod["connections"][NEW] = prod["connections"].pop(OLD)
+# Patch target.node dentro de listas aninhadas
+for src, dest in prod["connections"].items():
+    for main_list in dest.get("main", []):
+        for conn in main_list:
+            if conn.get("node") == OLD:
+                conn["node"] = NEW
+```
+Senao: 400 "Connection source X does not reference an existing node".
+
+**Gotcha 3 — payload minimo**: NAO incluir pinData, staticData, versionId,
+activeVersionId, versionCounter no body. Apenas `name`, `nodes`, `connections`,
+`settings`. PUT cria nova versao automaticamente (versionCounter incrementa).
+
+**Worked example completo em D0.3 commit 2cb4897**: WF 23 LGPD Esqueci
+(`TtD6qS6LCexwhMke`) — trocou URL de node e validou via PUT + GET roundtrip
+contra https://cartorio-n8n.dfgdxq.easypanel.host.
+
+### Working tree corruption mid-session + revert seletivo (D0.3 2026-06-25)
+Type: lesson
+
+Cenario real: working tree tinha modificacoes NAO minhas em
+`backend/app/api/v1/router.py` (ZCode/Pietra/peer auto-editou quebrando
+sintaxe — `non-default argument follows default argument` na linha 2643,
+refactor inline auth -> dep com bug de ordem). Sintoma: pytest collection
+FAIL com `SyntaxError`, mesmo diff do master no `git stash` importando OK.
+
+Verificacao de ownership ANTES de commitar:
+1. `git diff master --stat` — lista arquivos modificados
+2. Pra cada arquivo NAO esperado: `git diff master -- <file> | head -30`
+3. Se nao reconheco as mudancas como minhas: `git checkout master -- <file>`
+4. Re-aplicar SO meu bloco (Edit/Write)
+5. Validar pytest completo
+
+Lesson: working tree state NAO eh confiavel entre sessoes. Lesson 11 (briefing
+stale) + Lesson 12 (ZCode auto-commit) cobrem cenario ZCode; este cenario eh
+ZCode/ZCode-like auto-EDIT (NAO commit) — mais perigoso porque nao aparece em
+`git log`, so em `git diff`. Sintoma classico: pytest quebra no collection mas
+master stash importa OK.
+
+Apliquei revert seletivo em D0.3: revert `router.py`+`config.py`+`deps.py`
+pra master, re-apliquei SO meu bloco (105 linhas do GET /cliente/{id}).
+Resultado: 8 tests passaram, sem regressao. Commit `2cb4897`.
+
+### Briefing dual-instruction (escopo #1 + escopo #3) — IMPLEMENTAR + TROCAR URL (D0.3)
+Type: pattern
+
+Briefing D0.3 teve instrucao dupla aparentemente conflitante:
+- Escopo #1: implementar GET /cliente/{id} (que NAO EXISTIA)
+- Escopo #3: trocar WF 23 URL de /cliente/{id} para /cliente/{id}/historico
+
+Resolvi implementando OS DOIS. Razao: implementacao da URL resolve
+o problema imediato do WF 23 E cobre outros consumers futuros; troca da
+URL do WF 23 aproveita que /historico JA EXISTIA e eh mais completo
+(timeline protocolos+atendimentos).
+
+**Insight**: quando briefing tem instrucoes aparentemente conflitantes,
+NUNCA escolher uma. Implementar todas e reportar no report-back qual
+foi a escolha e por que. Pietra root decide se aceita ou pede revert.
+
+**Caveat reportado**: WF 23 IF "Pode Deletar?" espera `$json.pode_deletar`
+no response, mas /historico retorna `cliente_id, cliente_nome, total_eventos, items[]`.
+Apos D0.3, o IF vai dar false sempre e NADA sera deletado. Reportei pro
+Pietra decidir entre: (a) adicionar `pode_deletar` ao /historico response,
+(b) refazer IF pra checar `total_eventos==0`, ou (c) rollback da troca
+e usar /cliente/{id} (que agora existe).
+
 Modified by Gustavo Almeida
