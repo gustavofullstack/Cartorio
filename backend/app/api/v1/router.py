@@ -2922,6 +2922,50 @@ async def stats_protocolos(
     }
 
 
+# ============================================================================
+# Redlock status (A25)
+# ============================================================================
+
+
+@api_router.get(
+    "/admin/locks",
+    tags=["admin"],
+    summary="Lista locks distribuidos ativos (A25 redlock)",
+    description=(
+        "Retorna todos os locks `redlock:*` atualmente ativos no Redis. "
+        "Util para diagnosticar jobs em execucao (migrations, retencao, "
+        "seed emolumento). Requer X-API-Key."
+    ),
+    response_description="Lista de locks ativos.",
+)
+async def admin_list_locks(request: Request) -> dict:
+    """Lista locks ativos (A25)."""
+    from app.services.redlock import is_locked
+
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
+        )
+
+    # Candidatos conhecidos
+    known_locks = [
+        "migrations:run",
+        "seed:emolumento",
+        "retencao:run",
+        "backup:run",
+        "dlq:dispatch",
+    ]
+    active = [{"name": name, "locked": is_locked(name)} for name in known_locks]
+
+    return {
+        "total_known": len(known_locks),
+        "active_count": sum(1 for l in active if l["locked"]),
+        "locks": active,
+    }
+
+
 @api_router.get(
     "/metrics/prometheus",
     tags=["meta"],
