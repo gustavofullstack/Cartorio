@@ -148,13 +148,13 @@ def install_problem_handlers(app: FastAPI) -> None:
                 "type": err.get("type", ""),
             })
         problem = _build_problem(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Validacao falhou em {len(errors)} campo(s)",
             request=request,
             extras={"errors": errors},
         )
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             content=problem,
             media_type=PROBLEM_CONTENT_TYPE,
         )

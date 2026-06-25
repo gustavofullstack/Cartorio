@@ -16,7 +16,6 @@ Revises: 2026_06_25_0012
 """
 from __future__ import annotations
 
-from typing import Sequence
 
 import sqlalchemy as sa
 from alembic import op

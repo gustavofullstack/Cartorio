@@ -102,11 +102,11 @@ def mock_redis_client():
     pipeline = MagicMock()
 
     # Default: incr retorna 1 (allowed)
-    incr_mock = AsyncMock(return_value=1)
-    expire_mock = AsyncMock(return_value=True)
+    # NOTE: pipeline.incr/expire sao sincronos (apenas enfileiram comando)
+    # Nao sao AsyncMock (evita RuntimeWarning de coroutine nao awaitada)
     pipe_instance = MagicMock()
-    pipe_instance.incr = incr_mock
-    pipe_instance.expire = expire_mock
+    pipe_instance.incr.return_value = None
+    pipe_instance.expire.return_value = None
     pipe_instance.execute = AsyncMock(return_value=[1, True])
     pipeline.return_value = pipe_instance
 
