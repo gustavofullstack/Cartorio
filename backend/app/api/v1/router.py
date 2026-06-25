@@ -1027,8 +1027,8 @@ async def health_ready() -> JSONResponse:
     response_description="Status do banco + latencia em ms.",
 )
 async def health_db() -> JSONResponse:
-    """Health check granular do PostgreSQL."""
-    from app.db import engine
+    """Health check granular do PostgreSQL + pool stats (A22)."""
+    from app.db import engine, get_pool_stats
     from sqlalchemy import text
 
     start = time.time()
@@ -1038,7 +1038,12 @@ async def health_db() -> JSONResponse:
         latency_ms = round((time.time() - start) * 1000, 2)
         return JSONResponse(
             status_code=200,
-            content={"status": "online", "service": "postgresql", "latency_ms": latency_ms},
+            content={
+                "status": "online",
+                "service": "postgresql",
+                "latency_ms": latency_ms,
+                "pool": get_pool_stats(),  # A22: pool observability
+            },
         )
     except Exception as e:
         return JSONResponse(
