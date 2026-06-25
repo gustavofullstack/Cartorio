@@ -2,6 +2,37 @@
   "name": "12 - Chatbot LLM End-to-End (PII + OpenCode-Go)",
   "nodes": [
     {
+      "id": "ff440c218b21",
+      "name": "Init Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2202b217",
+              "name": "correlation_id",
+              "value": "={{ $uuid }}",
+              "type": "string"
+            },
+            {
+              "id": "f995663b",
+              "name": "wf_started_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
+    },
+    {
       "parameters": {
         "httpMethod": "POST",
         "path": "chatbot-llm",
@@ -136,6 +167,31 @@
         1340,
         300
       ]
+    },
+    {
+      "id": "88255bec125b",
+      "name": "Log Final Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0a7016b8",
+              "name": "log_json",
+              "value": "={\"ts\": $now.toISO(), \"level\": \"info\", \"workflow\": $workflow.name, \"workflow_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id, \"wf_started_at\": $json.wf_started_at, \"duration_ms\": $now.diff($json.wf_started_at, 'milliseconds'), \"success\": $execution.success, \"error\": $json.error ?? null}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
     }
   ],
   "connections": {

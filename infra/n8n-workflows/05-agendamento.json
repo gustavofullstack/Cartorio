@@ -8,6 +8,37 @@
   "isArchived": false,
   "nodes": [
     {
+      "id": "a6aba81247ca",
+      "name": "Init Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "df5dcaf6",
+              "name": "correlation_id",
+              "value": "={{ $uuid }}",
+              "type": "string"
+            },
+            {
+              "id": "e50e9c22",
+              "name": "wf_started_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
+    },
+    {
       "parameters": {
         "httpMethod": "POST",
         "path": "agendar-atendimento",
@@ -128,6 +159,31 @@
         900,
         420
       ]
+    },
+    {
+      "id": "3b5b3cc794d9",
+      "name": "Log Final Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cee0d9dc",
+              "name": "log_json",
+              "value": "={\"ts\": $now.toISO(), \"level\": \"info\", \"workflow\": $workflow.name, \"workflow_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id, \"wf_started_at\": $json.wf_started_at, \"duration_ms\": $now.diff($json.wf_started_at, 'milliseconds'), \"success\": $execution.success, \"error\": $json.error ?? null}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
     }
   ],
   "connections": {

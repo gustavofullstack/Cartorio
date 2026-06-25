@@ -2,6 +2,37 @@
   "name": "01 - Consulta Emolumento WhatsApp (v3)",
   "nodes": [
     {
+      "id": "c7bf274346a9",
+      "name": "Init Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6b8cd95b",
+              "name": "correlation_id",
+              "value": "={{ $uuid }}",
+              "type": "string"
+            },
+            {
+              "id": "e83c71ba",
+              "name": "wf_started_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
+    },
+    {
       "parameters": {
         "httpMethod": "POST",
         "path": "consulta-emolumento",
@@ -141,6 +172,31 @@
         1340,
         300
       ]
+    },
+    {
+      "id": "4d69dbd1c45f",
+      "name": "Log Final Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ee1425e",
+              "name": "log_json",
+              "value": "={\"ts\": $now.toISO(), \"level\": \"info\", \"workflow\": $workflow.name, \"workflow_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id, \"wf_started_at\": $json.wf_started_at, \"duration_ms\": $now.diff($json.wf_started_at, 'milliseconds'), \"success\": $execution.success, \"error\": $json.error ?? null}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
     }
   ],
   "connections": {

@@ -4,6 +4,37 @@
   "active": true,
   "nodes": [
     {
+      "id": "5fb62205c3a4",
+      "name": "Init Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a277bbc4",
+              "name": "correlation_id",
+              "value": "={{ $uuid }}",
+              "type": "string"
+            },
+            {
+              "id": "fc4c5b35",
+              "name": "wf_started_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
+    },
+    {
       "parameters": {
         "httpMethod": "POST",
         "path": "openclaw-fallback",
@@ -118,6 +149,31 @@
         300
       ],
       "typeVersion": 1
+    },
+    {
+      "id": "c47933d4f537",
+      "name": "Log Final Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "caf2a2aa",
+              "name": "log_json",
+              "value": "={\"ts\": $now.toISO(), \"level\": \"info\", \"workflow\": $workflow.name, \"workflow_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id, \"wf_started_at\": $json.wf_started_at, \"duration_ms\": $now.diff($json.wf_started_at, 'milliseconds'), \"success\": $execution.success, \"error\": $json.error ?? null}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
     }
   ],
   "connections": {

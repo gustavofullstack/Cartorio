@@ -1,1 +1,394 @@
-{"updatedAt":"2026-06-23T13:55:40.193Z","createdAt":"2026-06-23T13:55:40.193Z","id":"sDtkfOJ5BA7M73wB","name":"04 - Boas-Vindas + Consentimento LGPD","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{"httpMethod":"POST","path":"boas-vindas","responseMode":"responseNode","options":{}},"id":"webhook-trigger","name":"Webhook Boas-Vindas","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"boas-vindas-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"// Detectar novo vs recorrente + normalizar payload\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst name = body.name || '';\nconst first_interaction = body.first_interaction !== false; // default true\nconst consent = body.consentimento_lgpd === true;\n\n// LGPD art. 7, I: consentimento explicito obrigatorio para primeiro contato\nconst needs_consent = first_interaction && !consent;\n\nreturn { json: {\n  sender,\n  name: name || (first_interaction ? '' : 'cliente'),\n  first_interaction,\n  consent,\n  needs_consent,\n  message_id: body.message_id || `welcome-${sender}-${Date.now()}`,\n  instance: body.instance || 'unknown'\n}};"},"id":"detect-user","name":"Detectar Usuario","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"conditions":{"options":{"caseSensitive":true,"leftValue":"","typeValidation":"strict"},"conditions":[{"id":"needs-consent","leftValue":"={{ $json.needs_consent }}","rightValue":true,"operator":{"type":"boolean","operation":"true","singleValue":true}}],"combinator":"and"},"options":{}},"id":"if-new-user","name":"Primeira interacao?","type":"n8n-nodes-base.if","typeVersion":2,"position":[680,300]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"welcome\",\n  \"type\": \"first_contact\",\n  \"response\": \"Ola! Bem-vindo ao 2o Cartorio de Notas de Uberlandia. 👋\\n\\nAntes de continuarmos, precisamos do seu consentimento explicito para tratar seus dados pessoais conforme a LGPD (Lei 13.709/2018).\\n\\n📋 Finalidades:\\n- Atendimento de servicos cartorarios (escrituras, procurações, certidoes)\\n- Armazenamento de protocolos por 20 anos (prazo legal)\\n- Comunicacao sobre o andamento do seu pedido\\n\\n✅ Para aceitar, responda: ACEITO\\n❌ Para recusar, responda: NAO ACEITO\\n\\nSeu consentimento fica registrado em nossa auditoria interna (hash chain imutavel).\"\n}"},"id":"respond-welcome-new","name":"Welcome Novo Cliente","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"welcome\",\n  \"type\": \"returning_user\",\n  \"response\": \"Ola novamente, {{ $json.name }}! 👋\\n\\nComo posso ajudar hoje?\\n\\n1️⃣ Consultar valor de emolumento\\n2️⃣ Status de protocolo\\n3️⃣ Criar novo protocolo\\n4️⃣ Falar com atendente humano\\n\\nResponda com o numero ou descreva sua necessidade.\",\n  \"consentimento_lgpd\": {{ $json.consent || true }},\n  \"sender\": \"{{ $json.sender }}\"\n}"},"id":"respond-welcome-returning","name":"Welcome Recorrente","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,420]}],"connections":{"Webhook Boas-Vindas":{"main":[[{"node":"Detectar Usuario","type":"main","index":0}]]},"Detectar Usuario":{"main":[[{"node":"Primeira interacao?","type":"main","index":0}]]},"Primeira interacao?":{"main":[[{"node":"Welcome Novo Cliente","type":"main","index":0}],[{"node":"Welcome Recorrente","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","saveExecutionProgress":true,"saveManualExecutions":true,"callerPolicy":"workflowsFromSameOwner"},"staticData":null,"meta":null,"nodeGroups":[],"pinData":null,"versionId":"60c22c45-fcaf-4631-a9b3-5e048b6c9b53","activeVersionId":"60c22c45-fcaf-4631-a9b3-5e048b6c9b53","versionCounter":1,"triggerCount":1,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T13:55:40.193Z","createdAt":"2026-06-23T13:55:40.193Z","role":"workflow:owner","workflowId":"sDtkfOJ5BA7M73wB","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[],"activeVersion":{"updatedAt":"2026-06-23T13:55:40.193Z","createdAt":"2026-06-23T13:55:40.193Z","versionId":"60c22c45-fcaf-4631-a9b3-5e048b6c9b53","workflowId":"sDtkfOJ5BA7M73wB","nodes":[{"parameters":{"httpMethod":"POST","path":"boas-vindas","responseMode":"responseNode","options":{}},"id":"webhook-trigger","name":"Webhook Boas-Vindas","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"boas-vindas-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"// Detectar novo vs recorrente + normalizar payload\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst name = body.name || '';\nconst first_interaction = body.first_interaction !== false; // default true\nconst consent = body.consentimento_lgpd === true;\n\n// LGPD art. 7, I: consentimento explicito obrigatorio para primeiro contato\nconst needs_consent = first_interaction && !consent;\n\nreturn { json: {\n  sender,\n  name: name || (first_interaction ? '' : 'cliente'),\n  first_interaction,\n  consent,\n  needs_consent,\n  message_id: body.message_id || `welcome-${sender}-${Date.now()}`,\n  instance: body.instance || 'unknown'\n}};"},"id":"detect-user","name":"Detectar Usuario","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"conditions":{"options":{"caseSensitive":true,"leftValue":"","typeValidation":"strict"},"conditions":[{"id":"needs-consent","leftValue":"={{ $json.needs_consent }}","rightValue":true,"operator":{"type":"boolean","operation":"true","singleValue":true}}],"combinator":"and"},"options":{}},"id":"if-new-user","name":"Primeira interacao?","type":"n8n-nodes-base.if","typeVersion":2,"position":[680,300]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"welcome\",\n  \"type\": \"first_contact\",\n  \"response\": \"Ola! Bem-vindo ao 2o Cartorio de Notas de Uberlandia. 👋\\n\\nAntes de continuarmos, precisamos do seu consentimento explicito para tratar seus dados pessoais conforme a LGPD (Lei 13.709/2018).\\n\\n📋 Finalidades:\\n- Atendimento de servicos cartorarios (escrituras, procurações, certidoes)\\n- Armazenamento de protocolos por 20 anos (prazo legal)\\n- Comunicacao sobre o andamento do seu pedido\\n\\n✅ Para aceitar, responda: ACEITO\\n❌ Para recusar, responda: NAO ACEITO\\n\\nSeu consentimento fica registrado em nossa auditoria interna (hash chain imutavel).\"\n}"},"id":"respond-welcome-new","name":"Welcome Novo Cliente","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"welcome\",\n  \"type\": \"returning_user\",\n  \"response\": \"Ola novamente, {{ $json.name }}! 👋\\n\\nComo posso ajudar hoje?\\n\\n1️⃣ Consultar valor de emolumento\\n2️⃣ Status de protocolo\\n3️⃣ Criar novo protocolo\\n4️⃣ Falar com atendente humano\\n\\nResponda com o numero ou descreva sua necessidade.\",\n  \"consentimento_lgpd\": {{ $json.consent || true }},\n  \"sender\": \"{{ $json.sender }}\"\n}"},"id":"respond-welcome-returning","name":"Welcome Recorrente","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,420]}],"connections":{"Webhook Boas-Vindas":{"main":[[{"node":"Detectar Usuario","type":"main","index":0}]]},"Detectar Usuario":{"main":[[{"node":"Primeira interacao?","type":"main","index":0}]]},"Primeira interacao?":{"main":[[{"node":"Welcome Novo Cliente","type":"main","index":0}],[{"node":"Welcome Recorrente","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T13:55:40.347Z","id":16,"workflowId":"sDtkfOJ5BA7M73wB","versionId":"60c22c45-fcaf-4631-a9b3-5e048b6c9b53","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "updatedAt": "2026-06-23T13:55:40.193Z",
+  "createdAt": "2026-06-23T13:55:40.193Z",
+  "id": "sDtkfOJ5BA7M73wB",
+  "name": "04 - Boas-Vindas + Consentimento LGPD",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "a6e327898449",
+      "name": "Init Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "02bc828f",
+              "name": "correlation_id",
+              "value": "={{ $uuid }}",
+              "type": "string"
+            },
+            {
+              "id": "1899c68e",
+              "name": "wf_started_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "boas-vindas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Boas-Vindas",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "boas-vindas-v1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Detectar novo vs recorrente + normalizar payload\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst name = body.name || '';\nconst first_interaction = body.first_interaction !== false; // default true\nconst consent = body.consentimento_lgpd === true;\n\n// LGPD art. 7, I: consentimento explicito obrigatorio para primeiro contato\nconst needs_consent = first_interaction && !consent;\n\nreturn { json: {\n  sender,\n  name: name || (first_interaction ? '' : 'cliente'),\n  first_interaction,\n  consent,\n  needs_consent,\n  message_id: body.message_id || `welcome-${sender}-${Date.now()}`,\n  instance: body.instance || 'unknown'\n}};"
+      },
+      "id": "detect-user",
+      "name": "Detectar Usuario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "needs-consent",
+              "leftValue": "={{ $json.needs_consent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-new-user",
+      "name": "Primeira interacao?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"first_contact\",\n  \"response\": \"Ola! Bem-vindo ao 2o Cartorio de Notas de Uberlandia. 👋\\n\\nAntes de continuarmos, precisamos do seu consentimento explicito para tratar seus dados pessoais conforme a LGPD (Lei 13.709/2018).\\n\\n📋 Finalidades:\\n- Atendimento de servicos cartorarios (escrituras, procurações, certidoes)\\n- Armazenamento de protocolos por 20 anos (prazo legal)\\n- Comunicacao sobre o andamento do seu pedido\\n\\n✅ Para aceitar, responda: ACEITO\\n❌ Para recusar, responda: NAO ACEITO\\n\\nSeu consentimento fica registrado em nossa auditoria interna (hash chain imutavel).\"\n}"
+      },
+      "id": "respond-welcome-new",
+      "name": "Welcome Novo Cliente",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"returning_user\",\n  \"response\": \"Ola novamente, {{ $json.name }}! 👋\\n\\nComo posso ajudar hoje?\\n\\n1️⃣ Consultar valor de emolumento\\n2️⃣ Status de protocolo\\n3️⃣ Criar novo protocolo\\n4️⃣ Falar com atendente humano\\n\\nResponda com o numero ou descreva sua necessidade.\",\n  \"consentimento_lgpd\": {{ $json.consent || true }},\n  \"sender\": \"{{ $json.sender }}\"\n}"
+      },
+      "id": "respond-welcome-returning",
+      "name": "Welcome Recorrente",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        900,
+        420
+      ]
+    },
+    {
+      "id": "3a6e1909100b",
+      "name": "Log Final Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eaa3c636",
+              "name": "log_json",
+              "value": "={\"ts\": $now.toISO(), \"level\": \"info\", \"workflow\": $workflow.name, \"workflow_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id, \"wf_started_at\": $json.wf_started_at, \"duration_ms\": $now.diff($json.wf_started_at, 'milliseconds'), \"success\": $execution.success, \"error\": $json.error ?? null}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Boas-Vindas": {
+      "main": [
+        [
+          {
+            "node": "Detectar Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar Usuario": {
+      "main": [
+        [
+          {
+            "node": "Primeira interacao?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Primeira interacao?": {
+      "main": [
+        [
+          {
+            "node": "Welcome Novo Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Welcome Recorrente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "60c22c45-fcaf-4631-a9b3-5e048b6c9b53",
+  "activeVersionId": "60c22c45-fcaf-4631-a9b3-5e048b6c9b53",
+  "versionCounter": 1,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T13:55:40.193Z",
+      "createdAt": "2026-06-23T13:55:40.193Z",
+      "role": "workflow:owner",
+      "workflowId": "sDtkfOJ5BA7M73wB",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-06-23T13:55:40.193Z",
+    "createdAt": "2026-06-23T13:55:40.193Z",
+    "versionId": "60c22c45-fcaf-4631-a9b3-5e048b6c9b53",
+    "workflowId": "sDtkfOJ5BA7M73wB",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "boas-vindas",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-trigger",
+        "name": "Webhook Boas-Vindas",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          240,
+          300
+        ],
+        "webhookId": "boas-vindas-v1"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// Detectar novo vs recorrente + normalizar payload\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst name = body.name || '';\nconst first_interaction = body.first_interaction !== false; // default true\nconst consent = body.consentimento_lgpd === true;\n\n// LGPD art. 7, I: consentimento explicito obrigatorio para primeiro contato\nconst needs_consent = first_interaction && !consent;\n\nreturn { json: {\n  sender,\n  name: name || (first_interaction ? '' : 'cliente'),\n  first_interaction,\n  consent,\n  needs_consent,\n  message_id: body.message_id || `welcome-${sender}-${Date.now()}`,\n  instance: body.instance || 'unknown'\n}};"
+        },
+        "id": "detect-user",
+        "name": "Detectar Usuario",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "needs-consent",
+                "leftValue": "={{ $json.needs_consent }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-new-user",
+        "name": "Primeira interacao?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          680,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"first_contact\",\n  \"response\": \"Ola! Bem-vindo ao 2o Cartorio de Notas de Uberlandia. 👋\\n\\nAntes de continuarmos, precisamos do seu consentimento explicito para tratar seus dados pessoais conforme a LGPD (Lei 13.709/2018).\\n\\n📋 Finalidades:\\n- Atendimento de servicos cartorarios (escrituras, procurações, certidoes)\\n- Armazenamento de protocolos por 20 anos (prazo legal)\\n- Comunicacao sobre o andamento do seu pedido\\n\\n✅ Para aceitar, responda: ACEITO\\n❌ Para recusar, responda: NAO ACEITO\\n\\nSeu consentimento fica registrado em nossa auditoria interna (hash chain imutavel).\"\n}"
+        },
+        "id": "respond-welcome-new",
+        "name": "Welcome Novo Cliente",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          900,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"returning_user\",\n  \"response\": \"Ola novamente, {{ $json.name }}! 👋\\n\\nComo posso ajudar hoje?\\n\\n1️⃣ Consultar valor de emolumento\\n2️⃣ Status de protocolo\\n3️⃣ Criar novo protocolo\\n4️⃣ Falar com atendente humano\\n\\nResponda com o numero ou descreva sua necessidade.\",\n  \"consentimento_lgpd\": {{ $json.consent || true }},\n  \"sender\": \"{{ $json.sender }}\"\n}"
+        },
+        "id": "respond-welcome-returning",
+        "name": "Welcome Recorrente",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          900,
+          420
+        ]
+      }
+    ],
+    "connections": {
+      "Webhook Boas-Vindas": {
+        "main": [
+          [
+            {
+              "node": "Detectar Usuario",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Detectar Usuario": {
+        "main": [
+          [
+            {
+              "node": "Primeira interacao?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Primeira interacao?": {
+        "main": [
+          [
+            {
+              "node": "Welcome Novo Cliente",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Welcome Recorrente",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Gustavo  Rodrigues",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-23T13:55:40.347Z",
+        "id": 16,
+        "workflowId": "sDtkfOJ5BA7M73wB",
+        "versionId": "60c22c45-fcaf-4631-a9b3-5e048b6c9b53",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    ]
+  }
+}
