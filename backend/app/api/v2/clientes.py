@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_cartorio_api_key
 from app.db import get_db
+from app.models.cliente import Cliente
 
 logger = logging.getLogger(__name__)
 

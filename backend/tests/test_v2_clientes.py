@@ -10,10 +10,13 @@ Cobre:
 
 Cursor format: opaque base64 de {id_after: int} (Relay-style).
 Estabilidade: ordering fixo por id garante cursor consistente.
+
+Usa conftest fixtures: db_session (com monkeypatch do engine global).
 """
 from __future__ import annotations
 
 import base64
+import json
 import os
 
 # Set test env BEFORE importing app modules
@@ -29,45 +32,24 @@ from app.config import get_settings  # noqa: E402
 get_settings.cache_clear()
 
 import pytest  # noqa: E402
-from fastapi import FastAPI, Depends  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
-from app.api.deps import require_cartorio_api_key  # noqa: E402
-from app.db import get_engine  # noqa: E402
-from app.models.base import Base  # noqa: E402
 from app.models.cliente import Cliente  # noqa: E402
 from app.api.v2.clientes import router as v2_clientes_router  # noqa: E402
 
 
-# ============================================================================
-# Helpers
-# ============================================================================
-
-
 def _decode_cursor(cursor: str) -> dict:
     """Decodifica cursor opaque (base64 JSON)."""
-    return __import__("json").loads(base64.urlsafe_b64decode(cursor + "==").decode("utf-8"))
-
-
-# ============================================================================
-# Test fixtures
-# ============================================================================
-
-
-@pytest.fixture(autouse=True)
-def setup_db():
-    """Cria schema fresh antes de cada teste."""
-    engine = get_engine()
-    Base.metadata.create_all(engine)
-    yield
-    Base.metadata.drop_all(engine)
+    padded = cursor + "=" * (-len(cursor) % 4)
+    return json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
 
 
 @pytest.fixture
 def app() -> FastAPI:
     test_app = FastAPI()
-    test_app.include_router(v2_clientes_router)
+    test_app.include_router(v2_clientes_router, prefix="/api/v2")
     return test_app
 
 
@@ -82,7 +64,7 @@ def sample_clientes(db_session: Session):
     clientes = []
     for i in range(1, 6):
         c = Cliente(
-            cpf_hash=f"hash_cliente_{i:032d}"[:64],  # 64 chars
+            cpf_hash=f"hash_cliente_{i:032d}"[:64],
             nome=f"Cliente {i}",
             email=f"cliente{i}@example.com",
             consentimento_lgpd=True,
@@ -91,16 +73,9 @@ def sample_clientes(db_session: Session):
         db_session.add(c)
         clientes.append(c)
     db_session.commit()
+    for c in clientes:
+        db_session.refresh(c)
     return clientes
-
-
-# Importante: garantir db_session disponivel
-@pytest.fixture
-def db_session():
-    from app.db import session_scope
-
-    with session_scope() as s:
-        yield s
 
 
 # ============================================================================
@@ -116,14 +91,14 @@ def test_v2_clientes_listar_retorna_primeira_pagina(
         "/api/v2/clientes",
         headers={"X-API-Key": "a" * 64},
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.text
     body = resp.json()
 
     assert "edges" in body
     assert "page_info" in body
     assert len(body["edges"]) == 5
     assert body["page_info"]["has_next_page"] is False
-    assert body["page_info"]["end_cursor"] is None  # unica pagina
+    assert body["page_info"]["end_cursor"] is None
 
 
 def test_v2_clientes_edges_tem_node_e_cursor(
@@ -134,6 +109,7 @@ def test_v2_clientes_edges_tem_node_e_cursor(
         "/api/v2/clientes",
         headers={"X-API-Key": "a" * 64},
     )
+    assert resp.status_code == 200, resp.text
     body = resp.json()
 
     edge = body["edges"][0]
@@ -154,7 +130,7 @@ def test_v2_clientes_cursor_pagination_prime_n_itens(
         "/api/v2/clientes?first=2",
         headers={"X-API-Key": "a" * 64},
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.text
     body = resp.json()
 
     assert len(body["edges"]) == 2
@@ -168,18 +144,17 @@ def test_v2_clientes_cursor_after_retorna_proxima_pagina(
     client: TestClient, sample_clientes
 ) -> None:
     """after=cursor retorna itens APOS o cursor (Relay-style)."""
-    # Pega cursor do item 2
     resp1 = client.get(
         "/api/v2/clientes?first=2",
         headers={"X-API-Key": "a" * 64},
     )
     cursor_2 = resp1.json()["page_info"]["end_cursor"]
 
-    # Pagina 2 usando after
     resp2 = client.get(
         f"/api/v2/clientes?first=2&after={cursor_2}",
         headers={"X-API-Key": "a" * 64},
     )
+    assert resp2.status_code == 200, resp2.text
     body = resp2.json()
 
     assert len(body["edges"]) == 2
@@ -202,6 +177,7 @@ def test_v2_clientes_ultima_pagina_sem_next(
         f"/api/v2/clientes?first=10&after={cursor_4}",
         headers={"X-API-Key": "a" * 64},
     )
+    assert resp2.status_code == 200, resp2.text
     body = resp2.json()
 
     assert len(body["edges"]) == 1
@@ -211,25 +187,21 @@ def test_v2_clientes_ultima_pagina_sem_next(
 
 
 def test_v2_clientes_exclui_encerrados_por_default(
-    client: TestClient, sample_clientes
+    client: TestClient, db_session: Session, sample_clientes
 ) -> None:
     """Clientes com motivo_encerramento setado NAO aparecem (LGPD art. 18 VI)."""
     from datetime import datetime, timezone
 
-    # Marca cliente 3 como encerrado
     cliente_3 = sample_clientes[2]
     cliente_3.motivo_encerramento = "revogacao_consentimento"
     cliente_3.deleted_at = datetime.now(timezone.utc)
-    from app.db import session_scope
-
-    with session_scope() as s:
-        s.merge(cliente_3)
-        s.commit()
+    db_session.commit()
 
     resp = client.get(
         "/api/v2/clientes",
         headers={"X-API-Key": "a" * 64},
     )
+    assert resp.status_code == 200, resp.text
     body = resp.json()
 
     ids = [e["node"]["id"] for e in body["edges"]]
@@ -238,23 +210,21 @@ def test_v2_clientes_exclui_encerrados_por_default(
 
 
 def test_v2_clientes_inclui_encerrados_se_filtro_explicit(
-    client: TestClient, sample_clientes
+    client: TestClient, db_session: Session, sample_clientes
 ) -> None:
     """?include_encerrados=true retorna todos."""
     from datetime import datetime, timezone
-    from app.db import session_scope
 
     cliente_3 = sample_clientes[2]
     cliente_3.motivo_encerramento = "revogacao_consentimento"
     cliente_3.deleted_at = datetime.now(timezone.utc)
-    with session_scope() as s:
-        s.merge(cliente_3)
-        s.commit()
+    db_session.commit()
 
     resp = client.get(
         "/api/v2/clientes?include_encerrados=true",
         headers={"X-API-Key": "a" * 64},
     )
+    assert resp.status_code == 200, resp.text
     body = resp.json()
     assert len(body["edges"]) == 5
 
@@ -273,11 +243,12 @@ def test_v2_clientes_response_nao_expoe_cpf_puro(
         "/api/v2/clientes",
         headers={"X-API-Key": "a" * 64},
     )
+    assert resp.status_code == 200
     body_text = resp.text
 
     # NAO deve conter campo "cpf" (apenas cpf_hash)
     assert '"cpf"' not in body_text
-    assert '"cpf_hash"' in body_text  # hash eh OK
+    assert '"cpf_hash"' in body_text
 
 
 def test_v2_clientes_cursor_e_opaco_base64(
@@ -288,9 +259,9 @@ def test_v2_clientes_cursor_e_opaco_base64(
         "/api/v2/clientes?first=1",
         headers={"X-API-Key": "a" * 64},
     )
+    assert resp.status_code == 200
     cursor = resp.json()["page_info"]["end_cursor"]
 
-    # Decode e verifica estrutura interna {id_after: int}
     decoded = _decode_cursor(cursor)
     assert "id_after" in decoded
     assert isinstance(decoded["id_after"], int)
