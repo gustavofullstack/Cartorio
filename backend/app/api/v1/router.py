@@ -3376,6 +3376,51 @@ async def admin_list_locks(
     }
 
 
+# ============================================================================
+# N8N Workflow Validator (B11)
+# ============================================================================
+
+
+@api_router.get(
+    "/admin/n8n/validate-wfs",
+    tags=["admin"],
+    summary="Valida TODOS os workflows N8N sem subir N8N (B11)",
+    description=(
+        "Roda o N8nWorkflowValidator contra infra/n8n-workflows/*.json. "
+        "Detecta: JSON invalido, nodes sem type, conexoes orfas, HTTP sem URL, "
+        "URLs hardcoded, env vars nao catalogadas. NAO precisa de N8N rodando. "
+        "Requer X-API-Key."
+    ),
+    response_description="Stats agregadas + lista de WFs com errors/warnings.",
+)
+async def admin_validate_n8n_wfs(request: Request) -> dict:
+    """Valida todos os WFs N8N (B11 - sem precisar de N8N rodando)."""
+    from app.services.n8n_workflow_validator import validate_all
+
+    api_key = request.headers.get("x-api-key")
+    if not api_key or api_key != settings.cartorio_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
+        )
+
+    result = validate_all()
+
+    invalid_wfs = [w for w in result["wfs"] if not w["valid"]][:5]
+    warning_wfs = [w for w in result["wfs"] if w["warnings"] and w["valid"]][:5]
+
+    return {
+        "directory": result.get("directory", "?"),
+        "total": result["total"],
+        "valid": result["valid"],
+        "invalid": result["invalid"],
+        "warning": result["warning"],
+        "top_invalid": invalid_wfs,
+        "top_warning": warning_wfs,
+        "n8n_required": False,
+    }
+
+
 @api_router.get(
     "/metrics/prometheus",
     tags=["meta"],
