@@ -136,12 +136,20 @@ class TestE1S1T7WebhookEvolution:
 
     def test_webhook_evolution_messages_upsert_existe_rota(self):
         """POST /api/v1/webhook/evolution endpoint registrado no router."""
-        from app.main import app
+        from app.api.v1 import router
 
-        routes = [r.path for r in app.routes if hasattr(r, "path")]
+        routes = []
+        for route in router.api_router.routes:
+            if hasattr(route, "path"):
+                routes.append(route.path)
+            elif hasattr(route, "routes"):
+                for r in route.routes:
+                    if hasattr(r, "path"):
+                        routes.append(r.path)
+
         match = [p for p in routes if "webhook/evolution" in p]
         assert len(match) > 0, (
-            f"Rota webhook/evolution NAO encontrada. Rotas: {routes[:15]}..."
+            f"Rota webhook/evolution NAO encontrada. Rotas({len(routes)}): {routes[:20]}..."
         )
 
     def test_audit_service_log_existe(self):
