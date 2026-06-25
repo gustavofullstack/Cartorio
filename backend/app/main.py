@@ -21,6 +21,7 @@ from app.services.tracing import init_tracing
 from app.middleware.request_context import RequestContextMiddleware
 from app.middleware.idempotency import IdempotencyMiddleware
 from app.middleware.slow_log import SlowLogMiddleware
+from app.middleware.openapi_validator import install_openapi_validation_middleware
 from app.middleware.problem_details import install_problem_handlers
 from app.services.idempotency_store import RedisIdempotencyStore
 
@@ -213,6 +214,11 @@ app = FastAPI(
 # Converte {"detail": "..."} em application/problem+json estruturado.
 # Ver tests/test_problem_details.py.
 install_problem_handlers(app)
+
+# OpenAPI validation helper (A19 — squad A): expoe schema + validators.
+# Integracao completa (request/response middleware) sera feita em Sprint 5+
+# com spectree. Por enquanto: log de paths/components detectados.
+install_openapi_validation_middleware(app)
 
 app.add_middleware(
     CORSMiddleware,
