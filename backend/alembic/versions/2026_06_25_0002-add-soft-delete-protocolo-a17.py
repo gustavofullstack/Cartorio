@@ -24,7 +24,9 @@ import sqlalchemy as sa
 
 
 revision: str = "2026_06_25_0002"
-down_revision: Union[str, None] = "2026_06_25_0001"
+# 2026-06-25 (cartorio-dev DB audit): swapped com 0001 — A17 soft delete precisa
+# rodar ANTES de A16 mat view porque a view filtra WHERE deleted_at IS NULL.
+down_revision: Union[str, None] = "2026_06_24_0003"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

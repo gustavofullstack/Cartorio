@@ -31,7 +31,9 @@ import sqlalchemy as sa
 
 
 revision: str = "2026_06_25_0001"
-down_revision: Union[str, None] = "2026_06_24_0003"
+# 2026-06-25 (cartorio-dev DB audit): swapped com 0002 — A16 mat view referencia
+# `protocolos.deleted_at` que eh adicionada por A17 soft delete. Chain ordering fix.
+down_revision: Union[str, None] = "2026_06_25_0002"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
