@@ -3371,7 +3371,7 @@ async def admin_list_locks(
 
     return {
         "total_known": len(known_locks),
-        "active_count": sum(1 for l in active if l["locked"]),
+        "active_count": sum(1 for item in active if item["locked"]),
         "locks": active,
     }
 
