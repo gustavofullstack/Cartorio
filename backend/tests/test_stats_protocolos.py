@@ -3,45 +3,32 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy import text
 
 from app.db import get_db
 from app.main import app
-from app.models.base import Base
 
 
-@pytest.fixture(scope="module")
-def test_engine():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    # A17: adicionar coluna deleted_at
-    with engine.connect() as conn:
-        conn.execute(text("ALTER TABLE protocolos ADD COLUMN deleted_at TIMESTAMP NULL"))
-        conn.commit()
-    yield engine
-    Base.metadata.drop_all(engine)
+@pytest.fixture
+def client(db_session):
+    """Cliente FastAPI com DB SQLite isolado.
 
-
-@pytest.fixture(scope="module")
-def test_session_factory(test_engine):
-    return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
-
-
-@pytest.fixture(scope="module")
-def client(test_engine, test_session_factory):
-    """Cliente FastAPI com DB SQLite isolado (module-scoped)."""
-    def _override_get_db():
-        db = test_session_factory()
+    Adiciona coluna deleted_at (A17) na tabela protocolos antes de
+    delegar para o fixture db_session do conftest (que ja tem o isolamento
+    correto da engine global).
+    """
+    with db_session.bind.connect() as conn:
         try:
-            yield db
+            conn.execute(text("ALTER TABLE protocolos ADD COLUMN deleted_at TIMESTAMP NULL"))
+            conn.commit()
+        except Exception:  # coluna ja existe
+            pass
+
+    def _override_get_db():
+        try:
+            yield db_session
         finally:
-            db.close()
+            pass
 
     app.dependency_overrides[get_db] = _override_get_db
     with TestClient(app) as c:

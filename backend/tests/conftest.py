@@ -45,21 +45,34 @@ from app.models import (  # noqa: E402,F401
 
 
 @pytest.fixture
-def db_session() -> Iterator[Session]:
-    """SQLite in-memory DB pra testes. Cada teste comeca vazio."""
-    engine = create_engine(
+def db_session(monkeypatch) -> Iterator[Session]:
+    """SQLite in-memory DB pra testes. Cada teste comeca vazio.
+
+    Redireciona a engine global (app.db.engine) para esta engine via
+    monkeypatch, garantindo que o lifespan da app + AuditService vejam
+    as mesmas tabelas criadas aqui (sem isso, lifespan roda em conexao
+    1 e AuditService em conexao 2 -> "no such table: audit_log").
+    """
+    from app.db import SessionLocal as GlobalSessionLocal  # noqa: PLC0415
+    from app.db import engine as global_engine  # noqa: PLC0415
+
+    eng = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    Base.metadata.create_all(eng)
+    SessionLocal = sessionmaker(bind=eng, autoflush=False, autocommit=False, expire_on_commit=False)
     session = SessionLocal()
+    # Redireciona a engine global para a engine deste teste
+    monkeypatch.setattr(global_engine, "pool", eng.pool)
+    # Redireciona o SessionLocal global para criar sessoes nesta engine
+    monkeypatch.setattr(GlobalSessionLocal, "kw", {"bind": eng, "autoflush": False, "autocommit": False, "expire_on_commit": False})
     try:
         yield session
     finally:
         session.close()
-        Base.metadata.drop_all(engine)
+        Base.metadata.drop_all(eng)
 
 
 @pytest.fixture
