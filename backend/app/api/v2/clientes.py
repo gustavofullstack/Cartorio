@@ -13,8 +13,6 @@ Referencia: docs/api-v1-to-v2-migration.md (A24.6).
 """
 from __future__ import annotations
 
-import base64
-import json
 import logging
 from typing import Annotated, Any
 
@@ -26,6 +24,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_cartorio_api_key
 from app.db import get_db
 from app.models.cliente import Cliente
+from app.services.cursor import decode_cursor_safe, encode_cursor
 
 logger = logging.getLogger(__name__)
 
@@ -70,15 +69,15 @@ class ClientesV2Response(BaseModel):
 
 
 def _encode_cursor(id_after: int) -> str:
-    """Codifica cursor opaque base64 (Relay-style)."""
-    payload = json.dumps({"id_after": id_after}).encode("utf-8")
-    return base64.urlsafe_b64encode(payload).decode("utf-8").rstrip("=")
+    """DEPRECATED: usa app.services.cursor.encode_cursor."""
+    return encode_cursor({"id_after": id_after})
 
 
 def _decode_cursor(cursor: str) -> dict[str, Any]:
-    """Decodifica cursor opaque (usado em testes)."""
-    padded = cursor + "=" * (-len(cursor) % 4)
-    return json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
+    """DEPRECATED: usa app.services.cursor.decode_cursor."""
+    from app.services.cursor import decode_cursor
+
+    return decode_cursor(cursor)
 
 
 # ============================================================================
@@ -116,13 +115,9 @@ async def listar_clientes_v2(
 
     # Cursor pagination: WHERE id > {decoded.id_after}
     if after:
-        try:
-            decoded = _decode_cursor(after)
-            id_after = int(decoded["id_after"])
+        id_after = decode_cursor_safe(after, "id_after")
+        if id_after is not None:
             stmt = stmt.where(Cliente.id > id_after)
-        except (ValueError, KeyError, json.JSONDecodeError) as e:
-            logger.warning("v2 clientes: cursor invalido '%s': %s", after, e)
-            # Cursor invalido = retorna primeira pagina (fail-soft, nao 400)
 
     # Limita a first+1 para detectar has_next_page
     stmt = stmt.limit(first + 1)

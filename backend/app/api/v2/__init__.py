@@ -27,11 +27,13 @@ from fastapi import APIRouter
 
 # Routers v2 (cada modulo exporta seu proprio router com prefix)
 from app.api.v2.clientes import router as clientes_v2_router
+from app.api.v2.protocolos import router as protocolos_v2_router
 
 api_v2_router = APIRouter()
 
 # Inclui sub-routers
 api_v2_router.include_router(clientes_v2_router)
+api_v2_router.include_router(protocolos_v2_router)
 
 
 @api_v2_router.get(
