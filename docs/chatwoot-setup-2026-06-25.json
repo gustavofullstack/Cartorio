@@ -1,0 +1,138 @@
+{
+  "$schema": "https://cartorio.com/schemas/chatwoot-setup-v1.json",
+  "version": "1.0.0",
+  "updated_at": "2026-06-25",
+  "purpose": "SQUAD H - setup completo do Chatwoot CRM para Cartorio 2o Notas. Cobre H1-H8: Evolution API inbox, custom attributes, handoff macros, canned responses, labels, reports, automations, bot handoff.",
+
+  "H1_evolution_inbox": {
+    "description": "Conectar Evolution API ao Chatwoot como inbox WhatsApp",
+    "steps": [
+      "1. Acesse Chatwoot admin: https://chat.2notasudi.com.br (interno via Tailscale)",
+      "2. Settings -> Inboxes -> Add Inbox -> WhatsApp",
+      "3. Provider: 'WhatsApp Business' (NAO use 'Evolution' direto, use API)",
+      "4. Endpoint: https://whatsapp.2notasudi.com.br",
+      "5. API Key: a mesma EVOLUTION_API_KEY (do backend/.env)",
+      "6. Instance: cartorio-2notas",
+      "7. Webhook URL que o Chatwoot vai expor: https://chat.2notasudi.com.br/webhook/whatsapp/<inbox_id>",
+      "8. Configure a Evolution API para POST eventos para esse webhook URL",
+      "9. Test: enviar msg WhatsApp para o numero pareado -> aparece no Chatwoot"
+    ],
+    "validation": "GET /api/v1/health/integracoes -> evolution.status=online",
+    "lgpd": "Mensagens WhatsApp contem PII. RLS no Supabase + audit_log obrigatorio"
+  },
+
+  "H2_custom_attributes": {
+    "description": "Custom attributes no Chatwoot para enriquecer contato/conversa com dados do cartorio",
+    "attributes": [
+      {"name": "cpf_cnpj_hash", "type": "text", "model": "contact", "description": "SHA-256 do CPF/CNPJ (LGPD - nunca guardar plain)"},
+      {"name": "protocolo_id", "type": "number", "model": "conversation", "description": "FK para tabela protocolos no Supabase"},
+      {"name": "emolumento_total_centavos", "type": "number", "model": "conversation", "description": "Total em centavos (LGPD-safe)"},
+      {"name": "lgpd_consent_granted", "type": "checkbox", "model": "contact", "description": "true se cliente consentiu tratamento (LGPD art. 7 I)"},
+      {"name": "lgpd_consent_at", "type": "date", "model": "contact", "description": "ISO timestamp do consent"},
+      {"name": "servico_interesse", "type": "list", "model": "conversation", "description": "reconhecimento_firma|autenticacao|escritura_compra_venda|escritura_doacao|procuracao|divorcio_extra|inventario_extra|apostilamento|testamento|ata_notarial|usucapiao|segunda_via|consulta|outro"},
+      {"name": "canal_origem", "type": "list", "model": "contact", "description": "whatsapp|telegram|web|telefone|presencial"},
+      {"name": "agente_ia_pausado", "type": "checkbox", "model": "conversation", "description": "true se agente IA foi pausado para humano assumir"}
+    ],
+    "creation_steps": [
+      "Chatwoot admin -> Settings -> Custom Attributes -> Add",
+      "Para cada attribute acima, criar com tipo correto",
+      "API: POST /api/v1/accounts/{account_id}/custom_attribute_definitions",
+      "Setar valor: POST /api/v1/accounts/{account_id}/contacts/{id}/custom_attributes"
+    ]
+  },
+
+  "H3_handoff_macros": {
+    "description": "Macros para handoff humano (pausar agente IA + transferir)",
+    "macros": [
+      {"id": "M-H01", "name": "Pausar agente IA", "actions": ["POST /api/v1/accounts/{id}/conversations/{cid}/toggle status=resolved"]},
+      {"id": "M-H02", "name": "Reabrir com agente IA", "actions": ["POST /api/v1/accounts/{id}/conversations/{cid}/toggle status=open"]},
+      {"id": "M-H03", "name": "Atribuir a escrevente", "actions": ["POST /api/v1/accounts/{id}/conversations/{cid}/assignments {agent_id}"]},
+      {"id": "M-H04", "name": "Adicionar label juridico", "actions": ["POST /api/v1/accounts/{id}/conversations/{cid}/labels {label_ids: ['juridico']}"]},
+      {"id": "M-H05", "name": "Adicionar label LGPD-pendente", "actions": ["POST /api/v1/accounts/{id}/conversations/{cid}/labels {label_ids: ['lgpd-pendente']}"]},
+      {"id": "M-H06", "name": "Escalar supervisor", "actions": ["POST /api/v1/accounts/{id}/conversations/{cid}/assignments {team_id: supervisor}"]},
+      {"id": "M-H07", "name": "Aplicar macro + nota privada", "actions": ["POST .../messages {content: 'Contexto: ...', private: true}"]},
+      {"id": "M-H08", "name": "Marcar como resolvido", "actions": ["POST .../conversations/{cid}/toggle status=resolved"]},
+      {"id": "M-H09", "name": "Snooze 1h", "actions": ["POST .../conversations/{cid}/snooze {snoozed_until: now+1h}"]},
+      {"id": "M-H10", "name": "Transferir para setor", "actions": ["POST .../conversations/{cid}/assignments {team_id: <setor>}"]}
+    ],
+    "implementation": "Macros podem ser executados via N8N WF 03-handoff-human ou diretamente pela UI do Chatwoot"
+  },
+
+  "H4_canned_responses": {
+    "description": "52 canned responses (R01-R52) ja criadas em docs/canned-responses-chatwoot.json",
+    "import_steps": [
+      "Chatwoot admin -> Settings -> Canned Responses",
+      "Para cada R01-R52 em docs/canned-responses-chatwoot.json:",
+      "  - Adicionar manualmente (UI) ou",
+      "  - Importar via API: POST /api/v1/accounts/{id}/canned_responses"
+    ],
+    "categories": ["saudacao", "info", "servico", "valor", "agendamento", "feedback", "juridico", "restricao", "lgpd", "acessibilidade", "protocolo", "transfer"]
+  },
+
+  "H5_labels": {
+    "description": "Labels para classificar conversas (filtros e reports)",
+    "labels": [
+      {"name": "novo", "color": "#7c3aed", "description": "Primeira interacao"},
+      {"name": "protocolo", "color": "#0891b2", "description": "Conversa sobre protocolo especifico"},
+      {"name": "emolumento", "color": "#ea580c", "description": "Discussao de valores"},
+      {"name": "documento", "color": "#16a34a", "description": "Cliente precisa de documento"},
+      {"name": "concluido", "color": "#22c55e", "description": "Atendimento finalizado"},
+      {"name": "pausado", "color": "#64748b", "description": "Agente IA pausado, humano assumiu"},
+      {"name": "urgente", "color": "#ef4444", "description": "Requer atencao imediata"},
+      {"name": "lgpd-pendente", "color": "#be185d", "description": "Aguardando consentimento"},
+      {"name": "lead-frio", "color": "#475569", "description": "Sem caso definido"},
+      {"name": "vip", "color": "#ca8a04", "description": "Cliente prioritario"}
+    ],
+    "creation_steps": [
+      "Chatwoot admin -> Settings -> Labels -> Add",
+      "Para cada label acima, criar com cor hex"
+    ]
+  },
+
+  "H6_reports": {
+    "description": "5 reports para acompanhamento",
+    "reports": [
+      {"id": "R-ATEND", "name": "Atendimentos por dia", "metric": "conversations.count", "group_by": "day", "filter": "channel=whatsapp OR channel=telegram", "frequency": "daily 09:00"},
+      {"id": "R-CONV", "name": "Taxa de conversao", "metric": "(conversations.resolved / conversations.opened) * 100", "group_by": "week", "frequency": "weekly monday"},
+      {"id": "R-LGPD", "name": "LGPD consents", "metric": "contacts.lgpd_consent_granted.count", "group_by": "month", "frequency": "monthly 1st"},
+      {"id": "R-NPS", "name": "NPS medio", "metric": "avg(csat_score) where csat_given=true", "group_by": "month", "frequency": "monthly 1st"},
+      {"id": "R-TMA", "name": "Tempo medio atendimento", "metric": "avg(conversation.first_reply_at - conversation.created_at)", "group_by": "day", "frequency": "daily 18:00"}
+    ],
+    "implementation": "Chatwoot Reports (Settings -> Reports) + 5 dashboards custom"
+  },
+
+  "H7_automations": {
+    "description": "Automations para SLAs e consistência",
+    "automations": [
+      {"id": "A-SLA-FR", "trigger": "conversation.created AND first_reply_at IS NULL AND now-created_at > 5min", "action": "send_template T11 (lembrete SLA)", "owner": "escrevente_oncall"},
+      {"id": "A-SLA-RES", "trigger": "conversation.created AND status=open AND now-created_at > 24h", "action": "label adicionar 'urgente' + assign supervisor", "owner": "supervisor"},
+      {"id": "A-LGPD-REQ", "trigger": "conversation.created AND contact.lgpd_consent_granted=false", "action": "send_message R28 (LGPD consent) + label 'lgpd-pendente'", "owner": "agente_ia"},
+      {"id": "A-AGENT-PAUSE", "trigger": "message.incoming AND content matches /^(atendente|humano|reclamação)/i", "action": "macro M-H01 (pausar agente IA)", "owner": "agente_ia"},
+      {"id": "A-AGENT-RESUME", "trigger": "conversation.resolved", "action": "macro M-H02 (reabrir com agente IA)", "owner": "sistema"}
+    ]
+  },
+
+  "H8_bot_handoff_1click": {
+    "description": "Botao 1-click no Chatwoot para humano pausar agente IA",
+    "implementation": [
+      "1. Adicionar custom button no Chatwoot UI (via plugin chatwoot/custom-handoff)",
+      "2. Click -> POST /api/v1/accounts/{id}/conversations/{cid}/toggle status=resolved (pausa agente IA)",
+      "3. Click -> POST /api/v1/accounts/{id}/conversations/{cid}/assignments {team_id: escreventes}",
+      "4. Click -> POST /api/v1/accounts/{id}/conversations/{cid}/messages {content: 'Agente pausado. Humano assumiu.', private: false}",
+      "5. Click -> Adiciona label 'pausado' (H5)"
+    ],
+    "endpoint_central": "POST /api/v1/chatwoot/conversations/{id}/handoff (no backend FastAPI)",
+    "auth": "X-API-Key"
+  },
+
+  "metadata": {
+    "total_setup_steps": 50,
+    "lgpd_compliance": "Todas as mensagens passam por PII sanitizer antes de persistir (backend/app/services/pii.py). Audit log obrigatorio.",
+    "validators": [
+      "GET /api/v1/health/integracoes -> evolution.status=online, chatwoot.status=online",
+      "POST /api/v1/telegram/webhook/info -> 200 OK",
+      "Chatwoot: Settings -> Inboxes -> cartorio-2notas 'connected'",
+      "Evolution: POST /instance/connectionState/cartorio-2notas -> state=open"
+    ]
+  }
+}
