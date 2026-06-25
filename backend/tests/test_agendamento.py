@@ -289,3 +289,210 @@ def test_api_cancelar_agendamento(client, test_session, cliente_test):
     assert cancel_response.status_code == 200
     data = cancel_response.json()
     assert data["status"] == "cancelado"
+
+
+# ============================================================================
+# Testes de cobertura para métodos não testados
+# ============================================================================
+
+
+def test_cancelar_agendamento_nao_encontrado(test_session):
+    """cancelar_agendamento levanta ValueError se agendamento não existe."""
+    from app.services.agendamento import AgendamentoService
+
+    with pytest.raises(ValueError, match="não encontrado"):
+        AgendamentoService.cancelar_agendamento(test_session, 99999)
+
+
+def test_cancelar_agendamento_status_invalido(test_session, cliente_test):
+    """cancelar_agendamento levanta ValueError se status não permite cancelamento."""
+    from app.models.agendamento import StatusAgendamento
+    from app.services.agendamento import AgendamentoService
+
+    import datetime
+    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+
+    from app.models.agendamento import TipoAtendimento
+
+    agendamento = AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora,
+        titulo="Confirmar teste",
+        tipo=TipoAtendimento.NORMAL,
+        duration_minutes=30,
+    )
+
+    # Cancela primeiro (muda status para CANCELADO)
+    AgendamentoService.cancelar_agendamento(test_session, agendamento.id)
+
+    # Tentar cancelar novamente deve falhar (status já CANCELADO)
+    with pytest.raises(ValueError, match="não pode ser cancelado"):
+        AgendamentoService.cancelar_agendamento(test_session, agendamento.id)
+
+
+def test_confirmar_agendamento_sucesso(test_session, cliente_test):
+    """confirmar_agendamento confirma agendamento com status AGENDADO."""
+    from app.services.agendamento import AgendamentoService
+    from app.models.agendamento import StatusAgendamento
+
+    import datetime
+    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+
+    agendamento = AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora,
+        titulo="Confirmar teste",
+        tipo=TipoAtendimento.NORMAL,
+        duration_minutes=30,
+    )
+
+    confirmado = AgendamentoService.confirmar_agendamento(test_session, agendamento.id)
+    assert confirmado.status == StatusAgendamento.CONFIRMADO
+
+
+def test_confirmar_agendamento_nao_encontrado(test_session):
+    """confirmar_agendamento levanta ValueError se agendamento não existe."""
+    from app.services.agendamento import AgendamentoService
+
+    with pytest.raises(ValueError, match="não encontrado"):
+        AgendamentoService.confirmar_agendamento(test_session, 99999)
+
+
+def test_confirmar_agendamento_status_invalido(test_session, cliente_test):
+    """confirmar_agendamento levanta ValueError se status não é AGENDADO."""
+    from app.services.agendamento import AgendamentoService
+    from app.models.agendamento import StatusAgendamento
+
+    import datetime
+    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+
+    agendamento = AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora,
+        titulo="Confirmar status invalido",
+        tipo=TipoAtendimento.NORMAL,
+        duration_minutes=30,
+    )
+
+    # Cancela primeiro — status CANCELADO, não pode ser confirmado
+    AgendamentoService.cancelar_agendamento(test_session, agendamento.id)
+
+    with pytest.raises(ValueError, match="não pode ser confirmado"):
+        AgendamentoService.confirmar_agendamento(test_session, agendamento.id)
+
+
+def test_listar_agendamentos_data(test_session, cliente_test):
+    """listar_agendamentos_data retorna agendamentos de uma data específica."""
+    import datetime
+    data_alvo = datetime.date(2026, 7, 15)
+
+    # Cria agendamento no dia alvo
+    agendamento = AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=datetime.datetime(2026, 7, 15, 10, 0, 0, tzinfo=datetime.timezone.utc),
+        titulo="Agendamento no dia",
+        tipo=TipoAtendimento.NORMAL,
+        duration_minutes=30,
+    )
+
+    # Cria agendamento em outro dia (não deve aparecer)
+    AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=datetime.datetime(2026, 7, 16, 14, 0, 0, tzinfo=datetime.timezone.utc),
+        titulo="Agendamento outro dia",
+        tipo=TipoAtendimento.NORMAL,
+        duration_minutes=30,
+    )
+
+    resultados = AgendamentoService.listar_agendamentos_data(test_session, data_alvo)
+
+    assert len(resultados) == 1
+    assert resultados[0].id == agendamento.id
+    assert resultados[0].titulo == "Agendamento no dia"
+
+
+def test_listar_agendamentos_data_com_filtro_local(test_session, cliente_test):
+    """listar_agendamentos_data filtra por local quando especificado."""
+    import datetime
+    data_alvo = datetime.date(2026, 7, 20)
+
+    AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=datetime.datetime(2026, 7, 20, 10, 0, 0, tzinfo=datetime.timezone.utc),
+        titulo="Balcao 1",
+        tipo=TipoAtendimento.NORMAL,
+        local="balcao_1",
+        duration_minutes=30,
+    )
+
+    AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=datetime.datetime(2026, 7, 20, 11, 0, 0, tzinfo=datetime.timezone.utc),
+        titulo="Sala reuniao",
+        tipo=TipoAtendimento.NORMAL,
+        local="sala_2",
+        duration_minutes=30,
+    )
+
+    resultados = AgendamentoService.listar_agendamentos_data(
+        test_session, data_alvo, local="balcao_1"
+    )
+
+    assert len(resultados) == 1
+    assert resultados[0].titulo == "Balcao 1"
+
+
+def test_listar_agendamentos_data_vazio(test_session):
+    """listar_agendamentos_data retorna lista vazia se não há agendamentos na data."""
+    import datetime
+    resultados = AgendamentoService.listar_agendamentos_data(
+        test_session, datetime.date(2026, 12, 25)
+    )
+    assert resultados == []
+
+
+def test_listar_agendamentos_pendentes_sem_cache(test_session, cliente_test):
+    """listar_agendamentos_pendentes retorna agendamentos com status AGENDADO."""
+    import datetime
+    AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=datetime.datetime(2026, 8, 1, 9, 0, 0, tzinfo=datetime.timezone.utc),
+        titulo="Pendente 1",
+        tipo=TipoAtendimento.NORMAL,
+        duration_minutes=30,
+    )
+
+    from unittest.mock import patch
+    with patch("app.services.agendamento_cache.get_agendamentos_pendentes_cached", return_value=None):
+        with patch("app.services.agendamento_cache.set_agendamentos_pendentes_cached"):
+            pendentes = AgendamentoService.listar_agendamentos_pendentes(test_session)
+
+    assert len(pendentes) >= 1
+    assert pendentes[0]["titulo"] == "Pendente 1"
+
+
+def test_listar_agendamentos_proximos_vazio(test_session):
+    """listar_agendamentos_proximos retorna lista vazia sem agendamentos."""
+
+    from unittest.mock import patch
+    with patch("app.services.agendamento_cache.get_agendamentos_proximos_cached", return_value=None):
+        with patch("app.services.agendamento_cache.set_agendamentos_proximos_cached"):
+            proximos = AgendamentoService.listar_agendamentos_proximos(test_session)
+
+    assert proximos == []
