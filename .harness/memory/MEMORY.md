@@ -1569,3 +1569,49 @@ Gustavo pediu continuidade. Mandei o prompt cartorio + 100 tasks. Sprint focada 
 - Smoke test E2E 401/401/200
 
 Modified by Pietra/Mavis - 2026-06-25 01:00 BRT
+
+### Tick 2026-06-25 01:25 BRT — D0.3 ✅ + cartorio_api service env drift bug + smoke test 401/401/200
+
+- **D0.3** ✅ FINISHED 01:02 BRT (commit 2cb4897) — GET /cliente/{id} LGPD-safe
+- **Bug crítico encontrado**: docker service update --env-add CARTORIO_API_KEY aplicado por E0.AUTH **NÃO PERSISTIU** no cartorio_api service após rebuild do Easypanel. Container failed restart 2x com `cartorio_api_key: Field required`. Issue: rebuild pelo Easypanel talvez sobrescreve spec do service.
+- **Fix aplicado manualmente**: `docker service update --env-add CARTORIO_API_KEY=dffe2d... cartorio_api`. Container UP healthy após 30s.
+- **Smoke test E2E D0.3 ✅✅✅**: NO AUTH 401 UNAUTHORIZED, WRONG AUTH 401 UNAUTHORIZED, CORRECT AUTH 200 com cliente LGPD-safe (apenas hash, ZERO PII puro).
+- **Lesson 103 (CRÍTICA)**: Cartorio service spec drift após Easypanel rebuild. SEMPRE validar `docker service inspect cartorio_api --format '{{.Spec.TaskTemplate.ContainerSpec.Env}}'` após cada push + rebuild. Se env var sumiu, reaplicar manualmente.
+
+### Próximos (pipeline 1-2 agents)
+- A13 cartorio-dev: Dead man's switch audit_log >1h
+- D0.2 cartorio-dev: POST /audit/log
+- OpenClaw cartorio-zcode: thinking+1M+skills
+- B06 cartorio-n8n: Error handler global
+
+Modified by Pietra/Mavis - 2026-06-25 01:25 BRT
+
+### Tick 2026-06-25 01:30 BRT — D0.3a pode_deletar field done + Working tree cross-coord
+
+- **D0.3a** ✅ FINISHED — `pode_deletar: bool` adicionado ao `ClienteHistoricoResponse`
+  (GET /api/v1/cliente/{id}/historico). Logica: `cliente.motivo_encerramento is None`.
+  WF 23 IF "Pode Deletar?" agora recebe `$json.pode_deletar` corretamente.
+- **TDD canonico**: 2 testes (ativo=true, encerrado=false) escritos PRIMEIRO (red),
+  implementacao DEPOIS (green). pytest 9/9 passou, 771 total (+2 vs baseline 769).
+- **LGPD by design**: pode_deletar derivado de `motivo_encerramento` (campo de soft
+  delete que ja existe no Cliente model desde Sprint 2). ZERO hard delete, ZERO
+  novo audit log entry — apenas exposicao de estado ja persistido.
+- **Coverage**: 85.47% global (vs baseline 85.61% — variacao < 0.2%, NAO regressao).
+  Endpoint /cliente/{id}/historico 100% coberto (9 testes).
+- **Cross-coord mid-session**: working tree no git stash pop mostrou arquivos
+  NAO meus (audit.py +101/-1, audit_create.py novo, MEMORY.md) — trabalho
+  paralelo do Pietra em D0.2 (POST /audit/log). Confirmado por `git diff --stat`
+  + `git stash` round-trip. NAO comitei arquivos nao-meus (Lesson 4/5/6).
+
+**Lesson 104 (canon)**: Quando briefing D0.3a (adicionar field X) gera conflito
+aparente com instrucoes paralelas (implementar DELETE com audit+idempotencia),
+o escopo he o briefing, NAO a expansao. DELETE /cliente/{id} continua DEBITO
+Sprint 3 Goal #4.2 — task separada, com seu proprio briefing.
+
+**Lesson 105 (canon)**: Working tree cross-coord com `git stash` round-trip he
+o jeito mais confiavel de confirmar ownership de mudanca pre-existente.
+Sintoma classico de peer auto-edit (Lesson 12): pytest collection OK com
+master stash mas working tree quebra. Reverte com `git checkout master -- <file>`
+e re-aplica SO seu bloco.
+
+Modified by Gustavo Almeida
