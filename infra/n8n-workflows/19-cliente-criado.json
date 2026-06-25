@@ -126,7 +126,10 @@
       "position": [
         900,
         200
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -173,7 +176,10 @@
       "position": [
         900,
         400
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     }
   ],
   "connections": {

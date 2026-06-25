@@ -14,7 +14,10 @@
       "name": "Webhook Telegram",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "telegram-cartoriobot-v1"
     },
     {
@@ -26,18 +29,27 @@
       "name": "Extract Telegram fields",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {"caseSensitive": true, "typeValidation": "strict"},
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "is-bot",
               "leftValue": "={{ $json.is_bot_message }}",
               "rightValue": true,
-              "operator": {"type": "boolean", "operation": "equal"}
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
             }
           ],
           "combinator": "and"
@@ -47,7 +59,10 @@
       "name": "Mensagem de bot?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 200]
+      "position": [
+        680,
+        200
+      ]
     },
     {
       "parameters": {
@@ -56,21 +71,38 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"},
-            {"name": "Content-Type", "value": "application/json"},
-            {"name": "X-Canal", "value": "telegram"}
+            {
+              "name": "apikey",
+              "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Canal",
+              "value": "telegram"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"message\": \"Voce eh o assistente do 2o Servico Notarial de Uberlandia. Responda em portugues, tom cordial, maximo 3 paragrafos. Mensagem do cliente (com PII ja redacted): {{ $json.text }}\",\n  \"model\": \"deepseek-v4-flash\",\n  \"temperature\": 0.3,\n  \"consent_granted\": true,\n  \"actor_id\": \"telegram:{{ $json.from_user.id }}\"\n}",
-        "options": {"timeout": 30000}
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "llm-deepseek",
       "name": "LLM: deepseek-v4-flash",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -79,26 +111,49 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "Content-Type", "value": "application/json"}
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            {"name": "chat_id", "value": "={{ $('Extract Telegram fields').first().json.chat_id }}"},
-            {"name": "text", "value": "={{ $json.response }}"},
-            {"name": "parse_mode", "value": "Markdown"},
-            {"name": "reply_to_message_id", "value": "={{ $('Extract Telegram fields').first().json.message_id }}"}
+            {
+              "name": "chat_id",
+              "value": "={{ $('Extract Telegram fields').first().json.chat_id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.response }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "Markdown"
+            },
+            {
+              "name": "reply_to_message_id",
+              "value": "={{ $('Extract Telegram fields').first().json.message_id }}"
+            }
           ]
         },
-        "options": {"timeout": 15000}
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "send-telegram",
       "name": "Telegram: sendMessage",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -107,19 +162,30 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {"name": "apikey", "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"}
+            {
+              "name": "apikey",
+              "value": "084c39fb5c18f7d0f9cfb1cb7ee3ffa9716d199346bb11555b67f6929ff36239"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "{}",
-        "options": {"timeout": 10000}
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "audit-log",
       "name": "Audit chain verify",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -130,39 +196,84 @@
       "name": "Respond OK (200)",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1560, 300]
+      "position": [
+        1560,
+        300
+      ]
     }
   ],
   "connections": {
     "Webhook Telegram": {
       "main": [
-        [{"node": "Extract Telegram fields", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Extract Telegram fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Extract Telegram fields": {
       "main": [
-        [{"node": "Mensagem de bot?", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Mensagem de bot?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Mensagem de bot?": {
       "main": [
-        [{"node": "Respond OK (200)", "type": "main", "index": 0}],
-        [{"node": "LLM: deepseek-v4-flash", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Respond OK (200)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LLM: deepseek-v4-flash",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "LLM: deepseek-v4-flash": {
       "main": [
-        [{"node": "Telegram: sendMessage", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Telegram: sendMessage",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Telegram: sendMessage": {
       "main": [
-        [{"node": "Audit chain verify", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Audit chain verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Audit chain verify": {
       "main": [
-        [{"node": "Respond OK (200)", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Respond OK (200)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -171,9 +282,15 @@
     "callerPolicy": "workflowsFromSameOwner"
   },
   "tags": [
-    {"name": "telegram"},
-    {"name": "test"},
-    {"name": "cartoriobot"}
+    {
+      "name": "telegram"
+    },
+    {
+      "name": "test"
+    },
+    {
+      "name": "cartoriobot"
+    }
   ],
   "meta": null
 }

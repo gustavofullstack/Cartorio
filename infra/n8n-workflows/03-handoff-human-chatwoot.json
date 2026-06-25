@@ -79,7 +79,10 @@
       "position": [
         680,
         300
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -126,7 +129,10 @@
       "position": [
         900,
         300
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {

@@ -54,7 +54,10 @@
         460,
         300
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     }
   ],
   "connections": {

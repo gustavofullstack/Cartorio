@@ -1,1 +1,954 @@
-{"updatedAt":"2026-06-23T16:23:03.402Z","createdAt":"2026-06-23T16:23:03.402Z","id":"5ABAZCQVRLd7AmM5","name":"11 - Monitor Cartório","description":null,"active":true,"isArchived":false,"nodes":[{"id":"7ca41b9c-9517-47eb-8c9c-327071949e74","name":"POST /monitor-cartorio","type":"n8n-nodes-base.webhook","typeVersion":2.1,"position":[0,480],"parameters":{"httpMethod":"POST","path":"monitor-cartorio","responseMode":"responseNode","options":{}},"webhookId":"668396b2-f6ad-40c1-8f96-8c086e5e3821"},{"id":"c69e10a4-9147-405d-a414-8c17d5e18381","name":"Check API","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,0],"parameters":{"method":"GET","url":"https://api.2notasudi.com.br/health","options":{"timeout":5000}}},{"id":"55724f61-7f4e-4cae-8ecd-e7d6c9c2c91a","name":"Combine Results","type":"n8n-nodes-base.merge","typeVersion":3.2,"position":[448,512],"parameters":{"mode":"append","numberInputs":6}},{"id":"57701e1b-c4c3-48ba-9535-511282202522","name":"Check Evolution","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,192],"parameters":{"method":"GET","url":"https://whatsapp.2notasudi.com.br/","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"6a8eedfd-805a-45e2-8b7c-dcb33b0a55f7","name":"Check OpenClaw","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,384],"parameters":{"method":"GET","url":"https://agent.2notasudi.com.br/health","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"3924a4d9-7365-4453-8a72-99b64ec58366","name":"Check Supabase","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,576],"parameters":{"method":"GET","url":"https://supbase.2notasudi.com.br/auth/v1/health","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"08853511-2d31-4765-b46f-844c0d48c2cb","name":"Check Chatwoot","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,768],"parameters":{"method":"GET","url":"https://api.2notasudi.com.br/health","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"6635f0d1-2367-4839-a3ac-5fe1c04ae19d","name":"Check Redis","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,960],"parameters":{"method":"GET","url":"https://api.2notasudi.com.br/health","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"5c957fbd-dd29-4d90-ab76-6a199f7e40c9","name":"Has outage?","type":"n8n-nodes-base.if","typeVersion":2.2,"position":[672,576],"parameters":{"conditions":{"options":{"caseSensitive":true,"leftValue":"","typeValidation":"loose"},"conditions":[{"leftValue":"={{ $json.status }}","operator":{"type":"string","operation":"equals"},"rightValue":"down"}],"combinator":"and"}}},{"id":"08b393ab-5354-44b6-a290-eb3b4a2f531b","name":"Format Alert","type":"n8n-nodes-base.set","typeVersion":3.4,"position":[896,512],"parameters":{"mode":"manual","includeOtherFields":true,"assignments":{"assignments":[{"id":"alert_text","name":"alert_text","value":"=Cartório 2º Notas — Alerta de Saúde. Verifique o dashboard. Timestamp: {{ $now.toISO() }}","type":"string"}]}}},{"id":"25bdaf2d-1ff1-452d-8b1f-da0afe9afc20","name":"Send Chatwoot Alert","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[1120,512],"parameters":{"method":"POST","url":"https://chat.2notasudi.com.br/api/v1/accounts/1/conversations","sendHeaders":true,"headerParameters":{"parameters":[{"name":"api_access_token","value":"PLACEHOLDER_REPLACE_VIA_N8N_CREDENTIALS_UI"},{"name":"Content-Type","value":"application/json"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={{ { \"inbox_id\": 1, \"source_id\": \"monitor-cartorio\", \"contact\": { \"name\": \"Monitor Cartório\" }, \"message\": $json.alert_text } }}","options":{"timeout":10000}},"onError":"continueErrorOutput"},{"id":"e251ce32-8902-49f4-a278-f1e05ee5d3e6","name":"Respond Health Report","type":"n8n-nodes-base.respondToWebhook","typeVersion":1.5,"position":[1344,576],"parameters":{"respondWith":"json","responseBody":"={{ { \"checked_at\": $now.toISO(), \"trigger\": \"webhook\", \"items_count\": $items().length } }}","options":{"responseCode":200}}},{"id":"3199c446-033a-46da-abd7-942b3ee319c3","name":"Cron 5min","type":"n8n-nodes-base.scheduleTrigger","typeVersion":1.3,"position":[224,1152],"parameters":{"rule":{"interval":[{"field":"minutes","value":5}]}}}],"connections":{"POST /monitor-cartorio":{"main":[[{"node":"Check API","type":"main","index":0},{"node":"Check Evolution","type":"main","index":0},{"node":"Check OpenClaw","type":"main","index":0},{"node":"Check Supabase","type":"main","index":0},{"node":"Check Chatwoot","type":"main","index":0},{"node":"Check Redis","type":"main","index":0}]]},"Check API":{"main":[[{"node":"Combine Results","type":"main","index":0}]]},"Combine Results":{"main":[[{"node":"Has outage?","type":"main","index":0}]]},"Check Evolution":{"main":[[{"node":"Combine Results","type":"main","index":1}]]},"Check OpenClaw":{"main":[[{"node":"Combine Results","type":"main","index":2}]]},"Check Supabase":{"main":[[{"node":"Combine Results","type":"main","index":3}]]},"Check Chatwoot":{"main":[[{"node":"Combine Results","type":"main","index":4}]]},"Check Redis":{"main":[[{"node":"Combine Results","type":"main","index":5}]]},"Has outage?":{"main":[[{"node":"Format Alert","type":"main","index":0}],[{"node":"Respond Health Report","type":"main","index":0}]]},"Format Alert":{"main":[[{"node":"Send Chatwoot Alert","type":"main","index":0}]]},"Send Chatwoot Alert":{"main":[[{"node":"Respond Health Report","type":"main","index":0}]]},"Cron 5min":{"main":[[{"node":"Combine Results","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","availableInMCP":true},"staticData":{"node:Cron 5min":{"recurrenceRules":[]}},"meta":{"aiBuilderAssisted":true,"builderVariant":"mcp"},"nodeGroups":[],"pinData":null,"versionId":"45dfb8a6-d611-42a0-963b-f6df3f0ec90d","activeVersionId":"45dfb8a6-d611-42a0-963b-f6df3f0ec90d","versionCounter":1,"triggerCount":2,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T16:23:03.402Z","createdAt":"2026-06-23T16:23:03.402Z","role":"workflow:owner","workflowId":"5ABAZCQVRLd7AmM5","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[],"activeVersion":{"updatedAt":"2026-06-23T16:23:03.402Z","createdAt":"2026-06-23T16:23:03.402Z","versionId":"45dfb8a6-d611-42a0-963b-f6df3f0ec90d","workflowId":"5ABAZCQVRLd7AmM5","nodes":[{"id":"7ca41b9c-9517-47eb-8c9c-327071949e74","name":"POST /monitor-cartorio","type":"n8n-nodes-base.webhook","typeVersion":2.1,"position":[0,480],"parameters":{"httpMethod":"POST","path":"monitor-cartorio","responseMode":"responseNode","options":{}},"webhookId":"668396b2-f6ad-40c1-8f96-8c086e5e3821"},{"id":"c69e10a4-9147-405d-a414-8c17d5e18381","name":"Check API","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,0],"parameters":{"method":"GET","url":"https://api.2notasudi.com.br/health","options":{"timeout":5000}}},{"id":"55724f61-7f4e-4cae-8ecd-e7d6c9c2c91a","name":"Combine Results","type":"n8n-nodes-base.merge","typeVersion":3.2,"position":[448,512],"parameters":{"mode":"append","numberInputs":6}},{"id":"57701e1b-c4c3-48ba-9535-511282202522","name":"Check Evolution","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,192],"parameters":{"method":"GET","url":"https://whatsapp.2notasudi.com.br/","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"6a8eedfd-805a-45e2-8b7c-dcb33b0a55f7","name":"Check OpenClaw","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,384],"parameters":{"method":"GET","url":"https://agent.2notasudi.com.br/health","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"3924a4d9-7365-4453-8a72-99b64ec58366","name":"Check Supabase","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,576],"parameters":{"method":"GET","url":"https://supbase.2notasudi.com.br/auth/v1/health","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"08853511-2d31-4765-b46f-844c0d48c2cb","name":"Check Chatwoot","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,768],"parameters":{"method":"GET","url":"https://api.2notasudi.com.br/health","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"6635f0d1-2367-4839-a3ac-5fe1c04ae19d","name":"Check Redis","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[224,960],"parameters":{"method":"GET","url":"https://api.2notasudi.com.br/health","options":{"timeout":5000}},"onError":"continueErrorOutput"},{"id":"5c957fbd-dd29-4d90-ab76-6a199f7e40c9","name":"Has outage?","type":"n8n-nodes-base.if","typeVersion":2.2,"position":[672,576],"parameters":{"conditions":{"options":{"caseSensitive":true,"leftValue":"","typeValidation":"loose"},"conditions":[{"leftValue":"={{ $json.status }}","operator":{"type":"string","operation":"equals"},"rightValue":"down"}],"combinator":"and"}}},{"id":"08b393ab-5354-44b6-a290-eb3b4a2f531b","name":"Format Alert","type":"n8n-nodes-base.set","typeVersion":3.4,"position":[896,512],"parameters":{"mode":"manual","includeOtherFields":true,"assignments":{"assignments":[{"id":"alert_text","name":"alert_text","value":"=Cartório 2º Notas — Alerta de Saúde. Verifique o dashboard. Timestamp: {{ $now.toISO() }}","type":"string"}]}}},{"id":"25bdaf2d-1ff1-452d-8b1f-da0afe9afc20","name":"Send Chatwoot Alert","type":"n8n-nodes-base.httpRequest","typeVersion":4.4,"position":[1120,512],"parameters":{"method":"POST","url":"https://chat.2notasudi.com.br/api/v1/accounts/1/conversations","sendHeaders":true,"headerParameters":{"parameters":[{"name":"api_access_token","value":"PLACEHOLDER_REPLACE_VIA_N8N_CREDENTIALS_UI"},{"name":"Content-Type","value":"application/json"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={{ { \"inbox_id\": 1, \"source_id\": \"monitor-cartorio\", \"contact\": { \"name\": \"Monitor Cartório\" }, \"message\": $json.alert_text } }}","options":{"timeout":10000}},"onError":"continueErrorOutput"},{"id":"e251ce32-8902-49f4-a278-f1e05ee5d3e6","name":"Respond Health Report","type":"n8n-nodes-base.respondToWebhook","typeVersion":1.5,"position":[1344,576],"parameters":{"respondWith":"json","responseBody":"={{ { \"checked_at\": $now.toISO(), \"trigger\": \"webhook\", \"items_count\": $items().length } }}","options":{"responseCode":200}}},{"id":"3199c446-033a-46da-abd7-942b3ee319c3","name":"Cron 5min","type":"n8n-nodes-base.scheduleTrigger","typeVersion":1.3,"position":[224,1152],"parameters":{"rule":{"interval":[{"field":"minutes","value":5}]}}}],"connections":{"POST /monitor-cartorio":{"main":[[{"node":"Check API","type":"main","index":0},{"node":"Check Evolution","type":"main","index":0},{"node":"Check OpenClaw","type":"main","index":0},{"node":"Check Supabase","type":"main","index":0},{"node":"Check Chatwoot","type":"main","index":0},{"node":"Check Redis","type":"main","index":0}]]},"Check API":{"main":[[{"node":"Combine Results","type":"main","index":0}]]},"Combine Results":{"main":[[{"node":"Has outage?","type":"main","index":0}]]},"Check Evolution":{"main":[[{"node":"Combine Results","type":"main","index":1}]]},"Check OpenClaw":{"main":[[{"node":"Combine Results","type":"main","index":2}]]},"Check Supabase":{"main":[[{"node":"Combine Results","type":"main","index":3}]]},"Check Chatwoot":{"main":[[{"node":"Combine Results","type":"main","index":4}]]},"Check Redis":{"main":[[{"node":"Combine Results","type":"main","index":5}]]},"Has outage?":{"main":[[{"node":"Format Alert","type":"main","index":0}],[{"node":"Respond Health Report","type":"main","index":0}]]},"Format Alert":{"main":[[{"node":"Send Chatwoot Alert","type":"main","index":0}]]},"Send Chatwoot Alert":{"main":[[{"node":"Respond Health Report","type":"main","index":0}]]},"Cron 5min":{"main":[[{"node":"Combine Results","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T16:23:10.247Z","id":34,"workflowId":"5ABAZCQVRLd7AmM5","versionId":"45dfb8a6-d611-42a0-963b-f6df3f0ec90d","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "updatedAt": "2026-06-23T16:23:03.402Z",
+  "createdAt": "2026-06-23T16:23:03.402Z",
+  "id": "5ABAZCQVRLd7AmM5",
+  "name": "11 - Monitor Cartório",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "7ca41b9c-9517-47eb-8c9c-327071949e74",
+      "name": "POST /monitor-cartorio",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        480
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "monitor-cartorio",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "668396b2-f6ad-40c1-8f96-8c086e5e3821"
+    },
+    {
+      "id": "c69e10a4-9147-405d-a414-8c17d5e18381",
+      "name": "Check API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "55724f61-7f4e-4cae-8ecd-e7d6c9c2c91a",
+      "name": "Combine Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        512
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 6
+      }
+    },
+    {
+      "id": "57701e1b-c4c3-48ba-9535-511282202522",
+      "name": "Check Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        192
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://whatsapp.2notasudi.com.br/",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "onError": "continueErrorOutput",
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "6a8eedfd-805a-45e2-8b7c-dcb33b0a55f7",
+      "name": "Check OpenClaw",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        384
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://agent.2notasudi.com.br/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "onError": "continueErrorOutput",
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "3924a4d9-7365-4453-8a72-99b64ec58366",
+      "name": "Check Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        576
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://supbase.2notasudi.com.br/auth/v1/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "onError": "continueErrorOutput",
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "08853511-2d31-4765-b46f-844c0d48c2cb",
+      "name": "Check Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        768
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "onError": "continueErrorOutput",
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "6635f0d1-2367-4839-a3ac-5fe1c04ae19d",
+      "name": "Check Redis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        960
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.2notasudi.com.br/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "onError": "continueErrorOutput",
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "5c957fbd-dd29-4d90-ab76-6a199f7e40c9",
+      "name": "Has outage?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        576
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "down"
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "08b393ab-5354-44b6-a290-eb3b4a2f531b",
+      "name": "Format Alert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        512
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "alert_text",
+              "name": "alert_text",
+              "value": "=Cartório 2º Notas — Alerta de Saúde. Verifique o dashboard. Timestamp: {{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "25bdaf2d-1ff1-452d-8b1f-da0afe9afc20",
+      "name": "Send Chatwoot Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        512
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://chat.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "PLACEHOLDER_REPLACE_VIA_N8N_CREDENTIALS_UI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"inbox_id\": 1, \"source_id\": \"monitor-cartorio\", \"contact\": { \"name\": \"Monitor Cartório\" }, \"message\": $json.alert_text } }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "onError": "continueErrorOutput",
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "e251ce32-8902-49f4-a278-f1e05ee5d3e6",
+      "name": "Respond Health Report",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1344,
+        576
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"checked_at\": $now.toISO(), \"trigger\": \"webhook\", \"items_count\": $items().length } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "3199c446-033a-46da-abd7-942b3ee319c3",
+      "name": "Cron 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        1152
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "value": 5
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "POST /monitor-cartorio": {
+      "main": [
+        [
+          {
+            "node": "Check API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Evolution",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check OpenClaw",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Chatwoot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check API": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Results": {
+      "main": [
+        [
+          {
+            "node": "Has outage?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Evolution": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Check OpenClaw": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Check Supabase": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Check Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Check Redis": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Has outage?": {
+      "main": [
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Health Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert": {
+      "main": [
+        [
+          {
+            "node": "Send Chatwoot Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Chatwoot Alert": {
+      "main": [
+        [
+          {
+            "node": "Respond Health Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron 5min": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:Cron 5min": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "45dfb8a6-d611-42a0-963b-f6df3f0ec90d",
+  "activeVersionId": "45dfb8a6-d611-42a0-963b-f6df3f0ec90d",
+  "versionCounter": 1,
+  "triggerCount": 2,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T16:23:03.402Z",
+      "createdAt": "2026-06-23T16:23:03.402Z",
+      "role": "workflow:owner",
+      "workflowId": "5ABAZCQVRLd7AmM5",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-06-23T16:23:03.402Z",
+    "createdAt": "2026-06-23T16:23:03.402Z",
+    "versionId": "45dfb8a6-d611-42a0-963b-f6df3f0ec90d",
+    "workflowId": "5ABAZCQVRLd7AmM5",
+    "nodes": [
+      {
+        "id": "7ca41b9c-9517-47eb-8c9c-327071949e74",
+        "name": "POST /monitor-cartorio",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          480
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "monitor-cartorio",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "webhookId": "668396b2-f6ad-40c1-8f96-8c086e5e3821"
+      },
+      {
+        "id": "c69e10a4-9147-405d-a414-8c17d5e18381",
+        "name": "Check API",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          0
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.2notasudi.com.br/health",
+          "options": {
+            "timeout": 5000
+          }
+        }
+      },
+      {
+        "id": "55724f61-7f4e-4cae-8ecd-e7d6c9c2c91a",
+        "name": "Combine Results",
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          448,
+          512
+        ],
+        "parameters": {
+          "mode": "append",
+          "numberInputs": 6
+        }
+      },
+      {
+        "id": "57701e1b-c4c3-48ba-9535-511282202522",
+        "name": "Check Evolution",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          192
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://whatsapp.2notasudi.com.br/",
+          "options": {
+            "timeout": 5000
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "id": "6a8eedfd-805a-45e2-8b7c-dcb33b0a55f7",
+        "name": "Check OpenClaw",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          384
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://agent.2notasudi.com.br/health",
+          "options": {
+            "timeout": 5000
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "id": "3924a4d9-7365-4453-8a72-99b64ec58366",
+        "name": "Check Supabase",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          576
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://supbase.2notasudi.com.br/auth/v1/health",
+          "options": {
+            "timeout": 5000
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "id": "08853511-2d31-4765-b46f-844c0d48c2cb",
+        "name": "Check Chatwoot",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          768
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.2notasudi.com.br/health",
+          "options": {
+            "timeout": 5000
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "id": "6635f0d1-2367-4839-a3ac-5fe1c04ae19d",
+        "name": "Check Redis",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          224,
+          960
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.2notasudi.com.br/health",
+          "options": {
+            "timeout": 5000
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "id": "5c957fbd-dd29-4d90-ab76-6a199f7e40c9",
+        "name": "Has outage?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          672,
+          576
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose"
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.status }}",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "rightValue": "down"
+              }
+            ],
+            "combinator": "and"
+          }
+        }
+      },
+      {
+        "id": "08b393ab-5354-44b6-a290-eb3b4a2f531b",
+        "name": "Format Alert",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          896,
+          512
+        ],
+        "parameters": {
+          "mode": "manual",
+          "includeOtherFields": true,
+          "assignments": {
+            "assignments": [
+              {
+                "id": "alert_text",
+                "name": "alert_text",
+                "value": "=Cartório 2º Notas — Alerta de Saúde. Verifique o dashboard. Timestamp: {{ $now.toISO() }}",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "25bdaf2d-1ff1-452d-8b1f-da0afe9afc20",
+        "name": "Send Chatwoot Alert",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1120,
+          512
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://chat.2notasudi.com.br/api/v1/accounts/1/conversations",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "api_access_token",
+                "value": "PLACEHOLDER_REPLACE_VIA_N8N_CREDENTIALS_UI"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ { \"inbox_id\": 1, \"source_id\": \"monitor-cartorio\", \"contact\": { \"name\": \"Monitor Cartório\" }, \"message\": $json.alert_text } }}",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "id": "e251ce32-8902-49f4-a278-f1e05ee5d3e6",
+        "name": "Respond Health Report",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1344,
+          576
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ { \"checked_at\": $now.toISO(), \"trigger\": \"webhook\", \"items_count\": $items().length } }}",
+          "options": {
+            "responseCode": 200
+          }
+        }
+      },
+      {
+        "id": "3199c446-033a-46da-abd7-942b3ee319c3",
+        "name": "Cron 5min",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          224,
+          1152
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "value": 5
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "connections": {
+      "POST /monitor-cartorio": {
+        "main": [
+          [
+            {
+              "node": "Check API",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check Evolution",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check OpenClaw",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check Supabase",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check Chatwoot",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check Redis",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check API": {
+        "main": [
+          [
+            {
+              "node": "Combine Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Combine Results": {
+        "main": [
+          [
+            {
+              "node": "Has outage?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Evolution": {
+        "main": [
+          [
+            {
+              "node": "Combine Results",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Check OpenClaw": {
+        "main": [
+          [
+            {
+              "node": "Combine Results",
+              "type": "main",
+              "index": 2
+            }
+          ]
+        ]
+      },
+      "Check Supabase": {
+        "main": [
+          [
+            {
+              "node": "Combine Results",
+              "type": "main",
+              "index": 3
+            }
+          ]
+        ]
+      },
+      "Check Chatwoot": {
+        "main": [
+          [
+            {
+              "node": "Combine Results",
+              "type": "main",
+              "index": 4
+            }
+          ]
+        ]
+      },
+      "Check Redis": {
+        "main": [
+          [
+            {
+              "node": "Combine Results",
+              "type": "main",
+              "index": 5
+            }
+          ]
+        ]
+      },
+      "Has outage?": {
+        "main": [
+          [
+            {
+              "node": "Format Alert",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond Health Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Alert": {
+        "main": [
+          [
+            {
+              "node": "Send Chatwoot Alert",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Chatwoot Alert": {
+        "main": [
+          [
+            {
+              "node": "Respond Health Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cron 5min": {
+        "main": [
+          [
+            {
+              "node": "Combine Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Gustavo  Rodrigues",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-23T16:23:10.247Z",
+        "id": 34,
+        "workflowId": "5ABAZCQVRLd7AmM5",
+        "versionId": "45dfb8a6-d611-42a0-963b-f6df3f0ec90d",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    ]
+  }
+}

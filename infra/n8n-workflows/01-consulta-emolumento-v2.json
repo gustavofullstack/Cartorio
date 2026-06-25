@@ -2,12 +2,20 @@
   "name": "01 - Consulta Emolumento WhatsApp (v2)",
   "nodes": [
     {
-      "parameters": {"httpMethod": "POST", "path": "consulta-emolumento", "responseMode": "responseNode", "options": {}},
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consulta-emolumento",
+        "responseMode": "responseNode",
+        "options": {}
+      },
       "id": "webhook-trigger",
       "name": "Webhook WhatsApp",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "consulta-emolumento-v1"
     },
     {
@@ -19,30 +27,62 @@
       "name": "PII Scrubber + Parse",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
         "method": "GET",
         "url": "=https://api.2notasudi.com.br/api/v1/emolumento/calcular",
         "sendQuery": true,
-        "queryParameters": {"parameters": [
-          {"name": "tipo", "value": "={{ $json.tipo }}"},
-          {"name": "folhas", "value": "={{ $json.folhas }}"},
-          {"name": "urgencia", "value": "={{ $json.urgencia }}"}
-        ]},
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "tipo",
+              "value": "={{ $json.tipo }}"
+            },
+            {
+              "name": "folhas",
+              "value": "={{ $json.folhas }}"
+            },
+            {
+              "name": "urgencia",
+              "value": "={{ $json.urgencia }}"
+            }
+          ]
+        },
         "sendHeaders": true,
-        "headerParameters": {"parameters": [
-          {"name": "X-API-Key", "value": "cartorio-api-shared-secret-v1"}
-        ]},
-        "options": {"timeout": 10000}
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "cartorio-api-shared-secret-v1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "api-emolumento",
       "name": "API Emolumento (httpRequest + cred)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 300],
-      "credentials": {"httpHeaderAuth": {"id": "22Q8OUbeZ1bsGnlt", "name": "cartorio-api-bearer"}}
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "22Q8OUbeZ1bsGnlt",
+          "name": "cartorio-api-bearer"
+        }
+      },
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -53,13 +93,49 @@
       "name": "Respond com emolumento",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     }
   ],
   "connections": {
-    "Webhook WhatsApp": {"main": [[{"node": "PII Scrubber + Parse", "type": "main", "index": 0}]]},
-    "PII Scrubber + Parse": {"main": [[{"node": "API Emolumento (httpRequest + cred)", "type": "main", "index": 0}]]},
-    "API Emolumento (httpRequest + cred)": {"main": [[{"node": "Respond com emolumento", "type": "main", "index": 0}]]}
+    "Webhook WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "PII Scrubber + Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PII Scrubber + Parse": {
+      "main": [
+        [
+          {
+            "node": "API Emolumento (httpRequest + cred)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Emolumento (httpRequest + cred)": {
+      "main": [
+        [
+          {
+            "node": "Respond com emolumento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": {"executionOrder": "v1", "callerPolicy": "workflowsFromSameOwner"}
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  }
 }

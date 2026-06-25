@@ -47,7 +47,10 @@
         460,
         100
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -73,7 +76,10 @@
         460,
         250
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -99,7 +105,10 @@
         460,
         400
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -192,7 +201,10 @@
       "position": [
         1120,
         150
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     }
   ],
   "connections": {

@@ -78,7 +78,10 @@
       ],
       "onError": "continueErrorOutput",
       "retryOnFail": false,
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {

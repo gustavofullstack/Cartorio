@@ -54,7 +54,10 @@
         680,
         300
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -80,7 +83,10 @@
       ],
       "onError": "continueRegularOutput",
       "retryOnFail": false,
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "options": {
+        "timeout": 5000
+      }
     }
   ],
   "connections": {

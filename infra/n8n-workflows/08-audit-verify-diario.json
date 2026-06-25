@@ -1,1 +1,515 @@
-{"updatedAt":"2026-06-23T13:56:00.830Z","createdAt":"2026-06-23T13:56:00.830Z","id":"3rr2WFBCJZ16U4DH","name":"08 - Audit Verify Diario","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{"rule":{"interval":[{"field":"cronExpression","expression":"30 3 * * *"}]}},"id":"cron-330","name":"Cron 03:30","type":"n8n-nodes-base.scheduleTrigger","typeVersion":1.2,"position":[240,300]},{"parameters":{"method":"POST","url":"https://api.2notasudi.com.br/api/v1/audit/verify","sendHeaders":true,"headerParameters":{"parameters":[{"name":"apikey","value":"={{ $env.CARTORIO_API_KEY }}"}]},"options":{"timeout":30000}},"id":"verify","name":"POST /audit/verify","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[460,300]},{"parameters":{"mode":"runOnceForEachItem","jsCode":"// Verifica resultado; se broken, manda alerta pra Chatwoot inbox\nconst r = $input.item.json;\nif (r.integrity === 'broken' || r.broken_count > 0) {\n  return { json: {\n    severity: 'critical',\n    message: `[AUDIT] Cadeia quebrada em ${r.broken_count} entrada(s)! Acao manual necessaria.`,\n    payload: r\n  }};\n}\nreturn { json: {\n  severity: 'info',\n  message: `[AUDIT] OK - ${r.verified_count} entradas verificadas`,\n  payload: r\n}};"},"id":"check-result","name":"Check resultado","type":"n8n-nodes-base.code","typeVersion":2,"position":[680,300]},{"parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"id":"is-critical","leftValue":"={{ $json.severity }}","rightValue":"critical","operator":{"type":"string","operation":"equals"}}],"combinator":"and"},"options":{}},"id":"if-critical","name":"Critico?","type":"n8n-nodes-base.if","typeVersion":2,"position":[900,300]},{"parameters":{"method":"POST","url":"https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations","sendHeaders":true,"headerParameters":{"parameters":[{"name":"api_access_token","value":"={{ $env.CHATWOOT_BOT_TOKEN }}"},{"name":"Content-Type","value":"application/json"}]},"sendBody":true,"bodyParameters":{"parameters":[{"name":"source_id","value":"audit-monitor"},{"name":"message","value":"={{ $json.message }}"}]},"options":{"timeout":10000}},"id":"alert-chatwoot","name":"Alerta Chatwoot","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[1120,200]},{"parameters":{"method":"POST","url":"https://api.2notasudi.com.br/api/v1/audit/verify/log","sendBody":true,"bodyParameters":{"parameters":[{"name":"severity","value":"={{ $json.severity }}"},{"name":"message","value":"={{ $json.message }}"}]},"options":{"timeout":5000}},"id":"log-ok","name":"Log OK","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[1120,420]}],"connections":{"Cron 03:30":{"main":[[{"node":"POST /audit/verify","type":"main","index":0}]]},"POST /audit/verify":{"main":[[{"node":"Check resultado","type":"main","index":0}]]},"Check resultado":{"main":[[{"node":"Critico?","type":"main","index":0}]]},"Critico?":{"main":[[{"node":"Alerta Chatwoot","type":"main","index":0}],[{"node":"Log OK","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","callerPolicy":"workflowsFromSameOwner"},"staticData":{"node:Cron 03:30":{"recurrenceRules":[]}},"meta":null,"nodeGroups":[],"pinData":null,"versionId":"79be9944-99bc-4197-a932-40a41c8b0ef6","activeVersionId":"79be9944-99bc-4197-a932-40a41c8b0ef6","versionCounter":1,"triggerCount":1,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T13:56:00.830Z","createdAt":"2026-06-23T13:56:00.830Z","role":"workflow:owner","workflowId":"3rr2WFBCJZ16U4DH","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[],"activeVersion":{"updatedAt":"2026-06-23T13:56:00.830Z","createdAt":"2026-06-23T13:56:00.830Z","versionId":"79be9944-99bc-4197-a932-40a41c8b0ef6","workflowId":"3rr2WFBCJZ16U4DH","nodes":[{"parameters":{"rule":{"interval":[{"field":"cronExpression","expression":"30 3 * * *"}]}},"id":"cron-330","name":"Cron 03:30","type":"n8n-nodes-base.scheduleTrigger","typeVersion":1.2,"position":[240,300]},{"parameters":{"method":"POST","url":"https://api.2notasudi.com.br/api/v1/audit/verify","sendHeaders":true,"headerParameters":{"parameters":[{"name":"apikey","value":"={{ $env.CARTORIO_API_KEY }}"}]},"options":{"timeout":30000}},"id":"verify","name":"POST /audit/verify","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[460,300]},{"parameters":{"mode":"runOnceForEachItem","jsCode":"// Verifica resultado; se broken, manda alerta pra Chatwoot inbox\nconst r = $input.item.json;\nif (r.integrity === 'broken' || r.broken_count > 0) {\n  return { json: {\n    severity: 'critical',\n    message: `[AUDIT] Cadeia quebrada em ${r.broken_count} entrada(s)! Acao manual necessaria.`,\n    payload: r\n  }};\n}\nreturn { json: {\n  severity: 'info',\n  message: `[AUDIT] OK - ${r.verified_count} entradas verificadas`,\n  payload: r\n}};"},"id":"check-result","name":"Check resultado","type":"n8n-nodes-base.code","typeVersion":2,"position":[680,300]},{"parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"id":"is-critical","leftValue":"={{ $json.severity }}","rightValue":"critical","operator":{"type":"string","operation":"equals"}}],"combinator":"and"},"options":{}},"id":"if-critical","name":"Critico?","type":"n8n-nodes-base.if","typeVersion":2,"position":[900,300]},{"parameters":{"method":"POST","url":"https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations","sendHeaders":true,"headerParameters":{"parameters":[{"name":"api_access_token","value":"={{ $env.CHATWOOT_BOT_TOKEN }}"},{"name":"Content-Type","value":"application/json"}]},"sendBody":true,"bodyParameters":{"parameters":[{"name":"source_id","value":"audit-monitor"},{"name":"message","value":"={{ $json.message }}"}]},"options":{"timeout":10000}},"id":"alert-chatwoot","name":"Alerta Chatwoot","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[1120,200]},{"parameters":{"method":"POST","url":"https://api.2notasudi.com.br/api/v1/audit/verify/log","sendBody":true,"bodyParameters":{"parameters":[{"name":"severity","value":"={{ $json.severity }}"},{"name":"message","value":"={{ $json.message }}"}]},"options":{"timeout":5000}},"id":"log-ok","name":"Log OK","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[1120,420]}],"connections":{"Cron 03:30":{"main":[[{"node":"POST /audit/verify","type":"main","index":0}]]},"POST /audit/verify":{"main":[[{"node":"Check resultado","type":"main","index":0}]]},"Check resultado":{"main":[[{"node":"Critico?","type":"main","index":0}]]},"Critico?":{"main":[[{"node":"Alerta Chatwoot","type":"main","index":0}],[{"node":"Log OK","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T13:56:15.122Z","id":20,"workflowId":"3rr2WFBCJZ16U4DH","versionId":"79be9944-99bc-4197-a932-40a41c8b0ef6","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "updatedAt": "2026-06-23T13:56:00.830Z",
+  "createdAt": "2026-06-23T13:56:00.830Z",
+  "id": "3rr2WFBCJZ16U4DH",
+  "name": "08 - Audit Verify Diario",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 3 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-330",
+      "name": "Cron 03:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/verify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "verify",
+      "name": "POST /audit/verify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        300
+      ],
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Verifica resultado; se broken, manda alerta pra Chatwoot inbox\nconst r = $input.item.json;\nif (r.integrity === 'broken' || r.broken_count > 0) {\n  return { json: {\n    severity: 'critical',\n    message: `[AUDIT] Cadeia quebrada em ${r.broken_count} entrada(s)! Acao manual necessaria.`,\n    payload: r\n  }};\n}\nreturn { json: {\n  severity: 'info',\n  message: `[AUDIT] OK - ${r.verified_count} entradas verificadas`,\n  payload: r\n}};"
+      },
+      "id": "check-result",
+      "name": "Check resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-critical",
+              "leftValue": "={{ $json.severity }}",
+              "rightValue": "critical",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-critical",
+      "name": "Critico?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "audit-monitor"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "alert-chatwoot",
+      "name": "Alerta Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        200
+      ],
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/verify/log",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "severity",
+              "value": "={{ $json.severity }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "log-ok",
+      "name": "Log OK",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        420
+      ],
+      "options": {
+        "timeout": 5000
+      }
+    }
+  ],
+  "connections": {
+    "Cron 03:30": {
+      "main": [
+        [
+          {
+            "node": "POST /audit/verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /audit/verify": {
+      "main": [
+        [
+          {
+            "node": "Check resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check resultado": {
+      "main": [
+        [
+          {
+            "node": "Critico?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Critico?": {
+      "main": [
+        [
+          {
+            "node": "Alerta Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Cron 03:30": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "79be9944-99bc-4197-a932-40a41c8b0ef6",
+  "activeVersionId": "79be9944-99bc-4197-a932-40a41c8b0ef6",
+  "versionCounter": 1,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T13:56:00.830Z",
+      "createdAt": "2026-06-23T13:56:00.830Z",
+      "role": "workflow:owner",
+      "workflowId": "3rr2WFBCJZ16U4DH",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-06-23T13:56:00.830Z",
+    "createdAt": "2026-06-23T13:56:00.830Z",
+    "versionId": "79be9944-99bc-4197-a932-40a41c8b0ef6",
+    "workflowId": "3rr2WFBCJZ16U4DH",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "30 3 * * *"
+              }
+            ]
+          }
+        },
+        "id": "cron-330",
+        "name": "Cron 03:30",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          240,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.2notasudi.com.br/api/v1/audit/verify",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "={{ $env.CARTORIO_API_KEY }}"
+              }
+            ]
+          },
+          "options": {
+            "timeout": 30000
+          }
+        },
+        "id": "verify",
+        "name": "POST /audit/verify",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// Verifica resultado; se broken, manda alerta pra Chatwoot inbox\nconst r = $input.item.json;\nif (r.integrity === 'broken' || r.broken_count > 0) {\n  return { json: {\n    severity: 'critical',\n    message: `[AUDIT] Cadeia quebrada em ${r.broken_count} entrada(s)! Acao manual necessaria.`,\n    payload: r\n  }};\n}\nreturn { json: {\n  severity: 'info',\n  message: `[AUDIT] OK - ${r.verified_count} entradas verificadas`,\n  payload: r\n}};"
+        },
+        "id": "check-result",
+        "name": "Check resultado",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          680,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "is-critical",
+                "leftValue": "={{ $json.severity }}",
+                "rightValue": "critical",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-critical",
+        "name": "Critico?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          900,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://chatwoot.2notasudi.com.br/api/v1/accounts/1/conversations",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "api_access_token",
+                "value": "={{ $env.CHATWOOT_BOT_TOKEN }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "source_id",
+                "value": "audit-monitor"
+              },
+              {
+                "name": "message",
+                "value": "={{ $json.message }}"
+              }
+            ]
+          },
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "alert-chatwoot",
+        "name": "Alerta Chatwoot",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          1120,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.2notasudi.com.br/api/v1/audit/verify/log",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "severity",
+                "value": "={{ $json.severity }}"
+              },
+              {
+                "name": "message",
+                "value": "={{ $json.message }}"
+              }
+            ]
+          },
+          "options": {
+            "timeout": 5000
+          }
+        },
+        "id": "log-ok",
+        "name": "Log OK",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          1120,
+          420
+        ]
+      }
+    ],
+    "connections": {
+      "Cron 03:30": {
+        "main": [
+          [
+            {
+              "node": "POST /audit/verify",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "POST /audit/verify": {
+        "main": [
+          [
+            {
+              "node": "Check resultado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check resultado": {
+        "main": [
+          [
+            {
+              "node": "Critico?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Critico?": {
+        "main": [
+          [
+            {
+              "node": "Alerta Chatwoot",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log OK",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Gustavo  Rodrigues",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-23T13:56:15.122Z",
+        "id": 20,
+        "workflowId": "3rr2WFBCJZ16U4DH",
+        "versionId": "79be9944-99bc-4197-a932-40a41c8b0ef6",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    ]
+  }
+}

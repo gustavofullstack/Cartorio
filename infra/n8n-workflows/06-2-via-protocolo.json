@@ -1,1 +1,417 @@
-{"updatedAt":"2026-06-23T13:56:00.734Z","createdAt":"2026-06-23T13:56:00.734Z","id":"ukbRUEudoX3SvsqD","name":"06 - Segunda Via Documento","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{"httpMethod":"POST","path":"segunda-via","responseMode":"responseNode","options":{}},"id":"webhook-trigger","name":"Webhook WhatsApp","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"segunda-via-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\nreturn { json: { sender, raw, scrubbed, redactionCount, numeroProtocolo } };"},"id":"extract-proto","name":"Extrai protocolo + PII","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"id":"has-proto","leftValue":"={{ $json.numeroProtocolo }}","rightValue":"","operator":{"type":"string","operation":"exists"}}],"combinator":"and"},"options":{}},"id":"if-has-proto","name":"Tem protocolo?","type":"n8n-nodes-base.if","typeVersion":2,"position":[680,300]},{"parameters":{"method":"POST","url":"https://api.2notasudi.com.br/api/v1/documento/segunda-via","sendBody":true,"bodyParameters":{"parameters":[{"name":"protocolo","value":"={{ $json.numeroProtocolo }}"},{"name":"canal","value":"whatsapp"}]},"options":{"timeout":15000}},"id":"api-2via","name":"POST /documento/segunda-via","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[900,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"ok\",\n  \"response\": \"Documento gerado! Link para download: {{ $json.url_pdf }} (valido por {{ $json.validade_horas }}h)\",\n  \"details\": {{ JSON.stringify($json) }}\n}"},"id":"respond-ok","name":"Respond Link PDF","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[1140,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"handoff\",\n  \"response\": \"Para emitir segunda via com seguranca vou transferir voce a um atendente humano. Aguarde.\"\n}"},"id":"respond-handoff","name":"Handoff Humano","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,420]}],"connections":{"Webhook WhatsApp":{"main":[[{"node":"Extrai protocolo + PII","type":"main","index":0}]]},"Extrai protocolo + PII":{"main":[[{"node":"Tem protocolo?","type":"main","index":0}]]},"Tem protocolo?":{"main":[[{"node":"POST /documento/segunda-via","type":"main","index":0}],[{"node":"Handoff Humano","type":"main","index":0}]]},"POST /documento/segunda-via":{"main":[[{"node":"Respond Link PDF","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","callerPolicy":"workflowsFromSameOwner"},"staticData":null,"meta":null,"nodeGroups":[],"pinData":null,"versionId":"43731283-fa4d-4f72-aeb5-3167bd500957","activeVersionId":"43731283-fa4d-4f72-aeb5-3167bd500957","versionCounter":1,"triggerCount":1,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T13:56:00.734Z","createdAt":"2026-06-23T13:56:00.734Z","role":"workflow:owner","workflowId":"ukbRUEudoX3SvsqD","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[],"activeVersion":{"updatedAt":"2026-06-23T13:56:00.734Z","createdAt":"2026-06-23T13:56:00.734Z","versionId":"43731283-fa4d-4f72-aeb5-3167bd500957","workflowId":"ukbRUEudoX3SvsqD","nodes":[{"parameters":{"httpMethod":"POST","path":"segunda-via","responseMode":"responseNode","options":{}},"id":"webhook-trigger","name":"Webhook WhatsApp","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"segunda-via-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\nreturn { json: { sender, raw, scrubbed, redactionCount, numeroProtocolo } };"},"id":"extract-proto","name":"Extrai protocolo + PII","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"id":"has-proto","leftValue":"={{ $json.numeroProtocolo }}","rightValue":"","operator":{"type":"string","operation":"exists"}}],"combinator":"and"},"options":{}},"id":"if-has-proto","name":"Tem protocolo?","type":"n8n-nodes-base.if","typeVersion":2,"position":[680,300]},{"parameters":{"method":"POST","url":"https://api.2notasudi.com.br/api/v1/documento/segunda-via","sendBody":true,"bodyParameters":{"parameters":[{"name":"protocolo","value":"={{ $json.numeroProtocolo }}"},{"name":"canal","value":"whatsapp"}]},"options":{"timeout":15000}},"id":"api-2via","name":"POST /documento/segunda-via","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[900,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"ok\",\n  \"response\": \"Documento gerado! Link para download: {{ $json.url_pdf }} (valido por {{ $json.validade_horas }}h)\",\n  \"details\": {{ JSON.stringify($json) }}\n}"},"id":"respond-ok","name":"Respond Link PDF","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[1140,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"handoff\",\n  \"response\": \"Para emitir segunda via com seguranca vou transferir voce a um atendente humano. Aguarde.\"\n}"},"id":"respond-handoff","name":"Handoff Humano","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,420]}],"connections":{"Webhook WhatsApp":{"main":[[{"node":"Extrai protocolo + PII","type":"main","index":0}]]},"Extrai protocolo + PII":{"main":[[{"node":"Tem protocolo?","type":"main","index":0}]]},"Tem protocolo?":{"main":[[{"node":"POST /documento/segunda-via","type":"main","index":0}],[{"node":"Handoff Humano","type":"main","index":0}]]},"POST /documento/segunda-via":{"main":[[{"node":"Respond Link PDF","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T13:56:15.196Z","id":21,"workflowId":"ukbRUEudoX3SvsqD","versionId":"43731283-fa4d-4f72-aeb5-3167bd500957","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "updatedAt": "2026-06-23T13:56:00.734Z",
+  "createdAt": "2026-06-23T13:56:00.734Z",
+  "id": "ukbRUEudoX3SvsqD",
+  "name": "06 - Segunda Via Documento",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "segunda-via",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "segunda-via-v1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\nreturn { json: { sender, raw, scrubbed, redactionCount, numeroProtocolo } };"
+      },
+      "id": "extract-proto",
+      "name": "Extrai protocolo + PII",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-proto",
+              "leftValue": "={{ $json.numeroProtocolo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-has-proto",
+      "name": "Tem protocolo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/documento/segunda-via",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "protocolo",
+              "value": "={{ $json.numeroProtocolo }}"
+            },
+            {
+              "name": "canal",
+              "value": "whatsapp"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "api-2via",
+      "name": "POST /documento/segunda-via",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        200
+      ],
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Documento gerado! Link para download: {{ $json.url_pdf }} (valido por {{ $json.validade_horas }}h)\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
+      },
+      "id": "respond-ok",
+      "name": "Respond Link PDF",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Para emitir segunda via com seguranca vou transferir voce a um atendente humano. Aguarde.\"\n}"
+      },
+      "id": "respond-handoff",
+      "name": "Handoff Humano",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        900,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Extrai protocolo + PII",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrai protocolo + PII": {
+      "main": [
+        [
+          {
+            "node": "Tem protocolo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem protocolo?": {
+      "main": [
+        [
+          {
+            "node": "POST /documento/segunda-via",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handoff Humano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /documento/segunda-via": {
+      "main": [
+        [
+          {
+            "node": "Respond Link PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "43731283-fa4d-4f72-aeb5-3167bd500957",
+  "activeVersionId": "43731283-fa4d-4f72-aeb5-3167bd500957",
+  "versionCounter": 1,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T13:56:00.734Z",
+      "createdAt": "2026-06-23T13:56:00.734Z",
+      "role": "workflow:owner",
+      "workflowId": "ukbRUEudoX3SvsqD",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-06-23T13:56:00.734Z",
+    "createdAt": "2026-06-23T13:56:00.734Z",
+    "versionId": "43731283-fa4d-4f72-aeb5-3167bd500957",
+    "workflowId": "ukbRUEudoX3SvsqD",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "segunda-via",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-trigger",
+        "name": "Webhook WhatsApp",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          240,
+          300
+        ],
+        "webhookId": "segunda-via-v1"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\nreturn { json: { sender, raw, scrubbed, redactionCount, numeroProtocolo } };"
+        },
+        "id": "extract-proto",
+        "name": "Extrai protocolo + PII",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "has-proto",
+                "leftValue": "={{ $json.numeroProtocolo }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-has-proto",
+        "name": "Tem protocolo?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          680,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.2notasudi.com.br/api/v1/documento/segunda-via",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "protocolo",
+                "value": "={{ $json.numeroProtocolo }}"
+              },
+              {
+                "name": "canal",
+                "value": "whatsapp"
+              }
+            ]
+          },
+          "options": {
+            "timeout": 15000
+          }
+        },
+        "id": "api-2via",
+        "name": "POST /documento/segunda-via",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          900,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Documento gerado! Link para download: {{ $json.url_pdf }} (valido por {{ $json.validade_horas }}h)\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
+        },
+        "id": "respond-ok",
+        "name": "Respond Link PDF",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          1140,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Para emitir segunda via com seguranca vou transferir voce a um atendente humano. Aguarde.\"\n}"
+        },
+        "id": "respond-handoff",
+        "name": "Handoff Humano",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          900,
+          420
+        ]
+      }
+    ],
+    "connections": {
+      "Webhook WhatsApp": {
+        "main": [
+          [
+            {
+              "node": "Extrai protocolo + PII",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extrai protocolo + PII": {
+        "main": [
+          [
+            {
+              "node": "Tem protocolo?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Tem protocolo?": {
+        "main": [
+          [
+            {
+              "node": "POST /documento/segunda-via",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Handoff Humano",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "POST /documento/segunda-via": {
+        "main": [
+          [
+            {
+              "node": "Respond Link PDF",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Gustavo  Rodrigues",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-23T13:56:15.196Z",
+        "id": 21,
+        "workflowId": "ukbRUEudoX3SvsqD",
+        "versionId": "43731283-fa4d-4f72-aeb5-3167bd500957",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    ]
+  }
+}

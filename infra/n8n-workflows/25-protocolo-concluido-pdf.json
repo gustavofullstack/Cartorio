@@ -64,7 +64,10 @@
       "position": [
         460,
         300
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -141,7 +144,10 @@
       "position": [
         1120,
         200
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -174,7 +180,10 @@
       "position": [
         1340,
         200
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -217,7 +226,10 @@
       "position": [
         1560,
         200
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     }
   ],
   "connections": {

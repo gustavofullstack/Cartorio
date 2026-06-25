@@ -49,6 +49,9 @@
           "id": "22Q8OUbeZ1bsGnlt",
           "name": "cartorio-api-bearer"
         }
+      },
+      "options": {
+        "timeout": 5000
       }
     },
     {

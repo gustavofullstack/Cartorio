@@ -1,1 +1,407 @@
-{"updatedAt":"2026-06-23T13:56:00.638Z","createdAt":"2026-06-23T13:56:00.638Z","id":"iXWuZRYZLR3FYPYB","name":"04 - Consulta Protocolo","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{"httpMethod":"POST","path":"consulta-protocolo","responseMode":"responseNode","options":{}},"id":"webhook-trigger","name":"Webhook WhatsApp","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"consulta-protocolo-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"// Extrai numero de protocolo do texto; PII scrubber (defesa em profundidade)\nconst item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\n// PII patterns (mesmo set do workflow #1)\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet findings = [];\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    findings.push({ type, count: matches.length });\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Detectar numero de protocolo (formato: PROT-YYYY-NNNNNN ou similar)\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i)\n  || scrubbed.match(/\\b(\\d{4,8})\\b/);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\n\nreturn { json: { sender, raw, scrubbed, findings, redactionCount, numeroProtocolo } };"},"id":"extract-proto","name":"Extrair Protocolo + PII","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"id":"has-proto","leftValue":"={{ $json.numeroProtocolo }}","rightValue":"","operator":{"type":"string","operation":"exists"}},{"id":"no-pii","leftValue":"={{ $json.redactionCount }}","rightValue":0,"operator":{"type":"number","operation":"lte"}}],"combinator":"and"},"options":{}},"id":"if-has-proto","name":"Tem protocolo + sem PII?","type":"n8n-nodes-base.if","typeVersion":2,"position":[680,300]},{"parameters":{"url":"=https://api.2notasudi.com.br/api/v1/protocolo/{{ $json.numeroProtocolo }}","options":{"timeout":10000}},"id":"api-proto","name":"GET /protocolo/{id}","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[900,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"ok\",\n  \"response\": \"Protocolo {{ $json.numero }}: {{ $json.status }} (atualizado em {{ $json.updated_at }}). Próximo passo: {{ $json.proximo_passo }}\",\n  \"details\": {{ JSON.stringify($json) }}\n}"},"id":"respond-ok","name":"Respond OK","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[1140,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"handoff\",\n  \"response\": \"Para consultar seu protocolo preciso transferir voce a um atendente humano. Aguarde um instante.\",\n  \"reason\": \"{{ $json.redactionCount > 0 ? 'PII detectada - handoff LGPD' : 'numero de protocolo nao identificado' }}\"\n}"},"id":"respond-handoff","name":"Handoff Humano","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,420]}],"connections":{"Webhook WhatsApp":{"main":[[{"node":"Extrair Protocolo + PII","type":"main","index":0}]]},"Extrair Protocolo + PII":{"main":[[{"node":"Tem protocolo + sem PII?","type":"main","index":0}]]},"Tem protocolo + sem PII?":{"main":[[{"node":"GET /protocolo/{id}","type":"main","index":0}],[{"node":"Handoff Humano","type":"main","index":0}]]},"GET /protocolo/{id}":{"main":[[{"node":"Respond OK","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","callerPolicy":"workflowsFromSameOwner"},"staticData":null,"meta":null,"nodeGroups":[],"pinData":null,"versionId":"2b6d648e-c5a7-4cff-9320-48894c098db3","activeVersionId":"2b6d648e-c5a7-4cff-9320-48894c098db3","versionCounter":1,"triggerCount":1,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T13:56:00.638Z","createdAt":"2026-06-23T13:56:00.638Z","role":"workflow:owner","workflowId":"iXWuZRYZLR3FYPYB","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[],"activeVersion":{"updatedAt":"2026-06-23T13:56:00.638Z","createdAt":"2026-06-23T13:56:00.638Z","versionId":"2b6d648e-c5a7-4cff-9320-48894c098db3","workflowId":"iXWuZRYZLR3FYPYB","nodes":[{"parameters":{"httpMethod":"POST","path":"consulta-protocolo","responseMode":"responseNode","options":{}},"id":"webhook-trigger","name":"Webhook WhatsApp","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"consulta-protocolo-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"// Extrai numero de protocolo do texto; PII scrubber (defesa em profundidade)\nconst item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\n// PII patterns (mesmo set do workflow #1)\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet findings = [];\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    findings.push({ type, count: matches.length });\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Detectar numero de protocolo (formato: PROT-YYYY-NNNNNN ou similar)\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i)\n  || scrubbed.match(/\\b(\\d{4,8})\\b/);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\n\nreturn { json: { sender, raw, scrubbed, findings, redactionCount, numeroProtocolo } };"},"id":"extract-proto","name":"Extrair Protocolo + PII","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"id":"has-proto","leftValue":"={{ $json.numeroProtocolo }}","rightValue":"","operator":{"type":"string","operation":"exists"}},{"id":"no-pii","leftValue":"={{ $json.redactionCount }}","rightValue":0,"operator":{"type":"number","operation":"lte"}}],"combinator":"and"},"options":{}},"id":"if-has-proto","name":"Tem protocolo + sem PII?","type":"n8n-nodes-base.if","typeVersion":2,"position":[680,300]},{"parameters":{"url":"=https://api.2notasudi.com.br/api/v1/protocolo/{{ $json.numeroProtocolo }}","options":{"timeout":10000}},"id":"api-proto","name":"GET /protocolo/{id}","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[900,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"ok\",\n  \"response\": \"Protocolo {{ $json.numero }}: {{ $json.status }} (atualizado em {{ $json.updated_at }}). Próximo passo: {{ $json.proximo_passo }}\",\n  \"details\": {{ JSON.stringify($json) }}\n}"},"id":"respond-ok","name":"Respond OK","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[1140,200]},{"parameters":{"respondWith":"json","responseBody":"={\n  \"status\": \"handoff\",\n  \"response\": \"Para consultar seu protocolo preciso transferir voce a um atendente humano. Aguarde um instante.\",\n  \"reason\": \"{{ $json.redactionCount > 0 ? 'PII detectada - handoff LGPD' : 'numero de protocolo nao identificado' }}\"\n}"},"id":"respond-handoff","name":"Handoff Humano","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[900,420]}],"connections":{"Webhook WhatsApp":{"main":[[{"node":"Extrair Protocolo + PII","type":"main","index":0}]]},"Extrair Protocolo + PII":{"main":[[{"node":"Tem protocolo + sem PII?","type":"main","index":0}]]},"Tem protocolo + sem PII?":{"main":[[{"node":"GET /protocolo/{id}","type":"main","index":0}],[{"node":"Handoff Humano","type":"main","index":0}]]},"GET /protocolo/{id}":{"main":[[{"node":"Respond OK","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T13:56:15.057Z","id":19,"workflowId":"iXWuZRYZLR3FYPYB","versionId":"2b6d648e-c5a7-4cff-9320-48894c098db3","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "updatedAt": "2026-06-23T13:56:00.638Z",
+  "createdAt": "2026-06-23T13:56:00.638Z",
+  "id": "iXWuZRYZLR3FYPYB",
+  "name": "04 - Consulta Protocolo",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consulta-protocolo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "consulta-protocolo-v1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extrai numero de protocolo do texto; PII scrubber (defesa em profundidade)\nconst item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\n// PII patterns (mesmo set do workflow #1)\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet findings = [];\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    findings.push({ type, count: matches.length });\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Detectar numero de protocolo (formato: PROT-YYYY-NNNNNN ou similar)\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i)\n  || scrubbed.match(/\\b(\\d{4,8})\\b/);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\n\nreturn { json: { sender, raw, scrubbed, findings, redactionCount, numeroProtocolo } };"
+      },
+      "id": "extract-proto",
+      "name": "Extrair Protocolo + PII",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-proto",
+              "leftValue": "={{ $json.numeroProtocolo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            },
+            {
+              "id": "no-pii",
+              "leftValue": "={{ $json.redactionCount }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-has-proto",
+      "name": "Tem protocolo + sem PII?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.2notasudi.com.br/api/v1/protocolo/{{ $json.numeroProtocolo }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "api-proto",
+      "name": "GET /protocolo/{id}",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        200
+      ],
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Protocolo {{ $json.numero }}: {{ $json.status }} (atualizado em {{ $json.updated_at }}). Próximo passo: {{ $json.proximo_passo }}\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
+      },
+      "id": "respond-ok",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Para consultar seu protocolo preciso transferir voce a um atendente humano. Aguarde um instante.\",\n  \"reason\": \"{{ $json.redactionCount > 0 ? 'PII detectada - handoff LGPD' : 'numero de protocolo nao identificado' }}\"\n}"
+      },
+      "id": "respond-handoff",
+      "name": "Handoff Humano",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        900,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Extrair Protocolo + PII",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Protocolo + PII": {
+      "main": [
+        [
+          {
+            "node": "Tem protocolo + sem PII?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem protocolo + sem PII?": {
+      "main": [
+        [
+          {
+            "node": "GET /protocolo/{id}",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handoff Humano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /protocolo/{id}": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "2b6d648e-c5a7-4cff-9320-48894c098db3",
+  "activeVersionId": "2b6d648e-c5a7-4cff-9320-48894c098db3",
+  "versionCounter": 1,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T13:56:00.638Z",
+      "createdAt": "2026-06-23T13:56:00.638Z",
+      "role": "workflow:owner",
+      "workflowId": "iXWuZRYZLR3FYPYB",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-06-23T13:56:00.638Z",
+    "createdAt": "2026-06-23T13:56:00.638Z",
+    "versionId": "2b6d648e-c5a7-4cff-9320-48894c098db3",
+    "workflowId": "iXWuZRYZLR3FYPYB",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "consulta-protocolo",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-trigger",
+        "name": "Webhook WhatsApp",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          240,
+          300
+        ],
+        "webhookId": "consulta-protocolo-v1"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// Extrai numero de protocolo do texto; PII scrubber (defesa em profundidade)\nconst item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\n// PII patterns (mesmo set do workflow #1)\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet findings = [];\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    findings.push({ type, count: matches.length });\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Detectar numero de protocolo (formato: PROT-YYYY-NNNNNN ou similar)\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i)\n  || scrubbed.match(/\\b(\\d{4,8})\\b/);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\n\nreturn { json: { sender, raw, scrubbed, findings, redactionCount, numeroProtocolo } };"
+        },
+        "id": "extract-proto",
+        "name": "Extrair Protocolo + PII",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "has-proto",
+                "leftValue": "={{ $json.numeroProtocolo }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists"
+                }
+              },
+              {
+                "id": "no-pii",
+                "leftValue": "={{ $json.redactionCount }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "lte"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-has-proto",
+        "name": "Tem protocolo + sem PII?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          680,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://api.2notasudi.com.br/api/v1/protocolo/{{ $json.numeroProtocolo }}",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "api-proto",
+        "name": "GET /protocolo/{id}",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          900,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Protocolo {{ $json.numero }}: {{ $json.status }} (atualizado em {{ $json.updated_at }}). Próximo passo: {{ $json.proximo_passo }}\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
+        },
+        "id": "respond-ok",
+        "name": "Respond OK",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          1140,
+          200
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Para consultar seu protocolo preciso transferir voce a um atendente humano. Aguarde um instante.\",\n  \"reason\": \"{{ $json.redactionCount > 0 ? 'PII detectada - handoff LGPD' : 'numero de protocolo nao identificado' }}\"\n}"
+        },
+        "id": "respond-handoff",
+        "name": "Handoff Humano",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          900,
+          420
+        ]
+      }
+    ],
+    "connections": {
+      "Webhook WhatsApp": {
+        "main": [
+          [
+            {
+              "node": "Extrair Protocolo + PII",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extrair Protocolo + PII": {
+        "main": [
+          [
+            {
+              "node": "Tem protocolo + sem PII?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Tem protocolo + sem PII?": {
+        "main": [
+          [
+            {
+              "node": "GET /protocolo/{id}",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Handoff Humano",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GET /protocolo/{id}": {
+        "main": [
+          [
+            {
+              "node": "Respond OK",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Gustavo  Rodrigues",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-23T13:56:15.057Z",
+        "id": 19,
+        "workflowId": "iXWuZRYZLR3FYPYB",
+        "versionId": "2b6d648e-c5a7-4cff-9320-48894c098db3",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    ]
+  }
+}

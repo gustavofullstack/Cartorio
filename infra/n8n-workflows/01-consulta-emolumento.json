@@ -1,1 +1,514 @@
-{"updatedAt":"2026-06-23T17:58:21.408Z","createdAt":"2026-06-23T13:50:22.808Z","id":"bR7qIo3bFpG4zgxO","name":"01 - Consulta Emolumento WhatsApp (v3)","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{"httpMethod":"POST","path":"consulta-emolumento","responseMode":"responseNode","options":{}},"id":"webhook-01","name":"Webhook consulta-emolumento","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"consulta-emolumento-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || (item.body && item.body.data && item.body.data.message && (item.body.data.message.conversation || item.body.data.message.extendedTextMessage?.text || '')) || '';\nconst sender = (item.body && (item.body.sender || item.body.data?.key?.remoteJid)) || 'unknown';\nconst patterns = { cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g, rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g, phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g, email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g };\nlet scrubbed = raw; let count = 0;\nfor (const [t, p] of Object.entries(patterns)) { const m = scrubbed.match(p); if (m) { count += m.length; scrubbed = scrubbed.replace(p, '[' + t.toUpperCase() + '_REDACTED]'); } }\nreturn { json: { raw_text: raw, scrubbed_text: scrubbed, redaction_count: count, sender: sender } };"},"id":"pii-01","name":"PII Scrub","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"mode":"runOnceForEachItem","jsCode":"const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doaç|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"},"id":"parse-01","name":"Parse Tipo","type":"n8n-nodes-base.code","typeVersion":2,"position":[680,300]},{"parameters":{"method":"GET","url":"=https://api.2notasudi.com.br/api/v1/emolumento/calcular?tipo={{$json.tipo}}&urgencia={{$json.urgencia}}","sendHeaders":true,"headerParameters":{"parameters":[{"name":"X-API-Key","value":"={{ $env.CARTORIO_API_KEY }}"}]},"options":{"timeout":8000,"retry":{"enabled":true,"maxTries":2}}},"id":"api-01","name":"API Emolumento","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[900,300],"credentials":{"httpHeaderAuth":{"id":"ADNkyTP2e6uYskUZ","name":"cartorio-api-key"}},"onError":"continueRegularOutput"},{"parameters":{"method":"POST","url":"=https://api.2notasudi.com.br/api/v1/audit/verify/log","sendHeaders":true,"headerParameters":{"parameters":[{"name":"X-API-Key","value":"={{ $env.CARTORIO_API_KEY }}"},{"name":"Content-Type","value":"application/json"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={action: 'consulta_emolumento', workflow: '{{$workflow.name}}', execution_id: '{{$execution.id}}', tipo: '{{$json.tipo}}', valor_total: {{$json.total || 0}}}","options":{"timeout":5000}},"id":"audit-01","name":"Audit Log","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1120,300],"credentials":{"httpHeaderAuth":{"id":"ADNkyTP2e6uYskUZ","name":"cartorio-api-key"}},"onError":"continueRegularOutput"},{"parameters":{"respondWith":"json","responseBody":"={ok: {{$json.ok !== false && !$json.error}}, text: '{{$json.response || $json.text || (\"Valor: R$ \" + ($json.total || \"?\"))}}', valor_total: {{$json.total || 0}}, tipo: '{{$json.tipo}}', tabela: '{{$json.tabela_referencia || \"\"}}'}"},"id":"respond-01","name":"Respond Emolumento","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[1340,300]}],"connections":{"Webhook consulta-emolumento":{"main":[[{"node":"PII Scrub","type":"main","index":0}]]},"PII Scrub":{"main":[[{"node":"Parse Tipo","type":"main","index":0}]]},"Parse Tipo":{"main":[[{"node":"API Emolumento","type":"main","index":0}]]},"API Emolumento":{"main":[[{"node":"Audit Log","type":"main","index":0}]]},"Audit Log":{"main":[[{"node":"Respond Emolumento","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","saveExecutionProgress":true,"saveManualExecutions":true,"callerPolicy":"workflowsFromSameOwner","errorWorkflow":"4IS5oiLyHWGhtb8g","saveDataSuccessExecution":"all","saveDataErrorExecution":"all"},"staticData":null,"meta":null,"nodeGroups":[],"pinData":null,"versionId":"e4372420-7980-44d7-9078-5786a6dddf1d","activeVersionId":"e4372420-7980-44d7-9078-5786a6dddf1d","versionCounter":6,"triggerCount":1,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T13:50:22.808Z","createdAt":"2026-06-23T13:50:22.808Z","role":"workflow:owner","workflowId":"bR7qIo3bFpG4zgxO","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[{"updatedAt":"2026-06-23T17:32:50.917Z","createdAt":"2026-06-23T17:32:50.917Z","id":"qIO7CBdOUpUxN8ZC","name":"cartorio"},{"updatedAt":"2026-06-23T17:32:51.010Z","createdAt":"2026-06-23T17:32:51.010Z","id":"54HXmR9SyLg5OFdJ","name":"whatsapp"},{"updatedAt":"2026-06-23T17:32:51.187Z","createdAt":"2026-06-23T17:32:51.187Z","id":"9DtKvuO6NoUQTGJp","name":"consulta"},{"updatedAt":"2026-06-23T17:32:52.312Z","createdAt":"2026-06-23T17:32:52.312Z","id":"eJJmZEUyE6wdhj5r","name":"emolumento"}],"activeVersion":{"updatedAt":"2026-06-23T17:58:21.409Z","createdAt":"2026-06-23T17:58:21.409Z","versionId":"e4372420-7980-44d7-9078-5786a6dddf1d","workflowId":"bR7qIo3bFpG4zgxO","nodes":[{"parameters":{"httpMethod":"POST","path":"consulta-emolumento","responseMode":"responseNode","options":{}},"id":"webhook-01","name":"Webhook consulta-emolumento","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[240,300],"webhookId":"consulta-emolumento-v1"},{"parameters":{"mode":"runOnceForEachItem","jsCode":"const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || (item.body && item.body.data && item.body.data.message && (item.body.data.message.conversation || item.body.data.message.extendedTextMessage?.text || '')) || '';\nconst sender = (item.body && (item.body.sender || item.body.data?.key?.remoteJid)) || 'unknown';\nconst patterns = { cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g, rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g, phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g, email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g };\nlet scrubbed = raw; let count = 0;\nfor (const [t, p] of Object.entries(patterns)) { const m = scrubbed.match(p); if (m) { count += m.length; scrubbed = scrubbed.replace(p, '[' + t.toUpperCase() + '_REDACTED]'); } }\nreturn { json: { raw_text: raw, scrubbed_text: scrubbed, redaction_count: count, sender: sender } };"},"id":"pii-01","name":"PII Scrub","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,300]},{"parameters":{"mode":"runOnceForEachItem","jsCode":"const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doaç|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"},"id":"parse-01","name":"Parse Tipo","type":"n8n-nodes-base.code","typeVersion":2,"position":[680,300]},{"parameters":{"method":"GET","url":"=https://api.2notasudi.com.br/api/v1/emolumento/calcular?tipo={{$json.tipo}}&urgencia={{$json.urgencia}}","sendHeaders":true,"headerParameters":{"parameters":[{"name":"X-API-Key","value":"={{ $env.CARTORIO_API_KEY }}"}]},"options":{"timeout":8000,"retry":{"enabled":true,"maxTries":2}}},"id":"api-01","name":"API Emolumento","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[900,300],"credentials":{"httpHeaderAuth":{"id":"ADNkyTP2e6uYskUZ","name":"cartorio-api-key"}},"onError":"continueRegularOutput"},{"parameters":{"method":"POST","url":"=https://api.2notasudi.com.br/api/v1/audit/verify/log","sendHeaders":true,"headerParameters":{"parameters":[{"name":"X-API-Key","value":"={{ $env.CARTORIO_API_KEY }}"},{"name":"Content-Type","value":"application/json"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={action: 'consulta_emolumento', workflow: '{{$workflow.name}}', execution_id: '{{$execution.id}}', tipo: '{{$json.tipo}}', valor_total: {{$json.total || 0}}}","options":{"timeout":5000}},"id":"audit-01","name":"Audit Log","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1120,300],"credentials":{"httpHeaderAuth":{"id":"ADNkyTP2e6uYskUZ","name":"cartorio-api-key"}},"onError":"continueRegularOutput"},{"parameters":{"respondWith":"json","responseBody":"={ok: {{$json.ok !== false && !$json.error}}, text: '{{$json.response || $json.text || (\"Valor: R$ \" + ($json.total || \"?\"))}}', valor_total: {{$json.total || 0}}, tipo: '{{$json.tipo}}', tabela: '{{$json.tabela_referencia || \"\"}}'}"},"id":"respond-01","name":"Respond Emolumento","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[1340,300]}],"connections":{"Webhook consulta-emolumento":{"main":[[{"node":"PII Scrub","type":"main","index":0}]]},"PII Scrub":{"main":[[{"node":"Parse Tipo","type":"main","index":0}]]},"Parse Tipo":{"main":[[{"node":"API Emolumento","type":"main","index":0}]]},"API Emolumento":{"main":[[{"node":"Audit Log","type":"main","index":0}]]},"Audit Log":{"main":[[{"node":"Respond Emolumento","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T17:58:21.435Z","id":126,"workflowId":"bR7qIo3bFpG4zgxO","versionId":"e4372420-7980-44d7-9078-5786a6dddf1d","event":"deactivated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"},{"createdAt":"2026-06-23T17:58:21.446Z","id":127,"workflowId":"bR7qIo3bFpG4zgxO","versionId":"e4372420-7980-44d7-9078-5786a6dddf1d","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"},{"createdAt":"2026-06-23T17:58:21.771Z","id":128,"workflowId":"bR7qIo3bFpG4zgxO","versionId":"e4372420-7980-44d7-9078-5786a6dddf1d","event":"deactivated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"},{"createdAt":"2026-06-23T17:58:21.782Z","id":129,"workflowId":"bR7qIo3bFpG4zgxO","versionId":"e4372420-7980-44d7-9078-5786a6dddf1d","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "updatedAt": "2026-06-23T17:58:21.408Z",
+  "createdAt": "2026-06-23T13:50:22.808Z",
+  "id": "bR7qIo3bFpG4zgxO",
+  "name": "01 - Consulta Emolumento WhatsApp (v3)",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consulta-emolumento",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-01",
+      "name": "Webhook consulta-emolumento",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "consulta-emolumento-v1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || (item.body && item.body.data && item.body.data.message && (item.body.data.message.conversation || item.body.data.message.extendedTextMessage?.text || '')) || '';\nconst sender = (item.body && (item.body.sender || item.body.data?.key?.remoteJid)) || 'unknown';\nconst patterns = { cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g, rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g, phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g, email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g };\nlet scrubbed = raw; let count = 0;\nfor (const [t, p] of Object.entries(patterns)) { const m = scrubbed.match(p); if (m) { count += m.length; scrubbed = scrubbed.replace(p, '[' + t.toUpperCase() + '_REDACTED]'); } }\nreturn { json: { raw_text: raw, scrubbed_text: scrubbed, redaction_count: count, sender: sender } };"
+      },
+      "id": "pii-01",
+      "name": "PII Scrub",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doaç|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"
+      },
+      "id": "parse-01",
+      "name": "Parse Tipo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.2notasudi.com.br/api/v1/emolumento/calcular?tipo={{$json.tipo}}&urgencia={{$json.urgencia}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 8000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2
+          }
+        }
+      },
+      "id": "api-01",
+      "name": "API Emolumento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ADNkyTP2e6uYskUZ",
+          "name": "cartorio-api-key"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.2notasudi.com.br/api/v1/audit/verify/log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={action: 'consulta_emolumento', workflow: '{{$workflow.name}}', execution_id: '{{$execution.id}}', tipo: '{{$json.tipo}}', valor_total: {{$json.total || 0}}}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "audit-01",
+      "name": "Audit Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ADNkyTP2e6uYskUZ",
+          "name": "cartorio-api-key"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ok: {{$json.ok !== false && !$json.error}}, text: '{{$json.response || $json.text || (\"Valor: R$ \" + ($json.total || \"?\"))}}', valor_total: {{$json.total || 0}}, tipo: '{{$json.tipo}}', tabela: '{{$json.tabela_referencia || \"\"}}'}"
+      },
+      "id": "respond-01",
+      "name": "Respond Emolumento",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook consulta-emolumento": {
+      "main": [
+        [
+          {
+            "node": "PII Scrub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PII Scrub": {
+      "main": [
+        [
+          {
+            "node": "Parse Tipo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Tipo": {
+      "main": [
+        [
+          {
+            "node": "API Emolumento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Emolumento": {
+      "main": [
+        [
+          {
+            "node": "Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log": {
+      "main": [
+        [
+          {
+            "node": "Respond Emolumento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "4IS5oiLyHWGhtb8g",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "e4372420-7980-44d7-9078-5786a6dddf1d",
+  "activeVersionId": "e4372420-7980-44d7-9078-5786a6dddf1d",
+  "versionCounter": 6,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T13:50:22.808Z",
+      "createdAt": "2026-06-23T13:50:22.808Z",
+      "role": "workflow:owner",
+      "workflowId": "bR7qIo3bFpG4zgxO",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-06-23T17:32:50.917Z",
+      "createdAt": "2026-06-23T17:32:50.917Z",
+      "id": "qIO7CBdOUpUxN8ZC",
+      "name": "cartorio"
+    },
+    {
+      "updatedAt": "2026-06-23T17:32:51.010Z",
+      "createdAt": "2026-06-23T17:32:51.010Z",
+      "id": "54HXmR9SyLg5OFdJ",
+      "name": "whatsapp"
+    },
+    {
+      "updatedAt": "2026-06-23T17:32:51.187Z",
+      "createdAt": "2026-06-23T17:32:51.187Z",
+      "id": "9DtKvuO6NoUQTGJp",
+      "name": "consulta"
+    },
+    {
+      "updatedAt": "2026-06-23T17:32:52.312Z",
+      "createdAt": "2026-06-23T17:32:52.312Z",
+      "id": "eJJmZEUyE6wdhj5r",
+      "name": "emolumento"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-06-23T17:58:21.409Z",
+    "createdAt": "2026-06-23T17:58:21.409Z",
+    "versionId": "e4372420-7980-44d7-9078-5786a6dddf1d",
+    "workflowId": "bR7qIo3bFpG4zgxO",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "consulta-emolumento",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-01",
+        "name": "Webhook consulta-emolumento",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          240,
+          300
+        ],
+        "webhookId": "consulta-emolumento-v1"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || (item.body && item.body.data && item.body.data.message && (item.body.data.message.conversation || item.body.data.message.extendedTextMessage?.text || '')) || '';\nconst sender = (item.body && (item.body.sender || item.body.data?.key?.remoteJid)) || 'unknown';\nconst patterns = { cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g, rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g, phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g, email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g };\nlet scrubbed = raw; let count = 0;\nfor (const [t, p] of Object.entries(patterns)) { const m = scrubbed.match(p); if (m) { count += m.length; scrubbed = scrubbed.replace(p, '[' + t.toUpperCase() + '_REDACTED]'); } }\nreturn { json: { raw_text: raw, scrubbed_text: scrubbed, redaction_count: count, sender: sender } };"
+        },
+        "id": "pii-01",
+        "name": "PII Scrub",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doaç|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"
+        },
+        "id": "parse-01",
+        "name": "Parse Tipo",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          680,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "=https://api.2notasudi.com.br/api/v1/emolumento/calcular?tipo={{$json.tipo}}&urgencia={{$json.urgencia}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "X-API-Key",
+                "value": "={{ $env.CARTORIO_API_KEY }}"
+              }
+            ]
+          },
+          "options": {
+            "timeout": 8000,
+            "retry": {
+              "enabled": true,
+              "maxTries": 2
+            }
+          }
+        },
+        "id": "api-01",
+        "name": "API Emolumento",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          900,
+          300
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "ADNkyTP2e6uYskUZ",
+            "name": "cartorio-api-key"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://api.2notasudi.com.br/api/v1/audit/verify/log",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "X-API-Key",
+                "value": "={{ $env.CARTORIO_API_KEY }}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={action: 'consulta_emolumento', workflow: '{{$workflow.name}}', execution_id: '{{$execution.id}}', tipo: '{{$json.tipo}}', valor_total: {{$json.total || 0}}}",
+          "options": {
+            "timeout": 5000
+          }
+        },
+        "id": "audit-01",
+        "name": "Audit Log",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1120,
+          300
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "ADNkyTP2e6uYskUZ",
+            "name": "cartorio-api-key"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={ok: {{$json.ok !== false && !$json.error}}, text: '{{$json.response || $json.text || (\"Valor: R$ \" + ($json.total || \"?\"))}}', valor_total: {{$json.total || 0}}, tipo: '{{$json.tipo}}', tabela: '{{$json.tabela_referencia || \"\"}}'}"
+        },
+        "id": "respond-01",
+        "name": "Respond Emolumento",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          1340,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Webhook consulta-emolumento": {
+        "main": [
+          [
+            {
+              "node": "PII Scrub",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "PII Scrub": {
+        "main": [
+          [
+            {
+              "node": "Parse Tipo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Tipo": {
+        "main": [
+          [
+            {
+              "node": "API Emolumento",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "API Emolumento": {
+        "main": [
+          [
+            {
+              "node": "Audit Log",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Audit Log": {
+        "main": [
+          [
+            {
+              "node": "Respond Emolumento",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Gustavo  Rodrigues",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-23T17:58:21.435Z",
+        "id": 126,
+        "workflowId": "bR7qIo3bFpG4zgxO",
+        "versionId": "e4372420-7980-44d7-9078-5786a6dddf1d",
+        "event": "deactivated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      },
+      {
+        "createdAt": "2026-06-23T17:58:21.446Z",
+        "id": 127,
+        "workflowId": "bR7qIo3bFpG4zgxO",
+        "versionId": "e4372420-7980-44d7-9078-5786a6dddf1d",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      },
+      {
+        "createdAt": "2026-06-23T17:58:21.771Z",
+        "id": 128,
+        "workflowId": "bR7qIo3bFpG4zgxO",
+        "versionId": "e4372420-7980-44d7-9078-5786a6dddf1d",
+        "event": "deactivated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      },
+      {
+        "createdAt": "2026-06-23T17:58:21.782Z",
+        "id": 129,
+        "workflowId": "bR7qIo3bFpG4zgxO",
+        "versionId": "e4372420-7980-44d7-9078-5786a6dddf1d",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    ]
+  }
+}

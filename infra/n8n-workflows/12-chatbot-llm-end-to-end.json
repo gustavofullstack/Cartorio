@@ -103,7 +103,10 @@
       "position": [
         900,
         300
-      ]
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {

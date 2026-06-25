@@ -72,7 +72,10 @@
         680,
         300
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -129,7 +132,10 @@
         1120,
         200
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -162,7 +168,10 @@
         1120,
         400
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -195,7 +204,10 @@
         1340,
         300
       ],
-      "typeVersion": 4.2
+      "typeVersion": 4.2,
+      "options": {
+        "timeout": 5000
+      }
     }
   ],
   "connections": {

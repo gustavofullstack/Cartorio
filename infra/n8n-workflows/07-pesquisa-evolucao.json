@@ -1,1 +1,241 @@
-{"updatedAt":"2026-06-23T14:19:56.080Z","createdAt":"2026-06-23T13:56:00.783Z","id":"D9XJmlJRXZ3lavoa","name":"07 - Pesquisa Satisfacao","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{"rule":{"interval":[{"field":"hours","hoursInterval":24}]}},"id":"cron-24h","name":"Cron 24h","type":"n8n-nodes-base.scheduleTrigger","typeVersion":1.2,"position":[240,300]},{"parameters":{"url":"https://api.2notasudi.com.br/api/v1/atendimentos/ultimas-24h","options":{"timeout":10000}},"id":"api-list","name":"GET atendimentos","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[460,300]},{"parameters":{"resource":"message","operation":"sendText","instanceName":"cartorio-2notas","remoteJid":"5511999999999@s.whatsapp.net","message":"Ola! Seu atendimento no cartorio foi concluido. Avalie de 1 a 5."},"id":"send-wa","name":"Evolution sendText","type":"n8n-nodes-evolution-api.evolutionApi","typeVersion":1,"position":[900,300],"credentials":{"evolutionApi":{"id":"adbzRn9sEZD7VZbs","name":"evolution-api-cartorio"}}}],"connections":{"Cron 24h":{"main":[[{"node":"GET atendimentos","type":"main","index":0}]]},"GET atendimentos":{"main":[[{"node":"Evolution sendText","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","callerPolicy":"workflowsFromSameOwner"},"staticData":{"node:Cron 24h":{"recurrenceRules":[]}},"meta":null,"nodeGroups":[],"pinData":null,"versionId":"802ef2a7-3000-4655-995c-fa8a12883ac8","activeVersionId":"802ef2a7-3000-4655-995c-fa8a12883ac8","versionCounter":3,"triggerCount":1,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T13:56:00.783Z","createdAt":"2026-06-23T13:56:00.783Z","role":"workflow:owner","workflowId":"D9XJmlJRXZ3lavoa","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[],"activeVersion":{"updatedAt":"2026-06-23T14:19:56.082Z","createdAt":"2026-06-23T14:19:56.082Z","versionId":"802ef2a7-3000-4655-995c-fa8a12883ac8","workflowId":"D9XJmlJRXZ3lavoa","nodes":[{"parameters":{"rule":{"interval":[{"field":"hours","hoursInterval":24}]}},"id":"cron-24h","name":"Cron 24h","type":"n8n-nodes-base.scheduleTrigger","typeVersion":1.2,"position":[240,300]},{"parameters":{"url":"https://api.2notasudi.com.br/api/v1/atendimentos/ultimas-24h","options":{"timeout":10000}},"id":"api-list","name":"GET atendimentos","type":"n8n-nodes-base.httpRequest","typeVersion":4.1,"position":[460,300]},{"parameters":{"resource":"message","operation":"sendText","instanceName":"cartorio-2notas","remoteJid":"5511999999999@s.whatsapp.net","message":"Ola! Seu atendimento no cartorio foi concluido. Avalie de 1 a 5."},"id":"send-wa","name":"Evolution sendText","type":"n8n-nodes-evolution-api.evolutionApi","typeVersion":1,"position":[900,300],"credentials":{"evolutionApi":{"id":"adbzRn9sEZD7VZbs","name":"evolution-api-cartorio"}}}],"connections":{"Cron 24h":{"main":[[{"node":"GET atendimentos","type":"main","index":0}]]},"GET atendimentos":{"main":[[{"node":"Evolution sendText","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T14:19:56.164Z","id":23,"workflowId":"D9XJmlJRXZ3lavoa","versionId":"802ef2a7-3000-4655-995c-fa8a12883ac8","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "updatedAt": "2026-06-23T14:19:56.080Z",
+  "createdAt": "2026-06-23T13:56:00.783Z",
+  "id": "D9XJmlJRXZ3lavoa",
+  "name": "07 - Pesquisa Satisfacao",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "cron-24h",
+      "name": "Cron 24h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.2notasudi.com.br/api/v1/atendimentos/ultimas-24h",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "api-list",
+      "name": "GET atendimentos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        300
+      ],
+      "options": {
+        "timeout": 5000
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendText",
+        "instanceName": "cartorio-2notas",
+        "remoteJid": "5511999999999@s.whatsapp.net",
+        "message": "Ola! Seu atendimento no cartorio foi concluido. Avalie de 1 a 5."
+      },
+      "id": "send-wa",
+      "name": "Evolution sendText",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "evolutionApi": {
+          "id": "adbzRn9sEZD7VZbs",
+          "name": "evolution-api-cartorio"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron 24h": {
+      "main": [
+        [
+          {
+            "node": "GET atendimentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET atendimentos": {
+      "main": [
+        [
+          {
+            "node": "Evolution sendText",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Cron 24h": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "802ef2a7-3000-4655-995c-fa8a12883ac8",
+  "activeVersionId": "802ef2a7-3000-4655-995c-fa8a12883ac8",
+  "versionCounter": 3,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "shared": [
+    {
+      "updatedAt": "2026-06-23T13:56:00.783Z",
+      "createdAt": "2026-06-23T13:56:00.783Z",
+      "role": "workflow:owner",
+      "workflowId": "D9XJmlJRXZ3lavoa",
+      "projectId": "IriLCUUa2YxjQSQ5",
+      "project": {
+        "updatedAt": "2026-06-23T01:34:55.592Z",
+        "createdAt": "2026-06-22T19:27:08.156Z",
+        "id": "IriLCUUa2YxjQSQ5",
+        "name": "Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-06-23T14:19:56.082Z",
+    "createdAt": "2026-06-23T14:19:56.082Z",
+    "versionId": "802ef2a7-3000-4655-995c-fa8a12883ac8",
+    "workflowId": "D9XJmlJRXZ3lavoa",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "hours",
+                "hoursInterval": 24
+              }
+            ]
+          }
+        },
+        "id": "cron-24h",
+        "name": "Cron 24h",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          240,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://api.2notasudi.com.br/api/v1/atendimentos/ultimas-24h",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "api-list",
+        "name": "GET atendimentos",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          460,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendText",
+          "instanceName": "cartorio-2notas",
+          "remoteJid": "5511999999999@s.whatsapp.net",
+          "message": "Ola! Seu atendimento no cartorio foi concluido. Avalie de 1 a 5."
+        },
+        "id": "send-wa",
+        "name": "Evolution sendText",
+        "type": "n8n-nodes-evolution-api.evolutionApi",
+        "typeVersion": 1,
+        "position": [
+          900,
+          300
+        ],
+        "credentials": {
+          "evolutionApi": {
+            "id": "adbzRn9sEZD7VZbs",
+            "name": "evolution-api-cartorio"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Cron 24h": {
+        "main": [
+          [
+            {
+              "node": "GET atendimentos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GET atendimentos": {
+        "main": [
+          [
+            {
+              "node": "Evolution sendText",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Gustavo  Rodrigues",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-06-23T14:19:56.164Z",
+        "id": 23,
+        "workflowId": "D9XJmlJRXZ3lavoa",
+        "versionId": "802ef2a7-3000-4655-995c-fa8a12883ac8",
+        "event": "activated",
+        "userId": "3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"
+      }
+    ]
+  }
+}

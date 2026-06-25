@@ -9,7 +9,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -65,7 +68,10 @@
       "name": "Extract Error Info",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -100,7 +106,13 @@
       "name": "Alert Backend (HMAC)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -110,7 +122,10 @@
       "name": "Format Telegram",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -136,7 +151,13 @@
       "name": "Send Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -165,7 +186,10 @@
       "name": "If ECONNREFUSED?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
@@ -176,7 +200,10 @@
       "name": "Wait 3s (backoff)",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [1560, 180]
+      "position": [
+        1560,
+        180
+      ]
     },
     {
       "parameters": {
@@ -202,7 +229,13 @@
       "name": "Retry Alert (1/3)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 180]
+      "position": [
+        1780,
+        180
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -213,7 +246,10 @@
       "name": "Wait 6s (backoff 2)",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [2000, 180]
+      "position": [
+        2000,
+        180
+      ]
     },
     {
       "parameters": {
@@ -239,7 +275,13 @@
       "name": "Retry Alert (2/3)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2220, 180]
+      "position": [
+        2220,
+        180
+      ],
+      "options": {
+        "timeout": 5000
+      }
     },
     {
       "parameters": {
@@ -250,7 +292,10 @@
       "name": "Wait 12s (backoff 3)",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [2440, 180]
+      "position": [
+        2440,
+        180
+      ]
     },
     {
       "parameters": {
@@ -276,45 +321,137 @@
       "name": "Retry Alert (3/3 FINAL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2660, 180]
+      "position": [
+        2660,
+        180
+      ],
+      "options": {
+        "timeout": 5000
+      }
     }
   ],
   "connections": {
     "Error Trigger": {
-      "main": [[{"node": "Extract Error Info", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Extract Error Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract Error Info": {
-      "main": [[{"node": "Alert Backend (HMAC)", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Alert Backend (HMAC)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Alert Backend (HMAC)": {
-      "main": [[{"node": "Format Telegram", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Format Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Format Telegram": {
-      "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Send Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Send Telegram": {
-      "main": [[{"node": "If ECONNREFUSED?", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "If ECONNREFUSED?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "If ECONNREFUSED?": {
       "main": [
-        [{"node": "Wait 3s (backoff)", "type": "main", "index": 0}],
+        [
+          {
+            "node": "Wait 3s (backoff)",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Wait 3s (backoff)": {
-      "main": [[{"node": "Retry Alert (1/3)", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Retry Alert (1/3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Retry Alert (1/3)": {
-      "main": [[{"node": "Wait 6s (backoff 2)", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Wait 6s (backoff 2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Wait 6s (backoff 2)": {
-      "main": [[{"node": "Retry Alert (2/3)", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Retry Alert (2/3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Retry Alert (2/3)": {
-      "main": [[{"node": "Wait 12s (backoff 3)", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Wait 12s (backoff 3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Wait 12s (backoff 3)": {
-      "main": [[{"node": "Retry Alert (3/3 FINAL)", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Retry Alert (3/3 FINAL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -326,10 +463,18 @@
   },
   "staticData": null,
   "tags": [
-    {"name": "cartorio"},
-    {"name": "monitor"},
-    {"name": "error-handler"},
-    {"name": "b6-fix"}
+    {
+      "name": "cartorio"
+    },
+    {
+      "name": "monitor"
+    },
+    {
+      "name": "error-handler"
+    },
+    {
+      "name": "b6-fix"
+    }
   ],
   "meta": {
     "description": "B6 fix 2026-06-25: wires to /integrations/n8n/error endpoint with HMAC + Telegram group + 3x exp backoff retry on ECONNREFUSED. Replaces v4 which pointed to legacy /atendimento endpoint.",
