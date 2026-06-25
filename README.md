@@ -3,7 +3,7 @@
 > **Plataforma de atendimento jurídico via WhatsApp com IA, HITL, LGPD-by-design, audit chain imutável e 7 serviços integrados.**
 
 [![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/gustavofullstack/Cartorio/releases)
-[![Tests](https://img.shields.io/badge/tests-624_passing-brightgreen.svg)](docs/DEPLOYMENT.md)
+[![Tests](https://img.shields.io/badge/tests-1211_passing-brightgreen.svg)](docs/DEPLOYMENT.md)
 [![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](docs/DEPLOYMENT.md)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](backend/pyproject.toml)
 [![LGPD](https://img.shields.io/badge/LGPD-compliant-success.svg)](docs/LGPD.md)
@@ -16,10 +16,10 @@
 | Serviço | URL | Status | Versão | Função |
 |---|---|---|---|---|
 | **API FastAPI** | https://api.2notasudi.com.br | ✅ 200 | v0.6.0 | Regras de negócio + audit chain + MCP server |
-| **N8N** | https://flow.2notasudi.com.br | ✅ 200 | 1.x | 16 workflows ativos (atendimento, handoff, follow-up) |
+| **N8N** | https://flow.2notasudi.com.br | ✅ 200 | 1.x | 34 workflows ativos (atendimento, handoff, follow-up) |
 | **Evolution API** | https://whatsapp.2notasudi.com.br | ✅ 200 | 2.3.7 | Gateway WhatsApp Business |
 | **OpenClaw Gateway** | https://agent.2notasudi.com.br | ✅ 200 | 0.4.x | LLM router (MiniMax-M3, Gemini 3.1 Pro, deepseek-v4-flash) |
-| **Supabase** | https://supbase.2notasudi.com.br | ✅ 401* | self-hosted | PostgreSQL 16 + Auth + Storage + Realtime + Cron |
+| **Supabase** | https://supbase.2notasudi.com.br | ✅ 401* | self-hosted | PostgreSQL 16 + 134 tabelas + Auth + Storage + Realtime + Cron |
 | **EasyPanel** | https://easypanel.2notasudi.com.br | ✅ 200 | — | Central de deploy (Traefik + Swarm) |
 | **Telegram Bot** | @TestCartorioBot | ✅ 200 | 6.x | Canal alternativo de teste (temporário) |
 
