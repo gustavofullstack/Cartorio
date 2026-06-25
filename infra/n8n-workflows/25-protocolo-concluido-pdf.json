@@ -68,6 +68,10 @@
             {
               "name": "X-Canal",
               "value": "cron"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -158,6 +162,10 @@
             {
               "name": "Content-Type",
               "value": "application/json"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -194,12 +202,16 @@
             {
               "name": "Content-Type",
               "value": "application/json"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $('Split Out (1 item por vez)').item.json.cliente.telefone }}\",\n  \"text\": \"🎉 *Protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} CONCLUÍDO!*\\n\\nSua escritura/certidão está pronta.\\n\\n📎 PDF: {{ $json.url_pdf }}\\n\\nPode retirar no cartório (seg-sex 09h-17h) com RG e CPF.\\n\\nDúvidas? É só chamar aqui! 📜\"\n}",
+        "jsonBody": "={\n  \"number\": \"{{ $('Split Out (1 item por vez)').item.json.cliente.telefone }}\",\n  \"text\": \"\ud83c\udf89 *Protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} CONCLU\u00cdDO!*\\n\\nSua escritura/certid\u00e3o est\u00e1 pronta.\\n\\n\ud83d\udcce PDF: {{ $json.url_pdf }}\\n\\nPode retirar no cart\u00f3rio (seg-sex 09h-17h) com RG e CPF.\\n\\nD\u00favidas? \u00c9 s\u00f3 chamar aqui! \ud83d\udcdc\"\n}",
         "options": {
           "timeout": 30000
         }
@@ -230,6 +242,10 @@
             {
               "name": "Content-Type",
               "value": "application/json"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -242,7 +258,7 @@
             },
             {
               "name": "message",
-              "value": "=📬 PDF enviado para cliente: protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} (canal whatsapp, cliente {{ $('Split Out (1 item por vez)').item.json.cliente.nome }})."
+              "value": "=\ud83d\udcec PDF enviado para cliente: protocolo {{ $('Split Out (1 item por vez)').item.json.numero }} (canal whatsapp, cliente {{ $('Split Out (1 item por vez)').item.json.cliente.nome }})."
             }
           ]
         },
@@ -309,12 +325,16 @@
             {
               "name": "X-API-Key",
               "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"source\": \"n8n\", \"wf_name\": $workflow.name, \"wf_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id, \"status\": $execution.success ? 'success' : 'error', \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'), \"counters\": {  \"n8n_wf_executions_total\": 1}, \"gauges\": {  \"n8n_wf_error_rate\": $execution.success ? 0.0 : 1.0}}",
+        "jsonBody": "={\n  \"source\": \"n8n\",\n  \"wf_name\": $workflow.name,\n  \"wf_id\": $workflow.id,\n  \"execution_id\": $execution.id,\n  \"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id,\n  \"status\": $execution.success ? 'success' : 'error',\n  \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'),\n  \"counters\": {\n    \"n8n_wf_executions_total\": {\n      \"workflow=$workflow.name|status=success\": $execution.success ? 1 : 0,\n      \"workflow=$workflow.name|status=error\": $execution.success ? 0 : 1\n    },\n    \"n8n_wf_errors_total\": {\n      \"workflow=$workflow.name|error_type=generic\": $execution.success ? 0 : 1\n    }\n  },\n  \"gauges\": {\n    \"n8n_wf_execution_duration_seconds\": {\n      \"workflow=$workflow.name\": $now.diff($json.wf_started_at, 'seconds')\n    }\n  },\n  \"uptime_seconds\": $now.diff($json.wf_started_at, 'seconds')\n}",
         "options": {
           "timeout": 5000,
           "retry": {

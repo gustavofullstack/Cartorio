@@ -118,6 +118,10 @@
             {
               "name": "X-N8N-Signature",
               "value": "sha256={{ $binary.data ? Crypto.createHmac('sha256', $env.N8N_WEBHOOK_SECRET).update($binary.data).digest('hex') : '' }}"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -147,7 +151,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Format Telegram message with MarkdownV2 (Telegram Bot API 2026-06-25)\n// B6 fix: escapeMarkdownV2() canonica + parse_mode=MarkdownV2.\n// Spec: https://core.telegram.org/bots/api#markdownv2-style\nfunction escapeMarkdownV2(s) {\n  if (s === null || s === undefined) return 'unknown';\n  return String(s).replace(/([_*[\\]()~`>#+\\-=|{}.!])/g, '\\$1');\n}\n\nconst wfName = $input.item.json.wf_name ?? 'unknown';\nconst execId = $input.item.json.execution_id ?? 'unknown';\nconst errMsg = $input.item.json.error_message ?? 'unknown error';\nconst errName = $input.item.json.error_name ?? 'Error';\nconst nodeName = $input.item.json.node_name ?? 'unknown';\nconst ts = $input.item.json.ts ?? new Date().toISOString();\n\nconst text = `🚨 *N8N ERRO*\n` +\n  `*WF:* ${escapeMarkdownV2(wfName)}\n` +\n  `*Exec:* \\`${escapeMarkdownV2(execId)}\\`\n` +\n  `*Node:* ${escapeMarkdownV2(nodeName)}\n` +\n  `*Erro:* \\`${escapeMarkdownV2(errName)}\\` \\— ${escapeMarkdownV2(errMsg)}\n` +\n  `*TS:* ${escapeMarkdownV2(ts)}`;\n\nreturn [{\n  json: {\n    chat_id: '-5006771024',\n    text: text,\n    parse_mode: 'MarkdownV2',\n    disable_web_page_preview: true\n  }\n}];"
+        "jsCode": "// Format Telegram message with MarkdownV2 (Telegram Bot API 2026-06-25)\n// B6 fix: escapeMarkdownV2() canonica + parse_mode=MarkdownV2.\n// Spec: https://core.telegram.org/bots/api#markdownv2-style\nfunction escapeMarkdownV2(s) {\n  if (s === null || s === undefined) return 'unknown';\n  return String(s).replace(/([_*[\\]()~`>#+\\-=|{}.!])/g, '\\$1');\n}\n\nconst wfName = $input.item.json.wf_name ?? 'unknown';\nconst execId = $input.item.json.execution_id ?? 'unknown';\nconst errMsg = $input.item.json.error_message ?? 'unknown error';\nconst errName = $input.item.json.error_name ?? 'Error';\nconst nodeName = $input.item.json.node_name ?? 'unknown';\nconst ts = $input.item.json.ts ?? new Date().toISOString();\n\nconst text = `\ud83d\udea8 *N8N ERRO*\n` +\n  `*WF:* ${escapeMarkdownV2(wfName)}\n` +\n  `*Exec:* \\`${escapeMarkdownV2(execId)}\\`\n` +\n  `*Node:* ${escapeMarkdownV2(nodeName)}\n` +\n  `*Erro:* \\`${escapeMarkdownV2(errName)}\\` \\\u2014 ${escapeMarkdownV2(errMsg)}\n` +\n  `*TS:* ${escapeMarkdownV2(ts)}`;\n\nreturn [{\n  json: {\n    chat_id: '-5006771024',\n    text: text,\n    parse_mode: 'MarkdownV2',\n    disable_web_page_preview: true\n  }\n}];"
       },
       "id": "telegram-format-5",
       "name": "Format Telegram",
@@ -168,6 +172,10 @@
             {
               "name": "Content-Type",
               "value": "application/json"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -246,6 +254,10 @@
             {
               "name": "Content-Type",
               "value": "application/json"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -292,6 +304,10 @@
             {
               "name": "Content-Type",
               "value": "application/json"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -338,6 +354,10 @@
             {
               "name": "Content-Type",
               "value": "application/json"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -407,12 +427,16 @@
             {
               "name": "X-API-Key",
               "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"source\": \"n8n\", \"wf_name\": $workflow.name, \"wf_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id, \"status\": $execution.success ? 'success' : 'error', \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'), \"counters\": {  \"n8n_wf_executions_total\": 1}, \"gauges\": {  \"n8n_wf_error_rate\": $execution.success ? 0.0 : 1.0}}",
+        "jsonBody": "={\n  \"source\": \"n8n\",\n  \"wf_name\": $workflow.name,\n  \"wf_id\": $workflow.id,\n  \"execution_id\": $execution.id,\n  \"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id,\n  \"status\": $execution.success ? 'success' : 'error',\n  \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'),\n  \"counters\": {\n    \"n8n_wf_executions_total\": {\n      \"workflow=$workflow.name|status=success\": $execution.success ? 1 : 0,\n      \"workflow=$workflow.name|status=error\": $execution.success ? 0 : 1\n    },\n    \"n8n_wf_errors_total\": {\n      \"workflow=$workflow.name|error_type=generic\": $execution.success ? 0 : 1\n    }\n  },\n  \"gauges\": {\n    \"n8n_wf_execution_duration_seconds\": {\n      \"workflow=$workflow.name\": $now.diff($json.wf_started_at, 'seconds')\n    }\n  },\n  \"uptime_seconds\": $now.diff($json.wf_started_at, 'seconds')\n}",
         "options": {
           "timeout": 5000,
           "retry": {

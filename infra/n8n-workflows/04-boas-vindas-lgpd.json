@@ -105,7 +105,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"first_contact\",\n  \"response\": \"Ola! Bem-vindo ao 2o Cartorio de Notas de Uberlandia. 👋\\n\\nAntes de continuarmos, precisamos do seu consentimento explicito para tratar seus dados pessoais conforme a LGPD (Lei 13.709/2018).\\n\\n📋 Finalidades:\\n- Atendimento de servicos cartorarios (escrituras, procurações, certidoes)\\n- Armazenamento de protocolos por 20 anos (prazo legal)\\n- Comunicacao sobre o andamento do seu pedido\\n\\n✅ Para aceitar, responda: ACEITO\\n❌ Para recusar, responda: NAO ACEITO\\n\\nSeu consentimento fica registrado em nossa auditoria interna (hash chain imutavel).\"\n}"
+        "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"first_contact\",\n  \"response\": \"Ola! Bem-vindo ao 2o Cartorio de Notas de Uberlandia. \ud83d\udc4b\\n\\nAntes de continuarmos, precisamos do seu consentimento explicito para tratar seus dados pessoais conforme a LGPD (Lei 13.709/2018).\\n\\n\ud83d\udccb Finalidades:\\n- Atendimento de servicos cartorarios (escrituras, procura\u00e7\u00f5es, certidoes)\\n- Armazenamento de protocolos por 20 anos (prazo legal)\\n- Comunicacao sobre o andamento do seu pedido\\n\\n\u2705 Para aceitar, responda: ACEITO\\n\u274c Para recusar, responda: NAO ACEITO\\n\\nSeu consentimento fica registrado em nossa auditoria interna (hash chain imutavel).\"\n}"
       },
       "id": "respond-welcome-new",
       "name": "Welcome Novo Cliente",
@@ -119,7 +119,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"returning_user\",\n  \"response\": \"Ola novamente, {{ $json.name }}! 👋\\n\\nComo posso ajudar hoje?\\n\\n1️⃣ Consultar valor de emolumento\\n2️⃣ Status de protocolo\\n3️⃣ Criar novo protocolo\\n4️⃣ Falar com atendente humano\\n\\nResponda com o numero ou descreva sua necessidade.\",\n  \"consentimento_lgpd\": {{ $json.consent || true }},\n  \"sender\": \"{{ $json.sender }}\"\n}"
+        "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"returning_user\",\n  \"response\": \"Ola novamente, {{ $json.name }}! \ud83d\udc4b\\n\\nComo posso ajudar hoje?\\n\\n1\ufe0f\u20e3 Consultar valor de emolumento\\n2\ufe0f\u20e3 Status de protocolo\\n3\ufe0f\u20e3 Criar novo protocolo\\n4\ufe0f\u20e3 Falar com atendente humano\\n\\nResponda com o numero ou descreva sua necessidade.\",\n  \"consentimento_lgpd\": {{ $json.consent || true }},\n  \"sender\": \"{{ $json.sender }}\"\n}"
       },
       "id": "respond-welcome-returning",
       "name": "Welcome Recorrente",
@@ -177,12 +177,16 @@
             {
               "name": "X-API-Key",
               "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"source\": \"n8n\", \"wf_name\": $workflow.name, \"wf_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id, \"status\": $execution.success ? 'success' : 'error', \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'), \"counters\": {  \"n8n_wf_executions_total\": 1}, \"gauges\": {  \"n8n_wf_error_rate\": $execution.success ? 0.0 : 1.0}}",
+        "jsonBody": "={\n  \"source\": \"n8n\",\n  \"wf_name\": $workflow.name,\n  \"wf_id\": $workflow.id,\n  \"execution_id\": $execution.id,\n  \"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id,\n  \"status\": $execution.success ? 'success' : 'error',\n  \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'),\n  \"counters\": {\n    \"n8n_wf_executions_total\": {\n      \"workflow=$workflow.name|status=success\": $execution.success ? 1 : 0,\n      \"workflow=$workflow.name|status=error\": $execution.success ? 0 : 1\n    },\n    \"n8n_wf_errors_total\": {\n      \"workflow=$workflow.name|error_type=generic\": $execution.success ? 0 : 1\n    }\n  },\n  \"gauges\": {\n    \"n8n_wf_execution_duration_seconds\": {\n      \"workflow=$workflow.name\": $now.diff($json.wf_started_at, 'seconds')\n    }\n  },\n  \"uptime_seconds\": $now.diff($json.wf_started_at, 'seconds')\n}",
         "options": {
           "timeout": 5000,
           "retry": {
@@ -344,7 +348,7 @@
       {
         "parameters": {
           "respondWith": "json",
-          "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"first_contact\",\n  \"response\": \"Ola! Bem-vindo ao 2o Cartorio de Notas de Uberlandia. 👋\\n\\nAntes de continuarmos, precisamos do seu consentimento explicito para tratar seus dados pessoais conforme a LGPD (Lei 13.709/2018).\\n\\n📋 Finalidades:\\n- Atendimento de servicos cartorarios (escrituras, procurações, certidoes)\\n- Armazenamento de protocolos por 20 anos (prazo legal)\\n- Comunicacao sobre o andamento do seu pedido\\n\\n✅ Para aceitar, responda: ACEITO\\n❌ Para recusar, responda: NAO ACEITO\\n\\nSeu consentimento fica registrado em nossa auditoria interna (hash chain imutavel).\"\n}"
+          "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"first_contact\",\n  \"response\": \"Ola! Bem-vindo ao 2o Cartorio de Notas de Uberlandia. \ud83d\udc4b\\n\\nAntes de continuarmos, precisamos do seu consentimento explicito para tratar seus dados pessoais conforme a LGPD (Lei 13.709/2018).\\n\\n\ud83d\udccb Finalidades:\\n- Atendimento de servicos cartorarios (escrituras, procura\u00e7\u00f5es, certidoes)\\n- Armazenamento de protocolos por 20 anos (prazo legal)\\n- Comunicacao sobre o andamento do seu pedido\\n\\n\u2705 Para aceitar, responda: ACEITO\\n\u274c Para recusar, responda: NAO ACEITO\\n\\nSeu consentimento fica registrado em nossa auditoria interna (hash chain imutavel).\"\n}"
         },
         "id": "respond-welcome-new",
         "name": "Welcome Novo Cliente",
@@ -358,7 +362,7 @@
       {
         "parameters": {
           "respondWith": "json",
-          "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"returning_user\",\n  \"response\": \"Ola novamente, {{ $json.name }}! 👋\\n\\nComo posso ajudar hoje?\\n\\n1️⃣ Consultar valor de emolumento\\n2️⃣ Status de protocolo\\n3️⃣ Criar novo protocolo\\n4️⃣ Falar com atendente humano\\n\\nResponda com o numero ou descreva sua necessidade.\",\n  \"consentimento_lgpd\": {{ $json.consent || true }},\n  \"sender\": \"{{ $json.sender }}\"\n}"
+          "responseBody": "={\n  \"status\": \"welcome\",\n  \"type\": \"returning_user\",\n  \"response\": \"Ola novamente, {{ $json.name }}! \ud83d\udc4b\\n\\nComo posso ajudar hoje?\\n\\n1\ufe0f\u20e3 Consultar valor de emolumento\\n2\ufe0f\u20e3 Status de protocolo\\n3\ufe0f\u20e3 Criar novo protocolo\\n4\ufe0f\u20e3 Falar com atendente humano\\n\\nResponda com o numero ou descreva sua necessidade.\",\n  \"consentimento_lgpd\": {{ $json.consent || true }},\n  \"sender\": \"{{ $json.sender }}\"\n}"
         },
         "id": "respond-welcome-returning",
         "name": "Welcome Recorrente",

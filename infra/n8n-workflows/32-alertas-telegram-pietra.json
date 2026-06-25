@@ -31,6 +31,10 @@
             {
               "name": "X-API-Key",
               "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
@@ -87,7 +91,7 @@
     {
       "parameters": {
         "chatId": "={{ $env.TELEGRAM_GRUPO_PIETRA_CHAT_ID }}",
-        "text": "=🚨 ALERTA CARTOERIO\n\nStatus: {{ $json.status }}\nOffline: {{ $json.offline_count }}\nChecks: {{ $now.toISO() }}\n\n{{ JSON.stringify($json.integracoes, null, 2) }}",
+        "text": "=\ud83d\udea8 ALERTA CARTOERIO\n\nStatus: {{ $json.status }}\nOffline: {{ $json.offline_count }}\nChecks: {{ $now.toISO() }}\n\n{{ JSON.stringify($json.integracoes, null, 2) }}",
         "additionalFields": {
           "parse_mode": "MarkdownV2",
           "disable_notification": false
@@ -116,12 +120,16 @@
             {
               "name": "X-API-Key",
               "value": "={{ $env.CARTORIO_API_KEY }}"
+            },
+            {
+              "name": "X-Correlation-ID",
+              "value": "={{ $json.correlation_id }}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"source\": \"n8n\",\n  \"wf_name\": $workflow.name,\n  \"wf_id\": $workflow.id,\n  \"execution_id\": $execution.id,\n  \"status\": $execution.success ? 'success' : 'error',\n  \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'),\n  \"counters\": {\n    \"n8n_wf_executions_total\": 1,\n    \"n8n_alerts_sent_total\": 1\n  }\n}",
+        "jsonBody": "={\n  \"source\": \"n8n\",\n  \"wf_name\": $workflow.name,\n  \"wf_id\": $workflow.id,\n  \"execution_id\": $execution.id,\n  \"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id,\n  \"status\": $execution.success ? 'success' : 'error',\n  \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'),\n  \"counters\": {\n    \"n8n_wf_executions_total\": {\n      \"workflow=$workflow.name|status=success\": $execution.success ? 1 : 0,\n      \"workflow=$workflow.name|status=error\": $execution.success ? 0 : 1\n    },\n    \"n8n_wf_errors_total\": {\n      \"workflow=$workflow.name|error_type=generic\": $execution.success ? 0 : 1\n    }\n  },\n  \"gauges\": {\n    \"n8n_wf_execution_duration_seconds\": {\n      \"workflow=$workflow.name\": $now.diff($json.wf_started_at, 'seconds')\n    }\n  },\n  \"uptime_seconds\": $now.diff($json.wf_started_at, 'seconds')\n}",
         "options": {
           "timeout": 5000
         }
