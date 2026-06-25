@@ -34,7 +34,8 @@ from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from app.api.deps import require_cartorio_api_key  # noqa: E402
-from app.db import Base, get_engine  # noqa: E402
+from app.db import get_engine  # noqa: E402
+from app.models.base import Base  # noqa: E402
 from app.models.cliente import Cliente  # noqa: E402
 from app.api.v2.clientes import router as v2_clientes_router  # noqa: E402
 
