@@ -1,0 +1,250 @@
+diff --git a/backend/app/api/v1/router.py b/backend/app/api/v1/router.py
+index 2f64b2d..d9472c2 100644
+--- a/backend/app/api/v1/router.py
++++ b/backend/app/api/v1/router.py
+@@ -58,6 +58,12 @@ from app.schemas.audit import (
+     AuditLogResponse,
+ )
+ from app.schemas.metrics import MetricsResponse, N8nMetricsIngest, N8nMetricsIngestResponse
++from app.schemas.agendamento import (
++    AgendamentoCreateRequest,
++    AgendamentoResponse,
++    StatusAgendamento,
++    TipoAtendimento,
++)
+ from app.services.audit import AuditService
+ from app.services.audit_context import audit_kwargs
+ from app.services.audit_query import get_audit_log_by_id, list_audit_logs
+@@ -4179,6 +4185,232 @@ def post_dlq_enqueue(
+     )
+ 
+ 
++# ============================================================================
++# Agendamento (B0.4 Sprint 4 - Agendamento de Atendimentos)
++# ============================================================================
++
++
++@api_router.post(
++    "/agendamento",
++    tags=["agendamento"],
++    summary="Criar agendamento (LGPD + audit log)",
++    description=(
++        "Cria um novo agendamento para atendimento presencial. Valida "
++        "disponibilidade de horário, existência do cliente e protocolo (se "
++        "fornecido).\n\n"
++        "**Gate LGPD**: CPF é hasheado antes de persistir. Nenhum dado pessoal "
++        "em texto puro é salvo no banco.\n\n"
++        "**Conflitos**: Retorna 409 se horário já estiver ocupado no local.\n\n"
++        "**Audit log**: Registra criação (LGPD art. 37)."
++    ),
++    status_code=201,
++    response_description="Agendamento criado com sucesso.",
++    responses={
++        201: {"description": "Agendamento criado."},
++        400: {"description": "Payload inválido."},
++        404: {"description": "Cliente não encontrado."},
++        409: {"description": "Conflito de horário."},
++    },
++)
++def criar_agendamento(
++    request: Request,
++    payload: AgendamentoCreateRequest,
++    db: Annotated[Session, Depends(get_db)],
++) -> AgendamentoResponse:
++    """Cria agendamento com validações completas."""
++    from app.services.agendamento import (
++        AgendamentoConflictError,
++        AgendamentoService,
++        ClienteNotFoundError,
++        ProtocoloNotFoundError,
++    )
++
++    try:
++        agendamento = AgendamentoService.criar_agendamento(
++            db,
++            cliente_id=payload.cliente_id,
++            cliente_cpf=payload.cliente_cpf,
++            data_hora=payload.data_hora,
++            titulo=payload.titulo,
++            descricao=payload.descricao,
++            tipo=payload.tipo,
++            local=payload.local,
++            protocolo_id=payload.protocolo_id,
++            duration_minutes=payload.duration_minutes,
++            request=request,
++        )
++        return AgendamentoResponse.from_orm(agendamento)
++    except AgendamentoConflictError as e:
++        raise HTTPException(
++            status_code=409,
++            detail={
++                "erro": "CONFLITO_HORARIO",
++                "mensagem": "Horário já ocupado por outro agendamento.",
++                "detalhes": {
++                    "agendamento_existente_id": e.existing.id,
++                    "data_hora": e.existing.data_hora.isoformat(),
++                    "titulo": e.existing.titulo,
++                },
++            },
++        )
++    except ClienteNotFoundError as e:
++        raise HTTPException(
++            status_code=404,
++            detail={
++                "erro": "CLIENTE_NAO_ENCONTRADO",
++                "mensagem": str(e),
++            },
++        )
++    except ProtocoloNotFoundError as e:
++        raise HTTPException(
++            status_code=404,
++            detail={
++                "erro": "PROTOCOLO_NAO_ENCONTRADO",
++                "mensagem": str(e),
++            },
++        )
++    except ValueError as e:
++        raise HTTPException(
++            status_code=400,
++            detail={
++                "erro": "PAYLOAD_INVALIDO",
++                "mensagem": str(e),
++            },
++        )
++
++
++@api_router.get(
++    "/agendamento/cliente/{cliente_id}",
++    tags=["agendamento"],
++    summary="Listar agendamentos de um cliente",
++    description=(
++        "Lista todos os agendamentos de um cliente, ordenados por data "
++        "decrescente. Suporta paginação via query params."
++    ),
++    response_description="Lista de agendamentos do cliente.",
++    responses={
++        200: {"description": "Lista de agendamentos."},
++        404: {"description": "Cliente não encontrado."},
++    },
++)
++def listar_agendamentos_cliente(
++    cliente_id: int,
++    limit: int = Query(100, ge=1, le=500),
++    offset: int = Query(0, ge=0),
++    db: Annotated[Session, Depends(get_db)] = Depends(get_db),
++) -> list[AgendamentoResponse]:
++    """Lista agendamentos de um cliente."""
++    from app.services.agendamento import AgendamentoService
++
++    agendamentos = AgendamentoService.listar_agendamentos_cliente(
++        db, cliente_id, limit=limit, offset=offset
++    )
++    return [AgendamentoResponse.from_orm(a) for a in agendamentos]
++
++
++@api_router.get(
++    "/agendamento/data/{data}",
++    tags=["agendamento"],
++    summary="Listar agendamentos por data",
++    description=(
++        "Lista todos os agendamentos para uma data específica, opcionalmente "
++        "filtrados por local. Útil para visualização de agenda diária."
++    ),
++    response_description="Lista de agendamentos para a data.",
++)
++def listar_agendamentos_data(
++    data: datetime.date,
++    local: str | None = Query(None, description="Filtrar por local específico"),
++    db: Annotated[Session, Depends(get_db)] = Depends(get_db),
++) -> list[AgendamentoResponse]:
++    """Lista agendamentos para uma data."""
++    from app.services.agendamento import AgendamentoService
++
++    agendamentos = AgendamentoService.listar_agendamentos_data(db, data, local=local)
++    return [AgendamentoResponse.from_orm(a) for a in agendamentos]
++
++
++@api_router.post(
++    "/agendamento/{agendamento_id}/cancelar",
++    tags=["agendamento"],
++    summary="Cancelar agendamento",
++    description=(
++        "Cancela um agendamento. Só pode cancelar agendamentos nos status "
++        "'agendado' ou 'confirmado'. Registra audit log da operação."
++    ),
++    response_description="Agendamento cancelado.",
++    responses={
++        200: {"description": "Agendamento cancelado."},
++        400: {"description": "Agendamento não pode ser cancelado."},
++        404: {"description": "Agendamento não encontrado."},
++    },
++)
++def cancelar_agendamento(
++    agendamento_id: int,
++    request: Request,
++    db: Annotated[Session, Depends(get_db)] = Depends(get_db),
++) -> AgendamentoResponse:
++    """Cancela um agendamento."""
++    from app.services.agendamento import AgendamentoService
++
++    try:
++        agendamento = AgendamentoService.cancelar_agendamento(
++            db, agendamento_id, request=request
++        )
++        return AgendamentoResponse.from_orm(agendamento)
++    except ValueError as e:
++        raise HTTPException(
++            status_code=400,
++            detail={
++                "erro": "CANCELAMENTO_INVALIDO",
++                "mensagem": str(e),
++            },
++        )
++
++
++@api_router.post(
++    "/agendamento/{agendamento_id}/confirmar",
++    tags=["agendamento"],
++    summary="Confirmar agendamento",
++    description=(
++        "Confirma um agendamento. Só pode confirmar agendamentos no status "
++        "'agendado'. Registra audit log da operação."
++    ),
++    response_description="Agendamento confirmado.",
++    responses={
++        200: {"description": "Agendamento confirmado."},
++        400: {"description": "Agendamento não pode ser confirmado."},
++        404: {"description": "Agendamento não encontrado."},
++    },
++)
++def confirmar_agendamento(
++    agendamento_id: int,
++    request: Request,
++    db: Annotated[Session, Depends(get_db)] = Depends(get_db),
++) -> AgendamentoResponse:
++    """Confirma um agendamento."""
++    from app.services.agendamento import AgendamentoService
++
++    try:
++        agendamento = AgendamentoService.confirmar_agendamento(
++            db, agendamento_id, request=request
++        )
++        return AgendamentoResponse.from_orm(agendamento)
++    except ValueError as e:
++        raise HTTPException(
++            status_code=400,
++            detail={
++                "erro": "CONFIRMACAO_INVALIDA",
++                "mensagem": str(e),
++            },
++        )
++
++
++# ============================================================================
++# DLQ (Dead Letter Queue) - B0.3 Sprint 4
++# ============================================================================
++
++
+ @api_router.post(
+     "/dlq/refresh-gauges",
+     tags=["dlq"],
