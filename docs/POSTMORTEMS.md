@@ -271,7 +271,7 @@ git commit -m "docs(incident): postmortem INC-XXX <titulo curto>"
 
 ---
 
-### INC-005: Chatwoot 502 Bad Gateway (2026-06-26)
+### INC-005: Chatwoot 502 Bad Gateway (2026-06-26) — ROOT CAUSE ENCONTRADO
 
 **Severidade**: P0 (radar vermelho)
 **Detectado em**: 2026-06-26 ~17:50 BRT
@@ -282,37 +282,65 @@ git commit -m "docs(incident): postmortem INC-XXX <titulo curto>"
 - 17:50 BRT — Radar muda de green para red
 - 17:51 BRT — Investigação: OpenClaw OK, Chatwoot 502
 - 17:52 BRT — `curl https://api.2notasudi.com.br/api/v1/health/integracoes` mostra Chatwoot `[Errno -2] Name or service not known`
+- 18:00 BRT — `docker service ps cartorio_chatwoot` mostra **exit code 2** (crashloop, não 502 simples)
+- 18:05 BRT — `docker inspect cartorio_chatwoot` revela **Networks: NENHUMA** (root cause final)
 
-### Root Cause (CONFIRMADO)
-- O `.env` enviado por Gustavo contém `CHATWOOT_BASE_URL=http://cartorio_chatwoot:3000`
-- Esse hostname **só existe dentro da rede Docker Swarm** (cartorio_api container)
-- O API health check roda no contexto do nosso Mac — DNS local não resolve `cartorio_chatwoot`
-- Resultado: `Name or service not known`
+### Root Cause (CONFIRMADO v2)
+**Chatwoot (web) está em crashloop porque:**
+1. `POSTGRES_HOST=db` no .env do container
+2. Container `cartorio_chatwoot` (web) **NÃO está na rede `cartorio_supabase_default`**
+3. DNS interno do Docker Swarm **NÃO resolve `db`** (esse hostname não existe no nosso setup)
+4. Container **NÃO consegue conectar ao Postgres do Supabase**
+5. Exit code 2 = falha de conexão DB
+6. Easypanel faz restart loop (Ready → Failed → Shutdown → Ready → ...)
+
+**OBS**: `cartorio_chatwoot-sidekiq` ESTÁ na rede `cartorio_supabase_default` (por isso o sidekiq está 1/1 online). Apenas o `web` (cartorio_chatwoot) está sem rede.
 
 ### Impact
 - 1/7 serviços offline (Chatwoot)
 - OpenClaw 100% online (INC-004 resolvido antes)
 - API + N8N funcionais
+- LGPD: sem impacto (Pietra usa Chatwoot para HITL quando humano assume)
 
-### Resolution (Proposta)
-**Opção A** (recomendada): Mudar `CHATWOOT_BASE_URL` para `http://chat.2notasudi.com.br` (FQDN público) quando o DNS Cloudflare for criado (PENDENTE — Gustavo)
+### Resolution (Requer ação manual)
+**Opção 1 (recomendada)**: Adicionar rede via Easypanel UI
+- URL: `https://easypanel.2notasudi.com.br/projects/cartorio/services/cartorio_chatwoot/networks`
+- Adicionar: `cartorio_supabase_default`
 
-**Opção B**: Quando o API for deployado de volta (atualmente offline), o container cartorio_api consegue resolver `cartorio_chatwoot` via DNS interno do Docker Swarm. O problema é apenas em health checks externos (Mac).
+**Opção 2**: SSH command (requer privilégios)
+```bash
+ssh cartorio 'docker service update --network-add cartorio_supabase_default cartorio_chatwoot'
+```
 
-**Opção C**: Modificar o health check radar para aceitar `Name or service not known` como esperado (graceful degradation) e marcar Chatwoot como "unknown" ao invés de "offline".
+**Opção 3**: Mudar `POSTGRES_HOST` para FQDN do Kong (PostgREST)
+```bash
+POSTGRES_HOST=cartorio_supabase-kong
+POSTGRES_PORT=8000
+# Mas requer ajuste do SQL de setup
+```
+
+**Opção 4**: Redeclarar o serviço via Easypanel UI com network correta.
+
+### Fix do `.env` (já aplicado)
+- `CHATWOOT_BASE_URL=http://cartorio_chatwoot:3000` → `https://chat.2notasudi.com.br` (via `scripts/fix_chatwoot_url.sh`)
+- Isso resolve o problema do health check radar (DNS), mas **NÃO resolve o crashloop** (root cause continua sendo a falta de network)
 
 ### Lessons Learned
 - **L-194-novo**: Hostnames Docker Swarm (`cartorio_*`) não funcionam em DNS local do Mac
 - **L-195-novo**: Health check radar deve distinguir "offline" de "unknown" (DNS falho)
 - **L-196-novo**: Sempre usar FQDN público (ou IP) em URLs que precisam ser acessíveis externamente
-- **L-197-novo**: Testes de saúde (radar) devem ser graceful degradation
+- **L-197-novo**: Testes de saúde (radar) devem ter graceful degradation
+- **L-198-novo (root cause final)**: Container sem networks configuradas → DNS interno falha → exit 2 → crashloop
+- **L-199-novo**: Docker Swarm `docker inspect` mostra `Networks` (plural) — se for dict vazio, é root cause de conectividade
+- **L-200-novo**: `chatwoot-sidekiq` está OK (na rede certa) mas `chatwoot-web` está sem rede — bug de configuração do nosso setup
 
 ### Action Items
-- [ ] AI-1: Gustavo criar DNS A record `chatwoot.2notasudi.com.br` para IP público (PENDENTE — junto com outros DNS)
-- [ ] AI-2: Gustavo/CI mudar `CHATWOOT_BASE_URL` para FQDN público (quando DNS estiver pronto)
-- [ ] AI-3: cartorio-dev — adicionar graceful degradation no health check radar (`Name or service not known` = "unknown", não "offline")
-- [ ] AI-4: cartorio-dev — redeploy do API container (atualmente offline)
-- [ ] AI-5: cartorio-n8n — verificar se WF que depende do Chatwoot estão degradados gracefully
+- [ ] AI-1: Gustavo/CI — Adicionar `cartorio_supabase_default` à rede do `cartorio_chatwoot` web (Easypanel UI)
+- [ ] AI-2: cartorio-dev — adicionar graceful degradation no health check radar
+- [ ] AI-3: cartorio-dev — pre-commit check: validar Networks de cada service
+- [ ] AI-4: cartorio-dev — pre-deploy check: `docker inspect <service> | jq .Networks` deve ter pelo menos 1 network
+- [ ] AI-5: Gustavo — criar DNS A record `chatwoot.2notasudi.com.br` (junto com outros DNS pendentes)
+- [ ] AI-6: cartorio-n8n — verificar se WF de HITL está degradado gracefully (não depende de Chatwoot funcionando)
 
 ---
 
