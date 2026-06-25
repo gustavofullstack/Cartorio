@@ -368,3 +368,79 @@ mas reportar hash errado gera confusao em LGPD re-review ("qual commit
 mesmo?"). Pietra registrou Lesson 112 no MEMORY.md do projeto.
 
 Modified by Gustavo Almeida
+
+### Lesson 113 — slowapi 0.1.10 + FastAPI 0.115+ incompat (D0.2 P1.2 attempt 2026-06-25) (2026-06-25)
+Type: gotcha + tech debt
+
+Cenario real (P1.2 rate limit tentativa abortada por briefing conflict):
+- slowapi 0.1.10 mudou API: get_remote_address() agora exige request como
+  parametro explicito (nao usa mais contextvar). Workaround: embrulhar em
+  funcao propria def _client_ip_key(request): return get_remote_address(request).
+- SlowAPIMiddleware do slowapi 0.1.10 INCOMPATIVEL com FastAPI 0.115+
+  (response type mismatch BaseHTTPMiddleware). Erro: Exception: parameter
+  response must be an instance of starlette.responses.Response. Workaround:
+  NAO usar SlowAPIMiddleware — manter so app.state.limiter + exception handler
+  customizado + decorator @limiter.limit(...) no handler.
+
+Cenario abortado: P1.2 ja implementado via RateLimitByKeyMiddleware (tier dpo=60/min).
+slowapi seria double rate limit. Pietra mandou rollback. Branch feat/p1.2-rate-limit-audit-log
+criada + deletada em ~5min, sem commits.
+
+Lesson canon: SEMPRE verificar se rate limit JA existe no stack antes de adicionar
+novo. Briefing pode estar stale (Lessons 1/101/112). Briefing conflict check =
+PRIMEIRO passo antes de implementar.
+
+Modified by Gustavo Almeida
+
+### Lesson 116 — openclaw config schema gotchas (T5.0 2026-06-25)
+Type: canon workflow + gotcha
+
+Briefing T5.0 pediu: agents.defaults.model=anthropic-claude-opus-4-8 (1M ctx) +
+agents.defaults.thinking.enabled=adaptive + register 7 cartorio-* skills.
+Triangulacao contra schema real revelou 3 hallucinations em tentativas anteriores:
+
+**Gotcha 1 — `agents.defaults.thinking` NAO EXISTE no schema**. Tentativa T4.9
+(2026-06-24 18:17) adicionou `{enabled:adaptive, max_thinking_tokens:8000,
+triggers:keywords+complexity_threshold 0.7}` — schema REJEITA silenciosamente
+campos extras, gateway ignora. CORRETO: `agents.defaults.thinkingDefault` (enum
+valido: off|minimal|low|medium|high|xhigh|adaptive|max).
+
+**Gotcha 2 — catalog != config**. Briefing disse "anthropic-claude-opus-4-8 com
+1024k (1M) context" e "28+ modelos disponiveis". Verificacao:
+- `openclaw capability model list` -> modelo `claude-opus-4-8` EXISTE em providers
+  {anthropic, claude-cli, github-copilot}, NAO em {opencode-go, openai}.
+- Provider slot `openai` no openclaw.json usa baseUrl `https://opencode.ai/zen/go/v1`
+  (opencode-go backend) com key QUEIMADA sk-xcRwE... (NAO rotacionar).
+- Catalogo opencode-go: 1M+reasoning disponiveis = {deepseek-v4-flash,
+  deepseek-v4-pro, mimo-v2-pro, mimo-v2.5, mimo-v2.5-pro, qwen3.7-max,
+  qwen3.7-plus}. Nenhum claude-*.
+- Decisao: `agents.defaults.model = "openai/qwen3.7-max"` (1M ctx, reasoning:true,
+  thinkingFormat compat). Anthropic Opus requer anthropic provider + API key real
+  (separada, fora do escopo).
+
+**Gotcha 3 — `skills.entries` nao descobre files automaticamente**. Plugin-skills
+existem em `/home/node/.openclaw/plugin-skills/*.md` mas sem
+`skills.load.extraDirs=["/home/node/.openclaw/plugin-skills"]` o gateway NAO
+escaneia. Adicionar tambem `agents.defaults.skills = [...names...]` como
+allowlist explicito.
+
+**Workflow canon (openclaw config changes)**:
+1. Backup ANTES: `docker exec $CTR cp /home/node/.openclaw/openclaw.json
+   /home/node/.openclaw/openclaw.json.bak-pre-<desc>-<TS>` + md5 verify
+2. Dump schema: `docker exec $CTR openclaw config schema > /tmp/schema.json`
+3. Drill via Python: drill into `properties.agents.defaults.properties.<field>`
+4. Validar `--strict-json` com quoted strings:
+   `openclaw config set path '"value"' --strict-json --dry-run`
+5. Build JSON5 patch file (multiple ops) + `openclaw config patch --file X --dry-run`
+6. APPLY: `openclaw config patch --file X` (no dry-run)
+7. Verify: `openclaw config get <path>` + `openclaw config validate`
+8. Hot-reload check: `curl /health` ainda 200? Se sim, nao precisa restart.
+9. Update `infra/openclaw-agent/gateway-config-snapshot-tNN.json` com diff + rationale
+10. Commit `feat(openclaw): ...` + Modified by Gustavo Almeida (NAO push — Pietra coordena)
+
+**Lesson 117 — `openclaw config set` value mode NAO valida schema**. Mensagem
+"Dry run successful" aparece MAS sem `--strict-json` (ou `--batch-mode`) o
+schema nao eh checado. Usar `--strict-json` SEMPRE para value mode. Para
+multiplas ops, preferir `--file patch.json5` com `openclaw config patch`.
+
+Modified by Gustavo Almeida
