@@ -443,4 +443,86 @@ allowlist explicito.
 schema nao eh checado. Usar `--strict-json` SEMPRE para value mode. Para
 multiplas ops, preferir `--file patch.json5` com `openclaw config patch`.
 
+---
+
+## 2026-06-25 — GATES 100% GREEN + SUPABASE 0 TABELAS + PLANO LOOP 100
+
+### Lesson 118 — `conftest.py db_session` deve monkeypatchar a engine GLOBAL (commit 32618f8)
+- Sintoma: `test_stats_protocolos.py` passava SOZINHO mas falhava no pytest full
+  com `sqlite3.OperationalError: no such table: audit_log` (raised em
+  `ExceptionGroup` no lifespan da app).
+- Causa raiz: o `db_session` fixture criava uma engine SQLite in-memory nova
+  (StaticPool), MAS o lifespan da app chama `AuditService.log_system_action`
+  que abre conexao na `app.db.engine` global — engine essa que aponta para
+  `DATABASE_URL=sqlite:///:memory:` (do conftest) MAS sem `cache=shared`, ou
+  seja, cada conexao eh um DB novo. Resultado: conexao 1 do lifespan cria
+  tabelas em DB transitorio; conexao 2 do AuditService ve DB vazio.
+- Fix: `db_session(monkeypatch)` agora faz `monkeypatch.setattr(global_engine,
+  "pool", eng.pool)` + `monkeypatch.setattr(GlobalSessionLocal, "kw", {"bind":
+  eng, ...})`. Isso redireciona o pool e o bind do SessionLocal global para
+  a engine de teste. Custo: o teste ainda precisa de `Base.metadata.
+  create_all(eng)` para criar as tabelas.
+- Variante testada e REJEITADA: `os.environ["DATABASE_URL"] = "sqlite:///
+  :memory:?cache=shared"`. Quebrou 6 outros testes (test_dead_mans_switch
+  etc) que assumem engine isolada por teste.
+- Variante testada e REJEITADA: monkeypatch de `app.db.engine` direto. Frágil
+  porque o engine eh usado em vários lugares (lifespan, AuditService, e
+  dentro de `session_scope` que eh executado em threads separadas do
+  TestClient via anyio portal).
+
+### Lesson 119 — ruff E402 (imports tardios) melhor corrigido MOENDO para o topo
+- 8 erros E402 em `app/api/v1/integrations.py` (datetime, json, logging, uuid,
+  Request, sqlalchemy, session_scope, outbox models) — todos abaixo do
+  comment block da trigger outbox (linha 332-340). Movidos para o topo,
+  comment block preservado como referencia.
+- Custo: zero (comportamento identico, ordem de import só importa para
+  detectar ciclos).
+
+### Lesson 120 — mypy `getattr(x, name, None).isoformat()` → union-attr error
+- mypy infere que `getattr(p, "concluido_em", None)` pode ser `None`, e
+  o `.isoformat()` em None falha strict. Fix: walrus operator + guard.
+  ```python
+  "concluido_em": _v.isoformat() if (_v := getattr(p, "concluido_em", None)) is not None else None
+  ```
+- Alternativa naive (`if getattr(p, "concluido_em", None) is not None:
+  getattr(...).isoformat()`) NAO funciona — mypy nao rastreia o None check
+  para o segundo getattr call.
+
+### Lesson 121 — Supabase self-hosted 0 TABELAS em 2026-06-25
+- Verificado: `curl /rest/v1/protocolos?select=id` retorna
+  `{"code":"PGRST205","message":"Could not find the table 'public.protocolos'
+  in the schema cache"}`. Sem `public` schema, sem tabelas, sem RLS, sem
+  policies, sem realtime channels, sem storage buckets, sem vault secrets
+  aplicados via API (apenas env vars do container).
+- Impacto: TUDO que depende de Supabase (SQUAD S0 inteiro, 10 tasks) eh
+  P0-blocker. Backend funciona em SQLite local (testes) + Postgres do
+  container (prod), MAS sync com Supabase Studio/REST/GraphQL esta 0%.
+- Proxima task: SQUAD_S0_S01 — schema SQL completo com 10 tabelas + 2 views
+  + 1 materialized view + 8 indexes + 6 triggers + 4 RLS policies.
+
+### Lesson 122 — OpenClaw context 1M + thinking adaptive confirmado (commit 50cf8a7)
+- `openclaw.json` em `/var/lib/docker/volumes/cartorio_openclaw-gateway_config/_data/openclaw.json`
+  tem `agents.defaults.model: openai/minimax-m3`, `models.providers.openai.models[].contextWindow: 1048576`,
+  `models.providers.openai.models[].reasoning: true`. Hot reload aplicou
+  sem restart.
+- Endpoint `/healthz` retorna 200 OK `{"ok":true,"status":"live"}`. Skill
+  registry tem 7 skills cartorio (saudacoes, protocolo-tracker,
+  emolumento-calc, handoff-trigger, agendamento, segunda-via,
+  pesquisa-satisfacao).
+
+### Lesson 123 — Telegram bot @test_cartorio_bot OK + 3 updates pendentes
+- `getMe` retorna bot valido (id 8859206262, first_name "Test Cartorio Bot",
+  username "test_cartorio_bot"). Webhook info: `{"url":"","pending_update_
+  count":3,"allowed_updates":["message"]}`. URL vazia = polling mode
+  (default), 3 updates na fila. Configurar webhook URL (SQUAD_E E6) eh a
+  proxima task para E2E real.
+
+### Plan: PLAN_100_TASKS_LOOP.md + plan-100-loop-2026-06-25.json
+- 100 tasks distribuidas em 9 squads (S0/A/B/C/D/E/H/J/DOCS/BRAIN).
+- 1-2 agents max paralelo. Sequencial o resto.
+- Cronograma 5 dias: S0 (dias 1-2) → A (paralelo dia 1) → E (paralelo dia 2) →
+  H (dia 3) → D (paralelo dia 3) → J (dia 4) → BRAIN (paralelo dia 4) →
+  DOCS + D-final (dia 5).
+- Cada task = 1 commit Conventional Commits + push master.
+
 Modified by Gustavo Almeida
