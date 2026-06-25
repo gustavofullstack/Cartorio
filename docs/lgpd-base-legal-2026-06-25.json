@@ -1,0 +1,140 @@
+{
+  "$schema": "https://cartorio.com/schemas/lgpd-base-legal-v1.json",
+  "version": "1.0.0",
+  "updated_at": "2026-06-25",
+  "purpose": "SQUAD D D16 - mapeamento de base legal por tipo de dado (LGPD art. 7). Cada campo PII em qualquer tabela do sistema deve ter uma base legal documentada (consentimento, cumprimento de obrigacao legal, execucao de contrato, etc).",
+
+  "bases_legais": {
+    "consentimento": {
+      "artigo_lgpd": "art. 7 I",
+      "descricao": "Titular deu consentimento explicito para o tratamento",
+      "revogacao": "qualquer momento, sem custo",
+      "aplicavel_em": [
+        "marketing (envio de emails promocionais)",
+        "satisfacao (pesquisa NPS)",
+        "lembrete_agendamento_via_whatsapp",
+        "newsletter_cartorio"
+      ],
+      "evidencia_necessaria": "consent_granted=true, consent_at timestamp, consent_ip, consent_user_agent",
+      "revogacao_endpoint": "DELETE /api/v1/lgpd/consent {cliente_id, finalidade}"
+    },
+    "cumprimento_obrigacao_legal": {
+      "artigo_lgpd": "art. 7 II",
+      "descricao": "Tratamento necessario para cumprimento de obrigacao legal ou regulatoria",
+      "revogacao": "NAO revogavel (obrigacao legal)",
+      "aplicavel_em": [
+        "audit_log_todos_eventos (LGPD art. 37 + art. 50)",
+        "ITBI (Imposto de Transmissao de Bens Imoveis)",
+        "ITCMD (Imposto de Transmissao Causa Mortis e Doacao)",
+        "CNJ/DOI (Declaracao sobre Operacoes Imobiliarias)",
+        "Receita Federal (COAF, DOI, Dimob)",
+        "cartorio_registro_publico (obrigacao legal do tabeliao)"
+      ],
+      "evidencia_necessaria": "referencia legal especifica (lei, decreto, regulamento)",
+      "retencao_minima_anos": 5
+    },
+    "execucao_contrato": {
+      "artigo_lgpd": "art. 7 V",
+      "descricao": "Tratamento necessario para execucao de contrato ou procedimentos preliminares",
+      "revogacao": "NAO revogavel enquanto contrato vigente",
+      "aplicavel_em": [
+        "escritura_publica (exige identificacao das partes)",
+        "procuracao (identificacao do outorgado)",
+        "contratos em geral reconhecidos em cartorio",
+        "dados de clientes que contrataram servico"
+      ],
+      "evidencia_necessaria": "numero do contrato / protocolo",
+      "retencao_minima_anos": 5
+    },
+    "exercicio_regular_de_direitos": {
+      "artigo_lgpd": "art. 7 VI",
+      "descricao": "Tratamento para exercicio regular de direitos em processo (judicial, administrativo, arbitral)",
+      "revogacao": "NAO revogavel durante o processo",
+      "aplicavel_em": [
+        "divorcio_extrajudicial (CC art. 733)",
+        "inventario_extrajudicial (CPC art. 610)",
+        "usucapiao (CC art. 1238-1244)",
+        "notificacoes extrajudiciais"
+      ],
+      "evidencia_necessaria": "numero do processo judicial / administrativo",
+      "retencao_minima_anos": 5
+    },
+    "obrigacao_legal_operacao_cartorio": {
+      "artigo_lgpd": "art. 7 II + Lei 8.935/94",
+      "descricao": "Tabelionato de Notas eh servico publico delegado (art. 236 CF + Lei 8.935/94)",
+      "revogacao": "NAO revogavel",
+      "aplicavel_em": [
+        "todos os atos notariais (escritura, proc, ata, testamento, etc)",
+        "reconhecimento_firma",
+        "autenticacao_copias",
+        "apostilamento"
+      ],
+      "evidencia_necessaria": "tipo de ato + protocolo + livro/notas",
+      "retencao_minima_anos": 20
+    }
+  },
+
+  "mapeamento_campo_pii": {
+    "clientes.cpf": "obrigacao_legal_operacao_cartorio",
+    "clientes.nome": "obrigacao_legal_operacao_cartorio",
+    "clientes.email": "consentimento (marketing) OU execucao_contrato (contato)",
+    "clientes.telefone": "consentimento (lembrete) OU execucao_contrato (contato)",
+    "clientes.endereco": "obrigacao_legal_operacao_cartorio (identificacao partes)",
+    "clientes.data_nascimento": "obrigacao_legal_operacao_cartorio",
+    "protocolos.cliente_id": "obrigacao_legal_operacao_cartorio",
+    "protocolos.valor_total": "obrigacao_legal (fiscal/tributario)",
+    "atendimentos.canal": "consentimento (LGPD) OU execucao_contrato",
+    "atendimentos.descricao": "consentimento (LGPD) OU execucao_contrato",
+    "documentos.arquivo_path": "obrigacao_legal_operacao_cartorio (conservacao 20 anos)",
+    "emolumentos.valor": "obrigacao_legal (fiscal/tributario)",
+    "audit_log.actor_id": "cumprimento_obrigacao_legal (LGPD art. 37)",
+    "audit_log.payload": "cumprimento_obrigacao_legal (LGPD art. 37)",
+    "lgpd_consents.consent_granted": "consentimento",
+    "lgpd_consents.consent_at": "consentimento",
+    "lgpd_consents.revoked_at": "consentimento (revogacao)"
+  },
+
+  "mapeamento_finalidade_operacao": {
+    "atendimento_whatsapp": "consentimento + execucao_contrato",
+    "calculo_emolumento": "obrigacao_legal_operacao_cartorio",
+    "agendamento": "execucao_contrato",
+    "envio_documento_pronto": "execucao_contrato",
+    "pesquisa_satisfacao": "consentimento",
+    "marketing_promocoes": "consentimento (opt-in)",
+    "auditoria_interna": "cumprimento_obrigacao_legal",
+    "compliance_antifraude": "obrigacao_legal_operacao_cartorio",
+    "backup_disaster_recovery": "cumprimento_obrigacao_legal (LGPD art. 46)",
+    "analise_agregada_anonimizada": "legitimo_interesse (art. 7 IX - anonimizacao)"
+  },
+
+  "principios_lgpd_aplicados": {
+    "finalidade": "art. 6 I - cada finalidade explicitada no consent ou no contrato",
+    "adequacao": "art. 6 II - tratamento compativel com finalidade",
+    "necessidade": "art. 6 III - minimo necessario",
+    "livre_acesso": "art. 6 IV - titular pode consultar a qualquer momento",
+    "qualidade_dados": "art. 6 V - dados exatos, atualizados",
+    "transparencia": "art. 6 VI - titular informado sobre tratamento",
+    "seguranca": "art. 6 VII - medidas tecnicas e administrativas",
+    "prevencao": "art. 6 VIII - danos prevenidos",
+    "nao_discriminacao": "art. 6 IX - tratamento nao discriminatorio",
+    "responsabilizacao": "art. 6 X - demonstracao de conformidade"
+  },
+
+  "revogacao_consentimento": {
+    "como_revogar": "DELETE /api/v1/lgpd/consent {cliente_id, finalidade}",
+    "prazo_efetivacao": "imediato (< 1min)",
+    "confirmacao": "POST /api/v1/lgpd/consent/confirm-revocation retorna {revoked_at, effect: 'future_data_only'}",
+    "efeito": "futuro - dados ja tratados sob base legal NAO sao apagados, novos tratamentos exigem nova base",
+    "excecoes": "obrigacoes legais (cumprimento_obrigacao_legal) NAO podem ser revogadas"
+  },
+
+  "metadata": {
+    "total_bases_legais": 5,
+    "total_campos_mapeados": 18,
+    "total_finalidades": 10,
+    "principios_lgpd": 10,
+    "reviewer": "DPO Maria Silva (encarregada de dados)",
+    "review_at": "2026-06-25",
+    "next_review": "2026-12-25"
+  }
+}
