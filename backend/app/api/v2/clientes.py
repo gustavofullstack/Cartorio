@@ -149,7 +149,8 @@ async def listar_clientes_v2(
         for c in rows
     ]
 
-    end_cursor = edges[-1].cursor if edges else None
+    # end_cursor eh None na ultima pagina (has_next_page=False)
+    end_cursor = edges[-1].cursor if edges and has_next_page else None
 
     # Total count (sem filtro de cursor — total geral respeitando include_encerrados)
     from sqlalchemy import func
