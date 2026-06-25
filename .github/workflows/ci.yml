@@ -67,6 +67,23 @@ jobs:
         working-directory: backend
         run: rm -rf .mypy_cache && uv run mypy app/
 
+      # A23 - valida OpenAPI spec contra openapi-spec-validator (Sprint 4)
+      - name: OpenAPI spec validation (A23)
+        working-directory: backend
+        run: |
+          uv run python -c "
+          import urllib.request, json, sys
+          from openapi_spec_validator import validate_spec
+          from openapi_spec_validator.readers import read_from_filename
+          spec_dict, _ = read_from_filename('openapi.json') if __import__('os').path.exists('openapi.json') else ({}, None)
+          if not spec_dict:
+              print('openapi.json nao encontrado, pulando validacao estatica')
+              sys.exit(0)
+          validate_spec(spec_dict)
+          print('OpenAPI spec OK')
+          "
+        continue-on-error: true  # WARN-only ate app gerar openapi.json
+
   # ============================================================================
   # Tests (gate principal - 5-8min)
   # ============================================================================
