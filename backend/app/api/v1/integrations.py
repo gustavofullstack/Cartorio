@@ -20,7 +20,7 @@ import uuid as _uuid
 from typing import Annotated, Any
 
 import httpx
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
@@ -28,7 +28,15 @@ from app.api.deps import require_cartorio_api_key
 from app.config import settings
 from app.db import session_scope
 from app.integrations.opencode_go import ChatError, chat_with_settings
+from app.models.audit_log import AuditLog
 from app.models.outbox_message import OutboxMessage, OutboxQueue, OutboxStatus
+from app.services.audit import AuditService
+from app.services.metrics import store as metrics_store
+from app.services.n8n_error import (
+    classify_error_type,
+    compute_payload_digest,
+    validate_n8n_signature,
+)
 
 
 # ============================================================================
@@ -492,3 +500,186 @@ async def outbox_dispatch(
             result = {"status": "failed", "attempts": msg.attempts, "error": err}
 
     return result
+
+
+# ============================================================================
+# Endpoint: POST /integrations/n8n/error  (B6 N8N Error Handler Global)
+# ============================================================================
+# B6 2026-06-25: recebe erros de QUALQUER workflow N8N ativo (Error Workflow
+# global dispara este endpoint). Validacao HMAC via N8N_WEBHOOK_SECRET +
+# header X-N8N-Signature. Grava audit_log (LGPD art. 37) + incrementa metrica
+# Prometheus n8n_errors_total{workflow_name, error_type}.
+#
+# Cardinalidade controlada: workflow_name <= ~40 WFs ativos, error_type = 7
+# valores discretos (connection|http_4xx|http_5xx|timeout|validation|auth|unknown).
+#
+# Idempotencia: execution_id dedup via audit_log (request_id eh o execution_id).
+
+_n8n_error_log = logging.getLogger("integrations.n8n_error")
+
+
+class N8nErrorRequest(BaseModel):
+    """Payload do webhook N8N Error Workflow (B6).
+
+    Attributes:
+        workflow_name: Nome do WF que falhou (ex: '01 - Consulta Emolumento').
+        workflow_id: ID do WF que falhou (opcional).
+        execution_id: ID da execucao N8N (idempotency key).
+        error_type: Tipo classificado (opcional - backend classifica).
+        error: Dict com detalhes {name, message, http_code?, stack?}.
+        node: Node do N8N que falhou (opcional).
+        timestamp: ISO 8601 UTC (opcional).
+    """
+
+    workflow_name: str = Field(..., min_length=1, max_length=256)
+    workflow_id: str | None = Field(default=None, max_length=128)
+    execution_id: str = Field(..., min_length=1, max_length=128)
+    error_type: str | None = Field(default=None, max_length=64)
+    error: dict[str, Any] | None = Field(default=None)
+    node: str | None = Field(default=None, max_length=128)
+    timestamp: str | None = Field(default=None, max_length=64)
+
+
+class N8nErrorResponse(BaseModel):
+    """Response do endpoint /integrations/n8n/error."""
+
+    status: str
+    execution_id: str
+    audit_id: int | None = None
+    error_type: str
+
+
+@integrations_router.post(
+    "/integrations/n8n/error",
+    tags=["meta"],
+    summary="Webhook do N8N Error Workflow Global (B6)",
+    description=(
+        "Recebe notificacao de erro de qualquer workflow N8N ativo. "
+        "Validado por HMAC-SHA256 (header `X-N8N-Signature`, secret "
+        "`N8N_WEBHOOK_SECRET`). Grava em `audit_log` (LGPD art. 37) e "
+        "incrementa contador Prometheus `n8n_errors_total{workflow_name,"
+        "error_type}`. Idempotente via `execution_id`."
+    ),
+    response_model=N8nErrorResponse,
+)
+async def n8n_error_webhook(
+    request: Request,
+    payload: Annotated[N8nErrorRequest, Body(...)],
+    x_n8n_signature: Annotated[str | None, Header(alias="X-N8N-Signature")] = None,
+) -> N8nErrorResponse:
+    """Webhook N8N Error Handler Global (B6 2026-06-25).
+
+    Auth via HMAC N8N_WEBHOOK_SECRET. Grava audit_log LGPD-safe (apenas
+    digest + metadados estruturados). Idempotente via execution_id.
+    """
+    # 1. HMAC validation (raw body para integridade byte-a-byte)
+    raw_body = await request.body()
+    if not validate_n8n_signature(raw_body, x_n8n_signature):
+        _n8n_error_log.warning(
+            "n8n_error HMAC invalido (signature_present=%s, body_len=%d)",
+            x_n8n_signature is not None,
+            len(raw_body),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "erro": "INVALID_SIGNATURE",
+                "mensagem": "X-N8N-Signature ausente ou invalida.",
+            },
+            headers={"WWW-Authenticate": 'Signature realm="n8n-error"'},
+        )
+
+    execution_id = payload.execution_id
+    error_type = payload.error_type or classify_error_type(payload.error)
+
+    # Payload canonico audit_log (LGPD-safe: digest + metadados, sem bruto)
+    payload_digest = compute_payload_digest(payload.model_dump())
+    audit_payload: dict[str, Any] = {
+        "workflow_name": payload.workflow_name,
+        "workflow_id": payload.workflow_id,
+        "execution_id": execution_id,
+        "error_type": error_type,
+        "node": payload.node,
+        "ts": payload.timestamp,
+        "payload_digest": payload_digest,
+    }
+    if payload.error:
+        err_clean: dict[str, Any] = {}
+        if payload.error.get("name"):
+            err_clean["name"] = str(payload.error["name"])[:64]
+        if payload.error.get("message"):
+            err_clean["message"] = str(payload.error["message"])[:512]
+        if isinstance(payload.error.get("http_code"), int):
+            err_clean["http_code"] = payload.error["http_code"]
+        if err_clean:
+            audit_payload["error"] = err_clean
+
+    # Extrai contexto do request
+    client_ip = request.client.host if request.client else None
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        client_ip = xff.split(",")[0].strip()
+
+    # Grava audit_log (LGPD art. 37) com idempotencia via execution_id
+    audit_id: int | None = None
+    try:
+        with session_scope() as db:
+            existing = db.execute(
+                select(AuditLog).where(
+                    AuditLog.action == "n8n.error",
+                    AuditLog.request_id == execution_id,
+                )
+            ).scalar_one_or_none()
+            if existing is not None:
+                _n8n_error_log.info(
+                    "n8n_error idempotent execution_id=%s audit_id=%d",
+                    execution_id,
+                    existing.id,
+                )
+                return N8nErrorResponse(
+                    status="idempotent",
+                    execution_id=execution_id,
+                    audit_id=existing.id,
+                    error_type=error_type,
+                )
+
+            entry = AuditService.log(
+                db,
+                actor_id="n8n-error-workflow",
+                actor_type="system",
+                action="n8n.error",
+                resource=f"workflow:{payload.workflow_name}",
+                payload=audit_payload,
+                ip=client_ip,
+                user_agent=request.headers.get("user-agent"),
+                request_id=execution_id,
+                canal="n8n",
+            )
+            audit_id = entry.id
+    except Exception as e:
+        _n8n_error_log.exception(
+            "n8n_error audit_log failed execution_id=%s", execution_id
+        )
+        # Fail-soft: ainda incrementa metric + retorna 200
+        audit_id = None
+
+    # Incrementa metrica Prometheus
+    metrics_store.inc_counter(
+        "n8n_errors_total",
+        labels={"workflow_name": payload.workflow_name, "error_type": error_type},
+    )
+
+    _n8n_error_log.info(
+        "n8n_error accepted execution_id=%s workflow=%s error_type=%s audit_id=%s",
+        execution_id,
+        payload.workflow_name,
+        error_type,
+        audit_id,
+    )
+
+    return N8nErrorResponse(
+        status="accepted" if audit_id is not None else "queued",
+        execution_id=execution_id,
+        audit_id=audit_id,
+        error_type=error_type,
+    )
