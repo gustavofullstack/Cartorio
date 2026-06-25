@@ -318,3 +318,9 @@ Workflow #03 N8N agora conecta ponta-a-ponta com signature validation.
 - **Pendências SUI**: 3 (DNS chatwoot, cred Evolution, OpenClaw LLM key — depende de DPA)
 
 Modified by Gustavo Almeida / Mavis 2026-06-23 18:50 BRT
+
+## E6.S7.T10 - cron cartorio-backup-status (RESOLVIDO 2026-06-25 via codigo)
+
+- Script + cron + setup doc versionados em `infra/backup/cartorio-backup-status.sh`, `infra/cron/cartorio-backup-status`, `infra/backup/E6_S7_T10_setup.md`.
+- Deploy na VPS PENDENTE: copiar arquivos, criar `/etc/cartorio-backup/cartorio-backup-status.env`, restart cron.
+- Reduz MTTR para falhas de backup (hourly vs daily 03:00).

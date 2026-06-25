@@ -1944,3 +1944,8 @@ Gustavo mandou prompt cartorio novamente para continuidade. Squad B ~95% (Pietra
 - Migration 0005 backend/alembic/versions/2026_06_25_0005-supabase-pg-cron-jobs-s03.py (DESIGN-FAIL-SILENT linhas 45-63)
 - Endpoint POST /api/v1/audit/verify backend/app/api/v1/router.py linhas 937-960
 - Lesson 186 canon
+
+## E6.S7.T10 - cron cartorio-backup-status (RESOLVIDO 2026-06-25)
+- Codigo versionado em infra/backup/cartorio-backup-status.sh + infra/cron/cartorio-backup-status
+- Deploy na VPS PENDENTE: cp / chmod / systemctl restart cron
+- Setup doc: infra/backup/E6_S7_T10_setup.md
