@@ -1,11 +1,13 @@
-"""Endpoints LGPD para os 5 direitos do titular (Art. 18 LGPD).
+"""Endpoints LGPD para os 6 direitos do titular (Art. 18 LGPD).
 
-Adicionado 2026-06-24 (5 direitos: anonimizar, corrigir, oposicao, optout, portabilidade).
+Adicionado 2026-06-24 (5 POST direitos: anonimizar, corrigir, oposicao, optout, portabilidade).
+Adicionado 2026-06-25 (GET download portabilidade D09).
 O 6o direito (esquecimento) ja existia em router.py:2125.
-Total = 6 direitos LGPD Art. 18 implementados.
+Total = 6 direitos LGPD Art. 18 implementados + 1 GET download.
 
 Padrao:
 - POST /cliente/{id}/lgpd/{direito}
+- GET  /cliente/{id}/lgpd/portabilidade/download
 - Auth: X-API-Key (escrevente)
 - Audit log: registrar exercicio do direito (LGPD art. 37)
 - Retorna 200 com {status, direito, cliente_id, exercido_em}
@@ -16,9 +18,10 @@ Padrao:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -258,4 +261,81 @@ def direito_portabilidade(
         "exercido_em": datetime.now(timezone.utc).isoformat(),
         "audit": "logged",
         "export_url": f"/api/v1/cliente/{cliente_id}/lgpd/portabilidade/download",
+    }
+
+
+# ----------------------------------------------------------------------------
+# LGPD Art. 18 V - Download dos dados exportados (D09)
+# ----------------------------------------------------------------------------
+@lgpd_router.get(
+    "/cliente/{cliente_id}/lgpd/portabilidade/download",
+    tags=["lgpd"],
+    summary="Download dos dados do titular (portabilidade LGPD)",
+    description=(
+        "Retorna todos os dados pessoais do titular em formato JSON "
+        "estruturado (LGPD art. 18 V). Dados incluem: perfil, protocolos, "
+        "atendimentos, documentos, audit log e historico de consentimentos.\n\n"
+        "O hash SHA256 do payload (export_hash) garante integridade "
+        "(LGPD art. 37).\n\n"
+        "Auth: X-API-Key header obrigatorio."
+    ),
+    response_class=JSONResponse,
+)
+def download_portabilidade(
+    cliente_id: int,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    fmt: str = "json",
+) -> dict[str, Any]:
+    """Download dos dados exportados do titular (LGPD art. 18 V).
+
+    Args:
+        cliente_id: ID do cliente
+        fmt: Formato de saida ("json" ou "csv")
+    """
+    api_key = _require_api_key(request)
+
+    # Verifica se cliente existe e busca dados
+    from app.services.lgpd_export import (
+        ClienteNotFoundError,
+        exportar_dados_titular,
+    )
+
+    try:
+        bundle = exportar_dados_titular(db, cliente_id)
+    except ClienteNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail={"erro": "CLIENTE_NOT_FOUND", "cliente_id": cliente_id},
+        )
+
+    # Audit log do download
+    AuditService.log(
+        db,
+        actor_id=f"escrevente:{api_key[:8]}",
+        actor_type="bot",
+        action="cliente.lgpd.portabilidade.download",
+        resource=f"cliente:{cliente_id}",
+        payload={
+            "direito": "portabilidade.download",
+            "lgpd_art": "18 V",
+            "export_hash": bundle.export_hash,
+            "format": fmt,
+        },
+    )
+
+    return {
+        "status": "ok",
+        "direito": "portabilidade.download",
+        "cliente_id": cliente_id,
+        "exported_at": bundle.exported_at,
+        "export_hash": bundle.export_hash,
+        "dados": {
+            "cliente": bundle.cliente,
+            "protocolos": bundle.protocolos,
+            "atendimentos": bundle.atendimentos,
+            "documentos": bundle.documentos,
+            "audit_logs": bundle.audit_logs,
+            "consentimentos": bundle.consentimentos,
+        },
     }
