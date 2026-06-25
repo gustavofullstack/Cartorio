@@ -1,0 +1,79 @@
+# Prometheus config — Cartório 2º Notas Uberlândia
+# Squad C — C21/C22/C23
+# Targets: API metrics + N8N metrics (when available) + node exporter
+# Deploy: docker service create on VPS or compose
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+  external_labels:
+    project: cartorio
+    env: production
+
+# Alerting config
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # AlertManager (opcional — pode usar Telegram webhook direto)
+          # - alertmanager:9093
+
+# Rule files
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  # === API FastAPI (Prometheus endpoint) ===
+  - job_name: "cartorio-api"
+    metrics_path: "/api/v1/metrics/prometheus"
+    scheme: https
+    static_configs:
+      - targets:
+          - "api.2notasudi.com.br"
+        labels:
+          service: api
+          version: "v0.6"
+
+  # === N8N (Prometheus endpoint via MCP) ===
+  - job_name: "cartorio-n8n"
+    metrics_path: "/metrics"
+    scheme: https
+    static_configs:
+      - targets:
+          - "cartorio-n8n.dfgdxq.easypanel.host"
+        labels:
+          service: n8n
+    # N8N may need auth
+    # basic_auth:
+    #   username: <user>
+    #   password: <password>
+
+  # === OpenClaw Gateway ===
+  - job_name: "cartorio-openclaw"
+    metrics_path: "/metrics"
+    scheme: https
+    static_configs:
+      - targets:
+          - "agent.2notasudi.com.br"
+        labels:
+          service: openclaw
+
+  # === VPS node metrics (via node_exporter sidecar) ===
+  # Requires node_exporter container on VPS
+  # - job_name: "cartorio-node"
+  #   static_configs:
+  #     - targets:
+  #         - "node_exporter:9100"
+  #       labels:
+  #         service: vps
+
+  # === Docker daemon metrics ===
+  # Requires docker daemon --metrics-addr
+  # - job_name: "cartorio-docker"
+  #   static_configs:
+  #     - targets:
+  #         - "host.docker.internal:9323"
+  #       labels:
+  #         service: docker

@@ -1,0 +1,117 @@
+# Monitoring stack — Cartório 2º Notas Uberlândia
+# Squad C — C21/C22/C23
+# Deploy: docker stack deploy -c infra/monitoring/docker-compose.yml monitoring
+# Requires: Prometheus data source from API /api/v1/metrics/prometheus
+
+version: "3.8"
+
+services:
+  # === Prometheus (metrics storage + alerting) ===
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - cartorio-backend
+
+  # === Grafana (dashboards + visualization) ===
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=@Techno832466  # TODO: external secret
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - GF_SERVER_ROOT_URL=https://grafana.2notasudi.com.br
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.grafana.rule=Host(`grafana.2notasudi.com.br`)"
+        - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - cartorio-backend
+
+  # === Loki (log aggregation) ===
+  loki:
+    image: grafana/loki:latest
+    command:
+      - "-config.file=/etc/loki/loki.yml"
+    volumes:
+      - ./loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - cartorio-backend
+
+  # === Promtail (log collector) ===
+  promtail:
+    image: grafana/promtail:latest
+    command:
+      - "-config.file=/etc/promtail/promtail.yml"
+    volumes:
+      - ./promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    networks:
+      - cartorio-backend
+
+networks:
+  cartorio-backend:
+    external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:

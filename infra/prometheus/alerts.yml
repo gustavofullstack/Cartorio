@@ -1,0 +1,146 @@
+# Prometheus alert rules — Cartório 2º Notas Uberlândia
+# Squad C — C22 (10 regras P0/P1/P2)
+# Routing: alerts → Telegram bot via webhook or AlertManager
+
+groups:
+  - name: cartorio-p0-critical
+    interval: 1m
+    rules:
+      # P0: API down > 1min
+      - alert: CartorioAPIDown
+        expr: probe_success{job="cartorio-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          priority: P0
+          squad: cartorio-dev
+        annotations:
+          summary: "API Cartório DOWN"
+          description: "API em {{ $labels.instance }} não responde há mais de 1min."
+          runbook: "https://github.com/gustavofullstack/Cartorio/blob/master/docs/runbook/api-down.md"
+
+      # P0: Audit chain quebrada
+      - alert: CartorioAuditChainBroken
+        expr: audit_dead_mans_status > 0
+        for: 5m
+        labels:
+          severity: critical
+          priority: P0
+          squad: cartorio-lgpd
+        annotations:
+          summary: "Audit Chain com problemas"
+          description: "Dead man's switch acionado. Audit log pode estar parado."
+
+      # P0: N8N down
+      - alert: CartorioN8NDown
+        expr: probe_success{job="cartorio-n8n"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          priority: P0
+          squad: cartorio-n8n
+        annotations:
+          summary: "N8N DOWN"
+          description: "N8N workflow engine não responde."
+
+  - name: cartorio-p1-high
+    interval: 2m
+    rules:
+      # P1: Pool esgotada
+      - alert: CartorioDBPoolExhausted
+        expr: cartorio_db_pool_utilization_pct > 85
+        for: 5m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-dev
+        annotations:
+          summary: "Pool DB com alta utilização"
+          description: "Pool do banco está em {{ $value }}% de utilização."
+
+      # P1: Evolution API desconectada
+      - alert: CartorioEvolutionDisconnected
+        expr: evolution_connection_status{status="close"} == 1
+        for: 1m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-n8n
+        annotations:
+          summary: "Evolution API desconectada"
+          description: "Instância WhatsApp não está conectada."
+
+      # P1: Chatwoot com problemas
+      - alert: CartorioChatwootUnhealthy
+        expr: chatwoot_api_status != 200
+        for: 5m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-n8n
+        annotations:
+          summary: "Chatwoot com problemas"
+          description: "Chatwoot API retornou status != 200."
+
+  - name: cartorio-p2-observability
+    interval: 5m
+    rules:
+      # P2: Número de clientes baixo (possível perda de dados)
+      - alert: CartorioClientesCountAnomaly
+        expr: clientes_total < 1
+        for: 30m
+        labels:
+          severity: info
+          priority: P2
+          squad: cartorio-dev
+        annotations:
+          summary: "Nenhum cliente cadastrado"
+          description: "Total de clientes está em 0 — possível perda de dados ou reset."
+
+      # P2: Protocolos parados
+      - alert: CartorioProtocolosStale
+        expr: time() - protocolo_last_update_timestamp > 86400  # 24h
+        for: 1h
+        labels:
+          severity: info
+          priority: P2
+          squad: cartorio-n8n
+        annotations:
+          summary: "Nenhum protocolo novo em 24h"
+          description: "Último protocolo foi criado há mais de 24h."
+
+      # P2: Backup desatualizado
+      - alert: CartorioBackupStale
+        expr: time() - cartorio_backup_last_timestamp > 108000  # 30h
+        for: 1h
+        labels:
+          severity: warning
+          priority: P2
+          squad: cartorio-dev
+        annotations:
+          summary: "Backup desatualizado"
+          description: "Último backup foi há mais de 30h."
+
+      # P2: Chain length estagnada
+      - alert: CartorioAuditChainStagnant
+        expr: audit_chain_length < (audit_chain_length offset 1h)
+        for: 2h
+        labels:
+          severity: info
+          priority: P2
+          squad: cartorio-lgpd
+        annotations:
+          summary: "Audit chain estagnada"
+          description: "Audit chain não cresceu na última hora."
+
+      # P2: Baixa cobertura de testes (QA)
+      - alert: CartorioTestCoverageLow
+        expr: cartorio_test_coverage_pct < 85
+        for: 24h
+        labels:
+          severity: info
+          priority: P2
+          squad: cartorio-dev
+        annotations:
+          summary: "Cobertura de testes baixa"
+          description: "Cobertura de testes está em {{ $value }}% (target: 90%)."

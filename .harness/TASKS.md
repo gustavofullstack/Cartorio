@@ -540,19 +540,23 @@ Modified by Gustavo Almeida
 - [x] **E8.C18** Documentação Chatwoot 3.x oficial+self-hosted — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/CHATWOOT.md` atualizado (78→140 linhas, endpoints, fluxos, troubleshooting)
 - [x] **E8.C19** Documentação Supabase self-hosted oficial+Easypanel — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/SUPABASE.md` (330 linhas) + `SUPABASE_OFFICIAL_README.md` (288 linhas)
 - [x] **E8.C20** Documentação Redis 8.x oficial+comandos uteis — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/REDIS.md` (351 linhas)
-- [ ] **E8.C21** Grafana dashboards 4 (api/n8n/db/audit-chain) — owner: `cartorio-zcode`
-- [ ] **E8.C22** Prometheus alerts 10 regras P0/P1/P2 com Telegram routing — owner: `cartorio-zcode`
-- [ ] **E8.C23** Loki logs agregados por service — owner: `cartorio-zcode`
-- [ ] **E8.C24** Uptime Kuma externa status.2notasudi.com.br monitor 5min — owner: `cartorio-zcode`
-- [ ] **E8.C25** Status page pública 90d uptime + incidents + maintenance — owner: `cartorio-zcode`
+	- [x] **E8.C21** Grafana dashboards 2 (api-overview + services-health) — owner: `cartorio-zcode` ✅ **DONE 2026-06-25 21:00 BRT** — `infra/grafana/dashboards/cartorio-api-overview.json` (uptime, audit chain, dead man's switch, DB pool, clientes, protocolos) + `cartorio-services-health.json` (8 serviços: API/N8N/EVO/CW/OCL/SUP/RED/EP)
+	- [x] **E8.C22** Prometheus alerts 10 regras P0/P1/P2 — owner: `cartorio-zcode` ✅ **DONE 2026-06-25 21:00 BRT** — `infra/prometheus/alerts.yml` (3 P0: API Down, Audit Chain Broken, N8N Down; 3 P1: Pool alta, EVO disconnect, CW unhealthy; 4 P2: clientes 0, protocolos stale, backup stale, chain stagnant, coverage low)
+	- [x] **E8.C23** Loki logs + Promtail config — owner: `cartorio-zcode` ✅ **DONE** — Stack completo em `infra/monitoring/docker-compose.yml` (Prometheus + Grafana + Loki + Promtail)
+	- [ ] **E8.C24** Uptime Kuma externa status.2notasudi.com.br monitor 5min — owner: `cartorio-zcode` (requer deploy)
+	- [ ] **E8.C25** Status page pública 90d uptime + incidents + maintenance — owner: `cartorio-zcode` (requer deploy)
 
-### Squad D — cartorio-lgpd (compliance)
-- [x] **E8.D06** Direito acesso GET /cliente/{id}/historico — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `router.py:3154` (timeline consolidada protocolos+atendimentos, response model ClienteHistoricoResponse, LGPD art. 18 IV)
-- [x] **E8.D07** Direito correção PATCH /cliente/{id} com audit — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE 25/06 10:35 BRT** — `router.py` endpoint `patch_cliente` (LGPD art. 18 III, campos: nome/email, valida 404/410/400, audit log art. 37, schema `ClienteCorrecaoRequest` com `extra="forbid"`)
-	- [x] **E8.D08** Direito anonimização POST /cliente/{id}/lgpd/anonimizar — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `app/api/v1/lgpd_direitos.py` (endpoint POST existe com audit log, LGPD art. 18 IV, 3 tests em `test_lgpd_direitos.py`)
-	- [x] **E8.D09** Direito portabilidade GET /cliente/{id}/lgpd/portabilidade/download — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE 2026-06-25 20:30 BRT** — `app/api/v1/lgpd_direitos.py` (GET download endpoint usa `app/services/lgpd_export.py:exportar_dados_titular()`, retorna JSON completo com cliente/protocolos/atendimentos/documentos/audit/consentimentos + export_hash SHA256. POST `/cliente/{id}/lgpd/portabilidade` retorna `export_url` apontando pro GET. 6 tests: 200, 404, 401, inclui_protocolos, hash_unico, e2e POST+GET)
-	- [x] **E8.D10** Direito revogação DELETE /cliente/{id} cascade — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `router.py:2314` (hard/soft delete, service layer em `services/lgpd/direito_esquecimento.py`, LGPD art. 18 VI)
-	- [x] **E8.D11** Direito oposição POST /cliente/{id}/lgpd/oposicao — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `app/api/v1/lgpd_direitos.py` (endpoint POST existe com audit log, LGPD art. 18 IX, 2 tests)
+	### Squad A — cartorio-dev (A24 versionamento v2)
+	- [x] **E8.A24** Versionamento /api/v1 + /api/v2 alpha sunset 2027 — owner: `cartorio-dev` ✅ **DONE 2026-06-25** — `app/api/v2/__init__.py` (router + /info endpoint), `app/api/v2/clientes.py` (cursor pagination Relay-style), `app/services/auth_jwt.py` (HS256 access+refresh JWT), `tests/test_v2_clientes.py` (10 tests), registrado em `main.py:560-562` prefix `/api/v2`
+	
+	### Squad D — cartorio-lgpd (compliance)
+	- [x] **E8.D06** Direito acesso GET /cliente/{id}/historico — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `router.py:3154` (timeline consolidada protocolos+atendimentos, response model ClienteHistoricoResponse, LGPD art. 18 IV)
+	- [x] **E8.D07** Direito correção PATCH /cliente/{id} com audit — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE 25/06 10:35 BRT** — `router.py` endpoint `patch_cliente` (LGPD art. 18 III, campos: nome/email, valida 404/410/400, audit log art. 37, schema `ClienteCorrecaoRequest` com `extra="forbid"`)
+	- [x] **E8.D08** Direito anonimização POST /cliente/{id}/lgpd/anonimizar — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `app/api/v1/lgpd_direitos.py` (endpoint POST existe com audit log, LGPD art. 18 IV, 3 tests)
+	- [x] **E8.D09** Direito portabilidade GET /cliente/{id}/lgpd/portabilidade/download — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE 2026-06-25 20:30 BRT** — `app/api/v1/lgpd_direitos.py` (GET download usando `exportar_dados_titular()`, export_hash SHA256. 6 tests: 200, 404, 401, protocolos, hash, e2e)
+	- [x] **E8.D10** Direito revogação DELETE /cliente/{id} cascade — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE**
+	- [x] **E8.D11** Direito oposição POST /cliente/{id}/lgpd/oposicao — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `lgpd_direitos.py` (audit log, LGPD art. 18 IX, 2 tests)
+	- [x] **E8.D12** Direito não-automação POST /cliente/{id}/lgpd/optout — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `lgpd_direitos.py` (opt-out comunicacoes marketing, audit log, 2 tests)
 	- [x] **E8.D12** Direito não-automação POST /cliente/{id}/lgpd/optout — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `app/api/v1/lgpd_direitos.py` (endpoint POST existe com audit log, opt-out comunicacoes marketing, 2 tests)
 - [x] **E8.D13** Logs acesso LGPD art. 37 (request_id+IP truncado+UA+ts) — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `RequestContextMiddleware` + `AuditService.log` em todos endpoints, IP truncado /24, request_id UUID
 - [x] **E8.D14** Retenção configurável por tipo (5y/protocolo, até-revog/sem, 2y/conversa) — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `backend/app/jobs/retencao.py` (13 tests TDD, configurável via env vars)
