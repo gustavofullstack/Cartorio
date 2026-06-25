@@ -1,5 +1,7 @@
 """FastAPI app entry point."""
 
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
@@ -12,7 +14,7 @@ from sqlalchemy import text
 from app.api.v1.router import api_router
 from app.api.v1.ws.atendimentos import ws_router
 from app.config import settings
-from app.db import engine
+from app.db import engine, session_scope
 from app.models.base import Base
 from app.services.audit import AuditService
 from app.services.rate_limit import RateLimitMiddleware
@@ -25,6 +27,42 @@ from app.middleware.openapi_validator import install_openapi_validation_middlewa
 from app.middleware.version_header import VersionHeaderMiddleware, install_version_endpoint
 from app.middleware.problem_details import install_problem_handlers
 from app.services.idempotency_store import RedisIdempotencyStore
+
+logger = logging.getLogger(__name__)
+
+
+async def _dead_mans_switch_loop() -> None:
+    """Loop async do dead man's switch audit_log (A13).
+
+    Roda a cada `settings.audit_dead_mans_switch_interval_minutes` (env
+    `AUDIT_DEAD_MANS_SWITCH_INTERVAL_MINUTES`, default 15min). Executa
+    `run_dead_mans_switch_check_3lvl()` que ja loga + envia Telegram
+    se status != HEALTHY. Erros NAO derrubam o loop (best-effort).
+
+    Fica cancelado via `task.cancel()` no shutdown.
+    """
+    from app.jobs.cron_dead_mans_switch import run_dead_mans_switch_check_3lvl
+
+    interval_seconds = max(60, settings.audit_dead_mans_switch_interval_minutes * 60)
+    # Sleep inicial curto pra nao derrubar startup se DB estiver lento
+    await asyncio.sleep(30)
+    while True:
+        try:
+            with session_scope() as db:
+                result = run_dead_mans_switch_check_3lvl(db)
+                logger.info(
+                    "DEAD_MANS_SWITCH_TICK: status=%s alerted=%s telegram_sent=%s",
+                    result.health.status.value,
+                    result.alerted,
+                    result.telegram_sent,
+                )
+        except Exception as exc:  # pragma: no cover - safety net
+            logger.error(
+                "DEAD_MANS_SWITCH_LOOP_ERROR: type=%s msg=%s",
+                type(exc).__name__,
+                str(exc)[:200],
+            )
+        await asyncio.sleep(interval_seconds)
 
 
 @asynccontextmanager
@@ -45,9 +83,30 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # 3. Audit log: write a startup entry (no-op if audit_log empty)
     AuditService.log_system_action("api.startup", {"version": "0.5.4", "env": settings.app_env})
 
-    yield
+    # 4. Dead man's switch scheduler in-process (A13)
+    dms_task: asyncio.Task[None] | None = None
+    if settings.audit_dead_mans_switch_minutes > 0:
+        dms_task = asyncio.create_task(
+            _dead_mans_switch_loop(),
+            name="dead_mans_switch_loop",
+        )
+        logger.info(
+            "DEAD_MANS_SWITCH_SCHEDULER_STARTED: interval=%dmin threshold=%dmin",
+            settings.audit_dead_mans_switch_interval_minutes,
+            settings.audit_dead_mans_switch_minutes,
+        )
 
-    AuditService.log_system_action("api.shutdown", {})
+    try:
+        yield
+    finally:
+        # Cancel scheduler
+        if dms_task is not None:
+            dms_task.cancel()
+            try:
+                await dms_task
+            except asyncio.CancelledError:
+                pass
+        AuditService.log_system_action("api.shutdown", {})
 
 
 # ============================================================================

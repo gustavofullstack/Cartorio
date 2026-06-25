@@ -9,6 +9,30 @@ Garantias:
 
 Para verificar integridade: percorre do mais antigo pro mais novo,
 recalculando hash(prev_hash, payload, timestamp) e comparando.
+
+LGPD art. 37 (continuidade da auditoria): alem da integridade, o audit_log
+precisa estar VIVO (recebendo mutacoes regularmente). Se parar de receber
+entries por mais de `AUDIT_DEAD_MANS_SWITCH_MINUTES` (default 60min), isso
+indica perda de rastreabilidade juridica — alerta automatico via:
+
+- `app.jobs.cron_dead_mans_switch.run_dead_mans_switch_check_3lvl()` (3-level:
+  healthy/warning/critical, executado pelo scheduler in-process a cada
+  `AUDIT_DEAD_MANS_SWITCH_INTERVAL_MINUTES` = 15min no lifespan da app).
+- Endpoint admin: GET /api/v1/admin/audit/health (X-API-Key, 3-level read-only)
+- Endpoint admin: POST /api/v1/admin/audit/check-now (X-API-Key, forca check +
+  envia Telegram GRUPO PIETRA SQUAD se stale).
+- Metrica Prometheus: `audit_dead_mans_status` (0=healthy, 1=warning,
+  2=critical). Exposta via /api/v1/metrics/prometheus.
+- Alert Telegram GRUPO PIETRA SQUAD via `AUDIT_ALERT_TELEGRAM_CHAT_ID` (env).
+
+Shape 3-level (briefing A13):
+- healthy: idade <= threshold (default 60min)
+- warning: idade entre 1x e 2x threshold
+- critical: idade > 2x threshold OU tabela vazia (cold start, fail-safe)
+
+Shape 4-level legacy (mantido para compat com `/health/audit-freshness` e
+`/admin/audit/dead-mans-switch/check` da implementacao anterior):
+- healthy / stale / critical / empty
 """
 
 from __future__ import annotations

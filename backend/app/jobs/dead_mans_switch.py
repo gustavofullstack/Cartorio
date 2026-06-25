@@ -13,6 +13,16 @@ Diferenca de `app.services.dead_mans_switch`:
   tipado, threshold customizavel, classification 4-niveis: healthy/stale/
   critical/empty)
 
+Tambem expõe a funcao `check_audit_log_freshness_3lvl` (briefing A13
+/root/cartorio-a13-dead-mans-switch) que classifica em 3 niveis
+(healthy/warning/critical) com shape diferente:
+- last_audit_ts (ISO)
+- stale_seconds (int)
+- status (healthy|warning|critical)
+- threshold_minutes (int)
+
+E expone a metrica Prometheus `audit_dead_mans_status` (0/1/2).
+
 NAO mexe em audit/pii (escopo = observability + alerting, NAO logica de chain).
 """
 
@@ -184,7 +194,105 @@ def check_audit_log_freshness(
 
 __all__ = [
     "AuditHealth",
+    "AuditHealth3Lvl",
     "DEFAULT_THRESHOLD_MINUTES",
     "HealthStatus",
+    "HealthStatus3Lvl",
     "check_audit_log_freshness",
+    "check_audit_log_freshness_3lvl",
 ]
+
+
+# ============================================================================
+# 3-level classification (briefing A13 /root/cartorio-a13-dead-mans-switch)
+# ============================================================================
+
+
+class HealthStatus3Lvl(str, Enum):
+    """Status do audit log em 3 niveis (briefing A13).
+
+    Mapeamento do 4-level (HealthStatus):
+    - HEALTHY  -> HEALTHY  (0)
+    - STALE    -> WARNING  (1)
+    - CRITICAL -> CRITICAL (2)
+    - EMPTY    -> CRITICAL (2)  # cold start = critico (fail-safe)
+    """
+
+    HEALTHY = "healthy"
+    WARNING = "warning"
+    CRITICAL = "critical"
+
+
+# Mapeamento explicito 4-level -> 3-level
+_4L_TO_3L: dict[HealthStatus, HealthStatus3Lvl] = {
+    HealthStatus.HEALTHY: HealthStatus3Lvl.HEALTHY,
+    HealthStatus.STALE: HealthStatus3Lvl.WARNING,
+    HealthStatus.CRITICAL: HealthStatus3Lvl.CRITICAL,
+    HealthStatus.EMPTY: HealthStatus3Lvl.CRITICAL,
+}
+
+# Mapeamento 3-level -> codigo numerico Prometheus (0/1/2)
+_3L_TO_PROM: dict[HealthStatus3Lvl, int] = {
+    HealthStatus3Lvl.HEALTHY: 0,
+    HealthStatus3Lvl.WARNING: 1,
+    HealthStatus3Lvl.CRITICAL: 2,
+}
+
+
+class AuditHealth3Lvl(BaseModel):
+    """Saida tipada de `check_audit_log_freshness_3lvl` (briefing A13).
+
+    Attributes:
+        status: classificacao 3-niveis (healthy/warning/critical).
+        last_audit_ts: timestamp ISO do ultimo entry no audit_log, ou None se vazio.
+        stale_seconds: idade do ultimo entry em segundos (None se vazio).
+        threshold_minutes: threshold usado na avaliacao (default 60).
+    """
+
+    status: HealthStatus3Lvl
+    last_audit_ts: datetime | None = None
+    stale_seconds: int | None = None
+    threshold_minutes: int = Field(default=DEFAULT_THRESHOLD_MINUTES, ge=1)
+
+    model_config = {"frozen": True}
+
+
+def check_audit_log_freshness_3lvl(
+    db: Session,
+    threshold_minutes: int = DEFAULT_THRESHOLD_MINUTES,
+    *,
+    now: datetime | None = None,
+) -> AuditHealth3Lvl:
+    """Verifica freshness do audit_log em 3 niveis (briefing A13).
+
+    Wrapper sobre `check_audit_log_freshness` (4-niveis) que mapeia para o
+    shape 3-niveis (healthy/warning/critical). Tambem atualiza a metrica
+    Prometheus `audit_dead_mans_status` (0/1/2).
+
+    Args:
+        db: SQLAlchemy session.
+        threshold_minutes: janela maxima em minutos. Default 60.
+        now: override do "agora" para testes deterministicos.
+
+    Returns:
+        AuditHealth3Lvl com status + last_audit_ts + stale_seconds.
+    """
+    # Lazy import para evitar ciclo: services/metrics.py nao importa jobs/
+    from app.services.metrics import store as metrics_store
+
+    health4 = check_audit_log_freshness(db, threshold_minutes, now=now)
+    status3 = _4L_TO_3L[health4.status]
+    last_audit_ts = health4.last_entry_at
+    stale_seconds = (
+        health4.last_entry_age_minutes * 60 if health4.last_entry_age_minutes is not None else None
+    )
+
+    # Atualiza metrica Prometheus
+    metrics_store.set_audit_dead_mans_status(_3L_TO_PROM[status3])
+
+    return AuditHealth3Lvl(
+        status=status3,
+        last_audit_ts=last_audit_ts,
+        stale_seconds=stale_seconds,
+        threshold_minutes=health4.threshold_minutes,
+    )

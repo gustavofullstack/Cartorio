@@ -122,6 +122,18 @@ class MetricsStore:
         self._make_metric_or_skip_test("dlq_depth", "gauge")
         self.set_gauge("dlq_depth", float(depth), labels={"queue": queue})
 
+    def set_audit_dead_mans_status(self, status_code: int) -> None:
+        """Helper A13: gauge `audit_dead_mans_status` (3 niveis).
+
+        Args:
+            status_code: 0=healthy, 1=warning, 2=critical. Outros valores caem em 2.
+        """
+        # Clamp para evitar valores fora do range (safety net)
+        if status_code not in (0, 1, 2):
+            status_code = 2  # treat unknown as critical (fail-safe)
+        self._make_metric_or_skip_test("audit_dead_mans_status", "gauge")
+        self.set_gauge("audit_dead_mans_status", float(status_code))
+
     def _labels_key(self, labels: dict[str, str] | None) -> str:
         if not labels:
             return ""

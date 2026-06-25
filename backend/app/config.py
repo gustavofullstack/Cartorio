@@ -54,6 +54,14 @@ class Settings(BaseSettings):
     audit_hmac_key: str = Field(min_length=32)
     audit_verify_cron: str = "0 3 * * *"  # Diario as 03:00
 
+    # Dead man's switch (A13): se audit_log ficar stale > N min, alerta Telegram
+    # GRUPO PIETRA SQUAD. Default 60min = continuidade auditoria LGPD art. 37.
+    audit_dead_mans_switch_minutes: int = 60
+    audit_dead_mans_switch_interval_minutes: int = 15  # freq do scheduler in-process
+    # Chat ID Telegram GRUPO PIETRA SQUAD para alertas do dead man's switch.
+    # Vazio = nao envia (apenas loga). Sprint 5 integra com TelegramBot real.
+    audit_alert_telegram_chat_id: Optional[str] = None
+
     # ========================================================================
     # PII scrubbing
     # ========================================================================

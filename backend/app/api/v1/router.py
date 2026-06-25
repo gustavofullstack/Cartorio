@@ -1662,9 +1662,7 @@ async def health_backup_v2() -> JSONResponse:
 
     payload = {
         "status": health.status.value,
-        "last_backup_at": (
-            health.last_backup_at.isoformat() if health.last_backup_at else None
-        ),
+        "last_backup_at": (health.last_backup_at.isoformat() if health.last_backup_at else None),
         "last_backup_age_minutes": health.last_backup_age_minutes,
         "last_backup_dir": health.last_backup_dir,
         "backup_count": health.backup_count,
@@ -2603,6 +2601,130 @@ async def admin_audit_dead_mans_switch_check(
         "alerted": result.alerted,
     }
     status_code = 200 if result.health.status == HealthStatus.HEALTHY else 503
+    return JSONResponse(status_code=status_code, content=body)
+
+
+# ============================================================================
+# A13 dead man's switch — 3-level variant (briefing
+# /root/cartorio-a13-dead-mans-switch.yaml)
+# ============================================================================
+
+
+@api_router.get(
+    "/admin/audit/health",
+    tags=["admin", "audit"],
+    summary="Health check audit log (3-level: healthy/warning/critical)",
+    description=(
+        "Verifica freshness do `audit_log` em **3 niveis**:\n"
+        "- `healthy`: ultima entry <= threshold_minutes (default 60min)\n"
+        "- `warning`: idade entre 1x e 2x threshold\n"
+        "- `critical`: idade > 2x threshold OU tabela vazia (cold start)\n\n"
+        "Diferenca do `/admin/audit/dead-mans-switch/check` (4-level): este "
+        "endpoint retorna shape mais simples (sem `alert`), 3 niveis ao invez "
+        "de 4, e usa `stale_seconds` (int) ao inves de "
+        "`last_entry_age_minutes`. Util para integracao com monitor externo "
+        "(N8N Cron / Grafana). Atualiza metrica Prometheus "
+        "`audit_dead_mans_status` (0=healthy, 1=warning, 2=critical).\n\n"
+        "Requer `X-API-Key` (admin / DPO). Body: sem.\n\n"
+        "LGPD art. 37 (continuidade da auditoria)."
+    ),
+    response_description="AuditHealth3Lvl + status HTTP 200/503.",
+    responses={
+        200: {"description": "Audit log fresco (status=healthy)."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+        503: {"description": "Audit log warning/critical."},
+    },
+)
+async def admin_audit_health(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],
+) -> JSONResponse:
+    """Dead man's switch A13 (3-level): GET /admin/audit/health."""
+    from app.config import settings
+    from app.jobs.dead_mans_switch import (
+        HealthStatus3Lvl,
+        check_audit_log_freshness_3lvl,
+    )
+    from app.services.audit import AuditService
+    from app.services.audit_context import audit_kwargs
+
+    health = check_audit_log_freshness_3lvl(db, settings.audit_dead_mans_switch_minutes)
+
+    payload = {
+        "status": health.status.value,
+        "last_audit_ts": (health.last_audit_ts.isoformat() if health.last_audit_ts else None),
+        "stale_seconds": health.stale_seconds,
+        "threshold_minutes": health.threshold_minutes,
+    }
+    status_code = 200 if health.status == HealthStatus3Lvl.HEALTHY else 503
+    # Audit log de leitura (LGPD: leitura de health NAO eh dado pessoal,
+    # mas mantemos rastreabilidade para detectar acessos indevidos).
+    AuditService.log(
+        db=db,
+        actor_id="admin",
+        actor_type="system",
+        action="audit.health.read",
+        resource=f"audit_log:status={health.status.value}",
+        payload={
+            "status": health.status.value,
+            "stale_seconds": health.stale_seconds,
+            "threshold_minutes": health.threshold_minutes,
+        },
+        **audit_kwargs(request),
+    )
+    return JSONResponse(status_code=status_code, content=payload)
+
+
+@api_router.post(
+    "/admin/audit/check-now",
+    tags=["admin", "audit"],
+    summary="Forca check 3-level + envia alerta Telegram se stale",
+    description=(
+        "Executa o check 3-level **sob demanda** e envia alerta Telegram GRUPO "
+        "PIETRA SQUAD (se `AUDIT_ALERT_TELEGRAM_CHAT_ID` configurado) caso "
+        'status != healthy. Body opcional: `{"threshold_minutes": N}`.\n\n'
+        "Diferenca do `/admin/audit/dead-mans-switch/check`: este retorna "
+        "shape 3-level + campo `alerted` + `telegram_sent`. Util para "
+        "verificacao ad-hoc (DPO / on-call) sem esperar o scheduler "
+        "in-process (roda a cada `AUDIT_DEAD_MANS_SWITCH_INTERVAL_MINUTES`, "
+        "default 15min).\n\n"
+        "Requer `X-API-Key` (admin / DPO)."
+    ),
+    response_description="AuditHealth3Lvl + alerted + telegram_sent.",
+    responses={
+        200: {"description": "Audit log fresco."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+        503: {"description": "Audit log warning/critical."},
+    },
+)
+async def admin_audit_check_now(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],
+    payload: dict | None = None,
+) -> JSONResponse:
+    """Dead man's switch A13 (3-level): POST /admin/audit/check-now."""
+    from app.jobs.cron_dead_mans_switch import run_dead_mans_switch_check_3lvl
+    from app.jobs.dead_mans_switch import HealthStatus3Lvl
+
+    threshold_minutes: int | None = None
+    if isinstance(payload, dict) and isinstance(payload.get("threshold_minutes"), int):
+        threshold_minutes = payload["threshold_minutes"]
+
+    result = run_dead_mans_switch_check_3lvl(db, threshold_minutes=threshold_minutes)
+
+    body = {
+        "status": result.health.status.value,
+        "last_audit_ts": (
+            result.health.last_audit_ts.isoformat() if result.health.last_audit_ts else None
+        ),
+        "stale_seconds": result.health.stale_seconds,
+        "threshold_minutes": result.health.threshold_minutes,
+        "alerted": result.alerted,
+        "telegram_sent": result.telegram_sent,
+    }
+    status_code = 200 if result.health.status == HealthStatus3Lvl.HEALTHY else 503
     return JSONResponse(status_code=status_code, content=body)
 
 
