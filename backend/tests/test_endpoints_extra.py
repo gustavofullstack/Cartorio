@@ -8,7 +8,7 @@ Endpoints cobertos aqui:
 - GET  /api/v1/health/backup
 - GET  /api/v1/agendamento/disponibilidade
 - POST /api/v1/documento/segunda-via
-- GET  /api/v1/atendimentos/ultimas-24h
+- GET  /api/v1/atendimento/ultimas-24h
 - POST /api/v1/atendimento/{id}/pesquisa-enviada
 - POST /api/v1/atendimento
 - POST /api/v1/atendimento/{id}/concluir
@@ -143,13 +143,13 @@ def test_documento_segunda_via_canal_default(client):
 
 
 # ============================================================================
-# GET /api/v1/atendimentos/ultimas-24h
+# GET /api/v1/atendimento/ultimas-24h
 # ============================================================================
 
 
 def test_atendimentos_ultimas_24h_vazio(client):
     """Lista vazia quando nao ha atendimentos concluidos."""
-    resp = client.get("/api/v1/atendimentos/ultimas-24h")
+    resp = client.get("/api/v1/atendimento/ultimas-24h")
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 0
@@ -191,7 +191,7 @@ def test_atendimentos_ultimas_24h_com_atendimento(client, test_engine):
         s.add(c)
         s.commit()
 
-    resp = client.get("/api/v1/atendimentos/ultimas-24h")
+    resp = client.get("/api/v1/atendimento/ultimas-24h")
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 1
@@ -214,7 +214,7 @@ def test_atendimentos_ultimas_24h_exclui_pesquisa_enviada(client, test_engine):
         s.add(a)
         s.commit()
 
-    resp = client.get("/api/v1/atendimentos/ultimas-24h")
+    resp = client.get("/api/v1/atendimento/ultimas-24h")
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 0

@@ -20,6 +20,7 @@ from app.services.rate_limit_by_key import RateLimitByKeyMiddleware
 from app.services.tracing import init_tracing
 from app.middleware.request_context import RequestContextMiddleware
 from app.middleware.idempotency import IdempotencyMiddleware
+from app.middleware.slow_log import SlowLogMiddleware
 from app.services.idempotency_store import RedisIdempotencyStore
 
 
@@ -253,6 +254,11 @@ app.add_middleware(
     session_header="x-session-id",
     paths_prefixes=("/integrations/", "/admin/"),
 )
+
+# Slow request log (A15 — squad A): log estruturado para requests > 500ms.
+# Skip automatico de /health/* e /metrics (ruido). Threshold via env
+# SLOW_LOG_THRESHOLD_MS (default 500ms). Ver tests/test_slow_log.py.
+app.add_middleware(SlowLogMiddleware, threshold_ms=500)
 
 
 @app.get("/health", tags=["meta"])
