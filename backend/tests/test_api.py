@@ -143,7 +143,7 @@ def test_webhook_evolution_payload_vazio(client):
 
 
 def test_audit_verify_endpoint(client):
-    resp = client.post("/api/v1/audit/verify")
+    resp = client.post("/api/v1/audit/verify", headers={"X-API-Key": "a" * 64})
     assert resp.status_code == 200
     data = resp.json()
     assert "chain_ok" in data

@@ -149,7 +149,7 @@ def test_documento_segunda_via_canal_default(client):
 
 def test_atendimentos_ultimas_24h_vazio(client):
     """Lista vazia quando nao ha atendimentos concluidos."""
-    resp = client.get("/api/v1/atendimento/ultimas-24h")
+    resp = client.get("/api/v1/atendimento/ultimas-24h", headers={"X-API-Key": "a" * 64})
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 0
@@ -191,7 +191,7 @@ def test_atendimentos_ultimas_24h_com_atendimento(client, test_engine):
         s.add(c)
         s.commit()
 
-    resp = client.get("/api/v1/atendimento/ultimas-24h")
+    resp = client.get("/api/v1/atendimento/ultimas-24h", headers={"X-API-Key": "a" * 64})
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 1
@@ -214,7 +214,7 @@ def test_atendimentos_ultimas_24h_exclui_pesquisa_enviada(client, test_engine):
         s.add(a)
         s.commit()
 
-    resp = client.get("/api/v1/atendimento/ultimas-24h")
+    resp = client.get("/api/v1/atendimento/ultimas-24h", headers={"X-API-Key": "a" * 64})
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 0
