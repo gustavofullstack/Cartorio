@@ -1949,3 +1949,65 @@ Gustavo mandou prompt cartorio novamente para continuidade. Squad B ~95% (Pietra
 - Codigo versionado em infra/backup/cartorio-backup-status.sh + infra/cron/cartorio-backup-status
 - Deploy na VPS PENDENTE: cp / chmod / systemctl restart cron
 - Setup doc: infra/backup/E6_S7_T10_setup.md
+
+## 2026-06-25 16:30 BRT — SQUAD A24 + B + BRAIN + DOCS 100% DONE
+
+### Stats finais
+- pytest: 952 → 1205 passed (+253 testes nesta mega-sessão)
+- mypy: 0 errors (103 source files)
+- ruff: All checks passed
+- 22+ commits pushed origin/master
+- ZERO rotação de chaves (regra absoluta)
+- ZERO branches paralelas
+
+### Lessons adicionadas (L167-L182)
+(Cross-reference: detalhes completos em `.brain/lessons/sessao-2026-06-25.md`)
+
+**L167-169** (Backend/WIP):
+- WIP feature sem migration head pointer = porta aberta pra retrabalho
+- `backend/infra/` NÃO é path canonical (sempre `infra/` na raiz)
+- Feature A26 adiciona notification fields ao Cliente — validar LGPD art. 37
+
+**L170-172** (Backend/API):
+- JWT HS256 requer secret ≥ 32 bytes (RFC 7518) — validar no SERVICE não no startup
+- Cursor pagination Relay: `end_cursor = None` quando `has_next_page=False`
+- Pydantic v2 + Optional[str] = Field(default=None, min_length=32) valida mesmo quando None
+
+**L173-175** (N8N):
+- N8N usa `maxTries` (v1.x) E `maxRetries` (legacy) — validator aceita ambos
+- Webhook nodes não precisam URL (path interno) — false positive em validators
+- Settings.errorWorkflow = error handler wired (B06 enforcement)
+
+**L176-177** (TDD):
+- Tests que importam conftest fixtures devem rodar DEPOIS conftest
+- Cursor opaque base64 sem padding (rstrip("=")) — padding só pra decode
+
+**L178-180** (Multi-Agent):
+- Hooks CI auto-append podem fragmentar histórico git
+- Files duplicados em paths diferentes (git mv + filesystem copy)
+- Working tree "ahead" pode ser falso se CI já fez push
+
+**L181-182** (Workflow):
+- Sequencial > paralelo com pytest shared fixtures
+- Validator descobrindo bugs REAIS = alto valor (41 WFs com violações detectadas)
+
+### Anti-patterns identificados (AP1-AP6)
+- AP1: Deletar working tree "lixo" sem análise prévia
+- AP2: Migration sem `down_revision` definido
+- AP3: Workflow JSON em path não-canônico (`backend/infra/` → `infra/n8n-workflows/`)
+- AP4: N8N WF sem error handler wired (41/45 violavam)
+- AP5: Webhook nodes com URL hardcoded (sem `$env.VAR`)
+- AP6: Aceitar commits fragmentados por hooks CI (feature, não bug)
+
+### Pending (HOLD aguardando Gustavo)
+- B06-FIX (Lesson 51): N8N_BLOCK_ENV_ACCESS_IN_NODE — fix troca `$env` → `$credentials`
+- DNS Cloudflare: A records para `n8n.2notasudi.com.br` + `supabase.2notasudi.com.br`
+- WhatsApp QR scan (instance state=close)
+- OpenClaw password (Control UI 401)
+
+### Próximas trilhas (loop contínuo)
+- C24/C25 Uptime Kuma + Status page (requer deploy)
+- A26 retomada (3 bloqueios: migration head, model fields, wf paths)
+- BRAIN7 (já em progresso nesta sessão)
+
+Modified by ZCode/Mavis - 2026-06-26
