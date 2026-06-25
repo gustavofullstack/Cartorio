@@ -2681,18 +2681,32 @@ Auth: `X-API-Key` (escrevente/DPO/automacao N8N) via `require_cartorio_api_key`.
         "- N8N jobs que precisam gravar acoes sem depender de ORM direto\n\n"
         "Campos obrigatorios: action, resource. Demais opcionais com defaults \
 sensatos (actor_id='system', actor_type='system', payload={}, canal=None).\n\n"
+        "D0.2 hardened (LGPD review 2026-06-25 APPROVED_WITH_FIXES):\n"
+        "- IP override (P0.1): handler SEMPRE grava request.client.host \
+(honra XFF). Campo `ip` do payload eh ACEITO no schema (backward compat) \
+mas NAO eh confiavel — usar o do servidor.\n"
+        "- Audit do audit (P0.2): apos gravar, gera entry AUTOMATICA \
+action='audit.api_entry_created' com fingerprint da API key. Falha NAO \
+propaga (audit principal ja' foi gravado).\n"
+        "- Actor ID pattern (P0.3): ^[a-zA-Z0-9_.-]{1,64}$ — rejeita CPF, \
+email, espacos, chars especiais com 422 antes de persistir.\n"
+        "- PII warning (P1.1): se pii.detect_only(payload) encontrar matches, \
+response inclui `pii_warning` campo. NAO bloqueia, apenas sinaliza.\n\n"
         "Campos automaticos (caller NAO envia):\n"
         "- id (autoincrement)\n"
         "- hash, prev_hash, hmac_signature (via AuditService)\n"
         "- ip_truncated (via utils.ip.truncate_ip — LGPD D5)\n"
-        "- timestamp (utcnow)"
+        "- timestamp (utcnow)\n\n"
+        "Rate limit (P1.2): Sprint 4. Mesmo limite do GET /audit/logs (60/min)."
     ),
     response_model=AuditLogCreatedResponse,
     status_code=201,
     responses={
         201: {"model": AuditLogCreatedResponse, "description": "Entry criada com chain integrity."},
         401: {"description": "X-API-Key ausente ou invalida."},
-        422: {"description": "Payload invalido (Pydantic validation)."},
+        422: {
+            "description": "Payload invalido (Pydantic validation: actor_id pattern, campos obrigatorios)."
+        },
     },
 )
 async def create_audit_log_endpoint(
@@ -2703,18 +2717,94 @@ async def create_audit_log_endpoint(
 ) -> AuditLogCreatedResponse:
     """Cria entry de audit log via API (chain + HMAC automaticos).
 
-    D0.2 (2026-06-25): endpoint adicionado para suportar WF 23 LGPD Esqueci
-    que precisa gravar revogacao de consentimento via API. Antes deste
-    endpoint, WF 23 recebia 404 ao chamar POST /audit/log.
+    D0.2 (2026-06-25) + D0.2 hardened (LGPD review 2026-06-25 APPROVED_WITH_FIXES):
+    - P0.1: IP SPOOFING FIX — entry.ip sempre sobrescrito com request.client.host
+      (honra XFF). Caller NAO controla o IP gravado.
+    - P0.2: AUDIT DO AUDIT — apos gravar, gera entry meta action='audit.api_entry_created'
+      com fingerprint da API key. Falha NAO bloqueia o response.
+    - P0.3: ACTOR_ID PATTERN ja aplicado no schema (^[a-zA-Z0-9_.-]{1,64}$).
+      422 antes de chegar aqui.
+    - P1.1: PII WARNING — detecta via pii.detect_only() no payload.
+      NAO bloqueia, apenas retorna pii_warning no response.
     """
+    from app.middleware.request_context import _extract_client_ip
+    from app.services.audit import AuditService
     from app.services.audit_create import create_audit_log_entry
+    from app.services.pii import detect_only
 
+    import hashlib
+    import json
+    import logging
+
+    _log = logging.getLogger("cartorio.audit.api")
+
+    # P0.1 — IP SPOOFING FIX
+    # Ignorar entry.ip do input (caller NAO controla). Sempre usar o IP real
+    # extraido do request (request.client.host + XFF honored). Mesmo padrao
+    # usado em _audit_auth_failure (deps.py:55-58) e _extract_client_ip
+    # (middleware/request_context.py:40-54).
+    real_ip = _extract_client_ip(request)
+    entry.ip = real_ip
+
+    # Cria entry principal (LGPD art. 37)
     new_entry = create_audit_log_entry(db, entry)
+
+    # P0.2 — AUDIT DO AUDIT (chain integrity preservada)
+    # Cria entry AUTOMATICA que audita a criacao da entry principal.
+    # actor_id = fingerprint da API key (NAO actor_id do input — seria confusao
+    # de identidade). resource = id da entry criada.
+    try:
+        api_key_fingerprint = hashlib.sha256(api_key.encode("utf-8")).hexdigest()[:8]
+        AuditService.log(
+            db,
+            actor_id=f"api_key:{api_key_fingerprint}",
+            actor_type="system",
+            action="audit.api_entry_created",
+            resource=str(new_entry.id),
+            payload={
+                "created_entry_id": new_entry.id,
+                "created_action": entry.action,
+                "created_resource": entry.resource,
+                "created_actor_id": entry.actor_id,
+            },
+            canal=entry.canal or "api",
+            ip=real_ip,
+            user_agent=entry.user_agent,
+            request_id=entry.request_id,
+        )
+    except Exception as meta_err:  # noqa: BLE001 — meta-audit NAO pode quebrar response
+        _log.error(
+            "audit.meta_entry_failed created_entry_id=%s err=%s",
+            new_entry.id,
+            meta_err,
+            exc_info=True,
+        )
+
+    # P1.1 — PII WARNING (NAO bloqueia, apenas sinaliza)
+    pii_warning = None
+    try:
+        # Serializar payload para text (pii.detect_only espera str).
+        # JSON eh o formato canonico — garante roundtrip fiel.
+        payload_text = json.dumps(entry.payload, default=str, ensure_ascii=False)
+        findings = detect_only(payload_text)
+        if findings:
+            pii_warning = {
+                "detected": True,
+                "fields": sorted(findings.keys()),
+            }
+    except Exception as pii_err:  # noqa: BLE001 — pii detect eh best-effort
+        _log.warning(
+            "audit.pii_detect_failed created_entry_id=%s err=%s",
+            new_entry.id,
+            pii_err,
+        )
+
     return AuditLogCreatedResponse(
         id=new_entry.id,
         hash=new_entry.hash,
         prev_hash=new_entry.prev_hash,
         created_at=new_entry.timestamp,
+        pii_warning=pii_warning,  # type: ignore[arg-type]
     )
 
 

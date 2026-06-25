@@ -30,11 +30,19 @@ class AuditLogCreate(BaseModel):
 
     Campos:
     - actor_id: QUEM executou. Default 'system' para chamadas internas de n8n/cron.
+        Pattern: ^[a-zA-Z0-9_.-]{1,64}$ — rejeita CPF, email, espacos, chars
+        especiais. Bloqueia tentativa de incluir dado pessoal em campo que
+        deveria ser apenas identificador.
     - action: O QUE (ex: 'cliente.revogacao.consentimento', 'protocolo.update').
     - resource: ALVO (ex: 'cliente:42', 'protocolo:2026-00001').
     - payload: estado serializado (before/after quando aplicavel).
+        AVISO LGPD (D0.2 P1.1): caller DEVE pre-scrub PII. Endpoint detecta
+        via pii.detect_only() e emite warning no response — NAO bloqueia.
     - canal: origem (whatsapp, telegram, web, balcao, email, n8n, cron, system).
     - ip, user_agent, request_id: contexto de request (opcional).
+        NOTA (D0.2 P0.1): campo `ip` eh ACEITO no schema (backward compat)
+        mas o HANDLER SEMPRE sobrescreve com request.client.host (honra XFF).
+        Caller NAO confia no proprio `ip` — usar o que o servidor gravou.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -42,8 +50,13 @@ class AuditLogCreate(BaseModel):
     actor_id: str = Field(
         default="system",
         min_length=1,
-        max_length=128,
-        description="Quem executou a acao. Default 'system' para chamadas internas.",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_.-]{1,64}$",
+        description=(
+            "Quem executou a acao. Default 'system' para chamadas internas. "
+            "Pattern: ^[a-zA-Z0-9_.-]{1,64}$ — rejeita CPF, email, espacos. "
+            "Bloqueia tentativa de incluir dado pessoal em campo identificador."
+        ),
     )
     actor_type: Literal["user", "system", "bot", "escrevente", "tabeliao"] = Field(
         default="system",
@@ -63,7 +76,14 @@ class AuditLogCreate(BaseModel):
     )
     payload: dict[str, Any] = Field(
         default_factory=dict,
-        description="Estado serializado (before/after quando aplicavel).",
+        description=(
+            "Estado serializado (before/after quando aplicavel). "
+            "LGPD D0.2 P1.1: payload DEVE ser pre-scrubbed pelo caller. "
+            "PII (CPF, email, telefone) NAO deve ser incluida. Endpoint "
+            "emite warning no response (campo pii_warning) se detectar PII "
+            "via pii.detect_only() — NAO bloqueia, apenas sinaliza. "
+            "Scrub automatico: Sprint 4 (P2 backlog)."
+        ),
     )
     canal: (
         Literal["whatsapp", "telegram", "web", "balcao", "email", "n8n", "cron", "system"] | None
@@ -74,7 +94,11 @@ class AuditLogCreate(BaseModel):
     ip: str | None = Field(
         default=None,
         max_length=45,
-        description="IP COMPLETO do cliente. LGPD D5 — truncado automaticamente em /24 ou /32.",
+        description=(
+            "IP COMPLETO do cliente. LGPD D5 — truncado automaticamente em /24 ou /32. "
+            "D0.2 P0.1: handler SEMPRE sobrescreve com request.client.host "
+            "(honra XFF). Campo mantido para backward compat mas NAO confiavel."
+        ),
     )
     user_agent: str | None = Field(
         default=None,
@@ -88,6 +112,27 @@ class AuditLogCreate(BaseModel):
     )
 
 
+class PIIWarning(BaseModel):
+    """Aviso de PII detectado no payload (D0.2 P1.1).
+
+    NAO bloqueia o request — apenas sinaliza ao caller que o payload
+    continha dados que PODEM ser pessoais. Caller pode decidir reagendar
+    com payload pre-scrubbed.
+
+    Sprint 4 (P2 backlog): implementar scrub automatico antes de gravar.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    detected: bool = Field(..., description="True se pii.detect_only() encontrou matches.")
+    fields: list[str] = Field(
+        ...,
+        description=(
+            "Lista de tipos de PII detectados (ex: ['cpf', 'email']). Vazio se detected=False."
+        ),
+    )
+
+
 class AuditLogCreatedResponse(BaseModel):
     """Resposta 201 de POST /api/v1/audit/log.
 
@@ -96,6 +141,8 @@ class AuditLogCreatedResponse(BaseModel):
     - hash: hash SHA256 desta entry (chain integrity)
     - prev_hash: hash da entry anterior (None se for a primeira)
     - created_at: timestamp UTC do registro
+    - pii_warning: aviso de PII detectado no payload (D0.2 P1.1). None se
+        payload nao continha PII.
 
     Caller NAO precisa do payload/IP/etc — para isso existe GET /audit/logs/{id}.
     """
@@ -108,6 +155,13 @@ class AuditLogCreatedResponse(BaseModel):
         default=None, description="Hash da entry anterior (None se for a primeira)."
     )
     created_at: datetime = Field(..., description="Timestamp UTC do registro.")
+    pii_warning: PIIWarning | None = Field(
+        default=None,
+        description=(
+            "Aviso de PII detectado no payload via pii.detect_only(). "
+            "None se payload nao continha PII. NAO bloqueia — apenas sinaliza."
+        ),
+    )
 
 
 # ============================================================================
@@ -198,4 +252,5 @@ __all__ = [
     "AuditLogFilter",
     "AuditLogListResponse",
     "AuditLogResponse",
+    "PIIWarning",
 ]
