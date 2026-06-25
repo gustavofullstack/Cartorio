@@ -17,27 +17,18 @@ from __future__ import annotations
 
 import base64
 import json
-import os
+from datetime import datetime, timezone
+from unittest.mock import patch
 
-# Set test env BEFORE importing app modules
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
-os.environ.setdefault("AUDIT_HMAC_KEY", "a" * 64)
-os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
-os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
-os.environ.setdefault("CARTORIO_API_KEY", "a" * 64)
-os.environ.setdefault("JWT_SECRET", "z" * 32)
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app.config import get_settings  # noqa: E402
-
-get_settings.cache_clear()
-
-import pytest  # noqa: E402
-from fastapi import FastAPI  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy.orm import Session  # noqa: E402
-
-from app.models.cliente import Cliente  # noqa: E402
-from app.api.v2.clientes import router as v2_clientes_router  # noqa: E402
+from app.models.base import Base
+from app.models.cliente import Cliente
+from app.api.v2.clientes import router as v2_clientes_router
 
 
 def _decode_cursor(cursor: str) -> dict:
@@ -47,21 +38,43 @@ def _decode_cursor(cursor: str) -> dict:
 
 
 @pytest.fixture
-def app() -> FastAPI:
-    test_app = FastAPI()
-    test_app.include_router(v2_clientes_router, prefix="/api/v2")
-    return test_app
+def test_engine():
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    yield engine
+    Base.metadata.drop_all(engine)
 
 
 @pytest.fixture
-def client(app: FastAPI) -> TestClient:
-    return TestClient(app)
+def test_session_factory(test_engine):
+    return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
 
 @pytest.fixture
-def sample_clientes(db_session: Session):
+def client(test_engine, test_session_factory):
+    """TestClient que substitui engine e sessao do app por SQLite in-memory."""
+    with (
+        patch("app.db.engine", test_engine),
+        patch("app.db.SessionLocal", test_session_factory),
+        patch("app.main.engine", test_engine),
+        patch("app.api.v2.clientes.engine", test_engine),
+        patch("app.api.v2.clientes.SessionLocal", test_session_factory),
+    ):
+        from app.main import app
+
+        with TestClient(app) as c:
+            yield c
+
+
+@pytest.fixture
+def sample_clientes(test_session_factory):
     """Insere 5 clientes com ids 1..5."""
     clientes = []
+    session = test_session_factory()
     for i in range(1, 6):
         c = Cliente(
             cpf_hash=f"hash_cliente_{i:032d}"[:64],
@@ -70,11 +83,12 @@ def sample_clientes(db_session: Session):
             consentimento_lgpd=True,
             motivo_encerramento=None,
         )
-        db_session.add(c)
+        session.add(c)
         clientes.append(c)
-    db_session.commit()
+    session.commit()
     for c in clientes:
-        db_session.refresh(c)
+        session.refresh(c)
+    session.close()
     return clientes
 
 

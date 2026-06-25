@@ -277,7 +277,7 @@
         ]
       ]
     },
-    "Chatwoot: Create Conversation": {
+    "Chatwoot: Create Conversation (httpRequest)": {
       "main": [
         [
           {
@@ -288,7 +288,7 @@
         ]
       ]
     },
-    "Chatwoot: Send Message": {
+    "Chatwoot: Send Message (httpRequest)": {
       "main": [
         [
           {

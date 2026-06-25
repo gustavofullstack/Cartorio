@@ -34,6 +34,7 @@ VALID_TRIGGER_TYPES = (
     "n8n-nodes-base.executeWorkflowTrigger",
     "n8n-nodes-base.formTrigger",
     "n8n-nodes-base.cron",  # legacy
+    "@n8n/n8n-nodes-langchain.mcpTrigger",  # MCP Server trigger (22-mcp-server)
 )
 
 VALID_OUTPUT_TYPES_PREFIX = (

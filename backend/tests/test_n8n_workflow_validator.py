@@ -150,12 +150,16 @@ class TestN8nWorkflowValidator:
                 {
                     "name": "call_api",
                     "type": "n8n-nodes-base.httpRequest",
-                    "parameters": {"url": "{{$env.CARTORIO_API_URL}}/x"},
+                    "parameters": {
+                        "url": "{{$env.CARTORIO_API_URL}}/x",
+                        "options": {"retry": {"maxRetries": 3, "backoff": "exponential"}},
+                    },
                 },
             ],
             "connections": {
                 "start": {"main": [[{"node": "call_api"}]]}
             },
+            "settings": {"errorWorkflow": "global-error-handler"},
         }
         p = _make_wf(tmp_path, "valid.json", wf)
         result = _validate_one(p)
@@ -166,11 +170,12 @@ class TestN8nWorkflowValidator:
 
     def test_validate_all_aggregates(self, tmp_path: Path):
         """validate_all agrega stats corretamente."""
-        # WF valido
+        # WF valido (sem warnings: tem settings.errorWorkflow)
         _make_wf(tmp_path, "ok.json", {
             "name": "ok",
             "nodes": [{"name": "n1", "type": "t"}],
             "connections": {},
+            "settings": {"errorWorkflow": "global"},
         })
         # WF invalido
         _make_wf(tmp_path, "bad.json", {
@@ -178,7 +183,7 @@ class TestN8nWorkflowValidator:
             "nodes": [{"name": "n1"}],  # sem type
             "connections": {},
         })
-        # WF com warning
+        # WF com warning (sem errorWorkflow)
         _make_wf(tmp_path, "warn.json", {
             "name": "warn",
             "nodes": [{
@@ -205,3 +210,135 @@ class TestN8nWorkflowValidator:
         """DEFAULT_WF_DIR aponta para infra/n8n-workflows."""
         # Existe no projeto real
         assert "n8n-workflows" in str(DEFAULT_WF_DIR)
+
+    # ========================================================================
+    # B12: Test runner checks (retry, timeout, error handler)
+    # ========================================================================
+
+    def test_b07_http_node_sem_retry_avisa(self, tmp_path: Path):
+        """B07: HTTP node sem retry policy -> warning."""
+        wf = {
+            "name": "no-retry",
+            "nodes": [{
+                "name": "call_api",
+                "type": "n8n-nodes-base.httpRequest",
+                "parameters": {"url": "{{$env.CARTORIO_API_URL}}/x"},
+            }],
+            "connections": {},
+            "settings": {"errorWorkflow": "global"},
+        }
+        p = _make_wf(tmp_path, "no-retry.json", wf)
+        result = _validate_one(p)
+        assert any("B07" in w and "retry" in w.lower() for w in result["warnings"])
+
+    def test_b07_http_node_com_retry_ok(self, tmp_path: Path):
+        """B07: HTTP node COM retry 3x -> sem warning."""
+        wf = {
+            "name": "with-retry",
+            "nodes": [{
+                "name": "call_api",
+                "type": "n8n-nodes-base.httpRequest",
+                "parameters": {
+                    "url": "{{$env.CARTORIO_API_URL}}/x",
+                    "options": {"retry": {"maxRetries": 3, "backoff": "exponential"}},
+                },
+            }],
+            "connections": {},
+            "settings": {"errorWorkflow": "global"},
+        }
+        p = _make_wf(tmp_path, "with-retry.json", wf)
+        result = _validate_one(p)
+        retry_warnings = [w for w in result["warnings"] if "B07" in w]
+        assert retry_warnings == []
+
+    def test_b08_http_timeout_alto_avisa(self, tmp_path: Path):
+        """B08: HTTP node com timeout > 30s -> warning."""
+        wf = {
+            "name": "slow",
+            "nodes": [{
+                "name": "slow_call",
+                "type": "n8n-nodes-base.httpRequest",
+                "parameters": {
+                    "url": "{{$env.CARTORIO_API_URL}}/x",
+                    "options": {"timeout": 60000, "retry": {"maxRetries": 3}},
+                },
+            }],
+            "connections": {},
+            "settings": {"errorWorkflow": "global"},
+        }
+        p = _make_wf(tmp_path, "slow.json", wf)
+        result = _validate_one(p)
+        assert any("B08" in w and "timeout" in w.lower() for w in result["warnings"])
+
+    def test_b08_http_timeout_30s_ok(self, tmp_path: Path):
+        """B08: HTTP node com timeout <= 30s -> sem warning."""
+        wf = {
+            "name": "fast",
+            "nodes": [{
+                "name": "fast_call",
+                "type": "n8n-nodes-base.httpRequest",
+                "parameters": {
+                    "url": "{{$env.CARTORIO_API_URL}}/x",
+                    "options": {"timeout": 30000, "retry": {"maxRetries": 3}},
+                },
+            }],
+            "connections": {},
+            "settings": {"errorWorkflow": "global"},
+        }
+        p = _make_wf(tmp_path, "fast.json", wf)
+        result = _validate_one(p)
+        timeout_warnings = [w for w in result["warnings"] if "B08" in w]
+        assert timeout_warnings == []
+
+    def test_b06_wf_sem_error_handler_avisa(self, tmp_path: Path):
+        """B06: WF sem error handler wired -> warning."""
+        wf = {
+            "name": "no-error-handler",
+            "nodes": [{"name": "n1", "type": "t"}],
+            "connections": {},
+            # sem settings.errorWorkflow
+        }
+        p = _make_wf(tmp_path, "no-handler.json", wf)
+        result = _validate_one(p)
+        assert any("B06" in w for w in result["warnings"])
+
+    def test_b06_wf_com_error_handler_ok(self, tmp_path: Path):
+        """B06: WF COM error handler wired -> sem warning B06."""
+        wf = {
+            "name": "with-handler",
+            "nodes": [{"name": "n1", "type": "t"}],
+            "connections": {},
+            "settings": {"errorWorkflow": "global-error-handler"},
+        }
+        p = _make_wf(tmp_path, "with-handler.json", wf)
+        result = _validate_one(p)
+        b06_warnings = [w for w in result["warnings"] if "B06" in w]
+        assert b06_warnings == []
+
+    def test_b12_validate_all_summary_inclui_wfs_aviso_b12(self, tmp_path: Path):
+        """Batch validator agrega warnings B06/B07/B08 no summary."""
+        # WF sem error handler (B06 warn) + HTTP sem retry (B07 warn)
+        _make_wf(tmp_path, "wf-many-warns.json", {
+            "name": "many-warns",
+            "nodes": [{
+                "name": "call_api",
+                "type": "n8n-nodes-base.httpRequest",
+                "parameters": {"url": "{{$env.CARTORIO_API_URL}}/x"},  # sem retry
+            }],
+            "connections": {},
+            # sem errorWorkflow
+        })
+
+        result = validate_all(wf_dir=tmp_path)
+        assert result["total"] == 1
+        assert result["warning"] == 1
+        wf_result = result["wfs"][0]
+        # Warnings B06 + B07 presentes
+        warning_codes = set()
+        for w in wf_result["warnings"]:
+            if "B06" in w:
+                warning_codes.add("B06")
+            if "B07" in w:
+                warning_codes.add("B07")
+        assert "B06" in warning_codes
+        assert "B07" in warning_codes

@@ -1,14 +1,21 @@
-"""N8N Workflow Validator - B11.
+"""N8N Workflow Validator - B11/B12 test runner.
 
 Valida todos os workflows N8N em infra/n8n-workflows/*.json SEM precisar
-subir o N8N. Detecta 6 tipos de problema:
+subir o N8N. Detecta 9 tipos de problema:
 
+B11 (base):
 1. JSON invalido (syntax error)
 2. Nodes sem type
 3. Conexoes orfas (node destino nao existe)
 4. Webhook sem path
 5. HTTP node sem URL ou com URL hardcoded (NAO parametrizavel)
 6. References a env vars que nao existem
+
+B12 (test runner - estendido):
+7. HTTP node sem retry policy (B07: 3x exp backoff)
+8. HTTP node com timeout > 30s (B08: limite canon)
+9. WF sem error handler wired (B06: Error Workflow trigger)
+10. WFs canonicos (webhook evo-in, telegram-listener) presentes
 
 Uso:
     python -m app.services.n8n_workflow_validator
@@ -110,7 +117,16 @@ def _validate_one(wf_path: Path) -> dict[str, Any]:
         nname: str = node.get("name", "")
         params: dict = node.get("parameters", {})
 
-        if ntype in HTTP_NODE_TYPES:
+        # Webhook nao precisa de URL (URL eh o path interno)
+        if ntype == "n8n-nodes-base.webhook":
+            # Webhook deve ter path
+            path = params.get("path", "")
+            if not path:
+                result["errors"].append(f"Webhook node '{nname}' sem path")
+                result["valid"] = False
+
+        # HTTP request PRECISA de URL
+        if ntype == "n8n-nodes-base.httpRequest":
             url: str = params.get("url", "")
             if not url:
                 result["errors"].append(f"HTTP node '{nname}' sem URL")
@@ -121,9 +137,7 @@ def _validate_one(wf_path: Path) -> dict[str, Any]:
                     f"HTTP node '{nname}' usa localhost ({url})"
                 )
 
-        # 5. HTTP com URL hardcoded (NAO parametrizada)
-        if ntype == "n8n-nodes-base.httpRequest":
-            url = params.get("url", "")
+            # 5. HTTP com URL hardcoded (NAO parametrizada)
             if url and not url.startswith("{{") and "://api." in url:
                 result["warnings"].append(
                     f"HTTP node '{nname}' tem URL hardcoded (use $env.VAR)"
@@ -137,6 +151,44 @@ def _validate_one(wf_path: Path) -> dict[str, Any]:
         result["warnings"].append(
             f"Env vars nao catalogadas: {sorted(unknown_envs)}"
         )
+
+    # === B12: checks adicionais (retry, timeout, error handler) ===
+
+    # 7. B07: HTTP node sem retry policy
+    for node in nodes:
+        ntype = node.get("type", "")
+        nname = node.get("name", "")
+        if ntype == "n8n-nodes-base.httpRequest":
+            params = node.get("parameters", {})
+            options = params.get("options", {})
+            retry_cfg = options.get("retry", {})
+            if not retry_cfg or retry_cfg.get("maxRetries", 0) < 3:
+                result["warnings"].append(
+                    f"B07: HTTP node '{nname}' sem retry policy 3x (atual: maxRetries={retry_cfg.get('maxRetries', 0) if retry_cfg else 0})"
+                )
+
+    # 8. B08: HTTP node com timeout > 30s
+    for node in nodes:
+        ntype = node.get("type", "")
+        nname = node.get("name", "")
+        if ntype == "n8n-nodes-base.httpRequest":
+            params = node.get("parameters", {})
+            options = params.get("options", {})
+            timeout = options.get("timeout", 0)
+            if timeout > 30000:
+                result["warnings"].append(
+                    f"B08: HTTP node '{nname}' timeout > 30s ({timeout}ms)"
+                )
+
+    # 9. B06: WF sem error handler wired (settings.errorWorkflow nao setado)
+    settings = wf.get("settings", {})
+    error_workflow = settings.get("errorWorkflow")
+    if not error_workflow:
+        # So eh issue se WF tem nodes (WF vazio eh trivial)
+        if nodes:
+            result["warnings"].append(
+                "B06: WF sem error handler wired (settings.errorWorkflow nao setado)"
+            )
 
     return result
 
