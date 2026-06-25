@@ -4345,7 +4345,7 @@ def criar_agendamento(
             duration_minutes=payload.duration_minutes,
             request=request,
         )
-        return AgendamentoResponse.from_orm(agendamento)
+        return AgendamentoResponse.model_validate(agendamento)
     except AgendamentoConflictError as e:
         raise HTTPException(
             status_code=409,
@@ -4463,7 +4463,7 @@ def cancelar_agendamento(
         agendamento = AgendamentoService.cancelar_agendamento(
             db, agendamento_id, request=request
         )
-        return AgendamentoResponse.from_orm(agendamento)
+        return AgendamentoResponse.model_validate(agendamento)
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -4501,7 +4501,7 @@ def confirmar_agendamento(
         agendamento = AgendamentoService.confirmar_agendamento(
             db, agendamento_id, request=request
         )
-        return AgendamentoResponse.from_orm(agendamento)
+        return AgendamentoResponse.model_validate(agendamento)
     except ValueError as e:
         raise HTTPException(
             status_code=400,

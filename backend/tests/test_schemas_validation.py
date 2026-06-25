@@ -9,7 +9,6 @@ from pydantic import ValidationError
 
 from app.schemas.protocolo import (
     ProtocoloCreateRequest,
-    ProtocoloResponse,
     StatusProtocolo,
     CanalOrigem,
 )
