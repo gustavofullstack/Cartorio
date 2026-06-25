@@ -1,4 +1,5 @@
 """Testes do endpoint GET /api/v1/cliente/{id}/historico."""
+
 from __future__ import annotations
 
 import os
@@ -42,6 +43,7 @@ def client():
 
     import app.db
     import app.main as app_main_module
+
     original_engine = app.db.engine
     original_session_scope = app.db.session_scope
     app.db.engine = test_engine
@@ -79,6 +81,7 @@ AUTH = {"X-API-Key": "a" * 64}
 
 def _make_cliente(db, cpf_hash="h1"):
     from app.models.cliente import Cliente
+
     c = Cliente(cpf_hash=cpf_hash, nome="Joao da Silva", consentimento_lgpd=True)
     db.add(c)
     db.commit()
@@ -88,6 +91,7 @@ def _make_cliente(db, cpf_hash="h1"):
 
 def _make_protocolo(db, cliente_id, numero, status="em_andamento"):
     from app.models.protocolo import Protocolo
+
     p = Protocolo(
         cliente_id=cliente_id,
         numero=numero,
@@ -104,6 +108,7 @@ def _make_protocolo(db, cliente_id, numero, status="em_andamento"):
 def _make_atendimento(db, cliente_id, canal="whatsapp"):
     from app.models.atendimento import Atendimento
     from datetime import datetime, timezone
+
     a = Atendimento(
         cliente_id=cliente_id,
         canal=canal,
@@ -120,6 +125,7 @@ def _make_atendimento(db, cliente_id, canal="whatsapp"):
 
 def test_historico_cliente_vazio(client):
     from app.db import session_scope
+
     with session_scope() as db:
         cid = _make_cliente(db)
 
@@ -132,6 +138,7 @@ def test_historico_cliente_vazio(client):
 
 def test_historico_cliente_com_3_protocolos(client):
     from app.db import session_scope
+
     with session_scope() as db:
         cid = _make_cliente(db)
         _make_protocolo(db, cid, "2026-00001", "concluido")
@@ -145,6 +152,7 @@ def test_historico_cliente_com_3_protocolos(client):
 
 def test_historico_cliente_com_protocolos_e_atendimentos(client):
     from app.db import session_scope
+
     with session_scope() as db:
         cid = _make_cliente(db)
         _make_protocolo(db, cid, "2026-00001")
@@ -169,7 +177,8 @@ def test_historico_ordenado_por_timestamp_desc(client):
                 tipo="escritura_compra_venda",
                 status="concluido",
                 canal_origem="web",
-                created_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days_ago),
+                created_at=datetime.now(timezone.utc).replace(tzinfo=None)
+                - timedelta(days=days_ago),
             )
             db.add(p)
         db.commit()
@@ -195,3 +204,42 @@ def test_historico_auth_invalida_retorna_401(client):
 def test_historico_cliente_inexistente_404(client):
     resp = client.get("/api/v1/cliente/99999/historico", headers=AUTH)
     assert resp.status_code == 404
+
+
+def test_historico_pode_deletar_true_para_cliente_ativo(client):
+    """WF 23 LGPD Esqueci depende: cliente SEM motivo_encerramento pode ser deletado.
+
+    Cobre o caveat do D0.3: WF 23 IF "Pode Deletar?" le $json.pode_deletar
+    e dispara DELETE /cliente/{id} LGPD art. 18 VI. Cliente novo (sem
+    motivo_encerramento) = pode_deletar=True.
+    """
+    from app.db import session_scope
+
+    with session_scope() as db:
+        cid = _make_cliente(db)
+
+    resp = client.get(f"/api/v1/cliente/{cid}/historico", headers=AUTH)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["pode_deletar"] is True
+
+
+def test_historico_pode_deletar_false_para_cliente_encerrado(client):
+    """Cliente com motivo_encerramento != NULL NAO pode ser deletado novamente.
+
+    LGPD art. 18 VI: revogacao ja foi processada. Workflow #23 deve parar
+    no IF e NAO chamar DELETE (ja encerrado). pode_deletar=False.
+    """
+    from app.db import session_scope
+    from app.models.cliente import Cliente, MotivoEncerramento
+
+    with session_scope() as db:
+        cid = _make_cliente(db)
+        c = db.get(Cliente, cid)
+        c.motivo_encerramento = MotivoEncerramento.REVOGACAO_CONSENTIMENTO
+        db.commit()
+
+    resp = client.get(f"/api/v1/cliente/{cid}/historico", headers=AUTH)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["pode_deletar"] is False

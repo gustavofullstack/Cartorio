@@ -2680,6 +2680,13 @@ class ClienteHistoricoResponse(BaseModel):
     cliente_nome: str
     total_eventos: int
     items: list[ClienteHistoricoItem] = Field(description="Eventos ordenados por timestamp DESC.")
+    # LGPD art. 18 VI - WF 23 "Esqueci" depende deste field para gate do DELETE.
+    # True quando o cliente existe e ainda NAO foi encerrado (motivo_encerramento NULL),
+    # permitindo que o workflow N8N #23 dispare a revogacao do consentimento.
+    pode_deletar: bool = Field(
+        description="True se o cliente existe e motivo_encerramento IS NULL "
+        "(gate para WF 23 LGPD 'Esqueci' disparar DELETE)."
+    )
 
 
 @api_router.get(
@@ -2764,6 +2771,7 @@ async def get_cliente_historico(
         cliente_nome=cliente.nome,
         total_eventos=len(items),
         items=items,
+        pode_deletar=cliente.motivo_encerramento is None,
     )
 
 
