@@ -1,281 +1,1796 @@
 {
   "info": {
-    "name": "Cartorio 2 Notas Uberlandia",
-    "description": "API do cartorio 2 notas de Uberlandia com audit log imutavel (hash chain + HMAC), PII scrubbing em 3 camadas e human-in-the-loop obrigatorio em acoes juridicas.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "0.3.0"
+    "name": "Cartorio API",
+    "description": "50 paths from OpenAPI 3.1 - https://api.2notasudi.com.br/openapi.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key"
+      },
+      {
+        "key": "value",
+        "value": "{{cartorio_api_key}}"
+      },
+      {
+        "key": "in",
+        "value": "header"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health"
+          ]
+        },
+        "description": "Liveness probe."
+      }
+    },
+    {
+      "name": "Ready",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/ready",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ready"
+          ]
+        },
+        "description": "Readiness probe - confirma DB e audit log inicializados."
+      }
+    },
+    {
+      "name": "Mcp Servers",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/mcp-servers",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mcp-servers"
+          ]
+        },
+        "description": "Lista MCP servers registrados (descoberta via mcp_config global).\n\nRetorna metadata dos 5 servers MCP disponiveis para clients\n(Antigravity, OpenCode, Claude Code, Zed):\n\n- n8n-mcp         : workflows N8N via MCP-HTTP\n- supabase-mcp    : Postgres + docs (config em ~/.gemini/antigravity/mcp_config.json)\n- cartorio-api    : esta propria API como MCP tools (backend/mcp_server.py)\n- easypanel-mcp   : controle do Easypanel (helbertparanhos/easypanel-mcp-server)\n- openclaw-mcp    : gateway OpenClaw pa"
+      }
+    },
+    {
+      "name": "Smoke test do OpenCode-Go (LLM provider)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/integrations/opencode/test",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "integrations",
+            "opencode",
+            "test"
+          ]
+        },
+        "description": "Envia uma mensagem de teste ao OpenCode-Go e retorna a response. Usado para validar conectividade apos deploy + auditar latencia/tokens. NAO expor publicamente - em Sprint 2 adicionar auth X-API-Key.\n\nLGPD: requer consent_granted=True. Default False (safe-by-default). Toda chamada eh scrubbada internamente (defense-in-depth) e gravada no audit log (LGPD art. 37)."
+      }
+    },
+    {
+      "name": "Health check do OpenClaw Agent + LLM",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/integrations/agent/health",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "integrations",
+            "agent",
+            "health"
+          ]
+        },
+        "description": "Verifica se OpenClaw gateway esta alive + se o LLM provider configurado esta respondendo. Retorna 200 sempre (com status='ok'/'degraded'/'down') para que healthchecks externos (k8s livenessProbe) possam ler o body.\n\nLatencia tipica: < 100ms quando tudo OK; ate 5s se OpenClaw ou LLM travados.\n\nLGPD: nao envia dados pessoais, nao faz log de PII. Healthcheck seguro."
+      }
+    },
+    {
+      "name": "Despachar mensagem do outbox (webhook Supabase)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/integrations/outbox/dispatch",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "integrations",
+            "outbox",
+            "dispatch"
+          ]
+        },
+        "description": "Recebe webhook do Supabase quando ha INSERT em `outbox_messages`. Autenticado por `X-API-Key` (header). Busca a mensagem do DB, executa o handler da queue (`evolution|chatwoot|telegram|outbox`), atualiza o status para `done` ou `failed` (com `attempts++`).\n\nPayload esperado:\n```json\n{\"event\":\"INSERT\",\"table\":\"outbox_messages\",\"outbox_id\":\"<uuid>\",\"queue\":\"evolution\",\"payload\":{...},\"attempts\":0}\n```\n\nResposta: `{\"status\":\"done|failed\",\"attempts\":N,\"error\":\"...\"}`."
+      }
+    },
+    {
+      "name": "Calcular emolumento (tabela oficial MG 2026)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/emolumento/calcular",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "emolumento",
+            "calcular"
+          ]
+        },
+        "description": "Calcula emolumento + adicionais por folha (5% a partir da 2a) + adicional de urgencia (50%). Usa snapshot da tabela de emolumentos vigente (placeholder - em producao vem de carga oficial do estado). Nao envolve PII - pode ser consumido publicamente."
+      }
+    },
+    {
+      "name": "Consultar protocolo por numero",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/protocolo/{numero}",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "protocolo",
+            "{numero}"
+          ]
+        },
+        "description": "Busca um protocolo pelo numero no formato **ANO-SEQUENCIAL** (ex: `2026-00001`). Retorna status atual, etapa em que se encontra, historico completo de etapas, proxima acao esperada e prazo estimado. Toda consulta e registrada no audit log (LGPD art. 37 - registro de operacoes de tratamento)."
+      }
+    },
+    {
+      "name": "Criar protocolo (HITL DRAFT obrigatorio)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/protocolo",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "protocolo"
+          ]
+        },
+        "description": "Cria um novo protocolo em modo **DRAFT** (status inicial). O bot NUNCA cria protocolo direto em `EM_ANDAMENTO` - o escrevente sempre valida antes (Human-In-The-Loop, regra do projeto). \n\n**Gate LGPD obrigatorio**: o campo `consentimento_lgpd` DEVE ser `True`. Conforme Lei 13.709/2018 (LGPD), art. 7o, I, o tratamento de dados pessoais exige consentimento explicito. Se ausente, retorna 422 LGPD_BLOCKED. \n\n**PII scrubbing**: o CPF recebido e hasheado (SHA256+salt) antes de persistir. Nenhum dado pe"
+      }
+    },
+    {
+      "name": "Criar protocolo via API (auth X-API-Key, HITL DRAFT obrigatorio)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/protocolo/criar-api",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "protocolo",
+            "criar-api"
+          ]
+        },
+        "description": "Cria protocolo em modo **DRAFT** autenticado por **header X-API-Key**. Diferente do POST /api/v1/protocolo principal (public + LGPD gate), este endpoint eh usado por integracoes externas autorizadas: N8N WF #2 criar-protocolo, sistemas do escritorio, etc.\n\n**Auth**: header `X-API-Key` com mesmo valor de `CARTORIO_API_KEY` no .env.\n\n**Identificacao**: por `cliente_id` (FK clientes.id). Cliente precisa existir e NAO pode ter `motivo_encerramento = REVOGACAO_CONSENTIMENTO`.\n\n**Snapshot**: caller en"
+      }
+    },
+    {
+      "name": "Webhook WhatsApp (Evolution API)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/webhook/evolution",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "webhook",
+            "evolution"
+          ]
+        },
+        "description": "Recebe mensagem do Evolution API, aplica **PII scrubbing em 3 camadas** (input, pre-LLM, output), detecta intencao via LLM, retorna resposta. Bloqueia fluxo automaticamente se PII for detectado antes do LLM (handoff humano obrigatorio). \n\nRegistra **tudo** no audit log (chain SHA256 + HMAC)."
+      }
+    },
+    {
+      "name": "Verificar integridade da cadeia de audit log",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/audit/verify",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "audit",
+            "verify"
+          ]
+        },
+        "description": "Recalcula hash SHA256 + HMAC de todas as entradas do audit log e compara com o valor armazenado. Retorna `chain_ok=True` se a cadeia esta integra, ou `chain_ok=False` com `last_valid_position` indicando onde a quebra foi detectada. Recomendado rodar diariamente via cron."
+      }
+    },
+    {
+      "name": "Liveness probe (sem dependencias externas)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/live",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "health",
+            "live"
+          ]
+        },
+        "description": "Liveness probe padrao Kubernetes/Portainer. Retorna 200 se o processo esta vivo. NAO consulta DB/Redis/LLM (sem deps = sem falso negativo). Usado pelo container orchestrator pra decidir restart."
+      }
+    },
+    {
+      "name": "Readiness probe (verifica dependencias criticas)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/ready",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "health",
+            "ready"
+          ]
+        },
+        "description": "Readiness probe padrao Kubernetes/Portainer. Retorna 200 se todas as dependencias criticas (DB, Redis) estao saudaveis. Retorna 503 com detalhes se alguma dep cair. Usado pelo load balancer pra decidir roteamento."
+      }
+    },
+    {
+      "name": "Health check granular: PostgreSQL",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/db",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "health",
+            "db"
+          ]
+        },
+        "description": "Verifica conectividade com PostgreSQL via SQLAlchemy `SELECT 1`. Retorna 200 com `{status: 'online', latency_ms: ...}` se OK, ou 503 com `{status: 'offline', error: ...}` se falhar."
+      }
+    },
+    {
+      "name": "Health check granular: Redis",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/redis",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "health",
+            "redis"
+          ]
+        },
+        "description": "Verifica conectividade com Redis via PING. Retorna 200 com `{status: 'online', latency_ms: ...}` se OK, ou 503 com `{status: 'offline', error: ...}` se falhar."
+      }
+    },
+    {
+      "name": "Health check granular: LLM provider (Opencode-Go / OpenClaw)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/llm",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "health",
+            "llm"
+          ]
+        },
+        "description": "Verifica conectividade com o provider LLM primario (Opencode-Go) via GET na URL base. Retorna 200 se responde (qualquer status), ou 503 se falha de conexao."
+      }
+    },
+    {
+      "name": "Health radar multi-servico",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/radar",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "health",
+            "radar"
+          ]
+        },
+        "description": "Verifica conectividade de **todos** os 7 servicos da suite em paralelo: PostgreSQL, Redis, n8n, OpenClaw gateway, Evolution API, Chatwoot, Supabase. Retorna status individual por servico + status agregado (`green` se todos online). Para checks granulares use `/health/db`, `/health/redis`, `/health/llm`."
+      }
+    },
+    {
+      "name": "Status de TODAS integracoes externas (N8N workflow #30)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/integracoes",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "health",
+            "integracoes"
+          ]
+        },
+        "description": "Verifica conectividade + latencia + auth de **cada integracao externa** em paralelo: N8N, OpenClaw Gateway, Evolution API, Chatwoot, Supabase, OpenCode-Go (LLM), Redis, PostgreSQL. Retorna status individual + latencia_ms + status_code + erro (se houver).\n\nDiferenca vs /health/radar:\n- /health/radar: retorna so 'online'/'offline' por servico (7 servicos)\n- /health/integracoes: retorna latencia + status_code + auth_check   + LLM provider especifico (8 servicos)\n\nUsado pelo workflow N8N #30 (Health"
+      }
+    },
+    {
+      "name": "Status do backup diario (N8N workflow #09)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/backup",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "health",
+            "backup"
+          ]
+        },
+        "description": "Le o diretorio /var/backups/cartorio na VPS via SSH (Tailscale) e retorna idade do ultimo backup, quantidade de arquivos e tamanho. Usado pelo workflow N8N '09 - Monitor Backup Diario' para alertar via Chatwoot se backup falhou ou esta ausente ha > 26h."
+      }
+    },
+    {
+      "name": "Consultar disponibilidade de agenda (N8N workflow #05)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/agendamento/disponibilidade",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "agendamento",
+            "disponibilidade"
+          ]
+        },
+        "description": "Retorna slots disponiveis para atendimento presencial no cartorio. v0.4.0 MVP: tabela estatica de segunda a sexta 09-17h com 5 vagas/hora. Sprint 2 integra com Google Calendar API."
+      }
+    },
+    {
+      "name": "Emitir segunda via de documento (N8N workflow #06)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/documento/segunda-via",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "documento",
+            "segunda-via"
+          ]
+        },
+        "description": "Gera PDF da segunda via do documento associado ao protocolo informado. v0.4.0 MVP: retorna URL placeholder. Sprint 2: integracao com storage Supabase para gerar PDF real."
+      }
+    },
+    {
+      "name": "Listar atendimentos concluidos nas ultimas 24h (N8N workflow #07)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimentos/ultimas-24h",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "atendimentos",
+            "ultimas-24h"
+          ]
+        },
+        "description": "Retorna lista de atendimentos concluidos nas ultimas 24h que ainda nao receberam pesquisa de satisfacao. Usado pelo workflow N8N #07."
+      }
+    },
+    {
+      "name": "Marcar pesquisa de satisfacao como enviada (N8N workflow #07)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento/{atendimento_id}/pesquisa-enviada",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "atendimento",
+            "{atendimento_id}",
+            "pesquisa-enviada"
+          ]
+        },
+        "description": "Marca pesquisa_enviada_em = now() para evitar envio duplicado."
+      }
+    },
+    {
+      "name": "Criar atendimento (handoff Chatwoot ou webhook externo)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "atendimento"
+          ]
+        },
+        "description": "Cria atendimento. Chamado pelo workflow #03 (handoff humano) ou diretamente pela UI quando conversa e escalada."
+      }
+    },
+    {
+      "name": "Concluir atendimento (registra timestamp para pesquisa 24h)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento/{atendimento_id}/concluir",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "atendimento",
+            "{atendimento_id}",
+            "concluir"
+          ]
+        },
+        "description": "Marca atendimento como concluido."
+      }
+    },
+    {
+      "name": "Obter historico de atendimento (Redis + Supabase)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento/{session_id}/historico",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "atendimento",
+            "{session_id}",
+            "historico"
+          ]
+        },
+        "description": "Busca o historico de mensagens de uma sessao (canal/telefone). Consulta primeiro o cache quente no Redis e depois une/complementa com o historico de longo prazo persistido no Supabase."
+      }
+    },
+    {
+      "name": "Lista sessoes ativas (ultimas N horas)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento/list-active",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "atendimento",
+            "list-active"
+          ]
+        },
+        "description": "Retorna lista de sessoes com atividade recente, agrupadas por external_id + canal. Usado pelo N8N workflow #15 (Session Sync) que sincroniza Redis cache quente com DB. Substitui o proposto GET /sessao/list-active (que nunca existiu) com path alinhado aos demais /atendimento/*. Read-only, sem PII nova exposta (external_id ja eh publico para o cartorio)."
+      }
+    },
+    {
+      "name": "Webhook Chatwoot (HMAC + idempotency)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/webhook/chatwoot",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "webhook",
+            "chatwoot"
+          ]
+        },
+        "description": "Recebe webhooks do Chatwoot. Valida signature HMAC-SHA256 (se CHATWOOT_WEBHOOK_SECRET configurado), deduplica por event_id, e processa conversation_status_changed -> resolved marcando o atendimento como concluido (workflow #07 pesquisa 24h depois)."
+      }
+    },
+    {
+      "name": "CRON: marca atendimentos parados como stale (N8N workflow #23)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cron/stale-detector",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "cron",
+            "stale-detector"
+          ]
+        },
+        "description": "Chamado pelo workflow N8N #23 a cada 5min. Marca atendimentos com updated_at > STALE_THRESHOLD_MINUTES como 'stale'. Idempotente."
+      }
+    },
+    {
+      "name": "Direito ao esquecimento (LGPD art. 18 VI)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "cliente",
+            "{cliente_id}"
+          ]
+        },
+        "description": "Encerra tratamento de dados pessoais do cliente.\n\n- Cliente SEM protocolo: HARD DELETE (remove do DB).\n- Cliente COM protocolo: SOFT DELETE (anonimiza PII, marca motivo_encerramento).\n  Mantem integridade referencial dos atos cartorarios (Provimento CNJ 74/2018).\n\nRequer `X-API-Key` (escrevente autorizado). Idempotente: 2a chamada = 409.\n\nVer ADR-018 para detalhes."
+      }
+    },
+    {
+      "name": "Executa job de retenção LGPD (5y/2y)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/admin/retencao/run",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "admin",
+            "retencao",
+            "run"
+          ]
+        },
+        "description": "Roda o job de retenção descrito em ADR-019. Aceita `dry_run=true` para apenas contar sem aplicar mutações.\n\nRequer `X-API-Key` + `X-Canal=cron` (ou X-Canal=dpo)."
+      }
+    },
+    {
+      "name": "Exportar colecao Postman v2.1.0",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/postman",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "postman"
+          ]
+        },
+        "description": "Retorna a colecao Postman no schema v2.1.0 para download. Util para QA e desenvolvedores testarem os endpoints localmente."
+      }
+    },
+    {
+      "name": "Lista audit logs paginados (LGPD art. 37)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/audit/logs",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "audit",
+            "logs"
+          ]
+        },
+        "description": "Consulta audit log com filtros. Apenas DPO/escrevente autorizado (X-API-Key). LGPD art. 37: titular tem direito de acesso aos dados sobre tratamento. Rate limit interno: 60 req/min (D4 - DPO dashboard).\n\nFiltros (todos opcionais, AND entre si):\n- actor_id, actor_type, action_prefix, resource, canal\n- since, until (ISO 8601)\n- page (1-indexed, default 1), page_size (default 50, max 200)"
+      }
+    },
+    {
+      "name": "Busca 1 entry de audit log por ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/audit/logs/{log_id}",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "audit",
+            "logs",
+            "{log_id}"
+          ]
+        },
+        "description": "Retorna AuditLog individual. Apenas DPO/escrevente (X-API-Key)."
+      }
+    },
+    {
+      "name": "Historico completo do cliente (timeline LGPD)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/historico",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "cliente",
+            "{cliente_id}",
+            "historico"
+          ]
+        },
+        "description": "Retorna timeline consolidada de **todos** os protocolos + atendimentos do cliente, ordenados por timestamp DESC.\n\nLGPD art. 18 IV: titular tem direito de acesso aos dados sobre tratamento. DPO pode usar este endpoint para atender solicitacao de titular. Rate limit interno: 60 req/min (D4 - DPO dashboard).\n\nRequer X-API-Key (DPO/escrevente)."
+      }
+    },
+    {
+      "name": "Lista protocolos concluidos nos ultimos N minutos (N8N workflow #25)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/protocolo/recentes-concluidos",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "protocolo",
+            "recentes-concluidos"
+          ]
+        },
+        "description": "Retorna protocolos com status='concluido' que foram atualizados nos ultimos N minutos. Usado pelo workflow N8N #25 para disparar envio de PDF via WhatsApp.\n\nParams:\n- minutos: janela de tempo (default 10, suficiente para cron 5min)\n- limit: maximo de items (default 50)\n\nRequer X-API-Key (workflow N8N). Nao expoe PII (telefone = None por design)."
+      }
+    },
+    {
+      "name": "Upload de documento (PDF assinado) com hash SHA256",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/documento/upload",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "documento",
+            "upload"
+          ]
+        },
+        "description": "Recebe um arquivo (multipart/form-data), valida MIME type, calcula SHA256, persiste metadata no DB, e retorna storage_path + hash.\n\nStorage real: este endpoint apenas REGISTRA o documento. O arquivo em si precisa ser enviado para Supabase Storage via /api/v1/documento/storage-upload (Sprint 3.5+, a parte de storage). Aqui so persistimos o metadata + hash.\n\nValidacao humana: documento juridico exige revisao de escrevente. O campo `validado_por` fica NULL ate um escrevente revisar.\n\nRequer X-API-K"
+      }
+    },
+    {
+      "name": "Metrics em formato Prometheus (open source)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/metrics/prometheus",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "metrics",
+            "prometheus"
+          ]
+        },
+        "description": "Endpoint para Prometheus scraper (ou Grafana Agent, Mimir, Thanos). Formato text/plain, version 0.0.4. NAO requer auth (Prometheus scraper nao tem como passar X-API-Key).\n\nMetricas expostas:\n- `cartorio_uptime_seconds` - gauge, tempo de vida do processo\n- `cartorio_clientes_total` - gauge, total de clientes no DB\n- `cartorio_protocolos_total{status=...}` - gauge por status\n- `cartorio_audit_chain_length` - gauge, total entries no audit log\n- `cartorio_http_requests_total` (in-process) - counter "
+      }
+    },
+    {
+      "name": "Metrics em formato JSON (N8N-friendly)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/metrics",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "metrics"
+          ]
+        },
+        "description": "Endpoint para N8N workflows e integracoes que precisam consumir metrics estruturados (substitui Code nodes quebrados por sandbox JS do N8N 2.27 - Lesson 49).\n\nMesmo modelo de auth do `/metrics/prometheus`: NAO requer X-API-Key (scrapers e workflows internos nao tem como passar header). Aceita header se fornecido (forward-compat com futuras rotas protegidas).\n\nMetricas expostas (Sprint 4 STREAM 1 - 2026-06-24):\n- `clientes_total` (int) - total de clientes ativos no DB\n- `protocolos_total` (dict[s"
+      }
+    },
+    {
+      "name": "Ingest metrics do N8N (auth X-API-Key)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/metrics/n8n",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "metrics",
+            "n8n"
+          ]
+        },
+        "description": "Endpoint de ingestao para o workflow N8N #25 (Metrics Collector). Substitui o 404 que o workflow vinha recebendo a cada 1min desde 2026-06-23 (Lesson 55 - workflow mal projetado pra chamar endpoint que nao existia).\n\n**Auth**: header `X-API-Key` (mesmo gate dos demais endpoints admin do cartorio). Sem auth = 401.\n\n**Payload flexivel**: aceita shape canonico (counters/gauges/uptime_seconds), texto Prometheus cru (caso Code node do N8N tenha passado string direto), ou qualquer JSON (modo `unknown`"
+      }
+    },
+    {
+      "name": "Enfileirar mensagem na DLQ (auth X-API-Key)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/dlq/{queue}/enqueue",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "dlq",
+            "{queue}",
+            "enqueue"
+          ]
+        },
+        "description": "Enfileira mensagem na **Dead Letter Queue** para reprocessamento assincrono. Usado quando integracao externa (WhatsApp Evolution, Chatwoot, Telegram) falhou entrega.\n\n**Auth**: header `X-API-Key` (escrevente autorizado).\n\n**LGPD**: payload DEVE chegar **ja scrubbed** pelo caller. Cardinalidade do label `queue` eh enum-fixa (4 valores max).\n\n**Audit log**: action=`dlq.enqueued`, actor_type=`api`, payload com `{queue, actor_id_hash, payload_size_bytes}`."
+      }
+    },
+    {
+      "name": "Refresh DLQ depth gauges (auth X-API-Key)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/dlq/refresh-gauges",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "dlq",
+            "refresh-gauges"
+          ]
+        },
+        "description": "Forca refresh do gauge `dlq_depth{queue}` baseado em SELECT COUNT do DB. Util apos deploy/migration ou operacao manual.\n\n**Auth**: header `X-API-Key`."
+      }
+    },
+    {
+      "name": "Recebe updates do Telegram Bot",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/telegram/webhook",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "telegram",
+            "webhook"
+          ]
+        },
+        "description": "Endpoint chamado pelo Telegram quando usuario manda msg ao bot. Valida HMAC, faz PII scrub, consulta OpenClaw Agent, envia resposta de volta via Telegram API."
+      }
+    },
+    {
+      "name": "Status do webhook Telegram",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/telegram/webhook/info",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "telegram",
+            "webhook",
+            "info"
+          ]
+        },
+        "description": "Retorna info do webhook (debug)."
+      }
+    },
+    {
+      "name": "Direito Anonimizar",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/anonimizar",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "cliente",
+            "{cliente_id}",
+            "lgpd",
+            "anonimizar"
+          ]
+        },
+        "description": "Aplica direito de anonimizacao (LGPD art. 18 IV).\n\nAnonimiza PII nao-essencial (nome, email, telefone) mantendo\no ID para fins de integridade referencial de protocolos/historico.\nCliente continua existindo mas com dados pessoais substituidos."
+      }
+    },
+    {
+      "name": "Direito Corrigir",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/corrigir",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "cliente",
+            "{cliente_id}",
+            "lgpd",
+            "corrigir"
+          ]
+        },
+        "description": "Aplica direito de correcao (LGPD art. 18 III).\n\nAceita payload com campos a corrigir. Marca no audit log.\nImplementacao completa: cliente envia os dados corrigidos.\nAqui retorna confirmacao que o direito foi exercido."
+      }
+    },
+    {
+      "name": "Direito Oposicao",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/oposicao",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "cliente",
+            "{cliente_id}",
+            "lgpd",
+            "oposicao"
+          ]
+        },
+        "description": "Aplica direito de oposicao (LGPD art. 18 IX).\n\nTitular se opoe a tratamento de dados (ex: prospeccao, marketing).\nMarca cliente como oposicao=True e bloqueia canais de prospeccao."
+      }
+    },
+    {
+      "name": "Direito Optout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/optout",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "cliente",
+            "{cliente_id}",
+            "lgpd",
+            "optout"
+          ]
+        },
+        "description": "Aplica opt-out de comunicacoes (prospeccao, marketing).\n\nDiferente de opt_out global (que bloqueia tudo): este bloqueia\napenas canais de marketing. Cliente continua recebendo mensagens\ntransacionais (protocolos, agendamentos)."
+      }
+    },
+    {
+      "name": "Direito Portabilidade",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/portabilidade",
+          "protocol": "https",
+          "host": [
+            "api",
+            "2notasudi",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "api",
+            "v1",
+            "cliente",
+            "{cliente_id}",
+            "lgpd",
+            "portabilidade"
+          ]
+        },
+        "description": "Exporta todos os dados do titular em formato portavel (LGPD art. 18 V).\n\nRetorna JSON com todos os dados pessoais + protocolos + atendimentos.\nFormato: JSON estruturado (LGPD nao exige formato especifico)."
+      }
+    }
+  ],
   "variable": [
+    {
+      "key": "cartorio_api_key",
+      "value": "<64hex>",
+      "type": "string"
+    },
     {
       "key": "base_url",
       "value": "https://api.2notasudi.com.br",
       "type": "string"
-    },
-    {
-      "key": "api_key",
-      "value": "",
-      "type": "string",
-      "description": "API key (futuro, Sprint 4)"
-    }
-  ],
-  "auth": {
-    "type": "noauth"
-  },
-  "item": [
-    {
-      "name": "Meta",
-      "item": [
-        {
-          "name": "Health (liveness)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/health",
-              "host": ["{{base_url}}"],
-              "path": ["health"]
-            },
-            "description": "Liveness probe. Retorna 200 se a API ta respondendo."
-          }
-        },
-        {
-          "name": "Ready (readiness)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/ready",
-              "host": ["{{base_url}}"],
-              "path": ["ready"]
-            },
-            "description": "Readiness probe. Confirma DB e audit log inicializados."
-          }
-        },
-        {
-          "name": "Swagger UI",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/docs",
-              "host": ["{{base_url}}"],
-              "path": ["docs"]
-            },
-            "description": "Documentacao interativa OpenAPI 3.1 (Swagger UI)."
-          }
-        },
-        {
-          "name": "OpenAPI JSON",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/openapi.json",
-              "host": ["{{base_url}}"],
-              "path": ["openapi.json"]
-            },
-            "description": "Spec OpenAPI 3.1 em JSON. Use para gerar clients."
-          }
-        }
-      ]
-    },
-    {
-      "name": "Emolumento",
-      "item": [
-        {
-          "name": "Calcular emolumento",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/v1/emolumento/calcular?tipo=certidao&folhas=1&urgencia=false",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "emolumento", "calcular"],
-              "query": [
-                {"key": "tipo", "value": "certidao", "description": "certidao | escritura | procuracao | reconhecimento_firma | autenticacao | registro"},
-                {"key": "folhas", "value": "1", "description": "Numero de folhas"},
-                {"key": "urgencia", "value": "false", "description": "true adiciona 50%"}
-              ]
-            },
-            "description": "Calcula emolumento cartorario MG 2026. Publico, sem PII envolvida."
-          },
-          "response": [
-            {
-              "name": "Sucesso",
-              "_postman_previewlanguage": "json",
-              "body": "{\n  \"tipo\": \"certidao\",\n  \"folhas\": 1,\n  \"urgencia\": false,\n  \"base\": \"XX.XX\",\n  \"adicional_folhas\": \"0.00\",\n  \"adicional_urgencia\": \"0.00\",\n  \"total\": \"XX.XX\",\n  \"tabela_referencia\": \"MG-2026\",\n  \"valido_ate\": \"2026-12-31\"\n}"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Webhooks",
-      "item": [
-        {
-          "name": "Evolution (WhatsApp) webhook",
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type", "value": "application/json"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"instance\": \"cartorio-2notas\",\n  \"sender\": \"5511999999999\",\n  \"message\": {\n    \"text\": \"Ola, gostaria de saber o valor de uma certidao\"\n  }\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/webhook/evolution",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "webhook", "evolution"]
-            },
-            "description": "Webhook do Evolution API. Recebe mensagem, aplica PII scrubbing, retorna resposta. Se PII detectado, faz handoff humano automatico (HITL)."
-          },
-          "response": [
-            {
-              "name": "Sucesso sem PII",
-              "_postman_previewlanguage": "json",
-              "body": "{\n  \"status\": \"ok\",\n  \"response\": \"Recebi sua mensagem. Em breve um atendente ira responder.\",\n  \"scrubbed\": \"Ola, gostaria de saber o valor de uma certidao\"\n}"
-            },
-            {
-              "name": "Sucesso com PII (handoff)",
-              "_postman_previewlanguage": "json",
-              "body": "{\n  \"status\": \"ok\",\n  \"response\": \"Recebi sua mensagem com dados sensiveis. Por seguranca, vou transferir para um atendente humano. Aguarde um instante.\",\n  \"scrubbed\": \"Meu CPF é [CPF_REDACTED], gostaria de protocolo\"\n}"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Audit",
-      "item": [
-        {
-          "name": "Verificar cadeia de audit log",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/v1/audit/verify",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "audit", "verify"]
-            },
-            "description": "Verifica integridade da cadeia de audit log (hash chain + HMAC). Cron diario as 03:00 verifica automaticamente. Use essa rota pra verificar manualmente."
-          },
-          "response": [
-            {
-              "name": "Cadeia integra",
-              "_postman_previewlanguage": "json",
-              "body": "{\n  \"chain_ok\": true,\n  \"last_valid_position\": 1234\n}"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "OpenClaw Gateway",
-      "item": [
-        {
-          "name": "OpenClaw - Health",
-          "request": {
-            "method": "GET",
-            "header": [
-              {"key": "Authorization", "value": "Bearer <OPENCLAW_GATEWAY_TOKEN>"}
-            ],
-            "url": {
-              "raw": "https://agent.2notasudi.com.br/",
-              "host": ["agent.2notasudi.com.br"],
-              "path": [""]
-            },
-            "description": "OpenClaw gateway. Healthcheck publico."
-          }
-        }
-      ]
-    },
-    {
-      "name": "n8n",
-      "item": [
-        {
-          "name": "n8n - Healthz",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "https://flow.2notasudi.com.br/healthz",
-              "host": ["flow.2notasudi.com.br"],
-              "path": ["healthz"]
-            },
-            "description": "n8n health probe. Retorna 200 com {status:ok} se saudavel."
-          }
-        },
-        {
-          "name": "n8n - Listar workflows",
-          "request": {
-            "method": "GET",
-            "header": [
-              {"key": "X-N8N-API-KEY", "value": "{{n8n_api_key}}"}
-            ],
-            "url": {
-              "raw": "https://flow.2notasudi.com.br/api/v1/workflows",
-              "host": ["flow.2notasudi.com.br"],
-              "path": ["api", "v1", "workflows"]
-            },
-            "description": "Lista todos os workflows do n8n. Requer API key."
-          }
-        }
-      ]
-    },
-    {
-      "name": "Evolution API",
-      "item": [
-        {
-          "name": "Evolution - Health",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "https://whatsapp.2notasudi.com.br/manager/",
-              "host": ["whatsapp.2notasudi.com.br"],
-              "path": ["manager", ""]
-            },
-            "description": "Manager UI do Evolution API. POST /manager/login pra auth."
-          }
-        }
-      ]
-    },
-    {
-      "name": "Supabase",
-      "item": [
-        {
-          "name": "Supabase - Auth health",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "https://supbase.2notasudi.com.br/auth/v1/health",
-              "host": ["supbase.2notasudi.com.br"],
-              "path": ["auth", "v1", "health"]
-            },
-            "description": "Kong auth health. Retorna 401 sem API key (esperado, Supabase exige API key pra /auth/v1/health)."
-          }
-        },
-        {
-          "name": "Supabase - MCP (Antigravity config)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {"key": "Authorization", "value": "Bearer <SUPABASE_ANON_KEY>"}
-            ],
-            "url": {
-              "raw": "https://supbase.2notasudi.com.br/mcp?features=docs,database,debugging,development",
-              "host": ["supbase.2notasudi.com.br"],
-              "path": ["mcp"],
-              "query": [
-                {"key": "features", "value": "docs,database,debugging,development"}
-              ]
-            },
-            "description": "MCP server do Supabase (configurado no Antigravity). Streaming HTTP."
-          }
-        }
-      ]
     }
   ]
 }

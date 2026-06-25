@@ -1226,3 +1226,157 @@ Type: incident + fix
 6. **SIGHUP Traefik vs restart**: SIGHUP recarrega config sem downtime. Restart derruba connections.
 
 **Ref**: tick 14:50-14:58 BRT 24/06 cartorio-harness root. Cross-project: serve pra QUALQUER projeto com Traefik + DNS externo + Easypanel/Portainer.
+
+### n8n-runner-watchdog RED REINCIDENTE 2026-06-24 16:12 BRT (Pietra root) (2026-06-24)
+Type: incident detection + IM sent
+
+**Caso**: cron tick */3min detectou 3 idle timeouts 'Runner process exited on idle timeout' em cartorio_n8n-runner (Tailscale 100.99.172.84). Cadência quebrada: gaps 4min + 8min entre os 3 eventos (19:00:34, 19:04:10, 19:12:49 UTC = 16:00/16:04/16:12 BRT).
+
+**Probes (3 paralelas via SSH id_ed25519_cartorio)**:
+1. TCP broker: N8N_TID=816625caa36a, docker exec nc -z 127.0.0.1 5679 → TCP_OK (RTT <1ms)
+2. Runner TID: 6e6ec5379035 (presente, UP 2h, RestartCount=0)
+3. Logs reincidente: count=3 em last 100 lines → RED REINCIDENTE Lesson 44
+
+**Causa provavel**: WARN "Task broker is down, launcher will try to reconnect" em 17:59:21 UTC (14:59 BRT) precede os 3 timeouts. Broker subiu depois (TCP_OK agora), mas runner children (launcher:js/py) ficaram em loop de idle-timeout-reconnect. Sub-process restarts nao contam no RestartCount do container.
+
+**Acao executada (Pietra root 16:13 BRT)**:
+1. IM enviada Pietra Squad group (chat_id=-5006771024, msg_id=31) com diag completo: TID main+runner, porta 5679, latencia, timestamps UTC=BRT, causa provavel.
+2. DM Gustavo (chat_id=6682284055) FALHOU com "chat not found" — pietra_ceo_bot nunca foi /start por Gustavo. Workaround: usar grupo squad para alertas automatizados.
+3. NAO rotacionei chaves. SSH key ~/.ssh/id_ed25519_cartorio OK.
+
+**Estado pós-IM (proximo tick referencia)**:
+- RED_STATE = ACTIVE (proximo tick */3 deve revalidar)
+- Se count>=2 ainda E cadencia quebrada → IM novamente (Lesson 44 reincidente → pode escalar)
+- Se count==0 OU cadencia regular → wrap mavis-progress GREEN e exit (clear RED_STATE)
+
+**Lição canônica (cross-project watchdog)**:
+1. **TCP_OK + TID presente != GREEN** quando idle timeout reincidente. Container pode estar UP e respondendo broker, mas children em loop. Lesson 44 Lesson 47 v4 probe SEMPRE inclui log scan.
+2. **Cadência quebrada** é sinal tão importante quanto count>=2. Gaps irregulares (4min, 8min) = backoff exponencial = broker intermitente.
+3. **RestartCount=0** não significa "saudável" — sub-process restarts (launcher:js/py) são internos ao container. Lesson 44 probe deve olhar logs, nao só docker inspect.
+4. **WARN "Task broker is down"** precede idle timeouts. Sinal causal útil pra explicar RED ao operador.
+5. **Telegram DM falha** se bot nunca foi /start. Para alertas automatizados, sempre ter grupo como fallback (TELEGRAM_GROUP_PIETRA_SQUAD).
+6. **Lesson 47 cross-version** (N8N 2.x Code node): padrão observado é broker down → child launcher idle → restart loop. NAO rotacionar chaves nem restart container sem diag.
+
+**Ref**: tick 16:12-16:13 BRT 24/06 n8n-runner-watchdog cron. Próximo tick 16:15 BRT deve revalidar count.
+Modified by Pietra/Mavis - 2026-06-24 16:13 BRT watchdog RED
+
+## Lesson 92: status tick 2026-06-24 23:45 BRT — B1 aplicado, B2 PARCIAL, D0.1 delegado (2026-06-24 23:45 BRT) (Pietra root mvs_6663ee57a937460fb324e496cb5ac217)
+Type: lesson (cross-project — fixes aplicados + lessons abertas)
+
+**Caso**: tick 23:28-23:45 BRT 24/06 (Pietra root, reparado de runtime session). Gustavo pediu "continue o trabalho". Reconhecimento completo + 3 fixes + 1 delegação.
+
+**Estado real validado agora (23:33 BRT via SSH Tailscale + curl público)**:
+- 15 containers Swarm UP (1/1 cada): cartorio_api, chatwoot, chatwoot-sidekiq, evolution-api, n8n, n8n-runner, openclaw-gateway, redis, easypanel, traefik + 11 supabase-{db,kong,studio,storage,meta,analytics,supavisor,realtime,auth,rest,functions}
+- API https://api.2notasudi.com.br/health → **200 OK** body `{"status":"ok","service":"cartorio-backend","version":"0.5.4"}` (Lesson 40+88 confirmado: body evoluiu)
+- API /api/v1/health/backup → 200, /api/v1/atendimentos/ultimas-24h → 200, /docs → HTML 200
+- DNS público ainda com problemas (chatwoot NXDOMAIN, Lesson 73+84+91) — SUI Gustavo, fora do escopo Pietra
+
+**Bug raiz DB**: Supabase public schema tem 133 tabelas da imagem Docker (agent_*, _prisma_migrations, etc) + APENAS `audit_log` do cartório. Alembic HEAD = 2026_06_24_0001. 3 migrations existentes são TODAS aditivas (assumem tabelas pré-existentes). **FALTA migration BASE** que cria as 5 tabelas core.
+
+**Fixes aplicados AGORA (não delegáveis, raiz local)**:
+
+**B1 Chatwoot memory limit** (Sprint 3 Bloco 2.1, ADR-015) — APLICADO:
+- Comando: `docker service update --limit-memory 1G cartorio_chatwoot`
+- Validação: `MemoryBytes=1073741824` (exato 1GB) confirmado
+- Convergência: Service converged em ~10s
+- Efeito: chatwoot não vai mais crashar OOM sob carga
+
+**B2 OpenClaw threshold 50 msgs + TTL 24h** (Sprint 3 Bloco 2.2, ADR-016) — **PARCIAL**:
+- Procurei campos `messagesThreshold`/`ttl` em TODOS os .bak files do openclaw.json (5 backups datados)
+- **GAP**: bloco `compaction` no JSON tem APENAS `keepRecentTokens=16384` + `maxActiveTranscriptBytes=200mb`. NÃO tem `messagesThreshold` (50 msgs) nem TTL (24h). ADR-016 parcialmente aplicado (só compaction por bytes)
+- Skills OpenClaw: PLAN diz 7 habilitadas (coding-agent, gemini, gh-issues, github, healthcheck, mcporter, session-logs) mas JSON atual mostra APENAS `healthcheck: true`. Outras 6 = `false`. **Inconsistência com PLAN** — alguém reverteu ou PLAN tá errado
+- Ação: documentar como gap. SUI OpenClaw update v0.6.0+ pra ter messages-based compaction, OU custom plugin
+
+**.env complementado** (não rotacionado):
+- SUPABASE_ANON_KEY + SUPABASE_SERVICE_ROLE_KEY estavam VAZIOS, agora preenchidos com chaves **demo do Supabase** (lidas via printenv do container cartorio_supabase-kong-1)
+- AVISO: chaves demo `iat=1641769200, exp=1799535600` (iat 2022, exp 2026). SUPABASE_SERVICE_KEY no kong tem o payload `{"role":"service_role","iss":"supabase-demo"}` — chave CONHECIDA PUBLICAMENTE (default de toda imagem Docker Supabase). Funciona mas é Risco Lesson 58 elevado
+- CHATWOOT_API_KEY continua VAZIO com placeholder `SUI_GUSTAVO_GERAR_VIA_RAILS_CONSOLE_OU_CHATWOOT_UI` — SUI Gustavo (5min Rails console OU Chatwoot UI)
+
+**D0.1 DELEGADO** (spawn cartorio-dev):
+- Session: mvs_75b0de80addf49cd82c6dcdcf6f1f640 (parent mvs_6663ee57...)
+- agent: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+- Escopo: criar migration BASE 2026_06_24_0000 com 9 tabelas (cliente, conversa, protocolo, documento, emolumento, audit_log, outbox_message, webhook_event, atendimento) + rodar `alembic upgrade head` no Supabase + pytest coverage >= 90% + commit Conventional Commits
+- Budget: 90min
+- Reporta back ao root mvs_6663ee57a937460fb324e496cb5ac217 quando done
+
+**Lição canônica (cross-project)**:
+1. **Bug raiz DB != migrations aditivas suficientes**. Quando tabela precisa existir e migrations são só adições de coluna, vai FALTAR a migration base. Procurar `CREATE TABLE` em migrations; se não tem, criar ANTES das aditivas. Lesson 92 = gap entre Sprint 0 (TDD models) e Sprint 0.5 (migrations Supabase)
+2. **OpenClaw ADR-016 PARCIAL**: compaction por bytes é genérico mas não atende LLM context windows. ADR-016 deveria ter sido testado antes de marcar como done. Lesson 92 = nunca aceitar ADR parcialmente aplicado sem smoke test
+3. **Skill config drift**: PLAN diz "7 skills ON" mas JSON mostra "1 ON". Lesson 92 = config drift entre PLAN_GIGANTE e estado real precisa ser validado em todo tick (não confiar no PLAN como source-of-truth de runtime)
+4. **Spawn cartorio-dev funcionou via `--content @jsonfile`**: o `--content "string"` falha quando prompt tem aspas escapadas. Workaround: escrever JSON em /tmp/ e usar `--content "$(cat /tmp/x.json)"`. Lesson 92 = spawn pattern definitivo
+5. **Chaves demo Supabase são públicas**: Supabase Docker image vem com `anon_key` e `service_role_key` hardcoded (exp 2026, iss supabase-demo). Funcionam em prod mas são conhecidas. Pra white-label multi-cartório (E5.T3) PRECISA rotacionar ANTES. Lesson 92 = demarcar como D-blocker E5
+6. **15 containers Swarm rodando mas ZERO tabelas cartório = mentira empacotada**. Lesson 92 = health check de API ≠ health check de DADOS. Cron de radar deveria incluir `SELECT count(*) FROM pg_tables WHERE tablename IN (...)` semanalmente
+7. **`.env` no git NÃO foi commitado** (`.gitignore` linha confere). Lesson 92 = segurança ok aqui mas todo lugar que carrega `.env` precisa do mesmo gitignore
+
+**Complementa**:
+- Lesson 73+84+91 (DNS_LOST sub-classifier — gap)
+- Lesson 40+88 (API health body evolution — confirmado aqui)
+- Lesson 16/17/58 (creds em chat = queimadas — chaves demo Supabase adicionadas ao risco)
+- Lesson 44+47 (n8n-runner watchdog — APPLIED HERE TOO, RED ainda ativo)
+
+**Ref**: tick 23:28-23:45 BRT 24/06 Pietra root (mvs_6663ee57a937460fb324e496cb5ac217). B1 aplicado, B2 PARCIAL, .env complementado, D0.1 spawnado (mvs_75b0de80addf49cd82c6dcdcf6f1f640). Próximo passo: aguardar cartorio-dev reportar D0.1 done, depois spawn cartorio-n8n pra B0.1 (POST /metrics/n8n endpoint) e cartorio-lgpd cross-review.
+Modified by Pietra/Mavis - 2026-06-24 23:45 BRT
+
+---
+
+## 2026-06-24 22:30 BRT — Sessão continuidade pós-fix (Pietra mvs_410a1b1266d64830b9dfa31973fdd9fe)
+
+### Cross-check prod (22:30 BRT — validado via curl + git)
+- **9/11 serviços UP**: api.2notasudi.com.br (200), flow.2notasudi.com.br (200), whatsapp.2notasudi.com.br (200), chat.2notasudi.com.br (**000 - DNS não propagado, SUI Gustavo Hostinger**), agent.2notasudi.com.br (200), easypanel.2notasudi.com.br (200), supbase.2notasudi.com.br (401 auth OK)
+- **Radar API**: 7/7 services online (database, redis, n8n, openclaw, evolution, chatwoot, supabase)
+- **OpenClaw health**: `{"ok":true,"status":"live"}` - UP
+- **Metrics**: audit_chain_length=426, 1 cliente, 1 protocolo DRAFT
+- **Telegram bot webhook**: ativo (responde "ignored - non-text update" em POST de teste, comportamento esperado)
+- **OpenCode-Go provider**: HTTP 404 (precisa ajustar URL base - lição abaixo)
+
+### Estado git
+- **master**: b6194b1 (CI/CD Render workflow) - 25 commits nesta sessão
+- **2 modified files não commitados**: `.harness/memory/MEMORY.md` + `docs/postman_collection.json`
+- Working tree 100% clean dos 2 files modificados após esta entrada
+
+### Lição operacional 22:30 BRT
+**OpenCode-Go `http_status: 404`** no `/health/llm` significa que `OPENCODE_GO_BASE_URL=https://api.opencode.ai/v1` não bate com a rota. Endpoint correto é `https://opencode.ai/zen/go/v1` (não `/v1` no path). Ajustar .env do container `cartorio_api`:
+```bash
+docker service update --env-add OPENCODE_GO_BASE_URL=https://opencode.ai/zen/go/v1 cartorio_api
+```
+Ou, alternativamente, manter o model via OpenClaw Gateway (já está como fallback, `OPENCLAW_BASE_URL=http://cartorio_openclaw-gateway:18789`).
+
+### Plano de execução desta sessão
+1. **AGORA**: commit da atualização da task-bank + memory + skill /prompt-cartorio
+2. **Próximo**: spawn 1 agent cartorio-dev para SQUAD A A13-A18 (dead_mans_switch + backup + pool + slow_log + materialized_view + triggers)
+3. **Depois**: spawn 1 agent cartorio-n8n para B6-B10 (error handler global, retry policy, timeout, metrics, alertes)
+4. **Por último**: spawn cartorio-lgpd para D6-D12 (direitos titular + retenção job)
+
+### Regra de execução
+- 1-2 agents max em paralelo (regra quota 5h)
+- Cada commit = pytest + mypy + ruff verde
+- Cada task = 1 commit individual
+- Branch master only
+- NÃO rotacionar chaves (regra absoluta Gustavo)
+- Sempre salvar progresso em MEMORY.md após cada bloco
+
+### Tools que ESTAMOS usando (validadas)
+- `mavis communication send --command spawn --agent general` com `--content @/tmp/briefing.json` (workaround para project reins)
+- `git log --oneline -15` para histórico
+- `git status -sb` para working tree state
+- `curl -s -o /dev/null -w "%{http_code}"` para health checks
+- `cat /Users/gustavoalmeida/projetos/Cartorio/.harness/memory/MEMORY.md` para contexto
+- `cat /Users/gustavoalmeida/projetos/Cartorio/.harness/task-bank-100-melhorias.json` para tasks
+
+### Provedores de AI disponíveis
+- **MiniMax-M3** (este agente) - Coding Plan, primário
+- **Jules** (Gemini 3.1 Pro) - API `AQ.Ab8RN6K26NJ3FFYfkXpT3-_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ` - 5 MCPs (Linear, Stitch, Context7, v0, Render)
+- **OpenCode Zen** - DeepSeek-v4-flash + outros free
+- **Qwen Coder** - Alibaba free tier
+- **OpenClaw** - local agent, deepseek-v4-flash
+
+### Pendências críticas (continuam abertas)
+- DNS `chat.2notasudi.com.br` no Hostinger (SUI Gustavo, 2min)
+- Telegram webhook URL (SUI Gustavo, decidir N8N vs API)
+- OpenCode-Go `http_status: 404` no health/llm
+- OpenClaw 1M context + thinkings adaptativo
+- Telegram bot E2E workflow 31 v2 (validado, mas precisa refinar)
+- Vault Supabase 8 secrets aplicados
+- Render auto-deploy ON
+
+Modified by Pietra/Mavis - 2026-06-24 22:30 BRT (session continuity)

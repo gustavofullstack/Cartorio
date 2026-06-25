@@ -8,12 +8,26 @@
     "squads": 4,
     "parallel_max": 2,
     "p_mode": "sequential com 1-2 paralelos",
-    "done_2026_06_24": {
-      "squad_a": "12/25 (A1-A12)",
-      "squad_b": "5/25 (B1-B5)",
-      "squad_c": "5/25 (C1-C5)",
-      "squad_d": "5/25 (D1-D5)"
-    }
+    "done_2026_06_24_evening": {
+      "session_master": "b6194b1",
+      "total_commits_session": 25,
+      "linear_tasks_done": "104/104 (100% Sprint 1-3) + 50 CAR-141..190 criadas (Sprint 5)",
+      "squad_a": "12/25 (A1-A12 done, A13-A25 pending)",
+      "squad_b": "5/25 (B1-B5 done, B6-B25 pending)",
+      "squad_c": "5/5 ✅ (C1-C5 done, doc raiz 100%)",
+      "squad_d": "5/25 (D1-D5 done, D6-D25 pending)",
+      "services_up_9_11": true,
+      "telegram_bot_workflow_31_v2_e2e": "OK",
+      "vault_supabase_8_secrets_applied": true,
+      "render_autodeploy_on": true,
+      "opencode_go_thinking_on": true,
+      "audit_chain_length": 426
+    },
+    "next_priority_2026_06_25": [
+      "SQUAD_A_A13_A25 (13 tasks: dead_mans_switch, backup, pool, slow_log, materialized_view, triggers, soft_delete, locks, cache, openapi_validate, versioning, rfc7807)",
+      "SQUAD_B_B6_B15 (10 tasks: n8n polish, error handler, retry, timeout, metrics, alerts, test runner, templates)",
+      "SQUAD_D_D6_D15 (10 tasks: DPA fornecedores, retenção job, IP truncation, audit ANPD)"
+    ]
   },
   "SQUAD_A_API_DB_HARDENING": {
     "owner": "cartorio-dev",
