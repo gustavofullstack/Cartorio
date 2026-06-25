@@ -145,7 +145,8 @@ def test_get_protocolo_inexistente_retorna_404(client):
     resp = client.get("/api/v1/protocolo/2026-99999")
     assert resp.status_code == 404
     data = resp.json()
-    # FastAPI envelopa HTTPException detail no campo `detail`
+    # RFC 7807: problem.json root tem erro/mensagem/detalhes
+    # + detail retrocompat (dict original)
     detail = data["detail"]
     assert detail["erro"] == "PROTOCOLO_NOT_FOUND"
     assert "2026-99999" in detail["mensagem"]
@@ -256,7 +257,9 @@ def test_post_protocolo_sem_consentimento_retorna_lgpd_blocked(client, test_engi
         json=_payload_valido(consentimento_lgpd=False),
     )
     assert resp.status_code == 422
-    detail = resp.json()["detail"]
+    data = resp.json()
+    # RFC 7807: detail retrocompat preservado
+    detail = data["detail"]
     assert detail["erro"] == "LGPD_BLOCKED"
     assert "LGPD" in detail["mensagem"] or "13.709" in detail["mensagem"]
     assert detail["detalhes"]["consentimento_lgpd_aceito"] is False
@@ -350,7 +353,9 @@ def test_post_protocolo_tipo_invalido_retorna_422(client):
         json=_payload_valido(tipo="tipo_que_nao_existe"),
     )
     assert resp.status_code == 422
-    detail = resp.json()["detail"]
+    data = resp.json()
+    # RFC 7807: detail retrocompat preservado
+    detail = data["detail"]
     assert detail["erro"] == "TIPO_INVALIDO"
     assert "certidao_negativa" in detail["detalhes"]["tipos_validos"]
 

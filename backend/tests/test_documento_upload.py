@@ -152,7 +152,7 @@ def test_upload_hash_invalido_retorna_400(client):
     }
     resp = client.post("/api/v1/documento/upload", data=form_data, headers=AUTH)
     assert resp.status_code == 400
-    assert resp.json()["detail"]["erro"] == "INVALID_HASH"
+    assert resp.json()["erro"] == "INVALID_HASH"
 
 
 def test_upload_mime_invalido_retorna_400(client):
@@ -170,7 +170,7 @@ def test_upload_mime_invalido_retorna_400(client):
     }
     resp = client.post("/api/v1/documento/upload", data=form_data, headers=AUTH)
     assert resp.status_code == 400
-    assert resp.json()["detail"]["erro"] == "INVALID_MIME"
+    assert resp.json()["erro"] == "INVALID_MIME"
 
 
 def test_upload_protocolo_inexistente_404(client):

@@ -113,7 +113,7 @@ def test_opencode_test_endpoint_blocks_when_consent_explicit_false(client):
         json={"message": "ping", "consent_granted": False},
     )
     assert resp.status_code == 422
-    assert resp.json()["detail"]["erro"] == "LGPD_BLOCKED"
+    assert resp.json()["erro"] == "LGPD_BLOCKED"
 
 
 def test_opencode_test_endpoint_does_not_call_provider_when_consent_blocked(client):

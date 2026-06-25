@@ -21,6 +21,7 @@ from app.services.tracing import init_tracing
 from app.middleware.request_context import RequestContextMiddleware
 from app.middleware.idempotency import IdempotencyMiddleware
 from app.middleware.slow_log import SlowLogMiddleware
+from app.middleware.problem_details import install_problem_handlers
 from app.services.idempotency_store import RedisIdempotencyStore
 
 
@@ -206,6 +207,12 @@ app = FastAPI(
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
+
+# RFC 7807 Problem Details (A21 — squad A): handlers globais para
+# HTTPException, RequestValidationError, e Exception generica.
+# Converte {"detail": "..."} em application/problem+json estruturado.
+# Ver tests/test_problem_details.py.
+install_problem_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
