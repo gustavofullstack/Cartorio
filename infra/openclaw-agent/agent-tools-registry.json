@@ -1,0 +1,240 @@
+{
+  "$schema": "https://cartorio.com/schemas/agent-tools-v1.json",
+  "version": "1.0.0",
+  "updated_at": "2026-06-25",
+  "purpose": "SQUAD E E4 - registry canonico das tools que OpenClaw CartorioBot pode chamar. Cada tool tem: name, provider, endpoint, auth, pii_safe, rate_limit, version. OpenClaw le este JSON e expoe as tools no MCP server para o agent runtime.",
+
+  "tools": [
+    {
+      "name": "cartorio_api_health",
+      "provider": "api",
+      "endpoint": "GET /api/v1/health/radar",
+      "auth": "none",
+      "pii_safe": true,
+      "rate_limit_per_min": 60,
+      "version": "1.0.0",
+      "description": "Status de 8 integracoes: database, redis, n8n, openclaw, evolution, chatwoot, supabase, opencode_go"
+    },
+    {
+      "name": "cartorio_api_emolumento_calcular",
+      "provider": "api",
+      "endpoint": "GET /api/v1/emolumento/calcular?tipo=X&folhas=Y&urgencia=Z",
+      "auth": "X-API-Key",
+      "pii_safe": true,
+      "rate_limit_per_min": 30,
+      "version": "1.0.0",
+      "description": "Calcula emolumento MG 2026 (tabela TJMG) com base em tipo de ato, quantidade de folhas e urgencia"
+    },
+    {
+      "name": "cartorio_api_protocolo_criar",
+      "provider": "api",
+      "endpoint": "POST /api/v1/protocolo",
+      "auth": "X-API-Key",
+      "pii_safe": false,
+      "rate_limit_per_min": 10,
+      "version": "1.0.0",
+      "description": "Cria novo protocolo. LGPD: requer consent_granted=true. Retorna protocolo_id + status=DRAFT"
+    },
+    {
+      "name": "cartorio_api_protocolo_consultar",
+      "provider": "api",
+      "endpoint": "GET /api/v1/protocolo/{id}",
+      "auth": "X-API-Key",
+      "pii_safe": false,
+      "rate_limit_per_min": 30,
+      "version": "1.0.0",
+      "description": "Consulta protocolo por id. Retorna status, tipo, valor_total, cliente (anonimizado)"
+    },
+    {
+      "name": "cartorio_api_agendamento_disponibilidade",
+      "provider": "api",
+      "endpoint": "GET /api/v1/agendamento/disponibilidade?servico=X&data_inicio=Y&data_fim=Z",
+      "auth": "X-API-Key",
+      "pii_safe": true,
+      "rate_limit_per_min": 20,
+      "version": "1.0.0",
+      "description": "Lista slots livres para agendamento. LGPD-safe (sem dados pessoais no retorno)"
+    },
+    {
+      "name": "cartorio_api_agendamento_criar",
+      "provider": "api",
+      "endpoint": "POST /api/v1/agendamento",
+      "auth": "X-API-Key",
+      "pii_safe": false,
+      "rate_limit_per_min": 5,
+      "version": "1.0.0",
+      "description": "Cria agendamento. LGPD: requer consent_granted=true. Retorna agendamento_id + data/hora"
+    },
+    {
+      "name": "n8n_workflow_trigger",
+      "provider": "n8n",
+      "endpoint": "POST /webhook/{wf-name}",
+      "auth": "X-N8N-Webhook-Token",
+      "pii_safe": false,
+      "rate_limit_per_min": 30,
+      "version": "1.0.0",
+      "description": "Dispara WF N8N por nome. WFs disponiveis: 01-consulta-emolumento, 02-criar-protocolo, 03-handoff-human, 04-boas-vindas-lgpd, 05-agendamento, 06-2-via-protocolo, 12-chatbot-llm-end-to-end, 13-openclaw-chat-bridge, 32-alertas-telegram-pietra"
+    },
+    {
+      "name": "supabase_rest_query",
+      "provider": "supabase",
+      "endpoint": "GET/POST/PATCH /rest/v1/{table}?select=*&filter=...",
+      "auth": "apikey (service_role) + Authorization: Bearer",
+      "pii_safe": false,
+      "rate_limit_per_min": 60,
+      "version": "1.0.0",
+      "description": "Query direta no Supabase via PostgREST. RLS policies (S02) aplicam. Use apenas para tabelas com service_role (LGPD: PII em clientes, protocolos, etc)"
+    },
+    {
+      "name": "supabase_graphql",
+      "provider": "supabase",
+      "endpoint": "POST /graphql/v1",
+      "auth": "apikey (service_role)",
+      "pii_safe": false,
+      "rate_limit_per_min": 60,
+      "version": "1.0.0",
+      "description": "GraphQL via pg_graphql. Schema auto-gerado das tabelas. Mesmas RLS do REST"
+    },
+    {
+      "name": "supabase_realtime_subscribe",
+      "provider": "supabase",
+      "endpoint": "WebSocket /realtime/v1/websocket?apikey=...&vsn=1.0.0",
+      "auth": "apikey (anon ou service_role)",
+      "pii_safe": false,
+      "rate_limit_per_min": 0,
+      "version": "1.0.0",
+      "description": "Subscribe realtime channels: protocolo_updates, atendimento_live, lgpd_consent_changes. Sem rate limit (WebSocket)"
+    },
+    {
+      "name": "supabase_storage_upload",
+      "provider": "supabase",
+      "endpoint": "POST /storage/v1/object/{bucket}/{path}",
+      "auth": "apikey (service_role) + Authorization: Bearer",
+      "pii_safe": false,
+      "rate_limit_per_min": 20,
+      "version": "1.0.0",
+      "description": "Upload para storage buckets: cliente-docs (PRIVATE), protocolo-pdfs (PRIVATE), satisfacao-forms (PUBLIC READ)"
+    },
+    {
+      "name": "redis_cache_get",
+      "provider": "redis",
+      "endpoint": "GET key",
+      "auth": "AUTH password (cartorio-redis-secret-v1)",
+      "pii_safe": false,
+      "rate_limit_per_min": 0,
+      "version": "1.0.0",
+      "description": "Cache get. Keys: emol:tabela:*, protocolo:*, lock:redlock:*, rate_limit:*, idempotency:*"
+    },
+    {
+      "name": "redis_cache_set",
+      "provider": "redis",
+      "endpoint": "SET key value EX seconds",
+      "auth": "AUTH password",
+      "pii_safe": false,
+      "rate_limit_per_min": 0,
+      "version": "1.0.0",
+      "description": "Cache set com TTL. Use 24h para emolumento, 5min para idempotencia, 60s para rate limit"
+    },
+    {
+      "name": "chatwoot_pausar_agente",
+      "provider": "chatwoot",
+      "endpoint": "POST /api/v1/accounts/{account_id}/conversations/{id}/toggle",
+      "auth": "api_access_token (header)",
+      "pii_safe": false,
+      "rate_limit_per_min": 10,
+      "version": "1.0.0",
+      "description": "Pausa o agente IA na conversa. Transferencia para humano. LGPD: notifica cliente sobre pausa"
+    },
+    {
+      "name": "chatwoot_canned_response",
+      "provider": "chatwoot",
+      "endpoint": "GET /api/v1/accounts/{account_id}/canned_responses",
+      "auth": "api_access_token",
+      "pii_safe": true,
+      "rate_limit_per_min": 30,
+      "version": "1.0.0",
+      "description": "Lista 52 canned responses juridicos (docs/canned-responses-chatwoot.json). LGPD-safe"
+    },
+    {
+      "name": "chatwoot_add_label",
+      "provider": "chatwoot",
+      "endpoint": "POST /api/v1/accounts/{account_id}/conversations/{id}/labels",
+      "auth": "api_access_token",
+      "pii_safe": true,
+      "rate_limit_per_min": 20,
+      "version": "1.0.0",
+      "description": "Adiciona label: novo, protocolo, emolumento, documento, concluido, pausado. LGPD-safe"
+    },
+    {
+      "name": "evolution_send_message",
+      "provider": "evolution",
+      "endpoint": "POST /message/sendText/{instance}",
+      "auth": "apikey",
+      "pii_safe": false,
+      "rate_limit_per_min": 30,
+      "version": "2.3.7",
+      "description": "Envia mensagem WhatsApp via Evolution API. Instance: cartorio-2notas"
+    },
+    {
+      "name": "evolution_check_number",
+      "provider": "evolution",
+      "endpoint": "POST /chat/whatsappNumbers/{instance}",
+      "auth": "apikey",
+      "pii_safe": false,
+      "rate_limit_per_min": 60,
+      "version": "2.3.7",
+      "description": "Valida se numero tem WhatsApp. LGPD: registrar no audit_log"
+    },
+    {
+      "name": "opencode_go_chat",
+      "provider": "opencode_go",
+      "endpoint": "POST https://opencode.ai/zen/go/v1/chat/completions",
+      "auth": "Bearer sk-xcRwExjQjqmlc5swP8umqK2YqWUfVt23H3Xl6dpd9TqEyi16ssJXzHeUFGNNIfsJ",
+      "pii_safe": false,
+      "rate_limit_per_min": 100,
+      "version": "1.0.0",
+      "description": "LLM proxy opencode-go com thinking adaptive. Model: minimax-m3 (1M context). LGPD: PII scrubber antes de enviar"
+    },
+    {
+      "name": "openclaw_status",
+      "provider": "openclaw",
+      "endpoint": "GET /healthz",
+      "auth": "none",
+      "pii_safe": true,
+      "rate_limit_per_min": 60,
+      "version": "0.4.x",
+      "description": "Status do proprio OpenClaw. LGPD-safe. Retorna {ok, status}"
+    }
+  ],
+
+  "metrics": {
+    "tool_call_total": "cartorio_agent_tool_calls_total{tool,status}",
+    "tool_latency_ms": "cartorio_agent_tool_latency_ms{tool}",
+    "tool_error_rate": "cartorio_agent_tool_error_rate{tool}",
+    "tokens_in": "cartorio_agent_tokens_in_total{model}",
+    "tokens_out": "cartorio_agent_tokens_out_total{model}",
+    "think_tokens": "cartorio_agent_thinking_tokens_total{model}"
+  },
+
+  "thinking": {
+    "enabled_always": true,
+    "mode": "adaptive",
+    "rationale": "SQUAD E E2 - thinking sempre ON, mesmo em chat curto. adaptive = LLM decide quando pensar mais ou menos baseado na complexidade da task.",
+    "model": "minimax-m3",
+    "context_window_tokens": 1048576
+  },
+
+  "failover_chain": {
+    "order": ["opencode_go", "openclaw", "openrouter"],
+    "trigger": "rate_limit_429 OR timeout_5s OR error_5xx",
+    "retries_per_provider": 2,
+    "backoff_ms": [1000, 2000]
+  },
+
+  "metadata": {
+    "total_tools": 20,
+    "providers": ["api", "n8n", "supabase", "redis", "chatwoot", "evolution", "opencode_go", "openclaw"],
+    "pii_safe_tools": 7,
+    "lgpd_compliance": "Todas as tools com pii_safe=false exigem consent_granted=true antes de chamar. Audit log obrigatorio em cada tool call"
+  }
+}
