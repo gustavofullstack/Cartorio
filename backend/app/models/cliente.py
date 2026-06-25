@@ -13,6 +13,7 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.protocolo import Protocolo
+    from app.models.agendamento import Agendamento
 
 
 class MotivoEncerramento(str, enum.Enum):
@@ -59,6 +60,9 @@ class Cliente(Base, TimestampMixin):
     )
 
     protocolos: Mapped[list["Protocolo"]] = relationship(back_populates="cliente")  # type: ignore[name-defined]
+    agendamentos: Mapped[list["Agendamento"]] = relationship(
+        back_populates="cliente", lazy="dynamic"
+    )  # type: ignore[name-defined]
 
 
 __all__ = ["Cliente", "Base", "MotivoEncerramento"]
