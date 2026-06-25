@@ -4578,8 +4578,8 @@ def get_agendamentos_pendentes(
             "data_hora": agendamento.data_hora.isoformat(),
             "cliente_id": agendamento.cliente_id,
             "local": agendamento.local,
-            "tipo": agendamento.tipo.value,
-            "status": agendamento.status.value,
+            "tipo": agendamento.tipo.value if hasattr(agendamento.tipo, "value") else agendamento.tipo,
+            "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
             **cliente_info
         })
 
@@ -4642,8 +4642,8 @@ def get_agendamentos_proximos(
             "data_hora": agendamento.data_hora.isoformat(),
             "cliente_id": agendamento.cliente_id,
             "local": agendamento.local,
-            "tipo": agendamento.tipo.value,
-            "status": agendamento.status.value,
+            "tipo": agendamento.tipo.value if hasattr(agendamento.tipo, "value") else agendamento.tipo,
+            "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
             **cliente_info
         })
     

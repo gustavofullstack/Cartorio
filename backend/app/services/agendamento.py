@@ -428,3 +428,44 @@ class AgendamentoService:
         db.refresh(agendamento)
 
         return agendamento
+    @staticmethod
+    def listar_agendamentos_pendentes(db: Session) -> list[Agendamento]:
+        """Lista agendamentos pendentes de notificacao (status AGENDADO).
+
+        Usado pelo NotificationService para disparar lembretes.
+        Recriado em 2026-06-25 (E1.S4.T2 cleanup) - estava duplicado e
+        foi removido junto com os duplicates por engano no sed.
+        """
+        from app.models.agendamento import StatusAgendamento
+
+        stmt = select(Agendamento).where(
+            Agendamento.status == StatusAgendamento.AGENDADO,
+        ).order_by(Agendamento.data_hora)
+
+        return cast(list[Agendamento], db.execute(stmt).scalars().all())
+
+    @staticmethod
+    def listar_agendamentos_proximos(db: Session) -> list[Agendamento]:
+        """Lista agendamentos das proximas 24h para disparo de lembretes.
+
+        Retorna agendamentos com status AGENDADO ou CONFIRMADO entre agora
+        e as proximas 24h.
+
+        Recriado em 2026-06-25 (E1.S4.T2 cleanup).
+        """
+        import datetime as _dt
+        from app.models.agendamento import StatusAgendamento
+
+        agora = _dt.datetime.now(_dt.timezone.utc)
+        proximas_24h = agora + _dt.timedelta(hours=24)
+
+        stmt = select(Agendamento).where(
+            Agendamento.status.in_([
+                StatusAgendamento.AGENDADO,
+                StatusAgendamento.CONFIRMADO,
+            ]),
+            Agendamento.data_hora >= agora,
+            Agendamento.data_hora <= proximas_24h,
+        ).order_by(Agendamento.data_hora)
+
+        return cast(list[Agendamento], db.execute(stmt).scalars().all())
