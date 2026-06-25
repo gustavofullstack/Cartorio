@@ -2845,6 +2845,84 @@ async def upload_documento(
 
 
 @api_router.get(
+    "/stats/protocolos",
+    tags=["meta"],
+    summary="Stats de protocolos por status/tipo/canal (A16 materialized view)",
+    description=(
+        "Retorna estatisticas agregadas de protocolos. Em prod usa a view "
+        "materializada `mv_protocolo_stats` (refresh diario 03:00 BRT via cron). "
+        "Em SQLite (testes) faz query agregada direta - mesma shape de response."
+    ),
+    response_description="Lista de stats + totalizadores.",
+)
+async def stats_protocolos(
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    """Stats agregadas de protocolos (A16 - materialized view)."""
+    from sqlalchemy import text
+
+    # Detecta backend
+    is_postgres = settings.database_url.startswith(("postgresql", "postgres"))
+
+    if is_postgres:
+        # Em prod: query a MV. Se ela nao existir (migration nao aplicada),
+        # fallback para query agregada.
+        try:
+            rows = db.execute(
+                text(
+                    "SELECT status, tipo, canal, total, valor_total, first_at, last_at "
+                    "FROM mv_protocolo_stats ORDER BY total DESC"
+                )
+            ).mappings().all()
+            source = "mv_protocolo_stats"
+        except Exception:
+            # MV nao existe - fallback
+            rows = db.execute(
+                text(
+                    "SELECT status, tipo, canal_origem AS canal, COUNT(*) AS total, "
+                    "COALESCE(SUM(CAST(valor_total * 100 AS bigint)), 0) AS valor_total, "
+                    "MIN(created_at) AS first_at, MAX(created_at) AS last_at "
+                    "FROM protocolos WHERE deleted_at IS NULL "
+                    "GROUP BY status, tipo, canal_origem ORDER BY total DESC"
+                )
+            ).mappings().all()
+            source = "fallback_aggregate"
+    else:
+        # SQLite (testes) - sem CAST bigint, valor_total ja vem em DECIMAL
+        rows = db.execute(
+            text(
+                "SELECT status, tipo, canal_origem AS canal, COUNT(*) AS total, "
+                "COALESCE(SUM(CAST(valor_total * 100 AS INTEGER)), 0) AS valor_total, "
+                "MIN(created_at) AS first_at, MAX(created_at) AS last_at "
+                "FROM protocolos WHERE deleted_at IS NULL "
+                "GROUP BY status, tipo, canal_origem ORDER BY total DESC"
+            )
+        ).mappings().all()
+        source = "sqlite_aggregate"
+
+    items = [
+        {
+            "status": r["status"],
+            "tipo": r["tipo"],
+            "canal": r["canal"],
+            "total": int(r["total"]),
+            "valor_total_centavos": int(r["valor_total"] or 0),
+            "first_at": r["first_at"].isoformat() if r["first_at"] else None,
+            "last_at": r["last_at"].isoformat() if r["last_at"] else None,
+        }
+        for r in rows
+    ]
+
+    return {
+        "source": source,
+        "count_groups": len(items),
+        "total_protocolos": sum(i["total"] for i in items),
+        "total_valor_centavos": sum(i["valor_total_centavos"] for i in items),
+        "items": items,
+    }
+
+
+@api_router.get(
     "/metrics/prometheus",
     tags=["meta"],
     summary="Metrics em formato Prometheus (open source)",
