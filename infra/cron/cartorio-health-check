@@ -1,0 +1,4 @@
+# Health check Cartório — roda a cada 5 minutos
+# Dependências: /usr/local/bin/health_check_all.sh
+# Alerta: Telegram se algum serviço estiver DOWN
+*/5 * * * * root /usr/local/bin/health_check_all.sh --webhook 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q 6682284055 > /dev/null 2>&1
