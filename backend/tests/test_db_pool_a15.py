@@ -13,9 +13,7 @@ Cobre tambem:
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
-from sqlalchemy.pool import QueuePool
+from unittest.mock import MagicMock
 
 from app.config import settings
 from app.db import engine
@@ -109,9 +107,9 @@ def test_pre_ping_detecta_conexao_morta_e_reconecta() -> None:
     """
     # Engine real usa SQLite (SingletonThreadPool); criamos QueuePool mockado
     # para simular o cenario Postgres onde pre_ping faz sentido.
-    from sqlalchemy.pool import QueuePool
+    from sqlalchemy.pool import QueuePool as _QP  # noqa: F401  # uso local abaixo
 
-    mock_pool = QueuePool.__new__(QueuePool)
+    mock_pool = _QP.__new__(_QP)
     mock_pool._pre_ping = True
     mock_pool._recycle = 3600
     mock_pool._max_overflow = 10
