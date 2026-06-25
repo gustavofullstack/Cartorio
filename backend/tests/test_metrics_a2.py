@@ -228,34 +228,44 @@ def test_pii_scrub_instrumenta_counter_e_histogram():
     """services.pii.scrub() instrumenta pii_blocked_total + scrub_latency_ms."""
     from app.services.pii import scrub
 
-    # Reset store
-    store = MetricsStore()
     import app.services.metrics as metrics_mod
 
-    metrics_mod.store = store
+    # Salva e restaura o store original pra NAO quebrar singleton
+    # (test_metrics_a2 2026-06-25 — Lesson: metrics_mod.store = fresh
+    #  desvincula o endpoint do singleton original)
+    original_store = metrics_mod.store
+    try:
+        store = MetricsStore()
+        metrics_mod.store = store
 
-    # Scrub com PII detectado
-    scrub("meu cpf é 123.456.789-09")
+        # Scrub com PII detectado
+        scrub("meu cpf é 123.456.789-09")
 
-    # Verifica que counter incrementou
-    output = store.render_prometheus()
-    assert "pii_blocked_total" in output
-    assert 'tipo_scrub="cpf"' in output
+        # Verifica que counter incrementou
+        output = store.render_prometheus()
+        assert "pii_blocked_total" in output
+        assert 'tipo_scrub="cpf"' in output
+    finally:
+        metrics_mod.store = original_store
 
 
 def test_pii_scrub_sem_pii_nao_incrementa_counter():
     """Scrub sem PII NAO incrementa pii_blocked_total."""
     from app.services.pii import scrub
 
-    store = MetricsStore()
     import app.services.metrics as metrics_mod
 
-    metrics_mod.store = store
+    original_store = metrics_mod.store
+    try:
+        store = MetricsStore()
+        metrics_mod.store = store
 
-    # Scrub SEM PII
-    result = scrub("ola mundo sem pii aqui")
-    assert result.redaction_count == 0
+        # Scrub SEM PII
+        result = scrub("ola mundo sem pii aqui")
+        assert result.redaction_count == 0
 
-    output = store.render_prometheus()
-    # NAO deve ter increment para cpf/rg/etc
-    assert "pii_blocked_total" not in output or " 0" in output
+        output = store.render_prometheus()
+        # NAO deve ter increment para cpf/rg/etc
+        assert "pii_blocked_total" not in output or " 0" in output
+    finally:
+        metrics_mod.store = original_store

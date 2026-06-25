@@ -280,22 +280,23 @@ def test_audit_log_idempotente_replay(client, test_engine, test_session_factory)
 # ============================================================================
 
 
-def test_metrica_prometheus_incrementada(client):
+def test_metrica_prometheus_incrementada(client, test_engine, test_session_factory):
     """n8n_errors_total{workflow_name, error_type} eh incrementada apos sucesso.
 
-    Test captura DELTA (antes/depois) do TOTAL de counters para ser robusto
+    Verifica que:
+    1. Resposta 200 com error_type correto (endpoint processou com sucesso)
+    2. audit_log foi criado (prova que o fluxo completo executou)
+    3. Contador da chave especifica existe no store (incrementacao registrada)
+
+    Usa assertion direto na chave do wf (nao delta global) pra ser robusto
     a execucao compartilhada do singleton `store` entre testes.
-    Cardinalidade: ~40 WFs ativos * 7 error_types = ~280 chaves.
     """
     import uuid
 
-    from app.services.metrics import store
+    from app.services.metrics import store as metrics_store
 
     unique_wf = f"WF-TEST-METRIC-{uuid.uuid4().hex[:8]}"
     unique_exec = f"exec-metric-{uuid.uuid4().hex[:8]}"
-
-    # Soma total ANTES (singleton compartilhado, mas delta eh confiavel)
-    total_before = sum(store.counters.get("n8n_errors_total", {}).values())
 
     payload = _make_payload(
         workflow_name=unique_wf,
@@ -304,19 +305,13 @@ def test_metrica_prometheus_incrementada(client):
     )
     resp = _post(client, payload)
     assert resp.status_code == 200
-    assert resp.json()["error_type"] == "connection"
+    data = resp.json()
+    assert data["error_type"] == "connection"
+    assert data["audit_id"] is not None
 
-    total_after = sum(store.counters.get("n8n_errors_total", {}).values())
-
-    # Counter GLOBAL incrementou em >= 1
-    assert total_after - total_before >= 1, (
-        f"metric nao incrementou: total_before={total_before} total_after={total_after}"
-    )
-
-    # E a chave especifica do nosso wf existe
-    counters = store.counters.get("n8n_errors_total", {})
-    matching = [k for k in counters if unique_wf in k]
-    assert len(matching) >= 1, f"chave com wf={unique_wf} nao encontrada em {list(counters)[:5]}"
+    # Contador da chave especifica do workflow foi incrementado
+    key = f"error_type=connection|workflow_name={unique_wf}"
+    assert metrics_store.counters.get("n8n_errors_total", {}).get(key, 0) >= 1
 
 
 def test_metrica_nao_incrementa_em_replay(client):
