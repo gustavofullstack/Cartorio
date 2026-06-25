@@ -19,6 +19,12 @@ Metricas expostas (A1+A2):
 - pii_blocked_total{tipo_scrub, channel} - counter (A2 LGPD)
 - scrub_latency_ms{tipo_scrub, result} - summary (A2 LGPD)
 - dlq_depth{queue} - gauge (A2 LGPD)
+- cartorio_db_pool_checked_out - gauge (A15 connection pool)
+- cartorio_db_pool_size - gauge (A15)
+- cartorio_db_pool_overflow - gauge (A15)
+- cartorio_db_pool_max_overflow - gauge (A15)
+- cartorio_db_pool_total_capacity - gauge (A15)
+- cartorio_db_pool_utilization_pct - gauge (A15)
 - cartorio_uptime_seconds - gauge
 """
 
@@ -287,11 +293,42 @@ def collect_db_metrics(db: Session) -> dict[str, Any]:
     return metrics
 
 
+def collect_pool_metrics() -> dict[str, Any]:
+    """Coleta gauges do pool SQLAlchemy (A15).
+
+    Retorna dict com chaves canonicas para o Prometheus exposition format:
+    - cartorio_db_pool_checked_out: conexoes em uso agora (gauge)
+    - cartorio_db_pool_size: tamanho base do pool (gauge)
+    - cartorio_db_pool_overflow: conexoes alem do pool_size (gauge)
+    - cartorio_db_pool_max_overflow: maximo permitido alem do pool_size (gauge)
+    - cartorio_db_pool_total_capacity: pool_size + max_overflow (gauge)
+    - cartorio_db_pool_utilization_pct: % uso atual (0-100) (gauge)
+
+    Para SQLite: retorna gauges zerados com chave `_backend=sqlite`.
+    """
+    # Import lazy pra evitar circular (db.py nao importa metrics.py)
+    from app.db import get_pool_stats
+
+    stats = get_pool_stats()
+    metrics: dict[str, Any] = {
+        "cartorio_db_pool_checked_out": float(stats.get("checked_out", 0)),
+        "cartorio_db_pool_size": float(stats.get("pool_size", 0)),
+        "cartorio_db_pool_overflow": float(stats.get("overflow", 0)),
+        "cartorio_db_pool_max_overflow": float(stats.get("max_overflow", 0)),
+        "cartorio_db_pool_total_capacity": float(stats.get("total_capacity", 0)),
+        "cartorio_db_pool_utilization_pct": float(stats.get("utilization_pct", 0.0)),
+    }
+    return metrics
+
+
 def render_full_prometheus(db: Session | None = None) -> str:
-    """Renderiza todos os metrics incluindo snapshot do DB."""
+    """Renderiza todos os metrics incluindo snapshot do DB + pool stats (A15)."""
     if db is not None:
         for name, value in collect_db_metrics(db).items():
             store.set_gauge(name, value)
+    # Pool stats sao in-process (sem dependencia de db), sempre populados
+    for name, value in collect_pool_metrics().items():
+        store.set_gauge(name, value)
     return store.render_prometheus()
 
 
@@ -303,6 +340,8 @@ def render_metrics_json(db: Session | None = None) -> dict[str, Any]:
     - protocolos_total: dict[status, int] - separa prefixo 'protocolos_total{status="..."}'
       para dict puro
     - audit_chain_length: int
+    - db_pool: dict (A15) - pool_checked_out/size/overflow/max_overflow/
+      total_capacity/utilization_pct - snapshot in-process
     - uptime_seconds: float
     - counters: dict[str, dict[labels_key, int]] - contadores in-process
     - gauges: dict[str, dict | scalar] - gauges in-process
@@ -326,6 +365,17 @@ def render_metrics_json(db: Session | None = None) -> dict[str, Any]:
             status = key[len('protocolos_total{status="') : -len('"}')]
             protocolos_total[status] = int(value)
 
+    # A15: pool metrics (in-process, sempre presente)
+    pool_raw = collect_pool_metrics()
+    db_pool: dict[str, float] = {
+        "checked_out": pool_raw.get("cartorio_db_pool_checked_out", 0.0),
+        "size": pool_raw.get("cartorio_db_pool_size", 0.0),
+        "overflow": pool_raw.get("cartorio_db_pool_overflow", 0.0),
+        "max_overflow": pool_raw.get("cartorio_db_pool_max_overflow", 0.0),
+        "total_capacity": pool_raw.get("cartorio_db_pool_total_capacity", 0.0),
+        "utilization_pct": pool_raw.get("cartorio_db_pool_utilization_pct", 0.0),
+    }
+
     # In-process metrics (counters e gauges)
     # Counters: {name: {labels_key: int}} -> {name: {labels_key: int}}
     counters: dict[str, dict[str, int]] = {}
@@ -347,6 +397,7 @@ def render_metrics_json(db: Session | None = None) -> dict[str, Any]:
         "clientes_total": clientes_total,
         "protocolos_total": protocolos_total,
         "audit_chain_length": audit_chain_length,
+        "db_pool": db_pool,
         "uptime_seconds": uptime_seconds,
         "counters": counters,
         "gauges": gauges,

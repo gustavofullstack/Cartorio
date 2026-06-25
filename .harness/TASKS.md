@@ -52,6 +52,7 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 ### Sprint 0.5 — Infra base
 - [ ] **E0.S0.5.T1** Rodar migrations Alembic em Supabase staging — owner: `cartorio-dev`
   - Done: schema completo no Postgres, tabelas criadas, indices em `cliente.cpf_hash` e `protocolo.numero`
+  - **RESET 2026-06-25 09:19 BRT (Pietra)**: ground truth via psql mostrou que alembic_version tem DUAS HEADS (0001+0003), 6 migrations (0004 RLS+audit chain, 0005 pg_cron, 0006 db webhooks, 0007 storage/realtime/graphql, 0008 vault, 0009 trigger updated_at) NUNCA APLICADAS no DB. lgpd_consent_log EXISTE (renomear pra lgpd_consents via migration 0010) e lgpd_audit_anpd FALTA (criar via migration 0011). cartorio-dev recebeu plano de 4 fases via msg #3622. Ref Lesson 176 canon.
 - [x] **E0.S0.5.T2** DNS + HTTPS (cartorio.com.br → Caddy/Traefik no Easypanel) — owner: `cartorio-n8n` — Traefik LetsEncrypt DNS-01 ativo, 6/6 dominios verdes
 - [~] **E0.S0.5.T3** Backup automatizado Postgres (snapshot diario, retencao 30d) — owner: `cartorio-lgpd` (compliance de retencao) + `cartorio-n8n` (execucao) — script + cron instalados, sem S3 ainda
 - [ ] **E0.S0.5.T4** Seed inicial de `tabela_emolumento` MG 2026 — owner: `cartorio-dev`
@@ -1145,8 +1146,43 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 - E1.S4.T5 — Redlock wrap scheduler asyncio.create_task (Lesson 163 v2 cleanup announcement pattern)
 - E1.S4.T6 — POST /admin/audit/check-now auditar propria execucao (DONE inline em 70d5d33 — gap coberto)
 
+### 2026-06-25 09:18 BRT — Pietra (harness root tick mvs_6663ee57) — **B6 plan_bc1ee676 REJECTED (plan_complete=true)** — 4 ciclos zero passes, DEFERRED pós-Sprint 3
+
+**Engine AUTO-PAUSED 09:17 BRT** — `consecutive_failures=4`, `max_consecutive_failures=3` E `max_cycles=4` AMBOS atingidos. Verifier ground truth (Lesson 169 canon) tentativa 5: 4 de 7 itens FAIL persistentes:
+- ruff F841 unused `e` (auto-fixable)
+- ruff format 3 arquivos (auto-fixable)
+- WF 00 ainda POSTa pra `/atendimento` antigo, NAO chama `/integrations/n8n/error` (scope failure REAL — caller missing, hash 09e55b5 backend orfao)
+- Telegram markdown_v2 formatting nao implementado (scope failure REAL — feature missing)
+- Commit sem trailer `Modified by Gustavo Almeida`
+
+**Lesson 174 manual_retry tentativa 3→4 (09:11 BRT) FALHOU** — direction explicita com 5 actions embedded no prompt nao moveu producer. cartorio-n8n nao self-fixed.
+
+**Decision tree Lesson 174 exaurido**:
+- L2 manual_retry: USED, nao funcionou
+- L3 override_accept: BLOQUEADO Lesson 172 v2 (producer nao self-fixed + scope failures REAIS nao pre-existing tech debt)
+- L4 reject + plan_complete: EXECUTADO 09:18 BRT (decision JSON `/tmp/b6-final-decision.json`)
+
+**DECISAO**: B6 NAO P0 Sprint 3. Realocada pós-Sprint 4. Sprint 3 gates reais inalterados:
+- Goal #2 P0 bugs (B1 Chatwoot restart + B2 OpenClaw overflow) — separados, nao B6
+- Goal #4 backend audit/DELETE/retenção (A13 DONE 09:07 BRT, push gate Gustavo)
+- Goal #5 WF #12 n8n-nodes-mcp + WF #03 n8n-nodes-chatwoot (separados)
+
+**Backend orfao hash 09e55b5**: POST `/api/v1/integrations/n8n/error` continua deployed + funcional (validado 4/4 smoke scenarios), apenas NAO HA caller WF N8N. Endpoint fica pronto pra Sprint 4 B6-retake ou outro consumer.
+
+**ACAO TOMADA**:
+1. Decision JSON aplicado (REJECT + plan_complete=true) — plan status = `completed`
+2. TASKS.md atualizado (esta secao)
+3. GRUPO UPDATE pendente (squad channel — ver abaixo)
+4. Lesson 176 a salvar em MEMORY.md (chain canon 124-176, 53 lições)
+5. NAO escalado Gustavo — B6 nao P0, ele já tinha 3 caminhos A/B/C na pendência anterior (linha 1134)
+
+**Squad GRUPO UPDATE 09:18 BRT** (msg via mavis communication): "B6 fechado REJECTED pos-4-ciclos-zero-passes. Backend orfao aceito (hash 09e55b5 deployed, sem caller). Sprint 3 segue com A13 push gate + B1+B2 P0 bugs + WF #12/#03 nodes oficiais. B6 vira Sprint 4 backlog. Pietra orquestrou."
+
+**NÃO rotacionei chaves.**
+
 ## LIÇÕES MEMORIZADAS
 
+- Lesson 176: AUTO-PAUSED 4-cycle REJECT pattern (chain canon 124-176, 53 lições canon) — Lesson 174 decision tree exausta = reject + plan_complete + DEFER
 - Lesson 58: chaves em chat = queimadas MAS user "não rotacionar" = seguir + warning
 - Lesson 57: N8N idle restart = working-as-designed (não escalonar)
 - Lesson 56: anti-spam pós-IM-CRITICAL

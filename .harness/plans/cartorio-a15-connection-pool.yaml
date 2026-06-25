@@ -1,0 +1,103 @@
+version: 1
+plan:
+  name: cartorio-a15-connection-pool
+  max_concurrency: 1
+  max_consecutive_failures: 2
+  max_cycles: 2
+  auto_accept: true
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: a15-pool-tuning
+    title: A15 Connection Pool tuning pool=20 overflow=10 pre_ping
+    prompt: >
+      TASK A15 do Squad A (API/DB Hardening) — Cartório 2notas.
+
+      CONTEXTO: API FastAPI rodando em produção contra Supabase Postgres
+      (cartorio_supabase-db-1). Pool atual do SQLAlchemy precisa tuning
+      para suportar carga real (chatbot + N8N + admin simultâneos).
+
+      OBJETIVO: Configurar pool SQLAlchemy = pool_size=20 + max_overflow=10
+      + pool_pre_ping=True. Manter Session lifecycle correto (yield Session
+      no dependency, ensure close). Validar via teste de carga leve.
+
+      PASSOS:
+
+      1. **Localizar config atual**:
+         - `backend/app/db.py` (engine + SessionLocal)
+         - `backend/app/config.py` (DATABASE_URL, settings)
+         - `backend/app/api/dependencies.py` ou onde `get_db()` está
+
+      2. **Aplicar config**:
+         - `engine = create_engine(DATABASE_URL, pool_size=20,
+           max_overflow=10, pool_pre_ping=True, pool_recycle=3600,
+           echo=False)`
+         - Manter compat com SQLite test (sqlite:///:memory:) — usar
+           StaticPool apenas em test, NullPool ok em sqlite file
+         - Adicionar settings opcionais (env override):
+           - DB_POOL_SIZE (default 20)
+           - DB_MAX_OVERFLOW (default 10)
+           - DB_POOL_RECYCLE (default 3600)
+           - DB_POOL_TIMEOUT (default 30)
+
+      3. **Documentar em backend/.env.example**:
+         - DB_POOL_SIZE=20
+         - DB_MAX_OVERFLOW=10
+         - DB_POOL_RECYCLE=3600
+         - DB_POOL_TIMEOUT=30
+         - Comentário explicando carga esperada
+
+      4. **Smoke test integração**:
+         - Conectar API atual (cartorio_api.1) e ler /api/v1/health/db
+           (ou criar endpoint se não existe) — confirmar pool metrics
+         - Concurrently: 30 requests GET /health em <5s sem 500/timeout
+         - Verificar Prometheus metric `cartorio_db_pool_checked_out`
+           (adicionar se não tem)
+
+      5. **Test pytest**:
+         - `tests/test_db_pool.py` com 2 cenários:
+           a. pool_size respeitado (mock engine, contar conexões abertas)
+           b. pre_ping detecta conexões mortas (mock conn.close + next
+              request, verificar reconnect)
+         - Coverage >= 90% no módulo db.py
+
+      6. **MEMÓRIA**:
+         - `.harness/reins/cartorio-dev/memory/A15-connection-pool.md`
+         - Status (data/hora), hash do commit, métricas pré/pós (se
+           aplicável), endpoint health/db adicionado/mantido
+
+      REGRAS DURAS:
+      - **NUNCA rotacionar chaves** (regra Gustavo)
+      - **NUNCA push sem Gustavo GO** (Lesson 110) — commit local OK
+      - Conventional Commits (feat/perf/test/docs) terminando com
+        "Modified by Gustavo Almeida"
+      - ruff check + ruff format clean
+      - mypy strict 0 errors no código NOVO
+      - pytest --cov=app coverage >= 90%
+
+      WORKFLOW: analisar → testar → corrigir → melhorar → otimizar →
+      documentar → comentar → salvar memória.
+
+      REPORTE ao root session mvs_6663ee57a937460fb324e496cb5ac217 via
+      `mavis communication send --from <sua-session> --to
+      mvs_6663ee57a937460fb324e496cb5ac217 --command prompt` ao terminar.
+      Reporte com 5 linhas: files_changed, tests_added, coverage, commit_hash,
+      status (SUCCESS|FAIL).
+
+      Push gate: NAO push. Apenas commit local.
+    verify_prompt: >
+      Verifique o trabalho A15: 1. db.py tem pool_size=20 +
+      max_overflow=10 + pool_pre_ping=True? 2. settings opcionais
+      (DB_POOL_*) em config.py + .env.example? 3. sqlite test path não
+      quebrou (StaticPool/NullPool)? 4. tests/test_db_pool.py com 2
+      cenários passa 100%? 5. coverage >= 90% em db.py? 6. Smoke
+      integração em prod OK (sem 500 em 30 concurrent)? 7. Memória
+      A15-connection-pool.md criada? 8. Conventional Commits + trailer
+      "Modified by Gustavo Almeida"? APROVADO = todos SIM.
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier

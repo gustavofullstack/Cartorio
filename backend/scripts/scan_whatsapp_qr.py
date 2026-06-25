@@ -22,15 +22,29 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 
 import httpx
 
-EVOLUTION_URL = "https://whatsapp.2notasudi.com.br"
-EVOLUTION_API_KEY = "429683C4C977415CAAFCCE10F7D57E11"
-INSTANCE = "cartorio-2notas"
+# Lesson 159 canon: credenciais via env var, NUNCA hardcoded.
+# Keys queimadas no chat sao marcadas como tal; esta key veio do codigo original
+# (script anterior) e NAO deve ser rotacionada — Gustavo + Pietra unicos com acesso.
+EVOLUTION_URL = os.environ.get(
+    "EVOLUTION_PUBLIC_URL", "https://whatsapp.2notasudi.com.br"
+)
+EVOLUTION_API_KEY = os.environ.get("EVOLUTION_API_KEY", "")
+INSTANCE = os.environ.get("EVOLUTION_INSTANCE", "cartorio-2notas")
 MANAGER_URL = f"{EVOLUTION_URL}/manager"
+
+if not EVOLUTION_API_KEY:
+    print(
+        "ERRO: EVOLUTION_API_KEY nao definida. "
+        "Defina no backend/.env ou export no shell (Lesson 159 canon).",
+        file=sys.stderr,
+    )
+    sys.exit(2)
 
 
 def get_state() -> str:

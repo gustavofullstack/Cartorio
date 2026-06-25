@@ -39,8 +39,14 @@ class Settings(BaseSettings):
     # Database (Supabase - container db:5432 na rede cartorio_supabase_default)
     # ========================================================================
     database_url: str
-    db_pool_size: int = 10
-    db_max_overflow: int = 5
+    # Pool tuning A15 — defaults calibrados pra carga real (chatbot + N8N + admin
+    # simultaneos). Total = pool_size + max_overflow = 30 conexoes. Pre-ping detecta
+    # stale; recycle 1h evita conexao morta em pgBouncer/LB.
+    db_pool_size: int = 20
+    db_max_overflow: int = 10
+    db_pool_recycle: int = 3600  # 1h — recicla conexao antes de timeouts silenciosos
+    db_pool_timeout: int = 30  # 30s na fila ate TimeoutError se pool saturado
+    db_pool_pre_ping: bool = True  # testa SELECT 1 antes de cada checkout
 
     # ========================================================================
     # Redis (cartorio_redis na porta 6379 interna, 1001 no host)

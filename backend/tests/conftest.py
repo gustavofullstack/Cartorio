@@ -16,6 +16,14 @@ os.environ["AUDIT_HMAC_KEY"] = "a" * 64  # 64 chars hex equivalente pra teste
 # como int). Forca valores numericos via env vars, que tem precedencia sobre .env.
 os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
 os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
+# A15: Forca defaults canonicos de pool mesmo se .env local tiver valores
+# antigos (10/5). Settings.precedence = .env < env var, entao setdefault aqui
+# sobrescreve o .env mas NAO conflita com override explicito em CI.
+os.environ.setdefault("DB_POOL_SIZE", "20")
+os.environ.setdefault("DB_MAX_OVERFLOW", "10")
+os.environ.setdefault("DB_POOL_RECYCLE", "3600")
+os.environ.setdefault("DB_POOL_TIMEOUT", "30")
+os.environ.setdefault("DB_POOL_PRE_PING", "true")
 # API key usada pelos testes que batem em endpoints protegidos por X-API-Key
 # (ex: DELETE /cliente/{id}, GET /cliente/{id}/historico). Setada aqui pra
 # estar disponivel antes de app.config criar o singleton `settings` na import.
@@ -29,6 +37,7 @@ from app.config import get_settings  # noqa: E402
 get_settings.cache_clear()
 
 from app.models.base import Base  # noqa: E402
+
 # Importa modelos concretos para que Base.metadata esteja populado nos testes
 # (caso contrario tabelas nao existem no SQLite in-memory e lifespan da app
 #  falha em AuditService.log_system_action → "no such table: audit_log")
@@ -67,7 +76,11 @@ def db_session(monkeypatch) -> Iterator[Session]:
     # Redireciona a engine global para a engine deste teste
     monkeypatch.setattr(global_engine, "pool", eng.pool)
     # Redireciona o SessionLocal global para criar sessoes nesta engine
-    monkeypatch.setattr(GlobalSessionLocal, "kw", {"bind": eng, "autoflush": False, "autocommit": False, "expire_on_commit": False})
+    monkeypatch.setattr(
+        GlobalSessionLocal,
+        "kw",
+        {"bind": eng, "autoflush": False, "autocommit": False, "expire_on_commit": False},
+    )
     try:
         yield session
     finally:

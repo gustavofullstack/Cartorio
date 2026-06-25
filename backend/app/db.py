@@ -1,4 +1,13 @@
-"""SQLAlchemy engine + session factory."""
+"""SQLAlchemy engine + session factory.
+
+A15: Pool tuning config-driven via Settings.
+- pool_size / max_overflow / pool_recycle / pool_timeout / pool_pre_ping
+  vem de settings (env vars DB_POOL_*) com defaults 20/10/3600/30/True.
+- SQLite (in-memory test + sqlite file) pula kwargs de pool e usa o
+  pool padrao do SQLAlchemy (NullPool para sqlite:///file ou StaticPool
+  para :memory: via conftest).
+- pool_use_lifo=True so Postgres (reduz abertura/fechamento em rajada).
+"""
 
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -10,7 +19,7 @@ from app.config import settings
 
 _is_sqlite = settings.database_url.startswith("sqlite")
 
-# A22: Connection pool tuning expandido
+# A15: Connection pool tuning config-driven
 # - pool_size=20: base pool (20 conexoes persistentes)
 # - max_overflow=10: ate 10 extras sob pico (total 30)
 # - pool_timeout=30: 30s para adquirir conexao (queue timeout)
@@ -18,14 +27,14 @@ _is_sqlite = settings.database_url.startswith("sqlite")
 # - pool_recycle=3600: recicla a cada 1h (evita conexao morta em pgBouncer/LB)
 # - pool_use_lifo=True: LIFO = conexoes recentes优先 (reduz abertura/fechamento)
 _engine_kwargs: dict = {
-    "pool_pre_ping": True,
-    "pool_recycle": 3600,
+    "pool_pre_ping": settings.db_pool_pre_ping,
+    "pool_recycle": settings.db_pool_recycle,
 }
 if not _is_sqlite:
     _engine_kwargs.update(
-        pool_size=20,
-        max_overflow=10,
-        pool_timeout=30,
+        pool_size=settings.db_pool_size,
+        max_overflow=settings.db_max_overflow,
+        pool_timeout=settings.db_pool_timeout,
         pool_use_lifo=True,  # LIFO = conexoes recentes优先 (so Postgres)
     )
 _engine_kwargs["echo"] = settings.app_env == "development"
