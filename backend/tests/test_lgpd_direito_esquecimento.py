@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import datetime as dt
 import os
-from typing import Any
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("AUDIT_HMAC_KEY", "a" * 64)
@@ -31,8 +30,6 @@ def db():
     from sqlalchemy.orm import sessionmaker
 
     from app.models.base import Base
-    from app.models.cliente import Cliente
-    from app.models.audit_log import AuditLog
 
     engine = create_engine(
         "sqlite:///:memory:",
@@ -65,7 +62,6 @@ def cliente(db):
 def test_direito_esquecimento_soft_delete_cascade(db, cliente):
     """Deve soft-deletar cliente + todas as tabelas cascade."""
     from app.services.lgpd_direito_esquecimento import (
-        CASCADE_TABLES,
         direito_esquecimento,
     )
 
