@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     # LiteLLM removido (hackeado em 2026-06)
     # ========================================================================
     opencode_go_api_key: Optional[str] = None
-    opencode_go_base_url: str = "https://api.opencode.ai/v1"  # placeholder
+    opencode_go_base_url: str = "https://opencode.ai/zen/go/v1"  # DeepSeek-v4-flash endpoint
     opencode_go_model: str = "deepseek-v4-flash"
     opencode_go_rate_limit_per_minute: Optional[int] = None  # None = sem rate limit
 
