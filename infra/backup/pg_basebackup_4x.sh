@@ -2,7 +2,20 @@
 # pg_basebackup 4x/dia (00:00, 06:00, 12:00, 18:00 UTC) + WAL archiving.
 # Owner: cartorio-dev
 # Schedule: 0 */6 * * * via /etc/cron.d/cartorio-pgbase (instalado por install_pg_backup_cron.sh)
-# Retention: 7d local (auto-delete > 7d). S3 mensal = PLACEHOLDER (Gustavo configura creds).
+# Retention: 7d local (auto-delete > 7d).
+#
+# ============================================================================
+# ⚠️  S3 MENSAL = EXPLICIT PLACEHOLDER — PENDENTE Gustavo configurar
+# ============================================================================
+# Para ativar upload mensal ao S3 (1o dia do mes), Gustavo precisa exportar:
+#   - AWS_ACCESS_KEY_ID
+#   - AWS_SECRET_ACCESS_KEY
+#   - AWS_S3_BUCKET  (ex: cartorio-backups-prod)
+#   - AWS_REGION     (ex: sa-east-1)
+# Ate la, este script loga "SKIPPED (credenciais AWS nao configuradas)" todo
+# dia 1o do mes. Backup LOCAL (7d) NAO eh afetado — segue 4x/dia normalmente.
+# Ver task A14-verify-and-close / .env.example para placeholders documentados.
+# ============================================================================
 #
 # LGPD: backup encriptado (LGPD art. 46), retencao cartorio 5y (respaldo fora deste script).
 #
@@ -10,10 +23,11 @@
 #              Janela = "data atual UTC + slot de 6h" (ex: 2026-06-25_12 = janela das 12h UTC).
 #
 # v1.0.0 (2026-06-25): A14 — backup DB 4x/dia pg_basebackup + WAL.
+# v1.1.0 (2026-06-25): A14 verify+close — banner S3 placeholder explicito.
 #   - 4x/dia UTC: 00, 06, 12, 18
 #   - WAL archiving via archive_command (placeholder no postgresql.conf — Gustavo aplica)
 #   - Retention local 7d
-#   - Monthly S3 upload (PLACEHOLDER — sem creds; loga skipped)
+#   - Monthly S3 upload (PLACEHOLDER — sem creds; loga skipped com banner)
 
 set -euo pipefail
 
@@ -86,16 +100,25 @@ log "  - removendo backups > ${RETENTION_DAYS} dias"
 find "${BACKUP_ROOT}" -maxdepth 1 -mindepth 1 -type d -mtime "+${RETENTION_DAYS}" \
   -exec rm -rf {} + 2>/dev/null || true
 
-# --- 4. Monthly S3 upload (PLACEHOLDER) ----------------------------------
-# Gustavo configura AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_S3_BUCKET.
-# Por ora loga skipped para deixar evidência auditavel.
+# --- 4. Monthly S3 upload (EXPLICIT PLACEHOLDER) --------------------------
+# ⚠️ S3 upload NAO ESTA ATIVO — Gustavo precisa configurar creds AWS no
+# env do script (cron.d NAO carrega ~/.bashrc automaticamente; ver bloco
+# de banner no topo deste arquivo para vars necessarias).
+# Quando ativo, ira rodar todo dia 1o do mes e sincronizar /var/backups/cartorio/pgbase
+# para s3://${AWS_S3_BUCKET}/pgbase/${TS_UTC}/
 DAY_OF_MONTH=$(date -u +%d)
 if [[ "${DAY_OF_MONTH}" == "01" ]]; then
-  if [[ -n "${AWS_S3_BUCKET:-}" && -n "${AWS_ACCESS_KEY_ID:-}" ]]; then
-    log "  - upload S3 mensal (bucket=${AWS_S3_BUCKET}) — NAO IMPLEMENTADO, placeholder"
+  if [[ -n "${AWS_S3_BUCKET:-}" && -n "${AWS_ACCESS_KEY_ID:-}" && -n "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
+    log "  - upload S3 mensal (bucket=${AWS_S3_BUCKET}, region=${AWS_REGION:-us-east-1}) — NAO IMPLEMENTADO, placeholder"
     # TODO Sprint 5: aws s3 sync "${BACKUP_ROOT}/${TS_UTC}/" "s3://${AWS_S3_BUCKET}/pgbase/${TS_UTC}/"
+    # Pre-requisito Gustavo:
+    #   1. Criar IAM user com AmazonS3FullAccess (ou policy minima de write no bucket)
+    #   2. Adicionar AWS_* vars no /etc/cron.d/cartorio-pgbase OU em /root/.aws/credentials
+    #   3. Instalar aws-cli no VPS (apt install awscli)
+    log "  - S3 mensal: status PLACEHOLDER (creds OK detectadas, mas sync NAO implementado)"
   else
     log "  - upload S3 mensal SKIPPED (credenciais AWS nao configuradas; Gustavo configura depois)"
+    log "  - Placeholder vars necessarias: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET"
   fi
 fi
 

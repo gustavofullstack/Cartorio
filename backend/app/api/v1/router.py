@@ -1652,13 +1652,24 @@ async def health_backup_v2() -> JSONResponse:
     LGPD: este endpoint NAO expoe dados de cliente — apenas timestamps + paths
     de diretorios de backup. Auditoria de acesso pode ser feita via N8N WF #09
     (mesmo WF que monitora /health/backup v1).
+
+    Tambem atualiza a metrica Prometheus `backup_last_success_timestamp_seconds`
+    (Unix epoch segundos do ultimo backup com marker `.complete`, ou 0 se
+    cold-start). Permite alertas Grafana tipo
+    `time() - backup_last_success_timestamp_seconds > 43200` (12h RPO).
     """
     from app.services.backup_v2 import (
         DEFAULT_HEALTHY_THRESHOLD_MINUTES,
         check_backup_v2_freshness,
     )
+    from app.services.metrics import store as metrics_store
 
     health = check_backup_v2_freshness(threshold_minutes=DEFAULT_HEALTHY_THRESHOLD_MINUTES)
+
+    # Atualiza gauge Prometheus (Unix epoch do ultimo backup OU 0 se cold-start).
+    # mtime do diretorio do backup ja vem em UTC via check_backup_v2_freshness.
+    last_backup_ts = health.last_backup_at.timestamp() if health.last_backup_at else None
+    metrics_store.set_backup_last_success_timestamp(last_backup_ts)
 
     payload = {
         "status": health.status.value,

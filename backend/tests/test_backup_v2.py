@@ -302,3 +302,77 @@ def test_backup_health_serialization_roundtrip():
     assert restored.last_backup_dir == original.last_backup_dir
     assert restored.backup_count == original.backup_count
     assert restored.alert == original.alert
+
+
+# ============================================================================
+# 9. Test briefing A14 verify-and-close — backup recente (<26h) = ok=true
+# ============================================================================
+
+
+def test_backup_recent_under_26h_returns_ok_true(client, tmp_path):
+    """Backup com idade 20h (1200min) ainda eh saudavel via v1 endpoint.
+
+    Briefing A14 verify-and-close 2026-06-25: adicionar 1 teste para garantir
+    que backup RECENTE (sub-26h, mesmo acima do threshold v2 de 360min)
+    ainda eh considerado ok=true pelo endpoint legado /health/backup (v1).
+    Isso protege contra regressao no endpoint legado apos mudancas em v2.
+    """
+    # v1 (legacy) endpoint checa .tar.gz no /var/backups/cartorio (raiz)
+    # enquanto v2 checa /var/backups/cartorio/pgbase/<DIR>/.complete.
+    # Para este teste, mockamos os.path.isdir / os.listdir do router v1.
+    import time as time_mod
+
+    now_ts = time_mod.time()
+    backup_age_s = 20 * 3600  # 20h atras (sub-26h)
+    backup_ts = now_ts - backup_age_s
+
+    fake_listing = ["backup-2026-06-25.tar.gz"]
+
+    with (
+        patch("app.api.v1.router.os.path.isdir", return_value=True),
+        patch("app.api.v1.router.os.listdir", return_value=fake_listing),
+        patch("app.api.v1.router.os.path.getmtime", return_value=backup_ts),
+        patch("app.api.v1.router.os.path.getsize", return_value=100 * 1024 * 1024),
+    ):
+        resp = client.get("/api/v1/health/backup")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is True
+    assert data["last_backup_age_hours"] is not None
+    # 20h < 26h => ok=true
+    assert data["last_backup_age_hours"] < 26.0
+    assert 19.0 <= data["last_backup_age_hours"] <= 21.0
+
+
+def test_backup_v2_updates_prometheus_metric(client, tmp_path):
+    """A14 verify-and-close: endpoint /health/backup-v2 atualiza metrica Prometheus.
+
+    Verifica que `backup_last_success_timestamp_seconds` eh setado com
+    Unix epoch do ultimo backup (ou 0 para cold-start).
+    """
+    from app.services.metrics import store as metrics_store
+
+    # Backup recente (1h atras) — metrica deve refletir mtime do diretorio
+    _make_complete_backup(tmp_path, "20260625_00", age_minutes=60)
+    expected_ts = time.time() - (60 * 60)
+
+    with patch("app.services.backup_v2.DEFAULT_BACKUP_DIR", str(tmp_path)):
+        resp = client.get("/api/v1/health/backup-v2")
+
+    assert resp.status_code == 200
+    # Metrica deve estar setada (valor aproximado, margem 5s)
+    gauge = metrics_store.gauges.get("backup_last_success_timestamp_seconds")
+    assert gauge is not None, "Gauge backup_last_success_timestamp_seconds nao foi setada"
+    assert isinstance(gauge, float)
+    # Margem de 5s para cobrir latencia entre mtime set e leitura
+    assert abs(gauge - expected_ts) < 5.0, f"Gauge {gauge} != expected ~{expected_ts} (margem 5s)"
+
+    # Cold-start: sem nenhum backup -> metrica = 0
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+    with patch("app.services.backup_v2.DEFAULT_BACKUP_DIR", str(empty_dir)):
+        resp = client.get("/api/v1/health/backup-v2")
+    assert resp.status_code == 503
+    gauge_empty = metrics_store.gauges.get("backup_last_success_timestamp_seconds")
+    assert gauge_empty == 0.0, f"Cold-start gauge deveria ser 0.0, recebeu {gauge_empty}"
