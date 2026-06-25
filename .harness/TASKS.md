@@ -523,7 +523,7 @@ Modified by Gustavo Almeida
 - [x] **E8.B10** Métricas Prometheus por WF (count, latency, error rate) — owner: `cartorio-n8n` ✅ **DONE** commit `ab90676` — per-WF Prometheus metrics.
 - [x] **E8.B11** Alertas Telegram para falha WF GRUPO Pietra Squad — owner: `cartorio-n8n` ✅ **DONE** commit `33f06aa` — cron 5min + /health/radar.
 - [ ] **E8.B12** Test runner 28 WFs Playwright + workflow test kit — owner: `cartorio-n8n`
-- [ ] **E8.B13** Canned responses Chatwoot 50+ templates jurídicos — owner: `cartorio-n8n`
+- [x] **E8.B13** Canned responses Chatwoot 50+ templates jurídicos — owner: `cartorio-n8n` ✅ **DONE** — `infra/chatwoot/canned_responses_juridicos.md` (52 templates PT-BR: protocolos, emolumentos, agendamentos, notariais, LGPD, atendimento, agent AI, stats, utilidades)
 - [ ] **E8.B14** Macros handoff humano 10 macros identificar/transferir/resumir — owner: `cartorio-n8n`
 - [ ] **E8.B15** Templates WhatsApp Meta aprovados 10 templates — owner: `cartorio-n8n`
 
