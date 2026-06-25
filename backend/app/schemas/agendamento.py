@@ -88,8 +88,8 @@ class AgendamentoResponse(AgendamentoBase):
         examples=["a" * 64],
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "id": 1,
@@ -105,6 +105,7 @@ class AgendamentoResponse(AgendamentoBase):
                     "criado_em": "2026-06-25T10:00:00-03:00",
                     "atualizado_em": "2026-06-25T10:00:00-03:00",
                     "cpf_hash": "a" * 64,
-                }
-            ]
+	        }
+	    ]
+    )
         }
