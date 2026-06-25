@@ -1,1 +1,339 @@
-{"updatedAt":"2026-06-23T17:35:33.265Z","createdAt":"2026-06-23T17:35:33.265Z","id":"4IS5oiLyHWGhtb8g","name":"00 - Error Handler Global (T25) v4","description":null,"active":true,"isArchived":false,"nodes":[{"parameters":{},"id":"error-trigger-4","name":"Error Trigger","type":"n8n-nodes-base.errorTrigger","typeVersion":1,"position":[240,300]},{"parameters":{"method":"POST","url":"https://api.2notasudi.com.br/api/v1/atendimento","sendHeaders":true,"headerParameters":{"parameters":[{"name":"X-API-Key","value":"={{ $env.CARTORIO_API_KEY }}"},{"name":"Content-Type","value":"application/json"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={\"telefone\": \"5534999999999\", \"motivo\": \"ALERTA N8N erro: {{ $json.error?.message }}\", \"origem\": \"n8n-error\", \"prioridade\": \"critica\"}","options":{"timeout":5000}},"id":"alert-4","name":"Alerta Chatwoot","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[460,300],"credentials":{"httpHeaderAuth":{"id":"ADNkyTP2e6uYskUZ","name":"cartorio-api-key"}}}],"connections":{"Error Trigger":{"main":[[{"node":"Alerta Chatwoot","type":"main","index":0}]]}},"settings":{"executionOrder":"v1","saveExecutionProgress":true,"saveDataSuccessExecution":"all","saveDataErrorExecution":"all"},"staticData":null,"meta":null,"nodeGroups":[],"pinData":null,"versionId":"d0e7055e-50a8-4a0d-845b-1b4d127f6731","activeVersionId":"d0e7055e-50a8-4a0d-845b-1b4d127f6731","versionCounter":1,"triggerCount":0,"sourceWorkflowId":null,"shared":[{"updatedAt":"2026-06-23T17:35:33.265Z","createdAt":"2026-06-23T17:35:33.265Z","role":"workflow:owner","workflowId":"4IS5oiLyHWGhtb8g","projectId":"IriLCUUa2YxjQSQ5","project":{"updatedAt":"2026-06-23T01:34:55.592Z","createdAt":"2026-06-22T19:27:08.156Z","id":"IriLCUUa2YxjQSQ5","name":"Gustavo  Rodrigues <gustavomar.fullstack@gmail.com>","type":"personal","icon":null,"description":null,"customTelemetryTags":[],"creatorId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}}],"tags":[{"updatedAt":"2026-06-23T17:32:50.917Z","createdAt":"2026-06-23T17:32:50.917Z","id":"qIO7CBdOUpUxN8ZC","name":"cartorio"},{"updatedAt":"2026-06-23T17:32:51.989Z","createdAt":"2026-06-23T17:32:51.989Z","id":"JkUwqQ0RWAvcyJ23","name":"monitor"}],"activeVersion":{"updatedAt":"2026-06-23T17:35:33.265Z","createdAt":"2026-06-23T17:35:33.265Z","versionId":"d0e7055e-50a8-4a0d-845b-1b4d127f6731","workflowId":"4IS5oiLyHWGhtb8g","nodes":[{"parameters":{},"id":"error-trigger-4","name":"Error Trigger","type":"n8n-nodes-base.errorTrigger","typeVersion":1,"position":[240,300]},{"parameters":{"method":"POST","url":"https://api.2notasudi.com.br/api/v1/atendimento","sendHeaders":true,"headerParameters":{"parameters":[{"name":"X-API-Key","value":"={{ $env.CARTORIO_API_KEY }}"},{"name":"Content-Type","value":"application/json"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={\"telefone\": \"5534999999999\", \"motivo\": \"ALERTA N8N erro: {{ $json.error?.message }}\", \"origem\": \"n8n-error\", \"prioridade\": \"critica\"}","options":{"timeout":5000}},"id":"alert-4","name":"Alerta Chatwoot","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[460,300],"credentials":{"httpHeaderAuth":{"id":"ADNkyTP2e6uYskUZ","name":"cartorio-api-key"}}}],"connections":{"Error Trigger":{"main":[[{"node":"Alerta Chatwoot","type":"main","index":0}]]}},"nodeGroups":[],"authors":"Gustavo  Rodrigues","name":null,"description":null,"autosaved":false,"workflowPublishHistory":[{"createdAt":"2026-06-23T17:35:33.520Z","id":53,"workflowId":"4IS5oiLyHWGhtb8g","versionId":"d0e7055e-50a8-4a0d-845b-1b4d127f6731","event":"activated","userId":"3e7253b9-fc1b-4e04-b7bb-8688371f4ad8"}]}}
+{
+  "name": "00 - Error Handler Global (T25) v5",
+  "description": "Global error handler for any N8N workflow. B6 fix 2026-06-25: posts to /api/v1/integrations/n8n/error (HMAC), formats Telegram alert, retries on ECONNREFUSED.",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "error-trigger-5",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "wf-name",
+              "name": "wf_name",
+              "value": "={{ $json.workflow?.name ?? 'unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "wf-id",
+              "name": "wf_id",
+              "value": "={{ $json.workflow?.id ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "exec-id",
+              "name": "execution_id",
+              "value": "={{ $json.executionId ?? ($json.execution?.id ?? 'unknown') }}",
+              "type": "string"
+            },
+            {
+              "id": "err-msg",
+              "name": "error_message",
+              "value": "={{ $json.error?.message ?? 'unknown error' }}",
+              "type": "string"
+            },
+            {
+              "id": "err-name",
+              "name": "error_name",
+              "value": "={{ $json.error?.name ?? 'Error' }}",
+              "type": "string"
+            },
+            {
+              "id": "ts",
+              "name": "ts",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "node-name",
+              "name": "node_name",
+              "value": "={{ $json.node?.name ?? ($json.node?.type ?? 'unknown') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-5",
+      "name": "Extract Error Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/integrations/n8n/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-N8N-Signature",
+              "value": "sha256={{ $binary.data ? Crypto.createHmac('sha256', $env.N8N_WEBHOOK_SECRET).update($binary.data).digest('hex') : '' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"workflow_name\": \"{{ $json.wf_name }}\",\n  \"workflow_id\": \"{{ $json.wf_id }}\",\n  \"execution_id\": \"{{ $json.execution_id }}\",\n  \"error\": {\n    \"name\": \"{{ $json.error_name }}\",\n    \"message\": \"{{ $json.error_message }}\"\n  },\n  \"node\": \"{{ $json.node_name }}\",\n  \"timestamp\": \"{{ $json.ts }}\"\n}",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "alert-backend-5",
+      "name": "Alert Backend (HMAC)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Telegram message with markdown\nconst wfName = $input.item.json.wf_name ?? 'unknown';\nconst execId = $input.item.json.execution_id ?? 'unknown';\nconst errMsg = $input.item.json.error_message ?? 'unknown error';\nconst errName = $input.item.json.error_name ?? 'Error';\nconst nodeName = $input.item.json.node_name ?? 'unknown';\nconst ts = $input.item.json.ts ?? new Date().toISOString();\n\nconst text = `🚨 *N8N ERRO*\n` +\n  `*WF:* ${wfName}\\n` +\n  `*Exec:* \\`${execId}\\`\\n` +\n  `*Node:* ${nodeName}\\n` +\n  `*Erro:* \\`${errName}\\` — ${errMsg}\\n` +\n  `*TS:* ${ts}`;\n\nreturn [{\n  json: {\n    chat_id: '-5006771024',\n    text: text,\n    parse_mode: 'Markdown',\n    disable_web_page_preview: true\n  }\n}];"
+      },
+      "id": "telegram-format-5",
+      "name": "Format Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "telegram-send-5",
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-conn-refused",
+              "leftValue": "={{ $json.error_message ?? '' }}",
+              "rightValue": "ECONNREFUSED",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-econn-5",
+      "name": "If ECONNREFUSED?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "id": "wait-5",
+      "name": "Wait 3s (backoff)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1560, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/integrations/n8n/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"workflow_name\": \"{{ $('Extract Error Info').item.json.wf_name }}\",\n  \"workflow_id\": \"{{ $('Extract Error Info').item.json.wf_id }}\",\n  \"execution_id\": \"{{ $('Extract Error Info').item.json.execution_id }}\",\n  \"error\": {\n    \"name\": \"{{ $('Extract Error Info').item.json.error_name }}\",\n    \"message\": \"{{ $('Extract Error Info').item.json.error_message }} (retry 1/3)\"\n  },\n  \"node\": \"{{ $('Extract Error Info').item.json.node_name }}\",\n  \"timestamp\": \"{{ $('Extract Error Info').item.json.ts }}\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "retry-1-5",
+      "name": "Retry Alert (1/3)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 180]
+    },
+    {
+      "parameters": {
+        "amount": 6,
+        "unit": "seconds"
+      },
+      "id": "wait-2-5",
+      "name": "Wait 6s (backoff 2)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2000, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/integrations/n8n/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"workflow_name\": \"{{ $('Extract Error Info').item.json.wf_name }}\",\n  \"workflow_id\": \"{{ $('Extract Error Info').item.json.wf_id }}\",\n  \"execution_id\": \"{{ $('Extract Error Info').item.json.execution_id }}\",\n  \"error\": {\n    \"name\": \"{{ $('Extract Error Info').item.json.error_name }}\",\n    \"message\": \"{{ $('Extract Error Info').item.json.error_message }} (retry 2/3)\"\n  },\n  \"node\": \"{{ $('Extract Error Info').item.json.node_name }}\",\n  \"timestamp\": \"{{ $('Extract Error Info').item.json.ts }}\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "retry-2-5",
+      "name": "Retry Alert (2/3)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2220, 180]
+    },
+    {
+      "parameters": {
+        "amount": 12,
+        "unit": "seconds"
+      },
+      "id": "wait-3-5",
+      "name": "Wait 12s (backoff 3)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2440, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/integrations/n8n/error",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"workflow_name\": \"{{ $('Extract Error Info').item.json.wf_name }}\",\n  \"workflow_id\": \"{{ $('Extract Error Info').item.json.wf_id }}\",\n  \"execution_id\": \"{{ $('Extract Error Info').item.json.execution_id }}\",\n  \"error\": {\n    \"name\": \"{{ $('Extract Error Info').item.json.error_name }}\",\n    \"message\": \"{{ $('Extract Error Info').item.json.error_message }} (retry 3/3 FINAL)\"\n  },\n  \"node\": \"{{ $('Extract Error Info').item.json.node_name }}\",\n  \"timestamp\": \"{{ $('Extract Error Info').item.json.ts }}\"\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "retry-3-5",
+      "name": "Retry Alert (3/3 FINAL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2660, 180]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [[{"node": "Extract Error Info", "type": "main", "index": 0}]]
+    },
+    "Extract Error Info": {
+      "main": [[{"node": "Alert Backend (HMAC)", "type": "main", "index": 0}]]
+    },
+    "Alert Backend (HMAC)": {
+      "main": [[{"node": "Format Telegram", "type": "main", "index": 0}]]
+    },
+    "Format Telegram": {
+      "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
+    },
+    "Send Telegram": {
+      "main": [[{"node": "If ECONNREFUSED?", "type": "main", "index": 0}]]
+    },
+    "If ECONNREFUSED?": {
+      "main": [
+        [{"node": "Wait 3s (backoff)", "type": "main", "index": 0}],
+        []
+      ]
+    },
+    "Wait 3s (backoff)": {
+      "main": [[{"node": "Retry Alert (1/3)", "type": "main", "index": 0}]]
+    },
+    "Retry Alert (1/3)": {
+      "main": [[{"node": "Wait 6s (backoff 2)", "type": "main", "index": 0}]]
+    },
+    "Wait 6s (backoff 2)": {
+      "main": [[{"node": "Retry Alert (2/3)", "type": "main", "index": 0}]]
+    },
+    "Retry Alert (2/3)": {
+      "main": [[{"node": "Wait 12s (backoff 3)", "type": "main", "index": 0}]]
+    },
+    "Wait 12s (backoff 3)": {
+      "main": [[{"node": "Retry Alert (3/3 FINAL)", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "errorWorkflow": "4IS5oiLyHWGhtb8g"
+  },
+  "staticData": null,
+  "tags": [
+    {"name": "cartorio"},
+    {"name": "monitor"},
+    {"name": "error-handler"},
+    {"name": "b6-fix"}
+  ],
+  "meta": {
+    "description": "B6 fix 2026-06-25: wires to /integrations/n8n/error endpoint with HMAC + Telegram group + 3x exp backoff retry on ECONNREFUSED. Replaces v4 which pointed to legacy /atendimento endpoint.",
+    "author": "cartorio-n8n worker",
+    "ticket": "B6"
+  }
+}

@@ -656,7 +656,7 @@ async def n8n_error_webhook(
                 canal="n8n",
             )
             audit_id = entry.id
-    except Exception as e:
+    except Exception:
         _n8n_error_log.exception(
             "n8n_error audit_log failed execution_id=%s", execution_id
         )

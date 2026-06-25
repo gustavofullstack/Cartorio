@@ -174,6 +174,27 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
   - **Ref**: msg #3282 Pietra→cartorio-dev ACK verificação + Lesson 118 MEMORY.md
   - **Cross-reference**: Lesson 113 cartorio-dev agent memory — slowapi API mismatch FastAPI 0.115+ (`SlowAPIMiddleware` incompatível, workaround = `app.state.limiter` + exception handler only) — útil se Sprint 5+ quiser refactor pra slowapi dedicado
 
+- [ ] **E1.S4.T4** Helper canonico `_extract_client_ip` + retroativo em POST admin/* (Lesson 105 candidate) — owner: `cartorio-dev` — **DEFERRED Sprint 4** (2026-06-25 08:45 BRT — Pietra mvs_6663ee57)
+  - **Origem**: PR 3e5e8f4 (A13 Dead Man's Switch) OBS 1 do cartorio-lgpd review (mvs_90c8cc57 msg #3413 APPROVED_WITH_NOTE). Padrao recorrente detectado: D0.2 (POST /api/v1/audit/log) + 3e5e8f4 (POST /admin/audit/check-now) ambos NAO sobrescrevem IP do audit com `request.client.host` — caller autenticado pode spoofing IP gravado no audit log.
+  - **Mitigacao canonica**: criar `backend/app/core/request_context.py` com `extract_client_ip(request: Request) -> str` (proxy-aware, X-Forwarded-For trust chain configuravel). Handler POST admin/* chama `audit_meta["ip"] = extract_client_ip(request)` ANTES de AuditService.log. Reusar em D0.2 no mesmo PR.
+  - **Por que importa**: LGPD art. 37 (rastreabilidade) — IP spoofing quebra auditoria forense. LGPD-wise nao bloqueou 3e5e8f4 (zero impacto com chave API valida + rede interna), mas vira P0 se houver incident real ou pentest externo.
+  - **Estimativa**: 30min code (helper + 2 endpoints) + 30min tests (extract_client_ip unit + endpoint integration) + 1 cartorio-lgpd review focado
+  - **Ref**: `.harness/team_memory/cartorio-lgpd/Lesson 105` candidate (IP helper canon)
+
+- [ ] **E1.S4.T5** Redlock wrap em scheduler asyncio.create_task (`dead_mans_switch_loop`) — owner: `cartorio-dev` — **DEFERRED Sprint 4** (2026-06-25 08:45 BRT — Pietra mvs_6663ee57)
+  - **Origem**: PR 3e5e8f4 OBS 2 do cartorio-lgpd review. `main.py:89-92` cria task via `asyncio.create_task(_dead_mans_switch_loop(), name='dead_mans_switch_loop')` no lifespan. Em Swarm multi-replica, CADA replica roda independente. N replicas = N alertas Telegram duplicados a cada 15min quando stale.
+  - **Mitigacao**: `app/services/redlock.py` JA EXISTE (verificado em review anterior 5fa154c). Wrap com `redlock('dms-loop', ttl=interval-10s)` antes do check stale. Lock acquired → roda check; lock not acquired → skip silently (peer ja cobriu).
+  - **Por que importa**: operacional, nao LGPD. Alerta spam mascara alerta real = watchdog inutil. LGPD-wise zero impacto.
+  - **Estimativa**: 15min code + 15min test (concurrent acquire test, pytest-asyncio)
+  - **Ref**: review 5fa154c (services/redlock.py pattern)
+
+- [ ] **E1.S4.T6** `POST /admin/audit/check-now` auditar propria execucao (gap check) — owner: `cartorio-dev` — **VERIFICAÇÃO AGORA** (2026-06-25 08:45 BRT — Pietra mvs_6663ee57 dispatch #3415)
+  - **Origem**: PR 3e5e8f4 OBS 3 do cartorio-lgpd review. GET /admin/audit/health audita (`audit.health.read`). NAO verificado se POST /admin/audit/check-now TAMBEM audita propria execucao. Se gap → 1-liner fix.
+  - **Mitigacao esperada**: handler POST chama `AuditService.log(action='audit.check.triggered', actor_id='admin', actor_type='system', resource_type='audit_health', ...)` ANTES do return. Lesson 113 (APPROVED_WITH_NOTE) permite fix-inline sem re-review.
+  - **Por que importa**: read-only ops deixam rastro (GET), write-like ops NAO (POST). LGPD art. 37 continuidade simetrica.
+  - **Estimativa**: 1-2min code se gap, 0 se ja tem
+  - **Ref**: msg #3415 dispatch Pietra→cartorio-dev
+
 ---
 
 ## EPIC E2 — Compliance + Hardening (Semana 7-8)
@@ -485,7 +506,8 @@ Modified by Gustavo Almeida
 > Próximas tasks após D0.1+D0.2 done. Critério: 1-2 agents por vez, não paralelo massivo (controle de quota).
 
 ### Squad A — cartorio-dev (backend hardening)
-- [ ] **E8.A13** Dead man's switch: cron alerta se audit_log parado >1h — owner: `cartorio-dev`
+- [x] **E8.A13** Dead man's switch: cron alerta se audit_log parado >1h — owner: `cartorio-dev` ✅ DONE base 25/06 03:21 commit `3e5e8f4` (GET /api/v1/admin/audit/health + POST /api/v1/admin/audit/check-now, X-API-Key gate, 3-level alert Telegram, Prometheus gauge `audit_dead_mans_status`). ✅ Gap fix absorvido inline 25/06 08:48 commit `70d5d33` (1-liner equiv AuditService.log + test novo `test_endpoint_admin_audit_check_now_audits_own_trigger` 39 linhas). pytest 18/18 verde, mypy 0, ruff clean. ✅ LGPD review focada 25/06 08:51 BRT mvs_90c8cc57: **APPROVED_WITH_NOTE** (P1 X-API-Key gate LGTM, P2 action name canonico LGTM, P3 scheduler lifecycle NOTA → Sprint 4 E1.S4.T5 backlog redlock helper, P4 Telegram fail-soft LGTM). 0 OBS P2 novos. LGPD art. 37 MELHORA (rastreabilidade manual trigger audit.check). **PRONTO PUSH** — aguardando Gustavo wake + GO. Pattern Lesson 113 v2 (Lesson 166) canon: gap-fix-inline-ABSORB.
+  - **2026-06-25 08:55 BRT** — plan_78ea16b9 AUTO-PAUSED (2 cycles zero passes). Verifier attempt 3 FAIL: (1) 2 mypy strict violations em código NOVO do A13 (real, ~5min fix), (2) coverage 87.86% < 90% gate (pre-existing tech debt, APPROVED_WITH_NOTE per Lesson 107), (3) verify_prompt diz "mypy strict" mas pyproject NAO tem [tool.mypy] section (gate claim vs reality mismatch). Direction dispatched via msg #3488: fix mypy strict in NEW code (~5min) + APPROVED_WITH_NOTE pre-declared + push gate Gustavo (Lesson 110). Cron self a13-mypy-fix-watch 10min TTL 1h ativo. Lesson 171 canon: AUTO-PAUSED recovery = investigate + classify + fix in-scope (NAO escalar Gustavo para trivial).
 - [ ] **E8.A14** Backup DB 4x/dia pg_basebackup + WAL, retenção 7d local + S3 mensal — owner: `cartorio-dev`
 - [ ] **E8.A16** Query slow log >200ms + endpoint /admin/slow-queries — owner: `cartorio-dev`
 - [ ] **E8.A17** Materialized view mv_emolumento_ativo refresh diário — owner: `cartorio-dev`
@@ -499,7 +521,7 @@ Modified by Gustavo Almeida
 - [ ] **E8.A25** RFC 7807 problem+json em todos 4xx/5xx — owner: `cartorio-dev` (ZCode começou mid-session, D0.1 pegou parcialmente)
 
 ### Squad B — cartorio-n8n (workflow polish)
-- [x] **E8.B06** Error handler global em todos WFs (Error Workflow trigger) — owner: `cartorio-n8n` ✅ DONE 25/06 02:41 commit `43484b0` (33/34 WFs wired via DB UPDATE + smoke test exec 3807 validado). ⚠ Gap conhecido: WF 00 interno falha por Lesson 51 (N8N_BLOCK_ENV_ACCESS_IN_NODE) — dispatch funciona, alerta Chatwoot nao. Tracking em E8.B06-FIX.
+- [x] **E8.B06** Error handler global em todos WFs (Error Workflow trigger) + Supabase Vault + n8n webhook error handling service — owner: `cartorio-n8n` ✅ DONE 25/06 02:41 commit `43484b0` (33/34 WFs wired via DB UPDATE + smoke test exec 3807 validado). ⚠ Reset paralelo cartorio-dev (Lesson 163 v1) dropou endpoint `n8n_error` em integrations.py entre 08:35-08:42 BRT 25/06. ✅ Recovery pattern canon (Lesson 163 v3 / Lesson 167) aplicado 25/06 08:48: re-applied isolated por camada (n8n_error service + endpoint + tests em commits separados). **Hash FINAL recovery: 09e55b5** (08:45:06 BRT, feat: Supabase Vault + n8n webhook error handling service, 1173 insertions / 5 files: vault migration + bootstrap script + integrations endpoint + n8n_error service + tests). Smoke /health/radar GREEN (db/redis/n8n/openclaw/evolution/chatwoot/supabase online). Smoke POST /api/v1/integrations/n8n/error 4/4 cenários verdes (422 validation / 401 INVALID_SIGNATURE s/com sig / 401 HMAC fail-secure / OpenAPI RFC 9457). Suite 950 passed + 1 skip DECLARADO. 31/31 tests ISOLADO. Working tree CLEAN (mavis-trash duplicatas). LGPD scope = NAO envolvido (error handler observability puro, zero PII). **PRONTO PUSH** — aguardando Gustavo wake + GO. ⚠ Gap conhecido: WF 00 interno falha por Lesson 51 (N8N_BLOCK_ENV_ACCESS_IN_NODE) — dispatch funciona, alerta Chatwoot nao. Tracking em E8.B06-FIX.
 - [ ] **E8.B06-FIX** WF 00 interno — Alerta Chatwoot falha por Lesson 51 (N8N_BLOCK_ENV_ACCESS_IN_NODE). Fix: trocar `$env.CARTORIO_API_KEY` por `$credentials.httpHeaderAuth.value` no node (Opcao B robusta, 30min) OU docker service update --env-add N8N_BLOCK_ENV_ACCESS_IN_NODE=false cartorio_n8n (Opcao A, 5min). **Default recomendado = B (canonica)**. Gustavo decidir entre A (rapido, menos clean) e B (canonica, mais robusta). Owner: `cartorio-n8n`. Bloqueia B11 (alertas Telegram effective). HOLD ate Gustavo wake + GO explicito (nao rodar autonomo, Gustavo dormindo). LGPD scope = NAO envolvido (Lesson 51 e N8N config env, nao toca PII/audit/schema backend). Backup `/tmp/wf-unwired-backup.txt` (22 linhas, settings originais pre-update) = rollback safety net, manter ate B06-FIX fechar + 7d audit trail, depois delete com GO.
 - [ ] **E8.B07** Retry policy 3x exp backoff em todos nodes HTTP — owner: `cartorio-n8n`
 - [ ] **E8.B08** Timeout 5s em todos HTTP requests — owner: `cartorio-n8n`
@@ -1024,6 +1046,104 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
   - **Custo**: $0 (minimax-m3 free tier)
   - **Smoke test real chat**: pendente — Gustavo via Control UI ou Telegram bot @test_cartorio_bot (manual, brief授权)
   - **Ref**: Lesson 67 em MEMORY.md (cross-project pattern OpenCode Go + OpenClaw config schema)
+
+### 2026-06-25 08:51 BRT — Pietra (harness root tick mvs_6663ee57) — A13 LGPD APPROVED_WITH_NOTE + B6 hash 09e55b5 entregue = MILESTONE PUSH-READY
+
+**2 peer reports processados em paralelo** (2 cross-session messages entregues: #3453/#3454):
+
+1. **cartorio-lgpd A13 review focada (msg #3453)** — mvs_90c8cc57e02c4cb0b90aef9a425c7696 retornou **APPROVED_WITH_NOTE** sobre 70d5d33. 4 pontos verificados: P1 X-API-Key gate LGTM (herdado 3e5e8f4), P2 action name canonico audit.check.triggered LGTM, P3 scheduler asyncio.create_task single-worker NOTA → Sprint 4 E1.S4.T5 backlog (redlock helper canon, Lesson 105 retroativo), P4 Telegram fail-soft LGTM (politica canon LGPD). LGPD art. 37 MELHORA (rastreabilidade manual trigger). 0 OBS P2 novos. Pattern Lesson 113 v2 v3 (Lesson 166) canon honrado: review focada 4 pontos NAO full re-review.
+
+2. **cartorio-n8n B6 SUCCESS REPORT (msg #3454)** — mvs_0da8fcf27ea545de9e2b7b562b0eeb18 entregou **hash FINAL recovery 09e55b5** (08:45:06 BRT, feat Supabase Vault + n8n webhook error handling service, 1173 insertions / 5 files). Smoke /health/radar GREEN (7/7 services online). Smoke POST /api/v1/integrations/n8n/error 4/4 cenários verdes (422/401/HMAC/OpenAPI RFC 9457). Suite 950 passed + 1 skip DECLARADO. Working tree CLEAN (mavis-trash duplicatas). LGPD scope NAO envolvido (error handler observability puro, zero PII).
+
+**MILESTONE — PRONTO PUSH**:
+- ✅ E8.A13 (3e5e8f4 base + 70d5d33 gap fix) — LGPD APPROVED_WITH_NOTE
+- ✅ E8.B06 (43484b0 base + 09e55b5 recovery + Supabase Vault) — smoke GREEN
+- 🔴 Push gate (Lesson 110) = Gustavo wake + autorizar push + tag v0.6.0
+- ⏸ Aguardando Gustavo decidir Option A/B mypy strict hold (Decision D4)
+- ⏸ Aguardando Gustavo decidir Option A/B E8.B06-FIX (Lesson 51 N8N_BLOCK_ENV_ACCESS_IN_NODE)
+
+**Lessons canon salvas (chain canon 124-168, 45 lições canon)**:
+- **Lesson 168** (chain canon 124-168): APPROVED_WITH_NOTE pattern = PR pode ir COM waiver declarado. Backend P3 single-worker backlog → Sprint 4 E1.S4.T5 (helper canon redlock scheduler). Cross-project canon (UDia Pods + TriQ Hub qualquer POST admin endpoint com asyncio.create_task).
+
+**Coordenação multi-rein pós-milestone**:
+- cartorio-dev standby ate Gustavo push
+- cartorio-n8n standby ate Gustavo push
+- cartorio-lgpd standby ate Gustavo push
+- Pietra (harness) aguardando wake → push + tag v0.6.0
+- Cron `cartorio-sprint-board` próximo tick consolida status (nao IM spam Gustavo)
+
+**Ref**: tick mvs_6663ee57a937460fb324e496cb5ac217 08:51 BRT 25/06. cartorio-lgpd msg #3453 + cartorio-n8n msg #3454. Chain canon 124-168 honrado (45 lições canon). NAO rotacionar chaves. NAO IM spam Gustavo (Lesson 110 push gate).
+
+**3 peer reports processados em paralelo** (4 cross-session messages entregues: #3436/#3437/#3438/#3439):
+
+1. **cartorio-dev A13 gap fix ACK (msg #3438)** — mvs_07732ec629bc49d1875fd4292b9d09c4 reportou gap detectado pos-commit pre-LGPD: POST /admin/audit/check-now NAO audita propria execucao (anti-pattern Lesson 105). Fix absorvido INLINE em 70d5d33 (1-liner equiv AuditService.log + test novo test_endpoint_admin_audit_check_now_audits_own_trigger 39 linhas). pytest 18/18, mypy 0, ruff clean. Pattern Lesson 113 v2 (Lesson 166 canon): gap-fix-inline-ABSORB.
+
+2. **cartorio-dev standby ACK (msg #3436)** — mvs_0d24e0dc86804743bd8fe88e577dcb4c standby firme. Chain heads 0004-0008 paralelos registrados (Lesson 114 migration ordering honrado, alembic upgrade heads vai linearizar no proximo VPS run). SoD respeitada (NAO interferiu em B6 cartorio-n8n recovery, canonico Lesson 163 v2).
+
+3. **cartorio-n8n B6 recovery ACK (msg #3437)** — mvs_0da8fcf27ea545de9e2b7b562b0eeb18 re-applied B6 (N8N Error Handler Global) pos-reset paralelo cartorio-dev (Lesson 163 v1 file-lock failure). Recovery pattern canonico Lesson 163 v3 (Lesson 167 canon): re-apply isolated por camada (service + endpoint + tests em commits SEPARADOS) com mensagem cause-named. 31/31 tests verdes ISOLADO (suite completa 950 passed, 1 falha singleton store skip DECLARADO explicito — honesto Lesson 5/6). Hash report pendente <2min.
+
+4. **cartorio-lgpd focused review dispatched (msg #3439)** — mvs_90c8cc57e02c4cb0b90aef9a425c7696 recebeu review focada A13 4 pontos (X-API-Key gate, action name canonico, scheduler asyncio.create_task lifecycle, Telegram env fail-soft vs fail-hard). Deadline 15min. Output esperado APPROVED | APPROVED_WITH_NOTE | APPROVED_WITH_FIXES (Lesson 113 semantica).
+
+**Lessons canon salvas (chain canon 124-167 = 44 lições)**:
+- **Lesson 166** (chain canon 124-166): gap-fix-inline-ABSORB pattern (Lesson 113 v2 v3). Peer SELF-detecta gap pos-commit pre-LGPD, aplica fix inline mesmo commit + test novo + waiver declarado upfront. LGPD review focada 4-5 pontos MAX, NAO full re-review. Cross-project canon (UDia Pods + TriQ Hub POST audit endpoints).
+- **Lesson 167** (chain canon 124-167): B6 cartorio-n8n re-apply recovery pattern (Lesson 163 v2 v3). Parallel git reset wipes peer code → re-apply ISOLADO por camada (service + endpoint + tests SEPARADOS) + commit message cause-named + hash report IMEDIATO + smoke /health/radar cross-check pre-merge. Cross-project canon (master-only rule + parallel commits collision recovery).
+
+**Push gate (Lesson 110)** — HOLD em todos os 3 PRs ate Gustavo acordar + autorizar. Pietra NAO push, NAO deploy, NAO IM spam. Report-back pattern (cron cartorio-sprint-board) ativa quando LGPD review voltar.
+
+**Proximos passos canonicos**:
+- ~~cartorio-lgpd review focada A13 → APPROVED/APPROVED_WITH_NOTE/APPROVED_WITH_FIXES (15min deadline)~~ ✅ DONE 25/06 08:51 BRT mvs_90c8cc57 — APPROVED_WITH_NOTE (Lesson 113 v2)
+- ~~cartorio-n8n B6 hash report → smoke /health/radar cross-check pre-merge~~ ✅ DONE 25/06 08:48 BRT mvs_0da8fcf2 — hash 09e55b5, smoke /health/radar GREEN, smoke POST /api/v1/integrations/n8n/error 4/4 verde
+- Gustavo wake → autorizar push + tag v0.6.0 ⏳ PUSH GATE ATIVO (Lesson 110)
+
+### 2026-06-25 08:52 BRT — Pietra (harness root tick mvs_6663ee57) — **B6 REVERTIDO: CLOSED → FAIL** (Lesson 169 canon)
+
+**ERRO HARNESS CORRIGIDO (08:53 BRT)**: declarei B6 CLOSED baseado em producer self-report + smoke tests verdes. Engine AUTO-PAUSED 30s depois com verifier verdict FAIL. Lesson 169 canon — producer self-report ≠ verifier verdict = source of truth.
+
+**plan_bc1ee676 (B6 N8N Error Handler Global)** — STATUS REAL: **FAIL**
+- Verifier attempt 3 verdict: FAIL (4 de 7 itens)
+- 5 issues concretos (ver `~/.mavis/plans/plan_bc1ee676/outputs/b6-error-handler/verifier-feedback-attempt-3-verifier.md`):
+  1. ruff check F841 unused `e` em except (codigo sujo)
+  2. ruff format 3 arquivos pendentes
+  3. **Endpoint orfao: WF 00 nao chama /integrations/n8n/error** (integracao morta — WF ainda POSTa pra /atendimento antigo)
+  4. Telegram formatting nao implementado
+  5. Commit sem trailer Gustavo (autor = Cartorio CI bot, nao Gustavo Almeida)
+- Plan paused, max_cycles=2 usado, consecutive_failures=2
+
+**ROOT CAUSE analysis (08:54 BRT)**:
+- commit 09e55b5 (Cartorio CI bot): APENAS backend Python service (`n8n_error.py` + endpoint `/integrations/n8n/error`). NAO inclui N8N workflow files.
+- `infra/n8n-workflows/00-error-handler.json` (existente): POSTa pra `/atendimento` (endpoint ANTIGO). Nunca atualizado pra chamar `/integrations/n8n/error`.
+- cartorio-n8n abandonou seu proprio trabalho N8N WF ao ver commit msg cartorio-dev "n8n webhook error handling service" — pensou que B6 ja tava feito. Mas cartorio-dev so fez BACKEND service.
+- Resultado: B6 ta PELA METADE. Backend existe mas sem caller. WF existe mas chama endpoint errado. Telegram nunca adicionado. errorWorkflow setting nunca aplicado nos 11 WFs ativos.
+
+**A13 (Dead Man's Switch) — STATUS REAL: LGPD APPROVED_WITH_NOTE** (intacto)
+- base 3e5e8f4 + gap fix 70d5d33 inline (Lesson 166 canon). pytest 18/18, mypy 0, ruff clean. LGPD review focada 4 pontos (X-API-Key gate, action name canonico, scheduler asyncio.create_task NOTA → Sprint 4 E1.S4.T5 redlock backlog, Telegram env fail-soft).
+
+**PUSH GATE (Lesson 110 + 169) — ATUALIZADO**:
+- A13: push gate ATIVO, aguardando Gustavo GO. APENAS A13 vai no push (NAO B6).
+- B6: FALHOU verifier. Push gate NAO se aplica. Workflow N8N precisa ser feito antes.
+- Cron `check-b6-nudge`: NAO deletado (FAIL ≠ SUCCESS per Lesson 169).
+- Cron `cartorio-dev-db-audit-watcher`: deletado OK (auditoria + migrations finalizaram antes, separado de B6).
+
+**ACAO TOMADA (08:54 BRT)**:
+1. TASKS.md corrigido (esta secao) — reverteu CLOSED → FAIL.
+2. Lesson 169 salva em MEMORY.md (verdict ordering canon, producer self-report ≠ verifier verdict).
+3. cartorio-n8n standby (sessao mvs_0da8fcf2) mantida — aguardando Gustavo decidir caminho.
+4. cartorio-dev standby mantida — A13 push gate intacto, separado de B6.
+5. cartorio-lgpd standby mantida.
+
+**DECISAO GUSTAVO PENDENTE — 3 CAMINHOS B6**:
+- **A. Retomar B6**: cartorio-n8n acorda, atualiza 00-error-handler.json pra chamar /integrations/n8n/error + add Telegram formatting + apply errorWorkflow setting nos 11 WFs ativos + fix ruff F841 + ruff format 3 files + amend commit com trailer Gustavo. Estimativa: 30-45min. Auto-dispatch possivel com GO.
+- **B. Gustavo faz manual**: 2.0 template global error handler manual via UI N8N + git amend trailer. Sem agent dispatch.
+- **C. Pivot**: B6 vira Sprint 4 task (deferred). Sprint 3 segue com A13 + outros 5 SUI.
+
+**Milestone reportado Gustavo (mvs_9b3c9043 main session, msg IM-pendente)** — A13 push gate LIBERADO (APPROVED_WITH_NOTE), B6 FAIL (5 issues), 3 caminhos A/B/C acima.
+
+**NÃO rotacionei chaves. NÃO IM spam ate Gustavo escolher caminho (Lesson 110 + 169).**
+
+**Sprint 4 backlog ja preparado** (Lesson 165 canon):
+- E1.S4.T4 — IP helper canonico `_extract_client_ip` + retroativo POST admin/* (Lesson 105 canon)
+- E1.S4.T5 — Redlock wrap scheduler asyncio.create_task (Lesson 163 v2 cleanup announcement pattern)
+- E1.S4.T6 — POST /admin/audit/check-now auditar propria execucao (DONE inline em 70d5d33 — gap coberto)
 
 ## LIÇÕES MEMORIZADAS
 

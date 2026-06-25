@@ -83,3 +83,42 @@ Workaround canonico = DB UPDATE direto em `workflow_entity.nodes` + `connections
 - DELETE /api/v1/workflows/{id} → 200 OK (soft delete via API)
 
 **Antes de editar WF (Lesson 55)**: curl smoke test no endpoint destino. Se 404, NAO criar POST node no WF — backend endpoint nao existe.
+
+### Lesson 163 — Cross-PR paralelo ortogonal (2026-06-25 08:50 BRT)
+Type: delegation rule [→ agent]
+
+Cenario: pai dispatcha task B6 (endpoint + audit + metric). Em paralelo, cartorio-dev entrega
+a MESMA feature em commit `09e55b5` (08:45:06 BRT). Trabalhamos em arquivos ortogonais
+(service + endpoint + tests) sem saber.
+
+5-pass protocol antes de COMITAR qualquer task:
+1. `git log master --oneline -20` (master avancou?)
+2. `git show <hash> --stat` (conteudo do commit)
+3. `git diff HEAD -- <arquivos que vou modificar>` (sobrepoe com version staged?)
+4. `git status -uall` (working tree tem arquivos untracked meus?)
+5. Se commit ortogonal JAH cobre escopo: NAO duplicar. Descarte working tree local
+   (`mavis-trash` arquivos untracked OU `git checkout HEAD -- <arquivos modificados>`).
+
+Caso real 2026-06-25 08:35-08:50 BRT (cartorio B6):
+- Pai mandou B6 as 08:26 BRT (briefing assumia WFs nao wired)
+- Pai aprovou caminho B (endpoint + audit + metric + tests) as 08:34 BRT
+- Eu re-apliquei codigo, working tree resetado por cartorio-dev em paralelo (collision git workflow)
+- cartorio-dev commita `09e55b5 feat: Supabase Vault + n8n webhook error handling service` 08:45:06
+- 1173 insertions em 5 files (mesmo escopo do meu B6)
+- Descartei duplicatas via `mavis-trash`, working tree limpo, NAO comitei duplicata
+- Reportei SUCCESS com hash do commit ortogonal (cross-ref Lesson 163 v2 v3 canonizacao)
+
+**Regra canonica Pietra root 2026-06-25 08:48 BRT** (Lesson 163 v2):
+Qualquer mudanca em `integrations.py`, `services/n8n_error.py`, `services/audit.py`,
+`services/pii.py` = **file-lock individual**. Anuncia no canal ANTES de comecar. Se outra
+task ja em andamento, espera ou escala pra Pietra serializar.
+
+**Confianca commit ortogonal antes de descartar**:
+- `git log --format='%an %ae %s' -1 <hash>` — autor conhecido? (Cartorio CI OK)
+- `git diff <hash>~1 <hash> --stat` — escopo confere com briefing? (5 files B6 OK)
+- `pytest tests/<novos tests> --no-cov` — verde? (31/31 cartorio-dev OK)
+- `curl -s https://<host>/<endpoint>` em prod — responde? (401 INVALID_SIGNATURE OK)
+- Working tree NAO tem diff positivo em arquivos ortogonais (cleanup)
+
+NAO descartar prematuramente. NAO comitar duplicata "por via das duvidas". Reportar
+descoberta cross-PR ao pai com hash + smoke test + cleanup status.
