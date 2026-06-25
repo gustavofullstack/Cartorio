@@ -348,3 +348,76 @@ POSTGRES_PORT=8000
 **Última atualização**: 2026-06-26 17:55 BRT
 **Próxima revisão**: a cada novo incidente
 **Status**: 🔴 INC-005 OPEN (HOLD Gustavo/CI)
+
+### INC-006: OpenClaw gateway crashando (exit 78) após tentativa de adicionar 5 provedores free (2026-06-25) — ✅ RESOLVIDO
+
+**Data**: 2026-06-25 21:36 → 21:38 BRT (~3min)
+**Severidade**: P0
+**Duração**: ~3min (restart loop contínuo)
+**Detectado por**: ZCode (cartorio-zcode agent) durante auditoria pós-BRAIN SYNC
+**Resolvido por**: ZCode (cartorio-zcode agent) — docker service update --force
+
+### Timeline
+- 21:36:12 — Gateway FAILED to start: `Invalid config at openclaw.json. models: Invalid input`
+- 21:36:13 — Stability bundle written: `openclaw-stability-2026-06-25T21-36-13-316Z-6-gateway.startup_failed.json`
+- 21:36:13 — Container exited (78) = modelo não encontrado
+- 21:37:02 — Novo startup bloqueado: `gateway.mode=local` "missing" (mas existia no config)
+- 21:37:50 — Mesmo erro persistia — múltiplos containers em crash loop
+- 21:38:00 — Investigação revelou: agent paralelo (Cartorio CI) já tinha adicionado 5 provedores em `/etc/easypanel/projects/cartorio/openclaw-gateway/volumes/config/openclaw.json` corretamente
+- 21:38:28 — `docker service update --force cartorio_openclaw-gateway`
+- 21:38:30 — **Gateway UP!** `agent model: openai/minimax-m3 (thinking=adaptive)`
+- 21:38:48 — Hot reload aplicado: `models.providers.opencode_free_1/2/3, mistral_free, openai` — todos os 5 provedores carregados
+
+### Root Cause
+1. **Race condition multi-agent**: cartorio-zcode e Cartorio CI agents trabalharam em paralelo nos mesmos arquivos de config do OpenClaw
+2. **Config intermediário inválido**: durante o intervalo, o container tentou carregar um snapshot parcial que continha `gateway.mode` flag ausente em uma view cached
+3. **Exit 78 do OpenClaw**: modelo primário não encontrado após schema validation falhar no providers block intermediário
+4. **Não era problema no schema real**: o config final (`openclaw.json`) está correto com `gateway.mode: "local"` e todos os 5 provedores
+
+### Impact
+- **OpenClaw DOWN por ~3min** durante crash loop (containers exited imediatamente)
+- **Nenhuma perda de dados** (config preservada no host, só container reiniciou)
+- **WhatsApp gateway funcionando** (Evolution API independente, não afetado)
+- **API funcionando** (FastAPI não depende do OpenClaw)
+
+### Resolution
+- `docker service update --force cartorio_openclaw-gateway` no host via Tailscale SSH
+- Container subiu em ~30s com config hot-reloaded
+- Logs confirmam: `agent model: openai/minimax-m3 (thinking=adaptive, fast=off)`
+- Todos os 5 provedores ativos: `openai + opencode_go + opencode_free_1/2/3 + mistral_free`
+
+### Lições Aprendidas
+- **L184**: Multi-agent em paralelo pode causar crash loop se escreverem no mesmo config simultaneamente. Adicionar `flock` ou sequencing via mutex file
+- **L185**: OpenClaw "models: Invalid input" error geralmente significa config intermediário foi escrito mas ainda não finalizado. Solução: `docker service update --force` recarrega com config final válido
+- **L186**: Exit 78 no OpenClaw = modelo primário não está em `models.providers.*.models[].id`. Verificar que `provider + model` no agent.json existem no openclaw.json
+- **L187**: Gateway hot-reload funciona — não precisa restart manual após mudanças no config se a estrutura JSON é válida
+
+### Action Items (futuro)
+- [ ] AI-1: cartorio-zcode — criar `/usr/local/bin/openclaw-safe-edit.sh` que usa `flock` para serializar edições concorrentes em `openclaw.json`
+- [ ] AI-2: cartorio-zcode — adicionar health check pós-edit (`curl /health && sleep 5 && docker service ps cartorio_openclaw-gateway`)
+- [ ] AI-3: Gustavo — escanear QR WhatsApp Business (já tinha instância `cartorio-2notas` ready, mas QR pendente)
+- [ ] AI-4: cartorio-zcode — adicionar `WatchdogConfig` no Traefik para OpenClaw (auto-restart se cair novamente)
+- [ ] AI-5: cartorio-zcode — documentar no OPERATIONS.md como adicionar novo provider (validar schema antes de salvar)
+
+### Estado Pós-Fix (validado 2026-06-25 21:38 BRT)
+```
+✅ OpenClaw HEALTHY (1/1 replicas)
+✅ Agent model: openai/minimax-m3 (1M context, thinking adaptive)
+✅ Hot reload aplicado: 5 provedores carregados
+✅ /health: {"ok":true,"status":"live"}
+✅ Control UI disponível em https://agent.2notasudi.com.br/
+✅ Multi-provider FREE chain ativo:
+   - openai (primary, minimax-m3, 1M ctx)
+   - opencode_go (secondary, deepseek-v4-flash, 1M ctx)
+   - opencode_free_1 (free, nemotron-3-ultra-free, 1M ctx)
+   - opencode_free_2 (free, nemotron-3-ultra-free, 1M ctx)
+   - opencode_free_3 (free, nemotron-3-ultra-free, 1M ctx)
+   - mistral_free (free, mistral-large-latest, 256K ctx)
+```
+
+---
+
+**Mantido por**: ZCode/Mavis (orquestrador)
+**Última atualização**: 2026-06-26 21:38 BRT
+**Próxima revisão**: a cada novo incidente
+**Status**: 🟢 INC-006 RESOLVED (E07 + E08 resolvidos ao mesmo tempo — 5 provedores free chain ativo)
