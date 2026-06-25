@@ -1,7 +1,6 @@
 """Testes do service lgpd_anonimizacao (D13 SQUAD D)."""
 from __future__ import annotations
 
-import pytest
 
 from app.services.lgpd_anonimizacao import (
     anonymize_cliente_row,
