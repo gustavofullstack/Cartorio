@@ -95,6 +95,7 @@ async def listar_tabela_emolumento_v2(
     if after:
         tipo_after = decode_cursor_safe(after, "tipo_after")
         if tipo_after is not None:
+            tipo_after = str(tipo_after)
             items = [(k, v) for k, v in items if k > tipo_after]
 
     # Pega first+1 para detectar next page
