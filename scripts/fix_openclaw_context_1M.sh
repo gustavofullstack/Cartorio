@@ -28,25 +28,25 @@ echo "FIX OpenClaw Context 131k → 1M"
 echo "=========================================="
 echo ""
 
-# 1. SSH connectivity check
+# 1. SSH connectivity check (via alias 'cartorio' - NUNCA IP direto)
 echo "[1/6] Verificando conectividade SSH na VPS..."
-if ! ssh -o ConnectTimeout=5 root@100.99.172.84 "echo OK" >/dev/null 2>&1; then
-    echo "❌ Falha ao conectar via Tailscale (100.99.172.84)"
+if ! ssh -o ConnectTimeout=5 cartorio "echo OK" >/dev/null 2>&1; then
+    echo "❌ Falha ao conectar via alias SSH 'cartorio' (Tailscale 100.99.172.84)"
     echo "   Gustavo precisa executar este script manualmente."
     exit 1
 fi
 
 # 2. Backup dos arquivos originais
 echo "[2/6] Criando backup em ${BACKUP_DIR}..."
-ssh root@100.99.172.84 "mkdir -p ${BACKUP_DIR} && cp ${MODELS_JSON} ${BACKUP_DIR}/models.json.bak && cp ${AGENT_JSON} ${BACKUP_DIR}/agent.json.bak"
+ssh cartorio "mkdir -p ${BACKUP_DIR} && cp ${MODELS_JSON} ${BACKUP_DIR}/models.json.bak && cp ${AGENT_JSON} ${BACKUP_DIR}/agent.json.bak"
 
 # 3. Verificar estado atual
 echo "[3/6] Estado ANTES do fix:"
-ssh root@100.99.172.84 "cat ${MODELS_JSON} | python3 -c 'import json, sys; d=json.load(sys.stdin); print(\"  model:\", d.get(\"model\")); print(\"  max_tokens:\", d.get(\"max_tokens\", d.get(\"max_completion_tokens\", \"NOT SET\")))'"
+ssh cartorio "cat ${MODELS_JSON} | python3 -c 'import json, sys; d=json.load(sys.stdin); print(\"  model:\", d.get(\"model\")); print(\"  max_tokens:\", d.get(\"max_tokens\", d.get(\"max_completion_tokens\", \"NOT SET\")))'"
 
 # 4. Aplicar fix em models.json (max_tokens = 1000000)
 echo "[4/6] Aplicando fix em models.json (max_tokens=1000000)..."
-ssh root@100.99.172.84 "python3 << 'PYEOF'
+ssh cartorio "python3 << 'PYEOF'
 import json
 from pathlib import Path
 
@@ -74,9 +74,9 @@ models_path.write_text(json.dumps(data, indent=2))
 print('  models.json updated successfully')
 PYEOF"
 
-# 5. Atualizar agent.json (nova chave OpenCode-Go)
-echo "[5/6] Aplicando nova chave OpenCode-Go em agent.json..."
-ssh root@100.99.172.84 "python3 << 'PYEOF'
+# 5. Atualizar agent.json (nova chave OpenCode-Go + modelo minimax-m3)
+echo "[5/6] Aplicando nova chave OpenCode-Go + modelo minimax-m3 em agent.json..."
+ssh cartorio "python3 << 'PYEOF'
 import json
 from pathlib import Path
 
@@ -104,14 +104,17 @@ if 'thinking' in data:
     data['thinking']['mode'] = 'adaptive'
     print('  Thinking: adaptive mode enabled')
 
-# Update model principal
+# Update model principal (MINIMAX-M3 conforme Gustavo 2026-06-24)
 if 'model' in data:
-    data['model'] = 'deepseek-v4-flash'
+    data['model'] = 'minimax-m3'
     print(f'  Model: {data[\"model\"]}')
 
 # Update max_tokens se existir no root
 if 'max_tokens' in data:
     data['max_tokens'] = 1000000
+# Update context_window se existir (1M tokens)
+if 'context_window' in data:
+    data['context_window'] = 1000000
 
 agent_path.write_text(json.dumps(data, indent=2))
 print('  agent.json updated successfully')
@@ -119,13 +122,13 @@ PYEOF"
 
 # 6. Restart do container
 echo "[6/6] Restart do container cartorio_openclaw-gateway..."
-ssh root@100.99.172.84 "docker service update --force cartorio_openclaw-gateway"
+ssh cartorio "docker service update --force cartorio_openclaw-gateway"
 
 # Aguardar container estar UP
 sleep 10
 echo ""
 echo "Verificando saúde pós-restart:"
-ssh root@100.99.172.84 "docker service ps cartorio_openclaw-gateway | head -3"
+ssh cartorio "docker service ps cartorio_openclaw-gateway | head -3"
 
 # 7. Validação final via API
 echo ""
@@ -140,10 +143,10 @@ if [ "$HEALTH" = "200" ]; then
     echo ""
     echo "Próximos passos:"
     echo "  1. Testar contexto real enviando mensagem longa"
-    echo "  2. Verificar logs: docker service logs cartorio_openclaw-gateway"
+    echo "  2. Verificar logs: ssh cartorio docker service logs cartorio_openclaw-gateway"
     echo "  3. Atualizar .harness/memory/MEMORY.md com L155 fix"
 else
     echo "  ❌ OpenClaw health: $HEALTH (esperado 200)"
-    echo "  Investigar: docker service logs cartorio_openclaw-gateway"
+    echo "  Investigar: ssh cartorio docker service logs cartorio_openclaw-gateway"
     exit 1
 fi

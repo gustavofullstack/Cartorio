@@ -13,31 +13,46 @@ Política e procedimentos de gestão de credenciais, secrets e API keys do proje
 
 ## 📋 Inventário de Credenciais
 
-### Por plataforma
+### Por plataforma (estado REAL 2026-06-26)
 
 | Plataforma | Tipo | Local de armazenamento | Variáveis |
 |------------|------|------------------------|------------|
 | **Minimax.io Coding Plan** | API Key | `.env` + MacBook Pro global | `MINIMAX_API_KEY` |
 | **Telegram Bot** | Bot Token | `.env` + MacBook Pro | `TELEGRAM_BOT_TOKEN` |
-| **Jules Agent** | API Key | `.env` + MacBook Pro | `JULES_API_KEY` |
-| **Render** | API Key | `.env` + MacBook Pro | `RENDER_API_KEY` |
-| **Linear** | API Key | `.env` + MacBook Pro | `LINEAR_API_KEY` |
+| **Jules Agent** | API Key | `.env` + MacBook Pro | `JULES_API_KEY` + `JULES_URL` |
+| **Render** | API Key | `.env` + MacBook Pro | `RENDER_API_KEY` + `RENDER_API_URL` |
+| **Linear** | API Key | `.env` + MacBook Pro | `LINEAR_API_KEY` + `LINEAR_API_URL` |
 | **OpenCode-Go (OpenClaw)** | API Key | `agent.json` na VPS + `.env` | `OPENCODE_GO_API_KEY` |
+| **OpenClaw Gateway** | API Key | `.env` (container openclaw) | `OPENCLAW_API_KEY` |
+| **MCP Server** | API Key | `.env` (api) | `MCP_API_KEY` |
+| **JWT v2 (HS256)** | Secret | `.env` (api) | `JWT_SECRET` |
 | **Postgres Cartório** | Password | `.env` + Vault Supabase | `DATABASE_URL` |
-| **Redis** | Password | `.env` + MacBook Pro | `REDIS_PASSWORD` |
+| **Redis** | Password | `.env` + MacBook Pro | `REDIS_PASSWORD` (`@Techno832466`) |
+| **Auditoria HMAC** | Chave | `.env` (api) | `AUDIT_HMAC_KEY` |
 
 ### Por serviço (VPS)
 
 ```bash
 /etc/easypanel/projects/cartorio/
-├── api/code/.env              → MINIMAX, DATABASE_URL, REDIS, JWT, AUDIT
-├── n8n/.env                    → DB connection, encryption key
-├── evolution-api/.env          → AUTHENTICATION_API_KEY, DB
+├── api/code/.env              → MINIMAX, DATABASE_URL, REDIS, JWT_SECRET, AUDIT, MCP, EASYPANEL
+├── n8n/.env                    → DB connection, encryption key, N8N_API_KEY
+├── evolution-api/.env          → AUTHENTICATION_API_KEY (429683C4...), DB
 ├── chatwoot/.env               → SECRET_KEY_BASE, DB
-├── supabase/.env               → POSTGRES_PASSWORD, JWT_SECRET, etc
-├── openclaw-gateway/.env       → OPENCODE_GO_API_KEY, model config
-├── redis/.env                  → REDIS_PASSWORD
+├── supabase/.env               → POSTGRES_PASSWORD, JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY
+├── openclaw-gateway/.env       → OPENCLAW_API_KEY (fz1qzo2xk...), modelo config
+├── redis/.env                  → REDIS_PASSWORD (@Techno832466)
 ```
+
+### Detalhes técnicos importantes (junho/2026)
+
+- **Modelo OpenCode-Go**: `minimax-m3` (1M context, $0 cost) — **substituiu** `deepseek-v4-flash` em 2026-06-24
+- **OpenClaw context**: 1.048.576 tokens (1M) — **fix já aplicado** por Gustavo 2026-06-24 14:58 BRT
+- **Thinking mode**: `adaptive` (não `enabled` simples)
+- **LiteLLM**: **REMOVIDO** 2026-06 (hackeado) — placeholder mantido para referência
+- **JWT_SECRET**: 64-char hex (HS256) para API v2 — **NÃO rotacionado**
+- **TELEMETRY_OPENCODE_DAILY_LIMIT_USD=5.0**: limite diário OpenCode-Go
+- **EASYPANEL_API_KEY**: para gerenciar containers
+- **SUPABASE_ANON_KEY + SERVICE_ROLE_KEY**: defaults da imagem Docker (ATENÇÃO: SUI substituir antes white-label)
 
 ---
 
