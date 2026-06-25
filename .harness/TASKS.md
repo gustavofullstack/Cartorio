@@ -511,7 +511,7 @@ Modified by Gustavo Almeida
 - [x] **E8.A21** Cache Redis 24h emolumento com invalidation pub/sub — owner: `cartorio-dev` ✅ **DONE** — `backend/app/services/emolumento_cache.py` (Redis SET EX 86400s, scan_iter invalidation por tipo ou full)
 - [x] **E8.A22** Cache warming cron 06:00 antes expediente — owner: `cartorio-dev` ✅ **DONE** — `backend/app/services/cache_warming.py` (8 tipos × 4 folhas, stats cached/errors/duration_ms)
 - [x] **E8.A23** OpenAPI spec validada openapi-spec-validator no CI — owner: `cartorio-dev` ✅ **DONE** — `backend/app/middleware/openapi_validator.py` + `backend/tests/test_openapi_validator.py`
-- [ ] **E8.A24** Versionamento /api/v1 + /api/v2 alpha sunset 2027 — owner: `cartorio-dev` (v2 esboço em `backend/app/api/v2/`)
+- [x] **E8.A24** Versionamento /api/v1 + /api/v2 alpha sunset 2027 — owner: `cartorio-dev` ✅ **DONE** — `app/api/v2/` (router + info + clientes + protocolos + emolumento), registrado em `main.py:562`
 - [x] **E8.A25** RFC 7807 problem+json em todos 4xx/5xx — owner: `cartorio-dev` ✅ **DONE** — `backend/app/middleware/problem_details.py` (181 linhas, installado em `main.py:276`, 11 status codes mapeados, tests em `test_problem_details.py`)
 
 ### Squad B — cartorio-n8n (workflow polish)
