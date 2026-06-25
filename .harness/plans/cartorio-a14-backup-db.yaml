@@ -1,0 +1,84 @@
+version: 1
+plan:
+  name: cartorio-a14-backup-db
+  max_concurrency: 1
+  max_consecutive_failures: 2
+  max_cycles: 2
+  auto_accept: true
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: a14-verify-and-close
+    title: A14 Backup DB 4x/dia — verify VPS install + finalize S3 placeholder
+    prompt: >
+      TASK A14 do Squad A (API/DB Hardening) — Cartório 2notas.
+
+      CONTEXTO: A14 já tem 3 commits locais (`23c5014`, `5502bc2`,
+      `9cd2ca4`). Trabalho principal FEITO: script `pg_basebackup_4x.sh`,
+      endpoint `/api/v1/health/backup-v2`, README LGPD.
+
+      O QUE FALTA VERIFICAR/FECHAR (gate para CLOSE):
+
+      1. **VERIFICAR install_pg_backup_cron.sh no VPS**:
+         - SSH root@100.99.172.84 (Tailscale)
+         - Confirmar `/etc/cron.d/cartorio-pgbase` existe com entry 4x/dia
+         - Confirmar `/usr/local/bin/pg_basebackup_4x.sh` presente
+         - Testar dry-run (idempotência: rodar 2x, segunda deve skip)
+         - Se NAO instalado: instalar via scp + bash, documentar output
+
+      2. **DOCUMENTAR S3 mensal como EXPLICIT PLACEHOLDER**:
+         - Adicionar banner no script: "S3 mensal = PENDENTE Gustavo
+           creds (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET)"
+         - Adicionar em `backend/.env.example` placeholder comentado
+         - Garantir que log "skipped" sai claro quando S3 desabilitado
+
+      3. **TESTES integração**:
+         - Rodar `cd backend && uv run pytest tests/test_backup_v2.py
+           tests/test_health_backup.py -v`
+         - Confirmar coverage >= 90% no módulo `services/backup_v2.py`
+         - Adicionar 1 teste: backup recente (< 26h) = ok=true
+
+      4. **MÉTRICA Prometheus** (se ainda não tem):
+         - `backup_last_success_timestamp_seconds` gauge
+         - Atualizar no `/api/v1/health/backup-v2`
+
+      5. **MEMÓRIA**:
+         - Adicionar em `.harness/reins/cartorio-dev/memory/A14-backup-db.md`:
+           status VPS install (data/hora), output do install, hash dos
+           3 commits existentes + este novo (se houver)
+
+      REGRAS DURAS:
+      - **NUNCA rotacionar chaves** (regra Gustavo)
+      - **NUNCA push sem Gustavo GO** (Lesson 110) — commit local OK
+      - Conventional Commits (feat/fix/test/docs/chore) terminando
+        com "Modified by Gustavo Almeida"
+      - ruff check + ruff format clean
+      - mypy strict 0 errors no código NOVO
+      - pytest --cov=app coverage >= 90%
+
+      WORKFLOW: analisar → testar → corrigir → melhorar → otimizar →
+      documentar → comentar → salvar memória.
+
+      REPORTE ao root session mvs_6663ee57a937460fb324e496cb5ac217 via
+      `mavis communication send --from <sua-session> --to
+      mvs_6663ee57a937460fb324e496cb5ac217 --command prompt` ao terminar.
+      Reporte com 5 linhas: files_changed, tests_added, coverage, commit_hash,
+      status (SUCCESS|FAIL).
+
+      Push gate: NAO push. Apenas commit local.
+    verify_prompt: >
+      Verifique o trabalho A14: 1. install_pg_backup_cron.sh foi
+      executado no VPS (cron file + script presente)? 2. S3 mensal está
+      documentado como PLACEHOLDER (banner + .env.example)? 3. pytest
+      tests/test_backup_v2.py + test_health_backup.py passa 100%? 4.
+      coverage >= 90% em services/backup_v2.py? 5. Métrica Prometheus
+      adicionada (se aplicável)? 6. Memória A14-backup-db.md criada?
+      7. Conventional Commits + trailer "Modified by Gustavo Almeida"?
+      APROVADO = todos SIM. Senão, liste o que falta especificamente.
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier
