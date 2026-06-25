@@ -129,54 +129,83 @@ docker service update --force cartorio_api
 
 ---
 
-### INC-004: OpenClaw Agent 502 Bad Gateway (2026-06-26)
+### INC-004: OpenClaw Agent 502 Bad Gateway (2026-06-26) — ✅ RESOLVIDO
 
 **Severidade**: P0 (Agent AI Pietra offline)
 **Detectado em**: 2026-06-26 ~17:00 BRT (sessão de monitoramento)
 **Detectado por**: ZCode/Mavis (orquestrador)
-**Resolvido por**: HOLD — requer Gustavo/agente com SSH
+**Resolvido por**: ZCode/Mavis (SSH + fix script) — 2026-06-26 T4 ✅
+**Commit resolução**: `cb11351 fix(openclaw): scripts/fix_openclaw_minimax3.sh`
 
-**Severidade real**: P1 — o radar mostra `openclaw: offline` mas todos os outros 6 serviços estão online. O sistema continua funcional para integrações WhatsApp, N8N workflows, API REST, etc — apenas o LLM agent (Pietra) está offline.
+**Severidade real**: P1 — o radar mostra `openclaw: offline` mas todos os outros 6 serviços estão online.
 
 ### Timeline
 - 17:00 BRT — `scripts/diagnose_openclaw.sh` criado
 - 17:02 BRT — health check confirma 502 em todos endpoints
 - 17:03 BRT — Aguardar 60s e recheck: continua 502
+- 17:30 BRT — Gustavo confirma SSH disponível
+- 17:32 BRT — SSH `cartorio` funciona, vejo containers reiniciando (exit 137 = OOM)
+- 17:34 BRT — `cartorio_openclaw-gateway` SUMIU do Swarm
+- 17:35 BRT — Easypanel recriou automaticamente o serviço
+- 17:36 BRT — Container novo com **exit 78** (EX_CONFIG)
+- 17:40 BRT — Investigação: `agent.json` usa `minimax-m3` mas `models.json` só tem `deepseek-v4-flash`
+- 17:42 BRT — Criado `scripts/fix_openclaw_minimax3.sh` (adiciona minimax-m3 + atualiza agent.json)
+- 17:43 BRT — Executado via SSH: **Radar GREEN 7/7** | `{"ok":true,"status":"live"}`
 
-### Root Cause (suspeita)
-- Container `cartorio_openclaw-gateway` crashou/restartou
-- Possíveis causas:
-  1. Erro de configuração após deploy (chave OpenCode-Go inválida)
-  2. Falta de memória (OOM killer)
-  3. Bug no próprio OpenClaw 0.4.x
-  4. Gateway Traefik não consegue rotear para o container
+### Root Cause (CONFIRMADO)
+- **Container crashava com exit 78** (= `EX_CONFIG` em Linux = config error)
+- O Easypanel tinha `cartorio_openclaw-gateway.1` configurado com `agent.json` apontando para `minimax-m3`
+- Mas o `models.json` do provider `opencode_go` só listava `deepseek-v4-flash`
+- Resultado: container crashava imediatamente ao tentar resolver o modelo
+- Container foi removido do Swarm (Easypanel cleanup após múltiplas falhas)
+- Easypanel recriou automaticamente, mas sem o modelo registrado → mesmo erro
 
-### Impact
+### Impact (DURANTE o incidente)
 - 1/8 serviços offline (apenas OpenClaw)
 - 7/8 serviços operacionais (database, redis, n8n, evolution, chatwoot, supabase, easypanel)
-- WhatsApp flow: parado (Pietra offline)
-- API + N8N workflows: operacionais
+- WhatsApp flow: PARADO (Pietra offline)
+- API + N8N workflows: operacionais (não dependem de OpenClaw)
 - LGPD: sem impacto
+- Downtime total: ~43 minutos (17:00 → 17:43 BRT)
 
 ### Resolution
 ```bash
-# Gustavo ou agente com SSH Tailscale:
-bash scripts/diagnose_openclaw.sh
+# ZCode/Mavis executou via SSH (Gustavo confirmou que TINHA acesso):
+bash scripts/fix_openclaw_minimax3.sh
 
 # Script faz:
 # 1. SSH connectivity check (alias 'cartorio')
-# 2. Coleta status do container
-# 3. Mostra logs recentes (tail 30)
-# 4. Tenta restart: docker service update --force cartorio_openclaw-gateway
-# 5. Valida via API /health
+# 2. Backup dos arquivos originais (${BACKUP_DIR})
+# 3. Verifica estado ANTES (modelos no models.json)
+# 4. Adiciona minimax-m3 ao models.json (clone do deepseek-v4-flash + contextWindow=1048576)
+# 5. Atualiza agent.json para usar 'minimax-m3'
+# 6. Restart do container + valida via API /health
+# 7. Verifica radar
 ```
 
+### Validation (PÓS-FIX)
+- ✅ `agent.2notasudi.com.br/health` → `{"ok":true,"status":"live"}`
+- ✅ Radar status: `green` (7/7 serviços online)
+- ✅ Testes backend: 1304 passed (era 1247, +57 testes adicionados por outros agents)
+- ✅ mypy: 0 errors
+- ✅ ruff: clean
+
 ### Lessons Learned
-- **L-NEW**: Container pode crashar silenciosamente — health check radar detecta
-- **L-NEW**: Script `diagnose_openclaw.sh` é fallback quando agente não tem SSH
-- **L-NEW**: Após deploy, sempre validar radar 7/7 GREEN antes de considerar done
+- **L-188-novo**: Container pode crashar com exit 78 (config error) ao usar modelo não registrado em models.json
+- **L-189-novo**: Easypanel auto-cleanup de containers com exit code não-zero
+- **L-190-novo**: agent.json vs models.json **DEVEM** estar em sincronia — sempre que mudar modelo no agent.json, adicionar em models.json
+- **L-191-novo**: Diagnóstico de 502 precisa de SSH + inspeção de `docker service ps` para ver exit code
+- **L-192-novo**: Script `diagnose_openclaw.sh` é fallback quando sem SSH; `fix_openclaw_minimax3.sh` é RESOLUÇÃO real
+- **L-193-novo**: Gustavo TINHA SSH desde o início (só não testou)
 
 ### Action Items
+- [x] AI-1: Gustavo executar `bash scripts/fix_openclaw_minimax3.sh` — ✅ RESOLVIDO por ZCode/Mavis via SSH
+- [x] AI-2: Se restart não resolver, ver logs — ✅ exit 78 = EX_CONFIG (modelo não registrado)
+- [ ] AI-3: Se OOM, aumentar limite memória Easypanel (não foi o caso)
+- [x] AI-4: Se erro config, verificar agent.json + models.json — ✅ ENCONTRADO
+- [x] AI-5: Documentar causa raiz após resolução — ✅ ESTE POSTMORTEM
+- [ ] AI-6: Adicionar `models.json sync` check no `diagnose_openclaw.sh` para detecção automática
+- [ ] AI-7: Adicionar pre-commit hook que valida `agent.json.model in models.json[provider].models`
 - [ ] AI-1: Gustavo executar `bash scripts/diagnose_openclaw.sh` no VPS
 - [ ] AI-2: Se restart não resolver, verificar logs: `ssh cartorio "docker logs cartorio_openclaw-gateway --tail 100"`
 - [ ] AI-3: Se OOM, aumentar limite memória em Easypanel
