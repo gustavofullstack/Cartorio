@@ -85,14 +85,25 @@ def upgrade() -> None:
             """
         )
 
-    # authenticated: SELECT na própria linha (placeholder via cliente_id == auth.uid())
-    # Em D13-D15 sera refinado para casar com auth.users.id do Supabase
+    # authenticated: SELECT na própria linha. Fallback gracioso por tabela:
+    # - Se coluna cliente_id existe: USING (cliente_id::text = auth.uid()::text OR cliente_id IS NULL)
+    # - Se nao existe (clientes, documentos, emolumentos): USING (id::text = auth.uid()::text OR id IS NULL)
+    # Em D13-D15 sera refinado para casar com auth.users.id do Supabase.
     for table in _PII_TABLES:
+        # Detecta se a coluna cliente_id existe nesta tabela
+        bind = op.get_bind()
+        has_cliente_id = False
+        try:
+            cols = sa.inspect(bind).get_columns(table)
+            has_cliente_id = any(c["name"] == "cliente_id" for c in cols)
+        except Exception:
+            pass
+        join_col = "cliente_id" if has_cliente_id else "id"
         op.execute(
             f"""
             CREATE POLICY authenticated_read_own ON {table}
             FOR SELECT TO authenticated
-            USING (cliente_id::text = auth.uid()::text OR cliente_id IS NULL)
+            USING ({join_col}::text = auth.uid()::text OR {join_col} IS NULL)
             """
         )
 
