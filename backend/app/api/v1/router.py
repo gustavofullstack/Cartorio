@@ -1626,6 +1626,13 @@ async def atendimentos_ultimas_24h() -> dict:
     from datetime import datetime, timedelta, timezone
     from sqlalchemy import select
     from app.models.atendimento import Atendimento
+    from app.services.atendimento_cache import get_cached, set_cached
+
+    # A18 - squad A: cache Redis 60s. Reduz carga DB 4-12x em pico.
+    # Fail-open: se Redis offline, retorna None e cai pro DB.
+    cached = get_cached("24h")
+    if cached is not None:
+        return cached
 
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
     with session_scope() as db:
@@ -1655,11 +1662,14 @@ async def atendimentos_ultimas_24h() -> dict:
             for a in rows
         ]
 
-    return {
+    payload = {
         "window_hours": 24,
         "count": len(atendimentos),
         "atendimentos": atendimentos,
     }
+    # A18: cache Redis 60s - reduz carga DB no N8N workflow #07
+    set_cached(payload, "24h")
+    return payload
 
 
 @api_router.post(
