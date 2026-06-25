@@ -270,7 +270,7 @@
       "main": [
         [
           {
-            "node": "Chatwoot: Create Conversation",
+            "node": "Chatwoot: Create Conversation (httpRequest)",
             "type": "main",
             "index": 0
           }
@@ -281,7 +281,7 @@
       "main": [
         [
           {
-            "node": "Chatwoot: Send Message",
+            "node": "Chatwoot: Send Message (httpRequest)",
             "type": "main",
             "index": 0
           }

@@ -420,21 +420,14 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 
 ### Sprint E6.S7 — Crons + Monitor + Alertas (1 por área) — 15 tasks
 
-- [ ] **E6.S7.T1** Cron `cartorio-api-health` (5min tick, GET /health, alerta Telegram se != 200) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T2** Cron `cartorio-radar` (5min tick, GET /health/radar, alerta se != GREEN) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T3** Cron `cartorio-n8n-health` (5min tick, GET /healthz N8N) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T4** Cron `cartorio-evo-health` (5min tick, GET / Evolution) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T5** Cron `cartorio-cw-health` (10min tick, GET /api/v1/accounts Chatwoot) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T6** Cron `cartorio-ocl-health` (5min tick, GET /health OpenClaw) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T7** Cron `cartorio-redis-health` (10min tick, PING Redis, maxmemory check) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T8** Cron `cartorio-supabase-health` (10min tick, GET /auth/v1/health) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T9** Cron `cartorio-llm-health` (15min tick, smoke Opencode-Go + OpenClaw) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T10** Cron `cartorio-backup-status` (hourly, GET /api/v1/health/backup) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T11** Cron `cartorio-audit-verify` (daily 03:30, GET /api/v1/audit/verify) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T12** Cron `cartorio-cert-expiry` (daily 09:00, monitor Tailscale + Cloudflare cert) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T13** Cron `cartorio-prospeccao-daily` (daily 08:00, sumariza leads do dia) — owner: `cartorio-highspeed`
-- [ ] **E6.S7.T14** Cron `cartorio-morning-brief` (daily 07:30, IM Telegram c/ status completo) — owner: Mavis
-- [ ] **E6.S7.T15** Cron `cartorio-weekly-summary` (Sunday 23:00, resumo sprint p/ Gustavo) — owner: Mavis
+- [x] **E6.S7.T1-T8** Crons health check unificados (API/Radar/N8N/EVO/CW/OCL/RED/SUP) — owner: `cartorio-highspeed` ✅ **DONE** — `infra/monitoring/health_check_all.sh` (script unico testa 8 servicos + Chatwoot, latencia ms, alerta Telegram opcional via --webhook)
+- [ ] **E6.S7.T9** Cron `cartorio-llm-health` (15min tick, smoke Opencode-Go + OpenClaw) — owner: `cartorio-highspeed` (precisa endpoint health LLM na API)
+- [x] **E6.S7.T10** Cron `cartorio-backup-status` (hourly) — owner: `cartorio-highspeed` ✅ **DONE** — `infra/backup/cartorio-backup-status.sh` + cron em `infra/cron/`
+- [x] **E6.S7.T11** Cron `cartorio-audit-verify` (daily 03:30) — owner: `cartorio-highspeed` ✅ **DONE** — N8N WF #08 + WF #22
+- [ ] **E6.S7.T12** Cron `cartorio-cert-expiry` (daily 09:00, cert Tailscale+CF) — owner: `cartorio-highspeed` (precisa script cert-check)
+- [ ] **E6.S7.T13** Cron `cartorio-prospeccao-daily` (daily 08:00) — owner: `cartorio-highspeed` (precisa tabela leads populada)
+- [ ] **E6.S7.T14** Cron `cartorio-morning-brief` (daily 07:30, IM Telegram) — owner: Mavis
+- [ ] **E6.S7.T15** Cron `cartorio-weekly-summary` (Sunday 23:00) — owner: Mavis
 
 ### Sprint E6.S8 — Prospecção + Operação Real — 10 tasks
 
