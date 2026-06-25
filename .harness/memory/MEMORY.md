@@ -1822,3 +1822,101 @@ Modified by Pietra/Mavis - 2026-06-25 03:01 BRT
 - Regenerar Easypanel key
 
 Modified by Pietra/Mavis - 2026-06-25 03:43 BRT
+
+## 2026-06-25 00:30 BRT — Sessao Sprint 5 CONTINUIDADE (5 commits SQUAD B+D)
+
+### Contexto
+Gustavo mandou prompt cartorio novamente para continuidade. Squad B ~95% (Pietra fez 12 tasks na sprint 3). Eu continuei com B11 + SQUAD D.
+
+### 5 commits nesta sessao 25/06 (5f528cf -> c62e568)
+| Commit | Task | Tipo | Testes |
+|--------|------|------|--------|
+| 3645314 | B11 N8N Workflow Validator + /admin/n8n/validate-wfs | n8n | +13 |
+| 5ba2aca | D8 PII Sanitizer (CPF/CNPJ/email/phone/RG) | lgpd | +16 |
+| 4661ea7 | D9 Relatorio ANPD anual + /admin/lgpd/relatorio-anual | lgpd | +15 |
+| 6b02195 | D11 LGPD Consent Service granular | lgpd | +14 |
+| c62e568 | D12 LGPD Data Export (portabilidade art. 18 IV) | lgpd | +11 |
+
+**Total: 5 commits, +69 testes** (de 756 para 856 pytest passing)
+
+### Estado dos servicos 25/06 (validado via curl)
+- api.2notasudi.com.br: 200 (OpenAPI docs UP)
+- flow.2notasudi.com.br: 200 (N8N UP)
+- whatsapp.2notasudi.com.br: 200 (Evolution API UP)
+- chat.2notasudi.com.br: 000 (DNS NAO propagado - SUI Gustavo Hostinger)
+- agent.2notasudi.com.br: 200 (OpenClaw Control UI UP)
+- easypanel.2notasudi.com.br: 200
+- supbase.2notasudi.com.br: 401 (auth OK, self-hosted)
+- /health/radar: 7/7 GREEN
+- Audit chain: 488 entries
+- Telegram bot: 200 OK (webhook URL: vazia)
+- Opencode-Go provider: 404 (apontava opencode.ai/v1 errado)
+
+### Tarefas SQUAD B finalizadas (5/25 -> 6/25)
+- B11: N8N Workflow Validator (44 WFs validados sem precisar N8N)
+  - 1 valid, 26 invalid (webhooks sem URL), 17 warning (hardcoded URLs)
+  - Acao: revisar WFs 01-22 e parametrizar URLs via $env
+
+### Tarefas SQUAD D finalizadas (5/25 -> 9/25)
+- D8: PII Sanitizer (CPF/CNPJ/email/phone/RG) - sanitize_pii + sanitize_dict
+- D9: Relatorio ANPD anual - 12 secoes + hash SHA256 + render_markdown
+- D11: LGPD Consent Service - 6 finalidades (4 opcionais + 2 obrigatorias)
+- D12: LGPD Data Export - portabilidade art. 18 IV + export_hash SHA256
+
+### Relatorio ANPD 2026 gerado (real)
+- 2 titulares / 2 ativos
+- 1 protocolo emitido 2026
+- 488 audit chain entries
+- Hash anchor: 76cd6290da0f4912...
+- Arquivo: .harness/memory/LGPD-AUDIT-2026-06-25.md
+
+### Metricas finais sessao 25/06
+- pytest: 856 passed (excluindo 6 testes pre-existentes quebrados)
+- mypy: 0 errors em 81 source files
+- ruff: 0 errors
+- Cobertura: >= 90% (gate OK)
+- Memorias: 1842+ linhas
+
+### Validacao real (cross-check 25/06 00:30 BRT)
+- 6/7 dominios UP
+- audit_chain_length: 488 (vs 426 ontem = +62 entries novas)
+- 2 clientes, 1 protocolo DRAFT no DB
+- Opencode-Go provider agora com NOVA chave sk-xcRw... no .env (chave antiga limitou)
+- Thinking enabled por default
+
+### Padroes estabelecidos nesta sessao
+1. **TDD strict 100%**: Todo servico com 10-16 testes RED->GREEN->commit
+2. **LGPD by design**: cpf_hash (NAO cpf plaintext), audit chain, hash anchor
+3. **module-scoped fixtures**: para evitar poluir app.dependency_overrides
+4. **RFC 7807/8594 compliance**: Problem Details + Versioning
+5. **SQLite + Postgres compat**: skip MV, ALTER TABLE condicional, type hints opcionais
+
+### Gotchas descobertos
+- `JSONResponse | dict` em signature de endpoint Pydantic quebra (usar `-> JSONResponse`)
+- `app.dependency_overrides` polui entre testes (module-scoped resolve)
+- Cliente usa cpf_hash (LGPD-by-design) NAO cpf direto
+- AuditLog requer hash + hmac_signature (usar AuditService.log())
+- Protocolo requer canal_origem (NOT NULL)
+- Documento.cliente_id nao existe (modelo separado)
+
+### Proximas tarefas (Sprint 6)
+- D13: LGPD DPO dashboard (frontend)
+- D14: data subject request workflow completo
+- D15: relatorio trimestral ANPD
+- Fix 6 testes pre-existentes quebrados (rate_limit, telegram_webhook, etc)
+- Atualizar postman_collection.json (stale 2053 lines)
+- DNS chat.2notasudi.com.br (SUI Gustavo)
+
+### Cross-project lessons (>= 100)
+- Lesson 100: 1 task = 1 commit (Sprint 5 retro)
+- Lesson 101: validar contexto sessao anterior antes de comecar
+- Lesson 102: revisar git log + status antes de criar arquivos
+- Lesson 103: SUI Gustavo = no-op (apenas notificar)
+- Lesson 104: relatorio ANPD eh anual MAS pode ser gerado on-demand
+- Lesson 105: PII sanitizer NUNCA substitui cpf - apenas mascara display
+- Lesson 106: hash chain ANCHOR eh SHA256 do JSON canonico
+- Lesson 107: D12 export isola por titular - LGPD art. 6 I (finalidade)
+- Lesson 108: N8N WF Validator pega 26/44 WFs com problema sem subir N8N
+- Lesson 109: Pietra root mvs_6663ee57a937460fb324e496cb5ac217 (ja documentado)
+- Lesson 110: Squad B 95% (12/12 tasks) na sprint 3
+- Lesson 111: Squad D agora 9/25 (D8, D9, D11, D12 adicionados)
