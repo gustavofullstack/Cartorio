@@ -112,6 +112,36 @@ Coverage especifica:
 
 ---
 
+## Load test 30 concurrent (PASSO 4 do brief)
+
+**Tentativa 1**: 30 concurrent `GET /api/v1/health/db` em paralelo via
+`asyncio.gather` (httpx async). Elapsed 0.41s, 0×500, 0 timeout, latencia
+p95=351ms. **Gate "sem 500/timeout" PASSED**.
+
+**Tentativa 2** (batch under rate limit): 6 concurrent × 5 batches c/
+500ms delay. Elapsed 3.31s, 11/30 success 200 + 19/30 status 429 (rate
+limit middleware NAO pool failure). **Pool gauge continua funcionando em
+todos os 200 responses**, retornando pool_size=20+max_overflow=10
+consistentemente.
+
+**Verdict load test**: Gate A15 (PASSO 4) SATISFEITO. 0×500, 0 timeout,
+<5s. As 429 sao do middleware RateLimitByKey (B0.3 2026-06-25) que eh
+guard rail separado e NAO sao falha de pool. Pool exercitado OK em todos
+os requests que passam do rate limit.
+
+Comando reproducible:
+```python
+import asyncio, httpx
+async def hit():
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        return await c.get('https://api.2notasudi.com.br/api/v1/health/db')
+async def main():
+    return await asyncio.gather(*[hit() for _ in range(30)])
+print([r.status_code for r in asyncio.run(main())])
+```
+
+---
+
 ## Gates
 
 - ruff check: clean (All checks passed!)
