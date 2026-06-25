@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartório 2º Notas — Super Status</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0;padding:20px}
+h1{font-size:1.8rem;color:#38bdf8;margin-bottom:8px}
+h2{font-size:1.2rem;color:#94a3b8;margin:20px 0 10px;border-bottom:1px solid #334155;padding-bottom:4px}
+h3{font-size:1rem;color:#cbd5e1;margin:10px 0 5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin:10px 0}
+.card{background:#1e293b;border-radius:8px;padding:14px;border-left:4px solid #334155}
+.card.up{border-left-color:#22c55e}.card.warn{border-left-color:#eab308}.card.down{border-left-color:#ef4444}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.75rem;font-weight:600}
+.badge.up{background:#166534;color:#4ade80}.badge.warn{background:#713f12;color:#facc15}.badge.down{background:#7f1d1d;color:#fca5a5}
+.metric{text-align:center;padding:12px}.metric .num{font-size:2rem;font-weight:700;color:#38bdf8}.metric .label{font-size:.8rem;color:#94a3b8}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin:8px 0}
+th,td{padding:6px 10px;text-align:left;border-bottom:1px solid #334155}
+th{color:#94a3b8;font-weight:600}
+.squad{margin:12px 0}.squad-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.progress{height:6px;background:#334155;border-radius:3px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,#22c55e,#38bdf8);border-radius:3px;transition:width .3s}
+.tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.7rem;margin:1px}
+.tag.done{background:#166534;color:#4ade80}.tag.pending{background:#713f12;color:#facc15}.tag.hold{background:#7f1d1d;color:#fca5a5}
+.alert{background:#1e293b;border-left:3px solid #eab308;padding:8px 12px;margin:4px 0;border-radius:0 4px 4px 0;font-size:.85rem}
+footer{text-align:center;color:#475569;font-size:.75rem;margin-top:30px;padding-top:10px;border-top:1px solid #1e293b}
+</style>
+</head>
+<body>
+
+<h1>🏛️ Cartório 2º Notas Uberlândia — Super Status</h1>
+<p style="color:#64748b">Gerado: 2026-06-25 16:15 BRT | v0.6.0 | Branch: master</p>
+
+<!-- ========== GATES ========== -->
+<h2>📊 Gates (Zero Errors)</h2>
+<div class="grid">
+  <div class="card up"><div class="metric"><div class="num">0</div><div class="label">mypy errors</div></div></div>
+  <div class="card up"><div class="metric"><div class="num">0</div><div class="label">ruff errors</div></div></div>
+  <div class="card up"><div class="metric"><div class="num">1120</div><div class="label">pytest passed</div></div></div>
+  <div class="card up"><div class="metric"><div class="num">11</div><div class="label">skipped (PG only)</div></div></div>
+</div>
+
+<!-- ========== SERVICES ========== -->
+<h2>🌐 Services (7/7 UP)</h2>
+<div class="grid">
+  <div class="card up"><h3>API FastAPI</h3><p>api.2notasudi.com.br</p><span class="badge up">200</span> 70ms | v0.6.0 | 6 MCP servers (164 tools)</div>
+  <div class="card up"><h3>N8N Workflow Engine</h3><p>flow.2notasudi.com.br</p><span class="badge up">200</span> 90ms | 33 WFs + evo-in</div>
+  <div class="card up"><h3>Evolution API</h3><p>whatsapp.2notasudi.com.br</p><span class="badge up">200</span> 276ms | instance cartorio-2notas</div>
+  <div class="card up"><h3>Chatwoot CRM</h3><p>cartorio-chatwoot.dfgdxq.easypanel.host</p><span class="badge up">200</span> 366ms | Sidekiq active</div>
+  <div class="card up"><h3>OpenClaw Agent AI</h3><p>agent.2notasudi.com.br</p><span class="badge up">200</span> 90ms | deepseek-v4-flash</div>
+  <div class="card up"><h3>Supabase</h3><p>supbase.2notasudi.com.br</p><span class="badge up">401</span> 68ms | 133 tables, 5 cron</div>
+  <div class="card up"><h3>Easypanel</h3><p>easypanel.2notasudi.com.br</p><span class="badge up">200</span> 69ms | 12 Docker services</div>
+</div>
+
+<!-- ========== SQUADS ========== -->
+<h2>🎯 Squad Progress</h2>
+
+<div class="squad">
+  <div class="squad-header"><h3>S0 — Supabase Foundation</h3><span class="tag done">10/10 DONE</span></div>
+  <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+</div>
+
+<div class="squad">
+  <div class="squad-header"><h3>A — API+DB Hardening</h3><span class="tag done">25/25 DONE</span></div>
+  <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+</div>
+
+<div class="squad">
+  <div class="squad-header"><h3>B — N8N Polish</h3><span class="tag pending">8/25 DONE</span></div>
+  <div class="progress"><div class="progress-bar" style="width:32%"></div></div>
+</div>
+
+<div class="squad">
+  <div class="squad-header"><h3>C — Docs + Obs</h3><span class="tag pending">8/10 DONE</span></div>
+  <div class="progress"><div class="progress-bar" style="width:80%"></div></div>
+</div>
+
+<div class="squad">
+  <div class="squad-header"><h3>D — LGPD Compliance</h3><span class="tag done">13/13 DONE</span></div>
+  <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+</div>
+
+<div class="squad">
+  <div class="squad-header"><h3>E — OpenClaw CartorioBot</h3><span class="tag done">8/8 DONE</span></div>
+  <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+</div>
+
+<div class="squad">
+  <div class="squad-header"><h3>H — Chatwoot CRM</h3><span class="tag done">8/8 DONE</span></div>
+  <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+</div>
+
+<div class="squad">
+  <div class="squad-header"><h3>J — Obs + CI/CD</h3><span class="tag pending">5/10 DONE</span></div>
+  <div class="progress"><div class="progress-bar" style="width:50%"></div></div>
+</div>
+
+<!-- ========== COMMITS ========== -->
+<h2>📝 Recent Commits (Session 2026-06-25)</h2>
+<table>
+<tr><th>Hash</th><th>Message</th></tr>
+<tr><td><code>754bd8d</code></td><td>feat(docs): SUPER HTML project status + fix v2 clientes tests</td></tr>
+<tr><td><code>c70882a</code></td><td>feat(infra): health_check_all.sh unificado 7 serviços</td></tr>
+<tr><td><code>adb915e</code></td><td>test(lgpd): D15 pgcrypto tests (8 tests, skip on SQLite)</td></tr>
+<tr><td><code>ba4aff6</code></td><td>feat(lgpd): D15 pgcrypto encryption at-rest + TASKS.md update</td></tr>
+<tr><td><code>e37665a</code></td><td>chore: sync memory + backend v2 clientes cleanup</td></tr>
+</table>
+
+<!-- ========== ALERTS ========== -->
+<h2>⚠️ Alerts</h2>
+<div class="alert">🟡 <strong>EVO instance=close</strong> — Gustavo precisa escanear QR em whatsapp.2notasudi.com.br/manager</div>
+<div class="alert">🟡 <strong>DNS n8n.2notasudi.com.br</strong> — NXDOMAIN, precisa A record no Cloudflare</div>
+<div class="alert">🟡 <strong>DNS supabase.2notasudi.com.br</strong> — NXDOMAIN, precisa A record no Cloudflare</div>
+<div class="alert">🟡 <strong>OpenClaw gateway password</strong> — 401 unauthorized nos logs (Gustavo configurar)</div>
+<div class="alert">🟡 <strong>B06-FIX</strong> — WF 00 Chatwoot alerta falha (Lesson 51), aguarda decisão A/B</div>
+
+<!-- ========== OVERALL ========== -->
+<h2>📈 Overall Progress</h2>
+<div class="grid">
+  <div class="card up"><div class="metric"><div class="num">77%</div><div class="label">Tasks DONE (~77/100)</div></div></div>
+  <div class="card up"><div class="metric"><div class="num">1120</div><div class="label">Tests Passing</div></div></div>
+  <div class="card up"><div class="metric"><div class="num">7/7</div><div class="label">Services UP</div></div></div>
+  <div class="card warn"><div class="metric"><div class="num">5</div><div class="label">Alerts Pending</div></div></div>
+</div>
+
+<footer>
+  Cartório 2º Notas Uberlândia — Agent AI Chatbot<br>
+  CEO: Gustavo Almeida | Domain: 2notasudi.com.br | Repo: gustavofullstack/Cartorio<br>
+  Generated by ZCode Agent — 2026-06-25
+</footer>
+
+</body>
+</html>
