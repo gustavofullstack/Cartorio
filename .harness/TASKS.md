@@ -560,7 +560,7 @@ Modified by Gustavo Almeida
 	- [x] **E8.D12** Direito não-automação POST /cliente/{id}/lgpd/optout — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `app/api/v1/lgpd_direitos.py` (endpoint POST existe com audit log, opt-out comunicacoes marketing, 2 tests)
 - [x] **E8.D13** Logs acesso LGPD art. 37 (request_id+IP truncado+UA+ts) — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `RequestContextMiddleware` + `AuditService.log` em todos endpoints, IP truncado /24, request_id UUID
 - [x] **E8.D14** Retenção configurável por tipo (5y/protocolo, até-revog/sem, 2y/conversa) — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — `backend/app/jobs/retencao.py` (13 tests TDD, configurável via env vars)
-- [ ] **E8.D15** Encriptação at-rest pgcrypto + in-transit TLS 1.3 obrigatório — owner: `cartorio-lgpd` + `cartorio-dev` (TLS 1.3 via Traefik, pgcrypto pendente)
+- [x] **E8.D15** Encriptação at-rest pgcrypto + in-transit TLS 1.3 obrigatório — owner: `cartorio-lgpd` + `cartorio-dev` ✅ **DONE** — migration `2026_06_25_0014` (CREATE EXTENSION pgcrypto + encrypt_pii/decrypt_pii functions + cpf_encrypted/rg_encrypted columns + indexes). TLS 1.3 via Traefik.
 
 Modified by Pietra/Mavis - 2026-06-25 00:02 BRT
 ---
