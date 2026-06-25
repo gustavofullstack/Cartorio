@@ -15,7 +15,8 @@ A intenção do usuário é:
 2. **Auditar, corrigir, melhorar, otimizar, organizar e documentar** o ambiente ZCode (configuração de providers, subagents, skills/plugins, MCPs, memória).
 3. **Persistir aprendizados** no `.brain/memory/` do projeto Cartorio e/ou em `~/.zcode/memory/` global.
 
-Os 4 provedores-alvo já estão **registrados** em `~/.zcode/v2/config.json` com `enabled: true` e chaves de API válidas. Falta:
+Os 4 provedores-alvo já estão **cadastrados** em `~/.zcode/v2/config.json` com chaves de API válidas, mas com `enabled: null` (achado empírico da Task 0.1 em 2026-06-25 — divergindo da hipótese inicial de `enabled: true`). Precisam ser ativados antes de qualquer uso. Falta:
+- **Ativação** dos 4 provedores free (de `enabled: null` para `enabled: true`).
 - Mecanismo de **routing/fallback** (não existe skill/plug-in nativo para isso).
 - **Override explícito por subagent** (campo `model` no JSON de subagent é string livre, sem garantia de honra como `providerId/modelId`).
 - **Mapeamento de skills/MCPs/plugins aplicáveis** ao projeto Cartorio.

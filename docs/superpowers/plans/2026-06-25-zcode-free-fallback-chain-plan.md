@@ -94,16 +94,18 @@ Criar `.brain/docs/audit-zcode-config-2026-06-25.md` com este conteúdo exato:
 - **Working dir**: /Users/gustavoalmeida/projetos/Cartorio
 - **Git branch**: feat/zcode-fallback-chain (criada nesta sessão)
 
-## Providers ativos (enabled em v2/config.json)
-| ID | Nome | Kind | baseURL |
-|---|---|---|---|
-| default-minimax | opencode-go | anthropic | https://opencode.ai/zen/go |
-| c997ca58-cfda-4c2f-8550-69830972bad7 | minimax-coding-plan | anthropic | https://api.minimax.io/anthropic |
-| a78c8877-8acd-42db-a21e-e1a4f38e57d3 | kimi | openai-compatible | https://api.kimi.com/coding/v1 |
-| 15568793-5414-4c84-b794-ba4572e0412e | opencode-free | openai-compatible | https://opencode.ai/zen/v1 |
-| a84a18da-ac47-43d1-a250-2bfdf49cf4a3 | openrouter-free | openai-compatible | https://openrouter.ai/api/v1 |
-| 4ff49ce7-9523-462f-89c2-2ba8b55042d8 | groq-free | openai-compatible | https://api.groq.com/openai/v1 |
-| 04873a4d-dba3-43c1-9840-22d9eb7ada4b | mistral-free | openai-compatible | https://api.mistral.ai/v1 |
+## Providers cadastrados em v2/config.json (achado da Task 0.1)
+| ID | Nome | Kind | baseURL | enabled |
+|---|---|---|---|---|
+| default-minimax | opencode-go | anthropic | https://opencode.ai/zen/go | **true** |
+| c997ca58-cfda-4c2f-8550-69830972bad7 | minimax-coding-plan | anthropic | https://api.minimax.io/anthropic | **true** |
+| a78c8877-8acd-42db-a21e-e1a4f38e57d3 | kimi | openai-compatible | https://api.kimi.com/coding/v1 | null |
+| 15568793-5414-4c84-b794-ba4572e0412e | opencode-free | openai-compatible | https://opencode.ai/zen/v1 | **null (precisa ativar)** |
+| a84a18da-ac47-43d1-a250-2bfdf49cf4a3 | openrouter-free | openai-compatible | https://openrouter.ai/api/v1 | **null (precisa ativar)** |
+| 4ff49ce7-9523-462f-89c2-2ba8b55042d8 | groq-free | openai-compatible | https://api.groq.com/openai/v1 | **null (precisa ativar)** |
+| 04873a4d-4767-4924-8d47-c25828e7e566 | mistral-free | openai-compatible | https://api.mistral.ai/v1 | **null (precisa ativar)** |
+
+**Achado crítico Task 0.1**: apenas 2 dos 7 providers estão `enabled: true`. Os 4 free (opencode/openrouter/groq/mistral) precisam ser ativados antes de qualquer uso. Ação em Task 0.3.
 
 ## Default atual
 - `~/.zcode/cli/config.json:89` → `"model": "default-minimax/minimax-m3"`
@@ -136,6 +138,90 @@ Criar `.brain/docs/audit-zcode-config-2026-06-25.md` com este conteúdo exato:
 
 ## Quota MiniMax IO
 [PENDENTE — confirmar com usuário antes de trocar default]
+```
+
+- [ ] **Step 2: Preencher a seção "Skills top-level" com a listagem real**
+
+```bash
+ls -1 ~/.zcode/skills/ | tee /tmp/zcode-skills-list.txt
+# copiar saída e colar na seção "Skills top-level" do audit doc
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add .brain/docs/audit-zcode-config-2026-06-25.md
+git -c user.name='Cartorio CI' -c user.email='ci@cartorio.local' \
+  commit -m "docs(audit): ZCode config snapshot 2026-06-25"
+```
+
+### Task 0.3: Ativar os 4 provedores free (achado da Task 0.1)
+
+**Files:**
+- Modify: `~/.zcode/v2/config.json`
+
+- [ ] **Step 1: Listar providers que precisam de ativação**
+
+```bash
+jq -r 'to_entries[] | select(.value.enabled==null) | .key' ~/.zcode/v2/config.json
+```
+Expected: 4 UUIDs (opencode-free, openrouter-free, groq-free, mistral-free).
+
+- [ ] **Step 2: Backup adicional antes da edição**
+
+```bash
+cp ~/.zcode/v2/config.json ~/.zcode/v2/config.json.bak.pre-activation.$(date +%Y%m%d-%H%M%S)
+```
+
+- [ ] **Step 3: Ativar os 4 provedores free via jq**
+
+```bash
+jq 'with_entries(if .value.enabled == null and (.value.options.baseURL | test("opencode.ai/zen/v1|openrouter.ai|groq|mistral")) then .value.enabled = true else . end)' \
+   ~/.zcode/v2/config.json > /tmp/v2-config-activated.json
+mv /tmp/v2-config-activated.json ~/.zcode/v2/config.json
+```
+
+- [ ] **Step 4: Verificar que apenas os 4 free foram ativados (kimi permanece null)**
+
+```bash
+jq -r 'to_entries[] | "\(.key) \(.value.enabled)"' ~/.zcode/v2/config.json | sort
+```
+Expected: 6 linhas com `true` (default-minimax, minimax-coding-plan + 4 free) e 1 com `null` (kimi).
+
+- [ ] **Step 5: Validar JSON**
+
+```bash
+jq empty ~/.zcode/v2/config.json && echo "JSON OK" || echo "JSON QUEBRADO"
+```
+Expected: `JSON OK`.
+
+- [ ] **Step 6: Não commitar ainda — ZCode precisa ser reiniciado para recarregar**
+
+Esta mudança afeta o app ativo. **Fechar e reabrir o ZCode antes de prosseguir:**
+```bash
+killall ZCode 2>/dev/null
+sleep 3
+open /Applications/ZCode.app
+```
+
+- [ ] **Step 7: Em nova sessão, verificar que provedores free aparecem como disponíveis**
+
+Perguntar ao agente numa nova mensagem:
+> "Quais provedores LLM você vê disponíveis agora em Settings?"
+
+Resposta esperada: deve listar opencode-free, openrouter-free, groq-free, mistral-free.
+
+- [ ] **Step 8: Commit timeline (não commita config do ZCode — é fora do repo)**
+
+```bash
+TS=$(date +%H:%M)
+cd /Users/gustavoalmeida/projetos/Cartorio
+cat >> .brain/memory/2026-06-25.md <<EOF
+[$TS] chore(config): 4 provedores free ativados (opencode/openrouter/groq/mistral), kimi permanece null
+EOF
+git add .brain/memory/2026-06-25.md
+git -c user.name='Cartorio CI' -c user.email='ci@cartorio.local' \
+  commit -m "chore(config): activated 4 free providers in ZCode v2 config"
 ```
 
 - [ ] **Step 2: Preencher a seção "Skills top-level" com a listagem real**
@@ -389,7 +475,7 @@ Criar `~/.zcode/skills/zcode-fallback/references/provider-registry.md` com:
 | `15568793-5414-4c84-b794-ba4572e0412e` | opencode-free | openai-compatible | `https://opencode.ai/zen/v1` | `deepseek-v4-flash-free`, `mimo-v2.5-free`, `nemotron-3-ultra-free`, `north-mini-code-free` | 1M (256K p/ `north`) | 4 modelos, generoso em contexto |
 | `a84a18da-ac47-43d1-a250-2bfdf49cf4a3` | openrouter-free | openai-compatible | `https://openrouter.ai/api/v1` | `nvidia/nemotron-3-ultra-550b-a55b:free`, `poolside/laguna-m.1:free`, `cohere/north-mini-code:free` | 1M / 262K / 256K | Rate limit ~20 req/min |
 | `4ff49ce7-9523-462f-89c2-2ba8b55042d8` | groq-free | openai-compatible | `https://api.groq.com/openai/v1` | `groq/compound`, `openai/gpt-oss-120b` | 131.1K | Rate limit ~30 req/min. **Mais rápido.** |
-| `04873a4d-dba3-43c1-9840-22d9eb7ada4b` | mistral-free | openai-compatible | `https://api.mistral.ai/v1` | `devstral-small-latest`, `mistral-large-latest`, `devstral-latest` | 256K | Devstral é bom p/ código. |
+| `04873a4d-4767-4924-8d47-c25828e7e566` | mistral-free | openai-compatible | `https://api.mistral.ai/v1` | `devstral-small-latest`, `mistral-large-latest`, `devstral-latest` | 256K | Devstral é bom p/ código. |
 
 ### OpenAI-compatible (pago alternativo)
 | Provider ID | Nome | Kind | baseURL | Models | Notas |
