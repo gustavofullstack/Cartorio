@@ -13,15 +13,22 @@ LGPD compliance (auditoria 2026-06-23):
 
 from __future__ import annotations
 
+import datetime as _dt
+import json
+import logging
+import uuid as _uuid
 from typing import Annotated, Any
 
 import httpx
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 
 from app.api.deps import require_cartorio_api_key
 from app.config import settings
+from app.db import session_scope
 from app.integrations.opencode_go import ChatError, chat_with_settings
+from app.models.outbox_message import OutboxMessage, OutboxQueue, OutboxStatus
 
 
 # ============================================================================
@@ -328,17 +335,7 @@ async def agent_health() -> AgentHealthResponse:
 # - Busca a mensagem do DB, executa handler da queue, atualiza status
 # - Idempotente: se status==done, retorna 200 sem reprocessar
 # - Backoff 5min em falha (next_retry_at)
-
-import datetime as _dt
-import json
-import logging
-import uuid as _uuid
-
-from fastapi import Request
-from sqlalchemy import select
-
-from app.db import session_scope
-from app.models.outbox_message import OutboxMessage, OutboxQueue, OutboxStatus
+# (imports movidos para o topo do arquivo - ruff E402)
 
 _log = logging.getLogger("integrations.outbox")
 
@@ -437,7 +434,7 @@ async def outbox_dispatch(
     outbox_id_raw = body.get("outbox_id") or body.get("record", {}).get("id")
     queue_raw = body.get("queue") or body.get("record", {}).get("queue")
     payload = body.get("payload") or body.get("record", {}).get("payload") or {}
-    attempts_in = int(body.get("attempts") or 0)
+    del attempts_in_unused  # noqa: F841  - placeholder for future attempt tracking
 
     if not outbox_id_raw or not queue_raw:
         raise HTTPException(

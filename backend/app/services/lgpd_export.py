@@ -128,7 +128,9 @@ def exportar_dados_titular(
             "canal_origem": p.canal_origem,
             "created_at": p.created_at.isoformat() if getattr(p, "created_at", None) else None,
             "updated_at": p.updated_at.isoformat() if getattr(p, "updated_at", None) else None,
-            "concluido_em": getattr(p, "concluido_em", None).isoformat() if getattr(p, "concluido_em", None) else None,
+            "concluido_em": (
+                _v.isoformat() if (_v := getattr(p, "concluido_em", None)) is not None else None
+            ),
         }
         for p in protocolos_rows
     ]
@@ -145,7 +147,9 @@ def exportar_dados_titular(
                 "canal": getattr(a, "canal", None),
                 "status": getattr(a, "status", None),
                 "created_at": a.created_at.isoformat() if a.created_at else None,
-                "concluido_em": getattr(a, "concluido_em", None).isoformat() if getattr(a, "concluido_em", None) else None,
+                "concluido_em": (
+                    _v.isoformat() if (_v := getattr(a, "concluido_em", None)) is not None else None
+                ),
             }
             for a in atendimentos_rows
         ]
