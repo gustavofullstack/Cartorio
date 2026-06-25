@@ -2587,6 +2587,7 @@ async def postman_collection() -> dict:
 )
 async def list_audit_logs_endpoint(
     request: Request,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
     actor_id: Annotated[str | None, Query(description="Filtrar por actor_id exato.")] = None,
     actor_type: Annotated[
         str | None,
@@ -2611,16 +2612,6 @@ async def list_audit_logs_endpoint(
     db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> AuditLogListResponse:
     """Lista audit logs paginados (DPO/escrevente)."""
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "erro": "UNAUTHORIZED",
-                "mensagem": "X-API-Key obrigatoria para consultar audit log.",
-            },
-        )
-
     filter_ = AuditLogFilter(
         actor_id=actor_id,
         actor_type=actor_type,  # type: ignore[arg-type]
@@ -2650,15 +2641,9 @@ async def get_audit_log_endpoint(
     request: Request,
     log_id: int,
     db: Annotated[Session, Depends(get_db)],
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> AuditLogResponse:
     """Retorna 1 entry de audit log por ID."""
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
-        )
-
     result = get_audit_log_by_id(db, log_id)
     if result is None:
         raise HTTPException(

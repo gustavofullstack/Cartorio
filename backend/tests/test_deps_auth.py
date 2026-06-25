@@ -258,43 +258,47 @@ def test_audit_service_log_chamado_em_401_invalid(client: TestClient, monkeypatc
     assert len(payload["key_fingerprint"]) == 8  # sha256[:8]
 
 
-def test_audit_service_log_chamado_em_503_config_missing(monkeypatch) -> None:
+def test_audit_service_log_chamado_em_503_config_missing() -> None:
     """Falha de config (503 CARTORIO_API_KEY None) DEVE gravar audit log.
 
     Safety net: mesmo quando settings desserializa com chave vazia/None
-    (bug hipotetico), ainda logamos a falha. Aqui forjamos o caminho.
+    (bug hipotetico), ainda logamos a falha. Aqui testamos o HELPER
+    _audit_auth_failure diretamente, ja que a config.py validacao strict
+    impede chegar ao 503 via HTTP em producao.
     """
     from unittest.mock import MagicMock, patch
 
-    from app.api.deps import require_cartorio_api_key
-    from fastapi import FastAPI, Depends
-    from fastapi.testclient import TestClient
+    from fastapi import Request
 
-    def protected(api_key: str = Depends(require_cartorio_api_key)) -> dict:
-        return {"status": "ok"}
+    from app.api.deps import _audit_auth_failure
 
-    test_app = FastAPI()
-    test_app.get("/protected", dependencies=[Depends(require_cartorio_api_key)])(
-        protected
-    )
-    test_client = TestClient(test_app)
+    mock_log = MagicMock()
+    mock_req = MagicMock(spec=Request)
+    mock_req.url.path = "/api/v1/integrations/opencode/test"
+    mock_req.method = "POST"
+    mock_req.client.host = "192.168.1.42"
+    mock_req.headers = {
+        "x-forwarded-for": "203.0.113.42",
+        "user-agent": "test-agent/1.0",
+        "x-request-id": "req-503-test",
+    }
 
-    # Mock settings.cartorio_api_key = None pra forcar o caminho 503
     with patch("app.api.deps.AuditService") as mock_service:
-        mock_log = MagicMock()
         mock_service.log = mock_log
-        with patch("app.api.deps.get_settings") as mock_get_settings:
-            mock_settings = MagicMock()
-            mock_settings.cartorio_api_key = None
-            mock_get_settings.return_value = mock_settings
+        _audit_auth_failure(mock_req, reason="config_missing", provided="anything")
 
-            resp = test_client.get("/protected", headers={"X-API-Key": "anything"})
-
-    assert resp.status_code == 503
     assert mock_log.call_count >= 1
     call_kwargs = mock_log.call_args.kwargs
+    assert call_kwargs["actor_id"] == "anonymous"
+    assert call_kwargs["actor_type"] == "unauthorized"
+    assert call_kwargs["action"] == "auth.failed"
+    assert call_kwargs["resource"] == "/api/v1/integrations/opencode/test"
     payload = call_kwargs["payload"]
     assert payload["reason"] == "config_missing"
+    assert payload["key_fingerprint"] != "anything"  # NAO loga valor da chave
+    assert call_kwargs["ip"] == "203.0.113.42"  # XFF honored
+    assert call_kwargs["user_agent"] == "test-agent/1.0"
+    assert call_kwargs["request_id"] == "req-503-test"
 
 
 def test_audit_service_log_NAO_chamado_em_200_sucesso(client: TestClient) -> None:
