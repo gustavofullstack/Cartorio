@@ -98,6 +98,12 @@ class Settings(BaseSettings):
     # ========================================================================
     chatwoot_webhook_secret: Optional[str] = None
     evolution_webhook_secret: Optional[str] = None
+    telegram_webhook_secret: Optional[str] = None
+
+    # ========================================================================
+    # Telegram Bot
+    # ========================================================================
+    telegram_bot_token: Optional[str] = None
 
     # ========================================================================
     # Stale detector (atendimento sem update > N min vira flag 'stale')

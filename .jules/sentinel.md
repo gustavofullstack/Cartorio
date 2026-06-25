@@ -1,0 +1,4 @@
+## 2026-06-25 - [CRITICAL] Fixed Hardcoded Telegram Bot Token
+**Vulnerability:** A critical Telegram Bot Token was hardcoded in `backend/app/api/v1/telegram.py` and its test suite. Additionally, the `telegram_webhook_secret` was accessed dynamically via `hasattr` instead of being clearly defined in configuration.
+**Learning:** Hardcoded credentials expose sensitive APIs (in this case, the Telegram Bot) to misuse if the codebase is exposed or shared. It also prevents the credential from being rotated easily since it requires a code change.
+**Prevention:** Ensure all sensitive credentials, tokens, and keys are defined as fields in the `app.config.Settings` class and securely injected via environment variables. Regularly scan for and refactor any statically assigned secrets found in the code or tests.
