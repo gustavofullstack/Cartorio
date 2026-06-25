@@ -282,3 +282,24 @@ B0.3 smoke test (cliente fake ID 99999, execução direta via curl bypass webhoo
 - Adicionar `n8n-nodes-base.respondToWebhook` node no fim do flow (responseMode=responseNode exige)
 - Connection: última IF/HTTPRequest output → Respond node
 - Body: `{status: "ok", cliente_id, audit_id, soft_deleted_at}` ou erro estruturado
+
+### N8N workflow_entity.settings column type = json, not jsonb (2026-06-25)
+Type: pitfall
+
+**B06 retry 02:41 BRT** tentou `SET settings = COALESCE(settings, '{}'::jsonb) || jsonb_build_object(...)` e quebrou:
+> ERROR: COALESCE could not convert type jsonb to json
+
+Causa: `workflow_entity.settings` e `json` (nao `jsonb`). COALESCE entre unknown (coluna) e jsonb (literal) nao unifica sem cast explicito.
+
+**Workaround canonico** (B06 retry usou, 22 WFs wired em 1 query):
+```sql
+UPDATE workflow_entity
+SET settings = (COALESCE(settings::jsonb, '{}'::jsonb) || jsonb_build_object('errorWorkflow', '4IS5oiLyHWGhtb8g'))::json
+WHERE id IN (...) AND active = true;
+```
+
+**Alternativa testada e NAO funciona**: PATCH /api/v1/workflows/{id} retorna 405 em N8N 2.x (Lesson 96). PUT exige body completo (name, nodes, connections) — inviavel para update cirurgico de settings.
+
+**Verificacao pos-update**: `SELECT id, name, settings->'errorWorkflow' FROM workflow_entity WHERE id IN (...)` deve retornar 4IS5oiLyHWGhtb8g para todos.
+
+**Caso real**: B06 retry 22 WFs wired em 1 transaction (30s total). Validacao psql + API ambos confirmaram 33/34 wired.

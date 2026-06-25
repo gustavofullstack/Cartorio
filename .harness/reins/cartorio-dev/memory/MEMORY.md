@@ -352,3 +352,19 @@ e misturar quebra audit log do escopo A13.
 Modified by Gustavo Almeida
 
 Modified by Gustavo Almeida
+### Lesson 111 — predicted commit hash ≠ actual git hash (D0.2 REWORK 2026-06-25) (2026-06-25)
+Type: pattern
+
+Briefing de Pietra previu 316d497 (sequencial ao 316d496) mas git gerou
+e33d977 (sequencial REAL). MOTIVO: master teve 1 commit intermediario
+(81a1bfc docs/memory Lesson 109 lifespan startup) entre meu standby e meu
+rework — Pietra nao previu isso no briefing.
+
+Lesson canon: SEMPRE usar `git rev-parse HEAD` pos-commit e reportar o
+hash REAL no report-back. NAO confiar em hashes preditos pelo briefing.
+
+Impacto zero na entrega (commit sequencial a 316d496, conteudo correto),
+mas reportar hash errado gera confusao em LGPD re-review ("qual commit
+mesmo?"). Pietra registrou Lesson 112 no MEMORY.md do projeto.
+
+Modified by Gustavo Almeida
