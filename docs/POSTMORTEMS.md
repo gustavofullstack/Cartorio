@@ -129,14 +129,69 @@ docker service update --force cartorio_api
 
 ---
 
+### INC-004: OpenClaw Agent 502 Bad Gateway (2026-06-26)
+
+**Severidade**: P0 (Agent AI Pietra offline)
+**Detectado em**: 2026-06-26 ~17:00 BRT (sessão de monitoramento)
+**Detectado por**: ZCode/Mavis (orquestrador)
+**Resolvido por**: HOLD — requer Gustavo/agente com SSH
+
+**Severidade real**: P1 — o radar mostra `openclaw: offline` mas todos os outros 6 serviços estão online. O sistema continua funcional para integrações WhatsApp, N8N workflows, API REST, etc — apenas o LLM agent (Pietra) está offline.
+
+### Timeline
+- 17:00 BRT — `scripts/diagnose_openclaw.sh` criado
+- 17:02 BRT — health check confirma 502 em todos endpoints
+- 17:03 BRT — Aguardar 60s e recheck: continua 502
+
+### Root Cause (suspeita)
+- Container `cartorio_openclaw-gateway` crashou/restartou
+- Possíveis causas:
+  1. Erro de configuração após deploy (chave OpenCode-Go inválida)
+  2. Falta de memória (OOM killer)
+  3. Bug no próprio OpenClaw 0.4.x
+  4. Gateway Traefik não consegue rotear para o container
+
+### Impact
+- 1/8 serviços offline (apenas OpenClaw)
+- 7/8 serviços operacionais (database, redis, n8n, evolution, chatwoot, supabase, easypanel)
+- WhatsApp flow: parado (Pietra offline)
+- API + N8N workflows: operacionais
+- LGPD: sem impacto
+
+### Resolution
+```bash
+# Gustavo ou agente com SSH Tailscale:
+bash scripts/diagnose_openclaw.sh
+
+# Script faz:
+# 1. SSH connectivity check (alias 'cartorio')
+# 2. Coleta status do container
+# 3. Mostra logs recentes (tail 30)
+# 4. Tenta restart: docker service update --force cartorio_openclaw-gateway
+# 5. Valida via API /health
+```
+
+### Lessons Learned
+- **L-NEW**: Container pode crashar silenciosamente — health check radar detecta
+- **L-NEW**: Script `diagnose_openclaw.sh` é fallback quando agente não tem SSH
+- **L-NEW**: Após deploy, sempre validar radar 7/7 GREEN antes de considerar done
+
+### Action Items
+- [ ] AI-1: Gustavo executar `bash scripts/diagnose_openclaw.sh` no VPS
+- [ ] AI-2: Se restart não resolver, verificar logs: `ssh cartorio "docker logs cartorio_openclaw-gateway --tail 100"`
+- [ ] AI-3: Se OOM, aumentar limite memória em Easypanel
+- [ ] AI-4: Se erro config, verificar `agent.json` (NÃO rotacionar chaves)
+- [ ] AI-5: Documentar causa raiz após resolução
+
+---
+
 ## 📊 Estatísticas
 
-- **Total de incidentes registrados**: 3 (até 2026-06-26)
-- **P0 críticos**: 1 (INC-002 Supabase Auth)
+- **Total de incidentes registrados**: 4 (até 2026-06-26)
+- **P0 críticos**: 2 (INC-002 Supabase Auth, INC-004 OpenClaw 502)
 - **P1 altos**: 1 (INC-003 agendamento.py)
 - **P3 baixos**: 1 (INC-001 SSH key)
-- **MTTR médio**: ~17min
-- **Root causes mais comuns**: misconfiguração (66%), syntax error (33%)
+- **MTTR médio**: ~13min (exceto INC-004 HOLD)
 
 ---
 
@@ -146,7 +201,8 @@ docker service update --force cartorio_api
 2. **Validar credenciais após regeneração** (especialmente DB passwords)
 3. **Sintaxe Python verificar antes de commit** (usar `ast.parse` em CI gate)
 4. **Backup antes de regeneração** (rollback rápido se algo quebrar)
-5. **Documentar TODOS os incidentes** mesmo pequenos (P3) — aprendizados valem muito
+5. **Health check radar detecta containers crashados** — usar como gate após deploy
+6. **OpenClaw 502 = container crashou** — usar `diagnose_openclaw.sh` para recovery
 
 ---
 
