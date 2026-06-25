@@ -29,6 +29,19 @@ from app.config import get_settings  # noqa: E402
 get_settings.cache_clear()
 
 from app.models.base import Base  # noqa: E402
+# Importa modelos concretos para que Base.metadata esteja populado nos testes
+# (caso contrario tabelas nao existem no SQLite in-memory e lifespan da app
+#  falha em AuditService.log_system_action → "no such table: audit_log")
+from app.models import (  # noqa: E402,F401
+    audit_log,  # usado por AuditService.log_system_action no lifespan
+    cliente,
+    protocolo,
+    atendimento,
+    documento,
+    conversa,
+    outbox_message,
+    webhook_event,
+)
 
 
 @pytest.fixture

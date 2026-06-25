@@ -1,0 +1,88 @@
+version: 1
+plan:
+  name: cartorio-b6-error-handler-global
+  max_concurrency: 2
+  max_consecutive_failures: 2
+  max_cycles: 2
+  auto_accept: true
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: b6-error-handler
+    title: B6 N8N Error Handler Global em todos WFs ativos
+    prompt: >
+      TASK B6 do Squad B (N8N Polish + WhatsApp) — Cartório 2notas.
+
+      Implementar Error Workflow global que captura falhas de QUALQUER
+      workflow N8N ativo no projeto Cartório.
+
+      Projeto: ~/projetos/Cartorio (backend FastAPI + n8n em infra/n8n-workflows/).
+
+      PASSOS:
+
+      1. AUDITAR todos os workflows existentes:
+         - Listar todos os WFs via N8N API: GET /api/v1/workflows
+         - Filtrar status=active
+         - Para cada um, verificar se tem errorWorkflow já configurado
+         - Salvar lista em .harness/reins/cartorio-n8n/memory/B6-wf-audit.json
+
+      2. CRIAR workflow "00-error-handler-global":
+         - Trigger: Error Trigger (escuta TODOS os erros)
+         - Nodes:
+           a. Set: extrair wf_name, error_message, execution_id, timestamp
+           b. HTTP Request: POST http://cartorio_api:8000/api/v1/integrations/n8n/error
+              com payload {wf_name, error, execution_id, ts}
+           c. Code (JS): formatar mensagem Telegram
+           d. HTTP Request: POST https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage
+              para GRUPO Pietra Squad (-5006771024) com:
+              "🚨 N8N ERRO\nWF: {wf_name}\nExec: {execution_id}\nErro: {error_message}\nTS: {ts}"
+           e. IF: se erro tipo "ECONNREFUSED" → retry com backoff 3x
+           f. END
+
+      3. APLICAR errorWorkflow="00-error-handler-global" em TODOS os WFs ativos:
+         - Para cada WF retornado na auditoria sem errorWorkflow:
+           - PUT /api/v1/workflows/{id} com body { ..., settings: { errorWorkflow: "<id do handler>" } }
+         - Documentar quantos foram atualizados
+
+      4. CRIAR endpoint backend /api/v1/integrations/n8n/error:
+         - Recebe payload, valida HMAC N8N_WEBHOOK_SECRET
+         - Insere em audit_log (event_type=n8n_error, payload)
+         - Incrementa métrica Prometheus n8n_errors_total{wf_name}
+         - Retorna 200
+
+      5. TESTES:
+         - Mock N8N API retornando 5 WFs (3 sem errorWorkflow, 2 com)
+         - Verificar handler WF criado e aplicado corretamente
+         - Verificar endpoint backend valida HMAC e insere audit_log
+         - Verificar mensagem Telegram formatada corretamente
+
+      CRITÉRIOS DONE:
+      - Endpoint backend pytest coverage >= 90%
+      - ruff check + mypy strict 0 errors
+      - WF handler criado e ativo em N8N
+      - Audit log gravado em teste end-to-end
+      - Conventional Commits terminando com "Modified by Gustavo Almeida"
+      - SEM rotação de chaves
+
+      REPORTE ao root session mvs_6663ee57a937460fb324e496cb5ac217 via
+      `mavis communication send --from <sua-session> --to mvs_6663ee57a937460fb324e496cb5ac217 --command prompt`
+      ao terminar com summary de 5 linhas.
+    verify_prompt: >
+      Verifique o commit/PR:
+      1. Endpoint /api/v1/integrations/n8n/error existe, valida HMAC, insere audit_log?
+      2. pytest coverage >= 90% no módulo novo?
+      3. ruff check + ruff format clean?
+      4. mypy strict 0 errors?
+      5. WF "00-error-handler-global" criado em N8N e aplicado nos WFs ativos?
+      6. Mensagem Telegram formatada corretamente?
+      7. Conventional Commits + Modified by Gustavo Almeida?
+      APROVADO = todos SIM.
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-n8n
+    role: produce
+    verified_by: verifier
+    depends_on: []
+    timeout_ms: 1800000

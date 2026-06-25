@@ -1,0 +1,87 @@
+version: 1
+plan:
+  name: cartorio-a13-dead-mans-switch
+  max_concurrency: 2
+  max_consecutive_failures: 2
+  max_cycles: 2
+  auto_accept: true
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: a13-implement
+    title: A13 Dead Man's Switch — audit cron parado >1h alerta Telegram
+    prompt: >
+      TASK A13 do Squad A (API/DB Hardening) — Cartório 2notas.
+
+      Implementar dead man's switch: cron detecta se audit_log parou de
+      receber mutações por mais de 1h e envia alerta Telegram GRUPO Pietra
+      Squad.
+
+      Projeto: ~/projetos/Cartorio (backend FastAPI em backend/app/).
+      Já existe audit_log com HMAC chain em backend/app/services/audit.py.
+      Já existe módulo Telegram em backend/app/services/telegram.py.
+
+      ENTREGÁVEIS:
+
+      1. Endpoint GET /admin/audit/health retornando:
+         - last_audit_ts (timestamp ISO da última mutação)
+         - stale_seconds (int)
+         - status (healthy | warning | critical)
+         - threshold_minutes (int, configurável)
+
+      2. Endpoint POST /admin/audit/check-now (forçar verificação manual)
+
+      3. Job assíncrono (APScheduler ou asyncio.create_task) que:
+         - Roda a cada 15 minutos
+         - Executa: SELECT MAX(ts) FROM audit_log
+         - Se staleness > AUDIT_DEAD_MANS_SWITCH_MINUTES (default 60) →
+           POST Telegram GRUPO Pietra Squad com mensagem formatada
+         - Configurável via env: AUDIT_DEAD_MANS_SWITCH_MINUTES=60
+         - Configurável via env: AUDIT_ALERT_TELEGRAM_CHAT_ID
+
+      4. Testes pytest com mock de tempo (freezegun):
+         - Cenário healthy (mutação <60min)
+         - Cenário warning (60-120min)
+         - Cenário critical (>120min)
+         - Telegram send mock asserting message format e chat_id
+
+      5. Métrica Prometheus audit_dead_mans_status (0=healthy, 1=warning, 2=critical)
+
+      6. Documentação em backend/app/services/audit.py docstring +
+         .harness/reins/cartorio-dev/memory/A13-dead-mans-switch.md
+
+      CRITÉRIOS DONE (gate):
+      - pytest -v --cov=app passa, coverage >= 90% no módulo novo
+      - ruff check clean + ruff format aplicado
+      - mypy strict 0 errors
+      - Conventional Commits (feat/fix/test/docs) terminando com
+        "Modified by Gustavo Almeida"
+      - SEM rotação de chaves
+      - Report SUCCESS|FAIL
+
+      WORKFLOW OBRIGATÓRIO:
+      analisar → testar → corrigir → melhorar → otimizar →
+      documentar → comentar → salvar memória.
+
+      REPORTE ao root session mvs_6663ee57a937460fb324e496cb5ac217 via
+      `mavis communication send --from <sua-session> --to mvs_6663ee57a937460fb324e496cb5ac217 --command prompt`
+      ao terminar com 5 linhas de summary (files_changed, tests_added, coverage, commit_hash, status).
+    verify_prompt: >
+      Verifique o commit/PR:
+      1. Coverage >= 90%? pytest -v --cov=app passa?
+      2. ruff check + ruff format clean?
+      3. mypy strict 0 errors?
+      4. 3 cenários de teste implementados (healthy/warning/critical)?
+      5. Telegram GRUPO alert format correto?
+      6. Env vars documentadas em backend/.env.example?
+      7. Conventional Commits + Modified by Gustavo Almeida?
+      APROVADO = todos SIM. Senão, liste especificamente o que falta.
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier
+    depends_on: []
+    timeout_ms: 1800000
