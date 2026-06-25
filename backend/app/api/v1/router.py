@@ -4411,7 +4411,7 @@ def listar_agendamentos_cliente(
     agendamentos = AgendamentoService.listar_agendamentos_cliente(
         db, cliente_id, limit=limit, offset=offset
     )
-    return [AgendamentoResponse.from_orm(a) for a in agendamentos]
+    return [AgendamentoResponse.model_validate(a) for a in agendamentos]
 
 
 @api_router.get(
@@ -4433,7 +4433,7 @@ def listar_agendamentos_data(
     from app.services.agendamento import AgendamentoService
 
     agendamentos = AgendamentoService.listar_agendamentos_data(db, data, local=local)
-    return [AgendamentoResponse.from_orm(a) for a in agendamentos]
+    return [AgendamentoResponse.model_validate(a) for a in agendamentos]
 
 
 @api_router.post(
