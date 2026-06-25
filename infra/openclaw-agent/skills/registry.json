@@ -1,0 +1,88 @@
+{
+  "$schema": "https://cartorio.com/schemas/skills-registry-v1.json",
+  "version": "1.0.0",
+  "updated_at": "2026-06-25",
+  "purpose": "SQUAD E E3 - skills registry auto-discovery. OpenClaw le este JSON e expoe as skills no runtime. Cada skill tem: name, intent, tools_used, pii_safe, version, prompt_template.",
+
+  "skills": [
+    {
+      "name": "cartorio-saudacoes",
+      "intent": "saudacao_inicial|retorno|primeira_vez",
+      "tools_used": ["cartorio_api_health", "opencode_go_chat"],
+      "pii_safe": true,
+      "version": "1.2.0",
+      "response_template": "R01|R02|R03",
+      "description": "Saudacao inicial + boas-vindas + retorno de cliente conhecido"
+    },
+    {
+      "name": "cartorio-protocolo-tracker",
+      "intent": "consultar_protocolo|status_protocolo|andamento",
+      "tools_used": ["cartorio_api_protocolo_consultar", "n8n_workflow_trigger:04-consulta-protocolo"],
+      "pii_safe": false,
+      "version": "1.0.0",
+      "response_template": "R17",
+      "description": "Cliente consulta status de protocolo por numero. LGPD: requer identificacao (CPF hash ou protocolo_id)"
+    },
+    {
+      "name": "cartorio-emolumento-calc",
+      "intent": "calcular_emolumento|quanto_custa|valor_servico",
+      "tools_used": ["cartorio_api_emolumento_calcular", "redis_cache_get", "redis_cache_set"],
+      "pii_safe": true,
+      "version": "1.0.0",
+      "response_template": "R16|R33",
+      "description": "Calcula emolumento MG 2026 (tabela TJMG) por tipo, folhas, urgencia. Cache 24h Redis (B21)"
+    },
+    {
+      "name": "cartorio-handoff-trigger",
+      "intent": "atendente_humano|falar_com_humano|reclamacao_grave",
+      "tools_used": ["chatwoot_pausar_agente", "chatwoot_add_label", "n8n_workflow_trigger:03-handoff-human"],
+      "pii_safe": false,
+      "version": "1.0.0",
+      "response_template": "R35|R37|M05",
+      "description": "Pausa agente IA e transfere para humano. Notifica Chatwoot. LGPD: registrar motivo"
+    },
+    {
+      "name": "cartorio-agendamento",
+      "intent": "agendar|marcar|horario_disponivel",
+      "tools_used": ["cartorio_api_agendamento_disponibilidade", "cartorio_api_agendamento_criar", "n8n_workflow_trigger:05-agendamento"],
+      "pii_safe": false,
+      "version": "1.0.0",
+      "response_template": "R18|R19|R20",
+      "description": "Lista horarios livres + cria agendamento. LGPD: requer consent + identificacao"
+    },
+    {
+      "name": "cartorio-segunda-via",
+      "intent": "segunda_via|copia|escritura_perdida",
+      "tools_used": ["cartorio_api_protocolo_consultar", "n8n_workflow_trigger:06-2-via-protocolo"],
+      "pii_safe": false,
+      "version": "1.0.0",
+      "response_template": "R22",
+      "description": "Emite 2a via de escritura. LGPD: requer protocolo_id + identificacao"
+    },
+    {
+      "name": "cartorio-pesquisa-satisfacao",
+      "intent": "feedback|avaliacao|nps|reclamacao",
+      "tools_used": ["n8n_workflow_trigger:07-pesquisa-satisfacao", "chatwoot_add_label"],
+      "pii_safe": true,
+      "version": "1.0.0",
+      "response_template": "R23|R24|R25|R50|R51",
+      "description": "Coleta NPS, elogios, reclamacoes. LGPD-safe (anonimizado)"
+    }
+  ],
+
+  "discovery": {
+    "directory": "infra/openclaw-agent/skills/",
+    "pattern": "*.md",
+    "auto_register": true,
+    "on_change": "openclaw config patch --file patch.json5 (hot reload)"
+  },
+
+  "metadata": {
+    "total_skills": 7,
+    "intents_catalogados": 24,
+    "pii_safe": 3,
+    "pii_unsafe": 4,
+    "language": "pt-BR",
+    "tone": "direto, curto, serio, sem emojis"
+  }
+}
