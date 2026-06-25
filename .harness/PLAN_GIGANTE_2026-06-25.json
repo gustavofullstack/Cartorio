@@ -1,0 +1,94 @@
+{
+  "$schema": "https://cartorio.com/schemas/plan-gigante-v2.json",
+  "version": "2.0.0",
+  "data": "2026-06-25T08:14:00-03:00",
+  "orquestrador": "Mavis/Pietra mvs_6663ee57a937460fb324e496cb5ac217",
+  "modo": "sequential-1-2-parallel",
+  "sem_rotacionar_chaves": true,
+  "sem_refazer": true,
+  "total_tasks": 150,
+  "squads": 10,
+  "tasks_done_ate_2026_06_24": 27,
+  "tasks_pending": 123,
+  "tasks_next_30_days": 60,
+  "squads_summary": {
+    "A": {"name": "API/DB Hardening", "owner": "cartorio-dev", "total": 25, "done": 12, "next": "A13-A25"},
+    "B": {"name": "N8N Polish + WhatsApp", "owner": "cartorio-n8n", "total": 25, "done": 5, "next": "B6-B15"},
+    "C": {"name": "Docs/Obs", "owner": "cartorio-zcode", "total": 25, "done": 5, "next": "C6-C25"},
+    "D": {"name": "LGPD/DocOps", "owner": "cartorio-lgpd", "total": 25, "done": 8, "next": "D13-D25"},
+    "E": {"name": "LGPD Engineering", "owner": "cartorio-lgpd", "total": 15, "done": 0, "next": "E01-E15"},
+    "F": {"name": "Testing & CI/CD", "owner": "cartorio-dev", "total": 15, "done": 0, "next": "F01-F15"},
+    "G": {"name": "Hardening Prod SRE", "owner": "cartorio-dev", "total": 10, "done": 0, "next": "G01-G10"},
+    "H": {"name": "Performance Opt", "owner": "cartorio-dev", "total": 10, "done": 0, "next": "H01-H10"},
+    "I": {"name": "UX Dashboard", "owner": "cartorio-zcode", "total": 10, "done": 0, "next": "I01-I10"},
+    "J": {"name": "Integ Jules/Linear/Render/Context7", "owner": "cross", "total": 15, "done": 0, "next": "J01-J15"}
+  },
+  "status_real_25_06_08_14_BRT": {
+    "api_200_8_8_integ": true,
+    "containers_up_vps": "13/13",
+    "api_tasks": {"healthy": "973c307ddb70", "starting": ["ff768a1a3822", "1ed9fe6f59e0"]},
+    "dns_externo_resolve": ["api.2notasudi.com.br"],
+    "dns_externo_nxdomain": ["n8n", "evo", "chatwoot", "supabase", "openclaw", "traefik"],
+    "telegram_bot_OK": true,
+    "linear_api_OK": true,
+    "render_api_OK_com_chave_correta": true,
+    "jules_api": "pendente verificar",
+    "env_issues": {
+      "render_api_key_no_env_errado": "rnd_QP8GWTShurLmVGSp3H2e25pXsKti (corrigido p/ rnd_sTv1GnBAmvWrsP7UGIs7wrbeuKzn)",
+      "render_api_key_no_container_vps_errado": "rnd_QP8GWTShurLmVGSp3H2e25pXsKti (pendente update Swarm env)",
+      "supabase_anon_key_no_container_vps_vazio": "pendente",
+      "supabase_service_role_key_no_container_vps_vazio": "pendente",
+      "chatwoot_api_key_no_container_vps_vazio": "pendente",
+      "supabase_url_typo_supbase": "pendente Gustavo decidir SUI 1.6",
+      "opencode_go_context_window_no_env": "pendente update 1048576",
+      "openclaw_context_window_no_env": "pendente update 1048576"
+    }
+  },
+  "next_15_tasks_queue": [
+    {"id": "A13", "squad": "A", "title": "Dead man's switch audit_log parado >1h alerta Telegram", "owner": "cartorio-dev", "est_h": 2, "deps": [], "priority": 1, "today": true},
+    {"id": "A14", "squad": "A", "title": "Backup DB 4x/dia pg_basebackup+WAL retenção 7d local+S3 mensal", "owner": "cartorio-dev", "est_h": 4, "deps": [], "priority": 1, "today": true},
+    {"id": "A15", "squad": "A", "title": "Connection pool tuning pool=20 overflow=10 pre_ping", "owner": "cartorio-dev", "est_h": 1, "deps": [], "priority": 1, "today": true},
+    {"id": "A18", "squad": "A", "title": "Trigger update_at automático em todas tabelas", "owner": "cartorio-dev", "est_h": 1, "deps": [], "priority": 2, "today": true},
+    {"id": "A19", "squad": "A", "title": "Soft delete pattern global deleted_at + filtro query", "owner": "cartorio-dev", "est_h": 2, "deps": [], "priority": 2, "today": true},
+    {"id": "A20", "squad": "A", "title": "Lock distribuído Redlock p/ migrations e seed", "owner": "cartorio-dev", "est_h": 1, "deps": [], "priority": 2},
+    {"id": "F01", "squad": "F", "title": "Mutation testing mutmut gate 80% mutants killed", "owner": "cartorio-dev", "est_h": 3, "deps": [], "priority": 2},
+    {"id": "F05", "squad": "F", "title": "E2E Playwright full flow cliente→consulta→emolumento→recibo", "owner": "cartorio-dev", "est_h": 4, "deps": ["A19"], "priority": 2},
+    {"id": "G01", "squad": "G", "title": "Grafana dashboard 12 panels latência/error/CPU/RAM/disk", "owner": "cartorio-dev", "est_h": 3, "deps": ["A02"], "priority": 2},
+    {"id": "G02", "squad": "G", "title": "Prometheus alert rules 25 P0/P1/P2 routing Telegram", "owner": "cartorio-dev", "est_h": 2, "deps": ["G01"], "priority": 2},
+    {"id": "E01", "squad": "E", "title": "LGPD consent granular por canal whatsapp/telegram/web", "owner": "cartorio-lgpd", "est_h": 3, "deps": ["D11"], "priority": 2},
+    {"id": "E03", "squad": "E", "title": "Portabilidade JSON+PDF padrão LGPD art 18 IV", "owner": "cartorio-lgpd", "est_h": 2, "deps": ["D12"], "priority": 2},
+    {"id": "B11", "squad": "B", "title": "Alertas Telegram para falha WF GRUPO Pietra Squad", "owner": "cartorio-n8n", "est_h": 1, "deps": ["B10"], "priority": 2},
+    {"id": "B12", "squad": "B", "title": "Test runner 28 WFs Playwright + workflow test kit", "owner": "cartorio-n8n", "est_h": 4, "deps": [], "priority": 3},
+    {"id": "J01", "squad": "J", "title": "Jules API configurado com Render MCP + Linear MCP + Context7 MCP", "owner": "cross", "est_h": 2, "deps": [], "priority": 3}
+  ],
+  "loop_engineer": {
+    "enabled": true,
+    "interval_min": 30,
+    "max_iterations": 50,
+    "stop_when": "all_pending_done OR Gustavo abort OR memory_exhausted",
+    "cron_name": "cartorio-loop-engineer",
+    "self_reminder_enabled": true
+  },
+  "agents_disponiveis": {
+    "cartorio-dev": "backend FastAPI/SQLAlchemy/audit/PII",
+    "cartorio-n8n": "workflows N8N/Evolution/Chatwoot/OpenClaw",
+    "cartorio-lgpd": "LGPD/RIPD/retenção/auditoria",
+    "cartorio-zcode": "docs/UX/admin",
+    "cross": "Mavis/Pietra orquestra multi-rein"
+  },
+  "tokens_strategy": {
+    "primary_endpoint": "minimax/MiniMax-M3 coding plan",
+    "minimax_api_key": "sk-cp-***MASKED*** (set em env)",
+    "parallel_max": 2,
+    "thinking_mode": "adaptive",
+    "context_target_tokens": 500000,
+    "fallback_free": ["opencode-zen free tier", "qwen-coder 30B free"],
+    "monitor": "codex-bar CLI input/output/endpoint"
+  },
+  "deliverable_summary": {
+    "md_path": ".harness/PLAN_GIGANTE_2026-06-25.md",
+    "json_path": ".harness/PLAN_GIGANTE_2026-06-25.json",
+    "task_bank_path": ".harness/task-bank-100-melhorias.json (atualizar v2 com E-J)",
+    "roadmap_path": "docs/ROADMAP_100TASK.md (atualizar v2 com 150 tasks)"
+  }
+}
