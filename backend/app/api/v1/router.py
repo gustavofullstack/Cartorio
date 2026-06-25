@@ -4542,11 +4542,20 @@ def get_agendamentos_pendentes(
     x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
     db: Session = Depends(get_db),
 ) -> list[dict]:
-    """Lista agendamentos pendentes para notificação N8N."""
+    """Lista agendamentos pendentes para notificação N8N.
+    
+    A26: Cache Redis 60s para reduzir carga DB em pico.
+    """
     from app.services.agendamento import AgendamentoService
+    from app.services.agendamento_cache import get_agendamentos_pendentes_cached, set_agendamentos_pendentes_cached
 
     api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
     _verify_api_key(api_key_header)
+
+    # A26 - Cache Redis: tenta buscar do cache primeiro
+    cached = get_agendamentos_pendentes_cached()
+    if cached is not None:
+        return cached
 
     agendamentos = AgendamentoService.listar_agendamentos_pendentes(db)
     
@@ -4583,6 +4592,9 @@ def get_agendamentos_pendentes(
             **cliente_info
         })
 
+    # A26: cacheia resultado para proximas chamadas
+    set_agendamentos_pendentes_cached(result)
+
     return result
 
 
@@ -4606,11 +4618,20 @@ def get_agendamentos_proximos(
     x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
     db: Session = Depends(get_db),
 ) -> list[dict]:
-    """Lista agendamentos próximos para lembrete N8N."""
+    """Lista agendamentos próximos para lembrete N8N.
+    
+    A26: Cache Redis 60s para reduzir carga DB em pico.
+    """
     from app.services.agendamento import AgendamentoService
+    from app.services.agendamento_cache import get_agendamentos_proximos_cached, set_agendamentos_proximos_cached
 
     api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
     _verify_api_key(api_key_header)
+
+    # A26 - Cache Redis: tenta buscar do cache primeiro
+    cached = get_agendamentos_proximos_cached()
+    if cached is not None:
+        return cached
 
     agendamentos = AgendamentoService.listar_agendamentos_proximos(db)
     
@@ -4646,7 +4667,10 @@ def get_agendamentos_proximos(
             "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
             **cliente_info
         })
-    
+
+    # A26: cacheia resultado para proximas chamadas
+    set_agendamentos_proximos_cached(result)
+
     return result
 
 

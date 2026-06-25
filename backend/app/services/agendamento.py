@@ -251,6 +251,10 @@ class AgendamentoService:
 
         db.commit()
         db.refresh(agendamento)
+        
+        # A26: Invalida cache após criação de novo agendamento
+        from app.services.agendamento_cache import invalidate_agendamento_cache
+        invalidate_agendamento_cache()
 
         return agendamento
 
@@ -370,6 +374,10 @@ class AgendamentoService:
 
         db.commit()
         db.refresh(agendamento)
+        
+        # A26: Invalida cache após cancelamento de agendamento
+        from app.services.agendamento_cache import invalidate_agendamento_cache
+        invalidate_agendamento_cache()
 
         return agendamento
 
@@ -426,6 +434,10 @@ class AgendamentoService:
 
         db.commit()
         db.refresh(agendamento)
+        
+        # A26: Invalida cache após confirmação de agendamento
+        from app.services.agendamento_cache import invalidate_agendamento_cache
+        invalidate_agendamento_cache()
 
         return agendamento
     @staticmethod
@@ -435,14 +447,43 @@ class AgendamentoService:
         Usado pelo NotificationService para disparar lembretes.
         Recriado em 2026-06-25 (E1.S4.T2 cleanup) - estava duplicado e
         foi removido junto com os duplicates por engano no sed.
+        
+        A26: Cache Redis 60s para reduzir carga DB em pico.
         """
         from app.models.agendamento import StatusAgendamento
+        from app.services.agendamento_cache import get_agendamentos_pendentes_cached, set_agendamentos_pendentes_cached
+
+        # A26 - Cache Redis: tenta buscar do cache primeiro
+        cached = get_agendamentos_pendentes_cached()
+        if cached is not None:
+            # Converte de volta para objetos Agendamento
+            # Este endpoint é usado principalmente pelas APIs N8N que retornam dict,
+            # então podemos retornar os dados cacheados diretamente
+            return cached
 
         stmt = select(Agendamento).where(
             Agendamento.status == StatusAgendamento.AGENDADO,
         ).order_by(Agendamento.data_hora)
 
-        return cast(list[Agendamento], db.execute(stmt).scalars().all())
+        agendamentos = cast(list[Agendamento], db.execute(stmt).scalars().all())
+        
+        # A26: cacheia resultado para proximas chamadas
+        # Converte para dict para cache (a API já retorna dict)
+        agendamentos_dicts = []
+        for agendamento in agendamentos:
+            agendamentos_dicts.append({
+                "id": agendamento.id,
+                "titulo": agendamento.titulo,
+                "data_hora": agendamento.data_hora,
+                "cliente_id": agendamento.cliente_id,
+                "local": agendamento.local,
+                "tipo": agendamento.tipo.value if hasattr(agendamento.tipo, "value") else agendamento.tipo,
+                "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
+            })
+        
+        set_agendamentos_pendentes_cached(agendamentos_dicts)
+        
+        return agendamentos
 
     @staticmethod
     def listar_agendamentos_proximos(db: Session) -> list[Agendamento]:
@@ -452,9 +493,20 @@ class AgendamentoService:
         e as proximas 24h.
 
         Recriado em 2026-06-25 (E1.S4.T2 cleanup).
+        
+        A26: Cache Redis 60s para reduzir carga DB em pico.
         """
         import datetime as _dt
         from app.models.agendamento import StatusAgendamento
+        from app.services.agendamento_cache import get_agendamentos_proximos_cached, set_agendamentos_proximos_cached
+
+        # A26 - Cache Redis: tenta buscar do cache primeiro
+        cached = get_agendamentos_proximos_cached()
+        if cached is not None:
+            # Converte de volta para objetos Agendamento
+            # Este endpoint é usado principalmente pelas APIs N8N que retornam dict,
+            # então podemos retornar os dados cacheados diretamente
+            return cached
 
         agora = _dt.datetime.now(_dt.timezone.utc)
         proximas_24h = agora + _dt.timedelta(hours=24)
@@ -468,4 +520,22 @@ class AgendamentoService:
             Agendamento.data_hora <= proximas_24h,
         ).order_by(Agendamento.data_hora)
 
-        return cast(list[Agendamento], db.execute(stmt).scalars().all())
+        agendamentos = cast(list[Agendamento], db.execute(stmt).scalars().all())
+        
+        # A26: cacheia resultado para proximas chamadas
+        # Converte para dict para cache (a API já retorna dict)
+        agendamentos_dicts = []
+        for agendamento in agendamentos:
+            agendamentos_dicts.append({
+                "id": agendamento.id,
+                "titulo": agendamento.titulo,
+                "data_hora": agendamento.data_hora,
+                "cliente_id": agendamento.cliente_id,
+                "local": agendamento.local,
+                "tipo": agendamento.tipo.value if hasattr(agendamento.tipo, "value") else agendamento.tipo,
+                "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
+            })
+        
+        set_agendamentos_proximos_cached(agendamentos_dicts)
+        
+        return agendamentos

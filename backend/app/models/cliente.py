@@ -38,6 +38,13 @@ class Cliente(Base, TimestampMixin):
     nome: Mapped[str] = mapped_column(String(255))
     email: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     telefone_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    
+    # Notificações e contatos
+    telegram_chat_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    whatsapp_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    email_notifications: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    sms_notifications: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    preferred_contact_method: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     # LGPD
     consentimento_lgpd: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
