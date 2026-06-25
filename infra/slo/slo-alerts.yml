@@ -1,0 +1,169 @@
+# SLO Burn Rate Alerts (J10)
+# Alertas baseados em error budget burn rate
+# Modelo: Multi-Window-Multi-Burn-Rate (Google SRE Workbook)
+
+groups:
+  - name: slo_api_availability
+    interval: 30s
+    rules:
+      # FAST BURN: 14.4x burn rate (1h budget em 1h)
+      - alert: SLO_API_Availability_FastBurn
+        expr: |
+          (
+            sum(rate(cartorio_http_requests_total{status=~"5.."}[1h]))
+            /
+            sum(rate(cartorio_http_requests_total[1h]))
+          ) > (1 - 0.995) * 14.4
+        for: 2m
+        labels:
+          severity: critical
+          slo: api_availability
+        annotations:
+          summary: "API error budget FAST BURN"
+          description: |
+            API consumindo error budget 14.4x mais rápido que sustentável.
+            1h de budget vai se esgotar em 1h.
+            AÇÃO IMEDIATA: investigar 5xx errors
+            Runbook: https://docs/MONITORING_GUIDE.md
+
+      # SLOW BURN: 1x burn rate (on track)
+      - alert: SLO_API_Availability_SlowBurn
+        expr: |
+          (
+            sum(rate(cartorio_http_requests_total{status=~"5.."}[6h]))
+            /
+            sum(rate(cartorio_http_requests_total[6h]))
+          ) > (1 - 0.995)
+        for: 30m
+        labels:
+          severity: warning
+          slo: api_availability
+        annotations:
+          summary: "API error budget SLOW BURN"
+          description: "API consumindo error budget em ritmo sustentado. Investigar nas próximas 24h."
+
+  - name: slo_api_latency
+    interval: 30s
+    rules:
+      - alert: SLO_API_Latency_p95_Violation
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(cartorio_http_request_duration_seconds_bucket[5m])) by (le, endpoint)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          slo: api_latency_p95
+        annotations:
+          summary: "API p95 latency > 500ms (endpoint: {{ $labels.endpoint }})"
+          description: "Latência p95 em {{ $labels.endpoint }} = {{ $value }}s (SLO: < 500ms)"
+
+      - alert: SLO_API_Latency_p99_Violation
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(cartorio_http_request_duration_seconds_bucket[5m])) by (le, endpoint)
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: critical
+          slo: api_latency_p99
+        annotations:
+          summary: "API p99 latency > 1s"
+          description: "Latência p99 = {{ $value }}s (SLO: < 1s)"
+
+  - name: slo_n8n_workflows
+    interval: 1m
+    rules:
+      - alert: SLO_N8N_WF_SuccessRate
+        expr: |
+          (
+            sum(rate(n8n_wf_executions_total{status="error"}[1h]))
+            /
+            sum(rate(n8n_wf_executions_total[1h]))
+          ) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          slo: n8n_wf_success_rate
+        annotations:
+          summary: "N8N WF error rate > 1% (SLO: 99%)"
+          description: "Taxa de erro = {{ $value | humanizePercentage }}"
+
+  - name: slo_openclaw
+    interval: 30s
+    rules:
+      - alert: SLO_OpenClaw_ResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(openclaw_response_duration_seconds_bucket[5m])) by (le)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          slo: openclaw_response_time
+        annotations:
+          summary: "OpenClaw p95 response > 5s"
+          description: "Latência p95 = {{ $value }}s (SLO: < 5s)"
+
+  - name: slo_supabase
+    interval: 1m
+    rules:
+      - alert: SLO_Supabase_QueryLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(pg_stat_statements_mean_exec_time_bucket[5m])) by (le)
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          slo: supabase_query_latency
+        annotations:
+          summary: "Supabase p95 query latency > 200ms"
+
+      - alert: Supabase_ConnectionPoolHigh
+        expr: |
+          (sum(pg_stat_activity_count{state="active"}) / 100) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Supabase connection pool > 80%"
+
+  - name: slo_redis
+    interval: 30s
+    rules:
+      - alert: SLO_Redis_Down
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          slo: redis_ping_success
+        annotations:
+          summary: "Redis DOWN"
+          description: "P0 - investigar imediatamente"
+
+  - name: slo_backup
+    interval: 5m
+    rules:
+      - alert: SLO_Backup_Failed
+        expr: backup_success_total == 0 OR backup_success_total != increase(backup_attempted_total[24h])
+        for: 30m
+        labels:
+          severity: critical
+          slo: backup_daily_success
+        annotations:
+          summary: "Backup diário falhou"
+          description: "SLO 100% violado. Verificar /usr/local/bin/cartorio-backup.sh"
+
+      - alert: SLO_Backup_Missing
+        expr: (time() - backup_last_success_timestamp) > 86400
+        for: 10m
+        labels:
+          severity: critical
+          slo: backup_daily_success
+        annotations:
+          summary: "Backup não roda há > 24h"
+
+# SLO Report (mensal)
+# Gerado por infra/slo/slo-report.sh (cron mensal 1º dia)
+# Output: docs/architecture/slo-report-YYYY-MM.md

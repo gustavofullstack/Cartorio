@@ -1,0 +1,211 @@
+# SLO/SLA Definitions (J10)
+# Service Level Objectives + Agreements
+# Meta: medir e alertar quando o SLO está em risco
+
+api:
+  service: cartorio-api
+  domain: api.2notasudi.com.br
+
+  slos:
+    # AVAILABILITY
+    - name: api_availability
+      description: "API responde com sucesso (2xx) em 99.5% do tempo"
+      sli:
+        type: availability
+        spec: |
+          sum(rate(cartorio_http_requests_total{status=~"2.."}[30d]))
+          /
+          sum(rate(cartorio_http_requests_total[30d]))
+      target: 0.995  # 99.5%
+      window: 30d
+      objective: 99.5%
+      error_budget: 0.5%  # 3.6h/mês
+      
+    # LATENCY p95
+    - name: api_latency_p95
+      description: "95% das requests em < 500ms"
+      sli:
+        type: latency
+        spec: |
+          histogram_quantile(0.95, 
+            sum(rate(cartorio_http_request_duration_seconds_bucket[5m])) by (le)
+          ) < 0.5
+      target: 0.95
+      threshold: 0.5  # 500ms
+      window: 5m
+      objective: 95% < 500ms
+      
+    # LATENCY p99
+    - name: api_latency_p99
+      description: "99% das requests em < 1s"
+      sli:
+        type: latency
+        spec: |
+          histogram_quantile(0.99,
+            sum(rate(cartorio_http_request_duration_seconds_bucket[5m])) by (le)
+          ) < 1.0
+      target: 0.99
+      threshold: 1.0  # 1s
+      window: 5m
+      objective: 99% < 1s
+
+n8n:
+  service: cartorio-n8n
+  domain: flow.2notasudi.com.br
+  
+  slos:
+    - name: n8n_wf_success_rate
+      description: "99% dos workflows executam com sucesso"
+      sli:
+        type: success_rate
+        spec: |
+          sum(rate(n8n_wf_executions_total{status="success"}[30d]))
+          /
+          sum(rate(n8n_wf_executions_total[30d]))
+      target: 0.99
+      window: 30d
+      objective: 99%
+      error_budget: 1%  # 7.2h/mês
+      
+    - name: n8n_wf_latency_p99
+      description: "99% dos workflows em < 30s"
+      sli:
+        type: latency
+        spec: |
+          histogram_quantile(0.99,
+            sum(rate(n8n_wf_latency_seconds_bucket[5m])) by (le, workflow)
+          ) < 30
+      target: 0.99
+      threshold: 30  # 30s
+      window: 5m
+      objective: 99% < 30s
+
+openclaw:
+  service: cartorio-openclaw
+  domain: agent.2notasudi.com.br
+  
+  slos:
+    - name: openclaw_ws_success
+      description: "99% das conexões WebSocket bem-sucedidas"
+      sli:
+        type: success_rate
+        spec: |
+          sum(rate(openclaw_ws_connections_total{status="success"}[30d]))
+          /
+          sum(rate(openclaw_ws_connections_total[30d]))
+      target: 0.99
+      window: 30d
+      objective: 99%
+      
+    - name: openclaw_response_time
+      description: "95% das respostas em < 5s (thinking ON)"
+      sli:
+        type: latency
+        spec: |
+          histogram_quantile(0.95,
+            sum(rate(openclaw_response_duration_seconds_bucket[5m])) by (le)
+          ) < 5
+      target: 0.95
+      threshold: 5  # 5s
+      window: 5m
+      objective: 95% < 5s
+
+supabase:
+  service: cartorio-supabase
+  domain: supbase.2notasudi.com.br
+  
+  slos:
+    - name: supabase_query_success
+      description: "99.9% das queries DB com sucesso"
+      sli:
+        type: success_rate
+        spec: |
+          1 - (
+            sum(rate(pg_stat_database_deadlocks[30d]))
+            /
+            sum(rate(pg_stat_database_xact_commit[30d]))
+          )
+      target: 0.999
+      window: 30d
+      objective: 99.9%
+      
+    - name: supabase_query_latency
+      description: "95% das queries em < 200ms"
+      sli:
+        type: latency
+        spec: |
+          histogram_quantile(0.95,
+            sum(rate(pg_stat_statements_mean_exec_time_bucket[5m])) by (le)
+          ) < 0.2
+      target: 0.95
+      threshold: 0.2  # 200ms
+      window: 5m
+      objective: 95% < 200ms
+
+redis:
+  service: cartorio-redis
+  domain: internal:6379
+  
+  slos:
+    - name: redis_ping_success
+      description: "99.99% dos PINGs bem-sucedidos"
+      sli:
+        type: availability
+        spec: |
+          sum(rate(redis_up[30d]))
+          /
+          count(redis_up) >= 0.9999
+      target: 0.9999
+      window: 30d
+      objective: 99.99%
+
+backup:
+  service: cartorio-backup
+  domain: api.2notasudi.com.br/api/v1/health/backup
+  
+  slos:
+    - name: backup_daily_success
+      description: "100% dos backups diários executam com sucesso"
+      sli:
+        type: success_rate
+        spec: |
+          sum(rate(backup_success_total[30d]))
+          /
+          sum(rate(backup_attempted_total[30d]))
+      target: 1.0
+      window: 30d
+      objective: 100%
+      error_budget: 0%  # ZERO tolerância
+
+# SLAs (compromissos com clientes)
+slas:
+  public:
+    api_uptime:
+      target: 99.5%
+      consequence: "Crédito proporcional no próximo mês"
+      measurement: "Monthly uptime via /api/v1/health/radar"
+    
+    whatsapp_response_time:
+      target: "< 5s em 95% das mensagens"
+      consequence: "Reportar em SESSION_SUMMARY + postmortem se violar"
+      measurement: "OpenClaw response time p95"
+
+# Error Budget Policy
+error_budget_policy:
+  api:
+    burn_rate_warn: 1  # 1x = on track
+    burn_rate_alert: 5  # 5x = investigation needed
+    burn_rate_critical: 14.4  # 14.4x = 1h budget exhausted in 1h
+    
+  response_policies:
+    warn:
+      action: "Investigar causa, sem ação imediata"
+      notification: "Telegram @squad-pietra"
+      
+    alert:
+      action: "On-call assume, investiga em < 30min"
+      notification: "Telegram on-call + Gustavo"
+      
+    critical:
+      action: "P0 incident, comunicação imediata"
+      notification: "Telegram todos + bridge incident"

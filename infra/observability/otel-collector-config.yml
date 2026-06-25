@@ -1,0 +1,96 @@
+# OpenTelemetry Collector config (J09)
+# Distributed tracing para API, N8N, OpenClaw
+
+receivers:
+  # OTLP (gRPC + HTTP) - API + OpenClaw enviam aqui
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Prometheus scraping (métricas)
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'cartorio-api'
+          static_configs:
+            - targets: ['api:8000']
+              labels:
+                service: api
+                env: production
+        - job_name: 'cartorio-openclaw'
+          static_configs:
+            - targets: ['openclaw:18789']
+              labels:
+                service: openclaw
+                env: production
+        - job_name: 'cartorio-n8n'
+          static_configs:
+            - targets: ['n8n:5678']
+              labels:
+                service: n8n
+                env: production
+
+processors:
+  # Batch para reduzir overhead
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  # Adiciona metadata comum
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: production
+        action: upsert
+      - key: service.namespace
+        value: cartorio
+        action: upsert
+
+  # Memory limiter
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+
+  # Sampling (apenas 10% dos traces em prod para reduzir volume)
+  probabilistic_sampler:
+    sampling_percentage: 10
+
+exporters:
+  # Jaeger para visualização
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # Logs (para correlação trace_id)
+  logging:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+  # Prometheus metrics
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource, probabilistic_sampler]
+      exporters: [otlp/jaeger, logging]
+
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, batch, resource]
+      exporters: [prometheus]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [logging]

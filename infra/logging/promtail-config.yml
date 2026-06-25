@@ -1,0 +1,60 @@
+# Promtail config (J08)
+# Coleta logs de TODOS containers Docker do Swarm
+# Envia para Loki (que Grafana consulta)
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    batchwait: 1s
+    batchsize: 1048576
+    timeout: 10s
+
+scrape_configs:
+  # Logs dos containers Docker (todos os serviços)
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Service name
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      # Compose service
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+      # Stack name
+      - source_labels: ['__meta_docker_container_label_com_docker_swarm_service_name']
+        target_label: 'swarm_service'
+      # Image
+      - source_labels: ['__meta_docker_container_image']
+        target_label: 'image'
+    pipeline_stages:
+      # Parse Docker log format
+      - docker: {}
+      # Parse JSON se for estruturado
+      - match:
+          selector: '{job="docker"} | json | line != ""'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  service: service
+                  correlation_id: correlation_id
+                  msg: msg
+            - labels:
+                level:
+                service:
+      # Drop PII patterns (LGPD safety)
+      - match:
+          selector: '{job="docker"}'
+          stages:
+            - regex:
+                expression: '.*(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11}|(\(?\d{2}\)?\s?9?\d{4}-?\d{4})).*'
+                replace: '[REDACTED-PII]'
