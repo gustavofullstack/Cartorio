@@ -560,3 +560,8 @@ app.include_router(lgpd_router, prefix="/api/v1")
 from app.api.v2 import api_v2_router  # noqa: E402
 
 app.include_router(api_v2_router, prefix="/api/v2")
+
+# BRAIN endpoints (BRAIN6) - tarefas, lessons, sync, loop-state
+from app.api.v1.brain import brain_router  # noqa: E402
+
+app.include_router(brain_router, prefix="/api/v1")
