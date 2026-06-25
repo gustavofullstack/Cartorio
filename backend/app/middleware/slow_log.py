@@ -7,6 +7,7 @@ Util para identificar gargalos antes que afetem SLA P95 < 200ms.
 - Path skipped: /health/* /metrics (ruido)
 - Audit log: nunca eh chamado aqui (slow log nao eh mutacao)
 - Estrutura log: JSON com method, path, status, duration_ms, request_id
+- Armazena em Redis (TTL 24h) para consulta via /admin/slow-queries (A16)
 """
 from __future__ import annotations
 
@@ -17,6 +18,8 @@ from typing import Awaitable, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from app.services.slow_queries import get_slow_queries_store
 
 logger = logging.getLogger("cartorio.slow")
 
@@ -46,6 +49,7 @@ class SlowLogMiddleware(BaseHTTPMiddleware):
 
     NAO bloqueia a response. Apenas emite log de WARNING/INFO.
     Threshold configuravel via app.state.settings.slow_log_threshold_ms.
+    Armazena em Redis (TTL 24h) para consulta via /admin/slow-queries (A16).
     """
 
     def __init__(self, app, threshold_ms: int = SLOW_THRESHOLD_MS_DEFAULT) -> None:
@@ -65,6 +69,7 @@ class SlowLogMiddleware(BaseHTTPMiddleware):
 
         if elapsed_ms >= self.threshold_ms:
             request_id = getattr(request.state, "request_id", None)
+            client_ip = getattr(request.state, "client_ip", None)
             log_payload = {
                 "event": "slow_request",
                 "method": request.method,
@@ -73,10 +78,22 @@ class SlowLogMiddleware(BaseHTTPMiddleware):
                 "duration_ms": round(elapsed_ms, 2),
                 "threshold_ms": self.threshold_ms,
                 "request_id": request_id,
-                "client_ip": getattr(request.state, "client_ip", None),
+                "client_ip": client_ip,
+                "timestamp": time.time(),
             }
             # WARNING para >=2x threshold, INFO para >=1x threshold
             level = logging.WARNING if elapsed_ms >= self.threshold_ms * 2 else logging.INFO
             logger.log(level, json.dumps(log_payload, default=str))
+
+            # Armazena no Redis para endpoint /admin/slow-queries (A16)
+            # Fire-and-forget: nao bloqueia response se Redis indisponivel
+            try:
+                store = get_slow_queries_store()
+                # Nao await - fire and forget para nao adicionar latencia
+                import asyncio
+                asyncio.create_task(store.add_slow_query(log_payload))
+            except Exception:
+                # Silencioso: Redis pode estar indisponivel, log ja foi emitido
+                pass
 
         return response

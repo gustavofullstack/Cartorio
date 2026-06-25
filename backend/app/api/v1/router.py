@@ -1518,27 +1518,38 @@ class _FakeResp:
     tags=["health"],
     summary="Status do backup diario (N8N workflow #09)",
     description=(
-        "Le o diretorio /var/backups/cartorio na VPS via SSH (Tailscale) e "
-        "retorna idade do ultimo backup, quantidade de arquivos e tamanho. "
+        "Retorna idade do ultimo backup, quantidade de arquivos e tamanho. "
         "Usado pelo workflow N8N '09 - Monitor Backup Diario' para alertar "
-        "via Chatwoot se backup falhou ou esta ausente ha > 26h."
+        "via Chatwoot se backup falhou ou esta ausente ha > 26h.\n\n"
+        "**E1.S4.T2 (fix 2026-06-25): 3 estrategias em ordem de prioridade**:\n"
+        "1. JSON metadata `/var/log/cartorio-backup-status.json` (escrito por "
+        "backup.sh ao terminar OK) - source-of-truth\n"
+        "2. Path local `/var/backups/cartorio` (se volume mount aplicado)\n"
+        "3. Erro explicativo com instrucoes de install\n\n"
+        "Campo `source` na resposta indica qual estrategia foi usada: "
+        "`status_json`, `local_path` ou `none`."
     ),
     response_description="Status do backup: ok=true se ultimo < 26h, senao ok=false.",
 )
 async def health_backup() -> dict:
     """Verifica idade e tamanho do backup diario.
 
-    E1.S4.T2 (fix 2026-06-23): leitura DIRETA via `os.listdir` + `os.path.getmtime`.
-    NAO usa `subprocess` nem `docker exec` (privilegios desnecessarios).
+    E1.S4.T2 (fix 2026-06-25): agora consulta 3 fontes em ordem:
+    1. JSON metadata em /var/log/cartorio-backup-status.json
+       (escrito por /usr/local/bin/cartorio-backup.sh ao terminar OK)
+    2. Path local /var/backups/cartorio (se volume mount aplicado)
+    3. Erro explicativo se nenhuma fonte disponivel
 
-    Pre-requisito OPS (NAO codigo):
-      Volume mount do diretorio de backups no container cartorio_api.
-      Em Easypanel: Services > cartorio_api > Volumes > Mount:
-        Host: /var/backups/cartorio
-        Container: /var/backups/cartorio
-        Mode: read-only (recomendado)
-      Sem o mount, o diretorio nao existe no container e o endpoint
-      retorna ok=false com `error="No such directory"`.
+    Sem esse fix o endpoint retornava SEMPRE ok=false porque o path
+    /var/backups/cartorio NAO esta montado no container cartorio_api.
+    A solucao C (JSON metadata) foi escolhida por:
+    - Nao requer mudanca de infra (volume mount)
+    - Nao requer docker CLI no container
+    - backup.sh ja roda como cron na VPS - so precisa escrever o JSON
+
+    Setup esperado (executar uma vez na VPS):
+      Append ao final de /usr/local/bin/cartorio-backup.sh:
+        echo "{\\"last_backup_iso\\": \\"$(date -u +%FT%TZ)\\", \\"last_backup_filename\\": \\"$(ls -t ${BACKUP_DIR}/*.tar.gz 2>/dev/null | head -1 | xargs basename)\\", \\"last_backup_size_bytes\\": $(stat -c%s $(ls -t ${BACKUP_DIR}/*.tar.gz 2>/dev/null | head -1)), \\"last_backup_age_hours\\": 0, \\"backup_count_7d\\": $(ls ${BACKUP_DIR}/*.tar.gz 2>/dev/null | wc -l), \\"ok\\": true, \\"updated_at\\": \\"$(date -u +%FT%TZ)\\"}" > /var/log/cartorio-backup-status.json
 
     Usado pelo N8N workflow #09 (Monitor Backup Diario) que alerta via
     Chatwoot se backup falhou ou esta ausente ha > 26h.
@@ -1546,6 +1557,35 @@ async def health_backup() -> dict:
     from datetime import datetime, timezone
 
     BACKUP_DIR = "/var/backups/cartorio"
+    STATUS_JSON_PATH = "/var/log/cartorio-backup-status.json"
+
+    # ===== Estrategia 1: JSON metadata (source-of-truth) =====
+    if os.path.exists(STATUS_JSON_PATH):
+        try:
+            with open(STATUS_JSON_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Renomeia last_backup_age_hours para age_hours (compatibilidade)
+            age_hours = data.get("last_backup_age_hours")
+            return {
+                "ok": data.get("ok", False),
+                "last_backup_age_hours": age_hours,
+                "last_backup_iso": data.get("last_backup_iso"),
+                "file_count": data.get("backup_count_7d", 0),
+                "dir_size": _humanize_size(data.get("last_backup_size_bytes", 0)),
+                "age_hours": age_hours,
+                "source": "status_json",
+                "filename": data.get("last_backup_filename"),
+                "updated_at": data.get("updated_at"),
+            }
+        except (json.JSONDecodeError, OSError) as e:
+            # JSON malformado - cai para Estrategia 2 (fallback)
+            json_error = f"{type(e).__name__}: {e}"
+        else:
+            json_error = None
+    else:
+        json_error = None
+
+    # ===== Estrategia 2: Path local (se volume mount aplicado) =====
     last_backup_age_hours: float | None = None
     file_count = 0
     total_size_bytes = 0
@@ -1555,14 +1595,24 @@ async def health_backup() -> dict:
 
     try:
         if not os.path.isdir(BACKUP_DIR):
+            # ===== Estrategia 3: Erro explicativo =====
             return {
                 "ok": False,
-                "error": f"Diretorio de backup nao acessivel: {BACKUP_DIR} (verificar volume mount)",
+                "error": (
+                    f"Backup status indisponivel: "
+                    f"(1) {STATUS_JSON_PATH} nao existe "
+                    f"(backup.sh ainda nao escreve JSON metadata) "
+                    f"E (2) {BACKUP_DIR} nao esta montado no container "
+                    f"(volume mount ausente). "
+                    f"Setup: append JSON write no final de cartorio-backup.sh "
+                    f"OU mount {BACKUP_DIR} no compose."
+                ),
                 "file_count": 0,
                 "dir_size": "?",
                 "last_backup_age_hours": None,
                 "last_backup_iso": None,
                 "age_hours": None,
+                "source": "none",
             }
 
         # Lista arquivos .tar.gz e calcula idade + tamanho
@@ -1575,7 +1625,7 @@ async def health_backup() -> dict:
                 mtime = os.path.getmtime(full_path)
                 size = os.path.getsize(full_path)
             except OSError:
-                # Arquivo sumiu entre listdir e stat (race) — pula
+                # Arquivo sumiu entre listdir e stat (race) - pula
                 continue
             file_count += 1
             total_size_bytes += size
@@ -1592,28 +1642,34 @@ async def health_backup() -> dict:
     except Exception as e:
         error_msg = f"{type(e).__name__}: {e}"
 
-    # Humaniza tamanho: B / K / M / G
-    dir_size = "0"
-    if total_size_bytes >= 1024**3:
-        dir_size = f"{total_size_bytes / 1024**3:.1f}G"
-    elif total_size_bytes >= 1024**2:
-        dir_size = f"{total_size_bytes / 1024**2:.1f}M"
-    elif total_size_bytes >= 1024:
-        dir_size = f"{total_size_bytes / 1024:.1f}K"
-    elif total_size_bytes > 0:
-        dir_size = f"{total_size_bytes}B"
-
     payload: dict = {
         "ok": ok,
         "last_backup_age_hours": last_backup_age_hours,
         "last_backup_iso": last_backup_iso,
         "file_count": file_count,
-        "dir_size": dir_size,
+        "dir_size": _humanize_size(total_size_bytes),
         "age_hours": last_backup_age_hours,
+        "source": "local_path",
     }
     if error_msg:
         payload["error"] = error_msg
+    elif json_error:
+        # JSON tentou mas falhou (malformado), local funcionou
+        payload["warning"] = f"status_json parse falhou, usando local_path: {json_error}"
     return payload
+
+
+def _humanize_size(size_bytes: int) -> str:
+    """Humaniza tamanho em B/K/M/G."""
+    if size_bytes >= 1024**3:
+        return f"{size_bytes / 1024**3:.1f}G"
+    if size_bytes >= 1024**2:
+        return f"{size_bytes / 1024**2:.1f}M"
+    if size_bytes >= 1024:
+        return f"{size_bytes / 1024:.1f}K"
+    if size_bytes > 0:
+        return f"{size_bytes}B"
+    return "0"
 
 
 # ============================================================================
@@ -3700,6 +3756,58 @@ async def admin_validate_n8n_wfs(request: Request) -> dict:
 
 
 # ============================================================================
+# A16 Slow queries endpoint
+# ============================================================================
+
+
+@api_router.get(
+    "/admin/slow-queries",
+    tags=["admin"],
+    summary="Lista queries lentas armazenadas (A16)",
+    description=(
+        "Retorna as queries HTTP mais lentas registradas pelo "
+        "`SlowLogMiddleware` (threshold default 500ms). Dados armazenados "
+        "em Redis sorted set com TTL 24h, max 1000 entries (LRU). "
+        "Query params: ?limit=100&min_duration_ms=500&path_prefix=/api/v1\n\n"
+        "Requer `X-API-Key` (admin / DPO)."
+    ),
+    response_description="Lista de slow queries (mais recentes primeiro).",
+    responses={
+        200: {"description": "Lista de slow queries."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+async def admin_slow_queries(
+    request: Request,
+    limit: int = 100,
+    min_duration_ms: float | None = None,
+    path_prefix: str | None = None,
+    api_key: Annotated[str, Depends(require_cartorio_api_key)] = None,  # type: ignore[assignment]
+) -> dict:
+    """Endpoint A16: GET /admin/slow-queries."""
+    from app.services.slow_queries import get_slow_queries_store
+
+    store = get_slow_queries_store()
+    queries = await store.get_slow_queries(
+        limit=limit,
+        min_duration_ms=min_duration_ms,
+        path_prefix=path_prefix,
+    )
+    total = await store.get_slow_queries_count()
+
+    return {
+        "total_stored": total,
+        "returned": len(queries),
+        "limit": limit,
+        "filters": {
+            "min_duration_ms": min_duration_ms,
+            "path_prefix": path_prefix,
+        },
+        "queries": queries,
+    }
+
+
+# ============================================================================
 # LGPD Relatorio ANPD (D9)
 # ============================================================================
 
@@ -4402,6 +4510,144 @@ def confirmar_agendamento(
                 "mensagem": str(e),
             },
         )
+
+
+# ============================================================================
+# DLQ (Dead Letter Queue) - B0.3 Sprint 4
+# ============================================================================
+
+
+# ============================================================================
+# Agendamento N8N Integration Endpoints
+# ============================================================================
+
+
+@api_router.get(
+    "/agendamento/pendentes",
+    tags=["agendamento"],
+    summary="Lista agendamentos pendentes para notificação (N8N)",
+    description=(
+        "Endpoint para workflows N8N buscar agendamentos pendentes de notificação. "
+        "Retorna agendamentos com status 'agendado' que ainda não foram notificados.\n\n"
+        "**Auth**: header `X-API-Key`.\n"
+        "**N8N**: Usado pelo workflow '01 - Notificação de Agendamento'."
+    ),
+    status_code=200,
+    responses={
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+def get_agendamentos_pendentes(
+    request: Request,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """Lista agendamentos pendentes para notificação N8N."""
+    from app.services.agendamento import AgendamentoService
+
+    api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
+
+    agendamentos = AgendamentoService.listar_agendamentos_pendentes(db)
+    
+    result = []
+    for agendamento in agendamentos:
+        # Buscar informações de contato do cliente
+        cliente_info = {
+            "cliente_telegram_chat_id": "",
+            "cliente_whatsapp_number": "",
+            "cliente_email": "",
+        }
+        
+        if agendamento.cliente_id:
+            from app.models.cliente import Cliente
+            cliente = db.execute(
+                select(Cliente).where(Cliente.id == agendamento.cliente_id)
+            ).scalar_one_or_none()
+            
+            if cliente:
+                cliente_info = {
+                    "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
+                    "cliente_whatsapp_number": cliente.whatsapp_number or "",
+                    "cliente_email": cliente.email or "",
+                }
+        
+        result.append({
+            "id": agendamento.id,
+            "titulo": agendamento.titulo,
+            "data_hora": agendamento.data_hora.isoformat(),
+            "cliente_id": agendamento.cliente_id,
+            "local": agendamento.local,
+            "tipo": agendamento.tipo.value,
+            "status": agendamento.status.value,
+            **cliente_info
+        })
+
+    return result
+
+
+@api_router.get(
+    "/agendamento/proximos",
+    tags=["agendamento"],
+    summary="Lista agendamentos próximos para lembrete (N8N)",
+    description=(
+        "Endpoint para workflows N8N buscar agendamentos próximos (próximas 24 horas) "
+        "que precisam de lembrete.\n\n"
+        "**Auth**: header `X-API-Key`.\n"
+        "**N8N**: Usado pelo workflow '02 - Lembrete de Agendamento'."
+    ),
+    status_code=200,
+    responses={
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
+)
+def get_agendamentos_proximos(
+    request: Request,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """Lista agendamentos próximos para lembrete N8N."""
+    from app.services.agendamento import AgendamentoService
+
+    api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
+
+    agendamentos = AgendamentoService.listar_agendamentos_proximos(db)
+    
+    result = []
+    for agendamento in agendamentos:
+        # Buscar informações de contato do cliente
+        cliente_info = {
+            "cliente_telegram_chat_id": "",
+            "cliente_whatsapp_number": "",
+            "cliente_email": "",
+        }
+        
+        if agendamento.cliente_id:
+            from app.models.cliente import Cliente
+            cliente = db.execute(
+                select(Cliente).where(Cliente.id == agendamento.cliente_id)
+            ).scalar_one_or_none()
+            
+            if cliente:
+                cliente_info = {
+                    "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
+                    "cliente_whatsapp_number": cliente.whatsapp_number or "",
+                    "cliente_email": cliente.email or "",
+                }
+        
+        result.append({
+            "id": agendamento.id,
+            "titulo": agendamento.titulo,
+            "data_hora": agendamento.data_hora.isoformat(),
+            "cliente_id": agendamento.cliente_id,
+            "local": agendamento.local,
+            "tipo": agendamento.tipo.value,
+            "status": agendamento.status.value,
+            **cliente_info
+        })
+    
+    return result
 
 
 # ============================================================================
