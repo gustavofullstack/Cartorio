@@ -51,7 +51,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://api.2notasudi.com.br/api/v1/cliente/{{ $json.cliente_id }}",
+        "url": "=https://api.2notasudi.com.br/api/v1/cliente/{{ $json.cliente_id }}/historico",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -66,7 +66,7 @@
         }
       },
       "id": "get-cliente-(validar-consent)",
-      "name": "GET Cliente (validar consent)",
+      "name": "GET Cliente Historico (validar consent)",
       "type": "n8n-nodes-base.httpRequest",
       "position": [
         680,
@@ -214,14 +214,14 @@
       "main": [
         [
           {
-            "node": "GET Cliente (validar consent)",
+            "node": "GET Cliente Historico (validar consent)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "GET Cliente (validar consent)": {
+    "GET Cliente Historico (validar consent)": {
       "main": [
         [
           {

@@ -1116,7 +1116,11 @@ async def health_audit(
     status_code = 503 if result["cold_start"] else 200
 
     payload = {
-        "status": "alive" if result["alive"] else "dead" if not result["cold_start"] else "cold_start",
+        "status": "alive"
+        if result["alive"]
+        else "dead"
+        if not result["cold_start"]
+        else "cold_start",
         "alive": result["alive"],
         "cold_start": result["cold_start"],
         "last_seen": result["last_seen"].isoformat() if result["last_seen"] else None,
@@ -2256,6 +2260,111 @@ async def delete_cliente(
 
 
 # ============================================================================
+# LGPD - Leitura do cliente (GET /cliente/{id} LGPD-safe)
+# ============================================================================
+
+
+@api_router.get(
+    "/cliente/{cliente_id}",
+    tags=["cliente"],
+    summary="Dados basicos do cliente (LGPD-safe)",
+    description=(
+        "Retorna dados basicos do cliente **LGPD-safe** (apenas hashes + metadados).\n\n"
+        "Politica LGPD (D0.3 2026-06-25):\n"
+        "- NAO expoe `cpf`, `telefone`, `email`, `nome` PURO. Apenas `_hash`.\n"
+        "- Se `cliente.motivo_encerramento != None` -> **410 Gone** "
+        "(cliente ja encerrado, LGPD art. 18 VI).\n\n"
+        "Auth: `X-API-Key` (escrevente/DPO autorizado) via `require_cartorio_api_key`.\n"
+        "Leitura eh audit-logged (LGPD art. 37 - registro de tratamento)."
+    ),
+    responses={
+        200: {"description": "Cliente encontrado (LGPD-safe)."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+        404: {"description": "Cliente nao encontrado."},
+        410: {"description": "Cliente encerrado (LGPD art. 18 VI)."},
+        422: {"description": "cliente_id nao-inteiro (Pydantic path validation)."},
+    },
+)
+async def get_cliente(
+    request: Request,
+    cliente_id: Annotated[int, Path(ge=1, description="ID interno do cliente.")],
+    db: Annotated[Session, Depends(get_db)],
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> dict:
+    """Retorna cliente LGPD-safe (apenas hashes + metadados NAO-PII).
+
+    Raises:
+        HTTPException 404 — cliente nao existe.
+        HTTPException 410 — cliente ja encerrado (LGPD art. 18 VI).
+        HTTPException 401 — auth falhou (handled by dependency).
+    """
+    cliente = db.get(Cliente, cliente_id)
+    if cliente is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "CLIENTE_NOT_FOUND",
+                "mensagem": f"Cliente {cliente_id} nao encontrado.",
+                "detalhes": {"cliente_id": cliente_id},
+            },
+        )
+
+    # LGPD: cliente encerrado NAO pode ser lido (LGPD art. 18 VI - revogacao)
+    if cliente.motivo_encerramento is not None:
+        raise HTTPException(
+            status_code=410,
+            detail={
+                "erro": "CLIENTE_ENCERRADO_LGPD",
+                "mensagem": (
+                    f"Cliente {cliente_id} ja foi encerrado (LGPD art. 18 VI). "
+                    f"Motivo: {cliente.motivo_encerramento.value}. "
+                    f"Tratamento de dados cessado."
+                ),
+                "detalhes": {
+                    "cliente_id": cliente_id,
+                    "motivo_encerramento": cliente.motivo_encerramento.value,
+                    "data_encerramento": (
+                        cliente.deleted_at.isoformat() if cliente.deleted_at else None
+                    ),
+                },
+            },
+        )
+
+    # Audit log LGPD art. 37 (registro de leitura de dado pessoal)
+    AuditService.log(
+        db,
+        actor_id="escrevente",  # X-API-Key NAO eh identidade humana (gate de servico)
+        actor_type="bot",
+        action="cliente.read",
+        resource=f"cliente:{cliente_id}",
+        payload={
+            "cliente_id": cliente_id,
+            "consentimento_lgpd": cliente.consentimento_lgpd,
+            # Hash do ID pra rastreabilidade cross-tabela sem expor PII puro
+            "cliente_id_hash": hash_pii(str(cliente_id), salt=settings.audit_hmac_key[:32]),
+        },
+        **audit_kwargs(request),
+    )
+
+    # LGPD-safe response: APENAS hashes + metadados NAO-PII
+    # NAO incluir `email`/`telefone`/`cpf`/`nome` puros (LGPD art. 18 IV).
+    return {
+        "id": cliente.id,
+        "cpf_hash": cliente.cpf_hash,
+        "telefone_hash": cliente.telefone_hash,
+        # email_hash computado em runtime (coluna `email` eh armazenada pura
+        # por limitacao do modelo atual; hash PII eh calculado na saida).
+        "email_hash": (
+            hash_pii(cliente.email, salt=settings.audit_hmac_key[:32]) if cliente.email else None
+        ),
+        "consentimento_lgpd": cliente.consentimento_lgpd,
+        "motivo_encerramento": None,  # != None ja tratado acima (410)
+        "created_at": cliente.created_at.isoformat() if cliente.created_at else None,
+        "updated_at": cliente.updated_at.isoformat() if cliente.updated_at else None,
+    }
+
+
+# ============================================================================
 # LGPD - Job retenção (admin)
 # ============================================================================
 
@@ -2871,36 +2980,48 @@ async def stats_protocolos(
         # Em prod: query a MV. Se ela nao existir (migration nao aplicada),
         # fallback para query agregada.
         try:
-            rows = db.execute(
-                text(
-                    "SELECT status, tipo, canal, total, valor_total, first_at, last_at "
-                    "FROM mv_protocolo_stats ORDER BY total DESC"
+            rows = (
+                db.execute(
+                    text(
+                        "SELECT status, tipo, canal, total, valor_total, first_at, last_at "
+                        "FROM mv_protocolo_stats ORDER BY total DESC"
+                    )
                 )
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
             source = "mv_protocolo_stats"
         except Exception:
             # MV nao existe - fallback
-            rows = db.execute(
+            rows = (
+                db.execute(
+                    text(
+                        "SELECT status, tipo, canal_origem AS canal, COUNT(*) AS total, "
+                        "COALESCE(SUM(CAST(valor_total * 100 AS bigint)), 0) AS valor_total, "
+                        "MIN(created_at) AS first_at, MAX(created_at) AS last_at "
+                        "FROM protocolos WHERE deleted_at IS NULL "
+                        "GROUP BY status, tipo, canal_origem ORDER BY total DESC"
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            source = "fallback_aggregate"
+    else:
+        # SQLite (testes) - sem CAST bigint, valor_total ja vem em DECIMAL
+        rows = (
+            db.execute(
                 text(
                     "SELECT status, tipo, canal_origem AS canal, COUNT(*) AS total, "
-                    "COALESCE(SUM(CAST(valor_total * 100 AS bigint)), 0) AS valor_total, "
+                    "COALESCE(SUM(CAST(valor_total * 100 AS INTEGER)), 0) AS valor_total, "
                     "MIN(created_at) AS first_at, MAX(created_at) AS last_at "
                     "FROM protocolos WHERE deleted_at IS NULL "
                     "GROUP BY status, tipo, canal_origem ORDER BY total DESC"
                 )
-            ).mappings().all()
-            source = "fallback_aggregate"
-    else:
-        # SQLite (testes) - sem CAST bigint, valor_total ja vem em DECIMAL
-        rows = db.execute(
-            text(
-                "SELECT status, tipo, canal_origem AS canal, COUNT(*) AS total, "
-                "COALESCE(SUM(CAST(valor_total * 100 AS INTEGER)), 0) AS valor_total, "
-                "MIN(created_at) AS first_at, MAX(created_at) AS last_at "
-                "FROM protocolos WHERE deleted_at IS NULL "
-                "GROUP BY status, tipo, canal_origem ORDER BY total DESC"
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
         source = "sqlite_aggregate"
 
     items = [
@@ -3189,9 +3310,7 @@ async def post_metrics_n8n(
     elif isinstance(payload.raw, str) and _looks_like_prometheus(payload.raw):
         payload_kind = "prometheus_raw"
         # Parse simples: linhas "metric_name{labels} value"
-        counters_ingested, gauges_ingested = _ingest_prometheus_text(
-            payload.raw, metrics_store
-        )
+        counters_ingested, gauges_ingested = _ingest_prometheus_text(payload.raw, metrics_store)
 
     else:
         # unknown: aceito, logado para investigacao. NUNCA 422 (workflow ja roda em prod).
