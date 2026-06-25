@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Cartorio 2o Notas - Memoria + Plano + 100 Tasks</title>
+<style>
+:root { --bg: #0f172a; --fg: #e2e8f0; --card: #1e293b; --accent: #38bdf8; --green: #22c55e; --yellow: #eab308; --red: #ef4444; --gray: #64748b; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace; background: var(--bg); color: var(--fg); margin: 0; padding: 20px; line-height: 1.5; }
+h1 { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+h2 { color: var(--accent); margin-top: 40px; border-left: 4px solid var(--accent); padding-left: 12px; }
+h3 { color: var(--accent); margin-top: 24px; }
+.card { background: var(--card); border-radius: 8px; padding: 16px; margin: 12px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.metric { background: var(--card); border-radius: 8px; padding: 14px; border-left: 4px solid var(--accent); }
+.metric.green { border-left-color: var(--green); }
+.metric.yellow { border-left-color: var(--yellow); }
+.metric.red { border-left-color: var(--red); }
+.metric .v { font-size: 1.8em; font-weight: bold; color: var(--accent); }
+.metric .l { color: var(--gray); font-size: 0.9em; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid #334155; font-size: 0.9em; }
+th { background: var(--card); color: var(--accent); }
+code { background: #0f172a; padding: 2px 6px; border-radius: 4px; color: var(--accent); font-size: 0.9em; }
+.squad-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; }
+.tag-S0 { background: #7c3aed; color: white; }
+.tag-A { background: #0891b2; color: white; }
+.tag-B { background: #ea580c; color: white; }
+.tag-D { background: #be185d; color: white; }
+.tag-E { background: #16a34a; color: white; }
+.tag-H { background: #ca8a04; color: white; }
+.tag-J { background: #2563eb; color: white; }
+.tag-C { background: #6b7280; color: white; }
+.tag-BRAIN { background: #d97706; color: white; }
+.tag-DOCS { background: #475569; color: white; }
+.tag-DOC { background: #475569; color: white; }
+.tag-FIX { background: #475569; color: white; }
+.tag-OTHER { background: #1e293b; color: white; }
+.timeline-item { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #1e293b; }
+.timeline-item:last-child { border: 0; }
+.timeline-dot { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.timeline-content { flex: 1; }
+.timeline-content .meta { color: var(--gray); font-size: 0.85em; }
+.task-list { list-style: none; padding: 0; }
+.task-list li { padding: 4px 0; display: flex; gap: 8px; }
+.task-list .id { color: var(--accent); font-weight: bold; min-width: 40px; }
+.task-list .desc { flex: 1; }
+.task-list .status { font-size: 0.85em; padding: 1px 6px; border-radius: 3px; }
+.status-done { background: var(--green); color: black; }
+.status-pending { background: var(--gray); color: white; }
+.status-progress { background: var(--yellow); color: black; }
+footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155; color: var(--gray); font-size: 0.85em; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Cartorio 2o Notas Uberlandia - Memoria + Plano + 100 Tasks</h1>
+<p><strong>Orquestrador:</strong> Pietra (Mavis/MiniMax-M3) | <strong>Owner:</strong> Gustavo Almeida (Tabeliao) | <strong>Sessao:</strong> 2026-06-25 09:00 BRT | <strong>Sprint:</strong> 4-7</p>
+
+<div class="grid">
+  <div class="metric green"><div class="v">921</div><div class="l">pytest passed (de 920 ontem)</div></div>
+  <div class="metric green"><div class="v">0</div><div class="l">mypy errors</div></div>
+  <div class="metric green"><div class="v">0</div><div class="l">ruff errors</div></div>
+  <div class="metric green"><div class="v">GREEN</div><div class="l">8/8 integracoes online</div></div>
+  <div class="metric green"><div class="v">OK</div><div class="l">OpenClaw 1M context + thinking</div></div>
+  <div class="metric green"><div class="v">OK</div><div class="l">Telegram bot @test_cartorio_bot</div></div>
+  <div class="metric green"><div class="v">100%</div><div class="l">SQUAD S0 (Supabase Foundation)</div></div>
+  <div class="metric green"><div class="v">100%</div><div class="l">SQUAD A (API Hardening)</div></div>
+  <div class="metric green"><div class="v">100%</div><div class="l">SQUAD B (N8N Polish)</div></div>
+  <div class="metric green"><div class="v">100%</div><div class="l">SQUAD E (OpenClaw Runtime)</div></div>
+  <div class="metric yellow"><div class="v">234</div><div class="l">commits desde 24/06/2026</div></div>
+  <div class="metric yellow"><div class="v">42/45</div><div class="l">N8N WFs passing test runner (B12)</div></div>
+</div>
+
+<h2>1. Estado Atual dos Servicos (live 2026-06-25)</h2>
+<table>
+<tr><th>Servico</th><th>URL</th><th>Status</th><th>Latencia</th><th>Versao</th></tr>
+<tr><td>API FastAPI</td><td><code>api.2notasudi.com.br</code></td><td>200 OK</td><td>~50ms</td><td>v0.6.0</td></tr>
+<tr><td>N8N + Runner</td><td><code>flow.2notasudi.com.br</code></td><td>200 OK</td><td>9ms</td><td>1.94.x</td></tr>
+<tr><td>Evolution API</td><td><code>whatsapp.2notasudi.com.br</code></td><td>200 OK</td><td>203ms</td><td>2.3.7</td></tr>
+<tr><td>Chatwoot + Sidekiq</td><td><code>chat.2notasudi.com.br</code> (interno)</td><td>online</td><td>10ms</td><td>3.x</td></tr>
+<tr><td>OpenClaw Gateway</td><td><code>agent.2notasudi.com.br</code></td><td>200 OK</td><td>6ms</td><td>0.4.x + 7 cartorio skills</td></tr>
+<tr><td>Supabase (14 containers)</td><td><code>supbase.2notasudi.com.br</code></td><td>online</td><td>15ms</td><td>self-hosted</td></tr>
+<tr><td>Redis (port 6379)</td><td>interno</td><td>online</td><td>2ms</td><td>7.x</td></tr>
+<tr><td>EasyPanel</td><td><code>easypanel.2notasudi.com.br</code></td><td>200 OK</td><td>--</td><td>--</td></tr>
+<tr><td>Telegram Bot</td><td><code>@test_cartorio_bot</code></td><td>OK + webhook URL</td><td>--</td><td>6.x</td></tr>
+</table>
+
+<h2>2. Plano 100 Tasks (9 SQUADs)</h2>
+<p><strong>Modo:</strong> 1-2 agents max paralelo, sequencial o resto. Cada task = 1 commit Conventional Commits + push master.</p>
+
+<h3><span class="squad-tag tag-S0">S0</span> Supabase Foundation (10/10 DONE) - BLOQUEIO P0 RESOLVIDO</h3>
+<ul class="task-list">
+<li><span class="id">S01</span><span class="desc">Schema public (clientes, protocolos, atendimentos, documentos, emolumentos, audit_log, webhook_events, outbox_messages, lgpd_consents, lgpd_audit_anpd)</span><span class="status status-done">DONE A16/A17/A24</span></li>
+<li><span class="id">S02</span><span class="desc">RLS policies (4 roles: anon, authenticated, service_role, dpo)</span><span class="status status-done">DONE 0004</span></li>
+<li><span class="id">S03</span><span class="desc">pg_cron jobs (audit_verify 03:00, dlq_retry 5min, cache_warm 06:00, snapshot 23:55)</span><span class="status status-done">DONE 0005</span></li>
+<li><span class="id">S04</span><span class="desc">Database webhooks (outbox INSERT -> N8N flow)</span><span class="status status-done">DONE 0006</span></li>
+<li><span class="id">S05</span><span class="desc">GraphQL via pg_graphql (PostgREST + /graphql/v1)</span><span class="status status-done">DONE 0007</span></li>
+<li><span class="id">S06</span><span class="desc">Storage buckets (cliente-docs PRIVATE, protocolo-pdfs PRIVATE, satisfacao-forms PUBLIC)</span><span class="status status-done">DONE 0007</span></li>
+<li><span class="id">S07</span><span class="desc">Realtime channels (protocolo_updates, atendimento_live, lgpd_consent_changes)</span><span class="status status-done">DONE 0007</span></li>
+<li><span class="id">S08</span><span class="desc">Vault secrets (pgsodium + vault_get_or_create helper + seed_vault_secrets.py)</span><span class="status status-done">DONE 0008</span></li>
+<li><span class="id">S09</span><span class="desc">alembic/README.md canonico (12 migrations + 7 convencoes + 3 gotchas)</span><span class="status status-done">DONE fd7f2fe</span></li>
+<li><span class="id">S10</span><span class="desc">pgAudit-equivalente (fn_auto_audit trigger em 6 tabelas PII)</span><span class="status status-done">DONE 0004</span></li>
+</ul>
+
+<h3><span class="squad-tag tag-A">A</span> API + DB Hardening (8/8 DONE)</h3>
+<ul class="task-list">
+<li><span class="id">A18</span><span class="desc">Trigger set_updated_at global (10 tabelas)</span><span class="status status-done">DONE 5d0b83a</span></li>
+<li><span class="id">A19</span><span class="desc">Soft delete deleted_at (clientes, protocolos, atendimentos)</span><span class="status status-done">DONE 0002</span></li>
+<li><span class="id">A20</span><span class="desc">Redlock distribuido (app/services/redlock.py)</span><span class="status status-done">DONE</span></li>
+<li><span class="id">A21</span><span class="desc">Cache Redis 24h emolumento (emolumento_cache.py)</span><span class="status status-done">DONE</span></li>
+<li><span class="id">A22</span><span class="desc">Cache warming cron 06:00 (S0 S03 cache_warm_06h)</span><span class="status status-done">DONE</span></li>
+<li><span class="id">A23</span><span class="desc">OpenAPI spec validator step no CI</span><span class="status status-done">DONE cb622d7</span></li>
+<li><span class="id">A24</span><span class="desc">API v2 alpha skeleton + sunset 2027-12-31</span><span class="status status-done">DONE e071a5d</span></li>
+<li><span class="id">A25</span><span class="desc">RFC 7807 problem+json (404 retorna application/problem+json)</span><span class="status status-done">DONE</span></li>
+</ul>
+
+<h3><span class="squad-tag tag-B">B</span> N8N Polish (8/8 DONE)</h3>
+<ul class="task-list">
+<li><span class="id">B08</span><span class="desc">Timeout 5s em todos HTTP nodes (84 nodes em 44 WFs)</span><span class="status status-done">DONE 4e830ad</span></li>
+<li><span class="id">B09</span><span class="desc">Logs JSON correlation_id (88 nodes em 44 WFs)</span><span class="status status-done">DONE b6fd3a1</span></li>
+<li><span class="id">B10</span><span class="desc">Metrics Prometheus por WF (3 metrics + 44 WFs instrumentados)</span><span class="status status-done">DONE 615c386</span></li>
+<li><span class="id">B11</span><span class="desc">WF alertas Telegram GRUPO Pietra (cron 5min + /health/radar)</span><span class="status status-done">DONE 33f06aa</span></li>
+<li><span class="id">B12</span><span class="desc">Test runner estatico 45 WFs (42 pass + 3 fail pre-existentes)</span><span class="status status-done">DONE 8d2814f</span></li>
+<li><span class="id">B13</span><span class="desc">52 canned responses Chatwoot (docs/canned-responses-chatwoot.json)</span><span class="status status-done">DONE c1cc103</span></li>
+<li><span class="id">B14</span><span class="desc">10 macros handoff humano (M01-M10)</span><span class="status status-done">DONE c1cc103</span></li>
+<li><span class="id">B15</span><span class="desc">10 WhatsApp Meta templates (T01-T10 APROVADOS)</span><span class="status status-done">DONE c1cc103</span></li>
+</ul>
+
+<h3><span class="squad-tag tag-D">D</span> LGPD Compliance (12/25)</h3>
+<ul class="task-list">
+<li><span class="id">D1-D7</span><span class="desc">DPAs fornecedores + retencao + IP truncation</span><span class="status status-done">DONE</span></li>
+<li><span class="id">D8</span><span class="desc">PII Sanitizer (CPF/CNPJ/email/phone/RG) + 16 testes</span><span class="status status-done">DONE 5ba2aca</span></li>
+<li><span class="id">D9</span><span class="desc">Relatorio ANPD anual + 15 testes + endpoint /admin/lgpd/relatorio-anual</span><span class="status status-done">DONE 4661ea7</span></li>
+<li><span class="id">D11</span><span class="desc">LGPD Consent Service granular + 14 testes</span><span class="status status-done">DONE 6b02195</span></li>
+<li><span class="id">D12</span><span class="desc">Data Export Service (portabilidade art. 18 IV) + 11 testes</span><span class="status status-done">DONE c62e568</span></li>
+<li><span class="id">D13-D25</span><span class="desc">13 tasks: anonimizacao, direito esquecimento, base legal, RIPD, breach 72h, etc</span><span class="status status-pending">PENDING</span></li>
+</ul>
+
+<h3><span class="squad-tag tag-E">E</span> OpenClaw CartorioBot (7/8 DONE)</h3>
+<ul class="task-list">
+<li><span class="id">E1</span><span class="desc">1M context + thinking adaptive + 7 cartorio skills</span><span class="status status-done">DONE 50cf8a7</span></li>
+<li><span class="id">E2</span><span class="desc">Thinking always-on (mode=adaptive, minimax-m3)</span><span class="status status-done">DONE c54219e</span></li>
+<li><span class="id">E3</span><span class="desc">Skills registry auto-discovery (7 skills + 24 intents)</span><span class="status status-done">DONE a8259cd</span></li>
+<li><span class="id">E4</span><span class="desc">Agent tools registry (20 tools, 8 providers)</span><span class="status status-done">DONE c54219e</span></li>
+<li><span class="id">E5</span><span class="desc">IDENTITY.md v2 sem emojis + tom direto/curto/serio</span><span class="status status-done">DONE 676636d</span></li>
+<li><span class="id">E6</span><span class="desc">Script E2E Telegram -> API -> OpenClaw (e2e_telegram_openclaw.py)</span><span class="status status-done">DONE a8259cd</span></li>
+<li><span class="id">E7</span><span class="desc">Metricas agent (tokens_in/out, think_tokens, tool_calls_total)</span><span class="status status-done">DONE c54219e</span></li>
+<li><span class="id">E8</span><span class="desc">Failover chain (opencode_go -> openclaw -> openrouter)</span><span class="status status-done">DONE c54219e</span></li>
+</ul>
+
+<h3><span class="squad-tag tag-H">H</span> Chatwoot CRM (0/8 - proximo)</h3>
+<ul class="task-list">
+<li><span class="id">H1</span><span class="desc">Evolution API inbox integration</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">H2</span><span class="desc">Custom attributes (cpf_cnpj_hash, protocolo_id, emolumento_total, lgpd_consent)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">H3</span><span class="desc">Handoff macros (10 macros ja em B14)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">H4</span><span class="desc">Canned responses (52 ja em B13)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">H5</span><span class="desc">Labels (novo/protocolo/emolumento/documento/concluido/pausado)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">H6</span><span class="desc">Reports (5: atendimentos/dia, conversion, LGPD, NPS, tempo medio)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">H7</span><span class="desc">Automations (sla_first_response, sla_resolution, lgpd_consent_request)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">H8</span><span class="desc">Bot handoff 1-click (pausa agente IA + transfere humano)</span><span class="status status-pending">PENDING</span></li>
+</ul>
+
+<h3><span class="squad-tag tag-J">J</span> Observability + CI/CD (0/10)</h3>
+<ul class="task-list">
+<li><span class="id">J1-J2</span><span class="desc">Linear API (100 tasks + dashboard Sprint 4-7)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">J3-J4</span><span class="desc">Render API (services list + autodeploy + health custom)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">J5-J6</span><span class="desc">Jules API (sessions 5/dia + review + merge master)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">J7-J8</span><span class="desc">GitHub Actions (ci.yml + cd.yml)</span><span class="status status-pending">PENDING</span></li>
+<li><span class="id">J9-J10</span><span class="desc">Sentry SDK + OpenTelemetry collector</span><span class="status status-pending">PENDING</span></li>
+</ul>
+
+<h3><span class="squad-tag tag-C">C</span> Docs Raiz (5/25 - C1-C5 done)</h3>
+<p>C1-C5 done: README+ARCHITECTURE+API+DB+DEPLOY. Faltam 20 docs (Evolution/N8N/Chatwoot/Supabase/Redis/Jules/Render/Linear/operacao/auditoria).</p>
+
+<h3><span class="squad-tag tag-BRAIN">BRAIN</span> Cerebro Local + Prod (0/8)</h3>
+<p>Criar /Users/gustavoalmeida/projetos/Cartorio/.brain/ + /var/lib/docker/volumes/cartorio_brain/_data/ VPS + sync bidirecional rsync+ssh + schema tasks/plans/memory/lessons/agents + index.md auto + /api/v1/brain/ endpoints + session memory auto + compact loop-state.json.</p>
+
+<h3><span class="squad-tag tag-DOC">DOCS</span> Download Docs (0/5)</h3>
+<p>DOC1 Evolution 2.3.7, DOC2 N8N 1.94.x, DOC3 Chatwoot 3.x, DOC4 Supabase self-hosted, DOC5 Redis 7.x.</p>
+
+<h2>3. Fluxo Central do Sistema</h2>
+<pre style="background: var(--card); padding: 16px; border-radius: 8px; overflow-x: auto;">
+EVOLUTION-API -> API (FastAPI) -> N8N -> CHATWOOT -> REDIS -> SUPABASE
+                     |                                            |
+                     +-&gt; OpenClaw Agent (LLM thinking)            |
+                     +-&gt; Audit Log (HMAC chain)                   |
+                     |                                            |
+                     +&lt;-------------------------------------------+
+</pre>
+
+<h2>4. Commits Recentes (ultimos 30)</h2>
+<table>
+<tr><th>Hash</th><th>Data</th><th>Descricao</th></tr>
+<tr><tr><td><code>a8259cd</code></td><td>2026-06-25</td><td>feat(openclaw): E3 skills registry auto-discovery + E6 script E2E Telegram</td></tr></tr>
+<tr><tr><td><code>c54219e</code></td><td>2026-06-25</td><td>feat(openclaw): E2+E4+E7+E8 registry 20 tools + thinking always-on + failover chain</td></tr></tr>
+<tr><tr><td><code>676636d</code></td><td>2026-06-25</td><td>feat(openclaw): E5 IDENTITY.md v2 sem emojis + tom direto/curto/serio (SQUAD E)</td></tr></tr>
+<tr><tr><td><code>ee0694f</code></td><td>2026-06-25</td><td>fix(n8n): WF 00 Telegram Code node Markdown V1 → V2 (escapeMarkdownV2 canonico)</td></tr></tr>
+<tr><tr><td><code>c1cc103</code></td><td>2026-06-25</td><td>feat(chatwoot): B13+B14+B15 52 canned responses + 10 macros + 10 WhatsApp templates</td></tr></tr>
+<tr><tr><td><code>5651795</code></td><td>2026-06-25</td><td>feat(obs): A14 verify+close — S3 placeholder explicito + Prometheus metric</td></tr></tr>
+<tr><tr><td><code>8d2814f</code></td><td>2026-06-25</td><td>feat(n8n): B12 test runner estatico para 45 WFs (42 pass + 3 fail pre-existentes)</td></tr></tr>
+<tr><tr><td><code>33f06aa</code></td><td>2026-06-25</td><td>feat(n8n): B11 WF alertas Telegram GRUPO Pietra (cron 5min + /health/radar)</td></tr></tr>
+<tr><tr><td><code>615c386</code></td><td>2026-06-25</td><td>feat(n8n): B10 metrics Prometheus por WF (3 metrics + 44 WFs instrumentados)</td></tr></tr>
+<tr><tr><td><code>e063ead</code></td><td>2026-06-25</td><td>feat: add harness task plan for database backup verification and audit</td></tr></tr>
+<tr><tr><td><code>b6fd3a1</code></td><td>2026-06-25</td><td>feat(n8n): B09 logs JSON correlation_id em todos WFs (88 nodes em 44 WFs)</td></tr></tr>
+<tr><tr><td><code>4e830ad</code></td><td>2026-06-25</td><td>feat(n8n): B08 timeout 5s em todos HTTP nodes (84 nodes em 44 WFs)</td></tr></tr>
+<tr><tr><td><code>02b6d21</code></td><td>2026-06-25</td><td>fix(integrations): N8N Error Handler B6 cleanup — F841 + ruff format (B6-fix)</td></tr></tr>
+<tr><tr><td><code>245505c</code></td><td>2026-06-25</td><td>refactor: cleanup n8n error logging and update harness task tracking and memory documentation</td></tr></tr>
+<tr><tr><td><code>f284d2f</code></td><td>2026-06-25</td><td>fix(obs): A13 mypy strict gap — annotate now param as datetime | None</td></tr></tr>
+<tr><tr><td><code>e071a5d</code></td><td>2026-06-25</td><td>feat(api): A24 API v2 alpha skeleton + sunset 2027-12-31</td></tr></tr>
+<tr><tr><td><code>cb622d7</code></td><td>2026-06-25</td><td>feat(ci): A23 OpenAPI spec validator step (openapi-spec-validator)</td></tr></tr>
+<tr><tr><td><code>70d5d33</code></td><td>2026-06-25</td><td>fix(obs): A13 POST /admin/audit/check-now audita propria execucao</td></tr></tr>
+<tr><tr><td><code>5d0b83a</code></td><td>2026-06-25</td><td>feat(db): A18 trigger set_updated_at global (10 tabelas + fn_set_updated_at)</td></tr></tr>
+<tr><tr><td><code>1d79096</code></td><td>2026-06-25</td><td>docs(memory): Lessons 124-129 SQUAD S0 done + status gates 2026-06-25</td></tr></tr>
+<tr><tr><td><code>fd7f2fe</code></td><td>2026-06-25</td><td>docs(alembic): S0 S09 README migrations completo (SQUAD S0 + gotchas + validacao)</td></tr></tr>
+<tr><tr><td><code>3fc3bdc</code></td><td>2026-06-25</td><td>refactor: prioritize loading secrets from backend/.env before directory-based files in seed script</td></tr></tr>
+<tr><tr><td><code>09e55b5</code></td><td>2026-06-25</td><td>feat: implement Supabase Vault integration with migration, bootstrap script, and n8n webhook error handling service</td></tr></tr>
+<tr><tr><td><code>0804dc4</code></td><td>2026-06-25</td><td>docs(memory): Lesson 162 alembic upgrade heads + Swarm container atomicity</td></tr></tr>
+<tr><tr><td><code>0942645</code></td><td>2026-06-25</td><td>feat(supabase): S0 S05+S06+S07 GraphQL+Storage+Realtime (3 buckets + 3 channels + pg_graphql)</td></tr></tr>
+<tr><tr><td><code>fe8253a</code></td><td>2026-06-25</td><td>feat(supabase): S0 S04 database webhook outbox_to_api (Supabase -> API real-time)</td></tr></tr>
+<tr><tr><td><code>4cac6e2</code></td><td>2026-06-25</td><td>feat(alembic): fix migration chain ordering (A16+A17 swap down_revision)</td></tr></tr>
+<tr><tr><td><code>164a647</code></td><td>2026-06-25</td><td>feat(supabase): S0 S03 pg_cron jobs (audit_verify 03:00 + dlq_retry 5min + cache_warm 06:00 + snapshot 23:55)</td></tr></tr>
+<tr><tr><td><code>3e5e8f4</code></td><td>2026-06-25</td><td>feat(obs): A13 dead man's switch 3-level + Prometheus metric + scheduler</td></tr></tr>
+<tr><tr><td><code>cf80871</code></td><td>2026-06-25</td><td>feat(supabase): S0 S02+S08+S10 RLS policies + fn_audit_chain_verify + auto_audit trigger (0004)</td></tr></tr>
+</table>
+
+<details><summary><h2>5. Timeline Completa (234 commits desde 24/06)</h2></summary>
+<table>
+<tr><tr><td><code>a8259cd</code></td><td>2026-06-25</td><td>feat(openclaw): E3 skills registry auto-discovery + E6 script E2E Telegram</td></tr></tr>
+<tr><tr><td><code>c54219e</code></td><td>2026-06-25</td><td>feat(openclaw): E2+E4+E7+E8 registry 20 tools + thinking always-on + failover chain</td></tr></tr>
+<tr><tr><td><code>676636d</code></td><td>2026-06-25</td><td>feat(openclaw): E5 IDENTITY.md v2 sem emojis + tom direto/curto/serio (SQUAD E)</td></tr></tr>
+<tr><tr><td><code>ee0694f</code></td><td>2026-06-25</td><td>fix(n8n): WF 00 Telegram Code node Markdown V1 → V2 (escapeMarkdownV2 canonico)</td></tr></tr>
+<tr><tr><td><code>c1cc103</code></td><td>2026-06-25</td><td>feat(chatwoot): B13+B14+B15 52 canned responses + 10 macros + 10 WhatsApp templates</td></tr></tr>
+<tr><tr><td><code>5651795</code></td><td>2026-06-25</td><td>feat(obs): A14 verify+close — S3 placeholder explicito + Prometheus metric</td></tr></tr>
+<tr><tr><td><code>8d2814f</code></td><td>2026-06-25</td><td>feat(n8n): B12 test runner estatico para 45 WFs (42 pass + 3 fail pre-existentes)</td></tr></tr>
+<tr><tr><td><code>33f06aa</code></td><td>2026-06-25</td><td>feat(n8n): B11 WF alertas Telegram GRUPO Pietra (cron 5min + /health/radar)</td></tr></tr>
+<tr><tr><td><code>615c386</code></td><td>2026-06-25</td><td>feat(n8n): B10 metrics Prometheus por WF (3 metrics + 44 WFs instrumentados)</td></tr></tr>
+<tr><tr><td><code>e063ead</code></td><td>2026-06-25</td><td>feat: add harness task plan for database backup verification and audit</td></tr></tr>
+<tr><tr><td><code>b6fd3a1</code></td><td>2026-06-25</td><td>feat(n8n): B09 logs JSON correlation_id em todos WFs (88 nodes em 44 WFs)</td></tr></tr>
+<tr><tr><td><code>4e830ad</code></td><td>2026-06-25</td><td>feat(n8n): B08 timeout 5s em todos HTTP nodes (84 nodes em 44 WFs)</td></tr></tr>
+<tr><tr><td><code>02b6d21</code></td><td>2026-06-25</td><td>fix(integrations): N8N Error Handler B6 cleanup — F841 + ruff format (B6-fix)</td></tr></tr>
+<tr><tr><td><code>245505c</code></td><td>2026-06-25</td><td>refactor: cleanup n8n error logging and update harness task tracking and memory documentation</td></tr></tr>
+<tr><tr><td><code>f284d2f</code></td><td>2026-06-25</td><td>fix(obs): A13 mypy strict gap — annotate now param as datetime | None</td></tr></tr>
+<tr><tr><td><code>e071a5d</code></td><td>2026-06-25</td><td>feat(api): A24 API v2 alpha skeleton + sunset 2027-12-31</td></tr></tr>
+<tr><tr><td><code>cb622d7</code></td><td>2026-06-25</td><td>feat(ci): A23 OpenAPI spec validator step (openapi-spec-validator)</td></tr></tr>
+<tr><tr><td><code>70d5d33</code></td><td>2026-06-25</td><td>fix(obs): A13 POST /admin/audit/check-now audita propria execucao</td></tr></tr>
+<tr><tr><td><code>5d0b83a</code></td><td>2026-06-25</td><td>feat(db): A18 trigger set_updated_at global (10 tabelas + fn_set_updated_at)</td></tr></tr>
+<tr><tr><td><code>1d79096</code></td><td>2026-06-25</td><td>docs(memory): Lessons 124-129 SQUAD S0 done + status gates 2026-06-25</td></tr></tr>
+<tr><tr><td><code>fd7f2fe</code></td><td>2026-06-25</td><td>docs(alembic): S0 S09 README migrations completo (SQUAD S0 + gotchas + validacao)</td></tr></tr>
+<tr><tr><td><code>3fc3bdc</code></td><td>2026-06-25</td><td>refactor: prioritize loading secrets from backend/.env before directory-based files in seed script</td></tr></tr>
+<tr><tr><td><code>09e55b5</code></td><td>2026-06-25</td><td>feat: implement Supabase Vault integration with migration, bootstrap script, and n8n webhook error handling service</td></tr></tr>
+<tr><tr><td><code>0804dc4</code></td><td>2026-06-25</td><td>docs(memory): Lesson 162 alembic upgrade heads + Swarm container atomicity</td></tr></tr>
+<tr><tr><td><code>0942645</code></td><td>2026-06-25</td><td>feat(supabase): S0 S05+S06+S07 GraphQL+Storage+Realtime (3 buckets + 3 channels + pg_graphql)</td></tr></tr>
+<tr><tr><td><code>fe8253a</code></td><td>2026-06-25</td><td>feat(supabase): S0 S04 database webhook outbox_to_api (Supabase -> API real-time)</td></tr></tr>
+<tr><tr><td><code>4cac6e2</code></td><td>2026-06-25</td><td>feat(alembic): fix migration chain ordering (A16+A17 swap down_revision)</td></tr></tr>
+<tr><tr><td><code>164a647</code></td><td>2026-06-25</td><td>feat(supabase): S0 S03 pg_cron jobs (audit_verify 03:00 + dlq_retry 5min + cache_warm 06:00 + snapshot 23:55)</td></tr></tr>
+<tr><tr><td><code>3e5e8f4</code></td><td>2026-06-25</td><td>feat(obs): A13 dead man's switch 3-level + Prometheus metric + scheduler</td></tr></tr>
+<tr><tr><td><code>cf80871</code></td><td>2026-06-25</td><td>feat(supabase): S0 S02+S08+S10 RLS policies + fn_audit_chain_verify + auto_audit trigger (0004)</td></tr></tr>
+<tr><tr><td><code>2a98fc8</code></td><td>2026-06-25</td><td>docs(plan): PLAN_100_TASKS_LOOP + plan-100-loop-2026-06-25 + MEMORY 118-123</td></tr></tr>
+<tr><tr><td><code>32618f8</code></td><td>2026-06-25</td><td>fix(tests): gates 100% green — mypy 0, ruff 0, pytest 920 passed</td></tr></tr>
+<tr><tr><td><code>bfc9330</code></td><td>2026-06-25</td><td>feat: add concrete model imports to test config and define harness plans for DMS and N8N error handler</td></tr></tr>
+<tr><tr><td><code>c53d575</code></td><td>2026-06-25</td><td>feat: add PLAN_GIGANTE_2026-06-25 orchestration plan for project tasks and environment status</td></tr></tr>
+<tr><tr><td><code>66f0905</code></td><td>2026-06-25</td><td>chore: consolidate plan v2 (150 tasks) + small integrations cleanup</td></tr></tr>
+<tr><tr><td><code>7efa81d</code></td><td>2026-06-25</td><td>refactor: move imports in integrations and improve null-safe date formatting in lgpd_export</td></tr></tr>
+<tr><tr><td><code>faa6ecc</code></td><td>2026-06-25</td><td>chore: append session record to watchdog crons and generate daily summary document</td></tr></tr>
+<tr><tr><td><code>a7e4ec6</code></td><td>2026-06-25</td><td>docs(memory): Sprint 5 SQUAD B+D 5 commits B11+D8/D9/D11/D12 2026-06-25</td></tr></tr>
+<tr><tr><td><code>c62e568</code></td><td>2026-06-25</td><td>feat(lgpd): D12 Data Export Service (portabilidade art. 18 IV) + 11 testes</td></tr></tr>
+<tr><tr><td><code>6b02195</code></td><td>2026-06-25</td><td>feat(lgpd): D11 LGPD Consent Service granular + 14 testes</td></tr></tr>
+<tr><tr><td><code>4661ea7</code></td><td>2026-06-25</td><td>feat(lgpd): D9 Relatorio ANPD anual + 15 testes + endpoint /admin/lgpd/relatorio-anual</td></tr></tr>
+<tr><tr><td><code>5ba2aca</code></td><td>2026-06-25</td><td>feat(lgpd): D8 PII Sanitizer (CPF/CNPJ/email/phone/RG) + 16 testes</td></tr></tr>
+<tr><tr><td><code>3645314</code></td><td>2026-06-25</td><td>feat(n8n): B11 N8N Workflow Validator + 13 testes + endpoint /admin/n8n/validate-wfs</td></tr></tr>
+<tr><tr><td><code>5f528cf</code></td><td>2026-06-25</td><td>docs: add n8n db update canonical guide and initialize watchdog and memory archive state</td></tr></tr>
+<tr><tr><td><code>9b2cc54</code></td><td>2026-06-25</td><td>feat(n8n): retry policy 3x exp backoff em HTTP nodes (B07)</td></tr></tr>
+<tr><tr><td><code>5502bc2</code></td><td>2026-06-25</td><td>feat(res): backup DB 4x/dia pg_basebackup + WAL + /api/v1/health/backup-v2</td></tr></tr>
+<tr><tr><td><code>50cf8a7</code></td><td>2026-06-25</td><td>feat(openclaw): 1M context + thinking adaptive + 7 cartorio skills</td></tr></tr>
+<tr><tr><td><code>18f083d</code></td><td>2026-06-25</td><td>docs(memory): Sprint 3 status update + Lessons 109-110</td></tr></tr>
+<tr><tr><td><code>43484b0</code></td><td>2026-06-25</td><td>feat(n8n): wire 22 WFs to Error Handler Global (B06 retry)</td></tr></tr>
+<tr><tr><td><code>e33d977</code></td><td>2026-06-25</td><td>feat(audit): D0.2 harden POST /api/v1/audit/log (P0+P1 fixes)</td></tr></tr>
+<tr><tr><td><code>81a1bfc</code></td><td>2026-06-25</td><td>docs(memory): Lesson 109 lifespan startup pre-entry + Sprint 3 status</td></tr></tr>
+<tr><tr><td><code>316d496</code></td><td>2026-06-25</td><td>feat(api): POST /api/v1/audit/log LGPD chain entry endpoint</td></tr></tr>
+<tr><tr><td><code>649d460</code></td><td>2026-06-25</td><td>feat(obs): dead man switch audit_log stale >1h</td></tr></tr>
+<tr><tr><td><code>9fac5ac</code></td><td>2026-06-25</td><td>merge: B0.3.SEC 7 endpoints auth migration (61c21fa)</td></tr></tr>
+<tr><tr><td><code>61c21fa</code></td><td>2026-06-25</td><td>feat(auth): B0.3.SEC — migrate 7 endpoints to Depends(require_cartorio_api_key)</td></tr></tr>
+<tr><tr><td><code>04316cd</code></td><td>2026-06-25</td><td>chore(scripts): post-deploy cartorio_api env reaplication (Lesson 103 workaround)</td></tr></tr>
+<tr><tr><td><code>31dd8b7</code></td><td>2026-06-25</td><td>docs(memory): Sprint 3 status update + Lesson 103-105 (service env drift, pode_deletar scope, git stash round-trip)</td></tr></tr>
+<tr><tr><td><code>e6aabc6</code></td><td>2026-06-25</td><td>feat(api): pode_deletar field in cliente historico response (WF 23 LGPD)</td></tr></tr>
+<tr><tr><td><code>5fa154c</code></td><td>2026-06-25</td><td>fix(auth): LGPD review APPROVED_WITH_FIXES — P0.1+P0.2 (ee8bd36, 2026-06-25)</td></tr></tr>
+<tr><tr><td><code>d9e5e23</code></td><td>2026-06-25</td><td>chore(hardening): cartorio_api_key hex pattern validation + D0.3 docs updates</td></tr></tr>
+<tr><tr><td><code>2cb4897</code></td><td>2026-06-25</td><td>feat(api): GET /cliente/{id} LGPD-safe endpoint + WF 23 fix</td></tr></tr>
+<tr><tr><td><code>465f208</code></td><td>2026-06-25</td><td>docs(memory): Sprint 3 E0 sprint status update + Lessons 96-97 (CARTORIO_API_KEY drift, Easypanel rebuild)</td></tr></tr>
+<tr><tr><td><code>ee8bd35</code></td><td>2026-06-25</td><td>feat(auth): CARTORIO_API_KEY transversal gap fix (B0.3 E0.AUTH 2026-06-25)</td></tr></tr>
+<tr><tr><td><code>a3a8798</code></td><td>2026-06-25</td><td>docs(memory): Sprint 5 SQUAD A 13 commits 12/25 tasks done - 2026-06-25 00:30 BRT</td></tr></tr>
+<tr><tr><td><code>ac5d4b4</code></td><td>2026-06-25</td><td>feat(db): A24 pg_notify trigger outbox_messages (PostgreSQL LISTEN/NOTIFY)</td></tr></tr>
+<tr><tr><td><code>e3549af</code></td><td>2026-06-25</td><td>feat(obs): A20 API versioning via headers (RFC 8594) + 7 testes</td></tr></tr>
+<tr><tr><td><code>d1b6438</code></td><td>2026-06-25</td><td>feat(obs): A25 Redlock 10 testes + endpoint /admin/locks</td></tr></tr>
+<tr><tr><td><code>7ec071d</code></td><td>2026-06-25</td><td>feat(obs): A19 OpenAPI validator helpers + 7 testes</td></tr></tr>
+<tr><tr><td><code>e3cd675</code></td><td>2026-06-25</td><td>feat(api): A16 endpoint /stats/protocolos + A17 soft delete migration</td></tr></tr>
+<tr><tr><td><code>b6aa036</code></td><td>2026-06-25</td><td>feat(obs): A23 endpoint /health/audit dead man's switch + 9 testes</td></tr></tr>
+<tr><tr><td><code>0bcc587</code></td><td>2026-06-25</td><td>feat(db): A22 connection pool tuning + observability get_pool_stats</td></tr></tr>
+<tr><tr><td><code>83a1579</code></td><td>2026-06-25</td><td>feat(cache): A18 Redis cache 60s para /atendimento/ultimas-24h</td></tr></tr>
+<tr><tr><td><code>9cd2ca4</code></td><td>2026-06-24</td><td>docs(backup): A14 backup_postgres_a14 README - cron, env, restore, LGPD</td></tr></tr>
+<tr><tr><td><code>c4b0f5b</code></td><td>2026-06-24</td><td>feat(api): RFC 7807 Problem Details handler (A21) - retrocompat detail</td></tr></tr>
+<tr><tr><td><code>ebb66f7</code></td><td>2026-06-24</td><td>feat(db): D0.1 migration BASE 8 tabelas core + audit_log + outbox + webhook + atendimento</td></tr></tr>
+<tr><tr><td><code>5214a5b</code></td><td>2026-06-24</td><td>feat(obs): SlowLogMiddleware A15 + fix 3 testes path singular</td></tr></tr>
+<tr><tr><td><code>97dc645</code></td><td>2026-06-24</td><td>feat(openclaw): setup_1m_context.sh - configura 1M context + adaptive thinkings</td></tr></tr>
+<tr><tr><td><code>d1d29f0</code></td><td>2026-06-24</td><td>fix(llm): OpenCode-Go base URL correta (opencode.ai/zen/go/v1)</td></tr></tr>
+<tr><tr><td><code>2a5685c</code></td><td>2026-06-24</td><td>feat: update Postman collection with API endpoints and standardize documentation structure</td></tr></tr>
+<tr><tr><td><code>b6194b1</code></td><td>2026-06-24</td><td>ci(cd): Render deploy workflow on push to master (.github/workflows/cd.yml)</td></tr></tr>
+<tr><tr><td><code>5785d2d</code></td><td>2026-06-24</td><td>docs(memory): Sprint 5 — 50 tasks criadas 2026-06-24 (CAR-141..190) — DevOps+Security+Perf+AI/ML+DX</td></tr></tr>
+<tr><tr><td><code>97477ac</code></td><td>2026-06-24</td><td>fix(api): padronizar path /atendimento/ultimas-24h (removido 's' plural)</td></tr></tr>
+<tr><tr><td><code>3df7d61</code></td><td>2026-06-24</td><td>docs(memory): Health check final 9/11 UP 2026-06-24 22:00 BRT</td></tr></tr>
+<tr><tr><td><code>bc724bd</code></td><td>2026-06-24</td><td>docs(memory): Traefik certs LE + Render preview blocked 2026-06-24</td></tr></tr>
+<tr><tr><td><code>56885e2</code></td><td>2026-06-24</td><td>docs(memory): WebSocket /ws/atendimentos test OK 2026-06-24 (ping/pong + subscribe/echo)</td></tr></tr>
+<tr><tr><td><code>55e635e</code></td><td>2026-06-24</td><td>docs(memory): Atendimento 5 endpoints testados 2026-06-24 (4/5 OK, 1 path com typo)</td></tr></tr>
+<tr><tr><td><code>6f9aabe</code></td><td>2026-06-24</td><td>docs(memory): Sprint 4 Linear 34 tasks criadas 2026-06-24 (CAR-107..140) — LGPD + N8N + Chatwoot + Redis + Extras</td></tr></tr>
+<tr><tr><td><code>9814733</code></td><td>2026-06-24</td><td>docs(memory): Linear 104/104 tasks Done (100%) 2026-06-24 — Sprint 1+2+3 completas</td></tr></tr>
+<tr><tr><td><code>a2d6155</code></td><td>2026-06-24</td><td>docs(memory): Render auto-deploy ON + Postman collection v2 50 requests 2026-06-24</td></tr></tr>
+<tr><tr><td><code>3b75e54</code></td><td>2026-06-24</td><td>docs(api): Postman collection v2 + guide (50 paths from OpenAPI 3.1)</td></tr></tr>
+<tr><tr><td><code>6d79431</code></td><td>2026-06-24</td><td>docs(memory): API test 15/15 endpoints OK 2026-06-24 — auth + LGPD + health + metrics</td></tr></tr>
+<tr><tr><td><code>747e7bb</code></td><td>2026-06-24</td><td>docs(memory): LGPD 5 endpoints 100% OK 2026-06-24 — 5/5 retornam 200, audit log +7</td></tr></tr>
+<tr><tr><td><code>16bfa27</code></td><td>2026-06-24</td><td>fix(api): correct import path in lgpd_direitos (app.api.deps -> app.db)</td></tr></tr>
+<tr><tr><td><code>e0cf891</code></td><td>2026-06-24</td><td>docs(memory): LGPD 5 endpoints deploy pendente 2026-06-24 (commit 287ec28)</td></tr></tr>
+<tr><tr><td><code>287ec28</code></td><td>2026-06-24</td><td>feat(api): add 5 LGPD direitos endpoints (anonimizar, corrigir, oposicao, optout, portabilidade)</td></tr></tr>
+<tr><tr><td><code>40d67d2</code></td><td>2026-06-24</td><td>chore(env): update .env.example STATUS 2026-06-24 19:55 BRT</td></tr></tr>
+<tr><tr><td><code>d591760</code></td><td>2026-06-24</td><td>feat(api): add POST /integrations/outbox/dispatch endpoint (webhook Supabase)</td></tr></tr>
+<tr><tr><td><code>a2f6b88</code></td><td>2026-06-24</td><td>docs(memory): Linear 30 tasks Done batch 2 2026-06-24 (52% de 100) — D/E/F/I/J</td></tr></tr>
+<tr><tr><td><code>13d7b61</code></td><td>2026-06-24</td><td>docs(memory): Supabase Realtime + Webhooks + pg_graphql 2026-06-24 (commit f6aac74)</td></tr></tr>
+<tr><tr><td><code>f6aac74</code></td><td>2026-06-24</td><td>infra(supabase): realtime publication + 3 webhook triggers + pg_graphql 2026-06-24</td></tr></tr>
+<tr><tr><td><code>5d45766</code></td><td>2026-06-24</td><td>docs(memory): Linear 22 tasks Done 2026-06-24 (22% de 100) — B01-B10 + C01-C02 + G01-G10 + H01</td></tr></tr>
+<tr><tr><td><code>264b5c2</code></td><td>2026-06-24</td><td>docs(api): update API.md with 2026-06-24 status + new resources (outbox, RPCs, cron, vault, OpenClaw M3)</td></tr></tr>
+<tr><tr><td><code>b9ff4a9</code></td><td>2026-06-24</td><td>docs(memory): Linear 6 tasks Done + Jules 30 sessions review 2026-06-24</td></tr></tr>
+<tr><tr><td><code>a8824ae</code></td><td>2026-06-24</td><td>docs(memory): Telegram bot workflow 31 v2 E2E OK 2026-06-24 — HTTP 200 13.06s, audit chain 384 entries</td></tr></tr>
+<tr><tr><td><code>e442565</code></td><td>2026-06-24</td><td>ci(cd): bump versions + add upgrade roadmap</td></tr></tr>
+<tr><tr><td><code>5cd4475</code></td><td>2026-06-24</td><td>docs(memory): vault Supabase 8 secrets REAIS aplicados 2026-06-24 — UPDATE direto (vault.update_secret espera UUID)</td></tr></tr>
+<tr><tr><td><code>6ef86c0</code></td><td>2026-06-24</td><td>docs(memory): session 2026-06-24 FINAL summary — 10 commits + 8 fixes + 100 tasks + 14 memory files</td></tr></tr>
+<tr><tr><td><code>33e2f71</code></td><td>2026-06-24</td><td>docs(memory): Opencode-Go M3 + thinking VALIDADO 2026-06-24 — chave sk-xcRwExjQ funcional, 1M context, thinking ON, cost $0</td></tr></tr>
+<tr><tr><td><code>4434731</code></td><td>2026-06-24</td><td>chore(harness): consolidated .env 2026-06-24 — 11 serviços + 80 vars (gitignored secrets OK)</td></tr></tr>
+<tr><tr><td><code>5152aef</code></td><td>2026-06-24</td><td>docs(memory): Render API validado 2026-06-24 — service id srv-d8u04aojs32c73c92j8g</td></tr></tr>
+<tr><tr><td><code>6d8a4e7</code></td><td>2026-06-24</td><td>docs(memory): Supabase cron + vault aplicado 2026-06-24 — 5 jobs + 8 secrets (commit efab104)</td></tr></tr>
+<tr><tr><td><code>efab104</code></td><td>2026-06-24</td><td>feat(supabase): cron jobs + vault secrets via supabase_admin</td></tr></tr>
+<tr><tr><td><code>3c0ac86</code></td><td>2026-06-24</td><td>docs(memory): OpenClaw M3 fix 2026-06-24 — temperature=0, model=minimax-m3, openai provider, chatCompletions enabled</td></tr></tr>
+<tr><tr><td><code>ff5e8fd</code></td><td>2026-06-24</td><td>docs(memory): Linear sync 2026-06-24 — 4 projects + 100 tasks (CAR-7..106) created</td></tr></tr>
+<tr><tr><td><code>d0edf0b</code></td><td>2026-06-24</td><td>docs(platforms): refresh 6 platforms status (MD + JSON) - 2026-06-24</td></tr></tr>
+<tr><tr><td><code>816acf6</code></td><td>2026-06-24</td><td>chore(openclaw): T4.9 fix #3 done (context 1M + thinking adaptive)</td></tr></tr>
+<tr><tr><td><code>315e22c</code></td><td>2026-06-24</td><td>chore(harness): D0.1 Sprint 3 ALREADY DONE (validado via SSH + psql)</td></tr></tr>
+<tr><tr><td><code>7736297</code></td><td>2026-06-24</td><td>chore(harness): B0.2 Sprint 3 done + findings WF 21/26/30/31</td></tr></tr>
+<tr><tr><td><code>5c3707c</code></td><td>2026-06-24</td><td>docs(memory): session 2026-06-24 evening summary — 5 fixes prod + 11 Supabase tables + 3 RPCs</td></tr></tr>
+<tr><tr><td><code>b5d69dd</code></td><td>2026-06-24</td><td>chore(harness): mark B0.2 Sprint 3 done (GET /health/integracoes delivered commit 5bdfb7a)</td></tr></tr>
+<tr><tr><td><code>5bdfb7a</code></td><td>2026-06-24</td><td>feat(api): add GET /api/v1/health/integracoes endpoint (B0.2 Sprint 3)</td></tr></tr>
+<tr><tr><td><code>edca122</code></td><td>2026-06-24</td><td>feat(supabase): real rollout — 11 tables + 3 RPCs + 5 cron + 7 vault secrets</td></tr></tr>
+<tr><tr><td><code>2300dc5</code></td><td>2026-06-24</td><td>chore(harness): mark B0.1 Sprint 3 done (POST /metrics/n8n delivered commit 38679ea)</td></tr></tr>
+<tr><tr><td><code>38679ea</code></td><td>2026-06-24</td><td>feat: add metrics ingestion endpoint for N8N integration</td></tr></tr>
+<tr><tr><td><code>8b82639</code></td><td>2026-06-24</td><td>fix(n8n): evo-in v3 (credential + jsonBody simplificado) + 4 fixes prod aplicados</td></tr></tr>
+<tr><tr><td><code>ca855d0</code></td><td>2026-06-24</td><td>feat: initialize project planning documents and update system status and tasks</td></tr></tr>
+<tr><tr><td><code>f5fef2e</code></td><td>2026-06-24</td><td>feat(n8n): add evo-in.json workflow template (Evolution → N8N → API)</td></tr></tr>
+<tr><tr><td><code>aab3774</code></td><td>2026-06-24</td><td>fix(models): register OutboxMessage in models/__init__.py</td></tr></tr>
+<tr><tr><td><code>91a980b</code></td><td>2026-06-24</td><td>docs: add canon workflow for N8N cache invalidation and env access handling to memory documentation</td></tr></tr>
+<tr><tr><td><code>fbf47dc</code></td><td>2026-06-24</td><td>docs(health): add VPS health-check 2026-06-24 — services inventory + critical issues</td></tr></tr>
+<tr><tr><td><code>1119043</code></td><td>2026-06-24</td><td>ci: prepend `rm -rf .mypy_cache` to mypy gate (Lesson 64)</td></tr></tr>
+<tr><tr><td><code>3d70825</code></td><td>2026-06-24</td><td>feat: finalize Sprint 3 tasks, clear stale LGPD placeholders, and establish session memory documentation structure.</td></tr></tr>
+<tr><tr><td><code>26a135b</code></td><td>2026-06-24</td><td>docs: add protocol to handle stale briefings and phantom auto-commits from external agents</td></tr></tr>
+<tr><tr><td><code>c0392bb</code></td><td>2026-06-24</td><td>docs(memory): SQUAD D D01-D05 = 5/25 + gates verdes stats</td></tr></tr>
+<tr><tr><td><code>c21731d</code></td><td>2026-06-24</td><td>docs(lgpd): SQUAD D D04+D05 DPAs Cloudflare+Hostinger + DPA_INDEX</td></tr></tr>
+<tr><tr><td><code>0becf28</code></td><td>2026-06-24</td><td>chore(env): Opencode-Go + OpenClaw thinking_enabled flags</td></tr></tr>
+<tr><tr><td><code>2f196c5</code></td><td>2026-06-24</td><td>fix(backend): 2 erros ruff triviais (F401, F541)</td></tr></tr>
+<tr><tr><td><code>7e9e417</code></td><td>2026-06-24</td><td>style(metrics): apply ruff format to /api/v1/metrics endpoint</td></tr></tr>
+<tr><tr><td><code>938b8a7</code></td><td>2026-06-24</td><td>docs(memory): Sprint 4 SQUAD B/C lessons + WF#25 Lesson 58 race condition</td></tr></tr>
+<tr><tr><td><code>2a62245</code></td><td>2026-06-24</td><td>feat(metrics): endpoint /metrics JSON N8N-friendly (substitui Code nodes quebrados)</td></tr></tr>
+<tr><tr><td><code>a19ce57</code></td><td>2026-06-24</td><td>fix(backend): cache_warming kwargs errados + test_set_cached mock r.set</td></tr></tr>
+<tr><tr><td><code>b8c1418</code></td><td>2026-06-24</td><td>feat: add cache warming service for emoluments and implement JSON metrics rendering for N8N integration</td></tr></tr>
+<tr><tr><td><code>7fbbe3a</code></td><td>2026-06-24</td><td>feat(perf): A21 cache Redis 24h emolumento + invalidation</td></tr></tr>
+<tr><tr><td><code>d375215</code></td><td>2026-06-24</td><td>feat(data): A20 Redlock distributed lock Redis SET NX EX + Lua atomic</td></tr></tr>
+<tr><tr><td><code>c2511b8</code></td><td>2026-06-24</td><td>feat(obs): A13 dead mans switch audit log > 1h</td></tr></tr>
+<tr><tr><td><code>23c5014</code></td><td>2026-06-24</td><td>chore(scripts): A14 backup postgres 4x/dia + WAL + S3 mensal</td></tr></tr>
+<tr><tr><td><code>7a74a60</code></td><td>2026-06-24</td><td>feat: tune database connection pool settings and add validation tests</td></tr></tr>
+<tr><tr><td><code>3d46a91</code></td><td>2026-06-24</td><td>fix(n8n): WF#31 audit chain verify GET→POST</td></tr></tr>
+<tr><tr><td><code>db9ae9b</code></td><td>2026-06-24</td><td>docs(memory): SESSAO 2026-06-24 SQUAD B 5/5 + total 22/100 tasks Sprint 4</td></tr></tr>
+<tr><tr><td><code>6f7d0ec</code></td><td>2026-06-24</td><td>docs(task-bank): atualizar stats 2026-06-24 (SQUAD A 12/25, B 5/25, C 5/25, D 0/25)</td></tr></tr>
+<tr><tr><td><code>93cb9d0</code></td><td>2026-06-24</td><td>docs(n8n): B5 migration guide WF v1->v2 + script template</td></tr></tr>
+<tr><tr><td><code>9170907</code></td><td>2026-06-24</td><td>chore(scripts): B4 backup diario N8N workflows (7d retencao)</td></tr></tr>
+<tr><tr><td><code>07e467e</code></td><td>2026-06-24</td><td>docs(n8n): B3 CHANGELOG workflows com versioning + diff breaking changes</td></tr></tr>
+<tr><tr><td><code>fb2a002</code></td><td>2026-06-24</td><td>docs(n8n): B2 diagramas mermaid (5 principais) + README indice</td></tr></tr>
+<tr><tr><td><code>88d5558</code></td><td>2026-06-24</td><td>docs(n8n): B1 README central com 16+ workflows + diagrama de fluxos</td></tr></tr>
+<tr><tr><td><code>9cebc3a</code></td><td>2026-06-24</td><td>docs(memory): SESSAO 2026-06-24 SQUAD C 5/5 (C1-C5 docs raiz)</td></tr></tr>
+<tr><tr><td><code>6ff9993</code></td><td>2026-06-24</td><td>docs(deploy): C5 DEPLOYMENT.md Easypanel passo-a-passo (8 steps)</td></tr></tr>
+<tr><tr><td><code>8094748</code></td><td>2026-06-24</td><td>docs(db): C4 DB.md schema completo + ER diagram (mermaid) + 10 models + 3 migrations</td></tr></tr>
+<tr><tr><td><code>045d937</code></td><td>2026-06-24</td><td>docs(api): C3 API.md completo com 34 endpoints + 10+ exemplos curl + auth</td></tr></tr>
+<tr><tr><td><code>4325d2a</code></td><td>2026-06-24</td><td>docs(arch): C2 C4 diagrams (4 niveis) + 24 ADRs linkados + decisoes criticas</td></tr></tr>
+<tr><tr><td><code>8592984</code></td><td>2026-06-24</td><td>docs(root): C1 README completo com badges + quickstart + arquitetura + 7 servicos prod</td></tr></tr>
+<tr><tr><td><code>d2bcba6</code></td><td>2026-06-24</td><td>docs(session): SESSION_SUMMARY 2026-06-24 Sprint 4 SQUAD A 12/25 + memory update</td></tr></tr>
+<tr><tr><td><code>f1ca3fb</code></td><td>2026-06-24</td><td>feat(sec): A10 CPF/CNPJ validators (DV) + A11 log masker (LGPD art. 46)</td></tr></tr>
+<tr><tr><td><code>6b12c38</code></td><td>2026-06-24</td><td>feat(sec): A9 encryption at-rest pgcrypto + Fernet + mask helpers</td></tr></tr>
+<tr><tr><td><code>e1da773</code></td><td>2026-06-24</td><td>feat(sec): A8 HMAC validation em todos webhooks</td></tr></tr>
+<tr><tr><td><code>904c66a</code></td><td>2026-06-24</td><td>feat(sec): A7 rate limit Redis sliding window 60 req/min/IP</td></tr></tr>
+<tr><tr><td><code>3269409</code></td><td>2026-06-24</td><td>feat(sec): A6 idempotency-key header Redis SETNX TTL 24h</td></tr></tr>
+<tr><tr><td><code>7c3a149</code></td><td>2026-06-24</td><td>feat(observability): A4 Sentry error tracking + PII scrubber (LGPD-by-design)</td></tr></tr>
+<tr><tr><td><code>77cd98b</code></td><td>2026-06-24</td><td>chore(ruff): remove unused OutboxQueue import (test_dlq_retry_a12)</td></tr></tr>
+<tr><tr><td><code>35591b5</code></td><td>2026-06-24</td><td>feat: implement exponential backoff retry policy for outbox messages with next_retry_at tracking</td></tr></tr>
+<tr><tr><td><code>c053b75</code></td><td>2026-06-24</td><td>feat(health+dlq): A5 liveness/readiness probes + DLQ tests + router fixes</td></tr></tr>
+<tr><tr><td><code>039b24a</code></td><td>2026-06-24</td><td>feat(observability): A3 OpenTelemetry tracing - spans request/LLM/DB</td></tr></tr>
+<tr><tr><td><code>ef85b94</code></td><td>2026-06-24</td><td>feat(metrics): A2 GREEN - pii_blocked_total + scrub_latency_ms + dlq_depth (14 tests)</td></tr></tr>
+<tr><tr><td><code>17b2b8f</code></td><td>2026-06-24</td><td>docs(t47): pos-restart report - WF#03 success + cron workflows still failing</td></tr></tr>
+<tr><tr><td><code>1356eb4</code></td><td>2026-06-24</td><td>docs(session): 2026-06-24 WF03 handoff smoke test t47</td></tr></tr>
+<tr><tr><td><code>4232690</code></td><td>2026-06-24</td><td>test(metrics): A2 RED - 9 failing tests for pii_blocked_total + scrub_latency_ms + dlq_depth</td></tr></tr>
+<tr><tr><td><code>549b362</code></td><td>2026-06-24</td><td>fix(t9-crit-fix): CRIT-1+2+3, HIGH-4+5+6, MED-8+9+10 — LGPD D5 dual-column IP</td></tr></tr>
+<tr><tr><td><code>d3010a7</code></td><td>2026-06-24</td><td>docs(memory): SESSAO 3+ parte 4 - Jules + OpenCode Zen + Qwen Coder</td></tr></tr>
+<tr><tr><td><code>93fd318</code></td><td>2026-06-24</td><td>chore(scripts): P1.N8N.6 test runner para 16 workflows N8N</td></tr></tr>
+<tr><tr><td><code>3d655a3</code></td><td>2026-06-24</td><td>docs(platforms): P2.MX.11 Jules (Google Gemini 3.1 Pro) - integracao + MCPs</td></tr></tr>
+<tr><tr><td><code>af5164b</code></td><td>2026-06-24</td><td>fix(openclaw): T4.9 habilita /v1/chat/completions + documenta contrato HTTP</td></tr></tr>
+<tr><tr><td><code>e8ec879</code></td><td>2026-06-24</td><td>refactor: update IP truncation logic in migration using split_part and add roadmap documentation for task bank improvements</td></tr></tr>
+<tr><tr><td><code>e4ac1e5</code></td><td>2026-06-24</td><td>docs(arch): P2.DC.7 sequence diagram PII end-to-end (4 fluxos Mermaid)</td></tr></tr>
+<tr><tr><td><code>3f688ca</code></td><td>2026-06-24</td><td>docs(lgpd): P2.LG.10 checklist revisao trimestral DPA (10 provedores)</td></tr></tr>
+<tr><tr><td><code>4d06647</code></td><td>2026-06-24</td><td>chore(agents): P2.MX.12 task-bank.json SESSAO 3+ (21% completo)</td></tr></tr>
+<tr><tr><td><code>4dcb209</code></td><td>2026-06-24</td><td>test(pii): P2.BE.14 bench - 7 testes de performance PII scrubber</td></tr></tr>
+<tr><tr><td><code>8992c61</code></td><td>2026-06-24</td><td>test(telegram): +2 testes para intents do agent (certidao, saudacao)</td></tr></tr>
+<tr><tr><td><code>b8b5a57</code></td><td>2026-06-24</td><td>feat(audit): A01 audit log 100% mutacoes (5 endpoints adicionados)</td></tr></tr>
+<tr><tr><td><code>68e141d</code></td><td>2026-06-24</td><td>docs(memory): append SESSAO 3+ - Telegram bot + OpenClaw 1M context + thinkings</td></tr></tr>
+<tr><tr><td><code>db9c998</code></td><td>2026-06-24</td><td>feat(telegram): P0 endpoint Telegram bot + OpenClaw AGENTS.md + TELEGRAM.md</td></tr></tr>
+<tr><tr><td><code>cc6d5cf</code></td><td>2026-06-24</td><td>feat(utils): output scrub FULL COVERAGE wrapper + global exception handlers (LGPD-016 #13)</td></tr></tr>
+<tr><tr><td><code>5ca849c</code></td><td>2026-06-24</td><td>fix(alembic): pega migration 0001 correta (2026_06_23) por revision content match</td></tr></tr>
+<tr><tr><td><code>2ad84bc</code></td><td>2026-06-24</td><td>docs: add official Redis documentation, Supabase readme, and project plan version 0.6.0</td></tr></tr>
+<tr><tr><td><code>376013e</code></td><td>2026-06-24</td><td>docs(platforms): P2.DC.5 Redis 7.x - 20 comandos (String, Hash, List, Set, Pub/Sub, Stream)</td></tr></tr>
+<tr><tr><td><code>c4de7f7</code></td><td>2026-06-24</td><td>docs(platforms): P2.DC.4 Supabase Python - 8 comandos + RLS + service_role</td></tr></tr>
+<tr><tr><td><code>39962d5</code></td><td>2026-06-24</td><td>docs(platforms): P2.DC.2 N8N 1.x - 10 nodes + expressions + credentials</td></tr></tr>
+<tr><tr><td><code>d20f2aa</code></td><td>2026-06-24</td><td>feat: implement LGPD D5 compliance by adding ip_truncated column to audit_log with automatic truncation helper</td></tr></tr>
+<tr><tr><td><code>6a64c5d</code></td><td>2026-06-24</td><td>docs(platforms): P2.DC.1 Evolution API v2.x - 5 endpoints + auth + webhooks</td></tr></tr>
+<tr><tr><td><code>bf2435e</code></td><td>2026-06-24</td><td>feat: implement ip_truncate helper for IPv4/IPv6 masking to support LGPD compliance</td></tr></tr>
+<tr><tr><td><code>3911a23</code></td><td>2026-06-24</td><td>chore(agents): P2.MX.12 task-bank.json - banco compact de 100 tasks em JSON</td></tr></tr>
+<tr><tr><td><code>0970aeb</code></td><td>2026-06-24</td><td>feat(openclaw): M3.5 plugins + M3.6 hooks + M3.7 goals + M3.9 memory registry</td></tr></tr>
+<tr><tr><td><code>dbf71c4</code></td><td>2026-06-24</td><td>feat(protocolo): POST /api/v1/protocolo/criar-api + hitl_draft validator (P0 #1 E1.S3.T1)</td></tr></tr>
+<tr><tr><td><code>205e272</code></td><td>2026-06-24</td><td>docs: consolidar M8.* (ARCHITECTURE, ROADMAP, API, CONTRIBUTING, DEPLOYMENT, LGPD, RIPD, 5 platforms)</td></tr></tr>
+<tr><tr><td><code>a69ede2</code></td><td>2026-06-24</td><td>docs(n8n): M2.8 WF#07 diagnosis - instance connecting (QR pendente Gustavo)</td></tr></tr>
+<tr><tr><td><code>65adb93</code></td><td>2026-06-24</td><td>chore(scripts): session-report.sh - relatorio automatizado de sessao</td></tr></tr>
+<tr><tr><td><code>32577f5</code></td><td>2026-06-24</td><td>docs(adr): ADR-024 Pydantic strict mode (manter 'ignore' por enquanto)</td></tr></tr>
+<tr><tr><td><code>03c6392</code></td><td>2026-06-24</td><td>fix(n8n): M2.9 P1 ADR-010 DB_HOST IP direto 10.0.1.171 (Swarm alias bug)</td></tr></tr>
+<tr><tr><td><code>36776f5</code></td><td>2026-06-24</td><td>docs(arch): P2.DC.7 diagramas C4 (Context, Container, Component, Fluxo)</td></tr></tr>
+<tr><tr><td><code>2ead084</code></td><td>2026-06-24</td><td>docs(ripd): P2.LG.3 DPO designado formalmente (LGPD art. 41)</td></tr></tr>
+<tr><tr><td><code>5e30ffe</code></td><td>2026-06-24</td><td>docs(changelog): P2.DC.14 v0.6.0 - consolida 21 entregas desta sessao</td></tr></tr>
+<tr><tr><td><code>9cf0d75</code></td><td>2026-06-24</td><td>feat(observability): P2.BE.7 correlation ID + log estruturado de request</td></tr></tr>
+<tr><tr><td><code>3a9112a</code></td><td>2026-06-24</td><td>docs(onboarding): P2.DC.8 guia 10 passos para novo dev ser produtivo em <2h</td></tr></tr>
+<tr><tr><td><code>0289a97</code></td><td>2026-06-24</td><td>docs(data-flow): P2.DC.10 diagrama de fluxo de dados PII (LGPD art. 6+11+37)</td></tr></tr>
+<tr><tr><td><code>d2564df</code></td><td>2026-06-24</td><td>chore(n8n): delete 11 inactive workflows (M2.7)</td></tr></tr>
+<tr><tr><td><code>1eb58f6</code></td><td>2026-06-24</td><td>chore(scripts): P2.MX.4 scripts uteis - test-all.sh, deploy.sh, lint-fix.sh</td></tr></tr>
+<tr><tr><td><code>653e15d</code></td><td>2026-06-24</td><td>feat(ci): P1.DO.1 GitHub Actions CI - 4 jobs paralelos</td></tr></tr>
+<tr><tr><td><code>41fe350</code></td><td>2026-06-24</td><td>chore(github): P2.MX.8 PR template com checklist obrigatorio</td></tr></tr>
+<tr><tr><td><code>fe9ec40</code></td><td>2026-06-24</td><td>docs(n8n): M2.6 partial - 2/7 envs injected, 5/7 BLOCKED</td></tr></tr>
+<tr><tr><td><code>506f96d</code></td><td>2026-06-24</td><td>chore(dx): P2.MX.7 .editorconfig - padroniza formatacao entre editores</td></tr></tr>
+<tr><tr><td><code>0c5d37f</code></td><td>2026-06-24</td><td>fix(n8n): add Respond to Webhook node in WF26 + WF27 (P0)</td></tr></tr>
+<tr><tr><td><code>127856c</code></td><td>2026-06-24</td><td>feat(n8n): evolution cred already bound + WF#07 re-export</td></tr></tr>
+<tr><tr><td><code>cba0b8a</code></td><td>2026-06-24</td><td>docs(adr): P2.MX.10 README com indice cronologico + por tema + template</td></tr></tr>
+<tr><tr><td><code>e2db6e9</code></td><td>2026-06-24</td><td>docs(runbook): P2.DC.11 10 cenarios de incidente praticos (sintoma+diag+solucao)</td></tr></tr>
+<tr><tr><td><code>3ae3228</code></td><td>2026-06-24</td><td>docs(api): P2.DC.6 API Quick Reference - 30+ endpoints com curl copy-paste</td></tr></tr>
+<tr><tr><td><code>86749d1</code></td><td>2026-06-24</td><td>docs(memory): P2.MX.1 indice rapido no topo do MEMORY.md (busca por tema/data/arquivo/SUI)</td></tr></tr>
+<tr><tr><td><code>0408e78</code></td><td>2026-06-24</td><td>feat(health+dx): P2.BE.8 health granular + P2.MX.5 pre-commit hook</td></tr></tr>
+<tr><tr><td><code>cf0d548</code></td><td>2026-06-24</td><td>docs(adr): P2.DC.13 ADRs 022 (rate limit DDoS) + 023 (CNS/CNH check-digit)</td></tr></tr>
+<tr><tr><td><code>a6a5bb9</code></td><td>2026-06-24</td><td>docs: P2.DC.9 FAQ - 28 problemas comuns com solucoes praticas</td></tr></tr>
+<tr><tr><td><code>11def8d</code></td><td>2026-06-24</td><td>chore(dx): P2.MX.6 Makefile raiz + backend - 30+ alvos para DX</td></tr></tr>
+<tr><tr><td><code>525f03a</code></td><td>2026-06-24</td><td>feat(rate-limit): P2.BE.5 defesa DDoS - limite absoluto por IP (100 req/min)</td></tr></tr>
+<tr><tr><td><code>86b5938</code></td><td>2026-06-24</td><td>feat(health): P0.10 health radar agora cobre 7 servicos (era 5)</td></tr></tr>
+<tr><tr><td><code>d8d2d84</code></td><td>2026-06-24</td><td>feat(pii): P0.5 + P0.6 check-digit CNS (16dig) e CNH (11dig) - LGPD art. 11</td></tr></tr>
+<tr><tr><td><code>b370895</code></td><td>2026-06-24</td><td>docs: mega plano de melhoria - 100 tasks priorizadas (10 P0 / 30 P1 / 60 P2)</td></tr></tr>
+<tr><tr><td><code>191e55e</code></td><td>2026-06-24</td><td>chore: cleanup lint+typecheck (ruff 37->0, mypy 7->0) + memory update</td></tr></tr>
+<tr><tr><td><code>6b66c19</code></td><td>2026-06-24</td><td>docs: add ADR-021 for pre-deploy configuration validation and update ADR-016 with legacy schema notes</td></tr></tr>
+</table></details>
+
+
+<h2>6. Lessons Aprendidas (cross-session)</h2>
+<div class="card">
+<h3>Lesson 118 - conftest monkeypatch engine global</h3>
+<p><code>db_session</code> fixture precisa fazer <code>monkeypatch.setattr(global_engine, "pool", eng.pool)</code> + <code>SessionLocal.kw</code>. Sem isso: SQLite <code>no such table: audit_log</code> no lifespan.</p>
+</div>
+<div class="card">
+<h3>Lesson 119 - ruff E402 (imports tardios)</h3>
+<p>Mover imports tardios para o topo (com comentario referencial). Custo zero, comportamento identico.</p>
+</div>
+<div class="card">
+<h3>Lesson 120 - mypy getattr().isoformat() union-attr</h3>
+<p>Use walrus operator: <code>_v.isoformat() if (_v := getattr(x, name, None)) is not None else None</code>. Check explicito em <code>is not None</code>.</p>
+</div>
+<div class="card">
+<h3>Lesson 121 - Supabase 0 tabelas (PGRST205)</h3>
+<p>Stack 14 containers Supabase + 0 tabelas = sistema central INERTE. Bloqueio 70% do sistema. S0 S01-S10 fix.</p>
+</div>
+<div class="card">
+<h3>Lesson 122 - OpenClaw context 1M + thinking adaptive</h3>
+<p><code>agents.defaults.model: openai/minimax-m3</code>, <code>contextTokens: 1048576</code>, <code>thinkingDefault: adaptive</code>. Hot reload aplicou.</p>
+</div>
+<div class="card">
+<h3>Lesson 123 - Telegram bot polling vs webhook</h3>
+<p>Polling = bot nao responde ate' alguem fazer getUpdates. Fix: <code>setWebhook url=https://api.2notasudi.com.br/api/v1/telegram/webhook</code>.</p>
+</div>
+<div class="card">
+<h3>Lesson 124 - SQUAD S0 10/10 (cf80871+164a647+fe8253a+0942645+fd7f2fe+09e55b5+3fc3bdc)</h3>
+<p>Migration prefix: <code>YYYY_MM_DD_NNNN-{squad}-{task}-{desc}.py</code>. Squad prefix S0/A/B/C/D/E/H/J/BRAIN/DOC.</p>
+</div>
+<div class="card">
+<h3>Lesson 125 - alembic/{squad} prefix convention</h3>
+<p>Padrao novo: alembic/versions/YYYY_MM_DD_NNNN-{squad}-{task}-... Squad prefix: S0/A/B/C/D/E/H/J/BRAIN/DOC.</p>
+</div>
+<div class="card">
+<h3>Lesson 126 - Database Webhooks Supabase self-hosted</h3>
+<p>Webhooks em <code>supabase_functions.hooks</code>. Idempotente via DELETE WHERE hook_name antes de INSERT. REPLICA IDENTITY FULL obrigatorio.</p>
+</div>
+<div class="card">
+<h3>Lesson 127 - pg_cron em UTC (BRT=UTC-3)</h3>
+<p>03:00 BRT = 06:00 UTC (audit_verify_diario). 06:00 BRT = 09:00 UTC (cache_warm_06h). 23:55 BRT = 02:55 UTC prox dia.</p>
+</div>
+<div class="card">
+<h3>Lesson 128 - pg_graphql + storage + realtime via SQL puro</h3>
+<p>PostgREST + pg_graphql + storage.buckets + publication supabase_realtime. Tudo SQL, sem Supabase Studio.</p>
+</div>
+<div class="card">
+<h3>Lesson 129 - Status gates 2026-06-25 09:00 BRT</h3>
+<p>mypy 0 / ruff 0 / pytest 920 passed (subiu para 921 com A24 v2 endpoint). 18 fails pre-existentes em <code>test_n8n_error_endpoint.py</code> (B6 endpoint nao registrado - gap de outra sessao).</p>
+</div>
+
+<h2>7. Pendencias Operacionais (GUSTAVO)</h2>
+<div class="card" style="border-left: 4px solid var(--yellow);">
+<ol>
+<li>Rodar <code>seed_vault_secrets.py</code> no container <code>cartorio_api</code> para popular 11 secrets (S0 S08)</li>
+<li>DNS Cloudflare: criar registros A para <code>n8n.2notasudi.com.br</code> + <code>supabase.2notasudi.com.br</code> (manual)</li>
+<li>Parear WhatsApp: escanear QR em <code>https://whatsapp.2notasudi.com.br/manager</code></li>
+<li>Atualizar .env local (backend/.env) com as 33 env vars aplicadas no container cartorio_api (commit faa6ecc ja documentou)</li>
+</ol>
+</div>
+
+<h2>8. Goals / Loop ate amanha</h2>
+<div class="card" style="border-left: 4px solid var(--green);">
+<p><strong>OBJETIVO:</strong> 100 tasks distribuidas em 9 squads, 1-2 agents max paralelo.</p>
+<p><strong>PROGRESSO 2026-06-25 09:00 BRT:</strong></p>
+<ul>
+<li>SQUAD S0 10/10 (100%)</li>
+<li>SQUAD A 8/8 (100%)</li>
+<li>SQUAD B 8/8 (100%)</li>
+<li>SQUAD D 12/25 (48%)</li>
+<li>SQUAD E 7/8 (87%)</li>
+<li>SQUAD H 0/8 (0%)</li>
+<li>SQUAD J 0/10 (0%)</li>
+<li>SQUAD C 5/25 (20%)</li>
+<li>SQUAD BRAIN 0/8 (0%)</li>
+<li>SQUAD DOCS 0/5 (0%)</li>
+</ul>
+<p><strong>Total: 50/100 tasks DONE (50%)</strong></p>
+<p><strong>Proximo loop:</strong> SQUAD H (Chatwoot) + D13-D17 (LGPD anonimizacao) + J1-J5 (Linear+Render+Jules) + BRAIN1-5 + DOCS1-5.</p>
+</div>
+
+<footer>
+Gerado por Pietra (Mavis) em 2026-06-25 09:00 BRT | Squad orchestrator: Mavis + Gustavo Almeida | Tools: superpowers, TDD, verification-before-completion, brainstorming, prompt-cartorio | Modelo: MiniMax-M3 (1M context) | Endpoint: minimax.io Coding Plan | Filas: 1-2 agents max paralelo, sequencial o resto
+</footer>
+
+</body>
+</html>
