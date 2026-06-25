@@ -216,3 +216,69 @@ ssh cartorio "docker exec \$DB_CONTAINER psql -U supabase_admin -d n8n -t -A -c 
 ```
 - UPDATE nodes + connections SEPARADAMENTE (Lesson 50 pattern)
 - Backup nodes ANTES do UPDATE (rollback path)
+### N8N 2.x API: POST /activate funciona, PATCH/PUT /workflows/{id} bloqueado (2026-06-25 00:05 BRT) (2026-06-25)
+Type: lesson
+
+**Lesson 96 (N8N 2.x activate endpoint canonico)**: N8N 2.x API auth funciona parcialmente. UPDATE completo de WF nao, mas activate sim.
+
+**API endpoints testados (X-N8N-API-KEY com JWT public key)**:
+- GET /api/v1/workflows → 200 OK ✅
+- GET /api/v1/workflows/{id} → 200 OK ✅
+- POST /api/v1/workflows/{id}/activate body `{"active": true}` → 200 OK ✅ (CANONICO para ativar)
+- DELETE /api/v1/workflows/{id} → 200 OK ✅ (soft delete via API)
+- PATCH /api/v1/workflows/{id} → 405 Method Not Allowed ❌
+- PUT /api/v1/workflows/{id} → 400 (exige body completo: name, nodes, connections) ❌
+- POST /rest/workflows/{id} → 401 Unauthorized ❌
+
+**Workaround canonico ativar WF**: 
+```bash
+curl -X POST -H "X-N8N-API-KEY: $N8N_KEY" \
+  "https://flow.2notasudi.com.br/api/v1/workflows/$WF_ID/activate"
+```
+NAO precisa body. 200 OK direto.
+
+**Workaround canonico deletar WF**:
+```bash
+curl -X DELETE -H "X-N8N-API-KEY: $N8N_KEY" \
+  "https://flow.2notasudi.com.br/api/v1/workflows/$WF_ID"
+```
+GET subsequente retorna 404 (confirmado deletado).
+
+**Caso real B0.3 (24/06 23:58 - 25/06 00:05 BRT)**:
+- WF 23 LGPD Esqueci: PATCH 405 → POST /activate 200 OK ✅
+- WF 31 OFF dup: DELETE 200 OK → GET 404 confirmado
+- Total 34 ON, 0 OFF (era 35/33/2)
+
+**Implicacao Lesson 50**: continua valido para UPDATE completo de nodes/connections. Activate/delete sao excecoes que funcionam via API direto.
+
+### WF 23 LGPD Esqueci smoke test - matriz de débitos (2026-06-25 00:05 BRT) (2026-06-25)
+Type: forensic note
+
+B0.3 smoke test (cliente fake ID 99999, execução direta via curl bypass webhook 500):
+
+| Step | Endpoint | HTTP | Causa | Débitos Sprint 3 |
+|------|----------|------|-------|------------------|
+| Webhook | /webhook/lgpd-esqueci | 500 | WF missing Respond to Webhook node (responseMode=responseNode sem node) | Ajustar WF 23 (1 edit) |
+| GET cliente | /cliente/99999 | 405 | endpoint missing (só DELETE nessa path) | D0.3 GET /cliente/{id} |
+| DELETE cliente | /cliente/99999 | 401 | endpoint exists, precisa X-API-Key | (cobre hard+soft per spec) |
+| POST soft-delete | /cliente/99999/soft-delete | 404 | endpoint MISSING — REDUNDANTE com DELETE | Não precisa (DELETE cobre) |
+| POST audit/log | /audit/log | 404 | endpoint MISSING | D0.2 audit log 100% |
+| (ALT) POST anonimizar | /cliente/{id}/lgpd/anonimizar | 401 | endpoint exists, action-only no body | (alternative path) |
+
+**Auth gap critico**: 
+- N8N service env (22 vars): NAO tem CARTORIO_API_KEY
+- API service env (65 vars): NAO tem CARTORIO_API_KEY  
+- Backend .env (/tmp/cartorio-build/backend/.env): NAO tem CARTORIO_API_KEY
+- Resultado: WF 23 envia `X-API-Key: $env.CARTORIO_API_KEY` (vazio) → 401 em todas chamadas autenticadas
+- Endpoint /metrics/n8n retorna 503 API_KEY_NOT_CONFIGURED (key ausente no servidor)
+
+**Workaround imediato** (escopo cartorio-dev):
+1. Definir CARTORIO_API_KEY (generate via openssl ou 1Password Vault)
+2. Adicionar env em N8N service + API service + .env files
+3. Restart `docker service update --env-add CARTORIO_API_KEY=... cartorio_n8n cartorio_api`
+4. Workflow passa a autenticar
+
+**Workaround WF 23 incompleto** (escopo cartorio-n8n):
+- Adicionar `n8n-nodes-base.respondToWebhook` node no fim do flow (responseMode=responseNode exige)
+- Connection: última IF/HTTPRequest output → Respond node
+- Body: `{status: "ok", cliente_id, audit_id, soft_deleted_at}` ou erro estruturado

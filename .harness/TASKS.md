@@ -455,6 +455,77 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 **TOTAL TASKS E6: 100 (T1-T100)** — sprint multi-rein full integração Cartório 2notas.
 
 Modified by Gustavo Almeida
+
+---
+
+## EPIC E7 — D0 SPRINT FIX INFRA (2026-06-24 23:46 BRT — pietra root) ✅ DONE
+
+> Bug crítico detectado pós-reconhecimento: Supabase public schema só tinha audit_log do cartório.
+> Alembic HEAD era 2026_06_24_0002 com 3 migrations ADITIVAS, mas NENHUMA migration BASE que cria as tabelas core.
+> Sprint 0 fechou models SQLAlchemy mas Sprint 0.5 não rodou alembic upgrade head corretamente.
+> Resultado: API rodava, mas dados novos iam pra 133 tabelas da imagem Docker, não pras tabelas do cartório.
+
+- [x] **E7.D0.1** Migration BASE 9 tabelas em Supabase public schema + alembic upgrade head + 9 tabelas validadas — owner: `cartorio-dev` — **DONE 2026-06-25 00:00 BRT (commit ebb66f7)** (sessions `mvs_75b0de80addf49cd82c6dcdcf6f1f640` → FINISHED). Migration `2026_06_24_0000-base-cartorio-core-tables.py` (329 linhas, IF NOT EXISTS idempotente) + merge `2026_06_24_0003-merge-0000-0002.py` (noop, resolve Multiple heads). Tabelas criadas: clientes, conversas, protocolos, documentos, atendimentos, audit_log, outbox_messages, webhook_events + emolumentos legacy. Briefing stale x4 detectado e corrigido (Lesson 93 salva): (1) contagem errada, (2) down_revision=None impossível, (3) alembic_version esperado impossível (current > target), (4) emolumento sem model. mypy 0 errors. Container trick documentado: scp + docker cp + alembic exec pra Easypanel random container. Smoke test INSERT clientes OK.
+
+- [ ] **E7.D0.2** Workflow 23 LGPD Esqueci ativar + Workflow 31 Telegram Listener duplicado deletar + nodes oficiais validar — owner: `cartorio-n8n` — **IN PROGRESS** (session `mvs_4974317cac5243bd89a7956844a0b4e6` STARTED 2026-06-25 00:00 BRT)
+
+---
+
+## EPIC E8 — NEXT WAVE 25/06 (2026-06-25 00:01 BRT — pietra root)
+
+> Próximas tasks após D0.1+D0.2 done. Critério: 1-2 agents por vez, não paralelo massivo (controle de quota).
+
+### Squad A — cartorio-dev (backend hardening)
+- [ ] **E8.A13** Dead man's switch: cron alerta se audit_log parado >1h — owner: `cartorio-dev`
+- [ ] **E8.A14** Backup DB 4x/dia pg_basebackup + WAL, retenção 7d local + S3 mensal — owner: `cartorio-dev`
+- [ ] **E8.A16** Query slow log >200ms + endpoint /admin/slow-queries — owner: `cartorio-dev`
+- [ ] **E8.A17** Materialized view mv_emolumento_ativo refresh diário — owner: `cartorio-dev`
+- [ ] **E8.A18** Trigger update_at automático em todas tabelas — owner: `cartorio-dev`
+- [ ] **E8.A19** Soft delete pattern global deleted_at + filtro query — owner: `cartorio-dev`
+- [ ] **E8.A20** Lock distribuído Redlock p/ migrations e seed — owner: `cartorio-dev`
+- [ ] **E8.A21** Cache Redis 24h emolumento com invalidation pub/sub — owner: `cartorio-dev`
+- [ ] **E8.A22** Cache warming cron 06:00 antes expediente — owner: `cartorio-dev`
+- [ ] **E8.A23** OpenAPI spec validada openapi-spec-validator no CI — owner: `cartorio-dev`
+- [ ] **E8.A24** Versionamento /api/v1 + /api/v2 alpha sunset 2027 — owner: `cartorio-dev`
+- [ ] **E8.A25** RFC 7807 problem+json em todos 4xx/5xx — owner: `cartorio-dev` (ZCode começou mid-session, D0.1 pegou parcialmente)
+
+### Squad B — cartorio-n8n (workflow polish)
+- [ ] **E8.B06** Error handler global em todos WFs (Error Workflow trigger) — owner: `cartorio-n8n`
+- [ ] **E8.B07** Retry policy 3x exp backoff em todos nodes HTTP — owner: `cartorio-n8n`
+- [ ] **E8.B08** Timeout 5s em todos HTTP requests — owner: `cartorio-n8n`
+- [ ] **E8.B09** Logs estruturados JSON correlation_id em todos nodes — owner: `cartorio-n8n`
+- [ ] **E8.B10** Métricas Prometheus por WF (count, latency, error rate) — owner: `cartorio-n8n`
+- [ ] **E8.B11** Alertas Telegram para falha WF GRUPO Pietra Squad — owner: `cartorio-n8n`
+- [ ] **E8.B12** Test runner 28 WFs Playwright + workflow test kit — owner: `cartorio-n8n`
+- [ ] **E8.B13** Canned responses Chatwoot 50+ templates jurídicos — owner: `cartorio-n8n`
+- [ ] **E8.B14** Macros handoff humano 10 macros identificar/transferir/resumir — owner: `cartorio-n8n`
+- [ ] **E8.B15** Templates WhatsApp Meta aprovados 10 templates — owner: `cartorio-n8n`
+
+### Squad C — cartorio-zcode (obs + docs)
+- [ ] **E8.C16** Documentação Evolution API v2.3.7 oficial+community — owner: `cartorio-zcode`
+- [ ] **E8.C17** Documentação N8N 1.x oficial+self-hosted — owner: `cartorio-zcode`
+- [ ] **E8.C18** Documentação Chatwoot 3.x oficial+self-hosted — owner: `cartorio-zcode`
+- [ ] **E8.C19** Documentação Supabase self-hosted oficial+Easypanel — owner: `cartorio-zcode`
+- [ ] **E8.C20** Documentação Redis 8.x oficial+comandos uteis — owner: `cartorio-zcode`
+- [ ] **E8.C21** Grafana dashboards 4 (api/n8n/db/audit-chain) — owner: `cartorio-zcode`
+- [ ] **E8.C22** Prometheus alerts 10 regras P0/P1/P2 com Telegram routing — owner: `cartorio-zcode`
+- [ ] **E8.C23** Loki logs agregados por service — owner: `cartorio-zcode`
+- [ ] **E8.C24** Uptime Kuma externa status.2notasudi.com.br monitor 5min — owner: `cartorio-zcode`
+- [ ] **E8.C25** Status page pública 90d uptime + incidents + maintenance — owner: `cartorio-zcode`
+
+### Squad D — cartorio-lgpd (compliance)
+- [ ] **E8.D06** Direito acesso GET /cliente/{id}/historico (finalizar WIP) — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D07** Direito correção PATCH /cliente/{id} com audit — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D08** Direito anonimização POST /cliente/{id}/anonimizar — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D09** Direito portabilidade GET /cliente/{id}/export JSON+CSV+PDF — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D10** Direito revogação DELETE /cliente/{id} cascade (refinar) — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D11** Direito oposição POST /cliente/{id}/opar — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D12** Direito não-automação POST /cliente/{id}/opt-out-bot só humano — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D13** Logs acesso LGPD art. 37 (request_id+IP truncado+UA+ts) — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D14** Retenção configurável por tipo (5y/protocolo, até-revog/sem, 2y/conversa) — owner: `cartorio-lgpd` + `cartorio-dev`
+- [ ] **E8.D15** Encriptação at-rest pgcrypto + in-transit TLS 1.3 obrigatório — owner: `cartorio-lgpd` + `cartorio-dev`
+
+Modified by Pietra/Mavis - 2026-06-25 00:02 BRT
 ---
 
 ## TIER 2 — INTEGRAÇÕES AVANÇADAS (Sprint 2 — paralelizado, 5 workers)
@@ -877,7 +948,16 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 - [ ] **A0.1** Audit log 100% mutações (cartorio-dev, 4h)
 - [ ] **A0.2** DELETE /cliente/{id} (cartorio-dev + cartorio-lgpd review, 3h)
 - [ ] **C0.1** Job retenção 5y/até-revogação (cartorio-lgpd, 2h)
-- [ ] **B0.3** Ativar n8n-nodes-mcp (#12) + n8n-nodes-chatwoot (#03) (cartorio-n8n, 2h)
+- [x] **B0.3** Ativar n8n-nodes-mcp (#12) + n8n-nodes-chatwoot (#03) (cartorio-n8n, 2h) — **DONE 2026-06-25 00:08 BRT** (peer cartorio-n8n @ mvs_4974317, report em `~/.mavis/scratchpads/mvs_6663ee57/b03-final-report.md`)
+  - **Escopo cumprido**: WF 12 (n8n-nodes-mcp) já ativo, sandbox Lesson 49 LIMPO (PII Scrubber + Decide Response, zero issues). WF 03 (n8n-nodes-chatwoot) ativo — node oficial Chatwoot instalado + usado em WF 03/12. WF 23 LGPD Esqueci TAMBEM foi ativado (HTTP 200, active=true) — bônus de escopo. WF 31 OFF duplicado (c9a7b048-...) deletado (HTTP 200). Total N8N: 34 ON / 0 OFF.
+  - **Adoption nodes oficiais**: 2/34 WFs (6%) vs critério Goal #5 ≥5. Top-5 candidatas migration Sprint 4 já ranqueadas (WF 03, 25, 26, 22, 08).
+  - **🚦 4 BLOCKERS descobertos via smoke test WF 23** (matriz forense completa no scratchpad, **A/B/C decisão Gustavo**):
+    1. **B0.3.B1** WF 23 Respond to Webhook node faltando (5min, escopo n8n) — webhook 500. Fix via N8N UI: 1 node + 1 connection
+    2. **B0.3.B2** `CARTORIO_API_KEY` GAP transversal — env var ausente em N8N (22 vars) + API (65 vars) + backend `.env` (mesmo após T16 T17 T18 setarem 24/06 11:25 BRT — drift aconteceu). `/metrics/n8n` confirma 503 API_KEY_NOT_CONFIGURED. Workaround: `openssl rand -hex 32` + `--env-add` em 3 services + restart. **Bloqueador de TUDO autenticado**
+    3. **B0.3.B3** `GET /api/v1/cliente/{id}` MISSING (D0.3 do Sprint novo, S3.B4.T2 do Sprint 3) — pré-requisito do DELETE consentido (LGPD art. 18 VI). Contrato: `X-API-Key` + `X-Request-Id` → 200 `{id, nome, consentimento, ativo, created_at}` ou 404
+    4. **B0.3.B4** `POST /api/v1/audit/log` MISSING (D0.2 do Sprint novo, S3.B4.T1 do Sprint 3 já DONE em `ea24216` — backend pronto, falta só endpoint HTTP). Contrato: `X-API-Key` + `X-Request-Id` + body `{action, actor, target, details:{motivo, ts, wf}}` → 200 `{audit_id, hash, prev_hash}` (chain entry)
+  - **NAO implementar** `POST /cliente/{id}/soft-delete` — spec do DELETE já cobre hard+soft, redundante. Fix é no WF 23 (B0.3.B1): trocar node POST soft-delete por DELETE direto
+  - **Lessons salvas**: Lesson 96 (N8N 2.x POST /workflows/{id}/activate é o canônico, PATCH/PUT bloqueado) + Lesson 97 (CARTORIO_API_KEY env triplet drift pattern, cross-project)
 - [x] **G0.1** Credenciais expostas — DOCUMENTADAS, NÃO rotacionadas (Lesson 68 canônica MAXIMA PRIORIDADE — NUNCA rotacionar)
   - **Decisão Gustavo 2026-06-24 14:50 BRT + 15:01 BRT (reforço 3x)**: NUNCA rotacionar chaves. Tratar como QUEIMADA-DOCUMENTADA. Únicos com acesso = Gustavo + Pietra, risco aceito.
   - **Inventário controlado em `.env`** (linhas 119-122 marca seção dedicada): OpenCode-Go (rotacionada 24/06 ✅ única exceção autorizada), N8N JWTs, OpenClaw Token/Password, Redis default, Supabase DB, MiniMax Coding Plan, Telegram Bot, Jules API, Render API/MCP, Linear API
