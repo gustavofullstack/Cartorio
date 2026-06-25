@@ -535,11 +535,11 @@ Modified by Gustavo Almeida
 - [ ] **E8.B15** Templates WhatsApp Meta aprovados 10 templates — owner: `cartorio-n8n`
 
 ### Squad C — cartorio-zcode (obs + docs)
-- [ ] **E8.C16** Documentação Evolution API v2.3.7 oficial+community — owner: `cartorio-zcode`
-- [ ] **E8.C17** Documentação N8N 1.x oficial+self-hosted — owner: `cartorio-zcode`
-- [ ] **E8.C18** Documentação Chatwoot 3.x oficial+self-hosted — owner: `cartorio-zcode`
-- [ ] **E8.C19** Documentação Supabase self-hosted oficial+Easypanel — owner: `cartorio-zcode`
-- [ ] **E8.C20** Documentação Redis 8.x oficial+comandos uteis — owner: `cartorio-zcode`
+- [x] **E8.C16** Documentação Evolution API v2.3.7 oficial+community — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/EVOLUTION.md` atualizado (72→155 linhas, endpoints, webhooks, troubleshooting, TriQ Hub)
+- [x] **E8.C17** Documentação N8N 1.x oficial+self-hosted — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/N8N.md` (330 linhas) + `N8N_OFFICIAL_INDEX.md` (7856 linhas)
+- [x] **E8.C18** Documentação Chatwoot 3.x oficial+self-hosted — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/CHATWOOT.md` atualizado (78→140 linhas, endpoints, fluxos, troubleshooting)
+- [x] **E8.C19** Documentação Supabase self-hosted oficial+Easypanel — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/SUPABASE.md` (330 linhas) + `SUPABASE_OFFICIAL_README.md` (288 linhas)
+- [x] **E8.C20** Documentação Redis 8.x oficial+comandos uteis — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/REDIS.md` (351 linhas)
 - [ ] **E8.C21** Grafana dashboards 4 (api/n8n/db/audit-chain) — owner: `cartorio-zcode`
 - [ ] **E8.C22** Prometheus alerts 10 regras P0/P1/P2 com Telegram routing — owner: `cartorio-zcode`
 - [ ] **E8.C23** Loki logs agregados por service — owner: `cartorio-zcode`

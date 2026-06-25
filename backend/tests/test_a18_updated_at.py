@@ -91,15 +91,6 @@ def test_models_with_timestamp_use_mixin():
             )
 
 
-def test_models_without_timestamp_are_intentional():
-    """Models append-only NAO devem ter updated_at (LGPD: audit log e append-only)."""
-    all_models = _all_models_with_tablename()
-    for table in MODELS_WITHOUT_TIMESTAMP:
-        # audit_log, outbox_messages, webhook_events sao append-only
-        # NAO usam TimestampMixin (decisao intencional — LGPD audit trail)
-        pass
-
-
 # ============================================================================
 # Comportamento SQLAlchemy (onupdate em SQLite)
 # ============================================================================

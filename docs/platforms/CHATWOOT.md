@@ -1,78 +1,115 @@
 # Chatwoot — Cartório 2º Ofício
 
-> **Customer support platform** (multi-canal, multi-agente, open-source).
-> Self-hosted (LGPD). Imagem: `chatwoot/chatwoot:latest`.
+> **CRM open-source** (multi-canal, multi-agente, inbox unificado).
+> Self-hosted (LGPD art. 33 — dado não sai do VPS). Container: `cartorio_chatwoot`.
 
-## Status atual (2026-06-24)
+## Status atual (2026-06-25 10:40 BRT)
 
 | Campo | Valor |
 |---|---|
-| Containers | `cartorio_chatwoot` + `chatwoot-sidekiq` |
-| Up time | 16h (ambos healthy) |
-| URL pública | `https://chatwoot.2notasudi.com.br` (Traefik) |
-| Versão | latest |
+| Containers | `cartorio_chatwoot.1` (11h UP) + `cartorio_chatwoot-sidekiq.1` (19h UP) |
+| URL pública | `https://chat.2notasudi.com.br` (Traefik SSL) |
+| Versão | `chatwoot/chatwoot:latest` |
 | DB tabelas | 92 (accounts, users, conversations, messages, inboxes, etc) |
-| Access tokens no DB | 2 (User id 2, AgentBot id 3) — criados 2026-06-23 |
-| `CHATWOOT_API_KEY` no `.env` API | populado (User token) |
-| SSL | self-signed CN=Easypanel (válido até 2036) |
-| Pendência | H02 inbox Evolution, H09 DNS `chat.2notasudi.com.br` |
+| Access tokens | 2 reais (User id 2 + AgentBot id 3) |
+| Health API | `GET /api/v1/accounts` → 200 OK (9ms via health/integracoes) |
+| Sidekiq | Background jobs ativo |
 
-## Endpoints consumidos
+## Arquitetura
 
-| Método | Path | Auth | Descrição |
-|---|---|---|---|
-| GET | `/api/v1/accounts` | bearer api_access_token | Lista accounts |
-| POST | `/api/v1/accounts/{id}/conversations` | bearer | Cria conversa |
-| POST | `/api/v1/accounts/{id}/conversations/{cid}/messages` | bearer | Envia mensagem |
-| GET | `/api/v1/accounts/{id}/conversations/{cid}` | bearer | Detalhes conversa |
-| POST | `/api/v1/accounts/{id}/agent_bots` | bearer | Cria bot agent |
-| POST | `/api/v1/webhooks` | bearer | Cria webhook subscriber |
-| GET | `/api/v1/accounts/{id}/inboxes` | bearer | Lista inboxes (WhatsApp Baileys) |
+```
+Cliente (WhatsApp/Web/Telegram)
+    │
+    ▼
+Chatwoot Inbox ───→ Agente humano (HITL via Chatwoot UI)
+    │
+    ├── Webhook → N8N → API → Supabase/Redis
+    ├── Agent Bot (pendente criar via UI Super Admin)
+    └── Macros/Automações (pendente configurar)
+```
+
+## Endpoints da API
+
+| Método | Path | Descrição |
+|---|---|---|
+| GET | `/api/v1/accounts` | Lista accounts |
+| POST | `/api/v1/accounts/{id}/conversations` | Cria conversa |
+| POST | `/api/v1/accounts/{id}/conversations/{cid}/messages` | Envia mensagem |
+| GET | `/api/v1/accounts/{id}/conversations/{cid}` | Detalhes conversa |
+| POST | `/api/v1/accounts/{id}/agent_bots` | Cria bot agent |
+| POST | `/api/v1/webhooks` | Cria webhook subscriber |
+| GET | `/api/v1/accounts/{id}/inboxes` | Lista inboxes |
 
 **Auth**: `api_access_token` (header `api_access_token: <token>` ou `Authorization: Bearer <token>`).
 
+## Funções do Chatwoot no Ecossistema
+
+| Função | Status | Detalhes |
+|---|---|---|
+| **Integrar WhatsApp** | 🔶 Parcial | Inbox Baileys independente (sem Evolution). Pendente: canal oficial |
+| **Agent AI (Pietra)** | 🔶 Parcial | Pendente criar Agent Bot no Super Admin |
+| **HITL** | 🔶 Parcial | WF `handoff-human` existe, falta Agent Bot criado |
+| **Macros** | ⬜ Pendente | 10 macros a criar |
+| **Canned Responses** | ⬜ Pendente | 50+ templates jurídicos |
+| **Automações** | ⬜ Pendente | Keywords, opt-out, protocolos |
+
 ## Integrações ativas
 
-- **Evolution** → Inbox WhatsApp Baileys (independente, sem ponte)
-- **N8N** → workflow `chatwoot-events` (webhook inbound) + `handoff-human` (OpenClaw→humano)
-- **API FastAPI** → `chatwoot_service.py` (CRUD conversas + handoff) + webhook `/api/v1/webhook/chatwoot` (HMAC)
-- **Supabase** → tabela `chatwoot_conversation_meta` (metadata persistente)
-- **OpenClaw** → handoff OpenClaw↔humano via API (Squad E09, H03)
-- **Redis** → session storage para contexto agente (DB 4)
+| Serviço | Tipo | Detalhes |
+|---|---|---|
+| **N8N** | Workflow | `handoff-human` (OpenClaw→humano) + webhook inbound |
+| **API FastAPI** | Service | `chatwoot_service.py` (CRUD conversas + handoff) + webhook `/api/v1/webhook/chatwoot` (HMAC) |
+| **Supabase** | DB | Tabela `chatwoot_conversation_meta` (custom attributes) |
+| **OpenClaw** | Handoff | Bot→humano via API FastAPI |
+| **Redis** | Cache | Session storage para contexto agente (DB 4) |
 
-## Tabelas / Schemas / Workflows
+## Fluxo de Handoff (N8N → Chatwoot)
 
-- **92 tabelas** no schema `public` do DB Chatwoot (accounts, users, conversations, messages, inboxes, contact_inboxes, etc)
-- **2 access tokens** (User id 2 + AgentBot id 3) — tokens reais já no DB, prontos pra uso
-- **N8N workflows**:
-  - `chatwoot-events` (webhook inbound) → normaliza payload → insere Supabase
-  - `handoff-human` (OpenClaw escalação) → cria conversa + atribui agente humano
-  - `bot-agent` (resposta automática pré-config)
-- **DB cartorio**: tabela `chatwoot_conversation_meta` (custom attributes: protocolo, emolumento_total, lgpd_consent_id, opt_out_flag)
+```
+OpenClaw detecta confidence < 0.85
+    → POST /api/v1/atendimento (handoff=true)
+    → N8N workflow handoff-human
+    → Chatwoot API createConversation + sendMessage
+    → Agente humano assume via Chatwoot UI
+```
 
-## Problemas conhecidos + fixes aplicados
+## Problemas conhecidos
 
-- **API `/api/v1/accounts` retornava HTML de login** (proxy/route do EasyPanel não chegava ao backend) → fix Traefik `chatwoot.2notasudi.com.br → cartorio_chatwoot-0` (validado)
-- **Domínio público correto = `chatwoot.2notasudi.com.br`** (NÃO `chat.2notasudi.com.br`) → corrigido no `.env`
-- **`CHATWOOT_API_KEY` VAZIO** no `.env` da API → FIX APLICADO (commit desta sessão, populado com User token do DB)
-- **SSL self-signed CN=Easypanel** → aceito pelo Traefik (válido até 2036)
-- **NÃO tem inbox Evolution configurada** (Squad H02) → WhatsApp chega via Baileys direto (independente)
-- **Bot agent @CartorioBot** (Squad H07) → não criado ainda, precisa API Chatwoot
+| # | Problema | Status |
+|---|---|---|
+| 1 | `chatwoot.2notasudi.com.br` DNS NXDOMAIN (precisa A record) | ⚠️ Gustavo |
+| 2 | CHATWOOT_API_KEY no .env — placeholder pendente | ⚠️ Gustavo |
+| 3 | Agent Bot @CartorioBot — precisa Super Admin UI | ⚠️ Gustavo |
+| 4 | Inbox Evolution não configurada (WhatsApp via Baileys direto) | 🔶 Parcial |
+| 5 | SSL self-signed CN=Easypanel (válido até 2036, funcional) | ✅ OK |
 
-## Próximas tasks (Squad H do plan 2026-06-24)
+## Troubleshooting
 
-- **H01** Health-check API (done)
-- **H02** Inbox Evolution (whatsapp_baileys)
-- **H03** Validar handoff OpenClaw↔humano
-- **H04** Custom attributes: protocolo, emolumento_total, lgpd_consent_id, opt_out_flag
-- **H05** Automações: keywords, opt-out, protocolos
-- **H06** Reports/dashboards
-- **H07** Bot agent @CartorioBot
-- **H08** Testar webhooks Chatwoot
-- **H09** DNS chat.2notasudi.com.br
-- **H10** Documentação Chatwoot completa
+### API retorna HTML de login
+**Causa**: Rota do Traefik não chega no backend Chatwoot.
+**Fix**: Verificar Traefik router `chat.2notasudi.com.br → cartorio_chatwoot:3000`
 
-Ver plano completo: `.harness/reins/cartorio-dev/tasks/2026-06-24-plan.json` (Squad H).
+### Health check
+```bash
+curl -s https://chat.2notasudi.com.br/api/v1/accounts
+# 200 OK = funcionando. 401 = API key errada.
+```
 
----
+## Recursos do Chatwoot a configurar
 
+- [ ] **Inbox WhatsApp** (Evolution via Baileys)
+- [ ] **Agent Bot** "Cartório Assistant" (criar via Super Admin UI)
+- [ ] **Canned Responses** — 50+ templates (FAQ cartorário)
+- [ ] **Macros** — 10 macros (identificar/transferir/resumir)
+- [ ] **Automações** — Keywords, opt-out LGPD, protocolos
+- [ ] **Labels/Tags** — Categorização de conversas
+- [ ] **Reports** — Métricas de atendimento
+
+## Referências
+
+- Container: `cartorio_chatwoot` (porta 3000) + `cartorio_chatwoot-sidekiq`
+- URL: `https://chat.2notasudi.com.br`
+- DB: PostgreSQL database `chatwoot` no Supabase
+- Workflows N8N: `handoff-human`, `chatwoot-events`, `bot-agent`
+- Documentação oficial: `docs/platforms/CHATWOOT_QUICK.md` (197 linhas)
+- Doc oficial auto-gerada: `docs/platforms/Chatwoot.md` (78 linhas — legado)
