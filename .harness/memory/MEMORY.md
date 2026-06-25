@@ -1615,3 +1615,62 @@ master stash mas working tree quebra. Reverte com `git checkout master -- <file>
 e re-aplica SO seu bloco.
 
 Modified by Gustavo Almeida
+
+### Tick 2026-06-25 02:08 BRT — 7 tasks DONE + D0.2 STARTED
+
+**Pipeline 25/06 02:08 BRT:**
+- ✅ D0.1 — Migration BASE 9 tabelas
+- ✅ B0.3 — WF 23 + WF 31 dup + AUTH gap finding
+- ✅ E0.AUTH — CARTORIO_API_KEY transversal + deps.py
+- ✅ D0.3 — GET /cliente/{id} LGPD-safe
+- ✅ D0.3a — pode_deletar no /historico
+- ✅ B0.3.SEC (61c21fa) — 7 endpoints auth migration (merge 9fac5ac)
+- ✅ A13 — dead_man's_switch audit_log >1h (commit 649d460)
+- 🟢 D0.2 — POST /audit/log STARTED
+
+**Total:**
+- 7 commits merged em master
+- 5 git pushes
+- 5 post-deploy runs (Lesson 103 script funcionando)
+- 9+ smoke tests E2E validados
+- Audit chain 470 entries healthy
+- /health GREEN 7/7
+
+**Próximos:**
+- D0.2 terminar
+- B06 Error handler (cartorio-n8n)
+- OpenClaw thinking+1M+skills
+- A14 backup DB
+
+Modified by Pietra/Mavis - 2026-06-25 02:08 BRT
+
+### Lesson 109 — app.main lifespan startup cria entry audit_log (D0.2 2026-06-25)
+Type: canon gotcha + pattern
+
+Cenario real D0.2 (POST /api/v1/audit/log): 2 testes falharam com
+`AssertionError: assert 'hash' is None` em prev_hash. Diagnostico: ao entrar
+no `with TestClient(app) as c:` context, FastAPI dispara o lifespan startup
+que chama `AuditService.log_system_action("api.startup", ...)` em
+`app/main.py:46`. Resultado: 1 entry de startup eh gravada ANTES de qualquer
+POST de teste. ID retornado pelo primeiro POST = 2 (nao 1), prev_hash aponta
+para hash da startup (nao None).
+
+Impacto em testes:
+- Testes que assumem "primeira entry tem prev_hash=None" quebram.
+- Chain integrity tests (2 POSTs encadeando via prev_hash) ainda funcionam —
+  so nao partem de prev_hash=None.
+
+Solucao canonica (recomendada):
+1. NAO tentar limpar audit_log table no setup — startup entry eh valiosa
+   (LGPD art. 37: prova que app subiu).
+2. Ajustar assertions: `assert body["prev_hash"] is not None and len == 64`
+   ao inves de `assert body["prev_hash"] is None`.
+3. Para testes de chain (2+ POSTs encadeando): validar
+   `body_b["prev_hash"] == body_a["hash"]` — incremento relativo,
+   nao absoluto.
+
+Aplicabilidade: TODO endpoint que grava em audit_log via FastAPI lifespan
+de startup (atualmente so `api.startup` em main.py:46, mas se adicionar
+mais hooks `api.shutdown`, `api.migration`, etc — mesma logica aplica).
+
+Modified by Gustavo Almeida
