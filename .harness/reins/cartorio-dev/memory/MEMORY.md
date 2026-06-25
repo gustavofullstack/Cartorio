@@ -526,3 +526,61 @@ multiplas ops, preferir `--file patch.json5` com `openclaw config patch`.
 - Cada task = 1 commit Conventional Commits + push master.
 
 Modified by Gustavo Almeida
+
+### Lesson 162 — alembic upgrade heads (plural) for parallel heads + Swarm container atomicity (DB audit A16+A17 2026-06-25) (2026-06-25)
+Type: pattern + gotcha
+
+**Cenario**: Apos swap de down_revisions entre A16 (mat view) e A17 (soft delete), chain ficou:
+  2026_06_24_0003 (mergepoint) -> 2026_06_25_0002 (A17 coluna)
+    -> 2026_06_25_0001 (A16 mat view) + 2026_06_25_0003 (A24 trigger)
+       ^AMBOS sao heads paralelos (down_revision = A17)
+
+**Erro canon**: `alembic upgrade head` (singular) falha com
+  "Multiple head revisions are present for given argument 'head'".
+
+**Fix canon**: usar `alembic upgrade heads` (plural) ou especificar
+  `<branchname>@head`. Heads paralelos sao caso comum em migrations
+  com 2 features independentes no mesmo ponto.
+
+**Ordem de aplicacao observada** (alembic decide):
+  1. 2026_06_24_0003 -> 2026_06_25_0002 (A17 coluna deleted_at)
+  2. 2026_06_25_0002 -> 2026_06_25_0003 (A24 pg_notify)
+  3. 2026_06_25_0002 -> 2026_06_25_0001 (A16 mat view)
+
+Alembic aplicou 0003 ANTES de 0001 mesmo ambos sendo heads paralelos
+(decisao interna do alembic). Como ambos sao independentes de ordering,
+resultado eh equivalente.
+
+**Cenario Swarm container rotation mid-task** (gotcha operacional):
+- Cada `docker exec` ou `docker cp` cria uma NOVA instancia do container
+  se Swarm decidiu rotacionar (ex: deploy triggered, health check fail)
+- `/tmp/<dir>` nao persiste entre rotacoes — copia via docker cp eh perdida
+- Sintoma classico: "No such file or directory" em comandos subsequentes
+- Solucao canon: TUDO dentro de UM docker exec (mkdir + cp + alembic + verify)
+  OU refresh TID a cada comando + redocker cp (lento mas funciona)
+
+**Workflow canon para alembic upgrade em container Swarm**:
+1. `CTR=$(docker ps -q -f name=cartorio_api.1 | head -1)` (pega TID fresco)
+2. `docker exec $CTR mkdir -p /tmp/alembic_run`
+3. `docker cp <host>/alembic.ini $CTR:/tmp/alembic_run/`
+4. `docker cp <host>/alembic $CTR:/tmp/alembic_run/`  (recursive)
+5. `docker exec $CTR mkdir -p /tmp/alembic_run/alembic/versions`
+6. `for f in <host>/alembic/versions/*.py; do docker cp $f $CTR:/tmp/alembic_run/alembic/versions/; done`
+7. `docker exec -e PYTHONPATH=/app -e CARTORIO_API_KEY=<hash> -e DATABASE_URL=... $CTR bash -c 'cd /tmp/alembic_run && alembic upgrade heads'`
+
+OU (mais robusto contra rotacao):
+- Escrever tudo num SCRIPT no host VPS e rodar via SSH numa unica sessao
+- Script faz refresh TID + mkdir + cp + exec em sequencia atomica
+
+**Working tree reset mid-session** (Lesson 109 amplificacao):
+- Edit tool aplicou swap nos 2 arquivos (mtime 08:39)
+- Apos CI commit 3e5e8f4 (08:40), os 2 arquivos VOLTARAM ao estado committed
+- git diff mostrou empty, git status mostrou "nothing to commit"
+- Necessario re-aplicar edit ANTES do git add
+- Confirmacao: grep '^down_revision' apos edit vs antes do edit
+
+**Lesson canon**: apos Edit, SEMPRE rodar `git diff <arquivo>` ANTES de
+`git status` final para confirmar que o save persistiu. Working tree
+em sistema com CI/agents paralelos NAO eh confiavel entre comandos.
+
+Modified by Gustavo Almeida

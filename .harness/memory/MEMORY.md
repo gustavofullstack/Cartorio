@@ -1920,3 +1920,5 @@ Gustavo mandou prompt cartorio novamente para continuidade. Squad B ~95% (Pietra
 - Lesson 109: Pietra root mvs_6663ee57a937460fb324e496cb5ac217 (ja documentado)
 - Lesson 110: Squad B 95% (12/12 tasks) na sprint 3
 - Lesson 111: Squad D agora 9/25 (D8, D9, D11, D12 adicionados)
+
+- Lesson 162: alembic upgrade heads (plural) para chains com parallel heads + Swarm container rotation atomicity (DB audit A16+A17 2026-06-25)
