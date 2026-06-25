@@ -30,7 +30,7 @@ from fastapi import APIRouter, Depends, Form, Header, HTTPException, Path, Query
 from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field  # noqa: F401  (usado nos schemas abaixo)
+from pydantic import BaseModel, ConfigDict, Field  # noqa: F401  (usado nos schemas abaixo)
 
 from app.config import settings
 from app.db import get_db, session_scope
@@ -2547,8 +2547,6 @@ async def patch_cliente(
     _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> dict:
     """Corrige dados cadastrais do titular (LGPD art. 18 III)."""
-    from app.utils.pii_sanitizer import hash_pii as hash_pii_fn
-
     cliente = db.get(Cliente, cliente_id)
     if cliente is None:
         raise HTTPException(
