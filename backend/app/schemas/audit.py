@@ -1,16 +1,113 @@
 """Schemas Pydantic v2 do recurso AuditLog.
 
 Cobre:
+- AuditLogCreate: payload de entrada de POST /api/v1/audit/log (D0.2 2026-06-25)
+- AuditLogCreatedResponse: resposta 201 com id/hash/prev_hash/created_at
 - AuditLogResponse: saida paginada de GET /api/v1/audit/logs (DPO/escrevente)
 - AuditLogListResponse: envelope com items + pagination metadata
 - AuditLogFilter: query params para filtrar por actor/action/resource/periodo
 """
+
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+# ============================================================================
+# Input (D0.2 — POST /api/v1/audit/log)
+# ============================================================================
+
+
+class AuditLogCreate(BaseModel):
+    """Payload de entrada para POST /api/v1/audit/log.
+
+    LGPD art. 37 — registro de tratamento. Consumidores:
+    - WF 23 LGPD Esqueci (revogacao de consentimento)
+    - N8N jobs que precisam gravar acoes sem depender de ORM direto
+
+    Campos:
+    - actor_id: QUEM executou. Default 'system' para chamadas internas de n8n/cron.
+    - action: O QUE (ex: 'cliente.revogacao.consentimento', 'protocolo.update').
+    - resource: ALVO (ex: 'cliente:42', 'protocolo:2026-00001').
+    - payload: estado serializado (before/after quando aplicavel).
+    - canal: origem (whatsapp, telegram, web, balcao, email, n8n, cron, system).
+    - ip, user_agent, request_id: contexto de request (opcional).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    actor_id: str = Field(
+        default="system",
+        min_length=1,
+        max_length=128,
+        description="Quem executou a acao. Default 'system' para chamadas internas.",
+    )
+    actor_type: Literal["user", "system", "bot", "escrevente", "tabeliao"] = Field(
+        default="system",
+        description="Tipo de ator (LGPD-by-design, default 'system' para n8n/cron).",
+    )
+    action: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        description="Acao executada (ex: 'cliente.revogacao.consentimento').",
+    )
+    resource: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Recurso afetado (ex: 'cliente:42', 'protocolo:2026-00001').",
+    )
+    payload: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Estado serializado (before/after quando aplicavel).",
+    )
+    canal: (
+        Literal["whatsapp", "telegram", "web", "balcao", "email", "n8n", "cron", "system"] | None
+    ) = Field(
+        default=None,
+        description="Canal de origem. None para chamadas externas sem canal definido.",
+    )
+    ip: str | None = Field(
+        default=None,
+        max_length=45,
+        description="IP COMPLETO do cliente. LGPD D5 — truncado automaticamente em /24 ou /32.",
+    )
+    user_agent: str | None = Field(
+        default=None,
+        max_length=512,
+        description="User-Agent do request.",
+    )
+    request_id: str | None = Field(
+        default=None,
+        max_length=64,
+        description="ID unico do request (UUIDv4) para correlacao.",
+    )
+
+
+class AuditLogCreatedResponse(BaseModel):
+    """Resposta 201 de POST /api/v1/audit/log.
+
+    Retorna apenas os campos essenciais para o caller confirmar a chain:
+    - id: ID sequencial da entrada criada
+    - hash: hash SHA256 desta entry (chain integrity)
+    - prev_hash: hash da entry anterior (None se for a primeira)
+    - created_at: timestamp UTC do registro
+
+    Caller NAO precisa do payload/IP/etc — para isso existe GET /audit/logs/{id}.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(..., description="ID sequencial da entrada criada.")
+    hash: str = Field(..., description="Hash SHA256 desta entry (chain integrity).")
+    prev_hash: str | None = Field(
+        default=None, description="Hash da entry anterior (None se for a primeira)."
+    )
+    created_at: datetime = Field(..., description="Timestamp UTC do registro.")
 
 
 # ============================================================================
@@ -27,7 +124,9 @@ class AuditLogResponse(BaseModel):
     actor_id: str = Field(..., description="Quem executou a acao (escrevente, bot, system, ...).")
     actor_type: str = Field(..., description="Tipo: user, system, bot, escrevente, tabeliao.")
     action: str = Field(..., description="Acao executada (ex: cliente.delete.soft).")
-    resource: str = Field(..., description="Recurso afetado (ex: cliente:42, protocolo:2026-00001).")
+    resource: str = Field(
+        ..., description="Recurso afetado (ex: cliente:42, protocolo:2026-00001)."
+    )
     payload: dict[str, Any] = Field(
         default_factory=dict,
         description="Estado serializado (before/after quando aplicavel).",
@@ -93,4 +192,10 @@ class AuditLogFilter(BaseModel):
     page_size: int = Field(default=50, ge=1, le=200, description="Tamanho da pagina.")
 
 
-__all__ = ["AuditLogFilter", "AuditLogListResponse", "AuditLogResponse"]
+__all__ = [
+    "AuditLogCreate",
+    "AuditLogCreatedResponse",
+    "AuditLogFilter",
+    "AuditLogListResponse",
+    "AuditLogResponse",
+]

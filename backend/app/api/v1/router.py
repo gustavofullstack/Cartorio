@@ -50,7 +50,13 @@ from app.schemas.protocolo import (
     ProtocoloResponse,
     StatusProtocolo,
 )
-from app.schemas.audit import AuditLogFilter, AuditLogListResponse, AuditLogResponse
+from app.schemas.audit import (
+    AuditLogCreate,
+    AuditLogCreatedResponse,
+    AuditLogFilter,
+    AuditLogListResponse,
+    AuditLogResponse,
+)
 from app.schemas.metrics import MetricsResponse, N8nMetricsIngest, N8nMetricsIngestResponse
 from app.services.audit import AuditService
 from app.services.audit_context import audit_kwargs
@@ -1180,9 +1186,7 @@ async def health_audit_freshness(
 
     payload = {
         "status": health.status.value,
-        "last_entry_at": (
-            health.last_entry_at.isoformat() if health.last_entry_at else None
-        ),
+        "last_entry_at": (health.last_entry_at.isoformat() if health.last_entry_at else None),
         "last_entry_age_minutes": health.last_entry_age_minutes,
         "threshold_minutes": health.threshold_minutes,
         "alert": health.alert,
@@ -2492,7 +2496,7 @@ async def admin_run_retencao(
         "tem idade <= threshold_minutes (default 60), ou **503** com "
         "`status` em `stale`/`critical`/`empty` caso contrario. Util para "
         "verificacao ad-hoc (DPO / on-call) sem esperar o cron.\n\n"
-        "Requer `X-API-Key` (admin / DPO). Body opcional: `{\"threshold_minutes\": N}`."
+        'Requer `X-API-Key` (admin / DPO). Body opcional: `{"threshold_minutes": N}`.'
     ),
     response_description="AuditHealth + status HTTP 200/503.",
     responses={
@@ -2523,9 +2527,7 @@ async def admin_audit_dead_mans_switch_check(
     body = {
         "status": result.health.status.value,
         "last_entry_at": (
-            result.health.last_entry_at.isoformat()
-            if result.health.last_entry_at
-            else None
+            result.health.last_entry_at.isoformat() if result.health.last_entry_at else None
         ),
         "last_entry_age_minutes": result.health.last_entry_age_minutes,
         "threshold_minutes": result.health.threshold_minutes,
@@ -2663,6 +2665,57 @@ async def postman_collection() -> dict:
             }
         ],
     }
+
+
+@api_router.post(
+    "/audit/log",
+    tags=["audit"],
+    summary="Cria entry de audit log via API (LGPD art. 37 chain)",
+    description=(
+        "Insere uma nova entry no audit log via API. \
+Auth: `X-API-Key` (escrevente/DPO/automacao N8N) via `require_cartorio_api_key`. "
+        "LGPD art. 37: registro de tratamento. Chain append-only preservado \
+(prev_hash + HMAC automaticos via AuditService).\n\n"
+        "Consumidores:\n"
+        "- WF 23 LGPD Esqueci: revogacao de consentimento\n"
+        "- N8N jobs que precisam gravar acoes sem depender de ORM direto\n\n"
+        "Campos obrigatorios: action, resource. Demais opcionais com defaults \
+sensatos (actor_id='system', actor_type='system', payload={}, canal=None).\n\n"
+        "Campos automaticos (caller NAO envia):\n"
+        "- id (autoincrement)\n"
+        "- hash, prev_hash, hmac_signature (via AuditService)\n"
+        "- ip_truncated (via utils.ip.truncate_ip — LGPD D5)\n"
+        "- timestamp (utcnow)"
+    ),
+    response_model=AuditLogCreatedResponse,
+    status_code=201,
+    responses={
+        201: {"model": AuditLogCreatedResponse, "description": "Entry criada com chain integrity."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+        422: {"description": "Payload invalido (Pydantic validation)."},
+    },
+)
+async def create_audit_log_endpoint(
+    request: Request,
+    entry: AuditLogCreate,
+    db: Annotated[Session, Depends(get_db)],
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],  # D0.2 2026-06-25
+) -> AuditLogCreatedResponse:
+    """Cria entry de audit log via API (chain + HMAC automaticos).
+
+    D0.2 (2026-06-25): endpoint adicionado para suportar WF 23 LGPD Esqueci
+    que precisa gravar revogacao de consentimento via API. Antes deste
+    endpoint, WF 23 recebia 404 ao chamar POST /audit/log.
+    """
+    from app.services.audit_create import create_audit_log_entry
+
+    new_entry = create_audit_log_entry(db, entry)
+    return AuditLogCreatedResponse(
+        id=new_entry.id,
+        hash=new_entry.hash,
+        prev_hash=new_entry.prev_hash,
+        created_at=new_entry.timestamp,
+    )
 
 
 @api_router.get(
