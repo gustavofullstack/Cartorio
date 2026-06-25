@@ -1,0 +1,107 @@
+# CD - Render deploy on push to master
+# Triggera deploy manual via Render API, polla ate status=live, reporta resultado.
+#
+# Secrets necessarios (Settings > Secrets and variables > Actions):
+#   RENDER_API_KEY    = rnd_sTv1GnBAmvWrsP7UGIs7wrbeuKzn  (NAO comitar)
+#   RENDER_SERVICE_ID = srv-d8u04aojs32c73c92j8g
+#   GH_TOKEN          = (auto via ${{ secrets.GITHUB_TOKEN }})
+
+name: CD
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'backend/**'
+      - 'Dockerfile'
+      - '.github/workflows/cd.yml'
+  workflow_dispatch:  # permite disparar manualmente
+
+concurrency:
+  group: cd-render
+  cancel-in-progress: false  # NAO cancelar deploy em andamento
+
+env:
+  RENDER_SERVICE_ID: srv-d8u04aojs32c73c92j8g
+
+jobs:
+  deploy-render:
+    name: Deploy to Render (Ohio, free)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trigger deploy via Render API
+        id: trigger
+        run: |
+          RESP=$(curl -sS -X POST \
+            "https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            -w "\n%{http_code}")
+          HTTP_CODE=$(echo "$RESP" | tail -n1)
+          BODY=$(echo "$RESP" | sed '$d')
+          echo "HTTP: $HTTP_CODE"
+          echo "Body: $BODY"
+          if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Render trigger failed (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+          DEPLOY_ID=$(echo "$BODY" | python3 -c "import json,sys;print(json.load(sys.stdin).get('id',''))")
+          echo "deploy_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Poll until live (max 5min)
+        id: poll
+        run: |
+          for i in $(seq 1 30); do
+            RESP=$(curl -sS \
+              "https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID }}/deploys?limit=1" \
+              -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}")
+            STATUS=$(echo "$RESP" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d[0].get('status','unknown'))")
+            echo "[$i/30] status=$STATUS"
+            if [ "$STATUS" = "live" ]; then
+              DEPLOY_URL=$(echo "$RESP" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d[0].get('deploy',{}).get('url',''))")
+              echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [ "$STATUS" = "build_failed" ] || [ "$STATUS" = "canceled" ] || [ "$STATUS" = "deactivated" ]; then
+              echo "::error::Render deploy terminal status: $STATUS"
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "::error::Timeout waiting for deploy to go live"
+          exit 1
+
+      - name: Comment on PR (if any)
+        if: steps.poll.outputs.deploy_url != '' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM=$(gh pr list --repo "$GITHUB_REPOSITORY" --state merged --base master --limit 1 --json number -q '.[0].number // empty')
+          if [ -n "$PR_NUM" ]; then
+            gh pr comment "$PR_NUM" --repo "$GITHUB_REPOSITORY" --body \
+              "Deploy Render OK: ${{ steps.poll.outputs.deploy_url }}"
+          fi
+
+      - name: Report failure as issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '## CD failure', '',
+              'Commit: ' + process.env.GITHUB_SHA, '',
+              'Run: ' + process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/actions/runs/' + process.env.GITHUB_RUN_ID, '',
+              'Veja os logs e o dashboard do Render (servico Ohio).'
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'CD: Render deploy failed (' + new Date().toISOString().slice(0,10) + ')',
+              body,
+              labels: ['ci','deploy']
+            });
