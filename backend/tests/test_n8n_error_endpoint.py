@@ -12,6 +12,7 @@ Cobre:
 
 Coverage target: >= 90% em app/services/n8n_error.py + endpoint.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -135,7 +136,9 @@ def client_dev_mode(test_engine, test_session_factory):
             yield c
 
 
-def _post(client, payload: dict, *, secret: str | None = N8N_WEBHOOK_SECRET, sig: str | None = "__AUTO__"):
+def _post(
+    client, payload: dict, *, secret: str | None = N8N_WEBHOOK_SECRET, sig: str | None = "__AUTO__"
+):
     """POST helper.
 
     - sig="__AUTO__" (default): auto-assina se secret fornecido.
@@ -190,9 +193,7 @@ def test_hmac_sha256_prefix_accepted(client):
     body = json.dumps(payload).encode("utf-8")
     sig = "sha256=" + _compute_sig(N8N_WEBHOOK_SECRET, body)
     headers = {"Content-Type": "application/json", "X-N8N-Signature": sig}
-    resp = client.post(
-        "/api/v1/integrations/n8n/error", content=body, headers=headers
-    )
+    resp = client.post("/api/v1/integrations/n8n/error", content=body, headers=headers)
     assert resp.status_code == 200
 
 
@@ -210,9 +211,7 @@ def test_hmac_wrong_secret_returns_401(client):
     body = json.dumps(payload).encode("utf-8")
     sig = _compute_sig("outra-chave-nao-configurada", body)
     headers = {"Content-Type": "application/json", "X-N8N-Signature": sig}
-    resp = client.post(
-        "/api/v1/integrations/n8n/error", content=body, headers=headers
-    )
+    resp = client.post("/api/v1/integrations/n8n/error", content=body, headers=headers)
     assert resp.status_code == 401
 
 
@@ -232,9 +231,7 @@ def test_audit_log_gravado_com_request_id_igual_execution_id(
     assert audit_id is not None
 
     with test_session_factory() as db:
-        entry = db.execute(
-            select(AuditLog).where(AuditLog.id == audit_id)
-        ).scalar_one()
+        entry = db.execute(select(AuditLog).where(AuditLog.id == audit_id)).scalar_one()
         assert entry is not None
         assert entry.action == "n8n.error"
         assert entry.actor_id == "n8n-error-workflow"
@@ -365,8 +362,14 @@ def test_classify_connection_refused():
     """ECONNREFUSED -> connection."""
     from app.services.n8n_error import classify_error_type
 
-    assert classify_error_type({"name": "ECONNREFUSED", "message": "connection refused"}) == "connection"
-    assert classify_error_type({"name": "Error", "message": "ECONNREFUSED 10.0.0.1:8000"}) == "connection"
+    assert (
+        classify_error_type({"name": "ECONNREFUSED", "message": "connection refused"})
+        == "connection"
+    )
+    assert (
+        classify_error_type({"name": "Error", "message": "ECONNREFUSED 10.0.0.1:8000"})
+        == "connection"
+    )
 
 
 def test_classify_timeout():
@@ -399,8 +402,13 @@ def test_classify_auth():
     """http_code 401/403 -> auth."""
     from app.services.n8n_error import classify_error_type
 
-    assert classify_error_type({"name": "Error", "message": "unauthorized", "http_code": 401}) == "auth"
-    assert classify_error_type({"name": "Error", "message": "forbidden", "http_code": 403}) == "auth"
+    assert (
+        classify_error_type({"name": "Error", "message": "unauthorized", "http_code": 401})
+        == "auth"
+    )
+    assert (
+        classify_error_type({"name": "Error", "message": "forbidden", "http_code": 403}) == "auth"
+    )
 
 
 def test_classify_validation():
@@ -427,7 +435,10 @@ def test_classify_host_unreachable_is_connection():
 
     assert classify_error_type({"name": "Error", "message": "EHOSTUNREACH"}) == "connection"
     assert classify_error_type({"name": "Error", "message": "ENETUNREACH"}) == "connection"
-    assert classify_error_type({"name": "Error", "message": "ENOTFOUND api.example.com"}) == "connection"
+    assert (
+        classify_error_type({"name": "Error", "message": "ENOTFOUND api.example.com"})
+        == "connection"
+    )
 
 
 # ============================================================================
@@ -496,7 +507,9 @@ def test_compute_payload_digest_deterministic():
     p = {"a": 1, "b": [1, 2, 3], "c": {"x": "y"}}
     assert compute_payload_digest(p) == compute_payload_digest(p)
     # Ordem de chaves nao importa (sort_keys=True)
-    assert compute_payload_digest(p) == compute_payload_digest({"c": {"x": "y"}, "b": [1, 2, 3], "a": 1})
+    assert compute_payload_digest(p) == compute_payload_digest(
+        {"c": {"x": "y"}, "b": [1, 2, 3], "a": 1}
+    )
 
 
 def test_compute_payload_digest_diferente_para_payload_diferente():
@@ -576,9 +589,7 @@ def test_hmac_lowercase_header_aceito(client):
     sig = _compute_sig(N8N_WEBHOOK_SECRET, body)
     # TestClient normaliza headers para lowercase no request; garantimos explicitamente
     headers = {"Content-Type": "application/json", "x-n8n-signature": sig}
-    resp = client.post(
-        "/api/v1/integrations/n8n/error", content=body, headers=headers
-    )
+    resp = client.post("/api/v1/integrations/n8n/error", content=body, headers=headers)
     assert resp.status_code == 200
 
 
@@ -587,9 +598,7 @@ def test_hmac_lowercase_header_aceito(client):
 # ============================================================================
 
 
-def test_audit_payload_nao_persiste_error_stack_gigante(
-    client, test_engine, test_session_factory
-):
+def test_audit_payload_nao_persiste_error_stack_gigante(client, test_engine, test_session_factory):
     """Stack traces grandes sao truncadas antes de persistir."""
     big_stack = "x" * 10_000
     payload = _make_payload(

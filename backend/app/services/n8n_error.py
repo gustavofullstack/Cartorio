@@ -10,6 +10,7 @@ B6 N8N Error Handler Global (Sprint 3):
 Pattern identical to `app/services/evolution_ingest.py::validate_evolution_signature`
 para consistencia entre integracoes externas (LGPD art. 37 audit chain).
 """
+
 from __future__ import annotations
 
 import hashlib

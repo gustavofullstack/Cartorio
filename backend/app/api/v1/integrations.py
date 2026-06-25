@@ -417,7 +417,7 @@ _DISPATCHERS = {
         '{"event":"INSERT","table":"outbox_messages","outbox_id":"<uuid>",'
         '"queue":"evolution","payload":{...},"attempts":0}\n'
         "```\n\n"
-        "Resposta: `{\"status\":\"done|failed\",\"attempts\":N,\"error\":\"...\"}`."
+        'Resposta: `{"status":"done|failed","attempts":N,"error":"..."}`.'
     ),
 )
 async def outbox_dispatch(
@@ -459,7 +459,9 @@ async def outbox_dispatch(
     try:
         outbox_uuid = _uuid.UUID(str(outbox_id_raw))
     except ValueError:
-        raise HTTPException(status_code=422, detail={"erro": "INVALID_UUID", "outbox_id": outbox_id_raw})
+        raise HTTPException(
+            status_code=422, detail={"erro": "INVALID_UUID", "outbox_id": outbox_id_raw}
+        )
 
     with session_scope() as db:
         msg = db.execute(
@@ -657,9 +659,7 @@ async def n8n_error_webhook(
             )
             audit_id = entry.id
     except Exception:
-        _n8n_error_log.exception(
-            "n8n_error audit_log failed execution_id=%s", execution_id
-        )
+        _n8n_error_log.exception("n8n_error audit_log failed execution_id=%s", execution_id)
         # Fail-soft: ainda incrementa metric + retorna 200
         audit_id = None
 
