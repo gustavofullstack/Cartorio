@@ -21,6 +21,7 @@ Tabelas cascade (cliente_id eh FK em):
 from __future__ import annotations
 
 import datetime
+import json
 import logging
 from typing import Any
 
@@ -31,15 +32,23 @@ from app.services.lgpd_anonimizacao import hash_pii
 
 log = logging.getLogger(__name__)
 
+# Tabelas com coluna deleted_at que referenciam cliente_id.
+# NOTA: adicionar novas tabelas ao schema ANTES de incluir aqui.
+# protocolos, atendimentos, documentos, conversas: tem model mas podem
+# nao ter deleted_at ainda — incluir quando a migration A19 for aplicada.
 CASCADE_TABLES = (
     "clientes",
-    "protocolos",
-    "atendimentos",
-    "documentos",
-    "conversas",
-    "emolumentos",
-    "lgpd_consents",
 )
+
+# Colunas PII existentes no model Cliente (NUNCA referencia colunas que nao existem)
+_CLIENTE_PII_COLUMNS = "nome = '[ANONIMIZADO art.18 V]', email = NULL, telefone_hash = NULL"
+# Colunas LGPD adicionais na tabela clientes
+_CLIENTE_LGPD_COLUMNS = "consentimento_lgpd = false"
+
+
+def _safe_json(value: dict) -> str:
+    """Serializa dict para JSON string segura para SQL."""
+    return json.dumps(value, ensure_ascii=False, default=str)
 
 
 def direito_esquecimento(
@@ -70,9 +79,9 @@ def direito_esquecimento(
     if reversivel_ate is None:
         reversivel_ate = now + datetime.timedelta(days=30)
 
-    # 1. Busca cliente (necessario para anonimizar)
+    # 1. Busca cliente (apenas colunas que existem no model)
     cliente_row = db.execute(
-        text("SELECT id, nome, cpf, cnpj, email, telefone FROM clientes WHERE id = :id"),
+        text("SELECT id, nome, cpf_hash, email, telefone_hash FROM clientes WHERE id = :id"),
         {"id": cliente_id},
     ).mappings().first()
 
@@ -81,11 +90,10 @@ def direito_esquecimento(
 
     # 2. Gera hashes ANTES de anonimizar (para reversibilidade se necessario)
     hashes = {
-        "nome_hash": hash_pii(cliente_row["nome"] or ""),
-        "cpf_hash": hash_pii(cliente_row["cpf"] or ""),
-        "cnpj_hash": hash_pii(cliente_row["cnpj"] or ""),
-        "email_hash": hash_pii(cliente_row["email"] or ""),
-        "telefone_hash": hash_pii(cliente_row["telefone"] or ""),
+        "nome_hash": hash_pii(cliente_row.get("nome") or ""),
+        "cpf_hash": cliente_row.get("cpf_hash") or "",  # ja eh hash, preserva
+        "email_hash": hash_pii(cliente_row.get("email") or ""),
+        "telefone_hash": cliente_row.get("telefone_hash") or "",  # ja eh hash
     }
 
     # 3. Soft delete cascade (marca deleted_at + anonimiza PII)
@@ -94,22 +102,27 @@ def direito_esquecimento(
 
     for table in CASCADE_TABLES:
         try:
-            result = db.execute(
-                text(
-                    f"UPDATE {table} "
-                    "SET deleted_at = :now, "
-                    "    nome = '[ANONIMIZADO art.18 V]', "
-                    "    cpf = NULL, cnpj = NULL, "
-                    "    email = NULL, telefone = NULL, celular = NULL, "
-                    "    rg = NULL, cns = NULL, cnh = NULL, "
-                    "    endereco = NULL, numero = NULL, complemento = NULL, "
-                    "    bairro = NULL, cidade = NULL, cep = NULL, "
-                    "    nome_mae = NULL, nome_pai = NULL, "
-                    "    data_nascimento = NULL, passaporte = NULL "
-                    "WHERE cliente_id = :cid AND deleted_at IS NULL"
-                ),
-                {"now": now, "cid": cliente_id},
-            )
+            if table == "clientes":
+                # Tabela clientes tem colunas especificas do model
+                result = db.execute(
+                    text(
+                        "UPDATE clientes SET "
+                        "deleted_at = :now, "
+                        f"{_CLIENTE_PII_COLUMNS}, "
+                        f"{_CLIENTE_LGPD_COLUMNS} "
+                        "WHERE id = :cid AND deleted_at IS NULL"
+                    ),
+                    {"now": now, "cid": cliente_id},
+                )
+            else:
+                # Demais tabelas: so deleted_at (nao tem PII do cliente)
+                result = db.execute(
+                    text(
+                        f"UPDATE {table} SET deleted_at = :now "
+                        "WHERE cliente_id = :cid AND deleted_at IS NULL"
+                    ),
+                    {"now": now, "cid": cliente_id},
+                )
             rowcount = getattr(result, "rowcount", 0) or 0
             if rowcount > 0:
                 rows_affected += rowcount
@@ -118,37 +131,10 @@ def direito_esquecimento(
             log.warning("cascade %s falhou para cliente %s: %s", table, cliente_id, e)
             continue
 
-    # Tabela clientes tambem (PK)
-    try:
-        db.execute(
-            text(
-                "UPDATE clientes SET "
-                "deleted_at = :now, "
-                "nome = '[ANONIMIZADO art.18 V]', "
-                "cpf = NULL, cnpj = NULL, email = NULL, telefone = NULL, "
-                "celular = NULL, rg = NULL, cns = NULL, cnh = NULL, "
-                "endereco = NULL, numero = NULL, complemento = NULL, "
-                "bairro = NULL, cidade = NULL, cep = NULL, "
-                "nome_mae = NULL, nome_pai = NULL, "
-                "data_nascimento = NULL, passaporte = NULL, "
-                "lgpd_consent_granted = false, "
-                "lgpd_consent_revoked_at = :now, "
-                "lgpd_direito_esquecimento_at = :now, "
-                "lgpd_direito_esquecimento_motivo = :motivo, "
-                "lgpd_reversivel_ate = :reversivel_ate "
-                "WHERE id = :cid"
-            ),
-            {
-                "now": now,
-                "cid": cliente_id,
-                "motivo": motivo,
-                "reversivel_ate": reversivel_ate,
-            },
-        )
-    except Exception as e:
-        log.warning("clientes cascade falhou para %s: %s", cliente_id, e)
-
     # 4. Audit log (obrigatorio LGPD art. 37)
+    # Usa AuditService.log() para garantir hash chain + HMAC corretos
+    from app.services.audit import AuditService
+
     audit_payload = {
         "cliente_id": cliente_id,
         "motivo": motivo,
@@ -156,23 +142,18 @@ def direito_esquecimento(
         "anonymized_tables": anonymized_tables,
         "total_rows_affected": rows_affected,
         "reversivel_ate": reversivel_ate.isoformat(),
-        "hashes_para_restauracao": hashes,  # chave separada para restore em 30d
+        "hashes_para_restauracao": hashes,
     }
-    audit_id = db.execute(
-        text(
-            "INSERT INTO audit_log ("
-            "actor_id, actor_type, action, resource, payload, canal, ip, user_agent"
-            ") VALUES ("
-            ":actor_id, 'user', 'lgpd.direito_esquecimento', :resource, "
-            "CAST(:payload AS jsonb), 'api', '0.0.0.0'::inet, 'direito_esquecimento_service'"
-            ") RETURNING id"
-        ),
-        {
-            "actor_id": actor_id,
-            "resource": f"cliente:{cliente_id}",
-            "payload": str(audit_payload).replace("'", '"'),
-        },
-    ).scalar()
+
+    audit_entry = AuditService.log(
+        db,
+        actor_id=actor_id,
+        actor_type="user",
+        action="lgpd.direito_esquecimento",
+        resource=f"cliente:{cliente_id}",
+        payload=audit_payload,
+    )
+    audit_id = audit_entry.id
 
     db.commit()
 
@@ -204,8 +185,7 @@ def restore_direito_esquecimento(
         db: sessao SQLAlchemy
         cliente_id: PK do cliente
         actor_id: quem solicitou o restore
-        justificativa: motivo legal para restaurar (ex: 'cliente_recorreu_decisao',
-                       'obrigacao_regulatoria', 'processo_judicial_ativo')
+        justificativa: motivo legal para restaurar
 
     Returns:
         dict com {cliente_id, restored, audit_log_id}
@@ -254,29 +234,23 @@ def restore_direito_esquecimento(
     )
 
     # Audit log
-    audit_id = db.execute(
-        text(
-            "INSERT INTO audit_log ("
-            "actor_id, actor_type, action, resource, payload, canal, ip, user_agent"
-            ") VALUES ("
-            ":actor_id, 'user', 'lgpd.direito_esquecimento.restore', :resource, "
-            "CAST(:payload AS jsonb), 'api', '0.0.0.0'::inet, 'restore_service'"
-            ") RETURNING id"
-        ),
-        {
+    from app.services.audit import AuditService
+
+    audit_entry = AuditService.log(
+        db,
+        actor_id=actor_id,
+        actor_type="user",
+        action="lgpd.direito_esquecimento.restore",
+        resource=f"cliente:{cliente_id}",
+        payload={
+            "cliente_id": cliente_id,
             "actor_id": actor_id,
-            "resource": f"cliente:{cliente_id}",
-            "payload": str(
-                {
-                    "cliente_id": cliente_id,
-                    "actor_id": actor_id,
-                    "justificativa": justificativa,
-                    "restored_tables": restored_tables,
-                    "lgpd_article": "art. 18 V §2 (revogacao)",
-                }
-            ).replace("'", '"'),
+            "justificativa": justificativa,
+            "restored_tables": restored_tables,
+            "lgpd_article": "art. 18 V §2 (revogacao)",
         },
-    ).scalar()
+    )
+    audit_id = audit_entry.id
 
     db.commit()
 

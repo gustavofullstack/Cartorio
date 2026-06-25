@@ -177,14 +177,14 @@ def test_direito_esquecimento_cliente_inexistente(db):
 
     # Deve retornar erro gracefully (sem exception)
     assert result is not None
-    assert "error" in result or "soft_deleted" in result
+    assert "erro" in result or "cliente_nao_encontrado" in str(result)
 
 
 def test_direito_esquecimento_restaurar(db, cliente):
     """Deve permitir restaurar soft delete (LGPD art. 18 V §2)."""
     from app.services.lgpd_direito_esquecimento import (
         direito_esquecimento,
-        restaurar_esquecimento,
+        restore_direito_esquecimento,
     )
 
     # Esquecer
@@ -195,7 +195,7 @@ def test_direito_esquecimento_restaurar(db, cliente):
     assert cliente.deleted_at is not None
 
     # Restaurar
-    result = restaurar_esquecimento(
+    result = restore_direito_esquecimento(
         db=db,
         cliente_id=cliente.id,
         actor_id="gustavo",
