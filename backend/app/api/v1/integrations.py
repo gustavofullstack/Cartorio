@@ -16,9 +16,10 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 import httpx
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.api.deps import require_cartorio_api_key
 from app.config import settings
 from app.integrations.opencode_go import ChatError, chat_with_settings
 
@@ -146,8 +147,14 @@ async def opencode_test(
             ]
         ),
     ],
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> OpenCodeTestResponse:
-    """Smoke test do OpenCode-Go LLM provider."""
+    """Smoke test do OpenCode-Go LLM provider.
+
+    B0.3 2026-06-25: agora exige X-API-Key (mesmo gate dos demais
+    endpoints admin). Substitui o gap transversal onde /integrations/*
+    estava sem auth porque CARTORIO_API_KEY nao estava configurada.
+    """
     # Config visivel na response (SEM expor a API key - LGPD + segredo)
     config_public = {
         "provider": "opencode_go",
@@ -323,13 +330,11 @@ async def agent_health() -> AgentHealthResponse:
 # - Backoff 5min em falha (next_retry_at)
 
 import datetime as _dt
-import hashlib
-import hmac
 import json
 import logging
 import uuid as _uuid
 
-from fastapi import Header, Request
+from fastapi import Request
 from sqlalchemy import select
 
 from app.db import session_scope
@@ -412,18 +417,13 @@ _DISPATCHERS = {
 )
 async def outbox_dispatch(
     request: Request,
-    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> dict:
-    """Webhook Supabase -> processa outbox_message por queue."""
-    # 1. Auth X-API-Key (se settings.cartorio_api_key configurado, valida; senao skip)
-    expected = settings.cartorio_api_key
-    if expected:
-        if not x_api_key or not hmac.compare_digest(x_api_key, expected):
-            raise HTTPException(
-                status_code=401,
-                detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key ausente ou invalida."},
-                headers={"WWW-Authenticate": "ApiKey"},
-            )
+    """Webhook Supabase -> processa outbox_message por queue.
+
+    B0.3 2026-06-25: refatorado para usar deps.require_cartorio_api_key
+    (constant-time compare centralizado em app/api/deps.py).
+    """
 
     # 2. Parse body
     try:

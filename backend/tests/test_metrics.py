@@ -8,7 +8,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("AUDIT_HMAC_KEY", "a" * 64)
 os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
 os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
-os.environ.setdefault("CARTORIO_API_KEY", "test-key-12345")
+os.environ.setdefault("CARTORIO_API_KEY", "a" * 64)
 
 from app.config import get_settings  # noqa: E402
 
@@ -231,7 +231,7 @@ def test_endpoint_metrics_json_sem_auth(client) -> None:
 
 def test_endpoint_metrics_json_com_auth_opcional(client) -> None:
     """GET /api/v1/metrics aceita X-API-Key (forward-compat) mas NAO exige."""
-    headers = {"X-API-Key": "test-key-12345"}
+    headers = {"X-API-Key": "a" * 64}
     resp = client.get("/api/v1/metrics", headers=headers)
     assert resp.status_code == 200
     body = resp.json()

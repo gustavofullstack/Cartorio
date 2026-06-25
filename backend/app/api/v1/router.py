@@ -61,6 +61,9 @@ from app.services.pii import hash_pii, scrub
 # Integrations router (smoke test OpenCode-Go, etc)
 from app.api.v1.integrations import integrations_router  # noqa: E402
 
+# Shared deps (B0.3 2026-06-25)
+from app.api.deps import require_cartorio_api_key  # noqa: E402
+
 # ============================================================================
 # Router com tags PT-BR para o Swagger/OpenAPI
 # ============================================================================
@@ -3067,6 +3070,8 @@ async def get_metrics_json(
 # POST /api/v1/metrics/n8n (B0.1 - Sprint 3)
 # Recebe metrics do workflow N8N #25 (Metrics Collector, cron 1min).
 # Corrige 404 que ocorria a cada 1min desde 2026-06-23 (Lesson 55).
+# B0.3 2026-06-25: auth trocada de inline `_verify_api_key` para
+# `Depends(require_cartorio_api_key)` (centralizada em app/api/deps.py).
 # ---------------------------------------------------------------------------
 
 
@@ -3102,7 +3107,7 @@ async def get_metrics_json(
 async def post_metrics_n8n(
     request: Request,
     payload: N8nMetricsIngest,
-    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
     db: Session = Depends(get_db),
 ) -> N8nMetricsIngestResponse:
     """Ingere metrics vindas do N8N workflow #25.
@@ -3112,9 +3117,6 @@ async def post_metrics_n8n(
     quebrar o cron (workflow continua funcionando mesmo se a API evoluir).
     """
     from app.services.metrics import store as metrics_store
-
-    api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
-    _verify_api_key(api_key_header)
 
     # Serializa payload pra log (size, kind)
     payload_dict = payload.model_dump(exclude_none=True)

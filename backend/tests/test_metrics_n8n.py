@@ -23,7 +23,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("AUDIT_HMAC_KEY", "a" * 64)
 os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
 os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
-os.environ.setdefault("CARTORIO_API_KEY", "test-key-12345")
+os.environ.setdefault("CARTORIO_API_KEY", "a" * 64)
 
 from app.config import get_settings  # noqa: E402
 
@@ -36,7 +36,7 @@ from sqlalchemy.orm import sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
 
-TEST_API_KEY = "test-key-12345"
+TEST_API_KEY = "a" * 64
 
 
 @pytest.fixture

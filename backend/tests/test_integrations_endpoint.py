@@ -2,15 +2,30 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+import os
 
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+# Set test env BEFORE importing app modules
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("AUDIT_HMAC_KEY", "a" * 64)
+os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
+os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
+# B0.3 2026-06-25: /integrations/* agora exige X-API-Key (gap transversal)
+TEST_API_KEY = "a" * 64
+os.environ.setdefault("CARTORIO_API_KEY", TEST_API_KEY)
 
-from app.models.base import Base
+from unittest.mock import AsyncMock, MagicMock, patch  # noqa: E402
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
+from sqlalchemy.pool import StaticPool  # noqa: E402
+
+from app.models.base import Base  # noqa: E402
+
+
+# Helper: default headers para /integrations/* (B0.3 2026-06-25 auth gate)
+AUTH_HEADERS = {"X-API-Key": TEST_API_KEY}
 
 
 @pytest.fixture
@@ -73,6 +88,7 @@ def test_opencode_test_endpoint_success(client):
 
             resp = client.post(
                 "/api/v1/integrations/opencode/test",
+                headers=AUTH_HEADERS,
                 json={"message": "ping", "consent_granted": True},
             )
 
@@ -97,6 +113,7 @@ def test_opencode_test_endpoint_blocks_when_consent_not_granted(client):
     ):
         resp = client.post(
             "/api/v1/integrations/opencode/test",
+            headers=AUTH_HEADERS,
             json={"message": "ping"},  # consent_granted omitido = False default
         )
 
@@ -110,6 +127,7 @@ def test_opencode_test_endpoint_blocks_when_consent_explicit_false(client):
     """BLOCKER 3: consent_granted=False explicito tambem bloqueia."""
     resp = client.post(
         "/api/v1/integrations/opencode/test",
+        headers=AUTH_HEADERS,
         json={"message": "ping", "consent_granted": False},
     )
     assert resp.status_code == 422
@@ -128,6 +146,7 @@ def test_opencode_test_endpoint_does_not_call_provider_when_consent_blocked(clie
 
         resp = client.post(
             "/api/v1/integrations/opencode/test",
+            headers=AUTH_HEADERS,
             json={"message": "ping"},  # consent_granted=False
         )
 
@@ -140,6 +159,7 @@ def test_opencode_test_endpoint_missing_api_key(client):
     with patch("app.config.settings.opencode_go_api_key", ""):
         resp = client.post(
             "/api/v1/integrations/opencode/test",
+            headers=AUTH_HEADERS,
             json={"message": "ping", "consent_granted": True},
         )
 
@@ -170,6 +190,7 @@ def test_opencode_test_endpoint_http_500(client):
 
             resp = client.post(
                 "/api/v1/integrations/opencode/test",
+                headers=AUTH_HEADERS,
                 json={"message": "ping", "consent_granted": True},
             )
 
@@ -204,6 +225,7 @@ def test_opencode_test_endpoint_default_message(client):
             # Sem message (default 'ping') mas com consent_granted=True explicito
             resp = client.post(
                 "/api/v1/integrations/opencode/test",
+                headers=AUTH_HEADERS,
                 json={"consent_granted": True},
             )
 
@@ -218,6 +240,7 @@ def test_opencode_test_endpoint_validates_temperature(client):
     with patch("app.config.settings.opencode_go_api_key", "sk-test"):
         resp = client.post(
             "/api/v1/integrations/opencode/test",
+            headers=AUTH_HEADERS,
             json={
                 "message": "ping",
                 "temperature": 5.0,
@@ -259,6 +282,7 @@ def test_opencode_test_endpoint_redacts_pii_in_response(client):
 
             resp = client.post(
                 "/api/v1/integrations/opencode/test",
+                headers=AUTH_HEADERS,
                 json={
                     "message": "Meu CPF e 123.456.789-09",
                     "consent_granted": True,

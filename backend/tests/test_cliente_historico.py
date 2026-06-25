@@ -7,7 +7,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("AUDIT_HMAC_KEY", "a" * 64)
 os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
 os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
-os.environ.setdefault("CARTORIO_API_KEY", "test-key-12345")
+os.environ.setdefault("CARTORIO_API_KEY", "a" * 64)
 
 from app.config import get_settings  # noqa: E402
 
@@ -74,7 +74,7 @@ def client():
         Base.metadata.drop_all(test_engine)
 
 
-AUTH = {"X-API-Key": "test-key-12345"}
+AUTH = {"X-API-Key": "a" * 64}
 
 
 def _make_cliente(db, cpf_hash="h1"):

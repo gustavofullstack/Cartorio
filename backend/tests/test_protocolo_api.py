@@ -84,7 +84,7 @@ def cliente_existente(test_engine):
 @pytest.fixture
 def api_key(monkeypatch):
     """Seta CARTORIO_API_KEY no settings para os testes."""
-    monkeypatch.setenv("CARTORIO_API_KEY", "test-secret-key-min-32-chars-aaaa")
+    monkeypatch.setenv("CARTORIO_API_KEY", "b" * 64)
     from app.config import settings
     return settings.cartorio_api_key
 
@@ -111,7 +111,7 @@ def test_criar_api_sem_api_key_retorna_401(client, cliente_existente):
 
 def test_criar_api_com_api_key_invalida_retorna_401(client, cliente_existente, monkeypatch):
     """Header X-API-Key com valor errado retorna 401."""
-    monkeypatch.setenv("CARTORIO_API_KEY", "test-secret-key-min-32-chars-aaaa")
+    monkeypatch.setenv("CARTORIO_API_KEY", "b" * 64)
     resp = client.post(
         "/api/v1/protocolo/criar-api",
         json={

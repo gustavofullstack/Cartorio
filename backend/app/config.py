@@ -115,8 +115,10 @@ class Settings(BaseSettings):
     # ========================================================================
     # Inter-service auth (API <-> N8N/Admin)
     # Header X-API-Key. Rotacao 90d (ADR-017).
+    # Validacao strict: 64 chars hex (= `openssl rand -hex 32`).
+    # FAIL-FAST: se ausente ou tamanho errado, app nao sobe (B0.3 2026-06-25).
     # =========================================================================
-    cartorio_api_key: Optional[str] = None
+    cartorio_api_key: str = Field(min_length=64, max_length=64)
 
     # ========================================================================
     # Supabase (acesso direto alem do DB)

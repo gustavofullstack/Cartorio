@@ -19,7 +19,10 @@ os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
 # API key usada pelos testes que batem em endpoints protegidos por X-API-Key
 # (ex: DELETE /cliente/{id}, GET /cliente/{id}/historico). Setada aqui pra
 # estar disponivel antes de app.config criar o singleton `settings` na import.
-os.environ.setdefault("CARTORIO_API_KEY", "test-key-12345")
+# Deve ter EXATAMENTE 64 chars (validacao strict em config.py: B0.3 2026-06-25).
+# Gerada via `openssl rand -hex 32` — valor fixo pra reprodutibilidade dos testes.
+TEST_CARTORIO_API_KEY = "a" * 64  # 64 chars hex equivalente pra teste
+os.environ.setdefault("CARTORIO_API_KEY", TEST_CARTORIO_API_KEY)
 
 from app.config import get_settings  # noqa: E402
 

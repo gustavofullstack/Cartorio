@@ -49,7 +49,7 @@ def db_session():
 @pytest.fixture
 def client_with_db(monkeypatch):
     """Fixture reservada para testes de endpoint futuros (smoke via OpenAPI por enquanto)."""
-    monkeypatch.setenv("CARTORIO_API_KEY", "test-key-a2-dlq")
+    monkeypatch.setenv("CARTORIO_API_KEY", "c" * 64)
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
     monkeypatch.setenv("AUDIT_HMAC_KEY", "x" * 64)
     yield monkeypatch
