@@ -246,6 +246,131 @@ def test_settings_jwt_secret_none_eh_opcional() -> None:
 # ============================================================================
 
 
+# ============================================================================
+# Tests: uncovered error paths
+# ============================================================================
+
+
+def test_issue_access_token_sem_settings_injeta_settings(user_id: str) -> None:
+    """issue_access_token sem settings injecta get_settings()."""
+    token = issue_access_token(user_id)
+    assert isinstance(token, str)
+
+
+def test_issue_access_token_sem_jwt_secret_raise() -> None:
+    """issue_access_token sem JWT_SECRET -> RuntimeError."""
+    import os
+    from app.config import get_settings
+
+    os.environ["JWT_SECRET"] = ""
+    get_settings.cache_clear()
+    try:
+        s = get_settings()
+        with pytest.raises(RuntimeError, match="JWT_SECRET"):
+            issue_access_token("user-id-test", settings=s)
+    finally:
+        os.environ["JWT_SECRET"] = "z" * 32
+        get_settings.cache_clear()
+
+
+def test_issue_refresh_token_sem_settings_injeta_settings(user_id: str) -> None:
+    """issue_refresh_token sem settings injecta get_settings()."""
+    token = issue_refresh_token(user_id)
+    assert isinstance(token, str)
+
+
+def test_issue_refresh_token_sem_jwt_secret_raise() -> None:
+    """issue_refresh_token sem JWT_SECRET -> RuntimeError."""
+    import os
+    from app.config import get_settings
+
+    os.environ["JWT_SECRET"] = ""
+    get_settings.cache_clear()
+    try:
+        s = get_settings()
+        with pytest.raises(RuntimeError, match="JWT_SECRET"):
+            issue_refresh_token("user-id-test", settings=s)
+    finally:
+        os.environ["JWT_SECRET"] = "z" * 32
+        get_settings.cache_clear()
+
+
+def test_issue_refresh_token_secret_muito_curto_raise() -> None:
+    """issue_refresh_token com secret < 32 chars -> RuntimeError."""
+    import os
+    from app.config import get_settings
+
+    os.environ["JWT_SECRET"] = "short"  # 5 chars
+    get_settings.cache_clear()
+    try:
+        s = get_settings()
+        # issue_refresh_token usa settings pra obter secret
+        # Ele deve levantar RuntimeError sobre tamanho minimo
+        with pytest.raises(RuntimeError, match="32"):
+            issue_refresh_token("user-id-test", settings=s)
+    finally:
+        os.environ["JWT_SECRET"] = "z" * 32
+        get_settings.cache_clear()
+
+
+def test_verify_token_sem_settings_injeta_settings(settings, user_id: str) -> None:
+    """verify_token sem settings injecta get_settings()."""
+    token = issue_access_token(user_id, settings=settings)
+    # Chama sem settings explicito - injeta automaticamente
+    payload = verify_token(token)
+    assert payload["sub"] == user_id
+
+
+def test_verify_token_sem_secret_raise(user_id: str) -> None:
+    """verify_token sem JWT_SECRET -> JWTError."""
+    # Cria token com secret, depois tenta verificar com outro secret vazio
+    import os
+    from app.config import get_settings
+
+    token = issue_access_token(user_id)
+    os.environ["JWT_SECRET"] = ""
+    get_settings.cache_clear()
+    try:
+        s = get_settings()
+        with pytest.raises(JWTError, match="Token invalido"):
+            verify_token(token, settings=s)
+    finally:
+        os.environ["JWT_SECRET"] = "z" * 32
+        get_settings.cache_clear()
+
+
+def test_verify_token_missing_claim_raise(settings, user_id: str) -> None:
+    """verify_token levanta JWTError se claim obrigatorio faltando."""
+    import jwt as pyjwt
+
+    # Cria payload sem 'jti' (claim obrigatorio)
+    import time
+    bad_payload = {
+        "sub": user_id,
+        "iss": settings.jwt_issuer,
+        "aud": "cartorio-v2",
+        "typ": "access",
+        "iat": int(time.time()),
+        "exp": int(time.time()) + 3600,
+        # jti ausente intencionalmente
+    }
+    bad_token = pyjwt.encode(
+        bad_payload,
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
+
+    # O pyjwt.decode com options={"require": [...], "verify_signature": True}
+    # so vai levantar erro se a lib validar. O PyJWT atual levanta MissingRequiredClaimError
+    with pytest.raises(JWTError):
+        verify_token(bad_token, settings=settings)
+
+
+# ============================================================================
+# Tests: LGPD — JWT nao expoe PII
+# ============================================================================
+
+
 def test_jwt_nao_expoe_pii_em_claims(settings, user_id: str) -> None:
     """JWT claims NAO devem conter CPF, RG, nome, email (LGPD art. 37)."""
     pii_values = ["123.456.789-00", "MG-12.345.678", "Joao da Silva", "joao@email.com"]
