@@ -152,7 +152,7 @@ class TestN8nWorkflowValidator:
                     "type": "n8n-nodes-base.httpRequest",
                     "parameters": {
                         "url": "{{$env.CARTORIO_API_URL}}/x",
-                        "options": {"retry": {"maxRetries": 3, "backoff": "exponential"}},
+                        "options": {"retry": {"maxTries": 3, "waitBetweenTries": 1000}},
                     },
                 },
             ],
@@ -240,13 +240,33 @@ class TestN8nWorkflowValidator:
                 "type": "n8n-nodes-base.httpRequest",
                 "parameters": {
                     "url": "{{$env.CARTORIO_API_URL}}/x",
-                    "options": {"retry": {"maxRetries": 3, "backoff": "exponential"}},
+                    "options": {"retry": {"maxTries": 3, "waitBetweenTries": 1000}},
                 },
             }],
             "connections": {},
             "settings": {"errorWorkflow": "global"},
         }
         p = _make_wf(tmp_path, "with-retry.json", wf)
+        result = _validate_one(p)
+        retry_warnings = [w for w in result["warnings"] if "B07" in w]
+        assert retry_warnings == []
+
+    def test_b07_retry_com_max_retries_legacy(self, tmp_path: Path):
+        """B07: HTTP node COM maxRetries (legacy) >=3 -> sem warning."""
+        wf = {
+            "name": "legacy-retry",
+            "nodes": [{
+                "name": "call_api",
+                "type": "n8n-nodes-base.httpRequest",
+                "parameters": {
+                    "url": "{{$env.CARTORIO_API_URL}}/x",
+                    "options": {"retry": {"maxRetries": 3, "backoff": "exponential"}},
+                },
+            }],
+            "connections": {},
+            "settings": {"errorWorkflow": "global"},
+        }
+        p = _make_wf(tmp_path, "legacy.json", wf)
         result = _validate_one(p)
         retry_warnings = [w for w in result["warnings"] if "B07" in w]
         assert retry_warnings == []
@@ -260,7 +280,7 @@ class TestN8nWorkflowValidator:
                 "type": "n8n-nodes-base.httpRequest",
                 "parameters": {
                     "url": "{{$env.CARTORIO_API_URL}}/x",
-                    "options": {"timeout": 60000, "retry": {"maxRetries": 3}},
+                    "options": {"timeout": 60000, "retry": {"maxTries": 3}},
                 },
             }],
             "connections": {},
@@ -279,7 +299,7 @@ class TestN8nWorkflowValidator:
                 "type": "n8n-nodes-base.httpRequest",
                 "parameters": {
                     "url": "{{$env.CARTORIO_API_URL}}/x",
-                    "options": {"timeout": 30000, "retry": {"maxRetries": 3}},
+                    "options": {"timeout": 30000, "retry": {"maxTries": 3}},
                 },
             }],
             "connections": {},

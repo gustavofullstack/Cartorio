@@ -154,7 +154,8 @@ def _validate_one(wf_path: Path) -> dict[str, Any]:
 
     # === B12: checks adicionais (retry, timeout, error handler) ===
 
-    # 7. B07: HTTP node sem retry policy
+    # 7. B07: HTTP node sem retry policy (3x exp backoff)
+    # N8N usa maxTries (v1.x) OU maxRetries (outras versoes). Aceita ambos >= 3.
     for node in nodes:
         ntype = node.get("type", "")
         nname = node.get("name", "")
@@ -162,9 +163,11 @@ def _validate_one(wf_path: Path) -> dict[str, Any]:
             params = node.get("parameters", {})
             options = params.get("options", {})
             retry_cfg = options.get("retry", {})
-            if not retry_cfg or retry_cfg.get("maxRetries", 0) < 3:
+            max_tries = retry_cfg.get("maxTries", 0) or retry_cfg.get("maxRetries", 0)
+            retry_enabled = retry_cfg.get("enabled", True)
+            if not retry_cfg or max_tries < 3 or not retry_enabled:
                 result["warnings"].append(
-                    f"B07: HTTP node '{nname}' sem retry policy 3x (atual: maxRetries={retry_cfg.get('maxRetries', 0) if retry_cfg else 0})"
+                    f"B07: HTTP node '{nname}' sem retry policy 3x (atual: maxTries={max_tries}, enabled={retry_enabled})"
                 )
 
     # 8. B08: HTTP node com timeout > 30s
