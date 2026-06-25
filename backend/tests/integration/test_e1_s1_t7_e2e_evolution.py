@@ -26,8 +26,6 @@ os.environ.setdefault("EVOLUTION_BASE_URL", "http://cartorio_evolution-api:8080"
 os.environ.setdefault("EVOLUTION_INSTANCE", "cartorio-2notas")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
-import pytest
-from fastapi.testclient import TestClient
 
 
 class TestE1S1T7PIIZero:
