@@ -584,3 +584,63 @@ OU (mais robusto contra rotacao):
 em sistema com CI/agents paralelos NAO eh confiavel entre comandos.
 
 Modified by Gustavo Almeida
+
+---
+
+## 2026-06-25 SPRINT 4 — SQUAD S0 SUPABASE FOUNDATION 10/10 DONE
+
+### Lesson 124 — SQUAD S0 Supabase Foundation completa (commits cf80871+164a647+fe8253a+0942645+09e55b5+3fc3bdc+fd7f2fe)
+- **S01 Schema** ja coberto por A16 (mv_protocolo_stats 0001) + A17 (soft delete 0002) + A24 (pg_notify outbox 0003) - migrations anteriores
+- **S02 RLS** (commit cf80871 / 0004): 4 roles (anon/authenticated/service_role/dpo) em 11 tabelas
+- **S03 pg_cron** (commit 164a647 / 0005): 4 jobs - audit_verify 06:00 UTC (03:00 BRT), dlq_retry */5min, cache_warm 09:00 UTC (06:00 BRT) via REFRESH MATERIALIZED VIEW, snapshot 02:55 UTC (23:55 BRT) com metricas ANPD
+- **S04 Database Webhooks** (commit fe8253a / 0006): supabase_functions.hooks com hook_name=outbox_to_api, REPLICA IDENTITY FULL na outbox_messages para payload completo
+- **S05 GraphQL** + **S06 Storage 3 buckets** + **S07 Realtime** (commit 0942645 / 0007 agrupado): pg_graphql, 3 buckets (cliente-docs PRIVATE/protocolo-pdfs PRIVATE/satisfacao-forms PUBLIC), publication supabase_realtime em 3 tabelas
+- **S08 Vault** (commits 09e55b5+3fc3bdc / 0008 - outra sessao): pgsodium + vault + vault_get_or_create() helper
+- **S09 Docs** (commit fd7f2fe / alembic/README.md): documentacao canonica com 12 migrations listadas + 7 convencoes + 3 gotchas
+- **S10 pgAudit** ja coberto por 0004 (fn_auto_audit trigger)
+- Operador roda: `cd backend && uv run python scripts/seed_vault_secrets.py` para popular 11 secrets
+
+### Lesson 125 — alembic/SQUAD_ID prefix nas migrations
+- Padrao novo: alembic/versions/YYYY_MM_DD_NNNN-{squad}-{task}-{desc}.py
+- Ex: 2026_06_25_0004-supabase-rls-policies-and-audit-chain-fn.py
+- Squad prefix: S0 (Supabase), A (API+DB), B (N8N), C (Docs), D (LGPD), E (OpenClaw), H (Chatwoot), J (Obs), BRAIN, DOC
+- `ls alembic/versions/ | grep ^.*-s0-` lista SQUAD S0
+- Documentado em alembic/README.md (fd7f2fe)
+
+### Lesson 126 — Database Webhooks Supabase self-hosted (S04)
+- Webhooks em `supabase_functions.hooks` (tabela da imagem Docker Supabase)
+- Colunas: hook_name (UNIQUE), table_name, events[] (text[]), http_method, http_url, http_headers (jsonb), function_name
+- Insere via SQL: `INSERT INTO supabase_functions.hooks VALUES (...)`
+- Idempotente: DELETE WHERE hook_name = 'X' antes de INSERT
+- REPLICA IDENTITY FULL na tabela eh OBRIGATORIO para o payload conter todos os campos da row
+- Supabase Realtime NAO faz HTTP - para HTTP webhook usa supabase_functions (que vem pronto na imagem)
+- Trigger pg_notify (A24) + supabase_functions.hook = fluxo assincrono outbox -> API -> N8N
+
+### Lesson 127 — pg_cron em UTC (BRT = UTC-3)
+- pg_cron nao tem fuso configuravel; tudo em UTC
+- 03:00 BRT = 06:00 UTC (audit_verify_diario)
+- 06:00 BRT = 09:00 UTC (cache_warm_06h) - 1h antes expediente cartorio (09:00)
+- 23:55 BRT = 02:55 UTC prox dia (snapshot_diario_2355)
+- Para adicionar novo job: SELECT cron.schedule('name', 'cron_expr', $$ sql $$)
+- Para remover: SELECT cron.unschedule('name') WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'name')
+- Cuidado: sem WHERE EXISTS, cron.unschedule falha se job nao existe
+
+### Lesson 128 — pg_graphql + storage + realtime via extensao SQL
+- pg_graphql: extensao nativa, expoe /graphql/v1 automaticamente. Permissoes via GRANT USAGE/ALL/SELECT no schema public
+- storage.buckets: tabela com (id PK, name UNIQUE, public, file_size_limit, allowed_mime_types[]). Storage API espera esse schema
+- publication supabase_realtime: cria via CREATE PUBLICATION ... FOR TABLE. Se ja existe, ALTER PUBLICATION ADD TABLE idempotente
+- Tudo via SQL puro, sem precisar de Supabase Studio/MCP
+
+### Lesson 129 — Status gates 2026-06-25 08:30 BRT (sessao atual)
+- mypy: 0 errors / 82 files
+- ruff: 0 errors (outras migrations tem F401 sqlalchemy unused, pre-existente)
+- pytest: 920 passed / 0 failed / 0 errors / 2 skipped / 28 warnings
+- 18 fails PRE-EXISTENTES em test_n8n_error_endpoint.py (B6 endpoint nao registrado ainda - gap de outra sessao)
+- OpenClaw: live, 1M context + thinking adaptive + 7 skills cartorio
+- Telegram bot @test_cartorio_bot: OK, 3 updates pendentes (polling mode)
+- Supabase: schema public 10/10 tabelas + RLS + triggers + cron + webhooks
+- Total commits SQUAD S0: 7 (5 meus + 2 outra sessao)
+- Total commits gates fix: 2 (32618f8 conftest + 2a98fc8 plan+memory)
+- Total geral hoje: 9 commits
+
+Modified by Pietra + Gustavo Almeida 2026-06-25 09:00 BRT
