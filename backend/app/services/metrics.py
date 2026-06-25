@@ -134,6 +134,61 @@ class MetricsStore:
         self._make_metric_or_skip_test("audit_dead_mans_status", "gauge")
         self.set_gauge("audit_dead_mans_status", float(status_code))
 
+    def inc_n8n_wf_execution(self, wf_name: str, status: str) -> None:
+        """Helper B10: counter n8n_wf_executions_total{wf_name,status}.
+
+        Args:
+            wf_name: nome canonico do workflow N8N (slug ex: 'consulta-emolumento')
+            status: 'success' | 'error' | 'running' (use success/error para finalized)
+        """
+        self._make_metric_or_skip_test("n8n_wf_executions_total", "counter")
+        self.inc_counter(
+            "n8n_wf_executions_total",
+            labels={"wf_name": wf_name, "status": status},
+        )
+
+    def observe_n8n_wf_duration(self, wf_name: str, duration_seconds: float) -> None:
+        """Helper B10: histogram n8n_wf_duration_seconds{wf_name}.
+
+        Args:
+            wf_name: nome canonico do workflow N8N
+            duration_seconds: duracao total da execucao (segundos)
+        """
+        self._make_metric_or_skip_test("n8n_wf_duration_seconds", "summary")
+        self.observe_histogram(
+            "n8n_wf_duration_seconds",
+            duration_seconds,
+            labels={"wf_name": wf_name},
+        )
+
+    def set_n8n_wf_error_rate(self, wf_name: str, error_rate: float) -> None:
+        """Helper B10: gauge n8n_wf_error_rate{wf_name} (0.0-1.0).
+
+        Args:
+            wf_name: nome canonico do workflow N8N
+            error_rate: errors / (success+errors), clamped [0.0, 1.0]
+        """
+        rate = max(0.0, min(1.0, float(error_rate)))
+        self._make_metric_or_skip_test("n8n_wf_error_rate", "gauge")
+        self.set_gauge("n8n_wf_error_rate", rate, labels={"wf_name": wf_name})
+
+    def set_backup_last_success_timestamp(self, unix_ts: float | None) -> None:
+        """Helper A14: gauge `backup_last_success_timestamp_seconds` (Unix epoch).
+
+        Gauge padrao Prometheus para "ultima vez que algo aconteceu com sucesso".
+        Valor 0 (epoch=1970) sinaliza cold-start (nunca houve backup). Quando
+        `unix_ts` eh None, mantemos 0 como sinal de "nunca" (fail-safe para
+        alertas Prometheus `time() - backup_last_success_timestamp_seconds > X`).
+
+        Args:
+            unix_ts: timestamp Unix (segundos) do ultimo backup com marker
+                `.complete` no diretorio de backups pg_basebackup. None = sem
+                backup (cold-start).
+        """
+        value = float(unix_ts) if unix_ts is not None else 0.0
+        self._make_metric_or_skip_test("backup_last_success_timestamp_seconds", "gauge")
+        self.set_gauge("backup_last_success_timestamp_seconds", value)
+
     def _labels_key(self, labels: dict[str, str] | None) -> str:
         if not labels:
             return ""

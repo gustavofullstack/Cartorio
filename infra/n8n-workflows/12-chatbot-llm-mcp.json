@@ -208,6 +208,43 @@
           "renameConflict": "longestVariableName"
         }
       }
+    },
+    {
+      "id": "840b5ba953e2",
+      "name": "Report Metrics N8N",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1400,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/metrics/n8n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.CARTORIO_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"source\": \"n8n\", \"wf_name\": $workflow.name, \"wf_id\": $workflow.id, \"execution_id\": $execution.id, \"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id, \"status\": $execution.success ? 'success' : 'error', \"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'), \"counters\": {  \"n8n_wf_executions_total\": 1}, \"gauges\": {  \"n8n_wf_error_rate\": $execution.success ? 0.0 : 1.0}}",
+        "options": {
+          "timeout": 5000,
+          "retry": {
+            "maxTries": 3,
+            "waitBetweenTries": 1000
+          }
+        }
+      }
     }
   ],
   "connections": {
