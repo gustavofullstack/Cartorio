@@ -18,7 +18,6 @@ from __future__ import annotations
 from typing import Sequence, Union
 
 from alembic import op
-from sqlalchemy import text
 
 revision: str = "2026_06_25_0013"
 down_revision: Union[str, None] = "2026_06_25_0012"

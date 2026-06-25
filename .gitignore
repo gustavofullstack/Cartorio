@@ -48,9 +48,6 @@ Thumbs.db
 ,cover
 *.cover
 :memory:
-.brain/memory/2026-06-25.md
-.brain/memory/2026-06-25.md
-.brain/memory/2026-06-25.md
 
 # N8N workflow backup files (auto-created by add_correlation_header.py / update_report_metrics.py)
 *.bak
