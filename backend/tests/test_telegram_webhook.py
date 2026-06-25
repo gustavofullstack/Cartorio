@@ -157,3 +157,166 @@ def test_webhook_horario_intent() -> None:
     result = asyncio.run(_call_openclaw_agent(123, "Bom dia"))
     assert "CartorioBot" in result or "ola" in result.lower()
     assert "/emolumento" in result or "/protocolo" in result  # slash commands
+
+
+# ── HMAC validation tests ──────────────────────────────────────────
+
+def test_hmac_valid_secret_accepted(client: TestClient, telegram_update_text: dict) -> None:
+    """HMAC valido e aceito quando secret configurado."""
+    import hashlib
+    import hmac as hmac_mod
+
+    from app.api.v1 import telegram as tg_mod
+
+    old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
+    try:
+        tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
+        body = client._transport.app  # noqa
+        import json as _json
+
+        raw_body = _json.dumps(telegram_update_text).encode()
+        expected = hmac_mod.new(b"test-secret-123", raw_body, hashlib.sha256).hexdigest()
+        with patch("app.api.v1.telegram.get_bus", return_value=None):
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()):
+                resp = client.post(
+                    "/api/v1/telegram/webhook",
+                    content=raw_body,
+                    headers={"X-Telegram-Bot-Api-Secret-Token": expected, "Content-Type": "application/json"},
+                )
+        assert resp.status_code == 200
+    finally:
+        tg_mod.TELEGRAM_WEBHOOK_SECRET = old_secret
+
+
+def test_hmac_missing_header_rejected(client: TestClient, telegram_update_text: dict) -> None:
+    """Sem header HMAC quando secret configurado retorna 401."""
+    import json as _json
+
+    from app.api.v1 import telegram as tg_mod
+
+    old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
+    try:
+        tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
+        raw_body = _json.dumps(telegram_update_text).encode()
+        resp = client.post(
+            "/api/v1/telegram/webhook",
+            content=raw_body,
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == 401
+    finally:
+        tg_mod.TELEGRAM_WEBHOOK_SECRET = old_secret
+
+
+def test_hmac_wrong_token_rejected(client: TestClient, telegram_update_text: dict) -> None:
+    """HMAC invalido retorna 401."""
+    import json as _json
+
+    from app.api.v1 import telegram as tg_mod
+
+    old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
+    try:
+        tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
+        raw_body = _json.dumps(telegram_update_text).encode()
+        resp = client.post(
+            "/api/v1/telegram/webhook",
+            content=raw_body,
+            headers={"X-Telegram-Bot-Api-Secret-Token": "wrong-token", "Content-Type": "application/json"},
+        )
+        assert resp.status_code == 401
+    finally:
+        tg_mod.TELEGRAM_WEBHOOK_SECRET = old_secret
+
+
+def test_hmac_no_secret_skips_validation(client: TestClient, telegram_update_text: dict) -> None:
+    """Sem secret configurado, HMAC e ignorado (dev mode)."""
+    from app.api.v1 import telegram as tg_mod
+
+    old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
+    try:
+        tg_mod.TELEGRAM_WEBHOOK_SECRET = None
+        with patch("app.api.v1.telegram.get_bus", return_value=None):
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()):
+                resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+        assert resp.status_code == 200
+    finally:
+        tg_mod.TELEGRAM_WEBHOOK_SECRET = old_secret
+
+
+# ── Redis bus integration ──────────────────────────────────────────
+
+def test_webhook_publishes_to_redis_bus(client: TestClient, telegram_update_text: dict) -> None:
+    """Quando Redis disponivel, publica mensagem no bus."""
+    mock_bus = AsyncMock()
+    with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
+        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()):
+            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+    assert resp.status_code == 200
+    mock_bus.publish.assert_called_once()
+    # publish() pode usar args ou kwargs
+    call_args = mock_bus.publish.call_args
+    if call_args.kwargs:
+        assert call_args.kwargs.get("channel") == "telegram:message" or call_args.args[0] == "telegram:message"
+    else:
+        assert call_args.args[0] == "telegram:message"
+
+
+# ── _send_telegram_message tests ───────────────────────────────────
+
+def test_send_telegram_message_success() -> None:
+    """_send_telegram_message envia msg com sucesso."""
+    import asyncio
+    from unittest.mock import MagicMock, patch
+
+    from app.api.v1.telegram import _send_telegram_message
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_client = AsyncMock()
+    mock_client.post.return_value = mock_resp
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client):
+        asyncio.run(_send_telegram_message(12345, "Ola!"))
+    mock_client.post.assert_called_once()
+
+
+def test_send_telegram_message_api_error() -> None:
+    """_send_telegram_message levanta 502 quando API retorna erro."""
+    import asyncio
+    from unittest.mock import MagicMock, patch
+
+    from app.api.v1.telegram import _send_telegram_message
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 400
+    mock_resp.text = "Bad Request"
+    mock_client = AsyncMock()
+    mock_client.post.return_value = mock_resp
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client):
+        with pytest.raises(Exception):
+            asyncio.run(_send_telegram_message(12345, "Ola!"))
+
+
+# ── webhook info endpoint ──────────────────────────────────────────
+
+def test_webhook_info_endpoint(client: TestClient) -> None:
+    """GET /webhook/info retorna info do webhook."""
+    from unittest.mock import MagicMock, patch
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {"ok": True, "result": {"url": "https://example.com"}}
+    mock_client = AsyncMock()
+    mock_client.get.return_value = mock_resp
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client):
+        resp = client.get("/api/v1/telegram/webhook/info")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is True

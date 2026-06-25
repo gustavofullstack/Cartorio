@@ -81,7 +81,135 @@ class TestOpenAPIValidator:
         """App principal (cartorio-api) tem schema OpenAPI carregavel."""
         from app.main import app
 
+        # Reset cache to force regeneration
+        app.openapi_schema = None
         schema = _get_app_openapi_schema(app)
         assert "paths" in schema
         # Tem que ter varios paths
         assert len(schema["paths"]) > 5
+
+    def test_validate_request_body_no_jsonschema(self):
+        """validate_request_body retorna True quando jsonschema nao disponivel."""
+        import sys
+
+        from app.middleware.openapi_validator import validate_request_body
+
+        schema: dict = {"paths": {"/test": {"post": {"requestBody": {"content": {"application/json": {"schema": {"type": "object"}}}}}}}}
+
+        # Simular jsonschema ausente
+        saved = sys.modules.get("jsonschema")
+        sys.modules["jsonschema"] = None  # type: ignore[assignment]
+        try:
+            valid, err = validate_request_body(schema, "/test", "POST", {"key": "val"})
+        finally:
+            if saved is not None:
+                sys.modules["jsonschema"] = saved
+            else:
+                sys.modules.pop("jsonschema", None)
+        assert valid is True
+        assert err is None
+
+    def test_validate_request_body_no_request_body(self):
+        """validate_request_body retorna True quando nao tem requestBody no schema."""
+        from app.middleware.openapi_validator import validate_request_body
+
+        schema = {"paths": {"/test": {"post": {}}}}
+        valid, err = validate_request_body(schema, "/test", "POST", {"key": "val"})
+        assert valid is True
+        assert err is None
+
+    def test_validate_request_body_valid(self):
+        """validate_request_body retorna True para body valido."""
+        from app.middleware.openapi_validator import validate_request_body
+
+        schema = {
+            "paths": {
+                "/test": {
+                    "post": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        valid, err = validate_request_body(schema, "/test", "POST", {"name": "Gustavo"})
+        assert valid is True
+        assert err is None
+
+    def test_validate_request_body_invalid(self):
+        """validate_request_body retorna False para body invalido."""
+        from app.middleware.openapi_validator import validate_request_body
+
+        schema = {
+            "paths": {
+                "/test": {
+                    "post": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        valid, err = validate_request_body(schema, "/test", "POST", {})
+        assert valid is False
+        assert err is not None
+        assert "name" in err
+
+    def test_validate_request_body_with_ref(self):
+        """validate_request_body resolve $ref antes de validar."""
+        from app.middleware.openapi_validator import validate_request_body
+
+        schema = {
+            "components": {
+                "schemas": {
+                    "Item": {"type": "object", "required": ["id"], "properties": {"id": {"type": "integer"}}}
+                }
+            },
+            "paths": {
+                "/test": {
+                    "post": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {"$ref": "#/components/schemas/Item"}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        valid, err = validate_request_body(schema, "/test", "POST", {"id": 1})
+        assert valid is True
+
+    def test_validate_request_body_ref_not_found(self):
+        """validate_request_body retorna True quando $ref invalido (fallback)."""
+        from app.middleware.openapi_validator import validate_request_body
+
+        schema = {
+            "paths": {
+                "/test": {
+                    "post": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {"$ref": "#/components/schemas/Missing"}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        valid, err = validate_request_body(schema, "/test", "POST", {"anything": True})
+        assert valid is True
