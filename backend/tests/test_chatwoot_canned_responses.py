@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import re
 
-import pytest  # noqa: E402
 
 from app.services.chatwoot_canned_responses import (  # noqa: E402
     CANNED_RESPONSES,

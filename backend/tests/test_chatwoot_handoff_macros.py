@@ -12,7 +12,6 @@ Cobre:
 """
 from __future__ import annotations
 
-import pytest  # noqa: E402
 
 from app.services.chatwoot_handoff_macros import (  # noqa: E402
     HANDOFF_MACROS,
