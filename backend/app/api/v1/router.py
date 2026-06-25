@@ -936,11 +936,18 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
         "Recalcula hash SHA256 + HMAC de todas as entradas do audit log e "
         "compara com o valor armazenado. Retorna `chain_ok=True` se a cadeia "
         "esta integra, ou `chain_ok=False` com `last_valid_position` indicando "
-        "onde a quebra foi detectada. Recomendado rodar diariamente via cron."
+        "onde a quebra foi detectada. Recomendado rodar diariamente via cron.\n\n"
+        "Requer `X-API-Key` (DPO/admin) — B0.3.SEC P0.5 2026-06-25."
     ),
     response_description="Status da cadeia + posicao da ultima entrada valida.",
+    responses={
+        200: {"description": "Status da cadeia."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
 )
-async def audit_verify() -> dict:
+async def audit_verify(
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],
+) -> dict:
     """Verifica integridade da cadeia de audit log."""
     with session_scope() as db:
         ok, last_valid = AuditService.verify_chain(db)
@@ -1675,11 +1682,18 @@ async def documento_segunda_via(
     summary="Listar atendimentos concluidos nas ultimas 24h (N8N workflow #07)",
     description=(
         "Retorna lista de atendimentos concluidos nas ultimas 24h que ainda "
-        "nao receberam pesquisa de satisfacao. Usado pelo workflow N8N #07."
+        "nao receberam pesquisa de satisfacao. Usado pelo workflow N8N #07.\n\n"
+        "Requer `X-API-Key` (workflow N8N) — B0.3.SEC P1.4 2026-06-25."
     ),
     response_description="Lista de atendimentos com id/canal/tipo.",
+    responses={
+        200: {"description": "Lista de atendimentos."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+    },
 )
-async def atendimentos_ultimas_24h() -> dict:
+async def atendimentos_ultimas_24h(
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],
+) -> dict:
     """Lista atendimentos concluidos nas ultimas 24h (pesquisa satisfacao)."""
     from datetime import datetime, timedelta, timezone
     from sqlalchemy import select
@@ -2192,6 +2206,7 @@ async def delete_cliente(
     request: Request,
     cliente_id: int,
     db: Annotated[Session, Depends(get_db)],
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],  # B0.3.SEC P0.3 2026-06-25
 ) -> dict:
     """Aplica direito ao esquecimento ao cliente (LGPD art. 18 VI)."""
     from app.services.lgpd.direito_esquecimento import (
@@ -2199,17 +2214,6 @@ async def delete_cliente(
         ClienteNotFoundError,
         direito_esquecimento,
     )
-
-    # Auth: exige X-API-Key (escrevente autorizado)
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "erro": "UNAUTHORIZED",
-                "mensagem": "X-API-Key obrigatoria para DELETE /cliente/{id}.",
-            },
-        )
 
     try:
         result = direito_esquecimento(db, cliente_id)
@@ -2385,19 +2389,13 @@ async def get_cliente(
 )
 async def admin_run_retencao(
     request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],  # B0.3.SEC P1.3 2026-06-25
     payload: dict | None = None,
-    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> dict:
     """Executa job de retenção (DPO/cron)."""
     from app.jobs.retencao import RetencaoConfig, run_retencao
     from app.services.audit_context import audit_kwargs
-
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
-        )
 
     dry_run = bool((payload or {}).get("dry_run", False))
     cfg = RetencaoConfig(enabled=not dry_run)
@@ -2712,15 +2710,9 @@ async def get_cliente_historico(
     request: Request,
     cliente_id: int,
     db: Annotated[Session, Depends(get_db)],
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],  # B0.3.SEC P0.4 2026-06-25
 ) -> ClienteHistoricoResponse:
     """Timeline consolidada de todos os eventos do cliente."""
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
-        )
-
     from app.models.atendimento import Atendimento
     from app.models.protocolo import Protocolo
 
@@ -2852,6 +2844,8 @@ async def get_protocolos_recentes_concluidos(
 )
 async def upload_documento(
     request: Request,
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],  # B0.3.SEC P1.5 2026-06-25
+    db: Session = Depends(get_db),
     protocolo_id: int = Form(..., description="ID do protocolo."),
     tipo: str = Form(..., description="Tipo: rg, cpf, escritura, certidao, etc."),
     storage_path: str = Form(..., description="Caminho no storage (Supabase Storage key)."),
@@ -2860,18 +2854,10 @@ async def upload_documento(
     tamanho_bytes: int | None = Form(None, description="Tamanho em bytes (opcional)."),
     uploaded_by: str = Form("sistema", description="Quem fez upload (nome/id)."),
     uploaded_by_tipo: str = Form("sistema", description="cliente, escrevente, sistema."),
-    db: Session = Depends(get_db),
 ) -> dict:
     """Registra metadata de documento uploaded."""
     from app.models.documento import Documento
     from app.models.protocolo import Protocolo
-
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
-        )
 
     # Validacao basica
     if len(hash_sha256) != 64 or not all(c in "0123456789abcdef" for c in hash_sha256.lower()):
@@ -3055,16 +3041,12 @@ async def stats_protocolos(
     ),
     response_description="Lista de locks ativos.",
 )
-async def admin_list_locks(request: Request) -> dict:
+async def admin_list_locks(
+    request: Request,
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],  # B0.3.SEC P1.6 2026-06-25
+) -> dict:
     """Lista locks ativos (A25)."""
     from app.services.redlock import is_locked
-
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
-        )
 
     # Candidatos conhecidos
     known_locks = [
