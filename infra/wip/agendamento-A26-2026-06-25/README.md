@@ -30,10 +30,11 @@ Feature de produto completa de cache + notificações para agendamentos. Camadas
 
 ## 🚧 3 bloqueios conhecidos (resolver antes de merge)
 
-### 1. Migration tem `down_revision` placeholder
-**Arquivo**: `A1-migration-add-client-notification-fields.py:16`
-```python
-down_revision: Union[str, None] = '<previous_revision>'  # ❌ LITERAL PLACEHOLDER
+### ✅ TODOS OS 3 BLOQUEIOS FORAM RESOLVIDOS (2026-06-26)
+
+### 1. ~~Migration tem `down_revision` placeholder~~ ✅ RESOLVIDO
+**Arquivo**: `A1-migration-add-client-notification-fields.py`
+**Status**: `down_revision: '2026_06_25_0013'` (correto, aponta para chain head atual)
 ```
 **Fix**: substituir por `"2026_06_25_0013"` (HEAD atual da chain alembic).
 **Tempo**: 30 segundos.
@@ -72,9 +73,9 @@ down_revision: Union[str, None] = '<previous_revision>'  # ❌ LITERAL PLACEHOLD
 ## 🎯 Roadmap para retomar A26
 
 ### Pré-requisitos
-- [ ] Bloqueio 1: fix `down_revision` em `A1-migration-add-client-notification-fields.py`
-- [ ] Bloqueio 2: adicionar 5 campos ao `Cliente` model em `backend/app/models/cliente.py`
-- [ ] Bloqueio 3: ✅ já resolvido (workflows movidos para cá)
+- [x] Bloqueio 1: fix `down_revision` em `A1-migration-add-client-notification-fields.py` ✅
+- [x] Bloqueio 2: adicionar 5 campos ao `Cliente` model em `backend/app/models/cliente.py` ✅
+- [x] Bloqueio 3: workflows movidos para cá ✅
 - [ ] Gustavo escanear QR Evolution API (`https://whatsapp.2notasudi.com.br/manager`)
 
 ### Passos
