@@ -464,3 +464,42 @@ def test_endpoint_admin_audit_check_now_requires_api_key() -> None:
         assert resp.status_code == 401
     finally:
         restore()
+
+
+def test_endpoint_admin_audit_check_now_audits_own_trigger() -> None:
+    """POST /admin/audit/check-now audita propria execucao (LGPD gap fix).
+
+    LGPD reviewer flag (08:46 BRT): GET /admin/audit/health auditava propria
+    leitura mas POST /admin/audit/check-now NAO. Gap coberto via
+    AuditService.log(action='audit.check.triggered').
+    """
+    import app.db
+    from app.models.audit_log import AuditLog
+    from sqlalchemy import select
+
+    client, restore = _make_isolated_client_with_entry_age(entry_age_minutes=5)
+    try:
+        before_count = len(app.db.SessionLocal().execute(select(AuditLog)).scalars().all())
+
+        resp = client.post(
+            "/api/v1/admin/audit/check-now",
+            headers=_auth_headers(),
+            json={},
+        )
+        assert resp.status_code == 200, resp.text
+
+        after_count = len(app.db.SessionLocal().execute(select(AuditLog)).scalars().all())
+        # 1 entry nova (audit.check.triggered) — alem da entry seed do test
+        assert after_count - before_count == 1
+
+        # Confirma action name correto
+        latest = (
+            app.db.SessionLocal()
+            .execute(select(AuditLog).order_by(AuditLog.timestamp.desc()).limit(1))
+            .scalars()
+            .one()
+        )
+        assert latest.action == "audit.check.triggered"
+        assert latest.actor_type == "system"
+    finally:
+        restore()

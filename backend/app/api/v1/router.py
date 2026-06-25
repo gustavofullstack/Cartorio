@@ -2707,6 +2707,8 @@ async def admin_audit_check_now(
     """Dead man's switch A13 (3-level): POST /admin/audit/check-now."""
     from app.jobs.cron_dead_mans_switch import run_dead_mans_switch_check_3lvl
     from app.jobs.dead_mans_switch import HealthStatus3Lvl
+    from app.services.audit import AuditService
+    from app.services.audit_context import audit_kwargs
 
     threshold_minutes: int | None = None
     if isinstance(payload, dict) and isinstance(payload.get("threshold_minutes"), int):
@@ -2725,6 +2727,23 @@ async def admin_audit_check_now(
         "telegram_sent": result.telegram_sent,
     }
     status_code = 200 if result.health.status == HealthStatus3Lvl.HEALTHY else 503
+    # Audit log do trigger ad-hoc (LGPD: trigger manual NAO eh dado pessoal,
+    # mas mantemos rastreabilidade para detectar abuso / trigger indevido).
+    AuditService.log(
+        db=db,
+        actor_id="admin",
+        actor_type="system",
+        action="audit.check.triggered",
+        resource=f"audit_log:status={result.health.status.value}",
+        payload={
+            "status": result.health.status.value,
+            "stale_seconds": result.health.stale_seconds,
+            "threshold_minutes": result.health.threshold_minutes,
+            "alerted": result.alerted,
+            "telegram_sent": result.telegram_sent,
+        },
+        **audit_kwargs(request),
+    )
     return JSONResponse(status_code=status_code, content=body)
 
 
