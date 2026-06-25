@@ -271,7 +271,52 @@ git commit -m "docs(incident): postmortem INC-XXX <titulo curto>"
 
 ---
 
+### INC-005: Chatwoot 502 Bad Gateway (2026-06-26)
+
+**Severidade**: P0 (radar vermelho)
+**Detectado em**: 2026-06-26 ~17:50 BRT
+**Detectado por**: ZCode/Mavis (orquestrador)
+**Resolvido por**: HOLD — requer Gustavo/CI
+
+### Timeline
+- 17:50 BRT — Radar muda de green para red
+- 17:51 BRT — Investigação: OpenClaw OK, Chatwoot 502
+- 17:52 BRT — `curl https://api.2notasudi.com.br/api/v1/health/integracoes` mostra Chatwoot `[Errno -2] Name or service not known`
+
+### Root Cause (CONFIRMADO)
+- O `.env` enviado por Gustavo contém `CHATWOOT_BASE_URL=http://cartorio_chatwoot:3000`
+- Esse hostname **só existe dentro da rede Docker Swarm** (cartorio_api container)
+- O API health check roda no contexto do nosso Mac — DNS local não resolve `cartorio_chatwoot`
+- Resultado: `Name or service not known`
+
+### Impact
+- 1/7 serviços offline (Chatwoot)
+- OpenClaw 100% online (INC-004 resolvido antes)
+- API + N8N funcionais
+
+### Resolution (Proposta)
+**Opção A** (recomendada): Mudar `CHATWOOT_BASE_URL` para `http://chat.2notasudi.com.br` (FQDN público) quando o DNS Cloudflare for criado (PENDENTE — Gustavo)
+
+**Opção B**: Quando o API for deployado de volta (atualmente offline), o container cartorio_api consegue resolver `cartorio_chatwoot` via DNS interno do Docker Swarm. O problema é apenas em health checks externos (Mac).
+
+**Opção C**: Modificar o health check radar para aceitar `Name or service not known` como esperado (graceful degradation) e marcar Chatwoot como "unknown" ao invés de "offline".
+
+### Lessons Learned
+- **L-194-novo**: Hostnames Docker Swarm (`cartorio_*`) não funcionam em DNS local do Mac
+- **L-195-novo**: Health check radar deve distinguir "offline" de "unknown" (DNS falho)
+- **L-196-novo**: Sempre usar FQDN público (ou IP) em URLs que precisam ser acessíveis externamente
+- **L-197-novo**: Testes de saúde (radar) devem ser graceful degradation
+
+### Action Items
+- [ ] AI-1: Gustavo criar DNS A record `chatwoot.2notasudi.com.br` para IP público (PENDENTE — junto com outros DNS)
+- [ ] AI-2: Gustavo/CI mudar `CHATWOOT_BASE_URL` para FQDN público (quando DNS estiver pronto)
+- [ ] AI-3: cartorio-dev — adicionar graceful degradation no health check radar (`Name or service not known` = "unknown", não "offline")
+- [ ] AI-4: cartorio-dev — redeploy do API container (atualmente offline)
+- [ ] AI-5: cartorio-n8n — verificar se WF que depende do Chatwoot estão degradados gracefully
+
+---
+
 **Mantido por**: ZCode/Mavis (orquestrador)
-**Última atualização**: 2026-06-26
+**Última atualização**: 2026-06-26 17:55 BRT
 **Próxima revisão**: a cada novo incidente
-**Status**: ✅ C10 SQUAD C DONE
+**Status**: 🔴 INC-005 OPEN (HOLD Gustavo/CI)
