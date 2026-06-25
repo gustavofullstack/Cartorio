@@ -1612,7 +1612,7 @@ async def documento_segunda_via(
 
 
 @api_router.get(
-    "/atendimentos/ultimas-24h",
+    "/atendimento/ultimas-24h",
     tags=["atendimento"],
     summary="Listar atendimentos concluidos nas ultimas 24h (N8N workflow #07)",
     description=(
