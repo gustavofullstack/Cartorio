@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -64,7 +65,7 @@ def run_dead_mans_switch_check(
     db: Session,
     threshold_minutes: int = DEFAULT_THRESHOLD_MINUTES,
     *,
-    now=None,
+    now: datetime | None = None,
 ) -> CronRunResult:
     """Entry point LEGADO para cron externo — verifica freshness do audit_log.
 
@@ -155,7 +156,7 @@ def run_dead_mans_switch_check_3lvl(
     db: Session,
     threshold_minutes: int | None = None,
     *,
-    now=None,
+    now: datetime | None = None,
 ) -> CronRunResult3Lvl:
     """Entry point 3-level (briefing A13) — verifica freshness + Telegram.
 
