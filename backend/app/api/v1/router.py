@@ -1146,6 +1146,52 @@ async def health_audit(
 
 
 @api_router.get(
+    "/health/audit-freshness",
+    tags=["health"],
+    summary="Health check: audit log freshness (dead man's switch A13)",
+    description=(
+        "Verifica se o `audit_log` esta recebendo entries recentes. Retorna "
+        "**200** com `status=healthy` quando a ultima entry tem idade <= "
+        "`threshold_minutes` (default 60min), ou **503** com `status` em "
+        "`stale` (1x < idade <= 2x threshold), `critical` (> 2x threshold), "
+        "ou `empty` (tabela vazia).\n\n"
+        "Endpoint PUBLICO (sem auth) — usado por cron externo / monitor "
+        "para alertar se o audit log parar (LGPD art. 37 — continuidade da "
+        "auditoria). Diferenca de `/health/audit` (A23): este endpoint "
+        "classifica em 4 niveis + retorna Pydantic `AuditHealth` tipado."
+    ),
+    response_description="AuditHealth + status HTTP 200/503.",
+    responses={
+        200: {"description": "Audit log fresco (status=healthy)."},
+        503: {"description": "Audit log stale/critical/empty."},
+    },
+)
+async def health_audit_freshness(
+    db: Annotated[Session, Depends(get_db)],
+) -> JSONResponse:
+    """Dead man's switch A13 — classifica audit log em 4 niveis."""
+    from app.jobs.dead_mans_switch import (
+        DEFAULT_THRESHOLD_MINUTES,
+        HealthStatus,
+        check_audit_log_freshness,
+    )
+
+    health = check_audit_log_freshness(db, DEFAULT_THRESHOLD_MINUTES)
+
+    payload = {
+        "status": health.status.value,
+        "last_entry_at": (
+            health.last_entry_at.isoformat() if health.last_entry_at else None
+        ),
+        "last_entry_age_minutes": health.last_entry_age_minutes,
+        "threshold_minutes": health.threshold_minutes,
+        "alert": health.alert,
+    }
+    status_code = 200 if health.status == HealthStatus.HEALTHY else 503
+    return JSONResponse(status_code=status_code, content=payload)
+
+
+@api_router.get(
     "/health/llm",
     tags=["health"],
     summary="Health check granular: LLM provider (Opencode-Go / OpenClaw)",
@@ -2434,6 +2480,60 @@ async def admin_run_retencao(
         "cutoff_inativo": (result.cutoff_inativo.isoformat() if result.cutoff_inativo else None),
         "duration_ms": result.duration_ms,
     }
+
+
+@api_router.post(
+    "/admin/audit/dead-mans-switch/check",
+    tags=["admin", "audit"],
+    summary="Forca check de freshness do audit log (admin)",
+    description=(
+        "Executa `check_audit_log_freshness` sob demanda e retorna o "
+        "resultado. Retorna **200** com `status=healthy` se a ultima entry "
+        "tem idade <= threshold_minutes (default 60), ou **503** com "
+        "`status` em `stale`/`critical`/`empty` caso contrario. Util para "
+        "verificacao ad-hoc (DPO / on-call) sem esperar o cron.\n\n"
+        "Requer `X-API-Key` (admin / DPO). Body opcional: `{\"threshold_minutes\": N}`."
+    ),
+    response_description="AuditHealth + status HTTP 200/503.",
+    responses={
+        200: {"description": "Audit log fresco."},
+        401: {"description": "X-API-Key ausente ou invalida."},
+        503: {"description": "Audit log stale/critical/empty."},
+    },
+)
+async def admin_audit_dead_mans_switch_check(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    api_key: Annotated[str, Depends(require_cartorio_api_key)],
+    payload: dict | None = None,
+) -> JSONResponse:
+    """Forca check de freshness do audit log (dead man's switch A13)."""
+    from app.jobs.cron_dead_mans_switch import run_dead_mans_switch_check
+    from app.jobs.dead_mans_switch import (
+        DEFAULT_THRESHOLD_MINUTES,
+        HealthStatus,
+    )
+
+    threshold_minutes = DEFAULT_THRESHOLD_MINUTES
+    if isinstance(payload, dict) and isinstance(payload.get("threshold_minutes"), int):
+        threshold_minutes = payload["threshold_minutes"]
+
+    result = run_dead_mans_switch_check(db, threshold_minutes=threshold_minutes)
+
+    body = {
+        "status": result.health.status.value,
+        "last_entry_at": (
+            result.health.last_entry_at.isoformat()
+            if result.health.last_entry_at
+            else None
+        ),
+        "last_entry_age_minutes": result.health.last_entry_age_minutes,
+        "threshold_minutes": result.health.threshold_minutes,
+        "alert": result.health.alert,
+        "alerted": result.alerted,
+    }
+    status_code = 200 if result.health.status == HealthStatus.HEALTHY else 503
+    return JSONResponse(status_code=status_code, content=body)
 
 
 # ============================================================================

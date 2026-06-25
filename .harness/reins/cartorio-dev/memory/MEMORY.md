@@ -307,4 +307,48 @@ Pietra decidir entre: (a) adicionar `pode_deletar` ao /historico response,
 (b) refazer IF pra checar `total_eventos==0`, ou (c) rollback da troca
 e usar /cliente/{id} (que agora existe).
 
+Modified by Gustavo Almeida### Dead man's switch audit_log — 4 niveis + placeholder Telegram (A13 2026-06-25)
+Type: pattern + canon workflow
+
+A13 implementou observability do audit_log com 4 niveis de severidade (healthy/
+stale/critical/empty) parametrizados por `threshold_minutes` (default 60min).
+Escopo DELIBERADAMENTE separado de `services/dead_mans_switch` (A23 SQUAD A):
+- `services/dead_mans_switch`: API de baixo nivel (`check_audit_log_alive(db) -> dict`)
+  para endpoint `/health/audit` (cold start + alive/stale simples).
+- `jobs/dead_mans_switch`: API parametrizada (threshold customizavel) + Pydantic
+  `AuditHealth` tipado (frozen) + classificacao 4-niveis para cron + admin.
+
+Endpoints:
+- GET /api/v1/health/audit-freshness (PUBLICO, sem auth): 200 healthy / 503 stale|critical|empty
+- POST /api/v1/admin/audit/dead-mans-switch/check (admin via X-API-Key): forca check + body opcional {"threshold_minutes": N}
+
+Cron entrypoint: `app.jobs.cron_dead_mans_switch.run_dead_mans_switch_check(db, threshold_minutes)`.
+Por enquanto so loga `_send_telegram_placeholder` (logger.error com prefix `DEAD_MANS_SWITCH_TELEGRAM_PLACEHOLDER`).
+Integracao real Telegram GRUPO PIETRA SQUAD → Sprint 5.
+
+**LESSON 106 (canon workflow)**: sessao abortada em branch deletada NAO perde trabalho
+se working tree NAO foi limpo. Ao retomar: `git status -sb` ANTES de tudo — arquivos
+untracked sao da sessao anterior (se escopo bate com a task), podem ser aproveitados
+inteiros. Cenario real: mvs_ba9a37812d544c898ee954860403b4d9 abortou em feat/b0.3.sec
+(deletada), A13 retomei em master 9fac5ac + reaproveitei `jobs/dead_mans_switch.py`,
+`jobs/cron_dead_mans_switch.py`, `jobs/__init__.py`, `tests/test_dead_mans_switch_jobs.py`,
+e adicoes no `router.py` — tudo intacto, 100% coverage nos novos arquivos. Apenas
+verifiquei deps + rodei pytest + commit.
+
+**LESSON 107 (coverage gate reality check)**: `pyproject.toml` define `--cov-fail-under=90`,
+MAS master ja esta em 86.47% ANTES da task (pre-existing tech debt). Ao comparar
+`--cov-fail-under=90` antes/depois: se a PR NAO baixa a cobertura (e.g. master 86.47%
+→ branch 86.76%), gate falha mas PR eh liquida. Reportar no report-back COM NUMERO
+(antes/depois + arquivos novos a 100%) em vez de tentar inflar cobertura com testes
+sinteticos para tapar buraco pre-existente. Cobertura da SUA entrega eh o que importa.
+
+**LESSON 108 (untracked files de peer — NUNCA misturar)**: working tree tinha `?? .harness/reins/cartorio-dev/crons/b0.3.sec-rebase-watchdog.md`
+(cron file de outro cartorio-dev session, mvs_62fe50d4). Como o cron file tem TTL
+proprio e NAO faz parte de A13, NAO foi staged. Mesmo arquivo sob outro nome —
+`M .harness/reins/cartorio-dev/memory/MEMORY.md` com lesson "B0.3.B4 HOLD" — foi
+revertado via `git checkout master -- <file>` porque pertence a outro PR (B0.3.B4)
+e misturar quebra audit log do escopo A13.
+
+Modified by Gustavo Almeida
+
 Modified by Gustavo Almeida
