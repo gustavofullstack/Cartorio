@@ -59,6 +59,10 @@ class Cliente(Base, TimestampMixin):
         SAEnum(MotivoEncerramento, name="motivo_encerramento_enum"),
         nullable=True,
     )
+    # LGPD direito ao esquecimento (art. 18 V): ate quando pode ser revertido.
+    # NULL = nao anonimizado. Setado pelo service lgpd_direito_esquecimento.
+    lgpd_reversivel_ate: Mapped[datetime | None] = mapped_column(nullable=True)
+
     # Audit chain: ID da entry do audit log que documentou o encerramento.
     # NULL = nunca encerrado. Garante rastreabilidade da decisao.
     audit_encerramento_id: Mapped[int | None] = mapped_column(

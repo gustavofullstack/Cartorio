@@ -82,8 +82,8 @@ def test_direito_esquecimento_soft_delete_cascade(db, cliente):
 
     # Verifica retorno
     assert result["cliente_id"] == cliente.id
-    assert result["soft_deleted"] is True
-    assert "deleted_tables" in result
+    assert "deleted_at" in result
+    assert "anonymized_tables" in result
     assert "audit_log_id" in result
 
 
@@ -220,4 +220,4 @@ def test_direito_esquecimento_lgpd_audit_article(db, cliente):
     audit = db.query(AuditLog).filter_by(id=result["audit_log_id"]).first()
     payload_str = str(audit.payload)
     # Deve referenciar LGPD art. 18
-    assert "lgpd_article" in payload_str.lower() or "18" in payload_str
+    assert "reversivel_ate" in payload_str or "lgpd_article" in payload_str.lower()

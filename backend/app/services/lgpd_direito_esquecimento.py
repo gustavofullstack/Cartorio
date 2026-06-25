@@ -109,10 +109,11 @@ def direito_esquecimento(
                         "UPDATE clientes SET "
                         "deleted_at = :now, "
                         f"{_CLIENTE_PII_COLUMNS}, "
-                        f"{_CLIENTE_LGPD_COLUMNS} "
+                        f"{_CLIENTE_LGPD_COLUMNS}, "
+                        "lgpd_reversivel_ate = :reversivel_ate "
                         "WHERE id = :cid AND deleted_at IS NULL"
                     ),
-                    {"now": now, "cid": cliente_id},
+                    {"now": now, "cid": cliente_id, "reversivel_ate": reversivel_ate},
                 )
             else:
                 # Demais tabelas: so deleted_at (nao tem PII do cliente)
@@ -203,7 +204,16 @@ def restore_direito_esquecimento(
     if not cliente_row["deleted_at"]:
         raise ValueError(f"cliente {cliente_id} NAO foi anonimizado (deleted_at IS NULL)")
 
-    reversivel_ate = cliente_row["lgpd_reversivel_ate"]
+    reversivel_ate_raw = cliente_row["lgpd_reversivel_ate"]
+    # SQLite retorna string, PostgreSQL retorna datetime; normalizar type-safe
+    reversivel_ate: datetime.datetime | None
+    if isinstance(reversivel_ate_raw, str):
+        try:
+            reversivel_ate = datetime.datetime.fromisoformat(reversivel_ate_raw)
+        except (ValueError, TypeError):
+            reversivel_ate = None
+    else:
+        reversivel_ate = reversivel_ate_raw
     now = datetime.datetime.now(datetime.UTC)
     if reversivel_ate and reversivel_ate < now:
         raise ValueError(
