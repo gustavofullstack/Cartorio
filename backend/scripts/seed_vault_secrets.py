@@ -47,19 +47,19 @@ SECRETS_MAP = [
 
 
 def load_secrets_from_files(secrets_dir: Path) -> dict[str, str]:
-    """Le todos os .env em secrets_dir e retorna dict {VAR_NAME: value}."""
+    """Le todos os .env em secrets_dir + backend/.env e retorna dict {VAR_NAME: value}."""
     merged: dict[str, str] = {}
-    if not secrets_dir.exists():
-        print(f"WARN: {secrets_dir} nao existe, tentando .env local", file=sys.stderr)
-        local_env = Path(__file__).parent.parent / ".env"
-        if local_env.exists():
-            merged.update({k: v for k, v in dotenv_values(local_env).items() if v is not None})
-        return merged
-    for env_file in secrets_dir.glob("*.env"):
-        vals = dotenv_values(env_file)
-        for k, v in vals.items():
-            if v is not None and k not in merged:
-                merged[k] = v
+    # 1. backend/.env (fonte canonica para cartorio_api_key, audit_hmac_key, n8n_webhook_secret)
+    local_env = Path(__file__).parent.parent / ".env"
+    if local_env.exists():
+        merged.update({k: v for k, v in dotenv_values(local_env).items() if v is not None})
+    # 2. diretorio de secrets
+    if secrets_dir.exists():
+        for env_file in secrets_dir.glob("*.env"):
+            vals = dotenv_values(env_file)
+            for k, v in vals.items():
+                if v is not None and k not in merged:
+                    merged[k] = v
     return merged
 
 
