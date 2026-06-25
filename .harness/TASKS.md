@@ -525,7 +525,7 @@ Modified by Gustavo Almeida
 - [ ] **E8.B12** Test runner 28 WFs Playwright + workflow test kit — owner: `cartorio-n8n`
 - [x] **E8.B13** Canned responses Chatwoot 50+ templates jurídicos — owner: `cartorio-n8n` ✅ **DONE** — `infra/chatwoot/canned_responses_juridicos.md` (52 templates PT-BR: protocolos, emolumentos, agendamentos, notariais, LGPD, atendimento, agent AI, stats, utilidades)
 - [x] **E8.B14** Macros handoff humano 10 macros identificar/transferir/resumir — owner: `cartorio-n8n` ✅ **DONE** — `infra/chatwoot/macros_handoff_humano.md` (10 macros: 3 transferência, 2 identificação, 2 resumo, 3 pausa HITL)
-- [ ] **E8.B15** Templates WhatsApp Meta aprovados 10 templates — owner: `cartorio-n8n`
+- [x] **E8.B15** Templates WhatsApp Meta aprovados 10 templates — owner: `cartorio-n8n` ✅ **DONE** — `infra/whatsapp/meta_templates_aprovados.md` (11 templates: 4 utility, 3 marketing, 4 transactional. Evolution API send example included)
 
 ### Squad C — cartorio-zcode (obs + docs)
 - [x] **E8.C16** Documentação Evolution API v2.3.7 oficial+community — owner: `cartorio-zcode` ✅ **DONE** — `docs/platforms/EVOLUTION.md` atualizado (72→155 linhas, endpoints, webhooks, troubleshooting, TriQ Hub)
