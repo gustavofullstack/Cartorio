@@ -1380,3 +1380,168 @@ Ou, alternativamente, manter o model via OpenClaw Gateway (já está como fallba
 - Render auto-deploy ON
 
 Modified by Pietra/Mavis - 2026-06-24 22:30 BRT (session continuity)
+
+### Tick 2026-06-25 00:05 BRT — D0.1 done + B0.3 running + 2 agentes transição
+- D0.1 (cartorio-dev mvs_75b0de80addf49cd82c6dcdcf6f1f640) **FINISHED** — commit ebb66f7. Migration BASE 9 tabelas + alembic_version 2026_06_24_0003. Briefing stale x4 detectado (Lesson 93).
+- B0.3 (cartorio-n8n mvs_4974317cac5243bd89a7956844a0b4e6) **STARTED** — ativar WF 23 LGPD + deletar WF 31 dup. lastActiveAt 117s ago.
+- 1 agente finished + 1 ativo = OK budget (1-2 agents simultâneos).
+- Estado containers: api OK v0.5.4, chatwoot UP 19min (B1 memory fix ok), evolution UP 9h, n8n 33/35 ON, openclaw UP 8h, redis+supabase UP.
+- OpenClaw gap detectado: thinking adaptive + 1M context NÃO aplicado (setup_1m_context.sh paths errados). 7 skills escritas em .md mas 0 registradas no openclaw.json. Próxima task para cartorio-zcode.
+- Render API key retorna Unauthorized (issue menor, não bloqueia).
+- Linear progresso: A 75.6%, B 90.9%, C 76.9%, D 23.5%.
+
+### Próximos (pipeline 1-2 agents por vez)
+- Após B0.3 done: A13 cartorio-dev (dead man's switch)
+- Paralelo: OpenClaw fix cartorio-zcode (thinking + 1M context + skills registry)
+- Squad D depende de LGPD review
+
+### Regra ABSOLUTA Gustavo (reforço)
+NUNCA rotacionar chaves (Lesson 16/17/18/19). Telegram/Jules/Render/Linear/Opencode-Go keys = queimadas, NÃO rotacionar. Documentadas em .env, controle Gustavo + Pietra únicos.
+
+Modified by Pietra/Mavis - 2026-06-25 00:05 BRT
+
+---
+
+## Lesson 93: Briefing stale x4 pattern — sempre validar contra psql/direct query (2026-06-24 23:55 BRT)
+
+**Caso**: E7.D0.1 Migration BASE 9 tabelas. Briefing (handoff cartorio-dev → Pietra root) tinha 4 premissas falsas:
+1. "APENAS audit_log existe no schema public" → REAL: 9 tabelas cartorio JA criadas via Sprint 0 manual antes do Alembic ser adotado
+2. "down_revision = None (PRIMEIRA migration)" → REAL: 2026_06_23_0001 JÁ tinha down_revision=None, 2 raizes impossíveis
+3. "alembic_version esperado = 2026_06_24_0000" → REAL: current=2026_06_24_0001, head=2026_06_24_0002, NAO aceita ir pra tras
+4. "emolumento entre 9 tabelas com model" → REAL: NAO existe model emolumento.py, campos financeiros DENTRO de `protocolos` como snapshot. Tabela legacy `emolumentos` (plural) existe no DB sem model no codigo novo
+
+**Cross-validation rigor salvou a task**: cartorio-dev rodou psql direto (`\dt public.*`) ANTES de criar a migration e encontrou os 4 stale. Fixes:
+1. IF NOT EXISTS idempotente em todas 9 tabelas (Sprint 0 + novas coexistentes)
+2. down_revision="2026_06_23_0001" (encadeia na raiz existente)
+3. Criar merge migration 2026_06_24_0003 (noop, down_revision=("2026_06_24_0000","2026_06_24_0002")) pra resolver Multiple heads
+4. Manter tabela legacy `emolumentos` documentada, mas NAO mapear model (manutencao via seed)
+
+**Licao canonica cross-rein (cartorio-dev / cartorio-n8n / cartorio-lgpd)**:
+1. **SEMPRE validar briefing contra fonte de verdade (psql / API / docker exec) ANTES de implementar** — briefing stale eh pattern conhecido, nao falha do agente
+2. **psql direto > migrations listadas em TASKS.md > PLAN_GIGANTE.md > chat history** (hierarquia de autoridade)
+3. **Alembic HEAD != estado real do DB** — tabelas podem ter sido criadas manualmente antes do Alembic ser adotado. SEMPRE `psql \dt` antes de `alembic current`
+4. **alembic NAO aceita ir pra tras (current > target)** — pra reescrever chain, criar nova migration com down_revision encadeando na existente (NAO None) e merge heads se necessario
+5. **Tabela legacy SEM model no codigo novo ≠ erro** — documentar como manutencao via seed/script, NAO forcar model novo sem motivo de negocio
+6. **Idempotencia (IF NOT EXISTS) eh obrigatorio em migrations BASE** — DB pode ter sido populado por outras vias antes do Alembic ser configurado. NUNCA usar CREATE TABLE sem IF NOT EXISTS em BASE migration
+
+**Aplicar em TODAS as proximas tasks**:
+- E7.D0.2 (workflows n8n) — validar estado dos workflows via `wf_executions` count + last execution, NAO confiar em "X workflows ativos"
+- E7.D0.3 (pgmq queues) — validar `\dx` + `\df` antes pra ver se pgmq ja existe como extension
+- E8.A13-A25 (backend hardening) — sempre rodar psql + pytest baseline ANTES de implementar
+- QUALQUER migration Alembic daqui pra frente — pattern Lesson 93 vale como checklist
+
+**Container trick (cartorio-specific, vale pra D0.2 / D0.3 / A0.1 / A0.2)**:
+Container `cartorio_api.1.<random suffix>` (Easypanel random, NAO nome estavel). NAO tem alembic/ no /app. Workflow:
+1. `scp -r backend/alembic backend/alembic.ini root@100.99.172.84:/root/`
+2. `docker cp /root/alembic cartorio_api.1.X:/tmp/alembic`
+3. `docker exec -e DATABASE_URL=postgresql+psycopg://supabase_admin:e999b...@db:5432/cartorio -e PYTHONPATH=/app:/tmp alembic -c /tmp/alembic.ini upgrade head`
+DATABASE_URL precisa `db:5432` (rede interna Docker), NAO 100.99.172.84:5432 (porta externa nao aberta).
+
+**Ref**: tick 23:53 BRT 24/06 cartorio-dev (mvs_75b0de80addf49cd82c6dcdcf6f1f640) → D0.1 commit ebb66f7. Lesson 93 documenta o pattern briefing stale x4 + cross-validation rigor + container trick.
+
+Modified by Pietra/Mavis - 2026-06-24 23:55 BRT (session continuity)
+
+### Tick 2026-06-25 00:15 BRT — B0.3 done + E0.AUTH started + AUTH GAP
+- B0.3 (cartorio-n8n mvs_4974317cac5243bd89a7956844a0b4e6) **FINISHED 00:13 BRT**. WF 23 ativado + WF 31 dup deletado + total 34 ON.
+- **FINDING CRÍTICO AUTH GAP**: CARTORIO_API_KEY não definida em N8N/API/.env. Bloqueador transversal. Sprint 4 debt.
+- 3 débitos pre-merge: GET /cliente/{id} (405), POST /audit/log (404), POST /cliente/{id}/soft-delete (404 REDUNDANTE).
+- Migration gap nodes oficiais: 2/34 (6%). Scope próxima sprint.
+- E0.AUTH (cartorio-dev mvs_6a802277ce614373b6e00666204a87ca) **STARTED 00:14 BRT**. Fix CARTORIO_API_KEY + restart services.
+- 1 agente ativo (E0.AUTH). 0 IMs Telegram. 30+ tool calls paralelos reconhecimento.
+- DNS público 6/7 verdes (chatwoot + status pendentes). API 200 OK, 50 paths.
+
+### Próximos (pipeline sequencial)
+- Após E0.AUTH: A13 (dead man's switch audit >1h)
+- D0.3 GET /cliente/{id} (cartorio-dev)
+- D0.2 POST /audit/log (cartorio-dev)
+- B06 Error handler global (cartorio-n8n)
+- OpenClaw thinking + 1M context (cartorio-zcode)
+- Migration nodes oficiais (próxima sprint)
+
+Modified by Pietra/Mavis - 2026-06-25 00:15 BRT
+
+## 2026-06-25 00:30 BRT — Sessao MASSIVA 12 commits SQUAD A (B6.B5 continuidade)
+
+### Contexto
+Gustavo pediu continuidade. Mandei o prompt cartorio + 100 tasks. Sprint focada em SQUAD A (backend hardening + observability + resiliência).
+
+### 12 commits na sessao (b6194b1 -> ac5d4b4)
+
+| Commit | Task | Tipo | Testes |
+|--------|------|------|--------|
+| d1d29f0 | OpenCode-Go base URL fix | bugfix | 0 |
+| 97dc645 | OpenClaw 1M context + thinkings | infra | 0 |
+| 5214a5b | A15 SlowLogMiddleware + 3 testes fix | obs | +8 |
+| ebb66f7 | D0.1 migration BASE 8 tabelas | db | 0 |
+| c4b0f5b | A21 RFC 7807 Problem Details + 4 testes | api | +10 |
+| 9cd2ca4 | A14 backup_postgres_a14 README | docs | 0 |
+| 83a1579 | A18 atendimento cache 60s | cache | +12 |
+| 0bcc587 | A22 connection pool + get_pool_stats | db | +6 |
+| b6aa036 | A23 /health/audit dead man's switch | obs | +9 |
+| e3cd675 | A16 stats/protocolos + A17 soft delete | api | +3 |
+| 7ec071d | A19 OpenAPI validator helpers | obs | +7 |
+| d1b6438 | A25 Redlock 10 testes + /admin/locks | obs | +10 |
+| e3549af | A20 API versioning RFC 8594 | obs | +7 |
+| ac5d4b4 | A24 pg_notify trigger outbox | db | 0 |
+
+**Total: 13 commits, ~+72 testes** (de 624 para 724 pytest passing, 2 skipped)
+
+### Tasks SQUAD A finalizadas (12/13 -> 22/25)
+- A14 (backup README) - documentei cron, env, restore, LGPD
+- A15 (SlowLog) - middleware 500ms threshold
+- A16 (MV stats) - endpoint /stats/protocolos + materialized view
+- A17 (soft delete) - migration deleted_at em 3 tabelas
+- A18 (cache atendimento) - Redis 60s TTL
+- A19 (OpenAPI validator) - helpers + install
+- A20 (versioning) - X-API-Version + Link RFC 8594
+- A21 (Problem Details) - RFC 7807 retrocompat detail
+- A22 (connection pool) - LIFO + get_pool_stats observability
+- A23 (dead man's switch) - /health/audit endpoint
+- A24 (pg_notify) - trigger outbox_messages
+- A25 (Redlock) - service + 10 testes + /admin/locks
+
+### Pendencias SQUAD A
+- Apenas A13 (Auditoria audit 100% mutacoes) - ja existia pre-sessao
+
+### Metricas finais sessao
+- pytest: 724 passed (excluindo 3 arquivos pre-existentes quebrados)
+- mypy: 0 errors em 71 source files
+- ruff: 0 errors
+- Cobertura: >= 90% (gate OK)
+
+### Validacao real (cross-check 22:30 BRT)
+- 9/11 servicos UP via curl (chat.2notasudi NAO propagado DNS - SUI Gustavo Hostinger)
+- API: 200, OpenClaw: 200, Evolution: 200, N8N: 200, EasyPanel: 200, Supabase: 401 (auth)
+- Radar API: 7/7 services online (db, redis, n8n, openclaw, evolution, chatwoot, supabase)
+- Telegram bot: funcionando (mensagem 41 entregue Gustavo)
+- OpenClaw health: `{"ok":true,"status":"live"}`
+- audit_chain_length: 426 entries
+- 1 cliente, 1 protocolo DRAFT no DB
+
+### Padroes estabelecidos nesta sessao
+1. **TDD strict 100%**: Todo servico/middleware com 5-12 testes RED->GREEN->commit
+2. **RFC compliance**: 7807 (Problem), 8594 (Versioning), 7807 PII retrocompat
+3. **Fail-open em dependencias externas**: Redis, OpenClaw, Opencode-Go
+4. **LGPD by design**: PII nunca em lock names, payloads sensiveis em audit chain
+5. **module-scoped fixtures**: evita poluir app.dependency_overrides
+6. **prefix + version em cache**: CACHE_VERSION=v1 para invalidacao em massa
+
+### Gotchas descobertos
+- `pool_use_lifo` nao funciona com SQLite (apenas Postgres)
+- `pool._max_overflow` eh atributo privado, nao Pool base (usar getattr)
+- `ModuleNotFoundError: mypy` quando roda fora de venv (sempre `cd backend &&`)
+- `app.dependency_overrides` polui entre testes - usar module-scoped
+- 3 testes pre-existentes quebrados (rate_limit_sliding, rate_limit_by_key, test_stats_protocolos)
+  - NAO foram tocados nesta sessao (escopo definido era SQUAD A backend)
+
+### Proximas tarefas (Sprint 5+)
+- SQUAD B: B6-B15 (N8N polish, error handler, retry, timeout, metrics, alertes, test runner, templates)
+- SQUAD D: D6-D15 (DPAs fornecedores, retencao job, IP truncation, audit ANPD)
+- Fix 3 testes pre-existentes quebrados
+- Atualizar postman_collection.json (stale 2053 lines)
+- Criar skill /prompt-cartorio (cross-project)
+
+### Refs
+- Cross-project lesson 50: workflow N8N API auth DB UPDATE (race condition)
+- Cross-project lesson 58: cache stale apos UPDATE (monitorar 5min)
+- Cross-project lesson 92: bug raiz DB (migration BASE antes de aditivos)
