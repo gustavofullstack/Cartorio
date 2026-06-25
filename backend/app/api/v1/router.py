@@ -4568,10 +4568,11 @@ def get_agendamentos_pendentes(
             "cliente_email": "",
         }
         
-        if agendamento.cliente_id:
+        cliente_id = agendamento.get("cliente_id")
+        if cliente_id:
             from app.models.cliente import Cliente
             cliente = db.execute(
-                select(Cliente).where(Cliente.id == agendamento.cliente_id)
+                select(Cliente).where(Cliente.id == cliente_id)
             ).scalar_one_or_none()
             
             if cliente:
@@ -4582,13 +4583,13 @@ def get_agendamentos_pendentes(
                 }
         
         result.append({
-            "id": agendamento.id,
-            "titulo": agendamento.titulo,
-            "data_hora": agendamento.data_hora.isoformat(),
-            "cliente_id": agendamento.cliente_id,
-            "local": agendamento.local,
-            "tipo": agendamento.tipo.value if hasattr(agendamento.tipo, "value") else agendamento.tipo,
-            "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
+            "id": agendamento.get("id"),
+            "titulo": agendamento.get("titulo"),
+            "data_hora": agendamento.get("data_hora"),
+            "cliente_id": cliente_id,
+            "local": agendamento.get("local"),
+            "tipo": agendamento.get("tipo"),
+            "status": agendamento.get("status"),
             **cliente_info
         })
 
@@ -4644,10 +4645,11 @@ def get_agendamentos_proximos(
             "cliente_email": "",
         }
         
-        if agendamento.cliente_id:
+        cliente_id = agendamento.get("cliente_id")
+        if cliente_id:
             from app.models.cliente import Cliente
             cliente = db.execute(
-                select(Cliente).where(Cliente.id == agendamento.cliente_id)
+                select(Cliente).where(Cliente.id == cliente_id)
             ).scalar_one_or_none()
             
             if cliente:
@@ -4658,13 +4660,13 @@ def get_agendamentos_proximos(
                 }
         
         result.append({
-            "id": agendamento.id,
-            "titulo": agendamento.titulo,
-            "data_hora": agendamento.data_hora.isoformat(),
-            "cliente_id": agendamento.cliente_id,
-            "local": agendamento.local,
-            "tipo": agendamento.tipo.value if hasattr(agendamento.tipo, "value") else agendamento.tipo,
-            "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
+            "id": agendamento.get("id"),
+            "titulo": agendamento.get("titulo"),
+            "data_hora": agendamento.get("data_hora"),
+            "cliente_id": cliente_id,
+            "local": agendamento.get("local"),
+            "tipo": agendamento.get("tipo"),
+            "status": agendamento.get("status"),
             **cliente_info
         })
 

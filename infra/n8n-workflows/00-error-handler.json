@@ -1,7 +1,7 @@
 {
-  "name": "00 - Error Handler Global (T25) v5",
-  "description": "Global error handler for any N8N workflow. B6 fix 2026-06-25: posts to /api/v1/integrations/n8n/error (HMAC), formats Telegram alert, retries on ECONNREFUSED.",
-  "active": false,
+  "name": "00 - Error Handler Global (T25) v6",
+  "description": "Global error handler for any N8N workflow. B6 fix 2026-06-25: posts to /api/v1/integrations/n8n/error (HMAC), formats Telegram alert, retries on ECONNREFUSED. B11: Telegram alerts to GRUPO Pietra Squad on WF failure.",
+  "active": true,
   "nodes": [
     {
       "id": "df09c57c4e3b",
@@ -149,10 +149,10 @@
         "timeout": 5000
       }
     },
-    {
-      "parameters": {
-        "jsCode": "// Format Telegram message with MarkdownV2 (Telegram Bot API 2026-06-25)\n// B6 fix: escapeMarkdownV2() canonica + parse_mode=MarkdownV2.\n// Spec: https://core.telegram.org/bots/api#markdownv2-style\nfunction escapeMarkdownV2(s) {\n  if (s === null || s === undefined) return 'unknown';\n  return String(s).replace(/([_*[\\]()~`>#+\\-=|{}.!])/g, '\\$1');\n}\n\nconst wfName = $input.item.json.wf_name ?? 'unknown';\nconst execId = $input.item.json.execution_id ?? 'unknown';\nconst errMsg = $input.item.json.error_message ?? 'unknown error';\nconst errName = $input.item.json.error_name ?? 'Error';\nconst nodeName = $input.item.json.node_name ?? 'unknown';\nconst ts = $input.item.json.ts ?? new Date().toISOString();\n\nconst text = `\ud83d\udea8 *N8N ERRO*\n` +\n  `*WF:* ${escapeMarkdownV2(wfName)}\n` +\n  `*Exec:* \\`${escapeMarkdownV2(execId)}\\`\n` +\n  `*Node:* ${escapeMarkdownV2(nodeName)}\n` +\n  `*Erro:* \\`${escapeMarkdownV2(errName)}\\` \\\u2014 ${escapeMarkdownV2(errMsg)}\n` +\n  `*TS:* ${escapeMarkdownV2(ts)}`;\n\nreturn [{\n  json: {\n    chat_id: '-5006771024',\n    text: text,\n    parse_mode: 'MarkdownV2',\n    disable_web_page_preview: true\n  }\n}];"
-      },
+{
+              "parameters": {
+                "jsCode": "// Format Telegram message with MarkdownV2 (Telegram Bot API 2026-06-25)\n// B6 fix: escapeMarkdownV2() canonica + parse_mode=MarkdownV2.\n// Spec: https://core.telegram.org/bots/api#markdownv2-style\n// B11: Uses TELEGRAM_GRUPO_PIETRA_CHAT_ID env var (or fallback)\n// NOTE: Requires N8N_BLOCK_ENV_ACCESS_IN_NODE=false OR HTTP Header Auth credential for TELEGRAM_BOT_TOKEN\nfunction escapeMarkdownV2(s) {\n  if (s === null || s === undefined) return 'unknown';\n  return String(s).replace(/([_*[\\]()~`>#+\\-=|{}.!])/g, '\\$1');\n}\n\nconst wfName = $input.item.json.wf_name ?? 'unknown';\nconst execId = $input.item.json.execution_id ?? 'unknown';\nconst errMsg = $input.item.json.error_message ?? 'unknown error';\nconst errName = $input.item.json.error_name ?? 'Error';\nconst nodeName = $input.item.json.node_name ?? 'unknown';\nconst ts = $input.item.json.ts ?? new Date().toISOString();\n\nconst text = `\ud83d\udea8 *N8N ERRO*\n` +\n  `*WF:* ${escapeMarkdownV2(wfName)}\n` +\n  `*Exec:* \\`${escapeMarkdownV2(execId)}\\`\n` +\n  `*Node:* ${escapeMarkdownV2(nodeName)}\n` +\n  `*Erro:* \\`${escapeMarkdownV2(errName)}\\` \\\u2014 ${escapeMarkdownV2(errMsg)}\n` +\n  `*TS:* ${escapeMarkdownV2(ts)}`;\n\nreturn [{\n  json: {\n    chat_id: $env.TELEGRAM_GRUPO_PIETRA_CHAT_ID ?? '-5006771024',\n    text: text,\n    parse_mode: 'MarkdownV2',\n    disable_web_page_preview: true\n  }\n}];"
+              },
       "id": "telegram-format-5",
       "name": "Format Telegram",
       "type": "n8n-nodes-base.code",

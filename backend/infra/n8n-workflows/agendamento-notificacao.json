@@ -1,0 +1,104 @@
+{
+  "name": "01 - Notificação de Agendamento",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "{{$env.CARTORIO_API_URL}}/api/v1/agendamento/pendentes",
+        "options": {},
+        "authentication": "headerAuth",
+        "headerAuth": {
+          "type": "apiKey",
+          "apiKey": "{{$env.CARTORIO_API_KEY}}"
+        }
+      },
+      "name": "HTTP_Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "message": "Novo agendamento criado: {{ $node[\"HTTP_Request\"].json[\"titulo\"] }} para {{ $node[\"HTTP_Request\"].json[\"data_hora\"] }}",
+        "chatId": "{{$node[\"HTTP_Request\"].json[\"cliente_telegram_chat_id\"]}}",
+        "other": {}
+      },
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "{{$env.TELEGRAM_BOT_CREDENTIALS_ID}}",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "message": "Novo agendamento criado: {{ $node[\"HTTP_Request\"].json[\"titulo\"] }} para {{ $node[\"HTTP_Request\"].json[\"data_hora\"] }}",
+        "recipient": "{{$node[\"HTTP_Request\"].json[\"cliente_whatsapp_number\"]}}",
+        "other": {}
+      },
+      "name": "Evolution",
+      "type": "n8n-nodes-base.evolution",
+      "typeVersion": 1,
+      "position": [
+        650,
+        500
+      ],
+      "credentials": {
+        "evolutionApi": {
+          "id": "{{$env.EVOLUTION_CREDENTIALS_ID}}",
+          "name": "Evolution API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "HTTP_Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP_Request": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

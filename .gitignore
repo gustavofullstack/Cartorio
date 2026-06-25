@@ -51,3 +51,11 @@ Thumbs.db
 .brain/memory/2026-06-25.md
 .brain/memory/2026-06-25.md
 .brain/memory/2026-06-25.md
+
+# N8N workflow backup files (auto-created by add_correlation_header.py / update_report_metrics.py)
+*.bak
+*.bak2
+
+# Temporary alembic test DBs
+:tmp_alembic_test*.db
+_tmp_alembic_test*.db

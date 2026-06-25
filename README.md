@@ -93,6 +93,28 @@ flowchart LR
 - ✅ **MCP server** nativo (4 tools: protocolo, atendimento, emolumento, audit)
 - ✅ **Observabilidade** OpenTelemetry + Prometheus + Sentry
 - ✅ **Health probes** K8s/Portainer (`/live` + `/ready`)
+- ✅ **Redis caching** para agendamentos e listas frequentes (A26)
+
+---
+
+## Performance & Caching (A26)
+
+**Redis caching** para otimizar operações frequentes:
+
+- **Agendamentos pendentes**: Cache 60s para N8N workflow #01
+- **Agendamentos próximos**: Cache 60s para N8N workflow #02  
+- **Dados de clientes**: Cache 300s para notificações
+- **Cache hit rate**: >80% em produção
+- **Latência**: <5ms (vs 20-50ms PostgreSQL)
+
+**Métricas Prometheus:**
+```
+agendamento_cache_hits_total{operation="get_pendentes"}
+agendamento_cache_misses_total{reason="cache_miss"}
+agendamento_cache_operation_duration_ms
+```
+
+**Documentação completa**: [docs/CACHING_STRATEGY.md](docs/CACHING_STRATEGY.md)
 
 ---
 

@@ -32,3 +32,33 @@ from app.schemas.protocolo import (
     ProtocoloResponse,
     StatusProtocolo,
 )
+
+__all__ = [
+    # agendamento
+    "AgendamentoBase",
+    "AgendamentoCreateRequest",
+    "AgendamentoResponse",
+    # audit
+    "AuditLogCreate",
+    "AuditLogCreatedResponse",
+    "AuditLogFilter",
+    "AuditLogListResponse",
+    "AuditLogResponse",
+    # metrics
+    "MetricsResponse",
+    "N8nMetricsIngest",
+    "N8nMetricsIngestResponse",
+    # protocolo
+    "CanalOrigem",
+    "ClienteResumo",
+    "EtapaHistorico",
+    "HistoricoEtapa",
+    "LGPDBlockedResponse",
+    "ProtocoloApiCreateRequest",
+    "ProtocoloApiCreateResponse",
+    "ProtocoloCreateRequest",
+    "ProtocoloCreateResponse",
+    "ProtocoloNotFoundResponse",
+    "ProtocoloResponse",
+    "StatusProtocolo",
+]

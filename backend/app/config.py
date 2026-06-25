@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     # Chat ID Telegram GRUPO PIETRA SQUAD para alertas do dead man's switch.
     # Vazio = nao envia (apenas loga). Sprint 5 integra com TelegramBot real.
     audit_alert_telegram_chat_id: Optional[str] = None
+    # Telegram Bot Token (usado por NotificationService para enviar msgs a clientes).
+    # Mesmo bot de testes @test_cartorio_bot — em produção, separar.
+    telegram_bot_token: Optional[str] = None
 
     # ========================================================================
     # PII scrubbing

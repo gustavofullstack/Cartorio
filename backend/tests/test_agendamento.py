@@ -4,22 +4,16 @@ import datetime
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 
 from app.models.base import Base
 from app.models.cliente import Cliente
-from app.models.agendamento import Agendamento, StatusAgendamento, TipoAtendimento
+from app.models.agendamento import StatusAgendamento, TipoAtendimento
 from app.services.agendamento import AgendamentoService
 
 
 @pytest.fixture
 def test_engine():
     # Force import de TODOS os models para popular Base.metadata
-    from app.models import (  # type: ignore[import-not-found]
-        agendamento,
-        cliente,
-        protocolo,
-    )
     from sqlalchemy.pool import StaticPool
 
     # StaticPool = 1 conexao compartilhada (evita "no such table" entre sessoes)
@@ -106,7 +100,6 @@ def client(test_engine, test_session_factory):
 
 def test_criar_agendamento_sucesso(test_session, cliente_test):
     """Testa criação de agendamento com sucesso."""
-    from app.config import settings
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
     
     agendamento = AgendamentoService.criar_agendamento(
@@ -225,7 +218,6 @@ def test_cancelar_agendamento(test_session, cliente_test):
 
 def test_api_criar_agendamento(client, test_session, cliente_test):
     """Testa endpoint API de criação de agendamento."""
-    import json
     
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
     

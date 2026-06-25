@@ -16,7 +16,7 @@ Integra com:
 from __future__ import annotations
 
 import datetime
-from typing import cast
+from typing import Any, cast
 
 from fastapi import Request
 
@@ -441,7 +441,7 @@ class AgendamentoService:
 
         return agendamento
     @staticmethod
-    def listar_agendamentos_pendentes(db: Session) -> list[Agendamento]:
+    def listar_agendamentos_pendentes(db: Session) -> list[dict[str, Any]]:
         """Lista agendamentos pendentes de notificacao (status AGENDADO).
 
         Usado pelo NotificationService para disparar lembretes.
@@ -456,19 +456,16 @@ class AgendamentoService:
         # A26 - Cache Redis: tenta buscar do cache primeiro
         cached = get_agendamentos_pendentes_cached()
         if cached is not None:
-            # Converte de volta para objetos Agendamento
-            # Este endpoint é usado principalmente pelas APIs N8N que retornam dict,
-            # então podemos retornar os dados cacheados diretamente
             return cached
 
         stmt = select(Agendamento).where(
             Agendamento.status == StatusAgendamento.AGENDADO,
         ).order_by(Agendamento.data_hora)
 
-        agendamentos = cast(list[Agendamento], db.execute(stmt).scalars().all())
+        agendamentos = db.execute(stmt).scalars().all()
         
         # A26: cacheia resultado para proximas chamadas
-        # Converte para dict para cache (a API já retorna dict)
+        # Converte para dict para cache (a API ja retorna dict)
         agendamentos_dicts = []
         for agendamento in agendamentos:
             agendamentos_dicts.append({
@@ -483,10 +480,10 @@ class AgendamentoService:
         
         set_agendamentos_pendentes_cached(agendamentos_dicts)
         
-        return agendamentos
+        return agendamentos_dicts
 
     @staticmethod
-    def listar_agendamentos_proximos(db: Session) -> list[Agendamento]:
+    def listar_agendamentos_proximos(db: Session) -> list[dict[str, Any]]:
         """Lista agendamentos das proximas 24h para disparo de lembretes.
 
         Retorna agendamentos com status AGENDADO ou CONFIRMADO entre agora
@@ -503,9 +500,6 @@ class AgendamentoService:
         # A26 - Cache Redis: tenta buscar do cache primeiro
         cached = get_agendamentos_proximos_cached()
         if cached is not None:
-            # Converte de volta para objetos Agendamento
-            # Este endpoint é usado principalmente pelas APIs N8N que retornam dict,
-            # então podemos retornar os dados cacheados diretamente
             return cached
 
         agora = _dt.datetime.now(_dt.timezone.utc)
@@ -520,10 +514,10 @@ class AgendamentoService:
             Agendamento.data_hora <= proximas_24h,
         ).order_by(Agendamento.data_hora)
 
-        agendamentos = cast(list[Agendamento], db.execute(stmt).scalars().all())
+        agendamentos = db.execute(stmt).scalars().all()
         
         # A26: cacheia resultado para proximas chamadas
-        # Converte para dict para cache (a API já retorna dict)
+        # Converte para dict para cache (a API ja retorna dict)
         agendamentos_dicts = []
         for agendamento in agendamentos:
             agendamentos_dicts.append({
@@ -538,4 +532,4 @@ class AgendamentoService:
         
         set_agendamentos_proximos_cached(agendamentos_dicts)
         
-        return agendamentos
+        return agendamentos_dicts

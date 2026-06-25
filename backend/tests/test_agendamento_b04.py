@@ -85,7 +85,6 @@ def client(test_engine, test_session_factory):
 @pytest.fixture
 def cliente_padrao(test_engine, test_session_factory):
     """Insere cliente basico para uso nos testes."""
-    from app.models.cliente import Cliente
 
     SessionLocal = test_session_factory
     with SessionLocal() as s:
@@ -111,8 +110,6 @@ def test_agendamento_model_existe():
     """Model Agendamento deve ser importavel de app.models.agendamento."""
     from app.models.agendamento import (  # type: ignore[import-not-found]
         Agendamento,
-        StatusAgendamento,
-        TipoAtendimento,
     )
 
     assert Agendamento.__tablename__ == "agendamentos"
