@@ -1613,6 +1613,74 @@ async def health_backup() -> dict:
 
 
 # ============================================================================
+# Health Backup V2 (A14 2026-06-25) - pg_basebackup 4x/dia + WAL archiving
+# ============================================================================
+
+
+@api_router.get(
+    "/health/backup-v2",
+    tags=["health"],
+    summary="Status do backup pg_basebackup 4x/dia (A14)",
+    description=(
+        "Verifica freshness do backup pg_basebackup 4x/dia (cron `0 */6 * * *` "
+        "executa `pg_basebackup_4x.sh` em 00:00, 06:00, 12:00, 18:00 UTC). "
+        "Classifica em **4 niveis** baseados na idade do ultimo backup com "
+        "marker `.complete` no diretorio `/var/backups/cartorio/pgbase`:\n\n"
+        "- `healthy` (200): ultimo backup <= 360 min (6h, = freq. cron)\n"
+        "- `stale` (503): 360 < idade <= 720 min (6h-12h, alerta amarelo)\n"
+        "- `critical` (503): idade > 720 min (12h+, RPO estourado)\n"
+        "- `empty` (503): nenhum backup com marker (cron nunca rodou OK)\n\n"
+        "Endpoint PUBLICO (sem auth) — usado por cron externo / monitor para "
+        "alertar se o backup 4x/dia parar. Diferenca de `/health/backup` (v1): "
+        "este endpoint checa **subdiretorios timestamped** com marker (pg_basebackup), "
+        "enquanto v1 checa `.tar.gz` soltos (backup diario v0.4.0)."
+    ),
+    response_description="BackupHealth + status HTTP 200 (healthy) / 503 (stale|critical|empty).",
+    responses={
+        200: {"description": "Backup 4x/dia fresco (status=healthy)."},
+        503: {"description": "Backup stale, critical ou empty."},
+    },
+)
+async def health_backup_v2() -> JSONResponse:
+    """Health check pg_basebackup 4x/dia (A14).
+
+    Diferenca do /health/backup:
+    - backup (v1, /var/backups/cartorio/*.tar.gz): cron diario 1x, threshold 26h.
+    - backup-v2 (/var/backups/cartorio/pgbase/YYYYMMDD_HH/.complete): cron
+      0 */6 (4x/dia), threshold 360 min (6h).
+
+    LGPD: este endpoint NAO expoe dados de cliente — apenas timestamps + paths
+    de diretorios de backup. Auditoria de acesso pode ser feita via N8N WF #09
+    (mesmo WF que monitora /health/backup v1).
+    """
+    from app.services.backup_v2 import (
+        DEFAULT_HEALTHY_THRESHOLD_MINUTES,
+        check_backup_v2_freshness,
+    )
+
+    health = check_backup_v2_freshness(threshold_minutes=DEFAULT_HEALTHY_THRESHOLD_MINUTES)
+
+    payload = {
+        "status": health.status.value,
+        "last_backup_at": (
+            health.last_backup_at.isoformat() if health.last_backup_at else None
+        ),
+        "last_backup_age_minutes": health.last_backup_age_minutes,
+        "last_backup_dir": health.last_backup_dir,
+        "backup_count": health.backup_count,
+        "threshold_minutes": health.threshold_minutes,
+        "backup_dir": health.backup_dir,
+        "alert": health.alert,
+    }
+    if health.error:
+        payload["error"] = health.error
+
+    # healthy => 200, stale|critical|empty => 503
+    status_code = 200 if health.status.value == "healthy" else 503
+    return JSONResponse(status_code=status_code, content=payload)
+
+
+# ============================================================================
 # Agendamento disponibilidade (v0.4.0) - N8N workflow #05
 # ============================================================================
 
