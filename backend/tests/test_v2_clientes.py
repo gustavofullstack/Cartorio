@@ -28,7 +28,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.models.base import Base
 from app.models.cliente import Cliente
-from app.api.v2.clientes import router as v2_clientes_router
+from sqlalchemy.orm import Session  # type: ignore[attr-defined]  # Session re-exported
 
 
 def _decode_cursor(cursor: str) -> dict:
@@ -61,8 +61,6 @@ def client(test_engine, test_session_factory):
         patch("app.db.engine", test_engine),
         patch("app.db.SessionLocal", test_session_factory),
         patch("app.main.engine", test_engine),
-        patch("app.api.v2.clientes.engine", test_engine),
-        patch("app.api.v2.clientes.SessionLocal", test_session_factory),
     ):
         from app.main import app
 
@@ -204,10 +202,10 @@ def test_v2_clientes_exclui_encerrados_por_default(
     client: TestClient, db_session: Session, sample_clientes
 ) -> None:
     """Clientes com motivo_encerramento setado NAO aparecem (LGPD art. 18 VI)."""
-    from datetime import datetime, timezone
+    from app.models.cliente import MotivoEncerramento
 
-    cliente_3 = sample_clientes[2]
-    cliente_3.motivo_encerramento = "revogacao_consentimento"
+    cliente_3 = db_session.merge(sample_clientes[2])
+    cliente_3.motivo_encerramento = MotivoEncerramento.REVOGACAO_CONSENTIMENTO
     cliente_3.deleted_at = datetime.now(timezone.utc)
     db_session.commit()
 
@@ -227,10 +225,10 @@ def test_v2_clientes_inclui_encerrados_se_filtro_explicit(
     client: TestClient, db_session: Session, sample_clientes
 ) -> None:
     """?include_encerrados=true retorna todos."""
-    from datetime import datetime, timezone
+    from app.models.cliente import MotivoEncerramento
 
-    cliente_3 = sample_clientes[2]
-    cliente_3.motivo_encerramento = "revogacao_consentimento"
+    cliente_3 = db_session.merge(sample_clientes[2])
+    cliente_3.motivo_encerramento = MotivoEncerramento.REVOGACAO_CONSENTIMENTO
     cliente_3.deleted_at = datetime.now(timezone.utc)
     db_session.commit()
 
