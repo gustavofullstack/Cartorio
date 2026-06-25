@@ -23,7 +23,8 @@
 -- - RLS: anon SEM acesso, authenticated limitado, dpo read-only
 --
 -- Sprint 4 S01 (2026-06-25) — SQUAD S0 Supabase Foundation
--- Migration final aplicada: 2026_06_25_0010
+-- Migration final aplicada: 2026_06_25_0012
+-- 0012 merge: 0003 (pg_notify outbox trigger) + 0010 (S01 merge)
 -- Modified by Gustavo Almeida
 -- =============================================================================
 

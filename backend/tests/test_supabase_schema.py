@@ -187,13 +187,14 @@ def test_alembic_head_linear(engine):
     )
 
 
-def test_alembic_head_is_0010(engine):
-    """DB no head canonico Sprint 4 S01 (2026_06_25_0010 = merge)."""
+def test_alembic_head_is_0012(engine):
+    """DB no head canonico Sprint 4 S01 (2026_06_25_0012 = merge final)."""
     with engine.connect() as conn:
         head = conn.execute(
             text("SELECT version_num FROM alembic_version")
         ).scalar()
-    assert head == "2026_06_25_0010", (
-        f"DB alembic head = {head!r}, esperado '2026_06_25_0010'. "
+    assert head == "2026_06_25_0012", (
+        f"DB alembic head = {head!r}, esperado '2026_06_25_0012'. "
+        f"0012 merge 0003 (pg_notify outbox) + 0010 (S01 merge)."
         f"Rodar alembic upgrade head para aplicar pending migrations."
     )
