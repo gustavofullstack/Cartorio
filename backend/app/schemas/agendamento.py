@@ -105,7 +105,7 @@ class AgendamentoResponse(AgendamentoBase):
                     "criado_em": "2026-06-25T10:00:00-03:00",
                     "atualizado_em": "2026-06-25T10:00:00-03:00",
                     "cpf_hash": "a" * 64,
-                }
+                },
             ]
         }
     )
