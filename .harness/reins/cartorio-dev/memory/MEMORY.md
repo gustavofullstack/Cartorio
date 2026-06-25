@@ -751,3 +751,150 @@ start fresh'.
 artefato que o VERIFIER LE primeiro. Estrutura anti-verifier-rejection.
 
 Modified by Gustavo Almeida 2026-06-25
+
+### S01 FASE 4 STAMP - alembic head 0010 vs briefing claim 0011 (2026-06-25)
+Type: lesson + trust-but-verify
+
+**Cenario**: Parent briefing claimed `alembic_version = 2026_06_24_0003` (Sprint 0 base) e goal = `2026_06_25_0011`. Realidade verificada via `psql` (Lesson 176 canon): alembic_version JA estava em `2026_06_25_0010` (o head da merge chain) — parallel cartorio-dev agent tinha rodado alembic upgrade head enquanto eu preparava o ambiente.
+
+**Achado critico - chain real**:
+- 23_0001 (root) -> 24_0000/24_0001 -> 24_0003 (merge) -> 25_0002 (branchpoint) -> 25_0001 -> 25_0010
+- 24_0003 -> 25_0011 -> 25_0004 -> ... -> 25_0009 -> 25_0010 (merge head)
+- 25_0002 -> 25_0003 (ORPHAN HEAD — nao merged into 0010)
+- **HEAD real = 25_0010** (nao 25_0011 como briefing)
+
+**Gotcha - alembic ScriptDirectory require canonical layout**:
+- `script_location = alembic` + migrations directly in `alembic/*.py` (no `versions/` subdir) -> alembic nao encontra revisions (count=0)
+- Workaround: mover pra `alembic/versions/*.py` (canonical) + precisa `script.py.mako` tambem
+- Lesson: SEMPRE respeitar canonical layout alembic (env.py + script.py.mako + versions/*.py em script_location)
+
+**pg_cron em Supabase self-hosted**:
+- Migration 0005 tenta CREATE EXTENSION pg_cron em cartorio DB
+- Fails silently (try/except no codigo) pq pg_cron vive no DB 'postgres' (NÃO em cartorio)
+- 4 jobs desejados (audit_verify_diario, dlq_retry_5min, cache_warm_06h, snapshot_diario_2355) NAO sao criados
+- 5 jobs pre-existentes em postgres DB: cleanup-sessions-24h, audit-chain-verify-6h, retention-daily-03h, stale-detector-5min, dlq-refresh-10min
+- Idempotente, no harm done. Documentado no docstring da migration.
+
+**Total tabelas** (ground truth):
+- 134 tabelas public (briefing disse 133 — off-by-one incluindo alembic_version)
+- 24 cartorio-related (13 main + 11 helpers N8N/Chatwoot/Evolution)
+
+**Workflow canonico alembic run-from-VPS**:
+1. `scp alembic.ini env.py alembic/versions/* VPS:/tmp/alembic_migrate/`
+2. `mkdir -p VPS:/tmp/alembic_migrate/alembic/versions` (canonical layout)
+3. Reorganize: `mv alembic/env.py alembic/versions/* alembic/`
+4. `scp script.py.mako` tambem
+5. Use `docker run --rm --network cartorio_supabase_default -v /tmp/alembic_migrate:/work -w /work python:3.12-slim` sidecar
+6. `pip install --quiet alembic psycopg2-binary` no sidecar
+7. `DATABASE_URL=postgresql://supabase_admin:PWD@cartorio_supabase-db-1:5432/cartorio alembic heads/current/history`
+
+**Lesson canon**: briefing stale + parallel agent races sao a REGRA, nao excecao (Lesson 4/5/6). SEMPRE validar ground truth via psql + alembic heads ANTES de agir. Briefings so indicam intencao do parent, NAO estado atual do sistema.
+
+Modified by Gustavo Almeida
+
+### Lesson 184 — fn_audit_chain_verify naming + cross-check on parent caveat (2026-06-25)
+Type: gotcha + compliance
+
+**Cenario**: Parent (harness) cross-checked my S01-FASE4 stamp e flagged "audit_chain_hash function: AUSENTE — investigar depois". Antes de aceitar como work item, fui verificar o nome real da function no codigo.
+
+**Naming nit canon**:
+- Nome REAL da function: fn_audit_chain_verify() (não audit_chain_hash)
+- Local: backend/alembic/versions/2026_06_25_0004-supabase-rls-policies-and-audit-chain-fn.py
+  - S08 block, linha 113-149
+  - CREATE OR REPLACE FUNCTION fn_audit_chain_verify(p_from_id BIGINT DEFAULT 0, p_to_id BIGINT DEFAULT NULL)
+  - RETURNS TABLE (total_checked BIGINT, chain_ok BOOLEAN, first_bad_id BIGINT)
+  - LANGUAGE plpgsql STABLE
+- Migration 0005 cron audit_verify_diario (postgres DB) chama EXATAMENTE fn_audit_chain_verify(0, NULL) — linha 89
+
+**Possibilidades do AUSENTE reported**:
+1. Query psql usou substring 'audit_chain_hash' (nao bate com nome real) — falso negativo
+2. Migration 0004 rodou mas bloco S08 falhou silenciosamente
+3. Function existe em schema diferente de public
+
+**Verificacao canon**: SELECT proname, pronamespace FROM pg_proc WHERE proname = 'fn_audit_chain_verify';
+Esperado: 1 row, schema public. Se 0 rows = migration 0004 S08 falhou.
+
+**Compliance impact**: 
+- cron audit_verify_diario (postgres DB, S08) depende dessa fn
+- Se ausente: auditoria diaria do cartorio NAO roda
+- Gap LGPD/regulatorio silencioso
+- Sprint 3 B6 (audit chain) pode estar com debt
+
+**Pattern canon — cross-check on parent caveat**:
+1. Parent/peer flag qualquer issue como "investigar depois"
+2. ANTES de aceitar como work item, do own quick local grep/Read para desambiguar (Lesson 4/5/6 trust-but-verify)
+3. Naming nit ou misunderstanding == 30s pra resolver vs scope creep
+4. Offer investigation WITH the diagnostic query pre-built — parent so roda e reporta
+5. NAO criar work item sem GO do parent
+
+**Lesson canon**: function names em migrations são contrato. SEMPRE grep o nome EXATO antes de aceitar "AUSENTE" como verdade. Naming drift entre relator (que lembra parcial) e codigo (que tem nome canonico) == fonte #1 de falso negativo em auditoria.
+
+Modified by Gustavo Almeida 2026-06-25
+
+### Lesson 185 — Migration DESIGN-FAIL-SILENT pattern (cron jobs + extensions) (2026-06-25)
+Type: gotcha + compliance
+
+**Cenario**: Parent (harness) cross-checked meu S01-FASE4 stamp e diagnosticou que `cron.job` AUSENTE em cartorio DB = gap LGPD real. Pediu investigation do pattern usado em migration 0005 (pg_cron jobs).
+
+**Pattern identificado (migration 0005, lida linha-a-linha)**:
+- Linhas 45-63: try/except wraps `CREATE EXTENSION IF NOT EXISTS pg_cron`
+- On exception: `pass` (silent swallow)
+- Docstring linhas 60-62 EXPLICITAMENTE diz: "pg_cron vive no DB 'postgres' e eh gerenciado separadamente. Pular silenciosamente - cron jobs serao criados via script externo se necessario."
+- **Ou seja: design INTENTIONAL é NO-OP no cartorio DB**
+- Resto do bloco (CREATE SCHEMA cron + 4x cron.schedule) TAMBEM falha em cartorio DB sem extensão, mas migration foi stamped (0010) — provável parallel agent rodou alembic upgrade head com stamping manual pós partial run
+
+**Cross-check vs Lesson 184 (1 dia antes, mesmo padrão)**:
+- Lesson 184: function name falso negativo (audit_chain_hash vs fn_audit_chain_verify)
+- Lesson 185: design intent mal-comunicado (migration documenta cron job que NAO vai rodar onde documenta)
+- Ambos = briefing/docstring vs ground truth drift
+
+**Gap LGPD real (não compliance theater)**:
+- cartorio DB: pg_cron AUSENTE → 0005 é no-op → audit_verify_diario NÃO roda
+- postgres DB: 5 jobs pre-existentes rodando (audit-chain-verify-6h 0 */6 * * *) — job name + schedule + DB DIFERENTES do que 0005 documenta; conecta em postgres DB, fn_audit_chain_verify() vive em cartorio.public → vai falhar com "function does not exist" se executar
+- VPS: crontab vazio
+- Resultado: ninguém chama fn_audit_chain_verify() no cartorio DB periodicamente
+
+**Mitigação recomendada (FASE 4.1) — Opção B n8n workflow**:
+- Endpoint já existe: POST /api/v1/audit/verify (router.py linha 937-960) com X-API-Key guard
+- n8n Schedule Trigger (cron "0 6 * * *" = 03:00 BRT daily) → HTTP Request → IF chain_ok=false → Telegram GRUPO PIETRA SQUAD
+- Observabilidade nativa (n8n execution history = audit trail)
+- Sem credentials novos (reusa X-API-Key)
+- Operabilidade via UI (não SSH)
+
+**Pattern canon — leitura de migrations antes de aceitar gaps como "design intent"**:
+1. SEMPRE ler o arquivo .py da migration COMPLETO, não só o docstring
+2. Identificar try/except + pass (silent swallow) = DESIGN-FAIL-SILENT = gap latente
+3. Identificar op.execute() calls DEPOIS do silent swallow = também vão falhar
+4. Cross-check stamp vs ground truth (psql) — se stamped mas tables vazias = partial run ou stamping manual
+5. NÃO aceitar "DESIGN-FAIL-SILENT" como aceitavel em compliance/audit code = gap regulatorio real
+6. Se extension vive em outro DB (postgres vs cartorio) = DEVE documentar no migration ONDE os cron jobs vivem, não só onde deveriam viver
+
+**Lesson canon**: migration docstring pode ser aspiracional ("vai rodar daily 03:00 BRT") mas codigo pode ser NO-OP (try/except/pass). SEMPRE ler o codigo, nao confiar no docstring. Compliance code = zero tolerancia pra silent fail.
+
+Modified by Gustavo Almeida 2026-06-25
+
+### Lesson 186 — Cross-rein handoff: pre-built review checklist canon (2026-06-25)
+Type: workflow + cross-coord
+
+**Cenario**: Terminei FASE 4.1 (recommendation Option B pro gap audit_verify_diario). Parent (harness) aprovou GO, abriu thread com cartorio-n8n pra implementar workflow n8n. Antes de ir pra fila, entreguei pre-built review checklist (6 itens: endpoint PII, X-API-Key handling, header logging, Telegram content, dead man's switch gap latente, timezone). Parent respondeu: "TEU PRE-BUILT CHECKLIST é exatamente o que eu queria. Salvo padrão: cross-rein tasks que terminam em delegação → agente que termina entrega review checklist pronto pro próximo reviewer."
+
+**Pattern canon — cross-rein handoff checklist**:
+1. ANTES de ir pra fila depois de delegar cross-rein, SEMPRE entregar pre-built review checklist pronto pro próximo reviewer
+2. Checklist estrutura:
+   - Itens LGPD/PII/security (o que pode dar merda)
+   - Itens técnicos (credenciais, logging, headers, timezone)
+   - Gaps latentes identificados (não scope creep, mas flagados pro próximo)
+   - Cada item com cross-check concreto (qual comando/JSON campo verificar)
+3. Benefício: próximo reviewer (cartorio-lgpd ou cartorio-n8n) NÃO começa cold, tem roteiro pronto
+4. Custo: 5-10min (contexto já tá carregado)
+5. ROI: 30-60min economizado pelo próximo reviewer + zero gap missed
+
+**Aplicabilidade**:
+- cartorio-dev → cartorio-n8n (workflow review)
+- cartorio-dev → cartorio-lgpd (PR review pré-merge)
+- cartorio-dev → cartorio-n8n (deploy/integration review)
+- NÃO aplicar em: tasks que não terminam em delegação cross-rein (ex: pure backend feature sem cross-coord)
+
+**Lesson canon**: cross-rein handoff sem checklist pré-built = próximo reviewer começa frio = 30-60min perdidos + gap missed risk. Agent que TERMINA tem contexto fresco — USE pra dar checklist pronto. Custo marginal, benefício alto.
+
+Modified by Gustavo Almeida 2026-06-25

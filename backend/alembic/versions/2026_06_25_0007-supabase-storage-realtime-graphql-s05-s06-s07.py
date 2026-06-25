@@ -117,6 +117,7 @@ def upgrade() -> None:
     op.execute("CREATE SCHEMA IF NOT EXISTS supabase_realtime")
 
     # Cria a publication 'supabase_realtime' (ja vem no Supabase, idempotente)
+    # Idempotente: para cada tabela, verifica se ja eh membro antes de adicionar
     op.execute(
         """
         DO $$
@@ -127,11 +128,25 @@ def upgrade() -> None:
                     public.atendimentos,
                     public.lgpd_consents;
             ELSE
-                -- Adiciona tabelas faltantes (idempotente)
-                ALTER PUBLICATION supabase_realtime ADD TABLE
-                    public.protocolos,
-                    public.atendimentos,
-                    public.lgpd_consents;
+                -- Adiciona tabelas faltantes (idempotente, uma por uma)
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_publication_tables
+                    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'protocolos'
+                ) THEN
+                    ALTER PUBLICATION supabase_realtime ADD TABLE public.protocolos;
+                END IF;
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_publication_tables
+                    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'atendimentos'
+                ) THEN
+                    ALTER PUBLICATION supabase_realtime ADD TABLE public.atendimentos;
+                END IF;
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_publication_tables
+                    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'lgpd_consents'
+                ) THEN
+                    ALTER PUBLICATION supabase_realtime ADD TABLE public.lgpd_consents;
+                END IF;
             END IF;
         END
         $$

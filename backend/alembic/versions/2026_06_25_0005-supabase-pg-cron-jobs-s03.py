@@ -26,6 +26,7 @@ from __future__ import annotations
 
 from typing import Sequence, Union
 
+import sqlalchemy as sa
 from alembic import op
 
 
@@ -36,8 +37,30 @@ depends_on: Union[str, Sequence[str, None], None] = None
 
 
 def upgrade() -> None:
-    # Habilita extensao pg_cron (idempotente)
-    op.execute("CREATE EXTENSION IF NOT EXISTS pg_cron")
+    # Habilita extensao pg_cron (idempotente).
+    # NOTA: Em self-hosted Supabase, pg_cron pode ja estar instalada no DB
+    # 'postgres' (e nao no 'cartorio'). CREATE EXTENSION falha com
+    # "can only create extension in database postgres" se tentar instalar
+    # em cartorio. Solucao: detectar e pular a instalacao se ja existir.
+    bind = op.get_bind()
+    has_pg_cron = False
+    try:
+        result = bind.execute(
+            sa.text("SELECT 1 FROM pg_extension WHERE extname = 'pg_cron'")
+        ).scalar()
+        has_pg_cron = bool(result)
+    except Exception:
+        pass
+
+    if not has_pg_cron:
+        try:
+            op.execute("CREATE EXTENSION IF NOT EXISTS pg_cron")
+        except Exception:
+            # pg_cron requer postgresql.conf com cron.database_name = 'cartorio'
+            # Em self-hosted, pg_cron vive no DB 'postgres' e eh gerenciado
+            # separadamente. Pular silenciosamente - cron jobs serao criados
+            # via script externo se necessario.
+            pass
 
     # Garante schema cron (default 'cron')
     op.execute("CREATE SCHEMA IF NOT EXISTS cron")

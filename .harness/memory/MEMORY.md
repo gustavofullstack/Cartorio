@@ -1922,3 +1922,25 @@ Gustavo mandou prompt cartorio novamente para continuidade. Squad B ~95% (Pietra
 - Lesson 111: Squad D agora 9/25 (D8, D9, D11, D12 adicionados)
 
 - Lesson 162: alembic upgrade heads (plural) para chains com parallel heads + Swarm container rotation atomicity (DB audit A16+A17 2026-06-25)
+- Lesson 186: Scheduled job sem watchdog proprio = silent gap. POST /api/v1/audit/verify NAO grava em audit_log, entao se o N8N workflow audit_chain_daily cair, dead man's switch A13 (15min polling audit_log stale >60min) NAO detecta. Mask diferente do "endpoint stale". Mitigacao: ou endpoint passa a logar (5 linhas + LGPD review) OU workflow chama /api/v1/admin/audit/check-now apos success. CANON: cron jobs SEM persistencia propria precisam de polling watchdog dedicado ou auto-report success (2026-06-25 FASE 4.1 backlog)
+
+## 2026-06-25 09:58 BRT — S01 FASE 4 + 4.1 (audit verify gap via N8N)
+
+### Contexto
+- FASE 4 backend migration 0010 aplicada em cartorio DB (134 tabelas, alembic_version=2026_06_25_0010)
+- Gap LGPD P1 descoberto: audit_verify_diario cron NAO roda. Migration 0005 S08 eh DESIGN-FAIL-SILENT (linha 60-62 docstring admite no-op; pg_cron so existe em postgres DB; jobs pre-existentes chamam fn_audit_chain_verify cross-schema FAIL).
+- cartorio-dev investigou, recomendou Opcao B (workflow N8N scheduled). Harness GO com 3 decisoes (daily 03:00 BRT, Telegram GRUPO PIETRA SQUAD, NO audit_log pollution).
+
+### Acoes
+- Delegado cartorio-n8n task FASE 4.1 (workflow audit_chain_daily + IF chain_ok=false → Telegram alert + credenciais X-API-Key do vault)
+- Addendum: timezone America/Sao_Paulo no Schedule Trigger + backlog FASE 4.2 noted
+- cartorio-dev em standby pra cross-review se cartorio-lgpd puxar (pre-built checklist 6 items entregue)
+
+### Backlog (NAO bloqueia v0.6.0 tag)
+- FASE 4.2: audit verify watchdog 24/7. Endpoint /api/v1/audit/verify sem persistencia. Se workflow N8N cair, A13 dead man's switch nao detecta (mask diferente: audit_log stale != endpoint stale). Opcoes: (a) endpoint passa a gravar 1 entry em audit_log por execucao (LGPD review), (b) N8N workflow chama /api/v1/admin/audit/check-now apos success. Decidir em Sprint 6+.
+- LGPD review opcional do workflow JSON (cartorio-dev confirmou items 1-4 LGPD-clean: sem PII em request/response, sem PII em Telegram message). Se Gustavo quiser belt-and-suspenders, cartorio-lgpd pode revisar 5min do JSON.
+
+### Refs
+- Migration 0005 backend/alembic/versions/2026_06_25_0005-supabase-pg-cron-jobs-s03.py (DESIGN-FAIL-SILENT linhas 45-63)
+- Endpoint POST /api/v1/audit/verify backend/app/api/v1/router.py linhas 937-960
+- Lesson 186 canon

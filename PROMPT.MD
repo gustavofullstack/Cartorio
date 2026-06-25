@@ -70,6 +70,7 @@ ANALISE → TESTE → CORRIJA → MELHORE → OTIMIZE → ORGANIZE → DOCUMENTE
 ```
 
 Esse ciclo deve ser aplicado em **TUDO**:
+
 - Cada serviço
 - Cada integração
 - Cada endpoint
@@ -93,14 +94,14 @@ Esse ciclo deve ser aplicado em **TUDO**:
 
 Eu ativo meu **Super Cérebro** com as seguintes capacidades simultâneas:
 
-| Papel | Responsabilidade |
-|-------|-----------------|
-| **CEO** | Decisões estratégicas, visão macro do projeto |
-| **CTO** | Decisões técnicas, arquitetura, stack |
-| **Orquestrador** | Coordenar agents, subagents, tasks |
-| **Tech Lead** | Padrões de código, code review, quality |
-| **Senior Dev** | Implementação complexa, debugging avançado |
-| **Dev Fullstack** | Frontend, backend, infra, DevOps |
+| Papel             | Responsabilidade                              |
+| ----------------- | --------------------------------------------- |
+| **CEO**           | Decisões estratégicas, visão macro do projeto |
+| **CTO**           | Decisões técnicas, arquitetura, stack         |
+| **Orquestrador**  | Coordenar agents, subagents, tasks            |
+| **Tech Lead**     | Padrões de código, code review, quality       |
+| **Senior Dev**    | Implementação complexa, debugging avançado    |
+| **Dev Fullstack** | Frontend, backend, infra, DevOps              |
 
 ### 2.2 Quem é o Chefe
 
@@ -182,7 +183,7 @@ Isso se aplica a TODAS as chaves: API keys, tokens, senhas, etc.
 ### 3.5 Acesso e Conexões
 
 ```
-✅ TUDO que temos só pode ser acessado via:
+✅ TUDO que temos pode ser acessado via:
    - MCPs (Model Context Protocol)
    - APIs (REST, GraphQL, WebSocket)
    - SSH (direto e via Tailscale)
@@ -279,14 +280,15 @@ Sequência obrigatória ao iniciar:
 ┌──────────────┐     ┌─────┐     ┌─────┐     ┌─────────┐     ┌───────┐     ┌──────────┐
 │ EVOLUTION-API│────▶│ API │────▶│ N8N │────▶│ CHATWOOT│────▶│ REDIS │────▶│ SUPABASE │
 └──────────────┘     └─────┘     └─────┘     └─────────┘     └───────┘     └──────────┘
-       ▲                                                                        │
-       │                                                                        │
+       ▲                                                                       │
+       │                                                                       │
        │              ┌─────┐     ┌─────┐     ┌─────────┐     ┌───────┐        │
        └──────────────│ API │◀────│ N8N │◀────│ CHATWOOT│◀────│ REDIS │◀───────┘
                       └─────┘     └─────┘     └─────────┘     └───────┘
 ```
 
 **Fluxo resumido**:
+
 ```
 EVOLUTION-API → API → N8N → CHATWOOT → REDIS → SUPABASE
 SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
@@ -294,58 +296,59 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 
 ### 5.2 Componentes do Ecossistema
 
-| # | Serviço | Função | Domínio | Status |
-|---|---------|--------|---------|--------|
-| 1 | **API** (FastAPI) | Backend central | api.2notasudi.com.br | ✅ UP v0.6.0 |
-| 2 | **N8N** | Workflow engine | cartorio-n8n.dfgdxq.easypanel.host | ✅ UP |
-| 3 | **Supabase** | Banco de dados central | supbase.2notasudi.com.br | ✅ UP |
-| 4 | **Evolution API** | Gateway WhatsApp | whatsapp.2notasudi.com.br | ✅ UP |
-| 5 | **Chatwoot** | CRM | chat.2notasudi.com.br | ✅ UP |
-| 6 | **Chatwoot Sidekiq** | Background jobs | — | ✅ UP |
-| 7 | **Redis** | Memória rápida/cache | — | ✅ UP |
-| 8 | **OpenClaw Gateway** | Agent AI | agent.2notasudi.com.br | ✅ UP |
-| 9 | **N8N Runner** | Execução workflows | — | ✅ UP |
-| 10 | **Easypanel** | Deploy central | easypanel.2notasudi.com.br | ✅ UP |
-| 11 | **Traefik** | Reverse proxy/SSL | — | ✅ UP |
+| #   | Serviço              | Função                 | Domínio                            | Status       |
+| --- | -------------------- | ---------------------- | ---------------------------------- | ------------ |
+| 1   | **API** (FastAPI)    | Backend central        | api.2notasudi.com.br               | ✅ UP v0.6.0 |
+| 2   | **N8N**              | Workflow engine        | cartorio-n8n.dfgdxq.easypanel.host | ✅ UP        |
+| 3   | **Supabase**         | Banco de dados central | supbase.2notasudi.com.br           | ✅ UP        |
+| 4   | **Evolution API**    | Gateway WhatsApp       | whatsapp.2notasudi.com.br          | ✅ UP        |
+| 5   | **Chatwoot**         | CRM                    | chat.2notasudi.com.br              | ✅ UP        |
+| 6   | **Chatwoot Sidekiq** | Background jobs        | —                                  | ✅ UP        |
+| 7   | **Redis**            | Memória rápida/cache   | —                                  | ✅ UP        |
+| 8   | **OpenClaw Gateway** | Agent AI               | agent.2notasudi.com.br             | ✅ UP        |
+| 9   | **N8N Runner**       | Execução workflows     | —                                  | ✅ UP        |
+| 10  | **Easypanel**        | Deploy central         | easypanel.2notasudi.com.br         | ✅ UP        |
+| 11  | **Traefik**          | Reverse proxy/SSL      | —                                  | ✅ UP        |
 
 ### 5.3 VPS & Hosting
 
-| Item | Valor |
-|------|-------|
-| **Provider** | Hostinger |
-| **Tipo** | VPS |
-| **SO** | Ubuntu |
-| **IP Público** | 187.77.236.77 |
-| **IP Tailscale** | 100.99.172.84 |
-| **Orquestrador** | Docker Swarm (via Easypanel) |
-| **SSL** | Traefik + Let's Encrypt (6 domínios) |
-| **DNS** | Cloudflare |
+| Item             | Valor                                |
+| ---------------- | ------------------------------------ |
+| **Provider**     | Hostinger                            |
+| **Tipo**         | VPS                                  |
+| **SO**           | Ubuntu                               |
+| **IP Público**   | 187.77.236.77                        |
+| **IP Tailscale** | 100.99.172.84                        |
+| **Orquestrador** | Docker Swarm (via Easypanel)         |
+| **SSL**          | Traefik + Let's Encrypt (6 domínios) |
+| **DNS**          | Cloudflare                           |
 
 ### 5.4 Rede Tailscale (VPN Privada)
 
-| Nó | IP Tailscale | Tipo |
-|----|-------------|------|
-| vps-cartorio | 100.99.172.84 | Servidor principal |
-| macbook-pro-gus | 100.83.180.16 | Dev machine (Gustavo) |
-| iphone-17-pro | 100.122.101.33 | iOS |
-| iphone-andre | 100.74.36.41 | iOS |
-| triqhub | 100.110.127.44 | Linux (sister project, exit-node) |
+| Nó              | IP Tailscale   | Tipo                              |
+| --------------- | -------------- | --------------------------------- |
+| vps-cartorio    | 100.99.172.84  | Servidor principal                |
+| macbook-pro-gus | 100.83.180.16  | Dev machine (Gustavo)             |
+| iphone-17-pro   | 100.122.101.33 | iOS                               |
+| iphone-andre    | 100.74.36.41   | iOS                               |
+| triqhub         | 100.110.127.44 | Linux (sister project, exit-node) |
 
 **Tailnet**: tail2fe279.ts.net (MagicDNS)
 
 ### 5.5 Domínios Públicos (2notasudi.com.br)
 
-| Domínio | Serviço | Status |
-|---------|---------|--------|
-| api.2notasudi.com.br | API FastAPI | ✅ Configurado |
-| agent.2notasudi.com.br | OpenClaw Gateway | ✅ Configurado |
-| chat.2notasudi.com.br | Chatwoot | ✅ Configurado |
-| supbase.2notasudi.com.br | Supabase | ✅ Configurado |
-| easypanel.2notasudi.com.br | Easypanel | ✅ Configurado |
-| whatsapp.2notasudi.com.br | Evolution API | ✅ Configurado |
-| cartorio-n8n.dfgdxq.easypanel.host | N8N | ✅ Configurado |
+| Domínio                            | Serviço          | Status         |
+| ---------------------------------- | ---------------- | -------------- |
+| api.2notasudi.com.br               | API FastAPI      | ✅ Configurado |
+| agent.2notasudi.com.br             | OpenClaw Gateway | ✅ Configurado |
+| chat.2notasudi.com.br              | Chatwoot         | ✅ Configurado |
+| supbase.2notasudi.com.br           | Supabase         | ✅ Configurado |
+| easypanel.2notasudi.com.br         | Easypanel        | ✅ Configurado |
+| whatsapp.2notasudi.com.br          | Evolution API    | ✅ Configurado |
+| cartorio-n8n.dfgdxq.easypanel.host | N8N              | ✅ Configurado |
 
 **DNS Pendente**:
+
 - ⚠️ n8n.2notasudi.com.br → Precisa A record no Cloudflare
 - ⚠️ supabase.2notasudi.com.br → Precisa A record no Cloudflare
 - ⚠️ flow.2notasudi.com.br → N8N com domínio próprio (opcional)
@@ -358,17 +361,18 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 
 **Função**: Backend central do sistema. Uma das **duas centrais** (junto com N8N).
 
-| Item | Valor |
-|------|-------|
-| **Framework** | FastAPI |
-| **Versão** | v0.6.0 |
-| **Porta** | 8000 |
+| Item             | Valor                        |
+| ---------------- | ---------------------------- |
+| **Framework**    | FastAPI                      |
+| **Versão**       | v0.6.0                       |
+| **Porta**        | 8000                         |
 | **URL Produção** | https://api.2notasudi.com.br |
-| **Health Check** | GET /health |
-| **MCP Servers** | 6 servers, 164 tools |
-| **Endpoints** | 50+ REST (/api/v1/*) |
+| **Health Check** | GET /health                  |
+| **MCP Servers**  | 6 servers, 164 tools         |
+| **Endpoints**    | 50+ REST (/api/v1/\*)        |
 
 **Responsabilidades da API**:
+
 - Centralizar toda lógica de negócio
 - Integrar com todos os outros serviços
 - Expor endpoints REST para comunicação
@@ -377,6 +381,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 - Manter audit trail (LGPD)
 
 **Obrigatório**:
+
 - ✅ TESTAR todos os endpoints
 - ✅ INTEGRAR com todos os serviços
 - ✅ CENTRALIZAR junto com N8N
@@ -388,17 +393,18 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 
 **Função**: Engine de workflows. Uma das **duas centrais** (junto com API).
 
-| Item | Valor |
-|------|-------|
-| **Versão** | Última estável |
-| **Porta** | 5678 |
-| **URL Produção** | https://cartorio-n8n.dfgdxq.easypanel.host |
-| **Health Check** | GET /healthz |
-| **MCP URL** | https://cartorio-n8n.dfgdxq.easypanel.host/mcp-server/http |
-| **Workflows Ativos** | 33 |
-| **Runner** | External (n8n-runner) |
+| Item                 | Valor                                                      |
+| -------------------- | ---------------------------------------------------------- |
+| **Versão**           | Última estável                                             |
+| **Porta**            | 5678                                                       |
+| **URL Produção**     | https://cartorio-n8n.dfgdxq.easypanel.host                 |
+| **Health Check**     | GET /healthz                                               |
+| **MCP URL**          | https://cartorio-n8n.dfgdxq.easypanel.host/mcp-server/http |
+| **Workflows Ativos** | 33                                                         |
+| **Runner**           | External (n8n-runner)                                      |
 
 **Plugins Instalados**:
+
 - @devlikeapro/n8n-nodes-chatwoot
 - @winth03/n8n-nodes-minio
 - n8n-nodes-evolution-api
@@ -406,6 +412,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 - n8n-nodes-pdfkit
 
 **Obrigatório**:
+
 - ✅ TESTAR todos os workflows
 - ✅ APRENDER usar melhor a ferramenta (resultados estão ruins)
 - ✅ INTEGRAR com API, Chatwoot, Evolution, Supabase, Redis
@@ -413,6 +420,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 - ✅ BAIXAR documentação completa do N8N
 
 **Problemas Identificados**:
+
 - ⚠️ Workflows parecem não funcionar corretamente
 - ⚠️ Precisa testar e corrigir cada workflow individualmente
 - ⚠️ DNS n8n.2notasudi.com.br → NXDOMAIN
@@ -423,34 +431,34 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 
 **Função**: Banco de dados central de **TUDO** o sistema.
 
-| Item | Valor |
-|------|-------|
-| **Porta** | 5432 (Postgres) |
-| **URL Produção** | https://supbase.2notasudi.com.br |
-| **Health Check** | GET /auth/v1/health |
-| **Tabelas** | 133 |
-| **RPCs** | 3 |
-| **Cron Jobs** | 5 |
-| **Vault Entries** | 8 reais |
-| **Webhooks** | 3 (outbox/protocolo/consent) |
-| **Realtime** | 5 canais |
+| Item              | Valor                            |
+| ----------------- | -------------------------------- |
+| **Porta**         | 5432 (Postgres)                  |
+| **URL Produção**  | https://supbase.2notasudi.com.br |
+| **Health Check**  | GET /auth/v1/health              |
+| **Tabelas**       | 133                              |
+| **RPCs**          | 3                                |
+| **Cron Jobs**     | 5                                |
+| **Vault Entries** | 8 reais                          |
+| **Webhooks**      | 3 (outbox/protocolo/consent)     |
+| **Realtime**      | 5 canais                         |
 
 **Recursos do Supabase que DEVEM ser utilizados**:
 
-| Recurso | Status Atual | Ação Necessária |
-|---------|-------------|-----------------|
-| API REST (PostgREST) | ⚠️ Subutilizado | Usar completamente |
-| MCP Server/Client | ⚠️ Subutilizado | Configurar e integrar |
-| Cron Jobs | 5 ativos | Expandir |
-| Database Webhooks | 3 ativos | Expandir |
-| GraphQL (pg_graphql) | ⚠️ Não utilizado | Configurar |
-| Queues | ⚠️ Não utilizado | Implementar |
-| Vault | 8 entries | Expandir |
-| Auth | Configurado | Manter |
-| Storage | Disponível | Utilizar |
-| Realtime | 5 canais | Expandir |
-| Edge Functions | Disponível | Utilizar |
-| Extensions/Plugins | TODOS ativados | Manter |
+| Recurso              | Status Atual     | Ação Necessária       |
+| -------------------- | ---------------- | --------------------- |
+| API REST (PostgREST) | ⚠️ Subutilizado  | Usar completamente    |
+| MCP Server/Client    | ⚠️ Subutilizado  | Configurar e integrar |
+| Cron Jobs            | 5 ativos         | Expandir              |
+| Database Webhooks    | 3 ativos         | Expandir              |
+| GraphQL (pg_graphql) | ⚠️ Não utilizado | Configurar            |
+| Queues               | ⚠️ Não utilizado | Implementar           |
+| Vault                | 8 entries        | Expandir              |
+| Auth                 | Configurado      | Manter                |
+| Storage              | Disponível       | Utilizar              |
+| Realtime             | 5 canais         | Expandir              |
+| Edge Functions       | Disponível       | Utilizar              |
+| Extensions/Plugins   | TODOS ativados   | Manter                |
 
 > **CRÍTICO**: O Supabase é o **melhor banco de dados existente** com todas as extensões
 > e plugins ativados. Até agora, quase nada foi utilizado (0 tabelas aplicativas
@@ -458,6 +466,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 > melhorar as conexões. USAR COMPLETAMENTE A FERRAMENTA!
 
 **Endpoints do Supabase (via Kong)**:
+
 ```
 /auth/v1/*        → Auth
 /rest/v1/*        → PostgREST (CRUD)
@@ -469,6 +478,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 **Studio**: https://supbase.2notasudi.com.br (porta 3000)
 
 **Obrigatório**:
+
 - ✅ CENTRALIZAR tudo no Supabase
 - ✅ CRIAR tabelas aplicativas
 - ✅ CONFIGURAR completamente
@@ -482,20 +492,22 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 
 **Função**: Gateway de comunicação WhatsApp.
 
-| Item | Valor |
-|------|-------|
-| **Porta** | 8080 |
-| **URL Produção** | https://whatsapp.2notasudi.com.br |
-| **Health Check** | GET / |
-| **Manager UI** | whatsapp.2notasudi.com.br/manager |
-| **Instância** | cartorio-2notas |
-| **Webhook** | https://cartorio-n8n.dfgdxq.easypanel.host/webhook/evo-in |
-| **WhatsApp Conectado** | TriQ Hub (para testes) |
+| Item                   | Valor                                                     |
+| ---------------------- | --------------------------------------------------------- |
+| **Porta**              | 8080                                                      |
+| **URL Produção**       | https://whatsapp.2notasudi.com.br                         |
+| **Health Check**       | GET /                                                     |
+| **Manager UI**         | whatsapp.2notasudi.com.br/manager                         |
+| **Instância**          | cartorio-2notas                                           |
+| **Webhook**            | https://cartorio-n8n.dfgdxq.easypanel.host/webhook/evo-in |
+| **WhatsApp Conectado** | TriQ Hub (para testes)                                    |
 
 **Estado Atual**:
+
 - ⚠️ Instance cartorio-2notas state=close → Gustavo precisa escanear QR
 
 **Obrigatório**:
+
 - ✅ INTEGRAR no Chatwoot, N8N, API, Supabase, Redis, OpenClaw
 - ✅ DEIXAR tudo pronto para última coisa ser apenas conectar
 - ✅ CONFIGURAR tudo bonitinho
@@ -511,19 +523,21 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 ### 6.5 Chatwoot (CRM)
 
 **Função**: Ferramenta de CRM para:
+
 1. Integrar o WhatsApp
 2. Integrar o Agent AI
 3. Pausar o agent em qualquer conversa (HITL — Human In The Loop)
 
-| Item | Valor |
-|------|-------|
-| **Porta** | 3000 |
-| **URL Produção** | https://chat.2notasudi.com.br |
-| **Health Check** | GET /api/v1/accounts |
-| **Access Tokens** | 2 tokens reais |
-| **Sidekiq** | Background jobs ativo |
+| Item              | Valor                         |
+| ----------------- | ----------------------------- |
+| **Porta**         | 3000                          |
+| **URL Produção**  | https://chat.2notasudi.com.br |
+| **Health Check**  | GET /api/v1/accounts          |
+| **Access Tokens** | 2 tokens reais                |
+| **Sidekiq**       | Background jobs ativo         |
 
 **Recursos do Chatwoot que DEVEM ser utilizados**:
+
 - CRM completo
 - Gestão de conversas
 - HITL (Human In The Loop)
@@ -536,6 +550,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 - Contacts
 
 **Obrigatório**:
+
 - ✅ CONFIGURAR todas as ferramentas disponíveis
 - ✅ INTEGRAR completamente com todos os serviços
 - ✅ BAIXAR documentação completa do Chatwoot
@@ -546,20 +561,22 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 
 **Função**: Cache, sessões, memória rápida, pub/sub.
 
-| Item | Valor |
-|------|-------|
-| **Porta Interna** | 6379 |
-| **Porta Host** | 1001 |
-| **Health Check** | redis-cli PING → PONG |
-| **Auth** | @Techno832466 |
-| **Redis Commander** | http://<vps>:8081 |
-| **DBGate** | http://<vps>:3001 |
+| Item                | Valor                 |
+| ------------------- | --------------------- |
+| **Porta Interna**   | 6379                  |
+| **Porta Host**      | 1001                  |
+| **Health Check**    | redis-cli PING → PONG |
+| **Auth**            | @Techno832466         |
+| **Redis Commander** | http://<vps>:8081     |
+| **DBGate**          | http://<vps>:3001     |
 
 **Segurança**:
+
 - DOCKER-USER drop bloqueia acesso externo
 - Conexão externa autorizada: Tailscale (100.99.172.84:1001) + DOCKER-USER ALLOW
 
 **Obrigatório**:
+
 - ✅ Memória rápida para sessões
 - ✅ Cache de dados frequentes
 - ✅ Pub/Sub para eventos
@@ -571,20 +588,21 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 
 **Função**: Onde fica toda a configuração completa do Agent AI Cartório.
 
-| Item | Valor |
-|------|-------|
-| **Porta** | 18789 (interno), 18790 (externo) |
-| **URL Produção** | https://agent.2notasudi.com.br |
-| **Health Check** | GET /health → {"ok":true,"status":"live"} |
-| **Agent ID** | main |
-| **Agent Name** | Pietra Cartório |
-| **Modelo Primário** | deepseek-v4-flash |
-| **Provider** | openai (compat Opencode-Go) |
-| **Contexto** | 1M tokens |
-| **Temperature** | 0 |
-| **Thinking** | ON |
+| Item                | Valor                                     |
+| ------------------- | ----------------------------------------- |
+| **Porta**           | 18789 (interno), 18790 (externo)          |
+| **URL Produção**    | https://agent.2notasudi.com.br            |
+| **Health Check**    | GET /health → {"ok":true,"status":"live"} |
+| **Agent ID**        | main                                      |
+| **Agent Name**      | Pietra Cartório                           |
+| **Modelo Primário** | deepseek-v4-flash                         |
+| **Provider**        | openai (compat Opencode-Go)               |
+| **Contexto**        | 1M tokens                                 |
+| **Temperature**     | 0                                         |
+| **Thinking**        | ON                                        |
 
 **Config Path**: /home/node/.openclaw/agents/main/agent/
+
 - agent.json
 - models.json
 - openclaw-agent.sqlite
@@ -592,6 +610,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 - plugins/
 
 **Personalidade do Agent Cartório**:
+
 ```
 ✅ BEM DIRETO
 ✅ CURTO
@@ -601,6 +620,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 ```
 
 **O Agent DEVE usar**:
+
 - API (FastAPI backend)
 - MCPs, Tools, Plugins, Skills, Hooks, Ferramentas
   - TUDO com harness forte tanto no N8N quanto na API
@@ -612,6 +632,7 @@ SUPABASE → REDIS → CHATWOOT → N8N → API → EVOLUTION-API
 - Evolution API (WhatsApp)
 
 **Endpoints**:
+
 ```
 GET  /health          → Health check
 GET  /v1/agents       → Lista de agents
@@ -620,6 +641,7 @@ POST /v1/messages     → Mensagens
 ```
 
 **Problemas Identificados**:
+
 - ⚠️ /v1/chat HTTP 404 → gateway.http schema rejeitado (2026.6.10)
 - ⚠️ WS funciona (usado por N8N, Telegram, UI)
 - ⚠️ Contexto limitado em 131.1k (deveria ser 1M) → CORRIGIR
@@ -627,10 +649,12 @@ POST /v1/messages     → Mensagens
 - ⚠️ Parece que teve um problema → VERIFICAR E CORRIGIR
 
 **Nova chave para OpenClaw**:
+
 - sk-xcRwExjQjqmlc5swP8umqK2YqWUfVt23H3Xl6dpd9TqEyi16ssJXzHeUFGNNIfsJ
   (nova chave Opencode-Go pois a anterior limitou)
 
 **Obrigatório**:
+
 - ✅ CORRIGIR contexto de 131.1k para 1M
 - ✅ ATIVAR thinkings no deepseek-v4-flash
 - ✅ CONFIGURAR completamente
@@ -642,14 +666,15 @@ POST /v1/messages     → Mensagens
 
 **Função**: Central de deploy e gerenciamento de containers.
 
-| Item | Valor |
-|------|-------|
-| **URL** | https://easypanel.2notasudi.com.br |
-| **Admin Email** | admin@2notasudi.com.br |
-| **Projeto** | cartorio |
-| **Path** | /projects/cartorio |
+| Item            | Valor                              |
+| --------------- | ---------------------------------- |
+| **URL**         | https://easypanel.2notasudi.com.br |
+| **Admin Email** | admin@2notasudi.com.br             |
+| **Projeto**     | cartorio                           |
+| **Path**        | /projects/cartorio                 |
 
 **Services Docker Swarm (12)**:
+
 1. api
 2. chatwoot
 3. chatwoot-sidekiq
@@ -664,6 +689,7 @@ POST /v1/messages     → Mensagens
 12. easypanel-traefik
 
 **Acesso**:
+
 - ✅ API do Easypanel
 - ✅ SSH
 - ✅ Acesso via browser na VPS
@@ -722,35 +748,35 @@ sequenceDiagram
 
 ### 8.1 Métodos de Acesso
 
-| Método | Destino | Uso |
-|--------|---------|-----|
-| **SSH Direto** | 187.77.236.77 | Acesso root à VPS |
-| **SSH Tailscale** | 100.99.172.84 | Acesso via VPN privada |
-| **MCPs** | Diversos | Tooling automatizado |
-| **APIs REST** | Diversos | Integração entre serviços |
-| **Browser Agent AI** | VPS | UX/UI sem limitações |
+| Método               | Destino       | Uso                       |
+| -------------------- | ------------- | ------------------------- |
+| **SSH Direto**       | 187.77.236.77 | Acesso root à VPS         |
+| **SSH Tailscale**    | 100.99.172.84 | Acesso via VPN privada    |
+| **MCPs**             | Diversos      | Tooling automatizado      |
+| **APIs REST**        | Diversos      | Integração entre serviços |
+| **Browser Agent AI** | VPS           | UX/UI sem limitações      |
 
 ### 8.2 Health Checks
 
-| Serviço | Endpoint | Esperado |
-|---------|----------|----------|
-| API | GET /health | 200 OK |
-| N8N | GET /healthz | 200 OK |
-| Evolution | GET / | 200 OK |
-| Chatwoot | GET /api/v1/accounts | 200 OK |
-| Redis | redis-cli PING | PONG |
-| Supabase | GET /auth/v1/health | 200 OK |
-| OpenClaw | GET /health | {"ok":true,"status":"live"} |
+| Serviço   | Endpoint             | Esperado                    |
+| --------- | -------------------- | --------------------------- |
+| API       | GET /health          | 200 OK                      |
+| N8N       | GET /healthz         | 200 OK                      |
+| Evolution | GET /                | 200 OK                      |
+| Chatwoot  | GET /api/v1/accounts | 200 OK                      |
+| Redis     | redis-cli PING       | PONG                        |
+| Supabase  | GET /auth/v1/health  | 200 OK                      |
+| OpenClaw  | GET /health          | {"ok":true,"status":"live"} |
 
 ### 8.3 MCP Servers Configurados
 
-| MCP Server | URL | Tools |
-|-----------|-----|-------|
-| API MCP | /mcp/mcp (FastMCP 3.x) | 164 tools |
-| N8N MCP | https://cartorio-n8n.dfgdxq.easypanel.host/mcp-server/http | 30 tools |
-| Supabase MCP | http://localhost:8000/mcp?features=docs,database,debugging,development | — |
-| Easypanel MCP | helbertparanhos/easypanel-mcp-server (community) | — |
-| OpenClaw MCP | Agent gateway config | — |
+| MCP Server    | URL                                                                    | Tools     |
+| ------------- | ---------------------------------------------------------------------- | --------- |
+| API MCP       | /mcp/mcp (FastMCP 3.x)                                                 | 164 tools |
+| N8N MCP       | https://cartorio-n8n.dfgdxq.easypanel.host/mcp-server/http             | 30 tools  |
+| Supabase MCP  | http://localhost:8000/mcp?features=docs,database,debugging,development | —         |
+| Easypanel MCP | helbertparanhos/easypanel-mcp-server (community)                       | —         |
+| OpenClaw MCP  | Agent gateway config                                                   | —         |
 
 ---
 
@@ -762,23 +788,24 @@ sequenceDiagram
 
 ### 9.1 Minimax.io Coding Plan
 
-| Item | Valor |
-|------|-------|
-| **API Key** | sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s |
-| **Modelo** | Minimax-M3 |
-| **Contexto** | 1M |
-| **Uso** | Endpoint principal para coding agents |
+| Item         | Valor                                                                                                                         |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| **API Key**  | sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s |
+| **Modelo**   | Minimax-M3                                                                                                                    |
+| **Contexto** | 1M                                                                                                                            |
+| **Uso**      | Endpoint principal para coding agents                                                                                         |
 
 ### 9.2 Telegram Bot
 
-| Item | Valor |
-|------|-------|
-| **Token** | 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q |
-| **Bot** | @test_cartorio_bot |
-| **Uso** | Pré-teste para WhatsApp |
-| **Status** | Conectado via API/N8N/Chatwoot/Redis/Supabase |
+| Item       | Valor                                          |
+| ---------- | ---------------------------------------------- |
+| **Token**  | 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q |
+| **Bot**    | @test_cartorio_bot                             |
+| **Uso**    | Pré-teste para WhatsApp                        |
+| **Status** | Conectado via API/N8N/Chatwoot/Redis/Supabase  |
 
 **Problemas do Telegram Bot**:
+
 - ⚠️ NÃO está respondendo
 - ⚠️ Chat poluído com mensagens lixo (TOMAR CUIDADO)
 - ⚠️ O Telegram NÃO é canal oficial (será WhatsApp), mas é pré-teste
@@ -786,37 +813,37 @@ sequenceDiagram
 
 ### 9.3 Jules Agent (Google Gemini 3.1 Pro)
 
-| Item | Valor |
-|------|-------|
+| Item        | Valor                                                  |
+| ----------- | ------------------------------------------------------ |
 | **API Key** | AQ.Ab8RN6K26NJ3FFYfkXpT3-\_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ |
-| **Docs** | https://developers.google.com/jules/api |
-| **Uso** | Tasks, análise, revisão de código |
+| **Docs**    | https://developers.google.com/jules/api                |
+| **Uso**     | Tasks, análise, revisão de código                      |
 
 ### 9.4 Render
 
-| Item | Valor |
-|------|-------|
-| **API Key** | rnd_QP8GWTShurLmVGSp3H2e25pXsKti |
-| **API Key Alternativa** | rnd_sTv1GnBAmvWrsP7UGIs7wrbeuKzn |
-| **Docs** | https://api-docs.render.com/reference/authentication |
-| **Service** | srv-d8u04aojs32c73c92j8g |
-| **URL** | cartorio-lrkp.onrender.com |
+| Item                    | Valor                                                |
+| ----------------------- | ---------------------------------------------------- |
+| **API Key**             | rnd_QP8GWTShurLmVGSp3H2e25pXsKti                     |
+| **API Key Alternativa** | rnd_sTv1GnBAmvWrsP7UGIs7wrbeuKzn                     |
+| **Docs**                | https://api-docs.render.com/reference/authentication |
+| **Service**             | srv-d8u04aojs32c73c92j8g                             |
+| **URL**                 | cartorio-lrkp.onrender.com                           |
 
 ### 9.5 Linear
 
-| Item | Valor |
-|------|-------|
+| Item        | Valor                                            |
+| ----------- | ------------------------------------------------ |
 | **API Key** | lin_api_9Bmfyw0EAeAGMzEClLB9OncAT5A66TuQGtCNpLPl |
-| **Docs** | https://linear.app/docs/api-and-webhooks |
-| **Status** | 52/100 tasks Done, 48 pendentes (Sprint 4-7) |
+| **Docs**    | https://linear.app/docs/api-and-webhooks         |
+| **Status**  | 52/100 tasks Done, 48 pendentes (Sprint 4-7)     |
 
 ### 9.6 OpenCode-Go (Nova Chave)
 
-| Item | Valor |
-|------|-------|
+| Item        | Valor                                                               |
+| ----------- | ------------------------------------------------------------------- |
 | **API Key** | sk-xcRwExjQjqmlc5swP8umqK2YqWUfVt23H3Xl6dpd9TqEyi16ssJXzHeUFGNNIfsJ |
-| **Motivo** | A chave anterior limitou |
-| **Uso** | Agent AI Cartório OpenClaw |
+| **Motivo**  | A chave anterior limitou                                            |
+| **Uso**     | Agent AI Cartório OpenClaw                                          |
 
 ### 9.7 Gestão de .env
 
@@ -871,18 +898,18 @@ ATIVE TODAS as:
 
 Cada plataforma tem seu harness e impacta o resultado final diferentemente:
 
-| Plataforma | Tipo | Especialidade |
-|-----------|------|---------------|
-| Minimax.APP | Agent Team + M3 | Coding principal |
-| ZCode.APP | Agent Team + M3 | Coding alternativo |
-| Jules.CLI/API | Gemini 3.1 Pro | Tasks e análise |
-| Claude Code | Claude | Raciocínio complexo |
-| ZED.APP | Editor + AI | Edição rápida |
-| OpenCode | Go CLI | Tasks simples |
-| OpenChamber | — | — |
-| Goose | — | — |
-| Hermes | — | — |
-| OpenClaw | Agent | Agent AI |
+| Plataforma    | Tipo            | Especialidade       |
+| ------------- | --------------- | ------------------- |
+| Minimax.APP   | Agent Team + M3 | Coding principal    |
+| ZCode.APP     | Agent Team + M3 | Coding alternativo  |
+| Jules.CLI/API | Gemini 3.1 Pro  | Tasks e análise     |
+| Claude Code   | Claude          | Raciocínio complexo |
+| ZED.APP       | Editor + AI     | Edição rápida       |
+| OpenCode      | Go CLI          | Tasks simples       |
+| OpenChamber   | —               | —                   |
+| Goose         | —               | —                   |
+| Hermes        | —               | —                   |
+| OpenClaw      | Agent           | Agent AI            |
 
 ### 10.4 Ferramentas Gratuitas (Economizar)
 
@@ -899,21 +926,21 @@ Cada plataforma tem seu harness e impacta o resultado final diferentemente:
 
 ### 11.1 Configuração
 
-| Item | Valor |
-|------|-------|
-| **Modelo** | Gemini 3.1 Pro |
-| **API** | AQ.Ab8RN6K26NJ3FFYfkXpT3-\_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ |
-| **Docs** | https://developers.google.com/jules/api |
+| Item       | Valor                                                  |
+| ---------- | ------------------------------------------------------ |
+| **Modelo** | Gemini 3.1 Pro                                         |
+| **API**    | AQ.Ab8RN6K26NJ3FFYfkXpT3-\_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ |
+| **Docs**   | https://developers.google.com/jules/api                |
 
 ### 11.2 MCPs Conectados ao Jules
 
-| MCP | Status |
-|-----|--------|
-| Linear | ✅ Conectado |
-| Stitch | ✅ Conectado |
-| Context7 | ✅ Conectado |
-| v0 | ✅ Conectado |
-| Render | ✅ Conectado (MCP) |
+| MCP      | Status             |
+| -------- | ------------------ |
+| Linear   | ✅ Conectado       |
+| Stitch   | ✅ Conectado       |
+| Context7 | ✅ Conectado       |
+| v0       | ✅ Conectado       |
+| Render   | ✅ Conectado (MCP) |
 
 ### 11.3 Render no Jules
 
@@ -949,35 +976,35 @@ Cada plataforma tem seu harness e impacta o resultado final diferentemente:
 
 ### 12.1 Render
 
-| Item | Valor |
-|------|-------|
-| **API Key** | rnd_sTv1GnBAmvWrsP7UGIs7wrbeuKzn |
-| **Docs** | https://api-docs.render.com/reference/authentication |
-| **Service** | cartorio-lrkp.onrender.com |
-| **Uso** | Deploy, preview, CI/CD |
+| Item        | Valor                                                |
+| ----------- | ---------------------------------------------------- |
+| **API Key** | rnd_sTv1GnBAmvWrsP7UGIs7wrbeuKzn                     |
+| **Docs**    | https://api-docs.render.com/reference/authentication |
+| **Service** | cartorio-lrkp.onrender.com                           |
+| **Uso**     | Deploy, preview, CI/CD                               |
 
 ### 12.2 Linear
 
-| Item | Valor |
-|------|-------|
+| Item        | Valor                                            |
+| ----------- | ------------------------------------------------ |
 | **API Key** | lin_api_9Bmfyw0EAeAGMzEClLB9OncAT5A66TuQGtCNpLPl |
-| **Docs** | https://linear.app/docs/api-and-webhooks |
-| **Tasks** | 52/100 Done, 48 pendentes |
+| **Docs**    | https://linear.app/docs/api-and-webhooks         |
+| **Tasks**   | 52/100 Done, 48 pendentes                        |
 
 ### 12.3 Comunicação Global via Linear e Render
 
 Usando Linear e Render, conseguimos comunicação global entre:
 
-| Plataforma | Tipo |
-|-----------|------|
-| Minimax.APP/CLI/SDK | Agent Team |
-| ZCode.APP/CLI/SDK | Agent Team |
-| Antigravity.APP/CLI/SDK | Agent |
-| OpenCode.APP/CLI/SDK | CLI |
-| ZED.APP/CLI/SDK | Editor |
-| OpenChamber.APP/CLI/SDK | — |
-| Hermes.APP/CLI/SDK | — |
-| Jules.CLI/API/SDK | Agent |
+| Plataforma              | Tipo       |
+| ----------------------- | ---------- |
+| Minimax.APP/CLI/SDK     | Agent Team |
+| ZCode.APP/CLI/SDK       | Agent Team |
+| Antigravity.APP/CLI/SDK | Agent      |
+| OpenCode.APP/CLI/SDK    | CLI        |
+| ZED.APP/CLI/SDK         | Editor     |
+| OpenChamber.APP/CLI/SDK | —          |
+| Hermes.APP/CLI/SDK      | —          |
+| Jules.CLI/API/SDK       | Agent      |
 
 **Benefício**: Todos conseguem ver tasks, planos, quem está trabalhando no quê.
 
@@ -1134,30 +1161,30 @@ como utilizar as plataformas corretamente.
 
 ### 15.4 Referências Rápidas do Projeto
 
-| Documento | Path | Descrição |
-|-----------|------|-----------|
-| Versionamento | docs/VERSIONAMENTO_PROJETO.md | LEIA PRIMEIRO em cold start |
-| Changelog | docs/CHANGELOG.md | Histórico granular |
-| Roadmap 12 semanas | docs/ROADMAP.md | Planejamento |
-| Super Plan | docs/SUPER_PLAN.md | Visão macro |
-| Prospecção | docs/PROSPECCAO_MERCADO.md | Pesquisa de mercado |
-| Pendências SUI | docs/PENDENCIAS_SUI_2026-06-23.md | Items pendentes |
-| Comunicação | docs/COMMUNICATION_ARCHITECTURE.md | Arquitetura de comunicação |
-| RIPD (LGPD) | docs/ripd.md | v1.1 (vai para v1.2) |
-| Consentimento | docs/consent.md | Termo de consentimento |
-| Privacidade | docs/privacy-policy.md | Política de privacidade |
-| Sprint Tasks | .harness/TASKS.md | Tasks do sprint |
-| Protocolo Time | .harness/AGENTS.md | Config dos agents |
+| Documento          | Path                               | Descrição                   |
+| ------------------ | ---------------------------------- | --------------------------- |
+| Versionamento      | docs/VERSIONAMENTO_PROJETO.md      | LEIA PRIMEIRO em cold start |
+| Changelog          | docs/CHANGELOG.md                  | Histórico granular          |
+| Roadmap 12 semanas | docs/ROADMAP.md                    | Planejamento                |
+| Super Plan         | docs/SUPER_PLAN.md                 | Visão macro                 |
+| Prospecção         | docs/PROSPECCAO_MERCADO.md         | Pesquisa de mercado         |
+| Pendências SUI     | docs/PENDENCIAS_SUI_2026-06-23.md  | Items pendentes             |
+| Comunicação        | docs/COMMUNICATION_ARCHITECTURE.md | Arquitetura de comunicação  |
+| RIPD (LGPD)        | docs/ripd.md                       | v1.1 (vai para v1.2)        |
+| Consentimento      | docs/consent.md                    | Termo de consentimento      |
+| Privacidade        | docs/privacy-policy.md             | Política de privacidade     |
+| Sprint Tasks       | .harness/TASKS.md                  | Tasks do sprint             |
+| Protocolo Time     | .harness/AGENTS.md                 | Config dos agents           |
 
 ### 15.5 Memória Agent (Mavis)
 
-| Tipo | Path |
-|------|------|
-| Memória agent | ~/.mavis/agents/mavis/memory/MEMORY.md |
-| Memória projeto | .harness/memory/MEMORY.md |
-| Memória tópicos | udiapods-context.md, cartorio-context.md, cross-agent-coordination.md |
-| Reins ativos | cartorio-dev (backend), cartorio-n8n (workflows), cartorio-lgpd (compliance) |
-| Orquestrador | Mavis (Pietra) — delegação + decisão + report para Gustavo |
+| Tipo            | Path                                                                         |
+| --------------- | ---------------------------------------------------------------------------- |
+| Memória agent   | ~/.mavis/agents/mavis/memory/MEMORY.md                                       |
+| Memória projeto | .harness/memory/MEMORY.md                                                    |
+| Memória tópicos | udiapods-context.md, cartorio-context.md, cross-agent-coordination.md        |
+| Reins ativos    | cartorio-dev (backend), cartorio-n8n (workflows), cartorio-lgpd (compliance) |
+| Orquestrador    | Mavis (Pietra) — delegação + decisão + report para Gustavo                   |
 
 ### 15.6 Super HTML
 
@@ -1262,14 +1289,14 @@ ANALISAR completamente CI/CD pelo:
 
 ### 18.1 Configurações LGPD
 
-| Item | Valor |
-|------|-------|
-| DPO Email | dpo@2notasudi.com.br |
-| Retenção Conversas | 365 dias |
-| Retenção Audit | 1825 dias (5 anos) |
-| PII Redaction | cpf, rg, phone, email, cnh, passport |
-| PII Scrub | Habilitado |
-| PII Block on Detect | Habilitado |
+| Item                | Valor                                |
+| ------------------- | ------------------------------------ |
+| DPO Email           | dpo@2notasudi.com.br                 |
+| Retenção Conversas  | 365 dias                             |
+| Retenção Audit      | 1825 dias (5 anos)                   |
+| PII Redaction       | cpf, rg, phone, email, cnh, passport |
+| PII Scrub           | Habilitado                           |
+| PII Block on Detect | Habilitado                           |
 
 ### 18.2 CORS
 
@@ -1284,14 +1311,14 @@ ANALISAR completamente CI/CD pelo:
 
 ### 18.3 Prospecção de Cartórios
 
-| Item | Valor |
-|------|-------|
-| Habilitado | true |
-| Greeting | "Olá [nome], sou Gustavo Almeida..." |
-| Opt-out | PARAR, SAIR, CANCELAR, UNSUBSCRIBE |
-| Limite diário | 10 |
-| Disparo | MANUAL via Telegram (CEO) |
-| Fonte leads | ANOREG/BR + Google Maps + CNJ |
+| Item          | Valor                                |
+| ------------- | ------------------------------------ |
+| Habilitado    | true                                 |
+| Greeting      | "Olá [nome], sou Gustavo Almeida..." |
+| Opt-out       | PARAR, SAIR, CANCELAR, UNSUBSCRIBE   |
+| Limite diário | 10                                   |
+| Disparo       | MANUAL via Telegram (CEO)            |
+| Fonte leads   | ANOREG/BR + Google Maps + CNJ        |
 
 ---
 
@@ -1306,26 +1333,26 @@ ANALISAR completamente CI/CD pelo:
 
 ### 19.2 Provedores Suportados
 
-| Provedor | Tipo de Auth | Notas |
-|----------|-------------|-------|
-| Gemini CLI | OAuth | Google |
-| Gemini Antigravity | OAuth | Google |
-| Codex | API + OAuth | OpenAI |
-| Claude | API + OAuth | Anthropic |
-| Minimax | API + OAuth | Minimax.io |
-| DeepSeek | API | DeepSeek |
-| Kimi | API + OAuth | Moonshot |
-| ZED | API + OAuth | ZED Editor |
-| OpenCode-Zen | Free API + OAuth | Gratuito |
+| Provedor           | Tipo de Auth     | Notas      |
+| ------------------ | ---------------- | ---------- |
+| Gemini CLI         | OAuth            | Google     |
+| Gemini Antigravity | OAuth            | Google     |
+| Codex              | API + OAuth      | OpenAI     |
+| Claude             | API + OAuth      | Anthropic  |
+| Minimax            | API + OAuth      | Minimax.io |
+| DeepSeek           | API              | DeepSeek   |
+| Kimi               | API + OAuth      | Moonshot   |
+| ZED                | API + OAuth      | ZED Editor |
+| OpenCode-Zen       | Free API + OAuth | Gratuito   |
 
 ### 19.3 Provider Atual
 
-| Item | Valor |
-|------|-------|
-| Provider padrão | opencode_go |
-| Modelo primário | deepseek-v4-flash |
-| Modelo fallback | deepseek-v4-flash |
-| Base URL | https://opencode.ai/zen/go/v1 |
+| Item            | Valor                         |
+| --------------- | ----------------------------- |
+| Provider padrão | opencode_go                   |
+| Modelo primário | deepseek-v4-flash             |
+| Modelo fallback | deepseek-v4-flash             |
+| Base URL        | https://opencode.ai/zen/go/v1 |
 
 ---
 
@@ -1368,12 +1395,12 @@ O FOCO É O AGENT AI DO CARTÓRIO COMPLETO:
    - Context7
    - Sequential Thinkings
    - Render
-   
+
 ⚠️ SUPABASE ZERO utilizado:
    - 0 tabelas aplicativas
    - Apenas 1 function
    - API, N8N e Supabase SÃO AS CENTRAIS do ecossistema
-   
+
 ✅ PRECISA utilizar TUDO isso!
 ```
 
@@ -1383,11 +1410,11 @@ O FOCO É O AGENT AI DO CARTÓRIO COMPLETO:
 
 ### 21.1 Agentes Atuais no Workspace
 
-| Plataforma | Stack | Status |
-|-----------|-------|--------|
-| Minimax.APP | Minimax-M3 + Agent Team | ✅ Ativo |
-| ZCode.APP | Minimax-M3 + Agent Team | ✅ Ativo |
-| Jules.CLI/API | Gemini 3.1 Pro | ✅ Ativo |
+| Plataforma    | Stack                   | Status   |
+| ------------- | ----------------------- | -------- |
+| Minimax.APP   | Minimax-M3 + Agent Team | ✅ Ativo |
+| ZCode.APP     | Minimax-M3 + Agent Team | ✅ Ativo |
+| Jules.CLI/API | Gemini 3.1 Pro          | ✅ Ativo |
 
 ### 21.2 Sincronização
 
@@ -1511,6 +1538,7 @@ Este Super Prompt é também um **Context Loop Engineer** para:
 ### 24.2 Recuperação de Contexto
 
 Ao receber este prompt, você deve:
+
 1. Recuperar TODO o contexto
 2. Continuar no: Plan, Tasks, Goals, Metas, Hooks, Missions, Progress, Deliverables
 3. Verificar SESSION_SUMMARY mais recente
@@ -1582,38 +1610,38 @@ PROSSIGA!
 
 ## 📊 STATUS DA INFRAESTRUTURA (2026-06-24 19:55 BRT)
 
-| Serviço | URL/Nome | Versão | Status | Detalhes |
-|---------|----------|--------|--------|----------|
-| API | api.2notasudi.com.br | v0.6.0 | ✅ UP | 7/7 health 200, 6 MCP servers (164 tools) |
-| N8N | flow.2notasudi.com.br | — | ✅ UP | 33 WFs ativos + evo-in + workflow 31 v2 |
-| EVO | whatsapp.2notasudi.com.br | — | ✅ UP | instance cartorio-2notas, webhook 5 eventos |
-| CW | chatwoot.2notasudi.com.br | — | ✅ UP | 2 access tokens, CHATWOOT_API_KEY OK |
-| RED | cartorio_redis | — | ✅ UP | PONG, auth @Techno832466 |
-| SUP | cartorio_supabase | — | ✅ UP | 133 tabelas, 3 RPCs, 5 cron, 8 vault |
-| OCL | cartorio_openclaw | — | ✅ UP | M3 1M context, temp=0, thinking ON |
-| TGM | @test_cartorio_bot | — | ✅ UP | workflow 31 v2, E2E HTTP 200 13s |
-| RND | cartorio-lrkp.onrender.com | — | ✅ UP | service srv-d8u04aojs32c73c92j8g |
-| OCG | Opencode-Go M3 | — | ✅ UP | chave sk-xcRwExjQ, 1M context, cost $0 |
+| Serviço | URL/Nome                   | Versão | Status | Detalhes                                    |
+| ------- | -------------------------- | ------ | ------ | ------------------------------------------- |
+| API     | api.2notasudi.com.br       | v0.6.0 | ✅ UP  | 7/7 health 200, 6 MCP servers (164 tools)   |
+| N8N     | flow.2notasudi.com.br      | —      | ✅ UP  | 33 WFs ativos + evo-in + workflow 31 v2     |
+| EVO     | whatsapp.2notasudi.com.br  | —      | ✅ UP  | instance cartorio-2notas, webhook 5 eventos |
+| CW      | chatwoot.2notasudi.com.br  | —      | ✅ UP  | 2 access tokens, CHATWOOT_API_KEY OK        |
+| RED     | cartorio_redis             | —      | ✅ UP  | PONG, auth @Techno832466                    |
+| SUP     | cartorio_supabase          | —      | ✅ UP  | 133 tabelas, 3 RPCs, 5 cron, 8 vault        |
+| OCL     | cartorio_openclaw          | —      | ✅ UP  | M3 1M context, temp=0, thinking ON          |
+| TGM     | @test_cartorio_bot         | —      | ✅ UP  | workflow 31 v2, E2E HTTP 200 13s            |
+| RND     | cartorio-lrkp.onrender.com | —      | ✅ UP  | service srv-d8u04aojs32c73c92j8g            |
+| OCG     | Opencode-Go M3             | —      | ✅ UP  | chave sk-xcRwExjQ, 1M context, cost $0      |
 
 ### Alerts
 
-| Serviço | Issue | Ação Necessária |
-|---------|-------|-----------------|
-| EVO | instance state=close | Gustavo escanear QR |
-| DNS | n8n.2notasudi.com.br NXDOMAIN | A record no Cloudflare |
-| DNS | supabase.2notasudi.com.br NXDOMAIN | A record no Cloudflare |
-| OCL | /v1/chat HTTP 404 | Gateway schema issue (WS funciona) |
-| LNR | Linear 52/100 tasks Done | 48 pendentes (Sprint 4-7) |
+| Serviço | Issue                              | Ação Necessária                    |
+| ------- | ---------------------------------- | ---------------------------------- |
+| EVO     | instance state=close               | Gustavo escanear QR                |
+| DNS     | n8n.2notasudi.com.br NXDOMAIN      | A record no Cloudflare             |
+| DNS     | supabase.2notasudi.com.br NXDOMAIN | A record no Cloudflare             |
+| OCL     | /v1/chat HTTP 404                  | Gateway schema issue (WS funciona) |
+| LNR     | Linear 52/100 tasks Done           | 48 pendentes (Sprint 4-7)          |
 
 ---
 
 ## 🔄 VERSIONAMENTO DESTE PROMPT
 
-| Versão | Data | Mudanças |
-|--------|------|----------|
-| 1.0.0 | 2026-06-22 | Versão inicial do prompt |
-| 2.0.0 | 2026-06-23 | Adição de chaves, Jules, Linear, Render |
-| 3.0.0 | 2026-06-25 | Reorganização completa em 1000+ linhas, seções numeradas, tabelas, diagramas, JSON companion |
+| Versão | Data       | Mudanças                                                                                     |
+| ------ | ---------- | -------------------------------------------------------------------------------------------- |
+| 1.0.0  | 2026-06-22 | Versão inicial do prompt                                                                     |
+| 2.0.0  | 2026-06-23 | Adição de chaves, Jules, Linear, Render                                                      |
+| 3.0.0  | 2026-06-25 | Reorganização completa em 1000+ linhas, seções numeradas, tabelas, diagramas, JSON companion |
 
 ---
 

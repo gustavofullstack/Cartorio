@@ -9,9 +9,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Set test env BEFORE importing app modules
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["AUDIT_HMAC_KEY"] = "a" * 64  # 64 chars hex equivalente pra teste
+# Set test env BEFORE importing app modules.
+# Sprint 4 S01: usa setdefault para permitir override via env var
+# (CI/prod tem DATABASE_URL=postgresql; dev local pode usar sqlite).
+# Se a env var ja esta setada (Postgres), respeita.
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("AUDIT_HMAC_KEY", "a" * 64)  # 64 chars hex equivalente pra teste
 # .env local pode ter CHATWOOT_ACCOUNT_ID/INBOX_ID vazios (placeholders nao parseados
 # como int). Forca valores numericos via env vars, que tem precedencia sobre .env.
 os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
