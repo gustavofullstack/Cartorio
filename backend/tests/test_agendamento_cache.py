@@ -14,7 +14,6 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from app.services.agendamento_cache import (
     CACHE_KEY_PREFIX,
@@ -23,7 +22,6 @@ from app.services.agendamento_cache import (
     _cache_key_cliente,
     _cache_key_pendentes,
     _cache_key_proximos,
-    _get_redis_client,
     get_agendamentos_pendentes_cached,
     get_agendamentos_proximos_cached,
     get_cliente_cached,
@@ -142,7 +140,7 @@ def test_get_pendentes_miss():
 
     with (
         patch("app.services.agendamento_cache._get_redis_client", return_value=mock_redis),
-        patch("app.services.agendamento_metrics.metrics_store") as mock_metrics,
+        patch("app.services.agendamento_metrics.metrics_store"),
     ):
         result = get_agendamentos_pendentes_cached()
 
@@ -168,7 +166,7 @@ def test_get_pendentes_erro():
 
     with (
         patch("app.services.agendamento_cache._get_redis_client", return_value=mock_redis),
-        patch("app.services.agendamento_metrics.metrics_store") as mock_metrics,
+        patch("app.services.agendamento_metrics.metrics_store"),
     ):
         result = get_agendamentos_pendentes_cached()
 

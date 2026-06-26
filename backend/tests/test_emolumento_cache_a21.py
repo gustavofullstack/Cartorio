@@ -76,3 +76,38 @@ def test_invalidate_por_tipo() -> None:
         mock_get.return_value = r
         result = invalidate("escritura")
     assert result == 2
+
+
+def test_set_cached_redis_offline_retorna_false() -> None:
+    """set_cached retorna False se Redis indisponivel."""
+    with patch("app.services.emolumento_cache._get_redis_client") as mock_get:
+        mock_get.return_value = None
+        assert set_cached("escritura", 100000.0, {"valor": 1}) is False
+
+
+def test_invalidate_redis_offline_retorna_zero() -> None:
+    """invalidate retorna 0 se Redis indisponivel."""
+    with patch("app.services.emolumento_cache._get_redis_client") as mock_get:
+        mock_get.return_value = None
+        assert invalidate(None) == 0
+        assert invalidate("escritura") == 0
+
+
+def test_get_cached_redis_error_retorna_none() -> None:
+    """get_cached retorna None se Redis lanca excecao."""
+    with patch("app.services.emolumento_cache._get_redis_client") as mock_get:
+        r = MagicMock()
+        r.get.side_effect = ConnectionError("Redis timeout")
+        mock_get.return_value = r
+        assert get_cached("escritura", 100000.0) is None
+
+
+def test_invalidate_redis_error_retorna_zero() -> None:
+    """invalidate retorna 0 se Redis lanca excecao no scan."""
+    with patch("app.services.emolumento_cache._get_redis_client") as mock_get:
+        r = MagicMock()
+        r.scan_iter.side_effect = ConnectionError("Redis scan failed")
+        mock_get.return_value = r
+        assert invalidate(None) == 0
+
+

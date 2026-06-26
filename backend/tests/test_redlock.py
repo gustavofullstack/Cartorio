@@ -136,3 +136,29 @@ class TestRedlock:
         assert "redlock:migrations:run" in fake.store
         # NAO expoe PII no nome
         assert "cpf" not in "redlock:migrations:run"
+
+    def test_acquire_lock_handles_redis_error(self):
+        """acquire_lock retorna None se Redis lanca excecao."""
+        fake = FakeRedis()
+        orig_set = fake.set
+        def broken_set(*args: object, **kwargs: object) -> None:
+            raise ConnectionError("Redis connection refused")
+        fake.set = broken_set  # type: ignore[method-assign]
+        with patch("app.services.redlock._get_redis_client", return_value=fake):
+            token = acquire_lock("error-test", ttl_seconds=60)
+        assert token is None
+        fake.set = orig_set
+
+    def test_release_lock_handles_redis_error(self):
+        """release_lock retorna False se Redis lanca excecao no eval."""
+        fake = FakeRedis()
+        fake.store["redlock:err"] = "mytoken"
+        orig_eval = fake.eval
+        def broken_eval(*args: object, **kwargs: object) -> None:
+            raise ConnectionError("Redis eval failed")
+        fake.eval = broken_eval  # type: ignore[method-assign]
+        with patch("app.services.redlock._get_redis_client", return_value=fake):
+            result = release_lock("err", "mytoken")
+        assert result is False
+        fake.eval = orig_eval
+
