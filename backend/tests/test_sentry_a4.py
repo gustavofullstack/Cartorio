@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import os
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from app.services.sentry import (
     _before_send,

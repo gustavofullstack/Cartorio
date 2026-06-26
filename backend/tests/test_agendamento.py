@@ -306,7 +306,6 @@ def test_cancelar_agendamento_nao_encontrado(test_session):
 
 def test_cancelar_agendamento_status_invalido(test_session, cliente_test):
     """cancelar_agendamento levanta ValueError se status não permite cancelamento."""
-    from app.models.agendamento import StatusAgendamento
     from app.services.agendamento import AgendamentoService
 
     import datetime
@@ -365,7 +364,6 @@ def test_confirmar_agendamento_nao_encontrado(test_session):
 def test_confirmar_agendamento_status_invalido(test_session, cliente_test):
     """confirmar_agendamento levanta ValueError se status não é AGENDADO."""
     from app.services.agendamento import AgendamentoService
-    from app.models.agendamento import StatusAgendamento
 
     import datetime
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
