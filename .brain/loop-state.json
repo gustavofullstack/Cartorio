@@ -1,19 +1,19 @@
 {
-  "session_id": "2026-06-26-quality-squeeze",
-  "session_start": "2026-06-26T15:30:00Z",
-  "current_squad": "COVERAGE-DONE",
-  "last_squad_completed": "COVERAGE",
-  "last_task": "sentry/slow_queries/tracing coverage boost",
-  "last_commit": "current-turno4",
-  "next_action": "Continue docs squad C or J obs - or fix remaining warnings (2)",
+  "session_id": "2026-06-26-brain8-loop",
+  "session_start": "2026-06-26T14:15:00Z",
+  "current_squad": "BRAIN8",
+  "last_squad_completed": "BRAIN8",
+  "last_task": "BRAIN8 cross-session context sync endpoints",
+  "last_commit": "0fe2bed feat(brain): BRAIN8 cross-session context sync endpoints (5 new + 17 tests)",
+  "next_action": "Continue Squad C docs (12/25 -> 15/25) + E06 E2E Telegram",
   "gates": {
     "mypy": 0,
     "ruff": 0,
-    "pytest_passed": 1305,
+    "pytest_passed": 1459,
     "pytest_failed": 0,
     "pytest_skipped": 12,
     "pytest_warnings": 2,
-    "coverage": "84% (target 90%)",
+    "coverage": "90.48% (>90% gate)",
     "openclaw": "online",
     "supabase": "online",
     "telegram": "online+webhook"
@@ -26,24 +26,15 @@
     "openclaw": "online (agent.2notasudi.com.br) - ctx 1M FIXED",
     "supabase": "online (supbase.2notasudi.com.br)",
     "redis": "online (PONG)",
-    "easypanel": "online"
+    "easypanel": "online",
+    "prometheus_metrics": "13 exposed via /api/v1/metrics/prometheus"
   },
   "commits_session": [
-    "b3acfcc test(agendamento): agendamento endpoint auth tests",
-    "da32aee test(health): backup endpoint auth tests",
-    "1f4dfb7 feat(devops): check_all.sh - full system check",
-    "36a4bfe docs(platforms): C18 ARCHITECTURE_DIAGRAM + C19 GLOSSARY",
-    "11a7b47 chore(memory): SESSION_SUMMARY - SQUAD E 100% DONE",
-    "c3c7dd1 docs(incident): INC-004 OpenClaw 502 postmortem",
-    "current: test(sentry): expand A4 coverage 38%->99%",
-    "current: test(slow_queries): new test file, coverage 49%->100%",
-    "current: test(tracing): expand A3 coverage 77%->98%",
-    "current: fix(ruff): remove unused Sequence import in migration 0013",
-    "current: fix(warning): 422 deprecated constant + async mock RuntimeWarning",
-    "current: 32 warnings -> 2 warnings (-94%)"
+    "6287d24 chore(api): bump version 0.5.4 → 0.6.0 + full system validation 2026-06-26",
+    "0fe2bed feat(brain): BRAIN8 cross-session context sync endpoints (5 new + 17 tests)"
   ],
-  "tasks_done_total": 88,
-  "tasks_done_session": 6,
+  "tasks_done_total": 89,
+  "tasks_done_session": 2,
   "squads_status": {
     "S0 Supabase": "10/10 DONE",
     "A API+DB": "25/25 DONE",
@@ -53,18 +44,29 @@
     "E OpenClaw": "8/8 DONE",
     "H Chatwoot": "8/8 DONE",
     "J Obs+CI/CD": "5/10 (50%)",
-    "BRAIN Cérebro": "7/8 (88%)",
+    "BRAIN Cérebro": "8/8 (100%) DONE",
     "DOCS Plataformas": "5/5 DONE"
   },
   "todos_next": [
-    "Continue docs squad C (12/25 -> target 15/25)",
-    "Continue J obs+ci/cd (5/10 -> target 7/10)",
-    "Fix remaining 2 warnings (StarletteDeprecationWarning + OTEL DeprecationWarning)",
-    "BRAIN8 cross-session context sync",
+    "Squad C docs (12/25 -> target 15/25)",
+    "E06 E2E Telegram -> API -> N8N -> OpenClaw -> Resposta",
+    "C24/C25 Uptime Kuma + Status page (deploy)",
+    "INC-005b Chatwoot SEM Networks: HOLD Gustavo/CI (Easypanel UI)",
     "DNS Cloudflare A records (SUI Gustavo)",
     "QR WhatsApp TriQ Hub (SUI Gustavo)"
   ],
-  "tokens_used_session_estimate": "~40k (quality squeeze turno)",
-  "pietra_role": "coverage + quality engineer",
-  "owner": "Gustavo Almeida (Tabeliao)"
+  "tokens_used_session_estimate": "~25k (BRAIN8 turno)",
+  "pietra_role": "brain + cross-session context engineer",
+  "owner": "Gustavo Almeida (Tabeliao)",
+  "warnings_external": [
+    "StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated - EXTERNAL (httpx library)",
+    "OpenTelemetry DeprecationWarning: SelectableGroups dict interface is deprecated - EXTERNAL (opentelemetry library)"
+  ],
+  "brain8_endpoints_added": [
+    "GET /api/v1/brain/snapshots - list cross-session snapshots",
+    "GET /api/v1/brain/snapshots/{id} - get 1 snapshot detail",
+    "GET /api/v1/brain/sessions - list all previous sessions",
+    "GET /api/v1/brain/context/restore/{id} - restore full context from snapshot",
+    "GET /api/v1/brain/context/current - live context (loop_state + index + counts)"
+  ]
 }
