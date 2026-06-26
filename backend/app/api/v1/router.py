@@ -3443,12 +3443,8 @@ async def get_protocolos_recentes_concluidos(
     db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> dict:
     """Endpoint usado pelo N8N workflow #25 (protocolo concluido -> PDF WhatsApp)."""
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
-        )
+    api_key_header = request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
 
     from app.services.protocolo_query import listar_protocolos_recentes_concluidos
 
@@ -3731,12 +3727,8 @@ async def admin_validate_n8n_wfs(request: Request) -> dict:
     """Valida todos os WFs N8N (B11 - sem precisar de N8N rodando)."""
     from app.services.n8n_workflow_validator import validate_all
 
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
-        )
+    api_key_header = request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
 
     result = validate_all()
 
@@ -3835,12 +3827,8 @@ async def admin_lgpd_relatorio_anual(
     """Gera relatorio ANPD (D9)."""
     from app.services.lgpd_relatorio import gerar_relatorio_anual, render_markdown
 
-    api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
-        raise HTTPException(
-            status_code=401,
-            detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
-        )
+    api_key_header = request.headers.get("x-api-key")
+    _verify_api_key(api_key_header)
 
     rel = gerar_relatorio_anual(db, ano=ano)
 
