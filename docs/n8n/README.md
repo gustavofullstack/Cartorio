@@ -1,138 +1,72 @@
-# N8N — Documentação Consolidada
+![Banner image](https://user-images.githubusercontent.com/10284570/173569848-c624317f-42b1-45a6-ab09-f0ea3c247648.png)
 
-> **Fonte**: docs.n8n.io + nossa experiência operacional
-> **Versão**: Latest (Docker Swarm via Easypanel)
-> **URL**: https://flow.2notasudi.com.br
-> **MCP URL**: https://flow.2notasudi.com.br/mcp-server/http
+# n8n - Secure Workflow Automation for Technical Teams
 
----
+n8n is a workflow automation platform that gives technical teams the flexibility of code with the speed of no-code. With 400+ integrations, native AI capabilities, and a fair-code license, n8n lets you build powerful automations while maintaining full control over your data and deployments.
 
-## 🎯 Conceitos Fundamentais
+![n8n.io - Screenshot](https://raw.githubusercontent.com/n8n-io/n8n/master/assets/n8n-screenshot-readme.png)
 
-| Conceito | Descrição |
-|----------|-----------|
-| **Workflow** | Sequência automatizada de ações (nodes conectados) |
-| **Node** | Unidade básica de ação (HTTP, Code, IF, Set, etc) |
-| **Trigger** | Node que inicia workflow (Webhook, Schedule, Manual) |
-| **Execution** | Uma rodada do workflow (registrada em DB) |
-| **Credentials** | Secrets gerenciados separadamente (HTTP Basic, API Keys, OAuth) |
-| **Expressions** | `{{ $json.field }}` para acessar dados dinâmicos |
-| **Webhook** | Endpoint HTTP para receber dados externos |
+## Key Capabilities
 
----
+- **Code When You Need It**: Write JavaScript/Python, add npm packages, or use the visual interface
+- **AI-Native Platform**: Build AI agent workflows based on LangChain with your own data and models
+- **Full Control**: Self-host with our fair-code license or use our [cloud offering](https://app.n8n.cloud/login)
+- **Enterprise-Ready**: Advanced permissions, SSO, and air-gapped deployments
+- **Active Community**: 400+ integrations and 900+ ready-to-use [templates](https://n8n.io/workflows)
 
-## 📡 Nós Principais (Core Nodes)
+## Quick Start
 
-| Nó | Função | Uso típico |
-|----|--------|-----------|
-| **HTTP Request** | Chamar API REST | Chamar nossa API, Supabase, etc |
-| **Webhook** | Receber HTTP POST | Receber eventos Evolution, Chatwoot |
-| **Code (JS/Python)** | Lógica custom | Transformar dados, calcular |
-| **Schedule** | Trigger por cron | Cron jobs (backup, audit) |
-| **IF / Switch** | Condicional | Roteamento por tipo de evento |
-| **Set** | Setar campos | Adicionar metadados (correlation_id) |
-| **Function** | Code legacy | Igual Code mas limitado |
-| **Merge** | Combinar fluxos | Wait + Join |
-| **Wait** | Delay controlado | Rate limiting entre chamadas |
-| **Stop and Error** | Parar com erro | Encerrar workflow com falha |
-
----
-
-## 🔌 Plugins Instalados (Cartório)
-
-| Plugin | Função |
-|--------|--------|
-| `@devlikeapro/n8n-nodes-chatwoot` | Nodes para Chatwoot |
-| `@winth03/n8n-nodes-minio` | Nodes para MinIO (S3) |
-| `n8n-nodes-evolution-api` | Nodes Evolution API |
-| `n8n-nodes-mcp` | Nodes MCP |
-| `n8n-nodes-pdfkit` | Geração de PDFs |
-
----
-
-## ✅ Padrões Já Aplicados (B07-B11)
-
-- **B07** Retry policy 3x exp backoff em 63/63 HTTP nodes
-- **B08** Timeout 5s/10s em 130/130 HTTP nodes
-- **B09** X-Correlation-ID em todos os HTTP nodes
-- **B10** Métricas Prometheus adicionadas
-- **B11** Error handler v6 conectado em todos os workflows
-
----
-
-## 📚 Workflows Ativos (34)
-
-| # | Workflow | Status |
-|---|----------|--------|
-| 00 | Error Handler Global (T25) v4 | ✅ |
-| 01 | Consulta Emolumento WhatsApp v3 | ✅ |
-| 02 | Criar Protocolo LGPD | ✅ |
-| 03 | Handoff Humano Chatwoot | ✅ |
-| 04 | Boas-Vindas + Consentimento LGPD | ✅ |
-| 04b | Consulta Protocolo | ✅ |
-| 05 | Agendamento Atendimento | ✅ |
-| 06 | Segunda Via Documento | ✅ |
-| 07 | Pesquisa Satisfação 24h | ⚠️ (aguarda cred Evolution) |
-| 08 | Audit Verify Diário (cron 03:30) | ✅ |
-| 09 | Monitor Backup Diário (cron 04:00) | ✅ |
-| 10 | FAQ Bot | ✅ |
-| 11 | Monitor Cartório (13 nodes) | ✅ |
-| 12 | Chatbot LLM End-to-End PII + OpenCode-Go | ✅ |
-| 22 | MCP Server Tools v2 | ✅ |
-| + | 19 workflows adicionais | ✅ |
-
----
-
-## ⚠️ Pendências (Sprint 5+)
-
-- [ ] **B12**: Test runner automatizado para workflows
-- [ ] **B13**: Templates de workflow padrão
-- [ ] **B14**: Dashboard de monitoramento N8N
-- [ ] **B15**: Alertas Telegram para falhas críticas
-- [ ] Agent: configurar credential Evolution API (WF #07)
-- [ ] Agent: testar todos os 34 workflows individualmente
-- [ ] Agent: corrigir workflows com problemas identificados
-
----
-
-## 🔗 Links Úteis
-
-| Recurso | URL |
-|---------|-----|
-| Docs oficial | https://docs.n8n.io/ |
-| GitHub | https://github.com/n8n-io/n8n |
-| Hospedagem cloud | https://n8n.cloud/ |
-| Comunidade | https://community.n8n.io/ |
-| Workflows templates | https://n8n.io/workflows/ |
-| HTTP Request docs | https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/ |
-| Webhook docs | https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/ |
-| Error handling | https://docs.n8n.io/flow-logic/error-handling/ |
-| Production checklist | https://docs.n8n.io/hosting/production-checklist/ |
-
----
-
-## 🎯 Nossa Arquitetura
+Try n8n instantly with [npx](https://docs.n8n.io/hosting/installation/npm/) (requires [Node.js](https://nodejs.org/en/)):
 
 ```
-EVOLUTION-API webhook → N8N (flow.2notasudi.com.br)
-                            ↓
-                       Workflow #01-34
-                            ↓
-                       HTTP Request → API (api.2notasudi.com.br)
-                            ↓
-                       Process + Audit + Log
-                            ↓
-                       Webhook N8N out → Evolution API (sendText)
-                            ↓
-                       WhatsApp do cliente
+npx n8n
 ```
 
----
+Or deploy with [Docker](https://docs.n8n.io/hosting/installation/docker/):
 
-## 📊 Métricas Prometheus
+```
+docker volume create n8n_data
+docker run -it --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n
+```
 
-N8N expõe métricas em `/metrics`:
-- `n8n_wf_executions_total{workflow, status}`
-- `n8n_wf_latency_seconds{workflow}`
-- `n8n_node_executions_total{node, type}`
-- `n8n_api_errors_total{endpoint}`
+Access the editor at http://localhost:5678
+
+## Resources
+
+- 📚 [Documentation](https://docs.n8n.io)
+- 🔧 [400+ Integrations](https://n8n.io/integrations)
+- 💡 [Example Workflows](https://n8n.io/workflows)
+- 🤖 [AI & LangChain Guide](https://docs.n8n.io/advanced-ai/)
+- 👥 [Community Forum](https://community.n8n.io)
+- 📖 [Community Tutorials](https://community.n8n.io/c/tutorials/28)
+
+## Support
+
+Need help? Our community forum is the place to get support and connect with other users:
+[community.n8n.io](https://community.n8n.io)
+
+## License
+
+n8n is [fair-code](https://faircode.io) distributed under the [Sustainable Use License](https://github.com/n8n-io/n8n/blob/master/LICENSE.md) and [n8n Enterprise License](https://github.com/n8n-io/n8n/blob/master/LICENSE_EE.md).
+
+- **Source Available**: Always visible source code
+- **Self-Hostable**: Deploy anywhere
+- **Extensible**: Add your own nodes and functionality
+
+[Enterprise Licenses](mailto:license@n8n.io) available for additional features and support.
+
+Additional information about the license model can be found in the [docs](https://docs.n8n.io/sustainable-use-license/).
+
+## Contributing
+
+Found a bug 🐛 or have a feature idea ✨? Check our [Contributing Guide](https://github.com/n8n-io/n8n/blob/master/CONTRIBUTING.md) for a setup guide & best practices.
+
+## Join the Team
+
+Want to shape the future of automation? Check out our [job posts](https://n8n.io/careers) and join our team!
+
+## What does n8n mean?
+
+**Short answer:** It means "nodemation" and is pronounced as n-eight-n.
+
+**Long answer:** "I get that question quite often (more often than I expected) so I decided it is probably best to answer it here. While looking for a good name for the project with a free domain I realized very quickly that all the good ones I could think of were already taken. So, in the end, I chose nodemation. 'node-' in the sense that it uses a Node-View and that it uses Node.js and '-mation' for 'automation' which is what the project is supposed to help with. However, I did not like how long the name was and I could not imagine writing something that long every time in the CLI. That is when I then ended up on 'n8n'." - **Jan Oberhauser, Founder and CEO, n8n.io**

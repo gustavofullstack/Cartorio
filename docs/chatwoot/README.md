@@ -1,181 +1,139 @@
-# Chatwoot — Documentação Consolidada
+<img src="./.github/screenshots/header.png#gh-light-mode-only" width="100%" alt="Header light mode"/>
+<img src="./.github/screenshots/header-dark.png#gh-dark-mode-only" width="100%" alt="Header dark mode"/>
 
-> **Fonte**: chatwoot.com/docs + nossa experiência operacional
-> **Versão**: Latest (Docker Swarm via Easypanel)
-> **URL**: https://chat.2notasudi.com.br
-> **Porta**: 3000 (interno)
-> **Admin**: admin@2notasudi.com.br
+___
 
----
+# Chatwoot
 
-## 🎯 Para que serve no Cartório
+The modern customer support platform, an open-source alternative to Intercom, Zendesk, Salesforce Service Cloud etc.
 
-| # | Função | Uso |
-|---|--------|-----|
-| 1 | **CRM** | Gerenciar todas as conversas dos clientes |
-| 2 | **Integrar WhatsApp** | Via Evolution API + webhooks |
-| 3 | **Integrar Agent AI** | OpenClaw (Pietra) aparece como agente |
-| 4 | **HITL** | Pausar o agent em qualquer conversa manualmente |
-| 5 | **Automações** | Regras automáticas baseadas em condições |
-| 6 | **Macros** | Ações predefinidas para atendentes |
-| 7 | **Canned Responses** | Respostas prontas para FAQ |
-| 8 | **Labels/Tags** | Categorização de conversas |
-| 9 | **Teams** | Equipes de atendimento |
-| 10 | **Reports** | Relatórios de atendimento e SLA |
-| 11 | **Contacts** | Base de contatos integrada |
-| 12 | **Inbox** | Canal WhatsApp conectado |
+<p>
+  <img src="https://img.shields.io/circleci/build/github/chatwoot/chatwoot" alt="CircleCI Badge">
+    <a href="https://hub.docker.com/r/chatwoot/chatwoot/"><img src="https://img.shields.io/docker/pulls/chatwoot/chatwoot" alt="Docker Pull Badge"></a>
+  <a href="https://hub.docker.com/r/chatwoot/chatwoot/"><img src="https://img.shields.io/docker/cloud/build/chatwoot/chatwoot" alt="Docker Build Badge"></a>
+  <img src="https://img.shields.io/github/commit-activity/m/chatwoot/chatwoot" alt="Commits-per-month">
+  <a title="Crowdin" target="_self" href="https://chatwoot.crowdin.com/chatwoot"><img src="https://badges.crowdin.net/e/37ced7eba411064bd792feb3b7a28b16/localized.svg"></a>
+  <a href="https://discord.gg/cJXdrwS"><img src="https://img.shields.io/discord/647412545203994635" alt="Discord"></a>
+  <a href="https://status.chatwoot.com"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fchatwoot%2Fstatus%2Fmaster%2Fapi%2Fchatwoot%2Fuptime.json" alt="uptime"></a>
+  <a href="https://status.chatwoot.com"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fchatwoot%2Fstatus%2Fmaster%2Fapi%2Fchatwoot%2Fresponse-time.json" alt="response time"></a>
+  <a href="https://artifacthub.io/packages/helm/chatwoot/chatwoot"><img src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/artifact-hub" alt="Artifact HUB"></a>
+</p>
 
----
 
-## 🔐 Autenticação
+<p>
+  <a href="https://heroku.com/deploy?template=https://github.com/chatwoot/chatwoot/tree/master" alt="Deploy to Heroku">
+     <img width="150" alt="Deploy" src="https://www.herokucdn.com/deploy/button.svg"/>
+  </a>
+  <a href="https://marketplace.digitalocean.com/apps/chatwoot?refcode=f2238426a2a8" alt="Deploy to DigitalOcean">
+     <img width="200" alt="Deploy to DO" src="https://www.deploytodo.com/do-btn-blue.svg"/>
+  </a>
+</p>
 
-| Tipo | Como |
-|------|------|
-| **API v1** | Header `api_access_token: <token>` |
-| **API v2** | OAuth 2.0 + Bearer token |
-| **Web login** | Email + senha (admin@2notasudi.com.br) |
-
-**Nossas tokens**:
-- 2 access tokens reais configurados
-- Token armazenado em `.env` da API
+<img src="./.github/screenshots/dashboard.png#gh-light-mode-only" width="100%" alt="Chat dashboard dark mode"/>
+<img src="./.github/screenshots/dashboard-dark.png#gh-dark-mode-only" width="100%" alt="Chat dashboard"/>
 
 ---
 
-## 📡 Endpoints Principais (API v1)
+Chatwoot is the modern, open-source, and self-hosted customer support platform designed to help businesses deliver exceptional customer support experience. Built for scale and flexibility, Chatwoot gives you full control over your customer data while providing powerful tools to manage conversations across channels.
 
-| Endpoint | Método | Função |
-|----------|--------|--------|
-| `/api/v1/accounts` | GET | Lista contas |
-| `/api/v1/accounts/:id/conversations` | GET | Lista conversas |
-| `/api/v1/accounts/:id/conversations/:id` | GET | Detalhe conversa |
-| `/api/v1/accounts/:id/conversations/:id/messages` | POST | Enviar mensagem |
-| `/api/v1/accounts/:id/contacts` | GET/POST | Listar/criar contatos |
-| `/api/v1/accounts/:id/agents` | GET | Lista agentes |
-| `/api/v1/accounts/:id/labels` | GET/POST | Labels |
-| `/api/v1/accounts/:id/canned_responses` | GET/POST | Canned responses |
-| `/api/v1/accounts/:id/teams` | GET/POST | Teams |
-| `/api/v1/accounts/:id/inboxes` | GET | Inboxes |
+### ✨ Captain – AI Agent for Support
 
----
+Supercharge your support with Captain, Chatwoot’s AI agent. Captain helps automate responses, handle common queries, and reduce agent workload—ensuring customers get instant, accurate answers. With Captain, your team can focus on complex conversations while routine questions are resolved automatically. Read more about Captain [here](https://chwt.app/captain-docs).
 
-## 🔌 Webhooks (Recebidos pela API)
+### 💬 Omnichannel Support Desk
 
-Eventos que o Chatwoot envia para nossa API:
+Chatwoot centralizes all customer conversations into one powerful inbox, no matter where your customers reach out from. It supports live chat on your website, email, Facebook, Instagram, Twitter, WhatsApp, Telegram, Line, SMS etc.
 
-| Evento | Quando | Endpoint |
-|--------|--------|----------|
-| `conversation_created` | Nova conversa | `/api/v1/webhook/chatwoot` |
-| `conversation_updated` | Status muda | `/api/v1/webhook/chatwoot` |
-| `message_created` | Nova mensagem | `/api/v1/webhook/chatwoot` |
-| `message_updated` | Mensagem editada | `/api/v1/webhook/chatwoot` |
-| `contact_created` | Novo contato | `/api/v1/webhook/chatwoot` |
-| `contact_updated` | Contato editado | `/api/v1/webhook/chatwoot` |
+### 📚 Help center portal
 
----
+Publish help articles, FAQs, and guides through the built-in Help Center Portal. Enable customers to find answers on their own, reduce repetitive queries, and keep your support team focused on more complex issues.
 
-## 👥 Estrutura Multi-Tenant
+### 🗂️ Other features
 
-```
-Chatwoot Account (1)
-├── Inbox (WhatsApp)
-├── Agents
-│   ├── Humano (André, Gustavo, etc)
-│   └── Bot (Pietra = OpenClaw)
-├── Teams
-├── Labels (tags)
-├── Canned Responses (FAQ)
-└── Conversations
-    ├── Status: open/pending/resolved/snoozed
-    └── Assignee: agent/team
-```
+#### Collaboration & Productivity
 
----
+- Private Notes and @mentions for internal team discussions.
+- Labels to organize and categorize conversations.
+- Keyboard Shortcuts and a Command Bar for quick navigation.
+- Canned Responses to reply faster to frequently asked questions.
+- Auto-Assignment to route conversations based on agent availability.
+- Multi-lingual Support to serve customers in multiple languages.
+- Custom Views and Filters for better inbox organization.
+- Business Hours and Auto-Responders to manage response expectations.
+- Teams and Automation tools for scaling support workflows.
+- Agent Capacity Management to balance workload across the team.
 
-## 🤖 HITL (Human In The Loop)
+#### Customer Data & Segmentation
+- Contact Management with profiles and interaction history.
+- Contact Segments and Notes for targeted communication.
+- Campaigns to proactively engage customers.
+- Custom Attributes for storing additional customer data.
+- Pre-Chat Forms to collect user information before starting conversations.
 
-Para pausar o agent em qualquer conversa:
+#### Integrations
+- Slack Integration to manage conversations directly from Slack.
+- Dialogflow Integration for chatbot automation.
+- Dashboard Apps to embed internal tools within Chatwoot.
+- Shopify Integration to view and manage customer orders right within Chatwoot.
+- Use Google Translate to translate messages from your customers in realtime.
+- Create and manage Linear tickets within Chatwoot.
 
-```
-1. Atendente vê conversa no Chatwoot
-2. Clica "Pausar Agent" (custom action)
-3. API recebe webhook → pausa OpenClaw
-4. Atendente assume (typing indicator + reply)
-5. Quando terminar: "Retomar Agent"
-6. Pietra retoma com contexto preservado
-```
+#### Reports & Insights
+- Live View of ongoing conversations for real-time monitoring.
+- Conversation, Agent, Inbox, Label, and Team Reports for operational visibility.
+- CSAT Reports to measure customer satisfaction.
+- Downloadable Reports for offline analysis and reporting.
 
----
 
-## ✅ Squad H — DONE 100% (8/8)
+## Documentation
 
-| H | Task | Status |
-|---|------|--------|
-| H01 | Configuração inicial | ✅ |
-| H02 | Inbox WhatsApp | ✅ |
-| H03 | Integração OpenClaw | ✅ |
-| H04 | HITL (Human In The Loop) | ✅ |
-| H05 | Labels e tags | ✅ |
-| H06 | Canned responses FAQ | ✅ |
-| H07 | Teams de atendimento | ✅ |
-| H08 | Script helper criar API key | ✅ |
+Detailed documentation is available at [chatwoot.com/help-center](https://www.chatwoot.com/help-center).
 
----
+## Translation process
 
-## ⚠️ INC-005b — HOLD Gustavo/CI
+The translation process for Chatwoot web and mobile app is managed at [https://translate.chatwoot.com](https://translate.chatwoot.com) using Crowdin. Please read the [translation guide](https://www.chatwoot.com/docs/contributing/translating-chatwoot-to-your-language) for contributing to Chatwoot.
 
-**Problema**: container `cartorio_chatwoot` está sem Networks no Docker Swarm.
+## Branching model
 
-**Sintoma**: API tenta chamar Chatwoot e falha (network error).
+We use the [git-flow](https://nvie.com/posts/a-successful-git-branching-model/) branching model. The base branch is `develop`.
+If you are looking for a stable version, please use the `master` or tags labelled as `v1.x.x`.
 
-**Fix necessário**: Adicionar network `cartorio_supabase_default` no Easypanel UI.
+## Deployment
 
-**Ação**: Gustavo/CI manual via Easypanel UI.
+### Heroku one-click deploy
 
----
+Deploying Chatwoot to Heroku is a breeze. It's as simple as clicking this button:
 
-## 🔗 Links Úteis
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/chatwoot/chatwoot/tree/master)
 
-| Recurso | URL |
-|---------|-----|
-| Docs oficial | https://www.chatwoot.com/docs/ |
-| Developer docs | https://www.chatwoot.com/developers/api/ |
-| GitHub | https://github.com/chatwoot/chatwoot |
-| Webhooks | https://www.chatwoot.com/developers/api/webhooks/ |
-| API reference | https://www.chatwoot.com/developers/api/ |
-| Docker Hub | https://hub.docker.com/r/chatwoot/chatwoot |
+Follow this [link](https://www.chatwoot.com/docs/environment-variables) to understand setting the correct environment variables for the app to work with all the features. There might be breakages if you do not set the relevant environment variables.
 
----
 
-## 🎯 Integração com nosso Sistema
+### DigitalOcean 1-Click Kubernetes deployment
 
-```
-Cliente (WhatsApp)
-    ↓
-Evolution API
-    ↓ webhook
-N8N (workflow #03-handoff-human-chatwoot)
-    ↓ REST
-API (FastAPI) → Supabase (audit_log + cliente)
-    ↓
-Chatwoot (cria/atualiza conversa)
-    ↓
-Atendente humano assume se HITL ON
-```
+Chatwoot now supports 1-Click deployment to DigitalOcean as a kubernetes app.
 
----
+<a href="https://marketplace.digitalocean.com/apps/chatwoot?refcode=f2238426a2a8" alt="Deploy to DigitalOcean">
+  <img width="200" alt="Deploy to DO" src="https://www.deploytodo.com/do-btn-blue.svg"/>
+</a>
 
-## 📊 Squad Status Atual
+### Other deployment options
 
-- H01-H08: ✅ **DONE 100%**
-- Squad H é a única com **100% completo** entre todas as squads!
-- 8/8 tasks implementadas, testadas e em produção
+For other supported options, checkout our [deployment page](https://chatwoot.com/deploy).
 
----
+## Security
 
-## 📁 Arquivos relacionados no repo
+Looking to report a vulnerability? Please refer our [SECURITY.md](./SECURITY.md) file.
 
-- `canned-responses-chatwoot.json` — 50+ respostas prontas para FAQ
-- `chatwoot-setup-2026-06-25.json` — Setup completo exportado
-- `scripts/diagnose_chatwoot_crashloop.sh` — Diagnóstico INC-005b
-- `scripts/fix_chatwoot_url.sh` — Fix URL FQDN público
-- `scripts/create_chatwoot_api_key.sh` — Helper para criar API key
+## Community
+
+If you need help or just want to hang out, come, say hi on our [Discord](https://discord.gg/cJXdrwS) server.
+
+## Contributors
+
+Thanks goes to all these [wonderful people](https://www.chatwoot.com/docs/contributors):
+
+<a href="https://github.com/chatwoot/chatwoot/graphs/contributors"><img src="https://opencollective.com/chatwoot/contributors.svg?width=890&button=false" /></a>
+
+
+*Chatwoot* &copy; 2017-2026, Chatwoot Inc - Released under the MIT License.
