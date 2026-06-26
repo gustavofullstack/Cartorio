@@ -219,6 +219,52 @@ async def test_get_nao_passa_pelo_middleware_idempotency() -> None:
 
 
 @pytest.mark.asyncio
+async def test_store_get_exception_fail_open() -> None:
+    """Se store.get() lancar excecao, middleware faz fail-open (passa direto)."""
+    broken_store = AsyncMock()
+    broken_store.get.side_effect = RuntimeError("Redis offline")
+    mw = IdempotencyMiddleware(
+        app=MagicMock(),
+        store=broken_store,
+        paths_prefixes=("/api/v1/",),
+    )
+    request = _make_post_request(idempotency_key="fail-open-key", body={"x": 1})
+    call_next = AsyncMock(return_value=MagicMock(status_code=200))
+    response = await mw.dispatch(request, call_next)
+    call_next.assert_called_once()
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_store_setnx_exception_fail_open() -> None:
+    """Se store.setnx() lancar excecao, middleware nao quebra o request."""
+    failing_store = AsyncMock()
+    failing_store.get.return_value = None
+    failing_store.setnx.side_effect = RuntimeError("Redis write fail")
+    mw = IdempotencyMiddleware(
+        app=MagicMock(),
+        store=failing_store,
+        paths_prefixes=("/api/v1/",),
+    )
+    request = _make_post_request(idempotency_key="setnx-fail", body={"y": 2})
+
+    async def _ok_response(req: MagicMock) -> MagicMock:
+        resp = MagicMock()
+        resp.status_code = 201
+        resp.headers = {}
+        resp.media_type = "application/json"
+
+        async def _iter():
+            yield b'{"created": true}'
+
+        resp.body_iterator = _iter()
+        return resp
+
+    response = await mw.dispatch(request, _ok_response)
+    assert response.status_code == 201
+
+
+@pytest.mark.asyncio
 async def test_post_response_com_erro_5xx_nao_cacheia(mw_with_fake_store) -> None:
     """Resposta 5xx NAO eh cacheada (cliente pode tentar novamente)."""
     request = _make_post_request(idempotency_key="abc-123")
