@@ -1,4 +1,4 @@
-"""brain.py - API endpoints do cerebro (BRAIN6).
+"""brain.py - API endpoints do cerebro (BRAIN6 + BRAIN8).
 
 Endpoints:
 - GET /api/v1/brain/tasks
@@ -6,6 +6,10 @@ Endpoints:
 - POST /api/v1/brain/lesson
 - POST /api/v1/brain/sync
 - GET /api/v1/brain/loop-state
+- GET /api/v1/brain/snapshots (BRAIN8 — list cross-session snapshots)
+- POST /api/v1/brain/snapshots/restore (BRAIN8 — restore context from snapshot)
+- GET /api/v1/brain/context/restore/{snapshot_id} (BRAIN8 — read restored context)
+- GET /api/v1/brain/sessions (BRAIN8 — list all sessions for context loop)
 
 LGPD-safe: endpoints NAO expoem PII. Apenas contadores agregados.
 """
@@ -21,6 +25,8 @@ from pydantic import BaseModel, Field
 brain_router = APIRouter(prefix="/brain", tags=["brain", "meta"])
 
 BRAIN_DIR = Path("/Users/gustavoalmeida/projetos/Cartorio/.brain")
+SNAPSHOTS_DIR = BRAIN_DIR / "snapshots"
+MEMORY_DIR = BRAIN_DIR / "memory"
 
 
 class LessonCreate(BaseModel):
@@ -217,3 +223,285 @@ async def get_loop_state() -> LoopState:
         tasks_done_today=state.get("tasks_done_today", 0),
         tasks_pending_today=state.get("tasks_pending_today", 0),
     )
+
+
+# ────────────────────────────────────────────────────────────────────────
+# BRAIN8 — Cross-session context sync & restoration
+# ────────────────────────────────────────────────────────────────────────
+
+
+class SnapshotSummary(BaseModel):
+    """Metadata de 1 snapshot (BRAIN8)."""
+
+    snapshot_id: str
+    exported_at: str
+    label: str | None = None
+    file_count: int
+    total_size_bytes: int
+    by_type: dict[str, int] = Field(default_factory=dict)
+
+
+class SnapshotDetail(BaseModel):
+    """Detalhes completos de 1 snapshot (BRAIN8)."""
+
+    snapshot_id: str
+    exported_at: str
+    label: str | None = None
+    files: dict[str, dict[str, str]]  # {path: {content, hash, size}}
+
+
+class SessionSummary(BaseModel):
+    """Resumo de 1 sessao (BRAIN8 — context loop engineer)."""
+
+    session_id: str
+    date: str
+    file: str
+    size_bytes: int
+    title: str | None = None
+    commits_count: int = 0
+    squads_touched: list[str] = Field(default_factory=list)
+
+
+class ContextRestoreResponse(BaseModel):
+    """Resposta de restauracao de contexto (BRAIN8)."""
+
+    snapshot_id: str
+    exported_at: str
+    loop_state: dict
+    index_md: str
+    lessons_count: int
+    tasks_count: int
+    memory_files: list[str]
+    key_files: dict[str, str]  # arquivos criticos restaurados
+
+
+@brain_router.get(
+    "/snapshots",
+    response_model=list[SnapshotSummary],
+    summary="Lista snapshots cross-session (BRAIN8)",
+)
+async def list_snapshots(
+    limit: int = Query(default=20, ge=1, le=100),
+) -> list[SnapshotSummary]:
+    """Lista todos os snapshots disponiveis em .brain/snapshots/.
+
+    Snapshots sao backups completos do estado cerebral, usados para:
+    - Cross-session context restoration (recuperar 100% apos compact)
+    - Diff entre sessoes (ver o que mudou)
+    - Disaster recovery (rollback)
+    """
+    if not SNAPSHOTS_DIR.exists():
+        return []
+
+    out: list[SnapshotSummary] = []
+    for f in sorted(SNAPSHOTS_DIR.glob("*.json"), reverse=True)[:limit]:
+        d = _read_json_safe(f)
+        if not d:
+            continue
+        stats = d.get("stats", {})
+        out.append(
+            SnapshotSummary(
+                snapshot_id=d.get("snapshot_id", f.stem),
+                exported_at=d.get("exported_at", "?"),
+                label=d.get("label"),
+                file_count=stats.get("total_files", len(d.get("files", {}))),
+                total_size_bytes=stats.get("total_size_bytes", 0),
+                by_type=stats.get("by_type", {}),
+            )
+        )
+    return out
+
+
+@brain_router.get(
+    "/snapshots/{snapshot_id}",
+    response_model=SnapshotDetail,
+    summary="Detalhes de 1 snapshot (BRAIN8)",
+)
+async def get_snapshot_detail(snapshot_id: str) -> SnapshotDetail:
+    """Retorna arquivos completos do snapshot para restauracao."""
+    snap_path = SNAPSHOTS_DIR / f"{snapshot_id}.json"
+    if not snap_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"snapshot {snapshot_id!r} nao encontrado"
+        )
+    d = _read_json_safe(snap_path)
+    if not d:
+        raise HTTPException(status_code=500, detail="snapshot corrompido")
+    return SnapshotDetail(
+        snapshot_id=d.get("snapshot_id", snapshot_id),
+        exported_at=d.get("exported_at", "?"),
+        label=d.get("label"),
+        files=d.get("files", {}),
+    )
+
+
+@brain_router.get(
+    "/sessions",
+    response_model=list[SessionSummary],
+    summary="Lista sessoes anteriores (BRAIN8 — context loop)",
+)
+async def list_sessions(
+    limit: int = Query(default=30, ge=1, le=200),
+) -> list[SessionSummary]:
+    """Lista todas as sessoes (memory/YYYY-MM-DD.md + SESSION_*.md).
+
+    Usado pelo Context Loop Engineer para:
+    - Navegar historico de sessoes
+    - Encontrar sessao relevante antes de iniciar trabalho
+    - Diff entre sessoes
+    """
+    if not MEMORY_DIR.exists():
+        return []
+
+    out: list[SessionSummary] = []
+    for f in sorted(MEMORY_DIR.glob("*.md"), reverse=True):
+        size = f.stat().st_size
+        title: str | None = None
+        commits_count = 0
+        squads: set[str] = set()
+        try:
+            content = f.read_text(encoding="utf-8")
+            lines = content.splitlines()
+            # Extrai titulo da primeira linha # ...
+            for line in lines[:5]:
+                if line.startswith("# ") and not line.startswith("# /"):
+                    title = line.lstrip("#").strip()
+                    break
+            # Conta commits no formato [hash]
+            import re
+
+            commits_count = len(re.findall(r"`[0-9a-f]{7}`", content))
+            # Detecta squads mencionados
+            squad_match = re.findall(r"SQUAD\s+([A-Z0-9]+)", content)
+            squads.update(squad_match)
+        except Exception:
+            pass
+
+        # Detecta tipo: SESSION_*.md vs YYYY-MM-DD.md
+        if f.name.startswith("SESSION_"):
+            session_id = f.stem.replace("SESSION_", "")
+            date = session_id.split("-")[:3]
+            date_str = "-".join(date) if len(date) >= 3 else f.stem
+        else:
+            session_id = f.stem
+            date_str = f.stem
+
+        out.append(
+            SessionSummary(
+                session_id=session_id,
+                date=date_str,
+                file=str(f),
+                size_bytes=size,
+                title=title,
+                commits_count=commits_count,
+                squads_touched=sorted(squads),
+            )
+        )
+        if len(out) >= limit:
+            break
+    return out
+
+
+@brain_router.get(
+    "/context/restore/{snapshot_id}",
+    response_model=ContextRestoreResponse,
+    summary="Restaura contexto completo de 1 snapshot (BRAIN8)",
+)
+async def restore_context(snapshot_id: str) -> ContextRestoreResponse:
+    """Restaura contexto completo de um snapshot para retomada de sessao.
+
+    Retorna:
+    - loop_state (estado compacto do cerebro no momento do snapshot)
+    - index_md (pagina de indice 1-pagina)
+    - lessons_count + tasks_count (catalogos)
+    - memory_files (lista de arquivos de memoria)
+    - key_files (arquivos criticos: STRUCTURE.md, loop-state.json, index.md, ...)
+    """
+    snap_path = SNAPSHOTS_DIR / f"{snapshot_id}.json"
+    if not snap_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"snapshot {snapshot_id!r} nao encontrado"
+        )
+    d = _read_json_safe(snap_path)
+    if not d:
+        raise HTTPException(status_code=500, detail="snapshot corrompido")
+
+    files = d.get("files", {})
+
+    # Restaura loop-state do snapshot
+    loop_state: dict = {}
+    loop_state_raw = files.get("loop-state.json", {})
+    if isinstance(loop_state_raw, dict) and loop_state_raw.get("content"):
+        try:
+            loop_state = json.loads(loop_state_raw["content"])
+        except Exception:
+            loop_state = {}
+
+    # Index markdown
+    index_md = ""
+    index_raw = files.get("index.md", {})
+    if isinstance(index_raw, dict):
+        index_md = index_raw.get("content", "")
+
+    # Lessons + tasks count (walk filesystem do snapshot)
+    lessons_count = sum(1 for k in files if k.startswith("lessons/") and k.endswith(".md"))
+    tasks_count = sum(1 for k in files if k.startswith("tasks/") and k.endswith(".json"))
+
+    # Memory files list
+    memory_files = sorted(k for k in files if k.startswith("memory/") and k.endswith(".md"))
+
+    # Key files (estrutura)
+    key_files: dict[str, str] = {}
+    for k in ("STRUCTURE.md", "loop-state.json", "agents/README.md", "api-specs/README.md"):
+        f = files.get(k, {})
+        if isinstance(f, dict) and f.get("content"):
+            key_files[k] = f["content"]
+
+    return ContextRestoreResponse(
+        snapshot_id=d.get("snapshot_id", snapshot_id),
+        exported_at=d.get("exported_at", "?"),
+        loop_state=loop_state,
+        index_md=index_md,
+        lessons_count=lessons_count,
+        tasks_count=tasks_count,
+        memory_files=memory_files,
+        key_files=key_files,
+    )
+
+
+@brain_router.get(
+    "/context/current",
+    summary="Contexto atual (alias para restoration live)",
+)
+async def current_context() -> dict:
+    """Retorna contexto live: loop-state + index + lessons count + tasks count.
+
+    Equivalente a /context/restore/{latest_snapshot} mas SEMPRE live.
+    Ideal para um agent iniciar uma sessao.
+    """
+    loop_state = _read_json_safe(BRAIN_DIR / "loop-state.json") or {}
+    index_md = ""
+    index_path = BRAIN_DIR / "index.md"
+    if index_path.exists():
+        try:
+            index_md = index_path.read_text(encoding="utf-8")
+        except Exception:
+            pass
+
+    lessons_count = 0
+    if (BRAIN_DIR / "lessons").exists():
+        lessons_count = len(list((BRAIN_DIR / "lessons").glob("*.md")))
+
+    tasks_count = 0
+    if (BRAIN_DIR / "tasks").exists():
+        tasks_count = len(list((BRAIN_DIR / "tasks").glob("*.json")))
+
+    return {
+        "loop_state": loop_state,
+        "index_md": index_md,
+        "lessons_count": lessons_count,
+        "tasks_count": tasks_count,
+        "memory_files": sorted(
+            str(p) for p in MEMORY_DIR.glob("*.md") if MEMORY_DIR.exists()
+        ),
+    }
