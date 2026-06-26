@@ -81,7 +81,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     Base.metadata.create_all(bind=engine)
 
     # 3. Audit log: write a startup entry (no-op if audit_log empty)
-    AuditService.log_system_action("api.startup", {"version": "0.5.4", "env": settings.app_env})
+    AuditService.log_system_action("api.startup", {"version": "0.6.0", "env": settings.app_env})
 
     # 4. Dead man's switch scheduler in-process (A13)
     dms_task: asyncio.Task[None] | None = None
@@ -342,7 +342,7 @@ app.add_middleware(SlowLogMiddleware, threshold_ms=500)
 @app.get("/health", tags=["meta"])
 def health() -> dict:
     """Liveness probe."""
-    return {"status": "ok", "service": settings.app_name, "version": "0.5.4"}
+    return {"status": "ok", "service": settings.app_name, "version": "0.6.0"}
 
 
 @app.get("/ready", tags=["meta"])
@@ -356,7 +356,7 @@ def root() -> dict:
     """Root - redireciona para Swagger UI."""
     return {
         "service": settings.app_name,
-        "version": "0.5.0",
+        "version": "0.6.0",
         "docs": "/docs",
         "redoc": "/redoc",
         "openapi": "/openapi.json",
@@ -426,7 +426,7 @@ def mcp_servers() -> dict:
             },
         ],
         "config_path": "~/.mavis/mcp/clients/cartorio-mcp-config.json",
-        "version": "0.5.0",
+        "version": "0.6.0",
     }
 
 
