@@ -330,7 +330,7 @@ async def agent_health() -> AgentHealthResponse:
         status=status,
         openclaw=openclaw_status,
         llm_provider=llm_status,
-        timestamp=_dt.datetime.utcnow().isoformat() + "Z",
+        timestamp=_dt.datetime.now(_dt.UTC).replace(tzinfo=None).isoformat(),
     )
 
 

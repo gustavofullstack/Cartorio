@@ -40,7 +40,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -101,8 +101,8 @@ class AuditService:
         last = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
         prev_hash = last.hash if last else None
 
-        now = datetime.utcnow()
-        timestamp = now.isoformat(timespec="microseconds")
+        now = datetime.now(UTC)
+        timestamp = now.replace(tzinfo=None).isoformat(timespec="microseconds")
         new_hash = cls._compute_hash(prev_hash, payload, timestamp)
         hmac_sig = cls._compute_hmac(f"{new_hash}:{timestamp}:{actor_id}:{action}")
 

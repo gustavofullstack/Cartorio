@@ -1,72 +1,29 @@
 {
-  "session_id": "2026-06-26-brain8-loop",
-  "session_start": "2026-06-26T14:15:00Z",
-  "current_squad": "BRAIN8",
-  "last_squad_completed": "BRAIN8",
-  "last_task": "BRAIN8 cross-session context sync endpoints",
-  "last_commit": "0fe2bed feat(brain): BRAIN8 cross-session context sync endpoints (5 new + 17 tests)",
-  "next_action": "Continue Squad C docs (12/25 -> 15/25) + E06 E2E Telegram",
-  "gates": {
-    "mypy": 0,
-    "ruff": 0,
-    "pytest_passed": 1459,
-    "pytest_failed": 0,
-    "pytest_skipped": 12,
-    "pytest_warnings": 2,
-    "coverage": "90.48% (>90% gate)",
-    "openclaw": "online",
-    "supabase": "online",
-    "telegram": "online+webhook"
-  },
-  "services": {
-    "api": "online (api.2notasudi.com.br) - 8/8 GREEN",
-    "n8n": "online (flow.2notasudi.com.br)",
-    "evolution": "online (whatsapp.2notasudi.com.br)",
-    "chatwoot": "online (cartorio-chatwoot.dfgdxq.easypanel.host)",
-    "openclaw": "online (agent.2notasudi.com.br) - ctx 1M FIXED",
-    "supabase": "online (supbase.2notasudi.com.br)",
-    "redis": "online (PONG)",
-    "easypanel": "online",
-    "prometheus_metrics": "13 exposed via /api/v1/metrics/prometheus"
-  },
-  "commits_session": [
-    "6287d24 chore(api): bump version 0.5.4 → 0.6.0 + full system validation 2026-06-26",
-    "0fe2bed feat(brain): BRAIN8 cross-session context sync endpoints (5 new + 17 tests)"
+  "updated_at": "2026-06-26T19:15:00-03:00",
+  "objective": "Full system validated — creating MCP skills, fixing datetime deprecation, securing iptables",
+  "services_green": "8/8",
+  "tests_passing": 1527,
+  "coverage": 91.11,
+  "mypy_prod": 0,
+  "ruff": 0,
+  "docker_swarm": "13/13 1/1 UP",
+  "mcp_servers": "5 (164 tools)",
+  "squads_completed": ["S0","A","B","D","E","H","DOCS","BRAIN"],
+  "squads_partial": {"C": "60%", "J": "70%"},
+  "fixes_applied": [
+    "datetime.utcnow() replaced in 3 production files",
+    "iptables Redis port 1001 restricted to Tailscale",
+    "iptables Easypanel port 3000 restricted to Tailscale",
+    "5 MCP Skill files created (Hostinger, Easypanel, Chatwoot, N8N, Supabase)",
+    "8 test file fixes (mypy generator types, null checks, enums)"
   ],
-  "tasks_done_total": 89,
-  "tasks_done_session": 2,
-  "squads_status": {
-    "S0 Supabase": "10/10 DONE",
-    "A API+DB": "25/25 DONE",
-    "B N8N Polish": "25/25 DONE",
-    "C Docs raiz": "12/25 (48%)",
-    "D LGPD": "25/25 DONE",
-    "E OpenClaw": "8/8 DONE",
-    "H Chatwoot": "8/8 DONE",
-    "J Obs+CI/CD": "5/10 (50%)",
-    "BRAIN Cérebro": "8/8 (100%) DONE",
-    "DOCS Plataformas": "5/5 DONE"
-  },
-  "todos_next": [
-    "Squad C docs (12/25 -> target 15/25)",
-    "E06 E2E Telegram -> API -> N8N -> OpenClaw -> Resposta",
-    "C24/C25 Uptime Kuma + Status page (deploy)",
-    "INC-005b Chatwoot SEM Networks: HOLD Gustavo/CI (Easypanel UI)",
-    "DNS Cloudflare A records (SUI Gustavo)",
-    "QR WhatsApp TriQ Hub (SUI Gustavo)"
-  ],
-  "tokens_used_session_estimate": "~25k (BRAIN8 turno)",
-  "pietra_role": "brain + cross-session context engineer",
-  "owner": "Gustavo Almeida (Tabeliao)",
-  "warnings_external": [
-    "StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated - EXTERNAL (httpx library)",
-    "OpenTelemetry DeprecationWarning: SelectableGroups dict interface is deprecated - EXTERNAL (opentelemetry library)"
-  ],
-  "brain8_endpoints_added": [
-    "GET /api/v1/brain/snapshots - list cross-session snapshots",
-    "GET /api/v1/brain/snapshots/{id} - get 1 snapshot detail",
-    "GET /api/v1/brain/sessions - list all previous sessions",
-    "GET /api/v1/brain/context/restore/{id} - restore full context from snapshot",
-    "GET /api/v1/brain/context/current - live context (loop_state + index + counts)"
+  "blockers": ["whatsapp_qr_scan","github_billing","dns_cloudflare"],
+  "next_actions": [
+    "J07: Grafana dashboards",
+    "J08: Loki log aggregation",
+    "J09: Distributed tracing",
+    "C09-C25: Restante documentacao",
+    "Monitorar GitHub Actions billing",
+    "Conectar WhatsApp producao via QR scan (SUI Gustavo)"
   ]
 }

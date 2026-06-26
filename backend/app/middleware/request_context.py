@@ -31,7 +31,7 @@ Implementacao:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -95,7 +95,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         client_ip = _extract_client_ip(request)
         user_agent = request.headers.get("user-agent")
         canal = request.headers.get("x-canal")
-        timestamp_iso = datetime.utcnow().isoformat(timespec="microseconds")
+        timestamp_iso = datetime.now(UTC).isoformat(timespec="microseconds")
 
         # Popula request.state (acessivel via Request injetado nas rotas)
         request.state.request_id = request_id
@@ -135,7 +135,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             request.url.path,
             response.status_code,
             request_id,
-            (datetime.utcnow() - datetime.fromisoformat(timestamp_iso)).total_seconds()
+            (datetime.now(UTC) - datetime.fromisoformat(timestamp_iso)).total_seconds()
             * 1000,
         )
         return response
