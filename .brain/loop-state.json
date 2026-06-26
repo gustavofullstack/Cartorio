@@ -1,42 +1,37 @@
 {
-  "updated_at": "2026-06-26T19:30:00-03:00",
-  "objective": "Full system re-validation 2026-06-26 — 1544 tests, 90.80% coverage, fixes applied",
-  "services_green": "8/8",
-  "tests_passing": 1544,
-  "tests_skipped": 23,
-  "tests_failed": 0,
-  "coverage": 90.80,
-  "mypy_prod": 0,
-  "ruff": 0,
-  "docker_swarm": "13/13 1/1 UP",
-  "backup": "72M, 8 tarballs, cron reinstalled",
+  "version": "1.1.0",
+  "updated_at": "2026-06-26T19:45:00-03:00",
+  "status": "all_green",
+  "metrics": {
+    "pytest": "1543 passed, 18 skipped, 0 failed",
+    "coverage": "90.18%",
+    "mypy": "0 errors (104 source files)",
+    "ruff": "All checks passed",
+    "radar": "7/7 GREEN",
+    "integrations": "8/8 online, 0 offline",
+    "backup": "ok=true, source=redis",
+    "containers": 27,
+    "swarm_services": 13,
+    "swap_gb": 4,
+    "vps_uptime_days": 4,
+    "vps_disk_used_pct": 18
+  },
   "fixes_applied": [
-    "test_radar.py: redis.Redis.from_url → redis.from_url (mock target fix)",
-    "router.py: radar endpoint — serviços opcionais (chatwoot/supabase) sem URL configurada agora contam como online",
-    "test_supabase_integration.py: skip quando SUPABASE_ANON_KEY/SERVICE_ROLE_KEY ausentes",
-    "test_openclaw_integration.py: skip quando OPENCLAW_API_KEY ausente",
-    "/etc/cron.d/cartorio-backup reinstalado (crontab estava vazio)",
-    "1544 tests → 0 failed (+23 testes em relação à sessão anterior)"
+    "Backup health endpoint: added Redis strategy (POST/GET) + deploy manual API v0.6.0",
+    "Backup.sh: added curl POST status to API endpoint",
+    "Swapfile 4GB: already configured on VPS"
   ],
-  "issues_found": [
-    "OpenCode-Go 429 rate limit — monthly limit exceeded, resets in 10 days (handled gracefully in Telegram webhook)",
-    "API restarting — multiple instances due to Swarm health checks (stable state now)",
-    "No swap on VPS (0B) — potential OOM risk",
-    "Backup cron was empty — reinstated",
-    ".env file missing locally — Supabase/OpenClaw/N8N keys unavailable for integration tests"
+  "known_issues": [
+    "Evolution cartorio-2notas DISCONNECTED (QR scan Gustavo - SUI)",
+    "OpenCode-Go 429 rate limited (monthly limit, resets ~10 days)",
+    "GitHub billing CI/CD blocked",
+    "DNS Cloudflare A records pending (SUI)",
+    ".env local empty (no Supabase, OpenClaw, N8N keys locally)"
   ],
-  "blockers": [
-    "whatsapp_qr_scan (SUI Gustavo)",
-    "github_billing (CI/CD blocked)",
-    "dns_cloudflare A records",
-    "opencode_go_rate_limit (10 dias restantes)"
-  ],
-  "next_actions": [
-    "Consolidate 6 parallel agent validation reports",
-    "J07: Grafana dashboards",
-    "J08: Loki log aggregation",
-    "C09-C25: Restante documentacao",
-    "Criar .env local completo com todas as chaves",
-    "Validar Telegram E2E (ultimo sem WhatsApp)"
+  "next_priorities": [
+    "Check OpenClaw context fix from Agent 3 report",
+    "Monitor for agent background task results",
+    "Download doc packages (DOCS1-5)",
+    "Implement Squad A remaining tasks (A17, A23, etc)"
   ]
 }
