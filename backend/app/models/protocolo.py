@@ -50,6 +50,9 @@ class Protocolo(Base, TimestampMixin):
     # Origem
     canal_origem: Mapped[str] = mapped_column(String(32))  # whatsapp, telegram, web, balcao
 
+    # Soft delete (A19)
+    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
+
     cliente: Mapped["Cliente"] = relationship(back_populates="protocolos")  # type: ignore[name-defined]
     documentos: Mapped[list["Documento"]] = relationship(back_populates="protocolo")  # type: ignore[name-defined]
     agendamentos: Mapped[list["Agendamento"]] = relationship(

@@ -40,6 +40,9 @@ class Documento(Base, TimestampMixin):
     validado_em: Mapped[datetime | None] = mapped_column(nullable=True)
     validacao_notas: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
+    # Soft delete (A19)
+    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
+
     protocolo: Mapped["Protocolo"] = relationship(back_populates="documentos")  # type: ignore[name-defined]
 
 

@@ -15,10 +15,10 @@ from datetime import datetime
 from sqlalchemy import DateTime, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import Base, TimestampMixin
 
 
-class WebhookEvent(Base):
+class WebhookEvent(Base, TimestampMixin):
     __tablename__ = "webhook_events"
     __table_args__ = (
         UniqueConstraint("source", "event_id", name="uq_webhook_events_source_event"),

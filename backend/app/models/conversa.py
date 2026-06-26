@@ -42,5 +42,8 @@ class Conversa(Base, TimestampMixin):
     llm_tokens_out: Mapped[int | None] = mapped_column(nullable=True)
     llm_latency_ms: Mapped[int | None] = mapped_column(nullable=True)
 
+    # Soft delete (A19)
+    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
+
 
 __all__ = ["Conversa", "Base"]
