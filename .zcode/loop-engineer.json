@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "name": "Cartório Loop Engineer",
+    "version": "1.0.0",
+    "created": "2026-06-26",
+    "author": "Gustavo Almeida"
+  },
+  "objective": "Continuar desenvolvimento e validação do sistema Cartório 2º Notas. Manter todos os serviços 8/8 GREEN. Completar squads pendentes.",
+  "completion_criteria": {
+    "all_services_green": true,
+    "all_squads_done": true,
+    "lgpd_100pct": true,
+    "documentation_100pct": true,
+    "whatsapp_production": true
+  },
+  "cron_schedule": {
+    "health_check": "*/15 * * * *",
+    "gates_run": "0 */6 * * *",
+    "memory_update": "0 */4 * * *",
+    "commit_push": "0 */2 * * *"
+  },
+  "tasks_priority": [
+    {
+      "id": "P0-1",
+      "squad": "E",
+      "task": "Corrigir OpenClaw skills + thinking (DONE turno 12)",
+      "status": "done"
+    },
+    {
+      "id": "P0-2",
+      "squad": "E",
+      "task": "Testar E2E Telegram → OpenClaw → Resposta",
+      "status": "pending"
+    },
+    {
+      "id": "P1-1",
+      "squad": "A",
+      "task": "Implementar A16-A25 (API Hardening 12 tasks)",
+      "status": "pending"
+    },
+    {
+      "id": "P1-2",
+      "squad": "B",
+      "task": "Completar B12-B15 (N8N Polish 4 tasks)",
+      "status": "pending"
+    },
+    {
+      "id": "P1-3",
+      "squad": "C",
+      "task": "Completar C08-C25 (Docs 20 tasks)",
+      "status": "pending"
+    },
+    {
+      "id": "P1-4",
+      "squad": "D",
+      "task": "Completar D19-D25 (LGPD 7 tasks)",
+      "status": "pending"
+    },
+    {
+      "id": "P1-5",
+      "squad": "J",
+      "task": "Completar J06-J10 (Obs+CI/CD 5 tasks)",
+      "status": "pending"
+    },
+    {
+      "id": "P1-6",
+      "squad": "BRAIN",
+      "task": "Completar BRAIN3-8 (Brain 6 tasks)",
+      "status": "pending"
+    },
+    {
+      "id": "P2-1",
+      "squad": "DOCS",
+      "task": "Baixar docs Evolution+N8N+Chatwoot+Supabase+Redis",
+      "status": "pending"
+    }
+  ],
+  "loop_behavior": {
+    "on_task_complete": "move_to_next_task",
+    "on_task_blocked": "skip_and_report",
+    "on_all_complete": "create_new_sprint",
+    "max_agents_simultaneous": 2,
+    "execution_style": "sequential"
+  },
+  "reporting": {
+    "telegram_dm": 6682284055,
+    "squad_group": -5006771024,
+    "report_frequency": "every_4_hours"
+  }
+}
