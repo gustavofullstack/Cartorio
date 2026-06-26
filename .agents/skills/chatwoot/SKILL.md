@@ -145,3 +145,12 @@ curl -H "api_access_token: d22c96d044956015643a70a0d58e2ba5a3f48f1eabfb8a6b793ca
 curl -H "api_access_token: d22c96d044956015643a70a0d58e2ba5a3f48f1eabfb8a6b793cafd850e0e0b3" \
   https://chat.2notasudi.com.br/api/v1/accounts/1/inboxes
 ```
+
+## MCP Server & Client Integration
+
+- **Chatwoot MCP Server**: Um servidor MCP customizado ou node MCP no N8N mapeia as operações do Chatwoot para os agents.
+- **Tools MCP Disponíveis**:
+  - `chatwoot_list_conversations(status: str)`: Lista conversas abertas.
+  - `chatwoot_send_message(conv_id: int, text: str)`: Envia resposta ao cliente.
+  - `chatwoot_toggle_agent(conv_id: int, paused: bool)`: Ativa/desativa Pietra (HITL).
+

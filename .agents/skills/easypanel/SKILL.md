@@ -124,3 +124,11 @@ EASYPANEL_PROJECT=cartorio
 /var/backups/cartorio/                → Backups automáticos
 /home/node/.openclaw/                 → Config OpenClaw
 ```
+
+## MCP Server & Client Integration
+
+- **Easypanel/Traefik MCP Client**: O orquestrador de agents utiliza chamadas MCP para automatizar o deploy e coletar status.
+- **Tools MCP**:
+  - `easypanel_deploy_service(projectName: str, serviceName: str)`: Dispara deploy via API trpc.
+  - `easypanel_get_service_logs(projectName: str, serviceName: str)`: Recupera logs.
+

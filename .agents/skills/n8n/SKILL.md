@@ -141,3 +141,16 @@ curl https://flow.2notasudi.com.br/healthz
 curl -H "X-N8N-API-KEY: $N8N_API_KEY" \
   "https://flow.2notasudi.com.br/api/v1/workflows?limit=50"
 ```
+
+## MCP Server & Client Integration
+
+- **N8N MCP Client/Server**: O plugin `n8n-nodes-mcp` permite que workflows do N8N atuem como clientes/servidores MCP.
+- **MCP Endpoint**: `https://flow.2notasudi.com.br/mcp-server/http`
+- **Exemplo de Chamada MCP (Listar Tools)**:
+  ```bash
+  curl -X POST https://flow.2notasudi.com.br/mcp-server/http \
+    -H "Authorization: Bearer $N8N_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"method": "tools/list"}'
+  ```
+

@@ -23,10 +23,12 @@ import logging
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.integrations.opencode_go import chat_with_settings
+from app.db import get_db
+from app.integrations.fallback import chat_with_fallback
 from app.services.pii import scrub
 from app.services.redis_bus import get_bus
 
@@ -92,6 +94,7 @@ def _verify_telegram_secret(
 async def telegram_webhook(
     request: Request,
     x_telegram_bot_api_secret_token: str | None = Header(None),
+    db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """Processa update do Telegram.
 
@@ -151,7 +154,7 @@ async def telegram_webhook(
 
     # 5. Chamar OpenClaw Agent (LLM)
     try:
-        agent_response = await _call_openclaw_agent(chat_id, text_scrubbed)
+        agent_response = await _call_openclaw_agent(chat_id, text_scrubbed, db=db)
     except Exception as e:
         logger.exception("OpenClaw Agent falhou: %s", e)
         agent_response = (
@@ -179,8 +182,12 @@ async def telegram_webhook(
     }
 
 
-async def _call_openclaw_agent(chat_id: int, text_scrubbed: str) -> str:
-    """Chama OpenClaw Agent (LLM) com contexto de conversa via OpenCode-Go.
+async def _call_openclaw_agent(
+    chat_id: int,
+    text_scrubbed: str,
+    db: Session | None = None,
+) -> str:
+    """Chama OpenClaw Agent (LLM) com contexto de conversa via Fallback.
 
     Usa o provider primario (opencode_go / deepseek-v4-flash) configurado
     em settings, com LGPD compliance (PII scrub, audit log, consent gate).
@@ -211,15 +218,16 @@ async def _call_openclaw_agent(chat_id: int, text_scrubbed: str) -> str:
     ]
 
     try:
-        resp = await chat_with_settings(
+        resp = await chat_with_fallback(
             messages=messages,
             consent_granted=True,
             actor_id=f"telegram:{chat_id}",
             session_id=f"tg:{chat_id}",
+            db=db,
         )
         return resp.content
     except Exception as e:
-        logger.exception("OpenCode-Go / OpenClaw falhou: %s", e)
+        logger.exception("Fallback LLM chat falhou: %s", e)
         return (
             "Desculpe, tive um problema tecnico. "
             "Tente novamente em alguns instantes."

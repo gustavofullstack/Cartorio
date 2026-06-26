@@ -151,3 +151,9 @@ VPS_PUBLIC_IP=187.77.236.77
 VPS_SSH_KEY=~/.ssh/id_ed25519_cartorio
 VPS_SSH_ALIAS=cartorio
 ```
+
+## MCP Server & Client Integration
+
+- **SSH MCP Server**: O host de desenvolvimento local pode rodar um MCP server do tipo `ssh` (ex: `ssh-mcp` ou um shell MCP) conectado à VPS (`100.99.172.84`) usando a chave SSH privada.
+- **Docker MCP Server**: Expõe comandos Docker Swarm para monitorar containers (`docker service ls`, `docker stats`) via protocolo MCP.
+

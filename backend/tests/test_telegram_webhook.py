@@ -153,7 +153,7 @@ def test_webhook_emolumento_intent() -> None:
         latency_ms=500,
     )
     with patch(
-        "app.api.v1.telegram.chat_with_settings",
+        "app.api.v1.telegram.chat_with_fallback",
         new=AsyncMock(return_value=fake_response),
     ):
         result = asyncio.run(_call_openclaw_agent(123, "Quero uma certidao de nascimento"))
@@ -176,7 +176,7 @@ def test_webhook_horario_intent() -> None:
         latency_ms=500,
     )
     with patch(
-        "app.api.v1.telegram.chat_with_settings",
+        "app.api.v1.telegram.chat_with_fallback",
         new=AsyncMock(return_value=fake_response),
     ):
         result = asyncio.run(_call_openclaw_agent(123, "Bom dia"))

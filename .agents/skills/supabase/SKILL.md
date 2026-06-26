@@ -168,3 +168,20 @@ SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
 SUPABASE_DB_URL=postgresql+psycopg://supabase_admin:...@db:5432/cartorio
 ```
+
+## MCP Server & Client Integration
+
+- **Supabase/Postgres MCP Server**: Permite que os agents executem queries SQL seguras, busquem esquemas de tabelas e administrem o banco via MCP.
+- **Configuração no Client (ex: Claude/Cursor/Antigravity)**:
+  ```json
+  "supabase-mcp": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-postgres",
+      "--connection-string",
+      "postgresql://supabase_admin:e999b7...@100.99.172.84:5432/cartorio"
+    ]
+  }
+  ```
+
