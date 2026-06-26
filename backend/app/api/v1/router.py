@@ -1277,8 +1277,9 @@ async def health_radar() -> dict:
     n8n_ok = False
     openclaw_ok = False
     evolution_ok = False
-    chatwoot_ok = False
-    supabase_ok = False
+    # Se a URL base nao foi configurada, o servico e opcional e conta como online
+    chatwoot_ok = not bool(settings.chatwoot_base_url)
+    supabase_ok = not bool(settings.supabase_url)
 
     async with httpx.AsyncClient(timeout=3.0) as client:
         try:

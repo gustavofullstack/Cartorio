@@ -1,7 +1,7 @@
 """Unit tests for the new health/radar, postman, and LLM webhook integration."""
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -58,7 +58,7 @@ def test_postman_collection(client):
 
 @patch("app.db.engine.connect")
 @patch("redis.from_url")
-@patch("httpx.AsyncClient.get")
+@patch("httpx.AsyncClient.get", new_callable=AsyncMock)
 def test_health_radar_all_green(mock_get, mock_redis_from_url, mock_db_connect, client):
     # Mock DB connection
     mock_conn = MagicMock()
@@ -87,7 +87,7 @@ def test_health_radar_all_green(mock_get, mock_redis_from_url, mock_db_connect, 
 
 @patch("app.db.engine.connect")
 @patch("redis.from_url")
-@patch("httpx.AsyncClient.get")
+@patch("httpx.AsyncClient.get", new_callable=AsyncMock)
 def test_health_radar_all_red(mock_get, mock_redis_from_url, mock_db_connect, client):
     # Mock DB connection failure
     mock_db_connect.side_effect = Exception("DB Down")
