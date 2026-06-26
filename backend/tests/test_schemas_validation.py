@@ -20,7 +20,7 @@ class TestProtocoloSchemas:
     def test_protocolo_create_requires_fields(self) -> None:
         """ProtocoloCreateRequest requires minimum fields."""
         with pytest.raises(ValidationError):
-            ProtocoloCreateRequest()
+            ProtocoloCreateRequest()  # type: ignore[call-arg]
 
     def test_protocolo_create_valid(self) -> None:
         """ProtocoloCreateRequest accepts valid data."""

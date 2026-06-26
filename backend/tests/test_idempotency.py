@@ -260,7 +260,7 @@ async def test_store_setnx_exception_fail_open() -> None:
         resp.body_iterator = _iter()
         return resp
 
-    response = await mw.dispatch(request, _ok_response)
+    response = await mw.dispatch(request, _ok_response)  # type: ignore[arg-type]
     assert response.status_code == 201
 
 

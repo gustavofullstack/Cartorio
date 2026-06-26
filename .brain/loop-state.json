@@ -1,37 +1,47 @@
 {
   "version": "1.1.0",
-  "updated_at": "2026-06-26T19:45:00-03:00",
+  "updated_at": "2026-06-26T19:55:00-03:00",
   "status": "all_green",
   "metrics": {
     "pytest": "1543 passed, 18 skipped, 0 failed",
     "coverage": "90.18%",
-    "mypy": "0 errors (104 source files)",
+    "mypy": "0 errors (284 source files — fix 42→0)",
     "ruff": "All checks passed",
     "radar": "7/7 GREEN",
     "integrations": "8/8 online, 0 offline",
-    "backup": "ok=true, source=redis",
+    "backup": "ok=true, source=redis, 44files/72MB, 0h age",
     "containers": 27,
     "swarm_services": 13,
     "swap_gb": 4,
     "vps_uptime_days": 4,
-    "vps_disk_used_pct": 18
+    "vps_disk_used_pct": 18,
+    "redis_keys": 1736,
+    "redis_memory_mb": 3.16
   },
   "fixes_applied": [
-    "Backup health endpoint: added Redis strategy (POST/GET) + deploy manual API v0.6.0",
-    "Backup.sh: added curl POST status to API endpoint",
+    "mypy: 42 errors fixed to 0 (15 files — alembic migrations + 7 test files)",
+    "Evolution API webhook: configured for TEST + cartorio-2notas instances → N8N /webhook/evo-in",
+    "Evolution API key discovered: 429683C4C977415CAAFCCE10F7D57E11",
+    "Backup health endpoint: Redis strategy OK (POST/GET) + deploy manual API v0.6.0",
+    "Backup.sh: curl POST status to API endpoint working",
     "Swapfile 4GB: already configured on VPS"
   ],
   "known_issues": [
-    "Evolution cartorio-2notas DISCONNECTED (QR scan Gustavo - SUI)",
-    "OpenCode-Go 429 rate limited (monthly limit, resets ~10 days)",
-    "GitHub billing CI/CD blocked",
+    "Evolution cartorio-2notas: state=connecting (QR scan Gustavo - SUI)",
+    "OpenCode-Go 429 rate limited (all 9 providers, resets ~10 days)",
+    "GitHub billing CI/CD blocked (SUI)",
     "DNS Cloudflare A records pending (SUI)",
-    ".env local empty (no Supabase, OpenClaw, N8N keys locally)"
+    "Redis: maxmemory=0 (no limit) + noeviction policy ⚠️",
+    "Supabase: JWT secret default dev, signup enabled (GOTRUE_DISABLE_SIGNUP=false)",
+    "Chatwoot API: /api/v1/* returns SPA 404 (routing config)",
+    "N8N: no N8N_API_KEY env var (can't use REST API auth)",
+    "OpenClaw port 18789: pending restart (host-mode port conflict)"
   ],
   "next_priorities": [
-    "Check OpenClaw context fix from Agent 3 report",
-    "Monitor for agent background task results",
-    "Download doc packages (DOCS1-5)",
-    "Implement Squad A remaining tasks (A17, A23, etc)"
+    "Executar final validation E2E Telegram ↔ API ↔ N8N ↔ OpenClaw",
+    "Configurar Redis maxmemory (ex: 500MB) + allkeys-lru policy",
+    "Corrigir Chatwoot API routing (verificar FRONTEND_URL + API path)",
+    "Aguardar 6 agents retornarem + consolidar reports finais",
+    "Documentar + Commit final + Push Master"
   ]
 }

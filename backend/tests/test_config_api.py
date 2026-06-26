@@ -34,26 +34,26 @@ class TestConfig:
 
     def test_settings_has_database_url(self, _settings_env) -> None:
         """Settings has DATABASE_URL."""
-        s = Settings()
+        s = Settings()  # type: ignore[call-arg]
         assert "postgresql" in s.database_url
 
     def test_settings_has_redis_url(self, _settings_env) -> None:
         """Settings has REDIS_URL."""
-        s = Settings()
+        s = Settings()  # type: ignore[call-arg]
         assert "redis" in s.redis_url.lower() or "localhost" in s.redis_url
 
     def test_settings_has_app_env(self, _settings_env) -> None:
         """Settings has APP_ENV."""
-        s = Settings()
+        s = Settings()  # type: ignore[call-arg]
         assert s.app_env in ("development", "staging", "production")
 
     def test_settings_pii_scrub_enabled(self, _settings_env) -> None:
         """Settings has PII_SCRUB_ENABLED."""
-        s = Settings()
+        s = Settings()  # type: ignore[call-arg]
         assert s.pii_scrub_enabled is True
 
     def test_settings_cors_origins(self, _settings_env) -> None:
         """Settings has CORS_ORIGINS."""
-        s = Settings()
+        s = Settings()  # type: ignore[call-arg]
         assert isinstance(s.cors_origins, list)
         assert len(s.cors_origins) > 0

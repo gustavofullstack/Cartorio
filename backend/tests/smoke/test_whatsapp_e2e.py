@@ -77,7 +77,7 @@ def test_webhook_e2e_message_without_pii() -> None:
         scrubbed = body.get("scrubbed", "")
         assert isinstance(scrubbed, str)
         assert "5511999999999" not in scrubbed or scrubbed == "".join(
-            [payload["message"]["text"]]
+            [payload["message"]["text"]]  # type: ignore[index]
         )
         # Resposta humanizada (atendente, nao transferencia)
         assert "transferir" not in str(body["response"]).lower()

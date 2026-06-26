@@ -53,7 +53,7 @@ class TestConnectionManagerUnit:
 
         ws = FakeWS()
         mgr.register(ws, "room1")  # type: ignore[arg-type]
-        mgr.unregister(ws, "room1")
+        mgr.unregister(ws, "room1")  # type: ignore[arg-type]
         assert mgr.total_connections() == 0
 
     def test_unregister_unknown_ws_is_safe(self) -> None:
@@ -169,7 +169,7 @@ class TestConnectionManagerSendPersonal:
         mgr.register(ws1, "room")  # type: ignore[arg-type]
         mgr.register(ws2, "room")  # type: ignore[arg-type]
 
-        await mgr.send_personal(ws1, {"dm": "so pra voce"})
+        await mgr.send_personal(ws1, {"dm": "so pra voce"})  # type: ignore[arg-type]
         assert received == [{"dm": "so pra voce"}]
 
 

@@ -286,7 +286,7 @@ def upgrade() -> None:
     if "outbox_messages" not in existing_tables:
         op.create_table(
             "outbox_messages",
-            sa.Column("id", postgresql.UUID(as_uuid=True) if is_pg else sa.String(length=36), primary_key=True),
+            sa.Column("id", postgresql.UUID(as_uuid=True) if is_pg else sa.String(length=36), primary_key=True),  # type: ignore[misc]
             sa.Column("queue", sa.String(length=32), nullable=False),
             sa.Column("payload", sa.JSON().with_variant(postgresql.JSONB(), "postgresql"), nullable=False),
             sa.Column("status", sa.String(length=32), nullable=False, server_default="pending"),

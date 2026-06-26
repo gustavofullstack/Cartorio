@@ -73,8 +73,8 @@ def _fake_stat(size: int, mtime: float):
         pass
 
     s = _S()
-    s.st_size = size
-    s.st_mtime = mtime
+    s.st_size = size  # type: ignore[attr-defined]
+    s.st_mtime = mtime  # type: ignore[attr-defined]
     return s
 
 

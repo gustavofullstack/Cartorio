@@ -57,7 +57,7 @@ def _frozen_now(now: datetime):
     """Patch `datetime.now` no modulo jobs/dead_mans_switch."""
     real_datetime = __import__("datetime").datetime
 
-    class _FrozenDateTime(real_datetime):
+    class _FrozenDateTime(real_datetime):  # type: ignore[misc, valid-type]
         @classmethod
         def now(cls, tz=None):  # type: ignore[override]
             if tz is None:

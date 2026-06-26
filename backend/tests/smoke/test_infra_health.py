@@ -86,7 +86,7 @@ def test_subdomain_tls_valid(subdomain: str, config: dict[str, Any]) -> None:
                 not_after = cert.get("notAfter")
                 assert not_after, f"Cert sem notAfter: {host}"
                 fmt = "%b %d %H:%M:%S %Y %Z"
-                expiry = datetime.strptime(not_after, fmt).replace(tzinfo=timezone.utc)
+                expiry = datetime.strptime(not_after, fmt).replace(tzinfo=timezone.utc)  # type: ignore[arg-type]
                 days_left = (expiry - datetime.now(timezone.utc)).days
                 assert days_left > 7, (
                     f"Cert de {host} expira em {days_left} dias. Renovar AGORA."
