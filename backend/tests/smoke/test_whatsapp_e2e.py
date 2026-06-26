@@ -14,6 +14,8 @@ Habilitar: SMOKE_TARGET=prod pytest -m smoke
 
 from __future__ import annotations
 
+from typing import Any
+
 import os
 
 import httpx
@@ -69,7 +71,7 @@ def test_webhook_e2e_message_without_pii() -> None:
         }
         resp = client.post("/api/v1/webhook/evolution", json=payload)
         assert resp.status_code == 200
-        body: dict = resp.json()
+        body: dict[str, Any] = resp.json()
         assert body["status"] == "ok"
         # Sem PII = texto nao-mascarado
         scrubbed = body.get("scrubbed", "")
@@ -78,9 +80,9 @@ def test_webhook_e2e_message_without_pii() -> None:
             [payload["message"]["text"]]
         )
         # Resposta humanizada (atendente, nao transferencia)
-        assert "transferir" not in body["response"].lower()
+        assert "transferir" not in str(body["response"]).lower()
 
-
+    
 def test_webhook_e2e_message_with_cpf_triggers_handoff() -> None:
     """Webhook com CPF deve detectar PII e devolver mensagem de handoff humano."""
     with _require_api_deployed() as client:

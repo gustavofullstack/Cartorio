@@ -30,8 +30,11 @@ from app.services.dead_mans_switch import (
 )
 
 
+from collections.abc import Generator
+
+
 @pytest.fixture
-def db() -> Session:
+def db() -> Generator[Session, None, None]:
     """SQLite in-memory + schema."""
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(bind=engine)

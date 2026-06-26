@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Generator
 from datetime import datetime, timezone
 
 import pytest
@@ -19,7 +20,7 @@ from app.services.lgpd_export import (
 
 
 @pytest.fixture
-def db() -> Session:
+def db() -> Generator[Session, None, None]:
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},

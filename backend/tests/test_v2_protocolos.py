@@ -161,6 +161,7 @@ def test_v2_protocolos_filtro_cliente_id(
 ) -> None:
     """Filtro cliente_id retorna apenas protocolos daquele cliente."""
     cliente = db_session.query(Cliente).first()
+    assert cliente is not None
     resp = client.get(
         f"/api/v2/protocolos?cliente_id={cliente.id}",
         headers={"X-API-Key": "a" * 64},
