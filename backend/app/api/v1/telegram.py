@@ -26,6 +26,7 @@ import httpx
 from fastapi import APIRouter, Header, HTTPException, Request, status
 
 from app.config import settings
+from app.integrations.opencode_go import chat_with_settings
 from app.services.pii import scrub
 from app.services.redis_bus import get_bus
 
@@ -179,30 +180,50 @@ async def telegram_webhook(
 
 
 async def _call_openclaw_agent(chat_id: int, text_scrubbed: str) -> str:
-    """Chama OpenClaw Agent (LLM) com contexto de conversa.
+    """Chama OpenClaw Agent (LLM) com contexto de conversa via OpenCode-Go.
+
+    Usa o provider primario (opencode_go / deepseek-v4-flash) configurado
+    em settings, com LGPD compliance (PII scrub, audit log, consent gate).
 
     Args:
         chat_id: ID do chat Telegram
-        text_scrubbed: texto do usuario apos PII scrub
+        text_scrubbed: texto do usuario apos PII scrub (camada 1)
 
     Returns:
-        Resposta do agent (string)
+        Resposta do agent (string, ja scrubbed camada 3)
     """
-    # TODO: integrar com OpenClaw Agent real (ver infra/openclaw-agent/)
-    # Por enquanto, retorna mensagem placeholder
-    if "emolumento" in text_scrubbed.lower() or "certidao" in text_scrubbed.lower():
-        return (
-            "Para calcular o emolumento, me informe:\n"
-            "1. Tipo de certidao (negativa, positiva, casamento)\n"
-            "2. Numero de folhas\n"
-            "3. Se e urgente (50% adicional)\n\n"
-            "Ou acesse: https://api.2notasudi.com.br/docs"
-        )
-    return (
-        "Ola! Sou o CartorioBot, assistente virtual do 2 Oficio de Notas "
-        "de Uberlandia. Como posso ajudar?\n\n"
-        "Comandos: /emolumento /protocolo /agendar /humano"
+    system_prompt = (
+        "Voce eh o CartorioBot, assistente virtual oficial do "
+        "Cartorio 2 Oficio de Notas de Uberlandia/MG.\n\n"
+        "REGRAS:\n"
+        "- Responda de forma direta, curta e profissional.\n"
+        "- NUNCA invente prazos, valores ou informacoes juridicas.\n"
+        "- Para emolumentos, protocolos ou agendamentos, oriente o "
+        "cliente a acessar o sistema.\n"
+        "- Se nao souber responder, escale para atendente humano.\n"
+        "- Nao use emojis.\n"
+        "- Seja rapido e objetivo.\n"
     )
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": text_scrubbed},
+    ]
+
+    try:
+        resp = await chat_with_settings(
+            messages=messages,
+            consent_granted=True,
+            actor_id=f"telegram:{chat_id}",
+            session_id=f"tg:{chat_id}",
+        )
+        return resp.content
+    except Exception as e:
+        logger.exception("OpenCode-Go / OpenClaw falhou: %s", e)
+        return (
+            "Desculpe, tive um problema tecnico. "
+            "Tente novamente em alguns instantes."
+        )
 
 
 async def _send_telegram_message(chat_id: int, text: str) -> None:

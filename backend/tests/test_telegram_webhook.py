@@ -138,25 +138,49 @@ def test_telegram_bot_token_constant() -> None:
 
 
 def test_webhook_emolumento_intent() -> None:
-    """Agent detecta 'certidao' e retorna orientacao."""
+    """Agent detecta 'certidao' e retorna resposta do LLM."""
     import asyncio
+    from unittest.mock import AsyncMock, patch
 
+    from app.integrations.opencode_go import ChatResponse
     from app.api.v1.telegram import _call_openclaw_agent
 
-    result = asyncio.run(_call_openclaw_agent(123, "Quero uma certidao de nascimento"))
-    assert "certidao" in result.lower()
-    assert "https://" in result  # link para API
+    fake_response = ChatResponse(
+        content="Para calcular emolumento, informe o tipo de certidao.",
+        model="deepseek-v4-flash",
+        tokens_in=50,
+        tokens_out=10,
+        latency_ms=500,
+    )
+    with patch(
+        "app.api.v1.telegram.chat_with_settings",
+        new=AsyncMock(return_value=fake_response),
+    ):
+        result = asyncio.run(_call_openclaw_agent(123, "Quero uma certidao de nascimento"))
+    assert "emolumento" in result.lower() or "certidao" in result.lower()
 
 
 def test_webhook_horario_intent() -> None:
-    """Agent responde a perguntas fora do escopo com fallback."""
+    """Agent responde a perguntas genericas via LLM."""
     import asyncio
+    from unittest.mock import AsyncMock, patch
 
+    from app.integrations.opencode_go import ChatResponse
     from app.api.v1.telegram import _call_openclaw_agent
 
-    result = asyncio.run(_call_openclaw_agent(123, "Bom dia"))
-    assert "CartorioBot" in result or "ola" in result.lower()
-    assert "/emolumento" in result or "/protocolo" in result  # slash commands
+    fake_response = ChatResponse(
+        content="Ola! Sou o CartorioBot, assistente do Cartorio 2 Oficio de Notas.",
+        model="deepseek-v4-flash",
+        tokens_in=50,
+        tokens_out=10,
+        latency_ms=500,
+    )
+    with patch(
+        "app.api.v1.telegram.chat_with_settings",
+        new=AsyncMock(return_value=fake_response),
+    ):
+        result = asyncio.run(_call_openclaw_agent(123, "Bom dia"))
+    assert "CartorioBot" in result or "cartorio" in result.lower()
 
 
 # ── HMAC validation tests ──────────────────────────────────────────
