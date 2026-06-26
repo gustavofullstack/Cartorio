@@ -1522,45 +1522,60 @@ class _FakeResp:
         "Retorna idade do ultimo backup, quantidade de arquivos e tamanho. "
         "Usado pelo workflow N8N '09 - Monitor Backup Diario' para alertar "
         "via Chatwoot se backup falhou ou esta ausente ha > 26h.\n\n"
-        "**E1.S4.T2 (fix 2026-06-25): 3 estrategias em ordem de prioridade**:\n"
+        "**E1.S4.T2 (fix 2026-06-26): 4 estrategias em ordem de prioridade**:\n"
+        "0. Redis key `backup:status` (escrito por backup.sh via POST "
+        "/api/v1/health/backup/status) - melhor performance\n"
         "1. JSON metadata `/var/log/cartorio-backup-status.json` (escrito por "
-        "backup.sh ao terminar OK) - source-of-truth\n"
+        "backup.sh ao terminar OK) - source-of-truth VPS\n"
         "2. Path local `/var/backups/cartorio` (se volume mount aplicado)\n"
         "3. Erro explicativo com instrucoes de install\n\n"
         "Campo `source` na resposta indica qual estrategia foi usada: "
-        "`status_json`, `local_path` ou `none`."
+        "`redis`, `status_json`, `local_path` ou `none`."
     ),
     response_description="Status do backup: ok=true se ultimo < 26h, senao ok=false.",
 )
 async def health_backup() -> dict:
     """Verifica idade e tamanho do backup diario.
 
-    E1.S4.T2 (fix 2026-06-25): agora consulta 3 fontes em ordem:
+    E1.S4.T2 (fix 2026-06-26): agora consulta 4 fontes em ordem:
+    0. Redis key `backup:status` (escrito via POST endpoint pelo backup.sh)
     1. JSON metadata em /var/log/cartorio-backup-status.json
        (escrito por /usr/local/bin/cartorio-backup.sh ao terminar OK)
     2. Path local /var/backups/cartorio (se volume mount aplicado)
     3. Erro explicativo se nenhuma fonte disponivel
 
-    Sem esse fix o endpoint retornava SEMPRE ok=false porque o path
-    /var/backups/cartorio NAO esta montado no container cartorio_api.
-    A solucao C (JSON metadata) foi escolhida por:
-    - Nao requer mudanca de infra (volume mount)
-    - Nao requer docker CLI no container
-    - backup.sh ja roda como cron na VPS - so precisa escrever o JSON
-
-    Setup esperado (executar uma vez na VPS):
-      Append ao final de /usr/local/bin/cartorio-backup.sh:
-        echo "{\\"last_backup_iso\\": \\"$(date -u +%FT%TZ)\\", \\"last_backup_filename\\": \\"$(ls -t ${BACKUP_DIR}/*.tar.gz 2>/dev/null | head -1 | xargs basename)\\", \\"last_backup_size_bytes\\": $(stat -c%s $(ls -t ${BACKUP_DIR}/*.tar.gz 2>/dev/null | head -1)), \\"last_backup_age_hours\\": 0, \\"backup_count_7d\\": $(ls ${BACKUP_DIR}/*.tar.gz 2>/dev/null | wc -l), \\"ok\\": true, \\"updated_at\\": \\"$(date -u +%FT%TZ)\\"}" > /var/log/cartorio-backup-status.json
-
-    Usado pelo N8N workflow #09 (Monitor Backup Diario) que alerta via
-    Chatwoot se backup falhou ou esta ausente ha > 26h.
+    A estrategia 0 (Redis) foi adicionada porque o Docker container nao
+    tem acesso ao filesystem do host VPS. O backup.sh faz POST com seu
+    status para o endpoint /api/v1/health/backup/status que armazena em Redis.
     """
     from datetime import datetime, timezone
 
     BACKUP_DIR = "/var/backups/cartorio"
     STATUS_JSON_PATH = "/var/log/cartorio-backup-status.json"
 
-    # ===== Estrategia 1: JSON metadata (source-of-truth) =====
+    # ===== Estrategia 0: Redis cache (escrito por backup.sh via POST) =====
+    try:
+        r = redis.from_url(settings.redis_url, socket_timeout=2.0, decode_responses=True)
+        redis_data = r.get("backup:status")
+        if redis_data is not None:
+            data = json.loads(redis_data)
+            age_hours = data.get("last_backup_age_hours")
+            return {
+                "ok": data.get("ok", False),
+                "last_backup_age_hours": age_hours,
+                "last_backup_iso": data.get("last_backup_iso"),
+                "file_count": data.get("backup_count_7d", 0),
+                "dir_size": _humanize_size(data.get("last_backup_size_bytes", 0)),
+                "age_hours": age_hours,
+                "source": "redis",
+                "filename": data.get("last_backup_filename"),
+                "updated_at": data.get("updated_at"),
+            }
+    except Exception:
+        # Redis indisponivel - tenta proxima estrategia
+        pass
+
+    # ===== Estrategia 1: JSON metadata (source-of-truth VPS) =====
     if os.path.exists(STATUS_JSON_PATH):
         try:
             with open(STATUS_JSON_PATH, "r", encoding="utf-8") as f:
@@ -1601,12 +1616,13 @@ async def health_backup() -> dict:
                 "ok": False,
                 "error": (
                     f"Backup status indisponivel: "
-                    f"(1) {STATUS_JSON_PATH} nao existe "
+                    f"(1) Redis `backup:status` vazio ou erro, "
+                    f"(2) {STATUS_JSON_PATH} nao existe "
                     f"(backup.sh ainda nao escreve JSON metadata) "
-                    f"E (2) {BACKUP_DIR} nao esta montado no container "
+                    f"E (3) {BACKUP_DIR} nao esta montado no container "
                     f"(volume mount ausente). "
-                    f"Setup: append JSON write no final de cartorio-backup.sh "
-                    f"OU mount {BACKUP_DIR} no compose."
+                    f"Setup: curl POST /api/v1/health/backup/status ao final "
+                    f"de cartorio-backup.sh OU mount {BACKUP_DIR} no compose."
                 ),
                 "file_count": 0,
                 "dir_size": "?",
@@ -1658,6 +1674,60 @@ async def health_backup() -> dict:
         # JSON tentou mas falhou (malformado), local funcionou
         payload["warning"] = f"status_json parse falhou, usando local_path: {json_error}"
     return payload
+
+
+class BackupStatusUpdate(BaseModel):
+    """Schema para receber status do backup via POST."""
+    model_config = ConfigDict(from_attributes=True)
+
+    ok: bool = False
+    last_backup_iso: str | None = None
+    last_backup_filename: str | None = None
+    last_backup_size_bytes: int | None = None
+    last_backup_age_hours: float | None = None
+    backup_count_7d: int = 0
+    updated_at: str | None = None
+
+
+@api_router.post(
+    "/health/backup/status",
+    tags=["health"],
+    summary="Atualiza status do backup via Redis (chamado pelo backup.sh)",
+    description=(
+        "Endpoint chamado pelo script /usr/local/bin/cartorio-backup.sh "
+        "ao final do backup, via curl POST com JSON de status. "
+        "Armazena em Redis key `backup:status` com TTL de 28h. "
+        "O GET /health/backup le esta key como estrategia 0 (prioritaria).\n\n"
+        "Uso no backup.sh:\n"
+        '  curl -X POST https://api.2notasudi.com.br/api/v1/health/backup/status \\\n'
+        '    -H "Content-Type: application/json" \\\n'
+        '    -d \'{"ok":true,"last_backup_iso":"2026-06-26T19:30:00Z",'
+        '"last_backup_filename":"cartorio_backup_20260626.tar.gz",'
+        '"last_backup_size_bytes":10000000,'
+        '"last_backup_age_hours":0,'
+        '"backup_count_7d":8,'
+        '"updated_at":"2026-06-26T19:30:00Z"}\''
+    ),
+)
+async def update_backup_status(data: BackupStatusUpdate) -> dict:
+    """Recebe status do backup e armazena em Redis (TTL 28h)."""
+    from datetime import datetime, timezone
+
+    try:
+        r = redis.from_url(settings.redis_url, socket_timeout=2.0, decode_responses=True)
+        payload = {
+            "ok": data.ok,
+            "last_backup_iso": data.last_backup_iso,
+            "last_backup_filename": data.last_backup_filename,
+            "last_backup_size_bytes": data.last_backup_size_bytes,
+            "last_backup_age_hours": data.last_backup_age_hours,
+            "backup_count_7d": data.backup_count_7d,
+            "updated_at": data.updated_at or datetime.now(timezone.utc).isoformat(),
+        }
+        r.setex("backup:status", 28 * 3600, json.dumps(payload))  # TTL 28h
+        return {"ok": True, "stored": "redis", "ttl_hours": 28}
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {e}", "stored": "none"}
 
 
 def _humanize_size(size_bytes: int) -> str:
