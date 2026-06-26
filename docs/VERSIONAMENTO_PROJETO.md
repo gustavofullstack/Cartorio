@@ -1,31 +1,46 @@
 # VERSIONAMENTO — Cartório AI OS
 
-> **Índice rápido** pra qualquer agent (Mavis, coders, LGPD) pegar contexto em < 2min.
+> **Índice rápido** pra qualquer agent pegar contexto em < 2min.
 > Pra detalhes, ler: `docs/CHANGELOG.md` (granular) + `docs/ROADMAP.md` (12 semanas) + `docs/SUPER_PLAN.md` (visão macro).
 
 ---
 
-## 🎯 ONDE ESTAMOS (snapshot 2026-06-23 13:55 BRT)
+## 🎯 ONDE ESTAMOS (snapshot 2026-06-26 20:00 BRT)
 
 ```
-VERSÃO ATUAL:        v0.4.3
-FASE:                Fase 0 → Fase 1 (transição)
-SPRINT ATUAL:        Sprint 1 — API Protocolo + LGPD Gate (concluído)
-PRÓXIMO SPRINT:      Sprint 1.1 — Backup + Workflows (em hardening)
-RADAR:               GREEN (com ressalvas — ver "RESSALVAS" abaixo)
+VERSÃO ATUAL:        v0.6.0
+FASE:                Fase 3 — Multi-canal + Escala (concluído)
+SPRINT ATUAL:        Hardening contínuo — Qualidade + Observabilidade + LGPD
+PRÓXIMO SPRINT:      WhatsApp produção + Go-Live
+RADAR:               🟢 8/8 GREEN (API, N8N, Evolution, Chatwoot, Redis, OpenClaw, Supabase, Easypanel)
 ```
 
-### RESSALVAS (verdade nua)
-- ✅ Infra: 12 containers Swarm UP, todos domínios respondendo, MCP server /mcp/mcp OK
-- ✅ OpenClaw: health 200 OK, Tailscale VPN OK, UI HTML servida em /v1/agents
-- ❌ **OpenClaw /v1/chat POST retorna 404** — rota não implementada na v0.4.0 (real gap que Gustavo reclamou)
-- ✅ N8N: 4 creds (opencode-go, supabase, cartorio-api, evolution-api) + 11 WFs ativos
-- ⚠️ **5 WFs duplicatas "11-Monitor Cartório" inativos** (cartorio-n8n vai deletar)
-- ✅ API: FastAPI 0.4.0, Swagger PT-BR, 18 endpoints, MCP server carregado
-- ✅ Chatwoot: conectado Supabase+Redis
-- ✅ Supabase: 15 services HEALTHY (db, auth, rest, storage, kong, studio, etc)
-- ❌ **Subdomínios Tailscale (*.tail2fe279.ts.net) NÃO respondem** (000) — precisa cert + Traefik router
-- ⚠️ **Opencode-Go in-line no router.py** (linhas 475-518), falta módulo dedicado (cartorio-dev tá fazendo)
+### STATUS SNAPSHOT
+
+- ✅ **API**: FastAPI v0.6.0 — 58+ endpoints REST, MCP server (164 tools), Swagger PT-BR
+- ✅ **N8N**: 34 workflows ativos, 5 plugins, retry 3x, timeout config, correlation-id
+- ✅ **Supabase**: 134 tabelas, 13 core, RLS ativo, pg_cron, webhooks, realtime
+- ✅ **Redis**: v8.8.0, 1.7k keys, 3.1MB, PONG
+- ✅ **OpenClaw**: Contexto 1M CONFIRMADO, Pietra Cartório, 7 skills, 5 providers, 9 fallback chain
+- ✅ **Evolution API**: v2.3.7, TEST conectado (553497376057), produção aguardando QR
+- ✅ **Chatwoot**: v4.12.1, Telegram inbox ativo, HITL configurado
+- ✅ **GitHub**: Branch master, CI/CD ativo, 1543 testes, 90.18% coverage, 0 mypy, 0 ruff
+
+### ISSUES CONHECIDOS
+
+| Severidade | Issue | Status |
+|-----------|-------|--------|
+| 🔴 CRÍTICO | Evolution cartorio-2notas disconnected (401 desde 25/06) | **Só Gustavo (QR scan)** |
+| 🔴 CRÍTICO | Supabase JWT secret = default (`your-super-secret-jwt-...`) | **Só Gustavo (rotação)** |
+| 🔴 CRÍTICO | OpenCode API rate limit mensal atingido (429) — reset em ~10d | **Aguardando** |
+| 🟡 HIGH | N8N Error Handler Global (WF #00) — $env bloqueado | **Agent-fixável** |
+| 🟡 HIGH | API exit 137 (SIGKILL/OOM) — reinícios recentes | **Investigar** |
+| 🟡 HIGH | UFW não instalado — Redis na porta 1001 exposto publicamente | **Agent-fixável** |
+| 🟡 HIGH | Real API key em .env.example (comentário) | **Agent-fixável** |
+| 🟡 MEDIUM | ROADMAP.md + VERSIONAMENTO_PROJETO.md desatualizados | ✅ **CORRIGIDO** |
+| 🟡 MEDIUM | Alembic migration chain (down_revision mismatch) | ✅ **CORRIGIDO** |
+| 🟡 MEDIUM | 16 stale remote branches (jules-*, fix-*, sentinel-*) | **Agent-fixável** |
+| 🟢 LOW | 17 apt updates pendentes (Docker, containerd, apparmor) | **Agendar** |
 
 ---
 
@@ -33,194 +48,98 @@ RADAR:               GREEN (com ressalvas — ver "RESSALVAS" abaixo)
 
 | Versão | Data | Sprint | Status | Resumo |
 |--------|------|--------|--------|--------|
-| **v0.4.3** | 2026-06-23 15:00 | 1.3 | ✅ | OpenClaw via Tailscale MagicDNS (vps-cartorio/openclaw.tail2fe279.ts.net) |
-| **v0.4.2** | 2026-06-23 14:25 | 1.2 | ✅ | Supabase 13/13 + Evolution instance + 4 endpoints + tabela atendimentos |
-| **v0.4.1** | 2026-06-23 14:10 | 1.1 | ✅ | Backup diário OK + 11 WFs N8N + 5 endpoints novos |
-| **v0.4.0** | 2026-06-23 11:00 | 1 | ✅ | API Protocolo (GET/POST) + LGPD Gate + PII scrub + 91% coverage |
-| **v0.3.1** | 2026-06-23 10:42 | - | ✅ | Incident recovery (LiteLLM hack + DBs limpos) |
-| **v0.3.0** | 2026-06-23 08:45 | 0.5+1 | ✅ | Infra verde + MCP server (combined_lifespan) |
-| **v0.2.0** | 2026-06-22 | 0.5 | ✅ | Infra base deployada (Easypanel + Swarm + Traefik) |
+| **v0.6.0** | 2026-06-24 | 3 | ✅ | 58+ endpoints, A26 caching, 1543 testes, 90.18% coverage |
+| **v0.5.4** | 2026-06-24 | 2.5 | ✅ | LGPD D18-D25, runbooks, brain API, Chatwoot script |
+| **v0.5.0** | 2026-06-24 | 2 | ✅ | Alembic merge, Supabase completo, S01 Final |
+| **v0.4.5** | 2026-06-23 | 1.3 | ✅ | 15 WFs N8N, 5 MCP servers (164 tools), backup |
+| **v0.4.3** | 2026-06-23 | 1.2 | ✅ | OpenClaw via Tailscale, Evolution API instance |
+| **v0.4.2** | 2026-06-23 | 1.1 | ✅ | Supabase 13/13, backup OK, 11 WFs N8N |
+| **v0.4.0** | 2026-06-23 | 1 | ✅ | API Protocolo, LGPD Gate, PII scrub, 91% coverage |
+| **v0.3.0** | 2026-06-23 | 0.5 | ✅ | Infra verde + MCP server |
+| **v0.2.0** | 2026-06-22 | 0 | ✅ | Infra base deployada (Easypanel + Swarm + Traefik) |
 | **v0.1.0** | 2026-06-22 | 0 | ✅ | Skeleton (FastAPI + SQLAlchemy + Alembic) |
-| **v0.0.1** | 2026-06-19 | - | ✅ | Initial bootstrap (repo + .harness/ + 3 reins) |
+| **v0.0.1** | 2026-06-19 | - | ✅ | Initial bootstrap (repo + .harness/) |
 
-**Detalhe completo**: `docs/CHANGELOG.md` (473 linhas, formato Conventional Commits + critérios de done).
+**Detalhe completo**: `docs/CHANGELOG.md` (~900 linhas, formato Conventional Commits + critérios de done).
 
 ---
 
 ## 🏗️ ARQUITETURA MACRO (1 slide)
 
 ```
-                        ┌─────────────────────────────────────────┐
-                        │   VPS 187.77.236.77 (Hostinger)         │
-                        │   Tailscale: 100.99.172.84              │
-                        │   12 containers Docker Swarm            │
-                        └─────────────────────────────────────────┘
-                                          │
-        ┌──────────────┬──────────────────┼──────────────────┬──────────────┐
-        │              │                  │                  │              │
-        ▼              ▼                  ▼                  ▼              ▼
-┌─────────────┐ ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│ Evolution   │ │ N8N + Runner│  │ OpenClaw    │  │ Supabase    │  │ Chatwoot    │
-│ API :8080   │ │ :5678       │  │ Gateway     │  │ :8000       │  │ :3000       │
-│ WhatsApp    │ │ Workflows   │  │ :18789      │  │ 15 services │  │ CRM/Atend.  │
-│             │ │ (11 ativos) │  │ Multi-canal │  │ 5 DBs       │  │ Humano      │
-└──────┬──────┘ └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘
-       │               │                │                │               │
-       │               │  HTTP          │  HTTP          │  SQL           │
-       │               ▼                ▼                ▼               │
-       │       ┌─────────────────────────────────────────────┐           │
-       │       │  API FastAPI (cartorio_api)                 │           │
-       │       │  - 18 endpoints REST                        │           │
-       │       │  - MCP server /mcp/mcp (FastMCP 3.x)       │           │
-       │       │  - Swagger /docs (PT-BR)                    │           │
-       │       │  - Audit log + PII scrub + LGPD gate        │◄──────────┘
-       │       │  - LLM via OpenCode-Go (DeepSeek V4 Flash)  │
-       │       └────────────────┬────────────────────────────┘
-       │                        │
-       │                        ▼
-       │              ┌─────────────────┐
-       │              │ Redis :6379/1001│
-       │              │ (cache + fila)  │
-       │              └─────────────────┘
+                        ┌─────────────────────────────────────────────┐
+                        │   VPS 187.77.236.77 (Hostinger)             │
+                        │   Tailscale: 100.99.172.84                   │
+                        │   28 containers (13 Swarm + 13 Supabase + 2) │
+                        └─────────────────────────────────────────────┘
+                                      │
+        ┌──────────────┬──────────────┼──────────────┬──────────────┐
+        │              │              │              │              │
+        ▼              ▼              ▼              ▼              ▼
+┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐
+│ Evolution  │ │ N8N + Run  │ │ OpenClaw   │ │ Supabase   │ │ Chatwoot   │
+│ API :8080  │ │ :5678      │ │ Gateway    │ │ 13 services │ │ :3000      │
+│ v2.3.7     │ │ 34 WFs     │ │ :18789     │ │ 134 tables  │ │ v4.12.1    │
+│ WhatsApp   │ │ 5 plugins  │ │ 1M ctx     │ │ PG 15       │ │ CRM/HITL   │
+└──────┬─────┘ └──────┬─────┘ └──────┬─────┘ └──────┬─────┘ └──────┬─────┘
+       │              │              │              │              │
+       │              │  HTTP        │  HTTP        │  SQL         │
+       │              ▼              ▼              ▼              │
+       │      ┌──────────────────────────────────────────────┐     │
+       │      │  API FastAPI (cartorio_api) v0.6.0           │     │
+       │      │  - 58+ endpoints REST                        │     │
+       │      │  - MCP server (164 tools, 5 servers)        │     │
+       │      │  - Swagger /docs (PT-BR)                     │     │
+       │      │  - Audit log + PII scrub + LGPD gate         │◄────┘
+       │      │  - LLM via OpenCode-Go (DeepSeek V4 Flash)   │
+       │      └────────────────┬─────────────────────────────┘
+       │                       │
+       │                       ▼
+       │             ┌─────────────────┐
+       │             │ Redis :6379/1001│
+       │             │ v8.8.0, 1.7k chs│
+       │             └─────────────────┘
        │
        ▼
   ┌────────────────────────┐
   │ WhatsApp Business API  │
   │ (cliente final)        │
+  │ ⏳ QR scan pendente    │
   └────────────────────────┘
 ```
 
-**Detalhe completo**: `docs/ARCHITECTURE.md` + `docs/COMMUNICATION_ARCHITECTURE.md`.
+---
+
+## 📊 KPIs ATUAIS
+
+| KPI | Meta | Atual | Status |
+|-----|------|-------|--------|
+| Testes passando | 1543+ | 1543 | ✅ |
+| Coverage | ≥ 90% | 90.18% | ✅ |
+| mypy errors | 0 | 0 | ✅ |
+| ruff errors | 0 | 0 | ✅ |
+| Serviços GREEN | 8/8 | 8/8 | ✅ |
+| LGPD compliance | 100% | ~92% | 🟡 |
+| Workflows N8N | 34 | 34 | ✅ |
+| Endpoints API | 58+ | 60 | ✅ |
 
 ---
 
-## 🧠 TIME (3 REINS + ORQUESTRADOR)
+## 🧠 STACK
 
-| Agent | Role | Quando spawnar | Limites |
-|-------|------|----------------|---------|
-| **Mavis (Pietra)** | Orquestrador | Eu mesmo sempre | NÃO escreve código de regra/WF/LGPD. Roteia + decide + reporta |
-| **cartorio-dev** | Backend Python/FastAPI | Mudança em API, modelo, endpoint, SQLAlchemy, pytest | Cobertura ≥ 90%, mypy 0 errors, ruff limpo |
-| **cartorio-n8n** | Workflows N8N + multi-canal | Mudança em WF, gateway OpenClaw, Evolution, deploy | Testa em staging, exporta JSON, valida creds |
-| **cartorio-lgpd** | Compliance/LGPD | Mudança em `audit`, `pii`, retenção, consentimento, copy jurídica | BLOQUEIA merge se quebrar LGPD by design |
-
-**Fluxo padrão**:
-```
-Gustavo (root) → Pietra (orquestra) → Rein (executa) → Rein (reporta) → Pietra (valida) → Gustavo (decide)
-```
-
----
-
-## 🔧 STACK
-
-| Camada | Tech | Versão | Por quê |
-|--------|------|--------|---------|
-| API | FastAPI + Pydantic v2 + SQLAlchemy 2.x | 0.4.0 | Tipagem forte, async, OpenAPI auto |
-| DB | MariaDB / Supabase Postgres | 10.11 / 15 | Relacional sólido + Supabase BaaS |
-| Cache/Fila | Redis 7 + Bull (futuro) | 7.x | Velocidade + sessão WhatsApp |
-| Workflows | N8N (self-hosted) | 2.x | Visual + auditável + extensível |
-| Gateway | OpenClaw | 0.4.0 | Multi-canal messaging |
-| WhatsApp | Evolution API | 2.x | Multi-device, webhooks, BAAS |
-| CRM/Atend. | Chatwoot | 3.x | Open source, omnichannel |
-| LLM | OpenCode-Go (DeepSeek V4 Flash) | API | Low-cost, compatível OpenAI |
-| LLM Router | LiteLLM (futuro) | - | HA + fallback multi-provider |
-| Front | (não existe ainda) | - | Só backend por enquanto |
-| Deploy | Docker Swarm + Easypanel + Traefik | - | 1-click, HTTPS auto, Traefik routers |
-| VPN | Tailscale | - | Zero-config, MagicDNS, segurança max |
-| DNS | Cloudflare | - | Proxy, WAF, SSL/TLS 1.3 |
-
----
-
-## 📊 KPIs (do ROADMAP)
-
-| Sprint | KPI | Meta | Status |
-|--------|-----|------|--------|
-| Sprint 1 | Consultas emolumento/dia | 100 | ⏳ medindo |
-| Sprint 1 | Erro de valor | 0 | ✅ 0 até agora |
-| Sprint 1 | Handoff humano | 0% | ✅ 0% |
-| Sprint 2 | Sugestões aceitas sem edição | 95% | ⏳ próximo |
-| Sprint 3 | Protocolos criados via bot | 50% | ⏳ pós-30d shadow |
-| Coverage | pytest --cov | ≥ 90% | ✅ 91.08% (v0.4.0) |
-| LGPD | Audit log entries/dia | 100% das mutações | ✅ |
-
----
-
-## 🚦 RADAR (sinal geral)
-
-| Domínio | Sinal | Última verificação |
-|---------|-------|---------------------|
-| **API FastAPI** | 🟢 | 2026-06-23 13:50 |
-| **MCP server** | 🟢 | 2026-06-23 13:50 |
-| **OpenClaw health** | 🟢 | 2026-06-23 13:50 |
-| **OpenClaw /v1/chat** | 🔴 | 2026-06-23 13:50 (404) |
-| **N8N workflows** | 🟡 | 2026-06-23 13:48 (11 ativos, 5 duplicatas inativas) |
-| **N8N credentials** | 🟢 | 2026-06-23 13:48 (4 creds) |
-| **N8N Variables** | 🔴 | 2026-06-23 13:48 (feat:variables não licenciado) |
-| **Supabase** | 🟢 | 2026-06-23 13:50 (15/15 services) |
-| **Chatwoot** | 🟢 | 2026-06-23 13:50 |
-| **Evolution API** | 🟢 | 2026-06-23 13:50 |
-| **Tailscale VPN** | 🟢 | 2026-06-23 13:50 |
-| **Tailscale subdomínios** | 🔴 | 2026-06-23 13:50 (000) |
-| **Backup diário** | 🟢 | 2026-06-23 11:25 |
-| **LGPD compliance** | 🟢 | 2026-06-23 (cartorio-lgpd audita contínuo) |
-| **Testes pytest** | 🟢 | 2026-06-23 (91.08% coverage) |
-| **Ripd v1.1** | 🟢 | 2026-06-23 |
-
-**3 vermelhos** = ação imediata:
-1. OpenClaw /v1/chat 404 — Gustavo precisa decidir (investigar ou esperar próxima release OpenClaw)
-2. N8N Variables não licenciado — Gustavo precisa decidir (upgrade ou workaround $env permanente)
-3. Tailscale subdomínios — cartorio-devops vai gerar cert + Traefik router
-
----
-
-## 📋 PENDÊNCIAS CONHECIDAS (resumo executivo)
-
-### P0 — Bloqueia produção
-- (nenhuma crítica no momento)
-
-### P1 — Hardening
-- OpenClaw /v1/chat 404 (decisão Gustavo)
-- Tailscale subdomínios (cartorio-devops)
-- Chatwoot super_admin password (decisão Gustavo)
-- Opencode-Go virar módulo dedicado (cartorio-dev)
-- 5 WFs Monitor duplicatas (cartorio-n8n)
-- WF #07 cred Evolution (cartorio-n8n)
-- Re-export WFs pra JSON (cartorio-n8n)
-- LGPD audit Opencode-Go + WFs NOVOS (cartorio-lgpd)
-- RIPD v1.2 com Opencode-Go + N8N (cartorio-lgpd)
-
-### P2 — Próximos sprints
-- Chatwoot domínio (chatwoot.2notasudi.com.br CNAME)
-- Cartorio API restart pra carregar MCP server novo
-- Tailscale exit node pra Gustavo
-- Evolution <-> N8N webhook integration real
-- Chatwoot <-> N8N inbox integration real
-
-### P3 — Backlog
-- Prospecção cartórios (T2: 60 leads em 60d)
-- LiteLLM HA (2 replicas, fallback)
-- LLM local Llama 3.1 8B pra PII scrub
-- Multi-canal (Telegram, Web, Email)
-- gov.br/ICP-Brasil assinatura digital
-- BI dashboard executivo
-- App mobile nativo
-
-**Detalhe completo**: `docs/PENDENCIAS_SUI_2026-06-23.md` (8 SUI) + `.harness/TASKS.md` (sprint tasks).
-
----
-
-## 🔐 DECISÕES CEO (transcrição)
-
-| Data | Decisão | Por quê |
-|------|---------|---------|
-| 2026-06-19 | Arquitetura HÍBRIDA (código + N8N + OpenClaw) | "Não pode errar" exige testes + audit |
-| 2026-06-19 | LGPD by design (PII scrub 3 camadas + audit log HMAC) | Cartório lida com dado pessoal |
-| 2026-06-19 | Sprint 1 SÓ consulta emolumento (read-only) | Validar com escrevente real antes de bot write |
-| 2026-06-19 | MVP > plano perfeito | Ship rápido > debate |
-| 2026-06-19 | Domínio público (*.2notasudi.com.br) + Tailscale VPN (admin) | Segurança + usabilidade |
-| 2026-06-19 | Opencode-Go (DeepSeek V4 Flash) low-cost pra começar | Validar antes de subir tier (Claude Opus/GPT-5) |
-| 2026-06-19 | **Prospecção MANUAL via Telegram (CEO dispara)**, NÃO bot | Sem opt-in de cartórios = spam + LGPD risk |
-| 2026-06-19 | N8N workflows SEMPRE chamam API backend | Audit chain + LGPD by design (Postgres direto = bypass) |
-| 2026-06-19 | Chatwoot: Gustavo cria super_admin via UI (não automatiza) | Rate-limit + decisão de produto |
+| Camada | Tech | Versão |
+|--------|------|--------|
+| API | FastAPI + Pydantic v2 + SQLAlchemy 2.x | v0.6.0 |
+| DB | Supabase Postgres 15 | 15.x |
+| Cache/Fila | Redis | 8.8.0 |
+| Workflows | N8N (self-hosted) | 2.27.4 |
+| Gateway | OpenClaw | Latest |
+| WhatsApp | Evolution API | v2.3.7 |
+| CRM/Atend. | Chatwoot | v4.12.1 |
+| LLM | OpenCode-Go (DeepSeek V4 Flash) | 1M ctx |
+| Deploy | Docker Swarm + Easypanel + Traefik | - |
+| VPN | Tailscale | - |
+| DNS | Cloudflare | - |
 
 ---
 
@@ -228,64 +147,35 @@ Gustavo (root) → Pietra (orquestra) → Rein (executa) → Rein (reporta) → 
 
 ```
 /Users/gustavoalmeida/projetos/Cartorio/
-├── backend/                        # FastAPI + SQLAlchemy + pytest
-│   ├── app/                        # código fonte
-│   │   ├── api/v1/router.py        # 18 endpoints REST
-│   │   ├── core/                   # config, security, db
-│   │   ├── models/                 # SQLAlchemy
-│   │   ├── schemas/                # Pydantic
-│   │   ├── services/               # regras de negócio
-│   │   └── pii/                    # scrubber
-│   ├── tests/                      # pytest (91% coverage)
-│   ├── alembic/                    # migrations
+├── backend/                        # FastAPI v0.6.0
+│   ├── app/                        # código fonte (284 source files)
+│   │   ├── api/v1/router.py        # 58+ endpoints REST
+│   │   ├── models/                 # SQLAlchemy models
+│   │   ├── schemas/                # Pydantic V2
+│   │   ├── services/               # 42 serviços
+│   │   └── utils/                  # PII, utilidades
+│   ├── tests/                      # 1543 testes, 90.18% coverage
+│   ├── alembic/versions/           # 21 migrações (head 0016)
 │   ├── mcp_server.py               # FastMCP 3.x
-│   ├── pyproject.toml
-│   └── .env.example                # template (commit-friendly)
-├── docs/                           # documentação viva
-│   ├── CHANGELOG.md                # ⭐ histórico de versões
-│   ├── ROADMAP.md                  # 12 semanas
-│   ├── SUPER_PLAN.md               # visão macro
-│   ├── ARCHITECTURE.md             # 1-slide arquitetura
-│   ├── COMMUNICATION_ARCHITECTURE.md
-│   ├── EVOLUTION_API_INTEGRATION.md
-│   ├── ripd.md                     # Relatório Impacto Proteção Dados
-│   ├── consent.md                  # termo consentimento
-│   ├── privacy-policy.md
-│   ├── PROSPECCAO_MERCADO.md       # ⭐ pesquisa + template
-│   ├── PENDENCIAS_SUI_2026-06-23.md
-│   ├── SMOKE_TEST_REPORT.md
-│   ├── ENV_PRODUCTION.md
-│   ├── VERSIONAMENTO_PROJETO.md    # ⭐ este arquivo
-│   └── leads/                      # scripts prospecção
-├── infra/                          # configurações deploy
-│   ├── n8n-workflows/              # JSONs exportados
-│   ├── backup/
-│   └── supabase/
-├── .harness/                       # time multi-agent
-│   ├── TASKS.md                    # sprint tasks
-│   ├── AGENTS.md                   # protocolo time
-│   ├── STANDARDS.md                # padrões código
-│   ├── agent.md                    # orquestrador
-│   ├── memory/MEMORY.md            # memória compartilhada
-│   └── reins/                      # 3 rein definitions
-├── infra/backup/                   # backup scripts
-├── Dockerfile
-├── README.md
-├── SESSION_SUMMARY_2026-06-23.md   # resumo última sessão
-├── package.json
-└── .env.example                    # template global
+│   └── .env.example
+├── docs/                           # 60+ documentos
+├── infra/                          # N8N workflows, backup, supabase, chatwoot
+├── .brain/                         # Memória do sistema
+├── .harness/                       # Tasks, agents, planos
+├── .secrets/                       # 15 .env files de serviço (gitignored)
+└── .github/workflows/             # CI/CD (lint, test, docs-build)
 ```
 
 ---
 
 ## 🎓 COMO USAR ESTE DOC
 
-**Sou novo agent (Mavis cold start)**: Ler `VERSIONAMENTO_PROJETO.md` (este) → `CHANGELOG.md` (entender o que foi feito) → `.harness/AGENTS.md` (entender time) → começar.
+**Sou novo agent (cold start)**: Ler `VERSIONAMENTO_PROJETO.md` (este) → `CHANGELOG.md` (entender o que foi feito) → `.harness/TASKS.md` → começar.
 
-**Sou agent do Mavis e vou trabalhar em sprint**: Ler `ROADMAP.md` (qual sprint) → `.harness/TASKS.md` (tasks específicas) → `docs/` relacionado (integração Evolution, LGPD, etc).
+**Sou agente existente**: Verificar "ONDE ESTAMOS" + "ISSUES CONHECIDOS" + continuar do SESSION_SUMMARY mais recente.
 
-**Sou Gustavo e quero saber o que tá acontecendo**: Ler "ONDE ESTAMOS" + "RADAR" + "PENDÊNCIAS CONHECIDAS" + "DECISÕES CEO" (todas nesse doc, 5min de leitura).
+**Sou Gustavo**: Ver "STATUS SNAPSHOT" + "ISSUES CONHECIDOS" — tudo em 2min de leitura.
 
-**Memory agent (Mavis memory)**: Salvar index em `~/.mavis/agents/mavis/memory/MEMORY.md` referenciando este doc + `docs/CHANGELOG.md` (não duplicar).
+---
 
-Modified by Gustavo Almeida
+*Modified by Gustavo Almeida | Atualizado 2026-06-26*

@@ -1,7 +1,7 @@
 """A18+A19: TimestampMixin agendamento/webhook + deleted_at soft delete
 
 Revision ID: 0015
-Revises: 0014
+Revises: 2026_06_25_0014
 Create Date: 2026-06-26
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers
 revision = "0015"
-down_revision = "0014"
+down_revision = "2026_06_25_0014"
 branch_labels = None
 depends_on = None
 
