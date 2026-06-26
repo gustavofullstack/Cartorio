@@ -181,6 +181,8 @@ class TestN8NIntegrationReal:
     @pytest.mark.asyncio
     async def test_n8n_healthz_real(self) -> None:
         """GET /healthz real contra VPS."""
+        if not settings.n8n_api_key:
+            pytest.skip("N8N_API_KEY nao configurado (ambiente de teste)")
         async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
             resp = await client.get("https://flow.2notasudi.com.br/healthz")
             assert resp.status_code == 200
@@ -188,13 +190,16 @@ class TestN8NIntegrationReal:
     @pytest.mark.asyncio
     async def test_n8n_workflows_count_real(self) -> None:
         """N8N deve ter 34 workflows ativos."""
+        if not settings.n8n_api_key:
+            pytest.skip("N8N_API_KEY nao configurado (ambiente de teste)")
         async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
             resp = await client.get(
                 "https://flow.2notasudi.com.br/api/v1/workflows?limit=100",
                 headers={"X-N8N-API-KEY": settings.n8n_api_key or ""},
             )
             assert resp.status_code == 200
-            import json, re
+            import json
+            import re
             raw = resp.text
             clean = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f]', ' ', raw)
             data = json.loads(clean)
