@@ -32,16 +32,24 @@
     "GitHub billing CI/CD blocked (SUI)",
     "DNS Cloudflare A records pending (SUI)",
     "Redis: maxmemory=0 (no limit) + noeviction policy ⚠️",
-    "Supabase: JWT secret default dev, signup enabled (GOTRUE_DISABLE_SIGNUP=false)",
+    "Supabase: JWT secret default dev (CRITICAL security), signup enabled (HIGH)",
     "Chatwoot API: /api/v1/* returns SPA 404 (routing config)",
-    "N8N: no N8N_API_KEY env var (can't use REST API auth)",
-    "OpenClaw port 18789: pending restart (host-mode port conflict)"
+    "N8N: no N8N_API_KEY env var, WEBHOOK_URL=easypanel.host (not flow.2notas.com.br)",
+    "OpenClaw port 18789: pending restart (host-mode port conflict)",
+    "API duplicate container (stale from rolling update)",
+    "Coverage buffer thin (90.18% — only 0.18% above 90% minimum)",
+    "Low coverage in critical modules: redis_bus (84%), lgpd_direito (81%)",
+    "Test quality: 6x FakeWS duplication, 839 MagicMock, 66 type:ignore",
+    "No standalone OpenClaw doc dir, no SUI doc, MCP skill stubs"
   ],
   "next_priorities": [
-    "Executar final validation E2E Telegram ↔ API ↔ N8N ↔ OpenClaw",
-    "Configurar Redis maxmemory (ex: 500MB) + allkeys-lru policy",
-    "Corrigir Chatwoot API routing (verificar FRONTEND_URL + API path)",
-    "Aguardar 6 agents retornarem + consolidar reports finais",
-    "Documentar + Commit final + Push Master"
+    "🔴 Fix Supabase JWT secret (rotate to random 32+ char)",
+    "🔴 Disable public signup (GOTRUE_DISABLE_SIGNUP=true)",
+    "🟡 Configure Redis maxmemory (500MB) + allkeys-lru policy",
+    "🟡 Add N8N_API_KEY env var + fix WEBHOOK_URL to flow.2notasudi.com.br",
+    "🟡 Create docs/openclaw/ standalone directory + expand MCP skill docs",
+    "🟢 Expand coverage: redis_bus (84%), lgpd_direito_esquecimento (81%)",
+    "🟢 Consolidate FakeWS into conftest.py, reduce MagicMock usage",
+    "🟢 Create integration conftest.py with shared fixtures"
   ]
 }
