@@ -15,6 +15,10 @@ from app.config import Settings
 _MINIMAL_ENV = {
     "DATABASE_URL": "postgresql://test:test@localhost/test",
     "AUDIT_HMAC_KEY": "0" * 32,  # 32 chars minimum
+    "CARTORIO_API_KEY": "a" * 64,  # 64 chars minimum
+    "TELEGRAM_BOT_TOKEN": "test:token",
+    "OPENCODE_GO_API_KEY": "test-key",
+    "OPENCODE_GO_MODEL": "test-model",
 }
 
 

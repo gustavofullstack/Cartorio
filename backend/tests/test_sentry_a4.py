@@ -143,6 +143,7 @@ def test_before_send_scrub_message() -> None:
     """_before_send faz scrub no campo message."""
     event: dict = {"message": "ERRO: CPF 123.456.789-00 invalido"}
     result = _before_send(event, {})
+    assert result is not None
     assert "[MASKED:cpf]" in result["message"]
 
 
@@ -157,6 +158,7 @@ def test_before_send_scrub_exception_values() -> None:
         }
     }
     result = _before_send(event, {})
+    assert result is not None
     assert "[MASKED:cpf]" in result["exception"]["values"][0]["value"]
     assert result["exception"]["values"][1]["value"] == "sem pii aqui"
 
@@ -165,6 +167,7 @@ def test_before_send_scrub_tags() -> None:
     """_before_send faz scrub em tags."""
     event: dict = {"tags": {"email": "cliente@test.com", "env": "prod"}}
     result = _before_send(event, {})
+    assert result is not None
     assert "[MASKED:email]" in result["tags"]["email"]
     assert result["tags"]["env"] == "prod"
 
@@ -173,6 +176,7 @@ def test_before_send_scrub_extra() -> None:
     """_before_send faz scrub em extra context."""
     event: dict = {"extra": {"cpf_cliente": "123.456.789-00", "tipo": "erro"}}
     result = _before_send(event, {})
+    assert result is not None
     assert "[MASKED:cpf]" in result["extra"]["cpf_cliente"]
 
 
@@ -180,6 +184,7 @@ def test_before_send_scrub_user() -> None:
     """_before_send faz scrub em dados do usuario."""
     event: dict = {"user": {"email": "admin@test.com", "id": "123"}}
     result = _before_send(event, {})
+    assert result is not None
     assert "[MASKED:email]" in result["user"]["email"]
     assert result["user"]["id"] == "123"
 
@@ -188,6 +193,7 @@ def test_before_send_sem_exception_ok() -> None:
     """_before_send funciona sem campo exception."""
     event: dict = {"message": "teste normal", "tags": {"env": "test"}}
     result = _before_send(event, {})
+    assert result is not None
     assert result["message"] == "teste normal"
 
 

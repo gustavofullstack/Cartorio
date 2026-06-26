@@ -69,10 +69,12 @@ def test_webhook_e2e_message_without_pii() -> None:
         }
         resp = client.post("/api/v1/webhook/evolution", json=payload)
         assert resp.status_code == 200
-        body = resp.json()
+        body: dict = resp.json()
         assert body["status"] == "ok"
         # Sem PII = texto nao-mascarado
-        assert "5511999999999" not in body["scrubbed"] or body["scrubbed"] == "".join(
+        scrubbed = body.get("scrubbed", "")
+        assert isinstance(scrubbed, str)
+        assert "5511999999999" not in scrubbed or scrubbed == "".join(
             [payload["message"]["text"]]
         )
         # Resposta humanizada (atendente, nao transferencia)

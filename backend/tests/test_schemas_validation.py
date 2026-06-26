@@ -28,7 +28,7 @@ class TestProtocoloSchemas:
             cliente_cpf="12345678901",
             cliente_nome="João da Silva",
             tipo="certidao_negativa",
-            canal_origem="whatsapp",
+            canal_origem=CanalOrigem.WHATSAPP,
             consentimento_lgpd=True,
         )
         assert p.cliente_nome == "João da Silva"
@@ -40,7 +40,7 @@ class TestProtocoloSchemas:
             cliente_cpf="12345678901",
             cliente_nome="João",
             tipo="certidao_negativa",
-            canal_origem="whatsapp",
+            canal_origem=CanalOrigem.WHATSAPP,
             consentimento_lgpd=True,
         )
         assert p.consentimento_lgpd is True
