@@ -165,8 +165,10 @@ def test_agent_health_nao_vaza_api_key(client) -> None:
     body_str = str(resp.json())
     # api_key nao pode aparecer em lugar nenhum
     from app.config import settings
-    assert settings.opencode_go_api_key not in body_str
-    assert settings.openclaw_api_key not in body_str
+    if settings.opencode_go_api_key:
+        assert settings.opencode_go_api_key not in body_str
+    if settings.openclaw_api_key:
+        assert settings.openclaw_api_key not in body_str
 
 
 def _mock_response(status_code: int, headers: dict | None = None) -> AsyncMock:
