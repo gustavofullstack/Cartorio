@@ -3,7 +3,7 @@
     "version": "4.0.0",
     "date": "2026-06-25",
     "author": "Gustavo Almeida",
-    "project": "Cartório 2º Notas Uberlândia — Agent AI Chatbot",
+    "project": "Cart\u00f3rio 2\u00ba Notas Uberl\u00e2ndia \u2014 Agent AI Chatbot",
     "repo": "gustavofullstack/Cartorio",
     "domain": "2notasudi.com.br",
     "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER"
@@ -20,7 +20,7 @@
       "CREATE_UPDATE_SUPER_PLAN_100_TASKS",
       "START_EXECUTION_1_2_AGENTS_SEQUENTIAL"
     ],
-    "work_cycle": "ANALISE → TESTE → CORRIJA → MELHORE → OTIMIZE → ORGANIZE → DOCUMENTE → COMENTE → SALVE_NA_MEMÓRIA"
+    "work_cycle": "ANALISE \u2192 TESTE \u2192 CORRIJA \u2192 MELHORE \u2192 OTIMIZE \u2192 ORGANIZE \u2192 DOCUMENTE \u2192 COMENTE \u2192 SALVE_NA_MEM\u00d3RIA"
   },
   "rules_absolute": {
     "no_key_rotation": {
@@ -60,7 +60,7 @@
       "DEVSECOPS",
       "QA_ENGINEER"
     ],
-    "agent_name": "Pietra (Mavis / Braço Direito)"
+    "agent_name": "Pietra (Mavis / Bra\u00e7o Direito)"
   },
   "operation_mode": {
     "continuous": true,
@@ -190,7 +190,7 @@
       "port_internal": 6379,
       "port_host": 1001,
       "auth": "@Techno832466",
-      "health": "redis-cli PING → PONG",
+      "health": "redis-cli PING \u2192 PONG",
       "connection": "redis://default:@Techno832466@100.99.172.84:1001/0",
       "uses": [
         "sessions_TTL30min",
@@ -205,9 +205,9 @@
       "url": "https://agent.2notasudi.com.br",
       "port_internal": 18789,
       "port_external": 18790,
-      "health": "GET /health → {ok:true,status:live}",
+      "health": "GET /health \u2192 {ok:true,status:live}",
       "agent_id": "main",
-      "agent_name": "Pietra Cartório",
+      "agent_name": "Pietra Cart\u00f3rio",
       "model": "deepseek-v4-flash",
       "provider": "openai",
       "base_url": "https://opencode.ai/zen/go/v1",
@@ -286,8 +286,8 @@
     "opencode_go": {
       "key": "sk-xcRwExjQjqmlc5swP8umqK2YqWUfVt23H3Xl6dpd9TqEyi16ssJXzHeUFGNNIfsJ",
       "base_url": "https://opencode.ai/zen/go/v1",
-      "use": "OpenClaw_Agent_AI_Cartório",
-      "note": "New key — previous one was rate limited",
+      "use": "OpenClaw_Agent_AI_Cart\u00f3rio",
+      "note": "New key \u2014 previous one was rate limited",
       "rotate": false
     }
   },
@@ -430,16 +430,10 @@
     },
     "DOCS_Download": {
       "total": 5,
-      "done": 0,
-      "pct": 0,
-      "status": "PENDING_URGENT",
-      "pending": [
-        "DOCS1",
-        "DOCS2",
-        "DOCS3",
-        "DOCS4",
-        "DOCS5"
-      ]
+      "done": 5,
+      "pct": 100,
+      "status": "DONE",
+      "pending": []
     }
   },
   "blockers_SUI": [
@@ -467,7 +461,8 @@
       "id": "T1",
       "blocker": "OpenClaw_context_131k_needs_1M",
       "action": "Fix_models_json",
-      "priority": "P0_URGENT"
+      "priority": "P0_URGENT",
+      "status": "RESOLVED"
     },
     {
       "id": "T2",
@@ -742,7 +737,7 @@
     "supabase_tables": 134,
     "supabase_core_tables": 13,
     "alembic_head": "2026_06_25_0014",
-    "openclaw_context_current": 131073,
+    "openclaw_context_current": 1000000,
     "openclaw_context_target": 1000000,
     "lgpd_compliance_pct": 68,
     "linear_tasks_done": 52,
