@@ -1678,6 +1678,7 @@ async def health_backup() -> dict:
 
 class BackupStatusUpdate(BaseModel):
     """Schema para receber status do backup via POST."""
+
     model_config = ConfigDict(from_attributes=True)
 
     ok: bool = False
@@ -1699,7 +1700,7 @@ class BackupStatusUpdate(BaseModel):
         "Armazena em Redis key `backup:status` com TTL de 28h. "
         "O GET /health/backup le esta key como estrategia 0 (prioritaria).\n\n"
         "Uso no backup.sh:\n"
-        '  curl -X POST https://api.2notasudi.com.br/api/v1/health/backup/status \\\n'
+        "  curl -X POST https://api.2notasudi.com.br/api/v1/health/backup/status \\\n"
         '    -H "Content-Type: application/json" \\\n'
         '    -d \'{"ok":true,"last_backup_iso":"2026-06-26T19:30:00Z",'
         '"last_backup_filename":"cartorio_backup_20260626.tar.gz",'
@@ -4531,9 +4532,7 @@ def cancelar_agendamento(
     from app.services.agendamento import AgendamentoService
 
     try:
-        agendamento = AgendamentoService.cancelar_agendamento(
-            db, agendamento_id, request=request
-        )
+        agendamento = AgendamentoService.cancelar_agendamento(db, agendamento_id, request=request)
         return AgendamentoResponse.model_validate(agendamento)
     except ValueError as e:
         raise HTTPException(
@@ -4569,9 +4568,7 @@ def confirmar_agendamento(
     from app.services.agendamento import AgendamentoService
 
     try:
-        agendamento = AgendamentoService.confirmar_agendamento(
-            db, agendamento_id, request=request
-        )
+        agendamento = AgendamentoService.confirmar_agendamento(db, agendamento_id, request=request)
         return AgendamentoResponse.model_validate(agendamento)
     except ValueError as e:
         raise HTTPException(
@@ -4614,11 +4611,14 @@ def get_agendamentos_pendentes(
     db: Session = Depends(get_db),
 ) -> list[dict]:
     """Lista agendamentos pendentes para notificação N8N.
-    
+
     A26: Cache Redis 60s para reduzir carga DB em pico.
     """
     from app.services.agendamento import AgendamentoService
-    from app.services.agendamento_cache import get_agendamentos_pendentes_cached, set_agendamentos_pendentes_cached
+    from app.services.agendamento_cache import (
+        get_agendamentos_pendentes_cached,
+        set_agendamentos_pendentes_cached,
+    )
 
     api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
     _verify_api_key(api_key_header)
@@ -4629,7 +4629,16 @@ def get_agendamentos_pendentes(
         return cached
 
     agendamentos = AgendamentoService.listar_agendamentos_pendentes(db)
-    
+
+    # Pre-fetch all clients to avoid N+1 queries
+    cliente_ids = [a.get("cliente_id") for a in agendamentos if a.get("cliente_id")]
+    clientes_map = {}
+    if cliente_ids:
+        from app.models.cliente import Cliente
+
+        clientes_db = db.execute(select(Cliente).where(Cliente.id.in_(cliente_ids))).scalars().all()
+        clientes_map = {c.id: c for c in clientes_db}
+
     result = []
     for agendamento in agendamentos:
         # Buscar informações de contato do cliente
@@ -4638,31 +4647,30 @@ def get_agendamentos_pendentes(
             "cliente_whatsapp_number": "",
             "cliente_email": "",
         }
-        
+
         cliente_id = agendamento.get("cliente_id")
         if cliente_id:
-            from app.models.cliente import Cliente
-            cliente = db.execute(
-                select(Cliente).where(Cliente.id == cliente_id)
-            ).scalar_one_or_none()
-            
+            cliente = clientes_map.get(cliente_id)
+
             if cliente:
                 cliente_info = {
                     "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
                     "cliente_whatsapp_number": cliente.whatsapp_number or "",
                     "cliente_email": cliente.email or "",
                 }
-        
-        result.append({
-            "id": agendamento.get("id"),
-            "titulo": agendamento.get("titulo"),
-            "data_hora": agendamento.get("data_hora"),
-            "cliente_id": cliente_id,
-            "local": agendamento.get("local"),
-            "tipo": agendamento.get("tipo"),
-            "status": agendamento.get("status"),
-            **cliente_info
-        })
+
+        result.append(
+            {
+                "id": agendamento.get("id"),
+                "titulo": agendamento.get("titulo"),
+                "data_hora": agendamento.get("data_hora"),
+                "cliente_id": cliente_id,
+                "local": agendamento.get("local"),
+                "tipo": agendamento.get("tipo"),
+                "status": agendamento.get("status"),
+                **cliente_info,
+            }
+        )
 
     # A26: cacheia resultado para proximas chamadas
     set_agendamentos_pendentes_cached(result)
@@ -4691,11 +4699,14 @@ def get_agendamentos_proximos(
     db: Session = Depends(get_db),
 ) -> list[dict]:
     """Lista agendamentos próximos para lembrete N8N.
-    
+
     A26: Cache Redis 60s para reduzir carga DB em pico.
     """
     from app.services.agendamento import AgendamentoService
-    from app.services.agendamento_cache import get_agendamentos_proximos_cached, set_agendamentos_proximos_cached
+    from app.services.agendamento_cache import (
+        get_agendamentos_proximos_cached,
+        set_agendamentos_proximos_cached,
+    )
 
     api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
     _verify_api_key(api_key_header)
@@ -4706,7 +4717,16 @@ def get_agendamentos_proximos(
         return cached
 
     agendamentos = AgendamentoService.listar_agendamentos_proximos(db)
-    
+
+    # Pre-fetch all clients to avoid N+1 queries
+    cliente_ids = [a.get("cliente_id") for a in agendamentos if a.get("cliente_id")]
+    clientes_map = {}
+    if cliente_ids:
+        from app.models.cliente import Cliente
+
+        clientes_db = db.execute(select(Cliente).where(Cliente.id.in_(cliente_ids))).scalars().all()
+        clientes_map = {c.id: c for c in clientes_db}
+
     result = []
     for agendamento in agendamentos:
         # Buscar informações de contato do cliente
@@ -4715,31 +4735,30 @@ def get_agendamentos_proximos(
             "cliente_whatsapp_number": "",
             "cliente_email": "",
         }
-        
+
         cliente_id = agendamento.get("cliente_id")
         if cliente_id:
-            from app.models.cliente import Cliente
-            cliente = db.execute(
-                select(Cliente).where(Cliente.id == cliente_id)
-            ).scalar_one_or_none()
-            
+            cliente = clientes_map.get(cliente_id)
+
             if cliente:
                 cliente_info = {
                     "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
                     "cliente_whatsapp_number": cliente.whatsapp_number or "",
                     "cliente_email": cliente.email or "",
                 }
-        
-        result.append({
-            "id": agendamento.get("id"),
-            "titulo": agendamento.get("titulo"),
-            "data_hora": agendamento.get("data_hora"),
-            "cliente_id": cliente_id,
-            "local": agendamento.get("local"),
-            "tipo": agendamento.get("tipo"),
-            "status": agendamento.get("status"),
-            **cliente_info
-        })
+
+        result.append(
+            {
+                "id": agendamento.get("id"),
+                "titulo": agendamento.get("titulo"),
+                "data_hora": agendamento.get("data_hora"),
+                "cliente_id": cliente_id,
+                "local": agendamento.get("local"),
+                "tipo": agendamento.get("tipo"),
+                "status": agendamento.get("status"),
+                **cliente_info,
+            }
+        )
 
     # A26: cacheia resultado para proximas chamadas
     set_agendamentos_proximos_cached(result)
