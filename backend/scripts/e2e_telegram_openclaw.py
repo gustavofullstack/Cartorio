@@ -25,6 +25,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 
@@ -44,8 +45,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--bot-token",
-        default="8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q",
-        help="Telegram bot token (NAO rotacionar)",
+        default=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+        help="Telegram bot token",
     )
     parser.add_argument(
         "--wait-seconds", type=int, default=10, help="tempo max de espera pela resposta"

@@ -1,7 +1,6 @@
 """Telegram webhook endpoint - recebe updates do bot CartorioBot.
 
 Bot: @CartorioBot (a registrar)
-Token: 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q (NAO rotacionar)
 
 Fluxo:
 1. Recebe update do Telegram
@@ -36,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 
-# Token do bot (NUNCA rotacionar - Gustavo + ZCode unicos com acesso)
-TELEGRAM_BOT_TOKEN = "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+# Token do bot (vir de settings.telegram_bot_token)
+TELEGRAM_BOT_TOKEN = settings.telegram_bot_token if hasattr(settings, "telegram_bot_token") and settings.telegram_bot_token else ""
 TELEGRAM_API_BASE = "https://api.telegram.org"
 
 # HMAC secret compartilhado com Telegram (configurado via setWebhook)

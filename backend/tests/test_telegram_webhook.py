@@ -131,10 +131,10 @@ def test_webhook_handles_telegram_api_failure(client: TestClient, telegram_updat
 
 
 def test_telegram_bot_token_constant() -> None:
-    """Token do bot esta hardcoded (NAO rotacionar)."""
+    """Token do bot eh lido das configs."""
     from app.api.v1.telegram import TELEGRAM_BOT_TOKEN
 
-    assert TELEGRAM_BOT_TOKEN == "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+    assert isinstance(TELEGRAM_BOT_TOKEN, str)
 
 
 def test_webhook_emolumento_intent() -> None:
