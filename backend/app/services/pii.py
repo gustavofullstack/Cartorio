@@ -178,11 +178,11 @@ def scrub(text: str) -> ScrubResult:
     total = 0
     start = time.perf_counter()
     for label, pattern in _PATTERNS.items():
-        matches = pattern.findall(out)
-        if matches:
-            findings[label] = len(matches)
-            total += len(matches)
-            out = pattern.sub(f"[{label.upper()}_REDACTED]", out)
+        # Optimization: subn applies replacement and returns the count in one pass.
+        out, count = pattern.subn(f"[{label.upper()}_REDACTED]", out)
+        if count > 0:
+            findings[label] = count
+            total += count
     duration_ms = (time.perf_counter() - start) * 1000.0
 
     # A2 metricas: instrumentar counter + histogram
@@ -206,7 +206,8 @@ def scrub(text: str) -> ScrubResult:
 
 def detect_only(text: str) -> dict[str, int]:
     """So detecta, nao altera texto. Util pra gates antes de chamar LLM."""
-    return {label: len(p.findall(text)) for label, p in _PATTERNS.items() if p.findall(text)}
+    # Optimization: calculate findall once using walrus operator.
+    return {label: len(m) for label, p in _PATTERNS.items() if (m := p.findall(text))}
 
 
 def hash_pii(value: str, salt: str) -> str:
