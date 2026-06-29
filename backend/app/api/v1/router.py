@@ -712,7 +712,17 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
             # accepted: continua processamento abaixo
 
     _msg = payload.get("message") or {}
-    raw_text = _msg.get("text", "") if isinstance(_msg, dict) else ""
+    # Evolution API / WhatsApp envia message.conversation OU message.extendedTextMessage
+    # (formato BAILEYS). Verifica ambos para garantir compatibilidade.
+    raw_text = ""
+    if isinstance(_msg, dict):
+        raw_text = _msg.get("text") or _msg.get("conversation") or _msg.get("extendedTextMessage", {}).get("text", "") or ""
+    if isinstance(raw_text, list):
+        # Às vezes o texto vem como lista de fragments (tipo: [{"type":"string","text":"..."}])
+        raw_text = "".join(
+            item.get("text", "") if isinstance(item, dict) else str(item)
+            for item in raw_text
+        )
     sender = payload.get("sender", "unknown")
     instance = payload.get("instance", "")
 

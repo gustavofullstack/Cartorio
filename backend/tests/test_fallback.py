@@ -84,12 +84,14 @@ async def test_chat_with_fallback_no_fallback_on_consent_blocked():
 
 
 @pytest.mark.asyncio
-async def test_chat_with_fallback_raises_if_both_fail():
-    """Se ambos os provedores falharem, propaga a excecao."""
+async def test_chat_with_fallback_raises_if_all_fail():
+    """Se todos os provedores (primary + fallback + tertiary/jules) falharem, propaga."""
     with patch("app.integrations.opencode_go.chat_with_settings", new_callable=AsyncMock) as mock_primary, \
-         patch("app.integrations.openclaw.chat_with_settings", new_callable=AsyncMock) as mock_fallback:
+         patch("app.integrations.openclaw.chat_with_settings", new_callable=AsyncMock) as mock_fallback, \
+         patch("app.integrations.jules.chat_with_settings", new_callable=AsyncMock) as mock_jules:
         mock_primary.side_effect = ChatError("Network primary", kind=ChatErrorKind.NETWORK)
         mock_fallback.side_effect = ChatError("Network fallback", kind=ChatErrorKind.NETWORK)
+        mock_jules.side_effect = ChatError("Jules timeout", kind=ChatErrorKind.TIMEOUT)
 
         with pytest.raises(ChatError) as exc:
             await chat_with_fallback(
@@ -97,9 +99,10 @@ async def test_chat_with_fallback_raises_if_both_fail():
                 consent_granted=True,
             )
 
-        assert "Network fallback" in str(exc.value)
+        assert "Jules timeout" in str(exc.value)
         mock_primary.assert_called_once()
         mock_fallback.assert_called_once()
+        mock_jules.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -208,18 +211,23 @@ async def test_chat_with_fallback_no_fallback_on_config_error():
 
 @pytest.mark.asyncio
 async def test_chat_with_fallback_unexpected_error_in_fallback():
-    """Erro inesperado (nao ChatError) no fallback -> ChatError NETWORK."""
+    """Erro inesperado (nao ChatError) no fallback wrappeado em ChatError NETWORK
+    e continua o chain para o tertiary. Ultimo erro eh propagado."""
     with patch("app.integrations.opencode_go.chat_with_settings", new_callable=AsyncMock) as mock_primary, \
-         patch("app.integrations.openclaw.chat_with_settings", new_callable=AsyncMock) as mock_fallback:
+         patch("app.integrations.openclaw.chat_with_settings", new_callable=AsyncMock) as mock_fallback, \
+         patch("app.integrations.jules.chat_with_settings", new_callable=AsyncMock) as mock_jules:
         mock_primary.side_effect = ChatError("primary", kind=ChatErrorKind.NETWORK)
         mock_fallback.side_effect = RuntimeError("kaboom")
+        mock_jules.side_effect = ChatError("Jules config missing", kind=ChatErrorKind.CONFIG)
 
         with pytest.raises(ChatError) as exc:
             await chat_with_fallback(
                 messages=[{"role": "user", "content": "oi"}],
                 consent_granted=True,
             )
-        assert exc.value.kind == ChatErrorKind.NETWORK
+        # O CONFIG de jules deve parar chain imediatamente (LGPD_BLOCKED/CONFIG bail)
+        assert exc.value.kind == ChatErrorKind.CONFIG
+        mock_jules.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -240,9 +248,11 @@ async def test_chat_with_fallback_records_audit_on_success():
     db = MagicMock()
     with patch("app.integrations.opencode_go.chat_with_settings", new_callable=AsyncMock) as mock_primary, \
          patch("app.integrations.openclaw.chat_with_settings", new_callable=AsyncMock) as mock_fallback, \
+         patch("app.integrations.jules.chat_with_settings", new_callable=AsyncMock) as mock_jules, \
          patch("app.services.audit.AuditService.log") as mock_audit:
         mock_primary.side_effect = ChatError("rate", kind=ChatErrorKind.RATE_LIMITED)
         mock_fallback.return_value = mock_resp
+        # jules NAO deve ser chamado (fallback retornou sucesso no step 1)
 
         res = await chat_with_fallback(
             messages=[{"role": "user", "content": "oi"}],
@@ -257,5 +267,7 @@ async def test_chat_with_fallback_records_audit_on_success():
         kwargs = mock_audit.call_args.kwargs
         assert kwargs["action"] == "llm.fallback_triggered"
         assert kwargs["payload"]["primary_provider"] == "opencode_go"
-        assert kwargs["payload"]["fallback_provider"] == "openclaw"
-        assert kwargs["payload"]["primary_error_kind"] == "RATE_LIMITED"
+        assert kwargs["payload"]["fallback_chain"] == ["opencode_go", "openclaw"]
+        assert kwargs["payload"]["previous_error_kind"] == "RATE_LIMITED"
+        assert kwargs["payload"]["chain_step"] == 1
+        mock_jules.assert_not_called()
