@@ -711,7 +711,14 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
                 return ingest_result
             # accepted: continua processamento abaixo
 
-    _msg = payload.get("message") or {}
+    # Evolution API envia payload no formato:
+    # { event, instance, data: { key: {id, remoteJid}, message: {...}, messageTimestamp } }
+    # O campo "message" fica DENTRO de "data", não no nível raiz.
+    _data = payload.get("data", {})
+    _msg = _data.get("message") or {}
+    sender = _data.get("key", {}).get("remoteJid", "unknown")
+    instance = payload.get("instance", "")
+
     # Evolution API / WhatsApp envia message.conversation OU message.extendedTextMessage
     # (formato BAILEYS). Verifica ambos para garantir compatibilidade.
     raw_text = ""
@@ -723,8 +730,6 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
             item.get("text", "") if isinstance(item, dict) else str(item)
             for item in raw_text
         )
-    sender = payload.get("sender", "unknown")
-    instance = payload.get("instance", "")
 
     # Defesa em profundidade: payload sem texto util (None, vazio, ou nao-dict)
     # deve fazer handoff humano em vez de tentar chamar o LLM com input invalido.
