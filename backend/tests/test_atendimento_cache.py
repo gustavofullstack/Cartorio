@@ -151,3 +151,65 @@ class TestAtendimentoCache:
             # Conteudo bate (com datetime como string)
             assert result["atendimentos"][0]["concluido_em"] == now.isoformat() or \
                    "2026" in result["atendimentos"][0]["concluido_em"]
+
+    def test_get_cached_returns_none_when_key_missing(self):
+        """get_cached com chave inexistente retorna None (linha 55)."""
+        fake = FakeRedis()
+        with patch("app.services.atendimento_cache._get_redis_client", return_value=fake):
+            # Nao setou nada, key nao existe
+            result = get_cached()
+            assert result is None
+
+    def test_get_redis_client_import_success(self):
+        """_get_redis_client retorna cliente quando redis instalado (linha 32)."""
+        from app.services.atendimento_cache import _get_redis_client
+        client = _get_redis_client()
+        assert client is not None
+
+    def test_get_redis_client_import_fail(self, monkeypatch):
+        """_get_redis_client retorna None quando import redis falha (linhas 31-32)."""
+        import builtins
+        original_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "redis":
+                raise ImportError("redis not available (simulated)")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", mock_import)
+        from app.services.atendimento_cache import _get_redis_client
+        # Apos monkeypatch, precisa recarregar o modulo para reexecutar
+        # a definicao de _get_redis_client? Nao, a funcao ja esta definida
+        # e o try/import redis executa toda vez que _get_redis_client e chamada.
+        result = _get_redis_client()
+        assert result is None
+
+    def test_invalidate_exception_returns_0(self, monkeypatch):
+        """invalidate com erro de Redis retorna 0 (linhas 96-98)."""
+        fake = FakeRedis()
+
+        class BrokenFakeRedis:
+            """FakeRedis que quebra em scan_iter."""
+            store = {}
+            expirations = {}
+            get = fake.get
+            set = fake.set
+            delete = fake.delete
+
+            def scan_iter(self, match="*", count=100):
+                raise RuntimeError("scan_iter broken")
+
+        broken = BrokenFakeRedis()
+        with patch("app.services.atendimento_cache._get_redis_client", return_value=broken):
+            count = invalidate("24h")
+            assert count == 0
+
+    def test_get_cached_exception_returns_none(self, monkeypatch):
+        """get_cached com erro de Redis retorna None (fail-safe)."""
+        class BrokenRedis:
+            def get(self, key):
+                raise RuntimeError("redis broken")
+
+        with patch("app.services.atendimento_cache._get_redis_client", return_value=BrokenRedis()):
+            result = get_cached()
+            assert result is None

@@ -27,6 +27,7 @@ from sqlalchemy import select
 from app.api.deps import require_cartorio_api_key
 from app.config import settings
 from app.db import session_scope
+from app.integrations.fallback import chat_with_fallback
 from app.integrations.opencode_go import ChatError, chat_with_settings
 from app.models.audit_log import AuditLog
 from app.models.outbox_message import OutboxMessage, OutboxQueue, OutboxStatus
@@ -93,6 +94,15 @@ class OpenCodeTestRequest(BaseModel):
         default="smoke_test_admin",
         description="ID do operador para audit log (LGPD art. 37).",
         max_length=200,
+    )
+    use_fallback: bool = Field(
+        default=False,
+        description=(
+            "Se True, usa fallback chain (opencode_go -> openclaw). "
+            "Util quando opencode_go esta rate-limited (429) ou indisponivel. "
+            "Sprint 3 Turno 18: adicionado para validar E2E live quando "
+            "primary provider retorna erro transitorio."
+        ),
     )
 
 
@@ -199,15 +209,29 @@ async def opencode_test(
         )
 
     try:
-        resp = await chat_with_settings(
-            messages=[{"role": "user", "content": payload.message}],
-            model=payload.model,
-            temperature=payload.temperature,
-            consent_granted=True,
-            actor_id=payload.actor_id,
-            # db=None: smoke test NAO grava audit log (operador escolhe)
-            # Em prod, esse endpoint deveria gravar via Depends(get_db)
-        )
+        if payload.use_fallback:
+            # Turno 18: usar fallback chain (opencode_go -> openclaw) quando
+            # primary provider esta rate-limited ou indisponivel.
+            resp = await chat_with_fallback(
+                messages=[{"role": "user", "content": payload.message}],
+                primary_provider="opencode_go",
+                fallback_provider="openclaw",
+                model=payload.model,
+                temperature=payload.temperature,
+                consent_granted=True,
+                actor_id=payload.actor_id,
+                # db=None: smoke test NAO grava audit log (operador escolhe)
+            )
+        else:
+            resp = await chat_with_settings(
+                messages=[{"role": "user", "content": payload.message}],
+                model=payload.model,
+                temperature=payload.temperature,
+                consent_granted=True,
+                actor_id=payload.actor_id,
+                # db=None: smoke test NAO grava audit log (operador escolhe)
+                # Em prod, esse endpoint deveria gravar via Depends(get_db)
+            )
 
         return OpenCodeTestResponse(
             status="ok",

@@ -65,3 +65,30 @@ def test_filter_nunca_quebra_logging() -> None:
     rec.args = (object(),)  # type: ignore[arg-type]
     # Deve retornar True (pass) sem excecao
     assert f.filter(rec) is True
+
+
+def test_filter_exception_path_caught() -> None:
+    """Filter captura excecao em getMessage() e retorna True (linhas 60-62)."""
+    f = MaskingFilter()
+    # Criamos um LogRecord cujo getMessage() levanta excecao
+    # Usando um formato que quebra com os args fornecidos
+    rec = _make_record("test %d %s")
+    rec.args = ("not-an-int",)  # type: ignore[arg-type]  # %d com string = TypeError
+    # Deve capturar a excecao e retornar True (fail-open)
+    assert f.filter(rec) is True
+
+
+def test_filter_exception_path_with_non_string_msg() -> None:
+    """Filter captura excecao quando record.msg nao eh string (linhas 60-62)."""
+    f = MaskingFilter()
+    # Se record.msg nao for string, getMessage() pode falhar
+    rec = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg=None,  # type: ignore[arg-type]
+        args=(),
+        exc_info=None,
+    )
+    assert f.filter(rec) is True

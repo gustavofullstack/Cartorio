@@ -1,5 +1,7 @@
 """Testes do PII scrubbing - LGPD compliance."""
 
+import pytest
+
 from app.services.pii import detect_only, hash_pii, scrub, validate_cnh, validate_cns
 
 
@@ -485,3 +487,37 @@ def test_cnh_validate_tamanho_invalido():
     assert validate_cnh("123") is False
     assert validate_cnh("1234567890") is False  # 10
     assert validate_cnh("123456789012") is False  # 12
+
+
+# ============================================================================
+# Cobertura de funcoes internas - ValueError paths
+# ============================================================================
+
+
+def test_cns_dv_invalid_input_raises():
+    """_cns_dv com input invalido levanta ValueError (linha 261)."""
+    from app.services.pii import _cns_dv
+    with pytest.raises(ValueError, match="CNS primeiros 15 digitos invalidos"):
+        _cns_dv("12345")  # muito curto
+    with pytest.raises(ValueError, match="CNS primeiros 15 digitos invalidos"):
+        _cns_dv("1234567890123456")  # 16 chars, nao 15
+    with pytest.raises(ValueError, match="CNS primeiros 15 digitos invalidos"):
+        _cns_dv("abc456789012345")  # nao-digito
+
+
+def test_cnh_dv1_invalid_input_raises():
+    """_cnh_dv1 com input invalido levanta ValueError (linha 325)."""
+    from app.services.pii import _cnh_dv1
+    with pytest.raises(ValueError, match="CNH primeiros 9 digitos invalidos"):
+        _cnh_dv1("12345")  # muito curto
+    with pytest.raises(ValueError, match="CNH primeiros 9 digitos invalidos"):
+        _cnh_dv1("abcdefghi")  # nao-digito
+
+
+def test_cnh_dv2_invalid_input_raises():
+    """_cnh_dv2 com input invalido levanta ValueError (linha 335)."""
+    from app.services.pii import _cnh_dv2
+    with pytest.raises(ValueError, match="CNH primeiros 10 digitos"):
+        _cnh_dv2("12345")  # muito curto
+    with pytest.raises(ValueError, match="CNH primeiros 10 digitos"):
+        _cnh_dv2("abcdefghij")  # nao-digito

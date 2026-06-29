@@ -25,7 +25,7 @@ os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
 os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
 # 64-char hex (validacao strict em config.py: B0.3 2026-06-25)
 TEST_CARTORIO_API_KEY = "a" * 64
-os.environ.setdefault("CARTORIO_API_KEY", TEST_CARTORIO_API_KEY)
+os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
 
 from app.config import get_settings  # noqa: E402
 

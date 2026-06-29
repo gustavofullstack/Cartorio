@@ -262,6 +262,193 @@ class TestRedisBusErrorPaths:
         assert await bus.ping() is False
 
 
+class TestRedisBusCoverageGaps:
+    """Testes direcionados para lacunas de cobertura."""
+
+    async def test_close_with_connected_client(self, fake_redis: None) -> None:
+        """close() com cliente ativo fecha conexao (linhas 72-73)."""
+        bus = RedisBus()
+        await bus._get_client()  # força conexao lazy
+        assert bus._client is not None
+        await bus.close()
+        assert bus._client is None
+
+    async def test_ping_generic_exception_returns_false(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """ping() com excecao generica (nao RedisError) retorna False (linhas 90-91)."""
+        bus = RedisBus()
+
+        class BrokenClient:
+            async def ping(self) -> bool:
+                raise OSError("generic network error")
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(BrokenClient()))
+        assert await bus.ping() is False
+
+    async def test_subscribe_non_json_message(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """subscribe com mensagem JSON invalida usa fallback raw (linhas 145-146)."""
+
+        bus = RedisBus()
+
+        # Mock get_message to return a non-JSON message first, then stop
+        messages = iter([
+            {"type": "message", "channel": "test:chan", "data": "not-json-string"},
+        ])
+
+        class FakePubSub:
+            async def subscribe(self, *channels: str) -> None:
+                pass
+
+            async def get_message(self, ignore_subscribe_messages: bool = True, timeout: float = 1.0):
+                try:
+                    return next(messages)
+                except StopIteration:
+                    return None
+
+            async def unsubscribe(self) -> None:
+                pass
+
+            async def aclose(self) -> None:
+                pass
+
+        class FakeClient:
+            def pubsub(self) -> FakePubSub:
+                return FakePubSub()
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(FakeClient()))
+
+        received: list[dict] = []
+        async for msg in bus.subscribe("test:chan"):
+            received.append(msg)
+            break
+
+        assert len(received) == 1
+        assert received[0]["data"] == {"raw": "not-json-string"}
+
+    async def test_subscribe_unsubscribe_raises_exception(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """subscribe: erro em unsubscribe no finally nao propaga (linhas 151-153)."""
+        bus = RedisBus()
+
+        class BrokenPubSub:
+            async def subscribe(self, *channels: str) -> None:
+                pass
+
+            async def get_message(self, ignore_subscribe_messages: bool = True, timeout: float = 1.0):
+                return None  # timeout sempre
+
+            async def unsubscribe(self) -> None:
+                raise RuntimeError("unsubscribe fail")
+
+            async def aclose(self) -> None:
+                pass
+
+        class FakeClient:
+            def pubsub(self) -> BrokenPubSub:
+                return BrokenPubSub()
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(FakeClient()))
+
+        # O loop nunca recebe mensagem e eventualmente o teste termina
+        # Precisamos interromper o loop senao fica infinito.
+        # Vamos usar um timeout curto no get_message para o loop ser quebrado
+        # ou usar uma condicao de parada.
+        import asyncio
+
+        async def consume() -> list:
+            results = []
+            async for msg in bus.subscribe("test:chan"):
+                results.append(msg)
+            return results
+
+        # O loop so termina quando uma excecao ocorre ou o generator e fechado.
+        # Vamos pegar o generator e fecha-lo manualmente.
+        gen = bus.subscribe("test:chan")
+        try:
+            await asyncio.wait_for(gen.__anext__(), timeout=0.5)
+        except (StopAsyncIteration, asyncio.TimeoutError):
+            pass
+        finally:
+            await gen.aclose()  # aciona o finally block
+
+        # Se chegou aqui, o finally com unsubscribe exception foi executado
+
+    async def test_pattern_subscribe_non_json_message(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """pattern_subscribe com JSON invalido usa fallback raw (linhas 187-188)."""
+        bus = RedisBus()
+
+        messages = iter([
+            {"type": "pmessage", "channel": "test:chan", "data": "not-json-string"},
+        ])
+
+        class FakePubSub:
+            async def psubscribe(self, pattern: str) -> None:
+                pass
+
+            async def get_message(self, ignore_subscribe_messages: bool = True, timeout: float = 1.0):
+                try:
+                    return next(messages)
+                except StopIteration:
+                    return None
+
+            async def punsubscribe(self) -> None:
+                pass
+
+            async def aclose(self) -> None:
+                pass
+
+        class FakeClient:
+            def pubsub(self) -> FakePubSub:
+                return FakePubSub()
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(FakeClient()))
+
+        received: list[dict] = []
+        async for msg in bus.pattern_subscribe("test:*"):
+            received.append(msg)
+            break
+
+        assert len(received) == 1
+        assert received[0]["data"] == {"raw": "not-json-string"}
+
+    async def test_pattern_subscribe_punsubscribe_raises_exception(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """pattern_subscribe: erro em punsubscribe no finally nao propaga (linhas 197-199)."""
+        bus = RedisBus()
+
+        class BrokenPubSub:
+            async def psubscribe(self, pattern: str) -> None:
+                pass
+
+            async def get_message(self, ignore_subscribe_messages: bool = True, timeout: float = 1.0):
+                return None
+
+            async def punsubscribe(self) -> None:
+                raise RuntimeError("punsubscribe fail")
+
+            async def aclose(self) -> None:
+                pass
+
+        class FakeClient:
+            def pubsub(self) -> BrokenPubSub:
+                return BrokenPubSub()
+
+        monkeypatch.setattr(bus, "_get_client", _async_return(FakeClient()))
+
+        gen = bus.pattern_subscribe("test:*")
+        try:
+            await asyncio.wait_for(gen.__anext__(), timeout=0.5)
+        except (StopAsyncIteration, asyncio.TimeoutError):
+            pass
+        finally:
+            await gen.aclose()  # aciona o finally block
+
+
 def _async_return(value: object) -> Any:
     """Helper: cria async callable que retorna value."""
 

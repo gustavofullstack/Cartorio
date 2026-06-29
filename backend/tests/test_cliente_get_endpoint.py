@@ -24,7 +24,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("AUDIT_HMAC_KEY", "a" * 64)
 os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
 os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
-os.environ.setdefault("CARTORIO_API_KEY", "a" * 64)
+os.environ["CARTORIO_API_KEY"] = "a" * 64
 
 from app.config import get_settings  # noqa: E402
 

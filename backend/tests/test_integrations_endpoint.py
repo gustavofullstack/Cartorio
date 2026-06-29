@@ -11,7 +11,7 @@ os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
 os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
 # B0.3 2026-06-25: /integrations/* agora exige X-API-Key (gap transversal)
 TEST_API_KEY = "a" * 64
-os.environ.setdefault("CARTORIO_API_KEY", TEST_API_KEY)
+os.environ["CARTORIO_API_KEY"] = TEST_API_KEY
 
 from unittest.mock import AsyncMock, MagicMock, patch  # noqa: E402
 
@@ -293,3 +293,86 @@ def test_opencode_test_endpoint_redacts_pii_in_response(client):
     data = resp.json()
     assert data["status"] == "ok"
     assert data["pii_redacted_count"] >= 1
+
+
+def test_opencode_test_endpoint_use_fallback_success(client):
+    """Turno 18: use_fallback=True aciona fallback chain (opencode_go -> openclaw).
+
+    Quando opencode_go falha com 429 (rate limited), o fallback chain deve
+    automaticamente chamar openclaw e retornar sucesso.
+    """
+    mock_fallback_resp = MagicMock()
+    mock_fallback_resp.model = "openclaw"
+    mock_fallback_resp.content = "Ola do fallback"
+    mock_fallback_resp.tokens_in = 5
+    mock_fallback_resp.tokens_out = 3
+    mock_fallback_resp.latency_ms = 150
+    mock_fallback_resp.pii_redacted_count = 0
+    mock_fallback_resp.output_pii_redacted_count = 0
+
+    with (
+        patch("app.api.v1.integrations.chat_with_fallback", new=AsyncMock()) as mock_fb,
+        patch("app.api.v1.integrations.chat_with_settings", new=AsyncMock()) as mock_direct,
+    ):
+        mock_fb.return_value = mock_fallback_resp
+        resp = client.post(
+            "/api/v1/integrations/opencode/test",
+            headers=AUTH_HEADERS,
+            json={"message": "oi", "consent_granted": True, "use_fallback": True},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert data["response"] == "Ola do fallback"
+        assert data["model"] == "openclaw"
+        mock_fb.assert_called_once()
+        mock_direct.assert_not_called()
+
+
+def test_opencode_test_endpoint_use_fallback_both_fail(client):
+    """Turno 18: use_fallback=True e ambos providers falham -> status=erro."""
+    from app.integrations.opencode_go import ChatError, ChatErrorKind
+
+    with (
+        patch("app.api.v1.integrations.chat_with_fallback", new=AsyncMock()) as mock_fb,
+    ):
+        mock_fb.side_effect = ChatError(
+            "fallback falhou tbm", kind=ChatErrorKind.NETWORK
+        )
+        resp = client.post(
+            "/api/v1/integrations/opencode/test",
+            headers=AUTH_HEADERS,
+            json={"message": "oi", "consent_granted": True, "use_fallback": True},
+        )
+        assert resp.status_code == 200  # endpoint sempre 200, erro no body
+        data = resp.json()
+        assert data["status"] == "erro"
+        assert data["erro"]["kind"] == ChatErrorKind.NETWORK
+
+
+def test_opencode_test_endpoint_use_fallback_false_calls_direct(client):
+    """Turno 18: use_fallback=False (default) chama chat_with_settings direto."""
+    mock_resp = MagicMock()
+    mock_resp.model = "deepseek-v4-flash"
+    mock_resp.content = "direto"
+    mock_resp.tokens_in = 1
+    mock_resp.tokens_out = 1
+    mock_resp.latency_ms = 100
+    mock_resp.pii_redacted_count = 0
+    mock_resp.output_pii_redacted_count = 0
+
+    with (
+        patch("app.api.v1.integrations.chat_with_settings", new=AsyncMock()) as mock_direct,
+        patch("app.api.v1.integrations.chat_with_fallback", new=AsyncMock()) as mock_fb,
+    ):
+        mock_direct.return_value = mock_resp
+        resp = client.post(
+            "/api/v1/integrations/opencode/test",
+            headers=AUTH_HEADERS,
+            json={"message": "oi", "consent_granted": True, "use_fallback": False},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["response"] == "direto"
+        mock_direct.assert_called_once()
+        mock_fb.assert_not_called()
