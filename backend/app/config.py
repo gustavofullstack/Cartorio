@@ -156,6 +156,12 @@ class Settings(BaseSettings):
     dpo_email: str = "dpo@2notasudi.com.br"
     retention_days_conversas: int = 365
     retention_days_audit: int = 1825  # 5 anos
+    # Retencao scheduler in-process (Sprint 3 G4.3 - ADR-019).
+    # Roda `run_retencao()` diariamente no horario configurado.
+    # - retencao_enabled=False desativa o scheduler (job manual via /admin/retencao/run)
+    # - retencao_hour_brazil eh em BRT (UTC-3), convertido internamente
+    retencao_enabled: bool = True
+    retencao_hour_brazil: int = 3  # 03:00 BRT = 06:00 UTC daily
 
     # ========================================================================
     # CORS

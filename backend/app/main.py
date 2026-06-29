@@ -65,6 +65,28 @@ async def _dead_mans_switch_loop() -> None:
         await asyncio.sleep(interval_seconds)
 
 
+async def _retencao_scheduler_loop() -> None:
+    """Loop in-process do job de retenção LGPD (Sprint 3 G4.3 - ADR-019).
+
+    Roda `run_retencao()` diariamente no horario configurado (default 03:00 BRT).
+    Consome settings:
+    - retencao_enabled: liga/desliga o scheduler (False = job manual via
+      /admin/retencao/run).
+    - retencao_hour_brazil: hora alvo em BRT (UTC-3).
+
+    Idempotente: roda no MAXIMO 1x por dia BRT (controlado por last_run_date).
+    Erros NAO derrubam o loop (best-effort, mesmo padrao de dead man's switch).
+    Cancelado via task.cancel() no shutdown do lifespan.
+    """
+    from app.jobs.retencao_scheduler import retencao_scheduler_loop
+
+    await retencao_scheduler_loop(
+        interval_seconds=60,
+        retencao_enabled=settings.retencao_enabled,
+        retencao_hour_brazil=settings.retencao_hour_brazil,
+    )
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Smoke test DB + create tables if missing + audit log init + tracing init (A3)."""
@@ -96,14 +118,35 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             settings.audit_dead_mans_switch_minutes,
         )
 
+    # 5. Retenção LGPD scheduler in-process (Sprint 3 G4.3 - ADR-019)
+    # Roda run_retencao() diariamente no horario configurado
+    # (default 03:00 BRT = 06:00 UTC). Toggle via RETENCAO_ENABLED.
+    retencao_task: asyncio.Task[None] | None = None
+    if settings.retencao_enabled:
+        retencao_task = asyncio.create_task(
+            _retencao_scheduler_loop(),
+            name="retencao_scheduler_loop",
+        )
+        logger.info(
+            "RETENCAO_SCHEDULER_STARTED: hour_brazil=%d:00 enabled=%s",
+            settings.retencao_hour_brazil,
+            settings.retencao_enabled,
+        )
+
     try:
         yield
     finally:
-        # Cancel scheduler
+        # Cancel schedulers
         if dms_task is not None:
             dms_task.cancel()
             try:
                 await dms_task
+            except asyncio.CancelledError:
+                pass
+        if retencao_task is not None:
+            retencao_task.cancel()
+            try:
+                await retencao_task
             except asyncio.CancelledError:
                 pass
         AuditService.log_system_action("api.shutdown", {})
