@@ -3,6 +3,7 @@
 Usado em constraints CHECK no DB (A10) e validacao Pydantic.
 Algoritmo canonico de DV conforme Receita Federal / TCU.
 """
+
 from __future__ import annotations
 
 import re

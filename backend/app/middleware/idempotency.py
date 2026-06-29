@@ -15,6 +15,7 @@ Comportamento:
 - Idempotency-Key + body diferente: 422 (conflito).
 - Response 5xx: NAO cacheia (cliente pode tentar de novo).
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -97,9 +98,11 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Le header (case-insensitive: aceita Idempotency-Key, idempotency-key, etc)
-        idem_key = request.headers.get("idempotency-key") or request.headers.get(
-            "Idempotency-Key"
-        ) or request.headers.get("IDEMPOTENCY-KEY")
+        idem_key = (
+            request.headers.get("idempotency-key")
+            or request.headers.get("Idempotency-Key")
+            or request.headers.get("IDEMPOTENCY-KEY")
+        )
         if idem_key is None:
             # Tenta tambem chaves Title-case (Starlette Headers normaliza lowercase)
             for k, v in request.headers.items():
@@ -146,9 +149,7 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                 logger.info("idempotency: replay cache_key=%s", cache_key[:32])
                 return self._response_from_cache(cached)
             # Conflito: mesma key com body diferente
-            logger.warning(
-                "idempotency: conflito de body, cache_key=%s", cache_key[:32]
-            )
+            logger.warning("idempotency: conflito de body, cache_key=%s", cache_key[:32])
             return Response(
                 content=json.dumps(
                     {

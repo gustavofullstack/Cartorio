@@ -147,12 +147,15 @@ class AuditService:
         """Verifica integridade da cadeia inteira.
         Retorna (ok, ultima_posicao_valida).
         """
-        entries = db.query(AuditLog).order_by(AuditLog.id.asc()).all()
+        # ⚡ BOLT: using yield_per(1000) prevents loading the entire append-only audit log into memory
+        entries = db.query(AuditLog).order_by(AuditLog.id.asc()).yield_per(1000)
         prev_hash: str | None = None
+        count = 0
         for i, entry in enumerate(entries):
+            count += 1
             timestamp_iso = entry.timestamp.isoformat(timespec="microseconds")
             expected = cls._compute_hash(prev_hash, entry.payload, timestamp_iso)
             if entry.prev_hash != prev_hash or entry.hash != expected:
                 return False, i
             prev_hash = entry.hash
-        return True, len(entries)
+        return True, count

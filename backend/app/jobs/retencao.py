@@ -14,6 +14,7 @@ Idempotente: clientes ja soft-deleted (deleted_at IS NOT NULL) sao pulados.
 NAO emite audit log: o chamador (CLI, cron, API) eh quem sabe o canal/request_id.
 Funcao retorna dataclass com contadores + IDs afetados.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -129,14 +130,8 @@ def run_retencao(
     )
 
     # Itera todos clientes nao soft-deleted
-    clientes_ativos = (
-        db.query(Cliente)
-        .filter(Cliente.deleted_at.is_(None))
-        .all()
-    )
-    result = RetencaoResult(
-        **{**result.__dict__, "scanned": len(clientes_ativos)}
-    )
+    clientes_ativos = db.query(Cliente).filter(Cliente.deleted_at.is_(None)).all()
+    result = RetencaoResult(**{**result.__dict__, "scanned": len(clientes_ativos)})
 
     soft_5y: list[int] = []
     soft_inativo: list[int] = []

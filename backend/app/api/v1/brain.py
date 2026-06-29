@@ -13,6 +13,7 @@ Endpoints:
 
 LGPD-safe: endpoints NAO expoem PII. Apenas contadores agregados.
 """
+
 from __future__ import annotations
 
 import json
@@ -101,7 +102,9 @@ async def list_tasks(
     return out
 
 
-@brain_router.get("/lessons", response_model=list[LessonSummary], summary="Lista lessons do .brain/lessons")
+@brain_router.get(
+    "/lessons", response_model=list[LessonSummary], summary="Lista lessons do .brain/lessons"
+)
 async def list_lessons(
     from_date: str | None = Query(default=None, pattern="^\\d{4}-\\d{2}-\\d{2}$"),
     limit: int = Query(default=50, ge=1, le=500),
@@ -321,9 +324,7 @@ async def get_snapshot_detail(snapshot_id: str) -> SnapshotDetail:
     """Retorna arquivos completos do snapshot para restauracao."""
     snap_path = SNAPSHOTS_DIR / f"{snapshot_id}.json"
     if not snap_path.exists():
-        raise HTTPException(
-            status_code=404, detail=f"snapshot {snapshot_id!r} nao encontrado"
-        )
+        raise HTTPException(status_code=404, detail=f"snapshot {snapshot_id!r} nao encontrado")
     d = _read_json_safe(snap_path)
     if not d:
         raise HTTPException(status_code=500, detail="snapshot corrompido")
@@ -419,9 +420,7 @@ async def restore_context(snapshot_id: str) -> ContextRestoreResponse:
     """
     snap_path = SNAPSHOTS_DIR / f"{snapshot_id}.json"
     if not snap_path.exists():
-        raise HTTPException(
-            status_code=404, detail=f"snapshot {snapshot_id!r} nao encontrado"
-        )
+        raise HTTPException(status_code=404, detail=f"snapshot {snapshot_id!r} nao encontrado")
     d = _read_json_safe(snap_path)
     if not d:
         raise HTTPException(status_code=500, detail="snapshot corrompido")
@@ -501,7 +500,5 @@ async def current_context() -> dict:
         "index_md": index_md,
         "lessons_count": lessons_count,
         "tasks_count": tasks_count,
-        "memory_files": sorted(
-            str(p) for p in MEMORY_DIR.glob("*.md") if MEMORY_DIR.exists()
-        ),
+        "memory_files": sorted(str(p) for p in MEMORY_DIR.glob("*.md") if MEMORY_DIR.exists()),
     }

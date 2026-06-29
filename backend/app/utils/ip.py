@@ -78,8 +78,7 @@ def truncate_ip(ip: str | None, mask: int = 24) -> str | None:
             if ":" in v4_part:
                 hex_parts = v4_part.split(":")
                 if len(hex_parts) == 2 and all(
-                    len(p) == 4 and all(c in "0123456789abcdef" for c in p)
-                    for p in hex_parts
+                    len(p) == 4 and all(c in "0123456789abcdef" for c in p) for p in hex_parts
                 ):
                     hi = int(hex_parts[0], 16)
                     lo = int(hex_parts[1], 16)

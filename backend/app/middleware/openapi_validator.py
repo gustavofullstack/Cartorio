@@ -12,6 +12,7 @@ Quando MISMATCH:
 Sprint 5+: integrar com `spectree` ou `fastapi-validation`.
 Por enquanto: valida contra OpenAPI schema em runtime via jsonschema.
 """
+
 from __future__ import annotations
 
 import logging
@@ -75,7 +76,9 @@ def validate_request_body(
         return True, None  # jsonschema nao instalado - skip
 
     op = schema.get("paths", {}).get(path, {}).get(method.lower(), {})
-    body_schema = op.get("requestBody", {}).get("content", {}).get("application/json", {}).get("schema")
+    body_schema = (
+        op.get("requestBody", {}).get("content", {}).get("application/json", {}).get("schema")
+    )
     if not body_schema:
         return True, None  # Sem schema = sem validacao
 

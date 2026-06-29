@@ -11,6 +11,7 @@ Por que isso existe:
   None para todos os campos. Audit log eh best-effort; nao pode quebrar
   o request.
 """
+
 from __future__ import annotations
 
 from fastapi import Request

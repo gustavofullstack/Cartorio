@@ -28,6 +28,7 @@ Implementacao:
   para consistencia arquitetural com o resto da API.
 - Exposto como classe para `app.add_middleware(RequestContextMiddleware)`.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -88,9 +89,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         # Correlation ID: aceita X-Request-Id, X-Correlation-Id OU gera novo
         # X-Correlation-Id e' o padrao W3C (https://www.w3.org/TR/correlation-id/)
-        incoming = request.headers.get("x-request-id") or request.headers.get(
-            "x-correlation-id"
-        )
+        incoming = request.headers.get("x-request-id") or request.headers.get("x-correlation-id")
         request_id = _generate_or_propagate_request_id(incoming)
         client_ip = _extract_client_ip(request)
         user_agent = request.headers.get("user-agent")
@@ -135,8 +134,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             request.url.path,
             response.status_code,
             request_id,
-            (datetime.now(UTC) - datetime.fromisoformat(timestamp_iso)).total_seconds()
-            * 1000,
+            (datetime.now(UTC) - datetime.fromisoformat(timestamp_iso)).total_seconds() * 1000,
         )
         return response
 

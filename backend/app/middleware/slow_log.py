@@ -9,6 +9,7 @@ Util para identificar gargalos antes que afetem SLA P95 < 200ms.
 - Estrutura log: JSON com method, path, status, duration_ms, request_id
 - Armazena em Redis (TTL 24h) para consulta via /admin/slow-queries (A16)
 """
+
 from __future__ import annotations
 
 import json
@@ -91,6 +92,7 @@ class SlowLogMiddleware(BaseHTTPMiddleware):
                 store = get_slow_queries_store()
                 # Nao await - fire and forget para nao adicionar latencia
                 import asyncio
+
                 asyncio.create_task(store.add_slow_query(log_payload))
             except Exception:
                 # Silencioso: Redis pode estar indisponivel, log ja foi emitido

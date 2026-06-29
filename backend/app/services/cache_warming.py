@@ -4,6 +4,7 @@ Pre-aquece cache de emolumento antes do expediente abrir.
 Tipos principais: escritura, certidao, procurao, declaracao, etc.
 LGPD: log apenas count + duration, NAO expoe valores calculados.
 """
+
 from __future__ import annotations
 
 import dataclasses

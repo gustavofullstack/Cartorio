@@ -8,6 +8,7 @@ LGPD: cache armazena APENAS o response (sem PII). Chave eh hash de
 (Idempotency-Key + endpoint + actor_id) para evitar colisao entre
 clientes/usuarios diferentes.
 """
+
 from __future__ import annotations
 
 import json

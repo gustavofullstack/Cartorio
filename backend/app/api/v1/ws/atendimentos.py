@@ -87,9 +87,7 @@ async def ws_atendimentos(websocket: WebSocket) -> None:
 
     listener_task: asyncio.Task[None] | None = None
     try:
-        listener_task = asyncio.create_task(
-            _redis_listener_loop(manager, bus, channel)
-        )
+        listener_task = asyncio.create_task(_redis_listener_loop(manager, bus, channel))
         # Loop principal: le mensagens do cliente (ping/pong, comandos).
         while True:
             raw = await websocket.receive_text()

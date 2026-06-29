@@ -98,9 +98,7 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
         r"|\b\d{4}-\d{2}-\d{2}\b"  # YYYY-MM-DD ISO
     ),
     # 3. PLACA VEICULO - Mercosul (ABC1D23) e antiga (ABC-1234 / ABC1234)
-    "placa_veiculo": re.compile(
-        r"\b[A-Z]{3}-?\d[A-Z]\d{2}\b|\b[A-Z]{3}-?\d{4}\b"
-    ),
+    "placa_veiculo": re.compile(r"\b[A-Z]{3}-?\d[A-Z]\d{2}\b|\b[A-Z]{3}-?\d{4}\b"),
     # 4. CNPJ - 14 digitos com pontos/dash/separador opcionais (matriz ou filial)
     "cnpj": re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b"),
     # 5. CNS (Cartao Nacional de Saude) - LGPD art. 11 BLOQUEANTE.

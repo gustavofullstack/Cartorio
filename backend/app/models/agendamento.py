@@ -164,14 +164,14 @@ class Agendamento(Base, TimestampMixin):
             Instância de Agendamento pronta para persistir
         """
         import datetime
-        
+
         if salt is None:
             salt = settings.audit_hmac_key[:32]
-        
+
         # Garante que data_hora tem timezone (para comparações consistentes)
         if data_hora.tzinfo is None:
             data_hora = data_hora.replace(tzinfo=datetime.timezone.utc)
-        
+
         return cls(
             cliente_id=cliente_id,
             protocolo_id=protocolo_id,

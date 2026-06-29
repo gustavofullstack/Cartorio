@@ -14,6 +14,7 @@ Vantagens vs fixed window:
 LGPD: chave eh hash do IP/session_id, nao IP puro.
 Fail-open: se Redis offline, permite request (log warning).
 """
+
 from __future__ import annotations
 
 import logging
@@ -123,9 +124,7 @@ async def sliding_window_check(
         # 4. Allowed: registra a request
         member = f"{now}:{uuid.uuid4().hex[:8]}"
         await store.zadd(key, score=now, member=member)
-        return SlidingWindowResult(
-            allowed=True, current=current + 1, limit=limit, retry_after=0
-        )
+        return SlidingWindowResult(allowed=True, current=current + 1, limit=limit, retry_after=0)
     except Exception as e:  # noqa: BLE001
         # Fail-open: Redis offline, permite request
         logger.warning("sliding_window: store offline, fail-open: %s", e)

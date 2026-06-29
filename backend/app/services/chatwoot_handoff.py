@@ -63,9 +63,7 @@ def process_chatwoot_event(
     """
     # 1. Validar signature se raw_body fornecido
     if raw_body is not None and not _validate_signature(raw_body, signature):
-        log.warning(
-            "chatwoot_handoff: signature invalida (len=%d)", len(signature or "")
-        )
+        log.warning("chatwoot_handoff: signature invalida (len=%d)", len(signature or ""))
         return {"status": "rejected", "reason": "invalid_signature"}
 
     event = payload.get("event", "unknown")

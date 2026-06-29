@@ -38,7 +38,7 @@ class Cliente(Base, TimestampMixin):
     nome: Mapped[str] = mapped_column(String(255))
     email: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     telefone_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    
+
     # Notificações e contatos
     telegram_chat_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     whatsapp_number: Mapped[str | None] = mapped_column(String(20), nullable=True)

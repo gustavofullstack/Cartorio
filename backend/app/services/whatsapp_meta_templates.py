@@ -19,6 +19,7 @@ Uso:
     for t in META_TEMPLATES:
         whatsapp_api.create_template(t.name, t.category, t.components)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

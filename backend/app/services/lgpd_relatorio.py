@@ -15,6 +15,7 @@ Uso:
 
 Output: JSON estruturado para enviar ANPD + LGPD-AUDIT-{ano}.md
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -64,45 +65,47 @@ def gerar_relatorio_anual(
     from app.models.protocolo import Protocolo
 
     # 1. Numero de titulares
-    total_clientes = db.execute(
-        select(func.count(Cliente.id))
-    ).scalar() or 0
+    total_clientes = db.execute(select(func.count(Cliente.id))).scalar() or 0
 
-    clientes_ativos = db.execute(
-        select(func.count(Cliente.id)).where(Cliente.deleted_at.is_(None))
-    ).scalar() or 0
+    clientes_ativos = (
+        db.execute(select(func.count(Cliente.id)).where(Cliente.deleted_at.is_(None))).scalar() or 0
+    )
 
     # 2. Protocolos no ano
-    proto_ano = db.execute(
-        select(func.count(Protocolo.id)).where(
-            func.extract("year", Protocolo.created_at) == ano
-        )
-    ).scalar() or 0
+    proto_ano = (
+        db.execute(
+            select(func.count(Protocolo.id)).where(
+                func.extract("year", Protocolo.created_at) == ano
+            )
+        ).scalar()
+        or 0
+    )
 
     # 3. Atividades de tratamento (audit log)
-    audit_ano = db.execute(
-        select(func.count(AuditLog.id)).where(
-            func.extract("year", AuditLog.timestamp) == ano
-        )
-    ).scalar() or 0
+    audit_ano = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(func.extract("year", AuditLog.timestamp) == ano)
+        ).scalar()
+        or 0
+    )
 
     # 4. Direitos dos titulares (LGPD art. 18)
     # Mapeamento: action=lgpd.* indica exercicio de direito
-    direitos_count = db.execute(
-        select(func.count(AuditLog.id))
-        .where(AuditLog.action.like("lgpd.%"))
-    ).scalar() or 0
+    direitos_count = (
+        db.execute(select(func.count(AuditLog.id)).where(AuditLog.action.like("lgpd.%"))).scalar()
+        or 0
+    )
 
     # 5. Incidentes (action=security.* OR severity=high)
-    incidentes = db.execute(
-        select(func.count(AuditLog.id))
-        .where(AuditLog.action.like("security.%"))
-    ).scalar() or 0
+    incidentes = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(AuditLog.action.like("security.%"))
+        ).scalar()
+        or 0
+    )
 
     # 6. Audit chain integrity
-    chain_length = db.execute(
-        select(func.count(AuditLog.id))
-    ).scalar() or 0
+    chain_length = db.execute(select(func.count(AuditLog.id))).scalar() or 0
 
     # 7. Tipos de dados tratados (schema-based)
     tipos_dados = [

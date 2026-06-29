@@ -11,6 +11,7 @@ Falhas sao genericas (nao revelam se token era expirado vs signature invalida vs
 
 Secret: HS256 com jwt_secret em Settings (min 32 chars). Rotacao: ver Lesson 167 (TODO).
 """
+
 from __future__ import annotations
 
 import datetime as dt

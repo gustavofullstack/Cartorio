@@ -6,6 +6,7 @@ A24.4 emolumento, futuros).
 Cursor format: base64 url-safe de JSON {id_after: int}.
 Opaco para o cliente (decodificavel internamente para debugger).
 """
+
 from __future__ import annotations
 
 import base64

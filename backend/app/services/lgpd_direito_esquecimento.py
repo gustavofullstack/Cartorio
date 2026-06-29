@@ -18,6 +18,7 @@ Tabelas cascade (cliente_id eh FK em):
 - outbox_messages (?)
 - audit_log (?) - NAO exclui (mantem por obrigacao legal art. 37 LGPD)
 """
+
 from __future__ import annotations
 
 import datetime
@@ -36,9 +37,7 @@ log = logging.getLogger(__name__)
 # NOTA: adicionar novas tabelas ao schema ANTES de incluir aqui.
 # protocolos, atendimentos, documentos, conversas: tem model mas podem
 # nao ter deleted_at ainda — incluir quando a migration A19 for aplicada.
-CASCADE_TABLES = (
-    "clientes",
-)
+CASCADE_TABLES = ("clientes",)
 
 # Colunas PII existentes no model Cliente (NUNCA referencia colunas que nao existem)
 _CLIENTE_PII_COLUMNS = "nome = '[ANONIMIZADO art.18 V]', email = NULL, telefone_hash = NULL"
@@ -80,10 +79,14 @@ def direito_esquecimento(
         reversivel_ate = now + datetime.timedelta(days=30)
 
     # 1. Busca cliente (apenas colunas que existem no model)
-    cliente_row = db.execute(
-        text("SELECT id, nome, cpf_hash, email, telefone_hash FROM clientes WHERE id = :id"),
-        {"id": cliente_id},
-    ).mappings().first()
+    cliente_row = (
+        db.execute(
+            text("SELECT id, nome, cpf_hash, email, telefone_hash FROM clientes WHERE id = :id"),
+            {"id": cliente_id},
+        )
+        .mappings()
+        .first()
+    )
 
     if not cliente_row:
         return {"erro": "cliente_nao_encontrado", "cliente_id": cliente_id}
@@ -194,10 +197,14 @@ def restore_direito_esquecimento(
     Raises:
         ValueError: se passou do prazo de reversibilidade
     """
-    cliente_row = db.execute(
-        text("SELECT lgpd_reversivel_ate, deleted_at FROM clientes WHERE id = :id"),
-        {"id": cliente_id},
-    ).mappings().first()
+    cliente_row = (
+        db.execute(
+            text("SELECT lgpd_reversivel_ate, deleted_at FROM clientes WHERE id = :id"),
+            {"id": cliente_id},
+        )
+        .mappings()
+        .first()
+    )
 
     if not cliente_row:
         raise ValueError(f"cliente {cliente_id} nao encontrado")

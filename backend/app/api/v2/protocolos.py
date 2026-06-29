@@ -8,6 +8,7 @@ LGPD art. 37: response NAO expoe PII (apenas IDs).
 
 Auth: X-API-Key (mesma v1). JWT sera adicionado em A24.x.
 """
+
 from __future__ import annotations
 
 import logging

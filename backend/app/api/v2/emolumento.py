@@ -5,6 +5,7 @@ Usa envelope Relay (edges + pageInfo) consistente com A24.2/A24.3.
 
 LGPD: tabela NAO expoe PII. Apenas tipos + valores em BRL.
 """
+
 from __future__ import annotations
 
 import logging
@@ -76,7 +77,9 @@ async def listar_tabela_emolumento_v2(
     _api_key: Annotated[str, Depends(require_cartorio_api_key)],
     first: int = Query(default=20, ge=1, le=100, description="Max itens por pagina (1-100)."),
     after: str | None = Query(default=None, description="Cursor opaque."),
-    only_gratuitos: bool = Query(default=False, description="Filtrar apenas emolumentos gratuitos."),
+    only_gratuitos: bool = Query(
+        default=False, description="Filtrar apenas emolumentos gratuitos."
+    ),
 ) -> dict[str, Any]:
     """Lista tabela de emolumento com cursor pagination.
 

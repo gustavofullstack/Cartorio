@@ -21,6 +21,7 @@ Endpoint:
   GET /api/v2/info
   Resposta: {version, sunset_date, migration_guide_url, deprecations: [...]}
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter

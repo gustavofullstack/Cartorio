@@ -13,6 +13,7 @@ Algoritmo: Redis INCR com TTL sliding window de 60s.
 LGPD: o hash da API key NAO pode ser reversivel. SHA-256 da key ja eh
 suficiente (key tem 64 chars hex = 256 bits de entropia).
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -252,12 +253,15 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         if not ip_result.allowed:
             logger.warning(
                 "rate_limit.ddos: ip=%s current=%d limit=%d path=%s",
-                client_ip, ip_result.current, ip_result.limit, request.url.path,
+                client_ip,
+                ip_result.current,
+                ip_result.limit,
+                request.url.path,
             )
             return Response(
                 content=(
                     f'{{"erro":"RATE_LIMITED_DDOS","mensagem":"Limite absoluto de '
-                    f'{ip_result.limit} req/min por IP atingido. Tente em '
+                    f"{ip_result.limit} req/min por IP atingido. Tente em "
                     f'{ip_result.retry_after}s."}}'
                 ),
                 status_code=429,
@@ -274,12 +278,15 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         if not sliding_result.allowed:
             logger.warning(
                 "rate_limit.sliding: ip=%s current=%d limit=%d path=%s",
-                client_ip, sliding_result.current, sliding_result.limit, request.url.path,
+                client_ip,
+                sliding_result.current,
+                sliding_result.limit,
+                request.url.path,
             )
             return Response(
                 content=(
                     f'{{"erro":"RATE_LIMITED_SLIDING","mensagem":"Limite sliding window '
-                    f'{sliding_result.limit} req/min por IP. Tente em '
+                    f"{sliding_result.limit} req/min por IP. Tente em "
                     f'{sliding_result.retry_after}s."}}'
                 ),
                 status_code=429,
@@ -308,7 +315,10 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
             policy = TIER_POLICIES[tier]
             logger.warning(
                 "rate_limit: tier=%s hash=%s current=%d limit=%d",
-                tier, key_hash[:8], result.current, result.limit,
+                tier,
+                key_hash[:8],
+                result.current,
+                result.limit,
             )
             return Response(
                 content=(

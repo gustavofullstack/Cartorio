@@ -13,6 +13,7 @@ Headers aplicados em /api/v1/*:
 
 Nao aplica em /api/v2/*, /health, /docs, /openapi.json, /version.
 """
+
 from __future__ import annotations
 
 import logging

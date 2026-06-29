@@ -14,6 +14,7 @@ API:
 - mask_cnpj(plaintext) -> "**.***.***/****-**"
 - mask_email(email) -> "j***@example.com"
 """
+
 from __future__ import annotations
 
 import base64

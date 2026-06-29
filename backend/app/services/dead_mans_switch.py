@@ -3,6 +3,7 @@
 Job: se ultima entrada audit_log > 1h, alerta via Telegram/Chatwoot.
 LGPD: alerta nao expoe conteudo, apenas timestamp.
 """
+
 from __future__ import annotations
 
 import logging

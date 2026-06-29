@@ -50,9 +50,7 @@ class OutboxMessage(Base):
 
     __tablename__ = "outbox_messages"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     queue: Mapped[OutboxQueue] = mapped_column(
         SAEnum(OutboxQueue, name="outbox_queue_enum"),
         nullable=False,
@@ -75,7 +73,9 @@ class OutboxMessage(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     next_retry_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, index=True,
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

@@ -25,6 +25,7 @@ Uso:
     # Salva em .harness/memory/LGPD-EXPORT-{cpf_hash}-{ts}.json
     # Envia link download via WhatsApp (criptografado)
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -104,19 +105,23 @@ def exportar_dados_titular(
         "email": cliente.email,
         "telefone_hash": cliente.telefone_hash,  # hash
         "consentimento_lgpd": cliente.consentimento_lgpd,
-        "consentimento_em": cliente.consentimento_em.isoformat() if cliente.consentimento_em else None,
+        "consentimento_em": cliente.consentimento_em.isoformat()
+        if cliente.consentimento_em
+        else None,
         "consentimento_ip": cliente.consentimento_ip,
         "consentimento_canal": cliente.consentimento_canal,
         "created_at": cliente.created_at.isoformat() if cliente.created_at else None,
         "updated_at": cliente.updated_at.isoformat() if cliente.updated_at else None,
         "deleted_at": cliente.deleted_at.isoformat() if cliente.deleted_at else None,
-        "motivo_encerramento": cliente.motivo_encerramento.value if cliente.motivo_encerramento else None,
+        "motivo_encerramento": cliente.motivo_encerramento.value
+        if cliente.motivo_encerramento
+        else None,
     }
 
     # 2. Protocolos do titular
-    protocolos_rows = db.execute(
-        select(Protocolo).where(Protocolo.cliente_id == cliente_id)
-    ).scalars().all()
+    protocolos_rows = (
+        db.execute(select(Protocolo).where(Protocolo.cliente_id == cliente_id)).scalars().all()
+    )
 
     protocolos = [
         {
@@ -138,9 +143,11 @@ def exportar_dados_titular(
     # 3. Atendimentos (se houver)
     atendimentos: list[dict[str, Any]] = []
     try:
-        atendimentos_rows = db.execute(
-            select(Atendimento).where(Atendimento.cliente_id == cliente_id)
-        ).scalars().all()
+        atendimentos_rows = (
+            db.execute(select(Atendimento).where(Atendimento.cliente_id == cliente_id))
+            .scalars()
+            .all()
+        )
         atendimentos = [
             {
                 "id": a.id,
@@ -159,11 +166,15 @@ def exportar_dados_titular(
     # 4. Documentos (se houver - cliente_id eh atributo esperado)
     documentos: list[dict[str, Any]] = []
     try:
-        documentos_rows = db.execute(
-            select(Documento).where(  # type: ignore[attr-defined]
-                getattr(Documento, "cliente_id") == cliente_id  # type: ignore[attr-defined]
+        documentos_rows = (
+            db.execute(
+                select(Documento).where(  # type: ignore[attr-defined]
+                    getattr(Documento, "cliente_id") == cliente_id  # type: ignore[attr-defined]
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         documentos = [
             {
                 "id": d.id,
@@ -182,11 +193,15 @@ def exportar_dados_titular(
     audit_logs: list[dict[str, Any]] = []
     if incluir_audit:
         try:
-            audit_rows = db.execute(
-                select(AuditLog)
-                .where(AuditLog.actor_id == str(cliente_id))
-                .where(AuditLog.actor_type == "cliente")
-            ).scalars().all()
+            audit_rows = (
+                db.execute(
+                    select(AuditLog)
+                    .where(AuditLog.actor_id == str(cliente_id))
+                    .where(AuditLog.actor_type == "cliente")
+                )
+                .scalars()
+                .all()
+            )
             audit_logs = [
                 {
                     "id": al.id,
@@ -202,6 +217,7 @@ def exportar_dados_titular(
 
     # 6. Consentimentos (LGPD art. 18 V)
     from app.services.lgpd_consent import consent_history
+
     consentimentos_raw = consent_history(db, cliente_id)
     consentimentos = [
         {

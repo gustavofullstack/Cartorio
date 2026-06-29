@@ -21,6 +21,7 @@ LGPD art. 9: consentimento pode ser revogado a qualquer momento.
 
 Audit chain: cada registrar/revogar gera entry no audit_log.
 """
+
 from __future__ import annotations
 
 import logging
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 class Finalidade(str, Enum):
     """Finalidades de tratamento que exigem consentimento LGPD."""
+
     ATENDIMENTO_WHATSAPP = "atendimento_whatsapp"
     ATENDIMENTO_TELEGRAM = "atendimento_telegram"
     EMOLUMENTO_CONSULTA = "emolumento_consulta"
@@ -45,18 +47,22 @@ class Finalidade(str, Enum):
 
 
 # Finalidades obrigatorias (sempre aceitas para o servico funcionar)
-FINALIDADES_OBRIGATORIAS = frozenset({
-    Finalidade.PROTOCOLO_CRIACAO,
-    Finalidade.EMOLUMENTO_CONSULTA,
-})
+FINALIDADES_OBRIGATORIAS = frozenset(
+    {
+        Finalidade.PROTOCOLO_CRIACAO,
+        Finalidade.EMOLUMENTO_CONSULTA,
+    }
+)
 
 # Finalidades opcionais (opt-in explicito)
-FINALIDADES_OPCIONAIS = frozenset({
-    Finalidade.MARKETING,
-    Finalidade.PESQUISA_SATISFACAO,
-    Finalidade.ATENDIMENTO_WHATSAPP,
-    Finalidade.ATENDIMENTO_TELEGRAM,
-})
+FINALIDADES_OPCIONAIS = frozenset(
+    {
+        Finalidade.MARKETING,
+        Finalidade.PESQUISA_SATISFACAO,
+        Finalidade.ATENDIMENTO_WHATSAPP,
+        Finalidade.ATENDIMENTO_TELEGRAM,
+    }
+)
 
 
 @dataclass
@@ -185,7 +191,8 @@ def revogar_consentimento(
     if revoga_obrigatorias and finalidades is not None:
         logger.warning(
             "Cliente %s revogou finalidades obrigatorias: %s",
-            cliente_id, fins_str,
+            cliente_id,
+            fins_str,
         )
 
     now = datetime.now(tz=timezone.utc)
@@ -256,10 +263,12 @@ def consent_history(db: Session, cliente_id: int) -> list[dict]:
     stmt = (
         select(AuditLog)
         .where(
-            AuditLog.action.in_([
-                "lgpd.consent.granted",
-                "lgpd.consent.revoked",
-            ])
+            AuditLog.action.in_(
+                [
+                    "lgpd.consent.granted",
+                    "lgpd.consent.revoked",
+                ]
+            )
         )
         .where(AuditLog.resource == f"cliente/{cliente_id}")
         .order_by(AuditLog.timestamp.asc())
@@ -270,7 +279,8 @@ def consent_history(db: Session, cliente_id: int) -> list[dict]:
         {
             "action": r.action,
             "timestamp": r.timestamp.isoformat() if r.timestamp else None,
-            "finalidades": (r.payload or {}).get("finalidades") or (r.payload or {}).get("finalidades_revogadas"),
+            "finalidades": (r.payload or {}).get("finalidades")
+            or (r.payload or {}).get("finalidades_revogadas"),
             "canal": (r.payload or {}).get("canal"),
             "ip_truncated": (r.payload or {}).get("ip_truncated"),
         }

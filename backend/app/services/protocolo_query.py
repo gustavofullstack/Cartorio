@@ -3,6 +3,7 @@
 Usado pelo N8N workflow #25 (protocolo concluido -> envia PDF via WhatsApp).
 Tambem usado pelo dashboard DPO para monitorar transicoes recentes.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
