@@ -121,7 +121,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"prompt\": \"Voce eh o atendente virtual do Cartorio 2 Notas de Uberlandia. Responda em portugues, tom cordial, maximo 2 paragrafos. Mensagem do cliente (com PII ja redacted): {{ $json.scrubbed }}\",\n  \"model\": \"deepseek-v4-flash\",\n  \"consent_granted\": {{ $json.consent_granted }},\n  \"session_id\": \"n8n-flow-12:{{ $json.sender }}\"\n}",
+        "jsonBody": "={\n  \"prompt\": \"Voce eh o atendente virtual do Cartorio 2 Notas de Uberlandia. Responda em portugues, tom cordial, maximo 2 paragrafos. Mensagem do cliente (com PII ja redacted): {{ $json.scrubbed }}\",\n  \"model\": \"deepseek-v4-flash-free\",\n  \"consent_granted\": {{ $json.consent_granted }},\n  \"use_fallback\": true,\n  \"session_id\": \"n8n-flow-12:{{ $json.sender }}\"\n}",
         "options": {
           "timeout": 30000,
           "response": {
