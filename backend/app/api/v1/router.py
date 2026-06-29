@@ -711,9 +711,25 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
                 return ingest_result
             # accepted: continua processamento abaixo
 
-    raw_text = payload.get("message", {}).get("text", "") or ""
+    _msg = payload.get("message") or {}
+    raw_text = _msg.get("text", "") if isinstance(_msg, dict) else ""
     sender = payload.get("sender", "unknown")
     instance = payload.get("instance", "")
+
+    # Defesa em profundidade: payload sem texto util (None, vazio, ou nao-dict)
+    # deve fazer handoff humano em vez de tentar chamar o LLM com input invalido.
+    if not isinstance(_msg, dict) or not raw_text.strip():
+        return {
+            "status": "ok",
+            "response": (
+                "Recebi uma mensagem sem texto util. Vou transferir para um "
+                "atendente humano para que possamos ajudar melhor. [HUMANO]"
+            ).replace("[HUMANO]", "").strip(),
+            "scrubbed": "",
+            "pii_blocked": False,
+            "needs_human_handoff": True,
+            "handoff_reason": "payload_empty_message",
+        }
 
     # Calculate raw message hash
     raw_message_hash = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()
