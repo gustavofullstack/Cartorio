@@ -417,8 +417,8 @@ class TestN8nBatchValidationB12:
                     http_warnings.append(f"{wf.get('name','?')}: {w}")
         # Soft check: muitos workflows sem retry (B07) - registra mas nao falha
         # pois alguns workflows (error handler) gerenciam retry manualmente
-        total_wfs = results.get("total", 0)
-        wfs_with_warnings = len(set(
+        _total_wfs = results.get("total", 0)
+        _wfs_with_warnings = len(set(
             wf.get("name", "?") for wf in results.get("wfs", [])
             if any("B07" in w and "retry" in w.lower() for w in wf.get("warnings", []))
         ))

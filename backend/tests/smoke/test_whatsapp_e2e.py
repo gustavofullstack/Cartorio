@@ -14,7 +14,8 @@ Habilitar: SMOKE_TARGET=prod pytest -m smoke
 
 from __future__ import annotations
 
-from typing import Any
+from contextlib import contextmanager
+from typing import Any, Iterator
 
 import os
 
@@ -29,16 +30,49 @@ API_BASE = os.getenv("API_BASE_URL", "https://api.2notasudi.com.br")
 TIMEOUT_S = float(os.getenv("SMOKE_TIMEOUT", "10"))
 
 
-def _require_api_deployed() -> httpx.Client:
-    """Retorna client se API estiver deployed, skip senao."""
+@contextmanager
+def _require_api_deployed() -> Iterator[httpx.Client]:
+    """Context manager: yield client se API estiver deployed, skip senao.
+
+    Inclui header X-API-Key quando SMOKE_CARTORIO_API_KEY estiver setado no env
+    OU lido de backend/.env (sobrescreve o valor de teste do conftest).
+
+    Para rodar smoke contra API real:
+        SMOKE_CARTORIO_API_KEY=<chave_real> pytest -m smoke tests/smoke/
+    """
+    headers: dict[str, str] = {}
+    # SMOKE_* tem precedencia; fallback le .env direto (conftest.py sobrescreve
+    # CARTORIO_API_KEY com valor de teste, ignora-lo).
+    api_key = os.getenv("SMOKE_CARTORIO_API_KEY")
+    if not api_key:
+        env_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            ".env",
+        )
+        if os.path.isfile(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("CARTORIO_API_KEY="):
+                            api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            break
+            except OSError:
+                pass
+    if api_key:
+        headers["X-API-Key"] = api_key
+    client = httpx.Client(base_url=API_BASE, timeout=TIMEOUT_S, headers=headers)
     try:
-        client = httpx.Client(base_url=API_BASE, timeout=TIMEOUT_S)
         resp = client.get("/health")
         if resp.status_code != 200:
+            client.close()
             pytest.skip(f"API nao deployed ou unhealthy: {resp.status_code}")
-        return client
+        yield client
     except httpx.HTTPError as e:
+        client.close()
         pytest.skip(f"API nao acessivel em {API_BASE}: {e}")
+    finally:
+        client.close()
 
 
 def test_health_endpoint_returns_ok() -> None:
