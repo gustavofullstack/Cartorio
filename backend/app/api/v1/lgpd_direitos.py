@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.config import settings
 from app.services.audit import AuditService  # type: ignore
+from app.services.audit_context import audit_kwargs
 from sqlalchemy import select
 
 # Criar router dedicado (sem prefix para manter paths absolutos)
@@ -94,6 +95,7 @@ def direito_anonimizar(
         action="cliente.lgpd.anonimizar",
         resource=f"cliente:{cliente_id}",
         payload={"direito": "anonimizar", "lgpd_art": "18 IV"},
+        **audit_kwargs(request),
     )
 
     return {
@@ -134,6 +136,7 @@ def direito_corrigir(
         action="cliente.lgpd.corrigir",
         resource=f"cliente:{cliente_id}",
         payload={"direito": "corrigir", "lgpd_art": "18 III"},
+        **audit_kwargs(request),
     )
 
     return {
@@ -173,6 +176,7 @@ def direito_oposicao(
         action="cliente.lgpd.oposicao",
         resource=f"cliente:{cliente_id}",
         payload={"direito": "oposicao", "lgpd_art": "18 IX"},
+        **audit_kwargs(request),
     )
 
     return {
@@ -213,6 +217,7 @@ def direito_optout(
         action="cliente.lgpd.optout",
         resource=f"cliente:{cliente_id}",
         payload={"direito": "optout", "scope": "comunicacoes_marketing"},
+        **audit_kwargs(request),
     )
 
     return {
@@ -252,6 +257,7 @@ def direito_portabilidade(
         action="cliente.lgpd.portabilidade",
         resource=f"cliente:{cliente_id}",
         payload={"direito": "portabilidade", "lgpd_art": "18 V"},
+        **audit_kwargs(request),
     )
 
     return {
@@ -322,6 +328,7 @@ def download_portabilidade(
             "export_hash": bundle.export_hash,
             "format": fmt,
         },
+        **audit_kwargs(request),
     )
 
     return {
