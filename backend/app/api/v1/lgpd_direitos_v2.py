@@ -141,7 +141,8 @@ def lgpd_dashboard(
     ).scalar() or 0
 
     # Detect dialect (PostgreSQL prod vs SQLite test) for cross-compatible time
-    is_sqlite = db.bind.dialect.name == 'sqlite'
+    dialect_name = db.bind.dialect.name if db.bind is not None else "postgresql"
+    is_sqlite = dialect_name == "sqlite"
     if is_sqlite:
         ts_30d_expr = "datetime('now', '-30 days')"
         ts_1d_expr = "datetime('now', '-1 day')"

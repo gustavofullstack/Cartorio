@@ -146,13 +146,29 @@ class AuditService:
     def verify_chain(cls, db: Session) -> tuple[bool, int]:
         """Verifica integridade da cadeia inteira.
         Retorna (ok, ultima_posicao_valida).
+
+        Turno 24+ 2026-06-29: Normaliza timestamp removendo tzinfo (mesmo formato usado
+        em `log()` que faz `.replace(tzinfo=None).isoformat(timespec='microseconds')`).
+        Sem isso, entradas com timestamp tz-aware (do DB) sao formatadas com '+00:00'
+        e o hash computado diverge do hash armazenado.
+
+        NOTA: dados historicos podem ter chain quebrada (hash format mudou entre
+        versoes). Esta funcao retorna (ok, last_valid_position) — partial chain
+        verification eh o maximo possivel sem regenerar hashes de todos os entries.
         """
         entries = db.query(AuditLog).order_by(AuditLog.id.asc()).all()
         prev_hash: str | None = None
+        last_valid = 0
         for i, entry in enumerate(entries):
-            timestamp_iso = entry.timestamp.isoformat(timespec="microseconds")
+            # Normaliza timestamp removendo tzinfo para match com hash armazenado
+            ts = entry.timestamp
+            if ts.tzinfo is not None:
+                ts = ts.replace(tzinfo=None)
+            timestamp_iso = ts.isoformat(timespec="microseconds")
             expected = cls._compute_hash(prev_hash, entry.payload, timestamp_iso)
             if entry.prev_hash != prev_hash or entry.hash != expected:
-                return False, i
+                # Chain quebrada — retorna posicao do ultimo valido
+                return False, last_valid
             prev_hash = entry.hash
+            last_valid = i + 1
         return True, len(entries)
