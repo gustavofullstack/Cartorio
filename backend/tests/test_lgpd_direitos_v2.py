@@ -256,7 +256,7 @@ class TestConsentGranular:
             headers={"Authorization": f"Bearer {token}"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text[:500]}"
         data = response.json()
         assert data["status"] == "ok"
         assert data["finalidade"] == "marketing"
@@ -299,8 +299,8 @@ class TestConsentGranular:
 
         assert response.status_code == 404
 
-    def test_consent_400_invalid_finalidade(self, client: TestClient, db_session):
-        """D27: retorna 400 com finalidade invalida."""
+    def test_consent_422_invalid_finalidade(self, client: TestClient, db_session):
+        """D27: retorna 422 com finalidade invalida (Pydantic Literal validation)."""
         c = _create_cliente(db_session)
         token = _make_dpo_token()
 
@@ -315,7 +315,7 @@ class TestConsentGranular:
             headers={"Authorization": f"Bearer {token}"},
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_consent_401_without_token(self, client: TestClient):
         """D27: retorna 401 sem token."""
@@ -536,9 +536,11 @@ class TestCorrigirDados:
         assert data["status"] == "ok"
         assert "nome" in data["updated_fields"]
 
-        # Verifica no DB
+        # Verifica no DB (precisa expirar sessao para ler atualizacao
+        # de outra sessao do mesmo engine)
         from app.models.cliente import Cliente
 
+        db_session.expire_all()
         refreshed = db_session.get(Cliente, c.id)
         assert refreshed.nome == "Nome Novo"
 
@@ -715,6 +717,7 @@ class TestRevogarConsent:
 
         from app.models.cliente import Cliente
 
+        db_session.expire_all()
         refreshed = db_session.get(Cliente, c.id)
         assert refreshed.consentimento_lgpd is False
 

@@ -18,6 +18,7 @@ Padrao:
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Annotated, Any, Literal
@@ -27,7 +28,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_dpo_role, require_cliente_or_dpo
+from app.api.deps import require_dpo_role, require_cliente_or_dpo, _require_jwt_payload
 from app.db import get_db
 from app.services.audit import AuditService
 from app.services.audit_context import audit_kwargs
@@ -212,11 +213,21 @@ def registrar_consentimento_v2(
     request: Request,
     body: ConsentRequest,
     db: Annotated[Session, Depends(get_db)],
-    _payload: dict = Depends(require_cliente_or_dpo),  # type: ignore[type-arg]
+    _payload: dict = Depends(_require_jwt_payload),  # type: ignore[type-arg]
 ) -> dict[str, Any]:
     """Registra consentimento granular LGPD (D27, art. 8 + art. 9)."""
     from app.models.cliente import Cliente
     from app.services.lgpd_consent import Finalidade
+
+    # Auth: verificar se cliente_id do body coincide com sub do JWT
+    # ou se o usuario tem role DPO
+    sub = _payload.get("sub")
+    is_dpo = _payload.get("dpo") is True
+    if not is_dpo and str(sub) != str(body.cliente_id):
+        raise HTTPException(
+            status_code=403,
+            detail={"erro": "FORBIDDEN", "mensagem": "Acesso restrito ao titular ou DPO."},
+        )
 
     # Verificar se cliente existe
     cliente = db.get(Cliente, body.cliente_id)
@@ -558,11 +569,20 @@ def revogar_consent_v2(
     request: Request,
     body: RevogarConsentRequest,
     db: Annotated[Session, Depends(get_db)],
-    _payload: dict = Depends(require_cliente_or_dpo),  # type: ignore[type-arg]
+    _payload: dict = Depends(_require_jwt_payload),  # type: ignore[type-arg]
 ) -> dict[str, Any]:
     """Revoga consentimento do titular (D31, LGPD art. 9)."""
     from app.models.cliente import Cliente
     from app.services.lgpd_consent import revogar_consentimento
+
+    # Auth: verificar cliente_id do body vs JWT
+    sub = _payload.get("sub")
+    is_dpo = _payload.get("dpo") is True
+    if not is_dpo and str(sub) != str(body.cliente_id):
+        raise HTTPException(
+            status_code=403,
+            detail={"erro": "FORBIDDEN", "mensagem": "Acesso restrito ao titular ou DPO."},
+        )
 
     cliente = db.get(Cliente, body.cliente_id)
     if cliente is None:
@@ -648,6 +668,20 @@ def _truncate_ip_for_response(ip: str | None) -> str | None:
     return ip
 
 
+def _parse_payload(raw: object) -> dict:
+    """Converte payload de audit_log (JSON string ou dict) para dict."""
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        try:
+            return json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            return {}
+    if raw is None:
+        return {}
+    return {}
+
+
 def _scrub_payload_pii(payload: dict) -> dict:
     """Remove PII sensiveis de payload antes de expor ao titular.
 
@@ -713,19 +747,27 @@ def audit_log_titular(
         {"resource_pattern": f"cliente:{cliente_id}%", "lim": limit},
     ).mappings().all()
 
-    entries = []
+    entries: list[dict[str, Any]] = []
     for row in rows:
-        entry: dict[str, Any] = {
+        ts = row["timestamp"]
+        # SQLite retorna string, Postgres retorna datetime — normaliza
+        if isinstance(ts, str):
+            timestamp_str = ts
+        elif ts is not None:
+            timestamp_str = ts.isoformat()
+        else:
+            timestamp_str = None
+        entry = {
             "id": row["id"],
             "action": row["action"],
             "canal": row["canal"],
-            "timestamp": (
-                row["timestamp"].isoformat() if row["timestamp"] else None
-            ),
+            "timestamp": timestamp_str,
             # IP truncado (apenas /24 para IPv4)
             "ip_truncated": _truncate_ip_for_response(row.get("ip")),
             # Payload scrubbed (sem PII)
-            "payload": _scrub_payload_pii(row.get("payload") or {}),
+            "payload": _scrub_payload_pii(
+                _parse_payload(row.get("payload"))
+            ),
         }
         entries.append(entry)
 
