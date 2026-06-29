@@ -1195,6 +1195,40 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 
 **NÃO rotacionei chaves.**
 
+## SPRINT 3 — RE-VALIDAÇÃO 2026-06-29 (Pietra session mvs_97612f6bb1824cbdaf7c134fa34bf057)
+
+> **Status geral**: 95% production ready confirmado (re-validação 11:25 BRT — 8/8 GREEN, API radar all services online). 3 débitos pré-merge Sprint 3 atacados em paralelo por 3 workers spawnados.
+
+### Sprint 3 numbering (canibalização)
+
+- **D19-D25** (PROMPT.json + PLAN_100_TASKS_LOOP.md) = POLICY/PROCESS items históricos. **NÃO são código**.
+- **D26-D32** = Sprint 3 endpoints HTTP LGPD (escopo cartorio-dev implementar, cartorio-lgpd spec + review). Ver `.harness/specs/LGPD-026-032-spec.md` (cartorio-lgpd worker 29/06).
+- **Lesson 186**: sempre validar agent scope + ground truth pre-spawn (cartorio-lgpd detectou SoD violation + reality check stubs theater compliance).
+
+### Sprint 3 — Tasks em flight (2026-06-29 11:33 BRT)
+
+| Task | Owner | Worker session | Status |
+|------|-------|----------------|--------|
+| Audit log 100% mutações (request_id/ip/user_agent middleware) | cartorio-dev | mvs_6cd75d5f...270 | in flight |
+| DELETE /api/v1/cliente/{id} (LGPD art. 18 VI) | cartorio-dev | mvs_6cd75d5f...270 | in flight |
+| Job retenção 5y/até-revogação (D4) — Alembic migration + cron | cartorio-dev | mvs_6cd75d5f...270 | in flight |
+| Spec unificada LGPD-026-032 (7 endpoints HTTP) | cartorio-lgpd | mvs_f83d53b...7cf | spec-only (roteado após SoD pushback) |
+| D26 GET /api/v1/lgpd/dashboard | cartorio-dev (post-spec) | TBD | pending spec entrega |
+| D27 POST /api/v1/lgpd/consent | cartorio-dev (post-spec) | TBD | pending spec entrega |
+| D28 DELETE /api/v1/lgpd/cliente/{id} (anonimização) | cartorio-dev (post-spec) | TBD | pending spec entrega |
+| D29 GET /api/v1/lgpd/export/{cliente_id} (portabilidade) | cartorio-dev (post-spec) | TBD | pending spec entrega |
+| D30 POST /api/v1/lgpd/correct/{cliente_id} | cartorio-dev (post-spec) | TBD | pending spec entrega |
+| D31 POST /api/v1/lgpd/revogar-consent | cartorio-dev (post-spec) | TBD | pending spec entrega |
+| D32 GET /api/v1/lgpd/audit/{cliente_id} (transparência) | cartorio-dev (post-spec) | TBD | pending spec entrega |
+| WF #12 n8n-nodes-mcp (smoke test only — JÁ migrado) | cartorio-n8n | mvs_dbd9aac...d7b | smoke test pending |
+| WF #03 n8n-nodes-chatwoot (3 bugs: URL typo, double-POST, cred type) | cartorio-n8n | mvs_dbd9aac...d7b | file-lock declarado |
+
+### Cron consolidator
+
+- `cartorio-sprint3-consolidator` ativo a cada 30min até 2026-07-13 11:32 BRT (14d expiry)
+- Reporta pra Pietra session mvs_97612f6bb1824cbdaf7c134fa34bf057
+- Escala Gustavo DM (6682284055) se BLOCKED > 4h ou 3/3 DONE
+
 ## LIÇÕES MEMORIZADAS
 
 - Lesson 176: override_accept por STALE VERIFIER FAIL (chain canon 124-176, 53 lições canon) — producer self-fixed entre attempts, verifier re-checa pre-fix state; cross-check ground truth Lesson 170 antes de aceitar; plan_complete=true. Lesson 174 v2 L4 cancel + DEFER ainda disponivel se override_accept nao aplicavel.

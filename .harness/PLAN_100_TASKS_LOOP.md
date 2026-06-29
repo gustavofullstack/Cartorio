@@ -61,6 +61,12 @@
 - D24 DPO contato publicado
 - D25 auditoria ANPD anual (relatório gerado D9)
 
+> **NOTA 2026-06-29 (cartorio-harness decision)**: D19-D25 acima são POLICY/PROCESS items (escopo cartorio-lgpd histórico, alguns DONE outros policy-side PENDENTES, **NÃO são código**).
+>
+> **Sprint 3 endpoints HTTP LGPD = D26-D32** (escopo cartorio-dev IMPLEMENTAR + cartorio-lgpd spec + review + assina). Ver `.harness/TASKS.md` seção Sprint 3.
+>
+> Spec unificada: `.harness/specs/LGPD-026-032-spec.md` (cartorio-lgpd worker 29/06).
+
 ### 🟡 SQUAD E — OPENCLAW AGENT (8 tasks, 1/8 done)
 - E2 thinking sempre ativo
 - E3 skills registry auto-discovery

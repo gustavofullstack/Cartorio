@@ -377,17 +377,14 @@
       "pct": 20
     },
     "D_LGPD_Compliance": {
-      "total": 25,
+      "total": 32,
       "done": 17,
-      "pct": 68,
+      "pct": 53,
+      "pending_policy": ["D19","D20","D21","D22","D23","D24","D25"],
+      "pending_endpoints_sprint3": ["D26","D27","D28","D29","D30","D31","D32"],
+      "sprint3_status": "ROUTED 2026-06-29 — cartorio-lgpd writing spec LGPD-026-032, cartorio-dev will implement TDD, cartorio-lgpd reviews PR. Lesson 186: validate scope pre-spawn.",
       "pending": [
-        "D19",
-        "D20",
-        "D21",
-        "D22",
-        "D23",
-        "D24",
-        "D25"
+        "D19","D20","D21","D22","D23","D24","D25","D26","D27","D28","D29","D30","D31","D32"
       ]
     },
     "E_OpenClaw_CartorioBot": {

@@ -116,7 +116,61 @@ PROMPT.json atualizado: v4.0.0 (25/06) → **v4.1.0 (29/06)**.
 
 ---
 
-## 🎯 Status Final pós-sessão
+## 🔄 ROUTE CORRECTIONS (2026-06-29 11:35 BRT)
+
+### cartorio-lgpd worker detectou SoD violation (Lesson 186)
+
+**Problema**: meu briefing inicial pro `cartorio-lgpd` mandou implementar 7 endpoints HTTP (D19-D25). Mas `.harness/agent.md` + cartorio-lgpd agent.md são explícitos:
+
+> "Implementação de código -> cartorio-dev"
+> "Mudança em audit/pii: cartorio-dev IMPLEMENTA + cartorio-lgpd REVISA + assina"
+
+LGPD worker fez ground check (Lesson 163) e identificou que:
+1. **Scope violation**: implementer ≠ reviewer (SoD)
+2. **Reality check**: `backend/app/api/v1/lgpd_direitos.py` (commit 3c2f961) JÁ EXISTE com 6 endpoints stub que só logam audit + retornam `{status: ok}` — **teatro compliance**, não compliance real
+3. **Auth errada**: stubs usam X-API-Key (escrevente), NÃO JWT/DPO
+4. **Naming conflict**: PROMPT.json + PLAN_100 têm D19-D25 = policy/process (NÃO código)
+
+**Decisão**: A (re-rotear)
+- cartorio-lgpd escreve spec unificada (NÃO implementa)
+- cartorio-dev implementa TDD conforme spec
+- cartorio-lgpd revisa PR + assina
+
+**Numbering corrigido**: Sprint 3 endpoints HTTP = **D26-D32** (canibalizou nomenclatura conflitante com D19-D25 policy):
+- D26 GET /api/v1/lgpd/dashboard
+- D27 POST /api/v1/lgpd/consent
+- D28 DELETE /api/v1/lgpd/cliente/{id} (anonimização)
+- D29 GET /api/v1/lgpd/export/{cliente_id} (portabilidade)
+- D30 POST /api/v1/lgpd/correct/{cliente_id} (correção)
+- D31 POST /api/v1/lgpd/revogar-consent (revogação)
+- D32 GET /api/v1/lgpd/audit/{cliente_id} (transparência)
+
+D19-D25 continuam sendo policy/process históricos (escopo cartorio-lgpd, NÃO código).
+
+### cartorio-n8n worker detectou briefing stale (Task A) + 3 bugs (Task B)
+
+**Problema**: meu briefing inicial pro `cartorio-n8n` assumia WF #12 ainda com HTTP Request. Ground check dele:
+- **Task A** (WF #12 MCP): JÁ migrado com `n8n-nodes-mcp.mcpClient` (tool `cartorio_chatbot_responder`). Briefing stale. Ação: smoke test only.
+- **Task B** (WF #03 Chatwoot): 3 bugs encontrados:
+  1. URL hardcoded `chatwoot.2notasudi.com.br` → canonical `chat.2notasudi.com.br` (chatwoot. NXDOMAIN, Lesson 183 v3)
+  2. 2 nodes POST `/conversations` → 1 deveria ser `/conversations/{id}/messages`
+  3. Credencial `chatwoot-api` pode ser `httpHeaderAuth` genérica em vez de `ChatWootApi` type do node oficial
+
+**Decisão**: APROVADO plano dele (file-lock + backup + audit + fix + test) com 5 binds:
+1. Backup JSON antes
+2. Auditar credencial via SSH ANTES de tocar nodes
+3. Fix URL canonical
+4. Fix double-POST split
+5. Staging clone antes ativar (Lesson 50)
+
+**Bloqueio possível**: se credencial for httpHeaderAuth (NÃO ChatWootApi), worker PARA e reporta BLOCKED — eu escalo Gustavo UI (NÃO rotacionar).
+
+### Updates aplicadas
+
+- `PROMPT.json` v4.1.0: `squads_status.D_LGPD_Compliance` expandido (17/25 → 17/32 com pending_policy + pending_endpoints_sprint3 separados)
+- `.harness/PLAN_100_TASKS_LOOP.md`: nota de canibalização D19-D25 policy vs D26-D32 endpoints
+- `.harness/TASKS.md`: seção Sprint 3 — RE-VALIDAÇÃO 2026-06-29 com 13 tasks em flight
+- `MEMORY.md` (cross-project): **Lesson 186** salva (validate scope + briefing reality pre-spawn, chain canon 124-186, 63 lições canon)
 
 ### Squads progresso (atualizado)
 
