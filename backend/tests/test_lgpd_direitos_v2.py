@@ -897,6 +897,120 @@ class TestAuditTransparency:
 
 
 # ===========================================================================
+# ============================================================================
+# D23 — Direito de acesso
+# ============================================================================
+
+
+class TestDireitoAcesso:
+    """Testes do endpoint GET /lgpd/access/{cliente_id} (D23, art. 18 II)."""
+
+    def test_access_200_confirma_tratamento(self, client: TestClient, db_session):
+        """D23 happy path: titular confirma existencia de tratamento."""
+        c = _create_cliente(db_session)
+        token = _make_cliente_token(c.id)
+
+        response = client.get(
+            f"/api/v1/lgpd/access/{c.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["tratamento_confirmado"] is True
+        assert data["cliente_id"] == c.id
+        assert len(data["categorias_dados"]) >= 4
+        assert "copy_juridica" in data
+
+    def test_access_404_not_found(self, client: TestClient, db_session):
+        """D23: cliente inexistente retorna 404."""
+        token = _make_dpo_token()
+
+        response = client.get(
+            "/api/v1/lgpd/access/99999",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 404
+
+    def test_access_403_other_client(self, client: TestClient, db_session):
+        """D23: outro cliente nao pode acessar dados alheios."""
+        c = _create_cliente(db_session)
+        other = _create_cliente(db_session, cpf_hash="other_hash")
+        token = _make_cliente_token(other.id)
+
+        response = client.get(
+            f"/api/v1/lgpd/access/{c.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 403
+
+    def test_access_dpo_can_view_any(self, client: TestClient, db_session):
+        """D23: DPO pode acessar dados de qualquer titular."""
+        c = _create_cliente(db_session)
+        token = _make_dpo_token()
+
+        response = client.get(
+            f"/api/v1/lgpd/access/{c.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 200
+
+    def test_access_no_pii_in_response(self, client: TestClient, db_session):
+        """D23: response nao contem PII (apenas categorias e contagens)."""
+        c = _create_cliente(db_session, nome="Joao Silva", email="joao@test.com")
+        token = _make_dpo_token()
+
+        response = client.get(
+            f"/api/v1/lgpd/access/{c.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        # Nao deve conter valores PII
+        data_str = str(data)
+        assert "Joao Silva" not in data_str
+        assert "joao@test.com" not in data_str
+
+
+# ============================================================================
+# D20 — Relatorio mensal (service test)
+# ============================================================================
+
+
+class TestRelatorioMensal:
+    """Testes do servico de relatorio mensal LGPD (D20)."""
+
+    def test_relatorio_mensal_basico(self, db_session):
+        """D20: relatorio mensal retorna KPIs."""
+        from app.services.lgpd_relatorio import gerar_relatorio_mensal
+
+        relatorio = gerar_relatorio_mensal(db_session, ano=2026, mes=6)
+
+        assert relatorio["tipo"] == "mensal"
+        assert relatorio["ano"] == 2026
+        assert relatorio["mes"] == 6
+        assert "kpis" in relatorio
+        assert "hash_anchor" in relatorio
+        assert "dpo_contact" in relatorio
+
+    def test_relatorio_mensal_hash_integridade(self, db_session):
+        """D20: hash_anchor e SHA256 valido."""
+        import hashlib
+        from app.services.lgpd_relatorio import gerar_relatorio_mensal
+
+        relatorio = gerar_relatorio_mensal(db_session, ano=2026, mes=6)
+
+        # hash_anchor deve ser 64 chars hex
+        assert len(relatorio["hash_anchor"]) == 64
+        # Deve ser hex valido
+        hashlib.sha256(bytes.fromhex(relatorio["hash_anchor"][:2]))
+        assert all(c in "0123456789abcdef" for c in relatorio["hash_anchor"])
+
+
 # Auth edge cases (cross-cutting)
 # ===========================================================================
 

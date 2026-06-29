@@ -25,7 +25,7 @@ from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_dpo_role, require_cliente_or_dpo, _require_jwt_payload
@@ -190,6 +190,93 @@ def lgpd_dashboard(
         "audit_chain_status": {
             "ok": chain_ok,
             "chain_length": chain_length,
+        },
+    }
+
+
+# ============================================================================
+# D23 — Direito de acesso (LGPD art. 18 II)
+# ============================================================================
+
+
+@lgpd_v2_router.get(
+    "/lgpd/access/{cliente_id}",
+    summary="Confirmacao de existencia e acesso aos dados (LGPD art. 18 II)",
+    description=(
+        "Confirma a existencia de tratamento e retorna resumo das categorias\n"
+        "de dados pessoais tratados sobre o titular.\n\n"
+        "Inclui: dados identificacao, contato, atos juridicos, consentimentos.\n"
+        "Nao retorna valores PII — apenas categorias e contagens.\n\n"
+        "Auth: JWT Bearer (titular ou DPO)."
+    ),
+)
+def direito_acesso_v2(
+    cliente_id: int,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    _payload: dict = Depends(require_cliente_or_dpo),  # type: ignore[type-arg]
+) -> dict[str, Any]:
+    """Confirma existencia de tratamento e categorias de dados (D23, LGPD art. 18 II)."""
+    from app.models.cliente import Cliente
+    from app.models.protocolo import Protocolo
+    from app.models.audit_log import AuditLog
+
+    cliente = db.get(Cliente, cliente_id)
+    if cliente is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"erro": "CLIENTE_NOT_FOUND", "cliente_id": cliente_id},
+        )
+
+    # Conta protocolos do titular
+    total_protocolos = db.execute(
+        select(func.count(Protocolo.id)).where(Protocolo.cliente_id == cliente_id)
+    ).scalar() or 0
+
+    # Conta audit entries do titular
+    total_audit = db.execute(
+        select(func.count(AuditLog.id)).where(
+            AuditLog.resource.like(f"cliente:{cliente_id}%")
+        )
+    ).scalar() or 0
+
+    # Categorias de dados tratados
+    categorias_dados = [
+        {"categoria": "identificacao", "campos": ["nome", "cpf_hash"], "status": "tratando"},
+        {"categoria": "contato", "campos": ["email", "telefone_hash"], "status": "tratando"},
+        {"categoria": "ato_juridico", "campos": ["protocolos"], "count": total_protocolos},
+        {"categoria": "consentimento_lgpd", "campos": ["consentimento_lgpd", "consentimento_em"],
+         "status": "concedido" if cliente.consentimento_lgpd else "nao_concedido"},
+        {"categoria": "audit_trail", "campos": ["request_id", "ip_truncado", "user_agent"],
+         "count": total_audit},
+    ]
+
+    # Audit log da propria consulta
+    AuditService.log(
+        db,
+        actor_id=_payload.get("sub", "unknown"),
+        actor_type="dpo" if _payload.get("dpo") else "cliente",
+        action="lgpd.access.confirm",
+        resource=f"cliente:{cliente_id}",
+        payload={
+            "lgpd_art": "18 II",
+            "categorias_retornadas": len(categorias_dados),
+        },
+        **audit_kwargs(request),
+    )
+
+    return {
+        "status": "ok",
+        "cliente_id": cliente_id,
+        "tratamento_confirmado": True,
+        "categorias_dados": categorias_dados,
+        "total_protocolos": total_protocolos,
+        "total_audit_entries": total_audit,
+        "copy_juridica": {
+            "base_legal": "LGPD art. 18 II",
+            "direito": "Confirmacao da existencia de tratamento + acesso aos dados",
+            "prazo_resposta": "15 dias (art. 18 §5º)",
+            "dpo_contact": "dpo@2notasudi.com.br",
         },
     }
 

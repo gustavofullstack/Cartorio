@@ -1,19 +1,16 @@
-"""Relatorio ANPD anual LGPD (D9).
+"""Relatorios LGPD — anual (D9/D20) e mensal (D20).
 
-Gera relatorio anual exigido pela Lei Geral de Protecao de Dados (art. 38):
-- Numero de titulares
-- Tipo de dados tratados
-- Finalidades de uso
-- Medidas de seguranca
-- Encarregado (DPO) info
-- Direitos dos titulares exercidos (art. 18)
-- Incidentes de seguranca (art. 48)
+Gera relatorios exigidos pela Lei Geral de Protecao de Dados (art. 38):
+- Relatorio anual completo (12 secoes, hash anchor SHA256)
+- Relatorio mensal consolidado (KPIs + trends)
 
-Uso:
+Uso anual:
     relatorio = gerar_relatorio_anual(db, ano=2026)
-    # retorna dict com 12 secoes + timestamp + hash_chain_anchor
 
-Output: JSON estruturado para enviar ANPD + LGPD-AUDIT-{ano}.md
+Uso mensal:
+    relatorio = gerar_relatorio_mensal(db, ano=2026, mes=6)
+
+Output: JSON estruturado + hash_anchor SHA256 (LGPD art. 37 integridade).
 """
 from __future__ import annotations
 
@@ -269,3 +266,118 @@ def render_markdown(relatorio: dict) -> str:
     lines.append(relatorio["observacoes"])
     lines.append("")
     return "\n".join(lines)
+
+
+# ============================================================================
+# D20 — Relatorio mensal LGPD (consolidado)
+# ============================================================================
+
+
+def gerar_relatorio_mensal(
+    db: Session,
+    ano: int,
+    mes: int,
+    gerado_por: str = "system:cartorio-dpo",
+) -> dict:
+    """Gera relatorio mensal LGPD (D20 — compliance operacional).
+
+    Subconjunto do relatorio anual, focado em KPIs mensais:
+    - Novos titulares no mes
+    - Direitos exercidos no mes
+    - Operacoes de tratamento no mes
+    - Consentimentos revogados
+    - Incidentes
+
+    Args:
+        db: Session do DB
+        ano: Ano de referencia
+        mes: Mes de referencia (1-12)
+        gerado_por: Identifier de quem gerou
+
+    Returns:
+        dict estruturado com KPIs mensais + hash_anchor
+    """
+    from app.models.cliente import Cliente
+    from app.models.audit_log import AuditLog
+    from app.models.protocolo import Protocolo
+
+    # KPIs mensais
+    novos_clientes = db.execute(
+        select(func.count(Cliente.id)).where(
+            func.extract("year", Cliente.created_at) == ano,
+            func.extract("month", Cliente.created_at) == mes,
+        )
+    ).scalar() or 0
+
+    clientes_ativos = db.execute(
+        select(func.count(Cliente.id)).where(Cliente.deleted_at.is_(None))
+    ).scalar() or 0
+
+    protocolos_mes = db.execute(
+        select(func.count(Protocolo.id)).where(
+            func.extract("year", Protocolo.created_at) == ano,
+            func.extract("month", Protocolo.created_at) == mes,
+        )
+    ).scalar() or 0
+
+    audit_entries_mes = db.execute(
+        select(func.count(AuditLog.id)).where(
+            func.extract("year", AuditLog.timestamp) == ano,
+            func.extract("month", AuditLog.timestamp) == mes,
+        )
+    ).scalar() or 0
+
+    # Direitos exercidos no mes
+    direitos_mes = db.execute(
+        select(func.count(AuditLog.id))
+        .where(
+            AuditLog.action.like("lgpd.%"),
+            func.extract("year", AuditLog.timestamp) == ano,
+            func.extract("month", AuditLog.timestamp) == mes,
+        )
+    ).scalar() or 0
+
+    # Consentimentos revogados
+    revogacoes_mes = db.execute(
+        select(func.count(AuditLog.id))
+        .where(
+            AuditLog.action.like("lgpd.consent.revoked%"),
+            func.extract("year", AuditLog.timestamp) == ano,
+            func.extract("month", AuditLog.timestamp) == mes,
+        )
+    ).scalar() or 0
+
+    # Incidentes
+    incidentes_mes = db.execute(
+        select(func.count(AuditLog.id))
+        .where(
+            AuditLog.action.like("security.%"),
+            func.extract("year", AuditLog.timestamp) == ano,
+            func.extract("month", AuditLog.timestamp) == mes,
+        )
+    ).scalar() or 0
+
+    relatorio = {
+        "tipo": "mensal",
+        "ano": ano,
+        "mes": mes,
+        "gerado_em": datetime.now(tz=timezone.utc).isoformat(),
+        "gerado_por": gerado_por,
+        "kpis": {
+            "clientes_ativos": clientes_ativos,
+            "novos_clientes_mes": novos_clientes,
+            "protocolos_mes": protocolos_mes,
+            "audit_entries_mes": audit_entries_mes,
+            "direitos_exercidos_mes": direitos_mes,
+            "revogacoes_consentimento_mes": revogacoes_mes,
+            "incidentes_mes": incidentes_mes,
+        },
+        "status_compliance": (
+            "ADEQUADO" if incidentes_mes == 0 else "REQUER_ATENCAO"
+        ),
+        "dpo_contact": "dpo@2notasudi.com.br",
+        "base_legal": "LGPD Lei 13.709/2018 art. 38",
+    }
+
+    relatorio["hash_anchor"] = _hash_anchor(relatorio)
+    return relatorio
