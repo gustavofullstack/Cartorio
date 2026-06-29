@@ -38,3 +38,5 @@ Thumbs.db
 # Banco local
 *.sqlite
 *.db
+backend/full_stdout.txt
+backend/full_stderr.txt
