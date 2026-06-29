@@ -50,6 +50,7 @@ def _build_payload(
     typ: TokenType,
     ttl: dt.timedelta,
     settings: Settings,
+    dpo: bool = False,
 ) -> dict[str, Any]:
     """Constroi o payload JWT canonico com claims minimas (LGPD-safe)."""
     now = _now_utc()
@@ -61,18 +62,21 @@ def _build_payload(
         "iat": int(now.timestamp()),  # issued at (epoch seconds)
         "exp": int((now + ttl).timestamp()),  # expiration
         "jti": str(uuid.uuid4()),  # unique token id (revogacao futura)
+        "dpo": dpo,  # True = titular eh DPO (role claim LGPD)
     }
 
 
 def issue_access_token(
     user_id: str,
     *,
+    dpo: bool = False,
     settings: Settings | None = None,
 ) -> str:
     """Emite access token JWT (TTL curto: 60min default).
 
     Args:
         user_id: UUID v4 string do usuario (sub claim).
+        dpo: se True, inclui claim dpo=True (role DPO LGPD).
         settings: Settings injetada (test-friendly). Defaults to get_settings().
 
     Returns:
@@ -104,6 +108,7 @@ def issue_access_token(
         typ="access",
         ttl=dt.timedelta(minutes=settings.jwt_access_ttl_minutes),
         settings=settings,
+        dpo=dpo,
     )
     return pyjwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 

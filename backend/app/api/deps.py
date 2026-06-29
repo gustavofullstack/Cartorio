@@ -22,6 +22,7 @@ from fastapi import Depends, Header, HTTPException, Request, status
 
 from app.config import Settings, get_settings
 from app.services.audit import AuditService
+from app.services.auth_jwt import JWTError, verify_token
 
 _log = logging.getLogger("auth.deps")
 
@@ -144,3 +145,107 @@ def require_cartorio_api_key(
         )
 
     return provided
+
+
+# ---------------------------------------------------------------------------
+# JWT-based DPO role dependencies (LGPD D26-D32)
+# ---------------------------------------------------------------------------
+
+
+def _extract_bearer_token(request: Request) -> str:
+    """Extrai Bearer token do header Authorization.
+
+    Raises:
+        HTTPException 401: se header ausente ou formato invalido.
+    """
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "Bearer token ausente."},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return auth_header[7:]
+
+
+def _verify_jwt_payload(token: str) -> dict:  # type: ignore[type-arg]
+    """Verifica JWT e retorna payload. Levanta HTTPException 401 em caso de falha."""
+    try:
+        return verify_token(token, expected_typ="access")
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "Token invalido."},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+def require_dpo_role(request: Request) -> dict:  # type: ignore[type-arg]
+    """Dependency: JWT access token com claim dpo=True obrigatorio.
+
+    Retorna o payload do JWT (contendo sub, dpo, etc).
+
+    Raises:
+        HTTPException 401: token ausente, invalido, ou sem claim dpo=True.
+    """
+    token = _extract_bearer_token(request)
+    payload = _verify_jwt_payload(token)
+    if not payload.get("dpo"):
+        _log.warning(
+            "DPO role negado: sub=%s dpo=%s",
+            payload.get("sub"),
+            payload.get("dpo"),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"erro": "FORBIDDEN", "mensagem": "Requer perfil DPO."},
+        )
+    return payload
+
+
+def _require_jwt_payload(request: Request) -> dict:  # type: ignore[type-arg]
+    """Dependency: valida Bearer JWT (sem exigir role especifica).
+
+    Retorna payload do JWT. Usado como base para require_cliente_or_dpo.
+    """
+    token = _extract_bearer_token(request)
+    return _verify_jwt_payload(token)
+
+
+def require_cliente_or_dpo(
+    request: Request,
+    cliente_id: int,
+    payload: dict = Depends(_require_jwt_payload),  # type: ignore[type-arg]
+) -> dict:  # type: ignore[type-arg]
+    """Dependency: JWT valido com sub==cliente_id OU claim dpo=True.
+
+    Permite que o titular acesse seus proprios dados OU que o DPO acesse
+    qualquer dado (LGPD art. 41 — encarregado).
+
+    Args:
+        cliente_id: ID do titular (extraido da URL path).
+        payload: payload do JWT (injetado via Depends).
+
+    Raises:
+        HTTPException 403: token valido mas nao eh o titular nem DPO.
+    """
+    sub = payload.get("sub")
+    is_dpo = payload.get("dpo") is True
+
+    # sub pode ser str (UUID) ou int — normaliza
+    sub_matches = str(sub) == str(cliente_id)
+    if not sub_matches and not is_dpo:
+        _log.warning(
+            "Acesso negado: sub=%s cliente_id=%s dpo=%s",
+            sub,
+            cliente_id,
+            is_dpo,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "erro": "FORBIDDEN",
+                "mensagem": "Acesso restrito ao titular ou DPO.",
+            },
+        )
+    return payload

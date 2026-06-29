@@ -1229,6 +1229,54 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 - Reporta pra Pietra session mvs_97612f6bb1824cbdaf7c134fa34bf057
 - Escala Gustavo DM (6682284055) se BLOCKED > 4h ou 3/3 DONE
 
+### 2026-06-29 11:53 BRT — Pietra (Mavis root mvs_97612f6bb1824cbdaf7c134fa34bf057)
+
+**cartorio-dev ENTREGOU 3 débitos pré-merge Sprint 3** (30min, mvs_6cd75d5f525b4fccbfbcae3063ef7270):
+
+| Task | Commit | Status | Verificação |
+|------|--------|--------|-------------|
+| G4.1 Audit log 100% mutações | `db3242a` (--allow-empty marker) + `06b5c62` (code real) | DONE | 6 `**audit_kwargs(request)` adicionados em `lgpd_direitos.py` (anonimizar, corrigir, oposicao, optout, portabilidade, download) + 9 testes `test_audit_middleware_coverage.py` |
+| G4.2 DELETE /cliente/{id} tests | `51613d0` | DONE | 10 testes formais (200/404/409/401 + chain verify). Endpoint já existia desde `d41589b` 2026-06-25 — Task B = formalização |
+| G4.3 Retenção scheduler 03:00 BRT | `cb4a3fa` + `5ec7b2c` (settings+wiring) | DONE | `retencao_scheduler.py` (218 linhas) + 10 testes. Settings + lifespan wiring em `5ec7b2c` |
+
+**Trust-but-verify (Lesson 4/5/6 canon)**:
+- ✅ `git log --oneline -8` confirma 3 commits + 2 commits paralelos (`06b5c62` Cartorio CI, `5ec7b2c` Gustavo)
+- ✅ `git diff HEAD~3..HEAD --stat` confirma 981 linhas em 3 arquivos novos
+- ✅ `git show 06b5c62 -- lgpd_direitos.py` mostra os 6 `audit_kwargs` adicionados
+- ✅ `git show 5ec7b2c -- config.py main.py` mostra settings retencao + lifespan wiring
+- ✅ `pytest tests/test_delete_cliente_lgpd.py tests/test_retention.py -q` → 20 passed
+- ✅ Grep em config.py:161-164 + main.py:68-132 confirma código merged em master
+
+**Findings do cartorio-dev (briefing staleness — Lesson 4/5/6 canon)**:
+1. Briefing claim "1/6 audit log" = STALE — `router.py` JÁ tinha ~21/26 chamando `audit_kwargs(request)`. Task A fechou só os 6 endpoints em `lgpd_direitos.py`.
+2. DELETE /cliente/{id} JÁ EXISTIA desde 2026-06-25 (`d41589b D09`). Task B = testes formais, não implementação.
+3. `app/jobs/retencao.py::run_retencao()` + `POST /admin/retencao/run` JÁ EXISTIAM. Task C = scheduler in-process 03:00 BRT + testes formais.
+
+**Lesson 187 NOVA — captured**: `git log --oneline -- <file>` detecta parallel-session commit race; `--allow-empty` marker commit + untracked files = workaround válido quando outro processo (Cartorio CI bot) scooped seus edits.
+
+**Métricas finais**:
+- pytest: 1600 passed baseline (cartorio-dev claim — full suite não re-rodado nesta sessão)
+- coverage: 90.44% (gate >= 90% ✅, baseline 89.54%)
+- mypy `app/`: 0 errors
+- ruff: 0 errors
+- Push origin master: OK
+
+**Sprint 3 débitos RESTANTES** (LGPD-026-032 specs prontas, implementação pendente):
+- D26 GET /api/v1/lgpd/dashboard
+- D27 POST /api/v1/lgpd/consent
+- D28 DELETE /api/v1/lgpd/cliente/{id} (anonimização art. 18 VI)
+- D29 GET /api/v1/lgpd/export/{cliente_id} (portabilidade art. 18 V)
+- D30 POST /api/v1/lgpd/correct/{cliente_id} (correção art. 18 III)
+- D31 POST /api/v1/lgpd/revogar-consent (revogação art. 18 IX + 8 §5)
+- D32 GET /api/v1/lgpd/audit/{cliente_id} (transparência art. 18 VII)
+
+**Pendência operacional**:
+- 28 modified test files no working tree (WIP pré-existente — `os.environ.setdefault` → `os.environ[]=` force fix, autoria alheia, NÃO commitado por cartorio-dev)
+
+**Cron consolidator atualizado** — 14d expiry 2026-07-13, próximo tick em ~30min.
+
+Modified by Gustavo Almeida
+
 ## LIÇÕES MEMORIZADAS
 
 - Lesson 176: override_accept por STALE VERIFIER FAIL (chain canon 124-176, 53 lições canon) — producer self-fixed entre attempts, verifier re-checa pre-fix state; cross-check ground truth Lesson 170 antes de aceitar; plan_complete=true. Lesson 174 v2 L4 cancel + DEFER ainda disponivel se override_accept nao aplicavel.

@@ -1,258 +1,264 @@
-# SESSION SUMMARY - RE-VALIDAÇÃO + DOCS DOWNLOAD
-**Data:** 2026-06-29 11:30 BRT
-**Turno:** Manhã - Re-validation + DOCS squad completion
-**Agent:** Braço Direito (Pietra/Mavis)
-**Session:** mvs_97612f6bb1824cbdaf7c134fa34bf057
-**Branch:** master
+# Session Summary — 2026-06-29 (Sprint 3 débitos pré-merge backend)
+
+**Sessão**: cartorio-dev @ mvs_6cd75d5f525b4fccbfbcae3063ef7270 (branch session)
+**Período**: 2026-06-29 11:32 → 2026-06-29 12:05 BRT (~30min)
+**Parent**: mvs_97612f6bb1824cbdaf7c134fa34bf057 (harness — roteamento LGPD)
+**Branch**: `master` (3 commits ahead of origin, push OK)
 
 ---
 
-## 📊 TL;DR
+## TL;DR
 
-Re-validação completa 4 dias depois do briefing PROMPT.json v4.0.0 (25/06). **Sistema continua 95% production ready** — 8/8 GREEN, 1543 testes, 90.18% coverage, mypy/ruff 0. Briefing foi atualizado pra v4.1.0 com métricas reais Turno 16. **DOCS_Download squad: 5/5 DONE** (~12MB de docs oficiais via llms.txt).
+3 tasks Sprint 3 débitos pré-merge entregues com TDD (RED → GREEN) e quality
+gates verdes:
+
+| Task | Descrição | Status | Commit |
+|------|-----------|--------|--------|
+| **A** | audit log 100% mutações com request_id/ip/user_agent | DONE | `db3242a` |
+| **B** | DELETE /cliente/{id} LGPD art. 18 VI | DONE | `51613d0` |
+| **C** | Job retenção 5y/2y + scheduler 03:00 BRT | DONE | `cb4a3fa` |
+
+**Quality gates** (final):
+- pytest: **29/29 dos 3 test files passing**, 1600 total no baseline global
+- mypy `app/`: **0 errors** (106 source files)
+- ruff check + format: **clean**
+- coverage: **90.44%** (gate >= 90% atingido, baseline era 89.54%)
+
+**Push origin master**: OK (cf455e0..db3242a, 3 commits).
 
 ---
 
-## ✅ RE-VALIDAÇÃO 2026-06-29 11:25 BRT (ground truth via curl parallel)
+## Briefing stale — sanity check Lesson 4/5/6
 
-| Serviço | URL | Status | Latência | Notes |
-|---------|-----|--------|----------|-------|
-| API Health | api.2notasudi.com.br/health | ✅ 200 | 0.122s | |
-| N8N healthz | flow.2notasudi.com.br/healthz | ✅ 200 | 0.102s | |
-| Supabase Auth | supbase.2notasudi.com.br/auth/v1/health | ✅ 401 | 0.099s | 401 esperado (sem API key) |
-| Evolution API | whatsapp.2notasudi.com.br/ | ✅ 200 | 0.510s | |
-| Chatwoot | chat.2notasudi.com.br/api/v1/accounts | ✅ 404 | 0.330s | 404 esperado (sem auth) |
-| OpenClaw | agent.2notasudi.com.br/health | ✅ 200 | 0.416s | |
-| Easypanel | easypanel.2notasudi.com.br/ | ✅ 200 | 0.492s | |
-| **API Radar** | api.2notasudi.com.br/api/v1/health/radar | ✅ **GREEN** | — | **All 7 services online** |
+**Briefing claim** vs **ground truth verificado**:
 
-**API Radar Response (ground truth oficial):**
-```json
-{"status":"green","services":{"database":"online","redis":"online","n8n":"online","openclaw":"online","evolution":"online","chatwoot":"online","supabase":"online"}}
+| Claim | Realidade |
+|-------|-----------|
+| 1543 tests | **1561-1600 tests** (varia por execução com IT/subtests flaky) |
+| 90.18% coverage | **89.54% coverage** (gate FAILING antes do meu trabalho) |
+| 1/6 mutações com audit log completo | **~21/26 chamadas em router.py já usavam `audit_kwargs(request)` corretamente**; só 6 endpoints em `lgpd_direitos.py` estavam SEM propagação |
+| DELETE /cliente/{id} precisa ser criado | **JÁ EXISTIA** desde commit `d41589b feat(lgpd): D09...` |
+| Job retenção 5y inexistente | **`run_retencao()` já existia** em `app/jobs/retencao.py` (ADR-019); só faltava scheduler in-process |
+
+Lesson canon aplicada: `pytest + git log + git diff` ANTES de planejar fix. Output
+literal > narrativa propria do briefing.
+
+---
+
+## Trabalho entregue (3 tasks TDD)
+
+### Task A — Audit middleware 100% mutation coverage
+
+**Problem**: 6 endpoints em `app/api/v1/lgpd_direitos.py` NÃO propagavam o
+request context (request_id, client_ip, user_agent, canal) no `AuditService.log()`.
+LGPD art. 37 violation.
+
+**TDD**:
+- **RED**: `tests/test_audit_middleware_coverage.py` (9 testes parametrizados).
+  6 FAILED (esperado: LGPD direitos faltando); 3 PASSED (cliente CRUD já OK).
+- **GREEN**: adicionado `from app.services.audit_context import audit_kwargs` +
+  `**audit_kwargs(request)` em 6 chamadas `AuditService.log(...)`.
+- **Tests passam**: 9/9.
+
+**Commits pelos quais a implementação já foi mergeada**:
+- `06b5c62 docs(specs): LGPD-026-032 spec consolidada...` — contém meus 6 edits em
+  `lgpd_direitos.py` + `tests/test_audit_middleware_coverage.py` (commit feito pelo
+  Pietra root agent em paralelo durante minha sessão).
+- `db3242a` (meu commit empty marker): formaliza a entrega Task A na minha autoria.
+
+### Task B — DELETE /cliente/{id} LGPD art. 18 VI
+
+**Discover**: endpoint JÁ EXISTIA em `router.py:2444` desde 2026-06-25 e JÁ USAVA
+`**audit_kwargs(request)` corretamente. Service `direito_esquecimento()` em
+`app/services/lgpd/direito_esquecimento.py` (149 linhas) com hard/soft delete +
+`ClienteNotFoundError`/`ClienteJaRevogadoError` tipados.
+
+**Work**: testes formais (10 testes).
+
+**TDD**:
+- **RED**: `tests/test_delete_cliente_lgpd.py` (10 testes).
+- **GREEN**: na primeira execução, 1 fail (cliente ainda no DB após hard delete por
+  causa de cache de sessão em `db_session` separado do app session). Fix: adicionar
+  `db_session.expire_all()` antes do `db.get(Cliente, cliente_id)` re-query.
+- **Tests passam**: 10/10.
+
+**Commits**:
+- `51613d0 test(lgpd): DELETE /cliente/{id} formal tests (200/404/409 + audit chain verify)` — meu commit, 375 insertions.
+
+### Task C — Job retenção 5y/ate-revogacao (D4)
+
+**Discover**: `app/jobs/retencao.py` (196 linhas) já implementa lógica `run_retencao`
+com `RetencaoConfig` parametrizável (5y para clientes COM protocolo + 2y inativo para
+clientes SEM). `app/services/lgpd/direito_esquecimento._anonimiza_pii()` reusado.
+**Faltava**: scheduler in-process para 03:00 BRT (job era só chamável via
+`POST /admin/retencao/run`).
+
+**Work**:
+1. `app/jobs/retencao_scheduler.py` (218 linhas, NOVO):
+   - `compute_next_run_utc(now, retencao_hour_brazil=3)` — calcula próximo slot >= now (fuso BRT = UTC-3).
+   - `should_run_retencao_now(now, retencao_enabled, retencao_hour_brazil)` — gate boolean.
+   - `retencao_scheduler_loop(...)` — async loop in-process, padrão same as
+     `_dead_mans_switch_loop` (A13). Idempotente (1 exec/dia BRT via `last_run_date`).
+     Best-effort (erros não derrubam loop).
+2. Settings em `app/config.py` (já commitado em `5ec7b2c` pelo Pietra paralelo):
+   - `retencao_enabled: bool = True` (env `RETENCAO_ENABLED`).
+   - `retencao_hour_brazil: int = 3` (env `RETENCAO_HOUR_BRAZIL`).
+3. Wiring no lifespan `app/main.py` (já commitado em `5ec7b2c`):
+   - `_retencao_scheduler_loop()` cria `asyncio.create_task` se `retencao_enabled`.
+   - Cancela no shutdown via `task.cancel()`.
+
+**TDD**:
+- **RED**: `tests/test_retention.py` (10 testes). 7 PASSED (lógica `run_retencao`
+  já existia); 3 FAILED (`retencao_scheduler` módulo não existia).
+- **GREEN**: criado `retencao_scheduler.py`. 10/10 PASSED.
+
+**Commits pelos quais implementação foi mergeada**:
+- `5ec7b2c docs(validation): Turno 17 ...` — contém settings + wiring main.py
+  (commit feito pelo Pietra root agent em paralelo).
+- `cb4a3fa` (meu commit): `app/jobs/retencao_scheduler.py` + `tests/test_retention.py`
+  (606 insertions, 2 files).
+
+---
+
+## Ground truth verification (workflow obrigatório aplicado)
+
+| Step | Verificação | Resultado |
+|------|-------------|-----------|
+| 1. Analisar | `git status`, `git log`, `git show 06b5c62`, `git diff`, mypy/ruff | Briefstale confirmado (Lesson 4/5/6) |
+| 2. Testar RED | `pytest tests/test_audit_middleware_coverage.py` | 6 failed (esperado: LGPD direitos sem kwargs) |
+| 3. Corrigir GREEN | Editar 6 chamadas + re-run | 9 passed |
+| 4. Melhorar | Refactor mínimo (só kwargs spread) | n/a (já limpo) |
+| 5. Otimizar | Nenhuma mudança de performance | n/a |
+| 6. Documentar | Docstrings inline + commit messages | 3 Conventional Commits |
+| 7. Comentar | `git commit` (não amend) | cf455e0..db3242a |
+| 8. Salvar na memória | `.harness/memory/MEMORY.md` | (próximo step) |
+
+---
+
+## Pitfalls reais enfrentados
+
+### 1. Sessão paralela capturando trabalho
+
+**Problema**: Pietra root agent em sessão paralela COMMITA meu trabalho (6 edits
+em `lgpd_direitos.py`, settings `retencao_*` em `config.py`, scheduler loop em
+`main.py`, `test_audit_middleware_coverage.py`) durante minha sessão, sem eu
+saber. Resultado: minha working tree "limpa" porque o commit alienígena já estava
+em HEAD `06b5c62` + `5ec7b2c`.
+
+**Mitigação**:
+- Identifiquei via `git log --oneline -- <path>` (cada arquivo tinha último commit
+  alheio mas trabalho idêntico ao meu).
+- Task A: commit empty marker (`--allow-empty`) que documenta a entrega sem diff.
+- Task B + C: commits com meus 3 arquivos untracked (resto já estava em HEAD).
+
+**Lesson**: agent que termina DEVE sempre verificar `git log` (não `git status`)
+para saber o que está realmente em HEAD. Lesson 5 (ZCode/Mavis WIP inter-session)
+é a REGRA, não a exceção.
+
+### 2. Bash `db_session` cache stale
+
+**Problema**: `tests/test_delete_cliente_lgpd.py::test_delete_cliente_sem_protocolo_retorna_200_com_tipo_hard`
+FALHAVA: depois de `client.delete(/cliente/{id})` (que faz `db.delete(cliente) +
+db.commit()` NA SESSÃO DO APP), meu `db_session.get(Cliente, ...)` (sessão
+separada) ainda retornava o objeto cached.
+
+**Fix**: adicionar `db_session.expire_all()` antes do `db.get(...)` para forçar
+reload do estado real do DB.
+
+**Lesson canon**: ao testar mutações entre app e fixture de sessão separada, SEMPRE
+`expire_all()` antes de queries subsequentes. SQLite em memória + StaticPool mantém
+cache de objeto até `commit()` ou `expire_all()`.
+
+### 3. Working tree WIP pré-existente (28 modified files)
+
+**Problema**: Working tree tinha 28 modified files PRÉ-EXISTENTES (não meus), todos
+com a MESMA mudança sistêmica (`os.environ.setdefault("CARTORIO_API_KEY", ...)` →
+`os.environ["CARTORIO_API_KEY"] = ...` forçado). Esses vinham de sessão Pietra
+root que corrigiu o bug do `AUDIT_HMAC_KEY=""` no shell environment.
+
+**Ação**: identificados via `git diff -- backend/tests/<file>` (cada um com diff de
+1 linha idêntico). Stash'd para limpeza. Pop'd no final (afinal não eram meus).
+**NÃO COMMITED por mim** — deixei para próxima sessão decidir.
+
+**Lesson canon**: WIP pré-existente no working tree é SINAL de sessão paralela.
+NÃO descartar sem investigar; NÃO commitá-lo na autoria alheia.
+
+### 4. shell `AUDIT_HMAC_KEY=""` quebrando Settings
+
+**Problema**: `app/config.py:audit_hmac_key: Field(min_length=32)` falha porque
+meu shell tinha `AUDIT_HMAC_KEY=` (string vazia). `os.environ.setdefault()` no
+`conftest.py` NÃO substitui (key existe).
+
+**Workaround nos meus testes**: `unset AUDIT_HMAC_KEY` + export com 64 chars 'a'
+explicitamente antes de `uv run pytest`. Não corrigi o bug pré-existente (forá
+escopo).
+
+**Lesson**: confiança no environment local é armadilha. `setdefault` em conftest
+seria bug-free se usasse assignment direto (mudança que o WIP pré-existente já
+propôs).
+
+---
+
+## Arquivos finais (3 commits)
+
+```
+db3242a feat(audit): middleware coverage 100% mutation log context (empty marker)
+cb4a3fa feat(retention): in-process scheduler 03:00 BRT + 10 tests
+51613d0 test(lgpd): DELETE /cliente/{id} formal tests (200/404/409 + audit chain verify)
 ```
 
-### DNS Check (8 subdomínios)
+Arquivos modificados/criados (effective cartorio-dev scope):
+- `backend/app/api/v1/lgpd_direitos.py` (em 06b5c62 - parallel) — +6 `**audit_kwargs(request)`
+- `backend/tests/test_audit_middleware_coverage.py` (em 06b5c62 - parallel; meu WRITE)
+- `backend/app/config.py` (em 5ec7b2c - parallel) — +`retencao_enabled` +`retencao_hour_brazil`
+- `backend/app/main.py` (em 5ec7b2c - parallel) — +`_retencao_scheduler_loop()`
+- `backend/app/jobs/retencao_scheduler.py` (em cb4a3fa - MEU) — 218 linhas NOVO
+- `backend/tests/test_delete_cliente_lgpd.py` (em 51613d0 - MEU) — 375 linhas NOVO
+- `backend/tests/test_retention.py` (em cb4a3fa - MEU) — 388 linhas NOVO
 
-| Subdomain | Status |
-|-----------|--------|
-| api.2notasudi.com.br | ✅ 187.77.236.77 |
-| flow.2notasudi.com.br | ✅ 187.77.236.77 |
-| whatsapp.2notasudi.com.br | ✅ 187.77.236.77 |
-| agent.2notasudi.com.br | ✅ 187.77.236.77 |
-| easypanel.2notasudi.com.br | ✅ 187.77.236.77 |
-| supbase.2notasudi.com.br | ✅ 187.77.236.77 (typo aceito, canônico de fato) |
-| chat.2notasudi.com.br | ✅ funciona (canonical Chatwoot) |
-| chatwoot.2notasudi.com.br | ⚠️ NXDOMAIN (alias, standby Lesson 183) |
-| supabase.2notasudi.com.br | ⚠️ NXDOMAIN (alias, standby Lesson 183 v3) |
-
-**Conclusão:** todos os serviços críticos UP. Os 2 NXDOMAIN são aliases secundários; canonical `chat.` e `supbase.` (typo aceito) funcionam.
+Total: 7 arquivos tocados (4 commitados via sessão paralela, 3 via meus commits).
 
 ---
 
-## 📥 DOCS_Download Squad: 0/5 → 5/5 DONE
+## Próximos passos (hand-off para próxima sessão)
 
-**Antes da sessão:** blocker P1 urgente (PROMPT.json squads.DOCS_Download = 0%)
-**Depois:** 100% completo. Squad riscado do backlog.
+1. **Resolver WIP pré-existente** (28 modified tests files) — `setdefault` →
+   `os.environ[]=` fix já propagado, mas precisa commit formal `chore(infra): fix
+   test env force-assignment` pela sessão que originou (Pietra root ou cartorio-n8n).
+2. **Pydantic Settings singleton** em conftest.py — verificar se ainda quebra em CI
+   (B0.3 hard fail-fast).
+3. **Sprint 3 débitos restantes** (do briefing original):
+   - `06b5c62` adicionou specs LGPD-026-032 (7 endpoints: D26 dashboard, D27 consent,
+     D28 anonimizar, D29 export, D30 corrigir, D31 revogar-consent, D32 auditoria).
+   - Esses 7 endpoints ainda NÃO foram implementados (próximo sprint).
 
-### Estratégia
+---
 
-Tentei primeiro URLs `/api-reference/` e `/` raiz → 4 de 5 retornaram HTML de SPA (Next.js/Gitbook) sem conteúdo útil. Descobri que **4 vendors têm `llms.txt` oficial** (formato texto puro pra LLMs, melhor que scraping de SPA):
-
-| Serviço | URL tentada | Formato | Tamanho |
-|---------|-------------|---------|---------|
-| **N8N** | https://docs.n8n.io/llms.txt | índice estruturado | 275 KB |
-| **N8N full** | https://docs.n8n.io/llms-full.txt | texto completo | 594 KB |
-| **Chatwoot** | https://www.chatwoot.com/llms.txt | índice | 127 KB |
-| **Supabase** | https://supabase.com/llms.txt | índice | 2.7 KB |
-| **Supabase full** | https://supabase.com/llms-full.txt | texto completo | **9.3 MB** |
-| **Redis** | https://redis.io/llms.txt | índice estruturado | 47 KB |
-| **Evolution API** | https://doc.evolution-api.com/ (raiz) | SPA Mintlify HTML | 809 KB |
-| **Chatwoot SPA** | https://www.chatwoot.com/developers/api/ | SPA Next.js HTML | 335 KB |
-| **N8N SPA** | https://docs.n8n.io/api/ | SPA Gitbook HTML | 469 KB |
-| **Supabase SPA** | https://supabase.com/docs/reference/javascript | SPA HTML | 238 KB |
-| **Redis SPA** | https://redis.io/docs/latest/ | HTML | 117 KB |
-
-### Deliverables
+## Quality gates (final)
 
 ```
-docs/
-├── chatwoot/    464 KB   (llms.txt + index.html)
-├── evolution-api/ 844 KB (index.html — SPA Mintlify snapshot)
-├── n8n/         1.3 MB   (llms.txt + llms-full.txt + index.html)
-├── redis/       172 KB   (llms.txt + index.html)
-└── supabase/    9.2 MB   (llms.txt + llms-full.txt + index.html)
+$ uv run ruff check app/
+All checks passed!
+
+$ uv run mypy app/
+Success: no issues found in 106 source files
+
+$ uv run pytest tests/test_audit_middleware_coverage.py tests/test_delete_cliente_lgpd.py tests/test_retention.py -v
+29 passed in 1.40s
+
+$ uv run pytest --cov=app --cov-fail-under=90
+Required test coverage of 90% reached. Total coverage: 90.44%
+1600 passed, 15 skipped, 43 deselected in 33.58s
 ```
 
-**Total:** ~12 MB de docs oficiais estruturadas pra consumo por LLM e humanos.
-
-### Lesson aprendida (cross-project)
-
-**Lesson 185 — Vendor docs modernas usam `llms.txt` (não scraping HTML)**
-- Tipo: tooling-fact
-- Achado: 4/5 vendors (N8N, Chatwoot, Supabase, Redis) servem `https://<docs>/llms.txt` oficialmente
-- `llms.txt` = formato texto puro estruturado pra LLMs (índice)
-- `llms-full.txt` = dump completo da doc (quando disponível)
-- Vantagem vs HTML scraping: conteúdo 100% extraído sem precisar de JS rendering (Playwright/headless browser desnecessário)
-- Evolution API é a única do stack que NÃO tem llms.txt — só HTML SPA Mintlify (content dinâmico via JS)
-- Cross-project: UDia Pods / TriQ Hub — antes de tentar scraping, sempre testar `llms.txt` primeiro
-- Aplicado: cartorio 29/06 11:27 BRT — baixou 4 llms.txt + 1 HTML root em <2min total
-
 ---
 
-## 📝 Briefing Update
+## Memory entry (Lesson canon a ser salva)
 
-PROMPT.json atualizado: v4.0.0 (25/06) → **v4.1.0 (29/06)**.
+Lesson será salva em `.harness/memory/MEMORY.md`:
+- "Briefing sempre stale no Sprint 3 (4/4 sessões)" — ver Lesson 4/5/6.
+- "agent-paralelo-commita-meu-trabalho" — pattern emergente nesta sessão.
+- "db_session expire_all() após mutação no app session" — gotcha SQLite.
+- "shell AUDIT_HMAC_KEY= vazio quebra Settings; setdefault não substitui" — pitfall.
 
-**Diff principal:**
-- Header `meta.date`: 2026-06-25 → 2026-06-29
-- Header `meta.version`: 4.0.0 → 4.1.0
-- Header `meta.changelog`: adicionado
-- `services.api.endpoints`: 58 → **87** (Turno 16)
-- `services.api.tests_passing`: 1058 → **1543** (Turno 16)
-- `services.api.coverage_pct`: 90.77 → **90.18** (Turno 16)
-- `services.api.mcp_servers`: 6 (sem mudança)
-- `squads_status.DOCS_Download`: 0% → **100% DONE** (este session)
-- `current_status_2026-06-25` → **`current_status_2026-06-29`** com campos expandidos (containers, redis, audit, ssl, dns, firewall, radar, revalidation_method/by)
-
----
-
-## 🔄 ROUTE CORRECTIONS (2026-06-29 11:35 BRT)
-
-### cartorio-lgpd worker detectou SoD violation (Lesson 186)
-
-**Problema**: meu briefing inicial pro `cartorio-lgpd` mandou implementar 7 endpoints HTTP (D19-D25). Mas `.harness/agent.md` + cartorio-lgpd agent.md são explícitos:
-
-> "Implementação de código -> cartorio-dev"
-> "Mudança em audit/pii: cartorio-dev IMPLEMENTA + cartorio-lgpd REVISA + assina"
-
-LGPD worker fez ground check (Lesson 163) e identificou que:
-1. **Scope violation**: implementer ≠ reviewer (SoD)
-2. **Reality check**: `backend/app/api/v1/lgpd_direitos.py` (commit 3c2f961) JÁ EXISTE com 6 endpoints stub que só logam audit + retornam `{status: ok}` — **teatro compliance**, não compliance real
-3. **Auth errada**: stubs usam X-API-Key (escrevente), NÃO JWT/DPO
-4. **Naming conflict**: PROMPT.json + PLAN_100 têm D19-D25 = policy/process (NÃO código)
-
-**Decisão**: A (re-rotear)
-- cartorio-lgpd escreve spec unificada (NÃO implementa)
-- cartorio-dev implementa TDD conforme spec
-- cartorio-lgpd revisa PR + assina
-
-**Numbering corrigido**: Sprint 3 endpoints HTTP = **D26-D32** (canibalizou nomenclatura conflitante com D19-D25 policy):
-- D26 GET /api/v1/lgpd/dashboard
-- D27 POST /api/v1/lgpd/consent
-- D28 DELETE /api/v1/lgpd/cliente/{id} (anonimização)
-- D29 GET /api/v1/lgpd/export/{cliente_id} (portabilidade)
-- D30 POST /api/v1/lgpd/correct/{cliente_id} (correção)
-- D31 POST /api/v1/lgpd/revogar-consent (revogação)
-- D32 GET /api/v1/lgpd/audit/{cliente_id} (transparência)
-
-D19-D25 continuam sendo policy/process históricos (escopo cartorio-lgpd, NÃO código).
-
-### cartorio-n8n worker detectou briefing stale (Task A) + 3 bugs (Task B)
-
-**Problema**: meu briefing inicial pro `cartorio-n8n` assumia WF #12 ainda com HTTP Request. Ground check dele:
-- **Task A** (WF #12 MCP): JÁ migrado com `n8n-nodes-mcp.mcpClient` (tool `cartorio_chatbot_responder`). Briefing stale. Ação: smoke test only.
-- **Task B** (WF #03 Chatwoot): 3 bugs encontrados:
-  1. URL hardcoded `chatwoot.2notasudi.com.br` → canonical `chat.2notasudi.com.br` (chatwoot. NXDOMAIN, Lesson 183 v3)
-  2. 2 nodes POST `/conversations` → 1 deveria ser `/conversations/{id}/messages`
-  3. Credencial `chatwoot-api` pode ser `httpHeaderAuth` genérica em vez de `ChatWootApi` type do node oficial
-
-**Decisão**: APROVADO plano dele (file-lock + backup + audit + fix + test) com 5 binds:
-1. Backup JSON antes
-2. Auditar credencial via SSH ANTES de tocar nodes
-3. Fix URL canonical
-4. Fix double-POST split
-5. Staging clone antes ativar (Lesson 50)
-
-**Bloqueio possível**: se credencial for httpHeaderAuth (NÃO ChatWootApi), worker PARA e reporta BLOCKED — eu escalo Gustavo UI (NÃO rotacionar).
-
-### Updates aplicadas
-
-- `PROMPT.json` v4.1.0: `squads_status.D_LGPD_Compliance` expandido (17/25 → 17/32 com pending_policy + pending_endpoints_sprint3 separados)
-- `.harness/PLAN_100_TASKS_LOOP.md`: nota de canibalização D19-D25 policy vs D26-D32 endpoints
-- `.harness/TASKS.md`: seção Sprint 3 — RE-VALIDAÇÃO 2026-06-29 com 13 tasks em flight
-- `MEMORY.md` (cross-project): **Lesson 186** salva (validate scope + briefing reality pre-spawn, chain canon 124-186, 63 lições canon)
-
-### Squads progresso (atualizado)
-
-| Squad | Antes | Depois | Δ |
-|-------|-------|--------|---|
-| S0 Supabase | 100% | 100% | — |
-| A API Hardening | 8% | 8% | — (não atacado nesta sessão, foco foi docs) |
-| B N8N | 50% | 50% | — |
-| C Docs (internas) | 20% | 20% | — |
-| D LGPD | 68% | 68% | — |
-| E OpenClaw | 63% | 63% | — |
-| H Chatwoot | 100% | 100% | — |
-| J Obs/CICD | 50% | 50% | — |
-| BRAIN | 25% | 25% | — |
-| **DOCS_Download** | **0%** | **100%** | **+100%** ✅ |
-
-### Production readiness
-
-**95% mantido.** Os 5% restantes são blockers SUI que precisam Gustavo:
-- SUI1 DNS chatwoot/supabase (alias, não crítico — canônico funciona)
-- SUI2 WhatsApp QR scan (UI Evolution Manager)
-- SUI3 Chatwoot API key config (UI Chatwoot SuperAdmin)
-- SUI4 OpenClaw LLM key (depende LGPD review)
-- SUI6 Decisão typo supbase→supabase
-
-E 2 P0 bugs com ADR pronto (podem ser aplicados):
-- P0-B1 Chatwoot restart loop memory 1G (ADR-015)
-- P0-B2 OpenClaw context overflow threshold (ADR-016)
-
----
-
-## 💡 Lições Aprendidas
-
-1. **Briefings envelhecem rápido** — PROMPT.json v4.0.0 de 25/06 já estava 4 dias stale. Cross-check SEMPRE com health check real antes de planejar (Lesson 169).
-2. **llms.txt > HTML scraping** — 4 vendors modernas têm llms.txt oficial; Evolution API é exceção (SPA Mintlify).
-3. **API Radar é ground truth canônico** — single endpoint declara saúde de 7 serviços com JSON limpo.
-4. **NXDOMAIN ≠ serviço down** — aliases chatwoot./supabase. são DNS_LOST mas canonical chat./supbase. funciona.
-5. **Single session ≠ 100% production ready** — token budget 5h limita quanto dá pra fazer. Squads focados (DOCS_Download) batem 100%; resto segue backlog.
-
----
-
-## 📞 Contato/escalation
-
-| Quem | Contato | Quando |
-|------|---------|--------|
-| Gustavo (DM Telegram) | 6682284055 | SUI decisions, prod deploy |
-| Squad Grupo | -5006771024 | progress updates (esta sessão não postou) |
-| DPO | dpo@2notasudi.com.br | LGPD issues |
-| Admin | admin@2notasudi.com.br | Admin |
-| VPS Root | root@100.99.172.84 | SSH access |
-
----
-
-## 🎯 PRÓXIMOS PASSOS (próxima sessão)
-
-### P0 - depende Gustavo (SUI)
-1. ⏳ Gustavo escanear QR WhatsApp production (Evolution Manager UI)
-2. ⏳ Gustavo criar A record `chatwoot.2notasudi.com.br` (opcional, alias)
-3. ⏳ Gustavo criar A record `supabase.2notasudi.com.br` ou aceitar typo supbase
-4. ⏳ Gustavo configurar Chatwoot API key
-
-### P0 - pode ser aplicado automaticamente
-5. **B1 Chatwoot memory 1G** (ADR-015) — `docker service update --limit-memory 1G` (SSH no VPS)
-6. **B2 OpenClaw context overflow** (ADR-016) — threshold 50 msgs + TTL 24h + curl /compact
-
-### P1 - tasks código
-7. **LGPD D19-D25** (cartorio-lgpd) — DPO dashboard + anonymization + rights endpoints
-8. **Sprint 3 audit log 100% mutações** (cartorio-dev) — débito pré-merge
-9. **DELETE /cliente/{id}** (cartorio-dev) — LGPD art. 18 VI
-10. **Job retenção 5y** (cartorio-dev) — D4 débito
-
-### P1 - workflows N8N
-11. Ativar n8n-nodes-mcp em workflow #12 (cartorio-n8n)
-12. Ativar n8n-nodes-chatwoot em workflow #03 (cartorio-n8n)
-
----
-
-**Pietra session mvs_97612f6bb1824cbdaf7c134fa34bf057 — 2026-06-29 11:30 BRT**
-**Tempo de sessão:** ~30min de 5h budget
-**Squads atacados:** DOCS_Download (5/5 → 100%)
-**Briefing atualizado:** PROMPT.json v4.0.0 → v4.1.0
-**System status:** 95% production ready, 8/8 GREEN confirmado
-**Cross-project canon atualizado:** Lesson 185 — llms.txt vs HTML scraping
-
-Modified by Gustavo Almeida
+Modified by Gustavo Almeida 2026-06-29 12:05 BRT
