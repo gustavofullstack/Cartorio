@@ -167,6 +167,48 @@ class MetricsStore:
             labels={"wf_name": wf_name},
         )
 
+    # -------------------------------------------------------------------
+    # E07 — Agent/LLM metrics (tokens, latency, success)
+    # -------------------------------------------------------------------
+
+    def observe_agent_tokens(self, tokens_in: int, tokens_out: int, think_tokens: int = 0) -> None:
+        """Helper E07: histogram agent_tokens_total.
+
+        Args:
+            tokens_in: tokens de prompt consumidos
+            tokens_out: tokens de completion gerados
+            think_tokens: tokens de thinking (se disponivel)
+        """
+        self._make_metric_or_skip_test("agent_tokens_in_total", "histogram")
+        self.observe_histogram("agent_tokens_in_total", float(tokens_in))
+        self._make_metric_or_skip_test("agent_tokens_out_total", "histogram")
+        self.observe_histogram("agent_tokens_out_total", float(tokens_out))
+        if think_tokens:
+            self._make_metric_or_skip_test("agent_think_tokens_total", "histogram")
+            self.observe_histogram("agent_think_tokens_total", float(think_tokens))
+
+    def observe_agent_latency(self, latency_seconds: float) -> None:
+        """Helper E07: histogram agent_latency_seconds.
+
+        Args:
+            latency_seconds: tempo total da chamada ao LLM (segundos)
+        """
+        self._make_metric_or_skip_test("agent_latency_seconds", "histogram")
+        self.observe_histogram("agent_latency_seconds", latency_seconds)
+
+    def inc_agent_requests_total(self, provider: str, status: str) -> None:
+        """Helper E07: counter agent_requests_total{provider,status}.
+
+        Args:
+            provider: 'opencode_go' | 'openclaw' | 'openrouter'
+            status: 'success' | 'error' | 'rate_limited' | 'timeout'
+        """
+        self._make_metric_or_skip_test("agent_requests_total", "counter")
+        self.inc_counter(
+            "agent_requests_total",
+            labels={"provider": provider, "status": status},
+        )
+
     def set_n8n_wf_error_rate(self, wf_name: str, error_rate: float) -> None:
         """Helper B10: gauge n8n_wf_error_rate{wf_name} (0.0-1.0).
 

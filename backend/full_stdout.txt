@@ -1,0 +1,232 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/gustavoalmeida/projetos/Cartorio/backend
+configfile: pyproject.toml
+testpaths: tests
+plugins: asyncio-0.23.8, anyio-4.14.0, cov-7.1.0, hypothesis-6.155.7
+asyncio: mode=Mode.AUTO
+collected 1767 items / 1 skipped
+
+tests/integration/test_e1_s1_t7_e2e_evolution.py .............           [  0%]
+tests/integration/test_llm_output_scrub.py ..............                [  1%]
+tests/integration/test_opencode_go_no_pii.py ........                    [  1%]
+tests/smoke/test_infra_health.py ssssssssssssssssssssssssssss            [  3%]
+tests/smoke/test_whatsapp_e2e.py FFFFFFFF.                               [  4%]
+tests/test_a18_updated_at.py ..........                                  [  4%]
+tests/test_admin_pool_a15_endpoint.py ....                               [  4%]
+tests/test_agendamento.py .................                              [  5%]
+tests/test_agendamento_api.py ...                                        [  5%]
+tests/test_agendamento_b04.py ......................                     [  7%]
+tests/test_agendamento_cache.py ....................................     [  9%]
+tests/test_agendamento_metrics.py .......                                [  9%]
+tests/test_agent_health.py .....                                         [  9%]
+tests/test_alembic_setup.py ....ss                                       [ 10%]
+tests/test_api.py .............                                          [ 11%]
+tests/test_atendimento_cache.py .................                        [ 11%]
+tests/test_atendimentos_api.py .                                         [ 12%]
+tests/test_audit.py ......                                               [ 12%]
+tests/test_audit_a01_coverage.py ..........................              [ 13%]
+tests/test_audit_api.py ..                                               [ 13%]
+tests/test_audit_context.py ......                                       [ 14%]
+tests/test_audit_log_post.py ................                            [ 15%]
+tests/test_audit_middleware_coverage.py .........                        [ 15%]
+tests/test_audit_query.py ................                               [ 16%]
+tests/test_auth_jwt.py .....................                             [ 17%]
+tests/test_b0_3_sec_auth.py ...............                              [ 18%]
+tests/test_backup_v2.py ..............                                   [ 19%]
+tests/test_brain8_cross_session.py .................                     [ 20%]
+tests/test_brain_api.py ....                                             [ 20%]
+tests/test_cache_warming_a22.py .....                                    [ 20%]
+tests/test_chatwoot_canned_responses.py ......................           [ 22%]
+tests/test_chatwoot_handoff.py .....                                     [ 22%]
+tests/test_chatwoot_handoff_macros.py ..........................         [ 23%]
+tests/test_cliente_api.py ...                                            [ 24%]
+tests/test_cliente_get_endpoint.py ........                              [ 24%]
+tests/test_cliente_historico.py .........                                [ 25%]
+tests/test_config_api.py .....                                           [ 25%]
+tests/test_cpf_cnpj_a10.py ...................                           [ 26%]
+tests/test_crypto.py .............                                       [ 27%]
+tests/test_db_pool_a15.py .......                                        [ 27%]
+tests/test_db_pool_stats.py ......                                       [ 27%]
+tests/test_dead_mans_switch.py .........                                 [ 28%]
+tests/test_dead_mans_switch_a13.py .....                                 [ 28%]
+tests/test_dead_mans_switch_a13_3lvl.py ..................               [ 29%]
+tests/test_dead_mans_switch_jobs.py .................                    [ 30%]
+tests/test_delete_cliente_lgpd.py ..........                             [ 31%]
+tests/test_deps_auth.py ..............                                   [ 32%]
+tests/test_direito_esquecimento.py ........                              [ 32%]
+tests/test_dlq_a2.py .........                                           [ 32%]
+tests/test_dlq_retry_a12.py ..........                                   [ 33%]
+tests/test_documento_api.py .                                            [ 33%]
+tests/test_documento_upload.py ......                                    [ 33%]
+tests/test_emolumento.py ............                                    [ 34%]
+tests/test_emolumento_api.py ..                                          [ 34%]
+tests/test_emolumento_cache_a21.py ...........                           [ 35%]
+tests/test_emolumento_integration.py ...                                 [ 35%]
+tests/test_endpoints_extra.py ...................                        [ 36%]
+tests/test_evolution_hmac.py ......                                      [ 36%]
+tests/test_evolution_ingest.py ......                                    [ 37%]
+tests/test_fallback.py ...........                                       [ 37%]
+tests/test_health_backup.py ......                                       [ 38%]
+tests/test_health_backup_api.py ..                                       [ 38%]
+tests/test_health_backup_status_json_e1_s4_t2.py .....                   [ 38%]
+tests/test_health_integracoes.py .........                               [ 39%]
+tests/test_health_integracoes_api.py ..                                  [ 39%]
+tests/test_health_integration.py ......                                  [ 39%]
+tests/test_health_live_ready_a5.py ..                                    [ 39%]
+tests/test_health_radar.py ....                                          [ 39%]
+tests/test_health_radar_api.py ..                                        [ 40%]
+tests/test_idempotency.py ...............                                [ 40%]
+tests/test_idempotency_store.py ..........                               [ 41%]
+tests/test_integrations_api.py ..                                        [ 41%]
+tests/test_integrations_endpoint.py .............                        [ 42%]
+tests/test_ip_truncation.py ........                                     [ 42%]
+tests/test_lgpd_anonimizacao_d13.py .............................        [ 44%]
+tests/test_lgpd_api.py .....                                             [ 44%]
+tests/test_lgpd_consent.py ..............                                [ 45%]
+tests/test_lgpd_direito_esquecimento.py ................                 [ 46%]
+tests/test_lgpd_direitos.py .................                            [ 47%]
+tests/test_lgpd_direitos_v2.py ......................................... [ 49%]
+.......                                                                  [ 50%]
+tests/test_lgpd_export.py ...........                                    [ 50%]
+tests/test_lgpd_relatorio.py ...............                             [ 51%]
+tests/test_list_active.py ......                                         [ 51%]
+tests/test_log_masker.py .......                                         [ 52%]
+tests/test_log_masker_a11.py .......                                     [ 52%]
+tests/test_mcp_api.py ...                                                [ 52%]
+tests/test_mcp_servers_api.py ...                                        [ 53%]
+tests/test_metrics.py ..............                                     [ 53%]
+tests/test_metrics_a2.py ..............                                  [ 54%]
+tests/test_metrics_n8n.py ..............                                 [ 55%]
+tests/test_n8n_error_endpoint.py ...............................         [ 57%]
+tests/test_n8n_integration.py ...s.............                          [ 58%]
+tests/test_n8n_workflow_validator.py .....................               [ 59%]
+tests/test_notificacao.py ....................                           [ 60%]
+tests/test_openapi_api.py ....                                           [ 60%]
+tests/test_openapi_validator.py .............                            [ 61%]
+tests/test_openclaw_integration.py ........................              [ 62%]
+tests/test_openclaw_persona.py ........                                  [ 63%]
+tests/test_openclaw_skills_integration.py .......                        [ 63%]
+tests/test_openclaw_unit.py .................                            [ 64%]
+tests/test_opencode_go.py ....................                           [ 65%]
+tests/test_output_safety.py ........................                     [ 67%]
+tests/test_pgcrypto_d15.py ssssssss                                      [ 67%]
+tests/test_pii.py ...................................................... [ 70%]
+...                                                                      [ 70%]
+tests/test_pii_bench.py .......                                          [ 71%]
+tests/test_pii_performance.py ........                                   [ 71%]
+tests/test_pii_sanitizer.py ................                             [ 72%]
+tests/test_pii_validators.py ................                            [ 73%]
+tests/test_problem_details.py ..........                                 [ 73%]
+tests/test_protocolo_api.py .............                                [ 74%]
+tests/test_protocolo_endpoint.py ..................                      [ 75%]
+tests/test_protocolo_query.py .........                                  [ 76%]
+tests/test_radar.py .......                                              [ 76%]
+tests/test_rate_limit.py ...........                                     [ 77%]
+tests/test_rate_limit_by_key.py .................                        [ 78%]
+tests/test_rate_limit_sliding.py ......                                  [ 78%]
+tests/test_redis_bus.py ........................                         [ 79%]
+tests/test_redlock.py ............                                       [ 80%]
+tests/test_redlock_a20.py .......                                        [ 80%]
+tests/test_request_context_middleware.py .............                   [ 81%]
+tests/test_retencao.py .............                                     [ 82%]
+tests/test_retention.py ..........                                       [ 83%]
+tests/test_schemas_validation.py .....                                   [ 83%]
+tests/test_sentry_a4.py .............................                    [ 84%]
+tests/test_setup_backup_status_cron_e6_s7_t10.py ..........              [ 85%]
+tests/test_sliding_window.py .............                               [ 86%]
+tests/test_slow_log.py ........                                          [ 86%]
+tests/test_slow_queries_store.py ...................                     [ 87%]
+tests/test_stale_detector.py ....                                        [ 88%]
+tests/test_stats_protocolos.py ...                                       [ 88%]
+tests/test_supabase_integration.py .ss..................sss              [ 89%]
+tests/test_telegram_webhook.py .................                         [ 90%]
+tests/test_tracing_a3.py ...........                                     [ 91%]
+tests/test_utils_ip.py ....................
+INTERNALERROR> Traceback (most recent call last):
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/main.py", line 289, in wrap_session
+INTERNALERROR>     session.exitstatus = doit(config, session) or 0
+INTERNALERROR>                          ^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/main.py", line 343, in _main
+INTERNALERROR>     config.hook.pytest_runtestloop(session=session)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/logging.py", line 801, in pytest_runtestloop
+INTERNALERROR>     return (yield)  # Run all the tests.
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/terminal.py", line 688, in pytest_runtestloop
+INTERNALERROR>     result = yield
+INTERNALERROR>              ^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/main.py", line 367, in pytest_runtestloop
+INTERNALERROR>     item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/warnings.py", line 90, in pytest_runtest_protocol
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/assertion/__init__.py", line 192, in pytest_runtest_protocol
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/unittest.py", line 475, in pytest_runtest_protocol
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/faulthandler.py", line 88, in pytest_runtest_protocol
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 117, in pytest_runtest_protocol
+INTERNALERROR>     runtestprotocol(item, nextitem=nextitem)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 136, in runtestprotocol
+INTERNALERROR>     reports.append(call_and_report(item, "call", log))
+INTERNALERROR>                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 250, in call_and_report
+INTERNALERROR>     ihook.pytest_runtest_logreport(report=report)
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/terminal.py", line 634, in pytest_runtest_logreport
+INTERNALERROR>     if self.config.get_verbosity(Config.VERBOSITY_TEST_CASES) <= 0:
+INTERNALERROR>        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/Users/gustavoalmeida/projetos/Cartorio/backend/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py", line 1802, in get_verbosity
+INTERNALERROR>     assert isinstance(global_level, int)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR> AssertionError
+
+================= 8 failed, 1579 passed, 45 skipped in 29.68s ==================
