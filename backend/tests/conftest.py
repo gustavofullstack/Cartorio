@@ -35,7 +35,6 @@ _builtins.isinstance = _safe_isinstance
 # Workaround 2: garantir que `int` no namespace do modulo warnings e `type`
 # apontam para as classes reais. Algum plugin de teste pode ter feito
 # monkeypatch que nao afeta builtins global mas afeta o modulo.
-import warnings as _w_mod
 _w_mod.int = _builtins.int
 _w_mod.type = _builtins.type
 
