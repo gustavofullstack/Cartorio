@@ -122,3 +122,39 @@ task ja em andamento, espera ou escala pra Pietra serializar.
 
 NAO descartar prematuramente. NAO comitar duplicata "por via das duvidas". Reportar
 descoberta cross-PR ao pai com hash + smoke test + cleanup status.
+### Sprint 3 — Task B BLOCKED em 2 gates (Lesson 187 + Lesson 50 confirmado) (2026-06-29 14:42 BRT)
+Type: project state [→ project]
+
+**Task A (WF #12 mcpClient)**: ✅ DONE em 1 sprint rápido.
+- briefing tava stale — WF #12 (bryQNXccPvOgNhIL) JÁ usava n8n-nodes-mcp.mcpClient (migracao previa)
+- smoke test 3 execucoes (executions #24294, #24295, #24296), HTTP 200 OK
+- latency: 1.57s cold, 0.10-0.11s warm (cache hit)
+- LLM error interno (deepseek-v4-flash indisponivel) → graceful fallback + needs_human_handoff=true — fora do escopo da Task A
+
+**Task B (WF #03 chatwoot oficial)**: ⚠️ BLOCKED em 2 SUB-GATES hard-fail.
+
+SUB-GATE B1: **Lesson 50 confirmado `@devlikeapro/n8n-nodes-chatwoot`**:
+- node type `@devlikeapro/n8n-nodes-chatwoot.Chatwoot` ou `.chatWoot` REJEITA `POST /api/v1/workflows/{id}/activate` com `{"message":"Unrecognized node type"}`
+- testei 3 formatacoes do type name — todas bloqueadas
+- workaround canonico: **DB UPDATE direto + restart Swarm** (Lesson 49+50 recipe)
+- pietra NAO autorizou force-activate DB bypass ate gates pre-activate passarem
+
+SUB-GATE B2: **Chatwoot API endpoint unreachable**:
+- `POST https://chat.2notasudi.com.br/api/v1/accounts/1/conversations` retorna HTTP 404 (`{"error":"Resource could not be found"}`)
+- mesmo via Swarm DNS interno `cartorio_chatwoot:3000/api/v1/.../conversations` → mesmo 404
+- token bate 200 em OUTROS endpoints: POST /contacts (criou id=2), GET /agents (Gustavo admin), GET /inboxes (inbox 1 = Channel::Telegram)
+- inbox 1 = Channel::Telegram (nao Website/WhatsApp) — pode ser causa
+- POST /conversations com contact_id (sem source_id) → 500 internal error
+- **independente de N8N** — eh config do chatwoot instance (admin tasks fora do meu escopo)
+
+**Acoes executaveis mesmo com BLOCKED**:
+- backups criados em infra/n8n-workflows/backups/WF12_pre_mcp_2026-06-29.json + WF03_pre_chatwoot_2026-06-29.json
+- staging clone JSON spec: infra/n8n-workflows/03-handoff-human-chatwoot-v3-staging.json
+- nova cred D9HNG2CI3DD6T0CK tipo chatwootApi (mesmo token, NAO rotacionado) — pode deletar se nao quiser deixar
+- staging clone POST ativo em N8N como INATIVO: kZmO4g7wIw6OVwzP
+
+**Rollback**: WF #03 prod original (00PbDJUpJlrUxAir) E WF #12 prod original (bryQNXccPvOgNhIL) intactos. Tudo deletavel com cleanup de staging clone + nova credencial.
+
+**Report para parent**: BLOCKED com 2 sub-gates, pietra escalara pro admin/gustavo. Cron self-reminder a cada 30min enquanto aguarda decisao.
+
+Modified by Gustavo Almeida
