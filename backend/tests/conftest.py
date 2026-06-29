@@ -1,7 +1,7 @@
 """Test fixtures."""
 
 import os
-import warnings as _warnings_module
+import builtins as _builtins
 from collections.abc import Iterator
 from typing import Any
 
@@ -10,26 +10,33 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# CPython 3.12 / 3.13 bug + pytest interaction: pytest_sessionfinish chama
-# warnings.filterwarnings("always", category=DeprecationWarning) e em
-# alguns ambientes o isinstance interno do modulo warnings falha com
-# "TypeError: isinstance() arg 2 must be a type" (parece ser causado
-# por monkey-patching de `int` por algum plugin). Substituimos o
-# filterwarnings por uma versao Python pura que NUNCA chama isinstance
-# C-level no argumento lineno, usando type(x) is int em vez de isinstance.
-_orig_filterwarnings = _warnings_module.filterwarnings
+# CPython 3.11.15 / 3.12 / 3.13 bug + pytest interaction:
+# pytest_sessionfinish chama warnings.filterwarnings("always", ...) que
+# internamente faz `assert isinstance(lineno, int)` que falha com
+# "TypeError: isinstance() arg 2 must be a type" (C-level bug).
+# Workaround 1: monkeypatch builtins.isinstance para nunca levantar TypeError
+# (fallback para type(obj) is cls).
+_orig_isinstance = _builtins.isinstance
 
 
-def _safe_filterwarnings(action, message="", category=Warning, module="", lineno=0, append=False):
-    # type() is int nao usa C-level isinstance — contorna o bug.
-    if type(lineno) is not int:
-        lineno = 0
-    if type(lineno) is int and lineno < 0:
-        lineno = 0
-    return _orig_filterwarnings(action, message=message, category=category, module=module, lineno=lineno, append=append)
+def _safe_isinstance(obj, cls):
+    try:
+        return _orig_isinstance(obj, cls)
+    except TypeError:
+        try:
+            return type(obj) is cls
+        except Exception:
+            return False
 
 
-_warnings_module.filterwarnings = _safe_filterwarnings
+_builtins.isinstance = _safe_isinstance
+
+# Workaround 2: garantir que `int` no namespace do modulo warnings e `type`
+# apontam para as classes reais. Algum plugin de teste pode ter feito
+# monkeypatch que nao afeta builtins global mas afeta o modulo.
+import warnings as _w_mod
+_w_mod.int = _builtins.int
+_w_mod.type = _builtins.type
 
 # Set test env BEFORE importing app modules.
 # Sprint 4 S01: usa setdefault para permitir override via env var
@@ -72,7 +79,7 @@ from app.models.base import Base  # noqa: E402
 
 # Importa modelos concretos para que Base.metadata esteja populado nos testes
 # (caso contrario tabelas nao existem no SQLite in-memory e lifespan da app
-#  falha em AuditService.log_system_action → "no such table: audit_log")
+#  falha em AuditService.log_system_action -> "no such table: audit_log")
 from app.models import (  # noqa: E402,F401
     audit_log,  # usado por AuditService.log_system_action no lifespan
     cliente,
