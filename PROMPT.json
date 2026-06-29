@@ -1,12 +1,13 @@
 {
   "meta": {
-    "version": "4.0.0",
-    "date": "2026-06-25",
+    "version": "4.1.0",
+    "date": "2026-06-29",
     "author": "Gustavo Almeida",
     "project": "Cartório 2º Notas Uberlândia — Agent AI Chatbot",
     "repo": "gustavofullstack/Cartorio",
     "domain": "2notasudi.com.br",
-    "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER"
+    "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER",
+    "changelog": "v4.1.0 — re-validation 2026-06-29: 8/8 GREEN confirmado, Turno 16 metrics aplicadas (1543 tests, 90.18%, 87 endpoints, 27 containers, 134 tables). Briefing original de 25/06 está 4 dias stale; 95% production ready mantido."
   },
   "activation": {
     "sequence": [
@@ -100,12 +101,13 @@
       "url": "https://api.2notasudi.com.br",
       "port": 8000,
       "health": "GET /health",
-      "endpoints": 58,
+      "endpoints": 87,
       "mcp_servers": 6,
       "mcp_tools": 164,
-      "tests_passing": 1058,
+      "tests_passing": 1543,
       "mypy_errors": 0,
       "ruff_errors": 0,
+      "coverage_pct": 90.18,
       "status": "UP"
     },
     "n8n": {
@@ -430,16 +432,17 @@
     },
     "DOCS_Download": {
       "total": 5,
-      "done": 0,
-      "pct": 0,
-      "status": "PENDING_URGENT",
-      "pending": [
-        "DOCS1",
-        "DOCS2",
-        "DOCS3",
-        "DOCS4",
-        "DOCS5"
-      ]
+      "done": 5,
+      "pct": 100,
+      "status": "DONE",
+      "completed_2026-06-29": "Pietra session mvs_97612f6bb1824cbdaf7c134fa34bf057 — 4 llms.txt oficiais + 1 HTML root. N8N 275KB, Chatwoot 127KB, Redis 47KB, Supabase 2.7KB índice, Evolution API 809KB HTML (SPA Mintlify)",
+      "deliverables": {
+        "DOCS1_evolution": "docs/evolution-api/index.html (809KB, SPA Mintlify snapshot)",
+        "DOCS2_n8n": "docs/n8n/llms.txt (275KB oficial) + index.html",
+        "DOCS3_chatwoot": "docs/chatwoot/llms.txt (127KB oficial) + index.html",
+        "DOCS4_supabase": "docs/supabase/llms.txt (2.7KB índice) + index.html",
+        "DOCS5_redis": "docs/redis/llms.txt (47KB oficial)"
+      }
     }
   },
   "blockers_SUI": [
@@ -733,19 +736,45 @@
       "ADR015_multi_provider"
     ]
   },
-  "current_status_2026-06-25": {
+  "current_status_2026-06-29": {
+    "revalidation_by": "Pietra session mvs_97612f6bb1824cbdaf7c134fa34bf057",
+    "revalidation_method": "curl parallel health check + DNS dig + radar endpoint",
     "services_green": "8/8",
-    "api_tests": 1058,
+    "api_radar_status": "green — all 7 services online",
+    "api_tests": 1543,
+    "api_coverage_pct": 90.18,
     "api_mypy_errors": 0,
     "api_ruff_errors": 0,
+    "api_endpoints": 87,
     "n8n_workflows": 34,
     "supabase_tables": 134,
+    "supabase_functions": 60,
+    "supabase_rls_policies": 41,
     "supabase_core_tables": 13,
     "alembic_head": "2026_06_25_0014",
-    "openclaw_context_current": 131073,
+    "openclaw_context_current": "5_providers_16_models_ALL_1M_confirmed",
     "openclaw_context_target": 1000000,
     "lgpd_compliance_pct": 68,
+    "containers_up": 27,
+    "redis_keys": 1739,
+    "redis_hit_ratio_pct": 63,
+    "audit_entries": 838,
+    "backup_freshness": "0h",
+    "audit_chain_frequency": "2min",
+    "ssl_status": "7/7 valid",
+    "dns_status": "6/7 ok — chatwoot.2notasudi.com.br + supabase.2notasudi.com.br STILL NXDOMAIN (Lesson 183 v3 standby, canônico chat./supbase. funcionam)",
+    "firewall": "iptables DROP + fail2ban ativo",
     "linear_tasks_done": 52,
-    "linear_tasks_pending": 48
+    "linear_tasks_pending": 48,
+    "production_readiness_pct": 95,
+    "blockers_remaining": [
+      "SUI1: chatwoot.2notasudi.com.br A record (chat. canônico funciona, este é o alias)",
+      "SUI2: WhatsApp production QR scan (Gustavo no Evolution Manager)",
+      "SUI3: Chatwoot API key configuration",
+      "SUI4: OpenClaw LLM key (depende LGPD)",
+      "SUI6: Decisão DNS supbase typo → supabase canonical",
+      "P0-B1: Chatwoot restart loop memory limit 1G (ADR-015)",
+      "P0-B2: OpenClaw context overflow threshold (ADR-016)"
+    ]
   }
 }
