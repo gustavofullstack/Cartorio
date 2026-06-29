@@ -26,6 +26,7 @@ from app.middleware.slow_log import SlowLogMiddleware
 from app.middleware.openapi_validator import install_openapi_validation_middleware
 from app.middleware.version_header import VersionHeaderMiddleware, install_version_endpoint
 from app.middleware.problem_details import install_problem_handlers
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.services.idempotency_store import RedisIdempotencyStore
 
 logger = logging.getLogger(__name__)
@@ -292,6 +293,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Headers de seguranca (A23 — squad A): HSTS, CSP, X-Frame-Options, etc.
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Request context (audit metadata): popula request.state com request_id,
 # client_ip, user_agent, canal e timestamp. LGPD art. 37 exige registro
