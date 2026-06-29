@@ -793,7 +793,8 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
         # - rate limit por sessao (cost guard)
         # - PII scrubbing INTERNO (defense-in-depth)
         # - audit log via AuditService (LGPD art. 37)
-        from app.integrations.opencode_go import ChatError, chat_with_settings
+        from app.integrations.fallback import chat_with_fallback
+        from app.integrations.opencode_go import ChatError
 
         # LGPD: consent inferido pelo canal (cliente iniciou conversa via WhatsApp).
         # Em sprint 2 adicionar gate explicito ("digite SIM para autorizar uso de IA").
@@ -805,9 +806,15 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
         # Propagados para o wrapper opencode_go para audit log de output scrub.
         ctx_llm = audit_kwargs(request)
 
+        # Turno 21 2026-06-29: usar chat_with_fallback chain (opencode_go -> openclaw)
+        # ao inves de chat_with_settings direto. Quando opencode_go quota mensal esta
+        # esgotada (429), tenta openclaw automaticamente. N8N EVO-IN nao precisa fazer
+        # fallback manual. Resolve "needs_human_handoff=true" quando LLM rate-limited.
         try:
             with session_scope() as db_llm:
-                llm_resp = await chat_with_settings(
+                llm_resp = await chat_with_fallback(
+                    primary_provider="opencode_go",
+                    fallback_provider="openclaw",
                     messages=[
                         {
                             "role": "system",
