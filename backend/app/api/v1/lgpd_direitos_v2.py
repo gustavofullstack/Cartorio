@@ -136,7 +136,7 @@ def lgpd_dashboard(
     consents_ativos = db.execute(
         text(
             "SELECT COUNT(*) FROM clientes "
-            "WHERE consentimento_lgpd = 1 AND deleted_at IS NULL"
+            "WHERE consentimento_lgpd = TRUE AND deleted_at IS NULL"
         )
     ).scalar() or 0
 
@@ -145,7 +145,7 @@ def lgpd_dashboard(
         text(
             "SELECT COUNT(*) FROM audit_log "
             "WHERE action = 'lgpd.consent.revoked' "
-            "AND timestamp >= datetime('now', '-30 days')"
+            "AND timestamp >= NOW() - INTERVAL '30 days'"
         )
     ).scalar() or 0
 
@@ -154,7 +154,7 @@ def lgpd_dashboard(
         text(
             "SELECT COUNT(*) FROM audit_log "
             "WHERE action = 'lgpd.portabilidade.download' "
-            "AND timestamp >= datetime('now', '-30 days')"
+            "AND timestamp >= NOW() - INTERVAL '30 days'"
         )
     ).scalar() or 0
 
@@ -162,7 +162,7 @@ def lgpd_dashboard(
     audit_24h = db.execute(
         text(
             "SELECT COUNT(*) FROM audit_log "
-            "WHERE timestamp >= datetime('now', '-1 day')"
+            "WHERE timestamp >= NOW() - INTERVAL '1 day'"
         )
     ).scalar() or 0
 

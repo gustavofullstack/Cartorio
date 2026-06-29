@@ -613,3 +613,10 @@ app.include_router(api_v2_router, prefix="/api/v2")
 from app.api.v1.brain import brain_router  # noqa: E402
 
 app.include_router(brain_router, prefix="/api/v1")
+
+# Auth login (Turno 23+ 2026-06-29) - mint JWT for DPO/operador use
+# Sem este endpoint, os LGPD v2 endpoints (D26-D32) nao podem ser
+# testados em prod (exigem JWT). Sprint 4: substituir por Supabase Auth.
+from app.api.v1.auth_login import auth_router as auth_login_router  # noqa: E402
+
+app.include_router(auth_login_router, prefix="/api/v1")
