@@ -140,29 +140,38 @@ def lgpd_dashboard(
         )
     ).scalar() or 0
 
+    # Detect dialect (PostgreSQL prod vs SQLite test) for cross-compatible time
+    is_sqlite = db.bind.dialect.name == 'sqlite'
+    if is_sqlite:
+        ts_30d_expr = "datetime('now', '-30 days')"
+        ts_1d_expr = "datetime('now', '-1 day')"
+    else:
+        ts_30d_expr = "NOW() - INTERVAL '30 days'"
+        ts_1d_expr = "NOW() - INTERVAL '1 day'"
+
     # 4. Consentimentos revogados nos ultimos 30 dias
     consents_revogados_30d = db.execute(
         text(
-            "SELECT COUNT(*) FROM audit_log "
+            'SELECT COUNT(*) FROM audit_log '
             "WHERE action = 'lgpd.consent.revoked' "
-            "AND timestamp >= NOW() - INTERVAL '30 days'"
+            f'AND timestamp >= {ts_30d_expr}'
         )
     ).scalar() or 0
 
     # 5. Exports solicitados nos ultimos 30 dias
     exports_30d = db.execute(
         text(
-            "SELECT COUNT(*) FROM audit_log "
+            'SELECT COUNT(*) FROM audit_log '
             "WHERE action = 'lgpd.portabilidade.download' "
-            "AND timestamp >= NOW() - INTERVAL '30 days'"
+            f'AND timestamp >= {ts_30d_expr}'
         )
     ).scalar() or 0
 
     # 6. Audit entries nas ultimas 24h
     audit_24h = db.execute(
         text(
-            "SELECT COUNT(*) FROM audit_log "
-            "WHERE timestamp >= NOW() - INTERVAL '1 day'"
+            'SELECT COUNT(*) FROM audit_log '
+            f'WHERE timestamp >= {ts_1d_expr}'
         )
     ).scalar() or 0
 
