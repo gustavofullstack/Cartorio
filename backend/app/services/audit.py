@@ -152,21 +152,28 @@ class AuditService:
         Sem isso, entradas com timestamp tz-aware (do DB) sao formatadas com '+00:00'
         e o hash computado diverge do hash armazenado.
 
-        NOTA: dados historicos podem ter chain quebrada (hash format mudou entre
-        versoes). Esta funcao retorna (ok, last_valid_position) — partial chain
-        verification eh o maximo possivel sem regenerar hashes de todos os entries.
+        Turno 25+ 2026-06-29: Converte timestamp de "YYYY-MM-DD HH:MM:SS.ffffff" (PostgreSQL
+        format com espaco) para "YYYY-MM-DDTHH:MM:SS.ffffff" (ISO com T, usado pelo
+        `isoformat()` Python que computou o hash original). Tambem normaliza prev_hash
+        para "0"*64 quando None (chain head).
         """
         entries = db.query(AuditLog).order_by(AuditLog.id.asc()).all()
         prev_hash: str | None = None
         last_valid = 0
         for i, entry in enumerate(entries):
-            # Normaliza timestamp removendo tzinfo para match com hash armazenado
+            # Normaliza timestamp removendo tzinfo e convertendo space -> T
             ts = entry.timestamp
             if ts.tzinfo is not None:
                 ts = ts.replace(tzinfo=None)
             timestamp_iso = ts.isoformat(timespec="microseconds")
-            expected = cls._compute_hash(prev_hash, entry.payload, timestamp_iso)
-            if entry.prev_hash != prev_hash or entry.hash != expected:
+            # Converte "2026-06-22 22:12:18.297643" -> "2026-06-22T22:12:18.297643"
+            timestamp_iso = timestamp_iso.replace(" ", "T")
+            # Normaliza prev_hash: chain head usa None (que vira "0"*64 no compute)
+            prev_for_hash = prev_hash if prev_hash else "0" * 64
+            expected = cls._compute_hash(prev_for_hash, entry.payload, timestamp_iso)
+            # Compara prev_hash considerando chain head: ambos sao None
+            entry_prev = entry.prev_hash if entry.prev_hash else "0" * 64
+            if entry_prev != prev_for_hash or entry.hash != expected:
                 # Chain quebrada — retorna posicao do ultimo valido
                 return False, last_valid
             prev_hash = entry.hash
