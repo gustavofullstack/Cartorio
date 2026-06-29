@@ -1,0 +1,3 @@
+## 2026-06-29 - Semantic HTML in Swagger UI Header
+**Learning:** Custom Swagger UI headers often use generic `<div>` tags for navigation, which hurts accessibility. A semantic `<nav>` with an `aria-label` provides much better context for screen readers. Additionally, inline HTML inside Python string templates must have CSS variables and pseudo-class braces escaped with `{{` and `}}`.
+**Action:** When adding custom UI elements to tools like Swagger UI, always use semantic HTML (like `<nav>`) and include focus states (`:focus-visible`) to ensure keyboard accessibility. Also, remember to double-escape braces in Python f-strings or string templates.

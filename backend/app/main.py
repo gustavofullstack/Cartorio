@@ -489,17 +489,18 @@ SWAGGER_UI_HTML = """<!DOCTYPE html>
     .header-cartorio h1 {{ margin: 0; font-size: 1.4em; font-weight: 600; }}
     .header-cartorio .links a {{ color: #cbd5e0; margin-left: 18px; text-decoration: none; }}
     .header-cartorio .links a:hover {{ color: white; text-decoration: underline; }}
+    .header-cartorio .links a:focus-visible {{ outline: 2px solid white; outline-offset: 2px; border-radius: 2px; }}
   </style>
 </head>
 <body>
   <div class="header-cartorio">
     <h1>Cartorio 2 Notas Uberlandia - Backend API</h1>
-    <div class="links">
+    <nav class="links" aria-label="Navegação da API">
       <a href="/redoc">ReDoc</a>
       <a href="/openapi.json">openapi.json</a>
       <a href="/mcp">MCP</a>
       <a href="/mcp-servers">MCP Servers</a>
-    </div>
+    </nav>
   </div>
   <div id="swagger-ui"></div>
   <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
