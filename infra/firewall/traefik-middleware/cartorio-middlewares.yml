@@ -1,0 +1,133 @@
+# Traefik dynamic middlewares — Cartório 2notas (FASE 2)
+# =============================================================================
+# DRAFT — NÃO APLICAR sem GO Gustavo via Telegram DM 6682284055
+#         ou GRUPO -5006771024.
+# Boundary rule: Lesson 245 + 247 + 250 (cross-agent directive ≠ autorização).
+#
+# Autor: M3 (Pietra root agent)
+# Data:  2026-06-30
+# Stack: Traefik v2.x + Easypanel Docker Swarm
+#
+# Onde aplicar:
+#   1. Salvar como /root/traefik/dynamic/cartorio-middlewares.yml na VPS
+#   2. Editar /etc/traefik/traefik.yml (ou traefik-docker-compose.yml)
+#      e adicionar:
+#        providers:
+#          file:
+#            directory: /root/traefik/dynamic
+#            watch: true
+#   3. Reiniciar Traefik: docker service update easypanel-traefik --force
+#
+# O que este arquivo define:
+#   - rate-limit-api: 100 req/s média, burst 200, aplica em /api/*
+#   - rate-limit-strict: 10 req/s, burst 20, aplica em /api/v1/auth/*
+#   - ip-allow-tailscale: whitelist 100.64.0.0/10 (admin/Gustavo/agents)
+#   - security-headers: HSTS, X-Frame, CSP básico
+#   - chain-auth: combo rate-limit-strict + ip-allow-tailscale pra auth endpoints
+#   - chain-api: rate-limit-api + security-headers pra API geral
+#   - chain-admin: ip-allow-tailscale + security-headers pra rotas admin
+# =============================================================================
+
+http:
+  middlewares:
+
+    # --- Rate limits ---------------------------------------------------------
+    rate-limit-api:
+      rateLimit:
+        average: 100        # 100 req/s média sustentada
+        burst: 200          # tolera pico de 200
+        period: 1s
+        # Sem sourceCriterion: rate limit é por IP (X-Forwarded-For se vier)
+
+    rate-limit-strict:
+      rateLimit:
+        average: 10         # 10 req/s
+        burst: 20           # pico 20
+        period: 1s
+
+    # --- IP whitelist --------------------------------------------------------
+    ip-allow-tailscale:
+      ipAllowList:
+        sourceRange:
+          - "100.64.0.0/10"        # Tailscale CGNAT (Gustavo + agents)
+          - "127.0.0.0/8"          # loopback (Traefik interno)
+        # Sem ipStrategy: usa peer IP direto. Se Tailscale for via tunnel,
+        # adicionar ipStrategy pra confiar no header X-Forwarded-For do Tailscale.
+        # (Verificar se Traefik está atrás de Cloudflare ou diretamente.)
+
+    # --- Security headers ----------------------------------------------------
+    security-headers:
+      headers:
+        frameDeny: true                  # X-Frame-Options: DENY
+        sslRedirect: true                # Force HTTPS
+        stsIncludeSubdomains: true       # HSTS subdomains
+        stsSeconds: 31536000             # HSTS 1y
+        browserXssFilter: true           # X-XSS-Protection
+        contentTypeNosniff: true         # X-Content-Type-Options
+        referrerPolicy: "strict-origin-when-cross-origin"
+        # CSP permissivo pra API (endpoints JSON, não HTML)
+        contentSecurityPolicy: "default-src 'none'; frame-ancestors 'none'"
+
+    # --- Chains compostos ----------------------------------------------------
+    chain-auth:
+      chain:
+        middlewares:
+          - rate-limit-strict
+          - security-headers
+
+    chain-api:
+      chain:
+        middlewares:
+          - rate-limit-api
+          - security-headers
+
+    chain-admin:
+      chain:
+        middlewares:
+          - ip-allow-tailscale
+          - security-headers
+
+    chain-admin-relaxed:
+      # Para /admin/* que precisa ser acessível também do painel Easypanel
+      # (Easypanel roda no mesmo host, IP 172.17.0.x via Docker bridge)
+      chain:
+        middlewares:
+          - rate-limit-strict
+          - security-headers
+          # NÃO ip-allow-tailscale aqui — admin Easypanel precisa ser
+          # acessível do próprio Traefik via 127.0.0.1
+
+# =============================================================================
+# ROTEADORES (exemplo — ajustar labels nos docker-compose dos serviços)
+# =============================================================================
+# Estes middlewares são aplicados via labels nos serviços. Exemplo:
+#
+#   labels:
+#     - "traefik.http.routers.cartorio-api.middlewares=chain-api@file"
+#     - "traefik.http.routers.cartorio-auth.middlewares=chain-auth@file"
+#     - "traefik.http.routers.cartorio-admin.middlewares=chain-admin@file"
+#
+# Onde @file = provider file (este arquivo).
+#
+# Para serviços Easypanel (que não usam compose), ir em Easypanel UI:
+#   Service → Edit → Labels → adicionar os middlewares acima
+# =============================================================================
+
+# ROLLBACK (disaster recovery):
+#   1. Mover /root/traefik/dynamic/cartorio-middlewares.yml pra .bak
+#   2. docker service update easypanel-traefik --force
+#   3. Traefik volta sem middlewares (sem rate limit, sem ip allow, sem headers)
+#
+# VERIFICAÇÃO PÓS-APPLY:
+#   curl -I https://api.2notasudi.com.br/api/v1/auth
+#   # Esperado: X-Frame-Options: DENY, Strict-Transport-Security presente
+#
+#   for i in {1..15}; do curl -s -o /dev/null -w "%{http_code}\n" \
+#     https://api.2notasudi.com.br/api/v1/auth; done
+#   # Esperado: primeiros ~20 = 200, depois = 429 Too Many Requests
+#
+#   curl -I https://admin.2notasudi.com.br --interface tailscale0
+#   # Esperado: 200 OK (via Tailscale)
+#
+#   curl -I https://admin.2notasudi.com.br
+#   # Esperado: 403 Forbidden (sem Tailscale)

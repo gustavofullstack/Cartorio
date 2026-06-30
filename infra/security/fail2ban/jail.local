@@ -1,0 +1,57 @@
+# Fail2ban jail.local — Cartório 2notas
+# PR DRAFT. NÃO APLICADO.
+# Copiar para /etc/fail2ban/jail.local na VPS via SSH (ver README.md)
+
+[DEFAULT]
+# Bantime progressivo: 1h, 4h, 24h para reincidentes
+bantime.increment = true
+bantime = 1h
+bantime.factor = 1.5
+bantime.maxtime = 24h
+
+# Janela de detecção
+findtime = 10m
+
+# Máximo de tentativas antes do ban
+maxretry = 5
+
+# Ação: ban via iptables + log + email opcional (desabilitado)
+action = iptables-multiport[name=%(__name__)s, port="http,https", protocol=tcp]
+         sendmail-whois[name=%(__name__)s, dest=gustavomar.fullstack@gmail.com, sender=fail2ban@cartorio.local]
+
+# Whitelist: Meta IPs (whatsapp webhook) + Tailscale + IPs internos conhecidos
+# NOTA: whitelist.local será criado em PR separada com IPs validados
+# Por ora, ignoreip fica vazio até PR whitelist ser mergeada
+ignoreip =
+
+# === JAIL 1: Traefik auth brute-force ===
+[traefik-auth]
+enabled = true
+filter = traefik-auth
+logpath = /var/log/traefik/access.log
+port = http,https
+maxretry = 5
+findtime = 10m
+bantime = 1h
+
+# === JAIL 2: Traefik scanners/scraping (444/403) ===
+[traefik-444]
+enabled = true
+filter = traefik-444
+logpath = /var/log/traefik/access.log
+port = http,https
+maxretry = 10
+findtime = 5m
+bantime = 4h
+
+# === JAIL 3: Easypanel admin auth ===
+[easypanel-auth]
+enabled = true
+filter = easypanel-auth
+logpath = /var/log/easypanel/*.log
+port = 3000
+maxretry = 3
+findtime = 10m
+bantime = 24h
+
+Modified by Gustavo Almeida

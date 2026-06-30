@@ -1,0 +1,57 @@
+# fail2ban jail.local — Cartório 2notas
+# Place in /etc/fail2ban/jail.local on VPS
+# Backup existing before replacing: sudo cp /etc/fail2ban/jail.local /etc/fail2ban/jail.local.bak-$(date +%Y%m%d)
+
+[DEFAULT]
+# Ban for 1 hour (3600s), find 5 failures in 10 minutes
+bantime  = 3600
+findtime = 600
+maxretry = 5
+banaction = iptables-allports
+chain = INPUT
+chain6 = INPUT
+logencoding = utf-8
+
+# Email alerts (optional — disable if no MTA)
+action = %(action_)s
+# action_mwl = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", chain="%(chain)s"]
+# destemail = dpo@cartorio.local
+
+[traefik-auth]
+enabled  = true
+port     = 80,443,8080
+protocol = tcp
+filter   = traefik-auth
+# Log path — verify via: docker logs easypanel-traefik 2>&1 | head
+# Or if /var/log/traefik/access.log exists:
+logpath  = /var/log/traefik/access.log
+maxretry = 5
+bantime  = 1800
+
+[openclaw-auth]
+enabled  = true
+port     = 18789
+protocol = tcp
+filter   = openclaw-auth
+# OpenClaw log — verify via: docker logs cartorio_openclaw-gateway
+logpath  = /var/log/openclaw/access.log
+maxretry = 3
+bantime  = 3600
+
+[easypanel-ui]
+enabled  = true
+port     = 3000
+protocol = tcp
+filter   = traefik-auth
+logpath  = /var/log/easypanel/access.log
+maxretry = 5
+bantime  = 1800
+
+# -----------------------------------------------------------------------
+# VALIDATION BEFORE APPLYING:
+# 1. Check log paths exist on VPS:
+#    docker exec easypanel-traefik ls /var/log/traefik/ 2>/dev/null || echo "no log dir"
+# 2. Run: sudo fail2ban-client status
+# 3. Test regex: fail2ban-regex /var/log/traefik/access.log /etc/fail2ban/filter.d/traefik-auth.conf
+# 4. Rollback: sudo cp /etc/fail2ban/jail.local.bak-YYYYMMDD /etc/fail2ban/jail.local
+# -----------------------------------------------------------------------
