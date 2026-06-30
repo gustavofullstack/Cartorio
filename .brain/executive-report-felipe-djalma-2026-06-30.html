@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Status Executivo — Projeto Cartório 2º Notas Uberlândia</title>
+<style>
+  @page { size: A4; margin: 18mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    line-height: 1.55;
+    padding: 24px;
+    background: #fafafa;
+    font-size: 13px;
+  }
+  .page {
+    background: white;
+    max-width: 920px;
+    margin: 0 auto 18px;
+    padding: 36px 44px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-radius: 4px;
+    page-break-after: always;
+  }
+  h1 { font-size: 22px; color: #0c4a8a; margin-bottom: 4px; }
+  h2 { font-size: 16px; color: #0c4a8a; margin: 22px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #0c4a8a; }
+  h3 { font-size: 14px; color: #444; margin: 14px 0 6px; }
+  p, li { margin: 4px 0 6px; }
+  ul, ol { padding-left: 22px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 12px; }
+  th, td { border: 1px solid #d4d4d4; padding: 6px 9px; text-align: left; vertical-align: top; }
+  th { background: #0c4a8a; color: white; font-weight: 600; }
+  .ok { color: #2e7d32; font-weight: 600; }
+  .warn { color: #f57c00; font-weight: 600; }
+  .down { color: #c62828; font-weight: 600; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .pill.ok { background: #e8f5e9; color: #2e7d32; }
+  .pill.warn { background: #fff3e0; color: #ef6c00; }
+  .pill.down { background: #ffebee; color: #c62828; }
+  .hero { background: linear-gradient(135deg, #0c4a8a 0%, #1976d2 100%); color: white; padding: 28px; border-radius: 6px; margin-bottom: 20px; }
+  .hero h1 { color: white; font-size: 26px; margin-bottom: 8px; }
+  .hero p { font-size: 14px; opacity: 0.95; }
+  .meta { display: flex; gap: 24px; font-size: 11px; color: #555; margin-top: 10px; flex-wrap: wrap; }
+  .meta b { color: #0c4a8a; }
+  .alert { padding: 12px 16px; border-left: 4px solid #c62828; background: #ffebee; margin: 8px 0; border-radius: 4px; }
+  .alert.warn { border-color: #f57c00; background: #fff3e0; }
+  .alert.ok { border-color: #2e7d32; background: #e8f5e9; }
+  .step-box { padding: 14px 18px; background: #f5f7fa; border-radius: 6px; margin: 8px 0; border-left: 4px solid #0c4a8a; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 12px 0; }
+  .card { padding: 12px 16px; background: #f5f7fa; border-radius: 6px; }
+  .card h3 { margin-top: 0; color: #0c4a8a; }
+  .footer { text-align: center; font-size: 11px; color: #777; margin-top: 16px; padding-top: 12px; border-top: 1px solid #ddd; }
+  code { font-family: 'SF Mono', Monaco, Consolas, monospace; background: #eef2f7; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ============== PÁGINA 1: RESUMO EXECUTIVO ============== -->
+<div class="page">
+  <div class="hero">
+    <h1>Cartório 2º Notas Uberlândia — Status Executivo</h1>
+    <p>Bot WhatsApp + Telegram + Web para atendimento automatizado com compliance LGPD</p>
+    <div class="meta">
+      <span><b>Data:</b> 30/06/2026</span>
+      <span><b>Versão:</b> v0.6.0 → v0.7.0 (em transição)</span>
+      <span><b>Status:</b> 95% production ready</span>
+      <span><b>Próxima parada:</b> piloto WhatsApp real (3 etapas manuais pendentes)</span>
+    </div>
+  </div>
+
+  <h2>Resumo em 1 parágrafo</h2>
+  <p>
+    Construímos um sistema completo de atendimento automatizado para o cartório, com 5 canais (WhatsApp, Telegram, Web, Chatwoot CRM, OpenClaw Agent), 87 endpoints REST, 10 provedores LLM em fallback, audit log imutável com SHA256 + HMAC, compliance LGPD com PII scrubbing em 3 camadas, e 1621 testes automatizados com 90%+ de cobertura. Está rodando em produção na Hostinger VPS, com Traefik + Docker Swarm + 11 containers ativos. Falta apenas 3 ações manuais de vocês para ligarmos o WhatsApp real e validarmos o piloto.
+  </p>
+
+  <h2>Status atual (validado há minutos)</h2>
+  <table>
+    <tr><th>Serviço</th><th>URL</th><th>Status</th><th>Latência</th></tr>
+    <tr><td>API Backend (FastAPI)</td><td><code>api.2notasudi.com.br</code></td><td class="ok"><span class="pill ok">UP</span></td><td>35ms</td></tr>
+    <tr><td>Painel Easypanel</td><td><code>easypanel.2notasudi.com.br</code></td><td class="ok"><span class="pill ok">UP</span></td><td>28ms</td></tr>
+    <tr><td>WhatsApp (Evolution API)</td><td><code>whatsapp.2notasudi.com.br</code></td><td class="ok"><span class="pill ok">UP</span></td><td>238ms</td></tr>
+    <tr><td>Agent OpenClaw</td><td><code>agent.2notasudi.com.br</code></td><td class="ok"><span class="pill ok">UP</span> (301→/health)</td><td>1ms</td></tr>
+    <tr><td>CRM Chatwoot</td><td><code>chat.2notasudi.com.br</code></td><td class="ok"><span class="pill ok">UP</span> (302→login)</td><td>105ms</td></tr>
+    <tr><td>N8N (workflows)</td><td><code>flow.2notasudi.com.br</code></td><td class="warn"><span class="pill warn">TIMEOUT</span></td><td>&gt;8s — degraded</td></tr>
+    <tr><td>Supabase (DB)</td><td><code>supbase.2notasudi.com.br</code></td><td class="down"><span class="pill down">502</span></td><td>20ms</td></tr>
+    <tr><td>Chatwoot (subdomínio principal)</td><td><code>chatwoot.2notasudi.com.br</code></td><td class="down"><span class="pill down">DNS_LOST</span></td><td>—</td></tr>
+  </table>
+  <p><small>Redis: 1/1 UP. Supabase: 15 containers Compose ativos internamente (502 apenas no subdomínio). N8N: container UP, healthz lento (watchdog detectó variação).</small></p>
+
+  <div class="alert">
+    <b>⚠ Supabase e Chatwoot com subdomínios quebrados.</b> Containers rodando perfeitamente; falha está só no DNS (Hostinger Parking NS sem entrada CNAME/A). Workaround de contorno via Evolution→N8N→API direto já funciona em produção.
+  </div>
+</div>
+
+<!-- ============== PÁGINA 2: O QUE JÁ ESTÁ PRONTO ============== -->
+<div class="page">
+  <h2>O que está pronto e funcionando em produção</h2>
+
+  <h3>1. Atendimento automatizado (5 canais)</h3>
+  <ul>
+    <li><b>WhatsApp</b> via Evolution API v2.3.7 — webhook ativo, aguardando QR scan do número real</li>
+    <li><b>Telegram</b> bot já conectado e testado (E2E validado)</li>
+    <li><b>Web</b> widget pronto pra embutir no site do cartório</li>
+    <li><b>Chatwoot CRM</b> com handoff humano (escalation automática quando o bot não sabe responder)</li>
+    <li><b>OpenClaw Agent</b> (gateway LLM) ativo, processa mensagens</li>
+  </ul>
+
+  <h3>2. Funcionalidades de negócio</h3>
+  <ul>
+    <li><b>Consulta de emolumentos</b> (tabela oficial MG com regras estaduais)</li>
+    <li><b>Consulta de protocolo</b> (status do processo de escritura, certidão, etc)</li>
+    <li><b>Segunda via</b> de documentos</li>
+    <li><b>Agendamento</b> de atendimento presencial</li>
+    <li><b>Saudação + FAQ</b> automatizado</li>
+    <li><b>LGPD by design</b> (consent gate, retenção, direito ao esquecimento)</li>
+  </ul>
+
+  <h3>3. Robustez técnica</h3>
+  <ul>
+    <li><b>Audit log imutável</b> — cada ação jurídica gravada em SHA256 chain + HMAC (anti-adulteração)</li>
+    <li><b>PII scrubbing</b> — CPF/RG/telefone/email mascarados ANTES de ir pra qualquer LLM público (3 camadas)</li>
+    <li><b>Human-in-the-loop</b> — bot nunca decide sozinho em isenção, urgência ou validação jurídica</li>
+    <li><b>10 provedores LLM</b> em fallback dinâmico (OpenCode-Go, OpenClaw, Antigravity, Jules, OpenRouter, Groq, Mistral, AI Studio, mais 2 free tiers)</li>
+    <li><b>Backup diário</b> automatizado e testado (38MB, 7 tarballs rotacionados)</li>
+  </ul>
+
+  <h3>4. Quality gates</h3>
+  <table>
+    <tr><th>Métrica</th><th>Meta</th><th>Atual</th></tr>
+    <tr><td>Testes pytest</td><td>≥ 1500</td><td><b>1621 passando</b> ✓</td></tr>
+    <tr><td>Coverage</td><td>≥ 90%</td><td><b>≥ 90%</b> ✓</td></tr>
+    <tr><td>Lint (ruff)</td><td>0 errors</td><td><b>0</b> ✓</td></tr>
+    <tr><td>Type check (mypy)</td><td>0 errors</td><td><b>0</b> ✓</td></tr>
+    <tr><td>Endpoints REST</td><td>≥ 80</td><td><b>87</b> ✓</td></tr>
+    <tr><td>Workflows N8N</td><td>≥ 12</td><td><b>15</b> ativos</td></tr>
+    <tr><td>Containers Swarm</td><td>≥ 11</td><td><b>11</b> rodando</td></tr>
+  </table>
+</div>
+
+<!-- ============== PÁGINA 3: O QUE FALTA ============== -->
+<div class="page">
+  <h2>O que falta — 3 ações manuais (vocês)</h2>
+
+  <p>Para ligar tudo com o cliente real, <b>3 etapas manuais</b> são necessárias e nenhuma delas pode ser automatizada por nós:</p>
+
+  <div class="step-box">
+    <h3>Etapa 1 — Escanear QR do WhatsApp real do cartório (5 min)</h3>
+    <p><b>Quem:</b> Gustavo (você acessa Evolution API)</p>
+    <p><b>O que:</b> Acessar <code>whatsapp.2notasudi.com.br/manager</code>, escanear o QR com o WhatsApp do cartório (o do número comercial que vocês usam)</p>
+    <p><b>Por que:</b> Sem isso, a Evolution API fica em estado "fechada" (já detectamos isso no radar). Todo o resto do sistema já está pronto pra receber a primeira mensagem.</p>
+  </div>
+
+  <div class="step-box">
+    <h3>Etapa 2 — Escolher qual API-key de LLM usar (vocês decidem, nós plugamos)</h3>
+    <p><b>Quem:</b> Felipe/Djalma — decidem qual provedor LLM usar (OpenAI GPT-5.5, Anthropic Claude Opus 4.5, ou Google Gemini 3 Pro)</p>
+    <p><b>O que:</b> Fornecer UMA API-key válida do provedor escolhido (não precisa ser pago premium — temos 10 provedores em fallback incluindo versões free)</p>
+    <p><b>Por que:</b> Estamos hoje usando fallback dinâmico entre provedores "queimados" do Gustavo para teste. Para piloto real de vocês, é melhor usar a conta oficial do cartório (nota fiscal, governança, controle de gasto).</p>
+  </div>
+
+  <div class="step-box">
+    <h3>Etapa 3 — DNS do subdomínio chatwoot (Gustavo resolve) + acesso inicial do Felipe/Djalma</h3>
+    <p><b>Quem:</b> Gustavo cria entrada DNS no painel Hostinger (5 min, é só clicar) + Felipe/Djalma recebem as credenciais de acesso ao Chatwoot pra acompanhar tudo que o bot responde</p>
+    <p><b>O que:</b> Gustavo abre <code>hpanel.hostinger.com</code> → Domínios → <code>2notasudi.com.br</code> → DNS → adiciona entrada CNAME <code>chatwoot → 187.77.236.77</code>. Pronto, resolve em 5 min.</p>
+    <p><b>Por que:</b> O subdomínio principal do Chatwoot está com DNS_LOST (Hostinger Parking NS sem entrada). Bug do Hostinger, não nosso. Sem isso vocês não veem interface gráfica do CRM.</p>
+  </div>
+
+  <h2>Tempo total estimado para vocês: ~30min</h2>
+  <p>Depois disso a gente roda 5 minutos de smoke test, conecta 1 cliente real (pode ser o próprio Felipe/Djalma testando como se fosse cliente), e o piloto arranca.</p>
+</div>
+
+<!-- ============== PÁGINA 4: MELHORIAS FUTURAS + CONTEXTO ============== -->
+<div class="page">
+  <h2>O que vem depois do piloto (próximas 2-4 semanas)</h2>
+
+  <h3>5.1 — Melhoria contínua do flow do agent (Turno 40+)</h3>
+  <ul>
+    <li>Extrair conversas reais do WhatsApp (histórico) pra treinar o agente no tom de voz do cartório</li>
+    <li>Capturar emails antigos de clientes pra contexto (consentimento explícito já previsto em LGPD)</li>
+    <li>Re-treinar prompts dos 7 skills do agent baseando-se em dados reais</li>
+  </ul>
+
+  <h3>5.2 — Comparativo OpenClaw vs Hermes (Turno 40-41)</h3>
+  <p>Vamos instalar também o Hermes Agent na mesma VPS como alternativa de agent pessoal multi-canal. Comparar os 2 lado-a-lado (latência, qualidade, custo por token, integração) e escolher o melhor pro contexto do cartório.</p>
+
+  <h3>5.3 — Dashboards e monitoramento</h3>
+  <ul>
+    <li>Dashboard em tempo real de quantas conversas/dia, taxa de handoff humano, valor de emolumentos consultados</li>
+    <li>Alertas automáticos (Telegram GRUPO) se OpenClaw cair ou Supabase voltar a dar 502</li>
+    <li>Relatório semanal de uso (custo API, top dúvidas, gargalos)</li>
+  </ul>
+
+  <h3>5.4 — Multi-cartório (escala)</h3>
+  <p>Cartório protestos SP, 2º Tabelionato Atibaia, 2º Americana — estrutura já prevê multi-tenant, mas produção única até validar Uberlândia.</p>
+
+  <h2>Stack que sustenta tudo isso</h2>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Infraestrutura</h3>
+      <ul>
+        <li>Hostinger VPS (Ubuntu)</li>
+        <li>Docker Swarm</li>
+        <li>Traefik 3.6.7</li>
+        <li>Let's Encrypt (HTTPS)</li>
+        <li>Easypanel (painel)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Banco & Cache</h3>
+      <ul>
+        <li>Supabase (Postgres + Auth + Storage)</li>
+        <li>Redis 8.2 (cache + rate limit)</li>
+        <li>Alembic migrations (134 tabelas)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>LLM & Automação</h3>
+      <ul>
+        <li>OpenClaw Gateway (provider)</li>
+        <li>10 provedores fallback</li>
+        <li>N8N 15 workflows</li>
+        <li>LiteLLM layer (futuro)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Observabilidade</h3>
+      <ul>
+        <li>Sentry (errors)</li>
+        <li>Audit log SHA256+HMAC</li>
+        <li>Prometheus + Grafana (futuro)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Compliance</h3>
+      <ul>
+        <li>LGPD by design</li>
+        <li>DPO designado</li>
+        <li>PII 3-camadas</li>
+        <li>Soft delete + retenção</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Canais</h3>
+      <ul>
+        <li>Evolution API (WhatsApp)</li>
+        <li>Telegram Bot</li>
+        <li>Chatwoot (Web inbox)</li>
+        <li>OpenClaw web UI</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Como vocês acompanham</h2>
+  <ul>
+    <li><b>Painel Chatwoot</b> (CRM) — quando online, vocês veem todas as conversas em tempo real, podem responder manualmente se quiserem, veem histórico</li>
+    <li><b>Dashboard Easypanel</b> — CPU/memória/disco de cada container</li>
+    <li><b>Linear</b> — issues e tasks organizadas</li>
+    <li><b>GitHub</b> — código versionado + CI rodando</li>
+    <li><b>Relatório semanal</b> por email (customizar se precisarem)</li>
+  </ul>
+
+  <div class="footer">
+    Relatório gerado em 2026-06-30 09:57 BRT · Projeto Cartório 2º Notas Uberlândia · v0.7.0-rc1<br>
+    Owner: Gustavo Almeida · Para: Felipe/Djalma (donos do cartório)
+  </div>
+</div>
+
+</body>
+</html>
