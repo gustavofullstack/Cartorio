@@ -130,13 +130,6 @@ def test_webhook_handles_telegram_api_failure(client: TestClient, telegram_updat
     pass  # SKIP: coberto por test_handles_agent_failure
 
 
-def test_telegram_bot_token_constant() -> None:
-    """Token do bot esta hardcoded (NAO rotacionar)."""
-    from app.api.v1.telegram import TELEGRAM_BOT_TOKEN
-
-    assert TELEGRAM_BOT_TOKEN == "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
-
-
 def test_webhook_emolumento_intent() -> None:
     """Agent detecta 'certidao' e retorna resposta do LLM."""
     import asyncio
@@ -301,7 +294,7 @@ def test_send_telegram_message_success() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client):
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client), patch("app.api.v1.telegram.TELEGRAM_BOT_TOKEN", "dummy_token"):
         asyncio.run(_send_telegram_message(12345, "Ola!"))
     mock_client.post.assert_called_once()
 
@@ -321,7 +314,7 @@ def test_send_telegram_message_api_error() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client):
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client), patch("app.api.v1.telegram.TELEGRAM_BOT_TOKEN", "dummy_token"):
         with pytest.raises(Exception):
             asyncio.run(_send_telegram_message(12345, "Ola!"))
 
@@ -339,7 +332,7 @@ def test_webhook_info_endpoint(client: TestClient) -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client):
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client), patch("app.api.v1.telegram.TELEGRAM_BOT_TOKEN", "dummy_token"):
         resp = client.get("/api/v1/telegram/webhook/info")
     assert resp.status_code == 200
     data = resp.json()
