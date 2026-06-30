@@ -1,7 +1,7 @@
 """Telegram webhook endpoint - recebe updates do bot CartorioBot.
 
 Bot: @CartorioBot (a registrar)
-Token: 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q (NAO rotacionar)
+Token: Configuracao via env TELEGRAM_BOT_TOKEN
 
 Fluxo:
 1. Recebe update do Telegram
@@ -36,8 +36,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 
-# Token do bot (NUNCA rotacionar - Gustavo + ZCode unicos com acesso)
-TELEGRAM_BOT_TOKEN = "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+TELEGRAM_BOT_TOKEN = settings.telegram_bot_token
 TELEGRAM_API_BASE = "https://api.telegram.org"
 
 # HMAC secret compartilhado com Telegram (configurado via setWebhook)
@@ -241,6 +240,10 @@ async def _send_telegram_message(chat_id: int, text: str) -> None:
         chat_id: ID do chat Telegram
         text: texto a enviar (ja passou por PII scrub)
     """
+    if not TELEGRAM_BOT_TOKEN:
+        logger.error("TELEGRAM_BOT_TOKEN nao configurado")
+        return
+
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(
@@ -269,6 +272,9 @@ async def _send_telegram_message(chat_id: int, text: str) -> None:
 )
 async def telegram_webhook_info() -> dict[str, Any]:
     """Retorna info do webhook (debug)."""
+    if not TELEGRAM_BOT_TOKEN:
+        raise HTTPException(status_code=500, detail="Telegram bot token not configured")
+
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/getWebhookInfo"
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.get(url)
