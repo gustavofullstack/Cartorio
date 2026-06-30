@@ -718,6 +718,35 @@ Modified by Pietra/Mavis - 2026-06-25 00:02 BRT
 
 ---
 
+## EPIC SPRINT-4 — LGPD Complete + Débitos (v0.6.1 → v0.7.0)
+
+> Sprint 4 plan: M2.7 doc 2026-06-30. 12 tasks em 4 categorias.
+
+### Sprint 4 — LGPD (D29-D32)
+- [x] **S4.LGPD.T1** D29-G1: lgpd_export.py máscara nome+email no export bundle — owner: M2.7 (mvs_354628c) — **DONE commit e669fb6 + hotfix 340872e** (função _mask_bundle_pii faltando adicionada)
+- [ ] **S4.LGPD.T2** D29-G2: lgpd_direitos.py v1 endpoint usa _mask_bundle_pii — owner: M2.7 (mvs_354628c) — IN PROGRESS (já referencia a função, precisa do hotfix 340872e)
+- [ ] **S4.LGPD.T3** D28-G1: audit log em 100% mutações (request_id/ip/UA) — owner: M3 (eu)
+- [ ] **S4.LGPD.T4** D25-G1: DPO nominal + RIPD v1.3 — owner: cartorio-lgpd
+
+### Sprint 4 — Débitos técnicos
+- [ ] **S4.DEB.T1** DELETE /cliente/{id} (LGPD art. 18 VI) — owner: M3 (eu)
+- [ ] **S4.DEB.T2** Job retenção 5y/até-revogação (D4) — owner: M3 (eu)
+- [ ] **S4.DEB.T3** IP extraction helper (E1.S4.T4) — owner: cartorio-dev
+- [ ] **S4.DEB.T4** Redlock DMS loop (E1.S4.T5) — owner: cartorio-dev
+
+### Sprint 4 — Workflows N8N
+- [ ] **S4.WF.T1** Ativar n8n-nodes-mcp em WF #12 — owner: M2.7
+- [ ] **S4.WF.T2** Ativar n8n-nodes-chatwoot em WF #03 — owner: M2.7
+
+### Sprint 4 — Infra
+- [ ] **S4.INF.T1** Watchdog EVO external (E1.S4.T1) — owner: M3 (eu)
+- [ ] **S4.INF.T2** Fix /health/backup endpoint (E1.S4.T2) — owner: cartorio-dev
+- [ ] **S4.INF.T3** CHANGELOG v0.6.0 — owner: M2.7
+
+**Stop when Sprint 4**: S4.LGPD.T1-T2 done, S4.DEB.T1-T2 done, S4.WF.T1-T2 done, tag v0.7.0.
+
+---
+
 ## EPIC SPRINT-3 — WhatsApp Pilot Ready (v0.5.1 → v0.6.0)
 
 > Spec: `docs/superpowers/specs/2026-06-23-sprint-3-design.md` (DRAFT, aguardando aprovação Gustavo)
