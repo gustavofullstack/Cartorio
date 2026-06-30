@@ -337,8 +337,8 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 - [x] **E6.S2.T15** WF #27: Welcome First Time — DONE 2026-06-23 19:21 BRT (commit 3713d10) (primeira msg cliente → apresenta bot + pede consentimento) — owner: `cartorio-n8n`
 - [x] **E6.S2.T16** WF #28: Audit Snapshot — DONE 2026-06-23 19:21 BRT (commit 3713d10) (snapshot audit_log diário p/ S3 backup) — owner: `cartorio-n8n`
 - [x] **E6.S2.T17** WF #29: Rate Limit Reset — DONE 2026-06-23 19:21 BRT (commit 3713d10) (cron hourly reset counter Redis) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T18** WF #30: Health Deep Check (cron 15min, testa TODOS endpoints API + timeout 5s) — owner: `cartorio-n8n`
-- [ ] **E6.S2.T19** Credenciais N8N: criar `opencode-go-deepseek` (existe ✓) + `openclaw-gateway` (FALTA) + `chatwoot-api` (FALTA) + `redis-cartorio` (FALTA) — owner: `cartorio-n8n`
+- [x] **E6.S2.T18** WF #30: Health Deep Check (cron 15min, testa TODOS endpoints API + timeout 5s) — owner: `cartorio-n8n` — **DONE 2026-06-26** (WF #OYW3pxLCJFP47xgX "30 - Health Deep Check 15min" ativo, 35 workflows total)
+- [x] **E6.S2.T19** Credenciais N8N — owner: `cartorio-n8n` — **DONE 2026-06-26** (11 credenciais verificadas via API: chatwoot-api, redis-cartorio, openclaw-gateway, opencode-go, cartorio-api-key, opencode-go-deepseek, supabase-rest, supabase-postgres, evolution-api-cartorio todas OK)
 - [ ] **E6.S2.T20** Workflow documentado em `infra/n8n-workflows/` (JSON export canônico) — owner: `cartorio-n8n`
 
 ### Sprint E6.S3 — OpenClaw + Opencode-Go + LLM Stack — 15 tasks
