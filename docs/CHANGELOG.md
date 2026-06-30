@@ -5,6 +5,43 @@
 
 ---
 
+## v0.6.1 (2026-06-30) - SPRINT 3 CLOSE: RECOVERY + ANTIGRAVITY + LGPD REVIEW
+
+**Status:** 6/7 stop when atingidos, 27 containers UP, 0 Restarting, 1621 pytest, 0 mypy, 0 ruff.
+
+**Coordenacao:** M3 Pietra (mvs_354628cb) + M2.7 (mvs_95c881...) em paralelo.
+
+### Added (codigo)
+
+#### Sprint 3 P0
+- **ADR-015: Chatwoot restart loop fix** — `docker service update --limit-memory 1G` em `cartorio-chatwoot`
+- **ADR-016: OpenClaw context overflow** — threshold 50 msgs + TTL 24h + `curl /compact`
+- **Pre-commit anti-literal KEY fallback** (`a927ef2`) — regex S105/F401 detecta `KEY`, `PASSWORD`, `TOKEN` hardcoded
+- **Antigravity-SDK + chain 11 provedores** (`2660d57`) — LLM fallback automático entre provedores
+
+#### Sprint 3 P1
+- **N8N route cleanup** (`8263063`) — remove broken `n8n.2notasudi` route, mantem `flow.2notasudi`
+- **Ruff noqa fix** (`61a6a11`) — S105 + F401 em `scripts/integracoes_devops.py`
+- **Incident report** (`363c92a`) — INCIDENT-2026-06-30-1538 multi-service degradation
+
+### Sprint 3 PENDENTE (6/7 — GO Gustavo necessario)
+
+1. SUI 1.1: DNS `chatwoot.2notasudi.com.br` → A record Hostinger (187.77.236.77)
+2. SUI 1.2: Credencial Evolution API no N8N
+3. SUI 1.3: Agent Bot Chatwoot "Cartorio Assistant"
+4. SUI 1.4: Regenerar API key Easypanel
+5. SUI 1.5: OpenClaw LLM key (decisao L1 LGPD)
+6. SUI 1.6: Corrigir typo `supbase` → `supabase`
+
+### Sprint 4 Gate
+
+- LGPD review D26-D32 aprovada (Lesson 234)
+- 3 gaps identificados: D29-G1 P0, D29-G2 ALTA, D28-G1 ALTA
+- Sprint 4 plan: `/tmp/cartorio-sprint4-plan.md`
+- Divisao: M3 = T1/T3/T4/T6 | M2.7 = T2/T7/T8
+
+---
+
 ## v0.6.0 (2026-06-24) - HARDENING + DX + LGPD CHECK-DIGIT
 
 **Status:** 400/400 testes passando, coverage 91.05%. 21 entregas (18 codigo + 3 docs estruturais).
