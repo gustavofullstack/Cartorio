@@ -1270,6 +1270,23 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 - D31 POST /api/v1/lgpd/revogar-consent (revogação art. 18 IX + 8 §5)
 - D32 GET /api/v1/lgpd/audit/{cliente_id} (transparência art. 18 VII)
 
+### Sprint 4 — LGPD gaps + hardening (v0.7.0) — 2026-06-30
+
+**Coordenação:** M3 Pietra (mvs_354628cb) + M2.7 (mvs_95c881...) em paralelo.
+**Plan:** `/tmp/cartorio-sprint4-plan.md`
+
+| Task | Descrição | Owner | Status | Notes |
+|------|-----------|-------|--------|-------|
+| T1 | D29-G1 P0: mascara PII bundle.cliente export | M3 (cartorio-dev) | ✅ DONE e669fb6 | service-level _mask_nome/_mask_email |
+| T2 | D29-G2 ALTA: v1 endpoint mesmo gap | M2.7 | ✅ DONE 16:30 | JSONResponse + Deprecation header |
+| T3 | D28-G1 ALTA: delete duplo → 410 Gone | M3 | pending | |
+| T4 | audit log 100% mutações | M3 | pending | |
+| T5 | coverage ≥90% em lgpd_export | M3 | pending | |
+| T6 | job retenção 5y/até-revogação | M3 | pending | |
+| T7 | WF12: ativar n8n-nodes-mcp | M2.7 | 📋 runbook pronto | deps: package install |
+| T8 | WF03: ativar n8n-nodes-chatwoot | M2.7 | 📋 runbook pronto | deps: cred N8N |
+| REVIEW | T1+T2+T3 validados por cartorio-lgpd | cartorio-lgpd | pending | |
+
 **Pendência operacional**:
 - 28 modified test files no working tree (WIP pré-existente — `os.environ.setdefault` → `os.environ[]=` force fix, autoria alheia, NÃO commitado por cartorio-dev)
 
