@@ -331,18 +331,24 @@ def download_portabilidade(
         **audit_kwargs(request),
     )
 
-    return {
-        "status": "ok",
-        "direito": "portabilidade.download",
-        "cliente_id": cliente_id,
-        "exported_at": bundle.exported_at,
-        "export_hash": bundle.export_hash,
-        "dados": {
-            "cliente": bundle.cliente,
-            "protocolos": bundle.protocolos,
-            "atendimentos": bundle.atendimentos,
-            "documentos": bundle.documentos,
-            "audit_logs": bundle.audit_logs,
-            "consentimentos": bundle.consentimentos,
+    # Mascara PII no bundle.cliente (D29-G2: mesma protecao do v2)
+    from app.services.lgpd_export import _mask_bundle_pii
+
+    return JSONResponse(
+        content={
+            "status": "ok",
+            "direito": "portabilidade.download",
+            "cliente_id": cliente_id,
+            "exported_at": bundle.exported_at,
+            "export_hash": bundle.export_hash,
+            "dados": {
+                "cliente": _mask_bundle_pii(bundle.cliente),
+                "protocolos": bundle.protocolos,
+                "atendimentos": bundle.atendimentos,
+                "documentos": bundle.documentos,
+                "audit_logs": bundle.audit_logs,
+                "consentimentos": bundle.consentimentos,
+            },
         },
-    }
+        headers={"Deprecation": "true"},
+    )

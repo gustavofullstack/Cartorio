@@ -31,6 +31,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -39,6 +40,23 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
+
+
+def _mask_nome(nome: str) -> str:
+    """Mascara nome: primeira letra de cada parte + asteriscos. LGPD D29."""
+    parts = nome.strip().split()
+    masked = " ".join(f"{p[0]}***" if p else "" for p in parts)
+    return masked or "[nome indisponivel]"
+
+
+def _mask_email(email: str) -> str:
+    """Mascara email: primeira letra local + TLD completo. LGPD D29."""
+    if not email or "@" not in email:
+        return "[email indisponivel]"
+    local, domain = email.rsplit("@", 1)
+    # Mostra apenas TLD (gmail.com, uol.com.br) sem subdomínio
+    tld = domain.split(".")[-1] if domain else ""
+    return f"{local[:1]}***@{tld}"
 
 
 @dataclass
@@ -64,6 +82,33 @@ def _hash_export(data: dict) -> str:
     """SHA256 do JSON serializado (LGPD art. 37)."""
     canonical = json.dumps(data, sort_keys=True, default=str)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _mask_bundle_pii(cliente_dict: dict[str, Any]) -> dict[str, Any]:
+    """Mascara campos PII no bundle.cliente antes de retornar pela API.
+
+    Nunca retorna PII bruta em boundary de API.
+    Campos ja hasheados (cpf_hash, telefone_hash) permanecem intactos.
+
+    Args:
+        cliente_dict: dict retornado por exportar_dados_titular().cliente
+
+    Returns:
+        dict com PII mascarado
+    """
+    masked = dict(cliente_dict)
+
+    # email: "joao@gmail.com" -> "j***@gmail.com"
+    if masked.get("email"):
+        email_local = masked["email"].split("@")[0]
+        masked["email"] = f"{email_local[0]}***@{masked['email'].split('@')[1]}"
+
+    # nome: "Joao Silva Santos" -> "J*** S*** S***"
+    if masked.get("nome"):
+        parts = masked["nome"].split()
+        masked["nome"] = " ".join(f"{p[0]}***" for p in parts)
+
+    return masked
 
 
 def exportar_dados_titular(
@@ -97,13 +142,13 @@ def exportar_dados_titular(
 
     now = datetime.now(tz=timezone.utc)
 
-    # 1. Cliente (apenas dados do titular)
+    # 1. Cliente (apenas dados do titular) — PII mascarado LGPD D29
     cliente_dict: dict[str, Any] = {
         "id": cliente.id,
-        "nome": cliente.nome,
+        "nome": _mask_nome(cliente.nome),
         "cpf_hash": cliente.cpf_hash,  # LGPD-by-design: hash, NAO cpf
-        "email": cliente.email,
-        "telefone_hash": cliente.telefone_hash,  # hash
+        "email": _mask_email(cliente.email),
+        "telefone_hash": cliente.telefone_hash,  # hash (já pseudonimizado)
         "consentimento_lgpd": cliente.consentimento_lgpd,
         "consentimento_em": cliente.consentimento_em.isoformat()
         if cliente.consentimento_em

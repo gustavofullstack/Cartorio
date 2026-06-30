@@ -59,7 +59,10 @@ class TestLGPDExport:
         """Export basico retorna bundle com dados do titular."""
         bundle = exportar_dados_titular(db, cliente_id=cliente.id)
         assert bundle.cliente["id"] == cliente.id
-        assert bundle.cliente["nome"] == "Gustavo Almeida"
+        # LGPD D29: nome mascarado
+        assert bundle.cliente["nome"] == "G*** A***"
+        # LGPD D29: email mascarado
+        assert bundle.cliente["email"] == "g***@com"
         # LGPD-by-design: NAO expoe cpf plaintext, apenas hash
         assert bundle.cliente["cpf_hash"] == "hash_gustavo_123"
         assert "cpf" not in bundle.cliente
@@ -195,3 +198,35 @@ class TestLGPDExport:
         assert '"cpf":' not in bundle_str
         # Apenas cpf_hash eh exposto
         assert "cpf_hash" in bundle_str
+
+    def test_export_mask_nome_edge_cases(self, db):
+        """LGPD D29: nome com 1 parte, vazio, None sao tratados."""
+        from app.services.lgpd_export import _mask_nome
+
+        assert _mask_nome("Gustavo") == "G***"
+        assert _mask_nome("") == "[nome indisponivel]"
+        assert _mask_nome("   ") == "[nome indisponivel]"
+        # Nome ja mascarado (idempotente)
+        assert _mask_nome("G*** A***") == "G*** A***"
+
+    def test_export_mask_email_edge_cases(self, db):
+        """LGPD D29: email invalido/ja mascarado tratados."""
+        from app.services.lgpd_export import _mask_email
+
+        assert _mask_email("teste@sub.dominio.com") == "t***@com"
+        assert _mask_email("") == "[email indisponivel]"
+        assert _mask_email("sem-arroba") == "[email indisponivel]"
+        # Ja mascarado (idempotente)
+        assert _mask_email("g***@t.com") == "g***@com"
+
+    def test_mask_bundle_pii_idempotente(self, db, cliente):
+        """LGPD D29: _mask_bundle_pii nao quebra se chamado 2x (v1+v2)."""
+        from app.services.lgpd_export import _mask_bundle_pii
+
+        bundle = exportar_dados_titular(db, cliente_id=cliente.id)
+        masked1 = _mask_bundle_pii(bundle.cliente)
+        masked2 = _mask_bundle_pii(masked1)
+        # Idempotente: segunda chamada nao muda nada
+        assert masked1 == masked2
+        # Nome e email continuam mascarados
+        assert masked2["nome"] in ("G***", "G*** A***")
