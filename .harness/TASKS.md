@@ -730,7 +730,7 @@ Modified by Pietra/Mavis - 2026-06-25 00:02 BRT
 
 ### Sprint 4 — Débitos técnicos
 - [ ] **S4.DEB.T1** DELETE /cliente/{id} (LGPD art. 18 VI) — owner: M3 (eu)
-- [ ] **S4.DEB.T2** Job retenção 5y/até-revogação (D4) — owner: M3 (eu)
+- [x] **S4.DEB.T2** Job retenção 5y/até-revogação + purge fase 2 (D29-G3) — owner: M3 (eu) — **DONE commit 68dd122** (Fase 2: hard delete REVOGACAO_CONSENTIMENTO+OUTROS >5y, preserva EXERCICIO_DIREITO_TITULAR, 6 testes novos, 16/16 green)
 - [ ] **S4.DEB.T3** IP extraction helper (E1.S4.T4) — owner: cartorio-dev
 - [ ] **S4.DEB.T4** Redlock DMS loop (E1.S4.T5) — owner: cartorio-dev
 
@@ -1309,6 +1309,7 @@ POST https://api.2notasudi.com.br/api/v1/metrics/n8n → **404 Not Found** ~~(wo
 | T1 | D29-G1 P0: mascara PII bundle.cliente export | M3 (cartorio-dev) | ✅ DONE e669fb6 | service-level _mask_nome/_mask_email |
 | T2 | D29-G2 ALTA: v1 endpoint mesmo gap | M2.7 | ✅ DONE 16:30 | JSONResponse + Deprecation header |
 | T3 | D28-G1 ALTA: delete duplo → 410 Gone | M3 | pending | |
+| T5 | D29-G3 ALTA: retention phase 2 purge hard-delete (REVOGACAO+OUTROS >5y, preserva EXERCICIO_DIREITO_TITULAR, batch_id audit) | M3 | ✅ DONE 68dd122 | retencao.py + retencao_scheduler.py + 6 testes |
 | T4 | audit log 100% mutações | M3 | pending | |
 | T5 | coverage ≥90% em lgpd_export | M3 | pending | |
 | T6 | job retenção 5y/até-revogação | M3 | pending | |
