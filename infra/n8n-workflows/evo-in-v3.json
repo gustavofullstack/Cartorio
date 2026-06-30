@@ -1,0 +1,175 @@
+{
+  "name": "EVO-IN v3 - Evolution Webhook (COM ENVIO WHATSAPP)",
+  "nodes": [
+    {
+      "id": "dde4969532",
+      "name": "Init Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "718eab7534",
+              "name": "correlation_id",
+              "value": "={{ $uuid }}",
+              "type": "string"
+            },
+            {
+              "id": "de94764808",
+              "name": "wf_started_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "renameConflict": "longestVariableName"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evo-in-v3",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "id": "344f955303",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "evo-in-v3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/webhook/evolution",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "dffe2d0321dcf03f729d5967da45eb7b04cc478935f86131a52b0d649889c69b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "d74ec142db",
+      "name": "POST to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "options": {
+        "timeout": 30000
+      }
+    },
+    {
+      "parameters": {
+        "instanceName": "cartorio-2notas",
+        "number": "={{ $json.body.data.key.remoteJid }}",
+        "text": "={{ $json.response }}"
+      },
+      "id": "d0d1c69a91",
+      "name": "Send WhatsApp",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "id": "8802816775",
+      "name": "Log Final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "709042d488",
+              "name": "log",
+              "value": "=WF EVO-IN v3 executed",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Init Correlation": {
+      "main": [
+        [
+          {
+            "node": "Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "POST to Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST to Backend": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Log Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

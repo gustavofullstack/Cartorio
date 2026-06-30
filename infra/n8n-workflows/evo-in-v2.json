@@ -1,0 +1,160 @@
+{
+  "name": "EVO-IN v2 - Evolution Webhook Inbound (COM ENVIO)",
+  "nodes": [
+    {
+      "id": "init-corr",
+      "name": "Init Correlation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [200, 200],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "corr", "name": "correlation_id", "value": "={{ $uuid }}", "type": "string"},
+            {"id": "wf-started", "name": "wf_started_at", "value": "={{ $now.toISO() }}", "type": "string"}
+          ]
+        },
+        "options": {"renameConflict": "longestVariableName"}
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evo-in",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "id": "webhook-evo",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "evo-in"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/webhook/evolution",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Content-Type", "value": "application/json"},
+            {"name": "X-API-Key", "value": "dffe2d0321dcf03f729d5967da45eb7b04cc478935f86131a52b0d649889c69b"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {"timeout": 30000}
+      },
+      "id": "post-backend",
+      "name": "POST to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "options": {"timeout": 30000}
+    },
+    {
+      "id": "check-handoff",
+      "name": "Check Handoff",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.needs_human_handoff }}",
+        "rules": {
+          "rules": [
+            {"value2": "false", "operation": "equals"},
+            {"value2": "true", "operation": "equals"}
+          ]
+        },
+        "fallbackOutput": "default"
+      }
+    },
+    {
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp Response",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [900, 200],
+      "parameters": {
+        "operation": "sendText",
+        "instanceName": "cartorio-2notas",
+        "number": "={{ $json.body.data.key.remoteJid }}",
+        "text": "={{ $json.response }}"
+      }
+    },
+    {
+      "id": "log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 200],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "l1", "name": "log", "value": "=WF success: response sent to {{ $json.body.data.key.remoteJid }}", "type": "string"}
+          ]
+        }
+      }
+    },
+    {
+      "id": "handoff-chatwoot",
+      "name": "Handoff to Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/webhook/chatwoot",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"event\": \"handoff\",\n  \"instance\": \"cartorio-2notas\",\n  \"sender\": \"{{ $json.body.data.key.remoteJid }}\",\n  \"message\": \"{{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text }}\",\n  \"response\": \"{{ $json.response }}\"\n}"
+      }
+    },
+    {
+      "id": "log-handoff",
+      "name": "Log Handoff",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "l2", "name": "log", "value": "=Handoff to Chatwoot for {{ $json.body.data.key.remoteJid }}", "type": "string"}
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "POST to Backend", "type": "main", "index": 0}]]
+    },
+    "POST to Backend": {
+      "main": [[{"node": "Check Handoff", "type": "main", "index": 0}]]
+    },
+    "Check Handoff": {
+      "main": [
+        [{"node": "Send WhatsApp Response", "type": "main", "index": 0}],
+        [{"node": "Handoff to Chatwoot", "type": "main", "index": 0}]
+      ]
+    },
+    "Send WhatsApp Response": {
+      "main": [[{"node": "Log Success", "type": "main", "index": 0}]]
+    },
+    "Handoff to Chatwoot": {
+      "main": [[{"node": "Log Handoff", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
