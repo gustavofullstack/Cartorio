@@ -43,25 +43,36 @@ async def _dead_mans_switch_loop() -> None:
     """
     from app.jobs.cron_dead_mans_switch import run_dead_mans_switch_check_3lvl
 
+    from app.services.redlock import acquire_lock, release_lock
+
     interval_seconds = max(60, settings.audit_dead_mans_switch_interval_minutes * 60)
+    lock_ttl = interval_seconds - 10  # libera 10s antes do próximo ciclo
     # Sleep inicial curto pra nao derrubar startup se DB estiver lento
     await asyncio.sleep(30)
     while True:
-        try:
-            with session_scope() as db:
-                result = run_dead_mans_switch_check_3lvl(db)
-                logger.info(
-                    "DEAD_MANS_SWITCH_TICK: status=%s alerted=%s telegram_sent=%s",
-                    result.health.status.value,
-                    result.alerted,
-                    result.telegram_sent,
+        # Redlock: apenas a réplica que adquirir o lock executa o check.
+        # Em Swarm multi-replica, as demais pulam silenciosamente.
+        lock_token = acquire_lock("dms-loop", ttl_seconds=lock_ttl)
+        if lock_token is None:
+            logger.debug("DMS: lock held by peer, skipping this cycle")
+        else:
+            try:
+                with session_scope() as db:
+                    result = run_dead_mans_switch_check_3lvl(db)
+                    logger.info(
+                        "DEAD_MANS_SWITCH_TICK: status=%s alerted=%s telegram_sent=%s",
+                        result.health.status.value,
+                        result.alerted,
+                        result.telegram_sent,
+                    )
+            except Exception as exc:  # pragma: no cover - safety net
+                logger.error(
+                    "DEAD_MANS_SWITCH_LOOP_ERROR: type=%s msg=%s",
+                    type(exc).__name__,
+                    str(exc)[:200],
                 )
-        except Exception as exc:  # pragma: no cover - safety net
-            logger.error(
-                "DEAD_MANS_SWITCH_LOOP_ERROR: type=%s msg=%s",
-                type(exc).__name__,
-                str(exc)[:200],
-            )
+            finally:
+                release_lock("dms-loop", lock_token)
         await asyncio.sleep(interval_seconds)
 
 
