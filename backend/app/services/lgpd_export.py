@@ -58,6 +58,19 @@ def _mask_email(email: str | None) -> str:
     return f"{local[:1]}***@{tld}"
 
 
+def _mask_bundle_pii(cliente: dict[str, Any]) -> dict[str, Any]:
+    """Mascara nome e email do bundle.cliente. D29-G2 defense-in-depth.
+
+    Idempotente: se nome/email ja mascarados, nao modifica novamente.
+    """
+    masked = dict(cliente)
+    if "nome" in masked and masked["nome"]:
+        masked["nome"] = _mask_nome(masked["nome"])
+    if "email" in masked and masked["email"]:
+        masked["email"] = _mask_email(masked["email"])
+    return masked
+
+
 @dataclass
 class DataExportBundle:
     cliente: dict[str, Any]
