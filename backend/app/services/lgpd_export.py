@@ -31,7 +31,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -49,7 +48,7 @@ def _mask_nome(nome: str) -> str:
     return masked or "[nome indisponivel]"
 
 
-def _mask_email(email: str) -> str:
+def _mask_email(email: str | None) -> str:
     """Mascara email: primeira letra local + TLD completo. LGPD D29."""
     if not email or "@" not in email:
         return "[email indisponivel]"
@@ -82,33 +81,6 @@ def _hash_export(data: dict) -> str:
     """SHA256 do JSON serializado (LGPD art. 37)."""
     canonical = json.dumps(data, sort_keys=True, default=str)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-
-
-def _mask_bundle_pii(cliente_dict: dict[str, Any]) -> dict[str, Any]:
-    """Mascara campos PII no bundle.cliente antes de retornar pela API.
-
-    Nunca retorna PII bruta em boundary de API.
-    Campos ja hasheados (cpf_hash, telefone_hash) permanecem intactos.
-
-    Args:
-        cliente_dict: dict retornado por exportar_dados_titular().cliente
-
-    Returns:
-        dict com PII mascarado
-    """
-    masked = dict(cliente_dict)
-
-    # email: "joao@gmail.com" -> "j***@gmail.com"
-    if masked.get("email"):
-        email_local = masked["email"].split("@")[0]
-        masked["email"] = f"{email_local[0]}***@{masked['email'].split('@')[1]}"
-
-    # nome: "Joao Silva Santos" -> "J*** S*** S***"
-    if masked.get("nome"):
-        parts = masked["nome"].split()
-        masked["nome"] = " ".join(f"{p[0]}***" for p in parts)
-
-    return masked
 
 
 def exportar_dados_titular(

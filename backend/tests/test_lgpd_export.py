@@ -219,14 +219,14 @@ class TestLGPDExport:
         # Ja mascarado (idempotente)
         assert _mask_email("g***@t.com") == "g***@com"
 
-    def test_mask_bundle_pii_idempotente(self, db, cliente):
-        """LGPD D29: _mask_bundle_pii nao quebra se chamado 2x (v1+v2)."""
-        from app.services.lgpd_export import _mask_bundle_pii
+    def test_mask_bundle_cliente_ja_mascarado(self, db, cliente):
+        """LGPD D29: bundle.cliente ja vem mascarado (nome+email)."""
+        from app.services.lgpd_export import _mask_nome, _mask_email
 
         bundle = exportar_dados_titular(db, cliente_id=cliente.id)
-        masked1 = _mask_bundle_pii(bundle.cliente)
-        masked2 = _mask_bundle_pii(masked1)
-        # Idempotente: segunda chamada nao muda nada
-        assert masked1 == masked2
-        # Nome e email continuam mascarados
-        assert masked2["nome"] in ("G***", "G*** A***")
+        # Bundle.já vem mascarado inline
+        assert bundle.cliente["nome"] == _mask_nome("Gustavo Almeida")
+        assert bundle.cliente["email"] == _mask_email("gustavo@test.com")
+        # Segunda aplicacao e idempotente
+        assert _mask_nome(_mask_nome("Gustavo Almeida")) == "G*** A***"
+        assert _mask_email(_mask_email("gustavo@test.com")) == "g***@com"
