@@ -78,22 +78,69 @@ class Settings(BaseSettings):
     pii_block_on_detect: bool = True  # bloqueia fluxo se PII detectado antes do LLM
 
     # ========================================================================
-    # LLM providers
-    # Opencode-Go (DeepSeek-v4 flash) = low cost primario
-    # OpenClaw gateway = secundario (gpt-5.5 ou Anthropic)
-    # LiteLLM removido (hackeado em 2026-06)
+    # LLM providers (chain completo Turno 37 2026-06-30)
+    # opencode_go (DeepSeek-v4 flash) = primario
+    # openclaw = secundario
+    # openrouter, groq, mistral, opencode-free-2/3, google_ai_studio, jules = fallbacks
     # ========================================================================
+    # Primary
     opencode_go_api_key: Optional[str] = None
-    opencode_go_base_url: str = "https://opencode.ai/zen/go/v1"  # DeepSeek-v4-flash endpoint
-    opencode_go_model: str = "deepseek-v4-flash"
-    opencode_go_rate_limit_per_minute: Optional[int] = None  # None = sem rate limit
+    opencode_go_base_url: str = "https://opencode.ai/zen/v1"
+    opencode_go_model: str = "deepseek-v4-flash-free"
+    opencode_go_rate_limit_per_minute: Optional[int] = None
 
+    # Opencode-Free-1 (nemotron-3-ultra-free, 1M ctx) - Turno 37
+    opencode_free_1_api_key: Optional[str] = None
+    opencode_free_1_model: str = "nemotron-3-ultra-free"
+    opencode_free_1_base_url: str = "https://opencode.ai/zen/v1"
+
+    # Opencode-Free-2 (mimo-v2.5-free, 1M ctx) - Turno 37
+    opencode_free_2_api_key: Optional[str] = None
+    opencode_free_2_model: str = "mimo-v2.5-free"
+    opencode_free_2_base_url: str = "https://opencode.ai/zen/v1"
+
+    # Opencode-Free-3 (deepseek-v4-flash-free, 1M ctx) - Turno 37 (default)
+    opencode_free_3_api_key: Optional[str] = None
+    opencode_free_3_model: str = "deepseek-v4-flash-free"
+    opencode_free_3_base_url: str = "https://opencode.ai/zen/v1"
+
+    # Mistral (devstral-small-latest, 256K ctx) - Turno 37
+    mistral_api_key: Optional[str] = None
+    mistral_base_url: str = "https://api.mistral.ai/v1"
+    mistral_model: str = "devstral-small-latest"
+
+    # OpenRouter (multi-model aggregator) - Turno 37
+    openrouter_api_key: Optional[str] = None
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_model: str = "google/gemma-4-31b-it:free"
+
+    # Groq (compound, 131K ctx) - Turno 37
+    groq_api_key: Optional[str] = None
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    groq_model: str = "groq/compound"
+
+    # Google AI Studio (gemini-3.5-flash, 1M ctx) - Turno 37
+    google_ai_studio_api_key: Optional[str] = None
+    google_ai_studio_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
+    google_ai_studio_model: str = "gemini-3.5-flash"
+
+    # OpenClaw (gpt-5.5 fallback legacy)
     openclaw_base_url: str = "http://cartorio_openclaw-gateway:18790"
     openclaw_api_key: Optional[str] = None
     openclaw_model_primary: str = "gpt-5.5"
     openclaw_model_fallback: str = "anthropic/claude-sonnet-4.6"
 
-    llm_default_provider: Literal["opencode_go", "openclaw"] = "opencode_go"
+    # Jules (Google Gemini 3.1 Pro via async API) - Turno 35/37
+    jules_api_key: Optional[str] = None
+    jules_base_url: str = "https://jules.googleapis.com/v1alpha"
+
+    # Chain order (try in sequence). Tweak LLM_FALLBACK_CHAIN env to override
+    llm_default_provider: str = "opencode_free_3"
+    llm_fallback_chain: str = (
+        "opencode_free_3,opencode_free_1,opencode_free_2,"
+        "opencode_go,openrouter,groq,mistral,"
+        "google_ai_studio,openclaw,jules"
+    )
 
     # ========================================================================
     # Evolution API (WhatsApp)
