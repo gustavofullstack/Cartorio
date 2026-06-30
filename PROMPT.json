@@ -1,13 +1,13 @@
 {
   "meta": {
-    "version": "4.1.0",
-    "date": "2026-06-29",
+    "version": "4.2.0",
+    "date": "2026-06-30",
     "author": "Gustavo Almeida",
     "project": "Cartório 2º Notas Uberlândia — Agent AI Chatbot",
     "repo": "gustavofullstack/Cartorio",
     "domain": "2notasudi.com.br",
     "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER",
-    "changelog": "v4.1.0 — re-validation 2026-06-29: 8/8 GREEN confirmado, Turno 16 metrics aplicadas (1543 tests, 90.18%, 87 endpoints, 27 containers, 134 tables). Briefing original de 25/06 está 4 dias stale; 95% production ready mantido."
+    "changelog": "v4.2.0 — refator cirurgico 2026-06-30 (Sprint 3 Turno 38-39): BLOCO 19.11 novo squad, tabela Hermes atualizada (NousResearch 0.16.0), +~80 linhas, 27 sub-blocos, ~3.5K linhas. Antigravity-SDK integration (commit 7a0b12b) + 14 testes (1f3ead2) + pre-commit hook anti literal KEY (a927ef2). Lessons 199-201 reforcadas. Mantem 95% production ready."
   },
   "activation": {
     "sequence": [

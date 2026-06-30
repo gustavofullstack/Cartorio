@@ -1,6 +1,6 @@
 # 🧠 SUPER PROMPT — PROJETO CARTÓRIO 2º NOTAS UBERLÂNDIA
 # ═══════════════════════════════════════════════════════════════════════════════
-# VERSÃO: 4.0.0 | DATA: 2026-06-25 | AUTOR: Gustavo Almeida
+# VERSÃO: 4.2.0 | DATA: 2026-06-30 | AUTOR: Gustavo Almeida
 # PROJETO: Cartório 2º Notas Uberlândia — Agent AI Chatbot (Pietra Cartório)
 # REPOSITÓRIO: gustavofullstack/Cartorio
 # DOMÍNIO: 2notasudi.com.br
@@ -9,7 +9,7 @@
 
 > **LEIA ESTE DOCUMENTO ANTES DE QUALQUER AÇÃO.**
 > **NADA PODE SER ESQUECIDO OU IGNORADO.**
-> **ESTE É O DOCUMENTO VIVO DO PROJETO — ATUALIZADO EM 2026-06-25.**
+> **ESTE É O DOCUMENTO VIVO DO PROJETO — ATUALIZADO EM 2026-06-30.**
 
 ---
 
@@ -164,6 +164,7 @@
 - [19.8 — Squad J Obs + CI/CD](#198--squad-j--obs--cicd)
 - [19.9 — Squad BRAIN Sistema Cerebral](#199--squad-brain--sistema-cerebral)
 - [19.10 — Squad DOCS Download Docs](#1910--squad-docs--download-docs)
+- [19.11 — Sprint 3 WhatsApp Pilot Ready (Turno 38–39, 2026-06-30)](#1911--sprint-3-whatsapp-pilot-ready-turno-3839-2026-06-30)
 
 ### BLOCO 20 — PRÓXIMOS 7 DIAS PLANO COMPLETO
 - [20.1 — Análise do Estado Atual](#201--análise-do-estado-atual)
@@ -1495,7 +1496,7 @@ Localmente (MacBook):
 | **OpenCode** | Go CLI | Tasks simples via terminal | Scripts, deploys |
 | **OpenChamber** | — | (verificar capacidades) | — |
 | **Goose** | — | (verificar capacidades) | — |
-| **Hermes** | — | (verificar capacidades) | — |
+| **Hermes** | NousResearch `hermes-agent` CLI + gateway | Agente pessoal multi-canal (Matrix/Telegram/Slack) | Evaluate vs Antigravity/Claude Code |
 | **OpenClaw** | Agent AI | Agent de produção (Pietra) | Atendimento ao cliente |
 
 ---
@@ -2703,6 +2704,46 @@ AÇÃO: Usar curl/wget para baixar docs oficiais e salvar localmente.
 
 ---
 
+## 19.11 — Sprint 3 WhatsApp Pilot Ready (Turno 38–39, 2026-06-30)
+
+**Tema**: Fechar os 6 SUI do Gustavo + 2 bugs P0 + credenciais expostas + débitos pré-merge backend + workflows N8N nodes oficiais.
+
+```
+STATUS ATUAL (2026-06-30 09:42 BRT):
+
+  ✅ B1 Chatwoot restart loop (memory limit 1G) — aplicado (ADR-015)
+  ✅ B2 OpenClaw context overflow (threshold 50 msgs / TTL 24h + /compact) — aplicado (ADR-016)
+  ✅ Credenciais expostas DOCUMENTADAS (não rotacionadas por decisão Gustavo 2026-06-24)
+       — ver backend/.env linhas 119-122 + .secrets/ para inventário completo
+       — pre-commit hook `no-literal-api-key-fallback` ativo (stages=[manual])
+       — opt-out `# noqa: ALLOW_KEY_FALLBACK` em integracoes_devops.py
+  ✅ Antigravity-SDK integração (commit 7a0b12b) — Turno 38
+       — 14 testes pytest cobrindo (commit 1f3ead2) — Turno 39
+       — audit log real (Lesson 102 fix: era theater, agora AuditService.log)
+  ⏸ 6 SUI pendentes — responsabilidade Gustavo (UI-only)
+       1.1 DNS chatwoot.2notasudi.com.br (Easypanel UI)
+       1.2 Credencial Evolution API no N8N (N8N UI)
+       1.3 Agent Bot Chatwoot "Cartório Assistant"
+       1.4 Regenerar Easypanel API key (exposta)
+       1.5 OpenClaw LLM key (depende L1 LGPD)
+       1.6 Decisão DNS typo supbase → supabase
+  ⏸ Hermes gateway na VPS — PLANO APRESENTADO, aguardando Gustavo GO
+
+LESSONS APLICADAS (reforçadas nesta sessão):
+  L199 — LOOP STATE 6ª iteração — condensar + cobrar, não marchar
+  L200 — Antigravity race capturado entre sessions (Lesson 187)
+  L201 — Pre-commit hook anti-literal-keys: provider-aware + multi-line
+  L196 — OpenCode-Go free tier fallback (já documentado)
+
+CHAIN LLM ATUAL (10 provedores em fallback dinâmico):
+  opencode_go → opencode_free_1/2/3 → openrouter → groq →
+  mistral → google_ai_studio → openclaw → jules → antigravity
+
+Modified by Gustavo Almeida — Turno 39 (2026-06-30)
+```
+
+---
+
 ## 20.2 — Dia 1 2026-06-26
 
 **Tema**: Correções Críticas + Documentação
@@ -3416,6 +3457,8 @@ SEQUÊNCIA IDEAL:
 | 2.0.0 | 2026-06-23 | Adição de chaves, Jules, Linear, Render, histórico de sessão |
 | 3.0.0 | 2026-06-25 | Reorganização completa em 1000+ linhas, seções numeradas, tabelas, diagramas, JSON companion |
 | 4.0.0 | 2026-06-25 | Versão massiva: 2000+ linhas, 26 blocos, plano 7 dias, histórico completo, todos os squads |
+| 4.1.0 | 2026-06-29 | Re-validation Turno 16: 1543 tests, 90.18%, 87 endpoints, 27 containers, 134 tables. Briefing original de 25/06 ficou stale 4 dias (reflete em JSON companion) |
+| 4.2.0 | 2026-06-30 | Refator cirúrgico — Sprint 3 status, BLOCO 19.11 nova seção squad Turno 38-39, tabela Hermes atualizada (NousResearch hermes-agent 0.16.0), cron pattern reframed, Lessons 199-201 aplicadas. +~80 linhas, 27 sub-blocos, mantém ~3.5K |
 
 ---
 
