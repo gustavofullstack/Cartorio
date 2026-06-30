@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 JULES_API_BASE = "https://jules.googleapis.com/v1alpha"
-DEFAULT_POLL_TIMEOUT_SEC = 25.0
+DEFAULT_POLL_TIMEOUT_SEC = 60.0  # Jules pode demorar 20s+ para responder
 DEFAULT_POLL_INTERVAL_SEC = 2.0
 
 
@@ -199,12 +199,14 @@ async def chat_with_settings(
                 continue
 
             if aresp.status_code >= 400:
-                # Erro de GET — se 4xx, abort; se 5xx, continua
+                # Erro de GET — se 5xx, continua; se 4xx, apenas loga e continua.
+                # IMPORTANTE: Jules pode retornar 404 no início da sessão enquanto
+                # o agent ainda está processando. Não abortar por 404 — continuar polling.
                 if aresp.status_code < 500:
-                    raise ChatError(
-                        f"Jules activities GET {aresp.status_code}: {aresp.text[:200]}",
-                        kind=ChatErrorKind.HTTP_4XX,
-                        status_code=aresp.status_code,
+                    logger.warning(
+                        "jules.activities.4xx sid=%s status=%s — continuing poll",
+                        session_id_jules,
+                        aresp.status_code,
                     )
                 continue
 
