@@ -292,7 +292,7 @@ def download_portabilidade(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
     fmt: str = "json",
-) -> dict[str, Any]:
+) -> JSONResponse:
     """Download dos dados exportados do titular (LGPD art. 18 V).
 
     Args:
@@ -331,9 +331,8 @@ def download_portabilidade(
         **audit_kwargs(request),
     )
 
-    # Mascara PII no bundle.cliente (D29-G2: mesma protecao do v2)
-    from app.services.lgpd_export import _mask_bundle_pii
-
+    # bundle.cliente ja vem mascarado pelo service (exportar_dados_titular
+    # aplica _mask_nome + _mask_email em lgpd_export.py). Sem double-masking.
     return JSONResponse(
         content={
             "status": "ok",
@@ -342,7 +341,7 @@ def download_portabilidade(
             "exported_at": bundle.exported_at,
             "export_hash": bundle.export_hash,
             "dados": {
-                "cliente": _mask_bundle_pii(bundle.cliente),
+                "cliente": bundle.cliente,  # ja mascarado pelo service
                 "protocolos": bundle.protocolos,
                 "atendimentos": bundle.atendimentos,
                 "documentos": bundle.documentos,

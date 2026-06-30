@@ -451,7 +451,7 @@ class TestExportDados:
         assert data["cliente_id"] == c.id
         assert "export_hash" in data
         assert "dados" in data
-        assert data["dados"]["cliente"]["nome"] == "Cliente Teste"
+        assert data["dados"]["cliente"]["nome"] == "C*** T***"  # D29-G1: service-level mask
 
     def test_export_404(self, client: TestClient):
         """D29: retorna 404 quando cliente nao existe."""

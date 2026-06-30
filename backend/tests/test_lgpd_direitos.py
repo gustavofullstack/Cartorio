@@ -121,8 +121,10 @@ class TestDownloadPortabilidade:
         assert data["cliente_id"] == c.id
         assert "export_hash" in data
         assert "dados" in data
-        assert data["dados"]["cliente"]["nome"] == "Maria Portabilidade"
+        assert data["dados"]["cliente"]["nome"] == "M*** P***"  # D29-G2: mascarado
         assert data["dados"]["cliente"]["cpf_hash"] == "hash_maria_port_001"
+        # D29-G2: header Deprecation presente (endpoint v1 deprecated)
+        assert response.headers.get("Deprecation") == "true"
 
     def test_download_portabilidade_404(self, client: TestClient):
         """Retorna 404 quando cliente nao existe."""
@@ -405,5 +407,5 @@ class TestPortabilidade:
         )
         assert get_resp.status_code == 200
         dados = get_resp.json()
-        assert dados["dados"]["cliente"]["nome"] == "E2E Portabilidade"
-        assert dados["dados"]["cliente"]["email"] == "e2e@test.com"
+        assert dados["dados"]["cliente"]["nome"] == "E*** P***"  # D29-G2: mascarado
+        assert dados["dados"]["cliente"]["email"] == "e***@com"  # D29-G2: service-level mask
