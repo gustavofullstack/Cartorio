@@ -233,10 +233,7 @@ def run_retencao(
     exercicio_count = (
         db.query(Cliente)
         .filter(Cliente.deleted_at.isnot(None))
-        .filter(
-            Cliente.motivo_encerramento
-            == MotivoEncerramento.EXERCICIO_DIREITO_TITULAR
-        )
+        .filter(Cliente.motivo_encerramento == MotivoEncerramento.EXERCICIO_DIREITO_TITULAR)
         .count()
     )
     skipped_exercicio = exercicio_count

@@ -185,18 +185,14 @@ async def retencao_scheduler_loop(
                         "scanned": result.scanned,
                         "soft_deleted_5y": result.soft_deleted_5y,
                         "soft_deleted_inativo": result.soft_deleted_inativo,
-                        "hard_deleted_ids": [
-                            f"C{id:04d}" for id in result.hard_deleted_ids
-                        ],
+                        "hard_deleted_ids": [f"C{id:04d}" for id in result.hard_deleted_ids],
                         "hard_deleted_count": len(result.hard_deleted_ids),
                         "skipped_exercicio_direito": result.skipped_exercicio_direito,
                         "errors_count": len(result.errors),
                         "duration_ms": result.duration_ms,
                         "trigger": "scheduler",
                         "brazil_today": brazil_today,
-                        "cutoff_5y": (
-                            result.cutoff_5y.isoformat() if result.cutoff_5y else None
-                        ),
+                        "cutoff_5y": (result.cutoff_5y.isoformat() if result.cutoff_5y else None),
                     }
                     AuditService.log_system_action(
                         action="retencao.run.scheduled",

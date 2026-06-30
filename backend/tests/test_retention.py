@@ -264,6 +264,147 @@ class TestRunRetencaoIdempotencia:
         assert result2.skipped_already_deleted >= 1 or result2.soft_deleted_5y == []
 
 
+class TestRunRetencaoPhase2Purge:
+    """Fase 2: hard delete (purge) de clientes ja soft-deleted.
+
+    Motivos que VAO para purge apos 5y: REVOGACAO_CONSENTIMENTO, OUTROS.
+    Motivo que NAO vai para purge: EXERCICIO_DIREITO_TITULAR.
+    """
+
+    def _create_soft_deleted_cliente(
+        self,
+        db_session: Session,
+        nome: str,
+        cpf_hash: str,
+        motivo: MotivoEncerramento,
+        deleted_at: dt.datetime,
+    ) -> Cliente:
+        """Helper: cria cliente ja soft-deleted."""
+        c = Cliente(
+            nome=nome,
+            cpf_hash=cpf_hash,
+            email=f"{cpf_hash}@test.com",
+            telefone_hash=f"{cpf_hash}_tel",
+            consentimento_lgpd=False,
+            deleted_at=deleted_at.replace(tzinfo=None),
+            motivo_encerramento=motivo,
+        )
+        db_session.add(c)
+        db_session.commit()
+        db_session.refresh(c)
+        return c
+
+    def test_soft_deleted_revogacao_consentimento_5y_purged(self, db_session: Session):
+        """Cliente JA soft-deleted por REVOGACAO_CONSENTIMENTO + > 5y → PURGE."""
+        from app.jobs.retencao import run_retencao
+
+        now = dt.datetime(2026, 6, 29, 12, 0, 0, tzinfo=dt.timezone.utc)
+        seis_anos_atras = now - dt.timedelta(days=365 * 6)
+
+        cliente = self._create_soft_deleted_cliente(
+            db_session,
+            nome="Revogado 6y",
+            cpf_hash="hash_revogado_6y",
+            motivo=MotivoEncerramento.REVOGACAO_CONSENTIMENTO,
+            deleted_at=seis_anos_atras,
+        )
+        cliente_id = cliente.id
+
+        result = run_retencao(db_session, now=now)
+
+        # Row deve ter sido removida do DB
+        db_session.expire_all()
+        assert db_session.get(Cliente, cliente_id) is None
+        assert cliente_id in result.hard_deleted_ids
+        assert len(result.hard_deleted_ids) == 1
+
+    def test_soft_deleted_outros_5y_purged(self, db_session: Session):
+        """Cliente JA soft-deleted por OUTROS + > 5y → PURGE."""
+        from app.jobs.retencao import run_retencao
+
+        now = dt.datetime(2026, 6, 29, 12, 0, 0, tzinfo=dt.timezone.utc)
+        seis_anos_atras = now - dt.timedelta(days=365 * 6)
+
+        cliente = self._create_soft_deleted_cliente(
+            db_session,
+            nome="Outros 6y",
+            cpf_hash="hash_outros_6y",
+            motivo=MotivoEncerramento.OUTROS,
+            deleted_at=seis_anos_atras,
+        )
+        cliente_id = cliente.id
+
+        result = run_retencao(db_session, now=now)
+
+        db_session.expire_all()
+        assert db_session.get(Cliente, cliente_id) is None
+        assert cliente_id in result.hard_deleted_ids
+
+    def test_soft_deleted_exercicio_direito_titular_preservado(self, db_session: Session):
+        """Cliente JA soft-deleted por EXERCICIO_DIREITO_TITULAR + > 5y → PRESERVADO."""
+        from app.jobs.retencao import run_retencao
+
+        now = dt.datetime(2026, 6, 29, 12, 0, 0, tzinfo=dt.timezone.utc)
+        seis_anos_atras = now - dt.timedelta(days=365 * 6)
+
+        cliente = self._create_soft_deleted_cliente(
+            db_session,
+            nome="Correcao 6y",
+            cpf_hash="hash_correcao_6y",
+            motivo=MotivoEncerramento.EXERCICIO_DIREITO_TITULAR,
+            deleted_at=seis_anos_atras,
+        )
+        cliente_id = cliente.id
+
+        result = run_retencao(db_session, now=now)
+
+        # Row deve continuar existindo
+        db_session.expire_all()
+        assert db_session.get(Cliente, cliente_id) is not None
+        assert cliente_id not in result.hard_deleted_ids
+        assert result.skipped_exercicio_direito == 1
+
+    def test_soft_deleted_revogacao_menos_de_5y_nao_purged(self, db_session: Session):
+        """Cliente soft-deleted por REVOGACAO_CONSENTIMENTO + < 5y → NAO PURGE."""
+        from app.jobs.retencao import run_retencao
+
+        now = dt.datetime(2026, 6, 29, 12, 0, 0, tzinfo=dt.timezone.utc)
+        tres_anos_atras = now - dt.timedelta(days=365 * 3)  # < 5y cutoff
+
+        cliente = self._create_soft_deleted_cliente(
+            db_session,
+            nome="Revogado 3y",
+            cpf_hash="hash_revogado_3y",
+            motivo=MotivoEncerramento.REVOGACAO_CONSENTIMENTO,
+            deleted_at=tres_anos_atras,
+        )
+        cliente_id = cliente.id
+
+        result = run_retencao(db_session, now=now)
+
+        db_session.expire_all()
+        assert db_session.get(Cliente, cliente_id) is not None
+        assert result.hard_deleted_ids == []
+
+    def test_batch_id_presente_no_result(self, db_session: Session):
+        """run_retencao deve retornar batch_id nao-nulo."""
+        from app.jobs.retencao import run_retencao
+
+        now = dt.datetime(2026, 6, 29, 12, 0, 0, tzinfo=dt.timezone.utc)
+        result = run_retencao(db_session, now=now)
+        assert result.batch_id is not None
+        assert len(result.batch_id) == 36  # UUID format
+
+    def test_batch_id_personalizado(self, db_session: Session):
+        """batch_id customizado deve ser respeitado."""
+        from app.jobs.retencao import run_retencao
+
+        now = dt.datetime(2026, 6, 29, 12, 0, 0, tzinfo=dt.timezone.utc)
+        custom_id = "meu-batch-2026-06-29-001"
+        result = run_retencao(db_session, now=now, batch_id=custom_id)
+        assert result.batch_id == custom_id
+
+
 class TestRunRetencaoConfig:
     """RetencaoConfig deve aceitar overrides."""
 
