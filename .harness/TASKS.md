@@ -159,7 +159,10 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
   - **Por que importa mesmo assim (Lesson 7)**: daemon com loop infinito + TTY close + manual stop = silent death. systemd Restart=always NAO acorda se houve stop explicito. EVO perdeu network 3h, Swarm auto-recovery 4 crashes, mas daemon nao voltou sozinho
   - **Mitigacao aplicada AGORA (P0)**: cartorio-evo-health cron ja monitora (5min tick via `cartorio-highspeed`). Adiciona restart SE service inativo. Watchdog dedicado seria redundante ate Gustavo GO
   - **Ref**: `~/.mavis/agents/mavis/memory/MEMORY.md` Lesson 7 "Daemon silent death + systemd Restart=always eh armadilha"
-- [ ] **E1.S4.T2** Fix endpoint `GET /api/v1/health/backup` (router.py:752) — bug detectado 2026-06-23 19:01 BRT — owner: `cartorio-dev` — **P1 BACKLOG** (NAO bloqueador Sprint 3, cron `cartorio-backup-status` reporta `ok=false` 24/7 ate fix)
+- [x] **E1.S4.T2** Fix endpoint `GET /api/v1/health/backup` (router.py:752) — bug detectado 2026-06-23 19:01 BRT — owner: Pietra — **DONE 2026-06-26** (commits 0e5095c + 4ffa984)
+  - **Fix**: estrategias 0 (Redis) + 1 (JSON metadata /var/log/cartorio-backup-status.json) + 2 (path local) + 3 (erro explicativo com instrucoes). Redis写得 por backup.sh via POST /api/v1/health/backup/status.
+  - **Re-validado**: commit 67fe1e1 "full re-validation 2026-06-26 — 1544 tests, 8/8 GREEN, backup cron fixed"
+  - **Validacao 2026-06-30**: endpoint atual em router.py:1582-1728, 4 estrategias implementadas, docstring atualizada "E1.S4.T2 (fix 2026-06-26)"
   - **Root cause**: endpoint tenta `subprocess.run(["docker", "exec", "cartorio_api.1.", ...])` em container FastAPI onde (a) `docker` CLI nao existe, (b) nome do container truncado. Fallback local `os.path.isdir("/var/backups/cartorio")` falha pq path NAO esta montado no cartorio_api container. Resultado: retorna SEMPRE `{ok:false, file_count:0, dir_size:"?"}`
   - **Backup REAL esta funcionando** (verificado 19:01 BRT): /var/backups/cartorio/cartorio_backup_20260623_161145.tar.gz (958K, 16:11 BRT), cron VPS-side `0 3 * * *` rodando, monitor `cartorio-backup-monitor.timer` 6h tick reportaria OK se endpoint FastAPI nao mascarasse o status. False positive de cron Mavis `cartorio-backup-status` (hourly)
   - **Solucao recomendada**: **A) Volume mount** `/var/backups/cartorio` no compose do cartorio_api (mais simples, sem docker CLI). Alternativas: B) sidecar container com docker CLI, C) backup.sh escreve JSON metadata em `/var/log/cartorio-backup-status.json` que FastAPI le
@@ -175,25 +178,17 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
   - **Ref**: msg #3282 Pietra→cartorio-dev ACK verificação + Lesson 118 MEMORY.md
   - **Cross-reference**: Lesson 113 cartorio-dev agent memory — slowapi API mismatch FastAPI 0.115+ (`SlowAPIMiddleware` incompatível, workaround = `app.state.limiter` + exception handler only) — útil se Sprint 5+ quiser refactor pra slowapi dedicado
 
-- [ ] **E1.S4.T4** Helper canonico `_extract_client_ip` + retroativo em POST admin/* (Lesson 105 candidate) — owner: `cartorio-dev` — **DEFERRED Sprint 4** (2026-06-25 08:45 BRT — Pietra mvs_6663ee57)
-  - **Origem**: PR 3e5e8f4 (A13 Dead Man's Switch) OBS 1 do cartorio-lgpd review (mvs_90c8cc57 msg #3413 APPROVED_WITH_NOTE). Padrao recorrente detectado: D0.2 (POST /api/v1/audit/log) + 3e5e8f4 (POST /admin/audit/check-now) ambos NAO sobrescrevem IP do audit com `request.client.host` — caller autenticado pode spoofing IP gravado no audit log.
-  - **Mitigacao canonica**: criar `backend/app/core/request_context.py` com `extract_client_ip(request: Request) -> str` (proxy-aware, X-Forwarded-For trust chain configuravel). Handler POST admin/* chama `audit_meta["ip"] = extract_client_ip(request)` ANTES de AuditService.log. Reusar em D0.2 no mesmo PR.
-  - **Por que importa**: LGPD art. 37 (rastreabilidade) — IP spoofing quebra auditoria forense. LGPD-wise nao bloqueou 3e5e8f4 (zero impacto com chave API valida + rede interna), mas vira P0 se houver incident real ou pentest externo.
-  - **Estimativa**: 30min code (helper + 2 endpoints) + 30min tests (extract_client_ip unit + endpoint integration) + 1 cartorio-lgpd review focado
-  - **Ref**: `.harness/team_memory/cartorio-lgpd/Lesson 105` candidate (IP helper canon)
+- [x] **E1.S4.T4** Helper canonico `_extract_client_ip` + retroativo em POST admin/* (Lesson 105 candidate) — owner: `cartorio-dev` — **DONE 2026-06-30 16:57 BRT** (Pietra mvs_95c88146)
+  - **Verificacao 16:57**: `backend/app/middleware/request_context.py:_extract_client_ip()` ja existe (proxy-aware, XFF + fallback request.client.host). Middleware popula `request.state.client_ip`. Todos os handlers POST admin/* ja usam `audit_kwargs(request)` que extrai `client_ip` de `request.state`. Gap 0 real.
+  - **Refs**: router.py:3268+3284 (usa _extract_client_ip), router.py:3074 (check-now usa audit_kwargs), deps.py:55 (usa request.client.host via get_audit_context)
 
-- [ ] **E1.S4.T5** Redlock wrap em scheduler asyncio.create_task (`dead_mans_switch_loop`) — owner: `cartorio-dev` — **DEFERRED Sprint 4** (2026-06-25 08:45 BRT — Pietra mvs_6663ee57)
-  - **Origem**: PR 3e5e8f4 OBS 2 do cartorio-lgpd review. `main.py:89-92` cria task via `asyncio.create_task(_dead_mans_switch_loop(), name='dead_mans_switch_loop')` no lifespan. Em Swarm multi-replica, CADA replica roda independente. N replicas = N alertas Telegram duplicados a cada 15min quando stale.
-  - **Mitigacao**: `app/services/redlock.py` JA EXISTE (verificado em review anterior 5fa154c). Wrap com `redlock('dms-loop', ttl=interval-10s)` antes do check stale. Lock acquired → roda check; lock not acquired → skip silently (peer ja cobriu).
-  - **Por que importa**: operacional, nao LGPD. Alerta spam mascara alerta real = watchdog inutil. LGPD-wise zero impacto.
-  - **Estimativa**: 15min code + 15min test (concurrent acquire test, pytest-asyncio)
-  - **Ref**: review 5fa154c (services/redlock.py pattern)
+- [x] **E1.S4.T5** Redlock wrap em scheduler asyncio.create_task (`dead_mans_switch_loop`) — owner: Pietra — **DONE 2026-06-30 16:58 BRT** (commit 8bf5097)
+  - **Implementacao**: main.py `_dead_mans_switch_loop` agora usa `acquire_lock("dms-loop", ttl=lock_ttl)` antes de executar check. Lock released em finally. Peer replicas pulam ciclo silenciosamente. Lock TTL = interval-10s.
+  - **Testes**: 18/18 DMS tests green (pytest test_dead_mans_switch_a13_3lvl.py). Ruff clean.
+  - **Ref**: ADR-A13, Lesson 118
 
-- [ ] **E1.S4.T6** `POST /admin/audit/check-now` auditar propria execucao (gap check) — owner: `cartorio-dev` — **VERIFICAÇÃO AGORA** (2026-06-25 08:45 BRT — Pietra mvs_6663ee57 dispatch #3415)
-  - **Origem**: PR 3e5e8f4 OBS 3 do cartorio-lgpd review. GET /admin/audit/health audita (`audit.health.read`). NAO verificado se POST /admin/audit/check-now TAMBEM audita propria execucao. Se gap → 1-liner fix.
-  - **Mitigacao esperada**: handler POST chama `AuditService.log(action='audit.check.triggered', actor_id='admin', actor_type='system', resource_type='audit_health', ...)` ANTES do return. Lesson 113 (APPROVED_WITH_NOTE) permite fix-inline sem re-review.
-  - **Por que importa**: read-only ops deixam rastro (GET), write-like ops NAO (POST). LGPD art. 37 continuidade simetrica.
-  - **Estimativa**: 1-2min code se gap, 0 se ja tem
+- [x] **E1.S4.T6** `POST /admin/audit/check-now` auditar propria execucao (gap check) — owner: `cartorio-dev` — **DONE 2026-06-30 16:57 BRT** (Pietra mvs_95c88146)
+  - **Verificacao**: router.py:3061-3074 — endpoint ja chama `AuditService.log(action='audit.check.triggered', ...)` com `**audit_kwargs(request)`. Gap 0 real.
   - **Ref**: msg #3415 dispatch Pietra→cartorio-dev
 
 ---
