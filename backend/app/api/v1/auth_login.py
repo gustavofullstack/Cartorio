@@ -34,6 +34,7 @@ from app.services.auth_jwt import (
     issue_refresh_token,
     verify_token,
 )
+from app.services.audit_context import audit_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +123,6 @@ async def login(
     from app.services.audit import AuditService
     from app.db import session_scope
 
-    client_ip = request.client.host if request.client else "unknown"
-
     try:
         with session_scope() as db:
             access_ttl_min = payload.ttl_minutes or settings.jwt_access_ttl_minutes
@@ -138,6 +137,8 @@ async def login(
                 settings=settings,
             )
 
+            ctx = audit_kwargs(request)
+            ctx["canal"] = "admin"  # override: auth endpoint é sempre canal=admin
             AuditService.log(
                 db,
                 actor_id="auth_login_admin",
@@ -147,10 +148,8 @@ async def login(
                 payload={
                     "dpo": payload.dpo,
                     "ttl_minutes": access_ttl_min,
-                    "client_ip": client_ip,
                 },
-                ip=client_ip,
-                canal="admin",
+                **ctx,
             )
     except Exception as e:
         logger.exception("Erro ao mintar JWT: %s", e)
