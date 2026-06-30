@@ -45,6 +45,27 @@ repos:
       - id: detect-private-key
         name: "Bloquear chaves privadas (SSH, RSA, AWS, etc)"
 
+  # ============================================================================
+  # LGPD/security — chaves queimadas em codigo (Sprint 3 Goal #3)
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: no-literal-api-key-fallback
+        name: "BLOQUEAR fallback literal de chaves/API keys (LGPD/security)"
+        # Roda script Python que detecta literais de chaves conhecidas
+        # (lin_api_, sk-, rnd_, AQ., gAAAAA, ghp_, xox*, AKIA, AIza) em
+        # backend/app/**/*.py e backend/scripts/**/*.py.
+        # Opt-out explicito: linha com "# noqa: ALLOW_KEY_FALLBACK".
+        # Ref: Sprint 3 Goal #3 (2026-06-24).
+        entry: bash -c 'python3 backend/scripts/check_no_literal_keys.py'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        # Manual por enquanto: Gustavo decide se ativa em pre-commit full.
+        # Rodar: pre-commit run --hook-stage manual no-literal-api-key-fallback --all-files
+        stages: [manual]   # noqa: ALLOW_KEY_FALLBACK — Sprint 3 Goal #3
+
       - id: no-commit-to-branch
         name: "Bloquear commit direto em master/main"
         args: [--branch=master, --branch=main]

@@ -28,20 +28,23 @@ import httpx
 # LINEAR
 LINEAR_API = "https://api.linear.app/graphql"
 LINEAR_API_KEY = os.environ.get(
-    "LINEAR_API_KEY", "lin_api_9Bmfyw0EAeAGMzEClLB9OncAT5A66TuQGtCNpLPl"
+    "LINEAR_API_KEY",
+    "lin_api_9Bmfyw0EAeAGMzEClLB9OncAT5A66TuQGtCNpLPl",  # noqa: ALLOW_KEY_FALLBACK — Sprint 3 Goal #3: chave queimada, NAO rotacionada
 )
 LINEAR_TEAM = "cartorio-2notas"
 
 # RENDER
 RENDER_API = "https://api.render.com/v1"
 RENDER_API_KEY = os.environ.get("RENDER_API_KEY") or os.environ.get(
-    "RENDER_API", "rnd_QP8GWTShurLmVGSp3H2e25pXsKti"
+    "RENDER_API",
+    "rnd_QP8GWTShurLmVGSp3H2e25pXsKti",  # noqa: ALLOW_KEY_FALLBACK — Sprint 3 Goal #3: chave queimada, NAO rotacionada
 )
 
 # JULES
 JULES_API = "https://jules.googleapis.com/v1alpha"
 JULES_API_KEY = os.environ.get("JULES_API_KEY") or os.environ.get(
-    "JULES_API", "AQ.Ab8RN6K26NJ3FFYfkXpT3-_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ"
+    "JULES_API",
+    "AQ.Ab8RN6K26NJ3FFYfkXpT3-_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ",  # noqa: ALLOW_KEY_FALLBACK — Sprint 3 Goal #3: chave queimada, NAO rotacionada
 )
 
 
