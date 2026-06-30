@@ -1,18 +1,26 @@
-"""Job de retencao de dados - 5y para clientes COM protocolo, 2y inativo SEM.
+"""Job de retencao de dados - purge LGPD.
 
 Decisao: ver ADR-019.
 
-Politicas (avaliadas em sequencia, nao sobrepostas):
+Fase 1 (soft delete — ativa clientes inativos):
 1. Cliente COM protocolo: retencao 5 anos a partir do ULTIMO protocolo.
    Quando passa dos 5 anos, anonimiza PII (soft delete com motivo=retencao_5y).
 2. Cliente SEM protocolo: retencao 2 anos de inatividade.
    "Inativo" = sem protocolo criado, sem atendimento, sem update ha 2 anos.
    Quando passa, anonimiza PII (soft delete com motivo=outros).
 
-Idempotente: clientes ja soft-deleted (deleted_at IS NOT NULL) sao pulados.
+Fase 2 (hard delete — purge de clientes ja soft-deleted):
+3. Cliente JA soft-deleted por REVOGACAO_CONSENTIMENTO (art. 18 VI) + > 5y
+   desde o deleted_at → PURGE (row removida do DB).
+4. Cliente JA soft-deleted por OUTROS + > 5y desde deleted_at → PURGE.
+5. Cliente JA soft-deleted por EXERCICIO_DIREITO_TITULAR (art. 18 III — correcao)
+   → NAO PURGE. Correcoes devem ser mantidas ate revogacao explicita.
+
+Idempotente: clientes ja soft-deleted (deleted_at IS NOT NULL) sao pulados na Fase 1.
+Fase 2 sempre re-avalia clientes ja soft-deleted (podem ter atingido 5y no ultimo ciclo).
 
 NAO emite audit log: o chamador (CLI, cron, API) eh quem sabe o canal/request_id.
-Funcao retorna dataclass com contadores + IDs afetados.
+Funcao retorna dataclass com contadores + IDs afetados (IDs mascarados para log externo).
 """
 
 from __future__ import annotations
@@ -40,11 +48,18 @@ class RetencaoConfig:
 
 @dataclass(frozen=True)
 class RetencaoResult:
-    """Resultado de uma execucao do job de retencao."""
+    """Resultado de uma execucao do job de retencao.
 
+    IDs internos (int) para uso interno. Para log externo (audit LGPD art. 37),
+    o chamador deve mascarar antes de persistir (ex: f"C{id:04d}").
+    """
+
+    batch_id: str
     scanned: int
     soft_deleted_5y: list[int] = field(default_factory=list)
     soft_deleted_inativo: list[int] = field(default_factory=list)
+    hard_deleted_ids: list[int] = field(default_factory=list)
+    skipped_exercicio_direito: int = 0  # EXERCICIO_DIREITO_TITULAR preservados
     skipped_already_deleted: int = 0
     errors: list[str] = field(default_factory=list)
     cutoff_5y: datetime | None = None
@@ -93,21 +108,32 @@ def run_retencao(
     *,
     config: RetencaoConfig | None = None,
     now: datetime | None = None,
+    batch_id: str | None = None,
 ) -> RetencaoResult:
-    """Executa o job de retencao.
+    """Executa o job de retencao em duas fases.
+
+    Fase 1 — soft delete: anonimiza PII de clientes ATIVOS inativos.
+    Fase 2 — hard delete: PURGE clientes JA soft-deleted por
+    REVOGACAO_CONSENTIMENTO ou OUTROS apos 5y do deleted_at.
+    EXERCICIO_DIREITO_TITULAR (correcoes art. 18 III) sao PRESERVADOS
+    indefinidamente — nunca sao purgados automaticamente.
 
     Args:
         db: SQLAlchemy session.
         config: override dos parametros. Default = producao (5y / 2y / enabled).
         now: data de referencia (para testes deterministicos). Default = UTC now.
+        batch_id: identificador unico deste ciclo de execucao (UUID recomendado).
+                   Usado em audit logs para rastrear um ciclo completo.
 
     Returns:
-        RetencaoResult com contadores + listas de IDs.
+        RetencaoResult com contadores + listas de IDs (internos).
     """
     import time
+    import uuid
 
     config = config or RetencaoConfig()
     now = now or datetime.now(timezone.utc)
+    batch_id = batch_id or str(uuid.uuid4())
     # Model usa datetime.utcnow (naive UTC), entao convertemos pra naive
     # ANTES de comparar com colunas. Mantemos o original para audit log.
     now_naive = now.replace(tzinfo=None)
@@ -117,6 +143,7 @@ def run_retencao(
 
     if not config.enabled:
         return RetencaoResult(
+            batch_id=batch_id,
             scanned=0,
             cutoff_5y=cutoff_5y,
             cutoff_inativo=cutoff_inativo,
@@ -124,6 +151,7 @@ def run_retencao(
         )
 
     result = RetencaoResult(
+        batch_id=batch_id,
         scanned=0,
         cutoff_5y=cutoff_5y,
         cutoff_inativo=cutoff_inativo,
@@ -176,11 +204,54 @@ def run_retencao(
 
     db.commit()
 
+    # =============================================================================
+    # FASE 2 — hard delete (purge) de clientes ja soft-deleted
+    # Motivos que VAO para purge apos 5y: REVOGACAO_CONSENTIMENTO, OUTROS
+    # Motivo que NAO vai para purge: EXERCICIO_DIREITO_TITULAR
+    # =============================================================================
+    hard_deleted_ids: list[int] = []
+    skipped_exercicio: int = 0
+
+    motivos_purge = {
+        MotivoEncerramento.REVOGACAO_CONSENTIMENTO,
+        MotivoEncerramento.OUTROS,
+    }
+
+    clientes_soft_deleted = (
+        db.query(Cliente)
+        .filter(Cliente.deleted_at.isnot(None))
+        .filter(Cliente.deleted_at < cutoff_5y)
+        .filter(Cliente.motivo_encerramento.in_(motivos_purge))
+        .all()
+    )
+
+    for cliente in clientes_soft_deleted:
+        hard_deleted_ids.append(cliente.id)
+        db.delete(cliente)
+
+    # Contabiliza EXERCICIO_DIREITO_TITULAR que existem mas nao sao purgados
+    exercicio_count = (
+        db.query(Cliente)
+        .filter(Cliente.deleted_at.isnot(None))
+        .filter(
+            Cliente.motivo_encerramento
+            == MotivoEncerramento.EXERCICIO_DIREITO_TITULAR
+        )
+        .count()
+    )
+    skipped_exercicio = exercicio_count
+
+    db.commit()
+
     duration_ms = int((time.monotonic() - started) * 1000)
     return RetencaoResult(
+        batch_id=batch_id,
         scanned=len(clientes_ativos),
         soft_deleted_5y=soft_5y,
         soft_deleted_inativo=soft_inativo,
+        hard_deleted_ids=hard_deleted_ids,
+        skipped_exercicio_direito=skipped_exercicio,
+        skipped_already_deleted=0,
         errors=errors,
         cutoff_5y=cutoff_5y,
         cutoff_inativo=cutoff_inativo,

@@ -1,19 +1,19 @@
-"""Scheduler in-process para job de retenção LGPD (Sprint 3 G4.3).
+"""Scheduler in-process para job de retenção LGPD (Sprint 3 G4.3 + Sprint 4 D29-G3).
 
 Roda `run_retencao()` automaticamente no horario configurado (default 03:00 BRT = 06:00 UTC).
 Segue o mesmo padrao de `app.jobs.cron_dead_mans_switch.py` (3-level check).
 
-Decisao:
-- In-process loop (NAO pg_cron / NAO n8n schedule) — mesma justificativa do
-  dead man's switch A13: zero infra extra, observabilidade via logs estruturados.
-- Frequencia: 1 vez ao dia (daily). Roda mais frequentemente que isso NAO faz
-  sentido (retencao 5y/2y).
-- Fuso: BRT (UTC-3). Conversao explicita para evitar drift de 1h em DST.
+Duas fases:
+- Fase 1 (soft delete): anonimiza PII de clientes ATIVOS inativos (5y/2y).
+- Fase 2 (hard delete / purge): remove definitivamente clientes JA soft-deleted
+  por REVOGACAO_CONSENTIMENTO ou OUTROS apos 5y do deleted_at.
+  EXERCICIO_DIREITO_TITULAR (correcoes art. 18 III) sao PRESERVADOS.
 
 LGPD:
 - Art. 16: dados pessoais podem ser eliminados apos cessada a finalidade.
-- Art. 18 VI: titular pode pedir eliminacao. Job automatiza isso.
-- Art. 37: toda execucao do job gera audit log.
+- Art. 18 III: correcao de dados — NAO vai para purge automatico.
+- Art. 18 VI: titular pode pedir eliminacao. Job automatiza soft+hard delete.
+- Art. 37: toda execucao do job gera audit log com batch_id + per-client detail.
 
 Configuracao (env vars):
 - RETENCAO_ENABLED (default true)
@@ -179,24 +179,38 @@ async def retencao_scheduler_loop(
                     db.execute(text("SELECT 1"))
                     result = run_retencao(db)
                     # Audit log da execucao (LGPD art. 37)
+                    # IDs internos mascarados para log externo: f"C{id:04d}"
+                    audit_payload = {
+                        "batch_id": result.batch_id,
+                        "scanned": result.scanned,
+                        "soft_deleted_5y": result.soft_deleted_5y,
+                        "soft_deleted_inativo": result.soft_deleted_inativo,
+                        "hard_deleted_ids": [
+                            f"C{id:04d}" for id in result.hard_deleted_ids
+                        ],
+                        "hard_deleted_count": len(result.hard_deleted_ids),
+                        "skipped_exercicio_direito": result.skipped_exercicio_direito,
+                        "errors_count": len(result.errors),
+                        "duration_ms": result.duration_ms,
+                        "trigger": "scheduler",
+                        "brazil_today": brazil_today,
+                        "cutoff_5y": (
+                            result.cutoff_5y.isoformat() if result.cutoff_5y else None
+                        ),
+                    }
                     AuditService.log_system_action(
                         action="retencao.run.scheduled",
-                        payload={
-                            "scanned": result.scanned,
-                            "soft_deleted_5y": result.soft_deleted_5y,
-                            "soft_deleted_inativo": result.soft_deleted_inativo,
-                            "errors_count": len(result.errors),
-                            "duration_ms": result.duration_ms,
-                            "trigger": "scheduler",
-                            "brazil_today": brazil_today,
-                        },
+                        payload=audit_payload,
                     )
                 last_run_date = brazil_today
                 logger.info(
-                    "RETENCAO_TICK_END: scanned=%s d5y=%s d_inativo=%s errors=%s",
+                    "RETENCAO_TICK_END: batch=%s scanned=%s d5y=%s d_inativo=%s hard_deleted=%s skipped_exercicio=%s errors=%s",
+                    result.batch_id[:8],
                     result.scanned,
                     len(result.soft_deleted_5y),
                     len(result.soft_deleted_inativo),
+                    len(result.hard_deleted_ids),
+                    result.skipped_exercicio_direito,
                     len(result.errors),
                 )
         except asyncio.CancelledError:
