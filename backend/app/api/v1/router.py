@@ -863,8 +863,8 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
         try:
             with session_scope() as db_llm:
                 llm_resp = await chat_with_fallback(
-                    primary_provider="opencode_go",
-                    fallback_provider="openclaw",
+                    # Turno 37 2026-06-30: usa LLM_FALLBACK_CHAIN completo (10 provedores)
+                    # via settings, sem hardcodar primary/fallback/tertiary.
                     messages=[
                         {
                             "role": "system",
