@@ -41,6 +41,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Default turn 38 — 2026-06-30: alias canonico do model selection.
+# Mantem compat com o que rest of chain espera.
+
+ANTIGRAVITY_DEFAULT_MODEL = "gemini-3.1-pro"
+ANTIGRAVITY_PLANNING_MODEL = "gemini-3.1-pro"
+ANTIGRAVITY_EXECUTION_MODEL = "gemini-2.5-pro"
+ANTIGRAVITY_FAST_SCAN_MODEL = "gemini-3-flash"
+
+logger = logging.getLogger(__name__)
+
 # Antigravity config paths
 ANTIGRAVITY_TOKEN_PATH = Path.home() / ".config" / "antigravity" / "auth_token.json"
 ANTIGRAVITY_API_URL = "https://antigravity.googleapis.com/v1"
@@ -249,6 +259,51 @@ async def chat(
     scrub_result = scrub(content)
     safe_content = scrub_result.text
     output_pii_redacted_count = scrub_result.redaction_count
+
+    # Audit log LGPD-015 (Turno 38 — 2026-06-30: era theater of compliance,
+    # docstring prometia e codigo nao entregava. Agora chama AuditService.log
+    # com padrao canonico igual a jules.py::chat_with_settings).
+    if db is not None:
+        try:
+            from app.services.audit import AuditService
+
+            AuditService.log(
+                db,
+                actor_id=actor_id,
+                actor_type="bot",
+                action="llm.antigravity_called",
+                resource=f"llm:antigravity:{selected_model}",
+                payload={
+                    "model": selected_model,
+                    "use_planning_mode": use_planning_mode,
+                    "input_pii_redacted": total_redacted,
+                    "output_pii_redacted": output_pii_redacted_count,
+                    "latency_ms": latency_ms,
+                    "tokens_in": tokens_in,
+                    "tokens_out": tokens_out,
+                    "consent_granted": consent_granted,
+                },
+                request_id=request_id,
+                ip=client_ip,
+                canal="api",
+            )
+            if output_pii_redacted_count > 0:
+                AuditService.log(
+                    db,
+                    actor_id=actor_id,
+                    actor_type="bot",
+                    action="llm.output_scrubbed",
+                    resource=f"llm:antigravity:{selected_model}",
+                    payload={
+                        "redaction_count": output_pii_redacted_count,
+                        "provider": "antigravity",
+                    },
+                    request_id=request_id,
+                    ip=client_ip,
+                    canal="api",
+                )
+        except Exception as exc:
+            logger.warning("antigravity.audit_log_failed: %s", exc)
 
     return ChatResponse(
         content=safe_content,
