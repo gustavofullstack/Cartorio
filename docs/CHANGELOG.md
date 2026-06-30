@@ -5,13 +5,13 @@
 
 ---
 
-## v0.6.1 (2026-06-30) - SPRINT 3 CLOSE: RECOVERY + ANTIGRAVITY + LGPD REVIEW
+## v0.6.1 (2026-06-30) - SPRINT 3 CLOSE + SPRINT 4 START
 
 **Status:** 6/7 stop when atingidos, 27 containers UP, 0 Restarting, 1621 pytest, 0 mypy, 0 ruff.
 
 **Coordenacao:** M3 Pietra (mvs_354628cb) + M2.7 (mvs_95c881...) em paralelo.
 
-### Added (codigo)
+### Sprint 3 Close
 
 #### Sprint 3 P0
 - **ADR-015: Chatwoot restart loop fix** — `docker service update --limit-memory 1G` em `cartorio-chatwoot`
@@ -23,6 +23,30 @@
 - **N8N route cleanup** (`8263063`) — remove broken `n8n.2notasudi` route, mantem `flow.2notasudi`
 - **Ruff noqa fix** (`61a6a11`) — S105 + F401 em `scripts/integracoes_devops.py`
 - **Incident report** (`363c92a`) — INCIDENT-2026-06-30-1538 multi-service degradation
+- **Tag v0.6.0 pushada** — master ahead 5 commits
+
+### Sprint 4 — D29 LGPD Fix (M2.7 executed)
+
+#### D29-G1 P0 — bundle.cliente PII exposto (CRITICO)
+- **Fix:** `exportar_dados_titular()` agora mascara `nome` e `email` no bundle.cliente
+  - nome: "Gustavo Almeida" → "G*** A***" via `_mask_nome()`
+  - email: "gustavo@test.com" → "g***@com" via `_mask_email()`
+  - `cpf_hash` e `telefone_hash` ja pseudonimizados (intocados)
+- **v1 endpoint** (`lgpd_direitos.py`): `_mask_bundle_pii()` em defesa em profundidade (idempotente)
+- **14 testes** cobrindo: basico, borda (1 parte, vazio, ja mascarado), idempotencia
+- Commit: `e669fb6`
+
+#### T7 — n8n-nodes-mcp instalado
+- `npm install -g n8n-nodes-mcp@0.1.37` no container N8N
+- Versao pinada em `N8N_COMMUNITY_PACKAGES` env (N8N 2.x requer versao explicita)
+- Traefik custom.yaml atualizado com IP N8N no overlay network (10.11.9.x)
+- Commit: `5cfebfd`
+
+#### T8 — n8n-nodes-chatwoot disponivel
+- `@devlikeapro/n8n-nodes-chatwoot@1.0.2` carregado do volume `/home/node/.n8n/nodes/`
+- WF #03 "Handoff Humano (Chatwoot v2)" usa HTTP Request nodes; Chatwoot node
+  agora disponivel para swap manual no N8N UI (flow.2notasudi.com.br)
+- N8N health: 200 OK
 
 ### Sprint 3 PENDENTE (6/7 — GO Gustavo necessario)
 
@@ -36,9 +60,9 @@
 ### Sprint 4 Gate
 
 - LGPD review D26-D32 aprovada (Lesson 234)
-- 3 gaps identificados: D29-G1 P0, D29-G2 ALTA, D28-G1 ALTA
+- 3 gaps identificados: D29-G1 P0 ✅, D29-G2 ALTA, D28-G1 ALTA
 - Sprint 4 plan: `/tmp/cartorio-sprint4-plan.md`
-- Divisao: M3 = T1/T3/T4/T6 | M2.7 = T2/T7/T8
+- Divisao: M3 = T1/T3/T4/T6 | M2.7 = T2/T7/T8 ✅
 
 ---
 
