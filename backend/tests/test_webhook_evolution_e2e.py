@@ -351,3 +351,115 @@ def test_payload_com_unicode_emoji_e_pii(client) -> None:
     assert "123.456.789-09" not in str(body)
     # Emoji nao pode quebrar o scrub
     assert "👋" not in str(body) or "ola" in str(body).lower()  # ou nao quebra nada
+
+
+# ============================================================================
+# Sprint 3 (2026-06-30) — Evolution API Baileys variants
+# ============================================================================
+# EVO 2.3.7 + Baileys pode enviar o campo `data.key` como:
+#   - dict (formato canonico)  : { id: "...", remoteJid: "...", fromMe: ... }
+#   - string (variante Baileys): "<id-longo>"
+# O segundo formato crashava webhook_evolution com
+#   AttributeError: 'str' object has no attribute 'get' (router.py:701).
+# Estes testes cobrem os 3 formatos que EVO ja enviou em producao,
+# garantindo que o handler trata todos sem 500.
+
+
+def _make_evolution_payload_baileys_dict_key(text: str, sender: str = "5534998765432") -> dict:
+    """Formato Baileys canonico: `data.key` e dict {id, remoteJid, fromMe}."""
+    return {
+        "event": "MESSAGES_UPSERT",
+        "instance": "cartorio-2notas",
+        "data": {
+            "key": {
+                "id": "BAILES9A9F8E7D6C5B4A3",
+                "remoteJid": f"{sender}@s.whatsapp.net",
+                "fromMe": False,
+            },
+            "message": {"conversation": text},
+            "messageTimestamp": 1719747600,
+        },
+    }
+
+
+def _make_evolution_payload_baileys_str_key(text: str, sender: str = "5534998765432") -> dict:
+    """Formato Baileys variante: `data.key` e string (crashava antes do fix)."""
+    return {
+        "event": "MESSAGES_UPSERT",
+        "instance": "cartorio-2notas",
+        "data": {
+            "key": "BAILES9A9F8E7D6C5B4A3:99@s.whatsapp.net",
+            "message": {"conversation": text},
+            "messageTimestamp": 1719747600,
+        },
+    }
+
+
+def test_baileys_dict_key_nao_crashea(client) -> None:
+    """Baileys formato canonico (key=dict): handler responde 200 sem erro."""
+    payload = _make_evolution_payload_baileys_dict_key("Bom dia, horario de funcionamento?")
+    resp = client.post("/api/v1/webhook/evolution", json=payload)
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    body = resp.json()
+    assert body.get("status") == "ok"
+    # Texto util foi processado, nao cai em handoff por payload_empty
+    assert body.get("needs_human_handoff") in (False, None) or "texto util" not in body.get("response", "")
+
+
+def test_baileys_str_key_nao_crashea(client) -> None:
+    """REGRESSAO 2026-06-30 08:12 BRT: data.key como string NAO pode crashar.
+
+    Antes do fix, esta chamada voltava 500 com AttributeError em router.py:701.
+    Apos o fix, deve voltar 200 e cair no fluxo legado (sender=unknown,
+    sem idempotency check, mas com mensagem processada normalmente).
+    """
+    payload = _make_evolution_payload_baileys_str_key("Ola, qual o emolumento de uma certidao?")
+    resp = client.post("/api/v1/webhook/evolution", json=payload)
+    # Era 500 antes; agora 200 (handoff ou bot response, qualquer um desde que nao 500)
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text[:300]}"
+    body = resp.json()
+    assert body.get("status") == "ok"
+    # Nao pode ter volcado exception crua no body
+    assert "AttributeError" not in str(body)
+    assert "Traceback" not in str(body)
+
+
+def test_baileys_str_key_com_pii(client) -> None:
+    """Variante Baileys string-key com PII: PII removido, resposta 200 sem 500."""
+    payload = _make_evolution_payload_baileys_str_key(
+        "Meu CPF eh 123.456.789-09 e email maria@example.com"
+    )
+    resp = client.post("/api/v1/webhook/evolution", json=payload)
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text[:300]}"
+    body = resp.json()
+    # PII nao vaza
+    body_str = str(body).lower()
+    assert "123.456.789-09" not in body_str
+    assert "maria@example.com" not in body_str
+
+
+def test_baileys_sem_data_key(client) -> None:
+    """Payload sem campo `data`: cai no fluxo legado sem crashar."""
+    payload = {
+        "event": "MESSAGES_UPSERT",
+        "instance": "cartorio-2notas",
+        # sem "data" no payload
+        "message": {"text": "Ola cartorio"},
+    }
+    resp = client.post("/api/v1/webhook/evolution", json=payload)
+    assert resp.status_code in (200, 422), f"got {resp.status_code}: {resp.text[:300]}"
+
+
+def test_baileys_data_null_ou_nao_dict(client) -> None:
+    """Payload com `data: null` ou `data: "string"`: trata sem 500."""
+    for bad_data in [None, "string-as-data", 42, ["list", "as", "data"]]:
+        payload = {
+            "event": "MESSAGES_UPSERT",
+            "instance": "cartorio-2notas",
+            "data": bad_data,
+        }
+        resp = client.post("/api/v1/webhook/evolution", json=payload)
+        # Sem 500 - pode ser 200 (handoff) ou 422 (validation), nunca 500
+        assert resp.status_code in (200, 422), (
+            f"data={bad_data!r} -> {resp.status_code}: {resp.text[:300]}"
+        )

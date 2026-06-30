@@ -696,9 +696,24 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
     """
     # Idempotency check (Sprint 2) - so se payload tem formato novo
     # (data.key.id). Formato legado e ignorado silenciosamente.
+    #
+    # Defense in depth: Evolution API/Baileys pode enviar `data.key` como
+    # string em alguns formatos (sem dict {id, remoteJid, fromMe}). Se isso
+    # acontecer, `data.key.id` nao existe -> pulamos idempotencia silenciosamente
+    # e caimos no fluxo legado abaixo, em vez de crashar com
+    # AttributeError: 'str' object has no attribute 'get'.
+    # Ref: backend/logs/errors.log (2026-06-30 08:12 BRT) - Baileys novo.
     from app.services.evolution_ingest import ingest_evolution_event
 
-    if payload.get("data", {}).get("key", {}).get("id"):
+    _data = payload.get("data") or {}
+    _key_raw = _data.get("key") if isinstance(_data, dict) else None
+    _msg_id = (
+        _key_raw.get("id")
+        if isinstance(_key_raw, dict)
+        else None
+    )
+
+    if _msg_id:
         with session_scope() as db:
             ingest_result = ingest_evolution_event(db, payload)
             if ingest_result["status"] == "idempotent":
@@ -714,9 +729,13 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
     # Evolution API envia payload no formato:
     # { event, instance, data: { key: {id, remoteJid}, message: {...}, messageTimestamp } }
     # O campo "message" fica DENTRO de "data", não no nível raiz.
-    _data = payload.get("data", {})
-    _msg = _data.get("message") or {}
-    sender = _data.get("key", {}).get("remoteJid", "unknown")
+    # Reaproveita _data/_key_raw extraidos acima (sem reprocessar payload).
+    _msg = _data.get("message") if isinstance(_data, dict) else {}
+    sender = (
+        _key_raw.get("remoteJid", "unknown")
+        if isinstance(_key_raw, dict)
+        else "unknown"
+    )
     instance = payload.get("instance", "")
 
     # Evolution API / WhatsApp envia message.conversation OU message.extendedTextMessage
