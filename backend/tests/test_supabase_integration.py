@@ -59,11 +59,13 @@ class TestSupabaseConfig:
         """settings.supabase_url deve estar configurado."""
         assert settings.supabase_url, "SUPABASE_URL não configurado (esperado em prod)"
         # Aceita easypanel.host (staging) ou 2notasudi.com.br (prod) ou localhost
-        assert any([
-            "2notasudi" in settings.supabase_url,
-            "localhost" in settings.supabase_url,
-            "easypanel" in settings.supabase_url,
-        ]), f"SUPABASE_URL inesperado: {settings.supabase_url}"
+        assert any(
+            [
+                "2notasudi" in settings.supabase_url,
+                "localhost" in settings.supabase_url,
+                "easypanel" in settings.supabase_url,
+            ]
+        ), f"SUPABASE_URL inesperado: {settings.supabase_url}"
 
     def test_supabase_anon_key_existe(self) -> None:
         """settings.supabase_anon_key deve existir (skip se vazio em dev local)."""

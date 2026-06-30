@@ -37,6 +37,7 @@ def client(test_engine, test_session_factory):
         patch("app.main.engine", test_engine),
     ):
         from app.main import app
+
         with TestClient(app) as c:
             yield c
 
@@ -115,15 +116,8 @@ def test_webhook_evolution_llm_success(mock_post, client):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
-        "choices": [{
-            "message": {
-                "content": "Olá, posso te ajudar com sua certidão."
-            }
-        }],
-        "usage": {
-            "prompt_tokens": 10,
-            "completion_tokens": 15
-        }
+        "choices": [{"message": {"content": "Olá, posso te ajudar com sua certidão."}}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 15},
     }
     mock_post.return_value = mock_response
 
@@ -149,11 +143,7 @@ def test_webhook_evolution_llm_handoff(mock_post, client):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
-        "choices": [{
-            "message": {
-                "content": "Encaminhando para um atendente. [HUMANO]"
-            }
-        }]
+        "choices": [{"message": {"content": "Encaminhando para um atendente. [HUMANO]"}}]
     }
     mock_post.return_value = mock_response
 

@@ -1,4 +1,5 @@
 """Testes do servico de direito ao esquecimento (LGPD art. 18 VI)."""
+
 from __future__ import annotations
 
 import os
@@ -58,7 +59,9 @@ def _make_cliente(db, cpf_hash: str = "hash1234567890", nome: str = "Joao da Sil
     return c
 
 
-def _make_protocolo(db, cliente_id: int, status: str = "aberto", numero: str = "2026-00001") -> Protocolo:
+def _make_protocolo(
+    db, cliente_id: int, status: str = "aberto", numero: str = "2026-00001"
+) -> Protocolo:
     """Cria protocolo vinculado ao cliente."""
     p = Protocolo(
         cliente_id=cliente_id,
@@ -117,7 +120,9 @@ def test_cliente_com_protocolo_cancelado_faz_hard_delete(db_session) -> None:
 
 def test_cliente_com_protocolo_aberto_faz_soft_delete(db_session) -> None:
     """Cliente com protocolo aberto -> soft delete (anonimiza PII)."""
-    c = _make_cliente(db_session, cpf_hash="abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890")
+    c = _make_cliente(
+        db_session, cpf_hash="abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+    )
     p = _make_protocolo(db_session, c.id)
     cliente_id = c.id
 

@@ -49,9 +49,7 @@ def test_marks_old_atendimento_as_stale(db_session):
 
 def test_ignores_already_concluded_atendimentos(db_session):
     """Atendimentos ja concluidos nao sao marcados como stale (ja filtrados pela query)."""
-    concluded = _make_atendimento(
-        db_session, external_id="u-conc", status="concluido"
-    )
+    concluded = _make_atendimento(db_session, external_id="u-conc", status="concluido")
     concluded.updated_at = datetime.now(timezone.utc) - timedelta(hours=2)
     db_session.commit()
 

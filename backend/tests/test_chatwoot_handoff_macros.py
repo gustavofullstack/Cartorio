@@ -10,6 +10,7 @@ Cobre:
 7. Action types validos (assign_team, add_label, etc)
 8. Helpers de busca
 """
+
 from __future__ import annotations
 
 
@@ -35,7 +36,9 @@ def test_total_macros_eh_pelo_menos_10() -> None:
 def test_cada_macro_tem_nome_unico() -> None:
     """Nomes de macros sao unicos (slug-safe)."""
     names = [m.name for m in HANDOFF_MACROS]
-    assert len(names) == len(set(names)), f"Nomes duplicados: {[n for n in names if names.count(n) > 1]}"
+    assert len(names) == len(set(names)), (
+        f"Nomes duplicados: {[n for n in names if names.count(n) > 1]}"
+    )
 
 
 def test_cada_macro_tem_actions_nao_vazias() -> None:
@@ -232,9 +235,7 @@ def test_assign_team_payload_tem_team() -> None:
     for macro in HANDOFF_MACROS:
         for action in macro.actions:
             if action.type == "assign_team":
-                assert "team" in action.payload, (
-                    f"{macro.name}: assign_team sem 'team'"
-                )
+                assert "team" in action.payload, f"{macro.name}: assign_team sem 'team'"
                 assert action.payload["team"] in {
                     "atendimento",
                     "juridico",

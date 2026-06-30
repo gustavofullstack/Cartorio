@@ -14,6 +14,7 @@ Uso:
     for macro in HANDOFF_MACROS:
         chatwoot_api.execute_macro(conversation_id, macro.name)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -288,9 +289,7 @@ MACRO_TRANSFERIR = HandoffMacro(
     name="transferir",
     title="Transferir (sem mudança de time)",
     description="Apenas marca a conversa como transferida e adiciona label, sem mudar atribuicao.",
-    actions=(
-        MacroAction(type="add_label", payload={"label": "transferido"}),
-    ),
+    actions=(MacroAction(type="add_label", payload={"label": "transferido"}),),
     summary_template=(
         "🔁 **Conversa Transferida**\n\n"
         "Conversa: #{{conversation.id}}\n"
@@ -308,9 +307,7 @@ MACRO_RESUMIR = HandoffMacro(
     name="resumir",
     title="Resumir Contexto",
     description="Adiciona nota interna com resumo estruturado da conversa ate o momento.",
-    actions=(
-        MacroAction(type="add_label", payload={"label": "resumido"}),
-    ),
+    actions=(MacroAction(type="add_label", payload={"label": "resumido"}),),
     summary_template=(
         "📝 **Resumo da Conversa**\n\n"
         "Conversa: #{{conversation.id}}\n"

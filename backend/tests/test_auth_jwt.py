@@ -345,6 +345,7 @@ def test_verify_token_missing_claim_raise(settings, user_id: str) -> None:
 
     # Cria payload sem 'jti' (claim obrigatorio)
     import time
+
     bad_payload = {
         "sub": user_id,
         "iss": settings.jwt_issuer,

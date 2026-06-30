@@ -12,6 +12,7 @@ O teste de schema (test_supabase_schema.py) valida a migration no Postgres real.
 
 Modified by Gustavo Almeida — 2026-06-25
 """
+
 from __future__ import annotations
 
 import inspect
@@ -34,9 +35,7 @@ def _all_models_with_tablename() -> dict[str, type]:
     """Descobre todos os models SQLAlchemy com __tablename__."""
     models = {}
     for name, obj in inspect.getmembers(Base, inspect.isclass):
-        if hasattr(obj, "__tablename__") and obj.__tablename__ not in (
-            "alembic_version",
-        ):
+        if hasattr(obj, "__tablename__") and obj.__tablename__ not in ("alembic_version",):
             models[obj.__tablename__] = obj
     return models
 
@@ -74,8 +73,8 @@ MODELS_WITH_TIMESTAMP = {
 
 # Models intencionalmente SEM updated_at (append-only ou audit)
 MODELS_WITHOUT_TIMESTAMP = {
-    "audit_log",      # append-only, nunca atualizado
-    "outbox_messages", # append-only, status muda mas created_at basta
+    "audit_log",  # append-only, nunca atualizado
+    "outbox_messages",  # append-only, status muda mas created_at basta
     "webhook_events",  # append-only
 }
 
@@ -127,7 +126,7 @@ def test_cliente_updated_at_auto_set(db_session):
 
 
 def test_cliente_updated_at_muda_no_flush(db_session):
-    """ updated_at eh atualizado quando o ORM detecta mudanca."""
+    """updated_at eh atualizado quando o ORM detecta mudanca."""
     from app.models.cliente import Cliente
 
     cliente = Cliente(cpf_hash="test_hash_002", nome="Teste Original")
@@ -239,6 +238,4 @@ def test_migration_0009_covers_core_tables():
     content = matches[0].read_text()
 
     for table in MODELS_WITH_TIMESTAMP:
-        assert table in content, (
-            f"Tabela '{table}' nao encontrada na migration 0009"
-        )
+        assert table in content, f"Tabela '{table}' nao encontrada na migration 0009"

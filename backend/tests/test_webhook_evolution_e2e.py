@@ -403,7 +403,9 @@ def test_baileys_dict_key_nao_crashea(client) -> None:
     body = resp.json()
     assert body.get("status") == "ok"
     # Texto util foi processado, nao cai em handoff por payload_empty
-    assert body.get("needs_human_handoff") in (False, None) or "texto util" not in body.get("response", "")
+    assert body.get("needs_human_handoff") in (False, None) or "texto util" not in body.get(
+        "response", ""
+    )
 
 
 def test_baileys_str_key_nao_crashea(client) -> None:

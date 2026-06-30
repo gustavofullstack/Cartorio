@@ -707,11 +707,7 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
 
     _data = payload.get("data") or {}
     _key_raw = _data.get("key") if isinstance(_data, dict) else None
-    _msg_id = (
-        _key_raw.get("id")
-        if isinstance(_key_raw, dict)
-        else None
-    )
+    _msg_id = _key_raw.get("id") if isinstance(_key_raw, dict) else None
 
     if _msg_id:
         with session_scope() as db:
@@ -730,11 +726,16 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
     # { event, instance, data: { key: {id, remoteJid}, message: {...}, messageTimestamp } }
     # O campo "message" fica DENTRO de "data", não no nível raiz.
     # Reaproveita _data/_key_raw extraidos acima (sem reprocessar payload).
-    _msg = _data.get("message") if isinstance(_data, dict) else {}
+    # Compatibilidade com formato legado (message e sender na raiz do payload)
+    _msg = (
+        _data.get("message")
+        if (_data and isinstance(_data, dict))
+        else (payload.get("message") or {})
+    )
     sender = (
         _key_raw.get("remoteJid", "unknown")
-        if isinstance(_key_raw, dict)
-        else "unknown"
+        if (_key_raw and isinstance(_key_raw, dict))
+        else (payload.get("sender") or "unknown")
     )
     instance = payload.get("instance", "")
 
@@ -742,12 +743,16 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
     # (formato BAILEYS). Verifica ambos para garantir compatibilidade.
     raw_text = ""
     if isinstance(_msg, dict):
-        raw_text = _msg.get("text") or _msg.get("conversation") or _msg.get("extendedTextMessage", {}).get("text", "") or ""
+        raw_text = (
+            _msg.get("text")
+            or _msg.get("conversation")
+            or _msg.get("extendedTextMessage", {}).get("text", "")
+            or ""
+        )
     if isinstance(raw_text, list):
         # Às vezes o texto vem como lista de fragments (tipo: [{"type":"string","text":"..."}])
         raw_text = "".join(
-            item.get("text", "") if isinstance(item, dict) else str(item)
-            for item in raw_text
+            item.get("text", "") if isinstance(item, dict) else str(item) for item in raw_text
         )
 
     # Defesa em profundidade: payload sem texto util (None, vazio, ou nao-dict)
@@ -758,7 +763,9 @@ async def webhook_evolution(request: Request, payload: dict) -> dict:
             "response": (
                 "Recebi uma mensagem sem texto util. Vou transferir para um "
                 "atendente humano para que possamos ajudar melhor. [HUMANO]"
-            ).replace("[HUMANO]", "").strip(),
+            )
+            .replace("[HUMANO]", "")
+            .strip(),
             "scrubbed": "",
             "pii_blocked": False,
             "needs_human_handoff": True,
@@ -1735,6 +1742,7 @@ async def health_backup() -> dict:
 
 class BackupStatusUpdate(BaseModel):
     """Schema para receber status do backup via POST."""
+
     model_config = ConfigDict(from_attributes=True)
 
     ok: bool = False
@@ -1756,7 +1764,7 @@ class BackupStatusUpdate(BaseModel):
         "Armazena em Redis key `backup:status` com TTL de 28h. "
         "O GET /health/backup le esta key como estrategia 0 (prioritaria).\n\n"
         "Uso no backup.sh:\n"
-        '  curl -X POST https://api.2notasudi.com.br/api/v1/health/backup/status \\\n'
+        "  curl -X POST https://api.2notasudi.com.br/api/v1/health/backup/status \\\n"
         '    -H "Content-Type: application/json" \\\n'
         '    -d \'{"ok":true,"last_backup_iso":"2026-06-26T19:30:00Z",'
         '"last_backup_filename":"cartorio_backup_20260626.tar.gz",'
@@ -4588,9 +4596,7 @@ def cancelar_agendamento(
     from app.services.agendamento import AgendamentoService
 
     try:
-        agendamento = AgendamentoService.cancelar_agendamento(
-            db, agendamento_id, request=request
-        )
+        agendamento = AgendamentoService.cancelar_agendamento(db, agendamento_id, request=request)
         return AgendamentoResponse.model_validate(agendamento)
     except ValueError as e:
         raise HTTPException(
@@ -4626,9 +4632,7 @@ def confirmar_agendamento(
     from app.services.agendamento import AgendamentoService
 
     try:
-        agendamento = AgendamentoService.confirmar_agendamento(
-            db, agendamento_id, request=request
-        )
+        agendamento = AgendamentoService.confirmar_agendamento(db, agendamento_id, request=request)
         return AgendamentoResponse.model_validate(agendamento)
     except ValueError as e:
         raise HTTPException(
@@ -4671,11 +4675,14 @@ def get_agendamentos_pendentes(
     db: Session = Depends(get_db),
 ) -> list[dict]:
     """Lista agendamentos pendentes para notificação N8N.
-    
+
     A26: Cache Redis 60s para reduzir carga DB em pico.
     """
     from app.services.agendamento import AgendamentoService
-    from app.services.agendamento_cache import get_agendamentos_pendentes_cached, set_agendamentos_pendentes_cached
+    from app.services.agendamento_cache import (
+        get_agendamentos_pendentes_cached,
+        set_agendamentos_pendentes_cached,
+    )
 
     api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
     _verify_api_key(api_key_header)
@@ -4686,7 +4693,7 @@ def get_agendamentos_pendentes(
         return cached
 
     agendamentos = AgendamentoService.listar_agendamentos_pendentes(db)
-    
+
     result = []
     for agendamento in agendamentos:
         # Buscar informações de contato do cliente
@@ -4695,31 +4702,34 @@ def get_agendamentos_pendentes(
             "cliente_whatsapp_number": "",
             "cliente_email": "",
         }
-        
+
         cliente_id = agendamento.get("cliente_id")
         if cliente_id:
             from app.models.cliente import Cliente
+
             cliente = db.execute(
                 select(Cliente).where(Cliente.id == cliente_id)
             ).scalar_one_or_none()
-            
+
             if cliente:
                 cliente_info = {
                     "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
                     "cliente_whatsapp_number": cliente.whatsapp_number or "",
                     "cliente_email": cliente.email or "",
                 }
-        
-        result.append({
-            "id": agendamento.get("id"),
-            "titulo": agendamento.get("titulo"),
-            "data_hora": agendamento.get("data_hora"),
-            "cliente_id": cliente_id,
-            "local": agendamento.get("local"),
-            "tipo": agendamento.get("tipo"),
-            "status": agendamento.get("status"),
-            **cliente_info
-        })
+
+        result.append(
+            {
+                "id": agendamento.get("id"),
+                "titulo": agendamento.get("titulo"),
+                "data_hora": agendamento.get("data_hora"),
+                "cliente_id": cliente_id,
+                "local": agendamento.get("local"),
+                "tipo": agendamento.get("tipo"),
+                "status": agendamento.get("status"),
+                **cliente_info,
+            }
+        )
 
     # A26: cacheia resultado para proximas chamadas
     set_agendamentos_pendentes_cached(result)
@@ -4748,11 +4758,14 @@ def get_agendamentos_proximos(
     db: Session = Depends(get_db),
 ) -> list[dict]:
     """Lista agendamentos próximos para lembrete N8N.
-    
+
     A26: Cache Redis 60s para reduzir carga DB em pico.
     """
     from app.services.agendamento import AgendamentoService
-    from app.services.agendamento_cache import get_agendamentos_proximos_cached, set_agendamentos_proximos_cached
+    from app.services.agendamento_cache import (
+        get_agendamentos_proximos_cached,
+        set_agendamentos_proximos_cached,
+    )
 
     api_key_header = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
     _verify_api_key(api_key_header)
@@ -4763,7 +4776,7 @@ def get_agendamentos_proximos(
         return cached
 
     agendamentos = AgendamentoService.listar_agendamentos_proximos(db)
-    
+
     result = []
     for agendamento in agendamentos:
         # Buscar informações de contato do cliente
@@ -4772,31 +4785,34 @@ def get_agendamentos_proximos(
             "cliente_whatsapp_number": "",
             "cliente_email": "",
         }
-        
+
         cliente_id = agendamento.get("cliente_id")
         if cliente_id:
             from app.models.cliente import Cliente
+
             cliente = db.execute(
                 select(Cliente).where(Cliente.id == cliente_id)
             ).scalar_one_or_none()
-            
+
             if cliente:
                 cliente_info = {
                     "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
                     "cliente_whatsapp_number": cliente.whatsapp_number or "",
                     "cliente_email": cliente.email or "",
                 }
-        
-        result.append({
-            "id": agendamento.get("id"),
-            "titulo": agendamento.get("titulo"),
-            "data_hora": agendamento.get("data_hora"),
-            "cliente_id": cliente_id,
-            "local": agendamento.get("local"),
-            "tipo": agendamento.get("tipo"),
-            "status": agendamento.get("status"),
-            **cliente_info
-        })
+
+        result.append(
+            {
+                "id": agendamento.get("id"),
+                "titulo": agendamento.get("titulo"),
+                "data_hora": agendamento.get("data_hora"),
+                "cliente_id": cliente_id,
+                "local": agendamento.get("local"),
+                "tipo": agendamento.get("tipo"),
+                "status": agendamento.get("status"),
+                **cliente_info,
+            }
+        )
 
     # A26: cacheia resultado para proximas chamadas
     set_agendamentos_proximos_cached(result)

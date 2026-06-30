@@ -1,4 +1,5 @@
 """Testes do servico de query do audit log."""
+
 from __future__ import annotations
 
 import os
@@ -106,9 +107,7 @@ def test_filtro_por_actor_id(db_session) -> None:
     _log(db_session, actor_id="escrevente-2")
     _log(db_session, actor_id="bot-1")
 
-    result = list_audit_logs(
-        db_session, AuditLogFilter(actor_id="escrevente-1")
-    )
+    result = list_audit_logs(db_session, AuditLogFilter(actor_id="escrevente-1"))
     assert result.total == 1
     assert result.items[0].actor_id == "escrevente-1"
 
@@ -120,9 +119,7 @@ def test_filtro_por_actor_type(db_session) -> None:
     _log(db_session, actor_id="b1", actor_type="bot")
     _log(db_session, actor_id="s1", actor_type="system")
 
-    result = list_audit_logs(
-        db_session, AuditLogFilter(actor_type="escrevente")
-    )
+    result = list_audit_logs(db_session, AuditLogFilter(actor_type="escrevente"))
     assert result.total == 2
 
 
@@ -133,9 +130,7 @@ def test_filtro_por_action_prefix(db_session) -> None:
     _log(db_session, action="protocolo.create")
     _log(db_session, action="cliente.update")
 
-    result = list_audit_logs(
-        db_session, AuditLogFilter(action_prefix="cliente.delete")
-    )
+    result = list_audit_logs(db_session, AuditLogFilter(action_prefix="cliente.delete"))
     assert result.total == 2
     actions = {item.action for item in result.items}
     assert actions == {"cliente.delete.soft", "cliente.delete.hard"}
@@ -147,9 +142,7 @@ def test_filtro_por_resource(db_session) -> None:
     _log(db_session, resource="cliente:99")
     _log(db_session, resource="protocolo:2026-00001")
 
-    result = list_audit_logs(
-        db_session, AuditLogFilter(resource="cliente:42")
-    )
+    result = list_audit_logs(db_session, AuditLogFilter(resource="cliente:42"))
     assert result.total == 1
     assert result.items[0].resource == "cliente:42"
 
@@ -161,9 +154,7 @@ def test_filtro_por_canal(db_session) -> None:
     _log(db_session, canal="cron")
     _log(db_session, canal="web")
 
-    result = list_audit_logs(
-        db_session, AuditLogFilter(canal="whatsapp")
-    )
+    result = list_audit_logs(db_session, AuditLogFilter(canal="whatsapp"))
     assert result.total == 2
 
 
@@ -182,9 +173,7 @@ def test_filtro_por_periodo(db_session) -> None:
     from datetime import timezone
 
     base = datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc).replace(tzinfo=None)
-    db_session.query(AuditLog).filter(AuditLog.id == e1.id).update(
-        {"timestamp": base}
-    )
+    db_session.query(AuditLog).filter(AuditLog.id == e1.id).update({"timestamp": base})
     db_session.query(AuditLog).filter(AuditLog.id == e2.id).update(
         {"timestamp": base + timedelta(hours=1)}
     )
@@ -214,9 +203,7 @@ def test_filtro_since_apenas(db_session) -> None:
     from datetime import timezone
 
     base = datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc).replace(tzinfo=None)
-    db_session.query(AuditLog).filter(AuditLog.id == e1.id).update(
-        {"timestamp": base}
-    )
+    db_session.query(AuditLog).filter(AuditLog.id == e1.id).update({"timestamp": base})
     db_session.commit()
 
     result = list_audit_logs(
@@ -236,9 +223,7 @@ def test_paginacao_basica(db_session) -> None:
     for i in range(5):
         _log(db_session, resource=f"cliente:{i}")
 
-    result = list_audit_logs(
-        db_session, AuditLogFilter(page=1, page_size=2)
-    )
+    result = list_audit_logs(db_session, AuditLogFilter(page=1, page_size=2))
     assert result.total == 5
     assert len(result.items) == 2
     assert result.page == 1
@@ -251,9 +236,7 @@ def test_paginacao_ultima_pagina(db_session) -> None:
     for i in range(5):
         _log(db_session, resource=f"cliente:{i}")
 
-    result = list_audit_logs(
-        db_session, AuditLogFilter(page=3, page_size=2)
-    )
+    result = list_audit_logs(db_session, AuditLogFilter(page=3, page_size=2))
     assert result.total == 5
     assert len(result.items) == 1  # 3a pagina tem 5 - 2*2 = 1 item
     assert result.has_next is False
@@ -264,9 +247,7 @@ def test_paginacao_fora_do_range(db_session) -> None:
     for i in range(3):
         _log(db_session)
 
-    result = list_audit_logs(
-        db_session, AuditLogFilter(page=10, page_size=10)
-    )
+    result = list_audit_logs(db_session, AuditLogFilter(page=10, page_size=10))
     assert result.total == 3
     assert result.items == []
     assert result.has_next is False

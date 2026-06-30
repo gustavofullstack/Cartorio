@@ -11,6 +11,7 @@ Cobre:
 8. Buttons validos (URL, PHONE_NUMBER, QUICK_REPLY)
 9. Helpers de busca
 """
+
 from __future__ import annotations
 
 import re
@@ -188,7 +189,9 @@ def test_variaveis_sao_sequenciais() -> None:
             if c.type == "BODY" and c.text:
                 body_text += c.text
         if "{{" in body_text:
-            vars_found = sorted(set(int(m.group(1)) for m in re.finditer(r"\{\{(\d+)\}\}", body_text)))
+            vars_found = sorted(
+                set(int(m.group(1)) for m in re.finditer(r"\{\{(\d+)\}\}", body_text))
+            )
             # Devem comecar em 1 e ser sequenciais
             assert vars_found[0] == 1, f"{template.name}: variaveis nao comecam em 1"
             assert vars_found == list(range(1, len(vars_found) + 1)), (
@@ -282,9 +285,7 @@ def test_nenhum_template_contem_cpf_hardcoded() -> None:
     for template in META_TEMPLATES:
         for component in template.components:
             text = component.text or ""
-            assert not pattern.search(text), (
-                f"{template.name}: CPF hardcoded em component"
-            )
+            assert not pattern.search(text), f"{template.name}: CPF hardcoded em component"
 
 
 def test_nenhum_template_contem_telefone_pessoal_hardcoded() -> None:
@@ -295,9 +296,7 @@ def test_nenhum_template_contem_telefone_pessoal_hardcoded() -> None:
             text = component.text or ""
             # Se contem (XX), deve ter placeholder
             if pattern.search(text):
-                assert "XXXX" in text or "0000" in text, (
-                    f"{template.name}: telefone hardcoded"
-                )
+                assert "XXXX" in text or "0000" in text, f"{template.name}: telefone hardcoded"
 
 
 def test_telefone_institucional_eh_generico() -> None:

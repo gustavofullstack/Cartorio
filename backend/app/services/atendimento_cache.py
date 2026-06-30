@@ -9,6 +9,7 @@ O endpoint GET /api/v1/atendimento/ultimas-24h eh chamado pelo N8N workflow #07
 LGPD: chave NAO expoe PII (apenas timestamp "now rounded 60s").
 Sentinel versionado: invalidacao automatica via CACHE_VERSION.
 """
+
 from __future__ import annotations
 
 import json
@@ -26,6 +27,7 @@ CACHE_KEY_PREFIX = f"atendimento:ultimas-24h:{CACHE_VERSION}"
 def _get_redis_client() -> Any:
     try:
         import redis  # type: ignore[import-untyped]
+
         url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         return redis.Redis.from_url(url, socket_connect_timeout=2)
     except ImportError:

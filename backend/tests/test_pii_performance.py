@@ -4,6 +4,7 @@ LGPD cartorio review: latencia do scrub NAO pode ser gargalo do webhook.
 Meta: < 5ms para textos tipicos de WhatsApp (ate 500 chars).
 Texto com 100+ PII deve ser < 50ms.
 """
+
 from __future__ import annotations
 
 import os

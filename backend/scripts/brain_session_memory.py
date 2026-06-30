@@ -5,6 +5,7 @@ Pre-commit hook ou chamado manualmente apos commit:
 
 Cria o arquivo do dia se nao existir, append com timestamp HH:MM.
 """
+
 from __future__ import annotations
 
 import argparse

@@ -149,9 +149,9 @@ def test_marcar_pesquisa_enviada_not_found_grava_audit(client, test_engine):
 
     SessionLocal = sessionmaker(bind=test_engine)
     with SessionLocal() as db:
-        entries = db.query(AuditLog).filter_by(
-            action="atendimento.pesquisa_enviada.not_found"
-        ).all()
+        entries = (
+            db.query(AuditLog).filter_by(action="atendimento.pesquisa_enviada.not_found").all()
+        )
         assert len(entries) == 1
 
 
@@ -354,7 +354,6 @@ def test_unhandled_exception_scrub_via_output_safety(client, test_engine):
     assert scrubbed["request_id"] == "abc"
 
 
-
 # ============================================================================
 # Tests: Exception handlers globais (T10)
 # ============================================================================
@@ -427,9 +426,7 @@ def test_endpoint_protocolo_sem_consent_lgpd_audit_blocked(client, test_engine, 
 
     SessionLocal = sessionmaker(bind=test_engine)
     with SessionLocal() as db:
-        entries = db.query(AuditLog).filter_by(
-            action="protocolo.create.lgpd_blocked"
-        ).all()
+        entries = db.query(AuditLog).filter_by(action="protocolo.create.lgpd_blocked").all()
         assert len(entries) >= 1
         entry = entries[0]
         assert entry.payload["motivo"] == "consentimento_lgpd=false"

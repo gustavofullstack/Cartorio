@@ -1,4 +1,5 @@
 """Testes A11 — Log masker (MaskingFilter para LGPD art. 46)."""
+
 from __future__ import annotations
 
 import logging

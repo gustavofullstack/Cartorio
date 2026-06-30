@@ -13,6 +13,7 @@ Uso:
 
 OU: configurar globalmente em main.py via uvicorn LOGGING_CONFIG override.
 """
+
 from __future__ import annotations
 
 import logging

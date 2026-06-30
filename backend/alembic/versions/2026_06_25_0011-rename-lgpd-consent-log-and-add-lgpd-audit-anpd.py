@@ -39,6 +39,7 @@ Idempotente: cada operacao usa IF EXISTS ou IF NOT EXISTS.
 
 Modified by Gustavo Almeida
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -80,7 +81,12 @@ def upgrade() -> None:
             sa.Column("granted", sa.Boolean, nullable=False, server_default="false"),
             sa.Column("ip_truncated", sa.dialects.postgresql.INET, nullable=True),
             sa.Column("user_agent_truncated", sa.String(length=512), nullable=True),
-            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                server_default=sa.func.now(),
+                nullable=False,
+            ),
         )
         op.create_index("ix_lgpd_consents_cliente_id", "lgpd_consents", ["cliente_id"])
         op.create_index("ix_lgpd_consents_created_at", "lgpd_consents", ["created_at"])
@@ -105,7 +111,12 @@ def upgrade() -> None:
             sa.Column("dados_jsonb", postgresql.JSONB, nullable=True),
             sa.Column("ip_truncated", sa.dialects.postgresql.INET, nullable=True),
             sa.Column("user_agent_truncated", sa.String(length=512), nullable=True),
-            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                server_default=sa.func.now(),
+                nullable=False,
+            ),
         )
         op.create_index("ix_lgpd_audit_anpd_evento", "lgpd_audit_anpd", ["evento"])
         op.create_index("ix_lgpd_audit_anpd_created_at", "lgpd_audit_anpd", ["created_at"])
@@ -129,5 +140,8 @@ def downgrade() -> None:
                 op.drop_column("lgpd_consents", col)
 
     # Rename back: lgpd_consents -> lgpd_consent_log
-    if "lgpd_consents" in inspector.get_table_names() and "lgpd_consent_log" not in inspector.get_table_names():
+    if (
+        "lgpd_consents" in inspector.get_table_names()
+        and "lgpd_consent_log" not in inspector.get_table_names()
+    ):
         op.execute("ALTER TABLE lgpd_consents RENAME TO lgpd_consent_log")

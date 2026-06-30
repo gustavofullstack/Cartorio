@@ -13,6 +13,7 @@ exato (LGPD art. 37 - rastreabilidade de alteracoes).
 Idempotente: DROP TRIGGER IF EXISTS antes de CREATE TRIGGER.
 Downgrade: drop function + drop todas triggers.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union

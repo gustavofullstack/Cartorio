@@ -22,6 +22,7 @@ Criar refresh_concronico em cron diario 03:00 BRT (low traffic).
 
 Idempotente: CREATE MATERIALIZED VIEW IF NOT EXISTS (Postgres 9.5+).
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union

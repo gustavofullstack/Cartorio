@@ -74,9 +74,7 @@ def ingest_evolution_event(
     """
     # A8: validar HMAC signature se raw_body fornecido
     if raw_body is not None and not validate_evolution_signature(raw_body, signature):
-        log.warning(
-            "evolution_ingest: signature invalida (len=%d)", len(signature or "")
-        )
+        log.warning("evolution_ingest: signature invalida (len=%d)", len(signature or ""))
         return {"status": "rejected", "reason": "invalid_signature"}
 
     event = payload.get("event", "")

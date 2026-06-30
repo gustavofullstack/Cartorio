@@ -26,6 +26,7 @@ _log = logging.getLogger(__name__)
 
 class NotificationMethod(str, enum.Enum):
     """Métodos de notificação suportados."""
+
     TELEGRAM = "telegram"
     WHATSAPP = "whatsapp"
     EMAIL = "email"
@@ -61,9 +62,7 @@ class NotificationService:
         Raises:
             ValueError: Se cliente não encontrado ou sem método válido
         """
-        cliente = db.execute(
-            select(Cliente).where(Cliente.id == cliente_id)
-        ).scalar_one_or_none()
+        cliente = db.execute(select(Cliente).where(Cliente.id == cliente_id)).scalar_one_or_none()
 
         if cliente is None:
             raise ValueError(f"Cliente #{cliente_id} não encontrado")
@@ -85,9 +84,7 @@ class NotificationService:
 
         # Verificar consentimento
         if not cliente.consentimento_lgpd:
-            _log.warning(
-                "Cliente %d sem consentimento LGPD — notificação bloqueada", cliente_id
-            )
+            _log.warning("Cliente %d sem consentimento LGPD — notificação bloqueada", cliente_id)
             return False
 
         # Enviar notificação
@@ -111,16 +108,12 @@ class NotificationService:
                 if cliente.email is None:
                     _log.warning("Cliente %d sem email", cliente_id)
                     return False
-                success = await NotificationService._enviar_email(
-                    cliente.email, mensagem
-                )
+                success = await NotificationService._enviar_email(cliente.email, mensagem)
             case NotificationMethod.SMS:
                 if cliente.telefone_hash is None:
                     _log.warning("Cliente %d sem telefone_hash", cliente_id)
                     return False
-                success = await NotificationService._enviar_sms(
-                    cliente.telefone_hash, mensagem
-                )
+                success = await NotificationService._enviar_sms(cliente.telefone_hash, mensagem)
 
         # Audit log
         if success:
@@ -147,7 +140,7 @@ class NotificationService:
             return False
 
         url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
-        
+
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.post(
@@ -170,7 +163,7 @@ class NotificationService:
             f"{settings.evolution_base_url.rstrip('/')}/message/sendText/"
             f"{settings.evolution_instance}"
         )
-        
+
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.post(
@@ -246,7 +239,7 @@ class NotificationService:
             f"⏰ <b>Importante:</b> Seu agendamento está próximo!\n"
             f"💬 ID do agendamento: #{agendamento_id}"
         )
-        
+
         return await NotificationService.enviar_notificacao(
             db,
             cliente_id,
@@ -272,7 +265,7 @@ class NotificationService:
             f"📅 <b>Observação:</b> Seu agendamento foi cancelado.\n"
             f"Entre em contato se precisar reagendar."
         )
-        
+
         return await NotificationService.enviar_notificacao(
             db,
             cliente_id,

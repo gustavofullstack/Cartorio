@@ -92,7 +92,11 @@ async def test_openclaw_chat_happy_path():
         "id": "cmpl-1",
         "model": "openclaw-pietra",
         "choices": [
-            {"index": 0, "finish_reason": "stop", "message": {"role": "assistant", "content": "Ola, tudo bem?"}}
+            {
+                "index": 0,
+                "finish_reason": "stop",
+                "message": {"role": "assistant", "content": "Ola, tudo bem?"},
+            }
         ],
         "usage": {"prompt_tokens": 10, "completion_tokens": 5},
     }
@@ -241,16 +245,16 @@ async def test_openclaw_chat_with_db_records_audit():
     """Com db fornecido, registra audit log via _audit_log_sync."""
     payload = {
         "model": "openclaw-pietra",
-        "choices": [
-            {"finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}
-        ],
+        "choices": [{"finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}],
         "usage": {"prompt_tokens": 1, "completion_tokens": 1},
     }
     mock_resp = _make_httpx_response(200, json_data=payload)
     db = MagicMock()
 
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post, \
-         patch("app.integrations.openclaw._audit_log_sync") as mock_audit:
+    with (
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post,
+        patch("app.integrations.openclaw._audit_log_sync") as mock_audit,
+    ):
         mock_post.return_value = mock_resp
         await chat(
             messages=[{"role": "user", "content": "oi"}],
@@ -282,8 +286,10 @@ async def test_openclaw_chat_with_db_and_output_pii_records_audit_twice():
     mock_resp = _make_httpx_response(200, json_data=payload)
     db = MagicMock()
 
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post, \
-         patch("app.integrations.openclaw._audit_log_sync") as mock_audit:
+    with (
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post,
+        patch("app.integrations.openclaw._audit_log_sync") as mock_audit,
+    ):
         mock_post.return_value = mock_resp
         await chat(
             messages=[{"role": "user", "content": "oi"}],
@@ -312,8 +318,10 @@ async def test_openclaw_chat_audit_log_failure_swallowed():
     mock_resp = _make_httpx_response(200, json_data=payload)
     db = MagicMock()
 
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post, \
-         patch("app.integrations.openclaw._audit_log_sync", side_effect=Exception("audit fail")):
+    with (
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post,
+        patch("app.integrations.openclaw._audit_log_sync", side_effect=Exception("audit fail")),
+    ):
         mock_post.return_value = mock_resp
         resp = await chat(
             messages=[{"role": "user", "content": "oi"}],
@@ -334,8 +342,10 @@ async def test_openclaw_chat_with_rate_limit_invoked():
         "usage": {"prompt_tokens": 1, "completion_tokens": 1},
     }
     mock_resp = _make_httpx_response(200, json_data=payload)
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post, \
-         patch("app.integrations.openclaw._check_rate_limit") as mock_rl:
+    with (
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post,
+        patch("app.integrations.openclaw._check_rate_limit") as mock_rl,
+    ):
         mock_post.return_value = mock_resp
         await chat(
             messages=[{"role": "user", "content": "oi"}],

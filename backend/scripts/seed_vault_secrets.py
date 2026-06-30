@@ -20,6 +20,7 @@ Pre-requisitos:
   DATABASE_URL aponta para o db do Supabase
   service_role key para autenticar (ou rodar dentro do container)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -66,15 +67,20 @@ def load_secrets_from_files(secrets_dir: Path) -> dict[str, str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="apenas mostra o que faria")
-    parser.add_argument("--secrets-dir", default=str(Path.home() / ".mavis/secrets"),
-                        help="diretorio com .env files")
+    parser.add_argument(
+        "--secrets-dir",
+        default=str(Path.home() / ".mavis/secrets"),
+        help="diretorio com .env files",
+    )
     args = parser.parse_args()
 
     secrets_dir = Path(args.secrets_dir)
     project_secrets = Path("/Users/gustavoalmeida/projetos/Cartorio/.secrets")
     secrets = load_secrets_from_files(secrets_dir) or load_secrets_from_files(project_secrets)
     if not secrets:
-        print("ERRO: nenhum .env encontrado em", secrets_dir, "ou", project_secrets, file=sys.stderr)
+        print(
+            "ERRO: nenhum .env encontrado em", secrets_dir, "ou", project_secrets, file=sys.stderr
+        )
         return 1
 
     print(f"Encontradas {len(secrets)} env vars em {secrets_dir} + {project_secrets}")

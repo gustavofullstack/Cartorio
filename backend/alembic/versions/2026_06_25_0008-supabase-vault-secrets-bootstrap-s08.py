@@ -26,6 +26,7 @@ A API backend le os secrets via SELECT vault.secrets -> helper. Em prod,
 o backend le de env vars (ja funciona) E consulta vault como fallback
 via app/services/vault_client.py (criado em E4 squad).
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union

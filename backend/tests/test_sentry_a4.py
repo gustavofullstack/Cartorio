@@ -7,6 +7,7 @@ Cobertura:
 - capture_exception: com/sem sentry ativo
 - capture_message: com/sem sentry ativo
 """
+
 from __future__ import annotations
 
 import logging
@@ -23,6 +24,7 @@ from app.services.sentry import (
 
 
 # ─── scrub_pii (base) ───────────────────────────────────────────────────
+
 
 def test_scrub_pii_cpf_formatado() -> None:
     """CPF formatado 123.456.789-00 -> [MASKED:cpf]."""
@@ -139,6 +141,7 @@ def test_scrub_pii_none() -> None:
 
 # ─── _before_send ───────────────────────────────────────────────────────
 
+
 def test_before_send_scrub_message() -> None:
     """_before_send faz scrub no campo message."""
     event: dict = {"message": "ERRO: CPF 123.456.789-00 invalido"}
@@ -199,6 +202,7 @@ def test_before_send_sem_exception_ok() -> None:
 
 # ─── _init_sentry ───────────────────────────────────────────────────────
 
+
 def test_init_sentry_sem_dsn_retorna_false() -> None:
     """_init_sentry() sem SENTRY_DSN retorna False."""
     with patch.dict(os.environ, {}, clear=True):
@@ -224,18 +228,22 @@ def test_init_sentry_com_dsn_com_sdk_retorna_true() -> None:
 
     with (
         patch.dict(os.environ, {"SENTRY_DSN": "https://key@sentry.io/123"}, clear=True),
-        patch.dict("sys.modules", {
-            "sentry_sdk": mock_sdk,
-            "sentry_sdk.integrations": mock_sdk.integrations,
-            "sentry_sdk.integrations.fastapi": mock_sdk.integrations.fastapi,
-            "sentry_sdk.integrations.sqlalchemy": mock_sdk.integrations.sqlalchemy,
-        }),
+        patch.dict(
+            "sys.modules",
+            {
+                "sentry_sdk": mock_sdk,
+                "sentry_sdk.integrations": mock_sdk.integrations,
+                "sentry_sdk.integrations.fastapi": mock_sdk.integrations.fastapi,
+                "sentry_sdk.integrations.sqlalchemy": mock_sdk.integrations.sqlalchemy,
+            },
+        ),
     ):
         result = _init_sentry()
         assert result is True
 
 
 # ─── capture_exception ──────────────────────────────────────────────────
+
 
 def test_capture_exception_sentry_disabled(caplog) -> None:
     """capture_exception sem sentry loga localmente."""
@@ -262,6 +270,7 @@ def test_capture_exception_sentry_enabled() -> None:
 
 
 # ─── capture_message ────────────────────────────────────────────────────
+
 
 def test_capture_message_sentry_disabled(caplog) -> None:
     """capture_message sem sentry loga localmente."""

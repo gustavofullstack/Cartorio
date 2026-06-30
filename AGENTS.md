@@ -89,6 +89,13 @@ Pular etapa = bug. Especialmente em mudança de `audit` ou `pii`.
 
 Este projeto lida com CPF, RG, protocolo jurídico, escritura. **Nenhum desses valores brutos pode sair do backend**. Ver `backend/app/services/pii.py` antes de qualquer integração nova com LLM ou storage externo.
 
+## Integration & Verification Guidelines
+
+- **Evolution API Webhooks**: Always parse inbound webhook requests to support both legacy root-level keys (`payload.get("message")`) and nested data keys (`payload.get("data", {}).get("message")`).
+- **Test LLM Isolation**: Force environment variable overrides (`LLM_DEFAULT_PROVIDER="opencode_go"`) in `conftest.py` to prevent real LLM client network calls during local test runs.
+- **Docker Swarm Port Handling**: When restarting Swarm services in `host` publishing mode, scale to `0` first, then scale back to `1` to avoid port conflict failures.
+- **Chatwoot & Evolution Integration**: Always verify `CHATWOOT_ENABLED=true` is in the Evolution API service environment variables, create an API inbox in Chatwoot, and configure Evolution API using the generated `inboxId`.
+
 ## Padrão spec
 
 Este arquivo segue o [agents.md](https://agents.md) spec — consumido por OpenCode, Codex, Cursor, Aider, Devin, Gemini CLI, etc. A versão estendida com security/standards operacionais vive em `.harness/AGENTS.md`.

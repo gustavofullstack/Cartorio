@@ -2,6 +2,7 @@
 
 Cobre linhas nao testadas de _cns_dv, _cnh_dv1, _cnh_dv2.
 """
+
 from __future__ import annotations
 
 import pytest

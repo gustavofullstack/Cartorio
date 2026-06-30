@@ -2,7 +2,7 @@
 
 Cacheia dados frequentemente acessados:
 1. Lista de agendamentos pendentes (N8N workflow #01)
-2. Lista de agendamentos próximos (N8N workflow #02)  
+2. Lista de agendamentos próximos (N8N workflow #02)
 3. Dados de clientes para notificações
 
 Benefícios:
@@ -14,6 +14,7 @@ LGPD: chaves NÃO expõem PII (usam IDs hasheados ou timestamps).
 Sentinel versionado: invalidacao automatica via CACHE_VERSION.
 
 Métricas: Integra com Prometheus para rastrear hit/miss rates e performance."""
+
 from __future__ import annotations
 
 import json
@@ -32,6 +33,7 @@ def _get_redis_client() -> Any:
     """Cria cliente Redis com timeout curto para fail-fast."""
     try:
         import redis  # type: ignore[import-untyped]
+
         url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         return redis.Redis.from_url(url, socket_connect_timeout=2)
     except ImportError:
@@ -52,45 +54,55 @@ def _cache_key_cliente(cliente_id: int) -> str:
     """Chave para cache de dados de cliente (usando ID hasheado)."""
     from app.services.pii import hash_pii
     from app.config import settings
+
     cliente_id_hash = hash_pii(str(cliente_id), salt=settings.audit_hmac_key[:32])
     return f"{CACHE_KEY_PREFIX}:cliente:{cliente_id_hash}"
 
 
 def get_agendamentos_pendentes_cached() -> list[dict] | None:
     """Busca lista de agendamentos pendentes em cache.
-    
+
     Returns:
         Lista de agendamentos ou None se miss/erro.
-        
+
     Métricas: Incrementa contador de operações de cache.
     """
     from app.services.agendamento_metrics import increment_cache_metric
-    
+
     r = _get_redis_client()
     if r is None:
-        increment_cache_metric("agendamento_cache_misses_total", {"operation": "get_pendentes", "reason": "redis_unavailable"})
+        increment_cache_metric(
+            "agendamento_cache_misses_total",
+            {"operation": "get_pendentes", "reason": "redis_unavailable"},
+        )
         return None
     try:
         key = _cache_key_pendentes()
         raw = r.get(key)
         if raw is None:
-            increment_cache_metric("agendamento_cache_misses_total", {"operation": "get_pendentes", "reason": "cache_miss"})
+            increment_cache_metric(
+                "agendamento_cache_misses_total",
+                {"operation": "get_pendentes", "reason": "cache_miss"},
+            )
             return None
-        
+
         increment_cache_metric("agendamento_cache_hits_total", {"operation": "get_pendentes"})
         return json.loads(raw)
     except Exception as e:
         logger.warning("agendamento_cache.get_pendentes falhou: %s", e)
-        increment_cache_metric("agendamento_cache_errors_total", {"operation": "get_pendentes", "error": type(e).__name__})
+        increment_cache_metric(
+            "agendamento_cache_errors_total",
+            {"operation": "get_pendentes", "error": type(e).__name__},
+        )
         return None
 
 
 def set_agendamentos_pendentes_cached(agendamentos: list[dict]) -> bool:
     """Salva lista de agendamentos pendentes em cache.
-    
+
     Args:
         agendamentos: Lista de agendamentos para cachear
-        
+
     Returns:
         True se ok, False se erro.
     """
@@ -111,39 +123,48 @@ def set_agendamentos_pendentes_cached(agendamentos: list[dict]) -> bool:
 
 def get_agendamentos_proximos_cached() -> list[dict] | None:
     """Busca lista de agendamentos próximos em cache.
-    
+
     Returns:
         Lista de agendamentos ou None se miss/erro.
-        
+
     Métricas: Incrementa contador de operações de cache.
     """
     from app.services.agendamento_metrics import increment_cache_metric
-    
+
     r = _get_redis_client()
     if r is None:
-        increment_cache_metric("agendamento_cache_misses_total", {"operation": "get_proximos", "reason": "redis_unavailable"})
+        increment_cache_metric(
+            "agendamento_cache_misses_total",
+            {"operation": "get_proximos", "reason": "redis_unavailable"},
+        )
         return None
     try:
         key = _cache_key_proximos()
         raw = r.get(key)
         if raw is None:
-            increment_cache_metric("agendamento_cache_misses_total", {"operation": "get_proximos", "reason": "cache_miss"})
+            increment_cache_metric(
+                "agendamento_cache_misses_total",
+                {"operation": "get_proximos", "reason": "cache_miss"},
+            )
             return None
-        
+
         increment_cache_metric("agendamento_cache_hits_total", {"operation": "get_proximos"})
         return json.loads(raw)
     except Exception as e:
         logger.warning("agendamento_cache.get_proximos falhou: %s", e)
-        increment_cache_metric("agendamento_cache_errors_total", {"operation": "get_proximos", "error": type(e).__name__})
+        increment_cache_metric(
+            "agendamento_cache_errors_total",
+            {"operation": "get_proximos", "error": type(e).__name__},
+        )
         return None
 
 
 def set_agendamentos_proximos_cached(agendamentos: list[dict]) -> bool:
     """Salva lista de agendamentos próximos em cache.
-    
+
     Args:
         agendamentos: Lista de agendamentos para cachear
-        
+
     Returns:
         True se ok, False se erro.
     """
@@ -164,43 +185,52 @@ def set_agendamentos_proximos_cached(agendamentos: list[dict]) -> bool:
 
 def get_cliente_cached(cliente_id: int) -> dict | None:
     """Busca dados de cliente em cache.
-    
+
     Args:
         cliente_id: ID do cliente
-        
+
     Returns:
         Dados do cliente ou None se miss/erro.
-        
+
     Métricas: Incrementa contador de operações de cache.
     """
     from app.services.agendamento_metrics import increment_cache_metric
-    
+
     r = _get_redis_client()
     if r is None:
-        increment_cache_metric("agendamento_cache_misses_total", {"operation": "get_cliente", "reason": "redis_unavailable"})
+        increment_cache_metric(
+            "agendamento_cache_misses_total",
+            {"operation": "get_cliente", "reason": "redis_unavailable"},
+        )
         return None
     try:
         key = _cache_key_cliente(cliente_id)
         raw = r.get(key)
         if raw is None:
-            increment_cache_metric("agendamento_cache_misses_total", {"operation": "get_cliente", "reason": "cache_miss"})
+            increment_cache_metric(
+                "agendamento_cache_misses_total",
+                {"operation": "get_cliente", "reason": "cache_miss"},
+            )
             return None
-        
+
         increment_cache_metric("agendamento_cache_hits_total", {"operation": "get_cliente"})
         return json.loads(raw)
     except Exception as e:
         logger.warning("agendamento_cache.get_cliente falhou: %s", e)
-        increment_cache_metric("agendamento_cache_errors_total", {"operation": "get_cliente", "error": type(e).__name__})
+        increment_cache_metric(
+            "agendamento_cache_errors_total",
+            {"operation": "get_cliente", "error": type(e).__name__},
+        )
         return None
 
 
 def set_cliente_cached(cliente_id: int, cliente_data: dict) -> bool:
     """Salva dados de cliente em cache.
-    
+
     Args:
         cliente_id: ID do cliente
         cliente_data: Dados do cliente para cachear
-        
+
     Returns:
         True se ok, False se erro.
     """
@@ -221,7 +251,7 @@ def set_cliente_cached(cliente_id: int, cliente_data: dict) -> bool:
 
 def invalidate_agendamento_cache() -> int:
     """Invalida todo o cache de agendamentos.
-    
+
     Returns:
         Número de chaves removidas.
     """
@@ -240,10 +270,10 @@ def invalidate_agendamento_cache() -> int:
 
 def invalidate_cliente_cache(cliente_id: int) -> int:
     """Invalida cache de um cliente específico.
-    
+
     Args:
         cliente_id: ID do cliente
-        
+
     Returns:
         Número de chaves removidas (0 ou 1).
     """

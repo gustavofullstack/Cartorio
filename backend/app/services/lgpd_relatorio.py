@@ -12,6 +12,7 @@ Uso mensal:
 
 Output: JSON estruturado + hash_anchor SHA256 (LGPD art. 37 integridade).
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -61,45 +62,47 @@ def gerar_relatorio_anual(
     from app.models.protocolo import Protocolo
 
     # 1. Numero de titulares
-    total_clientes = db.execute(
-        select(func.count(Cliente.id))
-    ).scalar() or 0
+    total_clientes = db.execute(select(func.count(Cliente.id))).scalar() or 0
 
-    clientes_ativos = db.execute(
-        select(func.count(Cliente.id)).where(Cliente.deleted_at.is_(None))
-    ).scalar() or 0
+    clientes_ativos = (
+        db.execute(select(func.count(Cliente.id)).where(Cliente.deleted_at.is_(None))).scalar() or 0
+    )
 
     # 2. Protocolos no ano
-    proto_ano = db.execute(
-        select(func.count(Protocolo.id)).where(
-            func.extract("year", Protocolo.created_at) == ano
-        )
-    ).scalar() or 0
+    proto_ano = (
+        db.execute(
+            select(func.count(Protocolo.id)).where(
+                func.extract("year", Protocolo.created_at) == ano
+            )
+        ).scalar()
+        or 0
+    )
 
     # 3. Atividades de tratamento (audit log)
-    audit_ano = db.execute(
-        select(func.count(AuditLog.id)).where(
-            func.extract("year", AuditLog.timestamp) == ano
-        )
-    ).scalar() or 0
+    audit_ano = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(func.extract("year", AuditLog.timestamp) == ano)
+        ).scalar()
+        or 0
+    )
 
     # 4. Direitos dos titulares (LGPD art. 18)
     # Mapeamento: action=lgpd.* indica exercicio de direito
-    direitos_count = db.execute(
-        select(func.count(AuditLog.id))
-        .where(AuditLog.action.like("lgpd.%"))
-    ).scalar() or 0
+    direitos_count = (
+        db.execute(select(func.count(AuditLog.id)).where(AuditLog.action.like("lgpd.%"))).scalar()
+        or 0
+    )
 
     # 5. Incidentes (action=security.* OR severity=high)
-    incidentes = db.execute(
-        select(func.count(AuditLog.id))
-        .where(AuditLog.action.like("security.%"))
-    ).scalar() or 0
+    incidentes = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(AuditLog.action.like("security.%"))
+        ).scalar()
+        or 0
+    )
 
     # 6. Audit chain integrity
-    chain_length = db.execute(
-        select(func.count(AuditLog.id))
-    ).scalar() or 0
+    chain_length = db.execute(select(func.count(AuditLog.id))).scalar() or 0
 
     # 7. Tipos de dados tratados (schema-based)
     tipos_dados = [
@@ -302,60 +305,75 @@ def gerar_relatorio_mensal(
     from app.models.protocolo import Protocolo
 
     # KPIs mensais
-    novos_clientes = db.execute(
-        select(func.count(Cliente.id)).where(
-            func.extract("year", Cliente.created_at) == ano,
-            func.extract("month", Cliente.created_at) == mes,
-        )
-    ).scalar() or 0
+    novos_clientes = (
+        db.execute(
+            select(func.count(Cliente.id)).where(
+                func.extract("year", Cliente.created_at) == ano,
+                func.extract("month", Cliente.created_at) == mes,
+            )
+        ).scalar()
+        or 0
+    )
 
-    clientes_ativos = db.execute(
-        select(func.count(Cliente.id)).where(Cliente.deleted_at.is_(None))
-    ).scalar() or 0
+    clientes_ativos = (
+        db.execute(select(func.count(Cliente.id)).where(Cliente.deleted_at.is_(None))).scalar() or 0
+    )
 
-    protocolos_mes = db.execute(
-        select(func.count(Protocolo.id)).where(
-            func.extract("year", Protocolo.created_at) == ano,
-            func.extract("month", Protocolo.created_at) == mes,
-        )
-    ).scalar() or 0
+    protocolos_mes = (
+        db.execute(
+            select(func.count(Protocolo.id)).where(
+                func.extract("year", Protocolo.created_at) == ano,
+                func.extract("month", Protocolo.created_at) == mes,
+            )
+        ).scalar()
+        or 0
+    )
 
-    audit_entries_mes = db.execute(
-        select(func.count(AuditLog.id)).where(
-            func.extract("year", AuditLog.timestamp) == ano,
-            func.extract("month", AuditLog.timestamp) == mes,
-        )
-    ).scalar() or 0
+    audit_entries_mes = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(
+                func.extract("year", AuditLog.timestamp) == ano,
+                func.extract("month", AuditLog.timestamp) == mes,
+            )
+        ).scalar()
+        or 0
+    )
 
     # Direitos exercidos no mes
-    direitos_mes = db.execute(
-        select(func.count(AuditLog.id))
-        .where(
-            AuditLog.action.like("lgpd.%"),
-            func.extract("year", AuditLog.timestamp) == ano,
-            func.extract("month", AuditLog.timestamp) == mes,
-        )
-    ).scalar() or 0
+    direitos_mes = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(
+                AuditLog.action.like("lgpd.%"),
+                func.extract("year", AuditLog.timestamp) == ano,
+                func.extract("month", AuditLog.timestamp) == mes,
+            )
+        ).scalar()
+        or 0
+    )
 
     # Consentimentos revogados
-    revogacoes_mes = db.execute(
-        select(func.count(AuditLog.id))
-        .where(
-            AuditLog.action.like("lgpd.consent.revoked%"),
-            func.extract("year", AuditLog.timestamp) == ano,
-            func.extract("month", AuditLog.timestamp) == mes,
-        )
-    ).scalar() or 0
+    revogacoes_mes = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(
+                AuditLog.action.like("lgpd.consent.revoked%"),
+                func.extract("year", AuditLog.timestamp) == ano,
+                func.extract("month", AuditLog.timestamp) == mes,
+            )
+        ).scalar()
+        or 0
+    )
 
     # Incidentes
-    incidentes_mes = db.execute(
-        select(func.count(AuditLog.id))
-        .where(
-            AuditLog.action.like("security.%"),
-            func.extract("year", AuditLog.timestamp) == ano,
-            func.extract("month", AuditLog.timestamp) == mes,
-        )
-    ).scalar() or 0
+    incidentes_mes = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(
+                AuditLog.action.like("security.%"),
+                func.extract("year", AuditLog.timestamp) == ano,
+                func.extract("month", AuditLog.timestamp) == mes,
+            )
+        ).scalar()
+        or 0
+    )
 
     relatorio = {
         "tipo": "mensal",
@@ -372,9 +390,7 @@ def gerar_relatorio_mensal(
             "revogacoes_consentimento_mes": revogacoes_mes,
             "incidentes_mes": incidentes_mes,
         },
-        "status_compliance": (
-            "ADEQUADO" if incidentes_mes == 0 else "REQUER_ATENCAO"
-        ),
+        "status_compliance": ("ADEQUADO" if incidentes_mes == 0 else "REQUER_ATENCAO"),
         "dpo_contact": "dpo@2notasudi.com.br",
         "base_legal": "LGPD Lei 13.709/2018 art. 38",
     }

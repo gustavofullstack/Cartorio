@@ -194,9 +194,9 @@ def test_health_backup_soma_diretorio_para_dir_size(client):
     # dir_size vem formatado tipo "80M" via humanize ou similar
     # Verifica que o tamanho > 0 e bate com a soma esperada
     dir_size_str = str(data["dir_size"])
-    assert any(
-        unit in dir_size_str for unit in ["M", "K", "G", "B"]
-    ), f"dir_size '{dir_size_str}' nao tem unidade"
+    assert any(unit in dir_size_str for unit in ["M", "K", "G", "B"]), (
+        f"dir_size '{dir_size_str}' nao tem unidade"
+    )
 
 
 def test_health_backup_nunca_chama_docker_exec(client):

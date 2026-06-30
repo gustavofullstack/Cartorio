@@ -28,6 +28,7 @@ dado pessoal (clientes, protocolos, atendimentos, documentos, conversas,
 emolumentos) que escreve na tabela audit_log automaticamente se a app
 esquecer (defesa em profundidade).
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -56,17 +57,37 @@ def upgrade() -> None:
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
 
     # Tabelas auxiliares (LGPD consent + audit) também com RLS
-    for table in ("audit_log", "lgpd_consents", "lgpd_audit_anpd", "outbox_messages", "webhook_events"):
+    for table in (
+        "audit_log",
+        "lgpd_consents",
+        "lgpd_audit_anpd",
+        "outbox_messages",
+        "webhook_events",
+    ):
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
 
     # Drop policies existentes (idempotente — limpo antes de recriar)
-    for table in (*_PII_TABLES, "audit_log", "lgpd_consents", "lgpd_audit_anpd", "outbox_messages", "webhook_events"):
+    for table in (
+        *_PII_TABLES,
+        "audit_log",
+        "lgpd_consents",
+        "lgpd_audit_anpd",
+        "outbox_messages",
+        "webhook_events",
+    ):
         op.execute(f"DROP POLICY IF EXISTS service_role_full_access ON {table}")
         op.execute(f"DROP POLICY IF EXISTS dpo_read_access ON {table}")
         op.execute(f"DROP POLICY IF EXISTS authenticated_read_own ON {table}")
 
     # service_role: acesso total (backend FastAPI via service_role key)
-    for table in (*_PII_TABLES, "audit_log", "lgpd_consents", "lgpd_audit_anpd", "outbox_messages", "webhook_events"):
+    for table in (
+        *_PII_TABLES,
+        "audit_log",
+        "lgpd_consents",
+        "lgpd_audit_anpd",
+        "outbox_messages",
+        "webhook_events",
+    ):
         op.execute(
             f"""
             CREATE POLICY service_role_full_access ON {table}
@@ -234,11 +255,25 @@ def downgrade() -> None:
     op.execute("DROP FUNCTION IF EXISTS fn_audit_chain_verify(BIGINT, BIGINT)")
 
     # Drop policies
-    for table in (*_PII_TABLES, "audit_log", "lgpd_consents", "lgpd_audit_anpd", "outbox_messages", "webhook_events"):
+    for table in (
+        *_PII_TABLES,
+        "audit_log",
+        "lgpd_consents",
+        "lgpd_audit_anpd",
+        "outbox_messages",
+        "webhook_events",
+    ):
         op.execute(f"DROP POLICY IF EXISTS service_role_full_access ON {table}")
         op.execute(f"DROP POLICY IF EXISTS dpo_read_access ON {table}")
         op.execute(f"DROP POLICY IF EXISTS authenticated_read_own ON {table}")
 
     # Disable RLS (rollback conservador: deixa tabelas acessíveis)
-    for table in (*_PII_TABLES, "audit_log", "lgpd_consents", "lgpd_audit_anpd", "outbox_messages", "webhook_events"):
+    for table in (
+        *_PII_TABLES,
+        "audit_log",
+        "lgpd_consents",
+        "lgpd_audit_anpd",
+        "outbox_messages",
+        "webhook_events",
+    ):
         op.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")

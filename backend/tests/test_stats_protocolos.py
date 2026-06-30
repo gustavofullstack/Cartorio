@@ -1,4 +1,5 @@
 """Testes do endpoint /stats/protocolos (A16 - materialized view)."""
+
 from __future__ import annotations
 
 import pytest

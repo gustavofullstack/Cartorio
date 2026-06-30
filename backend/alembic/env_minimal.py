@@ -3,6 +3,7 @@
 Replacement for the production env.py that depends on app.config.settings.
 Used for one-off migration runs from /tmp/alembic_migrate.
 """
+
 import os
 from logging.config import fileConfig
 

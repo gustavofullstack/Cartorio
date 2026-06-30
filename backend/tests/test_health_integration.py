@@ -2,6 +2,7 @@
 
 Validates that key endpoints respond correctly.
 """
+
 from __future__ import annotations
 
 from fastapi.testclient import TestClient

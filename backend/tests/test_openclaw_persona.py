@@ -6,6 +6,7 @@ Valida que:
 - As skills documentam LGPD, endpoint, cache
 - Os exemplos curl nas skills batem com o schema real da API
 """
+
 from __future__ import annotations
 
 import re
@@ -75,9 +76,11 @@ def test_skills_tem_exemplo_curl_valido() -> None:
         content = skill_file.read_text()
         if "curl" in content:
             # Deve mencionar auth
-            assert "apikey" in content.lower() or "x-api-key" in content.lower() or "bearer" in content.lower(), (
-                f"{skill_file.name} tem exemplo curl mas sem header de auth"
-            )
+            assert (
+                "apikey" in content.lower()
+                or "x-api-key" in content.lower()
+                or "bearer" in content.lower()
+            ), f"{skill_file.name} tem exemplo curl mas sem header de auth"
 
 
 def test_skills_mencionam_canais_validos() -> None:
@@ -106,6 +109,4 @@ def test_skill_nao_tem_credenciais_hardcoded() -> None:
         content = skill_file.read_text()
         for pattern in patterns_sensiveis:
             matches = pattern.findall(content)
-            assert not matches, (
-                f"{skill_file.name} tem credencial hardcoded: {matches[:2]}"
-            )
+            assert not matches, f"{skill_file.name} tem credencial hardcoded: {matches[:2]}"

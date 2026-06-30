@@ -10,6 +10,7 @@ Endpoints:
 These enable Context Loop Engineer to restore 100% of context after
 session compact, cold start, or disaster recovery.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

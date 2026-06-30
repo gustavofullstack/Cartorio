@@ -9,6 +9,7 @@ Valida:
 5. AuditService.log() existe para registrar chamadas
 6. Docs/EVOLUTION_API_INTEGRATION.md documenta o fluxo
 """
+
 from __future__ import annotations
 
 import os
@@ -25,7 +26,6 @@ os.environ.setdefault("EVOLUTION_API_KEY", "test-evolution-key")
 os.environ.setdefault("EVOLUTION_BASE_URL", "http://cartorio_evolution-api:8080")
 os.environ.setdefault("EVOLUTION_INSTANCE", "cartorio-2notas")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
-
 
 
 class TestE1S1T7PIIZero:

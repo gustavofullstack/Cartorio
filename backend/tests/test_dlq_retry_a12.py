@@ -1,4 +1,5 @@
 """Testes A12 — DLQ retry policy 3x exp backoff (1min/5min/15min)."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

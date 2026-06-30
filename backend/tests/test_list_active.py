@@ -84,9 +84,7 @@ def client(test_engine, test_session_factory):
             yield c
 
 
-def _insert_conversa(
-    db_session_factory, external_id: str, canal: str, hours_ago: float
-) -> None:
+def _insert_conversa(db_session_factory, external_id: str, canal: str, hours_ago: float) -> None:
     """Insere conversa com updated_at = now - hours_ago.
 
     ORM bypass: usa UPDATE raw no ID especifico para forcar updated_at,
@@ -145,9 +143,7 @@ def test_list_active_com_conversa_recente(client, test_session_factory):
 
 def test_list_active_exclui_conversa_velha(client, test_session_factory):
     """Conversa atualizada 30h atras com since_hours=24 -> NAO retorna."""
-    _insert_conversa(
-        test_session_factory, "5534888888888", "whatsapp", hours_ago=30.0
-    )
+    _insert_conversa(test_session_factory, "5534888888888", "whatsapp", hours_ago=30.0)
 
     resp = client.get("/api/v1/atendimento/list-active?since_hours=24")
     assert resp.status_code == 200
@@ -158,9 +154,7 @@ def test_list_active_exclui_conversa_velha(client, test_session_factory):
 
 def test_list_active_filtro_customizado(client, test_session_factory):
     """since_hours=48 inclui conversa de 30h atras."""
-    _insert_conversa(
-        test_session_factory, "5534777777777", "whatsapp", hours_ago=30.0
-    )
+    _insert_conversa(test_session_factory, "5534777777777", "whatsapp", hours_ago=30.0)
 
     resp = client.get("/api/v1/atendimento/list-active?since_hours=48")
     assert resp.status_code == 200
@@ -171,12 +165,8 @@ def test_list_active_filtro_customizado(client, test_session_factory):
 
 def test_list_active_multi_canal_agupa_por_sender(client, test_session_factory):
     """Mesmo external_id em 2 canais -> 2 sessoes (uma por canal)."""
-    _insert_conversa(
-        test_session_factory, "5534666666666", "whatsapp", hours_ago=1.0
-    )
-    _insert_conversa(
-        test_session_factory, "5534666666666", "telegram", hours_ago=2.0
-    )
+    _insert_conversa(test_session_factory, "5534666666666", "whatsapp", hours_ago=1.0)
+    _insert_conversa(test_session_factory, "5534666666666", "telegram", hours_ago=2.0)
 
     resp = client.get("/api/v1/atendimento/list-active?since_hours=24")
     assert resp.status_code == 200
@@ -189,9 +179,7 @@ def test_list_active_multi_canal_agupa_por_sender(client, test_session_factory):
 def test_list_active_multi_conversa_mesma_sessao(client, test_session_factory):
     """3 conversas do mesmo sender -> 1 sessao (dedup por external_id+canal)."""
     for hours in [0.5, 1.0, 2.0]:
-        _insert_conversa(
-            test_session_factory, "5534555555555", "whatsapp", hours_ago=hours
-        )
+        _insert_conversa(test_session_factory, "5534555555555", "whatsapp", hours_ago=hours)
 
     # Debug removed
     resp = client.get("/api/v1/atendimento/list-active?since_hours=24")
@@ -207,7 +195,5 @@ def test_list_active_multi_conversa_mesma_sessao(client, test_session_factory):
     last_act = datetime.fromisoformat(last_act_str)
     if last_act.tzinfo is None:
         last_act = last_act.replace(tzinfo=timezone.utc)
-    age_minutes = (
-        datetime.now(timezone.utc) - last_act
-    ).total_seconds() / 60
+    age_minutes = (datetime.now(timezone.utc) - last_act).total_seconds() / 60
     assert 20 <= age_minutes <= 40  # margem de 10min para 0.5h atras

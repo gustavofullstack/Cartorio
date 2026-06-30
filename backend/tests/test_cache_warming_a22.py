@@ -1,4 +1,5 @@
 """Testes A22 — Cache warming cron 06:00 BRT."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -23,6 +24,7 @@ def test_folhas_tipicas_cobrem_faixa_real() -> None:
 
 def test_warm_emolumento_cache_com_mock() -> None:
     """warm roda todos tipos*folhas com funcao mockada que retorna dataclass-like."""
+
     @dataclasses.dataclass
     class FakeCalculo:
         tipo: str = "x"
@@ -47,6 +49,7 @@ def test_warm_emolumento_cache_com_mock() -> None:
 
 def test_warm_emolumento_cache_com_erros() -> None:
     """warm continua mesmo se algumas chamadas falham."""
+
     def fake_calc(tipo, *, folhas=1, urgencia=False):
         if folhas == 2:
             raise RuntimeError("simulado")

@@ -15,6 +15,7 @@ Payload: JSON com {id, event_type, resource, created_at}
 
 Idempotente: DROP TRIGGER IF EXISTS + CREATE TRIGGER.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union

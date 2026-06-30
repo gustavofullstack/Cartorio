@@ -4,6 +4,7 @@ Chave: emolumento:{tipo_documento}:{valor}
 TTL: 86400s (24h)
 LGPD: chave NAO expoe PII (tipo+valor sao publicos).
 """
+
 from __future__ import annotations
 
 import json
@@ -19,6 +20,7 @@ CACHE_TTL_SECONDS = 86400  # 24h
 def _get_redis_client() -> Any:
     try:
         import redis  # type: ignore[import-untyped]
+
         url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         return redis.Redis.from_url(url, socket_connect_timeout=2)
     except ImportError:

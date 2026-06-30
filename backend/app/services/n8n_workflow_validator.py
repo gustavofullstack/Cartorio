@@ -21,6 +21,7 @@ Uso:
     python -m app.services.n8n_workflow_validator
     # ou via endpoint /admin/n8n/validate-wfs (Sprint 5)
 """
+
 from __future__ import annotations
 
 import json
@@ -133,24 +134,18 @@ def _validate_one(wf_path: Path) -> dict[str, Any]:
                 result["valid"] = False
             elif url.startswith("http://localhost") or url.startswith("http://127.0.0.1"):
                 # OK em dev, mas warning em prod
-                result["warnings"].append(
-                    f"HTTP node '{nname}' usa localhost ({url})"
-                )
+                result["warnings"].append(f"HTTP node '{nname}' usa localhost ({url})")
 
             # 5. HTTP com URL hardcoded (NAO parametrizada)
             if url and not url.startswith("{{") and "://api." in url:
-                result["warnings"].append(
-                    f"HTTP node '{nname}' tem URL hardcoded (use $env.VAR)"
-                )
+                result["warnings"].append(f"HTTP node '{nname}' tem URL hardcoded (use $env.VAR)")
 
     # 6. Referencia a env vars desconhecidas
     wf_text = wf_path.read_text(encoding="utf-8")
     env_refs = set(re.findall(r"\{\{\s*\$env\.(\w+)\s*\}\}", wf_text))
     unknown_envs = env_refs - set(KNOWN_ENV_VARS)
     if unknown_envs:
-        result["warnings"].append(
-            f"Env vars nao catalogadas: {sorted(unknown_envs)}"
-        )
+        result["warnings"].append(f"Env vars nao catalogadas: {sorted(unknown_envs)}")
 
     # === B12: checks adicionais (retry, timeout, error handler) ===
 
@@ -179,9 +174,7 @@ def _validate_one(wf_path: Path) -> dict[str, Any]:
             options = params.get("options", {})
             timeout = options.get("timeout", 0)
             if timeout > 30000:
-                result["warnings"].append(
-                    f"B08: HTTP node '{nname}' timeout > 30s ({timeout}ms)"
-                )
+                result["warnings"].append(f"B08: HTTP node '{nname}' timeout > 30s ({timeout}ms)")
 
     # 9. B06: WF sem error handler wired (settings.errorWorkflow nao setado)
     settings = wf.get("settings", {})

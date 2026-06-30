@@ -13,6 +13,7 @@ Cria tabelas basicas exigidas pelo fluxo de dados principal:
 
 Compatibilidade com soft delete e timestamps.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -23,6 +24,8 @@ revision: str = "2026_06_25_0013"
 down_revision: Union[str, None] = "2026_06_25_0012"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+
+
 def upgrade() -> None:
     # Create clientes table (identidade do usuario)
     op.execute(

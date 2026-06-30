@@ -1,4 +1,5 @@
 """Testes do LGPD Consent Service (D11)."""
+
 from __future__ import annotations
 
 from collections.abc import Generator
@@ -156,6 +157,7 @@ class TestLGPDConsent:
     def test_revogar_consentimento_obrigatorias_log_warn(self, db, cliente, caplog):
         """Revogar obrigatorias gera WARNING (LGPD art. 9 - perder servico)."""
         import logging
+
         registrar_consentimento(
             db=db,
             cliente_id=cliente.id,
@@ -244,14 +246,18 @@ class TestLGPDConsent:
         db.refresh(c2)
 
         registrar_consentimento(
-            db=db, cliente_id=cliente.id,
+            db=db,
+            cliente_id=cliente.id,
             finalidades=[Finalidade.ATENDIMENTO_WHATSAPP],
-            ip="192.168.1.100", canal="whatsapp",
+            ip="192.168.1.100",
+            canal="whatsapp",
         )
         registrar_consentimento(
-            db=db, cliente_id=c2.id,
+            db=db,
+            cliente_id=c2.id,
             finalidades=[Finalidade.ATENDIMENTO_TELEGRAM],
-            ip="192.168.1.200", canal="telegram",
+            ip="192.168.1.200",
+            canal="telegram",
         )
 
         h1 = consent_history(db, cliente.id)

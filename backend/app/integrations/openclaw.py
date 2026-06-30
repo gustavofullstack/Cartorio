@@ -28,7 +28,15 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 # Reutilizar classes de erro do opencode_go para consistencia
-from app.integrations.opencode_go import ChatError, ChatErrorKind, ChatResponse, _hash_payload, _audit_log_sync, _scrub_messages, _check_rate_limit
+from app.integrations.opencode_go import (
+    ChatError,
+    ChatErrorKind,
+    ChatResponse,
+    _hash_payload,
+    _audit_log_sync,
+    _scrub_messages,
+    _check_rate_limit,
+)
 
 
 async def chat(

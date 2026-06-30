@@ -1,4 +1,5 @@
 """Testes do endpoint POST /api/v1/documento/upload."""
+
 from __future__ import annotations
 
 import os
@@ -44,6 +45,7 @@ def client():
 
     import app.db
     import app.main as app_main_module
+
     original_engine = app.db.engine
     original_session_scope = app.db.session_scope
     app.db.engine = test_engine
@@ -81,6 +83,7 @@ AUTH = {"X-API-Key": "a" * 64}
 
 def _make_protocolo(db, numero="2026-00001"):
     from app.models.protocolo import Protocolo
+
     p = Protocolo(
         cliente_id=1,  # dummy FK
         numero=numero,
@@ -97,6 +100,7 @@ def _make_protocolo(db, numero="2026-00001"):
 def test_upload_pdf_valido(client):
     """Upload de PDF com hash valido -> 200 + metadata."""
     from app.db import session_scope
+
     with session_scope() as db:
         pid = _make_protocolo(db)
 
@@ -140,6 +144,7 @@ def test_upload_sem_auth_retorna_401(client):
 def test_upload_hash_invalido_retorna_400(client):
     """Hash que nao eh SHA256 hex de 64 chars -> 400."""
     from app.db import session_scope
+
     with session_scope() as db:
         pid = _make_protocolo(db)
 
@@ -157,6 +162,7 @@ def test_upload_hash_invalido_retorna_400(client):
 
 def test_upload_mime_invalido_retorna_400(client):
     from app.db import session_scope
+
     with session_scope() as db:
         pid = _make_protocolo(db)
 
@@ -188,6 +194,7 @@ def test_upload_protocolo_inexistente_404(client):
 
 def test_upload_response_shape(client):
     from app.db import session_scope
+
     with session_scope() as db:
         pid = _make_protocolo(db)
 
@@ -203,7 +210,15 @@ def test_upload_response_shape(client):
     resp = client.post("/api/v1/documento/upload", data=form_data, headers=AUTH)
     body = resp.json()
     expected_keys = {
-        "id", "protocolo_id", "tipo", "storage_path", "storage_provider",
-        "mime_type", "tamanho_bytes", "hash_sha256", "uploaded_by", "uploaded_at",
+        "id",
+        "protocolo_id",
+        "tipo",
+        "storage_path",
+        "storage_provider",
+        "mime_type",
+        "tamanho_bytes",
+        "hash_sha256",
+        "uploaded_by",
+        "uploaded_at",
     }
     assert set(body.keys()) == expected_keys

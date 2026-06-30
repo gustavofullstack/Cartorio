@@ -176,8 +176,10 @@ def test_truncate_ipv4_mapped_ipv6_invalid_returns_none():
 
 def test_truncate_ipv4_mapped_ipv6_hex_parse_exception(monkeypatch):
     """Exception handler para hex parsing em IPv4-mapped IPv6 (linhas 88-89)."""
+
     def bad_int(v, base=10):
         raise ValueError("simulated parse error")
+
     monkeypatch.setattr("builtins.int", bad_int)
     assert truncate_ip("::ffff:c000:0280") is None
 
@@ -190,8 +192,6 @@ def test_truncate_ipv4_mapped_ipv6_hex_parse_exception(monkeypatch):
 def test_truncate_ipv6_only_double_colon_returns_none():
     """IPv6 '::' (0 grupos nao-vazios) retorna None (linha 121)."""
     assert truncate_ip("::") is None
-
-
 
 
 def test_truncate_ipv6_unique_local():

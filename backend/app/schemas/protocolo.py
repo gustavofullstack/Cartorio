@@ -12,6 +12,7 @@ Convencoes:
   concluido, cancelado, expirado.
 - numero_protocolo segue formato ANO-SEQUENCIAL (YYYY-NNNNN).
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -25,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # ============================================================================
 # Enums e constantes de dominio
 # ============================================================================
+
 
 class StatusProtocolo(str, Enum):
     """Ciclo de vida do protocolo. DRAFT = criado pelo bot, aguardando HITL."""
@@ -88,6 +90,7 @@ class EtapaHistorico(str, Enum):
 # ============================================================================
 # Erros estruturados
 # ============================================================================
+
 
 class ErrorResponse(BaseModel):
     """Envelope padrao de erro 4xx/5xx para a API."""
@@ -218,6 +221,7 @@ class ProtocoloNotFoundResponse(ErrorResponse):
 # Request: criacao de protocolo
 # ============================================================================
 
+
 class ProtocoloCreateRequest(BaseModel):
     """Payload de entrada para POST /api/v1/protocolo.
 
@@ -310,6 +314,7 @@ class ProtocoloCreateRequest(BaseModel):
 # ============================================================================
 # Response: saida do GET /api/v1/protocolo/{numero}
 # ============================================================================
+
 
 class HistoricoEtapa(BaseModel):
     """Uma entrada no historico de etapas do protocolo."""
@@ -459,6 +464,7 @@ ProtocoloResponse.model_rebuild()
 # Response: saida do POST /api/v1/protocolo
 # ============================================================================
 
+
 class ProtocoloCreateResponse(BaseModel):
     """Resposta do POST /api/v1/protocolo.
 
@@ -576,8 +582,7 @@ class ProtocoloApiCreateRequest(BaseModel):
         Field(
             default=True,
             description=(
-                "DEVE ser True. Backend REJEITA hitl_draft=False com 422 "
-                "(HITL obrigatorio)."
+                "DEVE ser True. Backend REJEITA hitl_draft=False com 422 (HITL obrigatorio)."
             ),
         ),
     ]

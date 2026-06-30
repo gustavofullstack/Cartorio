@@ -22,6 +22,7 @@ NOTA: pg_cron roda em UTC por default. O Brasil (BRT) eh UTC-3. Entao
 Idempotente: SELECT cron.unschedule() antes de cron.schedule() para evitar
 duplicacao em re-runs.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union

@@ -17,6 +17,7 @@ Uso:
     for cr in CANNED_RESPONSES:
         chatwoot_api.create_canned_response(cr.short_code, cr.content)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

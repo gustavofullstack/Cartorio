@@ -13,6 +13,7 @@ Cobertura:
 - extract_trace_context
 - get_tracer sem init
 """
+
 from __future__ import annotations
 
 import os
@@ -32,10 +33,12 @@ from app.services.tracing import (
 def teardown_function() -> None:
     """Reseta _initialized global apos cada teste."""
     import app.services.tracing as mod
+
     mod._initialized = False
 
 
 # ─── Init ───────────────────────────────────────────────────────────────
+
 
 def test_init_tracing_idempotente() -> None:
     """init_tracing pode ser chamado multiplas vezes sem erro."""
@@ -63,6 +66,7 @@ def test_init_tracing_otlp_sem_exporter_ok() -> None:
 
 # ─── Spans ──────────────────────────────────────────────────────────────
 
+
 def test_llm_span_cria_e_finaliza() -> None:
     """llm_span abre e fecha span com atributos de modelo + operacao."""
     init_tracing("cartorio-api-test")
@@ -89,6 +93,7 @@ def test_db_span_sem_tabela() -> None:
 
 # ─── current_trace_id ───────────────────────────────────────────────────
 
+
 def test_tracing_sem_init_retorna_tracer_valido() -> None:
     """get_tracer funciona sem init (modo NoOp em tests)."""
     tracer = get_tracer("cartorio.noop")
@@ -112,6 +117,7 @@ def test_current_trace_id_com_span_retorna_hex() -> None:
 
 
 # ─── Context propagation ───────────────────────────────────────────────
+
 
 def test_inject_trace_context_adiciona_traceparent() -> None:
     """inject_trace_context adiciona header traceparent."""

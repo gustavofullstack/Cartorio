@@ -86,6 +86,7 @@ def api_key(monkeypatch):
     """Seta CARTORIO_API_KEY no settings para os testes."""
     monkeypatch.setenv("CARTORIO_API_KEY", "b" * 64)
     from app.config import settings
+
     return settings.cartorio_api_key
 
 
@@ -293,7 +294,9 @@ def test_criar_api_hitl_draft_false_retorna_422(client, cliente_existente, api_k
     assert resp.status_code == 422
 
 
-def test_criar_api_hitl_draft_ausente_usa_default_true(client, cliente_existente, api_key, test_engine):
+def test_criar_api_hitl_draft_ausente_usa_default_true(
+    client, cliente_existente, api_key, test_engine
+):
     """hitl_draft omitido assume True (default)."""
     resp = client.post(
         "/api/v1/protocolo/criar-api",
@@ -317,9 +320,7 @@ def test_criar_api_hitl_draft_ausente_usa_default_true(client, cliente_existente
 # ============================================================================
 
 
-def test_criar_api_cliente_rejeitado_consent_retorna_lgpd_blocked(
-    client, test_engine, api_key
-):
+def test_criar_api_cliente_rejeitado_consent_retorna_lgpd_blocked(client, test_engine, api_key):
     """Cliente com motivo_encerramento = REVOGACAO_CONSENTIMENTO retorna 422 LGPD_BLOCKED."""
     SessionLocal = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
     with SessionLocal() as db:
@@ -348,7 +349,9 @@ def test_criar_api_cliente_rejeitado_consent_retorna_lgpd_blocked(
     assert resp.status_code == 422
     detail = resp.json()["detail"]
     assert detail["erro"] == "LGPD_BLOCKED"
-    assert "REVOGACAO" in detail["mensagem"].upper() or "consentimento" in detail["mensagem"].lower()
+    assert (
+        "REVOGACAO" in detail["mensagem"].upper() or "consentimento" in detail["mensagem"].lower()
+    )
 
 
 # ============================================================================
@@ -356,30 +359,40 @@ def test_criar_api_cliente_rejeitado_consent_retorna_lgpd_blocked(
 # ============================================================================
 
 
-def test_criar_api_numero_protocolo_formato_cart_yyyy_xxxxxx(
-    client, test_engine, api_key
-):
+def test_criar_api_numero_protocolo_formato_cart_yyyy_xxxxxx(client, test_engine, api_key):
     """Numero gerado segue formato CART-YYYY-XXXXXX (CART + 4 ano + 6 seq)."""
     # Insere 2 clientes
     SessionLocal = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
     with SessionLocal() as db:
         for cid in [10, 20]:
-            db.add(Cliente(
-                id=cid,
-                cpf_hash=str(cid) * 64,
-                nome=f"Cliente {cid}",
-                consentimento_lgpd=True,
-            ))
+            db.add(
+                Cliente(
+                    id=cid,
+                    cpf_hash=str(cid) * 64,
+                    nome=f"Cliente {cid}",
+                    consentimento_lgpd=True,
+                )
+            )
         db.commit()
 
     r1 = client.post(
         "/api/v1/protocolo/criar-api",
-        json={"cliente_id": 10, "ato": "escritural", "valor_snapshot": "100.00", "hitl_draft": True},
+        json={
+            "cliente_id": 10,
+            "ato": "escritural",
+            "valor_snapshot": "100.00",
+            "hitl_draft": True,
+        },
         headers={"X-API-Key": api_key},
     )
     r2 = client.post(
         "/api/v1/protocolo/criar-api",
-        json={"cliente_id": 20, "ato": "escritural", "valor_snapshot": "200.00", "hitl_draft": True},
+        json={
+            "cliente_id": 20,
+            "ato": "escritural",
+            "valor_snapshot": "200.00",
+            "hitl_draft": True,
+        },
         headers={"X-API-Key": api_key},
     )
     assert r1.status_code == 201

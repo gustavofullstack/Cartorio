@@ -22,6 +22,7 @@ Uso:
   cd backend
   uv run python scripts/e2e_telegram_openclaw.py --chat-id <ID>
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,9 +40,7 @@ def main() -> int:
     parser.add_argument(
         "--text", default="oi cartorio", help="texto a enviar (default: oi cartorio)"
     )
-    parser.add_argument(
-        "--api-base", default="https://api.2notasudi.com.br"
-    )
+    parser.add_argument("--api-base", default="https://api.2notasudi.com.br")
     parser.add_argument(
         "--bot-token",
         default="8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q",
@@ -100,9 +99,8 @@ def main() -> int:
             for u in data.get("result", []):
                 msg = u.get("message", {})
                 # Resposta do bot = chat_id == args.chat_id E from.is_bot == True
-                if (
-                    msg.get("chat", {}).get("id") == int(args.chat_id)
-                    and msg.get("from", {}).get("is_bot")
+                if msg.get("chat", {}).get("id") == int(args.chat_id) and msg.get("from", {}).get(
+                    "is_bot"
                 ):
                     bot_response = msg
                     break
@@ -116,7 +114,7 @@ def main() -> int:
 
     print("[4] RESPOSTA DO BOT:")
     print(f"    msg_id: {bot_response['message_id']}")
-    print(f"    text: {bot_response.get('text','')[:200]}")
+    print(f"    text: {bot_response.get('text', '')[:200]}")
 
     # 4. Valida que OpenClaw + N8N foram acionados
     print("\n[5] validando saude do pipeline:")

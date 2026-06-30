@@ -34,12 +34,8 @@ def upgrade() -> None:
         return
 
     # Cria enum types (Postgres)
-    queue_enum = sa.Enum(
-        "evolution", "chatwoot", "telegram", "outbox", name="outbox_queue_enum"
-    )
-    status_enum = sa.Enum(
-        "pending", "processing", "done", "failed", name="outbox_status_enum"
-    )
+    queue_enum = sa.Enum("evolution", "chatwoot", "telegram", "outbox", name="outbox_queue_enum")
+    status_enum = sa.Enum("pending", "processing", "done", "failed", name="outbox_status_enum")
 
     # Em PG cria enums; em SQLite cria como VARCHAR
     queue_enum.create(bind, checkfirst=True)

@@ -5,6 +5,7 @@ Cobertura:
 - track_agendamento_operation decorator (sucesso/falha, duration)
 - increment_cache_metric helper
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -19,6 +20,7 @@ from app.services.agendamento_metrics import (
 
 
 # ─── track_cache_operation ─────────────────────────────────────────────
+
 
 def test_track_cache_operation_hit():
     """track_cache_operation registra métricas de cache hit."""
@@ -65,6 +67,7 @@ def test_track_cache_operation_duration_recorded():
     @track_cache_operation("slow_op", "some_key")
     def slow_func():
         import time
+
         time.sleep(0.01)  # 10ms
         return "done"
 
@@ -80,6 +83,7 @@ def test_track_cache_operation_duration_recorded():
 
 
 # ─── track_agendamento_operation ───────────────────────────────────────
+
 
 def test_track_agendamento_operation_success():
     """track_agendamento_operation registra métricas de operação bem-sucedida."""
@@ -122,6 +126,7 @@ def test_track_agendamento_operation_failure():
 
 
 # ─── increment_cache_metric ────────────────────────────────────────────
+
 
 def test_increment_cache_metric_sem_labels():
     """increment_cache_metric funciona sem labels."""

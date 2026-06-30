@@ -28,6 +28,7 @@ S07 Realtime channels (publication supabase_realtime)
 
 Idempotente: tudo via DROP/CREATE com IF EXISTS/IF NOT EXISTS.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union

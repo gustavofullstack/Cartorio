@@ -17,6 +17,7 @@ LGPD:
 
 Rate limit: 10 req/min por IP (protege contra brute force).
 """
+
 from __future__ import annotations
 
 import logging

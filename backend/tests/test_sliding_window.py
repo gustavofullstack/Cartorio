@@ -4,6 +4,7 @@ Cobre:
 - RedisSlidingWindowStore (zadd, zremrangebyscore, zcount, _get_client)
 - sliding_window_check (allowed/blocked/fail-open)
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -44,7 +45,12 @@ class TestRedisSlidingWindowStore:
             client1 = await store._get_client()
             client2 = await store._get_client()
         assert client1 is client2  # mesmo objeto (cache)
-        mock_from_url.assert_called_once_with("redis://test:6379/0", socket_timeout=2.0, socket_connect_timeout=2.0, decode_responses=True)
+        mock_from_url.assert_called_once_with(
+            "redis://test:6379/0",
+            socket_timeout=2.0,
+            socket_connect_timeout=2.0,
+            decode_responses=True,
+        )
 
     @pytest.mark.asyncio
     async def test_zadd_calls_redis_zadd(self) -> None:
@@ -88,7 +94,9 @@ class TestSlidingWindowCheck:
         """Retorna allowed=True se count < limit."""
         mock_store.zcount.return_value = 0
         mock_store.zadd.return_value = 1
-        result = await sliding_window_check(mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0)
+        result = await sliding_window_check(
+            mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0
+        )
         assert result.allowed is True
         assert result.current == 1
         assert result.limit == 10
@@ -99,7 +107,9 @@ class TestSlidingWindowCheck:
     async def test_blocked_when_at_limit(self, mock_store: MagicMock) -> None:
         """Retorna allowed=False se count >= limit."""
         mock_store.zcount.return_value = 10
-        result = await sliding_window_check(mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0)
+        result = await sliding_window_check(
+            mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0
+        )
         assert result.allowed is False
         assert result.current == 10
         assert result.limit == 10
@@ -109,7 +119,9 @@ class TestSlidingWindowCheck:
     async def test_blocked_when_over_limit(self, mock_store: MagicMock) -> None:
         """Retorna allowed=False se count > limit."""
         mock_store.zcount.return_value = 15
-        result = await sliding_window_check(mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0)
+        result = await sliding_window_check(
+            mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0
+        )
         assert result.allowed is False
         assert result.current == 15
 
@@ -117,7 +129,9 @@ class TestSlidingWindowCheck:
     async def test_fail_open_on_store_error(self, mock_store: MagicMock) -> None:
         """Em erro de store (fail-open), retorna allowed=True."""
         mock_store.zremrangebyscore.side_effect = ConnectionError("Redis offline")
-        result = await sliding_window_check(mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0)
+        result = await sliding_window_check(
+            mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0
+        )
         assert result.allowed is True
         assert result.current == 0
 
@@ -143,14 +157,18 @@ class TestSlidingWindowCheck:
         """current retorna count+1 apos registrar."""
         mock_store.zcount.return_value = 4
         mock_store.zadd.return_value = 1
-        result = await sliding_window_check(mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0)
+        result = await sliding_window_check(
+            mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0
+        )
         assert result.current == 5  # count(4) + 1
 
     @pytest.mark.asyncio
     async def test_returns_sliding_window_result_type(self, mock_store: MagicMock) -> None:
         """Retorna instancia de SlidingWindowResult."""
         mock_store.zcount.return_value = 2
-        result = await sliding_window_check(mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0)
+        result = await sliding_window_check(
+            mock_store, key="ip:hash", limit=10, window_s=60, now=1000.0
+        )
         assert isinstance(result, SlidingWindowResult)
         assert hasattr(result, "allowed")
         assert hasattr(result, "current")

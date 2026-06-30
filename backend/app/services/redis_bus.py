@@ -130,9 +130,7 @@ class RedisBus:
             await pubsub.subscribe(*channels)
             try:
                 while True:
-                    msg = await pubsub.get_message(
-                        ignore_subscribe_messages=True, timeout=1.0
-                    )
+                    msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
                     if msg is None:
                         await asyncio.sleep(0.05)  # yield pro event loop
                         continue
@@ -156,9 +154,7 @@ class RedisBus:
         except Exception as e:
             raise RedisBusError(f"subscribe falhou: {e}") from e
 
-    async def pattern_subscribe(
-        self, pattern: str
-    ) -> AsyncIterator[dict[str, Any]]:
+    async def pattern_subscribe(self, pattern: str) -> AsyncIterator[dict[str, Any]]:
         """PSUBSCRIBE com pattern (ex: 'cartorio:*').
 
         Yields:
@@ -172,9 +168,7 @@ class RedisBus:
             await pubsub.psubscribe(pattern)
             try:
                 while True:
-                    msg = await pubsub.get_message(
-                        ignore_subscribe_messages=True, timeout=1.0
-                    )
+                    msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
                     if msg is None:
                         await asyncio.sleep(0.05)
                         continue

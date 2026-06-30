@@ -9,6 +9,7 @@ Adiciona headers em TODA response:
 
 Tambem expoe endpoint /version que retorna metadata completa.
 """
+
 from __future__ import annotations
 
 import logging

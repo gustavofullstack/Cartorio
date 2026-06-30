@@ -26,6 +26,7 @@ Idempotente: pode rodar multiplas vezes sem efeito (nao tem upgrade body).
 
 Modified by Gustavo Almeida
 """
+
 from typing import Sequence, Union
 
 # revision identifiers, used by Alembic.

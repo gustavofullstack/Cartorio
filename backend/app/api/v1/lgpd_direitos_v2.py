@@ -16,6 +16,7 @@ Padrao:
 - Audit log: registrar TODA operacao (LGPD art. 37)
 - PII scrub: mascarar IP/PII antes de expor
 """
+
 from __future__ import annotations
 
 import json
@@ -123,22 +124,25 @@ def lgpd_dashboard(
     Query raw SQL para performance (evita N+1 com ORM).
     """
     # 1. Total clientes ativos (deleted_at IS NULL)
-    total_ativos = db.execute(
-        text("SELECT COUNT(*) FROM clientes WHERE deleted_at IS NULL")
-    ).scalar() or 0
+    total_ativos = (
+        db.execute(text("SELECT COUNT(*) FROM clientes WHERE deleted_at IS NULL")).scalar() or 0
+    )
 
     # 2. Total clientes revocados (deleted_at IS NOT NULL)
-    total_revocados = db.execute(
-        text("SELECT COUNT(*) FROM clientes WHERE deleted_at IS NOT NULL")
-    ).scalar() or 0
+    total_revocados = (
+        db.execute(text("SELECT COUNT(*) FROM clientes WHERE deleted_at IS NOT NULL")).scalar() or 0
+    )
 
     # 3. Consentimentos ativos (consentimento_lgpd = TRUE AND deleted_at IS NULL)
-    consents_ativos = db.execute(
-        text(
-            "SELECT COUNT(*) FROM clientes "
-            "WHERE consentimento_lgpd = TRUE AND deleted_at IS NULL"
-        )
-    ).scalar() or 0
+    consents_ativos = (
+        db.execute(
+            text(
+                "SELECT COUNT(*) FROM clientes "
+                "WHERE consentimento_lgpd = TRUE AND deleted_at IS NULL"
+            )
+        ).scalar()
+        or 0
+    )
 
     # Detect dialect (PostgreSQL prod vs SQLite test) for cross-compatible time
     dialect_name = db.bind.dialect.name if db.bind is not None else "postgresql"
@@ -151,30 +155,34 @@ def lgpd_dashboard(
         ts_1d_expr = "NOW() - INTERVAL '1 day'"
 
     # 4. Consentimentos revogados nos ultimos 30 dias
-    consents_revogados_30d = db.execute(
-        text(
-            'SELECT COUNT(*) FROM audit_log '
-            "WHERE action = 'lgpd.consent.revoked' "
-            f'AND timestamp >= {ts_30d_expr}'
-        )
-    ).scalar() or 0
+    consents_revogados_30d = (
+        db.execute(
+            text(
+                "SELECT COUNT(*) FROM audit_log "
+                "WHERE action = 'lgpd.consent.revoked' "
+                f"AND timestamp >= {ts_30d_expr}"
+            )
+        ).scalar()
+        or 0
+    )
 
     # 5. Exports solicitados nos ultimos 30 dias
-    exports_30d = db.execute(
-        text(
-            'SELECT COUNT(*) FROM audit_log '
-            "WHERE action = 'lgpd.portabilidade.download' "
-            f'AND timestamp >= {ts_30d_expr}'
-        )
-    ).scalar() or 0
+    exports_30d = (
+        db.execute(
+            text(
+                "SELECT COUNT(*) FROM audit_log "
+                "WHERE action = 'lgpd.portabilidade.download' "
+                f"AND timestamp >= {ts_30d_expr}"
+            )
+        ).scalar()
+        or 0
+    )
 
     # 6. Audit entries nas ultimas 24h
-    audit_24h = db.execute(
-        text(
-            'SELECT COUNT(*) FROM audit_log '
-            f'WHERE timestamp >= {ts_1d_expr}'
-        )
-    ).scalar() or 0
+    audit_24h = (
+        db.execute(text(f"SELECT COUNT(*) FROM audit_log WHERE timestamp >= {ts_1d_expr}")).scalar()
+        or 0
+    )
 
     # 7. Audit chain status (verifica integridade basica)
     chain_ok, chain_length = AuditService.verify_chain(db)
@@ -239,26 +247,36 @@ def direito_acesso_v2(
         )
 
     # Conta protocolos do titular
-    total_protocolos = db.execute(
-        select(func.count(Protocolo.id)).where(Protocolo.cliente_id == cliente_id)
-    ).scalar() or 0
+    total_protocolos = (
+        db.execute(
+            select(func.count(Protocolo.id)).where(Protocolo.cliente_id == cliente_id)
+        ).scalar()
+        or 0
+    )
 
     # Conta audit entries do titular
-    total_audit = db.execute(
-        select(func.count(AuditLog.id)).where(
-            AuditLog.resource.like(f"cliente:{cliente_id}%")
-        )
-    ).scalar() or 0
+    total_audit = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(AuditLog.resource.like(f"cliente:{cliente_id}%"))
+        ).scalar()
+        or 0
+    )
 
     # Categorias de dados tratados
     categorias_dados = [
         {"categoria": "identificacao", "campos": ["nome", "cpf_hash"], "status": "tratando"},
         {"categoria": "contato", "campos": ["email", "telefone_hash"], "status": "tratando"},
         {"categoria": "ato_juridico", "campos": ["protocolos"], "count": total_protocolos},
-        {"categoria": "consentimento_lgpd", "campos": ["consentimento_lgpd", "consentimento_em"],
-         "status": "concedido" if cliente.consentimento_lgpd else "nao_concedido"},
-        {"categoria": "audit_trail", "campos": ["request_id", "ip_truncado", "user_agent"],
-         "count": total_audit},
+        {
+            "categoria": "consentimento_lgpd",
+            "campos": ["consentimento_lgpd", "consentimento_em"],
+            "status": "concedido" if cliente.consentimento_lgpd else "nao_concedido",
+        },
+        {
+            "categoria": "audit_trail",
+            "campos": ["request_id", "ip_truncado", "user_agent"],
+            "count": total_audit,
+        },
     ]
 
     # Audit log da propria consulta
@@ -398,9 +416,7 @@ def registrar_consentimento_v2(
         "cliente_id": body.cliente_id,
         "finalidade": body.finalidade,
         "granted": body.granted,
-        "consentido_em": (
-            result.consentido_em.isoformat() if result.consentido_em else None
-        ),
+        "consentido_em": (result.consentido_em.isoformat() if result.consentido_em else None),
     }
 
 
@@ -605,9 +621,7 @@ def corrigir_dados_v2(
         db_col = _DB_FIELD_MAP.get(field_name)
         if db_col and hasattr(cliente, db_col):
             old_val = getattr(cliente, db_col)
-            old_values[field_name] = (
-                str(old_val) if old_val is not None else None
-            )
+            old_values[field_name] = str(old_val) if old_val is not None else None
             setattr(cliente, db_col, value)
             updated_fields.append(field_name)
         else:
@@ -632,8 +646,7 @@ def corrigir_dados_v2(
         payload={
             "updated_fields": updated_fields,
             "old_values_scrubbed": {
-                k: v[:2] + "***" if v and len(v) > 2 else v
-                for k, v in old_values.items()
+                k: v[:2] + "***" if v and len(v) > 2 else v for k, v in old_values.items()
             },
         },
         **audit_kwargs(request),
@@ -741,9 +754,7 @@ def revogar_consent_v2(
         "cliente_id": body.cliente_id,
         "finalidades_revogadas": body.finalidades or "all",
         "consentimento_lgpd": cliente.consentimento_lgpd,
-        "revogado_em": (
-            result.revogado_em.isoformat() if result.revogado_em else None
-        ),
+        "revogado_em": (result.revogado_em.isoformat() if result.revogado_em else None),
     }
 
 
@@ -829,20 +840,22 @@ def audit_log_titular(
 ) -> dict[str, Any]:
     """Retorna audit log do titular com PII scrubbed (D32, LGPD art. 37)."""
     # Busca audit entries que referenciam o cliente
-    stmt = (
-        text(
-            "SELECT id, actor_id, actor_type, action, resource, "
-            "payload, ip, ip_truncated, user_agent, canal, timestamp "
-            "FROM audit_log "
-            "WHERE resource LIKE :resource_pattern "
-            "ORDER BY timestamp DESC "
-            "LIMIT :lim"
-        )
+    stmt = text(
+        "SELECT id, actor_id, actor_type, action, resource, "
+        "payload, ip, ip_truncated, user_agent, canal, timestamp "
+        "FROM audit_log "
+        "WHERE resource LIKE :resource_pattern "
+        "ORDER BY timestamp DESC "
+        "LIMIT :lim"
     )
-    rows = db.execute(
-        stmt,
-        {"resource_pattern": f"cliente:{cliente_id}%", "lim": limit},
-    ).mappings().all()
+    rows = (
+        db.execute(
+            stmt,
+            {"resource_pattern": f"cliente:{cliente_id}%", "lim": limit},
+        )
+        .mappings()
+        .all()
+    )
 
     entries: list[dict[str, Any]] = []
     for row in rows:
@@ -862,9 +875,7 @@ def audit_log_titular(
             # IP truncado (apenas /24 para IPv4)
             "ip_truncated": _truncate_ip_for_response(row.get("ip")),
             # Payload scrubbed (sem PII)
-            "payload": _scrub_payload_pii(
-                _parse_payload(row.get("payload"))
-            ),
+            "payload": _scrub_payload_pii(_parse_payload(row.get("payload"))),
         }
         entries.append(entry)
 

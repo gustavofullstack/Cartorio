@@ -2,6 +2,7 @@
 
 Validates that all schemas enforce correct types and constraints.
 """
+
 from __future__ import annotations
 
 import pytest

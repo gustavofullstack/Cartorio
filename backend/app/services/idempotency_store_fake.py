@@ -2,6 +2,7 @@
 
 A6: mesmo contrato que RedisIdempotencyStore, mas sem dependencia de Redis.
 """
+
 from __future__ import annotations
 
 import time

@@ -1,4 +1,5 @@
 """Testes A10 — CPF/CNPJ validator (regex + digito verificador)."""
+
 from __future__ import annotations
 
 import pytest

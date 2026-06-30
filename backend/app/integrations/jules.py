@@ -158,11 +158,7 @@ async def chat_with_settings(
         if resp.status_code >= 400:
             raise ChatError(
                 f"Jules session POST retorno {resp.status_code}: {resp.text[:200]}",
-                kind=(
-                    ChatErrorKind.HTTP_4XX
-                    if resp.status_code < 500
-                    else ChatErrorKind.HTTP_5XX
-                ),
+                kind=(ChatErrorKind.HTTP_4XX if resp.status_code < 500 else ChatErrorKind.HTTP_5XX),
                 status_code=resp.status_code,
                 body=resp.text[:500],
             )

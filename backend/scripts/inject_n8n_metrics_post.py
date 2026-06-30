@@ -17,6 +17,7 @@ Uso:
   uv run python scripts/inject_n8n_metrics_post.py --dry-run
   uv run python scripts/inject_n8n_metrics_post.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -52,18 +53,18 @@ def build_metrics_node(api_url: str) -> dict:
             "specifyBody": "json",
             "jsonBody": (
                 "={"
-                "\"source\": \"n8n\", "
-                "\"wf_name\": $workflow.name, "
-                "\"wf_id\": $workflow.id, "
-                "\"execution_id\": $execution.id, "
+                '"source": "n8n", '
+                '"wf_name": $workflow.name, '
+                '"wf_id": $workflow.id, '
+                '"execution_id": $execution.id, '
                 "\"correlation_id\": $json.correlation_id ?? $workflow.id + ':' + $execution.id, "
                 "\"status\": $execution.success ? 'success' : 'error', "
                 "\"duration_seconds\": $now.diff($json.wf_started_at, 'seconds'), "
-                "\"counters\": {"
-                "  \"n8n_wf_executions_total\": 1"
+                '"counters": {'
+                '  "n8n_wf_executions_total": 1'
                 "}, "
-                "\"gauges\": {"
-                "  \"n8n_wf_error_rate\": $execution.success ? 0.0 : 1.0"
+                '"gauges": {'
+                '  "n8n_wf_error_rate": $execution.success ? 0.0 : 1.0'
                 "}"
                 "}"
             ),

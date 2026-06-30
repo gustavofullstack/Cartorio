@@ -9,6 +9,7 @@ Cobertura:
 - enviar_notificacao: SMS placeholder
 - notificar_agendamento_criado/lembrete/cancelado
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -20,6 +21,7 @@ from app.services.notificacao import NotificationMethod, NotificationService
 
 # ─── NotificationMethod enum ──────────────────────────────────────────
 
+
 def test_notification_method_values():
     """NotificationMethod enum tem valores corretos."""
     assert NotificationMethod.TELEGRAM.value == "telegram"
@@ -30,6 +32,7 @@ def test_notification_method_values():
 
 # ─── enviar_notificacao — erros ──────────────────────────────────────
 
+
 async def test_enviar_cliente_inexistente():
     """enviar_notificacao levanta ValueError se cliente nao existe."""
     mock_db = MagicMock()
@@ -38,9 +41,7 @@ async def test_enviar_cliente_inexistente():
     mock_db.execute.return_value = mock_execute
 
     with pytest.raises(ValueError, match="não encontrado"):
-        await NotificationService.enviar_notificacao(
-            mock_db, cliente_id=999, mensagem="teste"
-        )
+        await NotificationService.enviar_notificacao(mock_db, cliente_id=999, mensagem="teste")
 
 
 async def test_enviar_sem_consentimento():
@@ -53,9 +54,7 @@ async def test_enviar_sem_consentimento():
     mock_execute.scalar_one_or_none.return_value = mock_cliente
     mock_db.execute.return_value = mock_execute
 
-    result = await NotificationService.enviar_notificacao(
-        mock_db, cliente_id=1, mensagem="teste"
-    )
+    result = await NotificationService.enviar_notificacao(mock_db, cliente_id=1, mensagem="teste")
     assert result is False
 
 
@@ -74,12 +73,11 @@ async def test_enviar_sem_metodo_preferido_e_sem_contato():
     mock_db.execute.return_value = mock_execute
 
     with pytest.raises(ValueError, match="não tem método de contato"):
-        await NotificationService.enviar_notificacao(
-            mock_db, cliente_id=1, mensagem="teste"
-        )
+        await NotificationService.enviar_notificacao(mock_db, cliente_id=1, mensagem="teste")
 
 
 # ─── enviar_notificacao — Telegram ───────────────────────────────────
+
 
 async def test_enviar_telegram_sucesso():
     """_enviar_telegram retorna True quando API responde 200."""
@@ -170,6 +168,7 @@ async def test_enviar_telegram_sem_chat_id():
 
 # ─── enviar_notificacao — WhatsApp ───────────────────────────────────
 
+
 async def test_enviar_whatsapp_sucesso():
     """_enviar_whatsapp retorna True quando API responde 200."""
     mock_response = MagicMock()
@@ -235,6 +234,7 @@ async def test_enviar_whatsapp_sem_numero():
 
 # ─── enviar_notificacao — Email / SMS (placeholders) ────────────────
 
+
 async def test_enviar_email_placeholder():
     """_enviar_email retorna True (placeholder)."""
     result = await NotificationService._enviar_email("teste@test.com", "msg")
@@ -283,6 +283,7 @@ async def test_enviar_sms_sem_telefone():
 
 # ─── Métodos de conveniência ─────────────────────────────────────────
 
+
 async def test_notificar_agendamento_criado():
     """notificar_agendamento_criado constroi mensagem e chama enviar_notificacao."""
     mock_db = MagicMock()
@@ -296,8 +297,12 @@ async def test_notificar_agendamento_criado():
 
     with patch("app.services.notificacao.AuditService.log"):
         result = await NotificationService.notificar_agendamento_criado(
-            mock_db, cliente_id=1, agendamento_id=42,
-            titulo="Teste", data_hora="2026-07-01 10:00", local="Sala 1"
+            mock_db,
+            cliente_id=1,
+            agendamento_id=42,
+            titulo="Teste",
+            data_hora="2026-07-01 10:00",
+            local="Sala 1",
         )
         assert result is True
 
@@ -315,8 +320,12 @@ async def test_notificar_agendamento_lembrete():
 
     with patch("app.services.notificacao.AuditService.log"):
         result = await NotificationService.notificar_agendamento_lembrete(
-            mock_db, cliente_id=1, agendamento_id=42,
-            titulo="Teste", data_hora="2026-07-01 10:00", local="Sala 1"
+            mock_db,
+            cliente_id=1,
+            agendamento_id=42,
+            titulo="Teste",
+            data_hora="2026-07-01 10:00",
+            local="Sala 1",
         )
         assert result is True
 

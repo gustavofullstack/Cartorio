@@ -10,6 +10,7 @@ LGPD safety:
   mensagens de excecao + tags + extra context antes de enviar pro Sentry.
 - Audit log nao vai pro Sentry (fica so no DB append-only).
 """
+
 from __future__ import annotations
 
 import logging
@@ -119,10 +120,13 @@ def capture_exception(exc: Exception, extra: dict[str, Any] | None = None) -> No
     """
     if not _init_sentry():
         # Modo NoOp: loga localmente.
-        logger.exception("exception (sentry disabled): %s", exc, extra=scrub_pii(extra) if extra else None)
+        logger.exception(
+            "exception (sentry disabled): %s", exc, extra=scrub_pii(extra) if extra else None
+        )
         return
 
     import sentry_sdk  # type: ignore[import-not-found]
+
     with sentry_sdk.push_scope() as scope:
         if extra:
             scope.set_extra("context", scrub_pii(extra))
@@ -136,6 +140,7 @@ def capture_message(message: str, level: str = "info", extra: dict[str, Any] | N
         getattr(logger, level, logger.info)("msg (sentry disabled): %s", safe_msg)
         return
     import sentry_sdk  # type: ignore[import-not-found]
+
     with sentry_sdk.push_scope() as scope:
         if extra:
             scope.set_extra("context", scrub_pii(extra))

@@ -9,6 +9,7 @@ LGPD art. 18 V — direito ao esquecimento com:
 Target: Aumentar cobertura de 0% para >= 95% em:
 - app/services/lgpd_direito_esquecimento.py (288 linhas, LGPD P0)
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -103,7 +104,11 @@ def test_direito_esquecimento_anonimiza_pii(db, cliente):
     assert cliente.nome != nome_original
     assert cliente.email != email_original
     # Hash irreversivel (LGPD compliance)
-    assert "anonimizado" in cliente.nome.lower() or "hash" in cliente.nome.lower() or len(cliente.nome) > 0
+    assert (
+        "anonimizado" in cliente.nome.lower()
+        or "hash" in cliente.nome.lower()
+        or len(cliente.nome) > 0
+    )
 
 
 def test_direito_esquecimento_audit_log(db, cliente):
@@ -123,6 +128,7 @@ def test_direito_esquecimento_audit_log(db, cliente):
 
     # Busca audit log no banco
     from app.models.audit_log import AuditLog
+
     audit = db.query(AuditLog).filter_by(id=audit_id).first()
     assert audit is not None
     assert audit.actor_id == "admin-123"
@@ -184,9 +190,7 @@ def test_direito_esquecimento_restaurar(db, cliente):
     )
 
     # Esquecer
-    direito_esquecimento(
-        db=db, cliente_id=cliente.id, actor_id="gustavo", motivo="Teste restore"
-    )
+    direito_esquecimento(db=db, cliente_id=cliente.id, actor_id="gustavo", motivo="Teste restore")
     db.refresh(cliente)
     assert cliente.deleted_at is not None
 
@@ -209,9 +213,7 @@ def test_direito_esquecimento_lgpd_audit_article(db, cliente):
     from app.services.lgpd_direito_esquecimento import direito_esquecimento
     from app.models.audit_log import AuditLog
 
-    result = direito_esquecimento(
-        db=db, cliente_id=cliente.id, actor_id="gustavo", motivo="Teste"
-    )
+    result = direito_esquecimento(db=db, cliente_id=cliente.id, actor_id="gustavo", motivo="Teste")
 
     audit = db.query(AuditLog).filter_by(id=result["audit_log_id"]).first()
     payload_str = str(audit.payload)
@@ -260,6 +262,7 @@ def test_direito_esquecimento_cascade_falha_loga_continue(db, cliente, caplog):
 
     # Adiciona tabela inexistente ao cascade via monkeypatch
     import app.services.lgpd_direito_esquecimento as mod
+
     original_tables = mod.CASCADE_TABLES
     try:
         mod.CASCADE_TABLES = original_tables + ("tabela_inexistente",)
@@ -291,12 +294,12 @@ def test_restore_cascade_falha_loga_continue(db, cliente, caplog):
     )
 
     import app.services.lgpd_direito_esquecimento as mod
+
     original_tables = mod.CASCADE_TABLES
     try:
         mod.CASCADE_TABLES = original_tables + ("tabela_inexistente",)
         result = restore_direito_esquecimento(
-            db=db, cliente_id=cliente.id, actor_id="gustavo",
-            justificativa="teste restore fail"
+            db=db, cliente_id=cliente.id, actor_id="gustavo", justificativa="teste restore fail"
         )
         assert result["restored"] is True
         assert any("restore" in msg and "tabela_inexistente" in msg for msg in caplog.messages)
@@ -315,13 +318,18 @@ def test_restore_reversibilidade_expirada(db, cliente, monkeypatch):
     # Esquecer com reversivel_ate no passado
     prazo_passado = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1)
     direito_esquecimento(
-        db=db, cliente_id=cliente.id, actor_id="gustavo",
-        motivo="teste expirado", reversivel_ate=prazo_passado,
+        db=db,
+        cliente_id=cliente.id,
+        actor_id="gustavo",
+        motivo="teste expirado",
+        reversivel_ate=prazo_passado,
     )
 
     with pytest.raises(ValueError, match="passou do prazo"):
         restore_direito_esquecimento(
-            db=db, cliente_id=cliente.id, actor_id="gustavo",
+            db=db,
+            cliente_id=cliente.id,
+            actor_id="gustavo",
             justificativa="tentativa apos prazo",
         )
 
@@ -358,11 +366,13 @@ def test_direito_esquecimento_else_branch_non_cliente_table(db, cliente, monkeyp
 
     # Adiciona uma tabela que existe ao cascade para testar o else
     import app.services.lgpd_direito_esquecimento as mod
+
     original_tables = mod.CASCADE_TABLES
 
     # protocolos tem cliente_id, mas nao tem deleted_at column na tabela.
     # Usamos diretamente SQL para criar a coluna se necessario.
     from sqlalchemy import text
+
     try:
         db.execute(text("ALTER TABLE protocolos ADD COLUMN deleted_at TIMESTAMP"))
         db.commit()
@@ -387,7 +397,9 @@ def test_direito_esquecimento_else_branch_non_cliente_table(db, cliente, monkeyp
         mod.CASCADE_TABLES = original_tables + ("protocolos",)
 
         result = direito_esquecimento(
-            db=db, cliente_id=cliente.id, actor_id="gustavo",
+            db=db,
+            cliente_id=cliente.id,
+            actor_id="gustavo",
             motivo="teste else branch",
         )
         assert result["cliente_id"] == cliente.id

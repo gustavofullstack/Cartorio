@@ -8,6 +8,7 @@ Backend valida com EVOLUTION_WEBHOOK_SECRET.
 - Webhook sem signature + secret configurado = rejected.
 - Webhook sem signature + secret NAO configurado = aceita (dev mode).
 """
+
 from __future__ import annotations
 
 import os

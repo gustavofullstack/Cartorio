@@ -12,6 +12,7 @@ Beneficios:
 
 LGPD: nunca colocar PII em span attributes. Apenas IDs hash ou contagens.
 """
+
 from __future__ import annotations
 
 import os
@@ -48,6 +49,7 @@ def init_tracing(service_name: str = "cartorio-api") -> None:
             from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # type: ignore[import-not-found]
                 OTLPSpanExporter,
             )
+
             provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
         except ImportError:
             # Exporter opcional: se nao instalado, segue sem export.
@@ -108,6 +110,7 @@ def current_trace_id() -> str | None:
 def inject_trace_context(headers: dict[str, str]) -> dict[str, str]:
     """Injeta traceparent em headers HTTP para propagacao W3C."""
     from opentelemetry.propagate import inject
+
     inject(headers)
     return headers
 
@@ -115,4 +118,5 @@ def inject_trace_context(headers: dict[str, str]) -> dict[str, str]:
 def extract_trace_context(headers: dict[str, str]) -> Any:
     """Extrai context W3C de headers recebidos (webhook inbound)."""
     from opentelemetry.propagate import extract
+
     return extract(headers)

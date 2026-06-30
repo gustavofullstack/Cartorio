@@ -1,4 +1,5 @@
 """Testes do rate limit por API key (3 tiers)."""
+
 from __future__ import annotations
 
 import os
@@ -125,7 +126,9 @@ async def test_middleware_allow_quando_primeira_request(mock_redis_client) -> No
     request.headers = {"x-api-key": "n8n-test"}
     request.url.path = "/api/v1/test"
 
-    with patch("app.services.rate_limit_by_key.redis_async.from_url", return_value=mock_redis_client):
+    with patch(
+        "app.services.rate_limit_by_key.redis_async.from_url", return_value=mock_redis_client
+    ):
         # Bypass call_next real
         call_next = AsyncMock(return_value=MagicMock(headers={}))
         response = await mw.dispatch(request, call_next)
@@ -147,7 +150,9 @@ async def test_middleware_429_quando_excede_limite(mock_redis_client) -> None:
     pipe_instance = mock_redis_client.pipeline.return_value
     pipe_instance.execute = AsyncMock(return_value=[61, True])  # 61 > 60 (dpo tier)
 
-    with patch("app.services.rate_limit_by_key.redis_async.from_url", return_value=mock_redis_client):
+    with patch(
+        "app.services.rate_limit_by_key.redis_async.from_url", return_value=mock_redis_client
+    ):
         call_next = AsyncMock()
         response = await mw.dispatch(request, call_next)
 

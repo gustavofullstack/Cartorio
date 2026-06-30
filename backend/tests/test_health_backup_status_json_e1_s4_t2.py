@@ -106,9 +106,7 @@ def client(test_engine, test_session_factory):
 def test_health_backup_lendo_json_status_quando_existe(client, tmp_path):
     """Quando cartorio-backup-status.json existe e ok=true, retorna ok=true."""
     status_path = tmp_path / "cartorio-backup-status.json"
-    last_backup_iso = (
-        datetime.now(timezone.utc) - timedelta(hours=6)
-    ).isoformat()
+    last_backup_iso = (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat()
     status_data = {
         "last_backup_iso": last_backup_iso,
         "last_backup_filename": "cartorio_backup_20260625_030000.tar.gz",
@@ -122,13 +120,9 @@ def test_health_backup_lendo_json_status_quando_existe(client, tmp_path):
 
     # Endpoint le do path /var/log/cartorio-backup-status.json (default VPS)
     # Mock OS para apontar para tmp_path
-    with patch("os.path.exists") as mock_exists, patch(
-        "builtins.open", create=True
-    ) as mock_open:
+    with patch("os.path.exists") as mock_exists, patch("builtins.open", create=True) as mock_open:
         mock_exists.return_value = True
-        mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(
-            status_data
-        )
+        mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(status_data)
 
         response = client.get("/api/v1/health/backup")
         # NOTE: este teste sera implementado para refletir o comportamento esperado
@@ -148,9 +142,7 @@ def test_health_backup_lendo_json_status_quando_existe(client, tmp_path):
 def test_health_backup_json_stale_marca_ok_false(client):
     """Quando JSON existe mas backup > 26h, retorna ok=false."""
     status_data = {
-        "last_backup_iso": (
-            datetime.now(timezone.utc) - timedelta(hours=30)
-        ).isoformat(),
+        "last_backup_iso": (datetime.now(timezone.utc) - timedelta(hours=30)).isoformat(),
         "last_backup_filename": "cartorio_backup_20260623_030000.tar.gz",
         "last_backup_size_bytes": 524288,
         "last_backup_age_hours": 30.5,
@@ -159,13 +151,9 @@ def test_health_backup_json_stale_marca_ok_false(client):
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    with patch("os.path.exists") as mock_exists, patch(
-        "builtins.open", create=True
-    ) as mock_open:
+    with patch("os.path.exists") as mock_exists, patch("builtins.open", create=True) as mock_open:
         mock_exists.return_value = True
-        mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(
-            status_data
-        )
+        mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(status_data)
 
         response = client.get("/api/v1/health/backup")
         assert response.status_code == 200
@@ -180,9 +168,7 @@ def test_health_backup_json_stale_marca_ok_false(client):
 # ============================================================================
 
 
-def test_health_backup_fallback_para_path_local_quando_json_ausente(
-    client, tmp_path, monkeypatch
-):
+def test_health_backup_fallback_para_path_local_quando_json_ausente(client, tmp_path, monkeypatch):
     """Quando JSON nao existe, mas /var/backups/cartorio existe no container
     (volume mount aplicado), usa o path local."""
     backup_dir = tmp_path / "backups"
@@ -197,18 +183,12 @@ def test_health_backup_fallback_para_path_local_quando_json_ausente(
     one_hour_ago = time.time() - 3600
     os.utime(tar_file, (one_hour_ago, one_hour_ago))
 
-    monkeypatch.setattr(
-        "app.api.v1.router.os.path.isdir", lambda p: p == "/var/backups/cartorio"
-    )
+    monkeypatch.setattr("app.api.v1.router.os.path.isdir", lambda p: p == "/var/backups/cartorio")
     monkeypatch.setattr(
         "app.api.v1.router.os.listdir", lambda p: ["cartorio_backup_20260625_150000.tar.gz"]
     )
-    monkeypatch.setattr(
-        "app.api.v1.router.os.path.getmtime", lambda p: one_hour_ago
-    )
-    monkeypatch.setattr(
-        "app.api.v1.router.os.path.getsize", lambda p: 17000
-    )
+    monkeypatch.setattr("app.api.v1.router.os.path.getmtime", lambda p: one_hour_ago)
+    monkeypatch.setattr("app.api.v1.router.os.path.getsize", lambda p: 17000)
     monkeypatch.setattr(
         "app.api.v1.router.os.path.join", lambda *args: str(args[0]) + "/" + args[1]
     )
@@ -225,14 +205,10 @@ def test_health_backup_fallback_para_path_local_quando_json_ausente(
 # ============================================================================
 
 
-def test_health_backup_quando_json_e_path_ausentes_retorna_instrucoes(
-    client, monkeypatch
-):
+def test_health_backup_quando_json_e_path_ausentes_retorna_instrucoes(client, monkeypatch):
     """Quando NEM JSON nem path local existem, retorna ok=false + instrucoes
     para instalar backup.sh + cron."""
-    monkeypatch.setattr(
-        "app.api.v1.router.os.path.isdir", lambda p: False
-    )
+    monkeypatch.setattr("app.api.v1.router.os.path.isdir", lambda p: False)
 
     response = client.get("/api/v1/health/backup")
     assert response.status_code == 200
@@ -249,9 +225,7 @@ def test_health_backup_quando_json_e_path_ausentes_retorna_instrucoes(
 
 def test_health_backup_json_malformado_retorna_ok_false_com_erro(client):
     """Quando JSON existe mas esta malformado, retorna ok=false sem crash."""
-    with patch("os.path.exists") as mock_exists, patch(
-        "builtins.open", create=True
-    ) as mock_open:
+    with patch("os.path.exists") as mock_exists, patch("builtins.open", create=True) as mock_open:
         mock_exists.return_value = True
         mock_open.return_value.__enter__.return_value.read.return_value = (
             "{ invalid json content [[["

@@ -7,6 +7,7 @@ Usa Redis ZADD/ZCOUNT/ZREMRANGEBYSCORE.
 - Apos janela passar, contador reseta
 - Redis offline = fail-open
 """
+
 from __future__ import annotations
 
 import os
@@ -53,9 +54,7 @@ class FakeSlidingWindowStore:
         if key not in self._store:
             return 0
         before = len(self._store[key])
-        self._store[key] = [
-            (s, m) for s, m in self._store[key] if s < min_score or s > max_score
-        ]
+        self._store[key] = [(s, m) for s, m in self._store[key] if s < min_score or s > max_score]
         return before - len(self._store[key])
 
     async def zcount(self, key: str, min_score: float, max_score: float) -> int:
@@ -73,7 +72,7 @@ async def test_sliding_window_60_requests_em_60s_passa() -> None:
         result = await sliding_window_check(
             store, key="ip:1.2.3.4", limit=60, window_s=60, now=now + i * 0.1
         )
-        assert result.allowed, f"Request {i+1} deveria ser allowed"
+        assert result.allowed, f"Request {i + 1} deveria ser allowed"
 
 
 @pytest.mark.asyncio

@@ -11,6 +11,7 @@ Pre-requisitos:
 - rsync instalado
 - Diretorio VPS: /var/lib/docker/volumes/cartorio_brain/_data/ (criado pelo admin)
 """
+
 from __future__ import annotations
 
 import argparse

@@ -20,6 +20,7 @@ mesmo branch. Resultado: chain agora linear
 
 Modified by Gustavo Almeida
 """
+
 from typing import Sequence, Union
 
 

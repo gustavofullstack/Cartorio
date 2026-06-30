@@ -1,4 +1,5 @@
 """Testes do PII Sanitizer (D8 - LGPD by design)."""
+
 from __future__ import annotations
 
 

@@ -34,12 +34,16 @@ def mark_stale_atendimentos(db: Session, threshold_minutes: int = 30) -> dict[st
     """
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=threshold_minutes)
 
-    rows = db.execute(
-        select(Atendimento).where(
-            Atendimento.status.in_(STATUS_ABERTOS),
-            Atendimento.updated_at < cutoff,
+    rows = (
+        db.execute(
+            select(Atendimento).where(
+                Atendimento.status.in_(STATUS_ABERTOS),
+                Atendimento.updated_at < cutoff,
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     marked = 0
     for atendimento in rows:

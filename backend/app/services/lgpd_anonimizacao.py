@@ -10,6 +10,7 @@ Este service implementa AMBOS:
 - hash_pii(value, salt) -> SHA-256 deterministico (pseudonimizacao)
 - anonymize_cliente_row(row) -> dict sem PII (anonimizacao p/ analytics)
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -103,7 +104,14 @@ def anonymize_cliente_row(row: dict[str, Any]) -> dict[str, Any]:
         elif key == "endereco_uf":
             # Mantem sigla do estado (LGPD-safe: 27 valores)
             result[key] = value
-        elif key in ("id", "tipo_cliente", "lgpd_consent_granted", "lgpd_consent_at", "deleted_at", "created_at"):
+        elif key in (
+            "id",
+            "tipo_cliente",
+            "lgpd_consent_granted",
+            "lgpd_consent_at",
+            "deleted_at",
+            "created_at",
+        ):
             result[key] = value
         # Outros campos NAO-PII: descarta (whitelist-only)
     return result

@@ -22,8 +22,14 @@ def upgrade() -> None:
     # A26: Notification fields — add columns that exist in model but not in DB
     op.add_column("clientes", sa.Column("telegram_chat_id", sa.String(64), nullable=True))
     op.add_column("clientes", sa.Column("whatsapp_number", sa.String(20), nullable=True))
-    op.add_column("clientes", sa.Column("email_notifications", sa.Boolean(), nullable=False, server_default="true"))
-    op.add_column("clientes", sa.Column("sms_notifications", sa.Boolean(), nullable=False, server_default="true"))
+    op.add_column(
+        "clientes",
+        sa.Column("email_notifications", sa.Boolean(), nullable=False, server_default="true"),
+    )
+    op.add_column(
+        "clientes",
+        sa.Column("sms_notifications", sa.Boolean(), nullable=False, server_default="true"),
+    )
     op.add_column("clientes", sa.Column("preferred_contact_method", sa.String(32), nullable=True))
 
     # Indexes for notification lookups

@@ -15,6 +15,7 @@ Fluxo:
 
 LGPD: mensagens sao PII (texto livre). 3 camadas de scrubbing obrigatorias.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -42,7 +43,9 @@ TELEGRAM_API_BASE = "https://api.telegram.org"
 
 # HMAC secret compartilhado com Telegram (configurado via setWebhook)
 # Em prod, vir de settings.telegram_webhook_secret
-TELEGRAM_WEBHOOK_SECRET = settings.telegram_webhook_secret if hasattr(settings, "telegram_webhook_secret") else None
+TELEGRAM_WEBHOOK_SECRET = (
+    settings.telegram_webhook_secret if hasattr(settings, "telegram_webhook_secret") else None
+)
 
 
 def _verify_telegram_secret(
@@ -157,10 +160,7 @@ async def telegram_webhook(
         agent_response = await _call_openclaw_agent(chat_id, text_scrubbed, db=db)
     except Exception as e:
         logger.exception("OpenClaw Agent falhou: %s", e)
-        agent_response = (
-            "Desculpe, tive um problema tecnico. "
-            "Tente novamente em alguns instantes."
-        )
+        agent_response = "Desculpe, tive um problema tecnico. Tente novamente em alguns instantes."
 
     # 6. PII scrub resposta (camada 3)
     response_scrubbed = scrub(agent_response).text
@@ -228,10 +228,7 @@ async def _call_openclaw_agent(
         return resp.content
     except Exception as e:
         logger.exception("Fallback LLM chat falhou: %s", e)
-        return (
-            "Desculpe, tive um problema tecnico. "
-            "Tente novamente em alguns instantes."
-        )
+        return "Desculpe, tive um problema tecnico. Tente novamente em alguns instantes."
 
 
 async def _send_telegram_message(chat_id: int, text: str) -> None:

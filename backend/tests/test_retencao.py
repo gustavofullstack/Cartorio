@@ -1,4 +1,5 @@
 """Testes do job de retencao (5y / 2y inativo)."""
+
 from __future__ import annotations
 
 import os

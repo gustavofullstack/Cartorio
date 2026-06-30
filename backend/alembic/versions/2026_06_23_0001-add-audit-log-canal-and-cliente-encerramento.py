@@ -14,6 +14,7 @@ Background:
 - ADR-018 (DELETE /cliente/{id}): motivo_encerramento + audit chain link
 - ADR-019 (Job retenção): rastreabilidade do encerramento
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -54,21 +55,31 @@ def upgrade() -> None:
         # SQLite: nao tem IF NOT EXISTS em ALTER TABLE. Verifica via PRAGMA.
         # Em dev/test, falha se ja existe - isso eh ok (create_all ja criou).
         # Em prod, alembic nem roda contra sqlite.
-        cols_audit = {row[1] for row in bind.exec_driver_sql("PRAGMA table_info(audit_log)").fetchall()}
+        cols_audit = {
+            row[1] for row in bind.exec_driver_sql("PRAGMA table_info(audit_log)").fetchall()
+        }
         if "canal" not in cols_audit:
             op.execute("ALTER TABLE audit_log ADD COLUMN canal VARCHAR(32)")
-        idx_audit = {row[1] for row in bind.exec_driver_sql("PRAGMA index_list(audit_log)").fetchall()}
+        idx_audit = {
+            row[1] for row in bind.exec_driver_sql("PRAGMA index_list(audit_log)").fetchall()
+        }
         if "ix_audit_log_canal" not in idx_audit:
             op.execute("CREATE INDEX ix_audit_log_canal ON audit_log (canal)")
 
-        cols_cliente = {row[1] for row in bind.exec_driver_sql("PRAGMA table_info(clientes)").fetchall()}
+        cols_cliente = {
+            row[1] for row in bind.exec_driver_sql("PRAGMA table_info(clientes)").fetchall()
+        }
         if "motivo_encerramento" not in cols_cliente:
             op.execute("ALTER TABLE clientes ADD COLUMN motivo_encerramento VARCHAR(32)")
         if "audit_encerramento_id" not in cols_cliente:
             op.execute("ALTER TABLE clientes ADD COLUMN audit_encerramento_id INTEGER")
-        idx_cliente = {row[1] for row in bind.exec_driver_sql("PRAGMA index_list(clientes)").fetchall()}
+        idx_cliente = {
+            row[1] for row in bind.exec_driver_sql("PRAGMA index_list(clientes)").fetchall()
+        }
         if "ix_clientes_motivo_encerramento" not in idx_cliente:
-            op.execute("CREATE INDEX ix_clientes_motivo_encerramento ON clientes (motivo_encerramento)")
+            op.execute(
+                "CREATE INDEX ix_clientes_motivo_encerramento ON clientes (motivo_encerramento)"
+            )
         if "ix_clientes_deleted_at" not in idx_cliente:
             op.execute("CREATE INDEX ix_clientes_deleted_at ON clientes (deleted_at)")
     else:
@@ -80,7 +91,9 @@ def downgrade() -> None:
     dialect = bind.dialect.name
 
     if dialect == "postgresql":
-        op.execute("ALTER TABLE clientes DROP CONSTRAINT IF EXISTS clientes_audit_encerramento_id_fkey")
+        op.execute(
+            "ALTER TABLE clientes DROP CONSTRAINT IF EXISTS clientes_audit_encerramento_id_fkey"
+        )
         op.execute("ALTER TABLE clientes DROP COLUMN IF EXISTS audit_encerramento_id")
         op.execute("DROP INDEX IF EXISTS ix_clientes_motivo_encerramento")
         op.execute("ALTER TABLE clientes DROP COLUMN IF EXISTS motivo_encerramento")

@@ -403,9 +403,7 @@ def test_opencode_test_endpoint_scrubs_output(client):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert "123.456.789-09" not in str(data), (
-        f"LGPD-015: CPF ECOADO no smoke test: {data}"
-    )
+    assert "123.456.789-09" not in str(data), f"LGPD-015: CPF ECOADO no smoke test: {data}"
     # output_pii_redacted_count deve aparecer no response do endpoint
     assert "output_pii_redacted_count" in data
     assert data["output_pii_redacted_count"] >= 1

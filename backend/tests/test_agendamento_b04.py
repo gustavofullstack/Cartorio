@@ -164,9 +164,7 @@ def test_criar_agendamento_happy_path(db, cliente_padrao):
     assert agendamento.titulo == "Reconhecimento de firma"
     # status pode vir como str (do DB) ou enum
     status_value = (
-        agendamento.status.value
-        if hasattr(agendamento.status, "value")
-        else agendamento.status
+        agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status
     )
     assert status_value == "agendado"
     # LGPD: CPF deve estar hasheado, NAO em texto puro
@@ -418,13 +416,9 @@ def test_concluir_define_data_hora_fim(db, cliente_padrao):
     assert ag.data_hora_fim is not None
     # data_hora_fim deve ser >= data_hora (concluido agora, depois do inicio)
     data_fim_naive = (
-        ag.data_hora_fim.replace(tzinfo=None)
-        if ag.data_hora_fim.tzinfo
-        else ag.data_hora_fim
+        ag.data_hora_fim.replace(tzinfo=None) if ag.data_hora_fim.tzinfo else ag.data_hora_fim
     )
-    data_hora_naive = (
-        ag.data_hora.replace(tzinfo=None) if ag.data_hora.tzinfo else ag.data_hora
-    )
+    data_hora_naive = ag.data_hora.replace(tzinfo=None) if ag.data_hora.tzinfo else ag.data_hora
     assert data_fim_naive >= data_hora_naive
 
 
@@ -527,8 +521,8 @@ def test_get_agendamento_cliente_endpoint(client, cliente_padrao):
         payload = {
             "cliente_id": cliente_padrao,
             "cliente_cpf": "52998224725",
-            "data_hora": f"2026-07-0{i+1}T10:00:00",
-            "titulo": f"Agendamento {i+1}",
+            "data_hora": f"2026-07-0{i + 1}T10:00:00",
+            "titulo": f"Agendamento {i + 1}",
         }
         client.post("/api/v1/agendamento", json=payload)
 
@@ -554,12 +548,10 @@ def test_listar_agendamentos_cliente(db, cliente_padrao):
             cliente_id=cliente_padrao,
             cliente_cpf="52998224725",
             data_hora=datetime.datetime(2026, 7, 3, 10 + i, 0, 0),
-            titulo=f"Ag {i+1}",
+            titulo=f"Ag {i + 1}",
         )
 
-    agendamentos = AgendamentoService.listar_agendamentos_cliente(
-        db, cliente_id=cliente_padrao
-    )
+    agendamentos = AgendamentoService.listar_agendamentos_cliente(db, cliente_id=cliente_padrao)
     assert len(agendamentos) == 3
 
 
@@ -567,7 +559,5 @@ def test_listar_agendamentos_cliente_vazio(db, cliente_padrao):
     """Cliente sem agendamentos deve retornar lista vazia."""
     from app.services.agendamento import AgendamentoService  # type: ignore[import-not-found]
 
-    agendamentos = AgendamentoService.listar_agendamentos_cliente(
-        db, cliente_id=cliente_padrao
-    )
+    agendamentos = AgendamentoService.listar_agendamentos_cliente(db, cliente_id=cliente_padrao)
     assert agendamentos == []

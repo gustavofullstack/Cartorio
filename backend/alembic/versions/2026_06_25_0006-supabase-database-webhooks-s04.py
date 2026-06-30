@@ -26,6 +26,7 @@ Este trigger + webhook fecham o loop:
 Idempotente: DELETE FROM supabase_functions.hooks WHERE hook_name=NOME
 antes de INSERT, para suportar re-run da migration.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union
@@ -62,9 +63,7 @@ def upgrade() -> None:
     )
 
     # Remove webhook existente (idempotente)
-    op.execute(
-        "DELETE FROM supabase_functions.hooks WHERE hook_name = 'outbox_to_api'"
-    )
+    op.execute("DELETE FROM supabase_functions.hooks WHERE hook_name = 'outbox_to_api'")
 
     # Insere webhook outbox_to_api
     # URL alvo: endpoint da API. Em prod usa dominio publico https://api.2notasudi.com.br

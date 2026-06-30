@@ -1,4 +1,5 @@
 """Testes do LGPD Data Export Service (D12)."""
+
 from __future__ import annotations
 
 import json
@@ -66,14 +67,16 @@ class TestLGPDExport:
     def test_export_inclui_protocolos(self, db, cliente):
         """Export inclui protocolos do titular."""
         for i in range(3):
-            db.add(Protocolo(
-                numero=f"CART-2026-{i:06d}",
-                cliente_id=cliente.id,
-                status="DRAFT",
-                tipo="certidao_casamento",
-                valor_total=100.0,
-                canal_origem="whatsapp",
-            ))
+            db.add(
+                Protocolo(
+                    numero=f"CART-2026-{i:06d}",
+                    cliente_id=cliente.id,
+                    status="DRAFT",
+                    tipo="certidao_casamento",
+                    valor_total=100.0,
+                    canal_origem="whatsapp",
+                )
+            )
         db.commit()
 
         bundle = exportar_dados_titular(db, cliente_id=cliente.id)
@@ -83,10 +86,13 @@ class TestLGPDExport:
     def test_export_inclui_consentimentos(self, db, cliente):
         """Export inclui historico de consentimentos."""
         from app.services.lgpd_consent import Finalidade, registrar_consentimento
+
         registrar_consentimento(
-            db=db, cliente_id=cliente.id,
+            db=db,
+            cliente_id=cliente.id,
             finalidades=[Finalidade.ATENDIMENTO_WHATSAPP],
-            ip="192.168.1.100", canal="whatsapp",
+            ip="192.168.1.100",
+            canal="whatsapp",
         )
 
         bundle = exportar_dados_titular(db, cliente_id=cliente.id)
@@ -99,14 +105,16 @@ class TestLGPDExport:
         db.add(c2)
         db.commit()
         db.refresh(c2)
-        db.add(Protocolo(
-            numero="CART-2026-000999",
-            cliente_id=c2.id,
-            status="DRAFT",
-            tipo="procuracao",
-            valor_total=200.0,
-            canal_origem="telegram",
-        ))
+        db.add(
+            Protocolo(
+                numero="CART-2026-000999",
+                cliente_id=c2.id,
+                status="DRAFT",
+                tipo="procuracao",
+                valor_total=200.0,
+                canal_origem="telegram",
+            )
+        )
         db.commit()
 
         bundle1 = exportar_dados_titular(db, cliente_id=cliente.id)
@@ -132,14 +140,16 @@ class TestLGPDExport:
         """Hash muda quando dados do titular mudam."""
         bundle1 = exportar_dados_titular(db, cliente_id=cliente.id)
         # Adiciona 1 protocolo
-        db.add(Protocolo(
-            numero="CART-2026-000777",
-            cliente_id=cliente.id,
-            status="CONCLUIDO",
-            tipo="escritura",
-            valor_total=500.0,
-            canal_origem="balcao",
-        ))
+        db.add(
+            Protocolo(
+                numero="CART-2026-000777",
+                cliente_id=cliente.id,
+                status="CONCLUIDO",
+                tipo="escritura",
+                valor_total=500.0,
+                canal_origem="balcao",
+            )
+        )
         db.commit()
         bundle2 = exportar_dados_titular(db, cliente_id=cliente.id)
 
@@ -153,9 +163,13 @@ class TestLGPDExport:
     def test_export_incluindo_audit(self, db, cliente):
         """incluir_audit=True (default) inclui audit_logs."""
         from app.services.audit import AuditService
+
         AuditService.log(
-            db=db, actor_id=str(cliente.id), actor_type="cliente",
-            action="cliente.created", resource=f"cliente/{cliente.id}",
+            db=db,
+            actor_id=str(cliente.id),
+            actor_type="cliente",
+            action="cliente.created",
+            resource=f"cliente/{cliente.id}",
             payload={},
         )
         db.commit()

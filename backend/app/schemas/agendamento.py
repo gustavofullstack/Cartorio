@@ -19,9 +19,7 @@ class AgendamentoBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     titulo: str = Field(..., min_length=5, max_length=255, examples=["Reconhecimento de firma"])
-    descricao: str | None = Field(
-        None, max_length=1000, examples=["Documentos: RG, CPF, contrato"]
-    )
+    descricao: str | None = Field(None, max_length=1000, examples=["Documentos: RG, CPF, contrato"])
     tipo: TipoAtendimento = Field(
         default=TipoAtendimento.NORMAL,
         description="Tipo de atendimento (normal, prioritário, urgente)",
@@ -70,9 +68,7 @@ class AgendamentoResponse(AgendamentoBase):
 
     id: int = Field(..., gt=0, description="ID do agendamento")
     cliente_id: int = Field(..., gt=0, description="ID do cliente (FK)")
-    protocolo_id: int | None = Field(
-        None, gt=0, description="ID do protocolo associado"
-    )
+    protocolo_id: int | None = Field(None, gt=0, description="ID do protocolo associado")
     status: StatusAgendamento = Field(..., description="Status atual")
     data_hora: datetime.datetime = Field(..., description="Data/hora do agendamento")
     data_hora_fim: datetime.datetime | None = Field(

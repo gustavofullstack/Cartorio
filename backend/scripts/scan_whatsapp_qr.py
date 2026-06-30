@@ -19,6 +19,7 @@ Uso:
   cd backend
   uv run python scripts/scan_whatsapp_qr.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -31,9 +32,7 @@ import httpx
 # Lesson 159 canon: credenciais via env var, NUNCA hardcoded.
 # Keys queimadas no chat sao marcadas como tal; esta key veio do codigo original
 # (script anterior) e NAO deve ser rotacionada — Gustavo + Pietra unicos com acesso.
-EVOLUTION_URL = os.environ.get(
-    "EVOLUTION_PUBLIC_URL", "https://whatsapp.2notasudi.com.br"
-)
+EVOLUTION_URL = os.environ.get("EVOLUTION_PUBLIC_URL", "https://whatsapp.2notasudi.com.br")
 EVOLUTION_API_KEY = os.environ.get("EVOLUTION_API_KEY", "")
 INSTANCE = os.environ.get("EVOLUTION_INSTANCE", "cartorio-2notas")
 MANAGER_URL = f"{EVOLUTION_URL}/manager"

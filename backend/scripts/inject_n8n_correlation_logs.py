@@ -16,6 +16,7 @@ Uso:
   uv run python scripts/inject_n8n_correlation_logs.py --dry-run
   uv run python scripts/inject_n8n_correlation_logs.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -50,7 +51,7 @@ def build_init_node() -> dict:
                         "name": "wf_started_at",
                         "value": "={{ $now.toISO() }}",
                         "type": "string",
-                    }
+                    },
                 ]
             },
             "options": {"renameConflict": "longestVariableName"},
@@ -74,16 +75,16 @@ def build_log_node() -> dict:
                         "name": "log_json",
                         "value": (
                             "={"
-                            "\"ts\": $now.toISO(), "
-                            "\"level\": \"info\", "
-                            "\"workflow\": $workflow.name, "
-                            "\"workflow_id\": $workflow.id, "
-                            "\"execution_id\": $execution.id, "
-                            "\"correlation_id\": $json.correlation_id, "
-                            "\"wf_started_at\": $json.wf_started_at, "
+                            '"ts": $now.toISO(), '
+                            '"level": "info", '
+                            '"workflow": $workflow.name, '
+                            '"workflow_id": $workflow.id, '
+                            '"execution_id": $execution.id, '
+                            '"correlation_id": $json.correlation_id, '
+                            '"wf_started_at": $json.wf_started_at, '
                             "\"duration_ms\": $now.diff($json.wf_started_at, 'milliseconds'), "
-                            "\"success\": $execution.success, "
-                            "\"error\": $json.error ?? null"
+                            '"success": $execution.success, '
+                            '"error": $json.error ?? null'
                             "}"
                         ),
                         "type": "string",

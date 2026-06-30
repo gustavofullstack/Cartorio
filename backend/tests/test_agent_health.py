@@ -1,4 +1,5 @@
 """Testes do endpoint /integrations/agent/health."""
+
 from __future__ import annotations
 
 import os
@@ -43,6 +44,7 @@ def client():
 
     import app.db
     import app.main as app_main_module
+
     original_engine = app.db.engine
     original_session_scope = app.db.session_scope
     app.db.engine = test_engine
@@ -105,7 +107,9 @@ def test_agent_health_quando_openclaw_down(client) -> None:
         instance.__aenter__ = AsyncMock(return_value=instance)
         instance.__aexit__ = AsyncMock(return_value=None)
         # 1a chamada: OpenClaw fail. 2a chamada: LLM ok
-        instance.get = AsyncMock(side_effect=[RequestError("connection refused"), _mock_response(200)])
+        instance.get = AsyncMock(
+            side_effect=[RequestError("connection refused"), _mock_response(200)]
+        )
         MockClient.return_value = instance
 
         resp = client.get("/api/v1/integrations/agent/health")
@@ -165,6 +169,7 @@ def test_agent_health_nao_vaza_api_key(client) -> None:
     body_str = str(resp.json())
     # api_key nao pode aparecer em lugar nenhum
     from app.config import settings
+
     if settings.opencode_go_api_key:
         assert settings.opencode_go_api_key not in body_str
     if settings.openclaw_api_key:

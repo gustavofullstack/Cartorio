@@ -1,4 +1,5 @@
 """Testes A13 — Dead man's switch audit log."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

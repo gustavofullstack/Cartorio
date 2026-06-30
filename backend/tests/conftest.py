@@ -71,6 +71,11 @@ os.environ.setdefault("DB_POOL_PRE_PING", "true")
 TEST_CARTORIO_API_KEY = "a" * 64  # 64 chars hex equivalente pra teste
 os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
 
+# Mocks e defaults para testes deterministas sem rede
+os.environ["LLM_DEFAULT_PROVIDER"] = "opencode_go"
+os.environ["LLM_FALLBACK_CHAIN"] = "opencode_go,openclaw"
+os.environ["OPENCODE_GO_MODEL"] = "minimax-m3"
+
 from app.config import get_settings  # noqa: E402
 
 get_settings.cache_clear()

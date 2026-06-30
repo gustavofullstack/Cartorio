@@ -54,9 +54,7 @@ def test_engine():
 
 @pytest.fixture
 def test_session_factory(test_engine):
-    return sessionmaker(
-        bind=test_engine, autoflush=False, autocommit=False, expire_on_commit=False
-    )
+    return sessionmaker(bind=test_engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
 
 @pytest.fixture
@@ -102,15 +100,11 @@ def client(test_engine, test_session_factory):
     from app.db import get_db
 
     with (
-        __import__("unittest.mock", fromlist=["patch"]).patch(
-            "app.db.engine", test_engine
-        ),
+        __import__("unittest.mock", fromlist=["patch"]).patch("app.db.engine", test_engine),
         __import__("unittest.mock", fromlist=["patch"]).patch(
             "app.db.SessionLocal", test_session_factory
         ),
-        __import__("unittest.mock", fromlist=["patch"]).patch(
-            "app.main.engine", test_engine
-        ),
+        __import__("unittest.mock", fromlist=["patch"]).patch("app.main.engine", test_engine),
     ):
         from app.main import app
 
@@ -256,7 +250,9 @@ class TestConsentGranular:
             headers={"Authorization": f"Bearer {token}"},
         )
 
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text[:500]}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text[:500]}"
+        )
         data = response.json()
         assert data["status"] == "ok"
         assert data["finalidade"] == "marketing"
@@ -405,10 +401,14 @@ class TestDireitoEsquecimento:
         )
 
         # Verifica no DB
-        row = db_session.execute(
-            text("SELECT deleted_at, nome FROM clientes WHERE id = :id"),
-            {"id": c.id},
-        ).mappings().first()
+        row = (
+            db_session.execute(
+                text("SELECT deleted_at, nome FROM clientes WHERE id = :id"),
+                {"id": c.id},
+            )
+            .mappings()
+            .first()
+        )
         assert row is not None
         assert row["deleted_at"] is not None
         assert row["nome"] == "[ANONIMIZADO art.18 V]"

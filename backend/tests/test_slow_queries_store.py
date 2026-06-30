@@ -8,6 +8,7 @@ Cobertura:
 - clear
 - erros: redis_url vazio, add falho, get falho
 """
+
 from __future__ import annotations
 
 import json
@@ -29,12 +30,14 @@ from app.services.slow_queries import (
 def _reset_singleton():
     """Reseta o singleton do get_slow_queries_store entre testes."""
     import app.services.slow_queries as sq
+
     sq._store = None
     yield
     sq._store = None
 
 
 # ─── Init ───────────────────────────────────────────────────────────────
+
 
 async def test_init_sem_redis_url_raise_no_call():
     """Init sem url (nem settings) levanta erro ao tentar conectar."""
@@ -62,6 +65,7 @@ async def test_close_fecha_client():
 
 
 # ─── add_slow_query ─────────────────────────────────────────────────────
+
 
 async def test_add_slow_query_success():
     """add_slow_query insere no sorted set + seta TTL."""
@@ -131,6 +135,7 @@ async def test_add_slow_query_falho_retorna_false():
 
 # ─── get_slow_queries ───────────────────────────────────────────────────
 
+
 async def test_get_slow_queries_vazio():
     """get_slow_queries retorna lista vazia quando nao ha dados."""
     mock_redis = AsyncMock()
@@ -145,7 +150,9 @@ async def test_get_slow_queries_vazio():
 
 async def test_get_slow_queries_com_dados():
     """get_slow_queries retorna dados parseados corretamente."""
-    entry = json.dumps({"event": "slow", "method": "GET", "duration_ms": 1500.0, "path": "/api/v1/test"})
+    entry = json.dumps(
+        {"event": "slow", "method": "GET", "duration_ms": 1500.0, "path": "/api/v1/test"}
+    )
     mock_redis = AsyncMock()
     mock_redis.zrevrange = AsyncMock(return_value=[entry])
 
@@ -219,6 +226,7 @@ async def test_get_slow_queries_falho_retorna_vazio():
 
 # ─── count / clear ──────────────────────────────────────────────────────
 
+
 async def test_get_slow_queries_count():
     """get_slow_queries_count retorna total."""
     mock_redis = AsyncMock()
@@ -270,6 +278,7 @@ async def test_clear_falho_retorna_false():
 
 # ─── Constantes ─────────────────────────────────────────────────────────
 
+
 def test_constants():
     """Constantes do modulo tem valores esperados."""
     assert SLOW_QUERIES_KEY == "cartorio:slow_queries"
@@ -278,6 +287,7 @@ def test_constants():
 
 
 # ─── Singleton ──────────────────────────────────────────────────────────
+
 
 def test_get_slow_queries_store_singleton():
     """get_slow_queries_store retorna mesma instancia."""

@@ -39,6 +39,4 @@ def evolution_headers() -> dict[str, str]:
 @pytest.fixture
 def evolution_base_url() -> str:
     """Base URL da Evolution API. Aponta pra prod se rodando contra prod."""
-    return os.getenv(
-        "EVOLUTION_BASE_URL", "https://whatsapp.2notasudi.com.br"
-    )
+    return os.getenv("EVOLUTION_BASE_URL", "https://whatsapp.2notasudi.com.br")

@@ -1,4 +1,5 @@
 """Testes A21 — Cache Redis 24h emolumento + invalidation."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -109,5 +110,3 @@ def test_invalidate_redis_error_retorna_zero() -> None:
         r.scan_iter.side_effect = ConnectionError("Redis scan failed")
         mock_get.return_value = r
         assert invalidate(None) == 0
-
-

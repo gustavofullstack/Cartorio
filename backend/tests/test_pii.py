@@ -337,7 +337,9 @@ def test_scrub_extremo_50_pii_com_cns_cnh():
     for i in range(10):
         pii_blocks.append(f"CNS {100000000000000 + i:015d}")
         pii_blocks.append(f"CNH {20000000000 + i:011d}")
-        pii_blocks.append(f"123.{(i*7) % 1000:03d}.{(i*13) % 1000:03d}-{(i*17) % 100:02d}")  # CPF
+        pii_blocks.append(
+            f"123.{(i * 7) % 1000:03d}.{(i * 13) % 1000:03d}-{(i * 17) % 100:02d}"
+        )  # CPF
         pii_blocks.append(f"email{i}@example.com")
     text = " ".join(pii_blocks)
     r = scrub(text)
@@ -497,6 +499,7 @@ def test_cnh_validate_tamanho_invalido():
 def test_cns_dv_invalid_input_raises():
     """_cns_dv com input invalido levanta ValueError (linha 261)."""
     from app.services.pii import _cns_dv
+
     with pytest.raises(ValueError, match="CNS primeiros 15 digitos invalidos"):
         _cns_dv("12345")  # muito curto
     with pytest.raises(ValueError, match="CNS primeiros 15 digitos invalidos"):
@@ -508,6 +511,7 @@ def test_cns_dv_invalid_input_raises():
 def test_cnh_dv1_invalid_input_raises():
     """_cnh_dv1 com input invalido levanta ValueError (linha 325)."""
     from app.services.pii import _cnh_dv1
+
     with pytest.raises(ValueError, match="CNH primeiros 9 digitos invalidos"):
         _cnh_dv1("12345")  # muito curto
     with pytest.raises(ValueError, match="CNH primeiros 9 digitos invalidos"):
@@ -517,6 +521,7 @@ def test_cnh_dv1_invalid_input_raises():
 def test_cnh_dv2_invalid_input_raises():
     """_cnh_dv2 com input invalido levanta ValueError (linha 335)."""
     from app.services.pii import _cnh_dv2
+
     with pytest.raises(ValueError, match="CNH primeiros 10 digitos"):
         _cnh_dv2("12345")  # muito curto
     with pytest.raises(ValueError, match="CNH primeiros 10 digitos"):

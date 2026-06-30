@@ -8,6 +8,7 @@ A6: POST com Idempotency-Key -> Redis SETNX com TTL 24h.
 - Key vazia = 400.
 - LGPD: cache armazena APENAS o response (sem PII).
 """
+
 from __future__ import annotations
 
 import os

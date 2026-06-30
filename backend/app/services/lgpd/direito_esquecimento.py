@@ -13,6 +13,7 @@ Regras:
 O service NAO emite audit log (delega isso ao router, que tem acesso ao
 request.state para contexto completo).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

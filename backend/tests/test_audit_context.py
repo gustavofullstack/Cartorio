@@ -1,4 +1,5 @@
 """Testes do helper extract_audit_context."""
+
 from __future__ import annotations
 
 import os

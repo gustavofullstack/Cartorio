@@ -1,4 +1,5 @@
 """Testes do N8N Workflow Validator (B11)."""
+
 from __future__ import annotations
 
 import json
@@ -57,9 +58,7 @@ class TestN8nWorkflowValidator:
         wf = {
             "name": "test",
             "nodes": [{"name": "node1", "type": "t"}],
-            "connections": {
-                "node_inexistente": {"main": [[{"node": "node1"}]]}
-            },
+            "connections": {"node_inexistente": {"main": [[{"node": "node1"}]]}},
         }
         p = _make_wf(tmp_path, "orfas.json", wf)
         result = _validate_one(p)
@@ -71,9 +70,7 @@ class TestN8nWorkflowValidator:
         wf = {
             "name": "test",
             "nodes": [{"name": "node1", "type": "t"}],
-            "connections": {
-                "node1": {"main": [[{"node": "node_inexistente"}]]}
-            },
+            "connections": {"node1": {"main": [[{"node": "node_inexistente"}]]}},
         }
         p = _make_wf(tmp_path, "orfa-target.json", wf)
         result = _validate_one(p)
@@ -84,11 +81,13 @@ class TestN8nWorkflowValidator:
         """HTTP node sem URL eh detectado."""
         wf = {
             "name": "test",
-            "nodes": [{
-                "name": "call_api",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {},  # sem url
-            }],
+            "nodes": [
+                {
+                    "name": "call_api",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {},  # sem url
+                }
+            ],
             "connections": {},
         }
         p = _make_wf(tmp_path, "no-url.json", wf)
@@ -100,11 +99,13 @@ class TestN8nWorkflowValidator:
         """HTTP com URL hardcoded da warning."""
         wf = {
             "name": "test",
-            "nodes": [{
-                "name": "call_api",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {"url": "https://api.exemplo.com/foo"},
-            }],
+            "nodes": [
+                {
+                    "name": "call_api",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {"url": "https://api.exemplo.com/foo"},
+                }
+            ],
             "connections": {},
         }
         p = _make_wf(tmp_path, "hardcoded.json", wf)
@@ -115,11 +116,13 @@ class TestN8nWorkflowValidator:
         """HTTP com localhost da warning (nao erro)."""
         wf = {
             "name": "test",
-            "nodes": [{
-                "name": "call_api",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {"url": "http://localhost:8000/api"},
-            }],
+            "nodes": [
+                {
+                    "name": "call_api",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {"url": "http://localhost:8000/api"},
+                }
+            ],
             "connections": {},
         }
         p = _make_wf(tmp_path, "localhost.json", wf)
@@ -131,11 +134,13 @@ class TestN8nWorkflowValidator:
         """Env var nao catalogada da warning."""
         wf = {
             "name": "test",
-            "nodes": [{
-                "name": "n1",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {"url": "{{$env.MY_UNKNOWN_VAR_42}}/api"},
-            }],
+            "nodes": [
+                {
+                    "name": "n1",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {"url": "{{$env.MY_UNKNOWN_VAR_42}}/api"},
+                }
+            ],
             "connections": {},
         }
         p = _make_wf(tmp_path, "env-unknown.json", wf)
@@ -158,9 +163,7 @@ class TestN8nWorkflowValidator:
                     },
                 },
             ],
-            "connections": {
-                "start": {"main": [[{"node": "call_api"}]]}
-            },
+            "connections": {"start": {"main": [[{"node": "call_api"}]]}},
             "settings": {"errorWorkflow": "global-error-handler"},
         }
         p = _make_wf(tmp_path, "valid.json", wf)
@@ -173,28 +176,42 @@ class TestN8nWorkflowValidator:
     def test_validate_all_aggregates(self, tmp_path: Path):
         """validate_all agrega stats corretamente."""
         # WF valido (sem warnings: tem settings.errorWorkflow)
-        _make_wf(tmp_path, "ok.json", {
-            "name": "ok",
-            "nodes": [{"name": "n1", "type": "t"}],
-            "connections": {},
-            "settings": {"errorWorkflow": "global"},
-        })
+        _make_wf(
+            tmp_path,
+            "ok.json",
+            {
+                "name": "ok",
+                "nodes": [{"name": "n1", "type": "t"}],
+                "connections": {},
+                "settings": {"errorWorkflow": "global"},
+            },
+        )
         # WF invalido
-        _make_wf(tmp_path, "bad.json", {
-            "name": "bad",
-            "nodes": [{"name": "n1"}],  # sem type
-            "connections": {},
-        })
+        _make_wf(
+            tmp_path,
+            "bad.json",
+            {
+                "name": "bad",
+                "nodes": [{"name": "n1"}],  # sem type
+                "connections": {},
+            },
+        )
         # WF com warning (sem errorWorkflow)
-        _make_wf(tmp_path, "warn.json", {
-            "name": "warn",
-            "nodes": [{
-                "name": "n1",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {"url": "http://localhost:8000"},
-            }],
-            "connections": {},
-        })
+        _make_wf(
+            tmp_path,
+            "warn.json",
+            {
+                "name": "warn",
+                "nodes": [
+                    {
+                        "name": "n1",
+                        "type": "n8n-nodes-base.httpRequest",
+                        "parameters": {"url": "http://localhost:8000"},
+                    }
+                ],
+                "connections": {},
+            },
+        )
 
         result = validate_all(wf_dir=tmp_path)
         assert result["total"] == 3
@@ -221,11 +238,13 @@ class TestN8nWorkflowValidator:
         """B07: HTTP node sem retry policy -> warning."""
         wf = {
             "name": "no-retry",
-            "nodes": [{
-                "name": "call_api",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {"url": "{{$env.CARTORIO_API_URL}}/x"},
-            }],
+            "nodes": [
+                {
+                    "name": "call_api",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {"url": "{{$env.CARTORIO_API_URL}}/x"},
+                }
+            ],
             "connections": {},
             "settings": {"errorWorkflow": "global"},
         }
@@ -237,14 +256,16 @@ class TestN8nWorkflowValidator:
         """B07: HTTP node COM retry 3x -> sem warning."""
         wf = {
             "name": "with-retry",
-            "nodes": [{
-                "name": "call_api",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {
-                    "url": "{{$env.CARTORIO_API_URL}}/x",
-                    "options": {"retry": {"maxTries": 3, "waitBetweenTries": 1000}},
-                },
-            }],
+            "nodes": [
+                {
+                    "name": "call_api",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {
+                        "url": "{{$env.CARTORIO_API_URL}}/x",
+                        "options": {"retry": {"maxTries": 3, "waitBetweenTries": 1000}},
+                    },
+                }
+            ],
             "connections": {},
             "settings": {"errorWorkflow": "global"},
         }
@@ -257,14 +278,16 @@ class TestN8nWorkflowValidator:
         """B07: HTTP node COM maxRetries (legacy) >=3 -> sem warning."""
         wf = {
             "name": "legacy-retry",
-            "nodes": [{
-                "name": "call_api",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {
-                    "url": "{{$env.CARTORIO_API_URL}}/x",
-                    "options": {"retry": {"maxRetries": 3, "backoff": "exponential"}},
-                },
-            }],
+            "nodes": [
+                {
+                    "name": "call_api",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {
+                        "url": "{{$env.CARTORIO_API_URL}}/x",
+                        "options": {"retry": {"maxRetries": 3, "backoff": "exponential"}},
+                    },
+                }
+            ],
             "connections": {},
             "settings": {"errorWorkflow": "global"},
         }
@@ -277,14 +300,16 @@ class TestN8nWorkflowValidator:
         """B08: HTTP node com timeout > 30s -> warning."""
         wf = {
             "name": "slow",
-            "nodes": [{
-                "name": "slow_call",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {
-                    "url": "{{$env.CARTORIO_API_URL}}/x",
-                    "options": {"timeout": 60000, "retry": {"maxTries": 3}},
-                },
-            }],
+            "nodes": [
+                {
+                    "name": "slow_call",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {
+                        "url": "{{$env.CARTORIO_API_URL}}/x",
+                        "options": {"timeout": 60000, "retry": {"maxTries": 3}},
+                    },
+                }
+            ],
             "connections": {},
             "settings": {"errorWorkflow": "global"},
         }
@@ -296,14 +321,16 @@ class TestN8nWorkflowValidator:
         """B08: HTTP node com timeout <= 30s -> sem warning."""
         wf = {
             "name": "fast",
-            "nodes": [{
-                "name": "fast_call",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {
-                    "url": "{{$env.CARTORIO_API_URL}}/x",
-                    "options": {"timeout": 30000, "retry": {"maxTries": 3}},
-                },
-            }],
+            "nodes": [
+                {
+                    "name": "fast_call",
+                    "type": "n8n-nodes-base.httpRequest",
+                    "parameters": {
+                        "url": "{{$env.CARTORIO_API_URL}}/x",
+                        "options": {"timeout": 30000, "retry": {"maxTries": 3}},
+                    },
+                }
+            ],
             "connections": {},
             "settings": {"errorWorkflow": "global"},
         }
@@ -340,16 +367,22 @@ class TestN8nWorkflowValidator:
     def test_b12_validate_all_summary_inclui_wfs_aviso_b12(self, tmp_path: Path):
         """Batch validator agrega warnings B06/B07/B08 no summary."""
         # WF sem error handler (B06 warn) + HTTP sem retry (B07 warn)
-        _make_wf(tmp_path, "wf-many-warns.json", {
-            "name": "many-warns",
-            "nodes": [{
-                "name": "call_api",
-                "type": "n8n-nodes-base.httpRequest",
-                "parameters": {"url": "{{$env.CARTORIO_API_URL}}/x"},  # sem retry
-            }],
-            "connections": {},
-            # sem errorWorkflow
-        })
+        _make_wf(
+            tmp_path,
+            "wf-many-warns.json",
+            {
+                "name": "many-warns",
+                "nodes": [
+                    {
+                        "name": "call_api",
+                        "type": "n8n-nodes-base.httpRequest",
+                        "parameters": {"url": "{{$env.CARTORIO_API_URL}}/x"},  # sem retry
+                    }
+                ],
+                "connections": {},
+                # sem errorWorkflow
+            },
+        )
 
         result = validate_all(wf_dir=tmp_path)
         assert result["total"] == 1
@@ -414,13 +447,16 @@ class TestN8nBatchValidationB12:
         for wf in results.get("wfs", []):
             for w in wf.get("warnings", []):
                 if "B07" in w and "retry" in w.lower():
-                    http_warnings.append(f"{wf.get('name','?')}: {w}")
+                    http_warnings.append(f"{wf.get('name', '?')}: {w}")
         # Soft check: muitos workflows sem retry (B07) - registra mas nao falha
         # pois alguns workflows (error handler) gerenciam retry manualmente
         _total_wfs = results.get("total", 0)
-        _wfs_with_warnings = len(set(
-            wf.get("name", "?") for wf in results.get("wfs", [])
-            if any("B07" in w and "retry" in w.lower() for w in wf.get("warnings", []))
-        ))
+        _wfs_with_warnings = len(
+            set(
+                wf.get("name", "?")
+                for wf in results.get("wfs", [])
+                if any("B07" in w and "retry" in w.lower() for w in wf.get("warnings", []))
+            )
+        )
         # Sem assert - apenas informacional. Workflows criticos (B07) devem
         # ter retry, mas a validacao granular e feita caso a caso

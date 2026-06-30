@@ -336,9 +336,7 @@ def test_opencode_test_endpoint_use_fallback_both_fail(client):
     with (
         patch("app.api.v1.integrations.chat_with_fallback", new=AsyncMock()) as mock_fb,
     ):
-        mock_fb.side_effect = ChatError(
-            "fallback falhou tbm", kind=ChatErrorKind.NETWORK
-        )
+        mock_fb.side_effect = ChatError("fallback falhou tbm", kind=ChatErrorKind.NETWORK)
         resp = client.post(
             "/api/v1/integrations/opencode/test",
             headers=AUTH_HEADERS,

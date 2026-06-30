@@ -1,4 +1,5 @@
 """Testes do Relatorio ANPD anual LGPD (D9)."""
+
 from __future__ import annotations
 
 import re
@@ -46,10 +47,17 @@ class TestRelatorioANPD:
 
         # 12 secoes principais
         required = {
-            "titulares", "operacoes", "direitos_titulares",
-            "incidentes_seguranca", "tipos_dados_tratados",
-            "finalidades_uso", "medidas_seguranca", "encarregado_dpo",
-            "base_legal", "transferencias_internacionais", "observacoes",
+            "titulares",
+            "operacoes",
+            "direitos_titulares",
+            "incidentes_seguranca",
+            "tipos_dados_tratados",
+            "finalidades_uso",
+            "medidas_seguranca",
+            "encarregado_dpo",
+            "base_legal",
+            "transferencias_internacionais",
+            "observacoes",
         }
         assert required.issubset(set(rel.keys()))
 
@@ -57,11 +65,13 @@ class TestRelatorioANPD:
         """Conta titulares ativos vs total."""
         # 2 clientes ativos
         for i in range(2):
-            db.add(Cliente(
-                nome=f"Cliente {i}",
-                cpf_hash=f"hash_cliente_{i}",
-                email=f"c{i}@test.com",
-            ))
+            db.add(
+                Cliente(
+                    nome=f"Cliente {i}",
+                    cpf_hash=f"hash_cliente_{i}",
+                    email=f"c{i}@test.com",
+                )
+            )
         db.commit()
 
         rel = gerar_relatorio_anual(db, ano=2026)
@@ -72,11 +82,15 @@ class TestRelatorioANPD:
     def test_titulares_com_deleted_at(self, db):
         """Cliente soft-deleted NAO conta como ativo."""
         from datetime import datetime
+
         now = datetime.now(tz=timezone.utc)
         c1 = Cliente(nome="A", cpf_hash="hash_a", email="a@t.com")
         c2 = Cliente(
-            nome="B", cpf_hash="hash_b", email="b@t.com",
-            deleted_at=now, motivo_encerramento="LGPD",
+            nome="B",
+            cpf_hash="hash_b",
+            email="b@t.com",
+            deleted_at=now,
+            motivo_encerramento="LGPD",
         )
         db.add_all([c1, c2])
         db.commit()

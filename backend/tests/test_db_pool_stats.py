@@ -6,6 +6,7 @@ Cobertura:
 - utilization_pct eh float entre 0 e 100
 - capacidade maxima = pool_size + max_overflow
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch

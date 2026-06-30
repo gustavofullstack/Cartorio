@@ -3,6 +3,7 @@
 Implementacao: Redis SET NX EX (atomic lock distribuido).
 LGPD: nome do lock NAO expoe dados pessoais, apenas identificador tecnico.
 """
+
 from __future__ import annotations
 
 import logging
@@ -17,6 +18,7 @@ def _get_redis_client() -> Any:
     """Lazy import redis (nao quebra se nao instalado)."""
     try:
         import redis  # type: ignore[import-untyped]
+
         url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         return redis.Redis.from_url(url, socket_connect_timeout=2)
     except ImportError:

@@ -10,6 +10,7 @@ Cobertura:
 - type URL segue padrao https://cartorio.com.br/problems/{slug}
 - content-type eh application/problem+json (RFC 7807 sec 3)
 """
+
 from __future__ import annotations
 
 import logging

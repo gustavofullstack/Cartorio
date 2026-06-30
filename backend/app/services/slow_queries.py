@@ -10,6 +10,7 @@ endpoint `/admin/slow-queries`.
 - TTL: 24h por entry (expire automatico)
 - Nao loga PII (ja filtrado no middleware via SKIP_PATHS)
 """
+
 from __future__ import annotations
 
 import json
@@ -103,7 +104,9 @@ class SlowQueriesStore:
             count = await client.zcard(SLOW_QUERIES_KEY)
             if count > SLOW_QUERIES_MAX_ENTRIES:
                 # Remove os mais antigos (menor score)
-                await client.zremrangebyrank(SLOW_QUERIES_KEY, 0, count - SLOW_QUERIES_MAX_ENTRIES - 1)
+                await client.zremrangebyrank(
+                    SLOW_QUERIES_KEY, 0, count - SLOW_QUERIES_MAX_ENTRIES - 1
+                )
 
             return True
 

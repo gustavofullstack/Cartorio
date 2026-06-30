@@ -9,6 +9,7 @@ Cobre:
 6. Combinacao de filtros
 7. 401 sem auth
 """
+
 from __future__ import annotations
 
 import os
@@ -64,7 +65,13 @@ def sample_protocolos(db_session: Session):
 
     protocolos = []
     statuses = ["aberto", "em_andamento", "concluido", "aberto", "cancelado"]
-    tipos = ["certidao_negativa", "escritura_compra_venda", "procuracao", "autenticacao", "certidao_positiva"]
+    tipos = [
+        "certidao_negativa",
+        "escritura_compra_venda",
+        "procuracao",
+        "autenticacao",
+        "certidao_positiva",
+    ]
     for i in range(5):
         p = Protocolo(
             numero=f"PROT-{2026}{i:06d}",
@@ -142,9 +149,7 @@ def test_v2_protocolos_cursor_pagination(client: TestClient, sample_protocolos) 
     assert body2["edges"][0]["node"]["id"] != body1["edges"][0]["node"]["id"]
 
 
-def test_v2_protocolos_filtro_status_aberto(
-    client: TestClient, sample_protocolos
-) -> None:
+def test_v2_protocolos_filtro_status_aberto(client: TestClient, sample_protocolos) -> None:
     """Filtro status=aberto retorna apenas 2 protocolos."""
     resp = client.get(
         "/api/v2/protocolos?status=aberto",

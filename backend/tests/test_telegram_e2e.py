@@ -8,6 +8,7 @@ Cobre o fluxo completo:
 
 Usa mocks para Telegram API e OpenClaw para nao depender de rede.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -89,7 +90,7 @@ def telegram_update_text() -> dict:
             "chat": {"id": 12345, "type": "private"},
             "text": "Ola, quero uma certidao",
             "date": 1719227400,
-        }
+        },
     }
 
 
@@ -128,7 +129,7 @@ class TestTelegramE2E:
                 "chat": {"id": 12345},
                 "text": "Meu CPF e 123.456.789-09",
                 "date": 1719227400,
-            }
+            },
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
@@ -156,7 +157,7 @@ class TestTelegramE2E:
                 "from": {"id": 12345},
                 "chat": {"id": 12345},
                 # sem campo "text"
-            }
+            },
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
@@ -169,7 +170,9 @@ class TestTelegramE2E:
         assert data["status"] == "ignored"
         assert data["reason"] == "non-text update"
 
-    def test_e2e_agent_failure_returns_ok(self, client: TestClient, telegram_update_text: dict) -> None:
+    def test_e2e_agent_failure_returns_ok(
+        self, client: TestClient, telegram_update_text: dict
+    ) -> None:
         """Falha do OpenClaw retorna 200 com erro amigavel."""
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
@@ -204,12 +207,10 @@ class TestTelegramE2E:
                 "chat": {"id": 12345},
                 "text": "Qual meu CPF?",
                 "date": 1719227400,
-            }
+            },
         }
         # Agent retorna CPF na resposta (deveria ser scrubbado)
-        agent_response = (
-            "Seu CPF e 123.456.789-09 e seu RG e MG-12.345.678"
-        )
+        agent_response = "Seu CPF e 123.456.789-09 e seu RG e MG-12.345.678"
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(

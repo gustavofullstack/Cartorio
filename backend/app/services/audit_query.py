@@ -10,6 +10,7 @@ claras. AuditService.log = write. AuditQuery = read.
 NAO emite audit log (leitura nao precisa audit por enquanto; pode evoluir
 em Sprint 4 com auditoria de leitura sensivel).
 """
+
 from __future__ import annotations
 
 
@@ -60,11 +61,15 @@ def list_audit_logs(db: Session, filter_: AuditLogFilter) -> AuditLogListRespons
 
     # Page (ordem DESC por timestamp = mais recente primeiro)
     offset = (filter_.page - 1) * filter_.page_size
-    rows = db.execute(
-        stmt.order_by(AuditLog.timestamp.desc(), AuditLog.id.desc())
-        .offset(offset)
-        .limit(filter_.page_size)
-    ).scalars().all()
+    rows = (
+        db.execute(
+            stmt.order_by(AuditLog.timestamp.desc(), AuditLog.id.desc())
+            .offset(offset)
+            .limit(filter_.page_size)
+        )
+        .scalars()
+        .all()
+    )
 
     items = [AuditLogResponse.model_validate(r) for r in rows]
     has_next = (offset + len(items)) < total

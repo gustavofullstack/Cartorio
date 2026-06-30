@@ -11,6 +11,7 @@ Auth: X-API-Key (mesma v1). JWT sera adicionado em A24.x como alternativa.
 
 Referencia: docs/api-v1-to-v2-migration.md (A24.6).
 """
+
 from __future__ import annotations
 
 import logging
@@ -103,7 +104,9 @@ async def listar_clientes_v2(
     _api_key: Annotated[str, Depends(require_cartorio_api_key)],
     first: int = Query(default=20, ge=1, le=100, description="Max itens por pagina (1-100)."),
     after: str | None = Query(default=None, description="Cursor opaque da pagina anterior."),
-    include_encerrados: bool = Query(default=False, description="Incluir clientes com motivo_encerramento setado."),
+    include_encerrados: bool = Query(
+        default=False, description="Incluir clientes com motivo_encerramento setado."
+    ),
 ) -> dict[str, Any]:
     """Lista clientes com cursor pagination (Relay-style)."""
     # Query base

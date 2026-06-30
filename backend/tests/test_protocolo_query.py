@@ -1,4 +1,5 @@
 """Testes do service de query de Protocolos (usado pelo N8N workflow #25)."""
+
 from __future__ import annotations
 
 import os
@@ -161,9 +162,15 @@ def test_ordenado_por_updated_at_desc(db_session) -> None:
     """Mais recente primeiro."""
     cliente = _make_cliente(db_session)
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    _make_protocolo(db_session, cliente.id, "2026-OLDEST", "concluido", updated_at=now - timedelta(minutes=8))
-    _make_protocolo(db_session, cliente.id, "2026-NEWEST", "concluido", updated_at=now - timedelta(seconds=10))
-    _make_protocolo(db_session, cliente.id, "2026-MID", "concluido", updated_at=now - timedelta(minutes=4))
+    _make_protocolo(
+        db_session, cliente.id, "2026-OLDEST", "concluido", updated_at=now - timedelta(minutes=8)
+    )
+    _make_protocolo(
+        db_session, cliente.id, "2026-NEWEST", "concluido", updated_at=now - timedelta(seconds=10)
+    )
+    _make_protocolo(
+        db_session, cliente.id, "2026-MID", "concluido", updated_at=now - timedelta(minutes=4)
+    )
 
     result = listar_protocolos_recentes_concluidos(db_session, minutos=10)
 
@@ -181,7 +188,13 @@ def test_limit_respeitado(db_session) -> None:
     cliente = _make_cliente(db_session)
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     for i in range(10):
-        _make_protocolo(db_session, cliente.id, f"2026-{i:03d}", "concluido", updated_at=now - timedelta(seconds=i))
+        _make_protocolo(
+            db_session,
+            cliente.id,
+            f"2026-{i:03d}",
+            "concluido",
+            updated_at=now - timedelta(seconds=i),
+        )
 
     result = listar_protocolos_recentes_concluidos(db_session, minutos=10, limit=3)
 
@@ -227,7 +240,9 @@ def test_janela_zero_minutos_retorna_apenas_concluido_no_instante(db_session) ->
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     _make_protocolo(db_session, cliente.id, "2026-00001", "concluido", updated_at=now)
     # 10s atras NAO entra
-    _make_protocolo(db_session, cliente.id, "2026-00002", "concluido", updated_at=now - timedelta(seconds=10))
+    _make_protocolo(
+        db_session, cliente.id, "2026-00002", "concluido", updated_at=now - timedelta(seconds=10)
+    )
 
     result = listar_protocolos_recentes_concluidos(db_session, minutos=0, limit=10)
 

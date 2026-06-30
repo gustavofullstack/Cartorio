@@ -1,4 +1,5 @@
 """Testes do openapi_validator (A19)."""
+
 from __future__ import annotations
 
 from fastapi import FastAPI
@@ -41,9 +42,7 @@ class TestOpenAPIValidator:
         """_resolve_ref resolve $ref simple."""
         schema = {
             "components": {
-                "schemas": {
-                    "Item": {"type": "object", "properties": {"id": {"type": "integer"}}}
-                }
+                "schemas": {"Item": {"type": "object", "properties": {"id": {"type": "integer"}}}}
             }
         }
         ref = {"$ref": "#/components/schemas/Item"}
@@ -94,7 +93,17 @@ class TestOpenAPIValidator:
 
         from app.middleware.openapi_validator import validate_request_body
 
-        schema: dict = {"paths": {"/test": {"post": {"requestBody": {"content": {"application/json": {"schema": {"type": "object"}}}}}}}}
+        schema: dict = {
+            "paths": {
+                "/test": {
+                    "post": {
+                        "requestBody": {
+                            "content": {"application/json": {"schema": {"type": "object"}}}
+                        }
+                    }
+                }
+            }
+        }
 
         # Simular jsonschema ausente
         saved = sys.modules.get("jsonschema")
@@ -129,7 +138,11 @@ class TestOpenAPIValidator:
                         "requestBody": {
                             "content": {
                                 "application/json": {
-                                    "schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {"name": {"type": "string"}},
+                                        "required": ["name"],
+                                    }
                                 }
                             }
                         }
@@ -152,7 +165,11 @@ class TestOpenAPIValidator:
                         "requestBody": {
                             "content": {
                                 "application/json": {
-                                    "schema": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}
+                                    "schema": {
+                                        "type": "object",
+                                        "required": ["name"],
+                                        "properties": {"name": {"type": "string"}},
+                                    }
                                 }
                             }
                         }
@@ -172,7 +189,11 @@ class TestOpenAPIValidator:
         schema = {
             "components": {
                 "schemas": {
-                    "Item": {"type": "object", "required": ["id"], "properties": {"id": {"type": "integer"}}}
+                    "Item": {
+                        "type": "object",
+                        "required": ["id"],
+                        "properties": {"id": {"type": "integer"}},
+                    }
                 }
             },
             "paths": {
@@ -187,7 +208,7 @@ class TestOpenAPIValidator:
                         }
                     }
                 }
-            }
+            },
         }
         valid, err = validate_request_body(schema, "/test", "POST", {"id": 1})
         assert valid is True

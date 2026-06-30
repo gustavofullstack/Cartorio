@@ -21,6 +21,7 @@ Vantagens:
 - Inclui request_id automaticamente (LGPD art. 37 - auditoria)
 - Content-type: application/problem+json (RFC 7807 sec 3)
 """
+
 from __future__ import annotations
 
 import logging
@@ -69,9 +70,7 @@ def _build_problem(
     extras: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Constroi payload RFC 7807."""
-    slug, default_title = _HTTP_PROBLEM_MAP.get(
-        status_code, ("error", "Erro")
-    )
+    slug, default_title = _HTTP_PROBLEM_MAP.get(status_code, ("error", "Erro"))
     problem: dict[str, Any] = {
         "type": _problem_url(type_slug or slug),
         "title": title or default_title,
@@ -97,9 +96,7 @@ def install_problem_handlers(app: FastAPI) -> None:
     """
 
     @app.exception_handler(StarletteHTTPException)
-    async def http_exception_handler(
-        request: Request, exc: StarletteHTTPException
-    ) -> JSONResponse:
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         # Se detail ja eh string, usa direto. Se eh dict, preserva info
         # semantica (ex: LGPD_BLOCKED com mensagem + detalhes).
         if isinstance(exc.detail, str):
@@ -142,11 +139,13 @@ def install_problem_handlers(app: FastAPI) -> None:
         # errors() vem do Pydantic v2 com estrutura {loc, msg, type, input, url, ...}
         errors = []
         for err in exc.errors():
-            errors.append({
-                "field": ".".join(str(p) for p in err.get("loc", [])),
-                "message": err.get("msg", ""),
-                "type": err.get("type", ""),
-            })
+            errors.append(
+                {
+                    "field": ".".join(str(p) for p in err.get("loc", [])),
+                    "message": err.get("msg", ""),
+                    "type": err.get("type", ""),
+                }
+            )
         problem = _build_problem(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Validacao falhou em {len(errors)} campo(s)",
@@ -160,9 +159,7 @@ def install_problem_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def generic_exception_handler(
-        request: Request, exc: Exception
-    ) -> JSONResponse:
+    async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         # 500 catch-all. NAO expoe mensagem original (pode vazar PII/stack).
         logger.exception(
             "Unhandled exception",

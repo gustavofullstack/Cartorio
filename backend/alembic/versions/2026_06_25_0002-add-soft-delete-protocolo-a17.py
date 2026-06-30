@@ -15,6 +15,7 @@ Indice parcial WHERE deleted_at IS NULL para queries rapidas.
 
 Migration idempotente (ADD COLUMN IF NOT EXISTS, CREATE INDEX IF NOT EXISTS).
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union

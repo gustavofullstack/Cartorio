@@ -1,4 +1,5 @@
 """Testes do Redlock (A25 - distributed lock)."""
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -141,8 +142,10 @@ class TestRedlock:
         """acquire_lock retorna None se Redis lanca excecao."""
         fake = FakeRedis()
         orig_set = fake.set
+
         def broken_set(*args: object, **kwargs: object) -> None:
             raise ConnectionError("Redis connection refused")
+
         fake.set = broken_set  # type: ignore[method-assign]
         with patch("app.services.redlock._get_redis_client", return_value=fake):
             token = acquire_lock("error-test", ttl_seconds=60)
@@ -154,11 +157,12 @@ class TestRedlock:
         fake = FakeRedis()
         fake.store["redlock:err"] = "mytoken"
         orig_eval = fake.eval
+
         def broken_eval(*args: object, **kwargs: object) -> None:
             raise ConnectionError("Redis eval failed")
+
         fake.eval = broken_eval  # type: ignore[method-assign]
         with patch("app.services.redlock._get_redis_client", return_value=fake):
             result = release_lock("err", "mytoken")
         assert result is False
         fake.eval = orig_eval
-

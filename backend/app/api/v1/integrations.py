@@ -210,12 +210,13 @@ async def opencode_test(
 
     try:
         if payload.use_fallback:
-            # Turno 18: usar fallback chain (opencode_go -> openclaw) quando
-            # primary provider esta rate-limited ou indisponivel.
+            # Turno 37 2026-06-30: usa LLM_FALLBACK_CHAIN (10 provedores)
+            from app.config import settings as _settings
+
+            chain = [p.strip() for p in _settings.llm_fallback_chain.split(",") if p.strip()]
             resp = await chat_with_fallback(
                 messages=[{"role": "user", "content": payload.message}],
-                primary_provider="opencode_go",
-                fallback_provider="openclaw",
+                chain=chain,
                 model=payload.model,
                 temperature=payload.temperature,
                 consent_granted=True,

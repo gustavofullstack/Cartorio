@@ -13,6 +13,7 @@ Estabilidade: ordering fixo por id garante cursor consistente.
 
 Usa conftest fixtures: db_session (com monkeypatch do engine global).
 """
+
 from __future__ import annotations
 
 import base64
@@ -95,9 +96,7 @@ def sample_clientes(test_session_factory):
 # ============================================================================
 
 
-def test_v2_clientes_listar_retorna_primeira_pagina(
-    client: TestClient, sample_clientes
-) -> None:
+def test_v2_clientes_listar_retorna_primeira_pagina(client: TestClient, sample_clientes) -> None:
     """GET /api/v2/clientes retorna primeira pagina com 5 clientes."""
     resp = client.get(
         "/api/v2/clientes",
@@ -113,9 +112,7 @@ def test_v2_clientes_listar_retorna_primeira_pagina(
     assert body["page_info"]["end_cursor"] is None
 
 
-def test_v2_clientes_edges_tem_node_e_cursor(
-    client: TestClient, sample_clientes
-) -> None:
+def test_v2_clientes_edges_tem_node_e_cursor(client: TestClient, sample_clientes) -> None:
     """Cada edge tem node (dados) + cursor (opaco)."""
     resp = client.get(
         "/api/v2/clientes",
@@ -134,9 +131,7 @@ def test_v2_clientes_edges_tem_node_e_cursor(
     assert "email" in node
 
 
-def test_v2_clientes_cursor_pagination_prime_n_itens(
-    client: TestClient, sample_clientes
-) -> None:
+def test_v2_clientes_cursor_pagination_prime_n_itens(client: TestClient, sample_clientes) -> None:
     """first=2 retorna 2 primeiros edges + has_next_page=True + end_cursor."""
     resp = client.get(
         "/api/v2/clientes?first=2",
@@ -175,9 +170,7 @@ def test_v2_clientes_cursor_after_retorna_proxima_pagina(
     assert body["page_info"]["has_next_page"] is True
 
 
-def test_v2_clientes_ultima_pagina_sem_next(
-    client: TestClient, sample_clientes
-) -> None:
+def test_v2_clientes_ultima_pagina_sem_next(client: TestClient, sample_clientes) -> None:
     """Ultima pagina: has_next_page=False + end_cursor=None."""
     resp1 = client.get(
         "/api/v2/clientes?first=4",
@@ -247,9 +240,7 @@ def test_v2_clientes_401_sem_auth(client: TestClient) -> None:
     assert resp.status_code == 401
 
 
-def test_v2_clientes_response_nao_expoe_cpf_puro(
-    client: TestClient, sample_clientes
-) -> None:
+def test_v2_clientes_response_nao_expoe_cpf_puro(client: TestClient, sample_clientes) -> None:
     """LGPD art. 37: response NAO expoe CPF puro, apenas cpf_hash."""
     resp = client.get(
         "/api/v2/clientes",
@@ -263,9 +254,7 @@ def test_v2_clientes_response_nao_expoe_cpf_puro(
     assert '"cpf_hash"' in body_text
 
 
-def test_v2_clientes_cursor_e_opaco_base64(
-    client: TestClient, sample_clientes
-) -> None:
+def test_v2_clientes_cursor_e_opaco_base64(client: TestClient, sample_clientes) -> None:
     """Cursor eh base64 URL-safe (opaco para o client, decodificavel pelo server)."""
     resp = client.get(
         "/api/v2/clientes?first=1",

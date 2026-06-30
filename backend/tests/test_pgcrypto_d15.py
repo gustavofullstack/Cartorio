@@ -15,6 +15,7 @@ Tests:
 7. cpf_encrypted column exists in clientes
 8. rg_encrypted column exists in clientes
 """
+
 from __future__ import annotations
 
 import os

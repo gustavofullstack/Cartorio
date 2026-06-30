@@ -106,10 +106,7 @@ class AgendamentoService:
             ),
             or_(
                 # Caso 1: B tem data_hora_fim definido
-                (
-                    (Agendamento.data_hora < data_hora_fim)
-                    & (Agendamento.data_hora_fim > data_hora)
-                ),
+                ((Agendamento.data_hora < data_hora_fim) & (Agendamento.data_hora_fim > data_hora)),
                 # Caso 2: B NAO tem data_hora_fim - conflito se B.data_hora
                 # cai dentro da janela [janela_inicio, data_hora_fim]
                 (
@@ -138,9 +135,7 @@ class AgendamentoService:
         Raises:
             ClienteNotFoundError: Se cliente não existir
         """
-        cliente = db.execute(
-            select(Cliente).where(Cliente.id == cliente_id)
-        ).scalar_one_or_none()
+        cliente = db.execute(select(Cliente).where(Cliente.id == cliente_id)).scalar_one_or_none()
         if cliente is None:
             raise ClienteNotFoundError(cliente_id)
         return cliente
@@ -182,7 +177,7 @@ class AgendamentoService:
         local: str = "balcao_1",
         protocolo_id: int | None = None,
         duration_minutes: int = 30,
-         request: Request | None = None,
+        request: Request | None = None,
     ) -> Agendamento:
         """Cria um novo agendamento com validações completas.
 
@@ -208,9 +203,7 @@ class AgendamentoService:
             ProtocoloNotFoundError: Protocolo não encontrado
         """
         # Validações (raise se cliente/protocolo nao existem)
-        AgendamentoService._validar_horario_disponivel(
-            db, data_hora, duration_minutes, local
-        )
+        AgendamentoService._validar_horario_disponivel(db, data_hora, duration_minutes, local)
         AgendamentoService._validar_cliente_existe(db, cliente_id)
         AgendamentoService._validar_protocolo_existe(db, protocolo_id)
 
@@ -251,9 +244,10 @@ class AgendamentoService:
 
         db.commit()
         db.refresh(agendamento)
-        
+
         # A26: Invalida cache após criação de novo agendamento
         from app.services.agendamento_cache import invalidate_agendamento_cache
+
         invalidate_agendamento_cache()
 
         return agendamento
@@ -323,7 +317,7 @@ class AgendamentoService:
         db: Session,
         agendamento_id: int,
         *,
-         request: Request | None = None,
+        request: Request | None = None,
     ) -> Agendamento:
         """Cancela um agendamento.
 
@@ -366,7 +360,9 @@ class AgendamentoService:
             action="agendamento.cancelled",
             resource=f"agendamento:{agendamento.id}",
             payload={
-                "status_anterior": "agendado" if agendamento.status == StatusAgendamento.AGENDADO else "confirmado",
+                "status_anterior": "agendado"
+                if agendamento.status == StatusAgendamento.AGENDADO
+                else "confirmado",
                 "status_novo": agendamento.status.value,
             },
             **audit_kwargs_dict,
@@ -374,9 +370,10 @@ class AgendamentoService:
 
         db.commit()
         db.refresh(agendamento)
-        
+
         # A26: Invalida cache após cancelamento de agendamento
         from app.services.agendamento_cache import invalidate_agendamento_cache
+
         invalidate_agendamento_cache()
 
         return agendamento
@@ -386,7 +383,7 @@ class AgendamentoService:
         db: Session,
         agendamento_id: int,
         *,
-         request: Request | None = None,
+        request: Request | None = None,
     ) -> Agendamento:
         """Confirma um agendamento.
 
@@ -434,12 +431,14 @@ class AgendamentoService:
 
         db.commit()
         db.refresh(agendamento)
-        
+
         # A26: Invalida cache após confirmação de agendamento
         from app.services.agendamento_cache import invalidate_agendamento_cache
+
         invalidate_agendamento_cache()
 
         return agendamento
+
     @staticmethod
     def listar_agendamentos_pendentes(db: Session) -> list[dict[str, Any]]:
         """Lista agendamentos pendentes de notificacao (status AGENDADO).
@@ -447,39 +446,52 @@ class AgendamentoService:
         Usado pelo NotificationService para disparar lembretes.
         Recriado em 2026-06-25 (E1.S4.T2 cleanup) - estava duplicado e
         foi removido junto com os duplicates por engano no sed.
-        
+
         A26: Cache Redis 60s para reduzir carga DB em pico.
         """
         from app.models.agendamento import StatusAgendamento
-        from app.services.agendamento_cache import get_agendamentos_pendentes_cached, set_agendamentos_pendentes_cached
+        from app.services.agendamento_cache import (
+            get_agendamentos_pendentes_cached,
+            set_agendamentos_pendentes_cached,
+        )
 
         # A26 - Cache Redis: tenta buscar do cache primeiro
         cached = get_agendamentos_pendentes_cached()
         if cached is not None:
             return cached
 
-        stmt = select(Agendamento).where(
-            Agendamento.status == StatusAgendamento.AGENDADO,
-        ).order_by(Agendamento.data_hora)
+        stmt = (
+            select(Agendamento)
+            .where(
+                Agendamento.status == StatusAgendamento.AGENDADO,
+            )
+            .order_by(Agendamento.data_hora)
+        )
 
         agendamentos = db.execute(stmt).scalars().all()
-        
+
         # A26: cacheia resultado para proximas chamadas
         # Converte para dict para cache (a API ja retorna dict)
         agendamentos_dicts = []
         for agendamento in agendamentos:
-            agendamentos_dicts.append({
-                "id": agendamento.id,
-                "titulo": agendamento.titulo,
-                "data_hora": agendamento.data_hora,
-                "cliente_id": agendamento.cliente_id,
-                "local": agendamento.local,
-                "tipo": agendamento.tipo.value if hasattr(agendamento.tipo, "value") else agendamento.tipo,
-                "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
-            })
-        
+            agendamentos_dicts.append(
+                {
+                    "id": agendamento.id,
+                    "titulo": agendamento.titulo,
+                    "data_hora": agendamento.data_hora,
+                    "cliente_id": agendamento.cliente_id,
+                    "local": agendamento.local,
+                    "tipo": agendamento.tipo.value
+                    if hasattr(agendamento.tipo, "value")
+                    else agendamento.tipo,
+                    "status": agendamento.status.value
+                    if hasattr(agendamento.status, "value")
+                    else agendamento.status,
+                }
+            )
+
         set_agendamentos_pendentes_cached(agendamentos_dicts)
-        
+
         return agendamentos_dicts
 
     @staticmethod
@@ -490,12 +502,15 @@ class AgendamentoService:
         e as proximas 24h.
 
         Recriado em 2026-06-25 (E1.S4.T2 cleanup).
-        
+
         A26: Cache Redis 60s para reduzir carga DB em pico.
         """
         import datetime as _dt
         from app.models.agendamento import StatusAgendamento
-        from app.services.agendamento_cache import get_agendamentos_proximos_cached, set_agendamentos_proximos_cached
+        from app.services.agendamento_cache import (
+            get_agendamentos_proximos_cached,
+            set_agendamentos_proximos_cached,
+        )
 
         # A26 - Cache Redis: tenta buscar do cache primeiro
         cached = get_agendamentos_proximos_cached()
@@ -505,31 +520,43 @@ class AgendamentoService:
         agora = _dt.datetime.now(_dt.timezone.utc)
         proximas_24h = agora + _dt.timedelta(hours=24)
 
-        stmt = select(Agendamento).where(
-            Agendamento.status.in_([
-                StatusAgendamento.AGENDADO,
-                StatusAgendamento.CONFIRMADO,
-            ]),
-            Agendamento.data_hora >= agora,
-            Agendamento.data_hora <= proximas_24h,
-        ).order_by(Agendamento.data_hora)
+        stmt = (
+            select(Agendamento)
+            .where(
+                Agendamento.status.in_(
+                    [
+                        StatusAgendamento.AGENDADO,
+                        StatusAgendamento.CONFIRMADO,
+                    ]
+                ),
+                Agendamento.data_hora >= agora,
+                Agendamento.data_hora <= proximas_24h,
+            )
+            .order_by(Agendamento.data_hora)
+        )
 
         agendamentos = db.execute(stmt).scalars().all()
-        
+
         # A26: cacheia resultado para proximas chamadas
         # Converte para dict para cache (a API ja retorna dict)
         agendamentos_dicts = []
         for agendamento in agendamentos:
-            agendamentos_dicts.append({
-                "id": agendamento.id,
-                "titulo": agendamento.titulo,
-                "data_hora": agendamento.data_hora,
-                "cliente_id": agendamento.cliente_id,
-                "local": agendamento.local,
-                "tipo": agendamento.tipo.value if hasattr(agendamento.tipo, "value") else agendamento.tipo,
-                "status": agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status,
-            })
-        
+            agendamentos_dicts.append(
+                {
+                    "id": agendamento.id,
+                    "titulo": agendamento.titulo,
+                    "data_hora": agendamento.data_hora,
+                    "cliente_id": agendamento.cliente_id,
+                    "local": agendamento.local,
+                    "tipo": agendamento.tipo.value
+                    if hasattr(agendamento.tipo, "value")
+                    else agendamento.tipo,
+                    "status": agendamento.status.value
+                    if hasattr(agendamento.status, "value")
+                    else agendamento.status,
+                }
+            )
+
         set_agendamentos_proximos_cached(agendamentos_dicts)
-        
+
         return agendamentos_dicts

@@ -1,4 +1,5 @@
 """Testes A5 — /health/live + /health/ready (liveness/readiness probes)."""
+
 from __future__ import annotations
 
 from fastapi.testclient import TestClient

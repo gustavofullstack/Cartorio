@@ -14,6 +14,7 @@ Em CI/dev, pode usar sqlite :memory: com schema mockado (NÃO IMPLEMENTADO -
 
 Modified by Gustavo Almeida
 """
+
 from __future__ import annotations
 
 import os
@@ -52,51 +53,136 @@ def inspector(engine):
 
 S01_TABLES = {
     "clientes": [
-        "id", "cpf_hash", "nome", "email", "telefone_hash",
-        "consentimento_lgpd", "consentimento_em", "consentimento_ip",
-        "deleted_at", "created_at", "updated_at", "motivo_encerramento",
+        "id",
+        "cpf_hash",
+        "nome",
+        "email",
+        "telefone_hash",
+        "consentimento_lgpd",
+        "consentimento_em",
+        "consentimento_ip",
+        "deleted_at",
+        "created_at",
+        "updated_at",
+        "motivo_encerramento",
     ],
     "protocolos": [
-        "id", "numero", "cliente_id", "tipo", "status", "valor_base",
-        "valor_adicional", "valor_total", "tabela_referencia", "prazo_dias",
-        "created_at", "updated_at", "deleted_at",
+        "id",
+        "numero",
+        "cliente_id",
+        "tipo",
+        "status",
+        "valor_base",
+        "valor_adicional",
+        "valor_total",
+        "tabela_referencia",
+        "prazo_dias",
+        "created_at",
+        "updated_at",
+        "deleted_at",
     ],
     "atendimentos": [
-        "id", "protocolo_id", "cliente_id", "canal", "external_id",
-        "chatwoot_conversation_id", "chatwoot_inbox_id", "chatwoot_agent_id",
-        "status", "tipo", "contexto_scrubbed", "iniciado_em", "concluido_em",
-        "handoff_para_humano", "created_at", "updated_at", "deleted_at",
+        "id",
+        "protocolo_id",
+        "cliente_id",
+        "canal",
+        "external_id",
+        "chatwoot_conversation_id",
+        "chatwoot_inbox_id",
+        "chatwoot_agent_id",
+        "status",
+        "tipo",
+        "contexto_scrubbed",
+        "iniciado_em",
+        "concluido_em",
+        "handoff_para_humano",
+        "created_at",
+        "updated_at",
+        "deleted_at",
     ],
     "documentos": [
-        "id", "protocolo_id", "tipo", "storage_path", "storage_provider",
-        "tamanho_bytes", "mime_type", "hash_sha256", "uploaded_by",
-        "uploaded_by_tipo", "validado_por", "validado_em", "validacao_notas",
-        "created_at", "updated_at", "deleted_at",
+        "id",
+        "protocolo_id",
+        "tipo",
+        "storage_path",
+        "storage_provider",
+        "tamanho_bytes",
+        "mime_type",
+        "hash_sha256",
+        "uploaded_by",
+        "uploaded_by_tipo",
+        "validado_por",
+        "validado_em",
+        "validacao_notas",
+        "created_at",
+        "updated_at",
+        "deleted_at",
     ],
     "emolumentos": [
-        "id", "tipo_servico", "complexidade", "valor", "tabela_mg_2026",
-        "created_at", "updated_at",
+        "id",
+        "tipo_servico",
+        "complexidade",
+        "valor",
+        "tabela_mg_2026",
+        "created_at",
+        "updated_at",
     ],
     "audit_log": [
-        "id", "actor_id", "actor_type", "action", "resource", "payload",
-        "ip", "user_agent", "request_id", "prev_hash", "hash",
-        "hmac_signature", "timestamp", "canal", "ip_truncated",
+        "id",
+        "actor_id",
+        "actor_type",
+        "action",
+        "resource",
+        "payload",
+        "ip",
+        "user_agent",
+        "request_id",
+        "prev_hash",
+        "hash",
+        "hmac_signature",
+        "timestamp",
+        "canal",
+        "ip_truncated",
     ],
     "webhook_events": [
-        "id", "source", "event_id", "received_at", "payload_hash",
+        "id",
+        "source",
+        "event_id",
+        "received_at",
+        "payload_hash",
     ],
     "outbox_messages": [
-        "id", "queue", "payload", "status", "attempts", "last_error",
-        "next_retry_at", "created_at", "updated_at",
+        "id",
+        "queue",
+        "payload",
+        "status",
+        "attempts",
+        "last_error",
+        "next_retry_at",
+        "created_at",
+        "updated_at",
     ],
     "lgpd_consents": [
-        "id", "cliente_id", "conversation_id", "consent_type", "granted",
-        "ip_truncated", "user_agent_truncated", "created_at",
-        "granted_at", "revoked_at", "version",
+        "id",
+        "cliente_id",
+        "conversation_id",
+        "consent_type",
+        "granted",
+        "ip_truncated",
+        "user_agent_truncated",
+        "created_at",
+        "granted_at",
+        "revoked_at",
+        "version",
     ],
     "lgpd_audit_anpd": [
-        "id", "anpd_protocolo", "evento", "dados_jsonb", "ip_truncated",
-        "user_agent_truncated", "created_at",
+        "id",
+        "anpd_protocolo",
+        "evento",
+        "dados_jsonb",
+        "ip_truncated",
+        "user_agent_truncated",
+        "created_at",
     ],
 }
 
@@ -105,8 +191,7 @@ S01_TABLES = {
 def test_s01_table_exists_with_columns(table_name, expected_columns, inspector):
     """Todas as 10 tabelas S01 existem com colunas principais."""
     assert table_name in inspector.get_table_names(), (
-        f"Tabela S01 '{table_name}' nao encontrada no DB. "
-        f"Esperada em: backend/alembic/versions/"
+        f"Tabela S01 '{table_name}' nao encontrada no DB. Esperada em: backend/alembic/versions/"
     )
     actual_columns = {c["name"] for c in inspector.get_columns(table_name)}
     missing = set(expected_columns) - actual_columns
@@ -122,8 +207,8 @@ def test_s01_table_exists_with_columns(table_name, expected_columns, inspector):
 
 S01_FUNCTIONS = [
     "fn_audit_chain_verify",  # S08 - valida chain HMAC
-    "fn_set_updated_at",      # A18 - trigger updated_at
-    "fn_auto_audit",          # S10 - pgAudit-equivalente
+    "fn_set_updated_at",  # A18 - trigger updated_at
+    "fn_auto_audit",  # S10 - pgAudit-equivalente
 ]
 
 
@@ -150,11 +235,13 @@ def test_s01_function_exists(func_name, engine):
 # RLS (Row Level Security) - LGPD by design
 # ============================================================================
 
+
 @pytest.mark.parametrize("table_name", list(S01_TABLES.keys()))
 def test_s01_rls_enabled(table_name, inspector):
     """RLS habilitado em todas as 10 tabelas S01 (LGPD art. 6 VIII)."""
     # SQLAlchemy Inspector nao expoe RLS diretamente - usar SQL raw via engine
     from sqlalchemy import create_engine
+
     eng = create_engine(DATABASE_URL)
     with eng.connect() as conn:
         result = conn.execute(
@@ -164,22 +251,18 @@ def test_s01_rls_enabled(table_name, inspector):
             ),
             {"t": table_name},
         ).scalar()
-    assert result is True, (
-        f"RLS nao habilitado em '{table_name}'. "
-        f"Esperado: True (LGPD-by-design)"
-    )
+    assert result is True, f"RLS nao habilitado em '{table_name}'. Esperado: True (LGPD-by-design)"
 
 
 # ============================================================================
 # Alembic head linear
 # ============================================================================
 
+
 def test_alembic_head_linear(engine):
     """alembic_version tem 1 row (linear chain) - nao multi-head."""
     with engine.connect() as conn:
-        rows = conn.execute(
-            text("SELECT version_num FROM alembic_version")
-        ).fetchall()
+        rows = conn.execute(text("SELECT version_num FROM alembic_version")).fetchall()
     assert len(rows) == 1, (
         f"alembic_version tem {len(rows)} rows (esperado 1 = chain linear). "
         f"Rows: {[r[0] for r in rows]}. "
@@ -190,9 +273,7 @@ def test_alembic_head_linear(engine):
 def test_alembic_head_is_0012(engine):
     """DB no head canonico Sprint 4 S01 (2026_06_25_0012 = merge final)."""
     with engine.connect() as conn:
-        head = conn.execute(
-            text("SELECT version_num FROM alembic_version")
-        ).scalar()
+        head = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     assert head == "2026_06_25_0012", (
         f"DB alembic head = {head!r}, esperado '2026_06_25_0012'. "
         f"0012 merge 0003 (pg_notify outbox) + 0010 (S01 merge)."

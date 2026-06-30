@@ -32,16 +32,17 @@ logger = logging.getLogger(__name__)
 
 
 # Provedores que usam o wrapper generico OpenAI-compat (opencode_generic)
-_OPENAI_COMPAT_PROVIDERS = frozenset({
-    "opencode_free_1",
-    "opencode_free_2",
-    "opencode_free_3",
-    "opencode_go",
-    "openrouter",
-    "groq",
-    "mistral",
-    "google_ai_studio",
-})
+_OPENAI_COMPAT_PROVIDERS = frozenset(
+    {
+        "opencode_free_1",
+        "opencode_free_2",
+        "opencode_free_3",
+        "openrouter",
+        "groq",
+        "mistral",
+        "google_ai_studio",
+    }
+)
 
 
 async def _call_provider(
@@ -59,6 +60,21 @@ async def _call_provider(
     client_ip: str | None,
 ) -> ChatResponse:
     """Dispatch helper: chama o provider certo com seus proprios settings."""
+    if provider == "opencode_go":
+        from app.integrations.opencode_go import chat_with_settings as chat_opencode_go
+
+        return await chat_opencode_go(
+            messages=messages,
+            temperature=temperature,
+            consent_granted=consent_granted,
+            actor_id=actor_id,
+            db=db,
+            session_id=session_id,
+            rate_limit_per_minute=rate_limit_per_minute,
+            request_id=request_id,
+            client_ip=client_ip,
+        )
+
     if provider in _OPENAI_COMPAT_PROVIDERS:
         # Providers genericos OpenAI-compat
         from app.integrations.opencode_generic import chat as chat_generic
@@ -165,11 +181,13 @@ async def chat_with_fallback(
         if primary_provider or fallback_provider or tertiary_provider:
             # Legacy 3-provider compat
             chain = [
-                p for p in [
+                p
+                for p in [
                     primary_provider or settings.llm_default_provider,
                     fallback_provider,
                     tertiary_provider,
-                ] if p
+                ]
+                if p
             ]
         else:
             # Nova chain completa do settings

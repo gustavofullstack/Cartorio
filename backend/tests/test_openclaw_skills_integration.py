@@ -4,6 +4,7 @@ Valida que os exemplos curl nas skills funcionam contra a API real.
 LGPD: verifica que dados sensiveis NAO sao retornados pela API para
 clientes NAO autorizados.
 """
+
 from __future__ import annotations
 
 import os
@@ -47,6 +48,7 @@ def client():
 
     import app.db
     import app.main as app_main_module
+
     original_engine = app.db.engine
     original_session_scope = app.db.session_scope
     app.db.engine = test_engine
@@ -82,6 +84,7 @@ def client():
 def _make_cliente(db, cpf_hash: str = "h1") -> int:
     """Helper que cria cliente e retorna ID."""
     from app.models.cliente import Cliente
+
     c = Cliente(cpf_hash=cpf_hash, nome="Joao da Silva", consentimento_lgpd=True)
     db.add(c)
     db.commit()
@@ -89,9 +92,12 @@ def _make_cliente(db, cpf_hash: str = "h1") -> int:
     return c.id
 
 
-def _make_protocolo(db, cliente_id: int, numero: str = "2026-00042", status: str = "em_andamento") -> int:
+def _make_protocolo(
+    db, cliente_id: int, numero: str = "2026-00042", status: str = "em_andamento"
+) -> int:
     """Helper que cria protocolo e retorna ID."""
     from app.models.protocolo import Protocolo
+
     p = Protocolo(
         cliente_id=cliente_id,
         numero=numero,
@@ -116,6 +122,7 @@ def test_skill_protocolo_tracker_exemplo_curl_funciona(client) -> None:
     """O exemplo curl em cartorio-protocolo-tracker.md retorna 200 + JSON."""
     # Setup: cria cliente + protocolo
     from app.db import session_scope
+
     with session_scope() as db:
         cid = _make_cliente(db)
         _make_protocolo(db, cid, numero="2026-00042")
@@ -144,6 +151,7 @@ def test_skill_protocolo_tracker_nao_vaza_cpf_hash_no_payload(client) -> None:
     integridade da chain) e o test documenta que a SKILL deve mascarar.
     """
     from app.db import session_scope
+
     with session_scope() as db:
         cid = _make_cliente(db, cpf_hash="hash_secreto_xyz")
         _make_protocolo(db, cid, numero="2026-00099")

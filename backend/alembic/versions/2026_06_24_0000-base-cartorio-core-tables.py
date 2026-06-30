@@ -45,6 +45,7 @@ SQLite (UUID como CHAR(32), JSON serializado, SAEnum como VARCHAR).
 
 Modified by Gustavo Almeida
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -71,19 +72,23 @@ def upgrade() -> None:
     existing_tables = set(inspector.get_table_names())
 
     # ----- ENUMS -----
-    motivo_encerramento_enum = postgresql.ENUM(
-        "revogacao_consentimento",
-        "retencao_5y",
-        "exercicio_direito_titular",
-        "outros",
-        name="motivo_encerramento_enum",
-        create_type=False,  # ja existe no DB prod
-    ) if is_pg else sa.Enum(
-        "revogacao_consentimento",
-        "retencao_5y",
-        "exercicio_direito_titular",
-        "outros",
-        name="motivo_encerramento_enum",
+    motivo_encerramento_enum = (
+        postgresql.ENUM(
+            "revogacao_consentimento",
+            "retencao_5y",
+            "exercicio_direito_titular",
+            "outros",
+            name="motivo_encerramento_enum",
+            create_type=False,  # ja existe no DB prod
+        )
+        if is_pg
+        else sa.Enum(
+            "revogacao_consentimento",
+            "retencao_5y",
+            "exercicio_direito_titular",
+            "outros",
+            name="motivo_encerramento_enum",
+        )
     )
 
     # Garante tipo enum existe (IF NOT EXISTS via create_type)
@@ -100,7 +105,12 @@ def upgrade() -> None:
             sa.Column("actor_type", sa.String(length=32), nullable=False, server_default="user"),
             sa.Column("action", sa.String(length=64), nullable=False),
             sa.Column("resource", sa.String(length=128), nullable=False),
-            sa.Column("payload", sa.JSON().with_variant(postgresql.JSONB(), "postgresql"), nullable=False, server_default=sa.text("'{}'")),
+            sa.Column(
+                "payload",
+                sa.JSON().with_variant(postgresql.JSONB(), "postgresql"),
+                nullable=False,
+                server_default=sa.text("'{}'"),
+            ),
             sa.Column("ip", sa.String(length=45), nullable=True),
             sa.Column("ip_truncated", sa.String(length=50), nullable=True),
             sa.Column("user_agent", sa.String(length=512), nullable=True),
@@ -120,7 +130,9 @@ def upgrade() -> None:
     op.execute("CREATE INDEX IF NOT EXISTS ix_audit_log_hash ON audit_log (hash)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_audit_log_timestamp ON audit_log (timestamp)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_audit_ip_truncated ON audit_log (ip_truncated)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_audit_resource_action ON audit_log (resource, action)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_audit_resource_action ON audit_log (resource, action)"
+    )
     op.execute("CREATE INDEX IF NOT EXISTS ix_audit_actor_action ON audit_log (actor_id, action)")
 
     # ----- CLIENTES -----
@@ -134,7 +146,9 @@ def upgrade() -> None:
             sa.Column("email", sa.String(length=255), nullable=True),
             sa.Column("telefone_hash", sa.String(length=64), nullable=True),
             # LGPD
-            sa.Column("consentimento_lgpd", sa.Boolean, nullable=False, server_default=sa.text("false")),
+            sa.Column(
+                "consentimento_lgpd", sa.Boolean, nullable=False, server_default=sa.text("false")
+            ),
             sa.Column("consentimento_em", sa.DateTime, nullable=True),
             sa.Column("consentimento_ip", sa.String(length=45), nullable=True),
             sa.Column("consentimento_canal", sa.String(length=32), nullable=True),
@@ -150,7 +164,9 @@ def upgrade() -> None:
     op.execute("CREATE INDEX IF NOT EXISTS ix_clientes_email ON clientes (email)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_clientes_telefone_hash ON clientes (telefone_hash)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_clientes_deleted_at ON clientes (deleted_at)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_clientes_motivo_encerramento ON clientes (motivo_encerramento)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_clientes_motivo_encerramento ON clientes (motivo_encerramento)"
+    )
     # FK clientes.audit_encerramento_id -> audit_log.id (ON DELETE SET NULL)
     op.execute(
         "DO $$ BEGIN "
@@ -175,7 +191,9 @@ def upgrade() -> None:
             sa.Column("intent_detected", sa.String(length=64), nullable=True),
             sa.Column("confidence_score", sa.Float, nullable=True),
             sa.Column("bot_response", sa.Text, nullable=True),
-            sa.Column("handoff_to_human", sa.Boolean, nullable=False, server_default=sa.text("false")),
+            sa.Column(
+                "handoff_to_human", sa.Boolean, nullable=False, server_default=sa.text("false")
+            ),
             sa.Column("handoff_at", sa.DateTime, nullable=True),
             sa.Column("handoff_reason", sa.String(length=255), nullable=True),
             sa.Column("handoff_agent", sa.String(length=128), nullable=True),
@@ -189,8 +207,12 @@ def upgrade() -> None:
     op.execute("CREATE INDEX IF NOT EXISTS ix_conversas_cliente_id ON conversas (cliente_id)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_conversas_canal ON conversas (canal)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_conversas_external_id ON conversas (external_id)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_conversas_intent_detected ON conversas (intent_detected)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_conversas_handoff_to_human ON conversas (handoff_to_human)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_conversas_intent_detected ON conversas (intent_detected)"
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_conversas_handoff_to_human ON conversas (handoff_to_human)"
+    )
 
     # ----- PROTOCOLOS -----
     if "protocolos" not in existing_tables:
@@ -233,12 +255,16 @@ def upgrade() -> None:
             sa.Column("protocolo_id", sa.Integer, sa.ForeignKey("protocolos.id"), nullable=False),
             sa.Column("tipo", sa.String(length=64), nullable=False),
             sa.Column("storage_path", sa.String(length=512), nullable=False),
-            sa.Column("storage_provider", sa.String(length=32), nullable=False, server_default="supabase"),
+            sa.Column(
+                "storage_provider", sa.String(length=32), nullable=False, server_default="supabase"
+            ),
             sa.Column("tamanho_bytes", sa.BigInteger, nullable=True),
             sa.Column("mime_type", sa.String(length=128), nullable=True),
             sa.Column("hash_sha256", sa.String(length=64), nullable=False),
             sa.Column("uploaded_by", sa.String(length=128), nullable=False),
-            sa.Column("uploaded_by_tipo", sa.String(length=32), nullable=False, server_default="cliente"),
+            sa.Column(
+                "uploaded_by_tipo", sa.String(length=32), nullable=False, server_default="cliente"
+            ),
             sa.Column("validado_por", sa.String(length=128), nullable=True),
             sa.Column("validado_em", sa.DateTime, nullable=True),
             sa.Column("validacao_notas", sa.String(length=1024), nullable=True),
@@ -270,14 +296,20 @@ def upgrade() -> None:
             sa.Column("pesquisa_comentario", sa.Text, nullable=True),
             sa.Column("iniciado_em", sa.DateTime, nullable=False, server_default=sa.func.now()),
             sa.Column("concluido_em", sa.DateTime, nullable=True),
-            sa.Column("handoff_para_humano", sa.Boolean, nullable=False, server_default=sa.text("false")),
+            sa.Column(
+                "handoff_para_humano", sa.Boolean, nullable=False, server_default=sa.text("false")
+            ),
             sa.Column("created_at", sa.DateTime, nullable=False, server_default=sa.func.now()),
             sa.Column("updated_at", sa.DateTime, nullable=False, server_default=sa.func.now()),
         )
-    op.execute("CREATE INDEX IF NOT EXISTS ix_atendimentos_protocolo_id ON atendimentos (protocolo_id)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_atendimentos_protocolo_id ON atendimentos (protocolo_id)"
+    )
     op.execute("CREATE INDEX IF NOT EXISTS ix_atendimentos_cliente_id ON atendimentos (cliente_id)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_atendimentos_canal ON atendimentos (canal)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_atendimentos_external_id ON atendimentos (external_id)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_atendimentos_external_id ON atendimentos (external_id)"
+    )
     op.execute("CREATE INDEX IF NOT EXISTS ix_atendimentos_status ON atendimentos (status)")
 
     # ----- OUTBOX_MESSAGES -----
@@ -286,19 +318,37 @@ def upgrade() -> None:
     if "outbox_messages" not in existing_tables:
         op.create_table(
             "outbox_messages",
-            sa.Column("id", postgresql.UUID(as_uuid=True) if is_pg else sa.String(length=36), primary_key=True),  # type: ignore[misc]
+            sa.Column(
+                "id",
+                postgresql.UUID(as_uuid=True) if is_pg else sa.String(length=36),
+                primary_key=True,
+            ),  # type: ignore[misc]
             sa.Column("queue", sa.String(length=32), nullable=False),
-            sa.Column("payload", sa.JSON().with_variant(postgresql.JSONB(), "postgresql"), nullable=False),
+            sa.Column(
+                "payload", sa.JSON().with_variant(postgresql.JSONB(), "postgresql"), nullable=False
+            ),
             sa.Column("status", sa.String(length=32), nullable=False, server_default="pending"),
             sa.Column("attempts", sa.Integer, nullable=False, server_default="0"),
             sa.Column("last_error", sa.Text, nullable=True),
             sa.Column("next_retry_at", sa.DateTime(timezone=True), nullable=True),
-            sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
+            sa.Column(
+                "updated_at",
+                sa.DateTime(timezone=True),
+                nullable=False,
+                server_default=sa.func.now(),
+            ),
         )
     op.execute("CREATE INDEX IF NOT EXISTS ix_outbox_messages_queue ON outbox_messages (queue)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_outbox_messages_status ON outbox_messages (status)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_outbox_messages_next_retry_at ON outbox_messages (next_retry_at)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_outbox_messages_next_retry_at ON outbox_messages (next_retry_at)"
+    )
 
     # ----- WEBHOOK_EVENTS -----
     # Tabela de deduplicacao. Idempotencia via UNIQUE(source, event_id).
@@ -314,7 +364,9 @@ def upgrade() -> None:
         )
     op.execute("CREATE INDEX IF NOT EXISTS ix_webhook_events_source ON webhook_events (source)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_webhook_events_event_id ON webhook_events (event_id)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_webhook_events_received_at ON webhook_events (received_at)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_webhook_events_received_at ON webhook_events (received_at)"
+    )
 
 
 def downgrade() -> None:

@@ -14,6 +14,7 @@ Cobre:
 
 Setup minimo: import inline igual test_rate_limit.py (padrao do repo).
 """
+
 from __future__ import annotations
 
 import os

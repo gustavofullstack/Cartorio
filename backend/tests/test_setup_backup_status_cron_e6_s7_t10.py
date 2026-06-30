@@ -53,8 +53,7 @@ def test_cartorio_backup_status_script_exists_in_infra():
     """Script de setup deve existir em infra/backup/ (versionado no repo)."""
     script = repo_path("infra/backup/cartorio-backup-status.sh")
     assert script.exists(), (
-        f"Script {script} nao encontrado. "
-        f"E6.S7.T10 exige o script versionado no repo."
+        f"Script {script} nao encontrado. E6.S7.T10 exige o script versionado no repo."
     )
     # Verifica shebang
     content = script.read_text()

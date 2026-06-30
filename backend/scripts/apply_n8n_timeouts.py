@@ -17,6 +17,7 @@ Uso:
   uv run python scripts/apply_n8n_timeouts.py --dry-run
   uv run python scripts/apply_n8n_timeouts.py
 """
+
 from __future__ import annotations
 
 import argparse

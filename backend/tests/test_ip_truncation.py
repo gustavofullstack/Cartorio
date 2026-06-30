@@ -2,6 +2,7 @@
 
 Cobra edge cases que faltavam na cobertura original.
 """
+
 from __future__ import annotations
 
 

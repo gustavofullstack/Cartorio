@@ -56,7 +56,7 @@ def test_migration_0001_existe_e_tem_estrutura() -> None:
     # Outras migrations podem ter "0001" no nome mas sao revisions diferentes
     # (ex: 2026_06_24_0001). Pegamos a primeira por data de revision.
     m0001 = next(
-        (f for f in files if "revision: str = \"2026_06_23_0001\"" in f.read_text()),
+        (f for f in files if 'revision: str = "2026_06_23_0001"' in f.read_text()),
         None,
     )
     assert m0001 is not None, "migration 0001 (2026_06_23_0001) deve existir"

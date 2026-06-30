@@ -123,9 +123,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 )
             response = await call_next(request)
             response.headers["X-RateLimit-Limit"] = str(self._per_minute)
-            response.headers["X-RateLimit-Remaining"] = str(
-                max(0, self._per_minute - int(count))
-            )
+            response.headers["X-RateLimit-Remaining"] = str(max(0, self._per_minute - int(count)))
             return response
         except Exception as e:  # noqa: BLE001
             # Fail-open: NAO bloqueia se Redis offline

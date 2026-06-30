@@ -70,9 +70,7 @@ async def _with_retry(fn: Any, *args: Any, **kwargs: Any) -> Any:
 def _headers(use_service_role: bool = True) -> dict[str, str]:
     """Retorna headers com Authorization e apikey corretos."""
     key = (
-        settings.supabase_service_role_key
-        if use_service_role
-        else settings.supabase_anon_key
+        settings.supabase_service_role_key if use_service_role else settings.supabase_anon_key
     ) or ""
     return {
         "apikey": key,

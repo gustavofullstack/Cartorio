@@ -1,4 +1,5 @@
 """Testes do service lgpd_anonimizacao (D13 SQUAD D)."""
+
 from __future__ import annotations
 
 

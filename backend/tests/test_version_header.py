@@ -1,4 +1,5 @@
 """Testes do VersionHeaderMiddleware (A20)."""
+
 from __future__ import annotations
 
 

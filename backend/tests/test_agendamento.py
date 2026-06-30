@@ -30,6 +30,7 @@ def test_engine():
 @pytest.fixture
 def test_session_factory(test_engine):
     from sqlalchemy.orm import sessionmaker
+
     return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
 
@@ -101,7 +102,7 @@ def client(test_engine, test_session_factory):
 def test_criar_agendamento_sucesso(test_session, cliente_test):
     """Testa criação de agendamento com sucesso."""
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
-    
+
     agendamento = AgendamentoService.criar_agendamento(
         db=test_session,
         cliente_id=cliente_test.id,
@@ -114,7 +115,7 @@ def test_criar_agendamento_sucesso(test_session, cliente_test):
         protocolo_id=None,
         duration_minutes=30,
     )
-    
+
     assert agendamento.id is not None
     assert agendamento.cliente_id == cliente_test.id
     assert agendamento.status == StatusAgendamento.AGENDADO
@@ -128,9 +129,9 @@ def test_criar_agendamento_sucesso(test_session, cliente_test):
 def test_criar_agendamento_conflito_horario(test_session, cliente_test):
     """Testa criação de agendamento com conflito de horário."""
     from app.services.agendamento import AgendamentoConflictError
-    
+
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
-    
+
     # Cria primeiro agendamento
     AgendamentoService.criar_agendamento(
         db=test_session,
@@ -142,7 +143,7 @@ def test_criar_agendamento_conflito_horario(test_session, cliente_test):
         local="balcao_1",
         duration_minutes=30,
     )
-    
+
     # Tenta criar segundo agendamento no mesmo horário
     with pytest.raises(AgendamentoConflictError):
         AgendamentoService.criar_agendamento(
@@ -161,7 +162,7 @@ def test_listar_agendamentos_cliente(test_session, cliente_test):
     """Testa listagem de agendamentos de um cliente."""
     data_hora1 = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
     data_hora2 = datetime.datetime(2026, 7, 2, 10, 0, 0, tzinfo=datetime.timezone.utc)
-    
+
     # Cria dois agendamentos
     AgendamentoService.criar_agendamento(
         db=test_session,
@@ -172,7 +173,7 @@ def test_listar_agendamentos_cliente(test_session, cliente_test):
         tipo=TipoAtendimento.NORMAL,
         duration_minutes=30,
     )
-    
+
     AgendamentoService.criar_agendamento(
         db=test_session,
         cliente_id=cliente_test.id,
@@ -182,12 +183,10 @@ def test_listar_agendamentos_cliente(test_session, cliente_test):
         tipo=TipoAtendimento.PRIORITARIO,
         duration_minutes=45,
     )
-    
+
     # Lista agendamentos
-    agendamentos = AgendamentoService.listar_agendamentos_cliente(
-        test_session, cliente_test.id
-    )
-    
+    agendamentos = AgendamentoService.listar_agendamentos_cliente(test_session, cliente_test.id)
+
     assert len(agendamentos) == 2
     assert agendamentos[0].titulo == "Segundo agendamento"  # Mais recente primeiro
     assert agendamentos[1].titulo == "Primeiro agendamento"
@@ -196,7 +195,7 @@ def test_listar_agendamentos_cliente(test_session, cliente_test):
 def test_cancelar_agendamento(test_session, cliente_test):
     """Testa cancelamento de agendamento."""
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
-    
+
     # Cria agendamento
     agendamento = AgendamentoService.criar_agendamento(
         db=test_session,
@@ -207,20 +206,18 @@ def test_cancelar_agendamento(test_session, cliente_test):
         tipo=TipoAtendimento.NORMAL,
         duration_minutes=30,
     )
-    
+
     # Cancela agendamento
-    agendamento_cancelado = AgendamentoService.cancelar_agendamento(
-        test_session, agendamento.id
-    )
-    
+    agendamento_cancelado = AgendamentoService.cancelar_agendamento(test_session, agendamento.id)
+
     assert agendamento_cancelado.status == StatusAgendamento.CANCELADO
 
 
 def test_api_criar_agendamento(client, test_session, cliente_test):
     """Testa endpoint API de criação de agendamento."""
-    
+
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
-    
+
     payload = {
         "cliente_id": cliente_test.id,
         "cliente_cpf": "12345678909",
@@ -231,9 +228,9 @@ def test_api_criar_agendamento(client, test_session, cliente_test):
         "local": "balcao_1",
         "duration_minutes": 30,
     }
-    
+
     response = client.post("/api/v1/agendamento", json=payload)
-    
+
     assert response.status_code == 201
     data = response.json()
     assert data["titulo"] == "Agendamento via API"
@@ -245,7 +242,7 @@ def test_api_listar_agendamentos_cliente(client, test_session, cliente_test):
     """Testa endpoint API de listagem de agendamentos."""
     # Cria um agendamento primeiro
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
-    
+
     payload = {
         "cliente_id": cliente_test.id,
         "cliente_cpf": "12345678909",
@@ -254,12 +251,12 @@ def test_api_listar_agendamentos_cliente(client, test_session, cliente_test):
         "tipo": "normal",
         "duration_minutes": 30,
     }
-    
+
     client.post("/api/v1/agendamento", json=payload)
-    
+
     # Lista agendamentos
     response = client.get(f"/api/v1/agendamento/cliente/{cliente_test.id}")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
@@ -270,7 +267,7 @@ def test_api_cancelar_agendamento(client, test_session, cliente_test):
     """Testa endpoint API de cancelamento de agendamento."""
     # Cria um agendamento primeiro
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
-    
+
     payload = {
         "cliente_id": cliente_test.id,
         "cliente_cpf": "12345678909",
@@ -279,13 +276,13 @@ def test_api_cancelar_agendamento(client, test_session, cliente_test):
         "tipo": "normal",
         "duration_minutes": 30,
     }
-    
+
     create_response = client.post("/api/v1/agendamento", json=payload)
     agendamento_id = create_response.json()["id"]
-    
+
     # Cancela agendamento
     cancel_response = client.post(f"/api/v1/agendamento/{agendamento_id}/cancelar")
-    
+
     assert cancel_response.status_code == 200
     data = cancel_response.json()
     assert data["status"] == "cancelado"
@@ -309,6 +306,7 @@ def test_cancelar_agendamento_status_invalido(test_session, cliente_test):
     from app.services.agendamento import AgendamentoService
 
     import datetime
+
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     from app.models.agendamento import TipoAtendimento
@@ -337,6 +335,7 @@ def test_confirmar_agendamento_sucesso(test_session, cliente_test):
     from app.models.agendamento import StatusAgendamento
 
     import datetime
+
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     agendamento = AgendamentoService.criar_agendamento(
@@ -366,6 +365,7 @@ def test_confirmar_agendamento_status_invalido(test_session, cliente_test):
     from app.services.agendamento import AgendamentoService
 
     import datetime
+
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     agendamento = AgendamentoService.criar_agendamento(
@@ -388,6 +388,7 @@ def test_confirmar_agendamento_status_invalido(test_session, cliente_test):
 def test_listar_agendamentos_data(test_session, cliente_test):
     """listar_agendamentos_data retorna agendamentos de uma data específica."""
     import datetime
+
     data_alvo = datetime.date(2026, 7, 15)
 
     # Cria agendamento no dia alvo
@@ -422,6 +423,7 @@ def test_listar_agendamentos_data(test_session, cliente_test):
 def test_listar_agendamentos_data_com_filtro_local(test_session, cliente_test):
     """listar_agendamentos_data filtra por local quando especificado."""
     import datetime
+
     data_alvo = datetime.date(2026, 7, 20)
 
     AgendamentoService.criar_agendamento(
@@ -457,6 +459,7 @@ def test_listar_agendamentos_data_com_filtro_local(test_session, cliente_test):
 def test_listar_agendamentos_data_vazio(test_session):
     """listar_agendamentos_data retorna lista vazia se não há agendamentos na data."""
     import datetime
+
     resultados = AgendamentoService.listar_agendamentos_data(
         test_session, datetime.date(2026, 12, 25)
     )
@@ -466,6 +469,7 @@ def test_listar_agendamentos_data_vazio(test_session):
 def test_listar_agendamentos_pendentes_sem_cache(test_session, cliente_test):
     """listar_agendamentos_pendentes retorna agendamentos com status AGENDADO."""
     import datetime
+
     AgendamentoService.criar_agendamento(
         db=test_session,
         cliente_id=cliente_test.id,
@@ -477,7 +481,10 @@ def test_listar_agendamentos_pendentes_sem_cache(test_session, cliente_test):
     )
 
     from unittest.mock import patch
-    with patch("app.services.agendamento_cache.get_agendamentos_pendentes_cached", return_value=None):
+
+    with patch(
+        "app.services.agendamento_cache.get_agendamentos_pendentes_cached", return_value=None
+    ):
         with patch("app.services.agendamento_cache.set_agendamentos_pendentes_cached"):
             pendentes = AgendamentoService.listar_agendamentos_pendentes(test_session)
 
@@ -489,7 +496,10 @@ def test_listar_agendamentos_proximos_vazio(test_session):
     """listar_agendamentos_proximos retorna lista vazia sem agendamentos."""
 
     from unittest.mock import patch
-    with patch("app.services.agendamento_cache.get_agendamentos_proximos_cached", return_value=None):
+
+    with patch(
+        "app.services.agendamento_cache.get_agendamentos_proximos_cached", return_value=None
+    ):
         with patch("app.services.agendamento_cache.set_agendamentos_proximos_cached"):
             proximos = AgendamentoService.listar_agendamentos_proximos(test_session)
 

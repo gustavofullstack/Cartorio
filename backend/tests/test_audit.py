@@ -1,7 +1,5 @@
 """Testes do audit log hash chain - seguranca do cartorio depende disso."""
 
-
-
 from app.models.audit_log import AuditLog
 from app.services.audit import AuditService
 

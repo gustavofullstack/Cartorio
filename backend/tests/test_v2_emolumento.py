@@ -8,6 +8,7 @@ Cobre:
 5. Metadata (tabela_referencia, valido_ate) sempre presente
 6. Cada node tem tipo, valor_base, gratuito
 """
+
 from __future__ import annotations
 
 import os

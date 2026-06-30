@@ -116,7 +116,7 @@ def test_webhook_e2e_message_without_pii() -> None:
         # Resposta humanizada (atendente, nao transferencia)
         assert "transferir" not in str(body["response"]).lower()
 
-    
+
 def test_webhook_e2e_message_with_cpf_triggers_handoff() -> None:
     """Webhook com CPF deve detectar PII e devolver mensagem de handoff humano."""
     with _require_api_deployed() as client:
@@ -141,10 +141,7 @@ def test_webhook_e2e_multiple_pii_types_detected() -> None:
     with _require_api_deployed() as client:
         payload = {
             "message": {
-                "text": (
-                    "CPF 111.222.333-44, email joao@teste.com, "
-                    "telefone (11) 98765-4321"
-                )
+                "text": ("CPF 111.222.333-44, email joao@teste.com, telefone (11) 98765-4321")
             },
             "sender": "5511977776666",
             "instance": "cartorio-2notas",
@@ -155,14 +152,10 @@ def test_webhook_e2e_multiple_pii_types_detected() -> None:
         scrubbed = body["scrubbed"]
         # Nenhum PII original pode vazar
         for original in ["111.222.333-44", "joao@teste.com", "(11) 98765-4321"]:
-            assert original not in scrubbed, (
-                f"PII '{original}' vazou no scrubbed: {scrubbed}"
-            )
+            assert original not in scrubbed, f"PII '{original}' vazou no scrubbed: {scrubbed}"
         # Todos devem ter sido redacted
         for label in ["CPF", "EMAIL", "PHONE_BR"]:
-            assert f"[{label}_REDACTED]" in scrubbed, (
-                f"Esperava [{label}_REDACTED] em: {scrubbed}"
-            )
+            assert f"[{label}_REDACTED]" in scrubbed, f"Esperava [{label}_REDACTED] em: {scrubbed}"
 
 
 def test_audit_chain_integrity_over_time() -> None:

@@ -2,6 +2,7 @@
 
 Validates that radar endpoint responds correctly.
 """
+
 from __future__ import annotations
 
 from fastapi.testclient import TestClient

@@ -3,6 +3,7 @@
 Cobre:
 - RedisIdempotencyStore: setnx, get, delete, _get_client
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -118,12 +119,14 @@ class TestRedisIdempotencyStore:
 
         # Simula redis state
         stored: dict[str, str] = {}
+
         async def fake_set(key: str, value: str, **kwargs: object) -> bool | None:
             nx = kwargs.get("nx", False)
             if nx and key in stored:
                 return None
             stored[key] = value
             return True
+
         fake_client.set = AsyncMock(side_effect=fake_set)  # type: ignore[method-assign]
         fake_client.get = AsyncMock(side_effect=lambda k: stored.get(k))  # type: ignore[method-assign]
         fake_client.delete = AsyncMock(side_effect=lambda k: stored.pop(k, None))  # type: ignore[method-assign]

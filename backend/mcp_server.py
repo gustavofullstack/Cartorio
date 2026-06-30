@@ -162,7 +162,9 @@ async def cartorio_consultar_protocolo(numero: str) -> dict:
                 "valor_base": str(protocolo.valor_base) if protocolo.valor_base else None,
                 "valor_total": str(protocolo.valor_total) if protocolo.valor_total else None,
                 "tabela_referencia": protocolo.tabela_referencia,
-                "prazo_estimado": f"{protocolo.prazo_dias} dias uteis" if protocolo.prazo_dias else None,
+                "prazo_estimado": f"{protocolo.prazo_dias} dias uteis"
+                if protocolo.prazo_dias
+                else None,
                 "proxima_acao": "Aguardando validacao humana do escrevente.",
                 "created_at": protocolo.created_at.isoformat() if protocolo.created_at else None,
             }
@@ -303,6 +305,7 @@ async def cartorio_audit_verify() -> dict:
         with session_scope() as db:
             ok, last_valid = AuditService.verify_chain(db)
             from app.models.audit_log import AuditLog
+
             total = db.query(AuditLog).count()
         return {
             "chain_ok": ok,
@@ -330,6 +333,7 @@ async def cartorio_saudacao() -> dict:
     deadlock em carga. Refator: sem chamada HTTP, apenas settings locais.
     """
     import datetime
+
     return {
         "api_status": 200,
         "mcp_server": "cartorio-mcp-cabuloso v0.4.0",

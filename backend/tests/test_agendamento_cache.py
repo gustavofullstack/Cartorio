@@ -9,6 +9,7 @@ Cobertura:
 - invalidate_cliente_cache (existe e não existe)
 - Constantes do módulo
 """
+
 from __future__ import annotations
 
 import json
@@ -34,6 +35,7 @@ from app.services.agendamento_cache import (
 
 
 # ─── Constantes ────────────────────────────────────────────────────────
+
 
 def test_constants():
     """Constantes do módulo têm valores esperados."""
@@ -61,6 +63,7 @@ def test_cache_key_cliente_inclui_hash():
 
 # ─── _get_redis_client ─────────────────────────────────────────────────
 
+
 def test_get_redis_client_sucesso():
     """_get_redis_client retorna cliente Redis quando disponível."""
     import builtins
@@ -87,6 +90,7 @@ def test_get_redis_client_sucesso():
 def test_get_redis_client_import_error():
     """_get_redis_client retorna None se redis não instalado."""
     import app.services.agendamento_cache as cache_mod
+
     with patch("builtins.__import__", side_effect=ImportError("no redis")):
         client = cache_mod._get_redis_client()
         assert client is None
@@ -97,6 +101,7 @@ def test_get_redis_client_sem_env():
     mock_redis = MagicMock()
     import builtins
     import app.services.agendamento_cache as cache_mod
+
     original_import = builtins.__import__
 
     def mock_import(name, *args, **kwargs):
@@ -115,6 +120,7 @@ def test_get_redis_client_sem_env():
 
 
 # ─── get/set pendentes ─────────────────────────────────────────────────
+
 
 def test_get_pendentes_hit():
     """get_agendamentos_pendentes_cached retorna dados no hit."""
@@ -206,6 +212,7 @@ def test_set_pendentes_erro():
 
 # ─── get/set próximos ─────────────────────────────────────────────────
 
+
 def test_get_proximos_hit():
     """get_agendamentos_proximos_cached retorna dados no hit."""
     mock_redis = MagicMock()
@@ -288,6 +295,7 @@ def test_set_proximos_erro():
 
 
 # ─── get/set cliente ───────────────────────────────────────────────────
+
 
 def test_get_cliente_hit():
     """get_cliente_cached retorna dados no hit."""
@@ -372,6 +380,7 @@ def test_set_cliente_erro():
 
 
 # ─── invalidate ────────────────────────────────────────────────────────
+
 
 def test_invalidate_agendamento_cache_com_chaves():
     """invalidate_agendamento_cache remove chaves e retorna contagem."""

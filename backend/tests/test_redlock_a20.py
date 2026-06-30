@@ -1,4 +1,5 @@
 """Testes A20 — Redlock distributed lock (Redis SET NX EX)."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch

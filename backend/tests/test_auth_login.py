@@ -12,6 +12,7 @@ LGPD compliance:
 - claims minimas: sub, iss, aud, typ, exp, iat, jti, dpo
 - audit log de todo login
 """
+
 from __future__ import annotations
 
 import os
@@ -292,8 +293,12 @@ class TestAuthLoginIntegration:
         # Dashboard tem KPIs agregados (qualquer chave de stats)
         # Aceita qualquer das chaves conhecidas do endpoint
         expected_keys = [
-            "total_clientes", "clientes_ativos", "kpis",
-            "audit_entries_24h", "consents_ativos", "audit_chain_status",
+            "total_clientes",
+            "clientes_ativos",
+            "kpis",
+            "audit_entries_24h",
+            "consents_ativos",
+            "audit_chain_status",
             "consents_revogados_30d",
         ]
         assert any(k in body for k in expected_keys), (

@@ -2,6 +2,7 @@
 
 Cobre linhas nao testadas do MaskingFilter.
 """
+
 from __future__ import annotations
 
 import logging

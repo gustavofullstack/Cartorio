@@ -11,6 +11,7 @@ Cobre:
 8. Search por tag funciona
 9. Search por short_code funciona
 """
+
 from __future__ import annotations
 
 import re
@@ -57,7 +58,9 @@ def test_cada_template_tem_pelo_menos_1_tag() -> None:
 def test_short_codes_sao_unicos() -> None:
     """Nenhum short_code duplicado."""
     codes = [cr.short_code for cr in CANNED_RESPONSES]
-    assert len(codes) == len(set(codes)), f"Short codes duplicados: {[c for c in codes if codes.count(c) > 1]}"
+    assert len(codes) == len(set(codes)), (
+        f"Short codes duplicados: {[c for c in codes if codes.count(c) > 1]}"
+    )
 
 
 def test_short_codes_slug_safe() -> None:
@@ -76,9 +79,9 @@ def test_lgpd_cobre_6_direitos_titular() -> None:
     """LGPD art. 18: 6 direitos do titular devem ter template."""
     expected = [
         "lgpd_anonimizacao",  # IV
-        "lgpd_correcao",      # III
-        "lgpd_esquecimento",   # VI
-        "lgpd_oposicao",       # II
+        "lgpd_correcao",  # III
+        "lgpd_esquecimento",  # VI
+        "lgpd_oposicao",  # II
         "lgpd_portabilidade",  # V
     ]
     # + consentimento (nao eh exatamente um "direito" do art. 18 mas eh requisito LGPD)
@@ -222,6 +225,4 @@ def test_nenhum_template_contem_telefone_pessoal() -> None:
         # Procura telefone (XX) XXXX-XXXX
         tels = re.findall(r"\(\d{2}\)\s*\d{4,5}-\d{4}", cr.content)
         for tel in tels:
-            assert "XXXX" in tel or "0000" in tel, (
-                f"{cr.short_code}: telefone hardcoded: {tel}"
-            )
+            assert "XXXX" in tel or "0000" in tel, f"{cr.short_code}: telefone hardcoded: {tel}"

@@ -4,6 +4,7 @@ LGPD: PII scrubber roda em toda request. Se for lento, vira gargalo.
 
 SLA: p99 < 5ms (meta do mega-plano P2.BE.13).
 """
+
 from __future__ import annotations
 
 import time
@@ -67,9 +68,7 @@ def test_pii_scrub_p99_latency() -> None:
     p95 = latencies_ms[int(0.95 * len(latencies_ms))]  # p95
     max_ms = latencies_ms[-1]
 
-    print(
-        f"\n[PII bench] p50={p50:.3f}ms p95={p95:.3f}ms p99={p99:.3f}ms max={max_ms:.3f}ms"
-    )
+    print(f"\n[PII bench] p50={p50:.3f}ms p95={p95:.3f}ms p99={p99:.3f}ms max={max_ms:.3f}ms")
 
     # p99 < 5ms (meta do mega-plano)
     assert p99 < 5, f"p99 latency {p99:.3f}ms >= 5ms SLA"

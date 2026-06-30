@@ -14,6 +14,7 @@ Uso:
 
 Pre-requisitos: API keys em .env (NAO rotacionar).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,15 +34,11 @@ LINEAR_TEAM = "cartorio-2notas"
 
 # RENDER
 RENDER_API = "https://api.render.com/v1"
-RENDER_API_KEY = os.environ.get(
-    "RENDER_API", "rnd_QP8GWTShurLmVGSp3H2e25pXsKti"
-)
+RENDER_API_KEY = os.environ.get("RENDER_API", "rnd_QP8GWTShurLmVGSp3H2e25pXsKti")
 
 # JULES
 JULES_API = "https://jules.googleapis.com/v1"
-JULES_API_KEY = os.environ.get(
-    "JULES_API", "AQ.Ab8RN6K26NJ3FFYfkXpT3-_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ"
-)
+JULES_API_KEY = os.environ.get("JULES_API", "AQ.Ab8RN6K26NJ3FFYfkXpT3-_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ")
 
 
 def linear_graphql(query: str, variables: dict | None = None) -> dict:

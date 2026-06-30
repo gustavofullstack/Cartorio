@@ -8,6 +8,7 @@ Cobertura:
 - invalidate remove todas as chaves com prefix
 - Fail silencioso em qualquer erro de Redis
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -51,6 +52,7 @@ class FakeRedis:
 
     def scan_iter(self, match: str = "*", count: int = 100):
         import fnmatch
+
         return iter([k for k in self.store.keys() if fnmatch.fnmatch(k, match)])
 
 
@@ -138,6 +140,7 @@ class TestAtendimentoCache:
     def test_serialization_with_datetime(self):
         """Serializa datetime com default=str (vira string ISO no Redis)."""
         from datetime import datetime, timezone
+
         fake = FakeRedis()
         with patch("app.services.atendimento_cache._get_redis_client", return_value=fake):
             now = datetime.now(timezone.utc)
@@ -149,8 +152,10 @@ class TestAtendimentoCache:
             assert "atendimentos" in result
             assert isinstance(result["atendimentos"][0]["concluido_em"], str)
             # Conteudo bate (com datetime como string)
-            assert result["atendimentos"][0]["concluido_em"] == now.isoformat() or \
-                   "2026" in result["atendimentos"][0]["concluido_em"]
+            assert (
+                result["atendimentos"][0]["concluido_em"] == now.isoformat()
+                or "2026" in result["atendimentos"][0]["concluido_em"]
+            )
 
     def test_get_cached_returns_none_when_key_missing(self):
         """get_cached com chave inexistente retorna None (linha 55)."""
@@ -163,12 +168,14 @@ class TestAtendimentoCache:
     def test_get_redis_client_import_success(self):
         """_get_redis_client retorna cliente quando redis instalado (linha 32)."""
         from app.services.atendimento_cache import _get_redis_client
+
         client = _get_redis_client()
         assert client is not None
 
     def test_get_redis_client_import_fail(self, monkeypatch):
         """_get_redis_client retorna None quando import redis falha (linhas 31-32)."""
         import builtins
+
         original_import = builtins.__import__
 
         def mock_import(name, *args, **kwargs):
@@ -178,6 +185,7 @@ class TestAtendimentoCache:
 
         monkeypatch.setattr(builtins, "__import__", mock_import)
         from app.services.atendimento_cache import _get_redis_client
+
         # Apos monkeypatch, precisa recarregar o modulo para reexecutar
         # a definicao de _get_redis_client? Nao, a funcao ja esta definida
         # e o try/import redis executa toda vez que _get_redis_client e chamada.
@@ -190,6 +198,7 @@ class TestAtendimentoCache:
 
         class BrokenFakeRedis:
             """FakeRedis que quebra em scan_iter."""
+
             store = {}
             expirations = {}
             get = fake.get
@@ -206,6 +215,7 @@ class TestAtendimentoCache:
 
     def test_get_cached_exception_returns_none(self, monkeypatch):
         """get_cached com erro de Redis retorna None (fail-safe)."""
+
         class BrokenRedis:
             def get(self, key):
                 raise RuntimeError("redis broken")

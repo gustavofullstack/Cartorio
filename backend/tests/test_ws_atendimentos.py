@@ -195,12 +195,8 @@ class TestWSAtendimentosIntegration:
         # 2) Verifica que ws_router foi incluido no app.
         # FastAPI wrappa routers incluidos em _IncludedRouter com atributo
         # `original_router` (nao `router`). Precisamos comparar identidade.
-        included = any(
-            getattr(r, "original_router", None) is ws_router for r in app.routes
-        )
-        assert included, (
-            "ws_router nao foi incluido no app via app.include_router"
-        )
+        included = any(getattr(r, "original_router", None) is ws_router for r in app.routes)
+        assert included, "ws_router nao foi incluido no app via app.include_router"
 
     def test_endpoint_works_with_test_client(self) -> None:
         """Endpoint funciona em TestClient (handshake inicial)."""
@@ -230,9 +226,7 @@ class TestWSAtendimentosIntegration:
 class TestWSAtendimentosRedisIntegration:
     """Mensagem publicada no RedisBus deve chegar via broadcast."""
 
-    async def test_redis_message_triggers_broadcast(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_redis_message_triggers_broadcast(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """E2E: mensagem publicada em RedisBus chega via broadcast.
 
         NOTA: usa fakeredis. Para teste com Redis REAL (SCRAM auth + cluster +

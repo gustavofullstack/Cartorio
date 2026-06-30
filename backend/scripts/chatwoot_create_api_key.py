@@ -13,6 +13,7 @@ Uso:
   cd backend
   uv run python scripts/chatwoot_create_api_key.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -81,10 +82,14 @@ def main() -> int:
                 token = line.split("=", 1)[1]
                 print("\n=== ACAO PARA GUSTAVO ===")
                 print(f"1. Copie o token: {token}")
-                print("2. Edite backend/.env e troque CHATWOOT_API_KEY=SUI_GUSTAVO_GERAR_VIA_RAILS_CONSOLE_OU_CHATWOOT_UI")
+                print(
+                    "2. Edite backend/.env e troque CHATWOOT_API_KEY=SUI_GUSTAVO_GERAR_VIA_RAILS_CONSOLE_OU_CHATWOOT_UI"
+                )
                 print(f"   por: CHATWOOT_API_KEY={token}")
                 print("3. Restart API: docker service update --force cartorio_api")
-                print(f"4. Validar: curl -H 'api_access_token: {token}' https://chat.2notasudi.com.br/api/v1/accounts")
+                print(
+                    f"4. Validar: curl -H 'api_access_token: {token}' https://chat.2notasudi.com.br/api/v1/accounts"
+                )
                 return 0
     print("\nERRO: Rails runner nao retornou TOKEN_NOVO=", file=sys.stderr)
     return 1

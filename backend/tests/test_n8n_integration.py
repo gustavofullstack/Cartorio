@@ -28,11 +28,13 @@ class TestN8NConfig:
         """settings.n8n_base_url deve estar configurado."""
         assert settings.n8n_base_url
         # Aceita formato interno (cartorio_n8n:5678) ou URL pública (flow.2notasudi.com.br)
-        assert any([
-            "n8n" in settings.n8n_base_url.lower(),
-            "5678" in settings.n8n_base_url,
-            "flow" in settings.n8n_base_url.lower(),
-        ]), f"N8N URL inesperada: {settings.n8n_base_url}"
+        assert any(
+            [
+                "n8n" in settings.n8n_base_url.lower(),
+                "5678" in settings.n8n_base_url,
+                "flow" in settings.n8n_base_url.lower(),
+            ]
+        ), f"N8N URL inesperada: {settings.n8n_base_url}"
 
     def test_n8n_api_key_existe(self) -> None:
         """settings.n8n_api_key deve existir (skip se nao configurado)."""
@@ -65,12 +67,14 @@ class TestN8NErrorService:
     def test_n8n_error_service_importavel(self) -> None:
         """n8n_error.py deve ser importável."""
         from app.services.n8n_error import validate_n8n_signature, classify_error_type  # type: ignore
+
         assert callable(validate_n8n_signature)
         assert callable(classify_error_type)
 
     def test_n8n_workflow_validator_importavel(self) -> None:
         """n8n_workflow_validator.py deve ser importável."""
         from app.services.n8n_workflow_validator import validate_all  # type: ignore
+
         assert callable(validate_all)
 
 
@@ -111,7 +115,11 @@ class TestN8NWorkflowsMock:
             "data": [
                 {"id": "1", "name": "EVO-IN - Evolution Webhook Inbound", "active": True},
                 {"id": "2", "name": "31 - Telegram Listener (CartorioBot test)", "active": True},
-                {"id": "3", "name": "12 - Chatbot LLM End-to-End (PII + MCP + OpenCode-Go)", "active": True},
+                {
+                    "id": "3",
+                    "name": "12 - Chatbot LLM End-to-End (PII + MCP + OpenCode-Go)",
+                    "active": True,
+                },
             ]
         }
 
@@ -200,8 +208,9 @@ class TestN8NIntegrationReal:
             assert resp.status_code == 200
             import json
             import re
+
             raw = resp.text
-            clean = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f]', ' ', raw)
+            clean = re.sub(r"[\x00-\x08\x0b-\x0c\x0e-\x1f]", " ", raw)
             data = json.loads(clean)
             workflows = data.get("data", [])
             assert len(workflows) >= 34, f"Esperado >= 34 workflows, obtido {len(workflows)}"

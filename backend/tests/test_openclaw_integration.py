@@ -73,12 +73,14 @@ class TestOpenClawConfig:
         """Context window deve ser 1M (1048576) conforme configurado."""
         # Verificar via env var
         import os
+
         ctx = os.environ.get("OPENCODE_GO_CONTEXT_WINDOW", "1048576")
         assert int(ctx) >= 131072, f"Context window muito pequeno: {ctx}"
 
     def test_opencode_go_thinking_enabled(self) -> None:
         """Thinking mode deve estar habilitado."""
         import os
+
         thinking = os.environ.get("LLM_THINKING_ENABLED", "true")
         assert thinking.lower() in ("true", "1", "yes")
 
@@ -119,6 +121,7 @@ class TestOpenClawFallback:
     def test_fallback_service_importavel(self) -> None:
         """fallback.py deve ser importável."""
         from app.integrations.fallback import chat_with_fallback  # type: ignore
+
         assert callable(chat_with_fallback)
 
     def test_3_providers_documentados(self) -> None:
@@ -171,28 +174,32 @@ class TestOpenClawPIIScrub:
     def test_pii_scrub_service_importavel(self) -> None:
         """pii.py deve ser importável."""
         from app.services.pii import scrub  # type: ignore
+
         assert callable(scrub)
 
     def test_pii_scrub_cpf(self) -> None:
         """CPF deve ser removido antes de enviar para LLM."""
         from app.services.pii import scrub  # type: ignore
+
         resultado = scrub("Meu CPF é 123.456.789-00")
         # ScrubResult.text ou resultado como string
-        text = resultado.text if hasattr(resultado, 'text') else str(resultado)
+        text = resultado.text if hasattr(resultado, "text") else str(resultado)
         assert "123.456.789-00" not in text
 
     def test_pii_scrub_telefone(self) -> None:
         """Telefone deve ser removido antes de enviar para LLM."""
         from app.services.pii import scrub  # type: ignore
+
         resultado = scrub("Meu telefone é (34) 99999-9999")
-        text = resultado.text if hasattr(resultado, 'text') else str(resultado)
+        text = resultado.text if hasattr(resultado, "text") else str(resultado)
         assert "99999-9999" not in text
 
     def test_pii_scrub_email(self) -> None:
         """Email deve ser removido antes de enviar para LLM."""
         from app.services.pii import scrub  # type: ignore
+
         resultado = scrub("Me contacte em cliente@test.com")
-        text = resultado.text if hasattr(resultado, 'text') else str(resultado)
+        text = resultado.text if hasattr(resultado, "text") else str(resultado)
         assert "cliente@test.com" not in text
 
 

@@ -20,6 +20,7 @@ Uso:
     payload = {"name": "Gustavo", "cpf": "123.456.789-00"}
     safe = sanitize_dict(payload)  # {"name": "Gustavo", "cpf": "***789-00"}
 """
+
 from __future__ import annotations
 
 import re
@@ -54,11 +55,13 @@ def sanitize_cpf(text: str) -> str:
 
 def sanitize_rg(text: str) -> str:
     """Mascara RG mantendo ultimos 3 digitos."""
+
     def _repl(m: re.Match) -> str:
         uf = m.group(1) or ""
         digits = m.group(2)
         masked_digits = _mask_keep_last(digits, 3)
         return f"{uf}{masked_digits}"
+
     return _RG_RE.sub(_repl, text)
 
 
@@ -116,8 +119,10 @@ def sanitize_dict(data: dict[str, Any], _depth: int = 0) -> dict[str, Any]:
             result[k] = sanitize_dict(v, _depth + 1)
         elif isinstance(v, list):
             result[k] = [
-                sanitize_pii(item) if isinstance(item, str)
-                else sanitize_dict(item, _depth + 1) if isinstance(item, dict)
+                sanitize_pii(item)
+                if isinstance(item, str)
+                else sanitize_dict(item, _depth + 1)
+                if isinstance(item, dict)
                 else item
                 for item in v
             ]

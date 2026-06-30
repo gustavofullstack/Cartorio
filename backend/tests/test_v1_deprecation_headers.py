@@ -11,6 +11,7 @@ Cobre:
 5. Header Link com rel="successor-version" aponta pra /api/v2
 6. Headers preservam respostas normais (200, 401, etc)
 """
+
 from __future__ import annotations
 
 import os

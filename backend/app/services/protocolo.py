@@ -5,6 +5,7 @@ quanto pela tool MCP (cartorio_criar_protocolo). Antes, o MCP fazia self-loop
 HTTP (httpx.post pra localhost:8000) - isso causava deadlock em carga porque
 o sub-app MCP e a API principal compartilhavam o mesmo event loop.
 """
+
 from __future__ import annotations
 
 import datetime
@@ -106,14 +107,13 @@ def criar_protocolo_svc(
     # Salt vem do settings (em prod vem de secret manager).
     # ------------------------------------------------------------------
     from app.config import settings  # lazy import to avoid circular
+
     cpf_hash = hash_pii(cliente_cpf, salt=settings.audit_hmac_key[:32])
 
     # ------------------------------------------------------------------
     # Cliente - reusa se CPF ja existir (idempotencia por hash)
     # ------------------------------------------------------------------
-    cliente = db.execute(
-        select(Cliente).where(Cliente.cpf_hash == cpf_hash)
-    ).scalar_one_or_none()
+    cliente = db.execute(select(Cliente).where(Cliente.cpf_hash == cpf_hash)).scalar_one_or_none()
 
     if cliente is None:
         cliente = Cliente(
@@ -128,7 +128,7 @@ def criar_protocolo_svc(
     else:
         cliente.consentimento_lgpd = True
         cliente.consentimento_em = datetime.datetime.now(datetime.timezone.utc)
-        cliente.consentimento_canal =canal_origem
+        cliente.consentimento_canal = canal_origem
 
     # ------------------------------------------------------------------
     # Snapshot de emolumento (regra: nunca recalcular)

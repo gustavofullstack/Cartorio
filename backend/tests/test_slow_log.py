@@ -8,6 +8,7 @@ Cobertura:
 - Threshold customizado via parametro
 - JSON valido no log
 """
+
 from __future__ import annotations
 
 import json
@@ -33,6 +34,7 @@ def _build_app(threshold_ms: int = 500) -> tuple[FastAPI, MagicMock]:
     @app.get("/slow")
     async def slow() -> dict:
         import asyncio
+
         # Aguarda para simular latencia (60ms < 500ms threshold)
         await asyncio.sleep(0.06)
         return {"slow": True}
@@ -95,12 +97,14 @@ class TestSlowLogMiddleware:
         @app.get("/health/live")
         async def health() -> dict:
             import asyncio
+
             await asyncio.sleep(0.05)
             return {"status": "ok"}
 
         @app.get("/metrics")
         async def metrics() -> dict:
             import asyncio
+
             await asyncio.sleep(0.05)
             return {"data": "x"}
 
@@ -125,7 +129,15 @@ class TestSlowLogMiddleware:
         assert len(logs) >= 1
         log = logs[0]
         # Campos obrigatorios
-        required = {"event", "method", "path", "status_code", "duration_ms", "threshold_ms", "request_id"}
+        required = {
+            "event",
+            "method",
+            "path",
+            "status_code",
+            "duration_ms",
+            "threshold_ms",
+            "request_id",
+        }
         assert required.issubset(log.keys())
 
     def test_default_threshold_is_500ms(self):
@@ -161,5 +173,7 @@ class TestSlowLogMiddleware:
             client.get("/slow")  # 60ms >= 2*30=60ms
 
         # Deve ter pelo menos 1 WARNING
-        warnings = [r for r in caplog.records if r.levelno == logging.WARNING and r.name == "cartorio.slow"]
+        warnings = [
+            r for r in caplog.records if r.levelno == logging.WARNING and r.name == "cartorio.slow"
+        ]
         assert len(warnings) >= 1

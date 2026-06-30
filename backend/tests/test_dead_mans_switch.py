@@ -11,6 +11,7 @@ Cobertura:
 - Lida com timestamp naive (assume UTC)
 - DEAD_THRESHOLD = 1h
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

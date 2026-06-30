@@ -2,6 +2,7 @@
 
 Validates v2 clientes cursor pagination.
 """
+
 from __future__ import annotations
 
 from fastapi.testclient import TestClient

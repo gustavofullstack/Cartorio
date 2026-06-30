@@ -124,9 +124,7 @@ class TestRedisBusSubscribe:
 
 
 class TestRedisBusPatternSubscribe:
-    async def test_psubscribe_receives_matching_channels(
-        self, fake_redis: None
-    ) -> None:
+    async def test_psubscribe_receives_matching_channels(self, fake_redis: None) -> None:
         bus_pub = RedisBus()
         bus_sub = RedisBus()
 
@@ -246,9 +244,7 @@ class TestRedisBusErrorPaths:
         await bus.close()
         await bus.close()  # idempotent
 
-    async def test_ping_returns_false_on_redis_error(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_ping_returns_false_on_redis_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """ping() retorna False (nao raise) quando Redis offline."""
         from redis.exceptions import ConnectionError as RedisConnError
 
@@ -292,15 +288,19 @@ class TestRedisBusCoverageGaps:
         bus = RedisBus()
 
         # Mock get_message to return a non-JSON message first, then stop
-        messages = iter([
-            {"type": "message", "channel": "test:chan", "data": "not-json-string"},
-        ])
+        messages = iter(
+            [
+                {"type": "message", "channel": "test:chan", "data": "not-json-string"},
+            ]
+        )
 
         class FakePubSub:
             async def subscribe(self, *channels: str) -> None:
                 pass
 
-            async def get_message(self, ignore_subscribe_messages: bool = True, timeout: float = 1.0):
+            async def get_message(
+                self, ignore_subscribe_messages: bool = True, timeout: float = 1.0
+            ):
                 try:
                     return next(messages)
                 except StopIteration:
@@ -336,7 +336,9 @@ class TestRedisBusCoverageGaps:
             async def subscribe(self, *channels: str) -> None:
                 pass
 
-            async def get_message(self, ignore_subscribe_messages: bool = True, timeout: float = 1.0):
+            async def get_message(
+                self, ignore_subscribe_messages: bool = True, timeout: float = 1.0
+            ):
                 return None  # timeout sempre
 
             async def unsubscribe(self) -> None:
@@ -381,15 +383,19 @@ class TestRedisBusCoverageGaps:
         """pattern_subscribe com JSON invalido usa fallback raw (linhas 187-188)."""
         bus = RedisBus()
 
-        messages = iter([
-            {"type": "pmessage", "channel": "test:chan", "data": "not-json-string"},
-        ])
+        messages = iter(
+            [
+                {"type": "pmessage", "channel": "test:chan", "data": "not-json-string"},
+            ]
+        )
 
         class FakePubSub:
             async def psubscribe(self, pattern: str) -> None:
                 pass
 
-            async def get_message(self, ignore_subscribe_messages: bool = True, timeout: float = 1.0):
+            async def get_message(
+                self, ignore_subscribe_messages: bool = True, timeout: float = 1.0
+            ):
                 try:
                     return next(messages)
                 except StopIteration:
@@ -425,7 +431,9 @@ class TestRedisBusCoverageGaps:
             async def psubscribe(self, pattern: str) -> None:
                 pass
 
-            async def get_message(self, ignore_subscribe_messages: bool = True, timeout: float = 1.0):
+            async def get_message(
+                self, ignore_subscribe_messages: bool = True, timeout: float = 1.0
+            ):
                 return None
 
             async def punsubscribe(self) -> None:

@@ -14,6 +14,7 @@ Passos:
 Revision ID: 2026_06_25_0013
 Revises: 2026_06_25_0012
 """
+
 from __future__ import annotations
 
 
@@ -33,7 +34,8 @@ def upgrade() -> None:
     conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;"))
 
     # 2. Vault: ensure vault schema exists and store helper
-    conn.execute(sa.text("""
+    conn.execute(
+        sa.text("""
         -- Ensure vault extension is available
         CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
 
@@ -52,35 +54,47 @@ def upgrade() -> None:
             VALUES (p_name, p_description, p_secret::text::bytea);
         END;
         $$;
-    """))
+    """)
+    )
 
     # 3. GraphQL: add pg_graphql comments to expose cartorio views
     # pg_graphql auto-exposes tables via EXECUTE format('comment on table %I is
     # $e$@graphql({"totalCount": {"enabled": true}})$e$', table_name)
-    conn.execute(sa.text("""
+    conn.execute(
+        sa.text("""
         -- Expose clientes with totalCount
         COMMENT ON TABLE public.clientes IS
             '@graphql({"totalCount": {"enabled": true}, "name": "Clientes"})';
-    """))
-    conn.execute(sa.text("""
+    """)
+    )
+    conn.execute(
+        sa.text("""
         COMMENT ON TABLE public.protocolos IS
             '@graphql({"totalCount": {"enabled": true}, "name": "Protocolos"})';
-    """))
-    conn.execute(sa.text("""
+    """)
+    )
+    conn.execute(
+        sa.text("""
         COMMENT ON TABLE public.atendimentos IS
             '@graphql({"totalCount": {"enabled": true}, "name": "Atendimentos"})';
-    """))
-    conn.execute(sa.text("""
+    """)
+    )
+    conn.execute(
+        sa.text("""
         COMMENT ON TABLE public.documentos IS
             '@graphql({"totalCount": {"enabled": true}, "name": "Documentos"})';
-    """))
-    conn.execute(sa.text("""
+    """)
+    )
+    conn.execute(
+        sa.text("""
         COMMENT ON TABLE public.audit_log IS
             '@graphql({"totalCount": {"enabled": true}, "name": "AuditLog"})';
-    """))
+    """)
+    )
 
     # 4. Realtime publication for live dashboards (C23)
-    conn.execute(sa.text("""
+    conn.execute(
+        sa.text("""
         -- Drop existing if stale, recreate with specific tables
         DROP PUBLICATION IF EXISTS cartorio_realtime;
         CREATE PUBLICATION cartorio_realtime FOR TABLE
@@ -91,10 +105,12 @@ def upgrade() -> None:
             public.outbox_messages,
             public.lgpd_consents
         WITH (publish = 'insert, update, delete');
-    """))
+    """)
+    )
 
     # 5. Helper: encrypt/decrypt using pgcrypto (D15)
-    conn.execute(sa.text("""
+    conn.execute(
+        sa.text("""
         CREATE OR REPLACE FUNCTION public.encrypt_sensitive(
             p_plaintext text,
             p_key text DEFAULT current_setting('app.encryption_key', true)
@@ -111,9 +127,11 @@ def upgrade() -> None:
             RETURN pgp_sym_encrypt(p_plaintext, p_key);
         END;
         $$;
-    """))
+    """)
+    )
 
-    conn.execute(sa.text("""
+    conn.execute(
+        sa.text("""
         CREATE OR REPLACE FUNCTION public.decrypt_sensitive(
             p_ciphertext bytea,
             p_key text DEFAULT current_setting('app.encryption_key', true)
@@ -129,7 +147,8 @@ def upgrade() -> None:
             RETURN pgp_sym_decrypt(p_ciphertext, p_key);
         END;
         $$;
-    """))
+    """)
+    )
 
 
 def downgrade() -> None:

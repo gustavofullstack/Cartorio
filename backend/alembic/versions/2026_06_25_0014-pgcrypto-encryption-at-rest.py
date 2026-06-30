@@ -13,6 +13,7 @@ D15 LGPD — Encriptação at-rest com pgcrypto.
 
 LGPD art. 46 — Medidas técnicas para proteção de dados pessoais.
 """
+
 from __future__ import annotations
 
 from typing import Sequence, Union

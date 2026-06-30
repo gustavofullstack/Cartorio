@@ -8,6 +8,7 @@ Helpers: mask_cpf -> '***.***.***-**', mask_email -> 'g***@example.com'.
 - mask_cpf preserva formato
 - mask_email preserva dominio e primeira letra
 """
+
 from __future__ import annotations
 
 import os

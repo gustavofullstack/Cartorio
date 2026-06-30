@@ -2,6 +2,7 @@
 
 Validates API v2 metadata endpoint.
 """
+
 from __future__ import annotations
 
 from fastapi.testclient import TestClient

@@ -7,6 +7,7 @@ Cobre:
 4. Estrutura: chaves esperadas (backend, pool_size, checked_out, etc)
 5. SQLite: retorna note 'SQLite nao usa pool de conexoes'
 """
+
 from __future__ import annotations
 
 import os

@@ -18,6 +18,7 @@ Uso:
   uv run python scripts/test_n8n_workflows.py
   uv run python scripts/test_n8n_workflows.py --strict  # falha em warning tbm
 """
+
 from __future__ import annotations
 
 import argparse
@@ -95,7 +96,9 @@ def validate_workflow(path: Path) -> list[str]:
     # 2. pelo menos 1 trigger
     triggers = [n for n in nodes if n.get("type") in VALID_TRIGGER_TYPES]
     if not triggers:
-        issues.append(f"sem trigger (esperado 1 de: {', '.join(t.split('.')[-1] for t in VALID_TRIGGER_TYPES[:4])})")
+        issues.append(
+            f"sem trigger (esperado 1 de: {', '.join(t.split('.')[-1] for t in VALID_TRIGGER_TYPES[:4])})"
+        )
 
     # 3. IDs unicos
     ids_seen: set[str] = set()

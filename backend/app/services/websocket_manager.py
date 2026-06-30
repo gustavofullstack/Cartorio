@@ -118,9 +118,7 @@ class ConnectionManager:
             await ws.send_json(payload)
             return True
         except Exception as e:  # noqa: BLE001
-            logger.warning(
-                "ws.send_personal.send_failed err=%s", type(e).__name__
-            )
+            logger.warning("ws.send_personal.send_failed err=%s", type(e).__name__)
             return False
 
 

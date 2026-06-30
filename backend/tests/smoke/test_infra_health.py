@@ -46,8 +46,7 @@ def _require_smoke() -> None:
     """Skip se nao estamos rodando contra a infra real."""
     if SMOKE_TARGET != "prod":
         pytest.skip(
-            "Smoke test contra infra real desabilitado. "
-            "Defina SMOKE_TARGET=prod para habilitar."
+            "Smoke test contra infra real desabilitado. Defina SMOKE_TARGET=prod para habilitar."
         )
 
 
@@ -88,9 +87,7 @@ def test_subdomain_tls_valid(subdomain: str, config: dict[str, Any]) -> None:
                 fmt = "%b %d %H:%M:%S %Y %Z"
                 expiry = datetime.strptime(not_after, fmt).replace(tzinfo=timezone.utc)  # type: ignore[arg-type]
                 days_left = (expiry - datetime.now(timezone.utc)).days
-                assert days_left > 7, (
-                    f"Cert de {host} expira em {days_left} dias. Renovar AGORA."
-                )
+                assert days_left > 7, f"Cert de {host} expira em {days_left} dias. Renovar AGORA."
     except (ssl.SSLError, socket.timeout, ConnectionRefusedError, OSError) as e:
         pytest.fail(f"TLS falhou em {host}:{port}: {e}")
 
@@ -112,8 +109,7 @@ def test_subdomain_http_responds(subdomain: str, config: dict[str, Any]) -> None
         assert resp.status_code == 200, f"{host}: HTTP {resp.status_code}"
         body = resp.text.lower()
         assert config["expected_keyword"].lower() in body, (
-            f"{host}: corpo nao contem '{config['expected_keyword']}'. "
-            f"Recebido: {body[:200]}"
+            f"{host}: corpo nao contem '{config['expected_keyword']}'. Recebido: {body[:200]}"
         )
     else:
         assert resp.status_code in allowed, (
@@ -213,17 +209,11 @@ def test_security_headers_present() -> None:
     resp = httpx.get(url, timeout=TIMEOUT_S)
     headers = {k.lower(): v for k, v in resp.headers.items()}
     # Pelo menos 1 de CSP/X-Frame deve existir OU documentar a falta
-    has_frame_protection = (
-        "content-security-policy" in headers or "x-frame-options" in headers
-    )
+    has_frame_protection = "content-security-policy" in headers or "x-frame-options" in headers
     has_hsts = "strict-transport-security" in headers
     # HSTS eh MUST-HAVE em HTTPS publico
-    assert has_hsts, (
-        f"Falta HSTS em {url}. DevOps: adicionar Strict-Transport-Security no Traefik."
-    )
+    assert has_hsts, f"Falta HSTS em {url}. DevOps: adicionar Strict-Transport-Security no Traefik."
     # Frame protection eh recomendacao forte
     if not has_frame_protection:
         # Nao falha - reporta
-        pytest.skip(
-            f"Sem CSP/X-Frame-Options em {url}. Recomendado adicionar para cartorio."
-        )
+        pytest.skip(f"Sem CSP/X-Frame-Options em {url}. Recomendado adicionar para cartorio.")
