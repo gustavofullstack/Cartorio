@@ -725,11 +725,11 @@ Modified by Pietra/Mavis - 2026-06-25 00:02 BRT
 ### Sprint 4 — LGPD (D29-D32)
 - [x] **S4.LGPD.T1** D29-G1: lgpd_export.py máscara nome+email no export bundle — owner: M2.7 (mvs_354628c) — **DONE commit e669fb6 + hotfix 340872e** (função _mask_bundle_pii faltando adicionada)
 - [ ] **S4.LGPD.T2** D29-G2: lgpd_direitos.py v1 endpoint usa _mask_bundle_pii — owner: M2.7 (mvs_354628c) — IN PROGRESS (já referencia a função, precisa do hotfix 340872e)
-- [ ] **S4.LGPD.T3** D28-G1: audit log em 100% mutações (request_id/ip/UA) — owner: M3 (eu)
+- [x] **S4.LGPD.T3** D28-G1: audit log em 100% mutações (request_id/ip/UA) — owner: M3 (eu) — **DONE commit 2a3df20** (audit_kwargs em auth_login.py via M2.7, gap 0 em 17 mutation handlers — 16 via helper + 1 manual)
 - [ ] **S4.LGPD.T4** D25-G1: DPO nominal + RIPD v1.3 — owner: cartorio-lgpd
 
 ### Sprint 4 — Débitos técnicos
-- [ ] **S4.DEB.T1** DELETE /cliente/{id} (LGPD art. 18 VI) — owner: M3 (eu)
+- [x] **S4.DEB.T1** DELETE /cliente/{id} (LGPD art. 18 VI) — owner: M3 (eu) — **DONE** (endpoint delete_cliente existe em router.py:2528 + direito_esquecimento.py com hard/soft delete + 24 testes green)
 - [x] **S4.DEB.T2** Job retenção 5y/até-revogação + purge fase 2 (D29-G3) — owner: M3 (eu) — **DONE commit 68dd122** (Fase 2: hard delete REVOGACAO_CONSENTIMENTO+OUTROS >5y, preserva EXERCICIO_DIREITO_TITULAR, 6 testes novos, 16/16 green)
 - [ ] **S4.DEB.T3** IP extraction helper (E1.S4.T4) — owner: cartorio-dev
 - [ ] **S4.DEB.T4** Redlock DMS loop (E1.S4.T5) — owner: cartorio-dev
