@@ -131,6 +131,18 @@ async def _call_provider(
             client_ip=client_ip,
         )
 
+    if provider == "antigravity":
+        from app.integrations.antigravity import chat_with_settings as chat_antigravity
+
+        return await chat_antigravity(
+            messages=messages,
+            temperature=temperature,
+            consent_granted=consent_granted,
+            actor_id=actor_id,
+            request_id=request_id,
+            client_ip=client_ip,
+        )
+
     raise ChatError(
         f"Provedor desconhecido: {provider}",
         kind=ChatErrorKind.CONFIG,

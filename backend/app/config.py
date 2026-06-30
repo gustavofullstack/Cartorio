@@ -134,12 +134,17 @@ class Settings(BaseSettings):
     jules_api_key: Optional[str] = None
     jules_base_url: str = "https://jules.googleapis.com/v1alpha"
 
+    # Antigravity (Gemini via OAuth2 stored token) - Turno 38
+    antigravity_token: Optional[str] = None  # null = use keyring/file
+    antigravity_base_url: str = "https://antigravity.googleapis.com/v1"
+    antigravity_default_model: str = "gemini-3.1-pro"
+
     # Chain order (try in sequence). Tweak LLM_FALLBACK_CHAIN env to override
     llm_default_provider: str = "opencode_free_3"
     llm_fallback_chain: str = (
         "opencode_free_3,opencode_free_1,opencode_free_2,"
         "opencode_go,openrouter,groq,mistral,"
-        "google_ai_studio,openclaw,jules"
+        "google_ai_studio,openclaw,jules,antigravity"
     )
 
     # ========================================================================

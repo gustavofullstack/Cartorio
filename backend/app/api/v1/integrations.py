@@ -288,6 +288,21 @@ class AgentHealthResponse(BaseModel):
 
 
 @integrations_router.get(
+    "/integrations/openclaw",
+    tags=["meta"],
+    summary="Status direto do OpenClaw Agent (Turno 38)",
+    description="Retorna status do gateway OpenClaw + lista models disponiveis + latency ping.",
+    response_model=AgentHealthResponse,
+)
+async def openclaw_status_endpoint() -> AgentHealthResponse:
+    """Status dedicado do OpenClaw Agent (alias para /integrations/agent/health).
+
+    Adicionado no Turno 38 para corresponder ao path documentado na bateria V4.
+    """
+    return await agent_health()
+
+
+@integrations_router.get(
     "/integrations/agent/health",
     tags=["meta"],
     summary="Health check do OpenClaw Agent + LLM",
