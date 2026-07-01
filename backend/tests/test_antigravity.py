@@ -54,9 +54,7 @@ class TestAntigravityOAuthConfig:
         token = ag._load_oauth_token()
         assert token == "test-ag-token-1234"
 
-    def test_load_oauth_token_via_arquivo(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-    ) -> None:
+    def test_load_oauth_token_via_arquivo(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
         """_load_oauth_token carrega de ANTIGRAVITY_TOKEN_PATH se env ausente."""
         monkeypatch.delenv("ANTIGRAVITY_TOKEN", raising=False)
         token_file = tmp_path / "antigravity.json"
@@ -65,9 +63,7 @@ class TestAntigravityOAuthConfig:
         token = ag._load_oauth_token()
         assert token == "arquivo-token-5678"
 
-    def test_load_oauth_token_none_se_nao_configurado(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_load_oauth_token_none_se_nao_configurado(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """_load_oauth_token retorna None se nenhum path configurado."""
         monkeypatch.delenv("ANTIGRAVITY_TOKEN", raising=False)
         # Apaga arquivo mesmo se existir

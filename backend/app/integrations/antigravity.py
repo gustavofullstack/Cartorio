@@ -163,7 +163,9 @@ async def chat(
         )
 
     # Model selection
-    selected_model = config.planning_model if use_planning_mode else (model or config.default_model)
+    selected_model = (
+        config.planning_model if use_planning_mode else (model or config.default_model)
+    )
     if selected_model not in config.available_models:
         logger.warning(
             "Antigravity: model %s nao disponivel, fallback para %s",
@@ -196,7 +198,9 @@ async def chat(
 
     start = time.time()
     try:
-        async with httpx.AsyncClient(timeout=timeout_seconds or config.timeout_seconds) as client:
+        async with httpx.AsyncClient(
+            timeout=timeout_seconds or config.timeout_seconds
+        ) as client:
             response = await client.post(url, json=payload, headers=headers)
     except httpx.TimeoutException as e:
         raise ChatError(
