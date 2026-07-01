@@ -92,7 +92,10 @@ def test_webhook_evolution_sem_pii(client):
         "usage": {"prompt_tokens": 10, "completion_tokens": 8},
     }
 
-    with patch("httpx.AsyncClient.post", new=AsyncMock(return_value=mock_response)):
+    with (
+        patch("httpx.AsyncClient.post", new=AsyncMock(return_value=mock_response)),
+        patch("app.config.settings.opencode_go_api_key", "fake-key"),
+    ):
         payload = {
             "message": {"text": "Ola, preciso de uma certidao"},
             "sender": "user123",
