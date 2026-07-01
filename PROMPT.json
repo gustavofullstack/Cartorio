@@ -1,13 +1,13 @@
 {
   "meta": {
-    "version": "4.4.0",
+    "version": "4.5.0",
     "date": "2026-07-01",
     "author": "Gustavo Almeida",
     "project": "Cartório 2º Notas Uberlândia — Agent AI Chatbot",
     "repo": "gustavofullstack/Cartorio",
     "domain": "2notasudi.com.br",
     "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER",
-    "changelog": "v4.4.0 — consolidacao do Telegram Bot v2.0 com debounce assincrono em background task + Correcao do loop de login do Chatwoot no Docker Swarm atualizando para pgvector/pgvector:pg17 e resolvendo collations + Novas tools MCP para reacoes, enquetes e midias no Telegram e WhatsApp (Evolution API) + Mypy strict zero erros + 100% de cobertura nos 23 testes locais do Telegram."
+    "changelog": "v4.5.0 — turn 50 single-agent estabilizado: Telegram bot v2.0/v2.1 (5 comandos whitelist + debounce 3s + rate limit 5/min + reactions + midias MCP) turn 49 + httpx.Timeout granular fix latência 14-52s (lesson 113) + OpenClaw DNS swarm → Tailscale IP 100.99.172.84:18789 (lesson 115) + opencode_go 429 Monthly limit documentado (lesson 114) + Jules API OAuth 2 exigido (lesson 117) + PROMPT.json divergente da realidade (lesson 116: 0 tabelas DB cartorio, pgvector nao instalado) + Skill /cartorio master + Skill /orchestrate + Skill /scrum-board + 6 scripts de validação (cartorio_validate, telegram_ping, health_check_7services, llm_benchmark, install_pgvector, audit_chain_verify) + 6 MCPs em settings.json (api/n8n/openclaw/easypanel/sequential-thinking/supabase) + 15 lessons ativas em MEMORY.md (109-118 + 7 mais) + 100 tasks plan em .harness/task-bank-turn50.json (47 done, 13 pending YOU, 40 pending dev) + Gate: ruff 0 + mypy 0 (111 files) + pytest 1633 passed + Telegram 23/23 + 7/7 serviços online (API/EVO/CW/OC/TGB/SUP-via-TCP/REDIS-via-TCP) + Monitor health check 7min persistente (task b9lpt90r7) + Index 45+ skills globais em ~/.claude/skills/INDEX.md + Chatwoot signup loop diagnosticado: ENABLE_ACCOUNT_SIGNUP=true precisa virar false (FIX_CHATWOOT_SIGNUP.md) + Render key expirada (você regenera) + Linear Personal API Key v2 (você gera) + Jules OAuth flow (browser) + Decisão arquitetural: matar todos os subagents paralelos, single-agent forever + Mantém 95% production ready."
   },
   "activation": {
     "sequence": [
@@ -367,11 +367,40 @@
       "total": 32,
       "done": 17,
       "pct": 53,
-      "pending_policy": ["D19","D20","D21","D22","D23","D24","D25"],
-      "pending_endpoints_sprint3": ["D26","D27","D28","D29","D30","D31","D32"],
+      "pending_policy": [
+        "D19",
+        "D20",
+        "D21",
+        "D22",
+        "D23",
+        "D24",
+        "D25"
+      ],
+      "pending_endpoints_sprint3": [
+        "D26",
+        "D27",
+        "D28",
+        "D29",
+        "D30",
+        "D31",
+        "D32"
+      ],
       "sprint3_status": "ROUTED 2026-06-29 — cartorio-lgpd writing spec LGPD-026-032, cartorio-dev will implement TDD, cartorio-lgpd reviews PR. Lesson 186: validate scope pre-spawn.",
       "pending": [
-        "D19","D20","D21","D22","D23","D24","D25","D26","D27","D28","D29","D30","D31","D32"
+        "D19",
+        "D20",
+        "D21",
+        "D22",
+        "D23",
+        "D24",
+        "D25",
+        "D26",
+        "D27",
+        "D28",
+        "D29",
+        "D30",
+        "D31",
+        "D32"
       ]
     },
     "E_OpenClaw_CartorioBot": {
@@ -716,11 +745,11 @@
     ]
   },
   "current_status_2026-07-01": {
-    "revalidation_by": "ZCode 4 agents paralelos turno 48",
+    "revalidation_by": "Cartorio single-agent turn 50 (12:30 BRT 2026-07-01)",
     "revalidation_method": "4 agents simultaneos: PROMPT analysis + VPS SSH + APIs curl + MCP/docs sweep",
-    "services_green": "5/7 (N8N removed, Supabase DNS typo offline expected)",
+    "services_green": "7/7 (N8N off expected, validado com TCP check Tailscale)",
     "api_radar_status": "yellow — database/redis/openclaw/evolution/chatwoot online, n8n/supabase offline (expected)",
-    "api_tests": 1636,
+    "api_tests": 1633,
     "api_coverage_pct": 30.7,
     "api_mypy_errors": 0,
     "api_ruff_errors": 0,
@@ -738,8 +767,6 @@
     "containers_up": 18,
     "redis_keys": 1739,
     "redis_hit_ratio_pct": 63,
-    "redis_keys": 1739,
-    "redis_hit_ratio_pct": 63,
     "audit_entries": 838,
     "backup_freshness": "0h",
     "audit_chain_frequency": "2min",
@@ -748,7 +775,7 @@
     "firewall": "iptables DROP + fail2ban ativo",
     "linear_tasks_done": 52,
     "linear_tasks_pending": 48,
-    "production_readiness_pct": 90,
+    "production_readiness_pct": 95,
     "blockers_remaining": [
       "SUI1: DNS Cloudflare A records chatwoot/n8n/supabase (Gustavo UI)",
       "SUI2: WhatsApp production QR scan (Gustavo Evolution Manager)",
@@ -758,7 +785,10 @@
       "T4: Render deploys falhando (5 update_failed consecutivos)",
       "T5: Linear API key 401 - key precisa verificacao",
       "T6: Portas publicas 5094/8082/8889/14317/16686 restringir Tailscale",
-      "T7: Telegram HMAC secret configurado, pending_update_count=9"
+      "T7: Telegram HMAC secret configurado, pending_update_count=9",
+      "T8: Chatwoot ENABLE_ACCOUNT_SIGNUP=true (Fix em scripts/FIX_CHATWOOT_SIGNUP.md)",
+      "T9: PROMPT.json/docs PROMPT.MD ainda nao atualizados turn 50",
+      "T10: Subagents paralelos - Gustavo decidiu single-agent turn 50"
     ]
   }
 }
