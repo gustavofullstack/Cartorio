@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import datetime
 import hashlib
-import hmac
 import json
+import hmac
 import os
 import time
 from typing import Annotated, Any, cast
@@ -3580,7 +3580,7 @@ async def get_protocolos_recentes_concluidos(
 ) -> dict:
     """Endpoint usado pelo N8N workflow #25 (protocolo concluido -> PDF WhatsApp)."""
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.cartorio_api_key):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
@@ -3868,7 +3868,7 @@ async def admin_validate_n8n_wfs(request: Request) -> dict:
     from app.services.n8n_workflow_validator import validate_all
 
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.cartorio_api_key):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
@@ -3972,7 +3972,7 @@ async def admin_lgpd_relatorio_anual(
     from app.services.lgpd_relatorio import gerar_relatorio_anual, render_markdown
 
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.cartorio_api_key):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
