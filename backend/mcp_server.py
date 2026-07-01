@@ -350,6 +350,107 @@ async def cartorio_saudacao() -> dict:
 # ============================================================================
 
 
+# ============================================================================
+# Tools de Interação Rica (Telegram & WhatsApp - Evolution API)
+# ============================================================================
+
+
+@mcp.tool(
+    name="cartorio_enviar_whatsapp_reaction",
+    description="Envia uma reação com emoji (ex: 👍, ❤️) para uma mensagem específica no WhatsApp do cliente.",
+)
+async def cartorio_enviar_whatsapp_reaction(number: str, message_id: str, emoji: str) -> dict:
+    """Envia uma reação no WhatsApp do cliente."""
+    from app.services.notificacao import NotificationService
+
+    success = await NotificationService.enviar_whatsapp_reaction(number, message_id, emoji)
+    return {"sucesso": success}
+
+
+@mcp.tool(
+    name="cartorio_enviar_whatsapp_poll",
+    description="Envia uma enquete com opções para o WhatsApp do cliente.",
+)
+async def cartorio_enviar_whatsapp_poll(number: str, question: str, options: list[str]) -> dict:
+    """Envia uma enquete no WhatsApp do cliente."""
+    from app.services.notificacao import NotificationService
+
+    success = await NotificationService.enviar_whatsapp_poll(number, question, options)
+    return {"sucesso": success}
+
+
+@mcp.tool(
+    name="cartorio_enviar_whatsapp_media",
+    description="Envia imagem ou documento (PDF/doc) para o WhatsApp do cliente.",
+)
+async def cartorio_enviar_whatsapp_media(
+    number: str, media_url: str, mediatype: str, filename: str, caption: str | None = None
+) -> dict:
+    """Envia mídia no WhatsApp do cliente. mediatype deve ser 'image' ou 'document'."""
+    from app.services.notificacao import NotificationService
+
+    success = await NotificationService.enviar_whatsapp_media(
+        number, media_url, mediatype, filename, caption
+    )
+    return {"sucesso": success}
+
+
+@mcp.tool(
+    name="cartorio_enviar_telegram_reaction",
+    description="Envia uma reação com emoji (ex: 👍, 👀) para uma mensagem do cliente no Telegram.",
+)
+async def cartorio_enviar_telegram_reaction(chat_id: int, message_id: int, emoji: str) -> dict:
+    """Envia uma reação no Telegram do cliente."""
+    from app.api.v1.telegram import _react
+
+    emoji_key = "thumbsup"
+    for k, v in {
+        "thumbsup": "👍",
+        "heart": "❤️",
+        "smile": "😊",
+        "eyes": "👀",
+        "check": "✅",
+        "cross": "❌",
+    }.items():
+        if emoji == v or emoji == k:
+            emoji_key = k
+            break
+    try:
+        await _react(chat_id, message_id, emoji_key)
+        return {"sucesso": True}
+    except Exception as e:
+        return {"sucesso": False, "erro": str(e)}
+
+
+@mcp.tool(
+    name="cartorio_enviar_telegram_poll",
+    description="Envia uma enquete de múltipla escolha para o chat do cliente no Telegram.",
+)
+async def cartorio_enviar_telegram_poll(chat_id: int, question: str, options: list[str]) -> dict:
+    """Envia uma enquete no Telegram do cliente."""
+    from app.api.v1.telegram import _send_poll
+
+    success = await _send_poll(chat_id, question, options)
+    return {"sucesso": success}
+
+
+@mcp.tool(
+    name="cartorio_enviar_telegram_media",
+    description="Envia imagem ou documento (PDF) para o chat do cliente no Telegram.",
+)
+async def cartorio_enviar_telegram_media(
+    chat_id: int, media_url: str, mediatype: str, filename: str, caption: str | None = None
+) -> dict:
+    """Envia mídia no Telegram do cliente. mediatype deve ser 'image' ou 'document'."""
+    from app.api.v1.telegram import _send_photo, _send_document
+
+    if mediatype == "image":
+        success = await _send_photo(chat_id, media_url, caption)
+    else:
+        success = await _send_document(chat_id, media_url, filename, caption)
+    return {"sucesso": success}
+
+
 @mcp.tool(
     name="super_server_info",
     description="Meta info do MCP server (versao, contagem de tools, etc).",

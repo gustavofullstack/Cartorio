@@ -47,10 +47,10 @@ _OPENAI_COMPAT_PROVIDERS = frozenset(
 # Aliases: nomes alternativos que roteiam para providers reais (2026-07-01 turn 46).
 # Evita CONFIG_ERROR quando algum caller passa nome "amigavel" (ex: "minimax").
 _PROVIDER_ALIASES: dict[str, str] = {
-    "minimax": "opencode_go",       # VPS aponta OPENCODE_GO_BASE_URL=https://api.minimax.io/v1
-    "minimax-m3": "opencode_go",    # compat: nome antigo (lowercase)
-    "MiniMax-M3": "opencode_go",    # compat: case-preserved (provider real name on VPS)
-    "antigravity": "openclaw",      # rota alternativa se agent vier com nome errado
+    "minimax": "opencode_go",  # VPS aponta OPENCODE_GO_BASE_URL=https://api.minimax.io/v1
+    "minimax-m3": "opencode_go",  # compat: nome antigo (lowercase)
+    "MiniMax-M3": "opencode_go",  # compat: case-preserved (provider real name on VPS)
+    "antigravity": "openclaw",  # rota alternativa se agent vier com nome errado
 }
 
 

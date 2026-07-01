@@ -7,9 +7,9 @@ LGPD compliance: NUNCA envia PII sem consentimento explícito.
 """
 
 from __future__ import annotations
-
 import enum
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -19,6 +19,31 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.models.cliente import Cliente
 from app.services.audit import AuditService
+
+
+def _strip_emojis(text: str) -> str:
+    """Remove emojis de textos, deixando apenas caracteres normais."""
+    if not text:
+        return text
+    pattern = re.compile(
+        "["
+        "\U0001f600-\U0001f64f"
+        "\U0001f300-\U0001f5ff"
+        "\U0001f680-\U0001f6ff"
+        "\U0001f1e0-\U0001f1ff"
+        "\u2700-\u27bf"
+        "\u2600-\u26ff"
+        "\u200d"
+        "\ufe0f"
+        "\U0001f900-\U0001f9ff"
+        "\U0001fa70-\U0001faff"
+        "]+",
+        re.UNICODE,
+    )
+    cleaned = pattern.sub("", text)
+    cleaned = re.sub(r"[\u2600-\u27BF]", "", cleaned)
+    cleaned = re.sub(r" +", " ", cleaned)
+    return cleaned.strip()
 
 
 _log = logging.getLogger(__name__)
@@ -139,13 +164,14 @@ class NotificationService:
             _log.error("TELEGRAM_BOT_TOKEN não configurado")
             return False
 
+        cleaned_msg = _strip_emojis(mensagem)
         url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
 
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.post(
                     url,
-                    json={"chat_id": chat_id, "text": mensagem, "parse_mode": "HTML"},
+                    json={"chat_id": chat_id, "text": cleaned_msg, "parse_mode": "HTML"},
                 )
                 return response.status_code == 200
         except Exception as e:
@@ -159,6 +185,7 @@ class NotificationService:
             _log.error("EVOLUTION_API_KEY não configurado")
             return False
 
+        cleaned_msg = _strip_emojis(mensagem)
         url = (
             f"{settings.evolution_base_url.rstrip('/')}/message/sendText/"
             f"{settings.evolution_instance}"
@@ -169,11 +196,92 @@ class NotificationService:
                 response = await client.post(
                     url,
                     headers={"apikey": settings.evolution_api_key},
-                    json={"number": number, "text": mensagem},
+                    json={"number": number, "text": cleaned_msg},
                 )
                 return response.status_code == 200
         except Exception as e:
             _log.exception("Falha ao enviar WhatsApp: %s", e)
+            return False
+
+    @staticmethod
+    async def enviar_whatsapp_reaction(number: str, message_id: str, emoji: str) -> bool:
+        """Envia reação a uma mensagem do WhatsApp via Evolution API."""
+        if not settings.evolution_api_key:
+            _log.error("EVOLUTION_API_KEY não configurado")
+            return False
+        url = f"{settings.evolution_base_url.rstrip('/')}/message/sendReaction/{settings.evolution_instance}"
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    url,
+                    headers={"apikey": settings.evolution_api_key},
+                    json={
+                        "number": number,
+                        "reaction": emoji,
+                        "key": {
+                            "remoteJid": f"{number}@s.whatsapp.net",
+                            "fromMe": False,
+                            "id": message_id,
+                        },
+                    },
+                )
+                return response.status_code == 200
+        except Exception as e:
+            _log.exception("Falha ao enviar WhatsApp reaction: %s", e)
+            return False
+
+    @staticmethod
+    async def enviar_whatsapp_poll(number: str, question: str, options: list[str]) -> bool:
+        """Envia enquete no WhatsApp via Evolution API."""
+        if not settings.evolution_api_key:
+            _log.error("EVOLUTION_API_KEY não configurado")
+            return False
+        url = f"{settings.evolution_base_url.rstrip('/')}/message/sendPoll/{settings.evolution_instance}"
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    url,
+                    headers={"apikey": settings.evolution_api_key},
+                    json={
+                        "number": number,
+                        "pollName": _strip_emojis(question),
+                        "options": [_strip_emojis(o) for o in options],
+                        "selectableOptionsCount": 1,
+                    },
+                )
+                return response.status_code == 200
+        except Exception as e:
+            _log.exception("Falha ao enviar WhatsApp poll: %s", e)
+            return False
+
+    @staticmethod
+    async def enviar_whatsapp_media(
+        number: str, media_url: str, mediatype: str, filename: str, caption: str | None = None
+    ) -> bool:
+        """Envia mídia (image/document) no WhatsApp via Evolution API."""
+        if not settings.evolution_api_key:
+            _log.error("EVOLUTION_API_KEY não configurado")
+            return False
+        url = f"{settings.evolution_base_url.rstrip('/')}/message/sendMedia/{settings.evolution_instance}"
+        try:
+            media_msg: dict[str, Any] = {
+                "mediatype": mediatype,
+                "fileName": filename,
+                "media": media_url,
+            }
+            if caption:
+                media_msg["caption"] = _strip_emojis(caption)
+            payload = {
+                "number": number,
+                "mediaMessage": media_msg,
+            }
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.post(
+                    url, headers={"apikey": settings.evolution_api_key}, json=payload
+                )
+                return response.status_code == 200
+        except Exception as e:
+            _log.exception("Falha ao enviar WhatsApp media: %s", e)
             return False
 
     @staticmethod

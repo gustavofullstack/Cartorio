@@ -72,9 +72,7 @@ def scan_file(path: Path) -> list[tuple[int, str, str]]:
 
     # 1) Multi-line: os.environ.get(KEY, "literal") com comment opt-out
     #    Escaneamos bloco-a-bloco removendo linhas com opt-out.
-    text_no_optout = "\n".join(
-        line for line in content.splitlines() if OPTOUT_MARKER not in line
-    )
+    text_no_optout = "\n".join(line for line in content.splitlines() if OPTOUT_MARKER not in line)
     if has_fallback_pattern(text_no_optout):
         # Encontra pelo menos uma linha com violacao real para reportar
         for lineno, line in enumerate(content.splitlines(), 1):
@@ -87,7 +85,9 @@ def scan_file(path: Path) -> list[tuple[int, str, str]]:
             ):
                 if PROVIDER_LITERAL.search(
                     # tenta match ate na mesma linha + linha seguinte
-                    line + " " + (content.splitlines()[lineno] if lineno < len(content.splitlines()) else "")
+                    line
+                    + " "
+                    + (content.splitlines()[lineno] if lineno < len(content.splitlines()) else "")
                 ):
                     violations.append((lineno, "ENV_FALLBACK", line.strip()))
 

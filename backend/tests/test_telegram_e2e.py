@@ -103,7 +103,7 @@ class TestTelegramE2E:
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._send_telegram_message",
+                "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
         ):
@@ -115,7 +115,7 @@ class TestTelegramE2E:
         assert data["response_sent"] is True
         mock_send.assert_called_once()
         sent_text = mock_send.call_args[0][1]
-        assert "Cartório 2º Ofício" in sent_text
+        assert "Cartorio 2o Oficio" in sent_text
         assert "/agendar" in sent_text
 
     def test_e2e_with_pii_scrub(self, client: TestClient) -> None:
@@ -135,7 +135,7 @@ class TestTelegramE2E:
                 "app.api.v1.telegram._call_fast_llm",
                 new=AsyncMock(return_value="Ok"),
             ) as mock_llm,
-            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)),
+            patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -157,7 +157,7 @@ class TestTelegramE2E:
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
-            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)),
+            patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -186,7 +186,7 @@ class TestTelegramE2E:
                 new=AsyncMock(return_value=""),
             ),
             patch(
-                "app.api.v1.telegram._send_telegram_message",
+                "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
         ):
@@ -222,7 +222,7 @@ class TestTelegramE2E:
                 new=AsyncMock(return_value=llm_response),
             ),
             patch(
-                "app.api.v1.telegram._send_telegram_message",
+                "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
         ):
@@ -243,7 +243,7 @@ class TestTelegramE2E:
                 "app.api.v1.telegram._call_fast_llm",
                 new=AsyncMock(),
             ) as mock_llm,
-            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)),
+            patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=telegram_update_start)
 
@@ -268,7 +268,7 @@ class TestTelegramE2E:
                 "app.api.v1.telegram._call_fast_llm",
                 new=AsyncMock(return_value="Horarios: seg-sex 9h-17h"),
             ) as mock_llm,
-            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)),
+            patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 

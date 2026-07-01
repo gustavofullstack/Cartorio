@@ -53,6 +53,18 @@ class RedisBus:
         self._url = redis_url or settings.redis_url
         self._client: redis_async.Redis | None = None
 
+    @property
+    def client(self) -> redis_async.Redis:
+        """Acessa o cliente Redis de forma síncrona (lazy-loaded)."""
+        if self._client is None:
+            self._client = redis_async.from_url(
+                self._url,
+                socket_timeout=2.0,
+                socket_connect_timeout=2.0,
+                decode_responses=True,
+            )
+        return self._client
+
     async def _get_client(self) -> redis_async.Redis:
         """Lazy connect. Falha rapida se redis_url nao setado."""
         if self._client is None:
