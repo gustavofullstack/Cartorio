@@ -33,7 +33,7 @@ flowchart LR
 
 **Sistema** expõe:
 - 50+ endpoints REST (`/api/v1/*`)
-- 4 MCP tools (protocolo, atendimento, emolumento, audit)
+- 10 MCP tools (protocolo, atendimento, emolumento, audit, reacoes, enquetes, midias)
 - 16 N8N workflows (atendimento, handoff, follow-up)
 - 6 webhooks (Evolution, Chatwoot, Telegram)
 
@@ -99,7 +99,7 @@ flowchart TB
 | **cartorio_chatwoot** | chat.2notasudi.com.br | Chatwoot 3.x | CRM + handoff humano |
 | **cartorio_chatwoot-sidekiq** | (internal) | Sidekiq | Background jobs Chatwoot |
 | **cartorio_redis** | (internal) | Redis 8 | Cache + idempotência + locks |
-| **cartorio_supabase** | supbase.2notasudi.com.br | Supabase self-hosted | Auth + DB + Storage + Realtime |
+| **cartorio_supabase** | supbase.2notasudi.com.br | pgvector/pgvector:pg17 | Postgres central + pgvector (134 tabelas core + Chatwoot + RLS) |
 | **easypanel** | easypanel.2notasudi.com.br | EasyPanel | Deploy + gestão |
 
 ---
@@ -246,6 +246,16 @@ sequenceDiagram
 - Supabase gerencia schemas separados
 - Single backend, multi-tenant white-label
 
+### 6. Debounce assíncrono em bursts de mensagens
+- Evita estouro de requisições paralelas (rate limit e timeout) em bursts de mensagens consecutivas enviadas pelo mesmo cliente.
+- FastAPI `BackgroundTasks` gerencia a fila assincronizada em Redis de forma imediata (`200 OK` HTTP).
+- Buffer dinâmico de 2.5s consolida múltiplos inputs num único resumo processado por LLM, otimizando o consumo de tokens e a experiência do usuário.
+
+### 7. Banco de dados Supabase Postgres + pgvector
+- O banco de dados centralizado `cartorio_supabase` foi atualizado para `pgvector/pgvector:pg17`.
+- Habilitada a extensão `vector` para busca semântica em base de dados e resolvida incompatibilidade glibc com refresh de collation (`template1` e `chatwoot`).
+- Solucionado o restart loop de containers Chatwoot limitando a memória do serviço do Docker Swarm para 1GB.
+
 ---
 
 ## Princípios arquiteturais (não negociáveis)
@@ -282,4 +292,4 @@ Tempo total esperado: < 2s. Com cache Redis: < 200ms.
 
 ---
 
-Modified by ZCode/Mavis + Gustavo Almeida — 2026-06-24
+Modified by Gustavo Almeida — 2026-07-01
