@@ -81,13 +81,16 @@
     "lesson-109: N8N /mcp-server/http 401 (token/header quebrado)",
     "lesson-110: Chatwoot 4.x + AI Agents SDK precisa pgvector (causa crashloop)",
     "lesson-111: Telegram parse_mode=HTML quebra com tags think/reasoning do LLM",
-    "lesson-112: MiniMax-M3 blip (timeout/parse) → retry 2x com backoff 2s"
+    "lesson-112: MiniMax-M3 blip (timeout/parse) → retry 2x com backoff 2s",
+    "lesson-113: Telegram webhook latency 14-52s — httpx timeout cumulativo; fix httpx.Timeout granular (commit 1902ffe)",
+    "lesson-114: opencode_go 429 Monthly limit (PROMPT.json T2)",
+    "lesson-115: OpenClaw DNS swarm-internal — usar Tailscale IP 100.99.172.84:18789"
   ],
   "next_priorities": [
-    "🔴 Ativar /loop health check dos 7 serviços (cron 7min)",
-    "🟡 Validar Telegram com galera do cartório (HOJE)",
-    "🟡 Religar N8N + validar 35 workflows",
+    "🔴 Validar Telegram com galera do cartório (HOJE)",
+    "🟡 Religar N8N + validar 35 workflows (SUI2 Gustavo_Cloudflare bloqueia)",
+    "🟡 Gustavo regenerar Render API key (regra no_key_rotation)",
     "🟢 Sprint retro + lessons loop"
   ],
-  "last_updated_iso": "2026-07-01T10:50:00-03:00"
+  "last_updated_iso": "2026-07-01T11:18:00-03:00"
 }
