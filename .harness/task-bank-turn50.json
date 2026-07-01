@@ -71,7 +71,7 @@
     {"id": "T55", "squad": "BRAIN", "title": "BRAIN8 API endpoints /api/v1/brain/", "priority": "P2", "owner": "cartorio-dev", "status": "in_progress"},
 
     {"id": "T56", "squad": "S0", "title": "OpenClaw context 1M (ja esta 1M)", "priority": "P0", "owner": "cartorio-dev", "status": "done", "lesson": "115"},
-    {"id": "T57", "squad": "E", "title": "E08 OpenClaw thinking adaptive", "priority": "P1", "owner": "cartorio-dev", "status": "pending"},
+    {"id": "T57", "squad": "E", "title": "E08 OpenClaw thinking adaptive", "priority": "P1", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01", "note": "working tree (no commit per decisão B turno 53): llm_thinking_mode + opencode_go_thinking_mode (Literal disabled/enabled/adaptive), 11 testes em test_thinking_mode.py, pytest 1643 passed, ruff+mypy OK"},
     {"id": "T58", "squad": "E", "title": "E07 OpenClaw new key update", "priority": "P1", "owner": "cartorio-dev", "status": "done", "note": "key atualizada agent.json"},
 
     {"id": "T59", "squad": "S0", "title": "Chatwoot admin admin@2notasudi.com.br criado", "priority": "P0", "owner": "cartorio-n8n", "status": "done"},
