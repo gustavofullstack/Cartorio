@@ -32,10 +32,10 @@ from app.integrations.opencode_go import (
     ChatError,
     ChatErrorKind,
     ChatResponse,
-    _hash_payload,
     _audit_log_sync,
-    _scrub_messages,
     _check_rate_limit,
+    _hash_payload,
+    _scrub_messages,
 )
 
 
@@ -89,7 +89,7 @@ async def chat(
     scrubbed_messages, pii_redacted_count = _scrub_messages(messages)
 
     # ---- Monta request ----
-    url = f"{target_base_url.rstrip('/')}/v1/chat/completions"
+    url = f"{target_base_url.rstrip('/')}/v1/chat"
     headers = {
         "Authorization": f"Bearer {target_api_key}",
         "Content-Type": "application/json",
