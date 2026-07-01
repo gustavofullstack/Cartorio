@@ -1,0 +1,11 @@
+{
+  "$schema": "https://zed.dev/schema/tasks.json",
+  "tasks": [
+    { "label": "🧪 test",  "command": "npm run test  --workspaces --if-present", "reveal": "always" },
+    { "label": "🔍 lint",  "command": "npm run lint  --workspaces --if-present", "reveal": "always" },
+    { "label": "🏗 build", "command": "npm run build --workspaces --if-present", "reveal": "always" },
+    { "label": "🚀 dev",   "command": "npm run dev --workspaces --if-present",  "reveal": "always", "use_new_terminal": true },
+    { "label": "📐 typecheck","command": "npm run typecheck --workspaces --if-present", "reveal": "always" },
+    { "label": "🧹 format","command": "npm run format --workspaces --if-present", "reveal": "always" }
+  ]
+}
