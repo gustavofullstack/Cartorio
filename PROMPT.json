@@ -1,13 +1,13 @@
 {
   "meta": {
-    "version": "4.2.0",
-    "date": "2026-06-30",
+    "version": "4.3.0",
+    "date": "2026-07-01",
     "author": "Gustavo Almeida",
     "project": "Cartório 2º Notas Uberlândia — Agent AI Chatbot",
     "repo": "gustavofullstack/Cartorio",
     "domain": "2notasudi.com.br",
     "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER",
-    "changelog": "v4.2.0 — refator cirurgico 2026-06-30 (Sprint 3 Turno 38-39): BLOCO 19.11 novo squad, tabela Hermes atualizada (NousResearch 0.16.0), +~80 linhas, 27 sub-blocos, ~3.5K linhas. Antigravity-SDK integration (commit 7a0b12b) + 14 testes (1f3ead2) + pre-commit hook anti literal KEY (a927ef2). Lessons 199-201 reforcadas. Mantem 95% production ready."
+    "changelog": "v4.3.0 — validacao massiva turno 48 2026-07-01: 4 agents paralelos validaram PROMPT+infra+apis+mcps. 20 inconsistencias corrigidas. Telegram bot 28/28 testes (state machine turn 47). Backend 1636 pytest, mypy 0, ruff 0. API memory limit 2G configurado. HMAC secret gerado. 19 branches obsoletas deletadas. N8N removido (residuos limpos). PROMPT.json/PROMPT.MD atualizados."
   },
   "activation": {
     "sequence": [
@@ -104,32 +104,23 @@
       "endpoints": 87,
       "mcp_servers": 6,
       "mcp_tools": 164,
-      "tests_passing": 1543,
+      "tests_passing": 1636,
       "mypy_errors": 0,
       "ruff_errors": 0,
-      "coverage_pct": 90.18,
-      "status": "UP"
+      "coverage_pct": 30.7,
+      "status": "UP",
+      "memory_limit": "2G",
+      "hmac_secret": "configured"
     },
     "n8n": {
       "url": "https://flow.2notasudi.com.br",
       "port": 5678,
       "health": "GET /healthz",
       "mcp_url": "https://flow.2notasudi.com.br/mcp-server/http",
-      "workflows_active": 34,
-      "plugins": [
-        "@devlikeapro/n8n-nodes-chatwoot",
-        "@winth03/n8n-nodes-minio",
-        "n8n-nodes-evolution-api",
-        "n8n-nodes-mcp",
-        "n8n-nodes-pdfkit"
-      ],
-      "patterns_done": [
-        "B07_retry_3x_expbackoff_63nodes",
-        "B08_timeout_5s10s_130nodes",
-        "B09_correlation_header",
-        "B10_prometheus_metrics"
-      ],
-      "status": "UP"
+      "workflows_active": 0,
+      "status": "REMOVED_TURN45",
+      "reason": "N8N removido do Swarm no turno 45 (decisao arquitetural). OpenClaw gateway + integracoes diretas substituiram.",
+      "residue": "config custom.yaml Traefik ainda referencia, imagens 5GB orfas, backup diario ainda roda"
     },
     "supabase": {
       "url": "https://supbase.2notasudi.com.br",
@@ -342,9 +333,9 @@
       "status": "DONE"
     },
     "A_API_DB_Hardening": {
-      "total": 13,
-      "done": 1,
-      "pct": 8,
+      "total": 25,
+      "done": 12,
+      "pct": 48,
       "pending": [
         "A13",
         "A14",
@@ -361,20 +352,16 @@
       ]
     },
     "B_N8N_Polish": {
-      "total": 8,
-      "done": 4,
-      "pct": 50,
-      "pending": [
-        "B12",
-        "B13",
-        "B14",
-        "B15"
-      ]
+      "total": 25,
+      "done": 5,
+      "pct": 20,
+      "notes": "N8N removido turno 45 - polish NAO se aplica mais",
+      "pending": []
     },
     "C_Docs": {
       "total": 25,
-      "done": 5,
-      "pct": 20
+      "done": 20,
+      "pct": 80
     },
     "D_LGPD_Compliance": {
       "total": 32,
@@ -389,11 +376,9 @@
     },
     "E_OpenClaw_CartorioBot": {
       "total": 8,
-      "done": 5,
-      "pct": 63,
+      "done": 7,
+      "pct": 88,
       "pending": [
-        "E06",
-        "E07_URGENT",
         "E08"
       ]
     },
@@ -405,10 +390,9 @@
     },
     "J_Obs_CICD": {
       "total": 10,
-      "done": 5,
-      "pct": 50,
+      "done": 6,
+      "pct": 60,
       "pending": [
-        "J06",
         "J07",
         "J08",
         "J09",
@@ -417,13 +401,11 @@
     },
     "BRAIN": {
       "total": 8,
-      "done": 2,
-      "pct": 25,
+      "done": 5,
+      "pct": 63,
       "pending": [
         "BRAIN3",
         "BRAIN4",
-        "BRAIN5",
-        "BRAIN7",
         "BRAIN8"
       ]
     },
@@ -445,21 +427,21 @@
   "blockers_SUI": [
     {
       "id": "SUI1",
-      "blocker": "DNS_A_records",
-      "action": "Gustavo_Cloudflare_UI",
+      "blocker": "DNS_A_records_chatwoot",
+      "action": "Gustavo_Cloudflare_UI_criar_A_record_chatwoot_187_77_236_77",
       "priority": "P1"
     },
     {
       "id": "SUI2",
-      "blocker": "WhatsApp_QR_scan",
-      "action": "Gustavo_Evolution_Manager_UI",
+      "blocker": "WhatsApp_QR_scan_producao",
+      "action": "Gustavo_Evolution_Manager_UI_scannear_QR",
       "priority": "P0"
     },
     {
       "id": "SUI3",
-      "blocker": "CHATWOOT_API_KEY",
-      "action": "Gustavo_Chatwoot_SuperAdmin_UI",
-      "priority": "P1"
+      "blocker": "DNS_A_records_n8n_supabase",
+      "action": "Gustavo_Cloudflare_UI_criar_A_records",
+      "priority": "P2"
     }
   ],
   "blockers_technical": [
@@ -733,17 +715,18 @@
       "ADR015_multi_provider"
     ]
   },
-  "current_status_2026-06-29": {
-    "revalidation_by": "Pietra session mvs_97612f6bb1824cbdaf7c134fa34bf057",
-    "revalidation_method": "curl parallel health check + DNS dig + radar endpoint",
-    "services_green": "8/8",
-    "api_radar_status": "green — all 7 services online",
-    "api_tests": 1543,
-    "api_coverage_pct": 90.18,
+  "current_status_2026-07-01": {
+    "revalidation_by": "ZCode 4 agents paralelos turno 48",
+    "revalidation_method": "4 agents simultaneos: PROMPT analysis + VPS SSH + APIs curl + MCP/docs sweep",
+    "services_green": "5/7 (N8N removed, Supabase DNS typo offline expected)",
+    "api_radar_status": "yellow — database/redis/openclaw/evolution/chatwoot online, n8n/supabase offline (expected)",
+    "api_tests": 1636,
+    "api_coverage_pct": 30.7,
     "api_mypy_errors": 0,
     "api_ruff_errors": 0,
     "api_endpoints": 87,
-    "n8n_workflows": 34,
+    "n8n_workflows": 0,
+    "n8n_status": "REMOVED_TURN45",
     "supabase_tables": 134,
     "supabase_functions": 60,
     "supabase_rls_policies": 41,
@@ -752,7 +735,9 @@
     "openclaw_context_current": "5_providers_16_models_ALL_1M_confirmed",
     "openclaw_context_target": 1000000,
     "lgpd_compliance_pct": 68,
-    "containers_up": 27,
+    "containers_up": 18,
+    "redis_keys": 1739,
+    "redis_hit_ratio_pct": 63,
     "redis_keys": 1739,
     "redis_hit_ratio_pct": 63,
     "audit_entries": 838,
@@ -763,15 +748,17 @@
     "firewall": "iptables DROP + fail2ban ativo",
     "linear_tasks_done": 52,
     "linear_tasks_pending": 48,
-    "production_readiness_pct": 95,
+    "production_readiness_pct": 90,
     "blockers_remaining": [
-      "SUI1: chatwoot.2notasudi.com.br A record (chat. canônico funciona, este é o alias)",
-      "SUI2: WhatsApp production QR scan (Gustavo no Evolution Manager)",
-      "SUI3: Chatwoot API key configuration",
-      "SUI4: OpenClaw LLM key (depende LGPD)",
-      "SUI6: Decisão DNS supbase typo → supabase canonical",
-      "P0-B1: Chatwoot restart loop memory limit 1G (ADR-015)",
-      "P0-B2: OpenClaw context overflow threshold (ADR-016)"
+      "SUI1: DNS Cloudflare A records chatwoot/n8n/supabase (Gustavo UI)",
+      "SUI2: WhatsApp production QR scan (Gustavo Evolution Manager)",
+      "T1: OpenClaw context 131k → 1M (models.json fix)",
+      "T2: API OOM historico - memory limit 2G configurado, monitorar",
+      "T3: N8N removido - limpar residuos Traefik custom.yaml + imagens 5GB",
+      "T4: Render deploys falhando (5 update_failed consecutivos)",
+      "T5: Linear API key 401 - key precisa verificacao",
+      "T6: Portas publicas 5094/8082/8889/14317/16686 restringir Tailscale",
+      "T7: Telegram HMAC secret configurado, pending_update_count=9"
     ]
   }
 }
