@@ -77,22 +77,28 @@ jq -r '.blockers_SUI[] | "  🔴 \(.id): \(.blocker) → \(.action) [\(.priority
 echo
 
 # ---- 8. Issues REAIS vs FALSOS POSITIVOS ----
-echo "## Issues REAIS vs FALSOS POSITIVOS (atualizado 2026-07-01 11:18)"
+echo "## Issues REAIS vs FALSOS POSITIVOS (atualizado 2026-07-01 12:22 BRT — turn 50)"
 echo "  ESPERADOS (não alarmar):"
 echo "    ⏸ N8N off — validado 2026-07-01"
-echo "    ⏸ SUP 404 Kong auth gate — design correto"
-echo "    ⏸ TGB 404 sem token — token em .env, bot validado E2E"
 echo "  FALSOS POSITIVOS RESOLVIDOS:"
 echo "    ✅ pgweb 0/1 — falso positivo (container Up 5min, Easypanel não sincroniza)"
 echo "    ✅ API 3 containers — falso positivo (só 1 ativo, outros Shutdown de tasks antigas)"
+echo "    ✅ SUP 404 Kong — RESOLVIDO (health_check agora usa TCP check via Tailscale 100.99.172.84:5094)"
+echo "    ✅ TGB 404 sem token — RESOLVIDO (token agora resolvido do backend/.env)"
+echo "    ✅ REDIS não checado — RESOLVIDO (TCP check via Tailscale 100.99.172.84:1001)"
 echo "  REAIS a corrigir (você):"
-echo "    🔴 Render key rnd_QP8GWTShurLmVGSp3H2e25pXsKti expirada — Gustavo regenerar em render.com (regra no_key_rotation)"
+echo "    🔴 Render key rnd_QP8GWTShurLmVGSp3H2e25pXsKti expirada — regenerar em render.com (regra no_key_rotation)"
 echo "    🟡 Linear API key — header não usa Bearer (enviar Authorization: lin_api_...)"
+echo "    🔴 Chatwoot signup loop — Easypanel UI: GOTRUE_DISABLE_SIGNUP=true"
 echo "  REAIS a corrigir (dev):"
-echo "    🔴 opencode_go 429 Monthly limit — LLM chain cai, comandos Telegram nativos OK (lesson 114)"
+echo "    🔴 opencode_go 429 Monthly limit — LLM chain cai mas comandos Telegram nativos OK (lesson 114)"
+echo "    🟡 WhatsApp production QR scan — Evolution Manager UI"
 echo "  RESOLVIDOS HOJE:"
 echo "    ✅ Telegram webhook latency 14-52s — fix httpx.Timeout granular (lesson 113, commit 1902ffe)"
+echo "    ✅ Telegram bot v2.0 — 5 comandos whitelist, debounce 3s, rate limit 5/min, reactions, sem emojis texto (commit c529b66, lesson 118)"
+echo "    ✅ Telegram bot v2.1 — debounce async, midias (sendPoll/sendPhoto/sendDocument), mypy strict (commit 9fa6169)"
 echo "    ✅ OpenClaw DNS swarm — MCP usa Tailscale IP 100.99.172.84:18789 (lesson 115)"
+echo "    ✅ Health check expandido — 7 serviços com TCP check (SUP/REDIS) + token Telegram resolvido"
 echo
 
 # ---- 9. Próximos passos ----
