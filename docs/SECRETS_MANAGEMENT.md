@@ -1,13 +1,47 @@
 # 🔐 Secrets Management — C10
 
 > **SQUAD C** | **Owner**: cartorio-zcode + cartorio-dev
-> **Data**: 2026-06-26
-> **Status**: ✅ DONE
+> **Data inicial**: 2026-06-26
+> **Última atualização**: 2026-07-01
+> **Status**: ✅ DONE (com addendum INC-2026-07-01-A abaixo)
 
 Política e procedimentos de gestão de credenciais, secrets e API keys do projeto Cartório 2º Notas Uberlândia.
 
 > ⚠️ **REGRA ABSOLUTA**: NUNCA rotacionar chaves (regra #1 do Super Prompt v4.0.0).
 > Apenas Gustavo e o agent têm acesso. Não há risco algum.
+
+---
+
+## 🚨 INC-2026-07-01-A — Vazamento de chave DeepSeek em chat (addendum)
+
+**Quando**: 2026-07-01 (turno atual).
+**O que aconteceu**: API key do DeepSeek foi colada em texto puro numa conversa com o agent (ZCode/Minimax-M3). A string passou a fazer parte do histórico de sessão, log do provedor de modelo e qualquer cache/snapshot correlacionado.
+**Status da chave**: **QUEIMADA** — tratada como pública a partir deste momento.
+**Ação obrigatória**:
+1. Gustavo deve revogar a chave no painel DeepSeek (https://platform.deepseek.com → API Keys → Delete).
+2. Gerar chave nova e **colar direto** em `/etc/easypanel/projects/cartorio/api/code/.env` (campo `OPENCODE_GO_API_KEY=`) **ou** no cofre MacBook (`~/.mavis/secrets/cartorio-global.env`).
+3. **Nunca** colar o valor em chat, email, ticket, comentário de PR, ou qualquer canal textual.
+4. Atualizar `.env` na VPS e reiniciar o serviço da API.
+
+**Lição L-2026-07-01-A**: credenciais em texto puro são equivalentes a credenciais públicas. Daqui pra frente, este agent:
+- **Aceita** apenas o **nome da variável** (`OPENCODE_GO_API_KEY`, `TELEGRAM_BOT_TOKEN`, etc.) e a **confirmação** de que foi colada no destino correto.
+- **Recusa** valores literais em qualquer canal.
+- **Recusa** combinações `email + senha`, `URL + token embutido`, e qualquer padrão onde credencial viaje junto com a mensagem.
+
+**Procedimento seguro de provisionar uma nova chave**:
+```bash
+# 1. No painel do provider (DeepSeek, OpenAI, Anthropic, etc), gerar a chave.
+# 2. Copiar para a área de transferência local. NUNCA print, NUNCA chat.
+# 3. Colar direto no destino via SSH Tailscale:
+ssh vps-cartorio
+nano /etc/easypanel/projects/cartorio/api/code/.env  # ou serviço específico
+# 4. chmod 600 /etc/easypanel/projects/cartorio/api/code/.env
+# 5. Reiniciar:
+docker service update --force cartorio_api
+# 6. Validar:
+curl -fsS https://api.2notasudi.com.br/health
+# 7. Reportar ao agent apenas: "OPENCODE_GO_API_KEY atualizada e validada".
+```
 
 ---
 
