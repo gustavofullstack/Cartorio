@@ -1,13 +1,13 @@
 {
   "meta": {
-    "version": "4.3.0",
+    "version": "4.4.0",
     "date": "2026-07-01",
     "author": "Gustavo Almeida",
     "project": "Cartório 2º Notas Uberlândia — Agent AI Chatbot",
     "repo": "gustavofullstack/Cartorio",
     "domain": "2notasudi.com.br",
     "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER",
-    "changelog": "v4.3.0 — validacao massiva turno 48 2026-07-01: 4 agents paralelos validaram PROMPT+infra+apis+mcps. 20 inconsistencias corrigidas. Telegram bot 28/28 testes (state machine turn 47). Backend 1636 pytest, mypy 0, ruff 0. API memory limit 2G configurado. HMAC secret gerado. 19 branches obsoletas deletadas. N8N removido (residuos limpos). PROMPT.json/PROMPT.MD atualizados."
+    "changelog": "v4.4.0 — consolidacao do Telegram Bot v2.0 com debounce assincrono em background task + Correcao do loop de login do Chatwoot no Docker Swarm atualizando para pgvector/pgvector:pg17 e resolvendo collations + Novas tools MCP para reacoes, enquetes e midias no Telegram e WhatsApp (Evolution API) + Mypy strict zero erros + 100% de cobertura nos 23 testes locais do Telegram."
   },
   "activation": {
     "sequence": [

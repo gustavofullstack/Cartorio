@@ -95,6 +95,16 @@ async def _answer_callback_query(callback_query_id: str) -> None:
         pass
 
 
+async def _send_typing(chat_id: int) -> bool:
+    url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendChatAction"
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.post(url, json={"chat_id": chat_id, "action": "typing"})
+            return resp.status_code == 200
+    except Exception:
+        return False
+
+
 async def _react(chat_id: int, message_id: int, reaction: str = "thumbsup") -> None:
     tg_reactions = {
         "thumbsup": "👍",
@@ -350,10 +360,10 @@ async def _handle_command(
         )
     if cmd == "/menu":
         await _set_state(bus, chat_id, STATE_IDLE)
-        return "Menu principal:", _menu_keyboard()
+        return "Cartorio 2o Oficio de Notas - Menu principal:", _menu_keyboard()
     if cmd == "/agendar":
         await _set_state(bus, chat_id, STATE_AGENDAR_SERVICO, {})
-        return "Selecione o servico desejado:", _servicos_keyboard()
+        return "Selecione o serviço desejado:", _servicos_keyboard()
     if cmd == "/protocolo":
         await _set_state(bus, chat_id, STATE_PROTOCOLO, {})
         return "Informe o numero do protocolo (ex: 2026-000123):", None
@@ -363,15 +373,36 @@ async def _handle_command(
             "Descreva brevemente sua questao. Um escrevente entrara em contato em ate 2 horas uteis.",
             None,
         )
+    if cmd == "/cancelar":
+        await _clear_state(bus, chat_id)
+        return "Operacao cancelada.", _menu_keyboard()
+    if cmd == "/lgpd":
+        return (
+            "Cartorio 2o Oficio de Notas - Politica de Privacidade\n\nNossos atendimentos estao em conformidade com a LGPD. Seus dados pessoais sao mascarados antes de qualquer processamento e mantidos de forma segura com logs de auditoria imutaveis. Para exercer seus direitos, entre em contato com nosso DPO pelo email dpo@2notasudi.com.br.",
+            _menu_keyboard(),
+        )
     return "", None
 
 
 async def _handle_callback(data: str, bus: Any, chat_id: int) -> tuple[str, list | None, bool]:
+    if data == "agendar":
+        data = "cmd:agendar"
+    elif data == "cancelar":
+        data = "cmd:menu"
+    elif data.startswith("serv:"):
+        try:
+            idx = int(data[5:]) - 1
+            keys = list(SERVICOS.keys())
+            if 0 <= idx < len(keys):
+                data = f"servico:{keys[idx]}"
+        except ValueError:
+            pass
+
     if data.startswith("cmd:"):
         c = data[4:]
         if c == "agendar":
             await _set_state(bus, chat_id, STATE_AGENDAR_SERVICO, {})
-            return "Selecione o servico:", _servicos_keyboard(), True
+            return "Selecione o serviço:", _servicos_keyboard(), True
         if c == "protocolo":
             await _set_state(bus, chat_id, STATE_PROTOCOLO, {})
             return "Informe o numero do protocolo:", None, True
@@ -625,11 +656,11 @@ async def _process_telegram_debounce(chat_id: int, db: Session) -> None:
     queue_key = f"tg:queue:{chat_id}"
     lock_key = f"tg:lock:{chat_id}"
     try:
-        pipe = bus.client.pipeline()
-        pipe.get(queue_key)
-        pipe.delete(queue_key)
-        pipe.delete(lock_key)
-        results = await pipe.execute()
+        async with bus.client.pipeline(transaction=True) as pipe:
+            await pipe.get(queue_key)
+            await pipe.delete(queue_key)
+            await pipe.delete(lock_key)
+            results = await pipe.execute()
         raw_queue = results[0]
         if not raw_queue:
             return
@@ -663,7 +694,9 @@ async def _process_telegram_debounce(chat_id: int, db: Session) -> None:
             keyboard = _menu_keyboard()
             await _clear_state(bus, chat_id)
         response_text = strip_emojis(scrub(response_text).text)
-        sent = await _send_message(chat_id, response_text, keyboard=keyboard)
+        sent = await _send_message(
+            chat_id, response_text, reply_markup={"inline_keyboard": keyboard} if keyboard else None
+        )
         if sent and msg_ids:
             await _react(chat_id, msg_ids[-1], "check")
         logger.info("TG background response chat=%s sent=%s", chat_id, sent)
@@ -700,21 +733,24 @@ async def telegram_webhook(
         if response_text:
             response_text = strip_emojis(response_text)
             await _react(chat_id, msg_id, "eyes")
-            sent = await _send_message(chat_id, response_text, keyboard=keyboard)
-            return {"status": "ok" if sent else "partial", "chat_id": chat_id}
+            markup = {"inline_keyboard": keyboard} if keyboard else None
+            sent = await _send_message(chat_id, response_text, reply_markup=markup)
+            return {"status": "ok" if sent else "partial", "chat_id": chat_id, "kind": "callback", "response_sent": sent}
     if text.startswith("/"):
         cmd = text.strip().split()[0].lower().split("@")[0]
-        if cmd not in {"/start", "/menu", "/humano", "/cancelar"}:
+        if cmd not in {"/start", "/menu", "/humano", "/cancelar", "/lgpd"}:
             await _react(chat_id, msg_id, "cross")
+            markup = {"inline_keyboard": _menu_keyboard()}
             sent = await _send_message(
-                chat_id, "Comando nao suportado. Use o menu de opcoes.", keyboard=_menu_keyboard()
+                chat_id, "Comando nao suportado. Use o menu de opcoes.", reply_markup=markup
             )
             return {"status": "ignored_command", "chat_id": chat_id}
         response_text, keyboard = await _handle_command(text, bus, chat_id, "")
         if response_text:
             response_text = strip_emojis(response_text)
-            sent = await _send_message(chat_id, response_text, keyboard=keyboard)
-            return {"status": "ok" if sent else "partial", "chat_id": chat_id}
+            markup = {"inline_keyboard": keyboard} if keyboard else None
+            sent = await _send_message(chat_id, response_text, reply_markup=markup)
+            return {"status": "ok" if sent else "partial", "chat_id": chat_id, "response_sent": sent}
 
     if not bus:
         if not await _check_rate_limit(bus, chat_id):
@@ -737,10 +773,11 @@ async def telegram_webhook(
             keyboard = _menu_keyboard()
             await _clear_state(bus, chat_id)
         response_text = strip_emojis(scrub(response_text).text)
-        sent = await _send_message(chat_id, response_text, keyboard=keyboard)
+        markup = {"inline_keyboard": keyboard} if keyboard else None
+        sent = await _send_message(chat_id, response_text, reply_markup=markup)
         if sent:
             await _react(chat_id, msg_id, "check")
-        return {"status": "ok" if sent else "partial", "chat_id": chat_id}
+        return {"status": "ok" if sent else "partial", "chat_id": chat_id, "response_sent": sent}
 
     lock_key = f"tg:lock:{chat_id}"
     await _enqueue_message(bus, chat_id, text_scrubbed, msg_id)
@@ -785,6 +822,7 @@ __all__ = ["router", "TELEGRAM_BOT_TOKEN"]
 # Compatibility aliases
 _send_telegram_action = _send_message
 _send_telegram_message = _send_message
+_set_reaction = _react  # legacy alias (tests + old code refs)
 
 # Aliases for test compatibility
 _send_telegram_action = _send_message

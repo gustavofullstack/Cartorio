@@ -1,6 +1,6 @@
 # 🧠 SUPER PROMPT — PROJETO CARTÓRIO 2º NOTAS UBERLÂNDIA
 # ═══════════════════════════════════════════════════════════════════════════════
-# VERSÃO: 4.2.0 | DATA: 2026-06-30 | AUTOR: Gustavo Almeida
+# VERSÃO: 4.4.0 | DATA: 2026-07-01 | AUTOR: Gustavo Almeida
 # PROJETO: Cartório 2º Notas Uberlândia — Agent AI Chatbot (Pietra Cartório)
 # REPOSITÓRIO: gustavofullstack/Cartorio
 # DOMÍNIO: 2notasudi.com.br
@@ -9,7 +9,7 @@
 
 > **LEIA ESTE DOCUMENTO ANTES DE QUALQUER AÇÃO.**
 > **NADA PODE SER ESQUECIDO OU IGNORADO.**
-> **ESTE É O DOCUMENTO VIVO DO PROJETO — ATUALIZADO EM 2026-06-30.**
+> **ESTE É O DOCUMENTO VIVO DO PROJETO — ATUALIZADO EM 2026-07-01.**
 
 ---
 

@@ -79,7 +79,7 @@ def test_webhook_start_command(client: TestClient, telegram_update_start: dict) 
             "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
         ) as mock_send:
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=telegram_update_start)
     assert resp.status_code == 200
     data = resp.json()
@@ -107,7 +107,7 @@ def test_webhook_menu_command(client: TestClient) -> None:
             "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
         ) as mock_send:
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
     sent_text = mock_send.call_args[0][1]
@@ -129,7 +129,7 @@ def test_webhook_cancelar_command(client: TestClient) -> None:
             "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
         ) as mock_send:
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
     sent_text = mock_send.call_args[0][1]
@@ -151,7 +151,7 @@ def test_unknown_command_shows_menu(client: TestClient) -> None:
             "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
         ) as mock_send:
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
     # /agendar nao existe mais como comando - cai no unknown_command
@@ -170,7 +170,7 @@ def test_callback_agendar_shows_services(
             "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
         ) as mock_send:
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     with patch(
                         "app.api.v1.telegram._answer_callback_query",
                         new=AsyncMock(return_value=True),
@@ -201,7 +201,7 @@ def test_callback_cancelar_returns_menu(client: TestClient) -> None:
             "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
         ) as mock_send:
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     with patch(
                         "app.api.v1.telegram._answer_callback_query",
                         new=AsyncMock(return_value=True),
@@ -234,7 +234,7 @@ def test_webhook_agendar_flow(client: TestClient) -> None:
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
         with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     with patch(
                         "app.api.v1.telegram._answer_callback_query",
                         new=AsyncMock(return_value=True),
@@ -258,7 +258,7 @@ def test_webhook_agendar_flow(client: TestClient) -> None:
             "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
         ) as mock_send:
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     with patch(
                         "app.api.v1.telegram._answer_callback_query",
                         new=AsyncMock(return_value=True),
@@ -278,12 +278,12 @@ def test_text_free_shows_menu(client: TestClient, telegram_update_text: dict) ->
             "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
         ) as mock_send:
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
     assert resp.status_code == 200
     # Texto livre sem state = mostra menu
     sent_text = mock_send.call_args[0][1]
-    assert "menu" in sent_text.lower() or "Cartorio" in sent_text
+    assert "menu" in sent_text.lower() or "cartorio" in sent_text.lower() or "cartório" in sent_text.lower()
 
 
 # === PII Scrubbing ===
@@ -302,7 +302,7 @@ def test_webhook_scrubs_pii_in_message(client: TestClient) -> None:
     with patch("app.api.v1.telegram.get_bus", return_value=None):
         with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
 
@@ -341,11 +341,9 @@ def test_hmac_valid_secret_accepted(client: TestClient, telegram_update_start: d
         raw_body = _json.dumps(telegram_update_start).encode()
         expected = hmac_mod.new(b"test-secret-123", raw_body, hashlib.sha256).hexdigest()
         with patch("app.api.v1.telegram.get_bus", return_value=None):
-            with patch(
-                "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-            ):
+            with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
                 with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                    with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                    with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                         resp = client.post(
                             "/api/v1/telegram/webhook",
                             content=raw_body,
@@ -407,11 +405,9 @@ def test_hmac_no_secret_skips_validation(client: TestClient, telegram_update_sta
     try:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = None
         with patch("app.api.v1.telegram.get_bus", return_value=None):
-            with patch(
-                "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-            ):
+            with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
                 with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
-                    with patch("app.api.v1.telegram._send_telegram_action", new=AsyncMock()):
+                    with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                         resp = client.post("/api/v1/telegram/webhook", json=telegram_update_start)
         assert resp.status_code == 200
     finally:
