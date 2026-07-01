@@ -57,7 +57,7 @@ import hashlib
 import json
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import httpx
 import redis
@@ -276,6 +276,7 @@ async def chat(
     redis_url: str | None = None,
     request_id: str | None = None,
     client_ip: str | None = None,
+    thinking_mode: Literal["disabled", "enabled", "adaptive"] = "disabled",
 ) -> ChatResponse:
     """Chama OpenCode-Go Chat Completions com LGPD compliance.
 
@@ -294,6 +295,11 @@ async def chat(
         session_id: ID da sessao para rate limit (ex: conversa WhatsApp).
         rate_limit_per_minute: Limite de chamadas/min/sessao. None = sem rate limit.
         redis_url: URL do Redis. Necessario se rate_limit_per_minute definido.
+        thinking_mode: T57 E08. Controla campo `thinking` no payload:
+                       - "disabled" (default): nao envia `thinking` no payload.
+                       - "enabled": envia `thinking={"type": "enabled"}` (force on).
+                       - "adaptive": envia `thinking={"type": "adaptive"}` (provider decide).
+                       DeepSeek-v4-flash + MiniMax-M3 suportam "adaptive" com 1M context.
 
     Returns:
         ChatResponse com content + metadata (tokens, latencia, pii_redacted_count).
@@ -354,11 +360,16 @@ async def chat(
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
-    payload = {
+    payload: dict[str, Any] = {
         "model": model,
         "messages": scrubbed_messages,  # SEMPRE scrubbed
         "temperature": temperature,
     }
+
+    # ---- Thinking mode (T57 E08) ----
+    # Apenas injeta `thinking` se mode != "disabled". Adaptive deixa provider decidir.
+    if thinking_mode != "disabled":
+        payload["thinking"] = {"type": thinking_mode}
 
     # ---- Executa com medicao de latencia ----
     start_time = time.time()
@@ -550,4 +561,5 @@ async def chat_with_settings(
         redis_url=settings.redis_url,
         request_id=request_id,
         client_ip=client_ip,
+        thinking_mode=settings.opencode_go_thinking_mode,
     )

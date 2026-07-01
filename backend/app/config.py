@@ -88,6 +88,10 @@ class Settings(BaseSettings):
     opencode_go_base_url: str = "https://opencode.ai/zen/v1"
     opencode_go_model: str = "deepseek-v4-flash-free"
     opencode_go_rate_limit_per_minute: Optional[int] = None
+    # Thinking mode (T57 E08) — controla `thinking` field no payload Chat Completions.
+    # Valores: "disabled" (sem thinking), "enabled" (force on), "adaptive" (provider decide — default).
+    # DeepSeek-v4-flash e MiniMax-M3 suportam "adaptive" com 1M context.
+    opencode_go_thinking_mode: Literal["disabled", "enabled", "adaptive"] = "adaptive"
 
     # Opencode-Free-1 (nemotron-3-ultra-free, 1M ctx) - Turno 37
     opencode_free_1_api_key: Optional[str] = None
@@ -146,6 +150,9 @@ class Settings(BaseSettings):
         "opencode_go,openrouter,groq,mistral,"
         "google_ai_studio,openclaw,jules,antigravity"
     )
+    # Thinking mode global (T57 E08) — default se provider-specific nao setar.
+    # "adaptive" deixa provider decidir quando usar thinking (recomendado p/ 1M ctx).
+    llm_thinking_mode: Literal["disabled", "enabled", "adaptive"] = "adaptive"
 
     # ========================================================================
     # Evolution API (WhatsApp)
