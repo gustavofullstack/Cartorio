@@ -238,26 +238,53 @@ async def _send_telegram_message(chat_id: int, text: str) -> None:
         chat_id: ID do chat Telegram
         text: texto a enviar (ja passou por PII scrub)
     """
+    # Sanitiza texto: remove tags nao suportadas pelo Telegram (think, etc)
+    safe_text = _sanitize_telegram_html(text)
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            url,
-            json={
-                "chat_id": chat_id,
-                "text": text,
-                "parse_mode": "HTML",
-            },
-        )
-        if resp.status_code != 200:
-            logger.error(
-                "Telegram API error: %d %s",
-                resp.status_code,
-                resp.text,
+        try:
+            resp = await client.post(
+                url,
+                json={
+                    "chat_id": chat_id,
+                    "text": safe_text,
+                    "parse_mode": "HTML",
+                },
             )
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Telegram API error: {resp.status_code}",
-            )
+            if resp.status_code != 200:
+                # LGPD/UX: log error mas NAO raise HTTPException.
+                # Telegram send failures (chat not found, etc) nao devem
+                # causar 502 (Telegram faria retry infinito).
+                logger.error(
+                    "Telegram API error: %d %s",
+                    resp.status_code,
+                    resp.text,
+                )
+                # Fallback: tentar sem parse_mode (texto plain)
+                try:
+                    resp2 = await client.post(
+                        url,
+                        json={"chat_id": chat_id, "text": safe_text},
+                    )
+                    if resp2.status_code != 200:
+                        logger.error("Telegram fallback plain: %d %s", resp2.status_code, resp2.text)
+                except Exception as e2:
+                    logger.exception("Telegram fallback falhou: %s", e2)
+        except Exception as e:
+            logger.exception("Telegram send falhou: %s", e)
+
+
+def _sanitize_telegram_html(text: str) -> str:
+    """Remove tags nao suportadas pelo Telegram HTML parser.
+
+    Telegram so aceita: <b>, <i>, <u>, <s>, <strike>, <del>, <a href>, <code>, <pre>.
+    Tags como <think>, <reasoning>, <function_calls> quebram parse_mode=HTML com
+    'Unsupported start tag'. Aqui stripamos o conteudo problematico.
+    """
+    import re
+    # Remove blocos  think  /  reasoning  /  analysis
+    text = re.sub(r"<\/?(think|reasoning|analysis|reflection|thought)>", "", text, flags=re.IGNORECASE)
+    return text
 
 
 @router.get(
