@@ -178,11 +178,28 @@ async def telegram_webhook(
             },
         )
 
-    # 5. Chamar OpenClaw Agent (LLM)
-    try:
-        agent_response = await _call_openclaw_agent(chat_id, text_scrubbed, db=db)
-    except Exception as e:
-        logger.exception("OpenClaw Agent falhou: %s", e)
+    # 5. Chamar OpenClaw Agent (LLM) com retry (TURN 47 — absorve flakiness pontual)
+    # LLMs pequenos podem ter blip (timeout, 502 gateway, parse). 1 retry com
+    # backoff 2s cobre incidentes transitorios sem fazer user esperar muito.
+    import asyncio
+
+    last_err: Exception | None = None
+    agent_response: str = ""
+    for attempt in range(2):
+        try:
+            agent_response = await _call_openclaw_agent(chat_id, text_scrubbed, db=db)
+            last_err = None
+            break
+        except Exception as e:
+            last_err = e
+            logger.warning(
+                "OpenClaw Agent tentativa %d/2 falhou: %s",
+                attempt + 1, e,
+            )
+            if attempt == 0:
+                await asyncio.sleep(2)
+    if last_err is not None:
+        logger.exception("OpenClaw Agent falhou apos 2 tentativas: %s", last_err)
         agent_response = "Desculpe, tive um problema tecnico. Tente novamente em alguns instantes."
 
     # 6. Strip blocos <think>...</think> (MiniMax-M3 / thinking models) ANTES do PII scrub.
