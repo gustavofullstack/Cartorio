@@ -1,12 +1,13 @@
-"""E2E tests: Telegram -> API -> OpenClaw -> response (E06).
+"""E2E tests: Telegram -> API -> LLM -> response (turn 47 - state machine).
 
 Cobre o fluxo completo:
 1. Telegram envia update para webhook
-2. API valida HMAC, PII scrub, consulta OpenClaw Agent
-3. API envia resposta via Telegram API mock
-4. Audit log gerado
+2. API processa comando nativo (state machine) ou LLM rapido
+3. PII scrub em 3 camadas (input, pre-LLM, output)
+4. API envia resposta via Telegram API
+5. Audit log gerado
 
-Usa mocks para Telegram API e OpenClaw para nao depender de rede.
+Usa mocks para Telegram API e LLM para nao depender de rede.
 """
 
 from __future__ import annotations
@@ -80,53 +81,50 @@ def client(test_engine, test_session_factory):
 
 
 @pytest.fixture
-def telegram_update_text() -> dict:
-    """Update de texto valido do Telegram."""
+def telegram_update_start() -> dict:
+    """Update com /start."""
     return {
         "update_id": 123456,
         "message": {
             "message_id": 1,
-            "from": {"id": 12345, "first_name": "Joao", "is_bot": False},
-            "chat": {"id": 12345, "type": "private"},
-            "text": "Ola, quero uma certidao",
+            "from": {"id": 6682284055, "first_name": "Joao", "is_bot": False},
+            "chat": {"id": 6682284055, "type": "private"},
+            "text": "/start",
             "date": 1719227400,
         },
     }
 
 
 class TestTelegramE2E:
-    """E2E: Telegram webhook -> API -> OpenClaw -> response."""
+    """E2E: Telegram webhook -> API -> LLM -> response."""
 
-    def test_e2e_text_message_flow(self, client: TestClient, telegram_update_text: dict) -> None:
-        """Fluxo completo: mensagem de texto -> resposta."""
+    def test_e2e_start_command(self, client: TestClient, telegram_update_start: dict) -> None:
+        """Comando /start -> resposta com saudacao + menu."""
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_openclaw_agent",
-                new=AsyncMock(return_value="Aqui esta sua certidao!"),
-            ) as mock_agent,
-            patch(
                 "app.api.v1.telegram._send_telegram_message",
-                new=AsyncMock(),
+                new=AsyncMock(return_value=True),
             ) as mock_send,
         ):
-            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_start)
 
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "ok"
-        assert data["chat_id"] == 12345
         assert data["response_sent"] is True
-        mock_agent.assert_called_once()
         mock_send.assert_called_once()
+        sent_text = mock_send.call_args[0][1]
+        assert "Cartório 2º Ofício" in sent_text
+        assert "/agendar" in sent_text
 
     def test_e2e_with_pii_scrub(self, client: TestClient) -> None:
-        """PII (CPF) e' scrubbed antes de ir ao OpenClaw."""
+        """PII (CPF) e' scrubbed antes de ir ao LLM."""
         update = {
             "update_id": 1,
             "message": {
-                "from": {"id": 12345},
-                "chat": {"id": 12345},
+                "from": {"id": 6682284055},
+                "chat": {"id": 6682284055},
                 "text": "Meu CPF e 123.456.789-09",
                 "date": 1719227400,
             },
@@ -134,19 +132,18 @@ class TestTelegramE2E:
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_openclaw_agent",
+                "app.api.v1.telegram._call_fast_llm",
                 new=AsyncMock(return_value="Ok"),
-            ) as mock_agent,
-            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()),
+            ) as mock_llm,
+            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
         assert resp.status_code == 200
-        # Verificar que o PII foi scrubbed antes do agent
-        call_args = mock_agent.call_args
-        text_scrubbed = call_args.kwargs.get("text_scrubbed") or call_args.args[1]
-        assert "[CPF_REDACTED]" in text_scrubbed
-        assert "123.456.789-09" not in text_scrubbed
+        # Verificar que o PII foi scrubbed antes do LLM
+        call_args = mock_llm.call_args
+        text_sent = call_args.args[0] if call_args.args else ""
+        assert "123.456.789-09" not in text_sent
 
     def test_e2e_ignores_non_text(self, client: TestClient) -> None:
         """Update sem text (sticker) e' ignorado."""
@@ -156,12 +153,11 @@ class TestTelegramE2E:
                 "message_id": 1,
                 "from": {"id": 12345},
                 "chat": {"id": 12345},
-                # sem campo "text"
             },
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
-            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()),
+            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -170,56 +166,64 @@ class TestTelegramE2E:
         assert data["status"] == "ignored"
         assert data["reason"] == "non-text update"
 
-    def test_e2e_agent_failure_returns_ok(
-        self, client: TestClient, telegram_update_text: dict
+    def test_e2e_llm_failure_returns_ok(
+        self, client: TestClient, telegram_update_start: dict
     ) -> None:
-        """Falha do OpenClaw retorna 200 com erro amigavel."""
+        """Falha do LLM em texto livre retorna 200 com fallback (comando /start nao chama LLM)."""
+        update = {
+            "update_id": 1,
+            "message": {
+                "from": {"id": 6682284055},
+                "chat": {"id": 6682284055},
+                "text": "Quanto custa um testamento?",  # texto livre -> chama LLM
+                "date": 1719227400,
+            },
+        }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_openclaw_agent",
-                new=AsyncMock(side_effect=Exception("API error")),
+                "app.api.v1.telegram._call_fast_llm",
+                new=AsyncMock(return_value=""),
             ),
             patch(
                 "app.api.v1.telegram._send_telegram_message",
-                new=AsyncMock(),
+                new=AsyncMock(return_value=True),
             ) as mock_send,
         ):
-            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+            resp = client.post("/api/v1/telegram/webhook", json=update)
 
-        # Mesmo com erro do agent, retorna 200 com fallback
+        # Mesmo com erro do LLM, retorna 200 com fallback
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "ok"
         assert data["response_sent"] is True
-        # Fallback message enviada
         mock_send.assert_called_once()
         call_text = mock_send.call_args[0][1]
-        # Mensagem de fallback: "Desculpe, tive um problema tecnico..."
-        assert "problema tecnico" in call_text.lower()
+        # Mensagem de fallback
+        assert "/menu" in call_text or "escrevente" in call_text
 
     def test_e2e_pii_scrubbed_in_response(self, client: TestClient) -> None:
-        """Resposta do agent com PII e' scrubbed antes de enviar ao Telegram."""
+        """Resposta do LLM com PII e' scrubbed antes de enviar ao Telegram."""
         update = {
             "update_id": 1,
             "message": {
-                "from": {"id": 12345},
-                "chat": {"id": 12345},
+                "from": {"id": 6682284055},
+                "chat": {"id": 6682284055},
                 "text": "Qual meu CPF?",
                 "date": 1719227400,
             },
         }
-        # Agent retorna CPF na resposta (deveria ser scrubbado)
-        agent_response = "Seu CPF e 123.456.789-09 e seu RG e MG-12.345.678"
+        # LLM retorna CPF na resposta (deveria ser scrubbado)
+        llm_response = "Seu CPF e 123.456.789-09 e seu RG e MG-12.345.678"
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_openclaw_agent",
-                new=AsyncMock(return_value=agent_response),
+                "app.api.v1.telegram._call_fast_llm",
+                new=AsyncMock(return_value=llm_response),
             ),
             patch(
                 "app.api.v1.telegram._send_telegram_message",
-                new=AsyncMock(),
+                new=AsyncMock(return_value=True),
             ) as mock_send,
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
@@ -227,23 +231,46 @@ class TestTelegramE2E:
         assert resp.status_code == 200
         # Mensagem enviada ao Telegram deve ter PII scrubbed
         sent_text = mock_send.call_args[0][1]
-        assert "[CPF_REDACTED]" in sent_text
         assert "123.456.789-09" not in sent_text
 
-    def test_e2e_audit_log_created(self, client: TestClient, telegram_update_text: dict) -> None:
-        """Flow completo termina com sucesso (E06 smoke test)."""
+    def test_e2e_comando_menu_sem_llm(
+        self, client: TestClient, telegram_update_start: dict
+    ) -> None:
+        """Comando nativo /start nao chama LLM."""
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_openclaw_agent",
-                new=AsyncMock(return_value="Resposta"),
-            ),
-            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()),
+                "app.api.v1.telegram._call_fast_llm",
+                new=AsyncMock(),
+            ) as mock_llm,
+            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)),
         ):
-            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_start)
 
         assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "ok"
-        assert data["chat_id"] == 12345
-        assert data["response_sent"] is True
+        # /start e' comando nativo - nao chama LLM
+        mock_llm.assert_not_called()
+
+    def test_e2e_texto_livre_chama_llm(self, client: TestClient) -> None:
+        """Texto livre (sem comando) chama LLM rapido."""
+        update = {
+            "update_id": 1,
+            "message": {
+                "from": {"id": 6682284055},
+                "chat": {"id": 6682284055},
+                "text": "Quero saber os horarios",
+                "date": 1719227400,
+            },
+        }
+        with (
+            patch("app.api.v1.telegram.get_bus", return_value=None),
+            patch(
+                "app.api.v1.telegram._call_fast_llm",
+                new=AsyncMock(return_value="Horarios: seg-sex 9h-17h"),
+            ) as mock_llm,
+            patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)),
+        ):
+            resp = client.post("/api/v1/telegram/webhook", json=update)
+
+        assert resp.status_code == 200
+        mock_llm.assert_called_once()

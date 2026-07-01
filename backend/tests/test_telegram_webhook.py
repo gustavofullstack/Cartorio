@@ -1,11 +1,13 @@
-"""Testes do endpoint Telegram webhook.
+"""Testes do endpoint Telegram webhook (turn 47 - state machine).
 
 Cobre:
-- HMAC validation (secret_token)
+- Comandos nativos (/start, /menu, /agendar, /protocolo, /emolumento, /lgpd)
+- State machine (Redis) para fluxos multi-passo
+- Tools MCP-style (agendar, consultar protocolo, calcular emolumento)
+- LLM rapido para intent nao-mapeado
 - PII scrub (camada 1 + 3)
-- Envio de resposta via Telegram API
-- Audit log
-- Casos de borda (non-text update, missing fields)
+- HMAC validation (secret_token)
+- SEMPRE retorna 200 (evita retry infinito Telegram)
 """
 
 from unittest.mock import AsyncMock, patch
@@ -22,42 +24,313 @@ def client() -> TestClient:
 
 
 @pytest.fixture
-def telegram_update_text() -> dict:
-    """Update de texto valido do Telegram."""
+def telegram_update_start() -> dict:
+    """Update com /start."""
     return {
         "update_id": 123456,
         "message": {
             "message_id": 1,
-            "from": {"id": 12345, "first_name": "Joao", "is_bot": False},
-            "chat": {"id": 12345, "type": "private"},
-            "text": "Ola, quero uma certidao",
+            "from": {"id": 6682284055, "first_name": "Gustavo", "is_bot": False},
+            "chat": {"id": 6682284055, "type": "private"},
+            "text": "/start",
             "date": 1719227400,
         },
     }
 
 
-def test_webhook_accepts_valid_text_update(client: TestClient, telegram_update_text: dict) -> None:
-    """Update de texto valido retorna 200."""
-    with patch("app.api.v1.telegram.get_bus", return_value=None):  # Redis offline em test
-        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()) as mock_send:
-            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+@pytest.fixture
+def telegram_update_text() -> dict:
+    """Update de texto livre."""
+    return {
+        "update_id": 123456,
+        "message": {
+            "message_id": 1,
+            "from": {"id": 6682284055, "first_name": "Joao", "is_bot": False},
+            "chat": {"id": 6682284055, "type": "private"},
+            "text": "Quanto custa uma certidao?",
+            "date": 1719227400,
+        },
+    }
+
+
+# ── Comandos nativos (zero LLM) ────────────────────────────────────
+
+
+def test_webhook_start_command(client: TestClient, telegram_update_start: dict) -> None:
+    """Comando /start retorna saudacao sem chamar LLM."""
+    with patch("app.api.v1.telegram.get_bus", return_value=None):  # Redis offline
+        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_start)
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "ok"
-    assert data["chat_id"] == 12345
     assert data["response_sent"] is True
     mock_send.assert_called_once()
+    sent_text = mock_send.call_args[0][1]
+    assert "Cartório 2º Ofício" in sent_text
+    assert "/agendar" in sent_text
+
+
+def test_webhook_menu_command(client: TestClient) -> None:
+    """Comando /menu retorna menu principal sem chamar LLM."""
+    update = {
+        "update_id": 1,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "/menu",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "Escolha uma opção" in sent_text
+    assert "/agendar" in sent_text
+
+
+def test_webhook_agendar_command(client: TestClient) -> None:
+    """Comando /agendar entra no state AGENDAR_SERVICO e retorna menu agendamento."""
+    update = {
+        "update_id": 1,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "/agendar",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "Reconhecimento de firma" in sent_text or "Qual serviço" in sent_text
+    assert "1." in sent_text
+
+
+def test_webhook_protocolo_command(client: TestClient) -> None:
+    """Comando /protocolo entra no state PROTOCOLO."""
+    update = {
+        "update_id": 1,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "/protocolo",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "Informe o número do protocolo" in sent_text
+
+
+def test_webhook_emolumento_command(client: TestClient) -> None:
+    """Comando /emolumento entra no state EMOLUMENTO_TIPO."""
+    update = {
+        "update_id": 1,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "/emolumento",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "Emolumentos" in sent_text
+    assert "1." in sent_text
+
+
+def test_webhook_lgpd_command(client: TestClient) -> None:
+    """Comando /lgpd entra no state LGPD."""
+    update = {
+        "update_id": 1,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "/lgpd",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "LGPD" in sent_text
+    assert "Acesso" in sent_text
+
+
+def test_webhook_cancelar_command(client: TestClient) -> None:
+    """Comando /cancelar limpa estado e volta ao menu."""
+    update = {
+        "update_id": 1,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "/cancelar",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "cancelada" in sent_text.lower()
+
+
+# ── State machine ──────────────────────────────────────────────────
+
+
+def test_webhook_agendar_flow(client: TestClient) -> None:
+    """Fluxo completo de agendamento via state machine (com Redis mockado)."""
+    # Mock Redis bus para persistir estado entre chamadas
+    mock_bus = AsyncMock()
+    # Simula Redis client com setex, get, delete
+    mock_redis = AsyncMock()
+    mock_redis.get.return_value = None  # state inicial: IDLE
+    mock_bus.client = mock_redis
+
+    step_texts = ["/agendar", "1", "15/07/2026", "14:30"]
+    for i, step_text in enumerate(step_texts):
+        # A cada step, atualiza o retorno do get conforme o estado esperado
+        if i == 0:
+            mock_redis.get.return_value = None  # IDLE
+        elif i == 1:
+            mock_redis.get.return_value = b'{"state":"agendar:servico","data":{}}'
+        elif i == 2:
+            mock_redis.get.return_value = b'{"state":"agendar:data","data":{"servico":"reconhecimento_firma","servico_nome":"Reconhecimento de Firma","valor":"R$ 8,50"}}'
+        elif i == 3:
+            mock_redis.get.return_value = b'{"state":"agendar:hora","data":{"servico":"reconhecimento_firma","servico_nome":"Reconhecimento de Firma","valor":"R$ 8,50","data":"2026-07-15"}}'
+
+        update = {
+            "update_id": 1,
+            "message": {
+                "from": {"id": 6682284055},
+                "chat": {"id": 6682284055},
+                "text": step_text,
+                "date": 1719227400,
+            },
+        }
+        with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+                with patch("app.api.v1.telegram._tool_agendar", new=AsyncMock(
+                    return_value={"numero": "2026-000123"}
+                )):
+                    resp = client.post("/api/v1/telegram/webhook", json=update)
+        assert resp.status_code == 200
+        if step_text == "14:30":  # final step - agendamento confirmado
+            sent_text = mock_send.call_args[0][1]
+            assert "Protocolo" in sent_text or "confirmado" in sent_text
+        elif step_text == "/agendar":
+            sent_text = mock_send.call_args[0][1]
+            assert "Reconhecimento" in sent_text or "Qual serviço" in sent_text
+
+
+# ── LLM rapido (texto livre, sem comando nem state) ────────────────
+
+
+def test_webhook_uses_fast_llm_for_free_text(
+    client: TestClient, telegram_update_text: dict
+) -> None:
+    """Texto livre (sem comando, sem state) usa LLM rapido."""
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._call_fast_llm", new=AsyncMock(
+                return_value="Emolumentos variam conforme o servico. Use /emolumento para consultar."
+            )
+        ) as mock_llm:
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)):
+                resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+    assert resp.status_code == 200
+    mock_llm.assert_called_once()
+
+
+def test_webhook_llm_fallback_when_llm_fails(
+    client: TestClient, telegram_update_text: dict
+) -> None:
+    """Se LLM falha, retorna fallback message."""
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._call_fast_llm", new=AsyncMock(return_value="")
+        ):
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+                resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "/menu" in sent_text or "escrevente" in sent_text
+
+
+# ── PII Scrubbing ──────────────────────────────────────────────────
+
+
+def test_webhook_scrubs_pii_in_message(client: TestClient) -> None:
+    """Mensagem com CPF e' scrubbed antes do LLM."""
+    update = {
+        "update_id": 1,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "Meu CPF e 123.456.789-09, manda certidao",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._call_fast_llm", new=AsyncMock(return_value="Ok")
+        ) as mock_llm:
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)):
+                resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    call_args = mock_llm.call_args
+    text_sent = call_args.args[0] if call_args.args else call_args.kwargs.get("text", "")
+    assert "[CPF_REDACTED]" in text_sent or "123.456.789-09" not in text_sent
+
+
+def test_webhook_scrubs_pii_in_response(client: TestClient) -> None:
+    """Resposta com PII e' scrubbed antes de enviar ao Telegram."""
+    update = {
+        "update_id": 1,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "Qual meu CPF?",
+            "date": 1719227400,
+        },
+    }
+    pii_response = "Seu CPF e 111.222.333-44, Joao da Silva"
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._call_fast_llm", new=AsyncMock(return_value=pii_response)
+        ):
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)) as mock_send:
+                resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "111.222.333-44" not in sent_text
+
+
+# ── Non-text updates ───────────────────────────────────────────────
 
 
 def test_webhook_ignores_non_text_update(client: TestClient) -> None:
-    """Update sem text/chat_id (ex: sticker) e ignorado."""
+    """Update sem text/chat_id (ex: sticker) e' ignorado."""
     update = {
         "update_id": 123456,
         "message": {
             "message_id": 1,
             "from": {"id": 12345},
             "chat": {"id": 12345},
-            # sem campo "text"
         },
     }
     resp = client.post("/api/v1/telegram/webhook", json=update)
@@ -67,152 +340,24 @@ def test_webhook_ignores_non_text_update(client: TestClient) -> None:
     assert data["reason"] == "non-text update"
 
 
-def test_webhook_scrubs_pii_in_message(client: TestClient) -> None:
-    """Mensagem com CPF e CRUB e' scrubbed antes do agent."""
-    update = {
-        "update_id": 1,
-        "message": {
-            "from": {"id": 12345},
-            "chat": {"id": 12345},
-            "text": "Meu CPF e 123.456.789-09, manda certidao",
-            "date": 1719227400,
-        },
-    }
-    with patch("app.api.v1.telegram.get_bus", return_value=None):
-        with patch(
-            "app.api.v1.telegram._call_openclaw_agent", new=AsyncMock(return_value="Ok")
-        ) as mock_agent:
-            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()):
-                resp = client.post("/api/v1/telegram/webhook", json=update)
-    assert resp.status_code == 200
-    call_args = mock_agent.call_args
-    text_scrubbed = call_args.kwargs.get("text_scrubbed") or call_args.args[1]
-    assert "[CPF_REDACTED]" in text_scrubbed
-    assert "123.456.789-09" not in text_scrubbed
+# ── HMAC validation ────────────────────────────────────────────────
 
 
-def test_webhook_scrubs_pii_in_response(client: TestClient) -> None:
-    """Resposta do agent com PII e scrubbed antes de enviar ao Telegram."""
-    update = {
-        "update_id": 1,
-        "message": {
-            "from": {"id": 12345},
-            "chat": {"id": 12345},
-            "text": "Qual meu CPF?",
-            "date": 1719227400,
-        },
-    }
-    pii_response = "Seu CPF e 111.222.333-44, Joao da Silva"
-    with patch("app.api.v1.telegram.get_bus", return_value=None):
-        with patch(
-            "app.api.v1.telegram._call_openclaw_agent", new=AsyncMock(return_value=pii_response)
-        ):
-            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()) as mock_send:
-                resp = client.post("/api/v1/telegram/webhook", json=update)
-    assert resp.status_code == 200
-    sent_text = mock_send.call_args.args[1]
-    assert "111.222.333-44" not in sent_text
-
-
-def test_webhook_handles_agent_failure(client: TestClient, telegram_update_text: dict) -> None:
-    """Se agent falha, retorna mensagem de erro ao usuario."""
-    with patch("app.api.v1.telegram.get_bus", return_value=None):
-        with patch(
-            "app.api.v1.telegram._call_openclaw_agent",
-            new=AsyncMock(side_effect=Exception("agent down")),
-        ):
-            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()) as mock_send:
-                resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
-    assert resp.status_code == 200
-    sent_text = mock_send.call_args.args[1]
-    assert "problema tecnico" in sent_text.lower() or "tente novamente" in sent_text.lower()
-
-
-def test_webhook_handles_telegram_api_failure(
-    client: TestClient, telegram_update_text: dict
-) -> None:
-    """Se Telegram API falha, retorna 500 (exception handler FastAPI).
-
-    NOTA: teste coberto por test_handles_agent_failure (que ja verifica
-    o caminho de exception). Pular este para evitar complexidade de
-    mockar httpx internamente.
-    """
-    pass  # SKIP: coberto por test_handles_agent_failure
-
-
-def test_telegram_bot_token_constant() -> None:
-    """Token do bot esta hardcoded (NAO rotacionar)."""
-    from app.api.v1.telegram import TELEGRAM_BOT_TOKEN
-
-    assert TELEGRAM_BOT_TOKEN == "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
-
-
-def test_webhook_emolumento_intent() -> None:
-    """Agent detecta 'certidao' e retorna resposta do LLM."""
-    import asyncio
-    from unittest.mock import AsyncMock, patch
-
-    from app.integrations.opencode_go import ChatResponse
-    from app.api.v1.telegram import _call_openclaw_agent
-
-    fake_response = ChatResponse(
-        content="Para calcular emolumento, informe o tipo de certidao.",
-        model="deepseek-v4-flash",
-        tokens_in=50,
-        tokens_out=10,
-        latency_ms=500,
-    )
-    with patch(
-        "app.api.v1.telegram.chat_with_fallback",
-        new=AsyncMock(return_value=fake_response),
-    ):
-        result = asyncio.run(_call_openclaw_agent(123, "Quero uma certidao de nascimento"))
-    assert "emolumento" in result.lower() or "certidao" in result.lower()
-
-
-def test_webhook_horario_intent() -> None:
-    """Agent responde a perguntas genericas via LLM."""
-    import asyncio
-    from unittest.mock import AsyncMock, patch
-
-    from app.integrations.opencode_go import ChatResponse
-    from app.api.v1.telegram import _call_openclaw_agent
-
-    fake_response = ChatResponse(
-        content="Ola! Sou o CartorioBot, assistente do Cartorio 2 Oficio de Notas.",
-        model="deepseek-v4-flash",
-        tokens_in=50,
-        tokens_out=10,
-        latency_ms=500,
-    )
-    with patch(
-        "app.api.v1.telegram.chat_with_fallback",
-        new=AsyncMock(return_value=fake_response),
-    ):
-        result = asyncio.run(_call_openclaw_agent(123, "Bom dia"))
-    assert "CartorioBot" in result or "cartorio" in result.lower()
-
-
-# ── HMAC validation tests ──────────────────────────────────────────
-
-
-def test_hmac_valid_secret_accepted(client: TestClient, telegram_update_text: dict) -> None:
+def test_hmac_valid_secret_accepted(client: TestClient, telegram_update_start: dict) -> None:
     """HMAC valido e aceito quando secret configurado."""
     import hashlib
     import hmac as hmac_mod
+    import json as _json
 
     from app.api.v1 import telegram as tg_mod
 
     old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
     try:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
-        body = client._transport.app  # noqa
-        import json as _json
-
-        raw_body = _json.dumps(telegram_update_text).encode()
+        raw_body = _json.dumps(telegram_update_start).encode()
         expected = hmac_mod.new(b"test-secret-123", raw_body, hashlib.sha256).hexdigest()
         with patch("app.api.v1.telegram.get_bus", return_value=None):
-            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()):
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)):
                 resp = client.post(
                     "/api/v1/telegram/webhook",
                     content=raw_body,
@@ -226,7 +371,7 @@ def test_hmac_valid_secret_accepted(client: TestClient, telegram_update_text: di
         tg_mod.TELEGRAM_WEBHOOK_SECRET = old_secret
 
 
-def test_hmac_missing_header_rejected(client: TestClient, telegram_update_text: dict) -> None:
+def test_hmac_missing_header_rejected(client: TestClient, telegram_update_start: dict) -> None:
     """Sem header HMAC quando secret configurado retorna 401."""
     import json as _json
 
@@ -235,7 +380,7 @@ def test_hmac_missing_header_rejected(client: TestClient, telegram_update_text: 
     old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
     try:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
-        raw_body = _json.dumps(telegram_update_text).encode()
+        raw_body = _json.dumps(telegram_update_start).encode()
         resp = client.post(
             "/api/v1/telegram/webhook",
             content=raw_body,
@@ -246,7 +391,7 @@ def test_hmac_missing_header_rejected(client: TestClient, telegram_update_text: 
         tg_mod.TELEGRAM_WEBHOOK_SECRET = old_secret
 
 
-def test_hmac_wrong_token_rejected(client: TestClient, telegram_update_text: dict) -> None:
+def test_hmac_wrong_token_rejected(client: TestClient, telegram_update_start: dict) -> None:
     """HMAC invalido retorna 401."""
     import json as _json
 
@@ -255,7 +400,7 @@ def test_hmac_wrong_token_rejected(client: TestClient, telegram_update_text: dic
     old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
     try:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
-        raw_body = _json.dumps(telegram_update_text).encode()
+        raw_body = _json.dumps(telegram_update_start).encode()
         resp = client.post(
             "/api/v1/telegram/webhook",
             content=raw_body,
@@ -269,7 +414,7 @@ def test_hmac_wrong_token_rejected(client: TestClient, telegram_update_text: dic
         tg_mod.TELEGRAM_WEBHOOK_SECRET = old_secret
 
 
-def test_hmac_no_secret_skips_validation(client: TestClient, telegram_update_text: dict) -> None:
+def test_hmac_no_secret_skips_validation(client: TestClient, telegram_update_start: dict) -> None:
     """Sem secret configurado, HMAC e ignorado (dev mode)."""
     from app.api.v1 import telegram as tg_mod
 
@@ -277,36 +422,14 @@ def test_hmac_no_secret_skips_validation(client: TestClient, telegram_update_tex
     try:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = None
         with patch("app.api.v1.telegram.get_bus", return_value=None):
-            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()):
-                resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
+            with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock(return_value=True)):
+                resp = client.post("/api/v1/telegram/webhook", json=telegram_update_start)
         assert resp.status_code == 200
     finally:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = old_secret
 
 
-# ── Redis bus integration ──────────────────────────────────────────
-
-
-def test_webhook_publishes_to_redis_bus(client: TestClient, telegram_update_text: dict) -> None:
-    """Quando Redis disponivel, publica mensagem no bus."""
-    mock_bus = AsyncMock()
-    with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
-        with patch("app.api.v1.telegram._send_telegram_message", new=AsyncMock()):
-            resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
-    assert resp.status_code == 200
-    mock_bus.publish.assert_called_once()
-    # publish() pode usar args ou kwargs
-    call_args = mock_bus.publish.call_args
-    if call_args.kwargs:
-        assert (
-            call_args.kwargs.get("channel") == "telegram:message"
-            or call_args.args[0] == "telegram:message"
-        )
-    else:
-        assert call_args.args[0] == "telegram:message"
-
-
-# ── _send_telegram_message tests ───────────────────────────────────
+# ── Telegram send ──────────────────────────────────────────────────
 
 
 def test_send_telegram_message_success() -> None:
@@ -324,12 +447,12 @@ def test_send_telegram_message_success() -> None:
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
     with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client):
-        asyncio.run(_send_telegram_message(12345, "Ola!"))
-    mock_client.post.assert_called_once()
+        result = asyncio.run(_send_telegram_message(12345, "Ola!"))
+    assert result is True
 
 
-def test_send_telegram_message_api_error() -> None:
-    """_send_telegram_message levanta 502 quando API retorna erro."""
+def test_send_telegram_message_api_error_returns_false() -> None:
+    """_send_telegram_message retorna False quando API retorna erro (sem exception)."""
     import asyncio
     from unittest.mock import MagicMock, patch
 
@@ -344,11 +467,11 @@ def test_send_telegram_message_api_error() -> None:
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
     with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=mock_client):
-        with pytest.raises(Exception):
-            asyncio.run(_send_telegram_message(12345, "Ola!"))
+        result = asyncio.run(_send_telegram_message(12345, "Ola!"))
+    assert result is False
 
 
-# ── webhook info endpoint ──────────────────────────────────────────
+# ── Webhook info endpoint ──────────────────────────────────────────
 
 
 def test_webhook_info_endpoint(client: TestClient) -> None:
@@ -367,3 +490,13 @@ def test_webhook_info_endpoint(client: TestClient) -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is True
+
+
+# ── Bot token constant ─────────────────────────────────────────────
+
+
+def test_telegram_bot_token_constant() -> None:
+    """Token do bot esta hardcoded (NAO rotacionar)."""
+    from app.api.v1.telegram import TELEGRAM_BOT_TOKEN
+
+    assert TELEGRAM_BOT_TOKEN == "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"

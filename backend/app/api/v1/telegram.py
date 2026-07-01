@@ -32,7 +32,6 @@ Modified by Gustavo Almeida.
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import hmac
 import json
@@ -43,7 +42,6 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -139,6 +137,7 @@ SERVICOS = {
 
 # === DECORATOR DE VERIFICACAO HMAC ===
 
+
 def _verify_telegram_secret(
     update_body: bytes,
     secret_token_header: str | None,
@@ -163,6 +162,7 @@ def _verify_telegram_secret(
 
 
 # === STATE MANAGER (Redis) ===
+
 
 async def _get_state(bus: Any, chat_id: int) -> dict[str, Any]:
     """Recupera estado do chat no Redis."""
@@ -199,12 +199,13 @@ async def _clear_state(bus: Any, chat_id: int) -> None:
 
 # === TOOLS (MCP-STYLE) - Executam acoes reais via API interna ===
 
+
 async def _tool_agendar(cliente_id: int, data: str, hora: str, servico: str) -> dict:
     """Cria agendamento via API interna."""
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.post(
-                f"http://cartorio_api:8000/api/v1/agendamento",
+                "http://cartorio_api:8000/api/v1/agendamento",
                 json={
                     "cliente_id": cliente_id,
                     "data": data,
@@ -212,7 +213,9 @@ async def _tool_agendar(cliente_id: int, data: str, hora: str, servico: str) -> 
                     "servico": servico,
                     "consent_granted": True,
                 },
-                headers={"X-API-Key": settings.cartorio_api_key} if hasattr(settings, "cartorio_api_key") else {},
+                headers={"X-API-Key": settings.cartorio_api_key}
+                if hasattr(settings, "cartorio_api_key")
+                else {},
             )
             return resp.json() if resp.status_code < 500 else {"erro": f"HTTP {resp.status_code}"}
     except Exception as e:
@@ -226,7 +229,9 @@ async def _tool_consultar_protocolo(numero: str) -> dict:
         async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get(
                 f"http://cartorio_api:8000/api/v1/protocolo/{numero}",
-                headers={"X-API-Key": settings.cartorio_api_key} if hasattr(settings, "cartorio_api_key") else {},
+                headers={"X-API-Key": settings.cartorio_api_key}
+                if hasattr(settings, "cartorio_api_key")
+                else {},
             )
             return resp.json() if resp.status_code < 500 else {"erro": f"HTTP {resp.status_code}"}
     except Exception as e:
@@ -263,7 +268,9 @@ async def _tool_criar_atendimento(cliente_id: int, topico: str, contato: str) ->
                     "contato": contato,
                     "canal": "telegram",
                 },
-                headers={"X-API-Key": settings.cartorio_api_key} if hasattr(settings, "cartorio_api_key") else {},
+                headers={"X-API-Key": settings.cartorio_api_key}
+                if hasattr(settings, "cartorio_api_key")
+                else {},
             )
             return resp.json() if resp.status_code < 500 else {"erro": f"HTTP {resp.status_code}"}
     except Exception as e:
@@ -272,6 +279,7 @@ async def _tool_criar_atendimento(cliente_id: int, topico: str, contato: str) ->
 
 
 # === INTENT ROUTER - Comandos nativos (sem LLM) ===
+
 
 async def _handle_command(
     text: str,
@@ -312,8 +320,7 @@ async def _handle_command(
     if cmd == "/protocolo":
         await _set_state(bus, chat_id, STATE_PROTOCOLO, {})
         return (
-            "<b>Consultar Protocolo</b>\n\n"
-            "Informe o número do protocolo (ex: 2026-000123):"
+            "<b>Consultar Protocolo</b>\n\nInforme o número do protocolo (ex: 2026-000123):"
         ), True
 
     if cmd == "/emolumento":
@@ -348,6 +355,7 @@ async def _handle_command(
 
 # === STATE HANDLERS (state machine com tools) ===
 
+
 async def _handle_state(
     text: str,
     state: str,
@@ -379,8 +387,7 @@ async def _handle_state(
         state_data["data"] = data_iso
         await _set_state(bus, chat_id, STATE_AGENDAR_HORA, state_data)
         return (
-            f"Data: <b>{data_iso}</b>\n\n"
-            "Qual horário? (08:00 - 17:00, formato HH:MM)"
+            f"Data: <b>{data_iso}</b>\n\nQual horário? (08:00 - 17:00, formato HH:MM)"
         ), STATE_AGENDAR_HORA
 
     if state == STATE_AGENDAR_HORA:
@@ -447,15 +454,25 @@ async def _handle_state(
 
     if state == STATE_LGPD:
         direitos = {
-            "1": ("Acesso", "Seus dados estão em nosso sistema. Para acesso completo, "
-                            "solicite em /humano ou via portal."),
-            "2": ("Correção", "Para corrigir dados: responda com o dado a corrigir "
-                              "(ex: 'nome: João Silva')."),
-            "3": ("Portabilidade", "Download em até 15 dias (LGPD art. 18 V). "
-                                   "Solicite em /humano ou portal."),
+            "1": (
+                "Acesso",
+                "Seus dados estão em nosso sistema. Para acesso completo, "
+                "solicite em /humano ou via portal.",
+            ),
+            "2": (
+                "Correção",
+                "Para corrigir dados: responda com o dado a corrigir (ex: 'nome: João Silva').",
+            ),
+            "3": (
+                "Portabilidade",
+                "Download em até 15 dias (LGPD art. 18 V). Solicite em /humano ou portal.",
+            ),
             "4": ("Oposição", "Parar tratamento: confirmado. Prazo legal: 15 dias."),
-            "5": ("Anonimização", "Esquecimento (LGPD art. 18 VI): dados serão anonimizados "
-                                  "em até 15 dias. Solicite em /humano."),
+            "5": (
+                "Anonimização",
+                "Esquecimento (LGPD art. 18 VI): dados serão anonimizados "
+                "em até 15 dias. Solicite em /humano.",
+            ),
             "6": ("Revogação", "Consentimento revogado. Para confirmar, responda 'sim'."),
         }
         if text in direitos:
@@ -483,6 +500,7 @@ async def _handle_state(
 
 
 # === HELPERS ===
+
 
 def _parse_date(text: str) -> str | None:
     """Parse 'hoje', 'amanhã' ou DD/MM/AAAA → YYYY-MM-DD."""
@@ -514,6 +532,7 @@ def _parse_time(text: str) -> str | None:
 
 # === LLM RAPIDO - Apenas para intent não-mapeado ===
 
+
 async def _call_fast_llm(text: str, context: str = "") -> str:
     """LLM rapido (Groq compound / Mistral) - SEM thinking blocks.
 
@@ -537,45 +556,81 @@ async def _call_fast_llm(text: str, context: str = "") -> str:
 
     # Tenta providers em ordem de velocidade (free rapidos)
     providers = [
-        ("groq", "groq/compound", settings.groq_api_key if hasattr(settings, "groq_api_key") else None,
-         settings.groq_base_url if hasattr(settings, "groq_base_url") else "https://api.groq.com/openai/v1"),
-        ("mistral", "devstral-small-latest", settings.mistral_api_key if hasattr(settings, "mistral_api_key") else None,
-         "https://api.mistral.ai/v1"),
-        ("openrouter", "google/gemma-4-31b-it:free",
-         settings.openrouter_api_key if hasattr(settings, "openrouter_api_key") else None,
-         "https://openrouter.ai/api/v1"),
+        (
+            "groq",
+            "groq/compound",
+            settings.groq_api_key if hasattr(settings, "groq_api_key") else None,
+            settings.groq_base_url
+            if hasattr(settings, "groq_base_url")
+            else "https://api.groq.com/openai/v1",
+        ),
+        (
+            "mistral",
+            "devstral-small-latest",
+            settings.mistral_api_key if hasattr(settings, "mistral_api_key") else None,
+            "https://api.mistral.ai/v1",
+        ),
+        (
+            "openrouter",
+            "google/gemma-4-31b-it:free",
+            settings.openrouter_api_key if hasattr(settings, "openrouter_api_key") else None,
+            "https://openrouter.ai/api/v1",
+        ),
     ]
 
     for prov_name, model, api_key, base_url in providers:
         if not api_key:
             continue
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            # Per-provider timeout 4s — total worst-case 12s vs 30s antes (Lesson 113).
+            # httpx.AsyncClient aceita timeout granular; usamos connect=2 read=4 write=4 pool=4.
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(connect=2.0, read=4.0, write=4.0, pool=4.0)
+            ) as client:
                 resp = await client.post(
                     f"{base_url}/chat/completions",
-                    json={"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 200},
-                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "temperature": 0.2,
+                        "max_tokens": 200,
+                    },
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
                 )
                 if resp.status_code == 200:
                     data = resp.json()
                     content = data["choices"][0]["message"]["content"].strip()
                     return content[:500]  # limite duro
         except Exception as e:
-            logger.warning("LLM %s falhou: %s", prov_name, e)
+            logger.warning("LLM %s falhou: %s", prov_name, type(e).__name__)
             continue
     return ""
 
 
 # === TELEGRAM SEND ===
 
+
 async def _send_telegram_message(chat_id: int, text: str) -> bool:
     """Envia msg via Telegram API. Retorna True se 200."""
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    # Timeout agressivo 5s — Telegram normalmente responde <500ms. Se passar,
+    # é problema de rede e o retry do Telegram entrega depois.
+    # Lesson 113: webhook latency 14-52s era cumulativo de httpx timeouts.
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(connect=1.5, read=5.0, write=1.5, pool=1.5)
+    ) as client:
         try:
             resp = await client.post(
                 url,
-                json={"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True},
+                json={
+                    "chat_id": chat_id,
+                    "text": text,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": True,
+                },
             )
             if resp.status_code == 200:
                 return True
@@ -587,6 +642,7 @@ async def _send_telegram_message(chat_id: int, text: str) -> bool:
 
 
 # === MAIN WEBHOOK ===
+
 
 @router.post("/webhook", status_code=200)
 async def telegram_webhook(
@@ -628,9 +684,7 @@ async def telegram_webhook(
 
     # 1. Tentar comando nativo
     if text.startswith("/"):
-        response_text, _ = await _handle_command(
-            text, state_data, bus, chat_id, user_id, user_name
-        )
+        response_text, _ = await _handle_command(text, state_data, bus, chat_id, user_id, user_name)
 
     # 2. Se nao eh comando, processar estado atual
     if not response_text:
@@ -661,10 +715,16 @@ async def telegram_webhook(
     # 6. Audit
     logger.info(
         "TG response chat=%s sent=%s len=%d",
-        chat_id, response_sent, len(response_scrubbed),
+        chat_id,
+        response_sent,
+        len(response_scrubbed),
     )
 
-    return {"status": "ok" if response_sent else "partial", "chat_id": chat_id, "response_sent": response_sent}
+    return {
+        "status": "ok" if response_sent else "partial",
+        "chat_id": chat_id,
+        "response_sent": response_sent,
+    }
 
 
 @router.get("/webhook/info")
