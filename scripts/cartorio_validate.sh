@@ -76,14 +76,23 @@ echo "## SUI Blockers (3 ativos)"
 jq -r '.blockers_SUI[] | "  🔴 \(.id): \(.blocker) → \(.action) [\(.priority)]"' "$CARTORIO/PROMPT.json" 2>/dev/null
 echo
 
-# ---- 8. Issues reais detectados HOJE ----
-echo "## Issues REAIS detectados (vs esperados)"
-echo "  Esperados (não alarmar): N8N off, SUP 404 Kong, TGB 404 sem token"
-echo "  REAIS a corrigir:"
-echo "    🔴 Render API key rnd_QP8GWTShurLmVGSp3H2e25pXsKti expirada (401)"
-echo "    🔴 pgweb swarm 0/1 replicas (serviço quebrado)"
-echo "    🟡 Linear API key (header não usa Bearer)"
-echo "    🟡 API localhost:8000 não responde (Traefik routing)"
+# ---- 8. Issues REAIS vs FALSOS POSITIVOS ----
+echo "## Issues REAIS vs FALSOS POSITIVOS (atualizado 2026-07-01 11:18)"
+echo "  ESPERADOS (não alarmar):"
+echo "    ⏸ N8N off — validado 2026-07-01"
+echo "    ⏸ SUP 404 Kong auth gate — design correto"
+echo "    ⏸ TGB 404 sem token — token em .env, bot validado E2E"
+echo "  FALSOS POSITIVOS RESOLVIDOS:"
+echo "    ✅ pgweb 0/1 — falso positivo (container Up 5min, Easypanel não sincroniza)"
+echo "    ✅ API 3 containers — falso positivo (só 1 ativo, outros Shutdown de tasks antigas)"
+echo "  REAIS a corrigir (você):"
+echo "    🔴 Render key rnd_QP8GWTShurLmVGSp3H2e25pXsKti expirada — Gustavo regenerar em render.com (regra no_key_rotation)"
+echo "    🟡 Linear API key — header não usa Bearer (enviar Authorization: lin_api_...)"
+echo "  REAIS a corrigir (dev):"
+echo "    🔴 opencode_go 429 Monthly limit — LLM chain cai, comandos Telegram nativos OK (lesson 114)"
+echo "  RESOLVIDOS HOJE:"
+echo "    ✅ Telegram webhook latency 14-52s — fix httpx.Timeout granular (lesson 113, commit 1902ffe)"
+echo "    ✅ OpenClaw DNS swarm — MCP usa Tailscale IP 100.99.172.84:18789 (lesson 115)"
 echo
 
 # ---- 9. Próximos passos ----
