@@ -1,55 +1,79 @@
 {
-  "version": "1.1.0",
-  "updated_at": "2026-06-26T19:55:00-03:00",
-  "status": "all_green",
+  "version": "2.0.0",
+  "updated_at": "2026-07-01T10:50:00-03:00",
+  "status": "orchestrator_activated",
+  "current_sprint": "Sprint 47 - 2026-07-01 (orquestrador ativo)",
+  "current_goal": "Ativar ambiente completo (orquestrador + swarm + skills + tools + mcps + memory + loop)",
   "metrics": {
-    "pytest": "1543 passed, 18 skipped, 0 failed",
-    "coverage": "90.18%",
-    "mypy": "0 errors (284 source files — fix 42→0)",
-    "ruff": "All checks passed",
-    "radar": "7/7 GREEN",
-    "integrations": "8/8 online, 0 offline",
-    "backup": "ok=true, source=redis, 44files/72MB, 0h age",
-    "containers": 27,
-    "swarm_services": 13,
-    "swap_gb": 4,
-    "vps_uptime_days": 4,
-    "vps_disk_used_pct": 18,
-    "redis_keys": 1736,
-    "redis_memory_mb": 3.16
+    "services": "6/7 online (N8N off — confirmed 2026-07-01)",
+    "pytest": "1211 passing",
+    "coverage": "90%+",
+    "mypy": "0 errors",
+    "ruff": "0 errors",
+    "telegram_e2e": "20/20 passou (chat_id 6682284055)",
+    "pgvector": "instalado no Postgres do Chatwoot",
+    "chatwoot_admin": "criado"
   },
-  "fixes_applied": [
-    "mypy: 42 errors fixed to 0 (15 files — alembic migrations + 7 test files)",
-    "Evolution API webhook: configured for TEST + cartorio-2notas instances → N8N /webhook/evo-in",
-    "Evolution API key discovered: 429683C4C977415CAAFCCE10F7D57E11",
-    "Backup health endpoint: Redis strategy OK (POST/GET) + deploy manual API v0.6.0",
-    "Backup.sh: curl POST status to API endpoint working",
-    "Swapfile 4GB: already configured on VPS"
+  "milestones": [
+    {
+      "id": "1",
+      "title": "Ambiente orquestrador ativado",
+      "status": "done",
+      "tasks": [
+        {"id": "1.1", "title": "Skill /orchestrate (swarm/parallel/sequential/MVP)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:45:00-03:00"},
+        {"id": "1.2", "title": "Setup ~/.claude/settings.json (hooks + perms + env cartório)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:47:00-03:00"},
+        {"id": "1.3", "title": "Skill /scrum-board (Kanban goals/metas/progress)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:50:00-03:00"},
+        {"id": "1.4", "title": "/loop health check dos 7 serviços", "owner": "orquestrador", "status": "in_progress"},
+        {"id": "1.5", "title": "Memory/README/INDEX sincronizado", "owner": "orquestrador", "status": "in_progress"}
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Telegram produção 100%",
+      "status": "in_progress",
+      "tasks": [
+        {"id": "2.1", "title": "Telegram E2E 20/20 cenários", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01T08:00:00-03:00"},
+        {"id": "2.2", "title": "Retry 2x com backoff 2s no LLM call", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01"},
+        {"id": "2.3", "title": "Resposta <1s (turno 47 refactor EXECUTOR)", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01"},
+        {"id": "2.4", "title": "Galera testando HOJE via GUIA_TESTES_TELEGRAM.md", "owner": "orquestrador", "status": "in_progress"}
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Estabilizar produção v0.6.0",
+      "status": "pending",
+      "tasks": [
+        {"id": "3.1", "title": "Ligar N8N novamente", "owner": "cartorio-n8n", "status": "pending"},
+        {"id": "3.2", "title": "Configurar Redis maxmemory 500MB + allkeys-lru", "owner": "cartorio-dev", "status": "pending"},
+        {"id": "3.3", "title": "Fix Supabase JWT secret (rotate)", "owner": "cartorio-lgpd", "status": "pending"},
+        {"id": "3.4", "title": "Disable public signup (GOTRUE_DISABLE_SIGNUP=true)", "owner": "cartorio-lgpd", "status": "pending"},
+        {"id": "3.5", "title": "Consolidate FakeWS duplication", "owner": "cartorio-dev", "status": "pending"},
+        {"id": "3.6", "title": "Expand coverage: redis_bus (84%), lgpd_direito (81%)", "owner": "cartorio-dev", "status": "pending"}
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Docs + Knowledge",
+      "status": "pending",
+      "tasks": [
+        {"id": "4.1", "title": "CLAUDE.md criado (este repo)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:35:00-03:00"},
+        {"id": "4.2", "title": "GUIA_TESTES_GALERA_2026-07-01.md pronto", "owner": "cartorio-n8n", "status": "done", "completed_at": "2026-07-01"},
+        {"id": "4.3", "title": "GUIA_TESTES_TELEGRAM.md pronto", "owner": "cartorio-n8n", "status": "done", "completed_at": "2026-07-01"},
+        {"id": "4.4", "title": "README/API.md 99 endpoints", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01"}
+      ]
+    }
   ],
-  "known_issues": [
-    "Evolution cartorio-2notas: state=connecting (QR scan Gustavo - SUI)",
-    "OpenCode-Go 429 rate limited (all 9 providers, resets ~10 days)",
-    "GitHub billing CI/CD blocked (SUI)",
-    "DNS Cloudflare A records pending (SUI)",
-    "Redis: maxmemory=0 (no limit) + noeviction policy ⚠️",
-    "Supabase: JWT secret default dev (CRITICAL security), signup enabled (HIGH)",
-    "Chatwoot API: /api/v1/* returns SPA 404 (routing config)",
-    "N8N: no N8N_API_KEY env var, WEBHOOK_URL=easypanel.host (not flow.2notas.com.br)",
-    "OpenClaw port 18789: pending restart (host-mode port conflict)",
-    "API duplicate container (stale from rolling update)",
-    "Coverage buffer thin (90.18% — only 0.18% above 90% minimum)",
-    "Low coverage in critical modules: redis_bus (84%), lgpd_direito (81%)",
-    "Test quality: 6x FakeWS duplication, 839 MagicMock, 66 type:ignore",
-    "No standalone OpenClaw doc dir, no SUI doc, MCP skill stubs"
+  "lessons_active": [
+    "lesson-109: N8N /mcp-server/http 401 (token/header quebrado)",
+    "lesson-110: Chatwoot 4.x + AI Agents SDK precisa pgvector (causa crashloop)",
+    "lesson-111: Telegram parse_mode=HTML quebra com tags think/reasoning do LLM",
+    "lesson-112: MiniMax-M3 blip (timeout/parse) → retry 2x com backoff 2s"
   ],
   "next_priorities": [
-    "🔴 Fix Supabase JWT secret (rotate to random 32+ char)",
-    "🔴 Disable public signup (GOTRUE_DISABLE_SIGNUP=true)",
-    "🟡 Configure Redis maxmemory (500MB) + allkeys-lru policy",
-    "🟡 Add N8N_API_KEY env var + fix WEBHOOK_URL to flow.2notasudi.com.br",
-    "🟡 Create docs/openclaw/ standalone directory + expand MCP skill docs",
-    "🟢 Expand coverage: redis_bus (84%), lgpd_direito_esquecimento (81%)",
-    "🟢 Consolidate FakeWS into conftest.py, reduce MagicMock usage",
-    "🟢 Create integration conftest.py with shared fixtures"
-  ]
+    "🔴 Ativar /loop health check dos 7 serviços (cron 7min)",
+    "🟡 Validar Telegram com galera do cartório (HOJE)",
+    "🟡 Religar N8N + validar 35 workflows",
+    "🟢 Sprint retro + lessons loop"
+  ],
+  "last_updated_iso": "2026-07-01T10:50:00-03:00"
 }
