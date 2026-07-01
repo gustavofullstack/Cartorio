@@ -162,6 +162,60 @@ curl -X POST "https://whatsapp.2notasudi.com.br/webhook/set/cartorio-2notas" \
 }
 ```
 
+### 6. POST /message/sendReaction/{instance}
+
+Envia uma reação (emoji) a uma mensagem específica.
+
+```bash
+curl -X POST "https://whatsapp.2notasudi.com.br/message/sendReaction/cartorio-2notas" \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "5534988887777",
+    "reaction": "👍",
+    "key": {
+      "remoteJid": "5534988887777@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3EB0ABC123"
+    }
+  }'
+```
+
+### 7. POST /message/sendPoll/{instance}
+
+Envia uma enquete de escolha única ou múltipla.
+
+```bash
+curl -X POST "https://whatsapp.2notasudi.com.br/message/sendPoll/cartorio-2notas" \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "5534988887777",
+    "pollName": "Qual serviço deseja agendar?",
+    "options": ["Abertura de Firma", "Procuração", "Escritura"],
+    "selectableOptionsCount": 1
+  }'
+```
+
+### 8. POST /message/sendMedia/{instance}
+
+Envia mídias (imagens, vídeos, áudios ou documentos PDF) informando uma URL pública do arquivo.
+
+```bash
+curl -X POST "https://whatsapp.2notasudi.com.br/message/sendMedia/cartorio-2notas" \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "5534988887777",
+    "mediaMessage": {
+      "mediatype": "document", // ou "image", "audio", "video"
+      "fileName": "tabela_emolumentos.pdf",
+      "media": "https://api.2notasudi.com.br/static/tabela.pdf",
+      "caption": "Tabela de emolumentos oficial"
+    }
+  }'
+```
+
 ## Webhook events (todos suportados)
 
 | Event | Quando dispara |
@@ -212,4 +266,4 @@ curl -X POST "https://whatsapp.2notasudi.com.br/webhook/set/cartorio-2notas" \
 - Estado no projeto: `infra/` (config Easypanel)
 - Integracao: `backend/app/services/evolution_ingest.py`
 
-Modified by ZCode/Mavis - 2026-06-24
+Modified by Gustavo Almeida - 2026-07-01
