@@ -116,7 +116,9 @@ class TestTelegramE2E:
         mock_send.assert_called_once()
         sent_text = mock_send.call_args[0][1]
         assert "Cartorio 2o Oficio" in sent_text
-        assert "/agendar" in sent_text
+        # Turn 49: /agendar removido dos comandos nativos; menu é via botoes inline
+        # Verifica que sauda sem citar comandos antigos
+        assert "/start" not in sent_text or "menu" in sent_text.lower()
 
     def test_e2e_with_pii_scrub(self, client: TestClient) -> None:
         """PII (CPF) e' scrubbed antes de ir ao LLM."""
