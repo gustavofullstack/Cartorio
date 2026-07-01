@@ -59,7 +59,21 @@
         {"id": "4.1", "title": "CLAUDE.md criado (este repo)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:35:00-03:00"},
         {"id": "4.2", "title": "GUIA_TESTES_GALERA_2026-07-01.md pronto", "owner": "cartorio-n8n", "status": "done", "completed_at": "2026-07-01"},
         {"id": "4.3", "title": "GUIA_TESTES_TELEGRAM.md pronto", "owner": "cartorio-n8n", "status": "done", "completed_at": "2026-07-01"},
-        {"id": "4.4", "title": "README/API.md 99 endpoints", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01"}
+        {"id": "4.4", "title": "README/API.md 99 endpoints", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01"},
+        {"id": "4.5", "title": "Skill /cartorio master + scripts cartorio_validate.sh + telegram_ping.sh", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:05:00-03:00"},
+        {"id": "4.6", "title": "MCPs configurados em settings.json (6: api/n8n/openclaw/easypanel/seq-thinking/supabase)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:05:00-03:00"}
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Issues REAIS detectados 2026-07-01",
+      "status": "pending",
+      "tasks": [
+        {"id": "5.1", "title": "Telegram webhook latency 14-19s (LAST_ERROR: Connection timed out, 9 pending)", "owner": "cartorio-dev", "status": "pending", "priority": "high"},
+        {"id": "5.2", "title": "Render API key rnd_QP8GWTShurLmVGSp3H2e25pXsKti expirada (401)", "owner": "Gustavo", "status": "pending", "priority": "medium", "note": "regra no_key_rotation em PROMPT.json — não rotacionar; pedir key nova ou remover Render do stack"},
+        {"id": "5.3", "title": "Linear API header (Linear não usa Bearer — enviar key direto)", "owner": "cartorio-dev", "status": "pending", "priority": "low"},
+        {"id": "5.4", "title": "pgweb swarm 0/1 replicas (debug tool quebrado)", "owner": "cartorio-n8n", "status": "pending", "priority": "low"},
+        {"id": "5.5", "title": "API 3 containers stale (scale 0 → 1)", "owner": "cartorio-n8n", "status": "pending", "priority": "low"}
       ]
     }
   ],
