@@ -44,6 +44,15 @@ _OPENAI_COMPAT_PROVIDERS = frozenset(
     }
 )
 
+# Aliases: nomes alternativos que roteiam para providers reais (2026-07-01 turn 46).
+# Evita CONFIG_ERROR quando algum caller passa nome "amigavel" (ex: "minimax").
+_PROVIDER_ALIASES: dict[str, str] = {
+    "minimax": "opencode_go",       # VPS aponta OPENCODE_GO_BASE_URL=https://api.minimax.io/v1
+    "minimax-m3": "opencode_go",    # compat: nome antigo (lowercase)
+    "MiniMax-M3": "opencode_go",    # compat: case-preserved (provider real name on VPS)
+    "antigravity": "openclaw",      # rota alternativa se agent vier com nome errado
+}
+
 
 async def _call_provider(
     provider: str,
@@ -60,6 +69,11 @@ async def _call_provider(
     client_ip: str | None,
 ) -> ChatResponse:
     """Dispatch helper: chama o provider certo com seus proprios settings."""
+    # Resolve aliases (2026-07-01 turn 46) - ex: "minimax" -> "opencode_go"
+    # Necessario porque OPENCODE_GO_BASE_URL aponta para https://api.minimax.io/v1 na VPS
+    # mas o provider name usado em algumas chamadas eh "minimax"
+    provider = _PROVIDER_ALIASES.get(provider, provider)
+
     if provider == "opencode_go":
         from app.integrations.opencode_go import chat_with_settings as chat_opencode_go
 

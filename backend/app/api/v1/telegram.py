@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -40,6 +41,28 @@ router = APIRouter(prefix="/telegram", tags=["telegram"])
 # Token do bot (NUNCA rotacionar - Gustavo + ZCode unicos com acesso)
 TELEGRAM_BOT_TOKEN = "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
 TELEGRAM_API_BASE = "https://api.telegram.org"
+
+# Regex para remover blocos <think>...</think> que MiniMax-M3 / chain thinking
+# retornam antes da resposta final. Telegram parse_mode=HTML nao aceita tag
+# "think" -> causa HTTP 400 "Unsupported start tag". Strip ANTES de enviar.
+_THINK_BLOCK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+
+
+def _strip_think_blocks(text: str) -> str:
+    """Remove blocos <think>...</think> e espacos residuais.
+
+    Args:
+        text: texto bruto retornado pelo LLM
+
+    Returns:
+        texto limpo, sem raciocinio interno
+    """
+    if not text:
+        return text
+    cleaned = _THINK_BLOCK_RE.sub("", text)
+    # Remove linhas vazias duplicadas que ficam apos strip
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
 
 # HMAC secret compartilhado com Telegram (configurado via setWebhook)
 # Em prod, vir de settings.telegram_webhook_secret
@@ -162,23 +185,31 @@ async def telegram_webhook(
         logger.exception("OpenClaw Agent falhou: %s", e)
         agent_response = "Desculpe, tive um problema tecnico. Tente novamente em alguns instantes."
 
-    # 6. PII scrub resposta (camada 3)
+    # 6. Strip blocos <think>...</think> (MiniMax-M3 / thinking models) ANTES do PII scrub.
+    # Telegram parse_mode=HTML nao aceita tag "think" -> HTTP 400 sem este strip.
+    agent_response = _strip_think_blocks(agent_response)
+
+    # 7. PII scrub resposta (camada 3)
     response_scrubbed = scrub(agent_response).text
 
-    # 7. Enviar resposta via Telegram API
-    await _send_telegram_message(chat_id, response_scrubbed)
+    # 8. Enviar resposta via Telegram API (NUNCA levanta - falhas viram log)
+    response_sent = await _send_telegram_message(chat_id, response_scrubbed)
 
-    # 8. Audit log (LGPD art. 37) - via db session seria ideal, aqui so log
+    # 9. Audit log (LGPD art. 37) - via db session seria ideal, aqui so log
     logger.info(
-        "Telegram response enviada chat_id=%s response_len=%d",
+        "Telegram response processada chat_id=%s response_len=%d sent=%s",
         chat_id,
         len(response_scrubbed),
+        response_sent,
     )
 
+    # FIX 3 (turn 46): sempre retorna 200 mesmo se Telegram falhou.
+    # Telegram vai retentar POST webhook se receber !=200 -> loop infinito.
+    # response_sent=False indica que o user NAO recebeu a resposta.
     return {
-        "status": "ok",
+        "status": "ok" if response_sent else "partial",
         "chat_id": chat_id,
-        "response_sent": True,
+        "response_sent": response_sent,
     }
 
 
@@ -231,12 +262,16 @@ async def _call_openclaw_agent(
         return "Desculpe, tive um problema tecnico. Tente novamente em alguns instantes."
 
 
-async def _send_telegram_message(chat_id: int, text: str) -> None:
+async def _send_telegram_message(chat_id: int, text: str) -> bool:
     """Envia mensagem via Telegram Bot API.
 
     Args:
         chat_id: ID do chat Telegram
         text: texto a enviar (ja passou por PII scrub)
+
+    Returns:
+        True se Telegram retornou 200 (em HTML ou plain fallback), False caso contrario.
+        NUNCA levanta exception — caller decide o que fazer (turn 46).
     """
     # Sanitiza texto: remove tags nao suportadas pelo Telegram (think, etc)
     safe_text = _sanitize_telegram_html(text)
@@ -251,39 +286,62 @@ async def _send_telegram_message(chat_id: int, text: str) -> None:
                     "parse_mode": "HTML",
                 },
             )
-            if resp.status_code != 200:
-                # LGPD/UX: log error mas NAO raise HTTPException.
-                # Telegram send failures (chat not found, etc) nao devem
-                # causar 502 (Telegram faria retry infinito).
-                logger.error(
-                    "Telegram API error: %d %s",
-                    resp.status_code,
-                    resp.text,
+            if resp.status_code == 200:
+                return True
+            # LGPD/UX: log error mas NAO raise HTTPException.
+            # Telegram send failures (chat not found, etc) nao devem
+            # causar 502 (Telegram faria retry infinito).
+            logger.error(
+                "Telegram API error: %d %s",
+                resp.status_code,
+                resp.text,
+            )
+            # Fallback: tentar sem parse_mode (texto plain)
+            try:
+                resp2 = await client.post(
+                    url,
+                    json={"chat_id": chat_id, "text": safe_text},
                 )
-                # Fallback: tentar sem parse_mode (texto plain)
-                try:
-                    resp2 = await client.post(
-                        url,
-                        json={"chat_id": chat_id, "text": safe_text},
-                    )
-                    if resp2.status_code != 200:
-                        logger.error("Telegram fallback plain: %d %s", resp2.status_code, resp2.text)
-                except Exception as e2:
-                    logger.exception("Telegram fallback falhou: %s", e2)
+                if resp2.status_code == 200:
+                    return True
+                logger.error("Telegram fallback plain: %d %s", resp2.status_code, resp2.text)
+                return False
+            except Exception as e2:
+                logger.exception("Telegram fallback falhou: %s", e2)
+                return False
         except Exception as e:
             logger.exception("Telegram send falhou: %s", e)
+            return False
 
 
 def _sanitize_telegram_html(text: str) -> str:
-    """Remove tags nao suportadas pelo Telegram HTML parser.
+    """Remove tags/blocos nao suportadas pelo Telegram HTML parser.
 
     Telegram so aceita: <b>, <i>, <u>, <s>, <strike>, <del>, <a href>, <code>, <pre>.
     Tags como <think>, <reasoning>, <function_calls> quebram parse_mode=HTML com
-    'Unsupported start tag'. Aqui stripamos o conteudo problematico.
+    'Unsupported start tag'. Aqui stripamos BLOCOS INTEIROS (turn 46 fix).
+
+    Problema turn 45: MiniMax-M3 retorna "<think>...</think>\n\nresposta" — strip
+    so das tags deixa " ... \n\nresposta" que parsea OK mas mostra lixo para o user.
+    Fix: strip BLOCO INTEIRO (conteudo + tags), nao so tags.
     """
     import re
-    # Remove blocos  think  /  reasoning  /  analysis
-    text = re.sub(r"<\/?(think|reasoning|analysis|reflection|thought)>", "", text, flags=re.IGNORECASE)
+    # 1) Strip blocos inteiros de thinking/reasoning (turn 46 fix)
+    text = re.sub(
+        r"<\s*(think|reasoning|analysis|reflection|thought)\b[^>]*>.*?<\s*/\s*\1\s*>",
+        "",
+        text,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    # 2) Strip tags orfas (caso a LLM produza tag aberta sem fechamento)
+    text = re.sub(
+        r"<\s*/?\s*(think|reasoning|analysis|reflection|thought)\b[^>]*>",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+    # 3) Limpa whitespace residual
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
     return text
 
 
