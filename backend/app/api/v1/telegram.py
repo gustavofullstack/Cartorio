@@ -61,6 +61,20 @@ STATE_AGENDAR_CONFIRMAR = "agendar:confirmar"
 STATE_PROTOCOLO = "protocolo:consulta"
 STATE_HUMANO = "humano:fila"
 
+# Whitelist canonica: fonte unica de verdade para comandos permitidos via texto.
+# Sincronizar com _handle_command (handler) E com a docstring do modulo (linha 6).
+ALLOWED_COMMANDS: frozenset[str] = frozenset(
+    {
+        "/start",
+        "/menu",
+        "/agendar",
+        "/protocolo",
+        "/humano",
+        "/cancelar",
+        "/lgpd",
+    }
+)
+
 SERVICOS: dict[str, tuple[str, str]] = {
     "reconhecimento_firma": ("Reconhecimento de Firma", "R$ 8,50"),
     "autenticacao": ("Autenticacao de Documento", "R$ 6,80"),
@@ -735,10 +749,15 @@ async def telegram_webhook(
             await _react(chat_id, msg_id, "eyes")
             markup = {"inline_keyboard": keyboard} if keyboard else None
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
-            return {"status": "ok" if sent else "partial", "chat_id": chat_id, "kind": "callback", "response_sent": sent}
+            return {
+                "status": "ok" if sent else "partial",
+                "chat_id": chat_id,
+                "kind": "callback",
+                "response_sent": sent,
+            }
     if text.startswith("/"):
         cmd = text.strip().split()[0].lower().split("@")[0]
-        if cmd not in {"/start", "/menu", "/humano", "/cancelar", "/lgpd"}:
+        if cmd not in ALLOWED_COMMANDS:
             await _react(chat_id, msg_id, "cross")
             markup = {"inline_keyboard": _menu_keyboard()}
             sent = await _send_message(
@@ -750,7 +769,11 @@ async def telegram_webhook(
             response_text = strip_emojis(response_text)
             markup = {"inline_keyboard": keyboard} if keyboard else None
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
-            return {"status": "ok" if sent else "partial", "chat_id": chat_id, "response_sent": sent}
+            return {
+                "status": "ok" if sent else "partial",
+                "chat_id": chat_id,
+                "response_sent": sent,
+            }
 
     if not bus:
         if not await _check_rate_limit(bus, chat_id):

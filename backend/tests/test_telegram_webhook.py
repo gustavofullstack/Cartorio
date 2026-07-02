@@ -142,6 +142,30 @@ def test_unknown_command_shows_menu(client: TestClient) -> None:
         "message": {
             "from": {"id": 6682284055},
             "chat": {"id": 6682284055},
+            "text": "/xyzzy_comando_invalido",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
+                    resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    # comando realmente desconhecido cai no unknown_command com menu
+    sent_text = mock_send.call_args[0][1]
+    assert "não disponível" in sent_text or "menu" in sent_text.lower()
+
+
+def test_agendar_text_command_accepted(client: TestClient) -> None:
+    """Regression: /agendar digitado deve ser aceito (whitelist canonica)."""
+    update = {
+        "update_id": 2,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
             "text": "/agendar",
             "date": 1719227400,
         },
@@ -154,9 +178,32 @@ def test_unknown_command_shows_menu(client: TestClient) -> None:
                 with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
-    # /agendar nao existe mais como comando - cai no unknown_command
     sent_text = mock_send.call_args[0][1]
-    assert "não disponível" in sent_text or "menu" in sent_text.lower()
+    # /agendar DEVE abrir o menu de servicos, nao rejeitar
+    assert "Agendar" in sent_text or "servi" in sent_text.lower()
+
+
+def test_protocolo_text_command_accepted(client: TestClient) -> None:
+    """Regression: /protocolo digitado deve ser aceito (whitelist canonica)."""
+    update = {
+        "update_id": 3,
+        "message": {
+            "from": {"id": 6682284055},
+            "chat": {"id": 6682284055},
+            "text": "/protocolo",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
+                    resp = client.post("/api/v1/telegram/webhook", json=update)
+    assert resp.status_code == 200
+    sent_text = mock_send.call_args[0][1]
+    assert "protocolo" in sent_text.lower()
 
 
 # === Callbacks (botões inline) ===
@@ -283,7 +330,11 @@ def test_text_free_shows_menu(client: TestClient, telegram_update_text: dict) ->
     assert resp.status_code == 200
     # Texto livre sem state = mostra menu
     sent_text = mock_send.call_args[0][1]
-    assert "menu" in sent_text.lower() or "cartorio" in sent_text.lower() or "cartório" in sent_text.lower()
+    assert (
+        "menu" in sent_text.lower()
+        or "cartorio" in sent_text.lower()
+        or "cartório" in sent_text.lower()
+    )
 
 
 # === PII Scrubbing ===
