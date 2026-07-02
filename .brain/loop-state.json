@@ -1,7 +1,7 @@
 {
   "version": "2.7.0",
-  "updated_at": "2026-07-02T21:05:49.411258-03:00",
-  "status": "telegram_bot_e2e_9x_validated + T1_OPENCLAW_1M_CONFIRMED_lesson139",
+  "updated_at": "2026-07-02T21:09:29.796077-03:00",
+  "status": "telegram_bot_e2e_9x + T1_OpenClaw_1M_DONE + SquadA_25/25_DONE_lesson139b",
   "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + Redis recovery + fallback chain)",
   "current_goal": "G7: Bot Telegram 100% via LiteLLM - 9 testes E2E + 1 CLI + 3 stress fallback",
   "metrics": {
@@ -52,9 +52,14 @@
       "id": "7",
       "title": "T1 OpenClaw context 1M confirmed (PROMPT.json sincronizado com realidade turn 50)",
       "status": "done"
+    },
+    {
+      "id": "8",
+      "title": "Squad A 25/25 DONE (audit hardening: redlock, cache 24h, openapi validator, problem+json, etc)",
+      "status": "done"
     }
   ],
-  "lessons_total": 138,
+  "lessons_total": 139,
   "user_action_required_only_one": [
     "ABRIR TELEGRAM NO CELULAR, mandar /start no @test_cartorio_bot, transcrever resposta"
   ],
