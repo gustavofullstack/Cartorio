@@ -735,7 +735,12 @@ async def telegram_webhook(
             await _react(chat_id, msg_id, "eyes")
             markup = {"inline_keyboard": keyboard} if keyboard else None
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
-            return {"status": "ok" if sent else "partial", "chat_id": chat_id, "kind": "callback", "response_sent": sent}
+            return {
+                "status": "ok" if sent else "partial",
+                "chat_id": chat_id,
+                "kind": "callback",
+                "response_sent": sent,
+            }
     if text.startswith("/"):
         cmd = text.strip().split()[0].lower().split("@")[0]
         if cmd not in {"/start", "/menu", "/humano", "/cancelar", "/lgpd"}:
@@ -750,7 +755,11 @@ async def telegram_webhook(
             response_text = strip_emojis(response_text)
             markup = {"inline_keyboard": keyboard} if keyboard else None
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
-            return {"status": "ok" if sent else "partial", "chat_id": chat_id, "response_sent": sent}
+            return {
+                "status": "ok" if sent else "partial",
+                "chat_id": chat_id,
+                "response_sent": sent,
+            }
 
     if not bus:
         if not await _check_rate_limit(bus, chat_id):

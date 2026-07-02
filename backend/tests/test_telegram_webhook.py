@@ -283,7 +283,11 @@ def test_text_free_shows_menu(client: TestClient, telegram_update_text: dict) ->
     assert resp.status_code == 200
     # Texto livre sem state = mostra menu
     sent_text = mock_send.call_args[0][1]
-    assert "menu" in sent_text.lower() or "cartorio" in sent_text.lower() or "cartório" in sent_text.lower()
+    assert (
+        "menu" in sent_text.lower()
+        or "cartorio" in sent_text.lower()
+        or "cartório" in sent_text.lower()
+    )
 
 
 # === PII Scrubbing ===
