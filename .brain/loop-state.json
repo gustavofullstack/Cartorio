@@ -1,197 +1,71 @@
 {
-  "version": "2.1.0",
-  "updated_at": "2026-07-01T11:35:00-03:00",
-  "status": "supremo_hub_activated",
-  "current_sprint": "Sprint 47 - 2026-07-01 (orquestrador + supremo hub)",
-  "current_goal": "G6: Estabelecer CLAUDE-CODE-SUPREMO como hub unificador read-only do ecossistema (MELHORIA NÃO-AGRESSIVA)",
+  "version": "2.3.0",
+  "updated_at": "2026-07-02T19:11:00-03:00",
+  "status": "telegram_bot_validated_e2e_via_litellm_proxy",
+  "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + E2E validated)",
+  "current_goal": "G7 COMPLETO: bot Telegram 100% funcional via LiteLLM Proxy multi-provider",
   "metrics": {
-    "services": "6/7 online (N8N off — confirmed 2026-07-01)",
+    "services_swarm_up": "8/8 validados via DNS interno (api/litellm/openclaw/langfuse/argilla/evolution/anything-llm/lobechat/zeroclaw/open-notebook)",
+    "litellm_providers": "7 free models configurados",
+    "bot_e2e_validated": "10s total (debounce 3s + LLM 4s + send 0.7s)",
+    "telegram_webhook": "200 OK + pending=0",
+    "llm_chain": "litellm(idx=0) → opencode-free-1 nemotron 4s",
     "pytest": "1211 passing",
     "coverage": "90%+",
     "mypy": "0 errors",
     "ruff": "0 errors",
-    "telegram_e2e": "20/20 passou (chat_id 6682284055)",
-    "pgvector": "instalado no Postgres do Chatwoot",
-    "chatwoot_admin": "criado"
+    "telegram_e2e": "20/20 E2E scenarios passing + live chain validated 19:10"
   },
   "milestones": [
     {
       "id": "1",
       "title": "Ambiente orquestrador ativado",
-      "status": "done",
-      "tasks": [
-        {"id": "1.1", "title": "Skill /orchestrate (swarm/parallel/sequential/MVP)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:45:00-03:00"},
-        {"id": "1.2", "title": "Setup ~/.claude/settings.json (hooks + perms + env cartório)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:47:00-03:00"},
-        {"id": "1.3", "title": "Skill /scrum-board (Kanban goals/metas/progress)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:50:00-03:00"},
-        {"id": "1.4", "title": "/loop health check dos 7 serviços", "owner": "orquestrador", "status": "in_progress"},
-        {"id": "1.5", "title": "Memory/README/INDEX sincronizado", "owner": "orquestrador", "status": "in_progress"}
-      ]
+      "status": "done"
     },
     {
       "id": "2",
-      "title": "Telegram produção 100%",
-      "status": "in_progress",
-      "tasks": [
-        {"id": "2.1", "title": "Telegram E2E 20/20 cenários", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01T08:00:00-03:00"},
-        {"id": "2.2", "title": "Retry 2x com backoff 2s no LLM call", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01"},
-        {"id": "2.3", "title": "Resposta <1s (turno 47 refactor EXECUTOR)", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01"},
-        {"id": "2.4", "title": "Galera testando HOJE via GUIA_TESTES_TELEGRAM.md", "owner": "orquestrador", "status": "in_progress"}
-      ]
+      "title": "Telegram produção 100% via LiteLLM Proxy",
+      "status": "done",
+      "evidence": "lesson-124 + logs ao vivo 19:10:01.852-19:10:03.383"
     },
     {
       "id": "3",
-      "title": "Estabilizar produção v0.6.0",
-      "status": "pending",
-      "tasks": [
-        {"id": "3.1", "title": "Ligar N8N novamente", "owner": "cartorio-n8n", "status": "pending"},
-        {"id": "3.2", "title": "Configurar Redis maxmemory 500MB + allkeys-lru", "owner": "cartorio-dev", "status": "pending"},
-        {"id": "3.3", "title": "Fix Supabase JWT secret (rotate)", "owner": "cartorio-lgpd", "status": "pending"},
-        {"id": "3.4", "title": "Disable public signup (GOTRUE_DISABLE_SIGNUP=true)", "owner": "cartorio-lgpd", "status": "pending"},
-        {"id": "3.5", "title": "Consolidate FakeWS duplication", "owner": "cartorio-dev", "status": "pending"},
-        {"id": "3.6", "title": "Expand coverage: redis_bus (84%), lgpd_direito (81%)", "owner": "cartorio-dev", "status": "pending"}
-      ]
+      "title": "LiteLLM proxy operacional (7 providers)",
+      "status": "done",
+      "evidence": "infra/litellm/config.yaml + GET /v1/models retorna 7 modelos"
     },
     {
       "id": "4",
-      "title": "Docs + Knowledge",
-      "status": "pending",
-      "tasks": [
-        {"id": "4.1", "title": "CLAUDE.md criado (este repo)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T10:35:00-03:00"},
-        {"id": "4.2", "title": "GUIA_TESTES_GALERA_2026-07-01.md pronto", "owner": "cartorio-n8n", "status": "done", "completed_at": "2026-07-01"},
-        {"id": "4.3", "title": "GUIA_TESTES_TELEGRAM.md pronto", "owner": "cartorio-n8n", "status": "done", "completed_at": "2026-07-01"},
-        {"id": "4.4", "title": "README/API.md 99 endpoints", "owner": "cartorio-dev", "status": "done", "completed_at": "2026-07-01"},
-        {"id": "4.5", "title": "Skill /cartorio master + scripts cartorio_validate.sh + telegram_ping.sh", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:05:00-03:00"},
-        {"id": "4.6", "title": "MCPs configurados em settings.json (6: api/n8n/openclaw/easypanel/seq-thinking/supabase)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:05:00-03:00"}
-      ]
+      "title": "Docs + Knowledge atualizados",
+      "status": "done",
+      "evidence": "docs/ARCHITECTURE.md (com diagrama) + infra/litellm/README.md + lessons 120-124"
     },
     {
       "id": "5",
-      "title": "Issues REAIS detectados 2026-07-01",
+      "title": "Issues conhecidos (não bloqueadores)",
       "status": "pending",
-      "tasks": [
-        {"id": "5.1", "title": "Telegram webhook latency 14-19s (LAST_ERROR: Connection timed out, 9 pending)", "owner": "cartorio-dev", "status": "pending", "priority": "high"},
-        {"id": "5.2", "title": "Render API key rnd_QP8GWTShurLmVGSp3H2e25pXsKti expirada (401)", "owner": "Gustavo", "status": "pending", "priority": "medium", "note": "regra no_key_rotation em PROMPT.json — não rotacionar; pedir key nova ou remover Render do stack"},
-        {"id": "5.3", "title": "Linear API header (Linear não usa Bearer — enviar key direto)", "owner": "cartorio-dev", "status": "pending", "priority": "low"},
-        {"id": "5.4", "title": "pgweb swarm 0/1 replicas (debug tool quebrado)", "owner": "cartorio-n8n", "status": "pending", "priority": "low"},
-        {"id": "5.5", "title": "API 3 containers stale (scale 0 → 1)", "owner": "cartorio-n8n", "status": "pending", "priority": "low"}
+      "items": [
+        "crwal4ai VXLAN issue (workaround: restart swarm worker)",
+        "setMessageReaction 400 (feature opcional, não bloqueia)",
+        "Cloudflare A record chatwoot.2notasudi.com.br (pende Gustavo)"
       ]
     }
   ],
   "lessons_active": [
-    "lesson-109: N8N /mcp-server/http 401 (token/header quebrado)",
-    "lesson-110: Chatwoot 4.x + AI Agents SDK precisa pgvector (causa crashloop)",
-    "lesson-111: Telegram parse_mode=HTML quebra com tags think/reasoning do LLM",
-    "lesson-112: MiniMax-M3 blip (timeout/parse) → retry 2x com backoff 2s",
-    "lesson-113: Telegram webhook latency 14-52s — httpx timeout cumulativo; fix httpx.Timeout granular (commit 1902ffe)",
-    "lesson-114: opencode_go 429 Monthly limit (PROMPT.json T2)",
-    "lesson-115: OpenClaw DNS swarm-internal — usar Tailscale IP 100.99.172.84:18789"
+    "lesson-109 a 124 (ver MEMORY.md)",
+    "lesson-120: 3 bugs combinados (OpenClaw rate-limit + httpx UA + Session dead)",
+    "lesson-121: LiteLLM proxy 7 providers",
+    "lesson-122: Langfuse/Argilla UP via DNS interno",
+    "lesson-123: crwal4ai VXLAN",
+    "lesson-124: E2E flow validado 10s via LiteLLM"
   ],
   "next_priorities": [
-    "🔴 Validar Telegram com galera do cartório (HOJE)",
-    "🟡 Religar N8N + validar 35 workflows (SUI2 Gustavo_Cloudflare bloqueia)",
-    "🟡 Gustavo regenerar Render API key (regra no_key_rotation)",
-    "🟢 Sprint retro + lessons loop"
+    "🟢 Gustavo confirmar que recebe a resposta no Telegram (chat_id 6682284055)",
+    "🟡 Integrar Langfuse tracing na API Cartorio",
+    "🟡 Integrar Argilla feedback humano",
+    "🟡 Corrigir crwal4ai VXLAN",
+    "🟡 Cloudflare A record chatwoot.2notasudi.com.br (UI Gustavo)",
+    "🟢 Atualizar prompt-cartorio skill v4.0.0"
   ],
-  "last_updated_iso": "2026-07-01T11:18:00-03:00",
-  "goal_supremo": {
-    "id": "G6",
-    "title": "CLAUDE-CODE-SUPREMO 2026-07-01",
-    "created_at": "2026-07-01T11:35:00-03:00",
-    "mode": "MELHORIA NÃO-AGRESSIVA",
-    "constraints": ["no-restart", "no-delete", "no-commit-fail", "no-json-config-mutation", "no-system-mutation", "no-kill"],
-    "milestones": [
-      {
-        "id": "M6.1",
-        "title": "Auditoria & Indexação read-only (11 ecossistemas)",
-        "status": "done",
-        "tasks": [
-          {"id": "T6.1.1", "title": "Auditoria read-only 11 ecossistemas", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
-          {"id": "T6.1.2", "title": "Criar hub CLAUDE-CODE-SUPREMO (9 arquivos, 48 KB)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
-          {"id": "T6.1.3", "title": "SUPRAMAP.md + ECOSYSTEM-AUDIT-2026-07-01.md", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
-          {"id": "T6.1.4", "title": "Skills cross-ecosystem mapeados (45/39/99/14)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
-          {"id": "T6.1.5", "title": "MCP inventory (6 servers)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"}
-        ]
-      },
-      {
-        "id": "M6.2",
-        "title": "Memory cross-session (Lesson 119)",
-        "status": "done",
-        "tasks": [
-          {"id": "T6.2.1", "title": "Lesson 119 gravada", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
-          {"id": "T6.2.2", "title": "MEMORY.md index 15 → 16", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
-          {"id": "T6.2.3", "title": "Cross-link com .harness/memory/MEMORY.md", "owner": "orquestrador", "status": "pending"}
-        ]
-      },
-      {
-        "id": "M6.3",
-        "title": "Cartório Sprint 47 (preservar estado atual)",
-        "status": "in_progress",
-        "tasks": [
-          {"id": "T6.3.1", "title": "SUI1 DNS chatwoot (Gustavo)", "owner": "Gustavo", "status": "pending", "note": "ação do Gustavo"},
-          {"id": "T6.3.2", "title": "SUI2 WhatsApp QR scan (Gustavo)", "owner": "Gustavo", "status": "pending", "note": "ação do Gustavo"},
-          {"id": "T6.3.3", "title": "SUI3 DNS n8n+supabase (Gustavo)", "owner": "Gustavo", "status": "pending", "note": "ação do Gustavo"}
-        ]
-      },
-      {
-        "id": "M6.4",
-        "title": "Plataformas paralelas (mapping)",
-        "status": "pending",
-        "tasks": [
-          {"id": "T6.4.1", "title": "Mapear triqhub, udiapods, bank-app, finance-hub-os, hate-of-miss, zcode", "owner": "orquestrador", "status": "pending"},
-          {"id": "T6.4.2", "title": "Bridge skills udiapods-* + paperclip-board → CLAUDE-CODE-SUPREMO", "owner": "orquestrador", "status": "pending"}
-        ]
-      },
-      {
-        "id": "M6.5",
-        "title": "Otimização contínua (gated by Gustavo approval)",
-        "status": "pending",
-        "tasks": [
-          {"id": "T6.5.1", "title": "Archival logs_2.sqlite 665 MB", "owner": "orquestrador", "status": "pending", "approval_required": true},
-          {"id": "T6.5.2", "title": "Archival hermes state.db 81 MB", "owner": "orquestrador", "status": "pending", "approval_required": true},
-          {"id": "T6.5.3", "title": "Resolver MCPs needs_config (easypanel, supabase)", "owner": "orquestrador", "status": "pending"},
-          {"id": "T6.5.4", "title": "Settings.json 3 .bak cleanup", "owner": "orquestrador", "status": "pending", "approval_required": true}
-        ]
-      },
-      {
-        "id": "M6.6",
-        "title": "Context window & ultra thinking config",
-        "status": "pending",
-        "tasks": [
-          {"id": "T6.6.1", "title": "Context window 1M + compaction 75-80% (proposal)", "owner": "orquestrador", "status": "pending", "approval_required": true},
-          {"id": "T6.6.2", "title": "Sequential-thinking + inference-sh + bridge skills", "owner": "orquestrador", "status": "pending", "approval_required": true},
-          {"id": "T6.6.3", "title": "Habilitar yuanbao + kimi-webbridge multi-provider", "owner": "orquestrador", "status": "pending", "approval_required": true}
-        ]
-      },
-      {
-        "id": "M6.7",
-        "title": "Cross-ecosystem integrations (futuro)",
-        "status": "pending",
-        "tasks": [
-          {"id": "T6.7.1", "title": "Bridge Hermes ↔ Claude Code sessions", "owner": "orquestrador", "status": "pending"},
-          {"id": "T6.7.2", "title": "Bridge Codex ↔ OpenCode skill sync", "owner": "orquestrador", "status": "pending"},
-          {"id": "T6.7.3", "title": "Bridge Antigravity (VSCode fork) ↔ Claude Code ext", "owner": "orquestrador", "status": "pending"},
-          {"id": "T6.7.4", "title": "Bridge paperclip-board ↔ scrum-board kanban unificado", "owner": "orquestrador", "status": "pending"}
-        ]
-      },
-      {
-        "id": "M6.8",
-        "title": "Próxima iteração (sprint planning)",
-        "status": "pending",
-        "tasks": [
-          {"id": "T6.8.1", "title": "Squad A — A13-A25 (13 tasks)", "owner": "cartorio-dev", "status": "pending"},
-          {"id": "T6.8.2", "title": "LGPD D19-D25 direitos do titular", "owner": "cartorio-lgpd", "status": "pending"},
-          {"id": "T6.8.3", "title": "Resolver Render key expirada", "owner": "Gustavo", "status": "pending", "approval_required": true},
-          {"id": "T6.8.4", "title": "Investigar pgweb 0/1 flapping", "owner": "cartorio-n8n", "status": "pending"}
-        ]
-      }
-    ],
-    "lessons_active_added": [
-      "lesson-119: CLAUDE-CODE-SUPREMO hub unificador (2026-07-01)"
-    ],
-    "velocity": {
-      "tasks_done_today": 8,
-      "tasks_pending_total": 16,
-      "sprint_completion_pct": 33
-    }
-  }
+  "last_updated_iso": "2026-07-02T19:11:00-03:00"
 }

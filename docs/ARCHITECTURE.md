@@ -45,6 +45,7 @@ flowchart LR
 flowchart TB
     subgraph Cliente["Cliente"]
         WA[WhatsApp App]
+        TG[Telegram App]
     end
     subgraph Internet["Internet"]
         CloudFlare[Cloudflare DNS + Proxy]
@@ -52,12 +53,20 @@ flowchart TB
     subgraph VPS["VPS Hostinger (Traefik + Swarm)"]
         Traefik[Traefik<br/>6 domínios SSL]
         CartorioAPI[API FastAPI<br/>v0.6.0 :8000]
+        LiteLLM[LiteLLM Proxy<br/>:4000<br/>7 providers free]
         N8N[N8N<br/>:5678]
         N8NRunner[N8N Runner<br/>:5678]
         OpenClaw[OpenClaw Gateway<br/>:18790]
         Evolution[Evolution API<br/>:8080]
         Chatwoot[Chatwoot<br/>:3000]
         Sidekiq[Chatwoot Sidekiq]
+        Langfuse[Langfuse<br/>tracing LLM]
+        Argilla[Argilla<br/>feedback humano]
+        AnythingLLM[Anything-LLM<br/>workspace]
+        LobeChat[LobeChat<br/>chat UI]
+        OpenNotebook[Open-Notebook<br/>experimentos]
+        Zeroclaw[Zeroclaw<br/>agent CLI]
+        Crawl4ai[crwal4ai<br/>RAG web]
         Redis[(Redis 8<br/>:6379)]
         Supabase[Supabase<br/>14 containers]
         PG[(PostgreSQL 16<br/>:5432)]
@@ -65,44 +74,99 @@ flowchart TB
     end
 
     WA --> CloudFlare
+    TG --> CloudFlare
     CloudFlare --> Traefik
     Traefik --> CartorioAPI
     Traefik --> N8N
     Traefik --> Evolution
     Traefik --> Chatwoot
     Traefik --> OpenClaw
+    Traefik --> LiteLLM
+    Traefik --> Langfuse
+    Traefik --> Argilla
     Traefik --> Supabase
     Traefik --> EasyPanel
 
+    %% Bot → LiteLLM primary path (Turno 47 supremo)
+    CartorioAPI -->|LLM call| LiteLLM
+    LiteLLM -->|nemotron-3-ultra-free| OpenCode[opencode.ai/zen]
+    LiteLLM -->|mimo-v2.5-free| OpenCode
+    LiteLLM -->|deepseek-v4-flash-free| OpenCode
+    LiteLLM -->|mistral-free| Mistral[mistral.ai]
+    LiteLLM -->|multi-provider| OpenRouter[openrouter.ai]
+    LiteLLM -->|gemini-flash| GoogleAI[Google AI Studio]
+
+    %% Persistence
     CartorioAPI --> PG
     CartorioAPI --> Redis
+    CartorioAPI -.->|tracing| Langfuse
+    CartorioAPI -.->|feedback| Argilla
+    CartorioAPI -.->|RAG| Crawl4ai
+
+    %% Adjacents
     N8N --> CartorioAPI
     N8N --> Evolution
     N8N --> Chatwoot
     OpenClaw --> N8N
     Evolution --> CartorioAPI
     Chatwoot --> CartorioAPI
+    AnythingLLM -.->|RAG| Supabase
+    LobeChat -.->|proxy| LiteLLM
+    OpenNotebook -.-> SurrealDB[SurrealDB]
     Sidekiq --> PG
     Supabase --> PG
+    Langfuse --> PG
+    Argilla --> PG
+    Langfuse --> Redis
+    Argilla --> Redis
 ```
 
-**Containers** (11 + infra):
+**Containers** (28 + infra) — atualizado 2026-07-02 (Turno 47 supremo):
 
-| Container | URL pública | Tech | Responsabilidade |
-|---|---|---|---|
-| **Traefik** | (proxy) | Traefik 2.x | SSL auto (Let's Encrypt) + 6 domínios |
-| **cartorio_api** | api.2notasudi.com.br | FastAPI v0.6.0 | Regras + audit + LGPD + MCP |
-| **cartorio_n8n** | flow.2notasudi.com.br | N8N 1.94.x | Workflows visuais + credenciais |
-| **cartorio_n8n-runner** | (internal) | N8N runner | Execução async workflows |
-| **cartorio_openclaw** | agent.2notasudi.com.br | OpenClaw 0.4.x | LLM router multi-provider |
-| **cartorio_evolution** | whatsapp.2notasudi.com.br | Evolution 2.3.7 | Gateway WhatsApp |
-| **cartorio_chatwoot** | chat.2notasudi.com.br | Chatwoot 3.x | CRM + handoff humano |
-| **cartorio_chatwoot-sidekiq** | (internal) | Sidekiq | Background jobs Chatwoot |
-| **cartorio_redis** | (internal) | Redis 8 | Cache + idempotência + locks |
-| **cartorio_supabase** | supbase.2notasudi.com.br | pgvector/pgvector:pg17 | Postgres central + pgvector (134 tabelas core + Chatwoot + RLS) |
-| **easypanel** | easypanel.2notasudi.com.br | EasyPanel | Deploy + gestão |
+| Container | URL pública | Tech | Status | Responsabilidade |
+|---|---|---|---|---|
+| **Traefik** | (proxy) | Traefik 2.x | ✅ | SSL auto + 6 domínios |
+| **cartorio_api** | api.2notasudi.com.br | FastAPI v0.6.0 | ✅ | Regras + audit + LGPD + MCP |
+| **cartorio_litellm-app** | (internal :4000) | LiteLLM v1.85.0 | ✅ | **Proxy LLM multi-provider (7 modelos free)** |
+| **cartorio_n8n** | flow.2notasudi.com.br | N8N 1.94.x | ⚠️ OFF | Workflows visuais (desligado 2026-07-01) |
+| **cartorio_openclaw** | agent.2notasudi.com.br | OpenClaw 0.4.x | ✅ | LLM agent router (CLI/WS) |
+| **cartorio_evolution** | whatsapp.2notasudi.com.br | Evolution 2.3.7 | ✅ | Gateway WhatsApp |
+| **cartorio_chatwoot** | chat.2notasudi.com.br | Chatwoot 3.x | ✅ | CRM + handoff humano |
+| **cartorio_anything-llm** | (internal :3001) | Anything-LLM 1.12 | ✅ | Workspace LLM multi-tenant |
+| **cartorio_lobechat** | (internal :3210) | LobeChat 1.143 | ✅ | Chat UI multi-provider |
+| **cartorio_open-notebook** | (internal :8502) | Open-Notebook 1.8.5 | ✅ | Jupyter-like experiments |
+| **cartorio_zeroclaw** | (internal :42617) | Zeroclaw 0.7.5 | ✅ | Agent terminal CLI |
+| **cartorio_langfuse-web** | (internal :80) | Langfuse 3.174 | ✅ | Tracing LLM observability |
+| **cartorio_argilla-web** | (internal :6900) | Argilla 2.8.0 | ✅ | Labeling feedback humano |
+| **cartorio_argilla-elastic** | (internal :9200) | ES 8.12.2 | ✅ | Busca full-text Argilla |
+| **cartorio_crwal4ai** | (internal :11235) | crwal4ai 0.9.0 | ⚠️ VXLAN | RAG web scraping |
+| **cartorio_redis** | (internal) | Redis 8.8 | ✅ | Cache + idempotência + locks |
+| **cartorio_supabase** | supbase.2notasudi.com.br | pgvector:pg17 | ✅ | Postgres central + 7 schemas |
+| **easypanel** | easypanel.2notasudi.com.br | EasyPanel | ✅ | Deploy + gestão |
 
 ---
+
+### Fluxo LLM primário (Turno 47 supremo)
+
+```
+Telegram → webhook → API → LiteLLM Proxy → 7 providers free
+                                     ↓
+                              nemotron-3-ultra-free (NVIDIA 1M ctx)
+                                     ↓
+                              response → sendMessage → Telegram
+```
+
+**Latência medida**: ~9s total (3s debounce + 3.8s LLM + 0.2s send).
+
+**Fallback chain** (ordem configurada em `LLM_FALLBACK_CHAIN`):
+1. `litellm` (proxy multi-provider)
+2. `opencode_free_1` (nemotron direto)
+3. `opencode_free_2` (mimo direto)
+4. `opencode_free_3` (deepseek-free direto)
+5. `opencode_go` (minimax-m3 se credit)
+6. `openrouter` / `groq` / `mistral` / `google_ai_studio` / `openclaw` / `jules`
+
+Config LiteLLM: `infra/litellm/config.yaml` (montado em `/app/config.yaml` no container).
 
 ## C4 Nível 3 — Component (módulos do backend)
 

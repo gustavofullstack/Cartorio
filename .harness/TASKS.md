@@ -1329,3 +1329,34 @@ Modified by Gustavo Almeida
 - Lesson 44: watchdog n8n-runner baseline
 
 Modified by Gustavo Almeida (Pietra orquestrou)
+
+## SESSÃO 2026-07-02 — Diagnóstico + Correção da Stack Swarm (27/27 UP)
+
+**Owner**: orchestrator
+**Status**: DONE (Wave 0-6 todas concluídas)
+
+### Tasks executadas
+
+- [x] WAVE-0: Diagnóstico read-only — mapeados 27 serviços Swarm reais (JSON dizia 24)
+- [x] WAVE-1: Fix POSTGRES_HOST=db → cartorio_supabase (chatwoot + sidekiq)
+- [x] WAVE-2: crwal4ai imagem amd64 (Easypanel trocou automaticamente de :all-arm64 para :latest)
+- [x] WAVE-3: argilla/langfuse/litellm reuso DB+Redis (6 serviços consertados)
+  - argilla-web/worker: GRANT ALL + senha SCRAM-SHA-256 reset
+  - langfuse-web/worker: Prisma OK, Next.js Ready
+  - litellm-app: Prisma DB reconnect fix
+- [x] WAVE-4: zeroclaw chmod 600 no config.toml
+- [x] WAVE-5: docs/SERVICE_INVENTORY.md criado (mapa real + divergências JSON)
+- [x] WAVE-6: Chatwoot bootstrap (SuperAdmin via rails runner) + Evolution↔Chatwoot integrado com CHATWOOT_* envs
+
+### Pendência
+
+- [ ] PEND-001: Reconectar WhatsApp cartorio-2notas via QR Code (humano, ação via painel Evolution-API)
+
+### Resultado
+
+- 27/27 serviços Swarm 1/1 UP
+- chat.2notasudi.com.br → 302 (login)
+- easypanel.2notasudi.com.br → 200
+- api.2notasudi.com.br → 200
+
+Modified by Gustavo Almeida

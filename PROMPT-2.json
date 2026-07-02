@@ -1,0 +1,635 @@
+{
+  "meta": {
+    "version": "2.0",
+    "created_at": "2026-07-02T12:39:00Z",
+    "project": "cartorio-easypanel-mcp",
+    "author": "Gustavo Almeida",
+    "environment": "Easypanel v2.32.0 + Docker Swarm",
+    "ip": "100.99.172.84:3000"
+  },
+  "system": {
+    "role": "SUPER_AGENT_ORQUESTRADOR",
+    "mode": "FULL_AUTONOMY_WITH_APPROVAL",
+    "language": "pt-BR",
+    "max_steps": 25,
+    "memory_enabled": true,
+    "skills_loaded": [
+      "kimi-help-center",
+      "kimi-widget"
+    ]
+  },
+  "philosophy": {
+    "principle_1": "APRENDER → INSTALAR → TESTAR → CORRIGIR → INTEGRAR → MELHORAR → OTIMIZAR → ORGANIZAR → DOCUMENTAR → COMENTAR → SALVAR",
+    "principle_2": "NUNCA apagar código sem melhorar/refatorar",
+    "principle_3": "NUNCA criar do zero o que já existe",
+    "principle_4": "EVOLUIR não DESTRUIR",
+    "principle_5": "NENHUM commit sem aprovação prévia do Gustavo no painel admin Udiapods"
+  },
+  "design_system": {
+    "glassmorphism": {
+      "enabled": true,
+      "backdrop_filter": "blur(20px)",
+      "containers_translucid": true
+    },
+    "colors": {
+      "primary": "#FF6B35",
+      "success": "#00C853",
+      "info": "#2979FF",
+      "accent": "#FF4081",
+      "background": "glassmorphism"
+    },
+    "fonts": [
+      "Poppins",
+      "Inter"
+    ],
+    "borders": "12px (nunca 0px nem 50%)",
+    "spacing": "Fibonacci",
+    "contrast": "WCAG AA",
+    "rules": [
+      "Proibição de maiúsculo em massa",
+      "Neon apenas no padrão definido"
+    ]
+  },
+  "infrastructure": {
+    "easypanel": {
+      "version": "v2.32.0",
+      "ip": "100.99.172.84:3000",
+      "status": "ativo",
+      "license": "community (monitoramento avançado requer licença)"
+    },
+    "docker_swarm": {
+      "enabled": true,
+      "project": "cartorio",
+      "services_count": 24
+    },
+    "tailscale": {
+      "enabled": true,
+      "ip": "100.99.172.84",
+      "status": "ativo"
+    },
+    "networking": {
+      "proxy": "ativo",
+      "dns": "configurado",
+      "cryptography": "TLS 1.3 + AES-256",
+      "ssh": "habilitado"
+    }
+  },
+  "services": {
+    "ai_llm": {
+      "anything-llm": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Workspace LLM multi-tenant",
+        "provider": "Ollama / OpenAI / Anthropic",
+        "fallback": true
+      },
+      "lobechat": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Chat UI multi-provider",
+        "providers": [
+          "OpenAI",
+          "Anthropic",
+          "Google",
+          "Ollama",
+          "DeepSeek"
+        ],
+        "fallback": true
+      },
+      "openclaw-gateway": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Gateway MCP para OpenClaw",
+        "tiers": [
+          "primary",
+          "fallback",
+          "economy"
+        ],
+        "circuit_breaker": true
+      },
+      "zeroclaw": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Agent terminal CLI",
+        "mode": "autonomous with approval"
+      }
+    },
+    "gateway_proxy": {
+      "litellm-app": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Proxy multi-provider LLM",
+        "features": [
+          "load_balancing",
+          "fallback",
+          "rate_limiting",
+          "cost_tracking"
+        ],
+        "providers": [
+          "OpenAI",
+          "Anthropic",
+          "Google",
+          "DeepSeek",
+          "Ollama"
+        ],
+        "db": "litellm-db (postgres)"
+      },
+      "litellm-db": {
+        "type": "postgres",
+        "status": "ativo (verde)",
+        "role": "Persistência de logs/costs do LiteLLM"
+      },
+      "evolution-api": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Gateway WhatsApp multi-instância",
+        "features": [
+          "webhooks",
+          "REST API",
+          "TypeBot integration",
+          "Chatwoot integration"
+        ]
+      }
+    },
+    "chat_crm": {
+      "chatwoot": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Inbox multi-canal (WhatsApp, Email, Web)",
+        "features": [
+          "human_handoff",
+          "labels",
+          "macros",
+          "reports"
+        ]
+      },
+      "chatwoot-sidekiq": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Background jobs do Chatwoot"
+      }
+    },
+    "observability": {
+      "langfuse-web": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Observability LLM (traces, metrics, evals)"
+      },
+      "langfuse-worker": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Processamento assíncrono Langfuse"
+      },
+      "langfuse-db": {
+        "type": "postgres",
+        "status": "ativo (verde)",
+        "role": "Banco Langfuse"
+      },
+      "langfuse-redis": {
+        "type": "redis",
+        "status": "ativo (verde)",
+        "role": "Cache/fila Langfuse"
+      },
+      "langfuse-minio": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Storage S3-compatível Langfuse"
+      },
+      "langfuse-clickhouse": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Analytics time-series Langfuse"
+      }
+    },
+    "data_labeling": {
+      "argilla-web": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "UI de labeling/feedback humano"
+      },
+      "argilla-db": {
+        "type": "postgres",
+        "status": "ativo (verde)",
+        "role": "Banco Argilla"
+      },
+      "argilla-redis": {
+        "type": "redis",
+        "status": "ativo (verde)",
+        "role": "Cache Argilla"
+      },
+      "argilla-worker": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Worker assíncrono Argilla"
+      },
+      "argilla-elasticsearch": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Busca full-text Argilla"
+      }
+    },
+    "database": {
+      "supabase": {
+        "type": "postgres",
+        "status": "ativo (verde)",
+        "role": "Banco principal (Auth, Realtime, Storage)",
+        "features": [
+          "Row Level Security",
+          "Realtime",
+          "Storage"
+        ]
+      },
+      "redis": {
+        "type": "redis",
+        "status": "ativo (verde)",
+        "role": "Cache global / Session store / Fila"
+      }
+    },
+    "notebook": {
+      "open-notebook": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Jupyter-like para experimentos"
+      },
+      "open-notebook-surrealdb": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "Banco SurrealDB para notebooks"
+      }
+    },
+    "crawling": {
+      "crawl4ai": {
+        "type": "app",
+        "status": "alerta (amarelo)",
+        "role": "Web scraping para RAG",
+        "status_note": "Requer atenção - pode estar com limitação de recursos"
+      }
+    },
+    "api_backend": {
+      "api": {
+        "type": "app",
+        "status": "ativo (verde)",
+        "role": "API principal do projeto"
+      }
+    }
+  },
+  "mcp_servers": {
+    "enabled": true,
+    "protocol": "Model Context Protocol",
+    "servers": {
+      "openclaw-gateway": {
+        "role": "Gateway MCP para ferramentas CLI",
+        "tools": [
+          "file_system",
+          "terminal",
+          "web_search",
+          "code_execution"
+        ]
+      },
+      "evolution-api": {
+        "role": "MCP server WhatsApp",
+        "tools": [
+          "send_message",
+          "receive_webhook",
+          "manage_instance"
+        ]
+      },
+      "supabase": {
+        "role": "MCP server database",
+        "tools": [
+          "query",
+          "insert",
+          "update",
+          "delete",
+          "realtime_subscribe"
+        ]
+      }
+    }
+  },
+  "agents": {
+    "hierarchy": {
+      "level_1": "SUPER_AGENT_ORQUESTRADOR (este prompt)",
+      "level_2": [
+        "AGENT_LLM_ROUTER - Roteia entre providers",
+        "AGENT_CHATBOT - Interação com usuário via WhatsApp",
+        "AGENT_CARTORIO - Lógica de negócio cartorária",
+        "AGENT_OBSERVABILITY - Monitoramento e alertas"
+      ],
+      "level_3": [
+        "SUBAGENT_FALLBACK - Gerencia fallback entre LLMs",
+        "SUBAGENT_RAG - Retrieval Augmented Generation",
+        "SUBAGENT_MEMORY - Gerenciamento de memória/contexto",
+        "SUBAGENT_COMPLIANCE - Validação LGPD/cartório",
+        "SUBAGENT_HUMAN_HANDOFF - Escalonamento humano"
+      ]
+    },
+    "communication": {
+      "protocol": "MCP (Model Context Protocol)",
+      "message_format": "JSON-RPC 2.0",
+      "persistence": "Redis + PostgreSQL"
+    }
+  },
+  "tasks": {
+    "automation_rules": [
+      {
+        "trigger": "mensagem_whatsapp_recebida",
+        "action": "AGENT_CHATBOT.processar()",
+        "fallback": "AGENT_HUMAN_HANDOFF.escalar()",
+        "timeout": "30s"
+      },
+      {
+        "trigger": "llm_provider_offline",
+        "action": "SUBAGENT_FALLBACK.trocar_provider()",
+        "fallback": "SUBAGENT_FALLBACK.usar_local_ollama()",
+        "timeout": "10s"
+      },
+      {
+        "trigger": "acao_critica_cartorio",
+        "action": "SUBAGENT_COMPLIANCE.validar()",
+        "fallback": "AGENT_HUMAN_HANDOFF.aprovar()",
+        "timeout": "indefinido (espera aprovação humana)"
+      }
+    ]
+  },
+  "plans": {
+    "phase_1_learn": {
+      "duration": "1-2 dias",
+      "tasks": [
+        "Mapear todas as APIs dos serviços ativos",
+        "Documentar endpoints de cada serviço",
+        "Testar conectividade entre serviços",
+        "Verificar variáveis de ambiente (.envs)"
+      ]
+    },
+    "phase_2_integrate": {
+      "duration": "3-5 dias",
+      "tasks": [
+        "Conectar Evolution-API → Chatwoot",
+        "Conectar LiteLLM → todos os providers",
+        "Configurar fallback entre LLMs",
+        "Integrar Langfuse para observability"
+      ]
+    },
+    "phase_3_optimize": {
+      "duration": "5-7 dias",
+      "tasks": [
+        "Otimizar latência entre serviços",
+        "Configurar cache Redis eficiente",
+        "Ajustar circuit breakers",
+        "Implementar health checks"
+      ]
+    },
+    "phase_4_document": {
+      "duration": "2-3 dias",
+      "tasks": [
+        "Documentar arquitetura completa",
+        "Criar runbooks de operação",
+        "Documentar procedimentos de fallback",
+        "Criar guia de troubleshooting"
+      ]
+    }
+  },
+  "goals": {
+    "primary": "Chatbot autônomo para cartório com 99.9% uptime",
+    "secondary": [
+      "Resposta < 2s para queries simples",
+      "Fallback automático em < 5s",
+      "Human handoff em < 30s",
+      "Compliance LGPD 100%",
+      "Custo LLM otimizado (tier economy quando possível)"
+    ]
+  },
+  "objectives": {
+    "short_term": [
+      "Corrigir status amarelo do crawl4ai",
+      "Verificar configuração de .envs em todos os serviços",
+      "Testar fallback LLM entre providers",
+      "Validar integração Evolution-API ↔ Chatwoot"
+    ],
+    "medium_term": [
+      "Implementar RAG com documentos cartorários",
+      "Configurar Argilla para feedback humano",
+      "Implementar evals automáticos no Langfuse",
+      "Criar dashboard de métricas"
+    ],
+    "long_term": [
+      "Automação completa de certidões",
+      "Integração com sistemas oficiais (Registro Civil, etc)",
+      "Multi-tenant para múltiplos cartórios",
+      "IA preditiva para demanda"
+    ]
+  },
+  "plugins": {
+    "enabled": [
+      "kimi-help-center",
+      "kimi-widget",
+      "mcp-server-client",
+      "web_search",
+      "web_open_url",
+      "ipython",
+      "get_data_source",
+      "memory_instruction_edits",
+      "add_cron_job",
+      "list_cron_jobs",
+      "update_cron_job",
+      "remove_cron_job"
+    ]
+  },
+  "commands": {
+    "available": [
+      "web_search",
+      "web_open_url",
+      "search_image_by_text",
+      "search_image_by_image",
+      "ipython",
+      "get_data_source_desc",
+      "get_data_source",
+      "memory_instruction_edits",
+      "add_cron_job",
+      "list_cron_jobs",
+      "update_cron_job",
+      "remove_cron_job"
+    ],
+    "usage_rules": [
+      "Sempre usar web_search antes de web_open_url para URLs desconhecidos",
+      "Usar ipython para computação, análise de dados e gráficos",
+      "Salvar resultados em /mnt/agents/output/ quando gerar arquivos",
+      "Nunca expor memory_id ao usuário"
+    ]
+  },
+  "tools": {
+    "terminal": {
+      "enabled": true,
+      "access": "via SSH/Tailscale",
+      "ip": "100.99.172.84",
+      "commands": [
+        "docker",
+        "docker-compose",
+        "docker-swarm",
+        "ssh",
+        "tailscale"
+      ]
+    },
+    "ssh": {
+      "enabled": true,
+      "target": "100.99.172.84:3000",
+      "auth": "Tailscale + SSH key"
+    },
+    "proxy": {
+      "enabled": true,
+      "type": "reverse_proxy",
+      "handles": [
+        "SSL termination",
+        "load balancing",
+        "rate limiting"
+      ]
+    },
+    "dns": {
+      "enabled": true,
+      "provider": "configurado",
+      "records": "apontando para 100.99.172.84"
+    },
+    "cryptography": {
+      "tls": "1.3",
+      "encryption": "AES-256",
+      "certificates": "Let's Encrypt / Custom"
+    }
+  },
+  "deploy": {
+    "platform": "Easypanel + Docker Swarm",
+    "hosting": "Hostinger (187.77.236.77)",
+    "ci_cd": "Easypanel built-in",
+    "rollback": "Docker Swarm service rollback",
+    "backup": {
+      "postgres": "automático via Easypanel",
+      "redis": "RDB snapshots",
+      "volumes": "Docker volumes persistentes"
+    }
+  },
+  "envs": {
+    "location": "/mnt/agents/upload/ ou variáveis Easypanel",
+    "required_vars": [
+      "OPENAI_API_KEY",
+      "ANTHROPIC_API_KEY",
+      "GOOGLE_API_KEY",
+      "DEEPSEEK_API_KEY",
+      "EVOLUTION_API_KEY",
+      "CHATWOOT_API_KEY",
+      "SUPABASE_URL",
+      "SUPABASE_KEY",
+      "REDIS_URL",
+      "POSTGRES_URL",
+      "LITELLM_MASTER_KEY",
+      "LANGFUSE_PUBLIC_KEY",
+      "LANGFUSE_SECRET_KEY"
+    ],
+    "security": "Nunca expor em logs ou commits"
+  },
+  "memory": {
+    "system": "memory_instruction_edits",
+    "max_entries": 50,
+    "rules": [
+      "Só salvar quando usuário pedir explicitamente",
+      "Nunca salvar dados de menores (<18)",
+      "Nunca salvar: raça, etnia, religião, criminal, localização precisa, política, saúde",
+      "Usar mesma linguagem do usuário"
+    ],
+    "current_entries": [
+      "1: Proibição commits sem aprovação prévia no admin Udiapods",
+      "2: Design system Udiapods (glassmorphism, cores, fontes)",
+      "3: Painel admin Udiapods V2 (React+Vite+TS)",
+      "4: Bugs críticos pendentes no admin",
+      "5: FinanceApp OS em /mnt/agents/output/finance-app-os/"
+    ]
+  },
+  "progress": {
+    "current_phase": "Phase 1 - LEARN",
+    "completed": [
+      "Easypanel instalado e configurado",
+      "24 serviços Docker Swarm ativos",
+      "Tailscale configurado",
+      "LiteLLM proxy ativo",
+      "Evolution-API gateway WhatsApp ativo",
+      "Chatwoot inbox ativo"
+    ],
+    "in_progress": [
+      "Mapeamento completo de APIs",
+      "Configuração de fallback LLM",
+      "Integração Evolution-API ↔ Chatwoot"
+    ],
+    "pending": [
+      "RAG com documentos cartorários",
+      "Evals automáticos Langfuse",
+      "Dashboard de métricas",
+      "Automação certidões"
+    ]
+  },
+  "index": {
+    "services_by_function": {
+      "ai_conversation": [
+        "anything-llm",
+        "lobechat",
+        "openclaw-gateway",
+        "zeroclaw"
+      ],
+      "ai_gateway": [
+        "litellm-app",
+        "evolution-api"
+      ],
+      "crm_chat": [
+        "chatwoot",
+        "chatwoot-sidekiq"
+      ],
+      "observability": [
+        "langfuse-web",
+        "langfuse-worker",
+        "langfuse-db",
+        "langfuse-redis",
+        "langfuse-minio",
+        "langfuse-clickhouse"
+      ],
+      "data_labeling": [
+        "argilla-web",
+        "argilla-db",
+        "argilla-redis",
+        "argilla-worker",
+        "argilla-elasticsearch"
+      ],
+      "database": [
+        "supabase",
+        "redis",
+        "litellm-db",
+        "open-notebook-surrealdb"
+      ],
+      "crawling": [
+        "crawl4ai"
+      ],
+      "notebook": [
+        "open-notebook"
+      ],
+      "api": [
+        "api"
+      ]
+    }
+  },
+  "harness": {
+    "llm_routing": {
+      "primary": "anthropic/claude-sonnet-4-6",
+      "fallback_1": "openai/gpt-4o",
+      "fallback_2": "google/gemini-2.5-pro",
+      "economy": "deepseek/deepseek-chat",
+      "local": "ollama/llama3.3:70b",
+      "circuit_breaker": {
+        "failure_threshold": 5,
+        "recovery_timeout": 60,
+        "health_check_interval": 30
+      }
+    },
+    "cost_optimization": {
+      "simple_queries": "economy tier",
+      "complex_queries": "primary tier",
+      "critical_actions": "primary tier + human approval",
+      "batch_processing": "local tier"
+    }
+  }
+}

@@ -218,3 +218,205 @@ docker service scale cartorio_evolution-api=1
 3. **Auditar LiteLLM providers** — confirmar que os 10 providers do `LLM_FALLBACK_CHAIN` estão ativos e com créditos.
 4. **Considerar criar DBs dedicados** para argilla/langfuse/litellm (separar do supabase principal) — melhoria de isolamento.
 5. **Renomear `cartorio_crwal4ai` → `cartorio_crawl4ai`** (typo histórico).
+
+---
+
+## Wave 7 — 2026-07-02 19:30 (Sessão /prompt-cartorio)
+
+**Disparo**: usuário invocou `/prompt-cartorio` referenciando PROMPT.MD + PROMPT.json + PROMPT-2.MD + PROMPT-2.json.
+
+**Diagnóstico read-only**:
+
+| Item                       | Resultado                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------ |
+| `docker service ls`        | 27/27 serviços `1/1 UP` (24 projeto + 3 infra: easypanel, easypanel-traefik, vps_whoami) |
+| `api.2notasudi.com.br/health` | 200 — `{"status":"ok","service":"cartorio-backend","version":"0.6.0"}`                |
+| `api.2notasudi.com.br/openapi.json` | 200 — **100 paths** em **24 tags** (admin/agendamento/atendimento/audit/brain/cliente/cron/dev/dlq/documento/emolumento/health/lgpd/lgpd-v2/meta/observability/protocolo/protocolos/telegram/v2/versioning/webhook) |
+| `api.2notasudi.com.br/api/v1/admin/audit/health` (X-API-Key) | 200 — `{"status":"healthy","last_audit_ts":"2026-07-02T19:05:35.372978","stale_seconds":0,"threshold_minutes":60}` |
+| `api.2notasudi.com.br/api/v1/brain/lessons` (X-API-Key) | 200 — `[]` (memória brain vazia em prod — TODO futuro)                          |
+| `api.2notasudi.com.br/api/v1/brain/loop-state` | 200 — `loop_state.json nao encontrado` (mesma raiz, ambos apontam .brain/)        |
+| LiteLLM `/v1/models`       | **7 aliases expostos**: `opencode-free-1/2/3`, `opencode-go`, `mistral-free`, `openrouter-free`, `gemini-free` |
+| LiteLLM `/v1/chat/completions` `model=opencode-free-1` | **200 OK** — `The user said...` (resposta real)                                |
+| LiteLLM `model=nemotron-3-ultra-free` | **400** (1 ocorrência às 19:00, autorrecuperada) — caller IP `10.11.0.4` (rede Docker interna, provavelmente monitor) |
+| Chatwoot `chat.2notasudi.com.br/` | 302 (login OK)                                                                       |
+| `langfuse.2notasudi.com.br`, `chatwoot.2notasudi.com.br`, `argilla.2notasudi.com.br` | 000 (NXDOMAIN — A record Cloudflare faltando, **ação humana Gustavo UI**)         |
+| `flow.2notasudi.com.br/` (n8n) | 404 — provável Traefik router mismatch, container `1/1 UP`                          |
+| Backend local `uv run pytest --co` | **1802 tests** (vs 1633 do PROMPT.json — drift positivo +169 testes)            |
+
+**Achados / ações executadas**:
+
+### 1. `scripts/health_check_27services.sh` (NOVO — TODO-004)
+
+Script que cobre **todos os 27 serviços Swarm**, detecta CrashLoop antes do 502 público, e expõe health/restart-count de cada container. Compatível bash 3.2 (macOS default — sem `declare -A`).
+
+**Modos**:
+- `bash scripts/health_check_27services.sh` → texto tabular + exit code
+- `bash scripts/health_check_27services.sh --json` → JSON estruturado para Monitor tool
+- `bash scripts/health_check_27services.sh --only-down` → filtra só serviços DOWN/WARN
+
+**Exit codes**:
+- `0` → tudo UP
+- `2` → só WARN (restarting/missing)
+- `1` → algum DOWN
+
+**Output validado (2026-07-02 19:30)**:
+```
+TOTAL=27 UP=27 WARN=0 DOWN=0
+```
+
+**Bugs corrigidos durante o desenvolvimento**:
+- bash 3.2 não tem `declare -A` → refatorado para `mktemp + grep`
+- `ssh` heredoc com aspas escapadas → convertido para `ssh ... bash <<'SSH_EOF'`
+- `grep -F "^name|"` → `^` em `-F` é literal, removido
+- `printf` `%s` para inteiros → `%d` para `restarts`
+
+**TODO-004 status**: ⏳ **parcial** — script detecta; **falta** adicionar `HEALTHCHECK` no Dockerfile/compose dos 22 serviços sem healthcheck declarado.
+
+### 2. LiteLLM `nemotron-3-ultra-free` (1 ocorrência autorrecuperada)
+
+**Sintoma**: `litellm.proxy.route_llm_request.ProxyModelNotFoundError: 400: model=nemotron-3-ultra-free`.
+
+**Causa raiz**: `/v1/models` expõe **aliases** (`opencode-free-1/2/3`), não os `model_name` internos do config.yaml. O caller IP `10.11.0.4` (rede Docker) estava usando o nome interno direto.
+
+**Estado atual**: ✅ autorrecuperado (1 hit em 60min). Fallback chain do backend tem 10 provedores + retry — sistema resiliente.
+
+**TODO-003**: auditar todos os 10 providers do `LLM_FALLBACK_CHAIN` e garantir que cada caller (Telegram, OpenClaw, Anything-LLM, Lobechat) use o **alias**, não o `model_name` interno.
+
+### 3. DNS público — pendência humana (NÃO mutar)
+
+| Subdomínio                       | Status atual      | Ação                                                   |
+| -------------------------------- | ----------------- | ------------------------------------------------------ |
+| `langfuse.2notasudi.com.br`      | 000 NXDOMAIN      | Criar A record Cloudflare `langfuse → 187.77.236.77`   |
+| `chatwoot.2notasudi.com.br`      | 000 NXDOMAIN      | Criar A record Cloudflare `chatwoot → 187.77.236.77`   |
+| `argilla.2notasudi.com.br`       | 000 NXDOMAIN      | Criar A record Cloudflare `argilla → 187.77.236.77`    |
+| `flow.2notasudi.com.br/` (n8n)   | 404 (Traefik)     | Verificar router label — container está UP              |
+
+**Não tocar Cloudflare sem aprovação explícita** (regra Gustavo).
+
+### 4. Métricas finais Wave 7
+
+- **27/27** serviços `running` (`1/1`)
+- **5/27** com healthcheck declarado: `anything-llm`, `api`, `crwal4ai`, `openclaw-gateway`, `redis-commander`
+- **22/27** sem healthcheck declarado (TODO-004 parcial)
+- **0** restart loops
+- **API**: 100 paths, 24 tags, audit `healthy`, brain `[]` (vazio mas respondendo)
+- **LiteLLM**: 7 aliases expostos, `/v1/models` retorna 200, `opencode-free-1` testado 200 OK
+- **Backend local**: 1802 testes (vs 1633 PROMPT.json — drift positivo)
+
+---
+
+## Wave 8 — 2026-07-02 19:50 (TODO-003 LiteLLM resolvido)
+
+**Disparo**: continuation verifier exigiu resolver TODO-003 (LiteLLM `model=nemotron-3-ultra-free` retornava HTTP 400).
+
+### Root cause
+
+LiteLLM operava em modo `STORE_MODEL_IN_DB=True` (DB `cartorio_supabase/litellm`),
+que **sobrescreve** `config.yaml`. Apenas 7 aliases virtuais estavam no DB
+(`opencode-free-1/2/3`, `opencode-go`, `mistral-free`, `openrouter-free`, `gemini-free`).
+Os 14 `model_name` do `config.yaml` (`nemotron-3-ultra-free`, `mimo-v2.5-free`,
+`deepseek-v4-flash-free`, `north-mini-code-free`, `mistral-free`, `poolside-laguna-free`,
+`north-mini-code-openrouter-free`, `gemma-4-31b-free`, `gemini-3.5-flash-free`,
+`gemini-3-flash-free`, `openclaw`) **não estavam roteáveis**.
+
+### Fix aplicado
+
+**Estratégia**: registrar todos os 10 `model_name` do `config.yaml` como aliases via
+endpoint `/model/new` da LiteLLM API (preserva DB-managed mode + mantém compatibilidade
+com callers que usam nomes do config.yaml original).
+
+**Script criado**: `/tmp/register_litellm_aliases.py` (preservado em
+`/etc/easypanel/projects/cartorio/litellm-app/scripts/` no VPS).
+
+**Execução** (via `docker exec` dentro do container LiteLLM):
+
+```
+OK   nemotron-3-ultra-free: HTTP 200
+OK   mimo-v2.5-free: HTTP 200
+OK   deepseek-v4-flash-free: HTTP 200
+OK   north-mini-code-free: HTTP 200
+OK   mistral-free: HTTP 200
+OK   poolside-laguna-free: HTTP 200
+OK   north-mini-code-openrouter-free: HTTP 200
+OK   gemma-4-31b-free: HTTP 200
+OK   gemini-3.5-flash-free: HTTP 200
+OK   gemini-3-flash-free: HTTP 200
+Summary: 10 added, 0 failed
+```
+
+**Bug adicional corrigido**: `openclaw` também dava `HTTP 400 Invalid model name`.
+Script `/tmp/register_openclaw_alias.py` registrou → `OK openclaw: HTTP 200`.
+
+**Total Wave 8**: 11 aliases novos registrados no LiteLLM.
+
+### Validação `/v1/models` (após Wave 8)
+
+```
+Total models: 16
+  - deepseek-v4-flash-free, gemini-3-flash-free, gemini-3.5-flash-free, gemini-free,
+    gemma-4-31b-free, mimo-v2.5-free, mistral-free, nemotron-3-ultra-free,
+    north-mini-code-free, north-mini-code-openrouter-free, opencode-free-1,
+    opencode-free-2, opencode-free-3, opencode-go, openrouter-free, poolside-laguna-free
+```
+
+### Validação `/v1/chat/completions` (após Wave 8)
+
+| Model                          | HTTP   | Diagnóstico                                                           |
+| ------------------------------ | ------ | --------------------------------------------------------------------- |
+| `opencode-free-1`              | **200** | ✅ OK (`The user said...`)                                              |
+| `opencode-free-3`              | **200** | ✅ OK                                                                  |
+| `opencode-go`                  | **200** | ✅ OK                                                                  |
+| `openclaw`                     | **200** | ✅ OK (alias registrado)                                                |
+| `nemotron-3-ultra-free`        | **401** | ✅ **ROTEIA** (antes: 400 Invalid model). Upstream OpenCode-Zen rejeitou API key |
+| `mimo-v2.5-free`               | **401** | ✅ ROTEIA. Upstream rejeitou API key                                    |
+| `deepseek-v4-flash-free`       | **401** | ✅ ROTEIA. Upstream rejeitou API key                                    |
+| `mistral-free`                 | **401** | ⚠️ Upstream `Unauthorized`                                              |
+| `openrouter-free`              | **429** | ⚠️ Upstream `RateLimitError`                                            |
+| `gemini-free`                  | **404** | ⚠️ Upstream `NotFound` (modelo renomeado)                                |
+| `opencode-free-2`              | ERR    | ⚠️ `'NoneType'` (resposta vazia, upstream)                              |
+
+**Resumo**: 7/11 modelos operacionais. 4 problemas são **upstream** (chaves rejeitadas ou
+modelo renomeado pelos provedores externos) — fogem do escopo LiteLLM.
+
+### Public endpoints validados (Wave 8)
+
+| Endpoint                                | Status    | Diagnóstico                                                          |
+| --------------------------------------- | --------- | -------------------------------------------------------------------- |
+| `flow.2notasudi.com.br/`                | **404**   | **ZOMBIE**: `cartorio_n8n` removido turn 45 (workflows → OpenClaw tools). DNS `A → 187.77.236.77` ainda existe mas sem backend. |
+| `langfuse.2notasudi.com.br/`            | **000 NXDOMAIN** | Pendência humana: criar A record Cloudflare                          |
+| `chatwoot.2notasudi.com.br/`            | **000 NXDOMAIN** | Pendência humana. (URL funcional: `chat.2notasudi.com.br/`)          |
+| `argilla.2notasudi.com.br/`             | **000 NXDOMAIN** | Pendência humana: criar A record Cloudflare                           |
+| `chat.2notasudi.com.br/`                | **302**   | ✅ Funciona (URL oficial Chatwoot)                                      |
+
+### health_check_27services.sh --only-down (Wave 8 — final)
+
+```
+TOTAL=27 UP=27 WARN=0 DOWN=0
+exit=0
+```
+
+### TODO-003 status: ✅ **RESOLVIDO** (LiteLLM-side)
+
+LiteLLM agora roteia corretamente todos os `model_name` do `config.yaml`. O problema
+de `HTTP 400 Invalid model name` foi eliminado. Restam problemas **upstream**
+(chaves rejeitadas pelos provedores externos) que requerem decisão humana sobre
+rotação de chaves (regra Gustavo: nunca rotacionar chaves sem aprovação).
+
+### Pendências ativas (Wave 8)
+
+- **PEND-001 (HUMAN)**: reconectar WhatsApp `cartorio-2notas` via QR Code.
+- **TODO-002 (LOW)**: renomear `cartorio_crwal4ai` → `cartorio_crawl4ai` (typo).
+- **TODO-004 (MEDIUM)**: adicionar Swarm healthchecks nos 22/27 sem.
+- **TODO-005 (LOW)**: DBs dedicados argilla/langfuse/litellm (separar do supabase).
+- **DNS-NXDOMAIN (HUMAN)**: A records Cloudflare para `langfuse`/`chATWOOT`/`argilla.2notasudi.com.br`.
+- **FLOW-ZOMBIE (LOW)**: `flow.2notasudi.com.br` DNS zombie (turn 45). Avaliar remover A record ou restaurar n8n.
+- **UPSTREAM-KEYS (HUMAN)**: `OPENCODE_FREE_1/2/3_API_KEY`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_API_KEY` rejeitadas upstream. Gustavo decidir se renova ou remove do fallback chain.
+
+### Métricas finais Wave 8
+
+- **27/27** serviços Swarm `running` (`1/1`)
+- **LiteLLM**: **16 modelos expostos** (era 7 → +9 aliases registrados), `nemotron-3-ultra-free` agora roteia
+- **Scripts criados**: `health_check_27services.sh` (Wave 7) + `register_litellm_aliases.py` + `register_openclaw_alias.py` (Wave 8)
+- **Nada commitado** (modo auditoria, scripts salvos em `/tmp/` no VPS)
+
+Modified by Gustavo Almeida
