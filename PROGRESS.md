@@ -115,3 +115,31 @@
 | Lesson 138 | saved |
 | PROGRESS.md | auto-saved 2 entries |
 
+
+## 2026-07-02 22:50 — CHEFE SAIU · MODO AUTÔNOMO ATIVADO
+
+### Cron jobs ativos (verificado via launchctl):
+- ✅ com.cartorio.goal-loop (PID 0, interval 4h) — orquestração principal
+- ✅ com.cartorio.intensive (PID 52489, interval 30min) — quick validation
+
+### Tasks enquanto-away (max 4h cycle):
+1. Run intensive tick (30min) → ruff+pytest+api_health logs
+2. Run goal-loop (4h) → full 5-agent chain + decisions
+3. Auto-fix trivial safe issues (03-fix-agent)
+4. Document everything (04-document-agent)
+5. Save lessons (05-memory-agent)
+
+### Hard guarantees:
+- 🚫 NEVER rotate keys
+- 🚫 NEVER destructive ops without explicit approval
+- 🚫 NEVER delete code
+- ✅ ALWAYS run ruff+pytest before commit
+- ✅ ALWAYS commit non-destructively on master
+- ✅ ALWAYS sync PROGRESS.md per cycle
+
+### Time-budget:
+- 30min cycles: ~1min each
+- 4h cycles: ~3min each
+- Total compute: <30min/day
+- Gustavo returns: whenever (cron keeps validating indefinitely)
+
