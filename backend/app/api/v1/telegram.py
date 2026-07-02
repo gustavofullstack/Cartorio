@@ -623,16 +623,15 @@ async def _call_fast_llm(text: str, context: str = "") -> str:
     """
     from app.integrations.fallback import ChatError, chat_with_fallback
 
+    # System curto para evitar timeout em providers free (lesson-2026-07-02):
+    # nemotron-3-ultra-free retorna ERROR se system>~600 chars + max_tokens alto.
     system = (
-        "Voce e o assistente do Cartorio 2 Oficio de Notas de Uberlandia/MG.\n"
-        "Regras ABSOLUTAS:\n- NUNCA use emojis na resposta\n"
-        "- Responda em NO MAXIMO 2 frases\n- Seja direto e profissional\n"
-        "- Se for sobre agendamento, protocolo: oriente /menu\n"
-        "- Para questoes juridicas complexas: oriente /humano\n"
-        "- NUNCA invente valores ou prazos"
+        "Assistente do Cartorio 2o Oficio de Notas de Uberlandia/MG. "
+        "Sem emojis. Max 2 frases. Direto. /menu para agendamento/protocolo. "
+        "/humano para juridico complexo. Nunca invente valores."
     )
     if context:
-        system += f"\n\nContexto: {context}"
+        system += f" Contexto: {context}"
     messages = [{"role": "system", "content": system}, {"role": "user", "content": text}]
     try:
         resp = await chat_with_fallback(
