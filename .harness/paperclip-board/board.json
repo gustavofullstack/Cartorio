@@ -8,7 +8,10 @@
       "name": "Final validation: 7/7 services 72h stable",
       "status": "in_progress",
       "pct": 95,
-      "blockers": ["SUI1 (DNS Cloudflare)", "SUI2 (WhatsApp QR)"]
+      "blockers": [
+        "SUI1 (DNS Cloudflare)",
+        "SUI2 (WhatsApp QR)"
+      ]
     },
     {
       "id": "G2",
@@ -31,27 +34,77 @@
       "name": "Refactor documentation turn 50 sync",
       "status": "in_progress",
       "pct": 80,
-      "blockers": ["T9: PROMPT.json/MD turn 50 sync (blocker is now docs divergence)"]
+      "blockers": [
+        "T9: PROMPT.json/MD turn 50 sync (blocker is now docs divergence)"
+      ]
     },
     {
       "id": "G5",
       "name": "Loop engineer auto-reactivação",
       "status": "in_progress",
       "pct": 60,
-      "deliverables_created": [".harness/agents/ (5)", ".harness/loop-engineer/ (3)", ".harness/validators/ (3)"]
+      "deliverables_created": [
+        ".harness/agents/ (5)",
+        ".harness/loop-engineer/ (3)",
+        ".harness/validators/ (3)"
+      ]
     }
   ],
   "tasks_in_progress": [
-    {"id": "T9", "owner": "cartorio-dev", "priority": "P0", "name": "Sync PROMPT.json/MD turn 50"},
-    {"id": "T8", "owner": "cartorio-dev", "priority": "P1", "name": "Apply Chatwoot ENABLE_ACCOUNT_SIGNUP=false"},
-    {"id": "MEM-1", "owner": "Minimax-M3", "priority": "P0", "name": "Install launchd plist for goal-loop-cron"},
-    {"id": "DEP-1", "owner": "cartorio-dev", "priority": "P0", "name": "Add fakeredis + pytest-asyncio to pyproject.toml deps"}
+    {
+      "id": "T9",
+      "owner": "cartorio-dev",
+      "priority": "P0",
+      "name": "Sync PROMPT.json/MD turn 50"
+    },
+    {
+      "id": "T8",
+      "owner": "cartorio-dev",
+      "priority": "P1",
+      "name": "Apply Chatwoot ENABLE_ACCOUNT_SIGNUP=false"
+    },
+    {
+      "id": "MEM-1",
+      "owner": "Minimax-M3",
+      "priority": "P0",
+      "name": "Install launchd plist for goal-loop-cron",
+      "status": "done",
+      "note": "subagents+validators+loop+paperclip committed in 2fe42df"
+    },
+    {
+      "id": "DEP-1",
+      "owner": "cartorio-dev",
+      "priority": "P0",
+      "name": "Add fakeredis + pytest-asyncio to pyproject.toml deps",
+      "status": "in_progress",
+      "note": "subagents+validators+loop+paperclip committed in 2fe42df"
+    }
   ],
   "tasks_pending": [
-    {"id": "E08", "owner": "cartorio-dev", "priority": "P3", "name": "Last Squad E task"},
-    {"id": "BRAIN3/4/8", "owner": "cartorio-dev", "priority": "P2", "name": "Brain endpoints 3 tasks"},
-    {"id": "J07-J10", "owner": "cartorio-dev", "priority": "P2", "name": "Squad J obs/CICD 4 tasks"},
-    {"id": "COV-1", "owner": "cartorio-dev", "priority": "P1", "name": "Coverage 30.7% → 90%"}
+    {
+      "id": "E08",
+      "owner": "cartorio-dev",
+      "priority": "P3",
+      "name": "Last Squad E task"
+    },
+    {
+      "id": "BRAIN3/4/8",
+      "owner": "cartorio-dev",
+      "priority": "P2",
+      "name": "Brain endpoints 3 tasks"
+    },
+    {
+      "id": "J07-J10",
+      "owner": "cartorio-dev",
+      "priority": "P2",
+      "name": "Squad J obs/CICD 4 tasks"
+    },
+    {
+      "id": "COV-1",
+      "owner": "cartorio-dev",
+      "priority": "P1",
+      "name": "Coverage 30.7% → 90%"
+    }
   ],
   "auto_chains": [
     "/goal → spawn 5 agents (1-2 simultaneous) → aggregate → document",
@@ -62,5 +115,8 @@
     "PROMPT.json turn 50 sync (T9)",
     "Loop engineer cron install via launchd (SUI Gustavo)",
     "Coverage expansion to 90% (Phase 5.5)"
-  ]
+  ],
+  "last_commit": "2fe42df",
+  "status": "synced",
+  "cycle_complete": true
 }
