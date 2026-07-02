@@ -36,7 +36,7 @@
 
 ## 🛡️ SQUADs Auditados
 
-### SQUAD A — API+DB Hardening (18/25 tasks)
+### SQUAD A — API+DB Hardening (25/25 tasks) ✅
 
 | Task | Status | Evidência |
 |---|---|---|
@@ -46,7 +46,16 @@
 | A16 Locks | ✅ | `/admin/locks` retorna 5 locks conhecidos |
 | A17 Pool stats | ✅ | `/admin/pool` retorna pool_size 10 |
 | A18 Swagger + OpenAPI + Slow log | ✅ | `/docs` 200, `/openapi.json` 100 paths, `/slow-queries` 720 stored |
-| A19-A25 | ❌ | Escopo separado |
+| A19 Soft delete global `deleted_at` | ✅ | `app/models/base.py` TimestampMixin + `2026_06_25_0002` migration (add-soft-delete-protocolo) |
+| A20 Redlock distribuído p/ migrations | ✅ | `backend/app/services/redlock.py` (93 linhas, Redis SET NX EX + Lua safe-release) |
+| A21 Cache Redis 24h emolumento + pub/sub | ✅ | `backend/app/services/emolumento_cache.py` (SET EX 86400s + scan_iter invalidation) |
+| A22 Cache warming cron 06:00 | ✅ | `backend/app/services/cache_warming.py` (8 tipos × 4 folhas) |
+| A23 OpenAPI spec validator CI | ✅ | `backend/app/middleware/openapi_validator.py` + `test_openapi_validator.py` |
+| A24 Versionamento /api/v1 + /api/v2 alpha | ✅ | `app/api/v2/` (router + info + clientes + protocolos + emolumento) registrado em `main.py:562` |
+| A25 RFC 7807 problem+json 4xx/5xx | ✅ | `backend/app/middleware/problem_details.py` (181 linhas, 11 status codes, instalado em `main.py:276`) |
+
+> **Sync 2026-07-02**: SQUAD_INDEX atualizado para refletir 25/25 conforme `.harness/TASKS.md` linhas 504-510
+> (commits `1b097fb`, `4676cbb`, `a6a563d`, `2af4fd2`). Squad A está completo.
 
 ### SQUAD B — N8N Polish (0/25 tasks)
 
