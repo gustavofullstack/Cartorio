@@ -1,9 +1,9 @@
 {
-  "version": "2.0.0",
-  "updated_at": "2026-07-01T10:50:00-03:00",
-  "status": "orchestrator_activated",
-  "current_sprint": "Sprint 47 - 2026-07-01 (orquestrador ativo)",
-  "current_goal": "Ativar ambiente completo (orquestrador + swarm + skills + tools + mcps + memory + loop)",
+  "version": "2.1.0",
+  "updated_at": "2026-07-01T11:35:00-03:00",
+  "status": "supremo_hub_activated",
+  "current_sprint": "Sprint 47 - 2026-07-01 (orquestrador + supremo hub)",
+  "current_goal": "G6: Estabelecer CLAUDE-CODE-SUPREMO como hub unificador read-only do ecossistema (MELHORIA NÃO-AGRESSIVA)",
   "metrics": {
     "services": "6/7 online (N8N off — confirmed 2026-07-01)",
     "pytest": "1211 passing",
@@ -92,5 +92,106 @@
     "🟡 Gustavo regenerar Render API key (regra no_key_rotation)",
     "🟢 Sprint retro + lessons loop"
   ],
-  "last_updated_iso": "2026-07-01T11:18:00-03:00"
+  "last_updated_iso": "2026-07-01T11:18:00-03:00",
+  "goal_supremo": {
+    "id": "G6",
+    "title": "CLAUDE-CODE-SUPREMO 2026-07-01",
+    "created_at": "2026-07-01T11:35:00-03:00",
+    "mode": "MELHORIA NÃO-AGRESSIVA",
+    "constraints": ["no-restart", "no-delete", "no-commit-fail", "no-json-config-mutation", "no-system-mutation", "no-kill"],
+    "milestones": [
+      {
+        "id": "M6.1",
+        "title": "Auditoria & Indexação read-only (11 ecossistemas)",
+        "status": "done",
+        "tasks": [
+          {"id": "T6.1.1", "title": "Auditoria read-only 11 ecossistemas", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
+          {"id": "T6.1.2", "title": "Criar hub CLAUDE-CODE-SUPREMO (9 arquivos, 48 KB)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
+          {"id": "T6.1.3", "title": "SUPRAMAP.md + ECOSYSTEM-AUDIT-2026-07-01.md", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
+          {"id": "T6.1.4", "title": "Skills cross-ecosystem mapeados (45/39/99/14)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
+          {"id": "T6.1.5", "title": "MCP inventory (6 servers)", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"}
+        ]
+      },
+      {
+        "id": "M6.2",
+        "title": "Memory cross-session (Lesson 119)",
+        "status": "done",
+        "tasks": [
+          {"id": "T6.2.1", "title": "Lesson 119 gravada", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
+          {"id": "T6.2.2", "title": "MEMORY.md index 15 → 16", "owner": "orquestrador", "status": "done", "completed_at": "2026-07-01T11:30:00-03:00"},
+          {"id": "T6.2.3", "title": "Cross-link com .harness/memory/MEMORY.md", "owner": "orquestrador", "status": "pending"}
+        ]
+      },
+      {
+        "id": "M6.3",
+        "title": "Cartório Sprint 47 (preservar estado atual)",
+        "status": "in_progress",
+        "tasks": [
+          {"id": "T6.3.1", "title": "SUI1 DNS chatwoot (Gustavo)", "owner": "Gustavo", "status": "pending", "note": "ação do Gustavo"},
+          {"id": "T6.3.2", "title": "SUI2 WhatsApp QR scan (Gustavo)", "owner": "Gustavo", "status": "pending", "note": "ação do Gustavo"},
+          {"id": "T6.3.3", "title": "SUI3 DNS n8n+supabase (Gustavo)", "owner": "Gustavo", "status": "pending", "note": "ação do Gustavo"}
+        ]
+      },
+      {
+        "id": "M6.4",
+        "title": "Plataformas paralelas (mapping)",
+        "status": "pending",
+        "tasks": [
+          {"id": "T6.4.1", "title": "Mapear triqhub, udiapods, bank-app, finance-hub-os, hate-of-miss, zcode", "owner": "orquestrador", "status": "pending"},
+          {"id": "T6.4.2", "title": "Bridge skills udiapods-* + paperclip-board → CLAUDE-CODE-SUPREMO", "owner": "orquestrador", "status": "pending"}
+        ]
+      },
+      {
+        "id": "M6.5",
+        "title": "Otimização contínua (gated by Gustavo approval)",
+        "status": "pending",
+        "tasks": [
+          {"id": "T6.5.1", "title": "Archival logs_2.sqlite 665 MB", "owner": "orquestrador", "status": "pending", "approval_required": true},
+          {"id": "T6.5.2", "title": "Archival hermes state.db 81 MB", "owner": "orquestrador", "status": "pending", "approval_required": true},
+          {"id": "T6.5.3", "title": "Resolver MCPs needs_config (easypanel, supabase)", "owner": "orquestrador", "status": "pending"},
+          {"id": "T6.5.4", "title": "Settings.json 3 .bak cleanup", "owner": "orquestrador", "status": "pending", "approval_required": true}
+        ]
+      },
+      {
+        "id": "M6.6",
+        "title": "Context window & ultra thinking config",
+        "status": "pending",
+        "tasks": [
+          {"id": "T6.6.1", "title": "Context window 1M + compaction 75-80% (proposal)", "owner": "orquestrador", "status": "pending", "approval_required": true},
+          {"id": "T6.6.2", "title": "Sequential-thinking + inference-sh + bridge skills", "owner": "orquestrador", "status": "pending", "approval_required": true},
+          {"id": "T6.6.3", "title": "Habilitar yuanbao + kimi-webbridge multi-provider", "owner": "orquestrador", "status": "pending", "approval_required": true}
+        ]
+      },
+      {
+        "id": "M6.7",
+        "title": "Cross-ecosystem integrations (futuro)",
+        "status": "pending",
+        "tasks": [
+          {"id": "T6.7.1", "title": "Bridge Hermes ↔ Claude Code sessions", "owner": "orquestrador", "status": "pending"},
+          {"id": "T6.7.2", "title": "Bridge Codex ↔ OpenCode skill sync", "owner": "orquestrador", "status": "pending"},
+          {"id": "T6.7.3", "title": "Bridge Antigravity (VSCode fork) ↔ Claude Code ext", "owner": "orquestrador", "status": "pending"},
+          {"id": "T6.7.4", "title": "Bridge paperclip-board ↔ scrum-board kanban unificado", "owner": "orquestrador", "status": "pending"}
+        ]
+      },
+      {
+        "id": "M6.8",
+        "title": "Próxima iteração (sprint planning)",
+        "status": "pending",
+        "tasks": [
+          {"id": "T6.8.1", "title": "Squad A — A13-A25 (13 tasks)", "owner": "cartorio-dev", "status": "pending"},
+          {"id": "T6.8.2", "title": "LGPD D19-D25 direitos do titular", "owner": "cartorio-lgpd", "status": "pending"},
+          {"id": "T6.8.3", "title": "Resolver Render key expirada", "owner": "Gustavo", "status": "pending", "approval_required": true},
+          {"id": "T6.8.4", "title": "Investigar pgweb 0/1 flapping", "owner": "cartorio-n8n", "status": "pending"}
+        ]
+      }
+    ],
+    "lessons_active_added": [
+      "lesson-119: CLAUDE-CODE-SUPREMO hub unificador (2026-07-01)"
+    ],
+    "velocity": {
+      "tasks_done_today": 8,
+      "tasks_pending_total": 16,
+      "sprint_completion_pct": 33
+    }
+  }
 }

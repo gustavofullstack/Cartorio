@@ -1,0 +1,19 @@
+{
+  "task_id": "T6.8.1",
+  "goal": "G6",
+  "milestone": "M6.8",
+  "title": "Squad A — implementar 13 tasks pendentes (A13-A25)",
+  "description": "Squad A (API/DB Hardening) tem 12/25 done. Pendentes: A13, A14, A16, A17, A18, A19, A20, A21, A22, A23, A24, A25. Owner: cartorio-dev. Aplicar TDD + Conventional Commits + LGPD review para tasks que tocam audit/pii.",
+  "owner": "cartorio-dev",
+  "priority": "high",
+  "status": "pending",
+  "mode": "implementation",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/Cartorio/backend/app/api/v1/* (refactors)",
+    "/Users/gustavoalmeida/projetos/Cartorio/backend/tests/test_*.py (novos + atualizações)"
+  ],
+  "depends_on": [],
+  "blocks": [],
+  "constraints": ["lint-gate-0-errors", "test-gate-90-coverage", "audit-pii-lgpd-review"],
+  "tags": ["squad-a", "implementation", "pending-backlog"]
+}

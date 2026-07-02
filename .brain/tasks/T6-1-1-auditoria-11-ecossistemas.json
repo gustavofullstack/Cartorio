@@ -1,0 +1,25 @@
+{
+  "task_id": "T6.1.1",
+  "goal": "G6",
+  "milestone": "M6.1",
+  "title": "Auditoria read-only de 11 ecossistemas",
+  "description": "Mapear ~/projetos/, ~/.config/, ~/.claude/, ~/.codex/, ~/.hermes/, ~/.antigravity*, ~/.openclaw, ~/.opencode, ~/.zcode*, ~/paperclip-temp/, ~/zed-config*, ~/.config/openchamber, ~/.config/kilo, ~/.config/cline, ~/.config/cmux, ~/.config/goose, ~/.config/openwork, e o VPS swarm Docker.",
+  "owner": "orquestrador",
+  "priority": "high",
+  "status": "done",
+  "mode": "read-only",
+  "completed_at": "2026-07-01T11:30:00-03:00",
+  "deliverables": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/SUPRAMAP.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/MAP/ECOSYSTEM-AUDIT-2026-07-01.md"
+  ],
+  "evidence": {
+    "files_scanned": 50,
+    "dirs_listed": 250,
+    "bytes_written_outside_target": 0,
+    "containers_running_before": 19,
+    "containers_running_after": 19
+  },
+  "constraints": ["no-restart", "no-delete", "no-commit-fail", "no-json-config-mutation", "no-system-mutation", "no-kill"],
+  "tags": ["auditoria", "read-only", "additive"]
+}

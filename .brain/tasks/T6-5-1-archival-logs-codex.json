@@ -1,0 +1,16 @@
+{
+  "task_id": "T6.5.1",
+  "goal": "G6",
+  "milestone": "M6.5",
+  "title": "Archival de ~/.codex/logs_2.sqlite (665 MB)",
+  "description": "Avaliar movability do SQLite 665 MB. Se Gustavo aprovar, mover últimos 6 meses para ~/.codex/archive/logs_2_archive_<TS>.sqlite; manter últimos 30 dias online. VALIDAÇÃO PRÉVIA obrigatória — Gustavo decide.",
+  "owner": "orquestrador",
+  "priority": "low",
+  "status": "pending",
+  "mode": "gated-by-approval",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/DECISION-NEEDED-archival-codex-logs.md"
+  ],
+  "constraints": ["approval-required", "backup-prerequisite", "no-system-mutation"],
+  "tags": ["archival", "housekeeping", "needs-decision"]
+}

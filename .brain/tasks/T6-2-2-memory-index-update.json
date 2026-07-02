@@ -1,0 +1,23 @@
+{
+  "task_id": "T6.2.2",
+  "goal": "G6",
+  "milestone": "M6.2",
+  "title": "Atualizar MEMORY.md index (15 → 16 lições)",
+  "description": "Adicionar linha única no MEMORY.md referenciando lesson-119-claude-code-supremo. Edit aditivo, sem remover outras linhas.",
+  "owner": "orquestrador",
+  "priority": "high",
+  "status": "done",
+  "mode": "additive-edit",
+  "completed_at": "2026-07-01T11:30:00-03:00",
+  "deliverables": [
+    "/Users/gustavoalmeida/.claude/projects/-Users-gustavoalmeida-projetos-Cartorio/memory/MEMORY.md"
+  ],
+  "evidence": {
+    "before_lines": 15,
+    "after_lines": 16,
+    "lines_added": 1,
+    "lines_removed": 0
+  },
+  "constraints": ["no-restart", "no-delete", "no-commit-fail", "no-json-config-mutation", "no-system-mutation", "no-kill"],
+  "tags": ["memory", "index", "additive"]
+}

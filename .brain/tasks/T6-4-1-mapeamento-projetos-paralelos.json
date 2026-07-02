@@ -1,0 +1,18 @@
+{
+  "task_id": "T6.4.1",
+  "goal": "G6",
+  "milestone": "M6.4",
+  "title": "Mapear projetos paralelos (triqhub, udiapods, bank-app, finance-hub-os, hate-of-miss, zcode)",
+  "description": "Para cada projeto em ~/projetos/, identificar: stack, entry point, estado (git), última atividade, skills relacionadas. SAÍDA: tabela em CLAUDE-CODE-SUPREMO/MAP/PROJETOS-ANEXOS.md.",
+  "owner": "orquestrador",
+  "priority": "medium",
+  "status": "pending",
+  "mode": "read-only",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/MAP/PROJETOS-ANEXOS.md"
+  ],
+  "depends_on": [],
+  "blocks": ["T6.7.x bridge skills"],
+  "constraints": ["no-restart", "no-delete", "no-commit-fail", "no-json-config-mutation", "no-system-mutation", "no-kill"],
+  "tags": ["mapping", "projetos", "discovery"]
+}

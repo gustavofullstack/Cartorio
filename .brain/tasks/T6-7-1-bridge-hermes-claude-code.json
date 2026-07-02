@@ -1,0 +1,17 @@
+{
+  "task_id": "T6.7.1",
+  "goal": "G6",
+  "milestone": "M6.7",
+  "title": "Bridge Hermes ↔ Claude Code sessions",
+  "description": "Mapear como ~/.hermes/SOUL.md + USER.md podem enriquecer contexto de uma sessão Claude Code (sub-agent receive subset). Documentar em CLAUDE-CODE-SUPREMO/BRIDGES/hermes-claude-code.md.",
+  "owner": "orquestrador",
+  "priority": "low",
+  "status": "pending",
+  "mode": "documentation",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/BRIDGES/hermes-claude-code.md"
+  ],
+  "depends_on": ["T6.4.1"],
+  "constraints": ["read-only-on-hermes"],
+  "tags": ["bridge", "hermes", "sessions"]
+}

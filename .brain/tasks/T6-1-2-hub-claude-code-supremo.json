@@ -1,0 +1,30 @@
+{
+  "task_id": "T6.1.2",
+  "goal": "G6",
+  "milestone": "M6.1",
+  "title": "Criar hub CLAUDE-CODE-SUPREMO (9 arquivos, 48 KB)",
+  "description": "Pasta aditiva ~/projetos/CLAUDE-CODE-SUPREMO/ com README + SUPRAMAP + INDEX/ENTRY-POINTS + MAP/ECOSYSTEM-AUDIT + MAP/CHANGELOG + MCP/MCP-INVENTORY + SKILLS-INDEX/SKILLS-MAP + PROMPTS/PROMPTS-INDEX + TEMPLATES/CHEATSHEET.",
+  "owner": "orquestrador",
+  "priority": "high",
+  "status": "done",
+  "mode": "additive",
+  "completed_at": "2026-07-01T11:30:00-03:00",
+  "deliverables": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/README.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/SUPRAMAP.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/INDEX/ENTRY-POINTS.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/MAP/ECOSYSTEM-AUDIT-2026-07-01.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/MAP/CHANGELOG.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/MCP/MCP-INVENTORY.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/SKILLS-INDEX/SKILLS-MAP.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/PROMPTS/PROMPTS-INDEX.md",
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/TEMPLATES/CHEATSHEET.md"
+  ],
+  "evidence": {
+    "files_added": 9,
+    "bytes_total": 49152,
+    "external_modifications": 0
+  },
+  "constraints": ["no-restart", "no-delete", "no-commit-fail", "no-json-config-mutation", "no-system-mutation", "no-kill"],
+  "tags": ["hub", "additive", "unificacao"]
+}

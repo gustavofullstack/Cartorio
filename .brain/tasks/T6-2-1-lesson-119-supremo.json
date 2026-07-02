@@ -1,0 +1,23 @@
+{
+  "task_id": "T6.2.1",
+  "goal": "G6",
+  "milestone": "M6.2",
+  "title": "Lesson 119 cross-session (CLAUDE-CODE-SUPREMO)",
+  "description": "Gravar lesson-119-claude-code-supremo.md em ~/.claude/projects/-Users-gustavoalmeida-projetos-Cartorio/memory/ com frontmatter (type=feedback, name=lesson-119-claude-code-supremo), Why e How to apply, links para ambient-2026-07-01 + cartorio-full-validation.",
+  "owner": "orquestrador",
+  "priority": "high",
+  "status": "done",
+  "mode": "additive",
+  "completed_at": "2026-07-01T11:30:00-03:00",
+  "deliverables": [
+    "/Users/gustavoalmeida/.claude/projects/-Users-gustavoalmeida-projetos-Cartorio/memory/lesson-119-claude-code-supremo.md"
+  ],
+  "evidence": {
+    "frontmatter_valid": true,
+    "type": "feedback",
+    "indexed_in_memory_md": true,
+    "cross_links": ["ambient-2026-07-01-orchestrator-activ", "cartorio-full-validation-2026-07-01"]
+  },
+  "constraints": ["no-restart", "no-delete", "no-commit-fail", "no-json-config-mutation", "no-system-mutation", "no-kill"],
+  "tags": ["memory", "cross-session", "feedback"]
+}

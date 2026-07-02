@@ -1,0 +1,17 @@
+{
+  "task_id": "T6.8.2",
+  "goal": "G6",
+  "milestone": "M6.8",
+  "title": "LGPD D19-D25 — direitos do titular",
+  "description": "Implementar direitos LGPD art. 18 (acesso, correção, anonimização, portabilidade, esquecimento, oposição, não-automação) — ref spec em ~/.harness/specs/LGPD-026-032-spec.md. Owner: cartorio-lgpd. Review required antes de merge.",
+  "owner": "cartorio-lgpd",
+  "priority": "high",
+  "status": "pending",
+  "mode": "implementation",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/Cartorio/backend/app/services/lgpd_direito_*.py (7 direitos)"
+  ],
+  "depends_on": [],
+  "constraints": ["ripd-update-required", "no-pii-leakage", "audit-trail-required"],
+  "tags": ["lgpd", "direitos-do-titular", "d19-d25"]
+}

@@ -1,0 +1,16 @@
+{
+  "task_id": "T6.5.4",
+  "goal": "G6",
+  "milestone": "M6.5",
+  "title": "Settings.json backups cleanup (3 .bak)",
+  "description": "~/.claude/settings.json tem 3 backups datados: settings.json.bak.deepseek, settings.json.bak.2026-07-01-orchestrator, settings.json (active). Propor consolidação ou archival — Gustavo decide.",
+  "owner": "orquestrador",
+  "priority": "low",
+  "status": "pending",
+  "mode": "gated-by-approval",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/DECISION-NEEDED-settings-backups.md"
+  ],
+  "constraints": ["approval-required", "no-active-settings-mutation"],
+  "tags": ["cleanup", "settings-backup", "needs-decision"]
+}

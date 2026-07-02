@@ -1,0 +1,17 @@
+{
+  "task_id": "T6.5.3",
+  "goal": "G6",
+  "milestone": "M6.5",
+  "title": "Resolver MCPs `needs_config` (easypanel, supabase)",
+  "description": "Investigar por que easypanel-mcp e supabase-mcp estão em estado `needs_config`. Verificar tokens/keys/URLs. Propor ativação sem alterar settings.json (apenas documentar comando necessário).",
+  "owner": "orquestrador",
+  "priority": "medium",
+  "status": "pending",
+  "mode": "investigation",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/DECISION-NEEDED-mcp-needs-config.md"
+  ],
+  "depends_on": [],
+  "constraints": ["no-json-config-mutation", "no-restart"],
+  "tags": ["mcp", "needs-config", "investigation"]
+}

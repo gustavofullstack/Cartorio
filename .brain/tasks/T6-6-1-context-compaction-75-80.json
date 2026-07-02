@@ -1,0 +1,17 @@
+{
+  "task_id": "T6.6.1",
+  "goal": "G6",
+  "milestone": "M6.6",
+  "title": "Configurar context window + compaction 75-80%",
+  "description": "Documentar proposta de configuration read-only para `compaction: 75-80%` e `context_window: 1M`. Settings.json alteração = ação do Gustavo. Tudo documentado em CLAUDE-CODE-SUPREMO/CONFIG/proposal-context-window.md.",
+  "owner": "orquestrador",
+  "priority": "medium",
+  "status": "pending",
+  "mode": "documentation",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/CONFIG/proposal-context-window.md"
+  ],
+  "depends_on": [],
+  "constraints": ["no-json-config-mutation"],
+  "tags": ["context-window", "compaction", "proposal"]
+}

@@ -1,0 +1,17 @@
+{
+  "task_id": "T6.6.2",
+  "goal": "G6",
+  "milestone": "M6.6",
+  "title": "Sequential-thinking + inference-sh + bridge skills",
+  "description": "Documentar e habilitar fluxo: sequential-thinking MCP (primário para reasoning chains) + skill inference-sh (helper LiteLLM/proxy) + skills yuanbao / kimi-webbridge (multi-provider). Tudo additivo — settings.json só sob aprovação do Gustavo.",
+  "owner": "orquestrador",
+  "priority": "medium",
+  "status": "pending",
+  "mode": "documentation",
+  "deliverables_pending": [
+    "/Users/gustavoalmeida/projetos/CLAUDE-CODE-SUPREMO/CONFIG/proposal-multi-provider-routing.md"
+  ],
+  "depends_on": [],
+  "constraints": ["no-json-config-mutation"],
+  "tags": ["mcp", "skills", "multi-provider"]
+}
