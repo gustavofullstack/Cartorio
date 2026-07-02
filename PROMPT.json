@@ -7,7 +7,7 @@
     "repo": "gustavofullstack/Cartorio",
     "domain": "2notasudi.com.br",
     "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER",
-    "changelog": "v4.5.0 — turn 50 single-agent estabilizado: Telegram bot v2.0/v2.1 (5 comandos whitelist + debounce 3s + rate limit 5/min + reactions + midias MCP) turn 49 + httpx.Timeout granular fix latência 14-52s (lesson 113) + OpenClaw DNS swarm → Tailscale IP 100.99.172.84:18789 (lesson 115) + opencode_go 429 Monthly limit documentado (lesson 114) + Jules API OAuth 2 exigido (lesson 117) + PROMPT.json divergente da realidade (lesson 116: 0 tabelas DB cartorio, pgvector nao instalado) + Skill /cartorio master + Skill /orchestrate + Skill /scrum-board + 6 scripts de validação (cartorio_validate, telegram_ping, health_check_7services, llm_benchmark, install_pgvector, audit_chain_verify) + 6 MCPs em settings.json (api/n8n/openclaw/easypanel/sequential-thinking/supabase) + 15 lessons ativas em MEMORY.md (109-118 + 7 mais) + 100 tasks plan em .harness/task-bank-turn50.json (47 done, 13 pending YOU, 40 pending dev) + Gate: ruff 0 + mypy 0 (111 files) + pytest 1633 passed + Telegram 23/23 + 7/7 serviços online (API/EVO/CW/OC/TGB/SUP-via-TCP/REDIS-via-TCP) + Monitor health check 7min persistente (task b9lpt90r7) + Index 45+ skills globais em ~/.claude/skills/INDEX.md + Chatwoot signup loop diagnosticado: ENABLE_ACCOUNT_SIGNUP=true precisa virar false (FIX_CHATWOOT_SIGNUP.md) + Render key expirada (você regenera) + Linear Personal API Key v2 (você gera) + Jules OAuth flow (browser) + Decisão arquitetural: matar todos os subagents paralelos, single-agent forever + Mantém 95% production ready."
+    "changelog": "v4.5.0 — turn 50 single-agent estabilizado: Telegram bot v2.0/v2.1 (5 comandos whitelist + debounce 3s + rate limit 5/min + reactions + midias MCP) turn 49 + httpx.Timeout granular fix latência 14-52s (lesson 113) + OpenClaw DNS swarm → Tailscale IP 100.99.172.84:18789 (lesson 115) + opencode_go 429 Monthly limit documentado (lesson 114) + Jules API OAuth 2 exigido (lesson 117) + PROMPT.json divergente da realidade (lesson 116: 0 tabelas DB cartorio, pgvector nao instalado) + Skill /cartorio master + Skill /orchestrate + Skill /scrum-board + 6 scripts de validação (cartorio_validate, telegram_ping, health_check_7services, llm_benchmark, install_pgvector, audit_chain_verify) + 6 MCPs em settings.json (api/n8n/openclaw/easypanel/sequential-thinking/supabase) + 15 lessons ativas em MEMORY.md (109-118 + 7 mais) + 100 tasks plan em .harness/task-bank-turn50.json (47 done, 13 pending YOU, 40 pending dev) + Gate: ruff 0 + mypy 0 (111 files) + pytest 1633 passed + Telegram 23/23 + 7/7 serviços online (API/EVO/CW/OC/TGB/SUP-via-TCP/REDIS-via-TCP) + Monitor health check 7min persistente (task b9lpt90r7) + Index 45+ skills globais em ~/.claude/skills/INDEX.md + Chatwoot signup loop diagnosticado: ENABLE_ACCOUNT_SIGNUP=true precisa virar false (FIX_CHATWOOT_SIGNUP.md) + Render key expirada (você regenera) + Linear Personal API Key v2 (você gera) + Jules OAuth flow (browser) + Decisão arquitetural: matar todos os subagents paralelos, single-agent forever + Mantém 95% production ready. | turn 50 lesson 139: T1 RESOLVIDO (openclaw context 1M confirmado, PROMPT.json atualizado)"
   },
   "activation": {
     "sequence": [
@@ -205,8 +205,8 @@
       "provider": "openai",
       "base_url": "https://opencode.ai/zen/go/v1",
       "context_target": 1000000,
-      "context_current": 131073,
-      "context_NEEDS_FIX": true,
+      "context_current": 1048576,
+      "context_NEEDS_FIX": false,
       "temperature": 0,
       "thinking": "adaptive_ON",
       "skills": [
@@ -220,12 +220,13 @@
       ],
       "config_path": "/home/node/.openclaw/agents/main/agent/",
       "issues": [
-        "context_131k_needs_fix_to_1M_URGENT",
-        "thinking_not_adaptive_needs_fix",
-        "v1_chat_HTTP_404_use_WS",
-        "new_opencode_key_needs_update"
+        "thinking_adaptive_OK",
+        "v1_chat_HTTP_404_use_WS (validado, WS funciona)",
+        "opencode_key_updated_2026-06-30",
+        "context_1M_CONFIRMED (lesson 116, verified turn 50)"
       ],
-      "status": "UP"
+      "status": "UP",
+      "context_status": "achieved"
     },
     "easypanel": {
       "url": "https://easypanel.2notasudi.com.br",
@@ -474,12 +475,6 @@
     }
   ],
   "blockers_technical": [
-    {
-      "id": "T1",
-      "blocker": "OpenClaw_context_131k_needs_1M",
-      "action": "Fix_models_json",
-      "priority": "P0_URGENT"
-    },
     {
       "id": "T2",
       "blocker": "DOCS_Download_0_of_5",
@@ -761,7 +756,7 @@
     "supabase_rls_policies": 41,
     "supabase_core_tables": 13,
     "alembic_head": "2026_06_25_0014",
-    "openclaw_context_current": "5_providers_16_models_ALL_1M_confirmed",
+    "openclaw_context_current": "1M_CONFIRMED (lesson 116, verified turn 50)",
     "openclaw_context_target": 1000000,
     "lgpd_compliance_pct": 68,
     "containers_up": 18,
@@ -779,7 +774,6 @@
     "blockers_remaining": [
       "SUI1: DNS Cloudflare A records chatwoot/n8n/supabase (Gustavo UI)",
       "SUI2: WhatsApp production QR scan (Gustavo Evolution Manager)",
-      "T1: OpenClaw context 131k → 1M (models.json fix)",
       "T2: API OOM historico - memory limit 2G configurado, monitorar",
       "T3: N8N removido - limpar residuos Traefik custom.yaml + imagens 5GB",
       "T4: Render deploys falhando (5 update_failed consecutivos)",
@@ -787,8 +781,7 @@
       "T6: Portas publicas 5094/8082/8889/14317/16686 restringir Tailscale",
       "T7: Telegram HMAC secret configurado, pending_update_count=9",
       "T8: Chatwoot ENABLE_ACCOUNT_SIGNUP=true (Fix em scripts/FIX_CHATWOOT_SIGNUP.md)",
-      "T9: PROMPT.json/docs PROMPT.MD ainda nao atualizados turn 50",
-      "T10: Subagents paralelos - Gustavo decidiu single-agent turn 50"
+      "T9: PROMPT.json/docs PROMPT.MD ainda nao atualizados turn 50"
     ]
   }
 }

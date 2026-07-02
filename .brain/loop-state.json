@@ -1,7 +1,7 @@
 {
   "version": "2.7.0",
-  "updated_at": "2026-07-02T20:02:00-03:00",
-  "status": "telegram_bot_e2e_9x_validated_user_confirm_pendente_pending7_telegram_retry",
+  "updated_at": "2026-07-02T21:05:49.411258-03:00",
+  "status": "telegram_bot_e2e_9x_validated + T1_OPENCLAW_1M_CONFIRMED_lesson139",
   "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + Redis recovery + fallback chain)",
   "current_goal": "G7: Bot Telegram 100% via LiteLLM - 9 testes E2E + 1 CLI + 3 stress fallback",
   "metrics": {
@@ -18,14 +18,43 @@
     "coverage": "90%+"
   },
   "milestones": [
-    {"id": "1", "title": "Bot Telegram 100% via LiteLLM (9 logs + 1 CLI + 3 fallback)", "status": "done"},
-    {"id": "2", "title": "LiteLLM proxy 7 providers", "status": "done"},
-    {"id": "3", "title": "Hardening paralelo (sysctl, redis maxmemory, backup:status)", "status": "done"},
-    {"id": "4", "title": "Docs + Lessons + STATUS + HANDOVER + SQUAD_INDEX", "status": "done"},
-    {"id": "5", "title": "SQUAD A 19/25 + BRAIN 7/8 auditados", "status": "done"},
-    {"id": "6", "title": "crwal4ai (offline por VXLAN swarm bug)", "status": "pending"}
+    {
+      "id": "1",
+      "title": "Bot Telegram 100% via LiteLLM (9 logs + 1 CLI + 3 fallback)",
+      "status": "done"
+    },
+    {
+      "id": "2",
+      "title": "LiteLLM proxy 7 providers",
+      "status": "done"
+    },
+    {
+      "id": "3",
+      "title": "Hardening paralelo (sysctl, redis maxmemory, backup:status)",
+      "status": "done"
+    },
+    {
+      "id": "4",
+      "title": "Docs + Lessons + STATUS + HANDOVER + SQUAD_INDEX",
+      "status": "done"
+    },
+    {
+      "id": "5",
+      "title": "SQUAD A 19/25 + BRAIN 7/8 auditados",
+      "status": "done"
+    },
+    {
+      "id": "6",
+      "title": "crwal4ai (offline por VXLAN swarm bug)",
+      "status": "pending"
+    },
+    {
+      "id": "7",
+      "title": "T1 OpenClaw context 1M confirmed (PROMPT.json sincronizado com realidade turn 50)",
+      "status": "done"
+    }
   ],
-  "lessons_total": 137,
+  "lessons_total": 138,
   "user_action_required_only_one": [
     "ABRIR TELEGRAM NO CELULAR, mandar /start no @test_cartorio_bot, transcrever resposta"
   ],
@@ -37,6 +66,10 @@
     "crwal4ai VXLAN fix (restart swarm worker node)"
   ],
   "next_priorities_post_user_confirm": [
+    "Atacar Squad A 12 tasks pendentes (A13-A25) - audit hardening",
+    "Reativar N8N (B6-B15)",
+    "Implementar LGPD D21-D25",
+    "BRAIN8 (1 task)",
     "Reativar N8N (B6-B15)",
     "SQUAD A20-A25 (5 tasks)",
     "crwal4ai VXLAN fix",
