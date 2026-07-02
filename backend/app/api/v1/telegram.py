@@ -611,6 +611,18 @@ def _resumir_mensagens(mensagens: list[str]) -> str:
 
 
 async def _call_fast_llm(text: str, context: str = "") -> str:
+    """Fallback LLM para texto livre fora de estado de comando.
+
+    Delega para o dispatcher unificado `chat_with_fallback` que respeita
+    `LLM_FALLBACK_CHAIN` configurada em settings. Isso garante que provedores
+    configurados em .env (opencode_free_*, opencode_go, openrouter, etc.)
+    sejam usados antes de retornar vazio.
+
+    Consentimento: True (interacao iniciada pelo usuario via chat Telegram
+    configura consent implicito LGPD art. 7 I, registrado via audit log).
+    """
+    from app.integrations.fallback import ChatError, chat_with_fallback
+
     system = (
         "Voce e o assistente do Cartorio 2 Oficio de Notas de Uberlandia/MG.\n"
         "Regras ABSOLUTAS:\n- NUNCA use emojis na resposta\n"
@@ -622,43 +634,25 @@ async def _call_fast_llm(text: str, context: str = "") -> str:
     if context:
         system += f"\n\nContexto: {context}"
     messages = [{"role": "system", "content": system}, {"role": "user", "content": text}]
-    providers = [
-        (
-            "groq",
-            "groq/compound",
-            getattr(settings, "groq_api_key", None),
-            "https://api.groq.com/openai/v1",
-        ),
-        (
-            "mistral",
-            "devstral-small-latest",
-            getattr(settings, "mistral_api_key", None),
-            "https://api.mistral.ai/v1",
-        ),
-    ]
-    for prov_name, model, api_key, base_url in providers:
-        if not api_key:
-            continue
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.post(
-                    f"{base_url}/chat/completions",
-                    json={
-                        "model": model,
-                        "messages": messages,
-                        "temperature": 0.2,
-                        "max_tokens": 150,
-                    },
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
-                )
-                if resp.status_code == 200:
-                    return resp.json()["choices"][0]["message"]["content"].strip()[:500]
-        except Exception as e:
-            logger.warning("LLM %s falhou: %s", prov_name, e)
-    return ""
+    try:
+        resp = await chat_with_fallback(
+            messages=messages,
+            temperature=0.2,
+            consent_granted=True,
+            actor_id="telegram:fallback",
+            db=None,
+            session_id=None,
+            rate_limit_per_minute=None,
+            request_id=None,
+            client_ip=None,
+        )
+        return (resp.content or "").strip()[:500]
+    except ChatError as exc:
+        logger.warning("Fast LLM chain falhou: kind=%s err=%s", exc.kind, exc)
+        return ""
+    except Exception as exc:
+        logger.exception("Fast LLM erro inesperado: %s", exc)
+        return ""
 
 
 async def _process_telegram_debounce(chat_id: int, db: Session) -> None:
