@@ -5,9 +5,10 @@ from sqlalchemy import Boolean, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
+from app.models.mixins import SoftDeleteMixin
 
 
-class Conversa(Base, TimestampMixin):
+class Conversa(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "conversas"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -42,8 +43,7 @@ class Conversa(Base, TimestampMixin):
     llm_tokens_out: Mapped[int | None] = mapped_column(nullable=True)
     llm_latency_ms: Mapped[int | None] = mapped_column(nullable=True)
 
-    # Soft delete (A19)
-    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
+    # Soft delete vem do SoftDeleteMixin (A19)
 
 
 __all__ = ["Conversa", "Base"]

@@ -9,12 +9,13 @@ from sqlalchemy import BigInteger, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+from app.models.mixins import SoftDeleteMixin
 
 if TYPE_CHECKING:
     from app.models.protocolo import Protocolo
 
 
-class Documento(Base, TimestampMixin):
+class Documento(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "documentos"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -40,8 +41,7 @@ class Documento(Base, TimestampMixin):
     validado_em: Mapped[datetime | None] = mapped_column(nullable=True)
     validacao_notas: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
-    # Soft delete (A19)
-    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
+    # Soft delete vem do SoftDeleteMixin (A19)
 
     protocolo: Mapped["Protocolo"] = relationship(back_populates="documentos")  # type: ignore[name-defined]
 

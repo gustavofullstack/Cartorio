@@ -12,10 +12,14 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
+from app.models.mixins import SoftDeleteMixin
 
 
-class Atendimento(Base, TimestampMixin):
+class Atendimento(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "atendimentos"
+
+    # A19: Soft delete drift fix. Migration 0002 (A17) adicionou coluna
+    # em prod, model agora reflete via SoftDeleteMixin (2026-07-02).
 
     id: Mapped[int] = mapped_column(primary_key=True)
     protocolo_id: Mapped[int | None] = mapped_column(

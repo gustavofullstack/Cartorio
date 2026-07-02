@@ -16,9 +16,10 @@ from sqlalchemy import DateTime, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
+from app.models.mixins import SoftDeleteMixin
 
 
-class WebhookEvent(Base, TimestampMixin):
+class WebhookEvent(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "webhook_events"
     __table_args__ = (
         UniqueConstraint("source", "event_id", name="uq_webhook_events_source_event"),
@@ -32,3 +33,6 @@ class WebhookEvent(Base, TimestampMixin):
     received_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     payload_hash: Mapped[str] = mapped_column(String(64))
     # SHA256 hex do payload original (auditoria, LGPD-safe)
+
+    # A19: Soft delete vem do SoftDeleteMixin. Dedup history eh preservado
+    # sem quebrar o UniqueConstraint(source, event_id).

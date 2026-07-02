@@ -10,6 +10,7 @@ from sqlalchemy import Boolean, Enum as SAEnum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+from app.models.mixins import SoftDeleteMixin
 
 if TYPE_CHECKING:
     from app.models.protocolo import Protocolo
@@ -29,7 +30,7 @@ class MotivoEncerramento(str, enum.Enum):
     OUTROS = "outros"
 
 
-class Cliente(Base, TimestampMixin):
+class Cliente(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "clientes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -52,9 +53,8 @@ class Cliente(Base, TimestampMixin):
     consentimento_ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
     consentimento_canal: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
-    # Soft delete (LGPD art. 18 VI + D4)
+    # Soft delete vem do SoftDeleteMixin (A19).
     # Soft quando cliente tem protocolo; hard quando nao tem (ver ADR-018).
-    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
     motivo_encerramento: Mapped[MotivoEncerramento | None] = mapped_column(
         SAEnum(MotivoEncerramento, name="motivo_encerramento_enum"),
         nullable=True,

@@ -16,6 +16,7 @@ from sqlalchemy import CheckConstraint, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+from app.models.mixins import SoftDeleteMixin
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
 from app.config import settings
@@ -41,7 +42,7 @@ class TipoAtendimento(str, Enum):
     URGENTE = "urgente"  # Urgência judicial ou administrativa
 
 
-class Agendamento(Base, TimestampMixin):
+class Agendamento(Base, TimestampMixin, SoftDeleteMixin):
     """Agendamento de atendimento presencial.
 
     Relacionamentos:
@@ -104,8 +105,7 @@ class Agendamento(Base, TimestampMixin):
         onupdate=func.now(),
     )
 
-    # Soft delete (A19)
-    deleted_at: Mapped[datetime.datetime | None] = mapped_column(nullable=True, index=True)
+    # Soft delete vem do SoftDeleteMixin (A19)
 
     # Relacionamentos ORM
     cliente: Mapped[Cliente] = relationship(

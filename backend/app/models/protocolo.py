@@ -10,6 +10,7 @@ from sqlalchemy import ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+from app.models.mixins import SoftDeleteMixin
 
 if TYPE_CHECKING:
     from app.models.cliente import Cliente
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from app.models.agendamento import Agendamento
 
 
-class Protocolo(Base, TimestampMixin):
+class Protocolo(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "protocolos"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -50,8 +51,7 @@ class Protocolo(Base, TimestampMixin):
     # Origem
     canal_origem: Mapped[str] = mapped_column(String(32))  # whatsapp, telegram, web, balcao
 
-    # Soft delete (A19)
-    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
+    # Soft delete vem do SoftDeleteMixin (A19)
 
     cliente: Mapped["Cliente"] = relationship(back_populates="protocolos")  # type: ignore[name-defined]
     documentos: Mapped[list["Documento"]] = relationship(back_populates="protocolo")  # type: ignore[name-defined]
