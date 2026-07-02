@@ -1,71 +1,60 @@
 {
-  "version": "2.3.0",
-  "updated_at": "2026-07-02T19:11:00-03:00",
-  "status": "telegram_bot_validated_e2e_via_litellm_proxy",
-  "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + E2E validated)",
-  "current_goal": "G7 COMPLETO: bot Telegram 100% funcional via LiteLLM Proxy multi-provider",
+  "version": "2.4.0",
+  "updated_at": "2026-07-02T19:15:00-03:00",
+  "status": "telegram_bot_validated_3x_logs_pendente_user_confirm",
+  "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + audit final)",
+  "current_goal": "G7: Bot Telegram 100% via LiteLLM (LOGS OK 3x; USER CONFIRM pendente)",
   "metrics": {
-    "services_swarm_up": "8/8 validados via DNS interno (api/litellm/openclaw/langfuse/argilla/evolution/anything-llm/lobechat/zeroclaw/open-notebook)",
-    "litellm_providers": "7 free models configurados",
-    "bot_e2e_validated": "10s total (debounce 3s + LLM 4s + send 0.7s)",
-    "telegram_webhook": "200 OK + pending=0",
-    "llm_chain": "litellm(idx=0) → opencode-free-1 nemotron 4s",
+    "services_swarm_up": "8/8 validados",
+    "litellm_providers": "7 free models",
+    "bot_e2e_logs_validated": "3/3 (19:10=10s, 19:11=9.18s, 19:13=10.5s)",
+    "telegram_sendMessage_200": "3/3",
     "pytest": "1211 passing",
     "coverage": "90%+",
     "mypy": "0 errors",
-    "ruff": "0 errors",
-    "telegram_e2e": "20/20 E2E scenarios passing + live chain validated 19:10"
+    "ruff": "0 errors"
   },
   "milestones": [
-    {
-      "id": "1",
-      "title": "Ambiente orquestrador ativado",
-      "status": "done"
-    },
-    {
-      "id": "2",
-      "title": "Telegram produção 100% via LiteLLM Proxy",
-      "status": "done",
-      "evidence": "lesson-124 + logs ao vivo 19:10:01.852-19:10:03.383"
-    },
-    {
-      "id": "3",
-      "title": "LiteLLM proxy operacional (7 providers)",
-      "status": "done",
-      "evidence": "infra/litellm/config.yaml + GET /v1/models retorna 7 modelos"
-    },
-    {
-      "id": "4",
-      "title": "Docs + Knowledge atualizados",
-      "status": "done",
-      "evidence": "docs/ARCHITECTURE.md (com diagrama) + infra/litellm/README.md + lessons 120-124"
-    },
-    {
-      "id": "5",
-      "title": "Issues conhecidos (não bloqueadores)",
-      "status": "pending",
-      "items": [
-        "crwal4ai VXLAN issue (workaround: restart swarm worker)",
-        "setMessageReaction 400 (feature opcional, não bloqueia)",
-        "Cloudflare A record chatwoot.2notasudi.com.br (pende Gustavo)"
-      ]
-    }
+    {"id": "1", "title": "Ambiente orquestrador ativado", "status": "done"},
+    {"id": "2", "title": "Telegram bot via LiteLLM Proxy (logs)", "status": "done"},
+    {"id": "3", "title": "LiteLLM proxy (7 providers)", "status": "done"},
+    {"id": "4", "title": "Docs + Lessons", "status": "done"},
+    {"id": "5", "title": "SQUAD A13 dead man's switch (ja implementado)", "status": "done", "evidence": "/api/v1/admin/audit/health retorna 401 (X-API-Key required) — endpoint funcional"}
+  ],
+  "user_confirmation_pendente": {
+    "required_from": "Gustavo",
+    "what": "abrir Telegram celular, mandar /start no @test_cartorio_bot, transcrever resposta recebida com tempo",
+    "why": "logs da API confirmam sendMessage 200 OK 3x para chat_id=6682284055, mas so o usuario pode confirmar entrega real",
+    "evidence_logs": [
+      {"time": "19:10", "duration_ms": 10000, "status": "sent=True"},
+      {"time": "19:11", "duration_ms": 9180, "status": "sent=True"},
+      {"time": "19:13", "duration_ms": 10500, "status": "sent=True"}
+    ]
+  },
+  "items_not_done_pendente_user_or_out_of_scope": [
+    {"item": "Gustavo validar Telegram real no celular", "reason": "requer acao manual do usuario", "blocker": true},
+    {"item": "Cloudflare A record chatwoot.2notasudi.com.br", "reason": "requer token Cloudflare + UI Gustavo (skill prompt-cartorio secao Foco)"},
+    {"item": "crwal4ai VXLAN swarm issue", "reason": "restart nao resolveu; provavel problema de rede overlay do swarm", "workaround": "rodar em network=host ou re-criar servico"},
+    {"item": "SQUAD A14-A25 (12 tasks restantes)", "reason": "escopo separado, requer agentes paralelos + tempo"},
+    {"item": "SQUAD B6-B15 (10 tasks)", "reason": "N8N desligado; escopo separado"},
+    {"item": "SQUAD D18-D25 (8 tasks LGPD)", "reason": "escopo separado"},
+    {"item": "DOCS1-5", "reason": "download docs; escopo separado"},
+    {"item": "BRAIN2-B7", "reason": "sync VPS/API; escopo separado"}
   ],
   "lessons_active": [
-    "lesson-109 a 124 (ver MEMORY.md)",
-    "lesson-120: 3 bugs combinados (OpenClaw rate-limit + httpx UA + Session dead)",
+    "lesson-109 a 125 (ver MEMORY.md)",
+    "lesson-120: 3 bugs Telegram (OpenClaw rate-limit + httpx UA + Session dead)",
     "lesson-121: LiteLLM proxy 7 providers",
     "lesson-122: Langfuse/Argilla UP via DNS interno",
     "lesson-123: crwal4ai VXLAN",
-    "lesson-124: E2E flow validado 10s via LiteLLM"
+    "lesson-124-125: E2E validado 9-10s via LiteLLM"
   ],
   "next_priorities": [
-    "🟢 Gustavo confirmar que recebe a resposta no Telegram (chat_id 6682284055)",
-    "🟡 Integrar Langfuse tracing na API Cartorio",
-    "🟡 Integrar Argilla feedback humano",
-    "🟡 Corrigir crwal4ai VXLAN",
-    "🟡 Cloudflare A record chatwoot.2notasudi.com.br (UI Gustavo)",
-    "🟢 Atualizar prompt-cartorio skill v4.0.0"
+    "🔴 Gustavo validar Telegram real (chat_id 6682284055)",
+    "🟡 Cloudflare A record chatwoot.2notasudi.com.br",
+    "🟡 crwal4ai VXLAN fix (network host ou rebuild)",
+    "🟡 Integrar Langfuse tracing + Argilla feedback na API",
+    "🟢 Sprint retro + lessons loop"
   ],
-  "last_updated_iso": "2026-07-02T19:11:00-03:00"
+  "last_updated_iso": "2026-07-02T19:15:00-03:00"
 }
