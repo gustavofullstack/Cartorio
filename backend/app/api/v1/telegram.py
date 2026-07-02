@@ -655,11 +655,18 @@ async def _call_fast_llm(text: str, context: str = "") -> str:
         return ""
 
 
-async def _process_telegram_debounce(chat_id: int, db: Session) -> None:
-    """Task em background para esperar o debounce, consolidar msgs e responder."""
+async def _process_telegram_debounce(chat_id: int) -> None:
+    """Task em background para esperar o debounce, consolidar msgs e responder.
+
+    NOTA: NAO recebe `db` (Session) — `background_tasks.add_task` do FastAPI
+    executa APOS o response ser retornado, e a Session do `Depends(get_db)`
+    ja foi fechada. Passar `db` aqui causaria "Session is closed" exception
+    silenciosa (lesson-2026-07-02). Esta funcao usa apenas Redis, sem DB.
+    """
     await asyncio.sleep(DEBOUNCE_WINDOW)
     bus = get_bus()
     if not bus:
+        logger.warning("TG debounce: bus indisponivel chat=%s", chat_id)
         return
     queue_key = f"tg:queue:{chat_id}"
     lock_key = f"tg:lock:{chat_id}"
@@ -802,7 +809,8 @@ async def telegram_webhook(
     has_lock = await bus.client.get(lock_key)
     if not has_lock:
         await bus.client.setex(lock_key, 5, "1")
-        background_tasks.add_task(_process_telegram_debounce, chat_id=chat_id, db=db)
+        # NAO passar `db` aqui — Session do Depends e fechada no fim do request.
+        background_tasks.add_task(_process_telegram_debounce, chat_id=chat_id)
         logger.info("TG scheduled background debounce chat=%s", chat_id)
         return {"status": "ok", "chat_id": chat_id, "scheduled": True}
     return {"status": "ok", "chat_id": chat_id, "accumulated": True}

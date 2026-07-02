@@ -84,6 +84,10 @@ async def chat(
     headers = {
         "Authorization": f"Bearer {config.api_key}",
         "Content-Type": "application/json",
+        # Cloudflare bloqueia default httpx UA (python-httpx/X). Forcar UA
+        # de browser garante passagem para opencode.ai/zen (lesson-2026-07-02).
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept": "application/json",
     }
     payload = {
         "model": config.model,
