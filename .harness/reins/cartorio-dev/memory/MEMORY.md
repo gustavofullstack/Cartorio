@@ -159,6 +159,57 @@ Fix: declarar "DEFAULT config" + limite. Pra strict real, adicionar
 
 ---
 
+## A18 Pattern — PostgreSQL BEFORE UPDATE trigger idempotente (LGPD art. 37)
+
+**Licao canonica** (de 2026-07-02, A18 SQUAD A):
+
+Toda coluna `updated_at` em cartorio DB DEVE ter trigger BEFORE UPDATE
+que setta `NEW.updated_at = NOW()`. ORM `onupdate=datetime.utcnow` nao
+cobre updates via SQL puro (psql, n8n direto, batch jobs). Trigger eh
+defesa em profundidade (LGPD art. 37 — rastreabilidade de alteracoes).
+
+**Pattern canonico** (ver `A18-update-at-trigger.md`):
+
+```sql
+CREATE OR REPLACE FUNCTION fn_set_updated_at() RETURNS trigger AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Para cada tabela com updated_at:
+DROP TRIGGER IF EXISTS trg_set_updated_at_<tabela> ON <tabela>;
+CREATE TRIGGER trg_set_updated_at_<tabela>
+BEFORE UPDATE ON <tabela>
+FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
+```
+
+**Migration Alembic canonica**:
+- Define `TABLES_WITH_UPDATED_AT` tuple derivado de `information_schema`
+  (NAO de lista hardcoded — auditar primeiro, ver A18-audit.md).
+- `upgrade()` faz CREATE OR REPLACE FUNCTION + loop CREATE TRIGGER.
+- `downgrade()` faz loop DROP TRIGGER + DROP FUNCTION (IF EXISTS).
+- Idempotente: DROP IF EXISTS antes de CREATE.
+
+**Licoes aprendidas**:
+1. **Audit primeiro, migrar depois** — query `information_schema.columns`
+   no DB prod real pode divergir de listas hardcoded em migrations
+   legadas. Migration `0009` listava `webhook_events` antes da `0015`
+   adicionar a coluna → falharia silenciosamente.
+2. **PG nao suporta `CREATE OR REPLACE TRIGGER`** — apenas function.
+   Padrao canonico = DROP IF EXISTS + CREATE.
+3. **Tests PG-only com skipif sqlite** — mesmos patterns de
+   `test_pgcrypto_d15.py`. 4 cenarios comportamentais (UPDATE/INSERT
+   com/sem trigger, idempotencia) sao impossiveis em SQLite.
+4. **Chain collision com sibling agent** — quando 2+ agentes paralelos
+   editam migrations no mesmo sprint, `revision="0018"` colide. Solucao:
+   re-numerar minha migration para `0019` com `down_revision="0018"`.
+   Validar com `importlib.util.spec_from_file_location` antes de
+   commitar.
+
+---
+
 ## Critical Compliance Pattern — audit_verify_diario gap (FASE 4.1)
 
 **Gap LGPD real (não compliance theater)**:
@@ -185,3 +236,5 @@ Fix: declarar "DEFAULT config" + limite. Pra strict real, adicionar
 - `A13-dead-mans-switch.md` — audit dead man's switch (3-level + scheduler)
 - `A14-backup-db.md` — pg_basebackup 4x/dia + WAL + S3 placeholder
 - `A15-connection-pool.md` — SQLAlchemy pool tuning (20/10/3600/30 + Prometheus)
+- `A18-audit.md` — auditoria DB prod: 8 tabelas com `updated_at`, 0 triggers (pre-0019)
+- `A18-update-at-trigger.md` — migration `0019` idempotente + 17 tests + LGPD art. 37
