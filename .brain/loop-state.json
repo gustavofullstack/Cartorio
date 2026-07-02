@@ -1,7 +1,7 @@
 {
-  "version": "2.7.0",
-  "updated_at": "2026-07-02T21:09:29.796077-03:00",
-  "status": "telegram_bot_e2e_9x + T1_OpenClaw_1M_DONE + SquadA_25/25_DONE_lesson139b",
+  "version": "2.7.1",
+  "updated_at": "2026-07-02T22:45:00-03:00",
+  "status": "telegram_bot_e2e_9x + T1_OpenClaw_1M_DONE + SquadA_25/25_DONE_lesson139b + SUI3_DONE",
   "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + Redis recovery + fallback chain)",
   "current_goal": "G7: Bot Telegram 100% via LiteLLM - 9 testes E2E + 1 CLI + 3 stress fallback",
   "metrics": {
@@ -57,11 +57,23 @@
       "id": "8",
       "title": "Squad A 25/25 DONE (audit hardening: redlock, cache 24h, openapi validator, problem+json, etc)",
       "status": "done"
+    },
+    {
+      "id": "9",
+      "title": "SUI3 Chatwoot ENABLE_ACCOUNT_SIGNUP=true->false aplicado e validado (HTTP 200, Puma up)",
+      "status": "done"
+    },
+    {
+      "id": "10",
+      "title": "SUI1 divergente diagnosticado: DNS nao criado + Traefik sem router. Aguardando Gustavo decidir fix manual ou auto",
+      "status": "pending"
     }
   ],
   "lessons_total": 139,
   "user_action_required_only_one": [
-    "ABRIR TELEGRAM NO CELULAR, mandar /start no @test_cartorio_bot, transcrever resposta"
+    "ABRIR TELEGRAM NO CELULAR, mandar /start no @test_cartorio_bot, transcrever resposta",
+    "SUI1 DIVERGENTE: Gustavo disse 'fechado' mas authoritative NS anna/bob.ns.cloudflare.com retornam NXDOMAIN para chatwoot/n8n/supabase.2notasudi.com.br (7/7 resolvers). Traefik /data/config/main.yaml tambem sem router. Diagnostico em SESSION_SUMMARY_2026-07-02.md commit e8fa19e",
+    "SUI2 NAO CONFIRMADO: Evolution instance cartorio-2notas ainda em state=close (validado 22:45 BRT). Gustavo precisa escanear QR em whatsapp.2notasudi.com.br/manager"
   ],
   "out_of_scope_session": [
     "SQUAD A20-A25 (5 tasks)",
