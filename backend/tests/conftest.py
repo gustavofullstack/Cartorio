@@ -132,6 +132,34 @@ def db_session(monkeypatch) -> Iterator[Session]:
         Base.metadata.drop_all(eng)
 
 
+@pytest.fixture(autouse=True)
+def _bypass_atendimento_cache(monkeypatch):
+    """Bypass autouse do cache de atendimento em TODOS os testes.
+
+    Sem este bypass, o `atendimento_cache.get_cached("24h")` le do Redis
+    real (chave deterministica atendimento:ultimas-24h:v1:24h, TTL 60s)
+    e pode devolver payload stale de um teste anterior, causando
+    flakiness intermitente. Para os testes do cache em si
+    (test_atendimento_cache.py), os proprios testes fazem monkeypatch em
+    redis.Redis.from_url, entao este bypass nao conflita.
+
+    Adicionado em 2026-07-02 — lesson 132.
+    """
+    from app.services import atendimento_cache  # noqa: PLC0415
+
+    monkeypatch.setattr(
+        atendimento_cache,
+        "get_cached",
+        lambda window: None,  # type: ignore[arg-type]
+    )
+    monkeypatch.setattr(
+        atendimento_cache,
+        "set_cached",
+        lambda payload, window: True,  # type: ignore[arg-type]
+    )
+    yield
+
+
 @pytest.fixture
 def sample_payload() -> dict[str, Any]:
     return {

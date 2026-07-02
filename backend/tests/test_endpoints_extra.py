@@ -49,6 +49,14 @@ def test_session_factory(test_engine):
 
 @pytest.fixture
 def client(test_engine, test_session_factory):
+    # A18 cache cleanup: garante que cada teste começa sem payload stale
+    # do Redis real (chave deterministica atendimento:ultimas-24h:v1:24h,
+    # TTL 60s). Sem isso, o primeiro teste popula o cache e os seguintes
+    # recebem o resultado antigo por ate 60s, falhando de forma
+    # aparentemente aleatoria (flakiness).
+    from app.services.atendimento_cache import invalidate
+
+    invalidate("24h")
     with (
         patch("app.db.engine", test_engine),
         patch("app.db.SessionLocal", test_session_factory),
