@@ -140,9 +140,59 @@
 
 ## Pendências conhecidas (não corrigidas nesta sessão)
 
-1. **`cartorio_evolution-api`**: `CHATWOOT_ENABLED=false`. Para habilitar precisa de `CHATWOOT_URL` + `CHATWOOT_TOKEN` + `CHATWOOT_ACCOUNT_ID` + `CHATWOOT_INBOX_ID` configurados via painel Easypanel. **Ação humana**: configurar via UI do Easypanel.
-2. **`cartorio_evolution-api`**: instância WhatsApp `cartorio-2notas` em `NOT CONNECTION` desde Wed Jul 01 09:41. **Ação humana**: reconectar via QR Code no painel Evolution-API.
-3. **`cartorio_openclaw-gateway`**: modelo `opencode_free_1/nemotron-3-ultra-free` retornou `Streaming response failed` (provider falhou). Mitigação automática: fallback chain tem 10 LLMs; alternativas podem funcionar.
+1. **`cartorio_evolution-api`**: instância WhatsApp `cartorio-2notas` em `NOT CONNECTION` desde Wed Jul 01 09:41. **Ação humana**: reconectar via QR Code no painel Evolution-API.
+2. **`cartorio_openclaw-gateway`**: modelo `opencode_free_1/nemotron-3-ultra-free` retornou `Streaming response failed` (provider falhou). Mitigação automática: fallback chain tem 10 LLMs; alternativas podem funcionar.
+
+## Wave 6 — Chatwoot bootstrap + Evolution↔Chatwoot (2026-07-02 18:50)
+
+### Problema raiz
+
+- DB `chatwoot` estava vazio (0 accounts, 0 users, 0 inboxes).
+- `ENABLE_ACCOUNT_SIGNUP` estava `false` no `InstallationConfig` (env var Docker não foi aplicada no bootstrap).
+- Resultado: `/api/v1/accounts` retornava 404 (sem conta pra criar).
+
+### Bootstrap executado via rails runner
+
+```ruby
+InstallationConfig.find_by(name: "ENABLE_ACCOUNT_SIGNUP").update!(value: true)
+account = Account.create!(name: "Cartorio 2 Notas Udi")          # id=1
+user = User.create!(email: "admin@2notasudi.com.br", password: "@Techno832466", type: "SuperAdmin", name: "Admin Gustavo")  # id=1
+AccountUser.create!(account_id: 1, user_id: 1, role: :administrator)
+channel = Channel::Api.create!(account_id: 1)                     # id=1
+Inbox.create!(name: "API Inbox", account_id: 1, channel_type: "Channel::Api", channel_id: 1)  # id=1
+```
+
+Token gerado via `POST /auth/sign_in` (JSON) → `TgSMyCg134D2GWZ38PaV3N5S` (Account 1, role administrator, SuperAdmin).
+
+### Evolution-API configurado
+
+Conforme `AGENTS.md` instrução (rolling restart com port mapping host → scale 0 → update → scale 1):
+
+```bash
+docker service scale cartorio_evolution-api=0
+docker service update --env-add CHATWOOT_ENABLED=true \
+  --env-add CHATWOOT_URL=http://cartorio_chatwoot:3000 \
+  --env-add CHATWOOT_ACCOUNT_ID=1 \
+  --env-add CHATWOOT_INBOX_ID=1 \
+  --env-add CHATWOOT_TOKEN=TgSMyCg134D2GWZ38PaV3N5S \
+  cartorio_evolution-api
+docker service scale cartorio_evolution-api=1
+```
+
+### Resultado
+
+- `cartorio_chatwoot`: super admin criado, inbox API pronta, integração Evolution↔Chatwoot configurada.
+- `cartorio_evolution-api`: 1/1 UP, sem erros, todas as envs `CHATWOOT_*` configuradas.
+- `chat.2notasudi.com.br/auth/sign_in`: 302 (form de signin OK).
+- `chat.2notasudi.com.br/`: 302 (redirect para login).
+
+### Credenciais criadas (não commitar)
+
+- **Email admin**: `admin@2notasudi.com.br`
+- **Senha**: `@Techno832466` (mesma do admin do Supabase — usar como referência para próximos admins)
+- **Token Evolution↔Chatwoot**: `TgSMyCg134D2GWZ38PaV3N5S`
+- **Account ID**: 1
+- **Inbox ID**: 1
 
 ## Divergências PROMPT.json vs realidade
 

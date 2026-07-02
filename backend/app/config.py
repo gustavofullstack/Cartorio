@@ -98,6 +98,11 @@ class Settings(BaseSettings):
     opencode_free_1_model: str = "nemotron-3-ultra-free"
     opencode_free_1_base_url: str = "https://opencode.ai/zen/v1"
 
+    # LiteLLM Proxy (multi-provider aggregator) - Turno 47 (Supremo)
+    litellm_api_key: Optional[str] = None
+    litellm_base_url: str = "http://cartorio_litellm-app:4000"
+    litellm_model: str = "nemotron-3-ultra-free"
+
     # Opencode-Free-2 (mimo-v2.5-free, 1M ctx) - Turno 37
     opencode_free_2_api_key: Optional[str] = None
     opencode_free_2_model: str = "mimo-v2.5-free"

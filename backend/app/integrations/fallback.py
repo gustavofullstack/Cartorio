@@ -41,6 +41,7 @@ _OPENAI_COMPAT_PROVIDERS = frozenset(
         "groq",
         "mistral",
         "google_ai_studio",
+        "litellm",  # Turno 47 — proxy LiteLLM (cartorio_litellm-app:4000/v1)
     }
 )
 

@@ -173,6 +173,7 @@ PROVIDER_DISPATCH = {
     "google_ai_studio": "google_ai_studio",
     "jules": "jules",
     "openclaw": "openclaw",
+    "litellm": "litellm",  # Turno 47 — proxy LiteLLM (cartorio_litellm-app:4000)
 }
 
 
@@ -235,5 +236,13 @@ def get_config_for(provider_name: str) -> ProviderConfig | None:
             base_url=settings.google_ai_studio_base_url,
             api_key=settings.google_ai_studio_api_key,
             model=settings.google_ai_studio_model,
+        )
+    if provider_name == "litellm":
+        # Turno 47 — LiteLLM Proxy multi-provider (OpenAI-compat em /v1)
+        return ProviderConfig(
+            name="litellm",
+            base_url=f"{settings.litellm_base_url}/v1",
+            api_key=settings.litellm_api_key or "missing",
+            model=settings.litellm_model,
         )
     return None

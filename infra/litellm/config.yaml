@@ -1,0 +1,109 @@
+# ============================================
+# LiteLLM Proxy — Cartorio 2o Oficio de Notas
+# Created 2026-07-02 — multi-provider FREE chain
+# ============================================
+
+model_list:
+  # === OpenCode Zen FREE (3 modelos via 3 chaves) ===
+  - model_name: nemotron-3-ultra-free
+    litellm_params:
+      model: openai/nemotron-3-ultra-free
+      api_base: https://opencode.ai/zen/v1
+      api_key: os.environ/OPENCODE_FREE_1_API_KEY
+      headers:
+        User-Agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+  - model_name: mimo-v2.5-free
+    litellm_params:
+      model: openai/xiaomi/mimo-v2.5-free
+      api_base: https://opencode.ai/zen/v1
+      api_key: os.environ/OPENCODE_FREE_2_API_KEY
+      headers:
+        User-Agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+  - model_name: deepseek-v4-flash-free
+    litellm_params:
+      model: openai/deepseek-v4-flash-free
+      api_base: https://opencode.ai/zen/v1
+      api_key: os.environ/OPENCODE_FREE_3_API_KEY
+      headers:
+        User-Agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+  - model_name: north-mini-code-free
+    litellm_params:
+      model: openai/cohere/north-mini-code-free
+      api_base: https://opencode.ai/zen/v1
+      api_key: os.environ/OPENCODE_FREE_1_API_KEY
+      headers:
+        User-Agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+
+  # === Mistral FREE ===
+  - model_name: mistral-free
+    litellm_params:
+      model: openai/mistral-free
+      api_base: https://api.mistral.ai/v1
+      api_key: os.environ/MISTRAL_FREE_API_KEY
+      headers:
+        User-Agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+
+  # === OpenRouter FREE ===
+  - model_name: poolside-laguna-free
+    litellm_params:
+      model: openai/poolside/laguna-m.1:free
+      api_base: https://openrouter.ai/api/v1
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: north-mini-code-openrouter-free
+    litellm_params:
+      model: openai/cohere/north-mini-code:free
+      api_base: https://openrouter.ai/api/v1
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: gemma-4-31b-free
+    litellm_params:
+      model: openai/google/gemma-4-31b-it:free
+      api_base: https://openrouter.ai/api/v1
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # === Google AI Studio FREE ===
+  - model_name: gemini-3.5-flash-free
+    litellm_params:
+      model: openai/gemini-3.5-flash
+      api_base: https://generativelanguage.googleapis.com/v1beta/openai
+      api_key: os.environ/GOOGLE_API_KEY
+  - model_name: gemini-3-flash-free
+    litellm_params:
+      model: openai/gemini-3-flash
+      api_base: https://generativelanguage.googleapis.com/v1beta/openai
+      api_key: os.environ/GOOGLE_API_KEY
+
+  # === OpenClaw Gateway (MiniMax-M3 + sk-*) — passthrough ===
+  - model_name: openclaw
+    litellm_params:
+      model: openai/openclaw
+      api_base: http://cartorio_openclaw-gateway:18789/v1
+      api_key: os.environ/OPENCLAW_GATEWAY_PASSWORD
+
+# ============================================
+# Router settings — fallback chain prioritario
+# ============================================
+router_settings:
+  num_retries: 2
+  timeout: 30
+  retry_policy: "exponential_backoff"
+  allowed_fails: 3
+  cooldown_time: 30  # seconds
+
+# ============================================
+# LiteLLM settings
+# ============================================
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  cache: false  # LGPD: nao cachear mensagens de clientes
+  telemetry: false
+  request_timeout: 30
+  drop_invalid_json: true
+
+# ============================================
+# General settings
+# ============================================
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: os.environ/STORE_MODEL_IN_DB
