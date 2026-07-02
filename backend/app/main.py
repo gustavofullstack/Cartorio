@@ -9,34 +9,38 @@ from collections.abc import AsyncIterator
 # 2026-07-02 fix: force=True re-aplica basicConfig sob handlers uvicorn
 # (sem isso, logs INFO ficam invisiveis porque uvicorn ja setou
 # root.handlers e basicConfig silenciosamente nao adiciona novos).
+# IMPORTANTE: basicConfig DEVE rodar ANTES dos imports abaixo — se o
+# modulo app.* tocar logging.getLogger(__name__) durante import (ex.
+# app.api.v1.telegram configura logger no top), o handler do uvicorn
+# seria usado. Por isso os imports abaixo carregam a marca E402 do ruff.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     force=True,
 )
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_redoc_html
-from fastapi.responses import HTMLResponse
-from sqlalchemy import text
+from fastapi import FastAPI  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.openapi.docs import get_redoc_html  # noqa: E402
+from fastapi.responses import HTMLResponse  # noqa: E402
+from sqlalchemy import text  # noqa: E402
 
-from app.api.v1.router import api_router
-from app.api.v1.ws.atendimentos import ws_router
-from app.config import settings
-from app.db import engine, session_scope
-from app.models.base import Base
-from app.services.audit import AuditService
-from app.services.rate_limit import RateLimitMiddleware
-from app.services.rate_limit_by_key import RateLimitByKeyMiddleware
-from app.services.tracing import init_tracing
-from app.middleware.request_context import RequestContextMiddleware
-from app.middleware.idempotency import IdempotencyMiddleware
-from app.middleware.slow_log import SlowLogMiddleware
-from app.middleware.openapi_validator import install_openapi_validation_middleware
-from app.middleware.version_header import VersionHeaderMiddleware, install_version_endpoint
-from app.middleware.problem_details import install_problem_handlers
-from app.services.idempotency_store import RedisIdempotencyStore
+from app.api.v1.router import api_router  # noqa: E402
+from app.api.v1.ws.atendimentos import ws_router  # noqa: E402
+from app.config import settings  # noqa: E402
+from app.db import engine, session_scope  # noqa: E402
+from app.models.base import Base  # noqa: E402
+from app.services.audit import AuditService  # noqa: E402
+from app.services.rate_limit import RateLimitMiddleware  # noqa: E402
+from app.services.rate_limit_by_key import RateLimitByKeyMiddleware  # noqa: E402
+from app.services.tracing import init_tracing  # noqa: E402
+from app.middleware.request_context import RequestContextMiddleware  # noqa: E402
+from app.middleware.idempotency import IdempotencyMiddleware  # noqa: E402
+from app.middleware.slow_log import SlowLogMiddleware  # noqa: E402
+from app.middleware.openapi_validator import install_openapi_validation_middleware  # noqa: E402
+from app.middleware.version_header import VersionHeaderMiddleware, install_version_endpoint  # noqa: E402
+from app.middleware.problem_details import install_problem_handlers  # noqa: E402
+from app.services.idempotency_store import RedisIdempotencyStore  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
