@@ -5,6 +5,16 @@ import logging
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
+# Configure root logger so app.api.v1.* modules (e.g. telegram) emit INFO.
+# 2026-07-02 fix: force=True re-aplica basicConfig sob handlers uvicorn
+# (sem isso, logs INFO ficam invisiveis porque uvicorn ja setou
+# root.handlers e basicConfig silenciosamente nao adiciona novos).
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    force=True,
+)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html
