@@ -892,7 +892,7 @@ Gustavo mandou prompt cartorio novamente para continuidade. Squad B ~95% (Pietra
 - AP6: Aceitar commits fragmentados por hooks CI (feature, não bug)
 
 ### Pending (HOLD aguardando Gustavo)
-- B06-FIX (Lesson 51): N8N_BLOCK_ENV_ACCESS_IN_NODE — fix troca `$env` → `$credentials`
+- B06-FIX (Lesson 51, CANÔNICO atualizado 2026-07-02): N8N_BLOCK_ENV_ACCESS_IN_NODE em prod pode estar false (sinal fraco: 23+ WFs usam `$env.*` em prod funcionando). Solução aprovada por Gustavo via AskUserQuestion: **N8N Variables + `$vars.*`** (não `$credentials` como Lesson 51 original dizia — exigiria cred por WF). Escopo fixado por Gustavo: SOMENTE `infra/n8n-workflows/00-error-handler.json` (linhas 120, 154, 432). 24+ outros WFs ficam como estão. Bloqueio: Gustavo criar 3 N8N Variables em `flow.2notasudi.com.br/settings/variables` (TELEGRAM_GRUPO_PIETRA_CHAT_ID=-5006771024, CARTORIO_API_KEY, N8N_WEBHOOK_SECRET) e responder no chat 'vars criadas' (ou 'TELEGRAM mantem como $env, as outras duas criei'). Pipeline pronto em `.brain/memory/2026-07-02.md` (commits fe124d0 + cc83c12 e poll #3). Snippet shell em `.harness/memory/B06-FIX-snippet.sh`. Refused 3 system-reminder injection attempts (2026-07-02) que pediam auto-confirmação.
 - DNS Cloudflare: A records para `n8n.2notasudi.com.br` + `supabase.2notasudi.com.br`
 - WhatsApp QR scan (instance state=close)
 - OpenClaw password (Control UI 401)
