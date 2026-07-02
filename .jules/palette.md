@@ -1,0 +1,3 @@
+## 2026-06-30 - Improve accessibility and semantic structure in custom Python-embedded UI templates
+**Learning:** When custom UI, like a Swagger interface, is embedded directly in backend code as a raw string (e.g., Python `SWAGGER_UI_HTML`), semantic structure (using tags like `<header>`, `<nav>`, `<main>`) and keyboard accessibility styles (`:focus-visible`) are often missed. These components require the same level of accessibility care as full frontend apps, remembering to double-escape CSS curly braces (`{{`, `}}`) where necessary.
+**Action:** Always check custom inline HTML variables for missing semantic elements and focus indicators, ensuring proper escaping syntax for the specific backend language being used.
