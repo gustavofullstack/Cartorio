@@ -38,9 +38,24 @@
 Teste 1 (19:10): webhook→debounce 3s→LiteLLM 4s→sendMessage 200 OK→sent=True (T+10.0s)
 Teste 2 (19:11): webhook→debounce 3s→LiteLLM 3.99s→sendMessage 200 OK→sent=True (T+9.18s)
 Teste 3 (19:13): webhook→debounce 3s→LiteLLM 5.36s→sendMessage 200 OK→sent=True (T+10.5s)
+Teste 4 (19:24): webhook→debounce 3s→LiteLLM 422→FALLBACK opencode_free_1 nemotron 2.04s→sendMessage 200 OK→sent=True (T+8.5s)
 ```
 
-Todas as 3 chamadas: `provider=litellm model=opencode-free-1 idx=0` (sem fallback).
+**Teste 4 confirma que a chain de fallback FUNCIONA**: LiteLLM upstream falhou (422 BadRequestError), sistema automaticamente tentou `opencode_free_1` direto, respondeu em 2.04s, enviou pro Telegram. **Bot auto-recuperou de falha do proxy LiteLLM sem intervenção manual**.
+
+## 🔴 INCIDENTE CRÍTICO: Redis crash 19:20
+
+```
+19:20:39  Redis reiniciou (load RDB, 917 keys, 7.4MB)
+19:20:40  Webhook retornou 500 (redis.exceptions.ConnectionError)
+          swarm DNS stale apontando pra IP antigo do Redis
+19:24:00  docker service update --force cartorio_redis → DNS atualizou (10.11.62.186 → 10.11.62.188)
+19:24:41  Bot voltou a responder normalmente
+```
+
+**Causa raiz provável**: OOM kill do Redis (já tinha alerta antigo sobre "N8N restart loop OOM"). **Ação preventiva recomendada**:
+- `sysctl vm.overcommit_memory=1` em `/etc/sysctl.conf`
+- Configurar limite de memória no Redis: `--maxmemory 500mb --maxmemory-policy allkeys-lru`
 
 ## 📂 Arquivos entregues
 

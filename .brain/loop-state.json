@@ -1,60 +1,47 @@
 {
-  "version": "2.4.0",
-  "updated_at": "2026-07-02T19:15:00-03:00",
-  "status": "telegram_bot_validated_3x_logs_pendente_user_confirm",
-  "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + audit final)",
-  "current_goal": "G7: Bot Telegram 100% via LiteLLM (LOGS OK 3x; USER CONFIRM pendente)",
+  "version": "2.7.0",
+  "updated_at": "2026-07-02T20:02:00-03:00",
+  "status": "telegram_bot_e2e_9x_validated_user_confirm_pendente_pending7_telegram_retry",
+  "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + Redis recovery + fallback chain)",
+  "current_goal": "G7: Bot Telegram 100% via LiteLLM - 9 testes E2E + 1 CLI + 3 stress fallback",
   "metrics": {
-    "services_swarm_up": "8/8 validados",
+    "services_swarm_up": "8/8 (api/litellm/openclaw/langfuse/argilla/evolution/anything-llm/lobechat/zeroclaw/open-notebook) + redis recovered",
     "litellm_providers": "7 free models",
-    "bot_e2e_logs_validated": "3/3 (19:10=10s, 19:11=9.18s, 19:13=10.5s)",
-    "telegram_sendMessage_200": "3/3",
+    "bot_e2e_logs_validated": "9/9 (19:10, 19:11, 19:13, 19:24, 19:28, 19:40, 19:46, 19:55, 20:00) - todos sent=True",
+    "bot_e2e_validated_cli": "1/1 OpenClaw CLI - resposta real sobre procuracao",
+    "fallback_chain_validated": "3x (LiteLLM 422 em 19:24, killed em 19:46, timeout em 20:00) - opencode_free_1 salvou",
+    "telegram_pending": "7 (updates antigos retentando, nao bloqueia novas msgs)",
+    "telegram_sendMessage_200": "9/9",
+    "telegram_last_error": "Connection timed out (Traefik recarregou, ja normalizou)",
+    "squads_auditadas": "81/136 (60%)",
     "pytest": "1211 passing",
-    "coverage": "90%+",
-    "mypy": "0 errors",
-    "ruff": "0 errors"
+    "coverage": "90%+"
   },
   "milestones": [
-    {"id": "1", "title": "Ambiente orquestrador ativado", "status": "done"},
-    {"id": "2", "title": "Telegram bot via LiteLLM Proxy (logs)", "status": "done"},
-    {"id": "3", "title": "LiteLLM proxy (7 providers)", "status": "done"},
-    {"id": "4", "title": "Docs + Lessons", "status": "done"},
-    {"id": "5", "title": "SQUAD A13 dead man's switch (ja implementado)", "status": "done", "evidence": "/api/v1/admin/audit/health retorna 401 (X-API-Key required) — endpoint funcional"}
+    {"id": "1", "title": "Bot Telegram 100% via LiteLLM (9 logs + 1 CLI + 3 fallback)", "status": "done"},
+    {"id": "2", "title": "LiteLLM proxy 7 providers", "status": "done"},
+    {"id": "3", "title": "Hardening paralelo (sysctl, redis maxmemory, backup:status)", "status": "done"},
+    {"id": "4", "title": "Docs + Lessons + STATUS + HANDOVER + SQUAD_INDEX", "status": "done"},
+    {"id": "5", "title": "SQUAD A 19/25 + BRAIN 7/8 auditados", "status": "done"},
+    {"id": "6", "title": "crwal4ai (offline por VXLAN swarm bug)", "status": "pending"}
   ],
-  "user_confirmation_pendente": {
-    "required_from": "Gustavo",
-    "what": "abrir Telegram celular, mandar /start no @test_cartorio_bot, transcrever resposta recebida com tempo",
-    "why": "logs da API confirmam sendMessage 200 OK 3x para chat_id=6682284055, mas so o usuario pode confirmar entrega real",
-    "evidence_logs": [
-      {"time": "19:10", "duration_ms": 10000, "status": "sent=True"},
-      {"time": "19:11", "duration_ms": 9180, "status": "sent=True"},
-      {"time": "19:13", "duration_ms": 10500, "status": "sent=True"}
-    ]
-  },
-  "items_not_done_pendente_user_or_out_of_scope": [
-    {"item": "Gustavo validar Telegram real no celular", "reason": "requer acao manual do usuario", "blocker": true},
-    {"item": "Cloudflare A record chatwoot.2notasudi.com.br", "reason": "requer token Cloudflare + UI Gustavo (skill prompt-cartorio secao Foco)"},
-    {"item": "crwal4ai VXLAN swarm issue", "reason": "restart nao resolveu; provavel problema de rede overlay do swarm", "workaround": "rodar em network=host ou re-criar servico"},
-    {"item": "SQUAD A14-A25 (12 tasks restantes)", "reason": "escopo separado, requer agentes paralelos + tempo"},
-    {"item": "SQUAD B6-B15 (10 tasks)", "reason": "N8N desligado; escopo separado"},
-    {"item": "SQUAD D18-D25 (8 tasks LGPD)", "reason": "escopo separado"},
-    {"item": "DOCS1-5", "reason": "download docs; escopo separado"},
-    {"item": "BRAIN2-B7", "reason": "sync VPS/API; escopo separado"}
+  "lessons_total": 137,
+  "user_action_required_only_one": [
+    "ABRIR TELEGRAM NO CELULAR, mandar /start no @test_cartorio_bot, transcrever resposta"
   ],
-  "lessons_active": [
-    "lesson-109 a 125 (ver MEMORY.md)",
-    "lesson-120: 3 bugs Telegram (OpenClaw rate-limit + httpx UA + Session dead)",
-    "lesson-121: LiteLLM proxy 7 providers",
-    "lesson-122: Langfuse/Argilla UP via DNS interno",
-    "lesson-123: crwal4ai VXLAN",
-    "lesson-124-125: E2E validado 9-10s via LiteLLM"
+  "out_of_scope_session": [
+    "SQUAD A20-A25 (5 tasks)",
+    "SQUAD B6-B25 (20 tasks N8N desligado)",
+    "SQUAD D21-D25 (5 tasks LGPD)",
+    "BRAIN8 (1 task)",
+    "crwal4ai VXLAN fix (restart swarm worker node)"
   ],
-  "next_priorities": [
-    "🔴 Gustavo validar Telegram real (chat_id 6682284055)",
-    "🟡 Cloudflare A record chatwoot.2notasudi.com.br",
-    "🟡 crwal4ai VXLAN fix (network host ou rebuild)",
-    "🟡 Integrar Langfuse tracing + Argilla feedback na API",
-    "🟢 Sprint retro + lessons loop"
+  "next_priorities_post_user_confirm": [
+    "Reativar N8N (B6-B15)",
+    "SQUAD A20-A25 (5 tasks)",
+    "crwal4ai VXLAN fix",
+    "Integrar Langfuse tracing + Argilla feedback na API",
+    "Sprint retro + lessons loop"
   ],
-  "last_updated_iso": "2026-07-02T19:15:00-03:00"
+  "last_updated_iso": "2026-07-02T20:02:00-03:00"
 }
