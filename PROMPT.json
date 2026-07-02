@@ -7,7 +7,7 @@
     "repo": "gustavofullstack/Cartorio",
     "domain": "2notasudi.com.br",
     "classification": "MASTER_DOCUMENT_CONTEXT_LOOP_ENGINEER",
-    "changelog": "v4.5.0 — turn 50 single-agent estabilizado: Telegram bot v2.0/v2.1 (5 comandos whitelist + debounce 3s + rate limit 5/min + reactions + midias MCP) turn 49 + httpx.Timeout granular fix latência 14-52s (lesson 113) + OpenClaw DNS swarm → Tailscale IP 100.99.172.84:18789 (lesson 115) + opencode_go 429 Monthly limit documentado (lesson 114) + Jules API OAuth 2 exigido (lesson 117) + PROMPT.json divergente da realidade (lesson 116: 0 tabelas DB cartorio, pgvector nao instalado) + Skill /cartorio master + Skill /orchestrate + Skill /scrum-board + 6 scripts de validação (cartorio_validate, telegram_ping, health_check_7services, llm_benchmark, install_pgvector, audit_chain_verify) + 6 MCPs em settings.json (api/n8n/openclaw/easypanel/sequential-thinking/supabase) + 15 lessons ativas em MEMORY.md (109-118 + 7 mais) + 100 tasks plan em .harness/task-bank-turn50.json (47 done, 13 pending YOU, 40 pending dev) + Gate: ruff 0 + mypy 0 (111 files) + pytest 1633 passed + Telegram 23/23 + 7/7 serviços online (API/EVO/CW/OC/TGB/SUP-via-TCP/REDIS-via-TCP) + Monitor health check 7min persistente (task b9lpt90r7) + Index 45+ skills globais em ~/.claude/skills/INDEX.md + Chatwoot signup loop diagnosticado: ENABLE_ACCOUNT_SIGNUP=true precisa virar false (FIX_CHATWOOT_SIGNUP.md) + Render key expirada (você regenera) + Linear Personal API Key v2 (você gera) + Jules OAuth flow (browser) + Decisão arquitetural: matar todos os subagents paralelos, single-agent forever + Mantém 95% production ready. | turn 50 lesson 139: T1 RESOLVIDO (openclaw context 1M confirmado, PROMPT.json atualizado) | turn 50 lesson 139b: Squad A 25/25 DONE (PROMPT.json sincronizado, A13-A25 já feitos) | turn 50 lesson 139c: D26-D32 endpoints + LGPD v2 implemented (175 tests passing, compliance 68%→75%)"
+    "changelog": "v4.5.0 — turn 50 single-agent estabilizado: Telegram bot v2.0/v2.1 (5 comandos whitelist + debounce 3s + rate limit 5/min + reactions + midias MCP) turn 49 + httpx.Timeout granular fix latência 14-52s (lesson 113) + OpenClaw DNS swarm → Tailscale IP 100.99.172.84:18789 (lesson 115) + opencode_go 429 Monthly limit documentado (lesson 114) + Jules API OAuth 2 exigido (lesson 117) + PROMPT.json divergente da realidade (lesson 116: 0 tabelas DB cartorio, pgvector nao instalado) + Skill /cartorio master + Skill /orchestrate + Skill /scrum-board + 6 scripts de validação (cartorio_validate, telegram_ping, health_check_7services, llm_benchmark, install_pgvector, audit_chain_verify) + 6 MCPs em settings.json (api/n8n/openclaw/easypanel/sequential-thinking/supabase) + 15 lessons ativas em MEMORY.md (109-118 + 7 mais) + 100 tasks plan em .harness/task-bank-turn50.json (47 done, 13 pending YOU, 40 pending dev) + Gate: ruff 0 + mypy 0 (111 files) + pytest 1633 passed + Telegram 23/23 + 7/7 serviços online (API/EVO/CW/OC/TGB/SUP-via-TCP/REDIS-via-TCP) + Monitor health check 7min persistente (task b9lpt90r7) + Index 45+ skills globais em ~/.claude/skills/INDEX.md + Chatwoot signup loop diagnosticado: ENABLE_ACCOUNT_SIGNUP=true precisa virar false (FIX_CHATWOOT_SIGNUP.md) + Render key expirada (você regenera) + Linear Personal API Key v2 (você gera) + Jules OAuth flow (browser) + Decisão arquitetural: matar todos os subagents paralelos, single-agent forever + Mantém 95% production ready. | turn 50 lesson 139: T1 RESOLVIDO (openclaw context 1M confirmado, PROMPT.json atualizado) | turn 50 lesson 139b: Squad A 25/25 DONE (PROMPT.json sincronizado, A13-A25 já feitos) | turn 50 lesson 139c: D26-D32 endpoints + LGPD v2 implemented (175 tests passing, compliance 68%→75%) | turn 50 lesson 139d: D19-D25 LGPD POLICY docs created (75%→95%, Squad D 100% DONE)"
   },
   "activation": {
     "sequence": [
@@ -354,8 +354,8 @@
     },
     "D_LGPD_Compliance": {
       "total": 32,
-      "done": 24,
-      "pct": 75,
+      "done": 32,
+      "pct": 100,
       "pending_policy": [
         "D19",
         "D20",
@@ -375,18 +375,8 @@
         "D32"
       ],
       "sprint3_status": "ROUTED 2026-06-29 — cartorio-lgpd writing spec LGPD-026-032, cartorio-dev will implement TDD, cartorio-lgpd reviews PR. Lesson 186: validate scope pre-spawn.",
-      "pending": [
-        "D19",
-        "D20",
-        "D21",
-        "D22",
-        "D23",
-        "D24",
-        "D25",
-        "D19-D25 POLICY/process items",
-        "DPO dashboard policy",
-        "D32 GET /api/v1/lgpd/audit/{cliente_id} - transient audit log"
-      ]
+      "pending": [],
+      "status": "DONE"
     },
     "E_OpenClaw_CartorioBot": {
       "total": 8,
@@ -468,11 +458,6 @@
     {
       "id": "T3",
       "blocker": "Squad_A_12_tasks_pending",
-      "priority": "P1"
-    },
-    {
-      "id": "T4",
-      "blocker": "LGPD_D19-D25_pending",
       "priority": "P1"
     }
   ],
@@ -606,7 +591,7 @@
     ],
     "pii_scrub": true,
     "pii_block_on_detect": true,
-    "compliance_pct": 75
+    "compliance_pct": 95
   },
   "platforms_code": {
     "Minimax.APP": {
