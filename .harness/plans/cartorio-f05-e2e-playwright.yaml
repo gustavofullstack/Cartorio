@@ -1,0 +1,161 @@
+version: 1
+plan:
+  name: cartorio-f05-e2e-playwright-v2
+  max_concurrency: 1
+  max_consecutive_failures: 2
+  max_cycles: 2
+  auto_accept: false
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: f05-e2e-playwright-full-flow-v2
+    title: "F05 E2E Playwright full flow cliente→consulta→emolumento→recibo v2"
+    prompt: >
+      TASK F05 do Squad F (Testing & CI/CD) — Cartório 2notas.
+
+      CONTEXTO: API FastAPI em produção com pytest 1648+ tests passando
+      (unit + integration). Falta camada E2E com browser real que valida
+      o fluxo crítico de negócio ponta-a-ponta: cliente agenda consulta →
+      comparece → recebe emolumento → recibo é emitido. A19 soft delete
+      já está DONE (commit dcbfc48 + b80688e) — soft-deletados não devem
+      aparecer no fluxo E2E.
+
+      OBJETIVO: Criar suite Playwright E2E que exercita um fluxo
+      cliente-real passando por TODOS os estágios de negócio. Suite
+      idempotente (rodável N vezes sem flake), com 5 cenários críticos
+      no mínimo. CI integration skeleton (não-ativo por default).
+
+      PASSOS:
+
+      1. **Setup Playwright**:
+         - `pip install playwright>=1.40 pytest-playwright`
+         - `playwright install chromium` (apenas chromium — firefox/webkit
+           adiciona 200MB+ por browser)
+         - Adicionar a `[project.optional-dependencies.e2e]` em
+           pyproject.toml (separado de dev pra não inflar CI unit)
+         - Criar `backend/tests/e2e/` (separado de `backend/tests/` unit)
+
+      2. **Fixture base** (`backend/tests/e2e/conftest.py`):
+         - `e2e_client` = context Playwright com login feito em usuário
+           cliente real (criado on-the-fly via API se não existir)
+         - `e2e_admin` = context Playwright com login feito em admin
+         - Limpar state entre tests via API (`db.reset_state()` ou
+           soft-delete cleanup) — NÃO drop database, usar soft delete
+           (A19 compatible)
+         - `e2e_base_url` = env var `E2E_BASE_URL` (default
+           `http://localhost:8000`, prod = `https://api.2notasudi.com.br`
+           via Tailscale)
+         - **NOMENCLATURA**: usar EXATAMENTE `e2e_client` e `e2e_admin`
+           (NÃO `e2e_cliente` / `e2e_api_key` — feedback verifier attempt 1).
+
+      3. **5 Cenários críticos** (`backend/tests/e2e/test_full_flow.py`):
+
+         **Cenário 1**: cliente novo → agenda consulta → recebe confirmação
+         - POST /cliente (cria cliente)
+         - POST /agendamento (cria agendamento)
+         - GET /agendamento/{id} (verifica status)
+         - Espera confirmação WhatsApp (mock ou skip — não-Real EVO)
+
+         **Cenário 2**: consulta realizada → emolumento calculado
+         - POST /atendimento (registra comparecimento)
+         - POST /emolumento/calcular (calcula valor com base em tipo)
+         - Verifica valor bate tabela vigente (mock data)
+
+         **Cenário 3**: recibo emitido → aparece na lista do cliente
+         - POST /recibo (emite recibo com hash SHA256)
+         - GET /cliente/{id}/recibos (lista contém recibo)
+         - Verifica hash único + ordenação por data
+
+         **Cenário 4**: soft delete (A19 compat) — cliente deletado
+         some da busca default, mas ?include_deleted=true mostra
+         - DELETE /cliente/{id} (soft delete)
+         - GET /cliente (sem include_deleted) → cliente NÃO aparece
+         - GET /cliente?include_deleted=true → cliente aparece
+         - GET /cliente/{id} retorna 410 Gone ou deleted_at populado
+
+         **Cenário 5**: LGPD consent (E01 future-compat) — sem consent,
+         endpoint de marketing retorna 403, com consent retorna 200
+         - Skip se E01 não implementado (add @pytest.mark.skip com reason)
+         - Senão: POST /cliente/{id}/consent → marketing endpoint ok
+
+      4. **Run config**:
+         - pytest.ini ou pyproject.toml `[tool.pytest.ini_options]`:
+           marker `e2e` registrado
+         - Comando: `pytest -m e2e --browser chromium --headed=false`
+         - CI: `.github/workflows/e2e-nightly.yml` skeleton APENAS COM
+           `workflow_dispatch` trigger (SEM `on.schedule`!) — feedback
+           verifier attempt 1: workflow deve ser draft/disabled OU
+           manual-only até admin GO.
+
+      5. **Smoke test** (`tests/test_e2e_health.py`):
+         - Test sentinel que **NÃO importa Playwright**. Apenas verifica
+           presença do binário `playwright` em `subprocess.run` — não
+           falha se Playwright aus (skip + warning).
+         - **NÃO usar pytest.importorskip em CI unit** — feedback
+           verifier attempt 1: importorskip ainda requer Playwright
+           instalado, não devia ser CI-blocking.
+         - 1 test que faz GET /health via urllib e espera 200 — sanity
+           puro, sem browser.
+
+      6. **MEMÓRIA** (`.harness/reins/cartorio-dev/memory/F05-e2e-playwright.md`):
+         - Lista 5 cenários com status (pass/skipped)
+         - Tempo de execução total
+         - Hash do commit
+         - Comando reproduzir
+         - Decisão: NÃO rodar em todo PR (custo). Manter nightly separado.
+
+      REGRAS DURAS:
+      - NUNCA rotacionar chaves
+      - NUNCA push sem Gustavo GO (Lesson 110) — commit local OK
+      - Conventional Commits (feat/test/chore) terminando com
+        "Modified by Gustavo Almeida"
+      - ruff check + ruff format clean
+      - mypy default config 0 errors no código NOVO
+      - pytest existente (1648+) deve continuar passando 100%
+      - E2E suite NÃO roda em CI unit (mark `e2e` separa)
+
+      TRATAMENTO DE BLOQUEIOS CONHECIDOS:
+      - Se Playwright falhar instalar em M-series Mac (problema Rosetta
+        em alguns casos), documentar e propor F05.1 = docker container
+        playwright ou skip macOS.
+      - Se EVO WhatsApp mock for muito frágil, skip Cenário 1 step WhatsApp
+        e validar apenas "API respondeu 200" como proxy. Documentar.
+      - Se suite completa > 10min single-browser, split em
+        `test_full_flow_smoke.py` (3 min, CI-friendly) e
+        `test_full_flow_deep.py` (10 min, nightly only).
+
+      REPORTE ao root session mvs_6defd95d5f2941198c6ec8711264286f via
+      `mavis communication send --from <sua-session> --to
+      mvs_6defd95d5f2941198c6ec8711264286f --command prompt` ao terminar.
+      7 linhas: scenarios_count, scenarios_passed, scenarios_skipped,
+      suite_runtime_seconds, browser_used, files_changed, commit_hash,
+      status.
+
+      Push gate: NAO push. Apenas commit local.
+    verify_prompt: >
+      Verifique F05: 1. Playwright instalado em [project.optional-
+      dependencies.e2e]? 2. `playwright install chromium` documentado?
+      3. tests/e2e/conftest.py com fixtures e2e_client/e2e_admin/
+      e2e_base_url? 4. 5 cenários escritos em tests/e2e/test_full_flow.py
+      (cliente/consulta/emolumento/recibo/soft-delete)? 5. pytest -m e2e
+      roda suite sem erros? 6. Soft delete (Cenário 4) funciona com A19
+      (cliente deletado some da busca default, aparece com
+      include_deleted)? 7. CI skeleton .github/workflows/e2e-nightly.yml
+      criado mas INACTIVE? 8. tests/test_e2e_health.py smoke test passa?
+      9. pytest 1648+ continua passando 100% (mark e2e separa)? 10.
+      Memória F05-e2e-playwright.md criada com números? 11. Conventional
+      Commits + trailer "Modified by Gustavo Almeida"?
+      APROVADO = todos SIM. Se suite e2e instável ou Cenário 4 não bate
+      com A19, FAIL mesmo se 9/11 OK.
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier
+    depends_on: []
+    gates: []
+    max_retries: 1
+    timeout_ms: 18000000
+    hang_alert_after_ms: 7200000

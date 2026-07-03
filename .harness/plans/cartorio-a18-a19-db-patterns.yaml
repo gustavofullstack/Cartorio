@@ -1,0 +1,204 @@
+version: 1
+plan:
+  name: cartorio-a18-a19-db-patterns
+  max_concurrency: 2
+  max_consecutive_failures: 2
+  max_cycles: 2
+  auto_accept: true
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: a18-update-at-trigger
+    title: "A18 Trigger update_at automático em todas tabelas com updated_at"
+    prompt: >
+      TASK A18 do Squad A (API/DB Hardening) — Cartório 2notas.
+
+      CONTEXTO: API FastAPI em produção contra Supabase Postgres
+      (cartorio_supabase-db-1). Algumas tabelas têm coluna `updated_at`
+      mas sem trigger automático — campos não são atualizados em UPDATE,
+      gerando dados stale em audit/observabilidade.
+
+      OBJETIVO: Criar trigger BEFORE UPDATE que setta NEW.updated_at = NOW()
+      em TODAS as tabelas que têm coluna `updated_at`. Idempotente
+      (rodável múltiplas vezes). Migration Alembic versionada.
+
+      PASSOS:
+
+      1. **Auditoria inicial**:
+         - Conectar cartorio_supabase-db-1 via Tailscale
+         - Query: `SELECT table_name FROM information_schema.columns
+           WHERE column_name = 'updated_at' AND table_schema = 'public';`
+         - Listar todas as tabelas candidatas em
+           `.harness/reins/cartorio-dev/memory/A18-audit.md`
+
+      2. **Criar função trigger genérica** (se não existe):
+         - `CREATE OR REPLACE FUNCTION set_updated_at()
+           RETURNS TRIGGER AS $$
+           BEGIN
+             NEW.updated_at = NOW();
+             RETURN NEW;
+           END;
+           $$ LANGUAGE plpgsql;`
+
+      3. **Migration Alembic** (`backend/alembic/versions/<hash>_a18_update_at_triggers.py`):
+         - Para cada tabela listada na auditoria:
+           `CREATE TRIGGER set_updated_at BEFORE UPDATE ON <table>
+           FOR EACH ROW EXECUTE FUNCTION set_updated_at();`
+         - Usar `IF NOT EXISTS` para idempotência
+         - `downgrade()` deve dropar os triggers
+
+      4. **Aplicar migration no dev/staging local** (Tailscale VPS):
+         - `cd backend && alembic upgrade head`
+         - Validar via psql: `SELECT tgname FROM pg_trigger
+           WHERE tgname = 'set_updated_at';`
+
+      5. **Test pytest** (`tests/test_update_at_trigger.py`):
+         - Cenário 1: UPDATE em tabela com trigger → updated_at muda
+         - Cenário 2: UPDATE em tabela SEM trigger → updated_at não muda
+         - Cenário 3: Migration é idempotente (rodar 2x, 2ª é no-op)
+         - Cenário 4: Inserção (INSERT) NÃO dispara trigger
+         - Coverage >= 90% no módulo de migration
+
+      6. **MEMÓRIA** (`.harness/reins/cartorio-dev/memory/A18-update-at-trigger.md`):
+         - Lista tabelas cobertas
+         - Hash do commit migration
+         - Output do alembic upgrade
+         - Decisão: NÃO aplicar em prod ainda (push gate Lesson 110) —
+           Gustavo autoriza deploy após review
+
+      REGRAS DURAS:
+      - NUNCA rotacionar chaves (regra Gustavo)
+      - NUNCA push sem Gustavo GO (Lesson 110) — commit local OK
+      - Conventional Commits (feat/test/docs) terminando com
+        "Modified by Gustavo Almeida"
+      - ruff check + ruff format clean
+      - mypy default config 0 errors no código NOVO
+      - pytest --cov=app coverage >= 90% no módulo novo
+      - Workflow: analisar → testar → corrigir → melhorar → otimizar →
+        documentar → comentar → salvar memória.
+
+      REPORTE ao root session mvs_bafd4821e3d0473b97ede30210a95462 via
+      `mavis communication send --from <sua-session> --to
+      mvs_bafd4821e3d0473b97ede30210a95462 --command prompt` ao terminar.
+      5 linhas: files_changed, tests_added, coverage, commit_hash, status.
+
+      Push gate: NAO push. Apenas commit local.
+    verify_prompt: >
+      Verifique A18: 1. Função set_updated_at() criada (CREATE OR REPLACE
+      FUNCTION)? 2. Migration Alembic gerada em
+      backend/alembic/versions/? 3. Triggers aplicados em TODAS as tabelas
+      com coluna updated_at (verificar pg_trigger)? 4. Migration idempotente
+      (rodável 2x)? 5. tests/test_update_at_trigger.py com 4 cenários passa
+      100%? 6. coverage >= 90% no módulo de migration? 7. Memória
+      A18-update-at-trigger.md criada? 8. Conventional Commits + trailer
+      "Modified by Gustavo Almeida"? APROVADO = todos SIM.
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier
+    depends_on: []
+    gates: []
+    max_retries: 2
+    timeout_ms: 1800000
+    hang_alert_after_ms: 900000
+
+  - id: a19-soft-delete-pattern
+    title: "A19 Soft delete pattern global deleted_at + filtro query"
+    prompt: >
+      TASK A19 do Squad A (API/DB Hardening) — Cartório 2notas.
+
+      CONTEXTO: API FastAPI em produção. DELETE atual é HARD delete —
+      remove registro do banco. Isso quebra audit chain (que precisa de
+      evidência histórica) e LGPD art 18 V (eliminação só após retenção).
+
+      OBJETIVO: Implementar soft delete pattern — coluna `deleted_at
+      TIMESTAMPTZ NULL` em todas as tabelas de domínio (não em audit_log
+      nem logs). DELETE vira UPDATE set deleted_at=NOW(). Queries de listagem
+      filtram `WHERE deleted_at IS NULL` por padrão.
+
+      PASSOS:
+
+      1. **Auditoria** (`.harness/reins/cartorio-dev/memory/A19-audit.md`):
+         - Listar tabelas de domínio (excluir audit_log, alembic_version,
+           ref tables estáticas como uf, tipo_certidao)
+         - Para cada uma, criar migration Alembic que adiciona coluna
+           `deleted_at TIMESTAMPTZ NULL DEFAULT NULL`
+
+      2. **SQLAlchemy mixin** (`backend/app/db.py` ou novo
+      `backend/app/models/mixins.py`):
+         - `class SoftDeleteMixin: deleted_at = Column(DateTime(timezone=True),
+           nullable=True, default=None)`
+         - Query helper: `def not_deleted(q): return q.filter(
+           cls.deleted_at.is_(None))`
+         - BaseRepository com `soft_delete()`, `restore()`, `find_active()`,
+           `find_including_deleted()`
+
+      3. **Atualizar routers/services** que fazem DELETE:
+         - Trocar `db.delete(obj)` por `obj.deleted_at = datetime.utcnow();
+           db.commit()`
+         - Atualizar endpoints GET list → adicionar filtro
+           `deleted_at IS NULL`
+         - Manter endpoint opcional `?include_deleted=true` para admin
+           (gated por permissão)
+
+      4. **Migration Alembic** versionada em
+      `backend/alembic/versions/<hash>_a19_soft_delete.py`:
+         - Para cada tabela: `ALTER TABLE <table> ADD COLUMN IF NOT EXISTS
+           deleted_at TIMESTAMPTZ NULL DEFAULT NULL;`
+         - Idempotente (rodável múltiplas vezes)
+         - `downgrade()` remove coluna
+
+      5. **Test pytest** (`tests/test_soft_delete.py`):
+         - Cenário 1: DELETE via endpoint setta deleted_at (não remove row)
+         - Cenário 2: GET list exclui soft-deletados
+         - Cenário 3: `?include_deleted=true` retorna todos
+         - Cenário 4: Restore setta deleted_at = NULL
+         - Cenário 5: Audit chain continua íntegra após soft delete
+         - Coverage >= 90% no módulo novo
+
+      6. **MEMÓRIA**:
+         - `.harness/reins/cartorio-dev/memory/A19-soft-delete.md`
+         - Lista tabelas alteradas
+         - Hash do commit
+         - Decisão: NÃO aplicar em prod sem Gustavo GO (Lesson 110)
+
+      REGRAS DURAS:
+      - NUNCA rotacionar chaves
+      - NUNCA push sem Gustavo GO
+      - Conventional Commits (feat/test/docs) terminando com
+        "Modified by Gustavo Almeida"
+      - ruff check + ruff format clean
+      - mypy default config 0 errors
+      - pytest --cov=app coverage >= 90%
+      - Workflow canon: analisar → testar → corrigir → melhorar →
+        otimizar → documentar → comentar → salvar memória.
+
+      REPORTE ao root session mvs_bafd4821e3d0473b97ede30210a95462 via
+      `mavis communication send --from <sua-session> --to
+      mvs_bafd4821e3d0473b97ede30210a95462 --command prompt` ao terminar.
+      5 linhas: files_changed, tests_added, coverage, commit_hash, status.
+
+      Push gate: NAO push. Apenas commit local.
+    verify_prompt: >
+      Verifique A19: 1. Coluna deleted_at adicionada em TODAS as tabelas de
+      domínio (verificar information_schema)? 2. SoftDeleteMixin +
+      BaseRepository com soft_delete/restore/find_active implementados?
+      3. Routers que faziam DELETE agora setam deleted_at?
+      4. List queries filtram deleted_at IS NULL por padrão? 5. Endpoint
+      `?include_deleted=true` opcional para admin? 6. Migration Alembic
+      idempotente (rodável 2x)? 7. tests/test_soft_delete.py com 5 cenários
+      passa 100%? 8. coverage >= 90% no módulo? 9. Audit chain continua
+      íntegra após soft delete (test end-to-end)? 10. Memória
+      A19-soft-delete.md criada? 11. Conventional Commits + trailer
+      "Modified by Gustavo Almeida"? APROVADO = todos SIM.
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier
+    depends_on: []
+    gates: []
+    max_retries: 2
+    timeout_ms: 1800000
+    hang_alert_after_ms: 900000

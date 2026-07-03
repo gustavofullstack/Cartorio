@@ -1,0 +1,112 @@
+version: 1
+plan:
+  name: cartorio-a20-redlock-migrations
+  max_concurrency: 1
+  max_consecutive_failures: 2
+  max_cycles: 2
+  auto_accept: true
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: a20-redlock-distributed-lock
+    title: "A20 Lock distribuído Redlock p/ migrations e seed"
+    prompt: >
+      TASK A20 do Squad A (API/DB Hardening) — Cartório 2notas.
+
+      CONTEXTO: API FastAPI em produção contra Supabase Postgres.
+      Alembic migrations rodam potencialmente em múltiplas replicas da API
+      durante deploy rolling update. Hoje não há lock distribuído — risco
+      de race condition onde 2 réplicas aplicam migration simultânea.
+
+      OBJETIVO: Implementar lock distribuído (Redis-based, Redlock pattern)
+      para (a) bloqueiar Alembic upgrade durante execução e (b) bloqueiar
+      seed scripts. Lock TTL configurável, auto-release em caso de crash.
+
+      PASSOS:
+
+      1. **Auditoria**:
+         - Localizar entrypoint Alembic: `backend/alembic/env.py` ou
+           `backend/scripts/migrate.sh`
+         - Localizar entrypoint seed: `backend/scripts/seed*.py` ou
+           similar
+         - Verificar Redis já acessível (já existe Redis em prod —
+           cartorio_redis.1)
+
+      2. **Implementar Redlock helper** (`backend/app/services/redlock.py`):
+         - Wrapper sobre redis.Redis().lock() OU biblioteca `redlock-py`
+           (validar compat Python 3.12)
+         - Configurável via env: REDIS_LOCK_TTL_SECONDS=300 default
+         - Context manager: `with redlock(key, ttl=300): ...`
+         - Auto-release em exit normal, keep-alive opcional
+
+      3. **Integrar no Alembic** (`backend/alembic/env.py`):
+         - Antes de `run_migrations_online()`: adquirir lock
+           key="cartorio:alembic:migration"
+         - Se lock NAO adquirido (outro replica migrando) → exit com
+           mensagem clara + código 75 (EX_TEMPFAIL sysv init)
+         - Pós-migration: lock auto-release via context manager
+         - Documentar em comentário como rodar migration com lock manual
+           em emergência: `alembic upgrade head --sql | psql ...`
+
+      4. **Integrar no seed script** (`backend/scripts/seed*.py`):
+         - Mesmo padrão Redlock com key="cartorio:seed:<seed_name>"
+         - Exit code 75 se lock não disponível
+
+      5. **Test pytest** (`tests/test_redlock.py`):
+         - Cenário 1: Lock adquirido + release funciona
+         - Cenário 2: 2 callers竞争的 — segundo espera OU falha rápido
+           (configurável via timeout=0 vs timeout=10)
+         - Cenário 3: Lock auto-expira após TTL (freezegun simula)
+         - Cenário 4: Context manager propaga exception + lock release
+         - Cenário 5: Mock Alembic env.py verifica acquire/release
+         - Cenário 6: Mock seed script idem
+         - Coverage >= 90% em redlock.py
+
+      6. **Documentar em `.env.example`**:
+         - REDIS_LOCK_TTL_SECONDS=300
+         - REDIS_LOCK_PREFIX=cartorio:
+         - Comentário explicando uso + recovery em emergência
+
+      7. **MEMÓRIA** (`.harness/reins/cartorio-dev/memory/A20-redlock.md`):
+         - Hash do commit
+         - Lista entrypoints integrados
+         - Decisão: NAO aplicar em prod sem Gustavo GO (Lesson 110)
+
+      REGRAS DURAS:
+      - NUNCA rotacionar chaves
+      - NUNCA push sem Gustavo GO
+      - Conventional Commits (feat/test/docs) terminando com
+        "Modified by Gustavo Almeida"
+      - ruff check + ruff format clean
+      - mypy default config 0 errors
+      - pytest --cov=app coverage >= 90%
+      - Workflow canon: analisar → testar → corrigir → melhorar →
+        otimizar → documentar → comentar → salvar memória.
+
+      REPORTE ao root session mvs_bafd4821e3d0473b97ede30210a95462 via
+      `mavis communication send --from <sua-session> --to
+      mvs_bafd4821e3d0473b97ede30210a95462 --command prompt` ao terminar.
+      5 linhas: files_changed, tests_added, coverage, commit_hash, status.
+
+      Push gate: NAO push. Apenas commit local.
+    verify_prompt: >
+      Verifique A20: 1. backend/app/services/redlock.py criado com
+      context manager + auto-release? 2. env override via REDIS_LOCK_TTL_SECONDS
+      + REDIS_LOCK_PREFIX? 3. alembic/env.py integrado com acquire/release
+      + exit code 75 em lock failure? 4. seed scripts integrados com mesmo
+      pattern? 5. tests/test_redlock.py com 6 cenários passa 100%?
+      6. coverage >= 90% em redlock.py? 7. .env.example documentado?
+      8. Memória A20-redlock.md criada? 9. Conventional Commits + trailer
+      "Modified by Gustavo Almeida"? APROVADO = todos SIM.
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier
+    depends_on: []
+    gates: []
+    max_retries: 2
+    timeout_ms: 1800000
+    hang_alert_after_ms: 900000
