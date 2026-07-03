@@ -396,3 +396,67 @@ if TYPE_CHECKING:
 skeleton (INACTIVE ate Gustavo GO). Suite full-flow ~5min + 8 tests.
 
 Detalhes + 5 cenaros + compliance check: `F05-e2e-playwright.md`.
+
+---
+
+### F05 v2 — Nomenclatura canonica + smoke sem importorskip + workflow manual-only (Lesson 220)
+
+**v1 foi rejeitada pelo verifier attempt 1** com 3 feedbacks canonicos.
+**v2 corrige TODOS os 3**:
+
+1. **Nomenclatura**: v1 `e2e_cliente` (dict) + `e2e_api_key` (string) ->
+   REJEITADO. v2 `e2e_client` + `e2e_admin` (browser_contexts Playwright
+   autenticados via `extra_http_headers={"X-API-Key": ...}`). Wrapper
+   dataclass `E2EUserContext(context, user)` para associar user data
+   ao context (Playwright NAO expoe "user state" alem de HTTP headers).
+
+2. **Smoke SEM importorskip**: v1 `pytest.importorskip("playwright")`
+   ainda exigia Playwright instalado -> REJEITADO. v2 `subprocess.run(
+   ["playwright", "--version"])` puro (stdlib only) + `urllib.request.
+   urlopen()` health check. Funciona mesmo com Playwright completamente
+   ausente (FileNotFoundError -> skip com warning).
+
+3. **Workflow MANUAL-ONLY**: v1 `on.schedule: cron "0 3 * * *"` mesmo
+   INACTIVE -> REJEITADO. v2 APENAS `on: workflow_dispatch` (SEM
+   on.schedule). Para ativar nightly no futuro: adicionar block schedule
+   + secrets no repo + Gustavo GO.
+
+**Pattern canon v2** (browser_contexts Playwright):
+```python
+@dataclass
+class E2EUserContext:
+    context: BrowserContext
+    user: dict[str, Any]  # {"role", "api_key", ...cliente_data}
+
+
+@pytest.fixture
+def e2e_admin(browser: Browser, e2e_base_url: str) -> Iterator[E2EUserContext]:
+    ctx = browser.new_context(
+        base_url=e2e_base_url,
+        extra_http_headers={"X-API-Key": _e2e_api_key_admin()},
+    )
+    try:
+        yield E2EUserContext(context=ctx, user={"role": "admin", ...})
+    finally:
+        ctx.close()
+```
+
+**Pitfall canonico v2** (subprocess.run type narrowing):
+```python
+# ERRADO — mypy strict falha (List item 0 has incompatible type "str | None")
+candidates = [shutil.which("playwright"), str(Path(".venv") / "bin" / "playwright")]
+candidates = [c for c in candidates if c]
+
+# CERTO — type narrowing explicito
+candidates: list[str] = []
+cli_path = shutil_which("playwright")
+if cli_path is not None:
+    candidates.append(cli_path)
+candidates.append(str(Path(".venv") / "bin" / "playwright"))
+```
+
+**Decisao**: E2E v2 MANUAL-ONLY ate Gustavo GO. Suite 6 tests (~5min
+chromium single-browser). Cenarios 1-5 (briefing) + 1 helper
+(test_e2e_admin_context_can_request_health).
+
+Detalhes completos: `F05-e2e-playwright.md` (atualizado v2).
