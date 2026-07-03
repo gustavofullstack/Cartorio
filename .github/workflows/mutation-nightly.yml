@@ -1,0 +1,167 @@
+# GitHub Actions - Mutation Testing Nightly (F01)
+#
+# Custo proibitivo em PR (~170min para suite 1648+ tests x 2121 mutantes).
+# Roda apenas em schedule nightly em master (00:00 UTC = 21:00 BRT dia anterior).
+# Pode ser disparado manualmente via workflow_dispatch para debug.
+#
+# Output: mutants/mutation_status.json + artifact upload.
+# Gate enforced em cartorio/backend/tests/test_mutation_gate.py (CI gate proprio).
+#
+# Para mutar SUBSET (recomendado em PRs day-to-day), usar:
+#   .venv/bin/mutmut run --max-children 4 localmente.
+#
+# ATIVACAO: este workflow NAO esta ativo por padrao (custo Free Tier GH Actions
+# ~50h/mes). Requer admin adicionar GH_PAT e depois trocar `false` por `true` no trigger on.schedule.
+
+name: Mutation Testing (Nightly)
+
+on:
+  schedule:
+    # 03:00 UTC = 00:00 BRT. Roda em master.
+    - cron: "0 3 * * *"
+  workflow_dispatch:  # permite rodar manualmente para debug
+    inputs:
+      jobs:
+        description: "Numero de children paralelos (recomendado: 4)"
+        required: false
+        default: "4"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.5.11"
+
+jobs:
+  mutation:
+    name: Mutation testing (mutmut v3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 180  # 3h max para subset critico
+
+    env:
+      DATABASE_URL: sqlite:///:memory:
+      CHATWOOT_ACCOUNT_ID: "0"
+      CHATWOOT_INBOX_ID: "0"
+      CARTORIO_API_KEY: ${{ secrets.CARTORIO_API_KEY_TEST || 'a' }}
+      AUDIT_HMAC_KEY: ${{ secrets.AUDIT_HMAC_KEY_TEST || 'a' }}
+      # Quatro As de testing:
+      APP_ENV: testing
+      LLM_PROVIDER: mock
+      REDIS_URL: redis://localhost:6379/0
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Setup Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/.venv
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --all-extras
+
+      # ========================================================================
+      # Step 1: stats collection — roda pytest uma vez para construir mapa de
+      # cobertura linha-a-linha. Mutmut usa esse mapa para escolher quais
+      # tests rodar contra cada mutante (skip linhas nao cobertas).
+      # ========================================================================
+      - name: Collect coverage + line-to-test map
+        working-directory: backend
+        run: |
+          uv run pytest \
+            --cov=app \
+            --cov-report=xml:coverage-pre-mutation.xml \
+            --cov-fail-under=0 \
+            -m "not smoke and not integration" \
+            --rootdir=. \
+            --tb=native \
+            -q \
+            tests/test_audit.py \
+            tests/test_audit_a01_coverage.py \
+            tests/test_audit_api.py \
+            tests/test_audit_context.py \
+            tests/test_audit_log_post.py \
+            tests/test_audit_middleware_coverage.py \
+            tests/test_audit_query.py \
+            tests/test_a19_soft_delete.py \
+            tests/test_pii.py \
+            tests/test_pii_bench.py \
+            tests/test_pii_performance.py \
+            tests/test_pii_sanitizer.py \
+            tests/test_pii_validators.py \
+            tests/test_redlock.py \
+            tests/test_redlock_a20.py \
+            tests/test_emolumento.py \
+            tests/test_emolumento_api.py \
+            tests/test_emolumento_cache_a21.py \
+            tests/test_emolumento_integration.py \
+            tests/test_protocolo_endpoint.py \
+            tests/test_crypto.py \
+            tests/test_pgcrypto_d15.py \
+            tests/test_lgpd_anonimizacao_d13.py \
+            tests/test_lgpd_consent.py \
+            tests/test_lgpd_direitos_v2.py \
+            tests/test_lgpd_export.py \
+            tests/test_direito_esquecimento.py \
+            tests/test_lgpd_relatorio.py \
+            tests/test_lgpd_direito_esquecimento.py \
+            tests/test_delete_cliente_lgpd.py
+
+      # ========================================================================
+      # Step 2: mutmut run — descobre mutantes, gera mutants/, aplica cada um,
+      # roda tests e classifica killed/survived/no_tests/timeout.
+      # ========================================================================
+      - name: Run mutmut (subset critico LGPD + audit)
+        working-directory: backend
+        run: |
+          uv run mutmut run --max-children ${{ github.event.inputs.jobs || '4' }} \
+            2>&1 | tee mutmut-run.log
+        # Nao bloqueia CI em sobrevivencia - gate F01 vem do test_mutation_gate.py
+
+      # ========================================================================
+      # Step 3: export report e upload artifact
+      # ========================================================================
+      - name: Export CICD stats (JSON parseable)
+        working-directory: backend
+        run: |
+          uv run mutmut export-cicd-stats > mutmut-stats.json || true
+          uv run mutmut results > mutmut-results.txt || true
+
+      - name: Upload mutmut artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report-${{ github.run_id }}
+          path: |
+            backend/mutants/
+            backend/mutmut-run.log
+            backend/mutmut-stats.json
+            backend/mutmut-results.txt
+          retention-days: 14
+
+      # ========================================================================
+      # Step 4: gate enforcement — falha CI se score < gate em qualquer modulo
+      # sem excecao justificada. NAO bloqueia este workflow (info only).
+      # ========================================================================
+      - name: Run test_mutation_gate (info only)
+        working-directory: backend
+        run: |
+          uv run pytest tests/test_mutation_gate.py -v --tb=short || true
+          echo "Gate F01 eh informativo nightly. CI de PR nao depende deste score."

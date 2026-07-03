@@ -1,0 +1,18 @@
+{
+  "baseline_run": "2026-07-02T21:22:00-03:00",
+  "mutmut_version": "3.6.0",
+  "config": "setup.cfg [mutmut]",
+  "totals": {"killed": 917, "survived": 524, "no_tests": 40, "timeout": 13, "processed": 1494, "queued": 2121},
+  "by_file": {
+    "app/services/crypto.py": {"killed": 41, "survived": 5, "no_tests": 0, "timeout": 0, "suspicious": 0, "score": 0.891},
+    "app/services/emolumento.py": {"killed": 14, "survived": 1, "no_tests": 0, "timeout": 0, "suspicious": 0, "score": 0.933},
+    "app/services/lgpd_anonimizacao.py": {"killed": 85, "survived": 8, "no_tests": 0, "timeout": 0, "suspicious": 0, "score": 0.914},
+    "app/services/pii.py": {"killed": 113, "survived": 5, "no_tests": 0, "timeout": 0, "suspicious": 0, "score": 0.958},
+    "app/services/lgpd_consent.py": {"killed": 125, "survived": 58, "no_tests": 0, "timeout": 4, "suspicious": 0, "score": 0.668, "exception": "see F01-mutation-testing.md #1"},
+    "app/services/lgpd_direito_esquecimento.py": {"killed": 62, "survived": 59, "no_tests": 0, "timeout": 0, "suspicious": 0, "score": 0.512, "exception": "see F01-mutation-testing.md #2"},
+    "app/services/lgpd_export.py": {"killed": 80, "survived": 92, "no_tests": 26, "timeout": 0, "suspicious": 0, "score": 0.404, "exception": "see F01-mutation-testing.md #3"},
+    "app/services/lgpd_relatorio.py": {"killed": 340, "survived": 274, "no_tests": 0, "timeout": 9, "suspicious": 0, "score": 0.546, "exception": "see F01-mutation-testing.md #4"},
+    "app/services/redlock.py": {"killed": 57, "survived": 22, "no_tests": 14, "timeout": 0, "suspicious": 0, "score": 0.613, "exception": "see F01-mutation-testing.md #5"},
+    "app/services/audit.py": {"killed": 0, "survived": 0, "no_tests": 0, "timeout": 0, "suspicious": 0, "score": 0.0, "exception": "see F01-mutation-testing.md F01.1 — not run yet"}
+  }
+}

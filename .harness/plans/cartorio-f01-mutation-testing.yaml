@@ -1,0 +1,127 @@
+version: 1
+plan:
+  name: cartorio-f01-mutation-testing
+  max_concurrency: 1
+  max_consecutive_failures: 2
+  max_cycles: 1
+  auto_accept: true
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: f01-mutation-testing-mutmut
+    title: "F01 Mutation testing mutmut gate 80% mutants killed"
+    prompt: >
+      TASK F01 do Squad F (Testing & CI/CD) — Cartório 2notas.
+
+      CONTEXTO: API FastAPI em produção (Cartorio 2notas) com pytest 1648+
+      tests passando. Cobertura atual ≥ 90% em módulos críticos. Mutation
+      testing é a próxima camada — testa a QUALIDADE dos testes (mutantes
+      sobreviventes = testes que não pegam bugs reais).
+
+      OBJETIVO: Instalar mutmut, configurar para o codebase, rodar baseline
+      na suíte completa, e kill pelo menos 80% dos mutantes. Documentar
+      gaps (mutantes sobreviventes em padrão conhecido: type hints,
+      default args, etc) e propor follow-up tasks.
+
+      PASSOS:
+
+      1. **Setup mutmut**:
+         - `pip install mutmut>=2.4.0`
+         - Criar `mutmut_config.py` ou `setup.cfg [mutmut]` com:
+           - paths_to_mutate="app/"
+           - backup=False (mutmut v2 já não precisa)
+           - runner="python -m pytest -x -q"
+           - tests_dir="tests/"
+         - Adicionar mutmut a `[project.optional-dependencies.dev]` em
+           pyproject.toml
+
+      2. **Baseline**:
+         - Rodar `mutmut run --jobs 4 --max-children 20` em subset
+           gerenciável (começar com `app/services/`, `app/api/v1/lgpd_*`,
+           `app/services/redlock.py`, `app/services/audit.py`)
+         - NÃO rodar em 100% do codebase na primeira passada (1648 testes
+           × mutação completa = horas). Focar subset crítico primeiro.
+         - Reportar: total mutantes, killed, survived, timeout, suspicious,
+           skipped para cada módulo.
+
+      3. **Threshold gate 80%**:
+         - Para cada módulo testado, calcular killed / (total - skipped) ≥ 0.80.
+         - Módulos abaixo do gate: investigar mutantes sobreviventes,
+           melhorar testes onde fazem sentido (NÃO testes cerimoniais),
+           e re-rodar até bater gate OU documentar exceção com justificativa
+           técnica (ex: mutante equivalente, mutante em __repr__ que não
+           afeta comportamento).
+
+      4. **CI integration** (estrutura, não execução):
+         - Adicionar `.github/workflows/mutation-test.yml` (ou comentário
+           em CI existente) com job nightly de mutmut — NÃO rodar em
+           PRs (custo proibitivo).
+         - Documentar comando + path do report HTML em
+           `.harness/reins/cartorio-dev/memory/F01-mutmut.md`
+
+      5. **Test smoke** (`tests/test_mutation_gate.py`):
+         - Subset leve que valida parse dos reports HTML/XML do mutmut
+         - Assertion: gate 80% por módulo OU lista de exceções justificadas
+         - Serve como sanity check antes de confiar nos números do mutmut
+
+      6. **MEMÓRIA** (`.harness/reins/cartorio-dev/memory/F01-mutation-testing.md`):
+         - Lista módulos testados + score mutation
+         - Lista exceções com justificativa
+         - Hash do commit
+         - Comando reproduzir baseline (`mutmut run --help` + flags)
+         - Decisão: NÃO rodar mutation test em prod CI (custo). Manter
+           nightly separado.
+
+      REGRAS DURAS:
+      - NUNCA rotacionar chaves (regra Gustavo)
+      - NUNCA push sem Gustavo GO (Lesson 110) — commit local OK
+      - Conventional Commits (feat/test/docs/chore) terminando com
+        "Modified by Gustavo Almeida"
+      - ruff check + ruff format clean
+      - mypy default config 0 errors no código NOVO
+      - pytest existente deve continuar passando 100% (1648+ tests)
+      - Workflow canon: analisar → testar → corrigir → melhorar → otimizar
+        → documentar → comentar → salvar memória.
+
+      TRATAMENTO DE BLOQUEIOS CONHECIDOS:
+      - mutmut em SQLAlchemy async pode ter falsos positivos (timeout
+        em queries). Workaround: marcar esses mutantes como
+        `mutmut.skip` com comentário.
+      - Se mutmut >=2.4 não suportar async pytest-asyncio, fallback
+        para `cosmic-ray` ou documentar blocker e voltar com F02 (gate
+        coverage hard em CI).
+      - Se custo proibitivo (>4h single-thread), documentar e propor
+        F01.5 = subset crítico + gate CI.
+
+      REPORTE ao root session mvs_6defd95d5f2941198c6ec8711264286f via
+      `mavis communication send --from <sua-session> --to
+      mvs_6defd95d5f2941198c6ec8711264286f --command prompt` ao terminar.
+      6 linhas: modules_tested, mutation_score, mutants_total,
+      mutants_killed, mutations_survived_with_justification, commit_hash,
+      status.
+
+      Push gate: NAO push. Apenas commit local.
+    verify_prompt: >
+      Verifique F01: 1. mutmut instalado em pyproject.toml dev deps? 2.
+      mutmut_config presente e parseando (paths_to_mutate, runner,
+      tests_dir)? 3. Baseline run produz report com killed/total visível?
+      4. Gate 80% atingido nos módulos testados OU exceções justificadas
+      (com comentário técnico)? 5. Test smoke test_mutation_gate.py
+      passa? 6. pytest 1648+ continua passando 100% após setup? 7.
+      Memória F01-mutation-testing.md criada com números + reproducer? 8.
+      Conventional Commits + trailer "Modified by Gustavo Almeida"?
+      APROVADO = todos SIM. CAVEAT: se custo proibitivo, aceitável
+      APPROVED_WITH_NOTE documentando blocker + caminho alternativo
+      (F01.5 subset crítico ou cosmic-ray fallback).
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier
+    depends_on: []
+    gates: []
+    max_retries: 2
+    timeout_ms: 18000000
+    hang_alert_after_ms: 7200000

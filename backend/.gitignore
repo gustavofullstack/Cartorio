@@ -40,3 +40,10 @@ Thumbs.db
 *.db
 backend/full_stdout.txt
 backend/full_stderr.txt
+
+# F01 mutation testing (mutmut v3) — generated artifacts
+# Keep ONLY mutants/mutation_status.json (baseline data, parseable by gate test)
+# All other mutants/ content is ephemeral (mutant source + meta files)
+mutants/
+!mutants/mutation_status.json
+!mutants/mutmut-stats.json
