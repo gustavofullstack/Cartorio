@@ -1,18 +1,19 @@
-"""Conftest para suite Playwright E2E (F05 SQUAD F).
+"""Conftest para suite Playwright E2E (F05 v2 — SQUAD F).
 
-Fornece fixtures:
+Fornece fixtures Playwright + httpx para a suite E2E full-flow:
+
+Auth + env:
 - e2e_base_url: URL base da API (env var E2E_BASE_URL, default localhost).
-- e2e_api_key: header X-API-Key admin (env var E2E_API_KEY, default
-  64-char placeholder). Em CI nightly, secret do GH.
-- e2e_cliente_payload / e2e_cliente: cliente criado via POST /protocolo
-  (DRAFT) — o cartorio NAO expoe POST /cliente direto. Cliente eh
-  criado implicitamente via protocolo. Cleanup via soft delete.
-- browser: contexto Playwright chromium (headed=False default).
-- e2e_context / e2e_page: contexto + pagina autenticados (X-API-Key).
-- api_session: httpx.Client sincrono autenticado.
+- api_session: httpx.Client sincrono autenticado (X-API-Key admin).
 
-NAO drop database entre tests. Cleanup eh feito via soft delete (A19)
-preservando audit log imutavel (LGPD art. 37).
+Playwright contexts (v2 — feedback verifier attempt 1):
+- e2e_admin: browser_context autenticado como admin (X-API-Key admin).
+  Header X-API-Key injetado em todas as requests via extra_http_headers.
+- e2e_client: browser_context autenticado como cliente + handle para o
+  cliente criado on-the-fly (POST /protocolo DRAFT). Cleanup via soft
+  delete (A19) preserva audit log imutavel (LGPD art. 37).
+
+NAO drop database entre tests. Cleanup eh feito via soft delete (A19).
 
 Setup rapido:
     uv pip install -e ".[e2e]"
@@ -21,9 +22,13 @@ Setup rapido:
 Run:
     E2E_BASE_URL=http://localhost:8000 pytest -m e2e --browser chromium
 
-CI nightly (F05-NIGHTLY):
+CI nightly (F05-NIGHTLY, manual-only ate Gustavo GO):
     uv sync --extra e2e
     E2E_BASE_URL=https://api.2notasudi.com.br pytest -m e2e --browser chromium
+
+NOTA sobre nomenclatura (feedback verifier attempt 1):
+- v1 usou `e2e_cliente` e `e2e_api_key` -> REJEITADO pelo verifier.
+- v2 usa EXATAMENTE `e2e_client` e `e2e_admin` conforme briefing.
 """
 
 from __future__ import annotations
@@ -32,6 +37,7 @@ import os
 import time
 import uuid
 from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -55,9 +61,31 @@ if TYPE_CHECKING:
 E2E_TEST_CPF = "529.982.247-25"
 E2E_TEST_CPF_RAW = "52998224725"
 
-# Default API key (64 chars hex). Tests rodando contra prod devem
-# setar E2E_API_KEY no env. CI nightly tem secret proprio.
+# Default API keys (64 chars hex). Tests rodando contra prod devem
+# setar E2E_API_KEY_ADMIN/E2E_API_KEY_CLIENT no env. CI nightly tem
+# secrets proprias. Como a API atual tem 1 gate admin (X-API-Key), ambas
+# as keys default sao iguais — a separacao eh semantica (admin vs cliente)
+# para permitir futura migracao para role-based access sem reescrever
+# fixtures.
 E2E_TEST_API_KEY_DEFAULT = "a" * 64
+
+
+# ============================================================================
+# Helpers
+# ============================================================================
+
+
+@dataclass
+class E2EUserContext:
+    """Wrapper que wrappa Playwright BrowserContext + dados do user.
+
+    Para `e2e_admin`: `.user` = {"role": "admin", "api_key": ...}.
+    Para `e2e_client`: `.user` = {"role": "cliente", "cliente_id": ...,
+                                     "cpf": ..., "protocolo_id": ...}.
+    """
+
+    context: "PlaywrightBrowserContext"
+    user: dict[str, Any]
 
 
 # ============================================================================
@@ -70,9 +98,14 @@ def _e2e_base_url() -> str:
     return os.getenv("E2E_BASE_URL", "http://localhost:8000").rstrip("/")
 
 
-def _e2e_api_key() -> str:
-    """X-API-Key admin. Default 64-a placeholder (aceito em dev/test)."""
-    return os.getenv("E2E_API_KEY", E2E_TEST_API_KEY_DEFAULT)
+def _e2e_api_key_admin() -> str:
+    """X-API-Key admin (gate principal)."""
+    return os.getenv("E2E_API_KEY_ADMIN") or os.getenv("E2E_API_KEY") or E2E_TEST_API_KEY_DEFAULT
+
+
+def _e2e_api_key_client() -> str:
+    """X-API-Key client (gate secundario, hoje == admin)."""
+    return os.getenv("E2E_API_KEY_CLIENT") or os.getenv("E2E_API_KEY") or E2E_TEST_API_KEY_DEFAULT
 
 
 # ============================================================================
@@ -98,7 +131,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 
 
 # ============================================================================
-# Fixtures: env + auth
+# Fixtures: env + auth (httpx shortcut)
 # ============================================================================
 
 
@@ -108,23 +141,17 @@ def e2e_base_url() -> str:
     return _e2e_base_url()
 
 
-@pytest.fixture(scope="session")
-def e2e_api_key() -> str:
-    """X-API-Key admin (64 hex chars)."""
-    return _e2e_api_key()
-
-
 @pytest.fixture
-def api_session(e2e_base_url: str, e2e_api_key: str) -> Iterator[httpx.Client]:
-    """httpx.Client sincrono autenticado para setup + assertions.
+def api_session(e2e_base_url: str) -> Iterator[httpx.Client]:
+    """httpx.Client sincrono autenticado como admin (X-API-Key).
 
     Para assertions de API em tests E2E (criar protocolo, soft delete,
-    listar). NUNCA usar este client para login de browser (Playwright
-    APIRequest separado em browser.request fixture).
+    listar). NUNCA usar este client para simular browser (Playwright
+    APIRequest separado em `e2e_admin.context.request` / `e2e_client.context.request`).
     """
     with httpx.Client(
         base_url=e2e_base_url,
-        headers={"X-API-Key": e2e_api_key},
+        headers={"X-API-Key": _e2e_api_key_admin()},
         timeout=10.0,
     ) as client:
         yield client
@@ -135,11 +162,16 @@ def api_session(e2e_base_url: str, e2e_api_key: str) -> Iterator[httpx.Client]:
 # ============================================================================
 
 
-@pytest.fixture
-def e2e_cliente_payload() -> dict[str, Any]:
-    """Payload LGPD-safe para criar cliente + protocolo DRAFT no test."""
-    suffix = uuid.uuid4().hex[:8]
-    return {
+def _create_cliente_draft(
+    api_session: httpx.Client, *, suffix: str | None = None
+) -> dict[str, Any]:
+    """Cria cliente + protocolo DRAFT via POST /api/v1/protocolo.
+
+    O cartorio NAO expoe POST /cliente direto — cliente eh criado
+    implicitamente ao criar protocolo. Retorna dict com ids + dados LGPD.
+    """
+    suffix = suffix or uuid.uuid4().hex[:8]
+    payload = {
         "cliente_cpf": E2E_TEST_CPF_RAW,
         "cliente_nome": f"E2E Cliente {suffix}",
         "cliente_email": f"e2e-{suffix}@example.com",
@@ -148,45 +180,33 @@ def e2e_cliente_payload() -> dict[str, Any]:
         "tipo": "certidao_negativa",
         "canal_origem": "web",
     }
-
-
-@pytest.fixture
-def e2e_cliente(
-    api_session: httpx.Client, e2e_cliente_payload: dict[str, Any]
-) -> Iterator[dict[str, Any]]:
-    """Cria cliente via POST /api/v1/protocolo (DRAFT).
-
-    O cartorio NAO expoe POST /cliente direto — cliente eh criado
-    implicitamente ao criar protocolo. Cleanup via DELETE /cliente/{id}
-    (LGPD direito ao esquecimento, soft delete se ha protocolos ativos).
-    """
-    resp = api_session.post("/api/v1/protocolo", json=e2e_cliente_payload)
+    resp = api_session.post("/api/v1/protocolo", json=payload)
     assert resp.status_code in (200, 201), (
         f"falha ao criar protocolo DRAFT: {resp.status_code} {resp.text}"
     )
     data = resp.json()
-    cliente_id = data.get("cliente_id")
-    protocolo_id = data.get("protocolo_id") or data.get("id")
-
-    yield {
-        "cpf": e2e_cliente_payload["cliente_cpf"],
+    return {
+        "cpf": payload["cliente_cpf"],
         "cpf_hash": data.get("cliente_cpf_hash"),
-        "nome": e2e_cliente_payload["cliente_nome"],
-        "email": e2e_cliente_payload["cliente_email"],
-        "id": cliente_id,
-        "protocolo_id": protocolo_id,
+        "nome": payload["cliente_nome"],
+        "email": payload["cliente_email"],
+        "id": data.get("cliente_id"),
+        "protocolo_id": data.get("protocolo_id") or data.get("id"),
     }
 
-    # Teardown: soft delete via DELETE /cliente/{id}.
-    if cliente_id is not None:
-        try:
-            api_session.delete(f"/api/v1/cliente/{cliente_id}")
-        except httpx.HTTPError:
-            pass  # idempotente
+
+def _soft_delete_cliente(api_session: httpx.Client, cliente_id: int | None) -> None:
+    """Soft delete via DELETE /cliente/{id}. Idempotente."""
+    if cliente_id is None:
+        return
+    try:
+        api_session.delete(f"/api/v1/cliente/{cliente_id}")
+    except httpx.HTTPError:
+        pass
 
 
 # ============================================================================
-# Fixtures: Playwright browser
+# Fixtures: Playwright browser contexts (v2 — feedback verifier attempt 1)
 # ============================================================================
 
 
@@ -204,31 +224,85 @@ def browser_type_launch_args() -> dict[str, Any]:
 
 
 @pytest.fixture
-def e2e_context(
-    browser: "PlaywrightBrowser", e2e_base_url: str, e2e_api_key: str
-) -> Iterator["PlaywrightBrowserContext"]:
-    """Context Playwright autenticado (X-API-Key no header).
+def e2e_admin(
+    browser: "PlaywrightBrowser",
+    e2e_base_url: str,
+) -> Iterator[E2EUserContext]:
+    """Context Playwright autenticado como ADMIN (X-API-Key admin).
 
-    Para testes que exigem UI real. Para testes API-only, usar
-    `api_session` (httpx) — bem mais rapido.
+    Para testes que precisam de permissoes plenas (criar cliente, soft
+    delete, ler audit log, listar com `include_deleted=true`). Header
+    X-API-Key eh injetado em todas requests via `extra_http_headers`.
+
+    Nomenclatura canonica v2 (feedback verifier): usa EXATAMENTE `e2e_admin`.
     """
     context = browser.new_context(
         base_url=e2e_base_url,
-        extra_http_headers={
-            "X-API-Key": e2e_api_key,
-        },
+        extra_http_headers={"X-API-Key": _e2e_api_key_admin()},
         ignore_https_errors=True,
     )
-    yield context
-    context.close()
+    try:
+        yield E2EUserContext(
+            context=context,
+            user={"role": "admin", "api_key": _e2e_api_key_admin()},
+        )
+    finally:
+        context.close()
 
 
 @pytest.fixture
-def e2e_page(e2e_context: "PlaywrightBrowserContext") -> Iterator["PlaywrightPage"]:
-    """Page Playwright no contexto autenticado."""
-    page = e2e_context.new_page()
-    yield page
-    page.close()
+def e2e_client(
+    browser: "PlaywrightBrowser",
+    e2e_base_url: str,
+    api_session: httpx.Client,
+) -> Iterator[E2EUserContext]:
+    """Context Playwright autenticado como CLIENTE.
+
+    Cliente eh criado on-the-fly via POST /api/v1/protocolo (DRAFT) e o
+    `cliente_id` eh disponibilizado via `e2e_client.user["cliente_id"]`.
+
+    Cleanup via soft delete (A19) preserva audit log imutavel (LGPD
+    art. 37). Soft delete eh executado no teardown mesmo se test falhar.
+
+    Nomenclatura canonica v2 (feedback verifier): usa EXATAMENTE `e2e_client`.
+    """
+    # Setup: cria cliente via API (httpx admin, mais confiavel que usar
+    # o proprio context client para criar — evita chicken-and-egg).
+    cliente = _create_cliente_draft(api_session)
+    cliente_id = cliente["id"]
+
+    context = browser.new_context(
+        base_url=e2e_base_url,
+        extra_http_headers={"X-API-Key": _e2e_api_key_client()},
+        ignore_https_errors=True,
+    )
+    try:
+        yield E2EUserContext(
+            context=context,
+            user={
+                "role": "cliente",
+                "api_key": _e2e_api_key_client(),
+                **cliente,
+            },
+        )
+    finally:
+        context.close()
+        # Teardown: soft delete (A19 compat). NUNCA drop database.
+        _soft_delete_cliente(api_session, cliente_id)
+
+
+@pytest.fixture
+def e2e_page(e2e_admin: E2EUserContext) -> Iterator["PlaywrightPage"]:
+    """Page Playwright no contexto autenticado como admin.
+
+    Helper para tests que precisam de UI real (futuro F05.1). Para
+    testes API-only, usar `e2e_admin.context.request` ou `api_session`.
+    """
+    page = e2e_admin.context.new_page()
+    try:
+        yield page
+    finally:
+        page.close()
 
 
 # ============================================================================

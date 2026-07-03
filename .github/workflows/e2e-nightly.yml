@@ -1,43 +1,45 @@
-# GitHub Actions - E2E Playwright Nightly (F05)
+# GitHub Actions - E2E Playwright (F05 v2 — manual-only)
 #
 # Suite Playwright que exercita o fluxo cliente ponta-a-ponta:
 #   cliente novo -> protocolo DRAFT -> agendamento -> atendimento ->
 #   emolumento -> documento -> soft delete (A19) -> consentimento LGPD
 #
-# Custo proibitivo em PR (~5min para suite 7 cenarios + chromium launch).
-# Roda apenas em schedule nightly em master (03:00 UTC = 00:00 BRT).
-# Pode ser disparado manualmente via workflow_dispatch para debug.
+# ATIVACAO: este workflow eh MANUAL-ONLY (apenas `workflow_dispatch`).
+# NAO tem `on.schedule` (removido em v2 — feedback verifier attempt 1).
+# Ate Gustavo GO explicito para ativar cron schedule, este workflow
+# NAO roda sozinho — apenas sob trigger manual via UI do GitHub.
 #
-# Output: tests/e2e/report.xml + artifact upload. Gate enforced pelos
-# proprios tests (pytest exit code 0 = suite verde).
+# Razao: suite E2E custa ~5min single-browser (chromium launch + 6 tests).
+# Rodar em todo PR inflaria custo Free Tier GH Actions. Rodar nightly
+# exige GH_PAT + E2E_API_KEY_AUDIT_HMAC secrets no repo — ainda NAO
+# configurado.
 #
-# ATIVACAO: este workflow NAO esta ativo por padrao (custo Free Tier
-# GH Actions ~50h/mes). Requer admin adicionar GH_PAT + E2E_API_KEY
-# secret e depois trocar `false` por `true` no trigger on.schedule.
-#
-# Pre-requisitos:
-#   - CARTORIO_API_KEY_E2E (X-API-Key admin para suite)
-#   - AUDIT_HMAC_KEY_E2E (HMAC key match do backend prod)
-#   - DATABASE_URL_E2E (Postgres test OU SQLite in-memory)
-#   - E2E_BASE_URL (https://api.2notasudi.com.br OU localhost:8000)
+# Pre-requisitos para ativar nightly:
+#   1. Adicionar secrets no repo:
+#      - E2E_API_KEY_ADMIN (X-API-Key admin)
+#      - AUDIT_HMAC_KEY_E2E (HMAC match do backend prod)
+#      - DATABASE_URL_E2E (Postgres test OU SQLite in-memory)
+#   2. Trocar `false` por `true` no trigger on.schedule abaixo.
+#   3. Gustavo GO explicito.
 #
 # Para rodar suite localmente:
 #   cd backend && uv sync --extra e2e && playwright install chromium
 #   E2E_BASE_URL=http://localhost:8000 pytest -m e2e --browser chromium -v
 
-name: E2E Playwright (Nightly)
+name: E2E Playwright (Manual)
 
 on:
-  schedule:
-    # 03:00 UTC = 00:00 BRT. Roda em master.
-    # ATENCAO: gatilho DESATIVADO por padrao (custo). Trocar `false` por `true` para ativar.
-    - cron: "0 3 * * *"
-  workflow_dispatch:  # permite rodar manualmente para debug
+  # APENAS manual trigger (feedback verifier v2: SEM on.schedule).
+  workflow_dispatch:
     inputs:
       e2e_base_url:
         description: "Base URL da API sob test (default: localhost:8000)"
         required: false
         default: "http://localhost:8000"
+      branch:
+        description: "Branch a testar (default: master)"
+        required: false
+        default: "master"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -54,17 +56,18 @@ jobs:
     timeout-minutes: 15  # suite ~5min + buffer
 
     env:
-      # E2E_BASE_URL: prod (Tailscale) OU staging local.
-      # workflow_dispatch permite override manual.
       E2E_BASE_URL: ${{ github.event.inputs.e2e_base_url || 'http://localhost:8000' }}
       # API key admin (X-API-Key header). Default 'a' * 64 so funciona em dev/test.
-      E2E_API_KEY: ${{ secrets.E2E_API_KEY || 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }}
+      E2E_API_KEY_ADMIN: ${{ secrets.E2E_API_KEY_ADMIN || 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }}
+      E2E_API_KEY_CLIENT: ${{ secrets.E2E_API_KEY_CLIENT || secrets.E2E_API_KEY_ADMIN || 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }}
       # Chromium deps (libs necessarias em Ubuntu runner).
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || 'master' }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -109,8 +112,9 @@ jobs:
 
       # ========================================================================
       # Step 2: Smoke health check (NAO marker e2e, captura drift cedo).
+      # v2: NAO usa pytest.importorskip (feedback verifier attempt 1).
       # ========================================================================
-      - name: Run e2e_health smoke (drift detection)
+      - name: Run e2e_health smoke (drift detection, no importorskip)
         working-directory: backend
         run: |
           uv run pytest tests/test_e2e_health.py -v --tb=short --no-cov
