@@ -291,3 +291,68 @@ Setup mutmut v3.6.0 em cartorio backend (substitui v2 do briefing, flag mudou `p
 5. Run baseline ~30min single-thread, ~10-15min com `--max-children 4` (Mac M-series).
 
 Detalhes: `.harness/reins/cartorio-dev/memory/F01-mutation-testing.md`.
+
+---
+
+## A20 Pattern — Redlock distributed lock (Redis SET NX EX) (2026-07-02)
+
+**Licao canonica**: alembic `env.py` NAO pode ser loaded como modulo em tests
+(depende de `alembic.context.config` que so funciona em alembic CLI). Padrao
+canon para validar integracao:
+
+1. **Source-check via regex** (nao importa env.py como modulo)
+   - `assert "from app.services.redlock import" in source`
+   - `assert "ALEMBIC_LOCK_NAME = "alembic:migration"" in source`
+   - `assert "sys.exit(EXIT_LOCK_BUSY)" in source`
+
+2. **Testes de comportamento** do `redlock()` em isolamento (C1-C4 cobrem)
+   + source-check da integracao (C5)
+
+**Pattern canonico de lock** (ver `A20-redlock.md`):
+```python
+ALEMBIC_LOCK_NAME = "alembic:migration"  # LGPD-safe
+
+def run_migrations_online():
+    try:
+        with redlock(ALEMBIC_LOCK_NAME, blocking=False, timeout=0):
+            _run_migrations_online_locked()
+    except LockBusyError as e:
+        sys.stderr.write(f"[ALEMBIC] Lock ocupado: {e}\n")
+        sys.exit(EXIT_LOCK_BUSY)  # 75 = EX_TEMPFAIL
+```
+
+**Decisoes**:
+- `blocking=False` (fail-fast) → Docker/swarm restart policy retenta com backoff
+- `EXIT_LOCK_BUSY = 75` (BSD sysexits.h EX_TEMPFAIL)
+- Lock name canonico: `alembic:migration` / `seed:<name>` (NAO expoe PII)
+- Lua script atomico no release: `if redis.call('get', K) == V then del K`
+  (evita race condition onde lock expira entre check e delete)
+
+**Coverage 92% em redlock.py** (ImportError branch inacessivel).
+
+## Working tree reset mid-session (Lesson 022 — confirmado em A20 sprint)
+
+**Padrao observado em 2026-07-02 A20**: working tree foi REVERTIDO entre
+sessoes, perdendo 5 arquivos editados (redlock.py, alembic/env.py,
+seed_vault_secrets.py, test_redlock_a20_v2.py, .env.example). Git reflog
+mostrou 5x "reset: moving to HEAD" entre work sessions.
+
+**Mitigacao canonica** (validada em A20):
+1. **Checkpoint `--allow-empty`** ANTES de qualquer edicao:
+   ```bash
+   git commit --allow-empty -m "chore(a20): checkpoint before X — lesson 022 reset observed"
+   ```
+2. **Commits atomicos por arquivo** (nao batching):
+   ```bash
+   git add file1.py && git commit -m "feat: file1 only"
+   git add file2.py && git commit -m "feat: file2 only"
+   ```
+3. **NAO** rodar comandos broad que disparam flush (`pytest tests/` na
+   raiz, `git status` repetido) entre commits.
+
+**Detectar**:
+```bash
+ls -la backend/app/services/redlock.py   # timestamp estagnado > 5min = lost
+git status                               # "nothing to commit" + arquivos modificados = lost
+git reflog | grep "reset"                # resets nao-initiated por mim
+```
