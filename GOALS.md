@@ -20,9 +20,19 @@
 | **B** | Telegram bot live + Chatwoot inbox 1 | ✅ done | 100% | lesson 137 — 9 E2E tests, latency 10-15s |
 | **C** | LGPD compliance 100% | ✅ done | 95% | squad D 100% + DPA DeepSeek (lesson 138) |
 | **D** | WhatsApp Evolution API conectado | 🟡 blocked | 30% | SUI Gustavo (QR scan whatsapp.2notasudi.com.br/manager) |
-| **E** | Loop engineer auto-reactivação | 🟡 in_progress | 60% | 5 agents + cron scripts criados (MEM-1 P0) |
+| **E** | Loop engineer auto-reactivação | ✅ done | 95% | 5 agents + cron scripts + state machine + loop-continue (Lesson 139-140) |
 | **F** | Docs sincronizadas turn 50+ | 🟡 in_progress | 80% | PROMPT.json/MD divergence (T9 P0) |
 | **G** | Multi-provider fallback validado | 🟡 in_progress | 50% | openclaw 3 providers, falta validar 3x retry |
+
+## SQUAD STATUS (validado cycle 140)
+
+| Task | Status | Evidência |
+|------|--------|-----------|
+| J7 ci.yml | ✅ done | `.github/workflows/ci.yml` 212 linhas (lint+mypy+pytest+coverage+codecov) |
+| J8 cd.yml | ✅ done | `.github/workflows/cd.yml` 107 linhas (Render API + polling + GH comment) |
+| J9 Sentry SDK | ✅ done | `app/services/sentry.py` 153 linhas + PII scrubber + 29 tests passing |
+| J10 OTel collector | ✅ done | `infra/observability/otel-collector-config.yml` + 6 tests J10 + 11 tracing tests |
+| J6 Render health custom | ⏸️ blocked | script+curl ready em `docs/j6-j10-ci-cd-2026-06-25.md` — falta SUI Gustavo (RENDER_API_KEY + service config) |
 
 ---
 

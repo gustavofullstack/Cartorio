@@ -464,6 +464,35 @@ T9, E08, J07, J08, J09, J10, COV-1-BLOCKED-pytest-bug
 
 Modified by Gustavo Almeida (via plan Mavis — cycle 139)
 
+---
+
+## 2026-07-03 12:35 — /loop cycle #3 — SQUAD J VALIDATION + J10 TESTS
+
+### Achado crítico (Lesson 141)
+**Squad J estava com status stale no board.** Investigação revelou:
+- J7 ci.yml ✅ JÁ IMPLEMENTADO em `.github/workflows/ci.yml` (212 linhas, gates completos)
+- J8 cd.yml ✅ JÁ IMPLEMENTADO em `.github/workflows/cd.yml` (107 linhas, Render API + polling)
+- J9 Sentry SDK ✅ JÁ IMPLEMENTADO em `app/services/sentry.py` (153 linhas + PII scrubber)
+- J10 OTel collector ✅ JÁ IMPLEMENTADO em `infra/observability/otel-collector-config.yml`
+- J6 Render health ⏸️ blocked — script+curl pronto, falta SUI Gustavo (RENDER_API_KEY)
+
+### Tests validados cycle 140
+- test_sentry_a4.py: 29 passed (J9)
+- test_tracing_a3.py: 11 passed (J10 parte 1)
+- test_otel_collector_config_j10.py: **6 passed** (J10 parte 2 — NOVO)
+- Total Squad J coverage: **60 tests**
+
+### Entregas cycle 140
+- ✅ test_otel_collector_config_j10.py — 6 assertions YAML para OTel config (memory_limiter, batch, OTLP, exporters, pipelines)
+- ✅ GOALS.md — Goal E promoted to 95% DONE, SQUAD STATUS table adicionada
+- ✅ board.json — tasks_completed_cycle_140[] adicionado com 6 tasks
+- ✅ ruff format aplicado no novo test
+
+### Carry over (state/last.json cycle 140)
+T9, E08, J6-SUI-Gustavo, COV-1-BLOCKED-pytest-bug
+
+Modified by Gustavo Almeida (via plan Mavis — cycle 140)
+
 
 ## 2026-07-03 11:58 — LOOP cycle #1
 

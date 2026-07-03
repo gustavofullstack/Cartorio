@@ -93,22 +93,48 @@
       "name": "Last Squad E task"
     },
     {
-      "id": "BRAIN3/4/8",
-      "owner": "cartorio-dev",
+      "id": "J6",
+      "owner": "cartorio-n8n",
       "priority": "P2",
-      "name": "Brain endpoints 3 tasks"
-    },
-    {
-      "id": "J07-J10",
-      "owner": "cartorio-dev",
-      "priority": "P2",
-      "name": "Squad J obs/CICD 4 tasks"
+      "name": "Render health custom (SUI Gustavo — RENDER_API_KEY)"
     },
     {
       "id": "COV-1",
       "owner": "cartorio-dev",
       "priority": "P1",
-      "name": "Coverage 30.7% → 90%"
+      "name": "Coverage 30.7% → 90% (BLOCKED pytest internal bug)"
+    }
+  ],
+  "tasks_completed_cycle_140": [
+    {
+      "id": "J07",
+      "name": "GitHub Actions ci.yml",
+      "evidence": ".github/workflows/ci.yml 212 lines"
+    },
+    {
+      "id": "J08",
+      "name": "GitHub Actions cd.yml",
+      "evidence": ".github/workflows/cd.yml 107 lines"
+    },
+    {
+      "id": "J09",
+      "name": "Sentry SDK + PII scrubber",
+      "evidence": "app/services/sentry.py 153 lines + 29 tests passing"
+    },
+    {
+      "id": "J10",
+      "name": "OTel collector + config",
+      "evidence": "infra/observability/otel-collector-config.yml + 6 tests J10"
+    },
+    {
+      "id": "DEP-1",
+      "name": "fakeredis + pytest-asyncio em dev deps",
+      "evidence": "pyproject.toml dev=[] já contém fakeredis>=2.26.0"
+    },
+    {
+      "id": "BRAIN3/4/8",
+      "name": "Brain endpoints 3 tasks",
+      "evidence": "test_brain_endpoints_t091b.py 13 tests + test_brain8_cross_session.py 17 tests passing"
     }
   ],
   "auto_chains": [
