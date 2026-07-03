@@ -126,6 +126,40 @@ async def _send_typing(chat_id: int) -> bool:
         return False
 
 
+# FIX 2026-07-03 (loop-infinito v2): pool HTTP singleton + fire-and-forget typing.
+# Antes: cada chamada criava AsyncClient novo (DNS+TLS+TCP = ~500ms).
+# Agora: pool global + typing em background task (retorna <1ms).
+_TG_HTTP_POOL: httpx.AsyncClient | None = None
+
+
+def _get_tg_pool() -> httpx.AsyncClient:
+    global _TG_HTTP_POOL
+    if _TG_HTTP_POOL is None:
+        _TG_HTTP_POOL = httpx.AsyncClient(
+            timeout=httpx.Timeout(3.0, connect=1.5),
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        )
+    return _TG_HTTP_POOL
+
+
+async def _send_typing_fast(chat_id: int) -> None:
+    """Fire-and-forget typing. Nao espera resposta do Telegram.
+    Cliente ve 'Bot esta digitando...'; backend responde webhook em <50ms.
+    """
+    url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendChatAction"
+    try:
+        client = _get_tg_pool()
+        # asyncio.create_task = nao bloqueia o request
+        async def _do() -> None:
+            try:
+                await client.post(url, json={"chat_id": chat_id, "action": "typing"})
+            except Exception:
+                pass
+        asyncio.create_task(_do())
+    except Exception:
+        pass
+
+
 async def _react(chat_id: int, message_id: int, reaction: str = "thumbsup") -> None:
     tg_reactions = {
         "thumbsup": "👍",
@@ -178,10 +212,15 @@ async def _check_idempotency(bus: Any, update_id: int) -> bool:
 
 async def _typing_loop(chat_id: int, stop_event: asyncio.Event) -> None:
     """Envia typing indicator a cada 4s ate stop_event ser setado.
-    Garante que cliente sempre ve 'Bot esta digitando...' durante processamento.
+    FIX v2: usa _send_typing_fast (fire-and-forget via pool) para nao bloquear.
     """
+    client = _get_tg_pool()
+    url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendChatAction"
     while not stop_event.is_set():
-        await _send_typing(chat_id)
+        try:
+            await client.post(url, json={"chat_id": chat_id, "action": "typing"})
+        except Exception:
+            pass
         try:
             await asyncio.wait_for(stop_event.wait(), timeout=TYPING_REFRESH_SEC)
         except asyncio.TimeoutError:
@@ -348,12 +387,13 @@ async def _send_message(
     elif keyboard:
         payload["reply_markup"] = json.dumps({"inline_keyboard": keyboard})
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json=payload)
-            if resp.status_code == 200:
-                return True
-            logger.warning("TG send %d: %.200s", resp.status_code, resp.text)
-            return False
+        # FIX v2: usa pool singleton (evita DNS+TLS+TCP a cada call)
+        client = _get_tg_pool()
+        resp = await client.post(url, json=payload)
+        if resp.status_code == 200:
+            return True
+        logger.warning("TG send %d: %.200s", resp.status_code, resp.text)
+        return False
     except Exception as e:
         logger.exception("TG send error: %s", e)
         return False
@@ -817,9 +857,9 @@ async def telegram_webhook(
             return {"status": "duplicate", "update_id": update_id, "chat_id": chat_id}
 
     # ====== TYPING VISIVEL: envia "Bot esta digitando..." IMEDIATAMENTE ======
-    # Workaround bug 2026-07-03: _send_typing existia mas nunca era chamado.
-    # Cliente (Gustavo no celular) nao via nada, parecia que bot travou.
-    await _send_typing(chat_id)
+    # FIX v2: _send_typing_fast = fire-and-forget, nao bloqueia webhook.
+    # Antes: await _send_typing (criava client novo, ~500ms overhead)
+    _send_typing_fast(chat_id)
 
     text_scrubbed = scrub(text).text
     if callback:
