@@ -10,6 +10,13 @@ em vault.secrets para self-hosted).
 IDEMPOTENTE: deleta secret existente antes de criar (mesmo nome).
 LGPD-safe: nao imprime os valores, apenas sucesso/falha.
 
+A20: Distributed Lock (Redlock)
+===============================
+Para evitar 2 replicas/instâncias seedando vault ao mesmo tempo durante
+deploy, este script adquire um lock distribuido antes de inserir.
+Se o lock ja esta ocupado, exit code 75 (EX_TEMPFAIL) — orquestrador
+retenta com backoff. TTL padrao 300s; auto-release em caso de crash.
+
 Uso:
   cd backend
   uv run python scripts/seed_vault_secrets.py --dry-run
@@ -30,6 +37,16 @@ from pathlib import Path
 
 import psycopg
 from dotenv import dotenv_values
+
+from app.services.redlock import (  # noqa: E402  (sys.path include via parent)
+    DEFAULT_LOCK_TTL_SECONDS,
+    EXIT_LOCK_BUSY,
+    LockBusyError,
+    redlock,
+)
+
+# Lock canonico deste seed. Convenção: 'seed:<seed_name>'.
+SEED_LOCK_NAME = "seed:vault_secrets"
 
 # Mapeamento: env_var_name -> (vault_secret_name, secrets_file_basename)
 SECRETS_MAP = [
@@ -72,8 +89,38 @@ def main() -> int:
         default=str(Path.home() / ".mavis/secrets"),
         help="diretorio com .env files",
     )
+    parser.add_argument(
+        "--skip-lock",
+        action="store_true",
+        help="NAO adquirir redlock (uso apenas para debug local)",
+    )
     args = parser.parse_args()
 
+    # A20: adquire lock distribuido (fail-fast). Se outra replica esta
+    # seedando, sai com codigo 75 — orquestrador retenta.
+    if not args.skip_lock:
+        try:
+            with redlock(
+                SEED_LOCK_NAME,
+                ttl_seconds=DEFAULT_LOCK_TTL_SECONDS,
+                blocking=False,
+                timeout=0,
+            ):
+                return _run_seed(args)
+        except LockBusyError as e:
+            sys.stderr.write(
+                f"\n[SEED] Lock distribuido ocupado: {e}\n"
+                f"[SEED] Outra replica provavelmente ja esta seedando vault.\n"
+                f"[SEED] Saindo com codigo {EXIT_LOCK_BUSY} (EX_TEMPFAIL) "
+                f"para que o orquestrador possa retentar.\n"
+            )
+            return EXIT_LOCK_BUSY
+    else:
+        return _run_seed(args)
+
+
+def _run_seed(args: argparse.Namespace) -> int:
+    """Implementacao real do seed (apos lock adquirido)."""
     secrets_dir = Path(args.secrets_dir)
     project_secrets = Path("/Users/gustavoalmeida/projetos/Cartorio/.secrets")
     secrets = load_secrets_from_files(secrets_dir) or load_secrets_from_files(project_secrets)
