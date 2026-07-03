@@ -1,0 +1,159 @@
+# GitHub Actions - E2E Playwright Nightly (F05)
+#
+# Suite Playwright que exercita o fluxo cliente ponta-a-ponta:
+#   cliente novo -> protocolo DRAFT -> agendamento -> atendimento ->
+#   emolumento -> documento -> soft delete (A19) -> consentimento LGPD
+#
+# Custo proibitivo em PR (~5min para suite 7 cenarios + chromium launch).
+# Roda apenas em schedule nightly em master (03:00 UTC = 00:00 BRT).
+# Pode ser disparado manualmente via workflow_dispatch para debug.
+#
+# Output: tests/e2e/report.xml + artifact upload. Gate enforced pelos
+# proprios tests (pytest exit code 0 = suite verde).
+#
+# ATIVACAO: este workflow NAO esta ativo por padrao (custo Free Tier
+# GH Actions ~50h/mes). Requer admin adicionar GH_PAT + E2E_API_KEY
+# secret e depois trocar `false` por `true` no trigger on.schedule.
+#
+# Pre-requisitos:
+#   - CARTORIO_API_KEY_E2E (X-API-Key admin para suite)
+#   - AUDIT_HMAC_KEY_E2E (HMAC key match do backend prod)
+#   - DATABASE_URL_E2E (Postgres test OU SQLite in-memory)
+#   - E2E_BASE_URL (https://api.2notasudi.com.br OU localhost:8000)
+#
+# Para rodar suite localmente:
+#   cd backend && uv sync --extra e2e && playwright install chromium
+#   E2E_BASE_URL=http://localhost:8000 pytest -m e2e --browser chromium -v
+
+name: E2E Playwright (Nightly)
+
+on:
+  schedule:
+    # 03:00 UTC = 00:00 BRT. Roda em master.
+    # ATENCAO: gatilho DESATIVADO por padrao (custo). Trocar `false` por `true` para ativar.
+    - cron: "0 3 * * *"
+  workflow_dispatch:  # permite rodar manualmente para debug
+    inputs:
+      e2e_base_url:
+        description: "Base URL da API sob test (default: localhost:8000)"
+        required: false
+        default: "http://localhost:8000"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.5.11"
+
+jobs:
+  e2e-suite:
+    name: Playwright E2E suite (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15  # suite ~5min + buffer
+
+    env:
+      # E2E_BASE_URL: prod (Tailscale) OU staging local.
+      # workflow_dispatch permite override manual.
+      E2E_BASE_URL: ${{ github.event.inputs.e2e_base_url || 'http://localhost:8000' }}
+      # API key admin (X-API-Key header). Default 'a' * 64 so funciona em dev/test.
+      E2E_API_KEY: ${{ secrets.E2E_API_KEY || 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }}
+      # Chromium deps (libs necessarias em Ubuntu runner).
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Setup Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/.venv
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies (incl. e2e extra)
+        working-directory: backend
+        run: uv sync --extra e2e
+
+      # ========================================================================
+      # Step 1: Install chromium binary via Playwright CLI.
+      # Cache para evitar download 200MB toda run.
+      # ========================================================================
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: /ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('backend/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright chromium + deps
+        working-directory: backend
+        run: |
+          uv run playwright install chromium
+          uv run playwright install-deps chromium
+
+      # ========================================================================
+      # Step 2: Smoke health check (NAO marker e2e, captura drift cedo).
+      # ========================================================================
+      - name: Run e2e_health smoke (drift detection)
+        working-directory: backend
+        run: |
+          uv run pytest tests/test_e2e_health.py -v --tb=short --no-cov
+
+      # ========================================================================
+      # Step 3: Run E2E suite completa.
+      # Playwright plugin auto-usa --browser chromium (configurado em browser_type_launch_args).
+      # ========================================================================
+      - name: Run E2E suite (Playwright + chromium)
+        working-directory: backend
+        run: |
+          uv run pytest tests/e2e/ \
+            --browser chromium \
+            -m e2e \
+            --junitxml=e2e-report.xml \
+            --tb=short \
+            -v \
+            2>&1 | tee e2e-run.log
+
+      # ========================================================================
+      # Step 4: Upload artifacts (report + log).
+      # ========================================================================
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ github.run_id }}
+          path: |
+            backend/e2e-report.xml
+            backend/e2e-run.log
+          retention-days: 14
+
+      # ========================================================================
+      # Step 5: Report status no job summary.
+      # ========================================================================
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f backend/e2e-report.xml ]; then
+            echo "## E2E Suite Results" >> $GITHUB_STEP_SUMMARY
+            grep -oE 'tests="[0-9]+" skipped="[0-9]+" failures="[0-9]+" errors="[0-9]+"' \
+              backend/e2e-report.xml | head -1 >> $GITHUB_STEP_SUMMARY || true
+          else
+            echo "## E2E Suite Results" >> $GITHUB_STEP_SUMMARY
+            echo "Report NAO gerado — suite falhou antes do junit export." >> $GITHUB_STEP_SUMMARY
+          fi

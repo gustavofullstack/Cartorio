@@ -356,3 +356,43 @@ ls -la backend/app/services/redlock.py   # timestamp estagnado > 5min = lost
 git status                               # "nothing to commit" + arquivos modificados = lost
 git reflog | grep "reset"                # resets nao-initiated por mim
 ```
+
+---
+
+### F05 Playwright optional-deps + mypy TYPE_CHECKING (Lesson 188)
+
+**Padrao canonico** (Playwright = optional-deps, NAO main deps):
+
+```toml
+# pyproject.toml
+[project.optional-dependencies]
+e2e = ["playwright>=1.40,<2", "pytest-playwright>=0.5,<1"]
+
+[tool.pytest.ini_options]
+addopts = "-m 'not smoke and not integration and not e2e'"  # exclui E2E do CI unit
+markers = ["e2e: end-to-end tests via Playwright"]
+```
+
+```python
+# conftest.py
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from playwright.sync_api import Browser as PlaywrightBrowser  # type: ignore[import-not-found]
+    from playwright.sync_api import BrowserContext as PlaywrightBrowserContext  # type: ignore[import-not-found]
+    from playwright.sync_api import Page as PlaywrightPage  # type: ignore[import-not-found]
+```
+
+**Pitfalls canonicos**:
+1. `import playwright  # type: ignore[import-not-found]` em runtime.
+2. Generator fixtures (`yield`) devem ter `Iterator[X]`, NAO `X`.
+3. Conditional `return` antes de `yield` em fixture autouse confunde mypy —
+   usar `# type: ignore[return-value]` no early return.
+4. Smoke test em CI unit deve SKIP (nao FAIL) quando optional-dep ausente.
+   `pytest.importorskip("playwright", reason="...")`.
+5. `addopts` filter `-m 'not e2e'` esconde E2E do collect. Para debug:
+   `pytest tests/e2e/ -m e2e --no-cov`.
+
+**Decisao**: E2E NAO roda em CI unit (custo + flake). Apenas nightly
+skeleton (INACTIVE ate Gustavo GO). Suite full-flow ~5min + 8 tests.
+
+Detalhes + 5 cenaros + compliance check: `F05-e2e-playwright.md`.
