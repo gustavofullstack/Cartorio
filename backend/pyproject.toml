@@ -30,7 +30,17 @@ dev = [
     "ruff>=0.8.4",
     "mypy>=1.14.0",
     "fakeredis>=2.26.0",
+    "lupa>=2.0",  # A20: fakeredis lua support (eval usado em release_lock)
     "mutmut>=3.6.0",
+]
+# F05 E2E suite (Playwright + chromium). SEPARADO de `dev` para nao
+# inflar CI unit (~200MB+ do chromium + 60MB Playwright). Instalar
+# apenas quando rodar `pytest -m e2e`. Em CI nightly, instalar com:
+#   uv sync --extra e2e
+# Binario do browser vive em ~/.cache/ms-playwright/ (NUNCA comitar).
+e2e = [
+    "playwright>=1.40,<2",
+    "pytest-playwright>=0.5,<1",
 ]
 
 [tool.ruff]
@@ -39,9 +49,10 @@ target-version = "py311"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90 -m 'not smoke and not integration'"
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90 -m 'not smoke and not integration and not e2e'"
 asyncio_mode = "auto"
 markers = [
     "smoke: integration tests against real infrastructure (requires SMOKE_TARGET=prod)",
     "integration: integration tests against real services (requires network access to VPS)",
+    "e2e: end-to-end tests via Playwright (requires E2E_BASE_URL + chromium binary)",
 ]
