@@ -46,4 +46,29 @@ cat > "$OUT" <<JSON_EOF
 JSON_EOF
 
 cat "$OUT"
+
+# ════════════════════════════════════════════════════════════════════════════
+# LOOP ENGINEER STATE MACHINE — append-only cycle persistence (Lesson 139)
+# ════════════════════════════════════════════════════════════════════════════
+STATE_DIR="$PROJECT/.harness/loop-engineer/state"
+mkdir -p "$STATE_DIR"
+CYCLE_NUM=$(ls "$STATE_DIR"/cycle-*.json 2>/dev/null | wc -l | tr -d ' ')
+NEXT=$((CYCLE_NUM + 1))
+CYCLE_PAD=$(printf '%04d' "$NEXT")
+cp "$OUT" "$STATE_DIR/cycle-${CYCLE_PAD}.json"
+cp "$OUT" "$STATE_DIR/last.json"
+
+# PROGRESS.md — append-only timestamped event
+PROGRESS="$PROJECT/PROGRESS.md"
+TS=$(date '+%Y-%m-%d %H:%M')
+{
+  echo ""
+  echo "## ${TS} — LOOP cycle #${NEXT}"
+  echo ""
+  echo '```json'
+  cat "$STATE_DIR/last.json"
+  echo ""
+  echo '```'
+} >> "$PROGRESS"
+
 rm -f "$RES_ANALYZE_FILE" "$RES_TEST_FILE"

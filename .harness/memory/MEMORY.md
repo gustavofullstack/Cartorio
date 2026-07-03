@@ -49,6 +49,38 @@ Acessar git history: `git log --follow archive-2026-06-23-sprint0_1.md` no repo 
 
 ---
 
+## 2026-07-03 — Lesson 139 — Loop Engineer auto-reactivação ativado
+
+### Contexto
+Gustavo pediu "transforme em loop, goals, meta, objetivo, progresso e cron!! p/ continuar sempre que parar" — modo YOLO. Listou 17 skills, das quais só `yolo` e `goal` existem no conjunto real. Outras 15 são invenções (`paperclip-converting-plans-to-tasks`, `parallel-m3-orchestration`, `m3-ultra`, `m27-fast`, `dispatch-parallel`, `orchestrate-protocol`, `para-memory-files`, `memory-files`, `context`, `init`, `loop`, `review`, `ceo-assistant`, `security-review`).
+
+### Decisão
+Mapear cada skill pedida para skill real OU ação direta via script. NÃO criar skills falsas.
+
+### Entregas
+1. **`GOALS.md` (raiz)** — canônico de metas A-G, formato letra → objetivo → status → % → evidência. Sincronizado com paperclip-board/board.json.
+2. **`.harness/loop-engineer/state/`** — cycle state machine (cycle-NNN.json + last.json). Cada loop append um cycle novo.
+3. **`goal-loop-cron.sh`** modificado — após gerar output, escreve em `state/cycle-NNNN.json` + `state/last.json` + append em `PROGRESS.md`.
+4. **`loop-continue.sh`** (novo) — leitura do `state/last.json` + impressão de carry_over_tasks + blockers + gates. Mapeia skill `loop`.
+5. **`SKILLS-MAP.md`** — tabela com 17 skills pedidas vs reais (mapeamento explícito).
+6. **`paperclip-board/board.json`** atualizado: G5 pct 60→85, adicionado `goals_canonical_ref` + `skill_mapping`.
+
+### Pendente (SUI Gustavo)
+- `launchctl list | grep cartorio` deve retornar 2 entries (goal-loop 4h + intensive 30min) — install via `bash .harness/loop-engineer/crons/install-launchd.sh` e `install-intensive-launchd.sh`. **PRÓXIMO STEP IMEDIATO.**
+
+### Cron cadences
+| Cron | Cadence | Função |
+|------|---------|--------|
+| `com.cartorio.goal-loop` | 4h | analyze + test + fix + document + memory + state append |
+| `com.cartorio.intensive` | 30min | health checks + progress heartbeat |
+
+### Cross-rein note
+- cartorio-dev: instala launchd (acesso root Gustavo)
+- cartorio-n8n: monitora health checks via intensive cadence
+- cartorio-lgpd: valida que PROGRESS.md não vaza PII (checar append-only)
+
+---
+
 ## 2026-06-24 14:50 BRT — Cross-check prod (Pietra sessão mvs_6663ee57...)
 
 ### Status real cross-checked (SSH cartorio + curl)
@@ -903,3 +935,22 @@ Gustavo mandou prompt cartorio novamente para continuidade. Squad B ~95% (Pietra
 - BRAIN7 (já em progresso nesta sessão)
 
 Modified by ZCode/Mavis - 2026-06-26
+
+---
+
+### Lesson 140 — Skills invocadas como templates vazios (2026-07-03)
+Type: feedback + project
+
+**Caso**: TRAE sessão `/plan` invocou 8 skills (`/init`, `/memory-files`, `/cartorio-context`, `/context`, `/goal`, `/dispatch-parallel`, `/m27-fast`, `/m3-ultra`) cujas descriptions eram placeholders `--context "{{contexto}}" --goal "{{objetivo}}"`. Plan gerado sem intent vira ruído.
+
+**Fix (canônico)**:
+1. SEMPRE que skill invocada vier vazia/sem contexto, ABRIR `AskUserQuestion` ANTES de planejar
+2. Mínimo 3 perguntas: intenção, objetivo concreto, escopo de write permitido
+3. Apresentar 2-4 opções mutuamente exclusivas (não "Other" automático)
+4. Confirmar antes de gerar plan file
+
+**Ref**: `.trae/documents/yolo-super-plano-100t-cartorio-2026-07-03.md` (plan gerado) + `~/MEMORY.md` sessão 2026-07-03T10:30Z.
+
+**Cross-project**: vale para QUALQUER invocação `/skill` em TRAE/Zed/Claude onde description é placeholder. Detectar placeholder = trigger AskUserQuestion imediato.
+
+Modified by Gustavo Almeida

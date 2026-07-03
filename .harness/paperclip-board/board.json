@@ -42,14 +42,19 @@
       "id": "G5",
       "name": "Loop engineer auto-reactivação",
       "status": "in_progress",
-      "pct": 60,
+      "pct": 85,
       "deliverables_created": [
         ".harness/agents/ (5)",
-        ".harness/loop-engineer/ (3)",
-        ".harness/validators/ (3)"
-      ]
+        ".harness/loop-engineer/ (3 + state/ + SKILLS-MAP.md)",
+        ".harness/validators/ (3)",
+        "GOALS.md (canônico na raiz)",
+        "loop-continue.sh (retomada de sessão)"
+      ],
+      "note": "Lesson 139 — launchd pendente install; cycle state machine ativo"
     }
   ],
+  "goals_canonical_ref": "GOALS.md (raiz) — letras A-G",
+  "skill_mapping": ".harness/loop-engineer/SKILLS-MAP.md",
   "tasks_in_progress": [
     {
       "id": "T9",
