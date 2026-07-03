@@ -51,6 +51,7 @@ def listar_protocolos_recentes_concluidos(
     *,
     minutos: int = 10,
     limit: int = 50,
+    include_deleted: bool = False,
 ) -> list[ProtocoloRecente]:
     """Lista protocolos que mudaram para status=concluido nos ultimos N minutos.
 
@@ -58,6 +59,9 @@ def listar_protocolos_recentes_concluidos(
         db: SQLAlchemy session.
         minutos: janela de tempo (default 10min, suficiente para cron 5min).
         limit: maximo de items (default 50, evita paginacao).
+        include_deleted: A19 LGPD art. 18 V — se True, inclui soft-deletados
+            (deleted_at IS NOT NULL). Default False (apenas ativos). Caller
+            (router) deve garantir gating admin (DPO) antes de passar True.
 
     Returns:
         Lista de ProtocoloRecente ordenados por concluded_at DESC.
@@ -69,17 +73,20 @@ def listar_protocolos_recentes_concluidos(
     """
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=minutos)
 
-    rows = (
+    stmt = (
         db.query(Protocolo)
         .join(Cliente, Protocolo.cliente_id == Cliente.id)
         .filter(
             Protocolo.status == "concluido",
             Protocolo.updated_at >= cutoff,
         )
-        .order_by(Protocolo.updated_at.desc())
-        .limit(limit)
-        .all()
     )
+
+    # A19 LGPD: filtrar soft-deletados por default
+    if not include_deleted:
+        stmt = stmt.filter(Protocolo.deleted_at.is_(None))
+
+    rows = stmt.order_by(Protocolo.updated_at.desc()).limit(limit).all()
 
     return [
         ProtocoloRecente(

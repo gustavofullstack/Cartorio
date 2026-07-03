@@ -249,3 +249,81 @@ def require_cliente_or_dpo(
             },
         )
     return payload
+
+
+# ---------------------------------------------------------------------------
+# A19: include_deleted admin gating
+# ---------------------------------------------------------------------------
+
+
+def assert_dpo_for_include_deleted(request: Request, include_deleted: bool) -> None:
+    """Gate admin: ?include_deleted=true exige JWT com claim dpo=True.
+
+    A19: rotas de listagem filtram `deleted_at IS NULL` por default (LGPD
+    art. 18 V). Bypass admin (DPO) via query param `?include_deleted=true`
+    exige autenticacao adicional — Bearer JWT com `dpo=True`.
+
+    Comportamento:
+    - include_deleted=False (default): noop (nao exige JWT adicional).
+    - include_deleted=True + sem Authorization header: 401 UNAUTHORIZED.
+    - include_deleted=True + JWT sem dpo=True: 403 FORBIDDEN.
+    - include_deleted=True + JWT com dpo=True: ok.
+
+    Padrao de uso em endpoint:
+        @router.get("/...")
+        async def listar(
+            request: Request,
+            db: ...,
+            include_deleted: bool = Query(False, ...),
+        ):
+            assert_dpo_for_include_deleted(request, include_deleted)
+            stmt = select(Model).where(Model.deleted_at.is_(None))
+            if include_deleted:
+                stmt = select(Model)  # sem filtro
+            ...
+
+    Justificativa do duplo auth (X-API-Key + JWT):
+    - X-API-Key ja eh exigido em todos os endpoints protegidos (service-to-service)
+    - JWT com role dpo serve pra identificar o ENCARREGADO (LGPD art. 41)
+      e autorizar bypass de filtro LGPD (auditoria de quem viu soft-deleted)
+    """
+    if not include_deleted:
+        return
+
+    # Tenta extrair JWT
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "erro": "UNAUTHORIZED",
+                "mensagem": (
+                    "?include_deleted=true exige Bearer JWT com perfil DPO. "
+                    "Forneça Authorization: Bearer <token_dpo>."
+                ),
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = auth_header[7:]
+    try:
+        payload = verify_token(token, expected_typ="access")
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "Token invalido."},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not payload.get("dpo"):
+        _log.warning(
+            "include_denied: sub=%s tentou include_deleted sem claim dpo",
+            payload.get("sub"),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "erro": "FORBIDDEN",
+                "mensagem": "?include_deleted=true requer perfil DPO (LGPD art. 41).",
+            },
+        )

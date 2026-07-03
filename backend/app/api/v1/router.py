@@ -72,7 +72,10 @@ from app.services.pii import hash_pii, scrub
 from app.api.v1.integrations import integrations_router  # noqa: E402
 
 # Shared deps (B0.3 2026-06-25)
-from app.api.deps import require_cartorio_api_key  # noqa: E402
+from app.api.deps import (  # noqa: E402
+    assert_dpo_for_include_deleted,
+    require_cartorio_api_key,
+)
 
 # ============================================================================
 # Router com tags PT-BR para o Swagger/OpenAPI
@@ -2037,6 +2040,7 @@ async def atendimentos_ultimas_24h(
                 .where(
                     Atendimento.concluido_em >= cutoff,
                     Atendimento.pesquisa_enviada_em.is_(None),
+                    Atendimento.deleted_at.is_(None),  # A19 LGPD
                 )
                 .order_by(Atendimento.concluido_em.desc())
                 .limit(200)
@@ -3478,12 +3482,16 @@ class ClienteHistoricoResponse(BaseModel):
         "LGPD art. 18 IV: titular tem direito de acesso aos dados sobre tratamento. "
         "DPO pode usar este endpoint para atender solicitacao de titular. "
         "Rate limit interno: 60 req/min (D4 - DPO dashboard).\n\n"
+        "A19 LGPD art. 18 V: soft-deletados (deleted_at IS NOT NULL) excluidos "
+        "por default. Use `?include_deleted=true` para incluir — exige Bearer "
+        "JWT com claim dpo=True (LGPD art. 41 - encarregado).\n\n"
         "Requer X-API-Key (DPO/escrevente)."
     ),
     response_model=ClienteHistoricoResponse,
     responses={
         200: {"description": "Timeline do cliente."},
         401: {"description": "X-API-Key ausente."},
+        403: {"description": "JWT DPO necessario para include_deleted."},
         404: {"description": "Cliente nao encontrado."},
     },
 )
@@ -3492,8 +3500,20 @@ async def get_cliente_historico(
     cliente_id: int,
     db: Annotated[Session, Depends(get_db)],
     api_key: Annotated[str, Depends(require_cartorio_api_key)],  # B0.3.SEC P0.4 2026-06-25
+    include_deleted: Annotated[
+        bool,
+        Query(
+            description=(
+                "A19 LGPD: incluir protocolos/atendimentos soft-deletados. "
+                "EXIGE Bearer JWT com claim dpo=True."
+            ),
+        ),
+    ] = False,
 ) -> ClienteHistoricoResponse:
     """Timeline consolidada de todos os eventos do cliente."""
+    # A19: gate admin
+    assert_dpo_for_include_deleted(request, include_deleted)
+
     from app.models.atendimento import Atendimento
     from app.models.protocolo import Protocolo
 
@@ -3509,7 +3529,14 @@ async def get_cliente_historico(
 
     items: list[ClienteHistoricoItem] = []
 
-    protocolos = db.query(Protocolo).filter(Protocolo.cliente_id == cliente_id).all()
+    # A19: filtrar soft-deletados por default
+    protocolo_q = db.query(Protocolo).filter(Protocolo.cliente_id == cliente_id)
+    atendimento_q = db.query(Atendimento).filter(Atendimento.cliente_id == cliente_id)
+    if not include_deleted:
+        protocolo_q = protocolo_q.filter(Protocolo.deleted_at.is_(None))
+        atendimento_q = atendimento_q.filter(Atendimento.deleted_at.is_(None))
+
+    protocolos = protocolo_q.all()
     for p in protocolos:
         items.append(
             ClienteHistoricoItem(
@@ -3523,7 +3550,7 @@ async def get_cliente_historico(
             )
         )
 
-    atendimentos = db.query(Atendimento).filter(Atendimento.cliente_id == cliente_id).all()
+    atendimentos = atendimento_q.all()
     for a in atendimentos:
         items.append(
             ClienteHistoricoItem(
@@ -3562,12 +3589,15 @@ async def get_cliente_historico(
         "N minutos. Usado pelo workflow N8N #25 para disparar envio de PDF via WhatsApp.\n\n"
         "Params:\n"
         "- minutos: janela de tempo (default 10, suficiente para cron 5min)\n"
-        "- limit: maximo de items (default 50)\n\n"
+        "- limit: maximo de items (default 50)\n"
+        "- include_deleted: A19 LGPD art. 18 V — incluir soft-deletados (default False). "
+        "Se True, EXIGE Bearer JWT com claim dpo=True.\n\n"
         "Requer X-API-Key (workflow N8N). Nao expoe PII (telefone = None por design)."
     ),
     responses={
         200: {"description": "Lista de protocolos concluidos (pode ser vazia)."},
         401: {"description": "X-API-Key ausente."},
+        403: {"description": "JWT DPO necessario para include_deleted."},
     },
 )
 async def get_protocolos_recentes_concluidos(
@@ -3576,9 +3606,18 @@ async def get_protocolos_recentes_concluidos(
         int, Query(ge=1, le=1440, description="Janela em minutos (default 10).")
     ] = 10,
     limit: Annotated[int, Query(ge=1, le=200, description="Maximo de items (default 50).")] = 50,
+    include_deleted: Annotated[
+        bool,
+        Query(
+            description=("A19 LGPD: incluir protocolos soft-deletados. EXIGE Bearer JWT dpo=True."),
+        ),
+    ] = False,
     db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> dict:
     """Endpoint usado pelo N8N workflow #25 (protocolo concluido -> PDF WhatsApp)."""
+    # A19: gate admin DPO
+    assert_dpo_for_include_deleted(request, include_deleted)
+
     api_key = request.headers.get("x-api-key")
     if not api_key or api_key != settings.cartorio_api_key:
         raise HTTPException(
@@ -3588,7 +3627,9 @@ async def get_protocolos_recentes_concluidos(
 
     from app.services.protocolo_query import listar_protocolos_recentes_concluidos
 
-    items = listar_protocolos_recentes_concluidos(db, minutos=minutos, limit=limit)
+    items = listar_protocolos_recentes_concluidos(
+        db, minutos=minutos, limit=limit, include_deleted=include_deleted
+    )
     return {
         "items": [item.to_dict() for item in items],
         "total": len(items),
@@ -4527,25 +4568,38 @@ def criar_agendamento(
     summary="Listar agendamentos de um cliente",
     description=(
         "Lista todos os agendamentos de um cliente, ordenados por data "
-        "decrescente. Suporta paginação via query params."
+        "decrescente. Suporta paginação via query params.\n\n"
+        "A19 LGPD art. 18 V: soft-deletados (deleted_at IS NOT NULL) excluidos "
+        "por default. Use `?include_deleted=true` para incluir — exige Bearer "
+        "JWT com claim dpo=True (LGPD art. 41 - encarregado)."
     ),
     response_description="Lista de agendamentos do cliente.",
     responses={
         200: {"description": "Lista de agendamentos."},
+        401: {"description": "JWT DPO ausente para include_deleted."},
+        403: {"description": "JWT sem claim dpo."},
         404: {"description": "Cliente não encontrado."},
     },
 )
 def listar_agendamentos_cliente(
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     cliente_id: int,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    include_deleted: bool = Query(
+        False,
+        description=("A19 LGPD: incluir soft-deletados. EXIGE Bearer JWT com claim dpo=True."),
+    ),
 ) -> list[AgendamentoResponse]:
     """Lista agendamentos de um cliente."""
+    # A19: gate admin DPO
+    assert_dpo_for_include_deleted(request, include_deleted)
+
     from app.services.agendamento import AgendamentoService
 
     agendamentos = AgendamentoService.listar_agendamentos_cliente(
-        db, cliente_id, limit=limit, offset=offset
+        db, cliente_id, limit=limit, offset=offset, include_deleted=include_deleted
     )
     return [AgendamentoResponse.model_validate(a) for a in agendamentos]
 
@@ -4556,19 +4610,35 @@ def listar_agendamentos_cliente(
     summary="Listar agendamentos por data",
     description=(
         "Lista todos os agendamentos para uma data específica, opcionalmente "
-        "filtrados por local. Útil para visualização de agenda diária."
+        "filtrados por local. Útil para visualização de agenda diária.\n\n"
+        "A19 LGPD art. 18 V: soft-deletados excluidos por default. Use "
+        "`?include_deleted=true` (gated DPO)."
     ),
     response_description="Lista de agendamentos para a data.",
+    responses={
+        200: {"description": "Lista de agendamentos."},
+        403: {"description": "JWT DPO necessario para include_deleted."},
+    },
 )
 def listar_agendamentos_data(
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     data: datetime.date,
     local: str | None = Query(None, description="Filtrar por local específico"),
+    include_deleted: bool = Query(
+        False,
+        description="A19 LGPD: incluir soft-deletados. EXIGE Bearer JWT dpo=True.",
+    ),
 ) -> list[AgendamentoResponse]:
     """Lista agendamentos para uma data."""
+    # A19: gate admin DPO
+    assert_dpo_for_include_deleted(request, include_deleted)
+
     from app.services.agendamento import AgendamentoService
 
-    agendamentos = AgendamentoService.listar_agendamentos_data(db, data, local=local)
+    agendamentos = AgendamentoService.listar_agendamentos_data(
+        db, data, local=local, include_deleted=include_deleted
+    )
     return [AgendamentoResponse.model_validate(a) for a in agendamentos]
 
 
@@ -4677,6 +4747,9 @@ def get_agendamentos_pendentes(
     """Lista agendamentos pendentes para notificação N8N.
 
     A26: Cache Redis 60s para reduzir carga DB em pico.
+    A19 LGPD: soft-deletados excluidos no service-level (filtro `deleted_at IS NULL`).
+    Endpoint MACHINE-only (N8N workflow). Sem `?include_deleted=true` (N8N
+    nao carrega JWT DPO). Debug de soft-deletados = query direta no DB.
     """
     from app.services.agendamento import AgendamentoService
     from app.services.agendamento_cache import (
@@ -4760,6 +4833,9 @@ def get_agendamentos_proximos(
     """Lista agendamentos próximos para lembrete N8N.
 
     A26: Cache Redis 60s para reduzir carga DB em pico.
+    A19 LGPD: soft-deletados excluidos no service-level (filtro `deleted_at IS NULL`).
+    Endpoint MACHINE-only (N8N workflow). Sem `?include_deleted=true` (N8N
+    nao carrega JWT DPO). Debug de soft-deletados = query direta no DB.
     """
     from app.services.agendamento import AgendamentoService
     from app.services.agendamento_cache import (

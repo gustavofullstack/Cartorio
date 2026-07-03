@@ -1,13 +1,15 @@
-"""GET /api/v2/clientes — listagem com cursor pagination Relay-style (A24.2).
+"""GET /api/v2/clientes — listagem com cursor pagination Relay-style (A24.2 + A19).
 
 API v2 quebra de v1:
 - offset/limit v1 -> cursor (opaco base64) v2
 - Envelope flat v1 -> envelope Relay v2 (edges + page_info + nodes)
 
 LGPD art. 37: response NAO expoe CPF puro (apenas cpf_hash).
-Clientes encerrados (motivo_encerramento != null) sao excluidos por default.
+LGPD art. 18 V (A19): soft-deleted (deleted_at IS NOT NULL) sao excluidos por
+default. Use `?include_deleted=true` para incluir (gated por DPO).
 
-Auth: X-API-Key (mesma v1). JWT sera adicionado em A24.x como alternativa.
+Auth: X-API-Key (mesma v1). Para `?include_deleted=true` exige Bearer JWT
+com claim dpo=True (LGPD art. 41 - encarregado).
 
 Referencia: docs/api-v1-to-v2-migration.md (A24.6).
 """
@@ -22,7 +24,10 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_cartorio_api_key
+from app.api.deps import (
+    assert_dpo_for_include_deleted,
+    require_cartorio_api_key,
+)
 from app.db import get_db
 from app.models.cliente import Cliente
 from app.services.cursor import decode_cursor_safe, encode_cursor
@@ -104,17 +109,34 @@ async def listar_clientes_v2(
     _api_key: Annotated[str, Depends(require_cartorio_api_key)],
     first: int = Query(default=20, ge=1, le=100, description="Max itens por pagina (1-100)."),
     after: str | None = Query(default=None, description="Cursor opaque da pagina anterior."),
-    include_encerrados: bool = Query(
-        default=False, description="Incluir clientes com motivo_encerramento setado."
+    include_deleted: bool = Query(
+        default=False,
+        description=(
+            "A19 LGPD: incluir clientes soft-deletados (deleted_at IS NOT NULL). "
+            "EXIGE Bearer JWT com claim dpo=True (LGPD art. 41 - encarregado)."
+        ),
+    ),
+    include_encerrados: bool = Query(  # DEPRECATED alias A19 → include_deleted
+        default=False,
+        description="DEPRECATED: use include_deleted. Mantido para compat v2.x.",
+        include_in_schema=False,  # nao aparece no OpenAPI
     ),
 ) -> dict[str, Any]:
-    """Lista clientes com cursor pagination (Relay-style)."""
+    """Lista clientes com cursor pagination (Relay-style).
+
+    A19: soft-deleted excluidos por default. Bypass via `?include_deleted=true`
+    requer JWT DPO (gate enforced em `assert_dpo_for_include_deleted`).
+    """
+    # Gate admin: ?include_deleted=true exige JWT dpo=True
+    effective_include = include_deleted or include_encerrados  # back-compat alias
+    assert_dpo_for_include_deleted(request, effective_include)
+
     # Query base
     stmt = select(Cliente).order_by(Cliente.id.asc())
 
-    # Filtro LGPD: excluir encerrados por default
-    if not include_encerrados:
-        stmt = stmt.where(Cliente.motivo_encerramento.is_(None))
+    # A19 LGPD art. 18 V: excluir soft-deletados por default
+    if not effective_include:
+        stmt = stmt.where(Cliente.deleted_at.is_(None))
 
     # Cursor pagination: WHERE id > {decoded.id_after}
     if after:
@@ -150,12 +172,12 @@ async def listar_clientes_v2(
     # end_cursor eh None na ultima pagina (has_next_page=False)
     end_cursor = edges[-1].cursor if edges and has_next_page else None
 
-    # Total count (sem filtro de cursor — total geral respeitando include_encerrados)
+    # Total count (sem filtro de cursor — total geral respeitando include_deleted)
     from sqlalchemy import func
 
     total_stmt = select(func.count(Cliente.id))
-    if not include_encerrados:
-        total_stmt = total_stmt.where(Cliente.motivo_encerramento.is_(None))
+    if not effective_include:
+        total_stmt = total_stmt.where(Cliente.deleted_at.is_(None))
     total_count = int(db.execute(total_stmt).scalar_one() or 0)
 
     return ClientesV2Response(

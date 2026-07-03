@@ -259,6 +259,7 @@ class AgendamentoService:
         *,
         limit: int = 100,
         offset: int = 0,
+        include_deleted: bool = False,
     ) -> list[Agendamento]:
         """Lista agendamentos de um cliente.
 
@@ -267,6 +268,8 @@ class AgendamentoService:
             cliente_id: ID do cliente
             limit: Limite de resultados
             offset: Offset para paginação
+            include_deleted: A19 LGPD art. 18 V — se True, inclui soft-deletados.
+                Default False. Caller (router) garante gating admin DPO.
 
         Returns:
             Lista de agendamentos
@@ -278,6 +281,9 @@ class AgendamentoService:
             .limit(limit)
             .offset(offset)
         )
+        # A19: filtrar soft-deletados por default
+        if not include_deleted:
+            stmt = stmt.where(Agendamento.deleted_at.is_(None))
         return cast(list[Agendamento], db.execute(stmt).scalars().all())
 
     @staticmethod
@@ -286,6 +292,7 @@ class AgendamentoService:
         data: datetime.date,
         *,
         local: str | None = None,
+        include_deleted: bool = False,
     ) -> list[Agendamento]:
         """Lista agendamentos para uma data específica.
 
@@ -293,6 +300,8 @@ class AgendamentoService:
             db: Sessão do banco
             data: Data desejada
             local: Filtrar por local (opcional)
+            include_deleted: A19 LGPD art. 18 V — se True, inclui soft-deletados.
+                Default False. Caller (router) garante gating admin DPO.
 
         Returns:
             Lista de agendamentos
@@ -307,6 +316,10 @@ class AgendamentoService:
 
         if local:
             stmt = stmt.where(Agendamento.local == local)
+
+        # A19: filtrar soft-deletados por default
+        if not include_deleted:
+            stmt = stmt.where(Agendamento.deleted_at.is_(None))
 
         stmt = stmt.order_by(Agendamento.data_hora)
 
@@ -448,6 +461,7 @@ class AgendamentoService:
         foi removido junto com os duplicates por engano no sed.
 
         A26: Cache Redis 60s para reduzir carga DB em pico.
+        A19: soft-deletados (deleted_at IS NOT NULL) excluidos por default.
         """
         from app.models.agendamento import StatusAgendamento
         from app.services.agendamento_cache import (
@@ -464,6 +478,7 @@ class AgendamentoService:
             select(Agendamento)
             .where(
                 Agendamento.status == StatusAgendamento.AGENDADO,
+                Agendamento.deleted_at.is_(None),  # A19 LGPD
             )
             .order_by(Agendamento.data_hora)
         )
@@ -504,6 +519,7 @@ class AgendamentoService:
         Recriado em 2026-06-25 (E1.S4.T2 cleanup).
 
         A26: Cache Redis 60s para reduzir carga DB em pico.
+        A19: soft-deletados (deleted_at IS NOT NULL) excluidos por default.
         """
         import datetime as _dt
         from app.models.agendamento import StatusAgendamento
@@ -531,6 +547,7 @@ class AgendamentoService:
                 ),
                 Agendamento.data_hora >= agora,
                 Agendamento.data_hora <= proximas_24h,
+                Agendamento.deleted_at.is_(None),  # A19 LGPD
             )
             .order_by(Agendamento.data_hora)
         )

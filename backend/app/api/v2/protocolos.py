@@ -1,12 +1,15 @@
-"""GET /api/v2/protocolos — listagem com cursor pagination Relay-style (A24.3).
+"""GET /api/v2/protocolos — listagem com cursor pagination Relay-style (A24.3 + A19).
 
 API v2 quebra de v1:
 - offset/limit v1 -> cursor (opaco base64) v2
 - Envelope flat v1 -> envelope Relay v2
 
 LGPD art. 37: response NAO expoe PII (apenas IDs).
+LGPD art. 18 V (A19): soft-deleted (deleted_at IS NOT NULL) sao excluidos
+por default. Use `?include_deleted=true` para incluir (gated por DPO).
 
-Auth: X-API-Key (mesma v1). JWT sera adicionado em A24.x.
+Auth: X-API-Key (mesma v1). Para `?include_deleted=true` exige Bearer JWT
+com claim dpo=True (LGPD art. 41 - encarregado).
 """
 
 from __future__ import annotations
@@ -15,12 +18,15 @@ import logging
 from decimal import Decimal
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_cartorio_api_key
+from app.api.deps import (
+    assert_dpo_for_include_deleted,
+    require_cartorio_api_key,
+)
 from app.db import get_db
 from app.models.protocolo import Protocolo
 from app.services.cursor import encode_cursor
@@ -81,6 +87,7 @@ class ProtocolosV2Response(BaseModel):
     response_description="Lista de protocolos paginada.",
 )
 async def listar_protocolos_v2(
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     _api_key: Annotated[str, Depends(require_cartorio_api_key)],
     first: int = Query(default=20, ge=1, le=100, description="Max itens por pagina (1-100)."),
@@ -88,11 +95,29 @@ async def listar_protocolos_v2(
     status: str | None = Query(default=None, description="Filtro por status."),
     cliente_id: int | None = Query(default=None, description="Filtro por cliente_id."),
     tipo: str | None = Query(default=None, description="Filtro por tipo."),
+    include_deleted: bool = Query(
+        default=False,
+        description=(
+            "A19 LGPD: incluir protocolos soft-deletados (deleted_at IS NOT NULL). "
+            "EXIGE Bearer JWT com claim dpo=True (LGPD art. 41 - encarregado)."
+        ),
+    ),
 ) -> dict[str, Any]:
-    """Lista protocolos com cursor pagination (Relay-style)."""
+    """Lista protocolos com cursor pagination (Relay-style).
+
+    A19: soft-deleted excluidos por default. Bypass via `?include_deleted=true`
+    requer JWT DPO (gate enforced em `assert_dpo_for_include_deleted`).
+    """
     from app.services.cursor import decode_cursor_safe
 
+    # Gate admin: ?include_deleted=true exige JWT dpo=True
+    assert_dpo_for_include_deleted(request, include_deleted)
+
     stmt = select(Protocolo).order_by(Protocolo.id.asc())
+
+    # A19 LGPD art. 18 V: excluir soft-deletados por default
+    if not include_deleted:
+        stmt = stmt.where(Protocolo.deleted_at.is_(None))
 
     if status:
         stmt = stmt.where(Protocolo.status == status)
