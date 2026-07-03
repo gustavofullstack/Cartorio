@@ -207,6 +207,35 @@ FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
    re-numerar minha migration para `0019` com `down_revision="0018"`.
    Validar com `importlib.util.spec_from_file_location` antes de
    commitar.
+5. **Test de migration com `op.execute(f"...")` raw SQL NAO usa regex
+   no file content** — table names sao Python f-string vars, NAO aparecem
+   como texto literal. Pattern canonico: load migration as module via
+   `importlib.util.spec_from_file_location()` + assert em module-level
+   constants (`module.TABLES_WITH_UPDATED_AT`) + assert em
+   `inspect.getsource(module.upgrade)` para substrings literais
+   (`"DROP TRIGGER IF EXISTS"`, `"CREATE OR REPLACE FUNCTION"`, etc).
+
+   ```python
+   import importlib.util, inspect
+
+   spec = importlib.util.spec_from_file_location(
+       "m", Path(__file__).parent / "alembic/versions/<file>.py"
+   )
+   m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+
+   # Asser em module-level constants (tabelas, etc)
+   assert len(m.TABLES_WITH_UPDATED_AT) == 8
+   assert set(m.TABLES_WITH_UPDATED_AT) == {...}
+
+   # Asser em substrings literais dentro do upgrade/downgrade
+   up = inspect.getsource(m.upgrade)
+   assert "DROP TRIGGER IF EXISTS" in up
+   assert "CREATE TRIGGER" in up
+   ```
+
+   Pitfall canonico: regex `re.findall(r"DROP TRIGGER IF EXISTS\s+\w+", content)`
+   retorna 0 matches porque o table name esta dentro do f-string var
+   `{trigger_name}` — texto literal NAO tem o nome da tabela.
 
 ---
 
@@ -238,3 +267,27 @@ FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
 - `A15-connection-pool.md` — SQLAlchemy pool tuning (20/10/3600/30 + Prometheus)
 - `A18-audit.md` — auditoria DB prod: 8 tabelas com `updated_at`, 0 triggers (pre-0019)
 - `A18-update-at-trigger.md` — migration `0019` idempotente + 17 tests + LGPD art. 37
+### F01 mutation testing mutmut v3 (2026-07-02)
+Type: workflow-tooling
+
+Setup mutmut v3.6.0 em cartorio backend (substitui v2 do briefing, flag mudou `paths_to_mutate` -> `source_paths`).
+
+**Setup canon**:
+- `backend/setup.cfg` section `[mutmut]` com `source_paths` (newline separated), `also_copy=app/,mcp_server.py,alembic.ini` (dependencies para mutants/), `pytest_add_cli_args=--cov-fail-under=0` (override do gate 90%).
+- `backend/tests/test_mutation_gate.py` smoke (4 tests): setup cfg, version, gate parse, venv.
+- `backend/mutants/mutation_status.json` consumido pelo gate test (skip se ausente).
+- `.github/workflows/mutation-nightly.yml` cron 03:00 UTC (inativo por default — custo).
+
+**Baseline 2026-07-02** (1494/2121 processados, score 61.4% killed):
+- PASS (gate >=80%): crypto 89.1%, emolumento 93.3%, pii 95.8%, lgpd_anonimizacao 91.4%
+- FAIL com excecao: lgpd_consent 66.8%, lgpd_direito_esquecimento 51.2%, lgpd_export 40.4%, lgpd_relatorio 54.6%, redlock 61.3%
+- NOT RUN: audit.py (163 queued, timeout) — F01.1 follow-up
+
+**Pitfalls canon**:
+1. coverage 90% no pyproject trava mutmut (exit 1 antes de processar mutants) — sempre passar `--cov-fail-under=0`.
+2. also_copy=app/ obrigatorio (mutmut cria mutants/ isolado, sem app/ resolve).
+3. `app/services/lgpd/` package SEM `__init__.py` quebra mutmut (`Path.resolve(strict=True)`). Workaround: listar arquivos individuais (`app/services/lgpd_consent.py`).
+4. `tests_dir=` deprecated em v3 — usar `pytest_add_cli_args_test_selection`.
+5. Run baseline ~30min single-thread, ~10-15min com `--max-children 4` (Mac M-series).
+
+Detalhes: `.harness/reins/cartorio-dev/memory/F01-mutation-testing.md`.
