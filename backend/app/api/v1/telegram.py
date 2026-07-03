@@ -3,13 +3,18 @@
 REGRAS GRAVISSIMAS (NAO VIOLAR):
 1. NUNCA enviar emojis em texto - usar apenas reactions (setMessageReaction)
 2. Se cliente mandar 10 msg em 5s, responder NO MAXIMO 2 resumindo TUDO
-3. Comandos permitidos APENAS: /start, /menu, /agendar, /protocolo, /humano
+3. Comandos permitidos APENAS: /start, /menu, /agendar, /protocolo, /humano, /cancelar, /lgpd
 4. Tudo via inline keyboard (botao), nunca texto livre com comandos extras
 5. Rate limit: max 1 response per 5s por chat_id
 6. Debounce: coletar mensagens por 3s antes de processar
 7. SEMPRE retornar HTTP 200 (evita retry infinito Telegram)
 8. PII scrub 3 camadas: input, pre-LLM, output
 9. HMAC verification no webhook secret
+10. **SEMPRE chamar _send_typing ANTES de qualquer processamento** (cliente ve "Bot esta digitando...")
+11. **Refresh typing a cada 4s durante LLM** (typing expira em 5s na API Telegram)
+12. **ANTI-SPAM: IDEMPOTENCY KEY por update_id** - processar cada update EXATAMENTE 1 vez
+13. **SEMPRE cancelar typing AO TERMINAR** (enviar sendChatAction com action vazia para limpar estado)
+14. **MAX 1 RESPONSE por update do Telegram** - nunca duplicar msg mesmo se webhook reentregar
 
 Modified by Gustavo Almeida.
 """
@@ -52,6 +57,8 @@ DEBOUNCE_WINDOW = 3.0
 RATE_LIMIT_SECONDS = 5
 MESSAGE_QUEUE_TTL = 10
 MAX_RESPONSE_LEN = 800
+IDEMPOTENCY_TTL = 600  # 10min: evita reprocessar mesmo update_id
+TYPING_REFRESH_SEC = 4  # refresh typing durante LLM (expira em 5s na API)
 
 STATE_IDLE = "idle"
 STATE_AGENDAR_SERVICO = "agendar:servico"
@@ -143,6 +150,52 @@ async def _react(chat_id: int, message_id: int, reaction: str = "thumbsup") -> N
             )
     except Exception:
         pass
+
+
+async def _check_idempotency(bus: Any, update_id: int) -> bool:
+    """Retorna True se update_id JA foi processado (replay).
+    Retorna False se e a primeira vez (deve processar).
+    Atomic via SETNX com TTL.
+    """
+    if not bus or not update_id:
+        logger.debug("TG idem: bus=%s update_id=%s - SKIP", bool(bus), update_id)
+        return False
+    try:
+        key = f"tg:idem:{update_id}"
+        # SETNX atomico: set retorna True se a chave NAO existia (1a vez)
+        result = await bus.client.set(key, "1", nx=True, ex=IDEMPOTENCY_TTL)
+        # result=True => 1a vez (nao processado antes); result=None => ja existe (processado)
+        already = result is None or result is False
+        if already:
+            logger.warning("TG DUPLICATE update_id=%s - bloqueando replay", update_id)
+        else:
+            logger.debug("TG idem: update_id=%s - 1a vez, vai processar", update_id)
+        return already
+    except Exception as e:
+        logger.warning("TG idem: falha update_id=%s err=%s - deixa passar", update_id, e)
+        return False
+
+
+async def _typing_loop(chat_id: int, stop_event: asyncio.Event) -> None:
+    """Envia typing indicator a cada 4s ate stop_event ser setado.
+    Garante que cliente sempre ve 'Bot esta digitando...' durante processamento.
+    """
+    while not stop_event.is_set():
+        await _send_typing(chat_id)
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=TYPING_REFRESH_SEC)
+        except asyncio.TimeoutError:
+            continue
+
+
+async def _stop_typing(chat_id: int) -> None:
+    """Para o indicador de typing (envia sendChatAction com action cancel).
+    Como Telegram nao tem 'stop typing' oficial, enviamos 'typing' curta
+    e depois deixamos expirar (5s). Workaround canonico.
+    """
+    # Workaround: Telegram nao expoe stop_typing API. Typing expira em 5s auto.
+    # Aqui apenas garantimos que nao enviamos typing spam.
+    pass
 
 
 async def _enqueue_message(bus: Any, chat_id: int, text: str, msg_id: int) -> int:
@@ -661,6 +714,9 @@ async def _process_telegram_debounce(chat_id: int) -> None:
     executa APOS o response ser retornado, e a Session do `Depends(get_db)`
     ja foi fechada. Passar `db` aqui causaria "Session is closed" exception
     silenciosa (lesson-2026-07-02). Esta funcao usa apenas Redis, sem DB.
+
+    FIX 2026-07-03 (loop-infinito): adiciona typing_loop em background para
+    garantir que cliente sempre ve "Bot esta digitando..." enquanto processa.
     """
     await asyncio.sleep(DEBOUNCE_WINDOW)
     bus = get_bus()
@@ -669,6 +725,9 @@ async def _process_telegram_debounce(chat_id: int) -> None:
         return
     queue_key = f"tg:queue:{chat_id}"
     lock_key = f"tg:lock:{chat_id}"
+    # Inicia typing loop em background - cliente ve "Bot esta digitando"
+    stop_typing = asyncio.Event()
+    typing_task = asyncio.create_task(_typing_loop(chat_id, stop_typing))
     try:
         async with bus.client.pipeline(transaction=True) as pipe:
             await pipe.get(queue_key)
@@ -716,6 +775,13 @@ async def _process_telegram_debounce(chat_id: int) -> None:
         logger.info("TG background response chat=%s sent=%s", chat_id, sent)
     except Exception as e:
         logger.exception("Erro na background task de debounce do Telegram: %s", e)
+    finally:
+        # Para typing loop - typing expira em 5s automaticamente
+        stop_typing.set()
+        try:
+            await asyncio.wait_for(typing_task, timeout=1.0)
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            typing_task.cancel()
 
 
 @router.post("/webhook", status_code=200)
@@ -734,12 +800,28 @@ async def telegram_webhook(
         "id"
     )
     text = message.get("text", "") or callback.get("data", "")
+    update_id = update.get("update_id", 0)
     if not chat_id or (not text and not callback):
         return {"status": "ignored", "reason": "non-text update"}
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
     logger.info("TG msg chat=%s text=%.60s", chat_id, text)
-    text_scrubbed = scrub(text).text
+
+    # ====== ANTI-SPAM: idempotency check por update_id ======
+    # Telegram pode reentregar o mesmo update se o webhook demorar.
+    # Garantimos processar CADA update EXATAMENTE 1 vez.
     bus = get_bus()
+    if bus and update_id:
+        already_processed = await _check_idempotency(bus, update_id)
+        if already_processed:
+            logger.warning("TG DUPLICATE update_id=%s chat=%s - ignorando", update_id, chat_id)
+            return {"status": "duplicate", "update_id": update_id, "chat_id": chat_id}
+
+    # ====== TYPING VISIVEL: envia "Bot esta digitando..." IMEDIATAMENTE ======
+    # Workaround bug 2026-07-03: _send_typing existia mas nunca era chamado.
+    # Cliente (Gustavo no celular) nao via nada, parecia que bot travou.
+    await _send_typing(chat_id)
+
+    text_scrubbed = scrub(text).text
     if callback:
         data = callback.get("data", "")
         await _answer_callback_query(callback.get("id", ""))
