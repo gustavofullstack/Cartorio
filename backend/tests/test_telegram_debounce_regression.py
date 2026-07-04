@@ -113,16 +113,12 @@ async def test_debounce_processes_message_without_touching_db() -> None:
     # Mocks das funções que _process_telegram_debounce chama após o queue
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
         with patch("app.api.v1.telegram._resumir_mensagens", return_value=["oi"]):
-            with patch(
-                "app.api.v1.telegram._check_rate_limit", new=AsyncMock(return_value=True)
-            ):
+            with patch("app.api.v1.telegram._check_rate_limit", new=AsyncMock(return_value=True)):
                 with patch(
                     "app.api.v1.telegram._get_state",
                     new=AsyncMock(return_value={"state": "idle", "data": {}}),
                 ):
-                    with patch(
-                        "app.api.v1.telegram._clear_state", new=AsyncMock()
-                    ):
+                    with patch("app.api.v1.telegram._clear_state", new=AsyncMock()):
                         with patch(
                             "app.api.v1.telegram._call_fast_llm",
                             new=AsyncMock(return_value="ola"),
