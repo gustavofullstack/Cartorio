@@ -19,7 +19,9 @@ logging.basicConfig(
     force=True,
 )
 
-from fastapi import FastAPI  # noqa: E402
+from typing import Callable  # noqa: E402
+
+from fastapi import FastAPI, Request, Response  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.openapi.docs import get_redoc_html  # noqa: E402
 from fastapi.responses import HTMLResponse  # noqa: E402
@@ -360,6 +362,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next: Callable) -> Response:  # type: ignore[type-arg]
+    """Security enhancement (Sentinel): Adiciona HTTP Security Headers as respostas."""
+    response = await call_next(request)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response  # type: ignore[no-any-return]
 
 # Request context (audit metadata): popula request.state com request_id,
 # client_ip, user_agent, canal e timestamp. LGPD art. 37 exige registro
