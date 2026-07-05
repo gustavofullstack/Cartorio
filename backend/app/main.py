@@ -363,6 +363,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next: Callable) -> Response:  # type: ignore[type-arg]
     """Security enhancement (Sentinel): Adiciona HTTP Security Headers as respostas."""
@@ -372,6 +373,7 @@ async def add_security_headers(request: Request, call_next: Callable) -> Respons
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     return response  # type: ignore[no-any-return]
+
 
 # Request context (audit metadata): popula request.state com request_id,
 # client_ip, user_agent, canal e timestamp. LGPD art. 37 exige registro
