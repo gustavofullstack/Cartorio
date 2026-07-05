@@ -120,7 +120,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://cartorio_test:test_password@localhost:5432/cartorio_test
       REDIS_URL: redis://localhost:6379/0
-      APP_ENV: testing
+      APP_ENV: development
 
     steps:
       - name: Checkout
