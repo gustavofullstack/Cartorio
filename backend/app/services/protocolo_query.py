@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
 
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
@@ -76,6 +76,10 @@ def listar_protocolos_recentes_concluidos(
     stmt = (
         db.query(Protocolo)
         .join(Cliente, Protocolo.cliente_id == Cliente.id)
+        # ⚡ Bolt: added contains_eager to fix N+1 query problem.
+        # Since we are already joining `Cliente`, this loads the relationship eagerly
+        # and avoids one additional query per Protocolo.
+        .options(contains_eager(Protocolo.cliente))
         .filter(
             Protocolo.status == "concluido",
             Protocolo.updated_at >= cutoff,

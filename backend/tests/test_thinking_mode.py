@@ -223,6 +223,8 @@ async def test_chat_with_settings_reads_thinking_mode_from_settings():
     original_mode = settings.opencode_go_thinking_mode
     settings.opencode_go_thinking_mode = "adaptive"
     try:
+        settings.opencode_go_api_key = "testkey"
+        settings.opencode_go_base_url = "http://test"
         mock_response = _mock_llm_response()
         with patch("app.integrations.opencode_go.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -240,6 +242,8 @@ async def test_chat_with_settings_reads_thinking_mode_from_settings():
         assert payload.get("thinking") == {"type": "adaptive"}
     finally:
         settings.opencode_go_thinking_mode = original_mode
+        settings.opencode_go_api_key = ""
+        settings.opencode_go_base_url = ""
 
 
 @pytest.mark.asyncio
@@ -251,6 +255,8 @@ async def test_chat_with_settings_disabled_does_not_inject():
     original_mode = settings.opencode_go_thinking_mode
     settings.opencode_go_thinking_mode = "disabled"
     try:
+        settings.opencode_go_api_key = "testkey"
+        settings.opencode_go_base_url = "http://test"
         mock_response = _mock_llm_response()
         with patch("app.integrations.opencode_go.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -268,3 +274,5 @@ async def test_chat_with_settings_disabled_does_not_inject():
         assert "thinking" not in payload
     finally:
         settings.opencode_go_thinking_mode = original_mode
+        settings.opencode_go_api_key = ""
+        settings.opencode_go_base_url = ""

@@ -75,6 +75,9 @@ os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
 os.environ["LLM_DEFAULT_PROVIDER"] = "opencode_go"
 os.environ["LLM_FALLBACK_CHAIN"] = "opencode_go,openclaw"
 os.environ["OPENCODE_GO_MODEL"] = "minimax-m3"
+os.environ["APP_ENV"] = "development"
+os.environ["OPENCODE_GO_API_KEY"] = "testkey"
+os.environ["OPENCLAW_API_KEY"] = "testkey123"
 
 from app.config import get_settings  # noqa: E402
 
