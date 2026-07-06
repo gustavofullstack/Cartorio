@@ -17,7 +17,6 @@ Ou via Makefile:
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 import time
@@ -89,7 +88,7 @@ def main() -> int:
         print(f"  [{wf_id}] {wf_name} (active={wf_active})")
 
         if not wf_active:
-            print(f"    SKIP: workflow inativo")
+            print("    SKIP: workflow inativo")
             results.append({"id": wf_id, "name": wf_name, "status": "skipped", "reason": "inactive"})
             continue
 

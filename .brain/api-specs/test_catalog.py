@@ -1,12 +1,10 @@
 """Testes do API Endpoints Catalog (BRAIN2)."""
 from __future__ import annotations
 
-import pytest  # noqa: E402
 
 from brain.api_specs.catalog import (  # noqa: E402
     API_ENDPOINTS,
     API_V2_ENDPOINTS,
-    ApiEndpoint,
     get_all_endpoints,
     get_endpoints_by_tag,
     get_endpoints_by_version,

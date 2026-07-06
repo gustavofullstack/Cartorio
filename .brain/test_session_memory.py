@@ -1,9 +1,7 @@
 """Testes do Session Memory Template (BRAIN6)."""
 from __future__ import annotations
 
-import re
 
-import pytest  # noqa: E402
 
 from brain.session_memory import (  # noqa: E402
     SessionSummary,

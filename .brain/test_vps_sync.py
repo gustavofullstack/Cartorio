@@ -1,7 +1,6 @@
 """Testes do VPS Sync Catalog (BRAIN4)."""
 from __future__ import annotations
 
-import pytest  # noqa: E402
 
 from brain.vps_sync import (  # noqa: E402
     BACKUP_PATHS,

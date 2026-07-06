@@ -102,7 +102,7 @@ def main():
         time.sleep(2)
         r = s.get(f"{BASE}/rest/workflows/{m['id']}", timeout=15).json()
         if r.get("code") == 404:
-            print(f"  Owner não tem acesso")
+            print("  Owner não tem acesso")
         else:
             d = r["data"]
             wid = d["id"]

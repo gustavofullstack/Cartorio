@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Mock generator for LGPD-safe development data."""
 import random
-import string
 
 def fake_cpf():
     return f"{random.randint(100,999)}.{random.randint(100,999)}.{random.randint(100,999)}-{random.randint(10,99)}"

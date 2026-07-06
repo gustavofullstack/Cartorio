@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Corrige o workflow 27 - Welcome First Time que retorna 500 por falta de respondToWebhook."""
 
-import json
 import sys
 import time
 
