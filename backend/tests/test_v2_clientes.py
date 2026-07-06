@@ -40,33 +40,40 @@ def _decode_cursor(cursor: str) -> dict:
 
 @pytest.fixture
 def test_engine():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    yield engine
-    Base.metadata.drop_all(engine)
+    """Engine SQLite in-memory para os testes desta suite.
+
+    Reaproveita o autouse do conftest para evitar isolamento por teste
+    (cada ``:memory:`` novo seria um DB vazio sem o ``StaticPool`` garantir
+    a mesma conexao). Aqui usamos o engine global do ``app.db`` que ja foi
+    substituido pelo autouse para SQLite com tabelas criadas.
+    """
+    import app.db as appdb
+
+    return appdb.engine
 
 
 @pytest.fixture
 def test_session_factory(test_engine):
-    return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
+    import app.db as appdb
+
+    return appdb.SessionLocal
 
 
 @pytest.fixture
 def client(test_engine, test_session_factory):
-    """TestClient que substitui engine e sessao do app por SQLite in-memory."""
-    with (
-        patch("app.db.engine", test_engine),
-        patch("app.db.SessionLocal", test_session_factory),
-        patch("app.main.engine", test_engine),
-    ):
-        from app.main import app
+    """TestClient que usa o engine SQLite ja configurado pelo conftest autouse.
 
-        with TestClient(app) as c:
-            yield c
+    O autouse ``_patch_db_session_for_all_tests`` ja substitui
+    ``app.db.SessionLocal`` / ``app.db.get_db`` por funcoes que apontam para
+    o mesmo engine SQLite in-memory usado nos fixtures deste test. Portanto
+    nao precisamos patchar nada - basta importar o app e usar TestClient.
+    O lifespan do app ira chamar ``Base.metadata.create_all(engine)`` no
+    engine ja preparado (com tabelas vazias no inicio de cada teste).
+    """
+    from app.main import app
+
+    with TestClient(app) as c:
+        yield c
 
 
 @pytest.fixture

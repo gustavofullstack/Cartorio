@@ -4,6 +4,7 @@ import os
 import builtins as _builtins
 import warnings as _w_mod
 from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 import pytest
@@ -130,6 +131,73 @@ def db_session(monkeypatch) -> Iterator[Session]:
     finally:
         session.close()
         Base.metadata.drop_all(eng)
+
+
+@pytest.fixture(autouse=True)
+def _patch_db_session_for_all_tests():
+    """AUTUSE: patcha app.db.session_scope + SessionLocal para usar
+    SQLite in-memory com TODAS as tabelas criadas.
+
+    Sem isso, AuditService.log_system_action() durante lifespan shutdown
+    falha com 'no such table: audit_log' (a engine global aponta para
+    postgres de prod que nao existe em CI/test).
+
+    Workaround 2026-07-06: aplica o patch em TODOS os testes, nao
+    somente quando db_session fixture é solicitada.
+    """
+    import app.db as appdb
+
+    # FORCAR import de TODOS models ANTES do create_all
+    from app.models.audit_log import AuditLog  # noqa: F401, PLC0415
+    from app.models.protocolo import Protocolo  # noqa: F401, PLC0415
+    from app.models.documento import Documento  # noqa: F401, PLC0415
+    from app.models.conversa import Conversa  # noqa: F401, PLC0415
+    from app.models.atendimento import Atendimento  # noqa: F401, PLC0415
+    from app.models.agendamento import Agendamento  # noqa: F401, PLC0415
+    from app.models.webhook_event import WebhookEvent  # noqa: F401, PLC0415
+    from app.models.outbox_message import OutboxMessage  # noqa: F401, PLC0415
+
+    eng = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(eng)
+    NewSL = sessionmaker(bind=eng, autoflush=False, autocommit=False, expire_on_commit=False)
+
+    @contextmanager
+    def patched_scope() -> Iterator[Session]:
+        db = NewSL()
+        try:
+            yield db
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+
+    def patched_get_db() -> Iterator[Session]:
+        db = NewSL()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    # Substituir os objetos no modulo app.db
+    original_scope = appdb.session_scope
+    original_get_db = appdb.get_db
+    original_sessionlocal = appdb.SessionLocal
+    appdb.session_scope = patched_scope
+    appdb.get_db = patched_get_db
+    appdb.SessionLocal = NewSL
+    appdb.engine = eng
+    try:
+        yield
+    finally:
+        appdb.session_scope = original_scope
+        appdb.get_db = original_get_db
+        appdb.SessionLocal = original_sessionlocal
 
 
 @pytest.fixture(autouse=True)

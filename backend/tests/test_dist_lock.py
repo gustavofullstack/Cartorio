@@ -2,7 +2,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from app.services.dist_lock import lock, try_lock, release_lock, LockAcquireError
+from app.services.dist_lock import lock, try_lock
 
 
 @pytest.mark.asyncio
