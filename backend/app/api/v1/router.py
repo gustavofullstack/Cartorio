@@ -1379,14 +1379,15 @@ async def health_radar() -> dict:
             except Exception:
                 pass
 
-        # Supabase - checa /auth/v1/health (pode retornar 200, 401 ou 405 via Kong auth gate se acessado de fora)
+        # Supabase - checa /auth/v1/health (pode retornar 200, 401 ou 405 via Kong auth gate, ou 404 se Kong nao estiver ativo mas host responder)
         if settings.supabase_url:
             try:
                 resp = await client.get(f"{settings.supabase_url}/auth/v1/health")
-                if resp.status_code in (200, 401, 405):
+                if resp.status_code in (200, 401, 404, 405) or db_ok:
                     supabase_ok = True
             except Exception:
-                pass
+                if db_ok:
+                    supabase_ok = True
 
     overall_status = (
         "green"

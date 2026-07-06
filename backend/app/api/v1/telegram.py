@@ -859,7 +859,7 @@ async def telegram_webhook(
     # ====== TYPING VISIVEL: envia "Bot esta digitando..." IMEDIATAMENTE ======
     # FIX v2: _send_typing_fast = fire-and-forget, nao bloqueia webhook.
     # Antes: await _send_typing (criava client novo, ~500ms overhead)
-    _send_typing_fast(chat_id)
+    asyncio.create_task(_send_typing_fast(chat_id))
 
     text_scrubbed = scrub(text).text
     if callback:
