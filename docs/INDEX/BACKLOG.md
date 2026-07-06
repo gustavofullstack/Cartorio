@@ -32,3 +32,13 @@
 ## TOTAL: 317/444 (71.4% OPEN)
 
 Modified by ZCode/Mavis + Gustavo Almeida — 2026-07-06 17:50 BRT
+
+## v22 NOVO — Descobertas
+
+- ❌ N8N service removido Swarm (investigar)
+- 🔴 crwal4ai health endpoint não responde (porta?)
+- ✅ DB_POOL_SIZE 10 → 25 (FEITO v22)
+- ✅ dist_lock.py Redlock (FEITO v22)
+- ✅ backup cron real (FEITO v22)
+- ✅ 2 materialized views SQL (FEITO v22)
+- ✅ 28 tests novos (23 LGPD + 5 dist_lock)

@@ -38,3 +38,20 @@
 - Decisão Gustavo: manter ou trocar?
 
 Modified by ZCode/Mavis + Gustavo Almeida — 2026-07-06 17:50 BRT
+
+## 🚨 v22 NOVO — N8N REMOVIDO DO SWARM
+
+### B7. cartorio_n8n service inexistente
+- **Sintoma**: `docker service ls | grep n8n` retorna vazio
+- **Radar health**: reporta `n8n: offline` desde quando? Verificar logs
+- **Impacto**: workflows N8N (Telegram bot webhook, WhatsApp handoff Chatwoot, BRAIN tasks) podem estar quebrados
+- **Ação**: recriar service via Easypanel OU documentar como removido de propósito
+- **Investigação**: verificar `~/.easypanel/projects/cartorio/` para config preservada
+
+## 🟡 v22 NOVO — crwal4ai health 000
+
+### B8. crwal4ai health endpoint não responde
+- **Sintoma**: docker exec curl http://localhost:8000/health → 000 (timeout)
+- **Container status**: Up 4 days (healthy no docker healthcheck)
+- **Possível causa**: porta errada ou endpoint mudou
+- **Ação**: verificar docs do unclecode/crawl4ai

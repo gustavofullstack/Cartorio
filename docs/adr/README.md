@@ -1,7 +1,7 @@
 # ADRs - Architectural Decision Records
 
 > **Decisoes arquiteturais do projeto Cartorio Chatbot, em ordem cronologica.**
-> Total: 23 ADRs (2026-06-23 ao 2026-06-24).
+> Total: 26 ADRs (2026-06-23 ao 2026-07-06).
 > Formato: [MADR](https://adr.github.io/madr/) simplificado (Contexto, Decisao, Consequencias, Alternativas).
 
 ## Indice por data
@@ -18,6 +18,9 @@
 | 021 | 2026-06-24 | [Pre-deploy config validation](./021-pre-deploy-config-validation.md) | Aceito |
 | 022 | 2026-06-24 | [Rate limit DDoS por IP](./022-rate-limit-ddos-by-ip.md) | Aceito |
 | 023 | 2026-06-24 | [CNS/CNH check-digit](./023-cns-cnh-check-digit.md) | Aceito |
+| 024 | 2026-06-24 | [Pydantic strict future](./024-pydantic-strict-future.md) | Aceito |
+| 025 | 2026-06-24 | [IP truncation LGPD D5](./025-ip-truncation-lgpd-d5.md) | Aceito |
+| 026 | 2026-07-06 | [app.core redis client async](./026-app-core-redis-client.md) | Aceito |
 
 ## Indice por tema
 
@@ -25,6 +28,8 @@
 - **018** Delete cliente LGPD (soft delete + audit)
 - **019** Retencao 5 anos (tabela_emolumento + audit_log)
 - **023** CNS/CNH check-digit (LGPD art. 11 - dado sensivel)
+- **025** IP truncation LGPD D5 (dual-column: ip + ip_truncated)
+- **026** app.core redis_client (singleton async, graceful degradation)
 
 ### Seguranca
 - **017** Credential rotation policy (sem rotacao forcada)
@@ -106,4 +111,4 @@ O que decidimos fazer. Seja ESPECIFICO (nao "usar Redis", mas "usar Redis 7 com 
 3. **Em code review**: ADRs sao a FONTE DA VERDADE para o "por que" de cada decisao
 4. **ADRs NAO sao para refactor** - use o CHANGELOG para isso
 
-Modified by ZCode/Mavis - 2026-06-24
+Modified by Gustavo Almeida — 2026-07-06
