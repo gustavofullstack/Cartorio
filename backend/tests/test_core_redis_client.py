@@ -15,7 +15,6 @@ import pytest
 async def test_get_redis_graceful_when_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
     """get_redis() retorna None quando redis.asyncio não disponível."""
     import sys
-    import importlib
 
     # Garante reload do módulo (reset singleton)
     if "app.core.redis_client" in sys.modules:

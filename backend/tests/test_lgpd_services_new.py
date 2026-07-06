@@ -6,7 +6,6 @@ Cobre stubs com comportamento determinístico (LGPD Art. 12, 18).
 from __future__ import annotations
 
 import json
-import pytest
 
 
 class TestOpposition:
