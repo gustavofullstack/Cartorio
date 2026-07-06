@@ -70,6 +70,7 @@ def test_direito_esquecimento_com_protocolos_soft_delete() -> None:
     db.execute.return_value.scalar.return_value = 3
 
     cliente = MagicMock()
+    cliente.deleted_at = None  # não está soft-deletado ainda
     cliente.cpf_hash = "abcdef0123456789abcdef0123456789"
     cliente.telefone_hash = "def"
     cliente.email = "test@x.com"
