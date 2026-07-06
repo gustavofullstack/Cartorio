@@ -8,6 +8,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-06)
 
 ### Por data (consolidado)
+- **2026-07-06** (Lesson 145 — Relatório quinzenal PDF+PPTX v3 ULTRA: 4 sections novas + animações CSS + 27 providers + timeline HH:MM): ver `.harness/memory/lesson-145-quinzenal-report-v3-ultra-2026-07-06.md`
 - **2026-07-06** (Lesson 144 — Fix 10+ páginas quebradas do PDF v2: charts SVG→PNG, font hardcoded, page-break): ver `.harness/memory/lesson-144-fix-broken-pages-2026-07-06.md`
 - **2026-07-06** (Lesson 143 — Relatório quinzenal v2 com logo TriQ Hub oficial + 4 SVGs + 4 apêndices): ver `.harness/memory/lesson-143-quinzenal-report-v2-2026-07-06.md`
 - **2026-07-06** (Lesson 142 — Relatório quinzenal PDF+PPTX para Felipe/Djalma v1): ver `.harness/memory/lesson-142-quinzenal-report-2026-07-06.md`

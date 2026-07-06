@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "gerado_em": "2026-07-06T09:26:53.867059",
+    "gerado_em": "2026-07-06T13:25:00.000000",
     "periodo": {
       "inicio": "2026-06-22",
       "fim": "2026-07-06"
@@ -10,7 +10,19 @@
       "Djalma Pizarro"
     ],
     "autor": "Gustavo Almeida + Equipe de Desenvolvimento Cartório Bot",
-    "cartao_projeto": "2º Serviço Notarial de Uberlândia"
+    "cartao_projeto": "2º Serviço Notarial de Uberlândia",
+    "versao_relatorio": "v3 ULTRA",
+    "total_paginas_pdf": 75,
+    "total_secoes": 37,
+    "novidades_v3": [
+      "providers-catalogo (27 providers FREE com status visual)",
+      "timeline-minuto (850 commits + 148 session events HH:MM)",
+      "prompt-vs-real (14 divergências PROMPT.MD × Realidade)",
+      "roadmap-visual (84.2% global + 9 blocos + 3 próximas sprints)",
+      "animações CSS (7 keyframes + delays escalonados)",
+      "page numbering CSS @page (X / 75 em todas as páginas)"
+    ],
+    "lesson": 145
   },
   "git": {
     "commits_total": 854,

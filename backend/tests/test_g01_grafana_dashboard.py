@@ -180,20 +180,22 @@ def test_no_pii_in_any_query(dashboard: dict) -> None:
 
 
 # Match plausible Prometheus metric names (snake_case with prefix).
-_METRIC_TOKEN = re.compile(r"\b([a-z][a-z0-9_]+?)(?:\{|\(|\s|$|_count|_sum|_total|_bucket)")
+_METRIC_TOKEN = re.compile(r"\b([a-z][a-z0-9_]+)\b")
 
 
 def _extract_metric_names(query: str) -> set[str]:
     """Extract plausible metric names from a PromQL query.
 
-    Conservative: only matches strings followed by { or ( or whitespace or a
-    known suffix (_count, _sum, _total, _bucket). This avoids false positives
-    on label names like 'endpoint' or 'tipo_scrub'.
+    Filters out known PromQL keywords and dashboard label names.
     """
     candidates: set[str] = set()
+    ignored_tokens = {
+        "by", "sum", "rate", "histogram_quantile",
+        "endpoint", "status", "tipo_scrub",
+    }
     for match in _METRIC_TOKEN.finditer(query):
         token = match.group(1)
-        if token.startswith("__") or token in {"by", "sum", "rate", "histogram_quantile"}:
+        if token.startswith("__") or token in ignored_tokens:
             continue
         candidates.add(token)
     return candidates
