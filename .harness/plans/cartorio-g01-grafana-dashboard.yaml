@@ -1,0 +1,170 @@
+version: 1
+plan:
+  name: cartorio-g01-grafana-dashboard
+  max_concurrency: 1
+  max_consecutive_failures: 2
+  max_cycles: 2
+  auto_accept: true
+  auto_reject_retries: 1
+  verifier_config:
+    default_verifiers:
+      - verifier
+    audit_sample_rate: 0
+    strict_mode: false
+tasks:
+  - id: g01-grafana-dashboard-12-panels
+    title: "G01 Grafana dashboard 12 panels latência/error/CPU/RAM/disk"
+    prompt: >
+      TASK G01 do Squad G (Hardening Prod SRE) — Cartório 2notas.
+
+      CONTEXTO: API FastAPI em produção contra Supabase Postgres.
+      Observability atual é ad-hoc (logs docker + Sentry sob demanda).
+      Falta um dashboard central que mostra saúde operacional de um
+      olhar — latência API, error rate, throughput, saturação de
+      recursos (CPU/RAM/disk), filas Bull.
+
+      OBJETIVO: Provisionar 1 dashboard Grafana com 12 panels cobrindo
+      SLI/SLO primários: latência (p50/p95/p99) por endpoint, error
+      rate 4xx/5xx, requests/min, CPU/RAM container api, disk usage,
+      Redis queue depth. Datasource Prometheus já em uso pelo
+      dead-man-switch (A13) — reaproveitar.
+
+      PASSOS:
+
+      1. **Auditoria A02 + Grafana existing**:
+         - A02 (logs estruturados) já está DONE — correlacionar
+           metric_name labels (latency_api_ms_bucket, error_4xx_total,
+           etc) para nomes de metric Prometheus
+         - Verificar se Grafana já está deployed em algum lugar do
+           Swarm (pode existir alias easypanel→grafana?)
+         - Se NÃO existe Grafana deployed: documentar blocker e
+           propor F01.5-fallback = dashboard Grafana Cloud free
+           tier OU `docker-compose.yml` Grafana+Prometheus local
+         - Se existe: descobrir URL + auth method
+
+      2. **Provision datasource Prometheus**:
+         - API expõe `/metrics` (já existe, usado por A13 audit
+           dead-man-switch)
+         - Datasource: Prometheus URL = http://prometheus:9090 (se
+           Swarm internal) OU criar via provisioning YAML
+           (Grafana provisioner aceita YAML files em
+           /etc/grafana/provisioning/datasources/)
+
+      3. **12 Panels** (1 dashboard JSON file commited):
+
+         **Painel 1**: Latência p50 API (line, 5min window)
+         - Query: `histogram_quantile(0.5,
+           sum(rate(latency_api_ms_bucket[5m])) by (le, endpoint))`
+
+         **Painel 2**: Latência p95 API (line, 5min window)
+         - Query: `histogram_quantile(0.95,
+           sum(rate(latency_api_ms_bucket[5m])) by (le, endpoint))`
+
+         **Painel 3**: Latência p99 API (line, 5min window)
+         - Query: `histogram_quantile(0.99,
+           sum(rate(latency_api_ms_bucket[5m])) by (le, endpoint))`
+
+         **Painel 4**: Error rate 4xx (line, requests/s por status)
+         - Query: `sum(rate(http_requests_total{status=~"4.."}[5m]))
+           by (endpoint)`
+
+         **Painel 5**: Error rate 5xx (line, requests/s por status)
+         - Query: `sum(rate(http_requests_total{status=~"5.."}[5m]))
+           by (endpoint)`
+         - Threshold alert: >0.01 sustained 5min (já coberto por G02)
+
+         **Painel 6**: Requests/min throughput (line)
+         - Query: `sum(rate(http_requests_total[1m])) * 60`
+
+         **Painel 7**: CPU usage container api (gauge)
+         - Query: `rate(container_cpu_usage_seconds_total{name=~"cartorio_api"}[5m]) * 100`
+         - Threshold: >80% sustained 10min
+
+         **Painel 8**: Memory usage container api (gauge)
+         - Query: `container_memory_usage_bytes{name=~"cartorio_api"}`
+         - Threshold: >90% container limit
+
+         **Painel 9**: Disk usage api container (gauge)
+         - Query: `container_fs_usage_bytes{name=~"cartorio_api"}`
+         - Threshold: >85% limit
+
+         **Painel 10**: Redis DBSIZE (single stat)
+         - Query: `redis_db_keys` (se exporter retornar) OU custom
+           exporter
+         - Mostra tendência Bull queue growth
+
+         **Painel 11**: Audit dead-man-switch (A13 status)
+         - Query: `audit_dead_mans_status` (já existe métrica A13)
+         - Threshold: 0 = degraded, 1 = OK
+
+         **Painel 12**: Uptime / health check status (single stat)
+         - Probe via blackbox_exporter OU manualmente via cron
+         - Shows: API up/down no último 24h, total downtime
+
+      4. **Provisioning file** (`deploy/grafana/dashboards/cartorio-overview.json`):
+         - Dashboard JSON commited no repo (não em runtime only)
+         - 12 panels acima
+         - Time range default: last 1h, refresh 30s
+         - Tags: `cartorio`, `prod`, `squad-g`
+
+      5. **Provisioning config** (`deploy/grafana/provisioning/dashboards/cartorio.yaml`):
+         - `apiVersion: 1`
+         - `providers: [{name: 'cartorio', folder: 'Cartório',
+           type: 'file', options: {path:
+           '/etc/grafana/provisioning/dashboards'}}]`
+
+      6. **Readme/MEMÓRIA** (`.harness/reins/cartorio-dev/memory/G01-grafana.md`):
+         - Lista panels com queries exatas
+         - Decision: provisioning via file (não API) — versionado
+         - Path do dashboard commited
+         - Hash do commit
+         - Decision: NÃO ativar em prod sem Gustavo GO (Lesson 110)
+         - Comando reproduzir (se standalone: `docker run -p 3000:3000
+           -v $PWD/deploy/grafana:/etc/grafana grafana/grafana`)
+
+      REGRAS DURAS:
+      - NUNCA rotacionar chaves
+      - NUNCA push sem Gustavo GO (Lesson 110) — commit local OK
+      - Conventional Commits (feat/ops/docs) terminando com
+        "Modified by Gustavo Almeida"
+      - ruff + mypy (se aplicável Python no exporter)
+      - Workflow canon: analisar → testar → corrigir → melhorar →
+        otimizar → documentar → comentar → salvar memória
+
+      TRATAMENTO DE BLODEIOS:
+      - Se Grafana ainda não deployed no Swarm: documentar + propor
+        G01.1 standalone via docker-compose local (NÃO prod). Aceito
+        APPROVED_WITH_NOTE.
+      - Se Prometheus URL não internal: usar Prometheus público
+        Cartório (se existir) OU provisionar local paralelo.
+      - Se queries não baterem com metric names reais da A02:
+        ajustar names OU usar `__name__="..."` glob patterns.
+
+      REPORTE ao root session mvs_6defd95d5f2941198c6ec8711264286f via
+      `mavis communication send --from <sua-session> --to
+      mvs_6defd95d5f2941198c6ec8711264286f --command prompt` ao terminar.
+      8 linhas: grafana_deployed, panels_count, panels_with_real_data,
+      dashboard_json_commited, provisioning_yaml_commited, query_source
+      (live/local), commit_hash, status.
+
+      Push gate: NAO push. Apenas commit local.
+    verify_prompt: >
+      Verifique G01: 1. Grafana provisioning em deploy/grafana/? 2.
+      Dashboard JSON cartorio-overview.json commited com 12 panels? 3.
+      Cada panel tem query Prometheus válida (parse-able PromQL)? 4.
+      Threshold alerts lógicos em painel 5 (5xx), 7 (CPU), 8 (RAM),
+      9 (disk)? 5. Dashboard time range default 1h + refresh 30s? 6.
+      Tags incluídas? 7. Memória G01-grafana.md criada com queries +
+      reproducer? 8. Conventional Commits + trailer "Modified by
+      Gustavo Almeida"? APROVADO = todos SIM. CAVEAT: se Grafana não
+      deployed no Swarm E standalone local não testável em prod,
+      aceitável APPROVED_WITH_NOTE documentando blocker + plano
+      G01.1 (Grafana+Prometheus docker-compose local).
+    assigned_to: users-gustavoalmeida-projetos-cartorio--cartorio-dev
+    role: produce
+    verified_by: verifier
+    depends_on: []
+    gates: []
+    max_retries: 2
+    timeout_ms: 18000000
+    hang_alert_after_ms: 7200000

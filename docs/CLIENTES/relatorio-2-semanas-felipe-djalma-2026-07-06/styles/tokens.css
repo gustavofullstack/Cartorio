@@ -1,0 +1,77 @@
+/* ===========================================================
+   TOKENS — Design system Cartório Premium Report
+   Fibonacci spacing · Linear minimalism · Glass mode
+   =========================================================== */
+
+:root{
+  /* --- Colors: full white glass mode --- */
+  --c-bg: #ffffff;
+  --c-bg-soft: #fafafa;
+  --c-bg-tint: #f5f5f7;
+  --c-fg: #0a0a0a;
+  --c-fg-muted: #6b7280;
+  --c-fg-subtle: #9ca3af;
+  --c-line: rgba(10, 10, 10, 0.06);
+  --c-line-strong: rgba(10, 10, 10, 0.12);
+
+  --c-accent: #0f172a;       /* Navy Cartório */
+  --c-accent-2: #1e3a8a;     /* Hover */
+  --c-accent-soft: rgba(15, 23, 42, 0.04);
+
+  --c-success: #047857;
+  --c-success-soft: rgba(4, 120, 87, 0.08);
+  --c-warn: #b45309;
+  --c-warn-soft: rgba(180, 83, 9, 0.08);
+  --c-danger: #b91c1c;
+  --c-danger-soft: rgba(185, 28, 28, 0.08);
+
+  --c-glass: rgba(255, 255, 255, 0.72);
+  --c-glass-border: rgba(15, 23, 42, 0.08);
+  --c-glass-shadow: rgba(15, 23, 42, 0.04);
+
+  /* --- Type scale (rem base 16) --- */
+  --fs-xs: 0.75rem;     /* 12px */
+  --fs-sm: 0.875rem;    /* 14px */
+  --fs-base: 1rem;      /* 16px */
+  --fs-md: 1.125rem;    /* 18px */
+  --fs-lg: 1.5rem;      /* 24px */
+  --fs-xl: 2rem;        /* 32px */
+  --fs-2xl: 2.625rem;   /* 42px */
+  --fs-3xl: 3.5rem;     /* 56px */
+  --fs-display: 4.625rem; /* 74px */
+
+  /* --- Fibonacci spacing --- */
+  --s-1: 0.5rem;        /* 8 */
+  --s-2: 0.8125rem;     /* 13 */
+  --s-3: 1.3125rem;     /* 21 */
+  --s-4: 2.125rem;      /* 34 */
+  --s-5: 3.4375rem;     /* 55 */
+  --s-6: 5.5625rem;     /* 89 */
+  --s-7: 9rem;          /* 144 */
+
+  /* --- Linear tokens --- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 13px;
+  --radius-lg: 21px;
+  --radius-xl: 34px;
+
+  --shadow-glass:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 8px 32px rgba(15, 23, 42, 0.04);
+  --shadow-card:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-elevated:
+    0 4px 16px rgba(15, 23, 42, 0.08),
+    0 16px 48px rgba(15, 23, 42, 0.12);
+
+  /* --- Layout --- */
+  --container-max: 89rem;
+  --container-pad: var(--s-3);
+
+  /* --- Page metrics (A4 portrait, 210mm × 297mm) --- */
+  --page-w: 210mm;
+  --page-h: 297mm;
+  --page-pad: var(--s-3);
+}

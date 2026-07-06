@@ -1,0 +1,15 @@
+{
+  "name": "relatorio-2-semanas-felipe-djalma-2026-07-06",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^23.11.1"
+  }
+}

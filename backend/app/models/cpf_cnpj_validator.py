@@ -76,6 +76,26 @@ def mask_cnpj(value: str) -> str:
     return "**.***.***/****-**"
 
 
+def validate_cpf_cnpj(value: str) -> bool:
+    """Composite validator (T010): aceita CPF (11) ou CNPJ (14) com DV correto.
+
+    Discrimina pelo comprimento apos strip de mascaras:
+        - 11 digitos -> validate_cpf
+        - 14 digitos -> validate_cnpj
+        - outro      -> False
+
+    Conforme Lesson 110 (Pydantic literal), esta funcao elimina a necessidade
+    de ramificacao client-side e centraliza a decisao por uma fonte unica.
+    Usada em LGPD review + integracao com Pydantic field_validator.
+    """
+    digits = _only_digits(value)
+    if len(digits) == 11:
+        return validate_cpf(digits)
+    if len(digits) == 14:
+        return validate_cnpj(digits)
+    return False
+
+
 __all__ = [
     "CPF_MASK",
     "CPF_PATTERN",
@@ -84,4 +104,5 @@ __all__ = [
     "mask_cpf",
     "validate_cnpj",
     "validate_cpf",
+    "validate_cpf_cnpj",
 ]

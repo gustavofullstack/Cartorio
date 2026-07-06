@@ -1,0 +1,61 @@
+/* ===========================================================
+   PRINT.CSS — A4 portrait · page-breaks · print-color-adjust
+   =========================================================== */
+
+@page{
+  size: A4 portrait;
+  margin: 0;
+}
+@page :first{ margin: 0; }
+
+@media print{
+  html, body{
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  .page{
+    width: 210mm;
+    height: 297mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: var(--s-4);
+    page-break-after: always;
+    break-after: page;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .page:last-of-type{
+    page-break-after: auto;
+    break-after: auto;
+  }
+  .no-print{ display: none !important; }
+  /* Strip blur in print — keep border + flat tint */
+  .card, .kpi, .glass, .tinted, .elevated, .bordered{
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: 1px solid var(--c-line) !important;
+  }
+  /* Subtle dot pattern via border for grid feel */
+  h2, h3, h4{ page-break-after: avoid; break-after: avoid; }
+  table, figure, .card, .keep-together, .timeline-event{
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .timeline-event{ page-break-inside: avoid; }
+  /* Text rendering clarity */
+  *{
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  }
+  /* Section anchors shouldn't show */
+  .anchor{ display: none; }
+  /* Force print backgrounds for status pills */
+  .badge.success{ background: var(--c-success-soft) !important; color: var(--c-success) !important; }
+  .badge.warn{ background: var(--c-warn-soft) !important; color: var(--c-warn) !important; }
+  .badge.danger{ background: var(--c-danger-soft) !important; color: var(--c-danger) !important; }
+  .badge.info{ background: var(--c-accent-soft) !important; color: var(--c-accent) !important; }
+}

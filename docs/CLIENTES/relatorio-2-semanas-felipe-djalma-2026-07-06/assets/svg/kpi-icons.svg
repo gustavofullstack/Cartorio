@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 80" font-family="Poppins, sans-serif" aria-label="Pictogramas KPI linear minimalista">
+  <style>
+    .stroke{ fill: none; stroke: #0f172a; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .fill{ fill: #0f172a; }
+    .label{ font-size: 9px; fill: #6b7280; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 500; }
+  </style>
+
+  <!-- TEST -->
+  <g transform="translate(0, 0)">
+    <g transform="translate(0, 12)">
+      <circle cx="20" cy="20" r="18" class="stroke"/>
+      <path d="M 14 20 L 18 24 L 26 16" class="stroke"/>
+    </g>
+    <text x="46" y="38" class="label">Testes</text>
+  </g>
+
+  <!-- COVERAGE -->
+  <g transform="translate(110, 0)">
+    <g transform="translate(0, 12)">
+      <circle cx="20" cy="20" r="18" class="stroke"/>
+      <path d="M 20 4 A 16 16 0 0 1 36 20 L 20 20 Z" class="fill"/>
+    </g>
+    <text x="46" y="38" class="label">Coverage</text>
+  </g>
+
+  <!-- LINT -->
+  <g transform="translate(220, 0)">
+    <g transform="translate(0, 12)">
+      <rect x="2" y="6" width="36" height="28" rx="4" class="stroke"/>
+      <line x1="8" y1="14" x2="32" y2="14" class="stroke"/>
+      <line x1="8" y1="20" x2="24" y2="20" class="stroke"/>
+      <line x1="8" y1="26" x2="20" y2="26" class="stroke"/>
+    </g>
+    <text x="46" y="38" class="label">Lint</text>
+  </g>
+
+  <!-- SERVICES -->
+  <g transform="translate(330, 0)">
+    <g transform="translate(0, 12)">
+      <rect x="2" y="2" width="16" height="16" rx="2" class="stroke"/>
+      <rect x="22" y="2" width="16" height="16" rx="2" class="stroke"/>
+      <rect x="2" y="22" width="16" height="16" rx="2" class="stroke"/>
+      <rect x="22" y="22" width="16" height="16" rx="2" class="stroke"/>
+    </g>
+    <text x="46" y="38" class="label">Serviços</text>
+  </g>
+
+  <!-- CHAIN -->
+  <g transform="translate(440, 0)">
+    <g transform="translate(0, 12)">
+      <circle cx="10" cy="20" r="6" class="stroke"/>
+      <circle cx="30" cy="20" r="6" class="stroke"/>
+      <line x1="16" y1="20" x2="24" y2="20" class="stroke"/>
+    </g>
+    <text x="46" y="38" class="label">Chain</text>
+  </g>
+
+  <!-- AUDIT -->
+  <g transform="translate(550, 0)">
+    <g transform="translate(0, 12)">
+      <rect x="4" y="4" width="32" height="32" rx="4" class="stroke"/>
+      <path d="M 12 14 L 28 14 M 12 20 L 28 20 M 12 26 L 22 26" class="stroke"/>
+    </g>
+    <text x="0" y="58" class="label">Audit</text>
+  </g>
+</svg>

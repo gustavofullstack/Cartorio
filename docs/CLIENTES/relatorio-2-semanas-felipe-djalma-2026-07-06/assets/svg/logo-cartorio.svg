@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" fill="none" aria-label="Cartório 2º Notas Uberlândia">
+  <!-- Wordmark minimalista: escrivaninha estilizada + texto -->
+  <g transform="translate(0, 12)">
+    <!-- Brasão geométrico linear -->
+    <rect x="0" y="6" width="40" height="40" rx="8" fill="#0f172a"/>
+    <path d="M 12 38 L 20 22 L 28 38 M 16 30 L 24 30" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="20" cy="18" r="3" fill="#ffffff"/>
+  </g>
+  <!-- Texto -->
+  <g transform="translate(56, 0)" font-family="Poppins, sans-serif" fill="#0a0a0a">
+    <text x="0" y="28" font-size="20" font-weight="700" letter-spacing="-0.4">2º Serviço Notarial</text>
+    <text x="0" y="50" font-size="13" font-weight="400" letter-spacing="0.3" fill="#6b7280">Uberlândia · MG</text>
+  </g>
+</svg>

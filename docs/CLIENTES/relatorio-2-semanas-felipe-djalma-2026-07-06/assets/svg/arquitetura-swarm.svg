@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 540" font-family="Poppins, sans-serif" aria-label="Diagrama 27 serviços Docker Swarm">
+  <style>
+    .layer-title{ font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; fill: #9ca3af; }
+    .node-title{ font-size: 11px; font-weight: 600; fill: #0a0a0a; }
+    .node-sub{ font-size: 9px; fill: #6b7280; }
+    .pill{ fill: #ffffff; stroke: rgba(15,23,42,0.12); stroke-width: 1; }
+    .pill-green{ fill: rgba(4,120,87,0.06); stroke: #047857; }
+    .pill-amber{ fill: rgba(180,83,9,0.06); stroke: #b45309; }
+    .pill-navy{ fill: rgba(15,23,42,0.06); stroke: #0f172a; }
+  </style>
+
+  <!-- Title -->
+  <text x="20" y="28" font-size="14" font-weight="700" fill="#0a0a0a">Arquitetura · 27 serviços Docker Swarm</text>
+  <text x="20" y="46" font-size="11" fill="#6b7280">VPS Hostinger · 187.77.236.77 · Tailscale 100.99.172.84</text>
+
+  <!-- LAYER 1 — Entrada / Webhook -->
+  <text x="20" y="80" class="layer-title">CANAL ENTRADA</text>
+  <g>
+    <rect class="pill" x="20" y="90" width="100" height="40" rx="6"/>
+    <text x="70" y="110" text-anchor="middle" class="node-title">Traefik</text>
+    <text x="70" y="124" text-anchor="middle" class="node-sub">SSL · routing</text>
+
+    <rect class="pill" x="140" y="90" width="100" height="40" rx="6"/>
+    <text x="190" y="110" text-anchor="middle" class="node-title">Evolution API</text>
+    <text x="190" y="124" text-anchor="middle" class="node-sub">WhatsApp · 2.3.7</text>
+
+    <rect class="pill" x="260" y="90" width="100" height="40" rx="6"/>
+    <text x="310" y="110" text-anchor="middle" class="node-title">Chatwoot</text>
+    <text x="310" y="124" text-anchor="middle" class="node-sub">CRM · 4.x</text>
+
+    <rect class="pill" x="380" y="90" width="100" height="40" rx="6"/>
+    <text x="430" y="110" text-anchor="middle" class="node-title">Telegram</text>
+    <text x="430" y="124" text-anchor="middle" class="node-sub">Webhook</text>
+  </g>
+
+  <!-- LAYER 2 — Orquestração -->
+  <text x="20" y="160" class="layer-title">ORQUESTRAÇÃO</text>
+  <g>
+    <rect class="pill-navy" x="20" y="170" width="220" height="50" rx="6"/>
+    <text x="130" y="193" text-anchor="middle" class="node-title">Cartório API · FastAPI v0.6.0</text>
+    <text x="130" y="208" text-anchor="middle" class="node-sub">100 paths · 24 tags · mypy=0 · ruff=0</text>
+
+    <rect class="pill" x="260" y="170" width="100" height="50" rx="6"/>
+    <text x="310" y="193" text-anchor="middle" class="node-title">N8N</text>
+    <text x="310" y="208" text-anchor="middle" class="node-sub">35 WFs · v2.27.4</text>
+
+    <rect class="pill" x="380" y="170" width="100" height="50" rx="6"/>
+    <text x="430" y="193" text-anchor="middle" class="node-title">OpenClaw</text>
+    <text x="430" y="208" text-anchor="middle" class="node-sub">agent gateway</text>
+  </g>
+
+  <!-- LAYER 3 — LLM Providers (11) -->
+  <text x="20" y="240" class="layer-title">CAMADA LLM · 11 PROVEDORES FALLBACK</text>
+  <g>
+    <rect class="pill-green" x="20" y="250" width="80" height="32" rx="6"/>
+    <text x="60" y="265" text-anchor="middle" class="node-title">opencode_go</text>
+    <text x="60" y="277" text-anchor="middle" class="node-sub">deepseek-v4</text>
+
+    <rect class="pill-green" x="110" y="250" width="80" height="32" rx="6"/>
+    <text x="150" y="265" text-anchor="middle" class="node-title">opencode_1</text>
+    <text x="150" y="277" text-anchor="middle" class="node-sub">nemotron</text>
+
+    <rect class="pill-green" x="200" y="250" width="80" height="32" rx="6"/>
+    <text x="240" y="265" text-anchor="middle" class="node-title">opencode_2</text>
+    <text x="240" y="277" text-anchor="middle" class="node-sub">mimo-2.5</text>
+
+    <rect class="pill-green" x="290" y="250" width="80" height="32" rx="6"/>
+    <text x="330" y="265" text-anchor="middle" class="node-title">opencode_3</text>
+    <text x="330" y="277" text-anchor="middle" class="node-sub">deepseek-v4</text>
+
+    <rect class="pill-amber" x="380" y="250" width="60" height="32" rx="6"/>
+    <text x="410" y="265" text-anchor="middle" class="node-title">mistral</text>
+    <text x="410" y="277" text-anchor="middle" class="node-sub">devstral</text>
+
+    <rect class="pill" x="450" y="250" width="50" height="32" rx="6"/>
+    <text x="475" y="265" text-anchor="middle" class="node-title">groq</text>
+    <text x="475" y="277" text-anchor="middle" class="node-sub">compound</text>
+
+    <rect class="pill" x="510" y="250" width="70" height="32" rx="6"/>
+    <text x="545" y="265" text-anchor="middle" class="node-title">openrouter</text>
+    <text x="545" y="277" text-anchor="middle" class="node-sub">multi</text>
+
+    <rect class="pill" x="590" y="250" width="70" height="32" rx="6"/>
+    <text x="625" y="265" text-anchor="middle" class="node-title">gemini</text>
+    <text x="625" y="277" text-anchor="middle" class="node-sub">3.5-flash</text>
+
+    <rect class="pill" x="670" y="250" width="50" height="32" rx="6"/>
+    <text x="695" y="265" text-anchor="middle" class="node-title">openclaw</text>
+    <text x="695" y="277" text-anchor="middle" class="node-sub">gateway</text>
+
+    <rect class="pill" x="730" y="250" width="40" height="32" rx="6"/>
+    <text x="750" y="265" text-anchor="middle" class="node-title">jules</text>
+    <text x="750" y="277" text-anchor="middle" class="node-sub">async</text>
+
+    <rect class="pill-navy" x="20" y="290" width="80" height="32" rx="6"/>
+    <text x="60" y="305" text-anchor="middle" class="node-title">antigravity</text>
+    <text x="60" y="317" text-anchor="middle" class="node-sub">gemini-3.1</text>
+  </g>
+
+  <!-- LAYER 4 — Observabilidade -->
+  <text x="20" y="350" class="layer-title">OBSERVABILIDADE</text>
+  <g>
+    <rect class="pill" x="20" y="360" width="90" height="40" rx="6"/>
+    <text x="65" y="378" text-anchor="middle" class="node-title">Langfuse</text>
+    <text x="65" y="392" text-anchor="middle" class="node-sub">tracing</text>
+
+    <rect class="pill" x="120" y="360" width="90" height="40" rx="6"/>
+    <text x="165" y="378" text-anchor="middle" class="node-title">Argilla</text>
+    <text x="165" y="392" text-anchor="middle" class="node-sub">feedback</text>
+
+    <rect class="pill" x="220" y="360" width="90" height="40" rx="6"/>
+    <text x="265" y="378" text-anchor="middle" class="node-title">AnythingLLM</text>
+    <text x="265" y="392" text-anchor="middle" class="node-sub">RAG</text>
+
+    <rect class="pill" x="320" y="360" width="90" height="40" rx="6"/>
+    <text x="365" y="378" text-anchor="middle" class="node-title">LiteLLM</text>
+    <text x="365" y="392" text-anchor="middle" class="node-sub">proxy · 17 mdls</text>
+
+    <rect class="pill" x="420" y="360" width="90" height="40" rx="6"/>
+    <text x="465" y="378" text-anchor="middle" class="node-title">Zeroclaw</text>
+    <text x="465" y="392" text-anchor="middle" class="node-sub">gateway 42617</text>
+  </g>
+
+  <!-- LAYER 5 — Persistência -->
+  <text x="20" y="430" class="layer-title">PERSISTÊNCIA</text>
+  <g>
+    <rect class="pill-navy" x="20" y="440" width="140" height="44" rx="6"/>
+    <text x="90" y="460" text-anchor="middle" class="node-title">Supabase</text>
+    <text x="90" y="474" text-anchor="middle" class="node-sub">134 tabelas · 60 funções</text>
+
+    <rect class="pill" x="170" y="440" width="100" height="44" rx="6"/>
+    <text x="220" y="460" text-anchor="middle" class="node-title">Redis 8</text>
+    <text x="220" y="474" text-anchor="middle" class="node-sub">cache · 1736 chaves</text>
+
+    <rect class="pill" x="280" y="440" width="90" height="44" rx="6"/>
+    <text x="325" y="460" text-anchor="middle" class="node-title">Open Notebook</text>
+    <text x="325" y="474" text-anchor="middle" class="node-sub">knowledge</text>
+
+    <rect class="pill" x="380" y="440" width="90" height="44" rx="6"/>
+    <text x="425" y="460" text-anchor="middle" class="node-title">LobeChat</text>
+    <text x="425" y="474" text-anchor="middle" class="node-sub">interface</text>
+  </g>
+
+  <!-- LAYER 6 — RAG / Crawl -->
+  <text x="20" y="510" class="layer-title">RAG / CRAWL</text>
+  <g>
+    <rect class="pill-amber" x="20" y="498" width="120" height="32" rx="6"/>
+    <text x="80" y="513" text-anchor="middle" class="node-title">crawl4ai</text>
+    <text x="80" y="525" text-anchor="middle" class="node-sub">typing-fix aplicado</text>
+
+    <rect class="pill" x="150" y="498" width="120" height="32" rx="6"/>
+    <text x="210" y="513" text-anchor="middle" class="node-title">Jules Async</text>
+    <text x="210" y="525" text-anchor="middle" class="node-sub">3-15min polling</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(560, 80)">
+    <text x="0" y="0" font-size="11" font-weight="600" fill="#0a0a0a">Status</text>
+    <rect x="0" y="10" width="12" height="12" fill="#ffffff" stroke="rgba(15,23,42,0.12)"/>
+    <text x="20" y="20" font-size="10" fill="#6b7280">UP · operacional</text>
+    <rect x="0" y="28" width="12" height="12" fill="rgba(4,120,87,0.06)" stroke="#047857"/>
+    <text x="20" y="38" font-size="10" fill="#6b7280">Primário/fallback ativo</text>
+    <rect x="0" y="46" width="12" height="12" fill="rgba(180,83,9,0.06)" stroke="#b45309"/>
+    <text x="20" y="56" font-size="10" fill="#6b7280">Atenção · revisar</text>
+    <rect x="0" y="64" width="12" height="12" fill="rgba(15,23,42,0.06)" stroke="#0f172a"/>
+    <text x="20" y="74" font-size="10" fill="#6b7280">Core · crítico</text>
+  </g>
+
+  <!-- Resource footer -->
+  <text x="20" y="538" font-size="10" fill="#6b7280">VPS: 4 CPU · 15 GiB RAM · 193 GB disco (32% usado) · 27 containers Swarm · 26/27 healthchecks · 8/8 serviços públicos GREEN</text>
+</svg>
