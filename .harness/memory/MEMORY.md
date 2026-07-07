@@ -1198,3 +1198,21 @@ Modified by Gustavo Almeida
 - Prod health: api 200, agent 200, api-health 200 (all UP)
 - 3 commits pushed: bff61e6 (auto-CI), f449ca5 (meu), cd95xxx
 - Modified by Gustavo Almeida + Antigravity (YOLO loop)
+
+## 2026-07-07 (Round 26 — GATE 90% ATINGIDO!)
+
+- test_telegram_state_machine.py (15 testes): _handle_state todos 5 estados
+- test_telegram_send.py (17 testes): _send_message + _send_poll/photo/document
+- Gate cobertura 90% ATINGIDO: 89.51% -> **90.58%** (+1.07pp)
+- 2202 -> 2234 pytest passing (+32)
+- Telegram.py: 59% -> ~75% (state machine + send message)
+- Gate volta de 88% -> 90% (objetivo)
+- ruff 0 erros + mypy 0 erros (122 source files)
+- Prod health: api 200, agent 200, api-health 200 (all UP)
+- Commit pushed: 2015086
+- Modified by Gustavo Almeida + Antigravity (YOLO loop)
+
+LECAO 2026-07-07: TDD state machine primeiro (RED -> GREEN -> REFACTOR) gera
+cobertura organica. _handle_state tem 5 branches, cada teste cobre 1 branch.
+Async context manager em _send_poll/photo/document exige classe _AsyncCtxMgr
+custom (MagicMock nao suporta __aenter__/__aexit__ sem config).
