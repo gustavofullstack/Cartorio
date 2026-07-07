@@ -61,7 +61,7 @@ def test_health_db_erro_retorna_503() -> None:
     @asynccontextmanager
     async def _fail_conn():
         raise Exception("DB down")
-        yield  # noqa: unreachable
+        yield  # noqa: F841, RUF052
 
     import app.db as appdb
 
@@ -124,7 +124,7 @@ def test_health_ready_503_quando_db_offline() -> None:
     @asynccontextmanager
     async def _fail_conn():
         raise Exception("DB down")
-        yield  # noqa: unreachable
+        yield  # noqa: F841, RUF052
 
     import app.db as appdb
 
