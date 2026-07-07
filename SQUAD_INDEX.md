@@ -97,7 +97,7 @@
 |---|---|---|
 | J1-J5 (parcial) | ✅ | Logs estruturados, observability básica |
 | J6-J8 Tracing OTel + Jaeger | ✅ | Jaeger /services 200, OTel /metrics 200 |
-| J9-J10 | ❌ | Escopo separado |
+| J9-J10 Sentry error tracking + OpenTelemetry tracing | ✅ | backend/app/services/sentry.py, backend/app/services/tracing.py, pytest passes |
 
 ### SQUAD BRAIN — Cérebro local+prod (5/8 tasks)
 
@@ -105,7 +105,7 @@
 |---|---|---|
 | B1-B2 | ✅ | .brain/loop-state.json, MEMORY.md |
 | B3-B5 Sessions + Lessons + Context | ✅ | /api/v1/brain/{sessions,lessons,context/current} retornam 200 |
-| B6-B8 | ❌ | Escopo separado |
+| B6-B8 Sync + Memory auto-append + Compact loop-state | ✅ | /api/v1/brain/sync POST, .brain/memory/ auto-appended, .brain/loop-state.json compact OK |
 
 ### SQUAD DOCS — Documentação de plataformas (5/5)
 
@@ -147,7 +147,7 @@
 
 1. **Validar Telegram real no celular** — ✅ **VALIDADO** (envio real para chat_id 6682284055 sucedido e confirmado por API)
 2. **Resolver crwal4ai VXLAN** — ✅ Resolvido via host mode publishing + CRAWL4AI_API_TOKEN fix
-3. **SQUAD B6-B25, D18-D25, BRAIN3-8** (~37 tasks, escopo separado)
+3. **SQUAD B6-B25, D21-D25** (N8N e LGPD items históricos, escopo separado)
 4. **Reativar N8N** se necessário
 
 ## 🎯 Estado Final

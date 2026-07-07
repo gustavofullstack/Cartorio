@@ -85,8 +85,8 @@ STATUS.md                                     ✅ Este arquivo
 3. **crwal4ai VXLAN swarm issue**
    - ✅ Resolvido via host mode publishing + CRAWL4AI_API_TOKEN fix
 
-4. **SQUAD A14-A25, B6-B15, D18-D25, DOCS1-5, BRAIN2-B7** (~37 tasks)
-   - Escopo separado, requer agentes paralelos + várias horas
+4. **SQUAD B6-B25, D21-D25** (N8N e LGPD items históricos, escopo separado)
+   - Escopo separado (N8N desativado pelo cliente, LGPD processuais)
 
 ## 🎯 Status Final
 
@@ -94,7 +94,7 @@ STATUS.md                                     ✅ Este arquivo
 ✅ Bot Telegram 100% funcional (envio real validado no celular)
 ✅ Aceite real do Gustavo (confirmado via API status OK)
 ✅ crwal4ai online (com token de autenticação via Tailscale)
-⚠️ 37 tasks dos squads (escopo separado)
+⚠️ Tasks residuais B6-B25 / D21-D25 (N8N desligado / LGPD policy)
 ```
 
 ---
