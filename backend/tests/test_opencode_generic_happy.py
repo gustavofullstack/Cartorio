@@ -43,7 +43,9 @@ from app.integrations.opencode_generic import (
 )
 
 
-def _make_response(status_code: int = 200, json_data: dict | None = None, text: str = "") -> MagicMock:
+def _make_response(
+    status_code: int = 200, json_data: dict | None = None, text: str = ""
+) -> MagicMock:
     """Cria mock de httpx.Response."""
     resp = MagicMock()
     resp.status_code = status_code
@@ -209,8 +211,19 @@ def test_get_config_for_desconhecido_retorna_none() -> None:
 
 def test_provider_dispatch_contem_todos_providers_principais() -> None:
     """PROVIDER_DISPATCH contem os providers principais."""
-    expected = {"opencode_go", "opencode_free_1", "opencode_free_2", "opencode_free_3",
-                "openrouter", "groq", "mistral", "google_ai_studio", "litellm", "jules", "openclaw"}
+    expected = {
+        "opencode_go",
+        "opencode_free_1",
+        "opencode_free_2",
+        "opencode_free_3",
+        "openrouter",
+        "groq",
+        "mistral",
+        "google_ai_studio",
+        "litellm",
+        "jules",
+        "openclaw",
+    }
     assert expected.issubset(set(PROVIDER_DISPATCH.keys()))
 
 

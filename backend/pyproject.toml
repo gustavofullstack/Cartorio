@@ -55,4 +55,11 @@ markers = [
     "smoke: integration tests against real infrastructure (requires SMOKE_TARGET=prod)",
     "integration: integration tests against real services (requires network access to VPS)",
     "e2e: end-to-end tests via Playwright (requires E2E_BASE_URL + chromium binary)",
+    "t024: regression test for retro-editing mid-chain",
+    "t025: test for HMAC key rotation",
+    "t036: test for retention of conversa >365d",
+    "t037: test for retention of conversa without client",
+    "t043: test for emolumento value below minimum",
+    "t044: test for emolumento value above teto",
+    "t045: test for emolumento isencao",
 ]
