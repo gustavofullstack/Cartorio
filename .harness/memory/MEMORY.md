@@ -1175,3 +1175,15 @@ Type: feedback + reference
 
 Modified by Gustavo Almeida
 - **2026-07-07** (Round 23 — cobertura SQUAD C + 30 testes + 2042 passing): conftest autouse re-bind engine/JWT_SECRET + LGPD A19 deleted_at): ver `.harness/memory/lesson-2026-07-07-conftest-engine-rebind-yolo-2026-07-07.md`
+
+## 2026-07-07 (Round 24 — cobertura SQUAD C extended)
+
+- test_brain_read_json.py (5 testes) + test_telegram_bus_helpers.py (16 testes) + test_integrations_dispatch.py (12 testes) + test_opencode_generic.py (11 testes) = **+44 testes novos**
+- 2042 -> 2093 pytest passing (+51)
+- Cobertura: 86.19% -> **87.65%** (gate 90% faltam 2.35% — ir via testes integration)
+- Jules: 48% -> 99% (commits bb852b0/be5a149 auto-aplicados por hook)
+- Opencode_generic: 0% -> 52%
+- Brain: ? -> 80%, Telegram helpers subiram 47% -> 48%
+- Health check prod: api 200, agent 200, whatsapp 301 (UP)
+- 4 commits pushed: bb852b0, be5a149, 965ab4b, 0fe421e
+- Modified by Gustavo Almeida + Antigravity (YOLO loop)
