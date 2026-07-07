@@ -1174,3 +1174,4 @@ Type: feedback + reference
 **Ref**: ~/.mcp/*/server.py (12 criados via loop simples)
 
 Modified by Gustavo Almeida
+- **2026-07-07** (Round 23 — cobertura SQUAD C + 30 testes + 2042 passing): conftest autouse re-bind engine/JWT_SECRET + LGPD A19 deleted_at): ver `.harness/memory/lesson-2026-07-07-conftest-engine-rebind-yolo-2026-07-07.md`
