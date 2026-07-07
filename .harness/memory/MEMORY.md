@@ -1174,3 +1174,9 @@ Type: feedback + reference
 **Ref**: ~/.mcp/*/server.py (12 criados via loop simples)
 
 Modified by Gustavo Almeida
+
+## L156 — OpenClaw 1M context FIX Validation (Jules)
+- Data: 2026-07-07
+- Contexto: Validado no codigo local, mas requer execucao SSH manual para aplicar no gateway
+- Tests: Atualizado backend/tests/test_openclaw_integration.py para garantir adaptive thinking
+- Acao: Gustavo (ou agente com SSH) deve rodar `scripts/fix_openclaw_context_1M.sh`

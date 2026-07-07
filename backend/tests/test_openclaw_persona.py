@@ -13,7 +13,8 @@ import re
 from pathlib import Path
 
 
-INFRA = Path("/Users/gustavoalmeida/projetos/Cartorio/infra/openclaw-agent/skills")
+_BASE = Path(__file__).parent.parent.parent
+INFRA = _BASE / "infra/openclaw-agent/skills"
 
 
 def test_skills_diretorio_existe() -> None:

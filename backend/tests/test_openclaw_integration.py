@@ -78,11 +78,11 @@ class TestOpenClawConfig:
         assert int(ctx) >= 131072, f"Context window muito pequeno: {ctx}"
 
     def test_opencode_go_thinking_enabled(self) -> None:
-        """Thinking mode deve estar habilitado."""
+        """Thinking mode deve estar habilitado como adaptive."""
         import os
 
-        thinking = os.environ.get("LLM_THINKING_ENABLED", "true")
-        assert thinking.lower() in ("true", "1", "yes")
+        thinking = settings.llm_thinking_mode
+        assert thinking == "adaptive"
 
 
 # ---------------------------------------------------------------------------
