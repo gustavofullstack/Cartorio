@@ -1312,3 +1312,32 @@ para controle total do tempo.
 
 _idempotencia_2x_mesmo_dia: rodar loop 3x com mesmo 'brazil_today' deve
 chamar run_retencao apenas 1x. Garante que nao duplica trabalho.
+
+## 2026-07-07 (Round 31 — redis_client + cobertura 91.17%)
+
+- test_redis_client.py (12 testes):
+  - get_redis lazy init + singleton reutiliza instancia
+  - get_redis nao chama from_url se singleton ja existe
+  - get_redis retorna None se from_url falha (Exception generica)
+  - get_redis retorna None se ImportError (redis[asyncio] nao instalado)
+  - get_redis usa REDIS_URL env var com kwargs (socket_connect_timeout=2, decode_responses=True)
+  - get_redis fallback redis://localhost:6379/0 quando REDIS_URL nao setado
+  - close_redis no-op quando None + fecha + reseta
+  - close_redis captura exception + ainda reseta _redis_client
+  - close_redis multiplas chamadas safe
+- 2302 -> 2314 pytest passing (+12)
+- Coverage: 91.10% -> 91.17% (+0.07pp)
+- Redis_client: 78% -> ~95%
+- ruff 0 erros + mypy 0 erros
+- Prod health: api 200, agent 200, api-health 200 (all UP)
+- Commit pushed: f11ec4b
+- Modified by Gustavo Almeida + Antigravity (YOLO loop)
+
+LECAO 2026-07-07: redis_client singleton com lazy init. Resetar _redis_client
+no fixture (autouse) antes/depois de cada test evita singleton 'contaminado'.
+
+Para ImportError no redis[asyncio]: patch builtins.__import__ para forcar
+raise ao importar 'redis.asyncio'. Util quando redis pode nao estar instalado.
+
+close_redis sempre reseta _redis_client=None mesmo com exception no aclose.
+Chamadas multiplas sao safe (segunda chamada = no-op).
