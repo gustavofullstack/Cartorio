@@ -1591,3 +1591,59 @@ Modified by Gustavo Almeida (via plan Mavis — cycle 140)
 }
 
 ```
+
+## 2026-07-07 — Session Antigravity (loop infinito YOLO)
+
+### Round 23 — Cobertura SQUAD C + fix test_v2_clientes + JWT_SECRET autouse
+
+**Diagnóstico inicial:**
+- git log: ba0d34c (test: add pytest fixes anterior)
+- Sprint 47 ativo (LiteLLM 7 providers)
+- 1211 pytest passando, **2 testes falhando**: test_v2_clientes + test_atendimento_historico_db_fallback
+- 1 erro fatal: `Settings.audit_hmac_key` < 32 chars (env vazio)
+
+**Ações realizadas:**
+1. **FIX test_atendimento_historico_db_fallback** (test_api.py)
+   - unique_external_id isolado para evitar colisão entre tests
+   - `db.flush()` + `db.commit()` explícitos
+
+2. **FIX test_v2_clientes** (10 testes)
+   - Renomeado `motivo_encerramento` → `deleted_at` (LGPD A19 soft-delete)
+   - Query param `include_encerrados` → `include_deleted` (canonical)
+   - JWT claims completas: `iss`/`jti`/`aud`/`typ` obrigatórios
+   - Render fixtures re-apontadas para `db_session`
+
+3. **FIX conftest.py** (rebind engine/SessionLocal)
+   - Tests que fazem `from app.db import engine` snapshot no import time
+   - **Solução**: autouse re-bind `engine`+`SessionLocal` em **todos** modulos `app.*`
+   - Antes: 1211 passing, **Depois**: 2012 passing
+
+4. **NEW conftest `_reset_jwt_secret` autouse**
+   - Tests como `test_auth_jwt::test_settings_jwt_secret_min_length` mutam env e quebram ordem
+   - Agora cada test tem JWT_SECRET canonico = "a"*64 + settings cache limpo
+
+5. **NOVOS TESTES** (30 testes novos, cobertura):
+   - `test_jules_integration.py` — 7 testes (LGPD_BLOCKED + CONFIG + HTTP_4XX + PII scrub)
+   - `test_telegram_helpers.py` — 9 testes (strip_emojis + keyboards + idempotency)
+   - `test_cache_lgpd_redis.py` — 14 testes (cache LGPD fail-open + redis_client async)
+
+### Métricas finais validadas
+- **2042 pytest passing** (zero falhas)
+- **ruff: 0 erros**
+- **mypy: 0 erros (122 source files)**
+- **coverage: 86.19%** (gate 90% — follow-up F5 com testes de integração)
+- **Jules: 17→48% (+31pp)**
+- **Telegram: 46→47%**
+- **cache_lgpd: 62→89% (+27pp)**
+- **redis_client: 67→78% (+11pp)**
+
+### Commits
+- `28098d3 test(squad-c): sobe cobertura Jules (17→48%), Telegram helpers, cache_lgpd+redis`
+- Pushed to origin master
+
+### Próximas tasks (SQUAD follow-up)
+- F5: cobertura 86→90% via testes de brain.py + opencode_generic.py
+- SQUAD A26+: dead man's switch tests + alert dedup
+- SQUAD D26+: retenção audit log integration
+
+Modified by Gustavo Almeida + Antigravity
