@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # ========================================================================
     # Aplicacao
     # ========================================================================
-    app_env: Literal["development", "staging", "production"] = "development"
+    app_env: Literal["development", "staging", "production", "testing"] = "development"
     app_name: str = "cartorio-backend"
     app_port: int = 8000
     log_level: str = "INFO"
