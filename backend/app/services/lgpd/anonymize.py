@@ -1,4 +1,5 @@
 """Anonimização irreversível de dados pessoais (LGPD Art. 12)."""
+
 from __future__ import annotations
 
 import hashlib
@@ -8,7 +9,7 @@ from typing import Any
 
 def anonymize_cpf(cpf: str) -> str:
     """CPF anonimizado preservando formato mas mascarando dígitos.
-    
+
     >>> anonymize_cpf("123.456.789-09")
     '***.***.***-09'
     """
@@ -22,7 +23,7 @@ def anonymize_cpf(cpf: str) -> str:
 
 def anonymize_email(email: str) -> str:
     """Email anonimizado preservando domínio.
-    
+
     >>> anonymize_email("fulano@example.com")
     'f***@example.com'
     """
@@ -36,7 +37,7 @@ def anonymize_email(email: str) -> str:
 
 def anonymize_phone(phone: str) -> str:
     """Telefone anonimizado preservando DDD.
-    
+
     >>> anonymize_phone("(34) 99876-5432")
     "(**) *****-5432"
     """

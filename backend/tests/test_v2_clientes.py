@@ -19,15 +19,10 @@ from __future__ import annotations
 import base64
 import json
 from datetime import datetime, timezone
-from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from app.models.base import Base
 from app.models.cliente import Cliente
 from sqlalchemy.orm import Session  # type: ignore[attr-defined]  # Session re-exported
 

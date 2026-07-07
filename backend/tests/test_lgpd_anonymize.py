@@ -1,4 +1,5 @@
 """Testes para anonimização PII (LGPD Art. 12)."""
+
 from app.services.lgpd.anonymize import (
     anonymize_cpf,
     anonymize_email,

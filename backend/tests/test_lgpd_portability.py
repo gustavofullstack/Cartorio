@@ -1,4 +1,5 @@
 """Testes para export de dados (LGPD Art. 18 V)."""
+
 from app.services.lgpd.portability import export_cliente_data, export_to_json
 
 

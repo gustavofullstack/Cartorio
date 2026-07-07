@@ -1,4 +1,5 @@
 """Cache Redis com TTL 24h e invalidação automática (LGPD compliant)."""
+
 from __future__ import annotations
 
 import hashlib

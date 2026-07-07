@@ -149,12 +149,14 @@ async def _send_typing_fast(chat_id: int) -> None:
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendChatAction"
     try:
         client = _get_tg_pool()
+
         # asyncio.create_task = nao bloqueia o request
         async def _do() -> None:
             try:
                 await client.post(url, json={"chat_id": chat_id, "action": "typing"})
             except Exception:
                 pass
+
         asyncio.create_task(_do())
     except Exception:
         pass
