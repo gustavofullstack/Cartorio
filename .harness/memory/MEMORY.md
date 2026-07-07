@@ -1262,3 +1262,29 @@ LECAO 2026-07-07: Para LLM providers, testar todos os 8 error kinds
 + happy path com/sem usage. Cobertura organica > 90% por arquivo.
 httpx.AsyncClient precisa ser mockado como class com __aenter__/__aexit__
 pq MagicMock nao suporta context manager async.
+
+## 2026-07-07 (Round 29 — notificacao NotificationService + cobertura 90.93%)
+
+- test_notificacao_service.py (24 testes):
+  - _strip_emojis (2 testes)
+  - enviar_notificacao erros: cliente nao encontrado + sem metodo + sem LGPD
+  - enviar_notificacao fallback: TELEGRAM/WHATSAPP/EMAIL/SMS (4 testes)
+  - enviar_notificacao metodo especifico
+  - enviar_notificacao com dados faltantes (4 testes)
+  - _enviar_telegram: sem token/200/500/exception (4 testes)
+  - _enviar_whatsapp: sem api_key/200/exception (3 testes)
+  - _enviar_email + _enviar_sms sucesso (2 testes)
+  - audit log gravado em sucesso
+- 2260 -> 2284 pytest passing (+24)
+- Coverage: 90.87% -> 90.93% (+0.06pp)
+- Notificacao: 74% -> 77%
+- ruff 0 erros + mypy 0 erros
+- Prod health: api 200, agent 200, api-health 200 (all UP)
+- Commit pushed: eeb1f9b (auto-hook)
+- Modified by Gustavo Almeida + Antigravity (YOLO loop)
+
+LECAO 2026-07-07: NotificationService.enviar_notificacao tem match/case com 4
+NotificationMethod (TELEGRAM/WHATSAPP/EMAIL/SMS). Cada metodo tem validacao
+de campo (chat_id, whatsapp_number, email, telefone_hash) + envio HTTP.
+Testar 5 caminhos por metodo (sem dados, sem config, HTTP 200, HTTP 500,
+exception) gera cobertura organica ~80%.
