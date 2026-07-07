@@ -1288,3 +1288,27 @@ NotificationMethod (TELEGRAM/WHATSAPP/EMAIL/SMS). Cada metodo tem validacao
 de campo (chat_id, whatsapp_number, email, telefone_hash) + envio HTTP.
 Testar 5 caminhos por metodo (sem dados, sem config, HTTP 200, HTTP 500,
 exception) gera cobertura organica ~80%.
+
+## 2026-07-07 (Round 30 — retencao_scheduler + cobertura 91.10%)
+
+- test_retencao_scheduler_loop.py (18 testes):
+  - _local_to_utc com varias horas BRT (0, 3, 12, 22)
+  - compute_next_run_utc com horas 0/22/23 + ja passou/ainda nao chegou
+  - should_run_retencao_now disabled + hora exata + fora da janela + now=None
+  - retencao_scheduler_loop: skip disabled, run na hora, idempotencia 2x/dia, exception best-effort, CancelledError propaga
+  - _BRAZIL_UTC_OFFSET_HOURS = 3
+- 2284 -> 2302 pytest passing (+18)
+- Coverage: 90.93% -> 91.10% (+0.17pp)
+- Retencao_scheduler: 72% -> ~95%
+- ruff 0 erros + mypy 0 erros
+- Prod health: api 200, agent 200, api-health 200 (all UP)
+- Commit pushed: 5fb7941
+- Modified by Gustavo Almeida + Antigravity (YOLO loop)
+
+LECAO 2026-07-07: Para testar retention_scheduler_loop, patch app.db.session_scope
++ app.jobs.retencao.run_retencao (imports sao LAZY dentro da funcao).
+Mock app.jobs.retencao_scheduler.datetime com .now + .timezone + .timedelta
+para controle total do tempo.
+
+_idempotencia_2x_mesmo_dia: rodar loop 3x com mesmo 'brazil_today' deve
+chamar run_retencao apenas 1x. Garante que nao duplica trabalho.
