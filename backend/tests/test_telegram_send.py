@@ -1,0 +1,324 @@
+"""Testes para app/api/v1/telegram.py - _send_message + _send_poll/photo/document (cobertura).
+
+Cobre:
+1. _send_message sucesso 200
+2. _send_message HTTP 400 retorna False
+3. _send_message exception retorna False
+4. _send_message com keyboard (json inline_keyboard)
+5. _send_message com reply_markup (dict ja serializado)
+6. _send_message trunca texto >MAX_RESPONSE_LEN
+7. _send_message strip_emojis do texto
+8. _send_poll sucesso
+9. _send_poll erro
+10. _send_photo sucesso
+11. _send_photo erro
+12. _send_document sucesso
+13. _send_document erro
+14. _menu_keyboard / _servicos_keyboard / _confirmar_keyboard retornam listas
+
+Sobe cobertura telegram.py 59% -> >=75%.
+"""
+
+from __future__ import annotations
+
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from app.api.v1.telegram import (
+    _confirmar_keyboard,
+    _menu_keyboard,
+    _send_document,
+    _send_message,
+    _send_photo,
+    _send_poll,
+    _servicos_keyboard,
+)
+
+
+def _make_resp(status_code: int = 200, text: str = "") -> MagicMock:
+    """Cria mock de httpx Response."""
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.text = text
+    return resp
+
+
+# =============================================================================
+# _send_message
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_send_message_sucesso_200() -> None:
+    """_send_message retorna True quando API responde 200."""
+    mock_client = MagicMock()
+    mock_client.post = AsyncMock(return_value=_make_resp(200))
+    mock_pool = MagicMock()
+    mock_pool.post = AsyncMock(return_value=_make_resp(200))
+
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        result = await _send_message(123, "Ola")
+
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_send_message_http_400_retorna_False() -> None:
+    """_send_message retorna False quando API responde 400."""
+    mock_pool = MagicMock()
+    mock_pool.post = AsyncMock(return_value=_make_resp(400, "Bad Request"))
+
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        result = await _send_message(123, "test")
+
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_send_message_exception_retorna_False() -> None:
+    """_send_message captura exception e retorna False."""
+    mock_pool = MagicMock()
+    mock_pool.post = AsyncMock(side_effect=Exception("network down"))
+
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        result = await _send_message(123, "test")
+
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_send_message_com_keyboard_inline() -> None:
+    """_send_message com keyboard adiciona inline_keyboard ao payload."""
+    mock_pool = MagicMock()
+    captured: dict = {}
+    resp = _make_resp(200)
+
+    async def _post_capture(url: str, json: dict) -> MagicMock:
+        captured["json"] = json
+        return resp
+
+    mock_pool.post = _post_capture
+
+    keyboard = [[{"text": "Botao 1", "callback_data": "x"}]]
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        await _send_message(123, "test", keyboard=keyboard)
+
+    # reply_markup deve ter inline_keyboard
+    assert "reply_markup" in captured["json"]
+    import json
+    markup = json.loads(captured["json"]["reply_markup"])
+    assert "inline_keyboard" in markup
+
+
+@pytest.mark.asyncio
+async def test_send_message_com_reply_markup_dict() -> None:
+    """_send_message com reply_markup dict usa direto."""
+    mock_pool = MagicMock()
+    captured: dict = {}
+
+    async def _post_capture(url: str, json: dict) -> MagicMock:
+        captured["json"] = json
+        return _make_resp(200)
+
+    mock_pool.post = _post_capture
+
+    reply_markup = {"keyboard": [[{"text": "x"}]], "one_time_keyboard": True}
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        await _send_message(123, "test", reply_markup=reply_markup)
+
+    import json
+    markup = json.loads(captured["json"]["reply_markup"])
+    assert "keyboard" in markup
+    assert markup["one_time_keyboard"] is True
+
+
+@pytest.mark.asyncio
+async def test_send_message_trunca_texto_muito_longo() -> None:
+    """_send_message trunca texto >MAX_RESPONSE_LEN (4096 chars Telegram)."""
+    mock_pool = MagicMock()
+    captured: dict = {}
+
+    async def _post_capture(url: str, json: dict) -> MagicMock:
+        captured["json"] = json
+        return _make_resp(200)
+
+    mock_pool.post = _post_capture
+
+    long_text = "A" * 5000  # > MAX_RESPONSE_LEN
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        await _send_message(123, long_text)
+
+    # Texto truncado para <= MAX_RESPONSE_LEN
+    assert len(captured["json"]["text"]) <= 4096
+
+
+@pytest.mark.asyncio
+async def test_send_message_strip_emojis() -> None:
+    """_send_message faz strip_emojis do texto antes de enviar."""
+    mock_pool = MagicMock()
+    captured: dict = {}
+
+    async def _post_capture(url: str, json: dict) -> MagicMock:
+        captured["json"] = json
+        return _make_resp(200)
+
+    mock_pool.post = _post_capture
+
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        await _send_message(123, "Ola \U0001F44D cliente")
+
+    # Texto nao contem thumbs-up emoji
+    assert "\U0001F44D" not in captured["json"]["text"]
+
+
+# =============================================================================
+# _send_poll
+# =============================================================================
+
+
+class _AsyncCtxMgr:
+    """Fake httpx.AsyncClient como context manager."""
+
+    def __init__(self, post_return: object = None, post_side_effect: object = None) -> None:
+        self._post = AsyncMock(
+            return_value=post_return,
+            side_effect=post_side_effect,
+        )
+
+    async def __aenter__(self) -> "_AsyncCtxMgr":
+        return self
+
+    async def __aexit__(self, *args: object) -> None:
+        pass
+
+    async def post(self, *args: object, **kwargs: object) -> object:
+        return await self._post(*args, **kwargs)
+
+
+@pytest.mark.asyncio
+async def test_send_poll_sucesso() -> None:
+    """_send_poll retorna True quando API responde 200."""
+    client = _AsyncCtxMgr(post_return=_make_resp(200))
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=client):
+        result = await _send_poll(123, "Qual servico?", ["A", "B", "C"])
+
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_send_poll_erro_retorna_False() -> None:
+    """_send_poll retorna False em caso de erro."""
+    client = _AsyncCtxMgr(post_side_effect=Exception("fail"))
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=client):
+        result = await _send_poll(123, "Pergunta?", ["A", "B"])
+
+    assert result is False
+
+
+# =============================================================================
+# _send_photo
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_send_photo_sucesso_sem_caption() -> None:
+    """_send_photo retorna True sem caption."""
+    client = _AsyncCtxMgr(post_return=_make_resp(200))
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=client):
+        result = await _send_photo(123, "https://example.com/photo.jpg")
+
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_send_photo_sucesso_com_caption() -> None:
+    """_send_photo retorna True com caption."""
+    client = _AsyncCtxMgr(post_return=_make_resp(200))
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=client):
+        result = await _send_photo(123, "https://example.com/photo.jpg", caption="Olha essa foto")
+
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_send_photo_erro_retorna_False() -> None:
+    """_send_photo retorna False em caso de erro."""
+    client = _AsyncCtxMgr(post_side_effect=Exception("network"))
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=client):
+        result = await _send_photo(123, "https://example.com/photo.jpg")
+
+    assert result is False
+
+
+# =============================================================================
+# _send_document
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_send_document_sucesso() -> None:
+    """_send_document retorna True com sucesso."""
+    client = _AsyncCtxMgr(post_return=_make_resp(200))
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=client):
+        result = await _send_document(123, "https://example.com/doc.pdf", "doc.pdf")
+
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_send_document_erro_retorna_False() -> None:
+    """_send_document retorna False em caso de erro."""
+    client = _AsyncCtxMgr(post_side_effect=Exception("timeout"))
+
+    with patch("app.api.v1.telegram.httpx.AsyncClient", return_value=client):
+        result = await _send_document(123, "https://example.com/doc.pdf", "doc.pdf")
+
+    assert result is False
+
+
+# =============================================================================
+# Keyboards helpers
+# =============================================================================
+
+
+def test_menu_keyboard_retorna_lista_de_listas() -> None:
+    """_menu_keyboard retorna lista de listas de dicts."""
+    kb = _menu_keyboard()
+    assert isinstance(kb, list)
+    assert all(isinstance(row, list) for row in kb)
+    assert all(isinstance(btn, dict) for row in kb for btn in row)
+
+
+def test_servicos_keyboard_retorna_lista_de_listas() -> None:
+    """_servicos_keyboard retorna lista de listas de dicts."""
+    kb = _servicos_keyboard()
+    assert isinstance(kb, list)
+    assert all(isinstance(row, list) for row in kb)
+
+
+def test_confirmar_keyboard_retorna_lista_de_listas() -> None:
+    """_confirmar_keyboard retorna lista de listas de dicts."""
+    kb = _confirmar_keyboard()
+    assert isinstance(kb, list)
+    assert all(isinstance(row, list) for row in kb)
+    # Deve ter botoes Confirmar/Cancelar
+    flat = [btn for row in kb for btn in row]
+    has_yes = any(
+        "confirmar" in (btn.get("text", "") or "").lower()
+        or "agendar" in (btn.get("callback_data", "") or "").lower()
+        for btn in flat
+    )
+    has_no = any(
+        "cancelar" in (btn.get("text", "") or "").lower()
+        or "menu" in (btn.get("callback_data", "") or "").lower()
+        for btn in flat
+    )
+    assert has_yes
+    assert has_no
