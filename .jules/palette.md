@@ -1,0 +1,6 @@
+## 2024-10-24 - HTML string templates in Python lack built-in semantic/A11y checks
+**Learning:** Python format strings defining HTML output (e.g., Swagger UI custom wrapper) often rely heavily on generic generic `<div>` wrappers instead of semantic ones and do not undergo automated a11y tooling validation during linting.
+**Action:** When inspecting Python applications, routinely check raw string literals containing HTML to ensure semantic HTML (`<header>`, `<nav>`) is used over generic tags, and manually verify keyboard accessibility states (`:focus-visible`) since linters skip them.
+## 2024-10-24 - Tests break when testing environment variable APP_ENV=testing is not allowed in Settings
+**Learning:** CI failures on test runners due to `ValidationError: 1 validation error for Settings app_env Input should be 'development', 'staging' or 'production'` happen because Pydantic Settings strictly validates `APP_ENV`. If the github actions workflow injects `APP_ENV=testing`, it will cause fatal validation errors on application startup (e.g., in `conftest.py`).
+**Action:** Always verify that the `app_env: Literal[...]` in `app/config.py` allows the values injected by testing pipelines, typically "testing".
