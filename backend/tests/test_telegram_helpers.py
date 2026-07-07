@@ -83,9 +83,7 @@ def test_confirmar_keyboard_estrutura_correta() -> None:
     # Deve ter ao menos uma linha com Confirmar/Cancelar
     assert len(keyboard) >= 1
     buttons_text = [btn["text"] for row in keyboard for btn in row]
-    tem_confirm = any(
-        "confirmar" in t.lower() or "cancelar" in t.lower() for t in buttons_text
-    )
+    tem_confirm = any("confirmar" in t.lower() or "cancelar" in t.lower() for t in buttons_text)
     assert tem_confirm, f"Esperava Confirmar/Cancelar, achei: {buttons_text}"
 
 

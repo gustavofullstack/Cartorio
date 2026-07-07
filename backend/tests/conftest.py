@@ -160,8 +160,6 @@ def _patch_db_session_for_all_tests():
     get_settings.cache_clear()
     settings.jwt_secret = "a" * 64
 
-
-
     # FORCAR import de TODOS models ANTES do create_all
     from app.models.audit_log import AuditLog  # noqa: F401, PLC0415
     from app.models.protocolo import Protocolo  # noqa: F401, PLC0415
