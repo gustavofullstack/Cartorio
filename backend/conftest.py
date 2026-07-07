@@ -5,6 +5,7 @@ Workarounds para bugs Python 3.11.15 + pytest 9.1.1:
 2. Config.get_verbosity AssertionError (coerce global_level to int)
 3. coverage 7.x sqlite lru_cache TypeError (NAO usar cov no terminal final)
 """
+
 from __future__ import annotations
 
 import builtins as _builtins

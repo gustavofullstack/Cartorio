@@ -3,6 +3,7 @@
 SQUAD A20 — garante exclusao mutua em operacoes criticas
 (emitir protocolo, validar documento, etc).
 """
+
 from __future__ import annotations
 
 import asyncio

@@ -1,4 +1,5 @@
 """Testes para direito de oposição (LGPD Art. 18 §2º)."""
+
 from app.services.lgpd.opposition import register_opposition, check_opposition
 
 

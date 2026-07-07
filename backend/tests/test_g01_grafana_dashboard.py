@@ -190,8 +190,13 @@ def _extract_metric_names(query: str) -> set[str]:
     """
     candidates: set[str] = set()
     ignored_tokens = {
-        "by", "sum", "rate", "histogram_quantile",
-        "endpoint", "status", "tipo_scrub",
+        "by",
+        "sum",
+        "rate",
+        "histogram_quantile",
+        "endpoint",
+        "status",
+        "tipo_scrub",
     }
     for match in _METRIC_TOKEN.finditer(query):
         token = match.group(1)
