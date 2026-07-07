@@ -499,3 +499,51 @@ def test_webhook_info_endpoint(client: TestClient) -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is True
+
+
+# =============================================================================
+# Debounce task tests
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_process_telegram_debounce_success() -> None:
+    """_process_telegram_debounce processa fila do Redis e envia resposta via LLM."""
+    from unittest.mock import ANY
+    import json
+    from app.api.v1.telegram import _process_telegram_debounce
+
+    mock_bus = MagicMock()
+    mock_pipe = AsyncMock()
+    raw_queue = json.dumps([{"text": "Ola bot", "msg_id": 12345}])
+    mock_pipe.execute = AsyncMock(return_value=[raw_queue, True, True])
+    mock_bus.client.pipeline.return_value.__aenter__ = AsyncMock(return_value=mock_pipe)
+    mock_bus.client.pipeline.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
+        with patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0.001):
+            with patch("app.api.v1.telegram._call_fast_llm", AsyncMock(return_value="Resposta")):
+                with patch("app.api.v1.telegram._send_message", AsyncMock(return_value=True)) as mock_send:
+                    with patch("app.api.v1.telegram._react", AsyncMock(return_value=True)) as mock_react:
+                        await _process_telegram_debounce(6682284055)
+
+                        mock_send.assert_called_once_with(
+                            6682284055, "Resposta", reply_markup=ANY
+                        )
+                        mock_react.assert_called_once_with(6682284055, 12345, "check")
+
+
+@pytest.mark.asyncio
+async def test_process_telegram_debounce_empty_queue() -> None:
+    """_process_telegram_debounce encerra silenciosamente se fila vazia."""
+    from app.api.v1.telegram import _process_telegram_debounce
+
+    mock_bus = MagicMock()
+    mock_pipe = AsyncMock()
+    mock_pipe.execute = AsyncMock(return_value=[None])
+    mock_bus.client.pipeline.return_value.__aenter__ = AsyncMock(return_value=mock_pipe)
+    mock_bus.client.pipeline.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
+        with patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0.001):
+            await _process_telegram_debounce(6682284055)
