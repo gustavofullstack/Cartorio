@@ -63,3 +63,12 @@ markers = [
     "t044: test for emolumento value above teto",
     "t045: test for emolumento isencao",
 ]
+filterwarnings = [
+    "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*:DeprecationWarning",
+    "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*:starlette.exceptions.StarletteDeprecationWarning",
+    "ignore:SelectableGroups dict interface is deprecated.*:DeprecationWarning",
+    "ignore:API NAO respondeu em.*:UserWarning",
+    "ignore:Playwright cache root ausente.*:UserWarning",
+    "ignore:playwright CLI NAO encontrado.*:UserWarning",
+]
+
