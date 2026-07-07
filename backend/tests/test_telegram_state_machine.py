@@ -127,7 +127,11 @@ async def test_state_agendar_hora_formato_valido() -> None:
     """_handle_state AGENDAR_HORA com hora valida vai para AGENDAR_CONFIRMAR."""
     bus = _make_bus()
     text, new_state, keyboard = await _handle_state(
-        "14:30", STATE_AGENDAR_HORA, {"servico_nome": "Certidao", "data": "2026-12-25"}, bus, chat_id=123
+        "14:30",
+        STATE_AGENDAR_HORA,
+        {"servico_nome": "Certidao", "data": "2026-12-25"},
+        bus,
+        chat_id=123,
     )
     assert "Confirmar" in text or "Confirm" in text or "confirma" in text.lower()
     assert new_state == STATE_AGENDAR_CONFIRMAR
@@ -155,7 +159,10 @@ async def test_state_agendar_hora_formato_invalido() -> None:
 async def test_state_agendar_confirmar_sim() -> None:
     """_handle_state AGENDAR_CONFIRMAR com 'sim' chama _confirmar_agendamento e vai para IDLE."""
     bus = _make_bus()
-    with patch("app.api.v1.telegram._confirmar_agendamento", new=AsyncMock(return_value=("Confirmado!", None, False))):
+    with patch(
+        "app.api.v1.telegram._confirmar_agendamento",
+        new=AsyncMock(return_value=("Confirmado!", None, False)),
+    ):
         text, new_state, keyboard = await _handle_state(
             "sim", STATE_AGENDAR_CONFIRMAR, {}, bus, chat_id=123
         )

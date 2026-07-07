@@ -31,7 +31,7 @@
 | LobeChat | ✅ UP | |
 | Evolution API | ✅ UP | WhatsApp gateway |
 | Chatwoot | ✅ UP | chat.2notasudi.com.br retorna 302 Traefik |
-| crwal4ai | ⚠️ OFF | VXLAN swarm issue (Lesson 126) |
+| crwal4ai | ✅ UP | Host mode + CRAWL4AI_API_TOKEN fix |
 | N8N | ❌ OFF | Gustavo desligou 2026-07-01 |
 
 ## 🛡️ SQUADs Auditados
@@ -146,15 +146,15 @@
 ## ❌ Pendente (precisa VOCÊ)
 
 1. **Validar Telegram real no celular** (chat_id=6682284055)
-2. **Resolver crwal4ai VXLAN** (restart swarm worker node ou rebuild com --network host)
-3. **SQUAD A15-A25, B6-B25, D18-D25, BRAIN3-8** (~37 tasks, escopo separado)
+2. **Resolver crwal4ai VXLAN** — ✅ Resolvido via host mode publishing + CRAWL4AI_API_TOKEN fix
+3. **SQUAD B6-B25, D18-D25, BRAIN3-8** (~37 tasks, escopo separado)
 4. **Reativar N8N** se necessário
 
 ## 🎯 Estado Final
 
 ```
 🤖 Bot Telegram: 100% funcional (validado em 6 testes)
-🛡️ Infra: 12 serviços UP + 1 offline (crwal4ai) + 1 desligado (N8N)
+🛡️ Infra: 13 serviços UP + 0 offline + 1 desligado (N8N)
 📚 Docs: STATUS.md + ARCHITECTURE.md + infra/litellm/README.md + SQUAD_INDEX.md
 🔧 Hardening: sysctl + Redis maxmemory + backup:status
 🔁 Fallback chain: validada na prática (LiteLLM 422 → opencode_free_1)

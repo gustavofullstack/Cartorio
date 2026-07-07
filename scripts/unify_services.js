@@ -40,6 +40,7 @@ services.forEach((name) => {
   
   if (name === "crwal4ai") {
     jsonObj.source.image = "unclecode/crawl4ai:latest";
+    setEnvVar("CRAWL4AI_API_TOKEN", "cartorio-secure-crawl4ai-token-2026");
   }
   
   if (name === "chatwoot" || name === "chatwoot-sidekiq") {

@@ -128,6 +128,7 @@ async def test_with_retry_nao_retenta_para_HTTPError_generico() -> None:
 @pytest.mark.asyncio
 async def test_supabase_health_sucesso_200() -> None:
     """supabase_health retorna True quando HTTP 200."""
+
     class FakeResp:
         status_code = 200
         text = "ok"
@@ -158,6 +159,7 @@ async def test_supabase_health_sucesso_200() -> None:
 @pytest.mark.asyncio
 async def test_supabase_health_401_conta_como_UP() -> None:
     """supabase_health retorna True para 401 (requer auth, mas Supabase UP)."""
+
     class FakeResp:
         status_code = 401
         text = "auth required"

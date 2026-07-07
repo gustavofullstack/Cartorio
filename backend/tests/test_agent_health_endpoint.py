@@ -38,8 +38,6 @@ def _make_fake_client(status_code: int, version: str | None = None) -> MagicMock
     return fake
 
 
-
-
 @pytest.mark.asyncio
 async def test_agent_health_status_ok_quando_openclaw_e_llm_up() -> None:
     """agent_health retorna status='ok' quando openclaw=200 e LLM=200."""

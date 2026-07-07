@@ -30,7 +30,7 @@
 - ✅ Argilla-web (porta 6900)
 - ✅ Argilla-elasticsearch (cluster green)
 - ✅ LiteLLM Proxy (porta 4000)
-- ✅ crwal4ai (bind OK, swarm VXLAN issue — ver Lesson 126)
+- ✅ crwal4ai (resolvido via host mode + CRAWL4AI_API_TOKEN)
 
 ## 📊 E2E Flow Validado (logs ao vivo)
 
@@ -84,8 +84,7 @@ STATUS.md                                     ✅ Este arquivo
    - Só pode fazer via UI do Cloudflare
 
 3. **crwal4ai VXLAN swarm issue**
-   - Container bind OK, swarm overlay não encaminha
-   - Workaround: recriar service com `--network host` (precisa autorização)
+   - ✅ Resolvido via host mode publishing + CRAWL4AI_API_TOKEN fix
 
 4. **SQUAD A14-A25, B6-B15, D18-D25, DOCS1-5, BRAIN2-B7** (~37 tasks)
    - Escopo separado, requer agentes paralelos + várias horas
@@ -95,7 +94,7 @@ STATUS.md                                     ✅ Este arquivo
 ```
 ✅ Bot Telegram 100% funcional (logs confirmam)
 ❓ Aceite real do Gustavo (pendente)
-⚠️ crwal4ai offline (workaround documentado)
+✅ crwal4ai online (com token de autenticação via Tailscale)
 ⚠️ 37 tasks dos squads (escopo separado)
 ```
 

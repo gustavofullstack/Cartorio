@@ -21,6 +21,15 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
+@pytest.fixture(autouse=True)
+def mock_llm_calls():
+    with patch("app.integrations.fallback.chat_with_fallback") as mock_chat:
+        mock_response = MagicMock()
+        mock_response.content = "Olá! Use o /menu para ver as opções do cartorio."
+        mock_chat.return_value = mock_response
+        yield mock_chat
+
+
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(app)

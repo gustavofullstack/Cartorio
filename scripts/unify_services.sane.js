@@ -55,6 +55,7 @@ const SECRETS = {
   REDIS_PASSWORD: requireEnv("REDIS_PASSWORD"),
   ARGILLA_USER_PASSWORD: requireEnv("ARGILLA_USER_PASSWORD"),
   LOBECHAT_OPENAI_API_KEY: requireEnv("LOBECHAT_OPENAI_API_KEY"),
+  CRAWL4AI_API_TOKEN: requireEnv("CRAWL4AI_API_TOKEN"),
 };
 
 const { open } = require("lmdb");
@@ -99,7 +100,8 @@ for (const name of services) {
 
   if (name === "crwal4ai") {
     jsonObj.source.image = "unclecode/crawl4ai:latest";
-    changes.push(`${name}: image -> ${jsonObj.source.image}`);
+    envLines = setEnvVar(envLines, "CRAWL4AI_API_TOKEN", SECRETS.CRAWL4AI_API_TOKEN);
+    changes.push(`${name}: image -> ${jsonObj.source.image} + CRAWL4AI_API_TOKEN`);
   }
   if (name === "chatwoot" || name === "chatwoot-sidekiq") {
     envLines = setEnvVar(envLines, "POSTGRES_HOST", "cartorio_supabase");

@@ -107,6 +107,7 @@ async def test_send_message_com_keyboard_inline() -> None:
     # reply_markup deve ter inline_keyboard
     assert "reply_markup" in captured["json"]
     import json
+
     markup = json.loads(captured["json"]["reply_markup"])
     assert "inline_keyboard" in markup
 
@@ -128,6 +129,7 @@ async def test_send_message_com_reply_markup_dict() -> None:
         await _send_message(123, "test", reply_markup=reply_markup)
 
     import json
+
     markup = json.loads(captured["json"]["reply_markup"])
     assert "keyboard" in markup
     assert markup["one_time_keyboard"] is True
@@ -166,10 +168,10 @@ async def test_send_message_strip_emojis() -> None:
     mock_pool.post = _post_capture
 
     with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
-        await _send_message(123, "Ola \U0001F44D cliente")
+        await _send_message(123, "Ola \U0001f44d cliente")
 
     # Texto nao contem thumbs-up emoji
-    assert "\U0001F44D" not in captured["json"]["text"]
+    assert "\U0001f44d" not in captured["json"]["text"]
 
 
 # =============================================================================
