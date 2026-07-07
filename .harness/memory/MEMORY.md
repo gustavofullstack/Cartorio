@@ -1240,3 +1240,25 @@ rate_limit_by_key intercepta - usar try/except + pytest.skip.
 Para mockar engine SQLAlchemy sync usado em async def: usar
 patch.object(appdb, 'engine') e atribuir context manager
 asynccontextmanager (o async def ignora o tipo sync se for ctx mgr).
+
+## 2026-07-07 (Round 28 — opencode_generic 76% -> ~95%)
+
+- test_opencode_generic_happy.py (26 testes):
+  - ProviderConfig.is_configured (4 testes)
+  - get_config_for todos 9 providers
+  - chat() 8 tipos de erro (CONFIG/LGPD_BLOCKED/TIMEOUT/NETWORK/HTTP_4XX/HTTP_5XX/PARSE x2)
+  - chat() sucesso 200 com/sem usage
+  - chat() PII redaction input/output
+- 2241 -> 2260 pytest passing (+19)
+- Coverage: 90.66% -> 90.87% (+0.21pp)
+- Opencode_generic: 76% -> ~95%
+- ruff 0 erros + mypy 0 erros
+- Prod health: api 200, agent 200, api-health 200 (all UP)
+- Commit pushed: a39ca40
+- Modified by Gustavo Almeida + Antigravity (YOLO loop)
+
+LECAO 2026-07-07: Para LLM providers, testar todos os 8 error kinds
+(CONFIG, LGPD_BLOCKED, TIMEOUT, NETWORK, HTTP_4XX, HTTP_5XX, PARSE x2)
++ happy path com/sem usage. Cobertura organica > 90% por arquivo.
+httpx.AsyncClient precisa ser mockado como class com __aenter__/__aexit__
+pq MagicMock nao suporta context manager async.
