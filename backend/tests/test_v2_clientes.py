@@ -19,17 +19,11 @@ from __future__ import annotations
 import base64
 import json
 from datetime import datetime, timezone
-from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from app.models.base import Base
 from app.models.cliente import Cliente
-from sqlalchemy.orm import Session  # type: ignore[attr-defined]  # Session re-exported
 
 
 def _decode_cursor(cursor: str) -> dict:
@@ -40,13 +34,7 @@ def _decode_cursor(cursor: str) -> dict:
 
 @pytest.fixture
 def test_engine():
-    """Engine SQLite in-memory para os testes desta suite.
-
-    Reaproveita o autouse do conftest para evitar isolamento por teste
-    (cada ``:memory:`` novo seria um DB vazio sem o ``StaticPool`` garantir
-    a mesma conexao). Aqui usamos o engine global do ``app.db`` que ja foi
-    substituido pelo autouse para SQLite com tabelas criadas.
-    """
+    """Engine SQLite in-memory — usa app.db.engine (patchado pelo autouse)."""
     import app.db as appdb
 
     return appdb.engine
@@ -61,15 +49,7 @@ def test_session_factory(test_engine):
 
 @pytest.fixture
 def client(test_engine, test_session_factory):
-    """TestClient que usa o engine SQLite ja configurado pelo conftest autouse.
-
-    O autouse ``_patch_db_session_for_all_tests`` ja substitui
-    ``app.db.SessionLocal`` / ``app.db.get_db`` por funcoes que apontam para
-    o mesmo engine SQLite in-memory usado nos fixtures deste test. Portanto
-    nao precisamos patchar nada - basta importar o app e usar TestClient.
-    O lifespan do app ira chamar ``Base.metadata.create_all(engine)`` no
-    engine ja preparado (com tabelas vazias no inicio de cada teste).
-    """
+    """TestClient que usa o engine SQLite ja configurado pelo conftest autouse."""
     from app.main import app
 
     with TestClient(app) as c:
@@ -198,16 +178,15 @@ def test_v2_clientes_ultima_pagina_sem_next(client: TestClient, sample_clientes)
     assert body["page_info"]["end_cursor"] is None
 
 
-def test_v2_clientes_exclui_encerrados_por_default(
-    client: TestClient, db_session: Session, sample_clientes
+def test_v2_clientes_exclui_deletados_por_default(
+    client: TestClient, test_session_factory, sample_clientes
 ) -> None:
-    """Clientes com motivo_encerramento setado NAO aparecem (LGPD art. 18 VI)."""
-    from app.models.cliente import MotivoEncerramento
-
-    cliente_3 = db_session.merge(sample_clientes[2])
-    cliente_3.motivo_encerramento = MotivoEncerramento.REVOGACAO_CONSENTIMENTO
+    """Clientes com deleted_at IS NOT NULL NAO aparecem (LGPD art. 18 V soft-delete)."""
+    session = test_session_factory()
+    cliente_3 = session.merge(sample_clientes[2])
     cliente_3.deleted_at = datetime.now(timezone.utc)
-    db_session.commit()
+    session.commit()
+    session.close()
 
     resp = client.get(
         "/api/v2/clientes",
@@ -221,23 +200,48 @@ def test_v2_clientes_exclui_encerrados_por_default(
     assert len(body["edges"]) == 4
 
 
-def test_v2_clientes_inclui_encerrados_se_filtro_explicit(
-    client: TestClient, db_session: Session, sample_clientes
+def test_v2_clientes_inclui_deletados_se_filtro_explicit(
+    client: TestClient, test_session_factory, sample_clientes
 ) -> None:
-    """?include_encerrados=true retorna todos."""
-    from app.models.cliente import MotivoEncerramento
+    """?include_deleted=true retorna todos (EXIGE JWT DPO per LGPD art. 41).
 
-    cliente_3 = db_session.merge(sample_clientes[2])
-    cliente_3.motivo_encerramento = MotivoEncerramento.REVOGACAO_CONSENTIMENTO
+    O conftest autouse garante JWT_SECRET canonico (= "a" * 64) e
+    get_settings() cacheado corretamente.
+    """
+    import jwt as pyjwt
+    import uuid as _uuid
+
+    session = test_session_factory()
+    cliente_3 = session.merge(sample_clientes[2])
     cliente_3.deleted_at = datetime.now(timezone.utc)
-    db_session.commit()
+    session.commit()
+    session.close()
+
+    dpo_token = pyjwt.encode(
+        {
+            "sub": "dpo-test",
+            "aud": "cartorio-v2",
+            "iss": "cartorio-api",
+            "typ": "access",
+            "dpo": True,
+            "iat": 1700000000,
+            "exp": 9999999999,
+            "jti": str(_uuid.uuid4()),
+        },
+        "a" * 64,  # JWT_SECRET canonico do conftest autouse
+        algorithm="HS256",
+    )
 
     resp = client.get(
-        "/api/v2/clientes?include_encerrados=true",
-        headers={"X-API-Key": "a" * 64},
+        "/api/v2/clientes?include_deleted=true",
+        headers={
+            "X-API-Key": "a" * 64,
+            "Authorization": f"Bearer {dpo_token}",
+        },
     )
     assert resp.status_code == 200, resp.text
     body = resp.json()
+
     assert len(body["edges"]) == 5
 
 

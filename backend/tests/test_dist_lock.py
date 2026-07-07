@@ -1,4 +1,5 @@
 """Testes para distributed lock (SQUAD A20 Redlock)."""
+
 import pytest
 from unittest.mock import AsyncMock, patch
 

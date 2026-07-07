@@ -4,42 +4,31 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
-
-from app.models.base import Base
+from sqlalchemy.orm import Session
 
 
 @pytest.fixture
 def test_engine():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    yield engine
-    Base.metadata.drop_all(engine)
+    """Engine SQLite in-memory para os testes desta suite."""
+    import app.db as appdb
+
+    return appdb.engine
 
 
 @pytest.fixture
 def test_session_factory(test_engine):
-    return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
+    import app.db as appdb
+
+    return appdb.SessionLocal
 
 
 @pytest.fixture
 def client(test_engine, test_session_factory):
-    """TestClient que substitui engine e sessao do app por SQLite in-memory."""
-    with (
-        patch("app.db.engine", test_engine),
-        patch("app.db.SessionLocal", test_session_factory),
-        patch("app.main.engine", test_engine),
-    ):
-        from app.main import app
+    """TestClient que usa o engine SQLite ja configurado pelo conftest autouse."""
+    from app.main import app
 
-        with TestClient(app) as c:
-            yield c
+    with TestClient(app) as c:
+        yield c
 
 
 def test_health_endpoint(client):
@@ -213,21 +202,24 @@ def test_atendimento_historico_db_fallback(client):
     mock_redis.lrange.return_value = []
 
     # Save a dummy conversa in SQLite test DB
+    unique_external_id = "user_db_fallback_isolated_xyz"
     with session_scope() as db:
         conversa = Conversa(
             canal="whatsapp",
-            external_id="user_db",
+            external_id=unique_external_id,
             raw_message_hash="hash123",
             raw_message_scrubbed="Mensagem do DB",
             bot_response="Resposta do Bot DB",
         )
         db.add(conversa)
+        db.flush()
+        db.commit()
 
     with patch("redis.from_url", return_value=mock_redis):
-        resp = client.get("/api/v1/atendimento/user_db/historico")
+        resp = client.get(f"/api/v1/atendimento/{unique_external_id}/historico")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["session_id"] == "user_db"
+        assert data["session_id"] == unique_external_id
         assert data["total"] == 2
         assert data["messages"][0]["content"] == "Mensagem do DB"
         assert data["messages"][1]["content"] == "Resposta do Bot DB"

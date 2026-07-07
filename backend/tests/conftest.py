@@ -4,7 +4,6 @@ import os
 import builtins as _builtins
 import warnings as _w_mod
 from collections.abc import Iterator
-from contextlib import contextmanager
 from typing import Any
 
 import pytest
@@ -71,15 +70,23 @@ os.environ.setdefault("DB_POOL_PRE_PING", "true")
 # Gerada via `openssl rand -hex 32` — valor fixo pra reprodutibilidade dos testes.
 TEST_CARTORIO_API_KEY = "a" * 64  # 64 chars hex equivalente pra teste
 os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
+# JWT_SECRET dos testes (>=32 chars, mesmo valor usado por test_v2_clientes.py
+# para emitir tokens DPO via jwt.encode). Setado aqui ANTES de app.config
+# criar o singleton settings pra que verify_token() enxergue o mesmo secret.
+os.environ["JWT_SECRET"] = "a" * 64
 
 # Mocks e defaults para testes deterministas sem rede
 os.environ["LLM_DEFAULT_PROVIDER"] = "opencode_go"
 os.environ["LLM_FALLBACK_CHAIN"] = "opencode_go,openclaw"
 os.environ["OPENCODE_GO_MODEL"] = "minimax-m3"
+os.environ["JWT_SECRET"] = "a" * 64
 
-from app.config import get_settings  # noqa: E402
+
+from app.config import get_settings, settings  # noqa: E402
 
 get_settings.cache_clear()
+settings.jwt_secret = "a" * 64
+
 
 from app.models.base import Base  # noqa: E402
 
@@ -146,6 +153,14 @@ def _patch_db_session_for_all_tests():
     somente quando db_session fixture é solicitada.
     """
     import app.db as appdb
+    import os
+    from app.config import get_settings, settings
+
+    os.environ["JWT_SECRET"] = "a" * 64
+    get_settings.cache_clear()
+    settings.jwt_secret = "a" * 64
+
+
 
     # FORCAR import de TODOS models ANTES do create_all
     from app.models.audit_log import AuditLog  # noqa: F401, PLC0415
@@ -165,39 +180,65 @@ def _patch_db_session_for_all_tests():
     Base.metadata.create_all(eng)
     NewSL = sessionmaker(bind=eng, autoflush=False, autocommit=False, expire_on_commit=False)
 
-    @contextmanager
-    def patched_scope() -> Iterator[Session]:
-        db = NewSL()
-        try:
-            yield db
-            db.commit()
-        except Exception:
-            db.rollback()
-            raise
-        finally:
-            db.close()
-
-    def patched_get_db() -> Iterator[Session]:
-        db = NewSL()
-        try:
-            yield db
-        finally:
-            db.close()
-
     # Substituir os objetos no modulo app.db
-    original_scope = appdb.session_scope
-    original_get_db = appdb.get_db
     original_sessionlocal = appdb.SessionLocal
-    appdb.session_scope = patched_scope
-    appdb.get_db = patched_get_db
-    appdb.SessionLocal = NewSL
+    original_engine = appdb.engine
+
+    # Como tests rodam em paralelo e `from app.db import get_db` ja
+    # snapshotou as referencias, a unica forma garantida de fazer testes
+    # que injetam deps enxergarem a NOVA engine SQLite eh SUBSTITUIR o
+    # engine do app.db pela nossa. Assim get_db()/SessionLocal() do app.db
+    # passam a abrir sessoes na nossa engine.
     appdb.engine = eng
+    appdb.SessionLocal = NewSL
+    # Re-bind engine/SessionLocal em TODOS os modulos que ja importaram
+    # `from app.db import engine/SessionLocal`. Isso garante que lifespan,
+    # routers, AuditService, etc. enxergam a mesma engine.
+    import sys  # noqa: PLC0415
+
+    rebound_engine: list[tuple[object, object]] = []
+    rebound_sl: list[tuple[object, object]] = []
+    for mod_name, mod in list(sys.modules.items()):
+        if not mod or not mod_name.startswith("app"):
+            continue
+        if not hasattr(mod, "__dict__"):
+            continue
+        cur_eng = mod.__dict__.get("engine")
+        if cur_eng is not None and cur_eng is not eng:
+            try:
+                mod.engine = eng  # type: ignore[attr-defined]
+                rebound_engine.append((mod, cur_eng))
+            except (AttributeError, TypeError):
+                pass
+        cur_sl = mod.__dict__.get("SessionLocal")
+        if cur_sl is not None and cur_sl is not NewSL:
+            try:
+                mod.SessionLocal = NewSL  # type: ignore[attr-defined]
+                rebound_sl.append((mod, cur_sl))
+            except (AttributeError, TypeError):
+                pass
+
+    # Importante: como `from app.db import engine/get_db/etc.` em outros
+    # modulos ja snapshotou as referencias no import time, basta trocar
+    # os atributos no objeto modulo para que proximos usos (incluindo
+    # Depends(get_db) do FastAPI) enxerguem a factory nova.
+    appdb.engine = eng
+
     try:
         yield
     finally:
-        appdb.session_scope = original_scope
-        appdb.get_db = original_get_db
         appdb.SessionLocal = original_sessionlocal
+        appdb.engine = original_engine
+        for mod, old in rebound_engine:
+            try:
+                mod.engine = old  # type: ignore[attr-defined]
+            except Exception:
+                pass
+        for mod, old in rebound_sl:
+            try:
+                mod.SessionLocal = old  # type: ignore[attr-defined]
+            except Exception:
+                pass
 
 
 @pytest.fixture(autouse=True)
@@ -225,6 +266,25 @@ def _bypass_atendimento_cache(monkeypatch):
         "set_cached",
         lambda payload, window: True,  # type: ignore[arg-type]
     )
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_jwt_secret(monkeypatch):
+    """Garante JWT_SECRET canonico (='a'*64) em TODOS os testes.
+
+    Sem isso, tests como test_auth_jwt::test_settings_jwt_secret_min_length
+    mutam o env var e chamam get_settings.cache_clear(), criando um novo
+    singleton com secret curto ('' ou 'z'*32). Tests subsequentes que
+    dependem do secret canonico (ex: test_v2_clientes com DPO JWT) quebram.
+
+    Adicionado em 2026-07-07 — flakiness SQUAD A fix.
+    """
+    monkeypatch.setenv("JWT_SECRET", "a" * 64)
+    from app.config import get_settings, settings  # noqa: PLC0415
+
+    get_settings.cache_clear()
+    settings.jwt_secret = "a" * 64
     yield
 
 

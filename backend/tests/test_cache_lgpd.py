@@ -1,4 +1,5 @@
 """Testes para cache LGPD-compliant (Redis TTL 24h)."""
+
 import pytest
 from unittest.mock import AsyncMock, patch
 
@@ -27,6 +28,7 @@ async def test_get_cache_miss():
         mock_redis.return_value = mock_client
 
         from app.services.cache_lgpd import get
+
         result = await get("missing_key")
         assert result is None
 
@@ -35,6 +37,7 @@ async def test_get_cache_miss():
 async def test_get_redis_down_returns_none():
     with patch("app.services.cache_lgpd.get_redis", return_value=None):
         from app.services.cache_lgpd import get
+
         result = await get("any_key")
         assert result is None
 
@@ -47,6 +50,7 @@ async def test_set_cache_success():
         mock_redis.return_value = mock_client
 
         from app.services.cache_lgpd import set_
+
         result = await set_("test_key", {"foo": "bar"}, ttl=60)
         assert result is True
         mock_client.setex.assert_called_once()
