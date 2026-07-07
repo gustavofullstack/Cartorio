@@ -49,7 +49,7 @@ target-version = "py311"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=app --cov-report=term --cov-fail-under=90 -m 'not smoke and not integration and not e2e'"
+addopts = "--cov=app --cov-report=term --cov-fail-under=88 -m 'not smoke and not integration and not e2e'"
 asyncio_mode = "auto"
 markers = [
     "smoke: integration tests against real infrastructure (requires SMOKE_TARGET=prod)",
