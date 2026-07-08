@@ -163,26 +163,28 @@ async def _send_typing(chat_id: int) -> bool:
 # Antes: cada chamada criava AsyncClient novo (DNS+TLS+TCP = ~500ms).
 # Agora: pool global + typing em background task (retorna <1ms).
 _TG_HTTP_POOL: httpx.AsyncClient | None = None
+_typing_tasks: set[asyncio.Task[Any]] = set()
+
+
+_pool_loop_id: int = 0
 
 
 def _get_tg_pool() -> httpx.AsyncClient:
-    global _TG_HTTP_POOL
+    global _TG_HTTP_POOL, _pool_loop_id
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = None
     current_loop_id = id(loop) if loop else 0
-    if not hasattr(_get_tg_pool, "_loop_id"):
-        _get_tg_pool._loop_id = 0
 
-    if _TG_HTTP_POOL is None or _get_tg_pool._loop_id != current_loop_id:
+    if _TG_HTTP_POOL is None or _pool_loop_id != current_loop_id:
         _TG_HTTP_POOL = httpx.AsyncClient(
             timeout=httpx.Timeout(15.0, connect=10.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
             verify=False,  # Bypass domain mismatch verification when using direct IP routing
             headers={"Host": "api.telegram.org"},  # Ensure Telegram routing works
         )
-        _get_tg_pool._loop_id = current_loop_id
+        _pool_loop_id = current_loop_id
     return _TG_HTTP_POOL
 
 
@@ -193,15 +195,7 @@ async def _send_typing_fast(chat_id: int) -> None:
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendChatAction"
     try:
         client = _get_tg_pool()
-
-        # asyncio.create_task = nao bloqueia o request
-        async def _do() -> None:
-            try:
-                await client.post(url, json={"chat_id": chat_id, "action": "typing"})
-            except Exception:
-                pass
-
-        asyncio.create_task(_do())
+        await client.post(url, json={"chat_id": chat_id, "action": "typing"})
     except Exception:
         pass
 
@@ -1000,7 +994,9 @@ async def telegram_webhook(
                 "Use /menu para abrir o cartorio, ou me mencione "
                 "(@test_cartorio_bot) na sua mensagem."
             )
-            await _send_message(chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()})
+            await _send_message(
+                chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
+            )
             return {"status": "ignored", "reason": "group message without command or mention"}
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
@@ -1019,7 +1015,11 @@ async def telegram_webhook(
     # ====== TYPING VISIVEL: envia "Bot esta digitando..." IMEDIATAMENTE ======
     # FIX v2: _send_typing_fast = fire-and-forget, nao bloqueia webhook.
     # Antes: await _send_typing (criava client novo, ~500ms overhead)
-    asyncio.create_task(_send_typing_fast(chat_id))
+    # create_task is correct here because we want it immediately, before webhook returns.
+    # keep a strong reference to avoid garbage collection
+    task = asyncio.create_task(_send_typing_fast(chat_id))
+    _typing_tasks.add(task)
+    task.add_done_callback(_typing_tasks.discard)
 
     text_scrubbed = scrub(text).text
     if callback:
