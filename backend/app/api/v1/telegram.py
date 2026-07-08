@@ -173,16 +173,16 @@ def _get_tg_pool() -> httpx.AsyncClient:
         loop = None
     current_loop_id = id(loop) if loop else 0
     if not hasattr(_get_tg_pool, "_loop_id"):
-        _get_tg_pool._loop_id = 0
+        _get_tg_pool._loop_id = 0  # type: ignore
 
-    if _TG_HTTP_POOL is None or _get_tg_pool._loop_id != current_loop_id:
+    if _TG_HTTP_POOL is None or getattr(_get_tg_pool, "_loop_id", 0) != current_loop_id:
         _TG_HTTP_POOL = httpx.AsyncClient(
             timeout=httpx.Timeout(15.0, connect=10.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
             verify=False,  # Bypass domain mismatch verification when using direct IP routing
             headers={"Host": "api.telegram.org"},  # Ensure Telegram routing works
         )
-        _get_tg_pool._loop_id = current_loop_id
+        _get_tg_pool._loop_id = current_loop_id  # type: ignore
     return _TG_HTTP_POOL
 
 
