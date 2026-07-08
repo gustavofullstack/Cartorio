@@ -606,8 +606,12 @@ def test_webhook_group_msg_without_command_reacts_and_orients() -> None:
         },
     }
     with patch("app.api.v1.telegram.get_bus", return_value=None):
-        with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send:
-            with patch("app.api.v1.telegram._react", new=AsyncMock(return_value=True)) as mock_react:
+        with patch(
+            "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            with patch(
+                "app.api.v1.telegram._react", new=AsyncMock(return_value=True)
+            ) as mock_react:
                 with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=payload)
     assert resp.status_code == 200
@@ -823,11 +827,11 @@ def test_get_tg_pool_lifecycle_and_no_loop() -> None:
     """Exercita o ciclo de vida do _get_tg_pool e o bloco try/except sem event loop."""
     from app.api.v1.telegram import _get_tg_pool
     import asyncio
-    
+
     # 1. Fora do loop de eventos (deve cair no except RuntimeError)
     pool1 = _get_tg_pool()
     assert pool1 is not None
-    
+
     # 2. Dentro do loop de eventos (deve registrar o loop atual)
     async def _test():
         pool2 = _get_tg_pool()
@@ -836,3 +840,58 @@ def test_get_tg_pool_lifecycle_and_no_loop() -> None:
 
     pool2 = asyncio.run(_test())
     assert pool2 is not pool1
+
+
+def test_debug_last_updates_records_and_returns_recent(client: TestClient) -> None:
+    """FIX 2026-07-08: Gustavo precisa inspecionar o que o backend REALMENTE
+    recebeu no webhook para diagnosticar 'botoes nao funcionam' via Painel ZCode.
+
+    - POST /api/v1/telegram/webhook com payload sintetico DEVE popular a lista
+    - GET /api/v1/telegram/debug/last-updates DEVE retornar o ultimo update.
+    - Lista trunca em _LAST_UPDATES_MAX (20) entradas.
+    """
+    from app.api.v1.telegram import _LAST_UPDATES
+
+    _LAST_UPDATES.clear()
+
+    payload = {
+        "update_id": 900001,
+        "message": {
+            "message_id": 11,
+            "from": {"id": 6682284055, "first_name": "Gustavo", "is_bot": False},
+            "chat": {"id": -1004331849032, "type": "supergroup", "title": "TESTE"},
+            "text": "/menu",
+            "date": 1719227400,
+        },
+    }
+    resp = client.post("/api/v1/telegram/webhook", json=payload)
+    assert resp.status_code == 200
+
+    debug = client.get("/api/v1/telegram/debug/last-updates")
+    assert debug.status_code == 200
+    body = debug.json()
+    assert body["service"] == "telegram-bot"
+    assert isinstance(body["last_updates"], list)
+    assert body["last_updates"], "webhook deveria ter registrado pelo menos 1 update"
+    latest = body["last_updates"][-1]
+    assert latest["update_id"] == 900001
+    assert latest["kind"] == "message"
+    assert latest["chat_id"] == -1004331849032
+    assert latest["data"] == "/menu"
+    assert "response" in latest
+
+
+def test_metrics_classifies_callback_and_duplicate() -> None:
+    """Cobertura para o classificador de metricas por status (FIX 2026-07-08)."""
+    from app.api.v1.telegram import classify_metric_for_status, _METRICS  # noqa: F401
+
+    before_ok = _METRICS["responses_ok"]
+
+    classify_metric_for_status("ok", kind="message")
+    classify_metric_for_status("ok", kind="callback")  # callbacks NAO contam como ok
+    classify_metric_for_status("duplicate", kind="message")  # duplicatas sao ignoradas
+    classify_metric_for_status("partial", kind="message")
+
+    assert _METRICS["responses_ok"] == before_ok + 1
+    # callback_ok NAO incrementa responses_ok
+    assert _METRICS["responses_partial"] >= 1

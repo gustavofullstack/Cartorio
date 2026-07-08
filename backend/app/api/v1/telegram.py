@@ -162,27 +162,28 @@ async def _send_typing(chat_id: int) -> bool:
 # FIX 2026-07-03 (loop-infinito v2): pool HTTP singleton + fire-and-forget typing.
 # Antes: cada chamada criava AsyncClient novo (DNS+TLS+TCP = ~500ms).
 # Agora: pool global + typing em background task (retorna <1ms).
+# FIX 2026-07-08 (mypy): _loop_id virou variavel de modulo em vez de attr de callable
+# (mypy nao permite attr-defined em Callable[...] com strict).
 _TG_HTTP_POOL: httpx.AsyncClient | None = None
+_TG_HTTP_POOL_LOOP_ID: int = 0
 
 
 def _get_tg_pool() -> httpx.AsyncClient:
-    global _TG_HTTP_POOL
+    global _TG_HTTP_POOL, _TG_HTTP_POOL_LOOP_ID
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = None
     current_loop_id = id(loop) if loop else 0
-    if not hasattr(_get_tg_pool, "_loop_id"):
-        _get_tg_pool._loop_id = 0
 
-    if _TG_HTTP_POOL is None or _get_tg_pool._loop_id != current_loop_id:
+    if _TG_HTTP_POOL is None or _TG_HTTP_POOL_LOOP_ID != current_loop_id:
         _TG_HTTP_POOL = httpx.AsyncClient(
             timeout=httpx.Timeout(15.0, connect=10.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
             verify=False,  # Bypass domain mismatch verification when using direct IP routing
             headers={"Host": "api.telegram.org"},  # Ensure Telegram routing works
         )
-        _get_tg_pool._loop_id = current_loop_id
+        _TG_HTTP_POOL_LOOP_ID = current_loop_id
     return _TG_HTTP_POOL
 
 
@@ -954,6 +955,57 @@ async def telegram_metrics() -> dict:
     }
 
 
+_LAST_UPDATES: list[dict] = []
+_LAST_UPDATES_MAX = 20
+
+
+def _record_update(update: dict, response: dict) -> None:
+    """FIX 2026-07-08: Gustavo precisa ver o que o backend REALMENTE
+    recebeu para diagnosticar 'botoes nao funcionam'. Guarda ultimos 20
+    updates com a resposta que demos."""
+    _LAST_UPDATES.append(
+        {
+            "ts": int(__import__("time").time()),
+            "update_id": update.get("update_id"),
+            "kind": (
+                "callback"
+                if update.get("callback_query")
+                else "message"
+                if update.get("message")
+                else "my_chat_member"
+                if update.get("my_chat_member")
+                else "other"
+            ),
+            "data": update.get("callback_query", {}).get("data")
+            or update.get("message", {}).get("text", ""),
+            "chat_id": (
+                update.get("message", {}).get("chat", {}).get("id")
+                or update.get("callback_query", {}).get("message", {}).get("chat", {}).get("id")
+                or update.get("my_chat_member", {}).get("chat", {}).get("id")
+            ),
+            "response": response,
+        }
+    )
+    if len(_LAST_UPDATES) > _LAST_UPDATES_MAX:
+        _LAST_UPDATES.pop(0)
+
+
+@router.get("/debug/last-updates")
+async def telegram_debug_last_updates() -> dict:
+    """FIX 2026-07-08: endpoint de debug que mostra os ultimos 20 updates
+    recebidos pelo webhook + a resposta dada. Gustavo pode usar pra
+    confirmar se o callback chegou ate o backend.
+
+    Uso: GET /api/v1/telegram/debug/last-updates
+    """
+    return {
+        "service": "telegram-bot",
+        "version": "v0.6.0",
+        "last_updates": list(_LAST_UPDATES),
+        "ts": int(__import__("time").time()),
+    }
+
+
 @router.post("/webhook", status_code=200)
 async def telegram_webhook(
     request: Request,
@@ -965,6 +1017,7 @@ async def telegram_webhook(
     body_bytes = await request.body()
     update = await request.json()
     _verify_telegram_secret(body_bytes, x_telegram_bot_api_secret_token)
+    _record_update(update, {"status": "received", "stage": "before_process"})
     message = update.get("message", {})
     callback = update.get("callback_query", {})
     my_chat_member = update.get("my_chat_member", {})
@@ -1000,7 +1053,9 @@ async def telegram_webhook(
                 "Use /menu para abrir o cartorio, ou me mencione "
                 "(@test_cartorio_bot) na sua mensagem."
             )
-            await _send_message(chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()})
+            await _send_message(
+                chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
+            )
             return {"status": "ignored", "reason": "group message without command or mention"}
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
