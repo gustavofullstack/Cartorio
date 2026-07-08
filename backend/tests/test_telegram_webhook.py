@@ -595,3 +595,69 @@ def test_bump_metric_increments_counter() -> None:
     bump_metric("test_bump")
     bump_metric("test_bump", 5)
     assert _METRICS["test_bump"] == original + 7
+
+
+def test_telegram_webhook_handles_supergroup_chat() -> None:
+    """Webhook responde 200 a update vindo de supergroup (chat_id negativo, type=supergroup).\n    Licao 2026-07-08: Gustavo migrou grupo -5319980720 p/ supergroup -1004331849032.\n    Bot precisa responder igual em DM (chat_id positivo) ou supergroup (negativo)."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    payload = {
+        "update_id": 99003,
+        "message": {
+            "chat": {
+                "id": -1004331849032,
+                "title": "TESTE/VALIDACAO",
+                "type": "supergroup",
+            },
+            "from": {"id": 6682284055, "first_name": "Gustavo"},
+            "text": "/start",
+            "message_id": 9903,
+        },
+    }
+    resp = client.post("/api/v1/telegram/webhook", json=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["chat_id"] == -1004331849032
+    assert body["response_sent"] is True
+
+
+def test_menu_keyboard_with_cancel_has_cancel_button() -> None:
+    """Versao do menu com botao Cancelar visivel - Gustavo pediu p/ parar spam no grupo."""
+    from app.api.v1.telegram import _menu_keyboard_with_cancel
+
+    kb = _menu_keyboard_with_cancel()
+    flat = [btn for row in kb for btn in row]
+    texts = [b["text"] for b in flat]
+    callbacks = [b["callback_data"] for b in flat]
+    assert "Agendar Atendimento" in texts
+    assert "Consultar Protocolo" in texts
+    assert "Falar com Escrevente" in texts
+    assert "Cancelar" in texts
+    assert "cmd:menu" in callbacks
+
+
+def test_telegram_menu_command_includes_cancel_button() -> None:
+    """POST /webhook /menu retorna reply_markup com botao Cancelar (anti-spam grupo)."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    payload = {
+        "update_id": 99004,
+        "message": {
+            "chat": {"id": -1004331849032, "type": "supergroup"},
+            "from": {"id": 6682284055, "first_name": "Gustavo"},
+            "text": "/menu",
+            "message_id": 99004,
+        },
+    }
+    resp = client.post("/api/v1/telegram/webhook", json=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["response_sent"] is True

@@ -375,6 +375,15 @@ def _menu_keyboard() -> list[list[dict]]:
     ]
 
 
+def _menu_keyboard_with_cancel() -> list[list[dict]]:
+    """Versao do menu com botao Cancelar visivel - usado em contexto de grupo p/ evitar
+    que usuario fique preso sem saida. Requisito Gustavo 2026-07-08: parar spam no grupo.
+    """
+    kb = _menu_keyboard()
+    kb.append([{"text": "Cancelar", "callback_data": "cmd:menu"}])
+    return kb
+
+
 def _servicos_keyboard() -> list[list[dict]]:
     kb: list[list[dict]] = []
     for i, (key, (nome, _)) in enumerate(SERVICOS.items(), 1):
@@ -490,7 +499,7 @@ async def _handle_command(
         )
     if cmd == "/menu":
         await _set_state(bus, chat_id, STATE_IDLE)
-        return "Cartorio 2o Oficio de Notas - Menu principal:", _menu_keyboard()
+        return "Cartorio 2o Oficio de Notas - Menu principal:", _menu_keyboard_with_cancel()
     if cmd == "/agendar":
         await _set_state(bus, chat_id, STATE_AGENDAR_SERVICO, {})
         return "Selecione o serviço desejado:", _servicos_keyboard()
@@ -889,6 +898,16 @@ async def telegram_webhook(
     update_id = update.get("update_id", 0)
     if not chat_id or (not text and not callback):
         return {"status": "ignored", "reason": "non-text update"}
+
+    # Avoid spam: ignore group chat messages that don't start with / or mention the bot
+    chat_type = message.get("chat", {}).get("type", "")
+    if chat_type in ("group", "supergroup"):
+        is_command = text.startswith("/")
+        mentions_bot = "@test_cartorio_bot" in text
+        if not is_command and not mentions_bot:
+            logger.info("TG group ignore chat=%s text=%.60s", chat_id, text)
+            return {"status": "ignored", "reason": "group message without command or mention"}
+
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
     logger.info("TG msg chat=%s text=%.60s", chat_id, text)
 
