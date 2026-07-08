@@ -137,35 +137,27 @@ def test_compute_next_run_utc_com_hora_23() -> None:
 def test_should_run_quando_retencao_disabled() -> None:
     """should_run_retencao_now retorna False se retencao_enabled=False."""
     now = datetime(2026, 6, 29, 6, 0, tzinfo=timezone.utc)  # 03:00 BRT
-    assert should_run_retencao_now(
-        now=now, retencao_enabled=False, retencao_hour_brazil=3
-    ) is False
+    assert should_run_retencao_now(now=now, retencao_enabled=False, retencao_hour_brazil=3) is False
 
 
 def test_should_run_quando_hora_exata_match() -> None:
     """should_run_retencao_now retorna True na hora exata (margem 60s)."""
     # 03:00 BRT = 06:00 UTC
     now = datetime(2026, 6, 29, 6, 0, tzinfo=timezone.utc)
-    assert should_run_retencao_now(
-        now=now, retencao_enabled=True, retencao_hour_brazil=3
-    ) is True
+    assert should_run_retencao_now(now=now, retencao_enabled=True, retencao_hour_brazil=3) is True
 
 
 def test_should_run_quando_fora_da_janela() -> None:
     """should_run_retencao_now retorna False fora da janela de 60s."""
     now = datetime(2026, 6, 29, 10, 0, tzinfo=timezone.utc)  # 07:00 BRT
-    assert should_run_retencao_now(
-        now=now, retencao_enabled=True, retencao_hour_brazil=3
-    ) is False
+    assert should_run_retencao_now(now=now, retencao_enabled=True, retencao_hour_brazil=3) is False
 
 
 def test_should_run_quando_agora_utc_now() -> None:
     """should_run_retencao_now aceita now=None (usa datetime.now(UTC))."""
     # Com now=None, a funcao usa datetime.now() — pode ser True ou False
     # dependendo do horario de execucao. Apenas garante que retorna bool.
-    result = should_run_retencao_now(
-        now=None, retencao_enabled=False, retencao_hour_brazil=3
-    )
+    result = should_run_retencao_now(now=None, retencao_enabled=False, retencao_hour_brazil=3)
     assert isinstance(result, bool)
     # retencao_enabled=False -> sempre False
     assert result is False

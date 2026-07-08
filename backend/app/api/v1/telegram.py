@@ -143,8 +143,8 @@ def strip_emojis(text: str) -> str:
 async def _answer_callback_query(callback_query_id: str) -> None:
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/answerCallbackQuery"
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            await client.post(url, json={"callback_query_id": callback_query_id})
+        client = _get_tg_pool()
+        await client.post(url, timeout=3.0, json={"callback_query_id": callback_query_id})
     except Exception:
         pass
 
@@ -152,9 +152,9 @@ async def _answer_callback_query(callback_query_id: str) -> None:
 async def _send_typing(chat_id: int) -> bool:
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendChatAction"
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            resp = await client.post(url, json={"chat_id": chat_id, "action": "typing"})
-            return resp.status_code == 200
+        client = _get_tg_pool()
+        resp = await client.post(url, timeout=3.0, json={"chat_id": chat_id, "action": "typing"})
+        return resp.status_code == 200
     except Exception:
         return False
 
@@ -163,26 +163,24 @@ async def _send_typing(chat_id: int) -> bool:
 # Antes: cada chamada criava AsyncClient novo (DNS+TLS+TCP = ~500ms).
 # Agora: pool global + typing em background task (retorna <1ms).
 _TG_HTTP_POOL: httpx.AsyncClient | None = None
+_TG_HTTP_POOL_LOOP_ID: int = 0
 
 
 def _get_tg_pool() -> httpx.AsyncClient:
-    global _TG_HTTP_POOL
+    global _TG_HTTP_POOL, _TG_HTTP_POOL_LOOP_ID
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = None
     current_loop_id = id(loop) if loop else 0
-    if not hasattr(_get_tg_pool, "_loop_id"):
-        _get_tg_pool._loop_id = 0
-
-    if _TG_HTTP_POOL is None or _get_tg_pool._loop_id != current_loop_id:
+    if _TG_HTTP_POOL is None or _TG_HTTP_POOL_LOOP_ID != current_loop_id:
         _TG_HTTP_POOL = httpx.AsyncClient(
             timeout=httpx.Timeout(15.0, connect=10.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
             verify=False,  # Bypass domain mismatch verification when using direct IP routing
             headers={"Host": "api.telegram.org"},  # Ensure Telegram routing works
         )
-        _get_tg_pool._loop_id = current_loop_id
+        _TG_HTTP_POOL_LOOP_ID = current_loop_id
     return _TG_HTTP_POOL
 
 
@@ -219,15 +217,16 @@ async def _react(chat_id: int, message_id: int, reaction: str = "thumbsup") -> N
     emoji = tg_reactions.get(reaction, "👍")
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/setMessageReaction"
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            await client.post(
-                url,
-                json={
-                    "chat_id": chat_id,
-                    "message_id": message_id,
-                    "reaction": [{"type": "emoji", "emoji": emoji}],
-                },
-            )
+        client = _get_tg_pool()
+        await client.post(
+            url,
+            timeout=3.0,
+            json={
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "reaction": [{"type": "emoji", "emoji": emoji}],
+            },
+        )
     except Exception:
         pass
 
@@ -358,16 +357,16 @@ async def _clear_state(bus: Any, chat_id: int) -> None:
 
 async def _call_api(method: str, path: str, body: dict | None = None) -> dict:
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            headers = {"Content-Type": "application/json"}
-            if hasattr(settings, "cartorio_api_key"):
-                headers["X-API-Key"] = settings.cartorio_api_key
-            url = f"http://127.0.0.1:8000{path}"
-            if method == "GET":
-                resp = await client.get(url, headers=headers)
-            else:
-                resp = await client.post(url, json=body or {}, headers=headers)
-            return resp.json() if resp.status_code < 500 else {"erro": f"HTTP {resp.status_code}"}
+        client = _get_tg_pool()
+        headers = {"Content-Type": "application/json"}
+        if hasattr(settings, "cartorio_api_key"):
+            headers["X-API-Key"] = settings.cartorio_api_key
+        url = f"http://127.0.0.1:8000{path}"
+        if method == "GET":
+            resp = await client.get(url, headers=headers, timeout=8.0)
+        else:
+            resp = await client.post(url, json=body or {}, headers=headers, timeout=8.0)
+        return resp.json() if resp.status_code < 500 else {"erro": f"HTTP {resp.status_code}"}
     except Exception as e:
         logger.exception("API call falhou: %s", e)
         return {"erro": str(e)}
@@ -463,9 +462,9 @@ async def _send_poll(chat_id: int, question: str, options: list[str]) -> bool:
         "is_anonymous": False,
     }
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json=payload)
-            return resp.status_code == 200
+        client = _get_tg_pool()
+        resp = await client.post(url, json=payload, timeout=10.0)
+        return resp.status_code == 200
     except Exception as e:
         logger.exception("TG poll error: %s", e)
         return False
@@ -480,9 +479,9 @@ async def _send_photo(chat_id: int, photo_url: str, caption: str | None = None) 
     if caption:
         payload["caption"] = strip_emojis(caption)
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json=payload)
-            return resp.status_code == 200
+        client = _get_tg_pool()
+        resp = await client.post(url, json=payload, timeout=10.0)
+        return resp.status_code == 200
     except Exception as e:
         logger.exception("TG photo error: %s", e)
         return False
@@ -499,9 +498,9 @@ async def _send_document(
     if caption:
         payload["caption"] = strip_emojis(caption)
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json=payload)
-            return resp.status_code == 200
+        client = _get_tg_pool()
+        resp = await client.post(url, json=payload, timeout=10.0)
+        return resp.status_code == 200
     except Exception as e:
         logger.exception("TG document error: %s", e)
         return False
@@ -1000,7 +999,9 @@ async def telegram_webhook(
                 "Use /menu para abrir o cartorio, ou me mencione "
                 "(@test_cartorio_bot) na sua mensagem."
             )
-            await _send_message(chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()})
+            await _send_message(
+                chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
+            )
             return {"status": "ignored", "reason": "group message without command or mention"}
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
@@ -1110,17 +1111,17 @@ async def telegram_webhook(
 @router.get("/webhook/info")
 async def telegram_webhook_info() -> dict:
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/getWebhookInfo"
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(url)
-        return resp.json()
+    client = _get_tg_pool()
+    resp = await client.get(url, timeout=10.0)
+    return resp.json()
 
 
 @router.post("/set-commands")
 async def telegram_set_commands() -> dict:
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/setMyCommands"
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(url, json={"commands": BOT_COMMANDS})
-        return resp.json()
+    client = _get_tg_pool()
+    resp = await client.post(url, timeout=10.0, json={"commands": BOT_COMMANDS})
+    return resp.json()
 
 
 def _verify_telegram_secret(update_body: bytes, secret_token_header: str | None) -> None:

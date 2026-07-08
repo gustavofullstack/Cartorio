@@ -43,7 +43,7 @@ async def test_call_api_get_chama_client_get() -> None:
         async def __aexit__(self, *args: object) -> None:
             pass
 
-        async def get(self, url: str, headers: dict) -> FakeResp:
+        async def get(self, url: str, headers: dict, **kwargs) -> FakeResp:
             captured["url"] = url
             captured["headers"] = headers
             return FakeResp()
@@ -51,7 +51,7 @@ async def test_call_api_get_chama_client_get() -> None:
         async def post(self, *args: object, **kwargs: object) -> FakeResp:
             return FakeResp()
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient", FakeClient):
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=FakeClient()):
         result = await _call_api("GET", "/api/v1/test")
 
     assert "url" in captured
@@ -88,12 +88,12 @@ async def test_call_api_post_chama_client_post_com_body() -> None:
         async def get(self, *args: object, **kwargs: object) -> FakeResp:
             return FakeResp()
 
-        async def post(self, url: str, json: dict, headers: dict) -> FakeResp:
+        async def post(self, url: str, json: dict, headers: dict, **kwargs) -> FakeResp:
             captured["url"] = url
             captured["json"] = json
             return FakeResp()
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient", FakeClient):
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=FakeClient()):
         result = await _call_api("POST", "/api/v1/clientes", body={"nome": "X"})
 
     assert "url" in captured
@@ -128,7 +128,7 @@ async def test_call_api_5xx_retorna_dict_com_erro() -> None:
         async def post(self, *args: object, **kwargs: object) -> FakeResp:
             return FakeResp()
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient", FakeClient):
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=FakeClient()):
         result = await _call_api("GET", "/api/v1/test")
 
     assert "erro" in result
@@ -156,7 +156,7 @@ async def test_call_api_exception_rede_retorna_dict_com_erro() -> None:
         async def post(self, *args: object, **kwargs: object) -> object:
             raise httpx.ConnectError("connection refused")
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient", FakeClient):
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=FakeClient()):
         result = await _call_api("GET", "/api/v1/test")
 
     assert "erro" in result
@@ -188,11 +188,11 @@ async def test_call_api_metodo_desconhecido_tratado_como_post() -> None:
         async def get(self, *args: object, **kwargs: object) -> FakeResp:
             return FakeResp()
 
-        async def post(self, url: str, json: dict, headers: dict) -> FakeResp:
+        async def post(self, url: str, json: dict, headers: dict, **kwargs) -> FakeResp:
             captured["method"] = "POST"
             return FakeResp()
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient", FakeClient):
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=FakeClient()):
         # Metodo PUT/DELETE cai no else do if (treated as POST)
         result = await _call_api("PUT", "/api/v1/test", body={"x": 1})
 

@@ -128,7 +128,9 @@ async def test_enviar_notificacao_erro_cliente_nao_encontrado() -> None:
     with pytest.raises(ValueError) as exc_info:
         await NotificationService.enviar_notificacao(db, cliente_id=999, mensagem="Oi")
     assert "999" in str(exc_info.value)
-    assert "nao encontrado" in str(exc_info.value).lower() or "não encontrado" in str(exc_info.value)
+    assert "nao encontrado" in str(exc_info.value).lower() or "não encontrado" in str(
+        exc_info.value
+    )
 
 
 @pytest.mark.asyncio

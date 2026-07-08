@@ -39,9 +39,7 @@ async def test_send_typing_success():
     fake_client = AsyncMock()
     fake_client.post = AsyncMock(return_value=fake_response)
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient") as mock_cls:
-        mock_cls.return_value.__aenter__ = AsyncMock(return_value=fake_client)
-        mock_cls.return_value.__aexit__ = AsyncMock(return_value=None)
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=fake_client):
         result = await _send_typing(chat_id=12345)
 
     assert result is True
@@ -60,9 +58,7 @@ async def test_send_typing_non_200_returns_false():
     fake_client = AsyncMock()
     fake_client.post = AsyncMock(return_value=fake_response)
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient") as mock_cls:
-        mock_cls.return_value.__aenter__ = AsyncMock(return_value=fake_client)
-        mock_cls.return_value.__aexit__ = AsyncMock(return_value=None)
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=fake_client):
         result = await _send_typing(chat_id=12345)
 
     assert result is False
@@ -90,9 +86,7 @@ async def test_react_default_thumbsup():
     fake_client = AsyncMock()
     fake_client.post = AsyncMock()
 
-    with patch("app.api.v1.telegram.httpx.AsyncClient") as mock_cls:
-        mock_cls.return_value.__aenter__ = AsyncMock(return_value=fake_client)
-        mock_cls.return_value.__aexit__ = AsyncMock(return_value=None)
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=fake_client):
         await _react(chat_id=99, message_id=42)
 
     call_args = fake_client.post.call_args
@@ -119,9 +113,7 @@ async def test_react_all_known_emojis():
     for reaction_name in known:
         fake_client = AsyncMock()
         fake_client.post = AsyncMock()
-        with patch("app.api.v1.telegram.httpx.AsyncClient") as mock_cls:
-            mock_cls.return_value.__aenter__ = AsyncMock(return_value=fake_client)
-            mock_cls.return_value.__aexit__ = AsyncMock(return_value=None)
+        with patch("app.api.v1.telegram._get_tg_pool", return_value=fake_client):
             await _react(chat_id=1, message_id=1, reaction=reaction_name)
 
         payload = fake_client.post.call_args.kwargs["json"]
@@ -133,9 +125,7 @@ async def test_react_unknown_falls_back_to_thumbsup():
     """_react com reaction desconhecida cai no default thumbsup."""
     fake_client = AsyncMock()
     fake_client.post = AsyncMock()
-    with patch("app.api.v1.telegram.httpx.AsyncClient") as mock_cls:
-        mock_cls.return_value.__aenter__ = AsyncMock(return_value=fake_client)
-        mock_cls.return_value.__aexit__ = AsyncMock(return_value=None)
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=fake_client):
         await _react(chat_id=1, message_id=1, reaction="nao_existe")
 
     payload = fake_client.post.call_args.kwargs["json"]
