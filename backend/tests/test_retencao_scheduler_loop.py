@@ -157,7 +157,9 @@ def test_should_run_quando_agora_utc_now() -> None:
     """should_run_retencao_now aceita now=None (usa datetime.now(UTC))."""
     # Com now=None, a funcao usa datetime.now() — pode ser True ou False
     # dependendo do horario de execucao. Apenas garante que retorna bool.
-    result = should_run_retencao_now(now=datetime.now(timezone.utc), retencao_enabled=False, retencao_hour_brazil=3)
+    result = should_run_retencao_now(
+        now=datetime.now(timezone.utc), retencao_enabled=False, retencao_hour_brazil=3
+    )
     assert isinstance(result, bool)
     # retencao_enabled=False -> sempre False
     assert result is False
