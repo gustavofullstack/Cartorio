@@ -290,3 +290,19 @@ def test_endpoint_metrics_json_inclui_contagens_db(client) -> None:
     assert body["protocolos_total"].get("aberto") == 1
     assert body["protocolos_total"].get("concluido") == 1
     assert body["audit_chain_length"] >= 0  # pode ter entries de session_scope
+
+
+def test_track_scrub_latency() -> None:
+    s = MetricsStore()
+    s.track_scrub_latency(tipo_scrub="db", result="success", duration_ms=150.5)
+    s.track_scrub_latency(tipo_scrub="db", result="success", duration_ms=50.0)
+    s.track_scrub_latency(tipo_scrub="logs", result="error", duration_ms=200.0)
+
+    key_db_success = s._labels_key({"tipo_scrub": "db", "result": "success"})
+    key_logs_error = s._labels_key({"tipo_scrub": "logs", "result": "error"})
+
+    assert len(s.histograms["scrub_latency_ms"][key_db_success]) == 2
+    assert sum(s.histograms["scrub_latency_ms"][key_db_success]) == pytest.approx(200.5)
+
+    assert len(s.histograms["scrub_latency_ms"][key_logs_error]) == 1
+    assert sum(s.histograms["scrub_latency_ms"][key_logs_error]) == pytest.approx(200.0)
