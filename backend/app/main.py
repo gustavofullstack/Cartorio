@@ -555,21 +555,25 @@ SWAGGER_UI_HTML = """<!DOCTYPE html>
       justify-content: space-between;
     }}
     .header-cartorio h1 {{ margin: 0; font-size: 1.4em; font-weight: 600; }}
-    .header-cartorio .links a {{ color: #cbd5e0; margin-left: 18px; text-decoration: none; }}
-    .header-cartorio .links a:hover {{ color: white; text-decoration: underline; }}
+    .header-cartorio .links a {{ color: #cbd5e0; margin-left: 18px; text-decoration: none; outline: none; }}
+    .header-cartorio .links a:hover,
+    .header-cartorio .links a:focus-visible {{ color: white; text-decoration: underline; outline: 2px solid white; outline-offset: 4px; border-radius: 2px; }}
+    .skip-link {{ position: absolute; top: -40px; left: 0; background: #e2e8f0; color: #1a365d; padding: 8px; z-index: 100; transition: top 0.2s; text-decoration: none; font-weight: bold; border-radius: 0 0 4px 0; outline: none; }}
+    .skip-link:focus, .skip-link:focus-visible {{ top: 0; outline: 2px solid #1a365d; outline-offset: -2px; }}
   </style>
 </head>
 <body>
-  <div class="header-cartorio">
+  <a href="#swagger-ui" class="skip-link">Pular para o conteúdo principal</a>
+  <header class="header-cartorio">
     <h1>Cartorio 2 Notas Uberlandia - Backend API</h1>
-    <div class="links">
+    <nav class="links" aria-label="Navegação da API">
       <a href="/redoc">ReDoc</a>
       <a href="/openapi.json">openapi.json</a>
       <a href="/mcp">MCP</a>
       <a href="/mcp-servers">MCP Servers</a>
-    </div>
-  </div>
-  <div id="swagger-ui"></div>
+    </nav>
+  </header>
+  <main id="swagger-ui"></main>
   <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
     window.onload = () => {{
