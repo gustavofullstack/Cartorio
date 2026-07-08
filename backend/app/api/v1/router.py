@@ -15,6 +15,7 @@ Tags:
 """
 
 from __future__ import annotations
+from app.integrations.google_calendar import get_scheduled_events
 
 import datetime
 import hashlib
@@ -1931,12 +1932,17 @@ async def agendamento_disponibilidade(
         return {"vagas": 0, "slots": [], "erro": "Atendimento apenas das 09h as 17h"}
 
     # MVP: tabela estatica - 5 vagas/hora
-    # TODO Sprint 2: integrar com Google Calendar API para bloquear slots ja agendados
+    # Sprint 2: integracao com Google Calendar API para bloquear slots ja agendados
+    scheduled_per_hour = await get_scheduled_events(dia.lower())
+
     slots = []
     for h in range(max(9, hora), 17):
-        slots.append({"dia": dia.lower(), "hora": h, "vagas": 5})
+        scheduled = scheduled_per_hour.get(h, 0)
+        vagas_disponiveis = max(0, 5 - scheduled)
+        slots.append({"dia": dia.lower(), "hora": h, "vagas": vagas_disponiveis})
 
-    return {"dia": dia.lower(), "hora_pedida": hora, "vagas": 5, "slots": slots}
+    vagas_pedida = max(0, 5 - scheduled_per_hour.get(hora, 0))
+    return {"dia": dia.lower(), "hora_pedida": hora, "vagas": vagas_pedida, "slots": slots}
 
 
 # ============================================================================

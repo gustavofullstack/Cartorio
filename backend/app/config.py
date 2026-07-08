@@ -162,6 +162,13 @@ class Settings(BaseSettings):
     # ========================================================================
     # Evolution API (WhatsApp)
     # ========================================================================
+
+    # ========================================================================
+    # Google Calendar (Sprint 2)
+    # ========================================================================
+    google_calendar_id: Optional[str] = None
+    google_calendar_api_key: Optional[str] = None
+
     evolution_base_url: str = "http://cartorio_evolution-api:8080"
     evolution_api_key: Optional[str] = None
     evolution_instance: str = "cartorio-2notas"
