@@ -99,41 +99,86 @@ def direito_esquecimento(
         "telefone_hash": cliente_row.get("telefone_hash") or "",  # ja eh hash
     }
 
-    # 3. Soft delete cascade (marca deleted_at + anonimiza PII)
+    # 3. Soft delete cascade (marca deleted_at + anonimiza PII) em uma unica query
     rows_affected = 0
     anonymized_tables = []
 
-    for table in CASCADE_TABLES:
-        try:
+    if CASCADE_TABLES:
+        ctes = []
+        selects = []
+
+        for table in CASCADE_TABLES:
             if table == "clientes":
-                # Tabela clientes tem colunas especificas do model
-                result = db.execute(
-                    text(
-                        "UPDATE clientes SET "
-                        "deleted_at = :now, "
-                        f"{_CLIENTE_PII_COLUMNS}, "
-                        f"{_CLIENTE_LGPD_COLUMNS}, "
-                        "lgpd_reversivel_ate = :reversivel_ate "
-                        "WHERE id = :cid AND deleted_at IS NULL"
-                    ),
-                    {"now": now, "cid": cliente_id, "reversivel_ate": reversivel_ate},
+                cte = (
+                    f"up_clientes AS (UPDATE clientes SET "
+                    f"deleted_at = :now, "
+                    f"{_CLIENTE_PII_COLUMNS}, "
+                    f"{_CLIENTE_LGPD_COLUMNS}, "
+                    f"lgpd_reversivel_ate = :reversivel_ate "
+                    f"WHERE id = :cid AND deleted_at IS NULL RETURNING 1)"
                 )
             else:
-                # Demais tabelas: so deleted_at (nao tem PII do cliente)
-                result = db.execute(
-                    text(
-                        f"UPDATE {table} SET deleted_at = :now "
-                        "WHERE cliente_id = :cid AND deleted_at IS NULL"
-                    ),
-                    {"now": now, "cid": cliente_id},
+                cte = (
+                    f"up_{table} AS (UPDATE {table} SET deleted_at = :now "
+                    f"WHERE cliente_id = :cid AND deleted_at IS NULL RETURNING 1)"
                 )
-            rowcount = getattr(result, "rowcount", 0) or 0
-            if rowcount > 0:
-                rows_affected += rowcount
-                anonymized_tables.append(table)
+            ctes.append(cte)
+            selects.append(f"(SELECT count(*) FROM up_{table}) as c_{table}")
+
+        query = "WITH " + ", ".join(ctes) + " SELECT " + ", ".join(selects)
+
+        try:
+            result = (
+                db.execute(
+                    text(query),
+                    {"now": now, "cid": cliente_id, "reversivel_ate": reversivel_ate},
+                )
+                .mappings()
+                .first()
+            )
+
+            if result:
+                for table in CASCADE_TABLES:
+                    count = result.get(f"c_{table}", 0)
+                    if count > 0:
+                        rows_affected += count
+                        anonymized_tables.append(table)
         except Exception as e:
-            log.warning("cascade %s falhou para cliente %s: %s", table, cliente_id, e)
-            continue
+            log.error("Cascade fail (CTE method) for client %s: %s", cliente_id, e)
+            # fallback to loop if CTE is not supported (e.g. old SQLite)
+            rows_affected = 0
+            anonymized_tables = []
+            for table in CASCADE_TABLES:
+                try:
+                    if table == "clientes":
+                        res = db.execute(
+                            text(
+                                "UPDATE clientes SET "
+                                "deleted_at = :now, "
+                                f"{_CLIENTE_PII_COLUMNS}, "
+                                f"{_CLIENTE_LGPD_COLUMNS}, "
+                                "lgpd_reversivel_ate = :reversivel_ate "
+                                "WHERE id = :cid AND deleted_at IS NULL"
+                            ),
+                            {"now": now, "cid": cliente_id, "reversivel_ate": reversivel_ate},
+                        )
+                    else:
+                        res = db.execute(
+                            text(
+                                f"UPDATE {table} SET deleted_at = :now "
+                                "WHERE cliente_id = :cid AND deleted_at IS NULL"
+                            ),
+                            {"now": now, "cid": cliente_id},
+                        )
+                    rowcount = getattr(res, "rowcount", 0) or 0
+                    if rowcount > 0:
+                        rows_affected += rowcount
+                        anonymized_tables.append(table)
+                except Exception as ex:
+                    log.warning(
+                        "cascade fallback %s falhou para cliente %s: %s", table, cliente_id, ex
+                    )
+                    continue
 
     # 4. Audit log (obrigatorio LGPD art. 37)
     # Usa AuditService.log() para garantir hash chain + HMAC corretos
@@ -230,25 +275,74 @@ def restore_direito_esquecimento(
 
     # Restaura deleted_at=NULL em todas as tabelas cascade
     restored_tables = []
-    for table in CASCADE_TABLES:
-        try:
-            result = db.execute(
-                text(
-                    f"UPDATE {table} SET deleted_at = NULL "
-                    "WHERE cliente_id = :cid AND deleted_at IS NOT NULL"
-                ),
-                {"cid": cliente_id},
-            )
-            rowcount = getattr(result, "rowcount", 0) or 0
-            if rowcount > 0:
-                restored_tables.append(table)
-        except Exception as e:
-            log.warning("restore %s falhou: %s", table, e)
 
-    db.execute(
-        text("UPDATE clientes SET deleted_at = NULL, lgpd_reversivel_ate = NULL WHERE id = :cid"),
-        {"cid": cliente_id},
-    )
+    if CASCADE_TABLES:
+        ctes = []
+        selects = []
+
+        for table in CASCADE_TABLES:
+            if table == "clientes":
+                cte = (
+                    "up_clientes AS (UPDATE clientes SET deleted_at = NULL, lgpd_reversivel_ate = NULL "
+                    "WHERE id = :cid RETURNING 1)"
+                )
+            else:
+                cte = (
+                    f"up_{table} AS (UPDATE {table} SET deleted_at = NULL "
+                    f"WHERE cliente_id = :cid AND deleted_at IS NOT NULL RETURNING 1)"
+                )
+            ctes.append(cte)
+            selects.append(f"(SELECT count(*) FROM up_{table}) as c_{table}")
+
+        query = "WITH " + ", ".join(ctes) + " SELECT " + ", ".join(selects)
+
+        try:
+            result = (
+                db.execute(
+                    text(query),
+                    {"cid": cliente_id},
+                )
+                .mappings()
+                .first()
+            )
+
+            if result:
+                for table in CASCADE_TABLES:
+                    count = result.get(f"c_{table}", 0)
+                    if count > 0:
+                        restored_tables.append(table)
+        except Exception as e:
+            log.error("Restore cascade fail (CTE method) for client %s: %s", cliente_id, e)
+            # fallback
+            for table in CASCADE_TABLES:
+                try:
+                    if table == "clientes":
+                        res = db.execute(
+                            text(
+                                "UPDATE clientes SET deleted_at = NULL, lgpd_reversivel_ate = NULL WHERE id = :cid"
+                            ),
+                            {"cid": cliente_id},
+                        )
+                    else:
+                        res = db.execute(
+                            text(
+                                f"UPDATE {table} SET deleted_at = NULL "
+                                "WHERE cliente_id = :cid AND deleted_at IS NOT NULL"
+                            ),
+                            {"cid": cliente_id},
+                        )
+                    rowcount = getattr(res, "rowcount", 0) or 0
+                    if rowcount > 0:
+                        restored_tables.append(table)
+                except Exception as ex:
+                    log.warning("restore fallback %s falhou: %s", table, ex)
+    else:
+        db.execute(
+            text(
+                "UPDATE clientes SET deleted_at = NULL, lgpd_reversivel_ate = NULL WHERE id = :cid"
+            ),
+            {"cid": cliente_id},
+        )
 
     # Audit log
     from app.services.audit import AuditService

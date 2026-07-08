@@ -1,0 +1,3 @@
+## 2024-07-08 - Optimize LGPD N+1 Updates using CTEs
+ **Learning:** Using `lru_cache` to cache SQLAlchemy `TextClause` objects provides zero performance benefit and does not solve N+1 database round trips. The correct way to batch heterogeneous `UPDATE` operations while preserving individual row counts in a single database round trip is to use data-modifying Common Table Expressions (CTEs) with `RETURNING 1` (e.g. `WITH u1 AS (UPDATE ... RETURNING 1) SELECT ...`). This works in PostgreSQL and modern SQLite.
+ **Action:** Refactored `app.services.lgpd_direito_esquecimento` loops to batch cascade soft-deletes and restores using CTEs, adding an exception handler to gracefully fall back to the loop approach if the dialect does not support data-modifying CTEs.
