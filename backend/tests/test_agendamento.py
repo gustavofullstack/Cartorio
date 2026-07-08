@@ -504,3 +504,180 @@ def test_listar_agendamentos_proximos_vazio(test_session):
             proximos = AgendamentoService.listar_agendamentos_proximos(test_session)
 
     assert proximos == []
+
+
+def test_validar_horario_disponivel_sem_conflitos(test_session, cliente_test):
+    """Testa a validação de horário sem agendamentos conflitantes."""
+    data_hora = datetime.datetime(2026, 7, 2, 10, 0, 0, tzinfo=datetime.timezone.utc)
+
+    # Não deve lançar erro
+    AgendamentoService._validar_horario_disponivel(
+        db=test_session, data_hora=data_hora, duration_minutes=30, local="balcao_1"
+    )
+
+
+def test_validar_horario_disponivel_local_diferente(test_session, cliente_test):
+    """Testa validação de horário quando existe agendamento mas em local diferente."""
+    data_hora = datetime.datetime(2026, 7, 2, 10, 0, 0, tzinfo=datetime.timezone.utc)
+
+    # Cria agendamento no balcão 2
+    AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora,
+        titulo="Agendamento Balcao 2",
+        tipo=TipoAtendimento.NORMAL,
+        local="balcao_2",
+        duration_minutes=30,
+    )
+
+    # Validar no balcão 1 não deve dar conflito
+    AgendamentoService._validar_horario_disponivel(
+        db=test_session, data_hora=data_hora, duration_minutes=30, local="balcao_1"
+    )
+
+
+def test_validar_horario_disponivel_status_ignorados(test_session, cliente_test):
+    """Testa validação ignorando agendamentos cancelados, concluídos ou que faltaram."""
+    data_hora = datetime.datetime(2026, 7, 2, 10, 0, 0, tzinfo=datetime.timezone.utc)
+
+    # Cria e cancela agendamento
+    ag = AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora,
+        titulo="Agendamento Cancelado",
+        tipo=TipoAtendimento.NORMAL,
+        local="balcao_1",
+        duration_minutes=30,
+    )
+    AgendamentoService.cancelar_agendamento(test_session, ag.id)
+
+    # Validar agora deve permitir
+    AgendamentoService._validar_horario_disponivel(
+        db=test_session, data_hora=data_hora, duration_minutes=30, local="balcao_1"
+    )
+
+
+def test_validar_horario_disponivel_conflito_mesmo_horario(test_session, cliente_test):
+    """Testa conflito exato no mesmo horário."""
+    from app.services.agendamento import AgendamentoConflictError
+
+    data_hora = datetime.datetime(2026, 7, 2, 10, 0, 0, tzinfo=datetime.timezone.utc)
+
+    AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora,
+        titulo="Agendamento 1",
+        tipo=TipoAtendimento.NORMAL,
+        local="balcao_1",
+        duration_minutes=30,
+    )
+
+    with pytest.raises(AgendamentoConflictError):
+        AgendamentoService._validar_horario_disponivel(
+            db=test_session, data_hora=data_hora, duration_minutes=30, local="balcao_1"
+        )
+
+
+def test_validar_horario_disponivel_conflito_sobreposicao(test_session, cliente_test):
+    """Testa conflito de sobreposição parcial de horário."""
+    from app.services.agendamento import AgendamentoConflictError
+
+    data_hora_1 = datetime.datetime(2026, 7, 2, 10, 0, 0, tzinfo=datetime.timezone.utc)
+    # Tenta agendar para 15 minutos DEPOIS do início do primeiro (conflito pois dura 30m)
+    data_hora_2 = datetime.datetime(2026, 7, 2, 10, 15, 0, tzinfo=datetime.timezone.utc)
+    # Tenta agendar para 15 minutos ANTES do início do primeiro (conflito pois dura 30m)
+    data_hora_3 = datetime.datetime(2026, 7, 2, 9, 45, 0, tzinfo=datetime.timezone.utc)
+
+    AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora_1,
+        titulo="Agendamento Base",
+        tipo=TipoAtendimento.NORMAL,
+        local="balcao_1",
+        duration_minutes=30,
+    )
+
+    with pytest.raises(AgendamentoConflictError):
+        AgendamentoService._validar_horario_disponivel(
+            db=test_session, data_hora=data_hora_2, duration_minutes=30, local="balcao_1"
+        )
+
+    with pytest.raises(AgendamentoConflictError):
+        AgendamentoService._validar_horario_disponivel(
+            db=test_session, data_hora=data_hora_3, duration_minutes=30, local="balcao_1"
+        )
+
+
+def test_validar_horario_disponivel_fronteira_permitida(test_session, cliente_test):
+    """Testa que agendar logo antes ou logo depois é permitido."""
+    data_hora_base = datetime.datetime(2026, 7, 2, 10, 0, 0, tzinfo=datetime.timezone.utc)
+    data_hora_antes = datetime.datetime(2026, 7, 2, 9, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora_depois = datetime.datetime(2026, 7, 2, 10, 30, 0, tzinfo=datetime.timezone.utc)
+
+    AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora_base,
+        titulo="Agendamento Base",
+        tipo=TipoAtendimento.NORMAL,
+        local="balcao_1",
+        duration_minutes=30,
+    )
+
+    # 30 mins ANTES - não deve dar conflito
+    AgendamentoService._validar_horario_disponivel(
+        db=test_session, data_hora=data_hora_antes, duration_minutes=30, local="balcao_1"
+    )
+
+    # 30 mins DEPOIS - não deve dar conflito
+    AgendamentoService._validar_horario_disponivel(
+        db=test_session, data_hora=data_hora_depois, duration_minutes=30, local="balcao_1"
+    )
+
+
+def test_validar_horario_disponivel_com_data_hora_fim(test_session, cliente_test):
+    """Testa validação de horário considerando data_hora_fim explicitamente definido."""
+    from app.services.agendamento import AgendamentoConflictError
+
+    data_hora_1 = datetime.datetime(2026, 7, 2, 14, 0, 0, tzinfo=datetime.timezone.utc)
+    data_hora_fim_1 = data_hora_1 + datetime.timedelta(minutes=60)  # 1h de duração
+
+    # Usa direto o Model para conseguir setar o data_hora_fim no status em_atendimento
+    ag = AgendamentoService.criar_agendamento(
+        db=test_session,
+        cliente_id=cliente_test.id,
+        cliente_cpf="12345678909",
+        data_hora=data_hora_1,
+        titulo="Agendamento Longo",
+        tipo=TipoAtendimento.NORMAL,
+        local="balcao_1",
+    )
+
+    # Confirma e inicia atendimento, e ajusta manualmente os horários
+    ag.status = StatusAgendamento.EM_ATENDIMENTO
+    ag.data_hora_fim = data_hora_fim_1
+    test_session.commit()
+
+    # Tenta agendar para 14:45 (dentro da janela de 1h)
+    data_hora_2 = datetime.datetime(2026, 7, 2, 14, 45, 0, tzinfo=datetime.timezone.utc)
+
+    with pytest.raises(AgendamentoConflictError):
+        AgendamentoService._validar_horario_disponivel(
+            db=test_session, data_hora=data_hora_2, duration_minutes=30, local="balcao_1"
+        )
+
+    # Tenta agendar para 15:00 (fim exato do outro, deve permitir)
+    data_hora_3 = datetime.datetime(2026, 7, 2, 15, 0, 0, tzinfo=datetime.timezone.utc)
+
+    AgendamentoService._validar_horario_disponivel(
+        db=test_session, data_hora=data_hora_3, duration_minutes=30, local="balcao_1"
+    )

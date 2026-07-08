@@ -111,7 +111,7 @@ class AgendamentoService:
                 # cai dentro da janela [janela_inicio, data_hora_fim]
                 (
                     Agendamento.data_hora_fim.is_(None)
-                    & (Agendamento.data_hora >= janela_inicio)
+                    & (Agendamento.data_hora > janela_inicio)
                     & (Agendamento.data_hora < data_hora_fim)
                 ),
             ),
