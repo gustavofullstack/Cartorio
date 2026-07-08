@@ -286,10 +286,37 @@ class NotificationService:
 
     @staticmethod
     async def _enviar_email(email: str, mensagem: str) -> bool:
-        """Envia notificação via email (placeholder para integração futura)."""
-        # TODO: Implementar integração com serviço de email (SendGrid, Mailgun, etc.)
-        _log.info("Email placeholder: %s → %s", email, mensagem[:50])
-        return True  # Simula sucesso para testes
+        """Envia notificação via email usando SendGrid."""
+        if not settings.sendgrid_api_key:
+            _log.error("SENDGRID_API_KEY não configurado")
+            return False
+
+        cleaned_msg = _strip_emojis(mensagem)
+        url = "https://api.sendgrid.com/v3/mail/send"
+
+        payload = {
+            "personalizations": [{"to": [{"email": email}]}],
+            "from": {"email": settings.sendgrid_from_email},
+            "subject": "Notificação - 2Notas",
+            "content": [{"type": "text/html", "value": cleaned_msg.replace("\n", "<br>")}],
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.post(
+                    url,
+                    headers={
+                        "Authorization": f"Bearer {settings.sendgrid_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
+                if response.status_code not in (200, 202):
+                    _log.error("Falha SendGrid (HTTP %d): %s", response.status_code, response.text)
+                return response.status_code in (200, 202)
+        except Exception as e:
+            _log.exception("Falha ao enviar email: %s", e)
+            return False
 
     @staticmethod
     async def _enviar_sms(telefone_hash: str, mensagem: str) -> bool:

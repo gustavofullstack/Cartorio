@@ -167,6 +167,12 @@ class Settings(BaseSettings):
     evolution_instance: str = "cartorio-2notas"
 
     # ========================================================================
+    # SendGrid (Email)
+    # ========================================================================
+    sendgrid_api_key: Optional[str] = None
+    sendgrid_from_email: str = "noreply@2notasudi.com.br"
+
+    # ========================================================================
     # Chatwoot (CRM / atendimento humano)
     # ========================================================================
     chatwoot_base_url: Optional[str] = None

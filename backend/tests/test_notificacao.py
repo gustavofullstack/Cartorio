@@ -235,10 +235,48 @@ async def test_enviar_whatsapp_sem_numero():
 # ─── enviar_notificacao — Email / SMS (placeholders) ────────────────
 
 
-async def test_enviar_email_placeholder():
-    """_enviar_email retorna True (placeholder)."""
-    result = await NotificationService._enviar_email("teste@test.com", "msg")
-    assert result is True
+async def test_enviar_email_sucesso():
+    """_enviar_email retorna True quando API responde 202 (SendGrid)."""
+    mock_response = MagicMock()
+    mock_response.status_code = 202
+
+    with (
+        patch("app.services.notificacao.settings.sendgrid_api_key", "sg_key_123"),
+        patch("app.services.notificacao.settings.sendgrid_from_email", "noreply@2notasudi.com.br"),
+        patch("httpx.AsyncClient") as mock_client_cls,
+    ):
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client_cls.return_value = mock_client
+
+        result = await NotificationService._enviar_email("teste@test.com", "mensagem teste")
+        assert result is True
+
+
+async def test_enviar_email_sem_api_key():
+    """_enviar_email retorna False sem API key configurada."""
+    with patch("app.services.notificacao.settings.sendgrid_api_key", ""):
+        result = await NotificationService._enviar_email("teste@test.com", "teste")
+        assert result is False
+
+
+async def test_enviar_email_falha_api():
+    """_enviar_email retorna False se API retorna erro."""
+    with (
+        patch("app.services.notificacao.settings.sendgrid_api_key", "sg_key_123"),
+        patch("app.services.notificacao.settings.sendgrid_from_email", "noreply@2notasudi.com.br"),
+        patch("httpx.AsyncClient") as mock_client_cls,
+    ):
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(side_effect=ConnectionError("timeout"))
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client_cls.return_value = mock_client
+
+        result = await NotificationService._enviar_email("teste@test.com", "teste")
+        assert result is False
 
 
 async def test_enviar_email_sem_email():
@@ -295,7 +333,10 @@ async def test_notificar_agendamento_criado():
     mock_execute.scalar_one_or_none.return_value = mock_cliente
     mock_db.execute.return_value = mock_execute
 
-    with patch("app.services.notificacao.AuditService.log"):
+    with (
+        patch("app.services.notificacao.AuditService.log"),
+        patch.object(NotificationService, "_enviar_email", new=AsyncMock(return_value=True)),
+    ):
         result = await NotificationService.notificar_agendamento_criado(
             mock_db,
             cliente_id=1,
@@ -318,7 +359,10 @@ async def test_notificar_agendamento_lembrete():
     mock_execute.scalar_one_or_none.return_value = mock_cliente
     mock_db.execute.return_value = mock_execute
 
-    with patch("app.services.notificacao.AuditService.log"):
+    with (
+        patch("app.services.notificacao.AuditService.log"),
+        patch.object(NotificationService, "_enviar_email", new=AsyncMock(return_value=True)),
+    ):
         result = await NotificationService.notificar_agendamento_lembrete(
             mock_db,
             cliente_id=1,
@@ -341,7 +385,10 @@ async def test_notificar_agendamento_cancelado():
     mock_execute.scalar_one_or_none.return_value = mock_cliente
     mock_db.execute.return_value = mock_execute
 
-    with patch("app.services.notificacao.AuditService.log"):
+    with (
+        patch("app.services.notificacao.AuditService.log"),
+        patch.object(NotificationService, "_enviar_email", new=AsyncMock(return_value=True)),
+    ):
         result = await NotificationService.notificar_agendamento_cancelado(
             mock_db, cliente_id=1, agendamento_id=42, titulo="Teste"
         )
