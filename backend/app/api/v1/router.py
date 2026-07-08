@@ -1669,7 +1669,7 @@ async def health_backup() -> dict:
             }
     except (json.JSONDecodeError, OSError) as e:
         # JSON malformado - cai para Estrategia 2 (fallback)
-        json_error = f"{type(e).__name__}: {e}"
+        json_error: str | None = f"{type(e).__name__}: {e}"
     else:
         json_error = None
 
