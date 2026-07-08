@@ -524,13 +524,15 @@ async def test_process_telegram_debounce_success() -> None:
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
         with patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0.001):
             with patch("app.api.v1.telegram._call_fast_llm", AsyncMock(return_value="Resposta")):
-                with patch("app.api.v1.telegram._send_message", AsyncMock(return_value=True)) as mock_send:
-                    with patch("app.api.v1.telegram._react", AsyncMock(return_value=True)) as mock_react:
+                with patch(
+                    "app.api.v1.telegram._send_message", AsyncMock(return_value=True)
+                ) as mock_send:
+                    with patch(
+                        "app.api.v1.telegram._react", AsyncMock(return_value=True)
+                    ) as mock_react:
                         await _process_telegram_debounce(6682284055)
 
-                        mock_send.assert_called_once_with(
-                            6682284055, "Resposta", reply_markup=ANY
-                        )
+                        mock_send.assert_called_once_with(6682284055, "Resposta", reply_markup=ANY)
                         mock_react.assert_called_once_with(6682284055, 12345, "check")
 
 
