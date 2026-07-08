@@ -38,6 +38,14 @@ Thumbs.db
 # Banco local
 *.sqlite
 *.db
+
+# Redis dumps (PII bruta - NUNCA commitar, LGPD-by-design)
+dump.rdb
+*.rdb
+dump.*.rdb
+appendonly.aof
+*.aof
+
 backend/full_stdout.txt
 backend/full_stderr.txt
 

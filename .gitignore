@@ -41,6 +41,13 @@ Thumbs.db
 *.sqlite
 *.db
 
+# Redis dumps (PII bruta - NUNCA commitar, LGPD-by-design)
+dump.rdb
+*.rdb
+dump.*.rdb
+appendonly.aof
+*.aof
+
 # Local secrets — never commit
 .secrets/
 
