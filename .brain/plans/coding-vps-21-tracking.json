@@ -1,0 +1,44 @@
+{
+  "name": "coding-vps-21-tracking",
+  "objective": "Ativar 21 apps da coding-vps 100% verdes com MiniMax-M3 + OpenCode como LLM providers",
+  "created": "2026-07-08T17:30:00Z",
+  "provider_strategy": "MiniMax-M3 (Coding Plan) como primario + OpenCode/OpenAI fallback via litellm-app",
+  "max_parallel_workers": 1,
+  "rule": "1 task = 1 commit + 1 smoke test + 1 push. NO parallel. NO spam.",
+  "apps": [
+    {"id": 1, "name": "anything-llm", "status": "UP", "task": "config-minimax", "estimated_min": 15},
+    {"id": 2, "name": "cline", "status": "OFF", "cause": "image not exist", "task": "remove-or-replace", "estimated_min": 5},
+    {"id": 3, "name": "crew-ai", "status": "NOT-CADASTRADO", "task": "deploy-new", "estimated_min": 30},
+    {"id": 4, "name": "goose", "status": "NOT-CADASTRADO", "source_local": "/Users/gustavoalmeida/projetos/ecosystem/goose", "task": "deploy-new", "estimated_min": 45},
+    {"id": 5, "name": "hermes-agent", "status": "NOT-CADASTRADO", "source_local": "/Users/gustavoalmeida/projetos/hermes-agent", "task": "deploy-new", "estimated_min": 30},
+    {"id": 6, "name": "kilo-org_kilocode", "status": "NOT-CADASTRADO", "source_local": "/Users/gustavoalmeida/projetos/kilocode", "task": "deploy-new", "estimated_min": 60},
+    {"id": 7, "name": "langflow", "status": "UP", "task": "config-minimax", "estimated_min": 15},
+    {"id": 8, "name": "langflow-db", "status": "UP", "task": "none", "estimated_min": 0},
+    {"id": 9, "name": "langfuse-clickhouse", "status": "UP", "task": "validate", "estimated_min": 5},
+    {"id": 10, "name": "langfuse-db", "status": "UP", "task": "none", "estimated_min": 0},
+    {"id": 11, "name": "langfuse-minio", "status": "UP", "task": "validate", "estimated_min": 5},
+    {"id": 12, "name": "langfuse-redis", "status": "UP", "task": "none", "estimated_min": 0},
+    {"id": 13, "name": "langfuse-web", "status": "UP", "task": "expose-port+config", "estimated_min": 20},
+    {"id": 14, "name": "langfuse-worker", "status": "UP", "task": "none", "estimated_min": 0},
+    {"id": 15, "name": "langgraph", "status": "NOT-CADASTRADO", "task": "deploy-new", "estimated_min": 30},
+    {"id": 16, "name": "litellm-app", "status": "UP-NO-MINIMAX", "task": "add-MiniMax-M3-as-provider", "estimated_min": 20},
+    {"id": 17, "name": "litellm-db", "status": "UP", "task": "none", "estimated_min": 0},
+    {"id": 18, "name": "openchamber", "status": "NOT-CADASTRADO", "source_local": "/Users/gustavoalmeida/projetos/ecosystem/openchamber", "task": "deploy-new", "estimated_min": 30},
+    {"id": 19, "name": "openclaw", "status": "NOT-CADASTRADO", "source_local": "/Users/gustavoalmeida/projetos/ecosystem/openclaw", "task": "deploy-new", "estimated_min": 30},
+    {"id": 20, "name": "opencode", "status": "NOT-CADASTRADO", "source_local": "/Users/gustavoalmeida/projetos/opencode", "task": "deploy-new", "estimated_min": 30},
+    {"id": 21, "name": "openhands", "status": "NOT-CADASTRADO", "task": "deploy-new", "estimated_min": 45}
+  ],
+  "already_done": [
+    "credenciais salvas em ~/.mavis/secrets/coding-vps-global.env (chmod 600)",
+    "Lesson 158 documentada",
+    "scripts/diagnose_coding_vps.sh criado e testado"
+  ],
+  "sequence": [
+    "Task 1: cline OFF -> remover (5min)",
+    "Task 2: litellm-app -> adicionar MiniMax-M3 via DB (20min)",
+    "Task 3: anything-llm -> configurar LLM provider pra apontar litellm (15min)",
+    "Task 4: langflow -> configurar LLM provider pra apontar litellm (15min)",
+    "Task 5: langfuse-web -> expor porta 3000 (20min)",
+    "Task 6-15: deployar 8 apps faltantes (total ~5h)"
+  ]
+}
