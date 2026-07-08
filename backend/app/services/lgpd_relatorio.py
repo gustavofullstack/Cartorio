@@ -101,6 +101,27 @@ def gerar_relatorio_anual(
         or 0
     )
 
+    comunicados_anpd = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(AuditLog.action == "security.anpd_reported")
+        ).scalar()
+        or 0
+    )
+
+    vazamentos_dados_pessoais = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(AuditLog.action == "security.data_breach")
+        ).scalar()
+        or 0
+    )
+
+    ataques_mitigados = (
+        db.execute(
+            select(func.count(AuditLog.id)).where(AuditLog.action == "security.mitigated_attack")
+        ).scalar()
+        or 0
+    )
+
     # 6. Audit chain integrity
     chain_length = db.execute(select(func.count(AuditLog.id))).scalar() or 0
 
@@ -146,9 +167,9 @@ def gerar_relatorio_anual(
     # 11. Incidentes de seguranca
     resumo_incidentes = {
         "total": incidentes,
-        "comunicados_anpd": 0,  # TODO: Sprint 5+ implementar logica
-        "vazamentos_dados_pessoais": 0,
-        "ataques_mitigados": 0,
+        "comunicados_anpd": comunicados_anpd,
+        "vazamentos_dados_pessoais": vazamentos_dados_pessoais,
+        "ataques_mitigados": ataques_mitigados,
     }
 
     # 12. Direitos exercidos (art. 18)
