@@ -826,6 +826,17 @@ async def _process_telegram_debounce(chat_id: int) -> None:
             typing_task.cancel()
 
 
+@router.get("/health")
+async def telegram_health() -> dict:
+    return {
+        "status": "ok",
+        "service": "telegram-bot",
+        "bot": "test_cartorio_bot",
+        "webhook_configured": True,
+        "version": "v0.6.0",
+    }
+
+
 @router.post("/webhook", status_code=200)
 async def telegram_webhook(
     request: Request,

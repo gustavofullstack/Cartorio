@@ -547,3 +547,19 @@ async def test_process_telegram_debounce_empty_queue() -> None:
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
         with patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0.001):
             await _process_telegram_debounce(6682284055)
+
+
+def test_telegram_health_endpoint_ok() -> None:
+    """GET /api/v1/telegram/health retorna 200 com payload."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    resp = client.get("/api/v1/telegram/health")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["service"] == "telegram-bot"
+    assert body["bot"] == "test_cartorio_bot"
+    assert body["webhook_configured"] is True
