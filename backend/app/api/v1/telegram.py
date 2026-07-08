@@ -168,6 +168,7 @@ _typing_tasks: set[asyncio.Task[Any]] = set()
 
 _pool_loop_id: int = 0
 
+
 def _get_tg_pool() -> httpx.AsyncClient:
     global _TG_HTTP_POOL, _pool_loop_id
     try:
