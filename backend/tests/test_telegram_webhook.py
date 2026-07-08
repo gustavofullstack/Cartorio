@@ -389,26 +389,20 @@ def test_webhook_ignores_non_text_update(client: TestClient) -> None:
 
 
 def test_hmac_valid_secret_accepted(client: TestClient, telegram_update_start: dict) -> None:
-    import hashlib
-    import hmac as hmac_mod
-    import json as _json
-
     from app.api.v1 import telegram as tg_mod
 
     old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
     try:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
-        raw_body = _json.dumps(telegram_update_start).encode()
-        expected = hmac_mod.new(b"test-secret-123", raw_body, hashlib.sha256).hexdigest()
         with patch("app.api.v1.telegram.get_bus", return_value=None):
             with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
                 with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
                     with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                         resp = client.post(
                             "/api/v1/telegram/webhook",
-                            content=raw_body,
+                            json=telegram_update_start,
                             headers={
-                                "X-Telegram-Bot-Api-Secret-Token": expected,
+                                "X-Telegram-Bot-Api-Secret-Token": "test-secret-123",
                                 "Content-Type": "application/json",
                             },
                         )
@@ -418,17 +412,14 @@ def test_hmac_valid_secret_accepted(client: TestClient, telegram_update_start: d
 
 
 def test_hmac_missing_header_rejected(client: TestClient, telegram_update_start: dict) -> None:
-    import json as _json
-
     from app.api.v1 import telegram as tg_mod
 
     old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
     try:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
-        raw_body = _json.dumps(telegram_update_start).encode()
         resp = client.post(
             "/api/v1/telegram/webhook",
-            content=raw_body,
+            json=telegram_update_start,
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == 401
@@ -437,17 +428,14 @@ def test_hmac_missing_header_rejected(client: TestClient, telegram_update_start:
 
 
 def test_hmac_wrong_token_rejected(client: TestClient, telegram_update_start: dict) -> None:
-    import json as _json
-
     from app.api.v1 import telegram as tg_mod
 
     old_secret = tg_mod.TELEGRAM_WEBHOOK_SECRET
     try:
         tg_mod.TELEGRAM_WEBHOOK_SECRET = "test-secret-123"
-        raw_body = _json.dumps(telegram_update_start).encode()
         resp = client.post(
             "/api/v1/telegram/webhook",
-            content=raw_body,
+            json=telegram_update_start,
             headers={
                 "X-Telegram-Bot-Api-Secret-Token": "wrong-token",
                 "Content-Type": "application/json",
@@ -598,7 +586,9 @@ def test_bump_metric_increments_counter() -> None:
 
 
 def test_telegram_webhook_handles_supergroup_chat() -> None:
-    """Webhook responde 200 a update vindo de supergroup (chat_id negativo, type=supergroup).\n    Licao 2026-07-08: Gustavo migrou grupo -5319980720 p/ supergroup -1004331849032.\n    Bot precisa responder igual em DM (chat_id positivo) ou supergroup (negativo)."""
+    """Webhook responde 200 a update vindo de supergroup (chat_id negativo, type=supergroup).
+    Licao 2026-07-08: Gustavo migrou grupo -5319980720 p/ supergroup -1004331849032.
+    Bot precisa responder igual em DM (chat_id positivo) ou supergroup (negativo)."""
     from fastapi.testclient import TestClient
 
     from app.main import app
@@ -617,7 +607,11 @@ def test_telegram_webhook_handles_supergroup_chat() -> None:
             "message_id": 9903,
         },
     }
-    resp = client.post("/api/v1/telegram/webhook", json=payload)
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
+            with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
+                    resp = client.post("/api/v1/telegram/webhook", json=payload)
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "ok"
@@ -656,8 +650,143 @@ def test_telegram_menu_command_includes_cancel_button() -> None:
             "message_id": 99004,
         },
     }
-    resp = client.post("/api/v1/telegram/webhook", json=payload)
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
+            with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
+                    resp = client.post("/api/v1/telegram/webhook", json=payload)
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "ok"
     assert body["response_sent"] is True
+
+
+# =============================================================================
+# my_chat_member (bot enter/leave/promoted em grupo) - 2026-07-08
+# =============================================================================
+
+
+def test_webhook_handles_my_chat_member_join() -> None:
+    """Quando bot entra em grupo, manda mensagem de boas-vindas com /menu.
+
+    Gustavo descobriu que o bot tinha saido do grupo TESTE/VALIDACAO/CORRECAO
+    (-5319980720 migrado para -1004331849032) e o webhook silenciosamente
+    ignorava os updates. Agora respondemos com welcome + botoes.
+    """
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    payload = {
+        "update_id": 99005,
+        "my_chat_member": {
+            "chat": {
+                "id": -1004331849032,
+                "title": "TESTE/VALIDACAO/CORRECAO",
+                "type": "supergroup",
+            },
+            "from": {"id": 6682284055, "first_name": "Gustavo"},
+            "old_chat_member": {"user": {"id": 8859206262, "is_bot": True}, "status": "left"},
+            "new_chat_member": {
+                "user": {"id": 8859206262, "is_bot": True},
+                "status": "administrator",
+            },
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["kind"] == "my_chat_member_join"
+    assert body["chat_id"] == -1004331849032
+    mock_send.assert_called_once()
+    sent_text = mock_send.call_args[0][1]
+    assert "BOT CARTORIO ATIVO" in sent_text
+    assert "TESTE/VALIDACAO/CORRECAO" in sent_text
+    assert "/menu" in sent_text
+    # Keyboard com botao Cancelar deve estar presente
+    call_kwargs = mock_send.call_args[1]
+    assert call_kwargs.get("keyboard") is not None
+
+
+def test_webhook_handles_my_chat_member_leave() -> None:
+    """Quando bot sai ou e removido de grupo, loga e ignora sem erro."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    payload = {
+        "update_id": 99006,
+        "my_chat_member": {
+            "chat": {"id": -1004331849032, "type": "supergroup"},
+            "from": {"id": 6682284055, "first_name": "Gustavo"},
+            "old_chat_member": {
+                "user": {"id": 8859206262, "is_bot": True},
+                "status": "administrator",
+            },
+            "new_chat_member": {
+                "user": {"id": 8859206262, "is_bot": True},
+                "status": "left",
+            },
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["kind"] == "my_chat_member_left"
+    # Nao deve mandar mensagem quando sai
+    mock_send.assert_not_called()
+
+
+def test_classify_metric_for_status() -> None:
+    """classify_metric_for_status mapeia corretamente cada status para o contador."""
+    from app.api.v1 import telegram as tg_mod
+
+    original = tg_mod._METRICS.copy()
+    try:
+        tg_mod._METRICS["responses_ok"] = 0
+        tg_mod._METRICS["responses_partial"] = 0
+        tg_mod._METRICS["responses_failed"] = 0
+        tg_mod.classify_metric_for_status("ok", "command")
+        tg_mod.classify_metric_for_status("ok", "command")
+        tg_mod.classify_metric_for_status("partial", "command")
+        tg_mod.classify_metric_for_status("ignored", "callback")
+        tg_mod.classify_metric_for_status("duplicate", "command")
+        tg_mod.classify_metric_for_status("ignored_command", "command")
+        # callbacks nao contam em responses_ok (handled separately)
+        tg_mod.classify_metric_for_status("ok", "callback")
+        assert tg_mod._METRICS["responses_ok"] == 2
+        assert tg_mod._METRICS["responses_partial"] == 1
+        # failed sobe quando status nao eh nenhum dos mapeados
+    finally:
+        tg_mod._METRICS.update(original)
+
+
+def test_get_tg_pool_lifecycle_and_no_loop() -> None:
+    """Exercita o ciclo de vida do _get_tg_pool e o bloco try/except sem event loop."""
+    from app.api.v1.telegram import _get_tg_pool
+    import asyncio
+    
+    # 1. Fora do loop de eventos (deve cair no except RuntimeError)
+    pool1 = _get_tg_pool()
+    assert pool1 is not None
+    
+    # 2. Dentro do loop de eventos (deve registrar o loop atual)
+    async def _test():
+        pool2 = _get_tg_pool()
+        assert pool2 is not None
+        return pool2
+
+    pool2 = asyncio.run(_test())
+    assert pool2 is not pool1

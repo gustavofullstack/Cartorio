@@ -22,7 +22,6 @@ Modified by Gustavo Almeida.
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import hmac
 import json
 import logging
@@ -117,6 +116,21 @@ def bump_metric(key: str, value: int = 1) -> None:
     _METRICS[key] = _METRICS.get(key, 0) + value
 
 
+def classify_metric_for_status(status: str, kind: str) -> None:
+    """FIX 2026-07-08: Gustavo reportou que /metrics nunca mexia em responses_ok.
+    Status vindos do webhook: "ok", "partial", "ignored", "ignored_command",
+    "duplicate". Mapeamos para os contadores corretos.
+    """
+    if status == "ok" and kind != "callback":
+        bump_metric("responses_ok")
+    elif status == "partial":
+        bump_metric("responses_partial")
+    elif status in ("ignored", "ignored_command", "duplicate"):
+        pass  # nao conta como falha
+    else:
+        bump_metric("responses_failed")
+
+
 def strip_emojis(text: str) -> str:
     """Remove emojis de textos, deixando apenas caracteres normais."""
     if not text:
@@ -153,13 +167,22 @@ _TG_HTTP_POOL: httpx.AsyncClient | None = None
 
 def _get_tg_pool() -> httpx.AsyncClient:
     global _TG_HTTP_POOL
-    if _TG_HTTP_POOL is None:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    current_loop_id = id(loop) if loop else 0
+    if not hasattr(_get_tg_pool, "_loop_id"):
+        _get_tg_pool._loop_id = 0
+
+    if _TG_HTTP_POOL is None or _get_tg_pool._loop_id != current_loop_id:
         _TG_HTTP_POOL = httpx.AsyncClient(
             timeout=httpx.Timeout(15.0, connect=10.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
             verify=False,  # Bypass domain mismatch verification when using direct IP routing
             headers={"Host": "api.telegram.org"},  # Ensure Telegram routing works
         )
+        _get_tg_pool._loop_id = current_loop_id
     return _TG_HTTP_POOL
 
 
@@ -842,8 +865,12 @@ async def _process_telegram_debounce(chat_id: int) -> None:
         sent = await _send_message(
             chat_id, response_text, reply_markup={"inline_keyboard": keyboard} if keyboard else None
         )
-        if sent and msg_ids:
-            await _react(chat_id, msg_ids[-1], "check")
+        if sent:
+            bump_metric("responses_ok")
+            if msg_ids:
+                await _react(chat_id, msg_ids[-1], "check")
+        else:
+            bump_metric("responses_failed")
         logger.info("TG background response chat=%s sent=%s", chat_id, sent)
     except Exception as e:
         logger.exception("Erro na background task de debounce do Telegram: %s", e)
@@ -854,6 +881,55 @@ async def _process_telegram_debounce(chat_id: int) -> None:
             await asyncio.wait_for(typing_task, timeout=1.0)
         except (asyncio.TimeoutError, asyncio.CancelledError):
             typing_task.cancel()
+
+
+async def _handle_my_chat_member(my_chat_member: dict) -> dict:
+    """FIX 2026-07-08: handler para eventos de entrada/saida/promocao do bot em grupos.
+
+    Gustavo descobriu que o bot tinha saido do grupo TESTE/VALIDACAO/CORRECAO
+    (-5319980720 migrado para -1004331849032) e o webhook silenciosamente
+    ignorava os updates. Agora: quando bot entra no grupo, manda mensagem de
+    boas-vindas mostrando /menu. Quando sai, loga e bumpa metrica.
+
+    Eventos cobertos:
+    - member adiciona bot ao grupo: status=member / status=administrator
+    - bot sai ou e removido: status=left / status=kicked
+    - promocao a admin: new status=administrator
+    """
+    chat = my_chat_member.get("chat", {})
+    chat_id = chat.get("id")
+    chat_title = chat.get("title", "grupo")
+    new_status = my_chat_member.get("new_chat_member", {}).get("status", "")
+    old_status = my_chat_member.get("old_chat_member", {}).get("status", "")
+    logger.info(
+        "TG my_chat_member chat=%s old=%s new=%s",
+        chat_id,
+        old_status,
+        new_status,
+    )
+
+    if new_status in ("member", "administrator") and old_status in ("left", "kicked", ""):
+        bump_metric("commands_handled")
+        welcome = (
+            f"BOT CARTORIO ATIVO em '{chat_title}'.\n\n"
+            "Comandos disponiveis:\n"
+            "/menu - Menu principal (Agendar / Consultar Protocolo / Humano)\n"
+            "/start - Reiniciar atendimento\n"
+            "/humano - Falar com escrevente\n"
+            "/cancelar - Cancelar operacao\n"
+            "/lgpd - Politica de privacidade\n\n"
+            "Ou use os botoes inline que aparecerao abaixo."
+        )
+        kb = _menu_keyboard_with_cancel()
+        await _send_message(chat_id, welcome, keyboard=kb)
+        return {"status": "ok", "kind": "my_chat_member_join", "chat_id": chat_id}
+
+    if new_status in ("left", "kicked"):
+        bump_metric("responses_failed")
+        logger.warning("TG bot removido chat=%s new_status=%s", chat_id, new_status)
+        return {"status": "ok", "kind": "my_chat_member_left", "chat_id": chat_id}
+
+    return {"status": "ignored", "kind": "my_chat_member", "chat_id": chat_id}
 
 
 @router.get("/health")
@@ -891,11 +967,19 @@ async def telegram_webhook(
     _verify_telegram_secret(body_bytes, x_telegram_bot_api_secret_token)
     message = update.get("message", {})
     callback = update.get("callback_query", {})
-    chat_id = message.get("chat", {}).get("id") or callback.get("message", {}).get("chat", {}).get(
-        "id"
+    my_chat_member = update.get("my_chat_member", {})
+    chat_id = (
+        message.get("chat", {}).get("id")
+        or callback.get("message", {}).get("chat", {}).get("id")
+        or my_chat_member.get("chat", {}).get("id")
     )
     text = message.get("text", "") or callback.get("data", "")
     update_id = update.get("update_id", 0)
+
+    # FIX 2026-07-08: auto-detecta quando bot entra/sai de grupo e responde.
+    if my_chat_member:
+        return await _handle_my_chat_member(my_chat_member)
+
     if not chat_id or (not text and not callback):
         return {"status": "ignored", "reason": "non-text update"}
 
@@ -936,12 +1020,15 @@ async def telegram_webhook(
             await _react(chat_id, msg_id, "eyes")
             markup = {"inline_keyboard": keyboard} if keyboard else None
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
+            status = "ok" if sent else "partial"
+            classify_metric_for_status(status, "callback")
             return {
-                "status": "ok" if sent else "partial",
+                "status": status,
                 "chat_id": chat_id,
                 "kind": "callback",
                 "response_sent": sent,
             }
+        return {"status": "ignored", "kind": "callback", "chat_id": chat_id}
     if text.startswith("/"):
         cmd = text.strip().split()[0].lower().split("@")[0]
         if cmd not in ALLOWED_COMMANDS:
@@ -950,15 +1037,20 @@ async def telegram_webhook(
             sent = await _send_message(
                 chat_id, "Comando nao suportado. Use o menu de opcoes.", reply_markup=markup
             )
+            classify_metric_for_status("ignored_command", "command")
             return {"status": "ignored_command", "chat_id": chat_id}
+        bump_metric("commands_handled")
         response_text, keyboard = await _handle_command(text, bus, chat_id, "")
         if response_text:
             response_text = strip_emojis(response_text)
             markup = {"inline_keyboard": keyboard} if keyboard else None
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
+            status = "ok" if sent else "partial"
+            classify_metric_for_status(status, "command")
             return {
-                "status": "ok" if sent else "partial",
+                "status": status,
                 "chat_id": chat_id,
+                "kind": "command",
                 "response_sent": sent,
             }
 
@@ -995,9 +1087,11 @@ async def telegram_webhook(
     has_lock = await bus.client.get(lock_key)
     if not has_lock:
         await bus.client.setex(lock_key, 5, "1")
+        bump_metric("scheduled_debounce")
         # NAO passar `db` aqui — Session do Depends e fechada no fim do request.
         background_tasks.add_task(_process_telegram_debounce, chat_id=chat_id)
         logger.info("TG scheduled background debounce chat=%s", chat_id)
+        classify_metric_for_status("ok", "debounce")
         return {"status": "ok", "chat_id": chat_id, "scheduled": True}
     return {"status": "ok", "chat_id": chat_id, "accumulated": True}
 
@@ -1023,8 +1117,9 @@ def _verify_telegram_secret(update_body: bytes, secret_token_header: str | None)
         return
     if not secret_token_header:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing secret token")
-    expected = hmac.new(TELEGRAM_WEBHOOK_SECRET.encode(), update_body, hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(secret_token_header, expected):
+    # O Telegram envia o secret_token de forma estática em texto claro.
+    # Comparamos usando hmac.compare_digest para segurança contra timing attacks.
+    if not hmac.compare_digest(secret_token_header.encode(), TELEGRAM_WEBHOOK_SECRET.encode()):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid secret token")
 
 
