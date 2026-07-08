@@ -171,6 +171,43 @@ def test_verify_token_issuer_errado_levanta_JWTError(settings, user_id: str) -> 
         verify_token(bad_token, settings=settings)
 
 
+def test_verify_token_audience_errado_levanta_JWTError(settings, user_id: str) -> None:
+    """Token com audience diferente -> JWTError."""
+    import time
+
+    token_payload = {
+        "sub": user_id,
+        "iss": settings.jwt_issuer,
+        "aud": "wrong-audience",
+        "typ": "access",
+        "iat": int(time.time()),
+        "exp": int(time.time()) + 3600,
+        "jti": str(uuid.uuid4()),
+    }
+    bad_token = pyjwt.encode(
+        token_payload,
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
+
+    with pytest.raises(JWTError, match="inv"):
+        verify_token(bad_token, settings=settings)
+
+
+def test_verify_token_exceptions_with_mocking(settings) -> None:
+    """Simula erros da biblioteca pyjwt diretamente."""
+    import jwt as pyjwt
+    from unittest.mock import patch
+
+    with patch("jwt.decode", side_effect=pyjwt.ExpiredSignatureError("Expirado mock")):
+        with pytest.raises(JWTError, match="expirado"):
+            verify_token("any-token", settings=settings)
+
+    with patch("jwt.decode", side_effect=pyjwt.InvalidSignatureError("Assinatura invalida mock")):
+        with pytest.raises(JWTError, match="assinatura"):
+            verify_token("any-token", settings=settings)
+
+
 # ============================================================================
 # Tests: refresh token
 # ============================================================================
