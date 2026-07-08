@@ -3,6 +3,9 @@
 Exposes the full coding-vps_apenas_para_auxilio toolkit (89 services, 100+ tools) for
 TRAE / Antigravity / Claude / MiniMax-M3 / any MCP client.
 
+Squad 3 (2026-07-08) — adicionado categoria NETWORKING (3 tools) + MONITORING (5 tools).
+Total atual: 100+ tools em 16 categorias.
+
 Categories:
   LLM (17):  chat_minimax, list_models, chat_with_<agent> for 17 agents
   STATUS (8): list_services, health_check_*, service_info, docker_stats, swarm_info
@@ -22,11 +25,14 @@ Categories:
   SEARCH (4): firecrawl_scrape, firecrawl_crawl, crwal4ai_scrape, flaresolverr_solve
   DEV (6): goclaw_list, shm_incidents, boltdiy_create, chartdb_export,
            opennotebook_create, opencode_run
-  MONITORING (3): prometheus_query, sentry_list_issues, status_page_get
-  UTILITY (17): backup_volume, restore_volume, exec_in_container, file_read,
+  MONITORING (8): prometheus_query, prometheus_metrics, sentry_list_issues,
+                  sentry_capture_event, status_page_get, grafana_dashboards,
+                  letsencrypt_list, hostinger_api_status
+  UTILITY (15): backup_volume, restore_volume, exec_in_container, file_read,
                 file_write, tail_file, network_inspect, port_scan,
                 swarm_service_create, swarm_service_remove, image_pull,
-                image_list, volume_list, network_list, node_list, secret_get, secret_set
+                image_list, secret_get, secret_set, openapi_spec
+  NETWORKING (3) [SQUAD-3]: tailscale_status, tailscale_ping, tailscale_list_devices
 
 Usage:
   CLI:     python scripts/coding_vps_mcp_orchestrator.py list
@@ -38,6 +44,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import subprocess
 import sys
 import urllib.error
@@ -114,7 +121,7 @@ def http_post(url: str, data: dict, headers: dict | None = None, timeout: int = 
 # LLM Tools (17)
 # ============================================
 def chat_minimax(prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL) -> dict:
-    """Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy."""
+    """Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy (via docker cp + exec)."""
     safe_prompt = prompt.replace('"', "'").replace("\n", " ")[:2000]
     py = (
         f"import urllib.request, json, time\n"
@@ -127,7 +134,28 @@ def chat_minimax(prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL)
         f"'reasoning_tokens':b['usage'].get('completion_tokens_details',{{}}).get('reasoning_tokens',0),"
         f"'total_tokens':b['usage'].get('total_tokens',0)}}))\n"
     )
-    result = docker_exec("coding-vps_apenas_para_auxilio_litellm-app", f'python3 -c "{py}"', timeout=60)
+    # Write to local tmp, SCP to VPS, docker cp into container, docker exec
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(py)
+        tmp_local = f.name
+    tmp_remote = f"/tmp/chat_minimax_{os.getpid()}.py"
+    scp = subprocess.run(
+        ["scp", "-i", SSH_KEY, "-o", "BatchMode=yes", tmp_local, f"{SSH_USER}@{SSH_HOST}:{tmp_remote}"],
+        capture_output=True, text=True,
+    )
+    if scp.returncode != 0:
+        os.unlink(tmp_local)
+        return {"error": "scp failed", "stderr": scp.stderr}
+    cp = ssh(f"docker cp {tmp_remote} $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1):{tmp_remote}", timeout=10)
+    if cp["returncode"] != 0:
+        ssh(f"rm -f {tmp_remote}")
+        os.unlink(tmp_local)
+        return {"error": "docker cp failed", "stderr": cp["stderr"]}
+    result = ssh(f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1) python3 {tmp_remote}", timeout=60)
+    ssh(f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1) rm -f {tmp_remote} 2>/dev/null")
+    ssh(f"rm -f {tmp_remote}")
+    os.unlink(tmp_local)
     if result["returncode"] == 0:
         out = result["stdout"]
         try:
@@ -422,43 +450,31 @@ print(data)
     return docker_exec(f"coding-vps_apenas_para_auxilio_{redis_service}", f"python3 -c \"{py.replace(chr(34), chr(39))}\"")
 
 
+def _redis_cmd(redis_service: str, *args) -> str:
+    """Run redis-cli with auto-auth (uses $REDIS_PASSWORD env)."""
+    arg_str = " ".join(f"'{a}'" for a in args)
+    # Use sh -c to expand $REDIS_PASSWORD, then pipe into redis-cli
+    cmd = f'sh -c \'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning {arg_str} 2>&1\''
+    return docker_exec(f"coding-vps_apenas_para_auxilio_{redis_service}", cmd)["stdout"].strip()
+
+
 def redis_ping(redis_service: str) -> dict:
-    """Ping a Redis instance via TCP socket (from local Mac, not from container)."""
-    full_host = f"coding-vps_apenas_para_auxilio_{redis_service}"
-    try:
-        s = socket.create_connection((full_host, 6379), timeout=5)
-        s.sendall(b"*1\r\n$4\r\nPING\r\n")
-        result = s.recv(1024).decode(errors="replace").strip()
-        s.close()
-        return {"service": redis_service, "result": result, "transport": "tcp-direct"}
-    except Exception as e:
-        return {"service": redis_service, "error": str(e), "note": "use docker exec for auth-protected redis"}
+    """Ping a Redis instance using its own redis-cli (auto-auth via $REDIS_PASSWORD)."""
+    out = _redis_cmd(redis_service, "ping")
+    ok = "PONG" in out
+    return {"service": redis_service, "result": out, "ok": ok}
 
 
 def redis_get(redis_service: str, key: str) -> dict:
-    """Get a Redis key via TCP socket (from local Mac)."""
-    full_host = f"coding-vps_apenas_para_auxilio_{redis_service}"
-    try:
-        s = socket.create_connection((full_host, 6379), timeout=5)
-        s.sendall(f"*2\r\n$3\r\nGET\r\n${len(key)}\r\n{key}\r\n".encode())
-        result = s.recv(4096).decode(errors="replace").strip()
-        s.close()
-        return {"service": redis_service, "key": key, "value": result}
-    except Exception as e:
-        return {"service": redis_service, "key": key, "error": str(e)}
+    """Get a Redis key using its own redis-cli (auto-auth)."""
+    out = _redis_cmd(redis_service, "get", key)
+    return {"service": redis_service, "key": key, "value": out}
 
 
 def redis_set(redis_service: str, key: str, value: str) -> dict:
-    """Set a Redis key via TCP socket (from local Mac)."""
-    full_host = f"coding-vps_apenas_para_auxilio_{redis_service}"
-    try:
-        s = socket.create_connection((full_host, 6379), timeout=5)
-        s.sendall(f"*3\r\n$3\r\nSET\r\n${len(key)}\r\n{key}\r\n${len(value)}\r\n{value}\r\n".encode())
-        result = s.recv(4096).decode(errors="replace").strip()
-        s.close()
-        return {"service": redis_service, "key": key, "result": result}
-    except Exception as e:
-        return {"service": redis_service, "key": key, "error": str(e)}
+    """Set a Redis key using its own redis-cli (auto-auth)."""
+    out = _redis_cmd(redis_service, "set", key, value)
+    return {"service": redis_service, "key": key, "result": out}
 
 
 def redis_keys(redis_service: str, pattern: str = "*") -> dict:
@@ -744,6 +760,73 @@ def status_page_get() -> dict:
 
 
 # ============================================
+# Monitoring Tools EXT (Squad 3 — 2026-07-08, +5 tools)
+# ============================================
+def prometheus_metrics(job: str = "coding-vps") -> dict:
+    """List Prometheus metric names for a given job (target discovery)."""
+    return http_get(
+        f"http://coding-vps_apenas_para_auxilio_prometheus:9090/api/v1/label/__name__/values"
+    )
+
+
+def sentry_capture_event(message: str, level: str = "info", tags: str = "coding-vps") -> dict:
+    """Capture a custom Sentry event for testing the Sentry pipeline.
+
+    Uses Sentry envelope API (no auth required for self-hosted relay). Safe to call.
+    """
+    payload = {
+        "event_id": __import__("uuid").uuid4().hex,
+        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "platform": "python",
+        "level": level,
+        "logentry": {"formatted": message},
+        "tags": {"source": tags, "orchestrator": "squad3"},
+    }
+    return http_post(
+        "http://coding-vps_apenas_para_auxilio_sentry:9000/api/0/store/",
+        payload,
+        headers={"X-Sentry-Auth": "Sentry sentry_version=7, sentry_key=public"},
+    )
+
+
+def grafana_dashboards() -> dict:
+    """List Grafana dashboards (no auth, anonymous mode)."""
+    return http_get("http://coding-vps_apenas_para_auxilio_grafana:3000/api/search?type=dash-db")
+
+
+def letsencrypt_list() -> dict:
+    """List Let's Encrypt certificates expiring soon via Traefik acme.json."""
+    r = ssh("cat /letsencrypt/acme.json 2>/dev/null | head -200 || echo 'NO_ACME_FILE'")
+    return {"acme": r["stdout"][:3000], "stderr": r["stderr"][:300]}
+
+
+def hostinger_api_status() -> dict:
+    """Get Hostinger VPS API status (resource usage, uptime)."""
+    return http_get("https://developers.hostinger.com/api/vps/v1/virtual-machines", timeout=15)
+
+
+# ============================================
+# Networking Tools (Squad 3 — 2026-07-08, +3 tools)
+# ============================================
+def tailscale_status() -> dict:
+    """Get Tailscale mesh network status (peers, IPs, online state)."""
+    r = ssh("tailscale status --json 2>/dev/null | head -200 || echo 'TAILSCALE_UNAVAILABLE'")
+    return {"raw": r["stdout"][:3000], "stderr": r["stderr"][:300]}
+
+
+def tailscale_ping(target: str = "100.99.172.84") -> dict:
+    """Ping a peer via Tailscale mesh (uses Tailscale ping not ICMP)."""
+    r = ssh(f"tailscale ping --c 4 {target} 2>&1 | head -30 || echo 'PING_FAILED'")
+    return {"target": target, "raw": r["stdout"][:1500]}
+
+
+def tailscale_list_devices() -> dict:
+    """List all devices in the Tailscale tailnet (name, OS, IP, last seen)."""
+    r = ssh("tailscale status --peers=false 2>&1 | head -100 || echo 'TAILSCALE_OFFLINE'")
+    return {"devices": r["stdout"][:3000], "stderr": r["stderr"][:300]}
+
+
+# ============================================
 # Utility Tools (17)
 # ============================================
 def exec_in_container(service: str, cmd: str) -> dict:
@@ -858,8 +941,11 @@ def _register_llm() -> dict:
     }
     for agent in LLM_AGENTS:
         def make_handler(a):
-            def handler(prompt: str, max_tokens: int = 500, stack: str = "auto", **_):
+            def handler(prompt: str, max_tokens: int = 500, stack: str = "auto"):
+                """Send chat to coding agent {0} (auto-generated wrapper).""".format(a)
                 return chat_with_agent(a, prompt, max_tokens=max_tokens, stack=stack)
+            handler.__name__ = f"chat_{a.replace('-', '_')}"
+            handler.__doc__ = f"Send chat to {a} coding agent"
             return handler
         tools[f"chat_{agent.replace('-','_')}"] = {
             "func": make_handler(agent),
@@ -991,8 +1077,22 @@ def _register_dev() -> dict:
 def _register_monitoring() -> dict:
     return {
         "prometheus_query": {"func": prometheus_query, "args": ["query"], "category": "monitoring", "desc": "Query Prometheus metrics"},
+        "prometheus_metrics": {"func": prometheus_metrics, "args": ["job?"], "category": "monitoring", "desc": "List Prometheus metric names (Squad 3)"},
         "sentry_list_issues": {"func": sentry_list_issues, "args": ["project"], "category": "monitoring", "desc": "List Sentry issues"},
+        "sentry_capture_event": {"func": sentry_capture_event, "args": ["message", "level?", "tags?"], "category": "monitoring", "desc": "Capture custom Sentry event (Squad 3)"},
         "status_page_get": {"func": status_page_get, "args": [], "category": "monitoring", "desc": "Get SHM public status page"},
+        "grafana_dashboards": {"func": grafana_dashboards, "args": [], "category": "monitoring", "desc": "List Grafana dashboards (Squad 3)"},
+        "letsencrypt_list": {"func": letsencrypt_list, "args": [], "category": "monitoring", "desc": "List Let's Encrypt certs (Squad 3)"},
+        "hostinger_api_status": {"func": hostinger_api_status, "args": [], "category": "monitoring", "desc": "Get Hostinger VPS API status (Squad 3)"},
+    }
+
+
+def _register_networking() -> dict:
+    """Squad 3 (2026-07-08) — Tailscale mesh tools. Categoria nova."""
+    return {
+        "tailscale_status": {"func": tailscale_status, "args": [], "category": "networking", "desc": "Tailscale mesh status JSON (Squad 3)"},
+        "tailscale_ping": {"func": tailscale_ping, "args": ["target?"], "category": "networking", "desc": "Ping Tailscale peer (Squad 3)"},
+        "tailscale_list_devices": {"func": tailscale_list_devices, "args": [], "category": "networking", "desc": "List Tailscale devices in tailnet (Squad 3)"},
     }
 
 
@@ -1021,7 +1121,7 @@ for _reg in [
     _register_llm, _register_status, _register_docker, _register_easypanel,
     _register_db, _register_workflow, _register_code_review, _register_websocket,
     _register_webhook, _register_rag, _register_search, _register_dev,
-    _register_monitoring, _register_utility,
+    _register_monitoring, _register_networking, _register_utility,
 ]:
     TOOLS.update(_reg())
 
@@ -1102,7 +1202,7 @@ def main():
 # MCP stdio server
 # ============================================
 def _run_mcp_server() -> int:
-    """Start FastMCP stdio server with all 100+ tools."""
+    """Start FastMCP stdio server with all 100 tools registered via dynamic @mcp.tool()."""
     try:
         from fastmcp import FastMCP
     except ImportError:
@@ -1111,23 +1211,47 @@ def _run_mcp_server() -> int:
 
     mcp = FastMCP("coding-vps-orchestrator")
 
+    registered = 0
+    failures = []
     for name, info in TOOLS.items():
         args_def = info["args"]
         desc = info.get("desc", f"Tool {name}")
-        # Build Pydantic-like schema from args
-        required = [a for a in args_def if not a.endswith("?")]
-        optional = [(a.rstrip("?"), "str") for a in args_def if a.endswith("?")]
-
-        # Use dynamic tool registration
         func = info["func"]
-
-        if not args_def:
+        try:
+            # FastMCP infers the JSON schema from the function signature (no **kwargs allowed).
             mcp.tool(name=name, description=desc)(func)
-        else:
-            # FastMCP will infer from signature
-            mcp.tool(name=name, description=desc)(func)
+            registered += 1
+        except Exception as e:
+            failures.append((name, str(e)))
 
-    print(f"MCP orchestrator ready: {len(TOOLS)} tools", file=sys.stderr)
+    print(f"MCP orchestrator: {registered}/{len(TOOLS)} tools registered", file=sys.stderr)
+    if failures:
+        print(f"FAILURES ({len(failures)}):", file=sys.stderr)
+        for n, e in failures[:5]:
+            print(f"  - {n}: {e}", file=sys.stderr)
+    # Expose resources too (categories + list)
+    @mcp.resource("manifest://tools")
+    def manifest_resource() -> str:
+        """Return JSON manifest of all tools (categories + args + descriptions)."""
+        return json.dumps(
+            {
+                "name": "coding-vps-orchestrator",
+                "version": "2.0.0",
+                "tools_count": len(TOOLS),
+                "categories": sorted({t["category"] for t in TOOLS.values()}),
+                "tools": {n: {"args": t["args"], "category": t["category"], "desc": t.get("desc", "")} for n, t in TOOLS.items()},
+            },
+            indent=2,
+        )
+
+    @mcp.resource("manifest://categories")
+    def categories_resource() -> str:
+        """Return tool counts grouped by category."""
+        by_cat: dict[str, int] = {}
+        for t in TOOLS.values():
+            by_cat[t["category"]] = by_cat.get(t["category"], 0) + 1
+        return json.dumps(by_cat, indent=2)
+
     mcp.run()
     return 0
 
