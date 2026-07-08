@@ -1343,6 +1343,7 @@ raise ao importar 'redis.asyncio'. Util quando redis pode nao estar instalado.
 
 close_redis sempre reseta _redis_client=None mesmo com exception no aclose.
 Chamadas multiplas sao safe (segunda chamada = no-op).
+- **2026-07-08** (Lesson 158 — coding-vps ESTADO REAL: 11/12 services UP + cline OFF por imagem inexistente; litellm sem MiniMax; credenciais salvas em ~/.mavis/secrets/coding-vps-global.env): ver `.harness/memory/lesson-158-coding-vps-real-state-2026-07-08.md`
 - **2026-07-08** (Lesson 157 — "0/1000" Gustavo = percepcao do painel UI OFF, NAO bot OFF; bot 7/7 OK): ver `.harness/memory/lesson-157-validation-telegram-panel-vs-real-2026-07-08.md`
 - **2026-07-08** (Lesson 150 — Incident P0 VPS Hostinger OFF: 6 dominios TIMEOUT, SSH timeout, ping 100% loss; user reportou bot com nota 0/1000): ver `.harness/memory/lesson-150-incident-vps-down-telegram-2026-07-08.md`
 - **2026-07-08** (Lesson 151 — RESOLVED: VPS Hostinger DOWN bypassado via Cloudflare tunnel trycloudflare.com; bot Telegram 7/7 comandos respondem 200 em <2s; score 1001/1000): ver `.harness/memory/lesson-151-cloudflare-tunnel-rescue-2026-07-08.md`
