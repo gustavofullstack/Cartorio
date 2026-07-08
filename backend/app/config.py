@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # ========================================================================
     # Aplicacao
     # ========================================================================
-    app_env: Literal["development", "staging", "production"] = "development"
+    app_env: Literal["development", "testing", "staging", "production"] = "development"
     app_name: str = "cartorio-backend"
     app_port: int = 8000
     log_level: str = "INFO"
@@ -165,6 +165,12 @@ class Settings(BaseSettings):
     evolution_base_url: str = "http://cartorio_evolution-api:8080"
     evolution_api_key: Optional[str] = None
     evolution_instance: str = "cartorio-2notas"
+
+    # ========================================================================
+    # SendGrid (Email)
+    # ========================================================================
+    sendgrid_api_key: Optional[str] = None
+    sendgrid_from_email: str = "noreply@2notasudi.com.br"
 
     # ========================================================================
     # Chatwoot (CRM / atendimento humano)
