@@ -606,8 +606,12 @@ def test_webhook_group_msg_without_command_reacts_and_orients() -> None:
         },
     }
     with patch("app.api.v1.telegram.get_bus", return_value=None):
-        with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send:
-            with patch("app.api.v1.telegram._react", new=AsyncMock(return_value=True)) as mock_react:
+        with patch(
+            "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            with patch(
+                "app.api.v1.telegram._react", new=AsyncMock(return_value=True)
+            ) as mock_react:
                 with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     resp = client.post("/api/v1/telegram/webhook", json=payload)
     assert resp.status_code == 200
@@ -823,11 +827,11 @@ def test_get_tg_pool_lifecycle_and_no_loop() -> None:
     """Exercita o ciclo de vida do _get_tg_pool e o bloco try/except sem event loop."""
     from app.api.v1.telegram import _get_tg_pool
     import asyncio
-    
+
     # 1. Fora do loop de eventos (deve cair no except RuntimeError)
     pool1 = _get_tg_pool()
     assert pool1 is not None
-    
+
     # 2. Dentro do loop de eventos (deve registrar o loop atual)
     async def _test():
         pool2 = _get_tg_pool()
