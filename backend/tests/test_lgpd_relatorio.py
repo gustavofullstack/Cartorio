@@ -166,6 +166,73 @@ class TestRelatorioANPD:
         rel = gerar_relatorio_anual(db, ano=2026)
         assert rel["incidentes_seguranca"]["total"] == 0
 
+    def test_incidentes_contagem_detalhada(self, db):
+        from app.models.audit_log import AuditLog
+
+        # Add various security events
+        db.add_all(
+            [
+                AuditLog(
+                    actor_id="test1",
+                    action="security.anpd_reported",
+                    resource="r1",
+                    hash="1",
+                    hmac_signature="1",
+                ),
+                AuditLog(
+                    actor_id="test2",
+                    action="security.anpd_reported",
+                    resource="r2",
+                    hash="2",
+                    hmac_signature="2",
+                ),
+                AuditLog(
+                    actor_id="test3",
+                    action="security.data_breach",
+                    resource="r3",
+                    hash="3",
+                    hmac_signature="3",
+                ),
+                AuditLog(
+                    actor_id="test4",
+                    action="security.mitigated_attack",
+                    resource="r4",
+                    hash="4",
+                    hmac_signature="4",
+                ),
+                AuditLog(
+                    actor_id="test5",
+                    action="security.mitigated_attack",
+                    resource="r5",
+                    hash="5",
+                    hmac_signature="5",
+                ),
+                AuditLog(
+                    actor_id="test6",
+                    action="security.mitigated_attack",
+                    resource="r6",
+                    hash="6",
+                    hmac_signature="6",
+                ),
+                AuditLog(
+                    actor_id="test7",
+                    action="security.other_event",
+                    resource="r7",
+                    hash="7",
+                    hmac_signature="7",
+                ),
+            ]
+        )
+        db.commit()
+
+        rel = gerar_relatorio_anual(db, ano=datetime.now(timezone.utc).year)
+        incidentes = rel["incidentes_seguranca"]
+
+        assert incidentes["total"] == 7
+        assert incidentes["comunicados_anpd"] == 2
+        assert incidentes["vazamentos_dados_pessoais"] == 1
+        assert incidentes["ataques_mitigados"] == 3
+
     def test_render_markdown_has_hash_anchor(self, db):
         """Markdown renderizado contem hash_anchor."""
         rel = gerar_relatorio_anual(db, ano=2026)
