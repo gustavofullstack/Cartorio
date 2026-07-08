@@ -5,9 +5,11 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-06)
+## INDICE RAPIDO (atualizado 2026-07-08)
 
 ### Por data (consolidado)
+- **2026-07-08** (Lesson 152 — Telegram bot para de responder apos group migration: handler my_chat_member + setWebhook secret_token + cloudflared tunnel restart): ver `.harness/memory/lesson-152-telegram-my-chat-member-group-migration-2026-07-08.md`
+- **2026-07-08** (Lesson 151 — Cloudflare tunnel rescue: `nohup cloudflared tunnel --url http://localhost:8000 &` + curl trycloudflare.com ate status 200)
 - **2026-07-06** (Lesson 145 — Relatório quinzenal PDF+PPTX v3 ULTRA: 4 sections novas + animações CSS + 27 providers + timeline HH:MM): ver `.harness/memory/lesson-145-quinzenal-report-v3-ultra-2026-07-06.md`
 - **2026-07-06** (Lesson 144 — Fix 10+ páginas quebradas do PDF v2: charts SVG→PNG, font hardcoded, page-break): ver `.harness/memory/lesson-144-fix-broken-pages-2026-07-06.md`
 - **2026-07-06** (Lesson 143 — Relatório quinzenal v2 com logo TriQ Hub oficial + 4 SVGs + 4 apêndices): ver `.harness/memory/lesson-143-quinzenal-report-v2-2026-07-06.md`
