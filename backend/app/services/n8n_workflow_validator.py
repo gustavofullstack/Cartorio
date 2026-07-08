@@ -89,10 +89,9 @@ def _validate_one(wf_path: Path) -> dict[str, Any]:
     )
 
     # 2. Nodes sem type
-    node_names = set()
+    node_names = {node.get("name", "") for node in nodes}
     for node in nodes:
         name = node.get("name", "")
-        node_names.add(name)
         if not node.get("type"):
             result["errors"].append(f"Node '{name}' sem type")
             result["valid"] = False
