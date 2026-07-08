@@ -31,13 +31,56 @@ def client(_client):
     return _client()
 
 
-@pytest.mark.asyncio
-async def test_dispatch_chatwoot_placeholder_nao_chama_rede() -> None:
-    """_dispatch_chatwoot eh placeholder (Sprint 2): apenas loga."""
+def test_dispatch_chatwoot_levanta_RuntimeError_sem_config() -> None:
+    """_dispatch_chatwoot valida configuracao (base_url, api_key, account_id)."""
     from app.api.v1.integrations import _dispatch_chatwoot
 
-    # NAO deve levantar exception nem chamar rede
-    await _dispatch_chatwoot({"conversation_id": 123, "content": "resposta"})
+    with patch("app.api.v1.integrations.settings") as mock_settings:
+        mock_settings.chatwoot_base_url = None
+        with pytest.raises(RuntimeError, match="Chatwoot nao configurado"):
+            asyncio.run(_dispatch_chatwoot({"conversation_id": 123, "content": "hi"}))
+
+
+def test_dispatch_chatwoot_levanta_ValueError_sem_campos() -> None:
+    """_dispatch_chatwoot valida payload conversation_id/content."""
+    from app.api.v1.integrations import _dispatch_chatwoot
+
+    with patch("app.api.v1.integrations.settings") as mock_settings:
+        mock_settings.chatwoot_base_url = "http://chatwoot"
+        mock_settings.chatwoot_api_key = "key"
+        mock_settings.chatwoot_account_id = 1
+        with pytest.raises(ValueError, match="conversation_id"):
+            asyncio.run(_dispatch_chatwoot({"content": "hi"}))
+
+
+def test_dispatch_chatwoot_levanta_RuntimeError_em_http_4xx() -> None:
+    """_dispatch_chatwoot propaga RuntimeError para HTTP >= 400."""
+    from app.api.v1.integrations import _dispatch_chatwoot
+
+    class FakeResp:
+        status_code = 500
+        text = "internal error"
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self) -> "FakeClient":
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            pass
+
+        async def post(self, *args: object, **kwargs: object) -> FakeResp:
+            return FakeResp()
+
+    with patch("app.api.v1.integrations.settings") as mock_settings:
+        mock_settings.chatwoot_base_url = "http://chatwoot"
+        mock_settings.chatwoot_api_key = "key"
+        mock_settings.chatwoot_account_id = 1
+        with patch("app.api.v1.integrations.httpx.AsyncClient", FakeClient):
+            with pytest.raises(RuntimeError, match="chatwoot HTTP 500"):
+                asyncio.run(_dispatch_chatwoot({"conversation_id": 123, "content": "hi"}))
 
 
 @pytest.mark.asyncio
