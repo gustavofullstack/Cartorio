@@ -163,26 +163,25 @@ async def _send_typing(chat_id: int) -> bool:
 # Antes: cada chamada criava AsyncClient novo (DNS+TLS+TCP = ~500ms).
 # Agora: pool global + typing em background task (retorna <1ms).
 _TG_HTTP_POOL: httpx.AsyncClient | None = None
+_TG_HTTP_POOL_LOOP_ID: int = 0
 
 
 def _get_tg_pool() -> httpx.AsyncClient:
-    global _TG_HTTP_POOL
+    global _TG_HTTP_POOL, _TG_HTTP_POOL_LOOP_ID
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = None
     current_loop_id = id(loop) if loop else 0
-    if not hasattr(_get_tg_pool, "_loop_id"):
-        _get_tg_pool._loop_id = 0
 
-    if _TG_HTTP_POOL is None or _get_tg_pool._loop_id != current_loop_id:
+    if _TG_HTTP_POOL is None or _TG_HTTP_POOL_LOOP_ID != current_loop_id:
         _TG_HTTP_POOL = httpx.AsyncClient(
             timeout=httpx.Timeout(15.0, connect=10.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
             verify=False,  # Bypass domain mismatch verification when using direct IP routing
             headers={"Host": "api.telegram.org"},  # Ensure Telegram routing works
         )
-        _get_tg_pool._loop_id = current_loop_id
+        _TG_HTTP_POOL_LOOP_ID = current_loop_id
     return _TG_HTTP_POOL
 
 
