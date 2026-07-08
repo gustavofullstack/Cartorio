@@ -1,0 +1,1890 @@
+{
+  "name": "coding-vps-orchestrator",
+  "version": "2.0.0",
+  "description": "MCP server exposing 92 tools of the coding-vps_apenas_para_auxilio toolkit (Tailscale SSH access to VPS at 100.99.172.84) for TRAE, Antigravity, Claude Code, Cursor, Aider, and any MCP-compatible client.",
+  "transport": "stdio",
+  "command": "python3 scripts/coding_vps_mcp_orchestrator.py mcp",
+  "alt_command_http": "python3 scripts/coding_vps_mcp_orchestrator.py http  # FastAPI/SSE on :8100",
+  "python": "3.14",
+  "runtime_dep": "fastmcp>=3.4.2",
+  "tools_count": 100,
+  "categories": {
+    "code-review": 6,
+    "db": 10,
+    "dev": 6,
+    "docker": 6,
+    "easypanel": 4,
+    "llm": 11,
+    "monitoring": 8,
+    "networking": 3,
+    "rag": 5,
+    "search": 4,
+    "status": 8,
+    "utility": 15,
+    "webhook": 4,
+    "websocket": 6,
+    "workflow": 4
+  },
+  "tools": [
+    {
+      "name": "chat_minimax",
+      "description": "Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "model": {
+            "type": "string",
+            "description": "model"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "list_models",
+      "description": "List all LiteLLM models available",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "chat_crew_ai",
+      "description": "Send chat to crew-ai coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat_goose",
+      "description": "Send chat to goose coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat_hermes",
+      "description": "Send chat to hermes coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat_kilo_org_kilocode",
+      "description": "Send chat to kilo-org_kilocode coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat_langgraph",
+      "description": "Send chat to langgraph coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat_openchamber",
+      "description": "Send chat to openchamber coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat_openclaw",
+      "description": "Send chat to openclaw coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat_opencode",
+      "description": "Send chat to opencode coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chat_openhands",
+      "description": "Send chat to openhands coding agent",
+      "category": "llm",
+      "category_description": "LLM / coding-agent chat (MiniMax-M3 via LiteLLM + 9 coding agents)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "max tokens"
+          },
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "list_services",
+      "description": "List all coding-vps services (main/side/all)",
+      "category": "status",
+      "category_description": "Container/service health & inventory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "stack": {
+            "type": "string",
+            "description": "stack"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "health_check_service",
+      "description": "TCP probe open ports of a service",
+      "category": "status",
+      "category_description": "Container/service health & inventory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          }
+        },
+        "required": [
+          "service"
+        ]
+      }
+    },
+    {
+      "name": "service_info",
+      "description": "Get full Docker service spec",
+      "category": "status",
+      "category_description": "Container/service health & inventory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          }
+        },
+        "required": [
+          "service"
+        ]
+      }
+    },
+    {
+      "name": "docker_stats",
+      "description": "CPU/Mem usage of all containers",
+      "category": "status",
+      "category_description": "Container/service health & inventory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "swarm_info",
+      "description": "Swarm manager/node info",
+      "category": "status",
+      "category_description": "Container/service health & inventory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "node_list",
+      "description": "List Docker swarm nodes",
+      "category": "status",
+      "category_description": "Container/service health & inventory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "network_list",
+      "description": "List Docker networks",
+      "category": "status",
+      "category_description": "Container/service health & inventory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "volume_list",
+      "description": "List coding-vps volumes",
+      "category": "status",
+      "category_description": "Container/service health & inventory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "service_logs",
+      "description": "Get last N log lines from a service",
+      "category": "docker",
+      "category_description": "Docker service controls (logs/scale/restart/env)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          },
+          "tail": {
+            "type": "integer",
+            "description": "tail"
+          }
+        },
+        "required": [
+          "service"
+        ]
+      }
+    },
+    {
+      "name": "restart_service",
+      "description": "Force-restart a service",
+      "category": "docker",
+      "category_description": "Docker service controls (logs/scale/restart/env)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          }
+        },
+        "required": [
+          "service"
+        ]
+      }
+    },
+    {
+      "name": "scale_service",
+      "description": "Scale service to N replicas",
+      "category": "docker",
+      "category_description": "Docker service controls (logs/scale/restart/env)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          },
+          "replicas": {
+            "type": "integer",
+            "description": "replicas"
+          }
+        },
+        "required": [
+          "service",
+          "replicas"
+        ]
+      }
+    },
+    {
+      "name": "deploy_image",
+      "description": "Rolling update a service to new image",
+      "category": "docker",
+      "category_description": "Docker service controls (logs/scale/restart/env)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          },
+          "image": {
+            "type": "string",
+            "description": "image"
+          }
+        },
+        "required": [
+          "service",
+          "image"
+        ]
+      }
+    },
+    {
+      "name": "env_get",
+      "description": "Get all env vars of a running container",
+      "category": "docker",
+      "category_description": "Docker service controls (logs/scale/restart/env)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          }
+        },
+        "required": [
+          "service"
+        ]
+      }
+    },
+    {
+      "name": "env_set",
+      "description": "Add or update an env var",
+      "category": "docker",
+      "category_description": "Docker service controls (logs/scale/restart/env)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          },
+          "key": {
+            "type": "string",
+            "description": "key"
+          },
+          "value": {
+            "type": "string",
+            "description": "value"
+          }
+        },
+        "required": [
+          "service",
+          "key",
+          "value"
+        ]
+      }
+    },
+    {
+      "name": "ep_login",
+      "description": "Login to Easypanel API, return JWT",
+      "category": "easypanel",
+      "category_description": "Easypanel API management",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "ep_list_projects",
+      "description": "List all Easypanel projects",
+      "category": "easypanel",
+      "category_description": "Easypanel API management",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "ep_list_services",
+      "description": "List services in an Easypanel project",
+      "category": "easypanel",
+      "category_description": "Easypanel API management",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "project"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "ep_deploy",
+      "description": "Trigger Easypanel deploy of a service",
+      "category": "easypanel",
+      "category_description": "Easypanel API management",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "project"
+          },
+          "service": {
+            "type": "string",
+            "description": "service"
+          }
+        },
+        "required": [
+          "project",
+          "service"
+        ]
+      }
+    },
+    {
+      "name": "postgres_query",
+      "description": "Run SQL on a Postgres DB",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "db": {
+            "type": "string",
+            "description": "db"
+          },
+          "sql": {
+            "type": "string",
+            "description": "sql"
+          }
+        },
+        "required": [
+          "db",
+          "sql"
+        ]
+      }
+    },
+    {
+      "name": "postgres_list_tables",
+      "description": "List tables in a Postgres DB",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "db": {
+            "type": "string",
+            "description": "db"
+          }
+        },
+        "required": [
+          "db"
+        ]
+      }
+    },
+    {
+      "name": "redis_ping",
+      "description": "Ping a Redis instance",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "redis_service": {
+            "type": "string",
+            "description": "redis service"
+          }
+        },
+        "required": [
+          "redis_service"
+        ]
+      }
+    },
+    {
+      "name": "redis_get",
+      "description": "Get a Redis key value",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "redis_service": {
+            "type": "string",
+            "description": "redis service"
+          },
+          "key": {
+            "type": "string",
+            "description": "key"
+          }
+        },
+        "required": [
+          "redis_service",
+          "key"
+        ]
+      }
+    },
+    {
+      "name": "redis_set",
+      "description": "Set a Redis key value",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "redis_service": {
+            "type": "string",
+            "description": "redis service"
+          },
+          "key": {
+            "type": "string",
+            "description": "key"
+          },
+          "value": {
+            "type": "string",
+            "description": "value"
+          }
+        },
+        "required": [
+          "redis_service",
+          "key",
+          "value"
+        ]
+      }
+    },
+    {
+      "name": "redis_keys",
+      "description": "List Redis keys matching pattern",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "redis_service": {
+            "type": "string",
+            "description": "redis service"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "pattern"
+          }
+        },
+        "required": [
+          "redis_service"
+        ]
+      }
+    },
+    {
+      "name": "clickhouse_query",
+      "description": "Query LangFuse ClickHouse",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sql": {
+            "type": "string",
+            "description": "sql"
+          }
+        },
+        "required": [
+          "sql"
+        ]
+      }
+    },
+    {
+      "name": "elasticsearch_search",
+      "description": "Search Argilla Elasticsearch",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "string",
+            "description": "index"
+          },
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": [
+          "index",
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "mongo_query",
+      "description": "MongoDB query (lynx-db etc)",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "db": {
+            "type": "string",
+            "description": "db"
+          },
+          "collection": {
+            "type": "string",
+            "description": "collection"
+          },
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": [
+          "db",
+          "collection",
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "minio_list",
+      "description": "List files in a MinIO bucket",
+      "category": "db",
+      "category_description": "Databases (Postgres, Redis, ClickHouse, ES, Mongo, MinIO)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "description": "bucket"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "temporal_list_workflows",
+      "description": "List Temporal workflows",
+      "category": "workflow",
+      "category_description": "Workflow orchestration (Temporal, Paperclip, LangFlow)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "temporal_describe",
+      "description": "Describe a Temporal workflow",
+      "category": "workflow",
+      "category_description": "Workflow orchestration (Temporal, Paperclip, LangFlow)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workflow_id": {
+            "type": "string",
+            "description": "workflow id"
+          },
+          "run_id": {
+            "type": "string",
+            "description": "run id"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "run_id"
+        ]
+      }
+    },
+    {
+      "name": "paperclip_list_tasks",
+      "description": "List Paperclip tasks",
+      "category": "workflow",
+      "category_description": "Workflow orchestration (Temporal, Paperclip, LangFlow)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "langflow_run",
+      "description": "Run a LangFlow flow",
+      "category": "workflow",
+      "category_description": "Workflow orchestration (Temporal, Paperclip, LangFlow)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flow_id": {
+            "type": "string",
+            "description": "flow id"
+          },
+          "inputs": {
+            "type": "string",
+            "description": "inputs"
+          }
+        },
+        "required": [
+          "flow_id",
+          "inputs"
+        ]
+      }
+    },
+    {
+      "name": "gerrit_list_changes",
+      "description": "List Gerrit code review changes",
+      "category": "code-review",
+      "category_description": "Code review (Gerrit, SonarQube, Sourcegraph, Argilla)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "gerrit_get_change",
+      "description": "Get Gerrit change details",
+      "category": "code-review",
+      "category_description": "Code review (Gerrit, SonarQube, Sourcegraph, Argilla)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "change_id": {
+            "type": "string",
+            "description": "change id"
+          }
+        },
+        "required": [
+          "change_id"
+        ]
+      }
+    },
+    {
+      "name": "sonarqube_projects",
+      "description": "List SonarQube projects",
+      "category": "code-review",
+      "category_description": "Code review (Gerrit, SonarQube, Sourcegraph, Argilla)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "sonarqube_issues",
+      "description": "Get SonarQube issues for a project",
+      "category": "code-review",
+      "category_description": "Code review (Gerrit, SonarQube, Sourcegraph, Argilla)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project_key": {
+            "type": "string",
+            "description": "project key"
+          }
+        },
+        "required": [
+          "project_key"
+        ]
+      }
+    },
+    {
+      "name": "sourcegraph_search",
+      "description": "Search code via Sourcegraph",
+      "category": "code-review",
+      "category_description": "Code review (Gerrit, SonarQube, Sourcegraph, Argilla)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "argilla_datasets",
+      "description": "List Argilla datasets for LLM feedback",
+      "category": "code-review",
+      "category_description": "Code review (Gerrit, SonarQube, Sourcegraph, Argilla)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "centrifugo_publish",
+      "description": "Publish to Centrifugo WebSocket channel",
+      "category": "websocket",
+      "category_description": "Realtime channels & P2P (Centrifugo, MiroTalk, Snapdrop, FilePizza)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "channel"
+          },
+          "data": {
+            "type": "string",
+            "description": "data"
+          }
+        },
+        "required": [
+          "channel",
+          "data"
+        ]
+      }
+    },
+    {
+      "name": "centrifugo_channels",
+      "description": "List Centrifugo channels",
+      "category": "websocket",
+      "category_description": "Realtime channels & P2P (Centrifugo, MiroTalk, Snapdrop, FilePizza)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "pattern"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "centrifugo_history",
+      "description": "Get Centrifugo channel history",
+      "category": "websocket",
+      "category_description": "Realtime channels & P2P (Centrifugo, MiroTalk, Snapdrop, FilePizza)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "channel"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "limit"
+          }
+        },
+        "required": [
+          "channel"
+        ]
+      }
+    },
+    {
+      "name": "mirotalk_create_room",
+      "description": "Create MiroTalk video room (WebRTC)",
+      "category": "websocket",
+      "category_description": "Realtime channels & P2P (Centrifugo, MiroTalk, Snapdrop, FilePizza)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "snapdrop_peers",
+      "description": "List active Snapdrop peers (P2P)",
+      "category": "websocket",
+      "category_description": "Realtime channels & P2P (Centrifugo, MiroTalk, Snapdrop, FilePizza)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "filepizza_create",
+      "description": "Create FilePizza P2P file transfer room",
+      "category": "websocket",
+      "category_description": "Realtime channels & P2P (Centrifugo, MiroTalk, Snapdrop, FilePizza)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "request_basket_create",
+      "description": "Create request-baskets bucket for webhook inspection",
+      "category": "webhook",
+      "category_description": "Webhook capture/send (request-baskets)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name"
+          },
+          "forward_url": {
+            "type": "string",
+            "description": "forward url"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "request_basket_list",
+      "description": "List all request-baskets",
+      "category": "webhook",
+      "category_description": "Webhook capture/send (request-baskets)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "request_basket_get",
+      "description": "Get requests captured by a basket",
+      "category": "webhook",
+      "category_description": "Webhook capture/send (request-baskets)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "webhook_send",
+      "description": "Send a webhook to a URL",
+      "category": "webhook",
+      "category_description": "Webhook capture/send (request-baskets)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "url"
+          },
+          "method": {
+            "type": "string",
+            "description": "method"
+          },
+          "payload": {
+            "type": "object",
+            "description": "payload"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    {
+      "name": "langflow_list_flows",
+      "description": "List LangFlow flows",
+      "category": "rag",
+      "category_description": "RAG / vector retrieval (LangFlow, AnythingLLM, Argilla, LangFuse, EvoAI)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "anythingllm_query",
+      "description": "Query AnythingLLM workspace",
+      "category": "rag",
+      "category_description": "RAG / vector retrieval (LangFlow, AnythingLLM, Argilla, LangFuse, EvoAI)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "workspace": {
+            "type": "string",
+            "description": "workspace"
+          },
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": [
+          "workspace",
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "argilla_search",
+      "description": "Search Argilla dataset",
+      "category": "rag",
+      "category_description": "RAG / vector retrieval (LangFlow, AnythingLLM, Argilla, LangFuse, EvoAI)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset": {
+            "type": "string",
+            "description": "dataset"
+          },
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": [
+          "dataset",
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "langfuse_traces",
+      "description": "Get recent LangFuse LLM traces",
+      "category": "rag",
+      "category_description": "RAG / vector retrieval (LangFlow, AnythingLLM, Argilla, LangFuse, EvoAI)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "description": "limit"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "evoai_generate",
+      "description": "Call Evo AI generation endpoint",
+      "category": "rag",
+      "category_description": "RAG / vector retrieval (LangFlow, AnythingLLM, Argilla, LangFuse, EvoAI)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "firecrawl_scrape",
+      "description": "Scrape URL via Firecrawl (markdown)",
+      "category": "search",
+      "category_description": "Web scraping & search (Firecrawl, crwal4ai, FlareSolverr)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "url"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    {
+      "name": "firecrawl_crawl",
+      "description": "Crawl website via Firecrawl",
+      "category": "search",
+      "category_description": "Web scraping & search (Firecrawl, crwal4ai, FlareSolverr)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "url"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "limit"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    {
+      "name": "crwal4ai_scrape",
+      "description": "Scrape via crwal4ai (LLM-friendly)",
+      "category": "search",
+      "category_description": "Web scraping & search (Firecrawl, crwal4ai, FlareSolverr)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "url"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    {
+      "name": "flaresolverr_solve",
+      "description": "Bypass Cloudflare via FlareSolverr",
+      "category": "search",
+      "category_description": "Web scraping & search (Firecrawl, crwal4ai, FlareSolverr)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "url"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    {
+      "name": "goclaw_list_agents",
+      "description": "List Goclaw AI agents",
+      "category": "dev",
+      "category_description": "Dev utilities (Goclaw, SHM, Bolt.DIY, ChartDB, Open Notebook, OpenCode)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "shm_incidents",
+      "description": "List SHM status page incidents",
+      "category": "dev",
+      "category_description": "Dev utilities (Goclaw, SHM, Bolt.DIY, ChartDB, Open Notebook, OpenCode)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "boltdiy_create",
+      "description": "Generate app code via Bolt.DIY",
+      "category": "dev",
+      "category_description": "Dev utilities (Goclaw, SHM, Bolt.DIY, ChartDB, Open Notebook, OpenCode)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "chartdb_export",
+      "description": "Export DB schema visualization",
+      "category": "dev",
+      "category_description": "Dev utilities (Goclaw, SHM, Bolt.DIY, ChartDB, Open Notebook, OpenCode)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "db_url": {
+            "type": "string",
+            "description": "db url"
+          }
+        },
+        "required": [
+          "db_url"
+        ]
+      }
+    },
+    {
+      "name": "opennotebook_create",
+      "description": "Create Open Notebook entry",
+      "category": "dev",
+      "category_description": "Dev utilities (Goclaw, SHM, Bolt.DIY, ChartDB, Open Notebook, OpenCode)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "title"
+          },
+          "content": {
+            "type": "string",
+            "description": "content"
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ]
+      }
+    },
+    {
+      "name": "opencode_run",
+      "description": "Run OpenCode Node.js coding agent",
+      "category": "dev",
+      "category_description": "Dev utilities (Goclaw, SHM, Bolt.DIY, ChartDB, Open Notebook, OpenCode)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "prompt"
+          }
+        },
+        "required": [
+          "prompt"
+        ]
+      }
+    },
+    {
+      "name": "prometheus_query",
+      "description": "Query Prometheus metrics",
+      "category": "monitoring",
+      "category_description": "Observability (Prometheus, Sentry, SHM)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "query"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "prometheus_metrics",
+      "description": "List Prometheus metric names (Squad 3)",
+      "category": "monitoring",
+      "category_description": "Observability (Prometheus, Sentry, SHM)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "job": {
+            "type": "string",
+            "description": "job"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "sentry_list_issues",
+      "description": "List Sentry issues",
+      "category": "monitoring",
+      "category_description": "Observability (Prometheus, Sentry, SHM)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "project"
+          }
+        },
+        "required": [
+          "project"
+        ]
+      }
+    },
+    {
+      "name": "sentry_capture_event",
+      "description": "Capture custom Sentry event (Squad 3)",
+      "category": "monitoring",
+      "category_description": "Observability (Prometheus, Sentry, SHM)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "message"
+          },
+          "level": {
+            "type": "string",
+            "description": "level"
+          },
+          "tags": {
+            "type": "string",
+            "description": "tags"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      }
+    },
+    {
+      "name": "status_page_get",
+      "description": "Get SHM public status page",
+      "category": "monitoring",
+      "category_description": "Observability (Prometheus, Sentry, SHM)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "grafana_dashboards",
+      "description": "List Grafana dashboards (Squad 3)",
+      "category": "monitoring",
+      "category_description": "Observability (Prometheus, Sentry, SHM)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "letsencrypt_list",
+      "description": "List Let's Encrypt certs (Squad 3)",
+      "category": "monitoring",
+      "category_description": "Observability (Prometheus, Sentry, SHM)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "hostinger_api_status",
+      "description": "Get Hostinger VPS API status (Squad 3)",
+      "category": "monitoring",
+      "category_description": "Observability (Prometheus, Sentry, SHM)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "tailscale_status",
+      "description": "Tailscale mesh status JSON (Squad 3)",
+      "category": "networking",
+      "category_description": "",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "tailscale_ping",
+      "description": "Ping Tailscale peer (Squad 3)",
+      "category": "networking",
+      "category_description": "",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "description": "target"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "tailscale_list_devices",
+      "description": "List Tailscale devices in tailnet (Squad 3)",
+      "category": "networking",
+      "category_description": "",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "exec_in_container",
+      "description": "Execute command in a running container",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "service"
+          },
+          "cmd": {
+            "type": "string",
+            "description": "cmd"
+          }
+        },
+        "required": [
+          "service",
+          "cmd"
+        ]
+      }
+    },
+    {
+      "name": "backup_volume",
+      "description": "Backup a Docker volume to tar.gz",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "volume": {
+            "type": "string",
+            "description": "volume"
+          },
+          "dest": {
+            "type": "string",
+            "description": "dest"
+          }
+        },
+        "required": [
+          "volume",
+          "dest"
+        ]
+      }
+    },
+    {
+      "name": "restore_volume",
+      "description": "Restore a tar.gz to a Docker volume",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tar_file": {
+            "type": "string",
+            "description": "tar file"
+          },
+          "volume": {
+            "type": "string",
+            "description": "volume"
+          }
+        },
+        "required": [
+          "tar_file",
+          "volume"
+        ]
+      }
+    },
+    {
+      "name": "image_pull",
+      "description": "Pull a Docker image on VPS",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "description": "image"
+          }
+        },
+        "required": [
+          "image"
+        ]
+      }
+    },
+    {
+      "name": "image_list",
+      "description": "List Docker images on VPS",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "swarm_service_create",
+      "description": "Create a new Docker Swarm service",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name"
+          },
+          "image": {
+            "type": "string",
+            "description": "image"
+          },
+          "env": {
+            "type": "string",
+            "description": "env"
+          },
+          "port": {
+            "type": "integer",
+            "description": "port"
+          }
+        },
+        "required": [
+          "name",
+          "image"
+        ]
+      }
+    },
+    {
+      "name": "swarm_service_remove",
+      "description": "Remove a Docker Swarm service",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "file_read",
+      "description": "Read a file from the VPS",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "path"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "name": "file_write",
+      "description": "Write a file to the VPS",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "path"
+          },
+          "content": {
+            "type": "string",
+            "description": "content"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ]
+      }
+    },
+    {
+      "name": "tail_file",
+      "description": "Tail a file on the VPS",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "path"
+          },
+          "lines": {
+            "type": "integer",
+            "description": "lines"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "name": "port_scan",
+      "description": "Scan TCP ports on a host inside Docker network",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "host"
+          },
+          "ports": {
+            "type": "string",
+            "description": "ports"
+          }
+        },
+        "required": [
+          "host"
+        ]
+      }
+    },
+    {
+      "name": "network_inspect",
+      "description": "Inspect a Docker network",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "description": "network"
+          }
+        },
+        "required": [
+          "network"
+        ]
+      }
+    },
+    {
+      "name": "secret_get",
+      "description": "Get a Docker secret",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "secret_set",
+      "description": "Create a Docker secret from stdin",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "name"
+          },
+          "value": {
+            "type": "string",
+            "description": "value"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      }
+    },
+    {
+      "name": "openapi_spec",
+      "description": "Get OpenAPI-like spec of all MCP tools",
+      "category": "utility",
+      "category_description": "General infra utilities (file I/O, secrets, networks, backups)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  ],
+  "resources": [
+    {
+      "uri": "manifest://tools",
+      "name": "tools-manifest",
+      "description": "JSON with all tools, args, categories and descriptions"
+    },
+    {
+      "uri": "manifest://categories",
+      "name": "categories-count",
+      "description": "JSON object: category -> tool count"
+    }
+  ],
+  "prompts": []
+}

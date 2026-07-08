@@ -1,0 +1,193 @@
+{
+  "_meta": {
+    "description": "Coding-vps service registry with real endpoints discovered via auto-scan",
+    "scan_method": "scripts/coding_vps_mcp_orchestrator.py + discover_clean.py",
+    "scan_date": "2026-07-08",
+    "infra": "coding-vps_apenas_para_auxilio (Easypanel + Docker Swarm + Tailscale)",
+    "scan_total": 28,
+    "scan_up": 20
+  },
+  "services": {
+    "langflow": {
+      "host": "coding-vps_apenas_para_auxilio_langflow",
+      "port": 7860,
+      "up": true,
+      "health": "/health",
+      "tools": ["langflow_run_flow"]
+    },
+    "langfuse-web": {
+      "host": "coding-vps_apenas_para_auxilio_langfuse-web",
+      "port_attempted": [3000, 3030],
+      "up": false,
+      "note": "langfuse-web/worker nao publicam porta 3000 - Next.js escuta no hostname do container",
+      "tools_via_docker_exec": ["langfuse_traces", "langfuse_health", "langfuse_count_traces"]
+    },
+    "anything-llm": {
+      "host": "coding-vps_apenas_para_auxilio_anything-llm",
+      "port": 3001,
+      "up": true,
+      "health": "/health",
+      "tools": ["anythingllm_workspaces"]
+    },
+    "centrifugo": {
+      "host": "coding-vps_apenas_para_auxilio_centrifugo",
+      "port": 8000,
+      "up": true,
+      "health": "/",
+      "tools": ["centrifugo_publish"]
+    },
+    "goclaw": {
+      "host": "coding-vps_apenas_para_auxilio_goclaw",
+      "port_attempted": [8000, 8080],
+      "up": false,
+      "note": "goclaw-ui usa Next.js bindando em hostname (mesmo problema langfuse-web)"
+    },
+    "openclaw": {
+      "host": "coding-vps_apenas_para_auxilio_openclaw",
+      "port": 8000,
+      "up": false,
+      "note": "openclaw = coding-vps/agent:patched que faz health em /health"
+    },
+    "zincsearch": {
+      "host": "coding-vps_apenas_para_auxilio_zincsearch",
+      "port": 4080,
+      "up": true,
+      "health": "/healthz",
+      "tools": ["zincsearch_search"]
+    },
+    "sonarqube": {
+      "host": "coding-vps_apenas_para_auxilio_sonarqube",
+      "port": 9000,
+      "up": true,
+      "tools": ["sonarqube_projects", "sonarqube_get_metrics"]
+    },
+    "gerrit": {
+      "host": "coding-vps_apenas_para_auxilio_gerrit",
+      "port": 8080,
+      "up": false,
+      "note": "gerrit startup demora ~30s, tentar novamente"
+    },
+    "sourcegraph": {
+      "host": "coding-vps_apenas_para_auxilio_sourcegraph",
+      "port": 7080,
+      "up": true,
+      "health": "/health",
+      "tools": ["sourcegraph_search", "sourcegraph_repos"]
+    },
+    "firecrawl": {
+      "host": "coding-vps_apenas_para_auxilio_firecrawl",
+      "port": 3002,
+      "up": true,
+      "health": "/",
+      "tools": ["firecrawl_scrape", "firecrawl_crawl"]
+    },
+    "paperclip": {
+      "host": "coding-vps_apenas_para_auxilio_paperclip",
+      "port_attempted": [3000, 8000],
+      "up": false
+    },
+    "yacy": {
+      "host": "coding-vps_apenas_para_auxilio_yacy",
+      "port": 8090,
+      "up": true,
+      "health": "/",
+      "tools": ["yacy_search"]
+    },
+    "karakeep-web": {
+      "host": "coding-vps_apenas_para_auxilio_karakeep-web",
+      "port": 3000,
+      "up": true,
+      "health": "/api/health",
+      "tools": ["karakeep_search"]
+    },
+    "snapdrop": {
+      "host": "coding-vps_apenas_para_auxilio_snapdrop",
+      "port": 80,
+      "up": true,
+      "health": "/health",
+      "tools": ["snapdrop_discover"]
+    },
+    "filepizza": {
+      "host": "coding-vps_apenas_para_auxilio_filepizza",
+      "port_attempted": [8080, 80],
+      "up": false,
+      "note": "filepizza startup demora"
+    },
+    "mirotalk": {
+      "host": "coding-vps_apenas_para_auxilio_mirotalk",
+      "port": 3000,
+      "up": true,
+      "health": "/health",
+      "tools": ["mirotalk_create_room"]
+    },
+    "boltdiy": {
+      "host": "coding-vps_apenas_para_auxilio_boltdiy",
+      "port": 5173,
+      "up": true,
+      "tools": ["boltdiy_health"]
+    },
+    "chartdb": {
+      "host": "coding-vps_apenas_para_auxilio_chartdb",
+      "port": 8080,
+      "up": false
+    },
+    "argilla-web": {
+      "host": "coding-vps_apenas_para_auxilio_argilla-web",
+      "port": 6900,
+      "up": true,
+      "health": "/health",
+      "tools": ["argilla_datasets"]
+    },
+    "litellm": {
+      "host": "coding-vps_apenas_para_auxilio_litellm-app",
+      "port": 4000,
+      "up": true,
+      "health": "/",
+      "tools": ["chat_minimax", "list_models", "list_services"]
+    },
+    "minio": {
+      "host": "coding-vps_apenas_para_auxilio_langfuse-minio",
+      "port": 9000,
+      "up": true,
+      "tools": ["minio_health", "minio_list_buckets"]
+    },
+    "clickhouse": {
+      "host": "coding-vps_apenas_para_auxilio_langfuse-clickhouse",
+      "port": 8123,
+      "up": true,
+      "health": "/ping",
+      "tools": ["clickhouse_query"]
+    },
+    "flaresolverr": {
+      "host": "coding-vps_apenas_para_auxilio_flaresolverr",
+      "port": 8191,
+      "up": false,
+      "tools": ["flaresolverr_solve"]
+    },
+    "shm": {
+      "host": "coding-vps_apenas_para_auxilio_shm",
+      "port": 8080,
+      "up": true,
+      "tools": ["shm_status"]
+    },
+    "temporal-web": {
+      "host": "coding-vps_apenas_para_auxilio_temporal-web",
+      "port": 8080,
+      "up": true,
+      "health": "/health",
+      "tools": ["temporal_list_workflows"]
+    },
+    "ferron": {
+      "host": "coding-vps_apenas_para_auxilio_ferron",
+      "port": 80,
+      "up": true,
+      "tools": []
+    },
+    "filepizza-coturn": {
+      "host": "coding-vps_apenas_para_auxilio_filepizza-coturn",
+      "port": 3478,
+      "up": true,
+      "tools": []
+    }
+  }
+}

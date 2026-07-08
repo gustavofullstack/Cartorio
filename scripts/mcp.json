@@ -1,0 +1,75 @@
+{
+  "name": "coding-vps-orchestrator",
+  "displayName": "coding-vps MCP Orchestrator",
+  "version": "2.0.0",
+  "description": "MCP server exposing 100 tools of the coding-vps_apenas_para_auxilio toolkit (Tailscale SSH access to VPS at 100.99.172.84) for TRAE, Antigravity, Claude Code, Cursor, Aider, and any MCP-compatible client.",
+  "author": {
+    "name": "Gustavo Almeida",
+    "email": "gustavomar.fullstack@gmail.com"
+  },
+  "homepage": "https://github.com/gustavoalmeida/coding-vps-mcp-orchestrator",
+  "license": "MIT",
+  "mcp_protocol": "2025-03-26",
+  "transport": {
+    "primary": "stdio",
+    "alternatives": ["sse", "http-streamable"],
+    "stdio": {
+      "command": "python3",
+      "args": ["scripts/coding_vps_mcp_orchestrator.py", "mcp"]
+    },
+    "http": {
+      "command": "python3",
+      "args": ["scripts/coding_vps_mcp_orchestrator.py", "http"],
+      "port": 8100,
+      "endpoints": {
+        "root": "/",
+        "tools_list": "/tools",
+        "tool_call": "/call/{tool_name}",
+        "openapi": "/openapi.json"
+      }
+    }
+  },
+  "python": "3.14",
+  "runtime_dependencies": {
+    "fastmcp": ">=3.4.2"
+  },
+  "infrastructure": {
+    "target_vps": "100.99.172.84",
+    "vpn": "Tailscale SSH",
+    "ssh_key_env": "SSH_PRIVATE_KEY (default: ~/.ssh/id_ed25519_cartorio)",
+    "required_env": [
+      "SSH_PRIVATE_KEY",
+      "SSH_TAILSCALE_HOST",
+      "LITELLM_API_KEY"
+    ]
+  },
+  "capabilities": {
+    "tools": 100,
+    "resources": 2,
+    "prompts": 0,
+    "categories": 15
+  },
+  "categories": {
+    "llm": 11,
+    "status": 8,
+    "docker": 6,
+    "easypanel": 4,
+    "db": 10,
+    "workflow": 4,
+    "code-review": 6,
+    "websocket": 6,
+    "webhook": 4,
+    "rag": 5,
+    "search": 4,
+    "dev": 6,
+    "monitoring": 8,
+    "networking": 3,
+    "utility": 15
+  },
+  "tools_manifest": "scripts/mcp_manifest.json",
+  "client_configs": {
+    "trae": "scripts/mcp_config.trae.json",
+    "claude_desktop": "scripts/mcp_config.claude_desktop.json",
+    "cursor": "scripts/mcp_config.cursor.json"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/mcp-server.json",
+  "mcpServers": {
+    "coding-vps-orchestrator": {
+      "command": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3",
+      "args": [
+        "/Users/gustavoalmeida/projetos/Cartorio/scripts/coding_vps_mcp_orchestrator.py",
+        "mcp"
+      ],
+      "env": {
+        "SSH_PRIVATE_KEY": "/Users/gustavoalmeida/.ssh/id_ed25519_cartorio",
+        "SSH_TAILSCALE_HOST": "100.99.172.84",
+        "LITELLM_API_KEY": "sk-local-litellm-2026"
+      },
+      "description": "coding-vps-orchestrator: 100 tools across 15 categories (LLM/MiniMax-M3, Docker, DB, RAG, Easypanel, monitoring). Tailscale SSH access to VPS 100.99.172.84."
+    }
+  }
+}

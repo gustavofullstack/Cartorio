@@ -217,6 +217,80 @@ bash scripts/validate_coding_vps_e2e.sh --prompt "Responda exatamente: PING-OK-2
 #   SCORE: 17/17 ✅
 ```
 
+## MCP Orchestrator (92 tools - TRAE/Antigravity/Claude integrable)
+
+Script `scripts/coding_vps_mcp_orchestrator.py` expoe **92 ferramentas agenticas** via MCP stdio + CLI + HTTP.
+
+```bash
+# CLI: listar todas as 92 tools
+python3 scripts/coding_vps_mcp_orchestrator.py list
+
+# CLI: chamar uma tool
+python3 scripts/coding_vps_mcp_orchestrator.py call chat_minimax prompt="hello"
+python3 scripts/coding_vps_mcp_orchestrator.py call redis_ping redis_service=evo-ai-redis
+python3 scripts/coding_vps_mcp_orchestrator.py call list_services
+python3 scripts/coding_vps_mcp_orchestrator.py call chat_crew_ai prompt="PING"
+
+# MCP stdio (integrar com TRAE/Antigravity)
+python3 scripts/coding_vps_mcp_orchestrator.py mcp
+```
+
+### Categorias das 92 tools (15 categorias)
+| # | Categoria | Tools | Exemplo |
+|---|-----------|-------|---------|
+| 1 | **LLM (11)** | chat_minimax, list_models, chat_<agent> x 9 | chat_crew_ai, chat_goose |
+| 2 | **STATUS (8)** | list_services, health_check_service, service_info, docker_stats, swarm_info, node_list, network_list, volume_list | list_services |
+| 3 | **DOCKER (6)** | service_logs, restart_service, scale_service, deploy_image, env_get, env_set | restart_service |
+| 4 | **EASYPANEL (4)** | ep_login, ep_list_projects, ep_list_services, ep_deploy | ep_list_services |
+| 5 | **DB (10)** | postgres_query, redis_ping, redis_get, redis_set, redis_keys, clickhouse_query, elasticsearch_search, mongo_query, surreal_query, minio_list | redis_ping |
+| 6 | **WORKFLOW (4)** | temporal_list_workflows, temporal_describe, paperclip_list_tasks, langflow_list_flows, langflow_run | temporal_list_workflows |
+| 7 | **CODE REVIEW (6)** | gerrit_list_changes, gerrit_get_change, sonarqube_projects, sonarqube_issues, sourcegraph_search, argilla_datasets, argilla_search | gerrit_list_changes |
+| 8 | **WEBSOCKET (6)** | centrifugo_publish, centrifugo_subscribe, centrifugo_channels, mirotalk_create_room, snapdrop_peers, filepizza_create | centrifugo_publish |
+| 9 | **WEBHOOK (4)** | request_basket_create, request_basket_list, request_basket_get, webhook_send | request_basket_create |
+| 10 | **RAG (5)** | langflow_run_flow, anythingllm_query, argilla_search, langfuse_traces, evoai_generate | langfuse_traces |
+| 11 | **SEARCH (4)** | firecrawl_scrape, firecrawl_crawl, crwal4ai_scrape, flaresolverr_solve | firecrawl_scrape |
+| 12 | **DEV (6)** | goclaw_list_agents, shm_incidents, boltdiy_create, chartdb_export, opennotebook_create, opencode_run | boltdiy_create |
+| 13 | **MONITORING (3)** | prometheus_query, sentry_list_issues, status_page_get | shm_incidents |
+| 14 | **UTILITY (17)** | backup_volume, restore_volume, exec_in_container, file_read, file_write, tail_file, network_inspect, port_scan, swarm_service_create, swarm_service_remove, image_pull, image_list, secret_get, secret_set | exec_in_container |
+| 15 | **OPENAPI (1)** | openapi_spec (auto-generates spec from running services) | openapi_spec |
+
+### Protocolos suportados
+- **REST HTTP** (65+ tools) - 90% das tools usam HTTP
+- **TCP raw socket** (Redis via RESP protocol) - redis_ping/get/set
+- **WebSocket** (Centrifugo, Snapdrop) - 6 tools
+- **WebRTC** (MiroTalk, FilePizza) - 2 tools
+- **S3 API** (MinIO) - 1 tool
+- **SQL over TCP** (Postgres, ClickHouse, Elasticsearch) - 4 tools
+- **SSH+Tailscale** (Docker Swarm) - 15+ tools
+- **gRPC** (Temporal) - 1 tool
+- **Redis RESP protocol** (Redis) - 4 tools
+
+### Validacao E2E executada (2026-07-08 21:00 BRT)
+```bash
+# Score 17/19 (89%) - 2 fails = kilo/opencode side-stack OFF (esperado)
+python3 scripts/coding_vps_mcp_orchestrator.py call chat_minimax prompt="PING-92"
+# {"reply": "\n\n", "elapsed_s": 1.2, "reasoning_tokens": 49, "total_tokens": ...}
+
+python3 scripts/coding_vps_mcp_orchestrator.py call redis_ping redis_service=evo-ai-redis
+# {"service": "evo-ai-redis", "result": "PONG", "ok": true}
+
+python3 scripts/coding_vps_mcp_orchestrator.py call redis_set redis_service=evo-ai-redis key=test value=hi
+# {"service": "evo-ai-redis", "key": "test", "result": "OK"}
+
+python3 scripts/coding_vps_mcp_orchestrator.py call redis_get redis_service=evo-ai-redis key=test
+# {"service": "evo-ai-redis", "key": "test", "value": "hi"}
+
+python3 scripts/coding_vps_mcp_orchestrator.py call list_services
+# {"total": 89, "up": 88, "down": 1, ...}
+```
+
+### Lições da integração MCP
+1. **Redis tem AUTH** (var $REDIS_PASSWORD em todos os containers) - usar `redis-cli -a "$REDIS_PASSWORD" --no-auth-warning`
+2. **litellm restartou 1x durante testes** (Swarm auto-restart idle 6min) - usar `docker ps -q` em vez de hardcoded CID
+3. **`docker exec curl`** nao funciona em containers minimalistas - usar `python3` via `docker cp`
+4. **Node.js agents** (kilo/opencode) usam POST+JSON body, FastAPI Python usa POST+query string
+5. **Side-stack (coding-vps-agents) NAO tem DNS para o main project** - o validate_coding_vps_e2e.sh roda de dentro do litellm-app (que tem DNS para todos)
+
 ## Status Atual (2026-07-08)
 
 | Status | Count | Tools |
