@@ -98,6 +98,7 @@ async def test_get_redis_retorna_none_se_import_error() -> None:
     """get_redis retorna None se redis[asyncio] nao instalado."""
     # Forca ImportError no import do redis.asyncio
     import builtins
+
     real_import = builtins.__import__
 
     def fake_import(name, *args, **kwargs):
@@ -181,6 +182,7 @@ async def test_close_redis_fecha_client_quando_existe() -> None:
 
     # aclose e coroutine (async)
     import asyncio
+
     mock_client.aclose = lambda: asyncio.sleep(0)  # Coroutine
 
     redis_client._redis_client = mock_client
@@ -194,6 +196,7 @@ async def test_close_redis_fecha_client_quando_existe() -> None:
 async def test_close_redis_reseta_client_para_none() -> None:
     """close_redis sempre reseta _redis_client=None no final."""
     import asyncio
+
     mock_client = MagicMock()
     mock_client.aclose = lambda: asyncio.sleep(0)
     redis_client._redis_client = mock_client
@@ -221,6 +224,7 @@ async def test_close_redis_captura_exception_ao_fechar() -> None:
 async def test_close_redis_multiplas_vezes_eh_safe() -> None:
     """close_redis chamado multiplas vezes nao quebra."""
     import asyncio
+
     mock_client = MagicMock()
     mock_client.aclose = lambda: asyncio.sleep(0)
     redis_client._redis_client = mock_client
