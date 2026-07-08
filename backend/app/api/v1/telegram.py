@@ -339,7 +339,7 @@ async def _call_api(method: str, path: str, body: dict | None = None) -> dict:
             headers = {"Content-Type": "application/json"}
             if hasattr(settings, "cartorio_api_key"):
                 headers["X-API-Key"] = settings.cartorio_api_key
-            url = f"http://cartorio_api:8000{path}"
+            url = f"http://127.0.0.1:8000{path}"
             if method == "GET":
                 resp = await client.get(url, headers=headers)
             else:
