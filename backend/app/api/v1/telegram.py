@@ -989,7 +989,18 @@ async def telegram_webhook(
         is_command = text.startswith("/")
         mentions_bot = "@test_cartorio_bot" in text
         if not is_command and not mentions_bot:
+            # FIX 2026-07-08: reagir com eyes + mandar msg de orientacao
+            # para que o usuario saiba como chamar o bot (clicar no botao
+            # /menu ou mencionar @test_cartorio_bot). Antes: silencio total
+            # que parecia bug. Gustavo reclamou "botoes nao funcionam".
             logger.info("TG group ignore chat=%s text=%.60s", chat_id, text)
+            early_msg_id = message.get("message_id", 0)
+            await _react(chat_id, early_msg_id, "eyes")
+            orientacao = (
+                "Use /menu para abrir o cartorio, ou me mencione "
+                "(@test_cartorio_bot) na sua mensagem."
+            )
+            await _send_message(chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()})
             return {"status": "ignored", "reason": "group message without command or mention"}
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)

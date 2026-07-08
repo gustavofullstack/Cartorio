@@ -585,6 +585,52 @@ def test_bump_metric_increments_counter() -> None:
     assert _METRICS["test_bump"] == original + 7
 
 
+def test_webhook_group_msg_without_command_reacts_and_orients() -> None:
+    """FIX 2026-07-08: ao inves de silenciar msg de grupo sem comando, reage
+    com eyes e manda msg de orientacao com menu. Gustavo reclamou que os
+    botoes nao funcionam mas era silent ignore.
+    """
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    payload = {
+        "update_id": 99010,
+        "message": {
+            "message_id": 999,
+            "chat": {"id": -1004331849032, "title": "TESTE/VALIDACAO", "type": "supergroup"},
+            "from": {"id": 6682284055, "first_name": "Gustavo"},
+            "text": "oi",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send:
+            with patch("app.api.v1.telegram._react", new=AsyncMock(return_value=True)) as mock_react:
+                with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
+                    resp = client.post("/api/v1/telegram/webhook", json=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ignored"
+    assert "group message without command or mention" in body["reason"]
+    # Deve reagir com eyes
+    mock_react.assert_called_once()
+    react_call = mock_react.call_args
+    assert react_call[0][0] == -1004331849032
+    assert react_call[0][1] == 999
+    assert react_call[0][2] == "eyes"
+    # Deve mandar orientacao com menu inline
+    assert mock_send.call_count >= 1
+    orient_call = mock_send.call_args_list[0]
+    sent_text = orient_call[0][1]
+    assert "/menu" in sent_text
+    assert "@test_cartorio_bot" in sent_text
+    # E a orientacao deve ter menu de botoes
+    call_kwargs = orient_call[1]
+    assert call_kwargs.get("reply_markup") is not None
+
+
 def test_telegram_webhook_handles_supergroup_chat() -> None:
     """Webhook responde 200 a update vindo de supergroup (chat_id negativo, type=supergroup).
     Licao 2026-07-08: Gustavo migrou grupo -5319980720 p/ supergroup -1004331849032.
