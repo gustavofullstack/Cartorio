@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from app.integrations.google_calendar import get_scheduled_events
-import httpx
 
 @pytest.mark.asyncio
 async def test_get_scheduled_events_no_credentials():
