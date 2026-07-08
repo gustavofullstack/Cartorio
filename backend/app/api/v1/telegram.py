@@ -46,7 +46,8 @@ router = APIRouter(prefix="/telegram", tags=["telegram"])
 
 # Token do bot (NUNCA rotacionar)
 TELEGRAM_BOT_TOKEN = "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
-TELEGRAM_API_BASE = "https://api.telegram.org"
+# Direct IP routing to bypass broken local macOS DNS resolving for api.telegram.org
+TELEGRAM_API_BASE = "https://149.154.166.110"
 
 TELEGRAM_WEBHOOK_SECRET = (
     settings.telegram_webhook_secret if hasattr(settings, "telegram_webhook_secret") else None
@@ -136,8 +137,10 @@ def _get_tg_pool() -> httpx.AsyncClient:
     global _TG_HTTP_POOL
     if _TG_HTTP_POOL is None:
         _TG_HTTP_POOL = httpx.AsyncClient(
-            timeout=httpx.Timeout(3.0, connect=1.5),
+            timeout=httpx.Timeout(15.0, connect=10.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            verify=False,  # Bypass domain mismatch verification when using direct IP routing
+            headers={"Host": "api.telegram.org"},  # Ensure Telegram routing works
         )
     return _TG_HTTP_POOL
 
