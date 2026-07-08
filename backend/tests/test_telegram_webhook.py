@@ -479,8 +479,9 @@ def test_hmac_no_secret_skips_validation(client: TestClient, telegram_update_sta
 
 def test_telegram_bot_token_constant() -> None:
     from app.api.v1.telegram import TELEGRAM_BOT_TOKEN
+    from app.config import settings
 
-    assert TELEGRAM_BOT_TOKEN == "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+    assert TELEGRAM_BOT_TOKEN == settings.telegram_bot_token
 
 
 # === Webhook info ===

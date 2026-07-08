@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 
 # Token do bot (NUNCA rotacionar)
-TELEGRAM_BOT_TOKEN = "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+TELEGRAM_BOT_TOKEN = settings.telegram_bot_token
 TELEGRAM_API_BASE = "https://api.telegram.org"
 
 TELEGRAM_WEBHOOK_SECRET = (
