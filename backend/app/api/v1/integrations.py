@@ -411,9 +411,33 @@ async def _dispatch_evolution(payload: dict) -> None:
 
 
 async def _dispatch_chatwoot(payload: dict) -> None:
-    """Placeholder - integracao Chatwoot sera implementada em Sprint 2."""
-    _log.info("chatwoot dispatch (placeholder): %s", json.dumps(payload)[:200])
-    # TODO Sprint 2: POST %s/api/v1/accounts/%s/conversations ...
+    """Envia mensagem como agente via Chatwoot (Sprint 2)."""
+    if (
+        not settings.chatwoot_base_url
+        or not settings.chatwoot_api_key
+        or not settings.chatwoot_account_id
+    ):
+        raise RuntimeError("Chatwoot nao configurado (base_url, api_key ou account_id)")
+
+    conversation_id = payload.get("conversation_id")
+    content = payload.get("content") or payload.get("text") or payload.get("message")
+
+    if not conversation_id or not content:
+        raise ValueError("payload chatwoot precisa de 'conversation_id' e 'content'")
+
+    url = f"{settings.chatwoot_base_url.rstrip('/')}/api/v1/accounts/{settings.chatwoot_account_id}/conversations/{conversation_id}/messages"
+
+    async with httpx.AsyncClient(timeout=15.0) as ac:
+        r = await ac.post(
+            url,
+            headers={
+                "api_access_token": settings.chatwoot_api_key,
+                "Content-Type": "application/json",
+            },
+            json={"content": content, "message_type": "outgoing", "private": False},
+        )
+    if r.status_code >= 400:
+        raise RuntimeError(f"chatwoot HTTP {r.status_code}: {r.text[:200]}")
 
 
 async def _dispatch_telegram(payload: dict) -> None:
