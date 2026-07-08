@@ -130,6 +130,43 @@ class TestN8nWorkflowValidator:
         assert result["valid"] is True
         assert any("localhost" in w for w in result["warnings"])
 
+    def test_validate_one_webhook_sem_path(self, tmp_path: Path):
+        """Webhook node sem path eh detectado."""
+        wf = {
+            "name": "test-webhook",
+            "nodes": [
+                {
+                    "name": "my_webhook",
+                    "type": "n8n-nodes-base.webhook",
+                    "parameters": {},  # sem path
+                }
+            ],
+            "connections": {},
+        }
+        p = _make_wf(tmp_path, "webhook-no-path.json", wf)
+        result = _validate_one(p)
+        assert result["valid"] is False
+        assert any("sem path" in e for e in result["errors"])
+
+    def test_validate_one_webhook_com_path(self, tmp_path: Path):
+        """Webhook node com path eh aceito sem erros."""
+        wf = {
+            "name": "test-webhook-ok",
+            "nodes": [
+                {
+                    "name": "my_webhook",
+                    "type": "n8n-nodes-base.webhook",
+                    "parameters": {"path": "my-path"},
+                }
+            ],
+            "connections": {},
+        }
+        p = _make_wf(tmp_path, "webhook-with-path.json", wf)
+        result = _validate_one(p)
+        assert result["valid"] is True
+        # Garante que nenhum erro de webhook foi disparado
+        assert not any("sem path" in e for e in result["errors"])
+
     def test_validate_one_env_var_desconhecida(self, tmp_path: Path):
         """Env var nao catalogada da warning."""
         wf = {
