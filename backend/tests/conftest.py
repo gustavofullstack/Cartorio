@@ -45,44 +45,28 @@ _w_mod.type = _builtins.type
 # Forca SQLite para testes (default). CI/postgres-tests DEVEM setar
 # DATABASE_URL explicitamente ANTES de invocar pytest.
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-# Forca AUDIT_HMAC_KEY mesmo se o shell tiver valor vazio herdado.
-# setdefault() nao sobrescreve valor existente (mesmo vazio).
-os.environ["AUDIT_HMAC_KEY"] = "a" * 64  # 64 chars hex equivalente pra teste
-# Forca TELEGRAM_WEBHOOK_SECRET vazio para que _verify_telegram_secret
-# pule validacao HMAC (dev mode) nos testes.
+os.environ["AUDIT_HMAC_KEY"] = "a" * 64
 os.environ["TELEGRAM_WEBHOOK_SECRET"] = ""
-# .env local pode ter CHATWOOT_ACCOUNT_ID/INBOX_ID vazios (placeholders nao parseados
-# como int). Forca valores numericos via env vars, que tem precedencia sobre .env.
-os.environ.setdefault("CHATWOOT_ACCOUNT_ID", "0")
-os.environ.setdefault("CHATWOOT_INBOX_ID", "0")
-# A15: Forca defaults canonicos de pool mesmo se .env local tiver valores
-# antigos (10/5). Settings.precedence = .env < env var, entao setdefault aqui
-# sobrescreve o .env mas NAO conflita com override explicito em CI.
-os.environ.setdefault("DB_POOL_SIZE", "20")
-os.environ.setdefault("DB_MAX_OVERFLOW", "10")
-os.environ.setdefault("DB_POOL_RECYCLE", "3600")
-os.environ.setdefault("DB_POOL_TIMEOUT", "30")
-os.environ.setdefault("DB_POOL_PRE_PING", "true")
-# API key usada pelos testes que batem em endpoints protegidos por X-API-Key
-# (ex: DELETE /cliente/{id}, GET /cliente/{id}/historico). Setada aqui pra
-# estar disponivel antes de app.config criar o singleton `settings` na import.
-# Deve ter EXATAMENTE 64 chars (validacao strict em config.py: B0.3 2026-06-25).
-# Gerada via `openssl rand -hex 32` — valor fixo pra reprodutibilidade dos testes.
-TEST_CARTORIO_API_KEY = "a" * 64  # 64 chars hex equivalente pra teste
+os.environ["CHATWOOT_ACCOUNT_ID"] = "0"
+os.environ["CHATWOOT_INBOX_ID"] = "0"
+os.environ["DB_POOL_SIZE"] = "20"
+os.environ["DB_MAX_OVERFLOW"] = "10"
+os.environ["DB_POOL_RECYCLE"] = "3600"
+os.environ["DB_POOL_TIMEOUT"] = "30"
+os.environ["DB_POOL_PRE_PING"] = "true"
+os.environ["AUDIT_DEAD_MANS_SWITCH_MINUTES"] = "60"
+
+TEST_CARTORIO_API_KEY = "a" * 64
 os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
-# JWT_SECRET dos testes (>=32 chars, mesmo valor usado por test_v2_clientes.py
-# para emitir tokens DPO via jwt.encode). Setado aqui ANTES de app.config
-# criar o singleton settings pra que verify_token() enxergue o mesmo secret.
 os.environ["JWT_SECRET"] = "a" * 64
 
-# Mocks e defaults para testes deterministas sem rede
 os.environ["LLM_DEFAULT_PROVIDER"] = "opencode_go"
 os.environ["LLM_FALLBACK_CHAIN"] = "opencode_go,openclaw"
 os.environ["OPENCODE_GO_MODEL"] = "minimax-m3"
 os.environ["JWT_SECRET"] = "a" * 64
 
-
 from app.config import get_settings, settings  # noqa: E402
+
 
 get_settings.cache_clear()
 settings.jwt_secret = "a" * 64
@@ -284,6 +268,28 @@ def _reset_jwt_secret(monkeypatch):
     get_settings.cache_clear()
     settings.jwt_secret = "a" * 64
     yield
+
+
+@pytest.fixture(autouse=True)
+def _mock_redis_from_url():
+    """Mocka redis.from_url globalmente para evitar conexoes reais em testes."""
+    import redis
+    from unittest.mock import MagicMock, patch
+
+    class MockRedis:
+        def incr(self, key):
+            return 1
+        def expire(self, key, seconds):
+            return True
+        def ping(self):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+        def close(self):
+            pass
+        def __getattr__(self, name):
+            return MagicMock()
+
+    with patch("redis.from_url", return_value=MockRedis()):
+        yield
 
 
 @pytest.fixture
