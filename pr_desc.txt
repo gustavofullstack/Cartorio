@@ -1,5 +1,0 @@
-💡 **What:** Replaced the N+1 `set.add()` calls inside the node loop with a single set comprehension `node_names = {node.get("name", "") for node in nodes}`.
-
-🎯 **Why:** To improve performance by pushing the set population and initialization loop down to the C-level in CPython. This eliminates the overhead of Python-level `.add()` method lookups and calls inside the loop.
-
-📊 **Measured Improvement:** In isolated benchmarks with 1000 items, execution time for this specific code block dropped from ~1.52 seconds (per 10000 iterations) down to ~1.32 seconds, a reduction of ~13-15% in execution time for this extraction block.

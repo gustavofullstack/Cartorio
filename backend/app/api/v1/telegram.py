@@ -1000,7 +1000,9 @@ async def telegram_webhook(
                 "Use /menu para abrir o cartorio, ou me mencione "
                 "(@test_cartorio_bot) na sua mensagem."
             )
-            await _send_message(chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()})
+            await _send_message(
+                chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
+            )
             return {"status": "ignored", "reason": "group message without command or mention"}
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
