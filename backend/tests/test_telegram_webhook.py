@@ -523,13 +523,15 @@ async def test_process_telegram_debounce_success() -> None:
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
         with patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0.001):
             with patch("app.api.v1.telegram._call_fast_llm", AsyncMock(return_value="Resposta")):
-                with patch("app.api.v1.telegram._send_message", AsyncMock(return_value=True)) as mock_send:
-                    with patch("app.api.v1.telegram._react", AsyncMock(return_value=True)) as mock_react:
+                with patch(
+                    "app.api.v1.telegram._send_message", AsyncMock(return_value=True)
+                ) as mock_send:
+                    with patch(
+                        "app.api.v1.telegram._react", AsyncMock(return_value=True)
+                    ) as mock_react:
                         await _process_telegram_debounce(6682284055)
 
-                        mock_send.assert_called_once_with(
-                            6682284055, "Resposta", reply_markup=ANY
-                        )
+                        mock_send.assert_called_once_with(6682284055, "Resposta", reply_markup=ANY)
                         mock_react.assert_called_once_with(6682284055, 12345, "check")
 
 
@@ -563,3 +565,33 @@ def test_telegram_health_endpoint_ok() -> None:
     assert body["service"] == "telegram-bot"
     assert body["bot"] == "test_cartorio_bot"
     assert body["webhook_configured"] is True
+
+
+def test_telegram_metrics_endpoint_ok() -> None:
+    """GET /api/v1/telegram/metrics returns counters + ts."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    resp = client.get("/api/v1/telegram/metrics")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["service"] == "telegram-bot"
+    assert body["version"] == "v0.6.0"
+    assert "counters" in body
+    assert isinstance(body["counters"], dict)
+    assert "requests_total" in body["counters"]
+    assert "responses_ok" in body["counters"]
+    assert isinstance(body["ts"], int)
+
+
+def test_bump_metric_increments_counter() -> None:
+    """bump_metric incrementa contador de forma idempotente."""
+    from app.api.v1.telegram import _METRICS, bump_metric
+
+    original = _METRICS.get("test_bump", 0)
+    bump_metric("test_bump")
+    bump_metric("test_bump")
+    bump_metric("test_bump", 5)
+    assert _METRICS["test_bump"] == original + 7

@@ -98,6 +98,24 @@ BOT_COMMANDS = [
     {"command": "cancelar", "description": "Cancelar operacao e voltar"},
 ]
 
+# Metrics in-process (sem prom client, leve, suficiente para dashboard 1000 pts).
+# Reset a cada restart do worker — Gustavo pode ver contadores ao vivo via GET /metrics.
+_METRICS: dict[str, int] = {
+    "requests_total": 0,
+    "responses_ok": 0,
+    "responses_partial": 0,
+    "responses_failed": 0,
+    "rate_limited": 0,
+    "scheduled_debounce": 0,
+    "hitl_created": 0,
+    "commands_handled": 0,
+}
+
+
+def bump_metric(key: str, value: int = 1) -> None:
+    """Incrementa contador in-process. Thread-safe pelo GIL do Python."""
+    _METRICS[key] = _METRICS.get(key, 0) + value
+
 
 def strip_emojis(text: str) -> str:
     """Remove emojis de textos, deixando apenas caracteres normais."""
@@ -840,6 +858,17 @@ async def telegram_health() -> dict:
     }
 
 
+@router.get("/metrics")
+async def telegram_metrics() -> dict:
+    """Contadores in-process para Gustavo dashboardar 1000 pontos sem dependencia externa."""
+    return {
+        "service": "telegram-bot",
+        "version": "v0.6.0",
+        "counters": dict(_METRICS),
+        "ts": int(__import__("time").time()),
+    }
+
+
 @router.post("/webhook", status_code=200)
 async def telegram_webhook(
     request: Request,
@@ -847,6 +876,7 @@ async def telegram_webhook(
     x_telegram_bot_api_secret_token: str | None = Header(None),
     db: Session = Depends(get_db),
 ) -> dict:
+    bump_metric("requests_total")
     body_bytes = await request.body()
     update = await request.json()
     _verify_telegram_secret(body_bytes, x_telegram_bot_api_secret_token)
