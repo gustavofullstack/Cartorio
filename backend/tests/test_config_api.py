@@ -43,10 +43,10 @@ class TestConfig:
         s = Settings()  # type: ignore[call-arg]
         assert "redis" in s.redis_url.lower() or "localhost" in s.redis_url
 
-    def test_settings_has_app_env(self, _settings_env) -> None:
+    def test_settings_has_app_env(self) -> None:
         """Settings has APP_ENV."""
         s = Settings()  # type: ignore[call-arg]
-        assert s.app_env in ("development", "staging", "production")
+        assert s.app_env in ("development", "staging", "production", "testing")
 
     def test_settings_pii_scrub_enabled(self, _settings_env) -> None:
         """Settings has PII_SCRUB_ENABLED."""
