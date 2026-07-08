@@ -26,6 +26,7 @@ from typing import Annotated, Any, cast
 
 import httpx
 import redis
+from starlette.concurrency import run_in_threadpool
 from fastapi import APIRouter, Depends, Form, Header, HTTPException, Path, Query, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy import select
@@ -1644,10 +1645,15 @@ async def health_backup() -> dict:
         pass
 
     # ===== Estrategia 1: JSON metadata (source-of-truth VPS) =====
-    if os.path.exists(STATUS_JSON_PATH):
-        try:
+    def _read_status_json():
+        if os.path.exists(STATUS_JSON_PATH):
             with open(STATUS_JSON_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
+                return json.load(f)
+        return None
+
+    try:
+        data = await run_in_threadpool(_read_status_json)
+        if data is not None:
             # Renomeia last_backup_age_hours para age_hours (compatibilidade)
             age_hours = data.get("last_backup_age_hours")
             return {
@@ -1661,11 +1667,9 @@ async def health_backup() -> dict:
                 "filename": data.get("last_backup_filename"),
                 "updated_at": data.get("updated_at"),
             }
-        except (json.JSONDecodeError, OSError) as e:
-            # JSON malformado - cai para Estrategia 2 (fallback)
-            json_error = f"{type(e).__name__}: {e}"
-        else:
-            json_error = None
+    except (json.JSONDecodeError, OSError) as e:
+        # JSON malformado - cai para Estrategia 2 (fallback)
+        json_error: str | None = f"{type(e).__name__}: {e}"
     else:
         json_error = None
 
@@ -1701,21 +1705,26 @@ async def health_backup() -> dict:
             }
 
         # Lista arquivos .tar.gz e calcula idade + tamanho
-        newest_mtime: float | None = None
-        for entry in os.listdir(BACKUP_DIR):
-            if not entry.endswith(".tar.gz"):
-                continue
-            full_path = os.path.join(BACKUP_DIR, entry)
-            try:
-                mtime = os.path.getmtime(full_path)
-                size = os.path.getsize(full_path)
-            except OSError:
-                # Arquivo sumiu entre listdir e stat (race) - pula
-                continue
-            file_count += 1
-            total_size_bytes += size
-            if newest_mtime is None or mtime > newest_mtime:
-                newest_mtime = mtime
+        def _scan_backup_dir():
+            nm: float | None = None
+            fc = 0
+            ts = 0
+            for entry in os.listdir(BACKUP_DIR):
+                if not entry.endswith(".tar.gz"):
+                    continue
+                full_path = os.path.join(BACKUP_DIR, entry)
+                try:
+                    mtime = os.path.getmtime(full_path)
+                    size = os.path.getsize(full_path)
+                except OSError:
+                    continue
+                fc += 1
+                ts += size
+                if nm is None or mtime > nm:
+                    nm = mtime
+            return nm, fc, ts
+
+        newest_mtime, file_count, total_size_bytes = await run_in_threadpool(_scan_backup_dir)
 
         if newest_mtime is not None:
             now_ts = datetime.now(timezone.utc).timestamp()

@@ -172,17 +172,17 @@ def _get_tg_pool() -> httpx.AsyncClient:
     except RuntimeError:
         loop = None
     current_loop_id = id(loop) if loop else 0
-    if not hasattr(_get_tg_pool, "_loop_id"):
-        _get_tg_pool._loop_id = 0
+    if not getattr(_get_tg_pool, "_loop_id", None):
+        setattr(_get_tg_pool, "_loop_id", 0)
 
-    if _TG_HTTP_POOL is None or _get_tg_pool._loop_id != current_loop_id:
+    if _TG_HTTP_POOL is None or getattr(_get_tg_pool, "_loop_id") != current_loop_id:
         _TG_HTTP_POOL = httpx.AsyncClient(
             timeout=httpx.Timeout(15.0, connect=10.0),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
             verify=False,  # Bypass domain mismatch verification when using direct IP routing
             headers={"Host": "api.telegram.org"},  # Ensure Telegram routing works
         )
-        _get_tg_pool._loop_id = current_loop_id
+        setattr(_get_tg_pool, "_loop_id", current_loop_id)
     return _TG_HTTP_POOL
 
 
@@ -1000,7 +1000,9 @@ async def telegram_webhook(
                 "Use /menu para abrir o cartorio, ou me mencione "
                 "(@test_cartorio_bot) na sua mensagem."
             )
-            await _send_message(chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()})
+            await _send_message(
+                chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
+            )
             return {"status": "ignored", "reason": "group message without command or mention"}
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
