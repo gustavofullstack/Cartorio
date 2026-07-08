@@ -163,6 +163,7 @@ async def _send_typing(chat_id: int) -> bool:
 # Antes: cada chamada criava AsyncClient novo (DNS+TLS+TCP = ~500ms).
 # Agora: pool global + typing em background task (retorna <1ms).
 _TG_HTTP_POOL: httpx.AsyncClient | None = None
+_typing_tasks = set()
 
 
 def _get_tg_pool() -> httpx.AsyncClient:
@@ -193,15 +194,7 @@ async def _send_typing_fast(chat_id: int) -> None:
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendChatAction"
     try:
         client = _get_tg_pool()
-
-        # asyncio.create_task = nao bloqueia o request
-        async def _do() -> None:
-            try:
-                await client.post(url, json={"chat_id": chat_id, "action": "typing"})
-            except Exception:
-                pass
-
-        asyncio.create_task(_do())
+        await client.post(url, json={"chat_id": chat_id, "action": "typing"})
     except Exception:
         pass
 
@@ -1019,7 +1012,11 @@ async def telegram_webhook(
     # ====== TYPING VISIVEL: envia "Bot esta digitando..." IMEDIATAMENTE ======
     # FIX v2: _send_typing_fast = fire-and-forget, nao bloqueia webhook.
     # Antes: await _send_typing (criava client novo, ~500ms overhead)
-    asyncio.create_task(_send_typing_fast(chat_id))
+    # create_task is correct here because we want it immediately, before webhook returns.
+    # keep a strong reference to avoid garbage collection
+    task = asyncio.create_task(_send_typing_fast(chat_id))
+    _typing_tasks.add(task)
+    task.add_done_callback(_typing_tasks.discard)
 
     text_scrubbed = scrub(text).text
     if callback:
