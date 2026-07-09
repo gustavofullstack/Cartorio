@@ -808,17 +808,18 @@ def test_classify_metric_for_status() -> None:
         tg_mod._METRICS["responses_ok"] = 0
         tg_mod._METRICS["responses_partial"] = 0
         tg_mod._METRICS["responses_failed"] = 0
+        tg_mod._METRICS["callbacks_ok"] = 0
         tg_mod.classify_metric_for_status("ok", "command")
         tg_mod.classify_metric_for_status("ok", "command")
         tg_mod.classify_metric_for_status("partial", "command")
         tg_mod.classify_metric_for_status("ignored", "callback")
         tg_mod.classify_metric_for_status("duplicate", "command")
         tg_mod.classify_metric_for_status("ignored_command", "command")
-        # callbacks nao contam em responses_ok (handled separately)
+        # FIX 2026-07-09: callbacks OK contam em responses_ok + callbacks_ok
         tg_mod.classify_metric_for_status("ok", "callback")
-        assert tg_mod._METRICS["responses_ok"] == 2
+        assert tg_mod._METRICS["responses_ok"] == 3
+        assert tg_mod._METRICS["callbacks_ok"] == 1
         assert tg_mod._METRICS["responses_partial"] == 1
-        # failed sobe quando status nao eh nenhum dos mapeados
     finally:
         tg_mod._METRICS.update(original)
 
@@ -882,16 +883,17 @@ def test_debug_last_updates_records_and_returns_recent(client: TestClient) -> No
 
 
 def test_metrics_classifies_callback_and_duplicate() -> None:
-    """Cobertura para o classificador de metricas por status (FIX 2026-07-08)."""
+    """Cobertura para o classificador de metricas por status (FIX 2026-07-09)."""
     from app.api.v1.telegram import classify_metric_for_status, _METRICS  # noqa: F401
 
     before_ok = _METRICS["responses_ok"]
+    before_cb = _METRICS.get("callbacks_ok", 0)
 
     classify_metric_for_status("ok", kind="message")
-    classify_metric_for_status("ok", kind="callback")  # callbacks NAO contam como ok
+    classify_metric_for_status("ok", kind="callback")  # callbacks contam como ok
     classify_metric_for_status("duplicate", kind="message")  # duplicatas sao ignoradas
     classify_metric_for_status("partial", kind="message")
 
-    assert _METRICS["responses_ok"] == before_ok + 1
-    # callback_ok NAO incrementa responses_ok
+    assert _METRICS["responses_ok"] == before_ok + 2
+    assert _METRICS.get("callbacks_ok", 0) == before_cb + 1
     assert _METRICS["responses_partial"] >= 1

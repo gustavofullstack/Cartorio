@@ -5,7 +5,7 @@
 **Seu ID:** `6682284055`  
 **Webhook:** `https://api.2notasudi.com.br/api/v1/telegram/webhook`
 
-## O que foi corrigido hoje (causa do 0/1000)
+## O que foi corrigido (causa do 0/1000 + polish)
 
 1. **Firewall DOCKER-USER dropava HTTPS publico (443)**  
    Telegram recebia `Connection timed out` → 0 requests no backend.  
@@ -20,6 +20,12 @@
 
 4. **Botoes (callback)**  
    Path `callback_query` + `cmd:*` validado com `response_sent: true`.
+
+5. **set-commands / webhook-info 500**  
+   Client HTTP sem `Host: api.telegram.org` no IP direto → agora usa pool TG.
+
+6. **Metrics**  
+   Callbacks OK contam em `responses_ok` + `callbacks_ok`. Debug last-updates grava resposta final.
 
 ## Smoke 30 segundos (antes da validacao humana)
 

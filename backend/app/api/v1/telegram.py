@@ -108,6 +108,7 @@ _METRICS: dict[str, int] = {
     "scheduled_debounce": 0,
     "hitl_created": 0,
     "commands_handled": 0,
+    "callbacks_ok": 0,
 }
 
 
@@ -120,9 +121,14 @@ def classify_metric_for_status(status: str, kind: str) -> None:
     """FIX 2026-07-08: Gustavo reportou que /metrics nunca mexia em responses_ok.
     Status vindos do webhook: "ok", "partial", "ignored", "ignored_command",
     "duplicate". Mapeamos para os contadores corretos.
+
+    FIX 2026-07-09: callbacks com status=ok TAMBEM contam em responses_ok
+    (antes eram ignorados e o dashboard parecia vermelho mesmo com botoes OK).
     """
-    if status == "ok" and kind != "callback":
+    if status == "ok":
         bump_metric("responses_ok")
+        if kind == "callback":
+            bump_metric("callbacks_ok")
     elif status == "partial":
         bump_metric("responses_partial")
     elif status in ("ignored", "ignored_command", "duplicate"):
@@ -1039,7 +1045,6 @@ async def telegram_webhook(
     body_bytes = await request.body()
     update = await request.json()
     _verify_telegram_secret(body_bytes, x_telegram_bot_api_secret_token)
-    _record_update(update, {"status": "received", "stage": "before_process"})
     message = update.get("message", {})
     callback = update.get("callback_query", {})
     my_chat_member = update.get("my_chat_member", {})
@@ -1051,12 +1056,17 @@ async def telegram_webhook(
     text = message.get("text", "") or callback.get("data", "")
     update_id = update.get("update_id", 0)
 
+    def _finish(resp: dict) -> dict:
+        """Grava resposta final no buffer de debug (antes so gravava 'received')."""
+        _record_update(update, resp)
+        return resp
+
     # FIX 2026-07-08: auto-detecta quando bot entra/sai de grupo e responde.
     if my_chat_member:
-        return await _handle_my_chat_member(my_chat_member)
+        return _finish(await _handle_my_chat_member(my_chat_member))
 
     if not chat_id or (not text and not callback):
-        return {"status": "ignored", "reason": "non-text update"}
+        return _finish({"status": "ignored", "reason": "non-text update"})
 
     # Avoid spam: ignore group chat messages that don't start with / or mention the bot
     chat_type = message.get("chat", {}).get("type", "")
@@ -1088,7 +1098,9 @@ async def telegram_webhook(
                 await _send_message(
                     chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
                 )
-            return {"status": "ignored", "reason": "group message without command or mention"}
+            return _finish(
+                {"status": "ignored", "reason": "group message without command or mention"}
+            )
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
     logger.info("TG msg chat=%s text=%.60s", chat_id, text)
@@ -1101,7 +1113,9 @@ async def telegram_webhook(
         already_processed = await _check_idempotency(bus, update_id)
         if already_processed:
             logger.warning("TG DUPLICATE update_id=%s chat=%s - ignorando", update_id, chat_id)
-            return {"status": "duplicate", "update_id": update_id, "chat_id": chat_id}
+            return _finish(
+                {"status": "duplicate", "update_id": update_id, "chat_id": chat_id}
+            )
 
     # ====== TYPING VISIVEL: envia "Bot esta digitando..." IMEDIATAMENTE ======
     # FIX v2: _send_typing_fast = fire-and-forget, nao bloqueia webhook.
@@ -1120,13 +1134,15 @@ async def telegram_webhook(
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
             status = "ok" if sent else "partial"
             classify_metric_for_status(status, "callback")
-            return {
-                "status": status,
-                "chat_id": chat_id,
-                "kind": "callback",
-                "response_sent": sent,
-            }
-        return {"status": "ignored", "kind": "callback", "chat_id": chat_id}
+            return _finish(
+                {
+                    "status": status,
+                    "chat_id": chat_id,
+                    "kind": "callback",
+                    "response_sent": sent,
+                }
+            )
+        return _finish({"status": "ignored", "kind": "callback", "chat_id": chat_id})
     if text.startswith("/"):
         cmd = text.strip().split()[0].lower().split("@")[0]
         if cmd not in ALLOWED_COMMANDS:
@@ -1136,7 +1152,7 @@ async def telegram_webhook(
                 chat_id, "Comando nao suportado. Use o menu de opcoes.", reply_markup=markup
             )
             classify_metric_for_status("ignored_command", "command")
-            return {"status": "ignored_command", "chat_id": chat_id}
+            return _finish({"status": "ignored_command", "chat_id": chat_id})
         bump_metric("commands_handled")
         response_text, keyboard = await _handle_command(text, bus, chat_id, "")
         if response_text:
@@ -1145,17 +1161,19 @@ async def telegram_webhook(
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
             status = "ok" if sent else "partial"
             classify_metric_for_status(status, "command")
-            return {
-                "status": status,
-                "chat_id": chat_id,
-                "kind": "command",
-                "response_sent": sent,
-            }
+            return _finish(
+                {
+                    "status": status,
+                    "chat_id": chat_id,
+                    "kind": "command",
+                    "response_sent": sent,
+                }
+            )
 
     if not bus:
         if not await _check_rate_limit(bus, chat_id):
             logger.info("TG rate limit chat=%s", chat_id)
-            return {"status": "ok", "chat_id": chat_id, "rate_limited": True}
+            return _finish({"status": "ok", "chat_id": chat_id, "rate_limited": True})
         state_obj = await _get_state(bus, chat_id)
         state = state_obj.get("state", STATE_IDLE)
         state_data = state_obj.get("data", {})
@@ -1177,7 +1195,9 @@ async def telegram_webhook(
         sent = await _send_message(chat_id, response_text, reply_markup=markup)
         if sent:
             await _react(chat_id, msg_id, "check")
-        return {"status": "ok" if sent else "partial", "chat_id": chat_id, "response_sent": sent}
+        return _finish(
+            {"status": "ok" if sent else "partial", "chat_id": chat_id, "response_sent": sent}
+        )
 
     lock_key = f"tg:lock:{chat_id}"
     await _enqueue_message(bus, chat_id, text_scrubbed, msg_id)
@@ -1190,24 +1210,41 @@ async def telegram_webhook(
         background_tasks.add_task(_process_telegram_debounce, chat_id=chat_id)
         logger.info("TG scheduled background debounce chat=%s", chat_id)
         classify_metric_for_status("ok", "debounce")
-        return {"status": "ok", "chat_id": chat_id, "scheduled": True}
-    return {"status": "ok", "chat_id": chat_id, "accumulated": True}
+        return _finish({"status": "ok", "chat_id": chat_id, "scheduled": True})
+    return _finish({"status": "ok", "chat_id": chat_id, "accumulated": True})
 
 
 @router.get("/webhook/info")
 async def telegram_webhook_info() -> dict:
+    """Usa pool com Host: api.telegram.org + verify=False (IP direto)."""
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/getWebhookInfo"
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    try:
+        client = _get_tg_pool()
         resp = await client.get(url)
         return resp.json()
+    except Exception as exc:
+        logger.exception("TG webhook/info failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
 
 
 @router.post("/set-commands")
 async def telegram_set_commands() -> dict:
+    """Registra menu de comandos do bot (start/menu/humano/cancelar).
+
+    FIX 2026-07-09: usava AsyncClient sem Host header no IP 149.154.166.110
+    → SSL/roteamento falhava e endpoint retornava 500.
+    """
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/setMyCommands"
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    try:
+        client = _get_tg_pool()
         resp = await client.post(url, json={"commands": BOT_COMMANDS})
-        return resp.json()
+        body = resp.json()
+        if resp.status_code != 200 or not body.get("ok", True):
+            logger.warning("TG setMyCommands %s: %s", resp.status_code, body)
+        return body
+    except Exception as exc:
+        logger.exception("TG set-commands failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
 
 
 def _verify_telegram_secret(update_body: bytes, secret_token_header: str | None) -> None:
