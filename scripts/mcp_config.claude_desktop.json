@@ -9,8 +9,7 @@
       ],
       "env": {
         "SSH_PRIVATE_KEY": "/Users/gustavoalmeida/.ssh/id_ed25519_cartorio",
-        "SSH_TAILSCALE_HOST": "100.99.172.84",
-        "LITELLM_API_KEY": "sk-local-litellm-2026"
+        "SSH_TAILSCALE_HOST": "100.99.172.84"
       }
     }
   }

@@ -2,82 +2,114 @@
 # install_mcp_clients.sh
 # Instala/registra o MCP server "coding-vps-orchestrator" em clientes MCP conhecidos.
 # - Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)
-# - Cursor:        ~/.cursor/mcp.json (Linux) ou %USERPROFILE%/.cursor/mcp.json (Windows)
-# - TRAE IDE / Antigravity: detectam configs no mesmo formato
+# - Cursor:        ~/.cursor/mcp.json
+# - TRAE IDE / TRAE SOLO: ~/.trae/mcp.json + repo .trae/mcp-servers/coding-vps.json
+# - Antigravity:   ~/.antigravity/mcp.json
 # Uso: bash scripts/install_mcp_clients.sh [install|uninstall|status]
+#
+# Secrets: LITELLM_API_KEY NÃO é gravado em plain text. Export no shell ou use
+# ~/.mavis/secrets/coding-vps-global.env (não commitar).
 
 set -euo pipefail
 
 PYTHON_BIN="/Library/Frameworks/Python.framework/Versions/3.14/bin/python3"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ORCHESTRATOR="$SCRIPT_DIR/coding_vps_mcp_orchestrator.py"
 SSH_KEY="${HOME}/.ssh/id_ed25519_cartorio"
+SSH_HOST="${SSH_TAILSCALE_HOST:-100.99.172.84}"
 
 ACTION="${1:-install}"
 
-write_claude_desktop() {
-  local cfg="$1/Claude/claude_desktop_config.json"
-  mkdir -p "$(dirname "$cfg")"
-  python3 - "$cfg" "$ORCHESTRATOR" "$PYTHON_BIN" "$SSH_KEY" <<'PYEOF'
-import json, sys
-path, orch, py, key = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-config = {"mcpServers": {"coding-vps-orchestrator": {
-    "command": py, "args": [orch, "mcp"],
-    "env": {"SSH_PRIVATE_KEY": key, "SSH_TAILSCALE_HOST": "100.99.172.84"},
-}}}
-with open(path, "w") as f:
-    json.dump(config, f, indent=2)
-PYEOF
-  echo "[ok] Claude Desktop config -> $cfg"
-}
-
-write_cursor() {
+_write_mcp_json() {
   local cfg="$1"
   mkdir -p "$(dirname "$cfg")"
-  python3 - "$cfg" "$ORCHESTRATOR" "$PYTHON_BIN" "$SSH_KEY" <<'PYEOF'
+  python3 - "$cfg" "$ORCHESTRATOR" "$PYTHON_BIN" "$SSH_KEY" "$SSH_HOST" <<'PYEOF'
 import json, sys
-path, orch, py, key = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-config = {"mcpServers": {"coding-vps-orchestrator": {
-    "command": py, "args": [orch, "mcp"],
-    "env": {"SSH_PRIVATE_KEY": key, "SSH_TAILSCALE_HOST": "100.99.172.84"},
-}}}
-with open(path, "w") as f:
-    json.dump(config, f, indent=2)
-PYEOF
-  echo "[ok] Cursor config -> $cfg"
+path, orch, py, key, host = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+config = {
+    "$schema": "https://modelcontextprotocol.io/schemas/mcp-server.json",
+    "mcpServers": {
+        "coding-vps-orchestrator": {
+            "command": py,
+            "args": [orch, "mcp"],
+            "env": {
+                "SSH_PRIVATE_KEY": key,
+                "SSH_TAILSCALE_HOST": host,
+            },
+            "description": (
+                "coding-vps-orchestrator: 62 tools / 13 categories via MCP stdio. "
+                "Optional: set LITELLM_API_KEY in the client environment."
+            ),
+        }
+    },
 }
-
-write_trae_local() {
-  local cfg="$1/.trae/mcp.json"
-  mkdir -p "$(dirname "$cfg")"
-  python3 - "$cfg" "$ORCHESTRATOR" "$PYTHON_BIN" "$SSH_KEY" <<'PYEOF'
-import json, sys
-path, orch, py, key = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-config = {"mcpServers": {"coding-vps-orchestrator": {
-    "command": py, "args": [orch, "mcp"],
-    "env": {"SSH_PRIVATE_KEY": key, "SSH_TAILSCALE_HOST": "100.99.172.84"},
-}}}
+# Preserve LITELLM_API_KEY if already present in an existing local config (never invent one).
+try:
+    with open(path) as f:
+        prev = json.load(f)
+    prev_env = (
+        prev.get("mcpServers", {})
+        .get("coding-vps-orchestrator", {})
+        .get("env", {})
+    )
+    if prev_env.get("LITELLM_API_KEY"):
+        config["mcpServers"]["coding-vps-orchestrator"]["env"]["LITELLM_API_KEY"] = prev_env[
+            "LITELLM_API_KEY"
+        ]
+except Exception:
+    pass
 with open(path, "w") as f:
     json.dump(config, f, indent=2)
+    f.write("\n")
+print(f"[ok] wrote {path}")
 PYEOF
-  echo "[ok] TRAE local config -> $cfg"
 }
 
 case "$ACTION" in
   install)
     echo "== installing coding-vps MCP into clients =="
-    write_claude_desktop "$HOME/Library/Application Support"
-    write_cursor "$HOME/.cursor/mcp.json"
-    write_trae_local "$HOME"
+    _write_mcp_json "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+    _write_mcp_json "$HOME/.cursor/mcp.json"
+    _write_mcp_json "$HOME/.trae/mcp.json"
+    _write_mcp_json "$HOME/.antigravity/mcp.json"
+    # Project-local TRAE auto-detect
+    _write_mcp_json "$REPO_ROOT/.trae/mcp-servers/coding-vps.json"
+    # Copy canonical templates into scripts/ (already versioned; re-sync for convenience)
+    cp "$SCRIPT_DIR/mcp_config.trae.json" "$SCRIPT_DIR/mcp_config.trae.json.bak" 2>/dev/null || true
     echo ""
-    echo "Done. Reinicie o client MCP para carregar o server."
-    echo "Validate: $PYTHON_BIN $ORCHESTRATOR mcp    # deve mostrar '100/100 tools registered'"
+    echo "Done. Restart the MCP client to load the server."
+    echo "Validate: bash $SCRIPT_DIR/validate_coding_vps_tools_60.sh"
+    echo "Or:       $PYTHON_BIN $ORCHESTRATOR list   # expect 62 tools"
     ;;
   uninstall)
     echo "== uninstall coding-vps MCP =="
-    rm -f "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
-    rm -f "$HOME/.cursor/mcp.json"
-    rm -f "$HOME/.trae/mcp.json"
+    # Only remove our key from configs when the file is solely ours; otherwise leave alone.
+    for f in \
+      "$HOME/Library/Application Support/Claude/claude_desktop_config.json" \
+      "$HOME/.cursor/mcp.json" \
+      "$HOME/.trae/mcp.json" \
+      "$HOME/.antigravity/mcp.json"
+    do
+      if [[ -f "$f" ]]; then
+        python3 - "$f" <<'PY'
+import json, sys
+path = sys.argv[1]
+with open(path) as f:
+    cfg = json.load(f)
+servers = cfg.get("mcpServers") or {}
+if "coding-vps-orchestrator" in servers:
+    del servers["coding-vps-orchestrator"]
+    cfg["mcpServers"] = servers
+    with open(path, "w") as f:
+        json.dump(cfg, f, indent=2)
+        f.write("\n")
+    print(f"[ok] removed coding-vps-orchestrator from {path}")
+else:
+    print(f"[skip] no coding-vps-orchestrator in {path}")
+PY
+      fi
+    done
     echo "Done."
     ;;
   status)
@@ -85,15 +117,27 @@ case "$ACTION" in
     echo "Server: $ORCHESTRATOR"
     test -f "$ORCHESTRATOR" && echo "  exists" || echo "  MISSING"
     "$PYTHON_BIN" -c "import fastmcp; print(f'  fastmcp {fastmcp.__version__}')" 2>/dev/null || echo "  fastmcp: NOT INSTALLED"
-    test -f "$SSH_KEY" && echo "  SSH key OK: $SSH_KEY" || echo "  SSH key MISSING: $SSH_KEY (crie com: ssh-keygen -t ed25519 -f $SSH_KEY)"
+    test -f "$SSH_KEY" && echo "  SSH key OK: $SSH_KEY" || echo "  SSH key MISSING: $SSH_KEY"
     echo ""
-    echo "Configs em uso:"
-    test -f "$HOME/Library/Application Support/Claude/claude_desktop_config.json" && echo "  [installed] Claude Desktop" || echo "  [missing]   Claude Desktop"
-    test -f "$HOME/.cursor/mcp.json" && echo "  [installed] Cursor" || echo "  [missing]   Cursor"
-    test -f "$HOME/.trae/mcp.json" && echo "  [installed] TRAE local" || echo "  [missing]   TRAE local"
+    echo "Configs:"
+    for label_path in \
+      "Claude Desktop|$HOME/Library/Application Support/Claude/claude_desktop_config.json" \
+      "Cursor|$HOME/.cursor/mcp.json" \
+      "TRAE|$HOME/.trae/mcp.json" \
+      "Antigravity|$HOME/.antigravity/mcp.json" \
+      "TRAE project|$REPO_ROOT/.trae/mcp-servers/coding-vps.json"
+    do
+      label="${label_path%%|*}"
+      path="${label_path#*|}"
+      if [[ -f "$path" ]] && grep -q "coding_vps_mcp_orchestrator.py" "$path" 2>/dev/null; then
+        echo "  [installed] $label -> $path"
+      else
+        echo "  [missing]   $label"
+      fi
+    done
     echo ""
-    echo "Test server start (5s timeout):"
-    timeout 5 "$PYTHON_BIN" "$ORCHESTRATOR" mcp 2>&1 | grep -E "registered|Error" | head -3
+    echo "Tool count (CLI):"
+    "$PYTHON_BIN" "$ORCHESTRATOR" list 2>&1 | head -1
     ;;
   *)
     echo "Usage: $0 [install|uninstall|status]"

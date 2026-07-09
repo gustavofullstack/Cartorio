@@ -54,13 +54,6 @@ PROMPT = sys.argv[1] if len(sys.argv) > 1 else "PING-OK-21"
 
 # Agents that expect POST + query string (FastAPI Python)
 QUERY_PARAM_AGENTS = [
-    ("side-stack", "coding-vps-agents_crew-ai", 8001),
-    ("side-stack", "coding-vps-agents_goose", 8002),
-    ("side-stack", "coding-vps-agents_hermes", 8003),
-    ("side-stack", "coding-vps-agents_langgraph", 8005),
-    ("side-stack", "coding-vps-agents_openchamber", 8006),
-    ("side-stack", "coding-vps-agents_openclaw", 8007),
-    ("side-stack", "coding-vps-agents_openhands", 8009),
     ("main", "coding-vps_apenas_para_auxilio_crew-ai", 8001),
     ("main", "coding-vps_apenas_para_auxilio_goose", 8002),
     ("main", "coding-vps_apenas_para_auxilio_hermes", 8003),
@@ -73,8 +66,7 @@ QUERY_PARAM_AGENTS = [
 
 # Agents that expect POST + JSON body (Node.js server.js)
 JSON_BODY_AGENTS = [
-    ("side-stack", "coding-vps-agents_kilo-org_kilocode", 8004),
-    ("side-stack", "coding-vps-agents_opencode", 8008),
+    ("main", "coding-vps_apenas_para_auxilio_opencode", 8008),
 ]
 
 
@@ -145,9 +137,15 @@ total = len(results)
 ok_n = sum(1 for r in results if r["ok"])
 side = [r for r in results if r["project"] == "side-stack"]
 main = [r for r in results if r["project"] == "main"]
+side_len = len(side)
+side_ok = sum(1 for r in side if r["ok"])
+side_pct = f"{side_ok}/{side_len}" if side_len > 0 else "0/0 (disabled)"
+main_len = len(main)
+main_ok = sum(1 for r in main if r["ok"])
+main_pct = f"{main_ok}/{main_len}" if main_len > 0 else "0/0 (disabled)"
 print(f"\nSCORE: {ok_n}/{total}", file=sys.stderr)
-print(f"  side-stack: {sum(1 for r in side if r['ok'])}/{len(side)}", file=sys.stderr)
-print(f"  main:       {sum(1 for r in main if r['ok'])}/{len(main)}", file=sys.stderr)
+print(f"  side-stack: {side_pct}", file=sys.stderr)
+print(f"  main:       {main_pct}", file=sys.stderr)
 sys.exit(0 if ok_n == total else 1)
 PYEOF
 

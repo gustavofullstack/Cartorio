@@ -51,6 +51,9 @@ Documentação técnica das 5 plataformas integradas ao Cartório 2º Notas Uber
 - `OPENCLAW.md` (143 linhas) — AI Agent Gateway
 - `JULES.md` (122 linhas) — Integração Jules (Google Gemini 3.1 Pro)
 - `STATUS-2026-06-24.json` — Status snapshot das plataformas (gerado por health checks)
+- **`coding-vps/`** — MCP orchestrator (62 tools) + integração TRAE/Antigravity/Cursor/Claude
+  - `coding-vps/INTEGRATION_TRAE_ANTIGRAVITY.md` — JSON exatos por client
+  - `coding-vps/MEMORY_2026-07-08.md` — lesson contagem real tools/services
 
 ---
 

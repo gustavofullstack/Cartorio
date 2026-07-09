@@ -1,43 +1,59 @@
 # coding-vps-orchestrator (MCP server)
 
-MCP server (`fastmcp` stdio JSON-RPC) que expoe as 100 tools do orchestrator
-`scripts/coding_vps_mcp_orchestrator.py` para clientes MCP (TRAE, Antigravity,
-Claude Code, Cursor, Aider, etc.).
+MCP server (`fastmcp` stdio JSON-RPC) que expoe as **62 tools** do orchestrator
+`scripts/coding_vps_mcp_orchestrator.py` para clientes MCP (TRAE, TRAE SOLO,
+Antigravity, Claude Code, Cursor, Aider, etc.).
+
+> **Estado real 2026-07-08 (Squad 5):** 62 tools / 13 categorias.
+> Claims antigos de 100/92/85 tools estão desatualizados (dedupe Squad 10 + aliases).
 
 ## TL;DR
 
 ```bash
-# Validar que o server sobe
+# Contagem real
 /Library/Frameworks/Python.framework/Versions/3.14/bin/python3 \
-  /Users/gustavoalmeida/projetos/Cartorio/scripts/coding_vps_mcp_orchestrator.py mcp
-# Deve mostrar: "MCP orchestrator: 100/100 tools registered"
+  /Users/gustavoalmeida/projetos/Cartorio/scripts/coding_vps_mcp_orchestrator.py list
+# Esperado: "MCP orchestrator: 62 tools in 13 categories"
+
+# Smoke
+bash /Users/gustavoalmeida/projetos/Cartorio/scripts/validate_coding_vps_tools_60.sh
 ```
 
 ## Manifesto & Configs
 
 | Arquivo | Para que serve |
 |---|---|
-| `scripts/mcp_manifest.json` | Manifesto canonico (100 tools, 2 resources, MCP-protocol JSON Schema) |
-| `scripts/mcp.json` | Manifesto de identidade do server (name, version, transport, deps) |
-| `scripts/mcp_config.trae.json` | Config para colar no TRAE/Antigravity workspace |
-| `scripts/mcp_config.claude_desktop.json` | Config para `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| `scripts/mcp_config.cursor.json` | Config para `~/.cursor/mcp.json` |
-| `scripts/install_mcp_clients.sh` | Instala/desinstala o server em todos os clientes |
+| `scripts/mcp.json` | Identidade do server (version, transport, categories) |
+| `scripts/mcp_manifest.json` | Manifesto estendido (pode estar stale vs CLI — confiar no `list`) |
+| `scripts/mcp_config.trae.json` | Template TRAE / TRAE SOLO |
+| `scripts/mcp_config.antigravity.json` | Template Antigravity |
+| `scripts/mcp_config.claude_desktop.json` | Template Claude Desktop |
+| `scripts/mcp_config.cursor.json` | Template Cursor (`~/.cursor/mcp.json`) |
+| `scripts/install_mcp_clients.sh` | Instala/desinstala em todos os clients |
+| `scripts/validate_coding_vps_tools_60.sh` | Smoke-test exit≠0 |
+| `docs/platforms/coding-vps/INTEGRATION_TRAE_ANTIGRAVITY.md` | JSON exatos + HTTP mode |
 | `scripts/MCP_USAGE.md` | Este arquivo |
 
-## Install automatic (Claude Desktop + Cursor + TRAE)
+**Secrets:** configs versionados **não** incluem `LITELLM_API_KEY`. Export no shell
+do client ou use `~/.mavis/secrets/coding-vps-global.env` (chmod 600).
+
+## Install automatic
 
 ```bash
 bash /Users/gustavoalmeida/projetos/Cartorio/scripts/install_mcp_clients.sh install
-bash /Users/gustavoalmeida/projetos/Cartorio/scripts/install_mcp_clients.sh status   # checa
+bash /Users/gustavoalmeida/projetos/Cartorio/scripts/install_mcp_clients.sh status
 bash /Users/gustavoalmeida/projetos/Cartorio/scripts/install_mcp_clients.sh uninstall
 ```
 
-## Install manual (1 cliente)
+Targets: Claude Desktop, Cursor, `~/.trae/mcp.json`, `~/.antigravity/mcp.json`,
+`.trae/mcp-servers/coding-vps.json`.
 
-### TRAE / Antigravity
+## Install manual (stdio)
 
-`~/.trae/mcp.json` (ou na raiz do projeto em `.trae/mcp.json`):
+### TRAE / TRAE SOLO / Antigravity / Cursor / Claude
+
+Mesmo bloco (paths absolutos no Mac Gustavo):
+
 ```json
 {
   "mcpServers": {
@@ -49,63 +65,35 @@ bash /Users/gustavoalmeida/projetos/Cartorio/scripts/install_mcp_clients.sh unin
       ],
       "env": {
         "SSH_PRIVATE_KEY": "/Users/gustavoalmeida/.ssh/id_ed25519_cartorio",
-        "SSH_TAILSCALE_HOST": "100.99.172.84",
-        "LITELLM_API_KEY": "sk-local-litellm-2026"
+        "SSH_TAILSCALE_HOST": "100.99.172.84"
       }
     }
   }
 }
 ```
 
-### Claude Desktop
+Paths de destino:
 
-`~/Library/Application Support/Claude/claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "coding-vps-orchestrator": {
-      "command": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3",
-      "args": ["/Users/gustavoalmeida/projetos/Cartorio/scripts/coding_vps_mcp_orchestrator.py", "mcp"],
-      "env": {"SSH_PRIVATE_KEY": "/Users/gustavoalmeida/.ssh/id_ed25519_cartorio"}
-    }
-  }
-}
-```
-
-### Cursor
-
-`~/.cursor/mcp.json` (mesma estrutura).
+| Client | Path |
+|--------|------|
+| TRAE | `~/.trae/mcp.json` + `.trae/mcp-servers/coding-vps.json` |
+| TRAE SOLO | mesmo `~/.trae/mcp.json` ou Preferences → MCP |
+| Antigravity | `~/.antigravity/mcp.json` |
+| Cursor | `~/.cursor/mcp.json` |
+| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` |
 
 ## Protocolo MCP (JSON-RPC 2.0 stdio)
 
-O server expoe **2 metodos**:
-
-### `initialize` (handshake)
+### `initialize`
 ```json
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"TRAE","version":"1.0"}}}
 ```
-Resposta vem com `serverInfo={"name":"coding-vps-orchestrator"}` e capability `tools`.
 
 ### `tools/list`
 ```json
 {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
 ```
-Retorna 100 tools. Cada tool tem:
-```json
-{
-  "name": "chat_minimax",
-  "description": "Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy",
-  "inputSchema": {
-    "type":"object",
-    "properties": {
-      "prompt":{"type":"string","description":"prompt"},
-      "max_tokens":{"type":"integer","description":"max tokens"},
-      "model":{"type":"string","description":"model"}
-    },
-    "required":["prompt"]
-  }
-}
-```
+Retorna **62** tools (não 100).
 
 ### `tools/call`
 ```json
@@ -114,94 +102,68 @@ Retorna 100 tools. Cada tool tem:
   "method":"tools/call",
   "params":{
     "name":"chat_minimax",
-    "arguments":{"prompt":"PING-OK-21","max_tokens":120,"model":"MiniMax-M3"}
-  }
-}
-```
-Resposta (formato `content[]`):
-```json
-{
-  "result":{
-    "content":[{"type":"text","text":"{\"reply\":\"PONG\",\"elapsed_s\":0.42,\"total_tokens\":37}"}],
-    "isError":false
+    "arguments":{"prompt":"PING-OK-62","max_tokens":120,"model":"MiniMax-M3"}
   }
 }
 ```
 
-### `resources/read` (bonus)
-```json
-{"jsonrpc":"2.0","id":4,"method":"resources/read","params":{"uri":"manifest://tools"}}
-```
-Devolve manifesto completo com tool/args/category/description.
+### `resources/read` (se registrado)
+- `manifest://tools`
+- `manifest://categories`
 
-URIs disponiveis:
-- `manifest://tools` — JSON com 100 tools
-- `manifest://categories` — JSON `{"llm":11,"status":8,...}`
-
-## Categorias de tools (15)
+## Categorias (13) — 62 tools
 
 | Categoria | qtd | Exemplos |
 |---|---:|---|
-| llm         | 11 | `chat_minimax`, `list_models`, `chat_<agente>` (9 coding agents) |
-| status      |  8 | `list_services`, `docker_stats`, `swarm_info`, `node_list` |
-| docker      |  6 | `service_logs`, `restart_service`, `scale_service`, `env_set` |
-| easypanel   |  4 | `ep_login`, `ep_list_projects`, `ep_deploy` |
-| db          | 10 | `postgres_query`, `redis_ping`, `clickhouse_query`, `minio_list` |
-| workflow    |  4 | `temporal_list_workflows`, `langflow_run`, `paperclip_list_tasks` |
-| code-review |  6 | `gerrit_list_changes`, `sonarqube_issues`, `sourcegraph_search` |
-| websocket   |  6 | `centrifugo_publish`, `mirotalk_create_room`, `filepizza_create` |
-| webhook     |  4 | `request_basket_create`, `webhook_send` |
-| rag         |  5 | `langflow_list_flows`, `anythingllm_query`, `langfuse_traces` |
-| search      |  4 | `firecrawl_scrape`, `crwal4ai_scrape`, `flaresolverr_solve` |
-| dev         |  6 | `goclaw_list_agents`, `boltdiy_create`, `opencode_run` |
-| monitoring  |  8 | `prometheus_query`, `sentry_list_issues`, `status_page_get` |
-| networking  |  3 | `traefik_*`, `caddy_*`, `n8n_*` |
-| utility     | 15 | `exec_in_container`, `file_read`, `swarm_service_create`, `port_scan` |
+| llm | 3 | `chat_minimax`, `chat_with_agent`, `list_models` |
+| status | 10 | `list_services`, `health_check_service`, `health_check_all`, … |
+| docker | 6 | `service_logs`, `restart_service`, `scale_service`, … |
+| easypanel | 4 | `ep_login`, `ep_list_*`, `ep_deploy` |
+| db | 7 | `postgres_*`, `redis_cmd`, `redis_ping`, `redis_get/set/keys` |
+| workflow | 3 | `temporal_*`, `langflow_run` |
+| code-review | 2 | `sonarqube_*` |
+| websocket | 4 | `centrifugo_*`, `mirotalk_create_room` |
+| webhook | 1 | `webhook_send` |
+| rag | 3 | `langflow_list_flows`, `anythingllm_query`, `langfuse_traces` |
+| dev | 1 | `opencode_run` |
+| networking | 1 | `tailscale_status` |
+| utility | 17 | `exec_in_container`, `service_http_*`, files, swarm, secrets, `openapi_spec` |
 
 ## Curl-like (modo HTTP debug)
-
-Se preferir testar via HTTP, o script expoe tambem em modo FastAPI:
 
 ```bash
 /Library/Frameworks/Python.framework/Versions/3.14/bin/python3 \
   /Users/gustavoalmeida/projetos/Cartorio/scripts/coding_vps_mcp_orchestrator.py http &
-curl http://localhost:8100/                      # GET / -> server info
-curl http://localhost:8100/tools                 # GET /tools -> list of all tools
-curl -X POST http://localhost:8100/call/chat_minimax \
-     -H 'Content-Type: application/json' \
-     -d '{"prompt":"PING-OK-21"}'
-curl http://localhost:8100/openapi.json          # OpenAPI 3.1 spec
+curl http://localhost:8100/
+curl http://localhost:8100/tools
+curl -X POST http://localhost:8100/call/list_services \
+     -H 'Content-Type: application/json' -d '{"stack":"all"}'
 ```
 
 ## Requisitos de runtime
 
 | Item | Valor |
 |---|---|
-| Python | 3.14 (tambem funciona 3.11+) |
+| Python | 3.11+ (3.14 Frameworks no Mac) |
 | fastmcp | >= 3.4.2 |
-| SSH key | `~/.ssh/id_ed25519_cartorio` (Tailscale) |
-| VPS target | `100.99.172.84` (coding-vps_apenas_para_auxilio) |
-| Network | Tailscale VPN ativo |
+| SSH key | `~/.ssh/id_ed25519_cartorio` |
+| VPS | `100.99.172.84` |
+| Network | Tailscale |
 
-## Bug fix aplicado (2026-07-08)
+## Histórico de contagem
 
-| Antes | Depois |
-|---|---|
-| Script travava em `mcp` mode com `ValueError: Functions with **kwargs are not supported as tools` (FastMCP 3.x rejeita `**_` na assinatura). | Removido `**_` do wrapper `make_handler` em `_register_llm`; agora todos os 9 `chat_<agente>` tools sao registrados. Adicionados 2 `@mcp.resource` (`manifest://tools`, `manifest://categories`). |
-| Sem `@mcp.tool()` declarados — confianca no dynamic registration. | `@mcp.tool(name, description)` explicito + try/except com log de falhas. |
-
-Validacao:
-```bash
-$ timeout 5 /Library/Frameworks/Python.framework/Versions/3.14/bin/python3 \
-    scripts/coding_vps_mcp_orchestrator.py mcp
-MCP orchestrator: 100/100 tools registered
-... INFO Starting MCP server 'coding-vps-orchestrator' with transport 'stdio'
-```
+| Data | Tools | Evento |
+|------|------:|--------|
+| pré-Squad 10 | 100 | catálogo inflado + stubs |
+| Squad 10 | 60 | dedupe final |
+| Squad 5 | **62** | `redis_ping` + `health_check_all` |
 
 ## Stack relacionada
 
-- Tailscale SSH → VPS Hostinger `100.99.172.84`
-- 89 servicos Docker Swarm em `coding-vps_apenas_para_auxilio_*`
-- LiteLLM proxy `:4000` com `MiniMax-M3 XMax Thinking`
-- 9 coding agents: crew-ai, goose, hermes, kilo-org_kilocode, langgraph,
-  openchamber, openclaw, opencode, openhands
+- Tailscale SSH → Hostinger `100.99.172.84`
+- ~89 serviços Docker Swarm `coding-vps*`
+- LiteLLM proxy com MiniMax-M3 XMax Thinking
+- Agents: crew-ai, goose, hermes, kilo, langgraph, openchamber, openclaw, opencode, openhands
+  (via `chat_with_agent`, não 9 tools separadas)
+
+**Modified by Gustavo Almeida**

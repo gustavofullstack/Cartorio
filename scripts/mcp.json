@@ -1,8 +1,8 @@
 {
   "name": "coding-vps-orchestrator",
   "displayName": "coding-vps MCP Orchestrator",
-  "version": "2.0.0",
-  "description": "MCP server exposing 100 tools of the coding-vps_apenas_para_auxilio toolkit (Tailscale SSH access to VPS at 100.99.172.84) for TRAE, Antigravity, Claude Code, Cursor, Aider, and any MCP-compatible client.",
+  "version": "2.1.0",
+  "description": "MCP server exposing 62 tools of the coding-vps_apenas_para_auxilio toolkit (Tailscale SSH access to VPS at 100.99.172.84) for TRAE, Antigravity, Claude Code, Cursor, Aider, and any MCP-compatible client.",
   "author": {
     "name": "Gustavo Almeida",
     "email": "gustavomar.fullstack@gmail.com"
@@ -39,37 +39,42 @@
     "ssh_key_env": "SSH_PRIVATE_KEY (default: ~/.ssh/id_ed25519_cartorio)",
     "required_env": [
       "SSH_PRIVATE_KEY",
-      "SSH_TAILSCALE_HOST",
+      "SSH_TAILSCALE_HOST"
+    ],
+    "optional_env": [
       "LITELLM_API_KEY"
     ]
   },
   "capabilities": {
-    "tools": 100,
+    "tools": 62,
     "resources": 2,
     "prompts": 0,
-    "categories": 15
+    "categories": 13
   },
   "categories": {
-    "llm": 11,
-    "status": 8,
+    "llm": 3,
+    "status": 10,
     "docker": 6,
     "easypanel": 4,
-    "db": 10,
-    "workflow": 4,
-    "code-review": 6,
-    "websocket": 6,
-    "webhook": 4,
-    "rag": 5,
-    "search": 4,
-    "dev": 6,
-    "monitoring": 8,
-    "networking": 3,
-    "utility": 15
+    "db": 7,
+    "workflow": 3,
+    "code-review": 2,
+    "websocket": 4,
+    "webhook": 1,
+    "rag": 3,
+    "dev": 1,
+    "networking": 1,
+    "utility": 17
   },
   "tools_manifest": "scripts/mcp_manifest.json",
   "client_configs": {
     "trae": "scripts/mcp_config.trae.json",
+    "antigravity": "scripts/mcp_config.antigravity.json",
     "claude_desktop": "scripts/mcp_config.claude_desktop.json",
     "cursor": "scripts/mcp_config.cursor.json"
+  },
+  "docs": {
+    "usage": "scripts/MCP_USAGE.md",
+    "integration": "docs/platforms/coding-vps/INTEGRATION_TRAE_ANTIGRAVITY.md"
   }
 }

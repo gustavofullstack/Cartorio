@@ -1,6 +1,6 @@
-"""MCP Server: coding-vps-tools-orchestrator (60 tools — DEDUPED Squad 10 2026-07-08).
+"""MCP Server: coding-vps-tools-orchestrator (62 tools — DEDUPED Squad 10 + Squad 5 aliases).
 
-Exposes the focused coding-vps_apenas_para_auxilio toolkit (89 services, 60 tools) for
+Exposes the focused coding-vps_apenas_para_auxilio toolkit (~89 services, 62 tools) for
 TRAE / Antigravity / Claude / MiniMax-M3 / any MCP client.
 
 Squad 10 (2026-07-08) — cleanup final: 100 tools -> 60 tools.
@@ -8,14 +8,17 @@ Removed redundant per-agent wrappers, deprecated stubs, tools tied to DOWN servi
 and broken direct-Docker-DNS monitoring/search/webhook helpers. Generic replacements kept:
 `chat_with_agent`, `redis_cmd`, `service_http_get`, `service_http_post`.
 
+Squad 5 (2026-07-08) — thin aliases: redis_ping (was unregistered), health_check_all
+(list_services summary wrapper). 60 -> 62 tools. Prefer not re-inflating the catalog.
+
 Categories (13):
   LLM (3): chat_minimax, chat_with_agent, list_models
-  STATUS (9): list_services, health_check_service, service_info, service_tasks,
-              docker_stats, swarm_info, node_list, network_list, volume_list
+  STATUS (10): list_services, health_check_service, health_check_all, service_info,
+               service_tasks, docker_stats, swarm_info, node_list, network_list, volume_list
   DOCKER (6): service_logs, restart_service, scale_service, deploy_image,
               env_get, env_set
   EASYPANEL (4): ep_login, ep_list_projects, ep_list_services, ep_deploy
-  DB (6): postgres_query, postgres_list_tables, redis_cmd, redis_get,
+  DB (7): postgres_query, postgres_list_tables, redis_cmd, redis_ping, redis_get,
           redis_set, redis_keys
   WORKFLOW (3): temporal_list_workflows, temporal_describe, langflow_run
   CODE REVIEW (2): sonarqube_projects, sonarqube_issues
@@ -213,37 +216,79 @@ def chat_minimax(prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL)
 
 
 def chat_with_agent(agent: str, prompt: str, max_tokens: int = 500, stack: str = "auto") -> dict:
-    """Send chat to a specific agent. Stack='main', 'side' or 'auto'."""
+    """Send chat to a specific agent. Stack='main', 'side' or 'auto'.
+
+    Agents are slim images without curl — use python3 urllib inside the container
+    (node fetch fallback for opencode when python is missing).
+    """
     if agent not in AGENT_PORTS:
         return {"error": f"unknown agent {agent}", "available": list(AGENT_PORTS.keys())}
     port = AGENT_PORTS[agent]
     is_node = agent in ("kilo-org_kilocode", "opencode")
 
-    stacks_to_try = []
     if stack == "auto":
+        # Side-stack removed in optim 2026-07-09 (duplicate MiniMax agents).
         stacks_to_try = [f"coding-vps_apenas_para_auxilio_{agent}", f"coding-vps-agents_{agent}"]
     elif stack == "main":
         stacks_to_try = [f"coding-vps_apenas_para_auxilio_{agent}"]
     else:
         stacks_to_try = [f"coding-vps-agents_{agent}"]
 
+    last_err: dict[str, Any] | None = None
+    prompt_json = json.dumps(prompt[:1500])
     for host in stacks_to_try:
         check = ssh(f"docker ps -q -f name={host} | head -1")
-        if not check["stdout"].strip():
+        cid = check["stdout"].strip().split("\n")[0] if check["stdout"].strip() else ""
+        if not cid:
             continue
+
         if is_node:
-            body = json.dumps({"prompt": prompt, "max_tokens": max_tokens})
-            py = f"import urllib.request, json; r=urllib.request.urlopen(urllib.request.Request('http://localhost:{port}/chat', data=json.dumps({body}).encode(), headers={{'Content-Type':'application/json'}}, method='POST'), timeout=60); print(r.read().decode())"
-            r = docker_exec(host, f'python3 -c "{py}"', timeout=60)
+            py = (
+                "import json,urllib.request\n"
+                f"payload=json.dumps({{'prompt': json.loads({prompt_json!r}), 'max_tokens': {int(max_tokens)}}})\n"
+                f"req=urllib.request.Request('http://127.0.0.1:{port}/chat', data=payload.encode(), "
+                "headers={'Content-Type':'application/json'}, method='POST')\n"
+                "print(urllib.request.urlopen(req, timeout=60).read().decode())\n"
+            )
+            r = ssh(f"docker exec {cid} python3 -c {shlex.quote(py)}", timeout=70)
+            if r["returncode"] != 0:
+                node = (
+                    "const p=" + prompt_json + ";"
+                    f"fetch('http://127.0.0.1:{port}/chat',{{method:'POST',"
+                    "headers:{'Content-Type':'application/json'},"
+                    f"body:JSON.stringify({{prompt:p,max_tokens:{int(max_tokens)}}})}})"
+                    ".then(r=>r.text()).then(t=>console.log(t))"
+                    ".catch(e=>{console.error(String(e));process.exit(1)})"
+                )
+                r = ssh(f"docker exec {cid} node -e {shlex.quote(node)}", timeout=70)
         else:
-            encoded = urllib.parse.quote(prompt)
-            r = ssh(f"docker exec $(docker ps -q -f name={host} | head -1) curl -s -X POST 'http://localhost:{port}/chat?prompt={encoded}&max_tokens={max_tokens}'", timeout=60)
-        if r["returncode"] == 0:
+            # FastAPI agents: POST /chat?prompt=&max_tokens=
+            py = (
+                "import json,urllib.parse,urllib.request\n"
+                f"prompt=json.loads({prompt_json!r})\n"
+                f"q=urllib.parse.urlencode({{'prompt': prompt, 'max_tokens': {int(max_tokens)}}})\n"
+                f"url='http://127.0.0.1:{port}/chat?' + q\n"
+                "print(urllib.request.urlopen(urllib.request.Request(url, method='POST'), timeout=60).read().decode())\n"
+            )
+            r = ssh(f"docker exec {cid} python3 -c {shlex.quote(py)}", timeout=70)
+
+        if r["returncode"] == 0 and r["stdout"].strip():
             try:
-                return {"agent": agent, "host": host, "stack": "side" if "agents_" in host else "main", "result": json.loads(r["stdout"])}
+                return {
+                    "agent": agent,
+                    "host": host,
+                    "stack": "side" if "agents_" in host else "main",
+                    "result": json.loads(r["stdout"]),
+                }
             except Exception:
-                return {"agent": agent, "host": host, "raw": r["stdout"]}
-    return {"error": f"agent {agent} not running"}
+                return {"agent": agent, "host": host, "raw": r["stdout"][:2000]}
+        last_err = {
+            "stderr": (r.get("stderr") or "")[:500],
+            "stdout": (r.get("stdout") or "")[:500],
+            "code": r.get("returncode"),
+            "host": host,
+        }
+    return {"error": f"agent {agent} not running", "detail": last_err}
 
 
 def list_models() -> dict:
@@ -301,6 +346,25 @@ def health_check_service(service: str) -> dict:
         if p.strip().isdigit():
             open_ports.append(int(p.strip()))
     return {"service": service, "open_ports": open_ports, "raw": r["stdout"]}
+
+
+def health_check_all(stack: str = "all") -> dict:
+    """Bulk health summary via list_services (no per-service TCP probes).
+
+    Thin alias for MCP clients that expect health_check_all. For deep TCP probe
+    on one service use health_check_service.
+    """
+    result = list_services(stack)
+    down_names = [s["name"] for s in result.get("services", []) if not s.get("up")]
+    return {
+        "stack": stack,
+        "total": result.get("total", 0),
+        "up": result.get("up", 0),
+        "down": result.get("down", 0),
+        "summary": f"{result.get('up', 0)}/{result.get('total', 0)} up",
+        "down_names": down_names[:50],
+        "services": result.get("services", []),
+    }
 
 
 def service_info(service: str) -> dict:
@@ -993,6 +1057,7 @@ def _register_status() -> dict:
     return {
         "list_services": {"func": lambda stack="all": list_services(stack), "args": ["stack?"], "category": "status", "desc": "List all coding-vps services (main/side/all)"},
         "health_check_service": {"func": health_check_service, "args": ["service"], "category": "status", "desc": "TCP probe open ports of a service"},
+        "health_check_all": {"func": health_check_all, "args": ["stack?"], "category": "status", "desc": "Bulk health summary (list_services wrapper; no per-service TCP)"},
         "service_info": {"func": service_info, "args": ["service"], "category": "status", "desc": "Get full Docker service spec"},
         "service_tasks": {"func": service_tasks, "args": ["service"], "category": "status", "desc": "List Docker Swarm tasks for a service"},
         "docker_stats": {"func": docker_stats, "args": [], "category": "status", "desc": "CPU/Mem usage of all containers"},
@@ -1028,6 +1093,7 @@ def _register_db() -> dict:
         "postgres_query": {"func": postgres_query, "args": ["db", "sql"], "category": "db", "desc": "Run SQL on a Postgres DB"},
         "postgres_list_tables": {"func": postgres_list_tables, "args": ["db"], "category": "db", "desc": "List tables in a Postgres DB"},
         "redis_cmd": {"func": redis_cmd, "args": ["redis_service", "command"], "category": "db", "desc": "Run a Redis command with auto-auth"},
+        "redis_ping": {"func": redis_ping, "args": ["redis_service"], "category": "db", "desc": "PING Redis (auto-auth via $REDIS_PASSWORD)"},
         "redis_get": {"func": redis_get, "args": ["redis_service", "key"], "category": "db", "desc": "Get a Redis key value"},
         "redis_set": {"func": redis_set, "args": ["redis_service", "key", "value"], "category": "db", "desc": "Set a Redis key value"},
         "redis_keys": {"func": redis_keys, "args": ["redis_service", "pattern?"], "category": "db", "desc": "List Redis keys matching pattern"},

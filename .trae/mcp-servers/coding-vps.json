@@ -1,16 +1,17 @@
 {
+  "$schema": "https://modelcontextprotocol.io/schemas/mcp-server.json",
   "mcpServers": {
-    "coding-vps": {
-      "command": "python3",
+    "coding-vps-orchestrator": {
+      "command": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3",
       "args": [
         "/Users/gustavoalmeida/projetos/Cartorio/scripts/coding_vps_mcp_orchestrator.py",
         "mcp"
       ],
       "env": {
         "SSH_PRIVATE_KEY": "/Users/gustavoalmeida/.ssh/id_ed25519_cartorio",
-        "SSH_TAILSCALE_HOST": "100.99.172.84",
-        "LITELLM_API_KEY": "e39dss0k1baohuqkprjv"
-      }
+        "SSH_TAILSCALE_HOST": "100.99.172.84"
+      },
+      "description": "coding-vps-orchestrator: 62 tools / 13 categories via MCP stdio. Optional: set LITELLM_API_KEY in the client environment."
     }
   }
 }
