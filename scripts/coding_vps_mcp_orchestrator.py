@@ -224,7 +224,8 @@ def chat_with_agent(agent: str, prompt: str, max_tokens: int = 500, stack: str =
     if agent not in AGENT_PORTS:
         return {"error": f"unknown agent {agent}", "available": list(AGENT_PORTS.keys())}
     port = AGENT_PORTS[agent]
-    is_node = agent in ("kilo-org_kilocode", "opencode")
+    # opencode image is Node-only; kilo was re-patched as FastAPI (python) on :8004
+    is_node = agent in ("opencode",)
 
     if stack == "auto":
         # Side-stack removed in optim 2026-07-09 (duplicate MiniMax agents).

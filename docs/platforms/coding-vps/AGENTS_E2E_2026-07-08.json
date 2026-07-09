@@ -1,0 +1,42 @@
+{
+  "agents": {
+    "crew-ai": {
+      "ok": true,
+      "sample": "{'agent': 'crew-ai', 'host': 'coding-vps_apenas_para_auxilio_crew-ai', 'stack': 'main', 'result': {'reply': '\\n\\n', 'ela"
+    },
+    "goose": {
+      "ok": true,
+      "sample": "{'agent': 'goose', 'host': 'coding-vps_apenas_para_auxilio_goose', 'stack': 'main', 'result': {'reply': '\\n\\n', 'elapsed"
+    },
+    "hermes": {
+      "ok": true,
+      "sample": "{'agent': 'hermes', 'host': 'coding-vps_apenas_para_auxilio_hermes', 'stack': 'main', 'result': {'reply': '\\n\\n', 'elaps"
+    },
+    "kilo-org_kilocode": {
+      "ok": true,
+      "sample": "{'agent': 'kilo-org_kilocode', 'host': 'coding-vps_apenas_para_auxilio_kilo-org_kilocode', 'stack': 'main', 'result': {'"
+    },
+    "langgraph": {
+      "ok": true,
+      "sample": "{'agent': 'langgraph', 'host': 'coding-vps_apenas_para_auxilio_langgraph', 'stack': 'main', 'result': {'reply': '\\n\\n', "
+    },
+    "openchamber": {
+      "ok": true,
+      "sample": "{'agent': 'openchamber', 'host': 'coding-vps_apenas_para_auxilio_openchamber', 'stack': 'main', 'result': {'reply': '\\n\\"
+    },
+    "openclaw": {
+      "ok": true,
+      "sample": "{'agent': 'openclaw', 'host': 'coding-vps_apenas_para_auxilio_openclaw', 'stack': 'main', 'result': {'reply': '\\n\\n', 'e"
+    },
+    "opencode": {
+      "ok": true,
+      "sample": "{'agent': 'opencode', 'host': 'coding-vps_apenas_para_auxilio_opencode', 'stack': 'main', 'result': {'reply': '\\n\\n', 'e"
+    },
+    "openhands": {
+      "ok": true,
+      "sample": "{'agent': 'openhands', 'host': 'coding-vps_apenas_para_auxilio_openhands', 'stack': 'main', 'result': {'reply': '\\n\\n', "
+    }
+  },
+  "passed": 9,
+  "total": 9
+}

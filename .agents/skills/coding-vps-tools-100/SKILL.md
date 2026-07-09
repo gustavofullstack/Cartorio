@@ -105,10 +105,12 @@ O VPS hospeda dezenas de serviços agentic (LLM agents, RAG, code-review, scrape
 
 ### LLM agents (quando UP)
 
-Main stack `coding-vps_apenas_para_auxilio_*` + side `coding-vps-agents_*`:
+**Main stack only** `coding-vps_apenas_para_auxilio_*` (side-stack `coding-vps-agents_*` **removido** 2026-07-09 — duplicata cara de RAM):
 crew-ai, goose, hermes, kilo-org_kilocode, langgraph, openchamber, openclaw, opencode, openhands (+ cline offline esperado — extensão VSCode).
 
-Todos os agents ativos devem falar MiniMax-M3 XMax Thinking via LiteLLM.
+Todos os agents ativos falam MiniMax-M3 XMax Thinking via LiteLLM.
+
+**Bugfix 2026-07-09:** `chat_with_agent` usava `curl` dentro da imagem slim (sem curl) e reportava falso "not running". Agora usa `python3 urllib` (fallback `node fetch` para opencode).
 
 ### Infra crítica
 
