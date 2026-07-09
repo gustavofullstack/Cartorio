@@ -290,75 +290,87 @@ async def _stop_typing(chat_id: int) -> None:
     pass
 
 
-async def _enqueue_message(bus: Any, chat_id: int, text: str, msg_id: int) -> int:
+async def _enqueue_message(bus: Any, key: int | str, text: str, msg_id: int) -> int:
     if not bus:
         return 1
     try:
-        raw = await bus.client.get(f"tg:queue:{chat_id}")
+        raw = await bus.client.get(f"tg:queue:{key}")
         queue = json.loads(raw) if raw else []
         queue.append({"text": text, "msg_id": msg_id, "ts": time.time()})
-        await bus.client.setex(f"tg:queue:{chat_id}", MESSAGE_QUEUE_TTL, json.dumps(queue))
+        await bus.client.setex(f"tg:queue:{key}", MESSAGE_QUEUE_TTL, json.dumps(queue))
         return len(queue)
     except Exception:
         return 1
 
 
-async def _get_queued_messages(bus: Any, chat_id: int) -> list[dict]:
+async def _get_queued_messages(bus: Any, key: int | str) -> list[dict]:
     if not bus:
         return []
     try:
-        raw = await bus.client.get(f"tg:queue:{chat_id}")
+        raw = await bus.client.get(f"tg:queue:{key}")
         return json.loads(raw) if raw else []
     except Exception:
         return []
 
 
-async def _clear_queue(bus: Any, chat_id: int) -> None:
+async def _clear_queue(bus: Any, key: int | str) -> None:
     if not bus:
         return
     try:
-        await bus.client.delete(f"tg:queue:{chat_id}")
+        await bus.client.delete(f"tg:queue:{key}")
     except Exception:
         pass
 
 
-async def _check_rate_limit(bus: Any, chat_id: int) -> bool:
+def _conv_key(chat_id: int, user_id: int | None = None, chat_type: str = "private") -> str:
+    """Chave de conversa / estado.
+
+    FIX 2026-07-09: em grupo/supergroup o estado DEVE ser por usuario
+    (chat_id:user_id). Senao multiplos clientes compartilham o mesmo fluxo
+    e o anti-spam do grupo engole respostas de data/hora/protocolo.
+    """
+    if chat_type in ("group", "supergroup") and user_id is not None:
+        return f"{chat_id}:{user_id}"
+    return str(chat_id)
+
+
+async def _check_rate_limit(bus: Any, key: int | str) -> bool:
     if not bus:
         return True
     try:
-        if await bus.client.get(f"tg:ratelimit:{chat_id}"):
+        if await bus.client.get(f"tg:ratelimit:{key}"):
             return False
-        await bus.client.setex(f"tg:ratelimit:{chat_id}", RATE_LIMIT_SECONDS, "1")
+        await bus.client.setex(f"tg:ratelimit:{key}", RATE_LIMIT_SECONDS, "1")
         return True
     except Exception:
         return True
 
 
-async def _get_state(bus: Any, chat_id: int) -> dict:
+async def _get_state(bus: Any, key: int | str) -> dict:
     if not bus:
         return {"state": STATE_IDLE, "data": {}}
     try:
-        raw = await bus.client.get(f"tg:state:{chat_id}")
+        raw = await bus.client.get(f"tg:state:{key}")
         return json.loads(raw) if raw else {"state": STATE_IDLE, "data": {}}
     except Exception:
         return {"state": STATE_IDLE, "data": {}}
 
 
-async def _set_state(bus: Any, chat_id: int, state: str, data: dict | None = None) -> None:
+async def _set_state(bus: Any, key: int | str, state: str, data: dict | None = None) -> None:
     if not bus:
         return
     payload = json.dumps({"state": state, "data": data or {}}, ensure_ascii=False)
     try:
-        await bus.client.setex(f"tg:state:{chat_id}", STATE_TTL, payload)
+        await bus.client.setex(f"tg:state:{key}", STATE_TTL, payload)
     except Exception as e:
         logger.warning("Falha state Redis: %s", e)
 
 
-async def _clear_state(bus: Any, chat_id: int) -> None:
+async def _clear_state(bus: Any, key: int | str) -> None:
     if not bus:
         return
     try:
-        await bus.client.delete(f"tg:state:{chat_id}")
+        await bus.client.delete(f"tg:state:{key}")
     except Exception:
         pass
 
@@ -539,33 +551,34 @@ async def _send_document(
 async def _handle_command(
     text: str,
     bus: Any,
-    chat_id: int,
+    key: int | str,
     _user_name: str,
 ) -> tuple[str, list | None]:
+    """key = conv_key (chat ou chat:user no grupo) para estado Redis."""
     cmd = text.strip().split()[0].lower().split("@")[0]
     if cmd == "/start":
-        await _clear_state(bus, chat_id)
+        await _clear_state(bus, key)
         return (
             "Cartorio 2o Oficio de Notas - Uberlandia/MG\n\nSelecione uma opcao abaixo:",
             _menu_keyboard(),
         )
     if cmd == "/menu":
-        await _set_state(bus, chat_id, STATE_IDLE)
+        await _set_state(bus, key, STATE_IDLE)
         return "Cartorio 2o Oficio de Notas - Menu principal:", _menu_keyboard_with_cancel()
     if cmd == "/agendar":
-        await _set_state(bus, chat_id, STATE_AGENDAR_SERVICO, {})
+        await _set_state(bus, key, STATE_AGENDAR_SERVICO, {})
         return "Selecione o serviço desejado:", _servicos_keyboard()
     if cmd == "/protocolo":
-        await _set_state(bus, chat_id, STATE_PROTOCOLO, {})
+        await _set_state(bus, key, STATE_PROTOCOLO, {})
         return "Informe o numero do protocolo (ex: 2026-000123):", None
     if cmd == "/humano":
-        await _set_state(bus, chat_id, STATE_HUMANO, {})
+        await _set_state(bus, key, STATE_HUMANO, {})
         return (
             "Descreva brevemente sua questao. Um escrevente entrara em contato em ate 2 horas uteis.",
             None,
         )
     if cmd == "/cancelar":
-        await _clear_state(bus, chat_id)
+        await _clear_state(bus, key)
         return "Operacao cancelada.", _menu_keyboard()
     if cmd == "/lgpd":
         return (
@@ -575,7 +588,9 @@ async def _handle_command(
     return "", None
 
 
-async def _handle_callback(data: str, bus: Any, chat_id: int) -> tuple[str, list | None, bool]:
+async def _handle_callback(
+    data: str, bus: Any, key: int | str, *, user_id: int | None = None
+) -> tuple[str, list | None, bool]:
     if data == "agendar":
         data = "cmd:agendar"
     elif data == "cancelar":
@@ -592,27 +607,27 @@ async def _handle_callback(data: str, bus: Any, chat_id: int) -> tuple[str, list
     if data.startswith("cmd:"):
         c = data[4:]
         if c == "agendar":
-            await _set_state(bus, chat_id, STATE_AGENDAR_SERVICO, {})
+            await _set_state(bus, key, STATE_AGENDAR_SERVICO, {})
             return "Selecione o serviço:", _servicos_keyboard(), True
         if c == "protocolo":
-            await _set_state(bus, chat_id, STATE_PROTOCOLO, {})
+            await _set_state(bus, key, STATE_PROTOCOLO, {})
             return "Informe o numero do protocolo:", None, True
         if c == "humano":
-            await _set_state(bus, chat_id, STATE_HUMANO, {})
+            await _set_state(bus, key, STATE_HUMANO, {})
             return "Descreva sua questao:", None, True
         if c == "menu":
-            await _clear_state(bus, chat_id)
+            await _clear_state(bus, key)
             return "Menu principal:", _menu_keyboard(), True
     if data.startswith("servico:"):
-        key = data[8:]
-        entry = SERVICOS.get(key)
+        svc = data[8:]
+        entry = SERVICOS.get(svc)
         if entry:
             nome, valor = entry
             await _set_state(
                 bus,
-                chat_id,
+                key,
                 STATE_AGENDAR_DATA,
-                {"servico": key, "servico_nome": nome, "valor": valor},
+                {"servico": svc, "servico_nome": nome, "valor": valor},
             )
             return (
                 f"Servico: {nome} - {valor}\n\nQual a data desejada? (DD/MM/AAAA, 'hoje' ou 'amanha')",
@@ -621,25 +636,28 @@ async def _handle_callback(data: str, bus: Any, chat_id: int) -> tuple[str, list
             )
         return "Opcao invalida.", _servicos_keyboard(), True
     if data == "agendar:confirmar":
-        return await _confirmar_agendamento(bus, chat_id)
+        return await _confirmar_agendamento(bus, key, user_id=user_id)
     return "", None, False
 
 
-async def _confirmar_agendamento(bus: Any, chat_id: int) -> tuple[str, list | None, bool]:
-    state_obj = await _get_state(bus, chat_id)
+async def _confirmar_agendamento(
+    bus: Any, key: int | str, *, user_id: int | None = None
+) -> tuple[str, list | None, bool]:
+    state_obj = await _get_state(bus, key)
     sdata = state_obj.get("data", {})
+    cliente = user_id if user_id is not None else 0
     result = await _call_api(
         "POST",
         "/api/v1/agendamento",
         {
-            "cliente_id": chat_id,
+            "cliente_id": cliente,
             "data": sdata.get("data", ""),
             "hora": sdata.get("hora", ""),
             "servico": sdata.get("servico", ""),
             "consent_granted": True,
         },
     )
-    await _clear_state(bus, chat_id)
+    await _clear_state(bus, key)
     if "erro" in result:
         return (
             f"Falha ao criar agendamento: {result['erro']}\n\nTente novamente ou /humano.",
@@ -661,15 +679,21 @@ async def _confirmar_agendamento(bus: Any, chat_id: int) -> tuple[str, list | No
 
 
 async def _handle_state(
-    text: str, state: str, state_data: dict, bus: Any, chat_id: int
+    text: str,
+    state: str,
+    state_data: dict,
+    bus: Any,
+    key: int | str,
+    *,
+    user_id: int | None = None,
 ) -> tuple[str, str, list | None]:
     tl = text.strip().lower()
     if state == STATE_AGENDAR_SERVICO:
-        for i, (key, (nome, _)) in enumerate(SERVICOS.items(), 1):
-            if tl == str(i) or tl == key:
-                state_data["servico"] = key
+        for i, (svc, (nome, _)) in enumerate(SERVICOS.items(), 1):
+            if tl == str(i) or tl == svc:
+                state_data["servico"] = svc
                 state_data["servico_nome"] = nome
-                await _set_state(bus, chat_id, STATE_AGENDAR_DATA, state_data)
+                await _set_state(bus, key, STATE_AGENDAR_DATA, state_data)
                 return (
                     f"Servico: {nome}\n\nQual a data? (DD/MM/AAAA, 'hoje' ou 'amanha')",
                     STATE_AGENDAR_DATA,
@@ -681,7 +705,7 @@ async def _handle_state(
         if not d:
             return "Data invalida. Use DD/MM/AAAA:", state, None
         state_data["data"] = d
-        await _set_state(bus, chat_id, STATE_AGENDAR_HORA, state_data)
+        await _set_state(bus, key, STATE_AGENDAR_HORA, state_data)
         return (
             f"Data: {d}\n\nDigite o horario (08:00-17:00, formato HH:MM):",
             STATE_AGENDAR_HORA,
@@ -692,7 +716,7 @@ async def _handle_state(
         if not h:
             return "Horario invalido. Use HH:MM:", state, None
         state_data["hora"] = h
-        await _set_state(bus, chat_id, STATE_AGENDAR_CONFIRMAR, state_data)
+        await _set_state(bus, key, STATE_AGENDAR_CONFIRMAR, state_data)
         return (
             (
                 f"Servico: {state_data.get('servico_nome', '')}\n"
@@ -704,15 +728,15 @@ async def _handle_state(
         )
     if state == STATE_AGENDAR_CONFIRMAR:
         if tl in ("sim", "s", "ok", "confirmar"):
-            r, kb, _ = await _confirmar_agendamento(bus, chat_id)
+            r, kb, _ = await _confirmar_agendamento(bus, key, user_id=user_id)
             return r, STATE_IDLE, kb
         if tl in ("nao", "n", "cancelar"):
-            await _clear_state(bus, chat_id)
+            await _clear_state(bus, key)
             return "Agendamento cancelado.", STATE_IDLE, _menu_keyboard()
         return "Confirme com 'sim' ou 'nao':", state, _confirmar_keyboard()
     if state == STATE_PROTOCOLO:
         res_protocolo = await _tool_consultar_protocolo(text.strip())
-        await _clear_state(bus, chat_id)
+        await _clear_state(bus, key)
         if "erro" in res_protocolo or res_protocolo.get("status") == "not_found":
             return (
                 f"Protocolo {text.strip()} nao encontrado.\nVerifique o numero.",
@@ -725,10 +749,12 @@ async def _handle_state(
             _menu_keyboard(),
         )
     if state == STATE_HUMANO:
+        uid = user_id if user_id is not None else 0
         res_atendimento = await _tool_criar_atendimento(
-            cliente_id=chat_id, topico=text.strip(), contato=f"telegram:{chat_id}"
+            cliente_id=uid, topico=text.strip(), contato=f"telegram:{uid}"
         )
-        await _clear_state(bus, chat_id)
+        await _clear_state(bus, key)
+        bump_metric("hitl_created")
         return (
             f"Ticket criado: #{res_atendimento.get('id', 'N/A')}\n\nUm escrevente entrara em contato em ate 2h uteis.",
             STATE_IDLE,
@@ -831,7 +857,9 @@ async def _call_fast_llm(text: str, context: str = "") -> str:
         return ""
 
 
-async def _process_telegram_debounce(chat_id: int) -> None:
+async def _process_telegram_debounce(
+    chat_id: int, *, conv_key: str | None = None, user_id: int | None = None
+) -> None:
     """Task em background para esperar o debounce, consolidar msgs e responder.
 
     NOTA: NAO recebe `db` (Session) — `background_tasks.add_task` do FastAPI
@@ -841,14 +869,17 @@ async def _process_telegram_debounce(chat_id: int) -> None:
 
     FIX 2026-07-03 (loop-infinito): adiciona typing_loop em background para
     garantir que cliente sempre ve "Bot esta digitando..." enquanto processa.
+
+    FIX 2026-07-09: conv_key = chat:user no grupo (estado/fila por usuario).
     """
+    key: int | str = conv_key if conv_key is not None else chat_id
     await asyncio.sleep(DEBOUNCE_WINDOW)
     bus = get_bus()
     if not bus:
         logger.warning("TG debounce: bus indisponivel chat=%s", chat_id)
         return
-    queue_key = f"tg:queue:{chat_id}"
-    lock_key = f"tg:lock:{chat_id}"
+    queue_key = f"tg:queue:{key}"
+    lock_key = f"tg:lock:{key}"
     # Inicia typing loop em background - cliente ve "Bot esta digitando"
     stop_typing = asyncio.Event()
     typing_task = asyncio.create_task(_typing_loop(chat_id, stop_typing))
@@ -867,10 +898,10 @@ async def _process_telegram_debounce(chat_id: int) -> None:
         textos = [m["text"] for m in queue]
         msg_ids = [m["msg_id"] for m in queue if m.get("msg_id")]
         text_to_process = _resumir_mensagens(textos) if len(textos) > 2 else textos[-1]
-        if not await _check_rate_limit(bus, chat_id):
-            logger.info("TG rate limit chat=%s", chat_id)
+        if not await _check_rate_limit(bus, key):
+            logger.info("TG rate limit key=%s", key)
             return
-        state_obj = await _get_state(bus, chat_id)
+        state_obj = await _get_state(bus, key)
         state = state_obj.get("state", STATE_IDLE)
         state_data = state_obj.get("data", {})
         response_text = ""
@@ -881,15 +912,16 @@ async def _process_telegram_debounce(chat_id: int) -> None:
                 state,
                 state_data,
                 bus,
-                chat_id,
+                key,
+                user_id=user_id,
             )
             if response_text and new_state == STATE_IDLE:
-                await _clear_state(bus, chat_id)
+                await _clear_state(bus, key)
         if not response_text:
             llm_resp = await _call_fast_llm(text_to_process)
             response_text = llm_resp if llm_resp else "Nao entendi. Use /menu para ver as opcoes."
             keyboard = _menu_keyboard()
-            await _clear_state(bus, chat_id)
+            await _clear_state(bus, key)
         response_text = strip_emojis(scrub(response_text).text)
         sent = await _send_message(
             chat_id, response_text, reply_markup={"inline_keyboard": keyboard} if keyboard else None
@@ -900,7 +932,7 @@ async def _process_telegram_debounce(chat_id: int) -> None:
                 await _react(chat_id, msg_ids[-1], "check")
         else:
             bump_metric("responses_failed")
-        logger.info("TG background response chat=%s sent=%s", chat_id, sent)
+        logger.info("TG background response chat=%s key=%s sent=%s", chat_id, key, sent)
     except Exception as e:
         logger.exception("Erro na background task de debounce do Telegram: %s", e)
     finally:
@@ -1068,47 +1100,58 @@ async def telegram_webhook(
     if not chat_id or (not text and not callback):
         return _finish({"status": "ignored", "reason": "non-text update"})
 
-    # Avoid spam: ignore group chat messages that don't start with / or mention the bot
-    chat_type = message.get("chat", {}).get("type", "")
+    user_id = (
+        message.get("from", {}).get("id")
+        or callback.get("from", {}).get("id")
+        or None
+    )
+    chat_type = (
+        message.get("chat", {}).get("type", "")
+        or callback.get("message", {}).get("chat", {}).get("type", "")
+        or "private"
+    )
+    conv = _conv_key(int(chat_id), int(user_id) if user_id else None, chat_type)
+    bus = get_bus()
+
+    # Avoid spam: ignore group free-text UNLESS mid-flow (data/hora/protocolo/HITL).
     if chat_type in ("group", "supergroup"):
         is_command = text.startswith("/")
         mentions_bot = "@test_cartorio_bot" in text
         if not is_command and not mentions_bot and not callback:
-            # FIX 2026-07-09: NAO spammar orientacao a cada msg do grupo.
-            # Apenas reacao "eyes" (silenciosa). Orientacao no max 1x/5min por chat
-            # (Redis key). Usuario reclamou: "spam piora o problema".
-            logger.info("TG group ignore chat=%s text=%.60s", chat_id, text)
-            early_msg_id = message.get("message_id", 0)
-            await _react(chat_id, early_msg_id, "eyes")
-            bus_hint = get_bus()
-            should_orient = True
-            if bus_hint:
-                try:
-                    orient_key = f"tg:orient:{chat_id}"
-                    # SET NX EX 300 = so manda orientacao se nao mandou nos ultimos 5min
-                    set_ok = await bus_hint.client.set(orient_key, "1", nx=True, ex=300)
-                    should_orient = bool(set_ok)
-                except Exception:
-                    should_orient = False
-            if should_orient:
-                orientacao = (
-                    "Use /menu ou os botoes. Mencione @test_cartorio_bot so se precisar "
-                    "de texto livre. Nao repito este aviso por 5 min."
+            mid_flow = False
+            if bus:
+                st = await _get_state(bus, conv)
+                mid_flow = st.get("state", STATE_IDLE) != STATE_IDLE
+            if not mid_flow:
+                # FIX 2026-07-09: NAO spammar orientacao a cada msg do grupo.
+                logger.info("TG group ignore chat=%s text=%.60s", chat_id, text)
+                early_msg_id = message.get("message_id", 0)
+                await _react(chat_id, early_msg_id, "eyes")
+                should_orient = True
+                if bus:
+                    try:
+                        orient_key = f"tg:orient:{chat_id}"
+                        set_ok = await bus.client.set(orient_key, "1", nx=True, ex=300)
+                        should_orient = bool(set_ok)
+                    except Exception:
+                        should_orient = False
+                if should_orient:
+                    orientacao = (
+                        "Use /menu ou os botoes. Mencione @test_cartorio_bot so se precisar "
+                        "de texto livre. Nao repito este aviso por 5 min."
+                    )
+                    await _send_message(
+                        chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
+                    )
+                return _finish(
+                    {"status": "ignored", "reason": "group message without command or mention"}
                 )
-                await _send_message(
-                    chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
-                )
-            return _finish(
-                {"status": "ignored", "reason": "group message without command or mention"}
-            )
+            logger.info("TG group mid-flow allow chat=%s conv=%s text=%.40s", chat_id, conv, text)
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
-    logger.info("TG msg chat=%s text=%.60s", chat_id, text)
+    logger.info("TG msg chat=%s conv=%s text=%.60s", chat_id, conv, text)
 
     # ====== ANTI-SPAM: idempotency check por update_id ======
-    # Telegram pode reentregar o mesmo update se o webhook demorar.
-    # Garantimos processar CADA update EXATAMENTE 1 vez.
-    bus = get_bus()
     if bus and update_id:
         already_processed = await _check_idempotency(bus, update_id)
         if already_processed:
@@ -1117,16 +1160,17 @@ async def telegram_webhook(
                 {"status": "duplicate", "update_id": update_id, "chat_id": chat_id}
             )
 
-    # ====== TYPING VISIVEL: envia "Bot esta digitando..." IMEDIATAMENTE ======
-    # FIX v2: _send_typing_fast = fire-and-forget, nao bloqueia webhook.
-    # Antes: await _send_typing (criava client novo, ~500ms overhead)
+    # ====== TYPING VISIVEL ======
     asyncio.create_task(_send_typing_fast(chat_id))
 
     text_scrubbed = scrub(text).text
+    uid = int(user_id) if user_id else None
     if callback:
         data = callback.get("data", "")
         await _answer_callback_query(callback.get("id", ""))
-        response_text, keyboard, _ = await _handle_callback(data, bus, chat_id)
+        response_text, keyboard, _ = await _handle_callback(
+            data, bus, conv, user_id=uid
+        )
         if response_text:
             response_text = strip_emojis(response_text)
             await _react(chat_id, msg_id, "eyes")
@@ -1154,7 +1198,7 @@ async def telegram_webhook(
             classify_metric_for_status("ignored_command", "command")
             return _finish({"status": "ignored_command", "chat_id": chat_id})
         bump_metric("commands_handled")
-        response_text, keyboard = await _handle_command(text, bus, chat_id, "")
+        response_text, keyboard = await _handle_command(text, bus, conv, "")
         if response_text:
             response_text = strip_emojis(response_text)
             markup = {"inline_keyboard": keyboard} if keyboard else None
@@ -1170,26 +1214,60 @@ async def telegram_webhook(
                 }
             )
 
+    # Free text: prefer SYNC path for mid-flow states (data/hora/protocolo/HITL)
+    # so group multi-step flows don't wait debounce 3s.
+    # FIX 2026-07-09: NAO aplicar rate limit no mid-flow — cliente manda
+    # data+hora em <5s e o rate limit engolia a conversa (rate_limited:true
+    # sem processar). Rate limit fica so no free-text IDLE / debounce.
+    if bus:
+        st_now = await _get_state(bus, conv)
+        if st_now.get("state", STATE_IDLE) != STATE_IDLE:
+            response_text, new_state, keyboard = await _handle_state(
+                text_scrubbed,
+                st_now.get("state", STATE_IDLE),
+                st_now.get("data", {}),
+                bus,
+                conv,
+                user_id=uid,
+            )
+            if response_text:
+                if new_state == STATE_IDLE:
+                    await _clear_state(bus, conv)
+                response_text = strip_emojis(scrub(response_text).text)
+                markup = {"inline_keyboard": keyboard} if keyboard else None
+                sent = await _send_message(chat_id, response_text, reply_markup=markup)
+                if sent:
+                    await _react(chat_id, msg_id, "check")
+                classify_metric_for_status("ok" if sent else "partial", "state")
+                return _finish(
+                    {
+                        "status": "ok" if sent else "partial",
+                        "chat_id": chat_id,
+                        "kind": "state",
+                        "response_sent": sent,
+                    }
+                )
+
     if not bus:
-        if not await _check_rate_limit(bus, chat_id):
-            logger.info("TG rate limit chat=%s", chat_id)
+        if not await _check_rate_limit(bus, conv):
+            logger.info("TG rate limit key=%s", conv)
             return _finish({"status": "ok", "chat_id": chat_id, "rate_limited": True})
-        state_obj = await _get_state(bus, chat_id)
+        state_obj = await _get_state(bus, conv)
         state = state_obj.get("state", STATE_IDLE)
         state_data = state_obj.get("data", {})
         response_text = ""
         keyboard = None
         if state != STATE_IDLE:
             response_text, new_state, keyboard = await _handle_state(
-                text_scrubbed, state, state_data, bus, chat_id
+                text_scrubbed, state, state_data, bus, conv, user_id=uid
             )
             if response_text and new_state == STATE_IDLE:
-                await _clear_state(bus, chat_id)
+                await _clear_state(bus, conv)
         if not response_text:
             llm_resp = await _call_fast_llm(text_scrubbed)
             response_text = llm_resp if llm_resp else "Nao entendi. Use /menu para ver as opcoes."
             keyboard = _menu_keyboard()
-            await _clear_state(bus, chat_id)
+            await _clear_state(bus, conv)
         response_text = strip_emojis(scrub(response_text).text)
         markup = {"inline_keyboard": keyboard} if keyboard else None
         sent = await _send_message(chat_id, response_text, reply_markup=markup)
@@ -1199,16 +1277,20 @@ async def telegram_webhook(
             {"status": "ok" if sent else "partial", "chat_id": chat_id, "response_sent": sent}
         )
 
-    lock_key = f"tg:lock:{chat_id}"
-    await _enqueue_message(bus, chat_id, text_scrubbed, msg_id)
+    lock_key = f"tg:lock:{conv}"
+    await _enqueue_message(bus, conv, text_scrubbed, msg_id)
     await _react(chat_id, msg_id, "eyes")
     has_lock = await bus.client.get(lock_key)
     if not has_lock:
         await bus.client.setex(lock_key, 5, "1")
         bump_metric("scheduled_debounce")
-        # NAO passar `db` aqui — Session do Depends e fechada no fim do request.
-        background_tasks.add_task(_process_telegram_debounce, chat_id=chat_id)
-        logger.info("TG scheduled background debounce chat=%s", chat_id)
+        background_tasks.add_task(
+            _process_telegram_debounce,
+            chat_id=chat_id,
+            conv_key=conv,
+            user_id=uid,
+        )
+        logger.info("TG scheduled background debounce chat=%s conv=%s", chat_id, conv)
         classify_metric_for_status("ok", "debounce")
         return _finish({"status": "ok", "chat_id": chat_id, "scheduled": True})
     return _finish({"status": "ok", "chat_id": chat_id, "accumulated": True})
