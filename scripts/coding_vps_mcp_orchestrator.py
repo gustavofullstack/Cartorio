@@ -1,45 +1,35 @@
-"""MCP Server: coding-vps-tools-orchestrator (85 tools — DEDUPED Squad 1 2026-07-09).
+"""MCP Server: coding-vps-tools-orchestrator (60 tools — DEDUPED Squad 10 2026-07-08).
 
-Exposes the focused coding-vps_apenas_para_auxilio toolkit (89 services, 85 tools) for
+Exposes the focused coding-vps_apenas_para_auxilio toolkit (89 services, 60 tools) for
 TRAE / Antigravity / Claude / MiniMax-M3 / any MCP client.
 
-Squad 1 (2026-07-09) — dedupe: removed 15 redundant low-value tools. Quality > quantity.
-Previous total: 100 tools → NEW: 85 tools (15% reduction).
-Removed: clickhouse_query, mongo_query, minio_list, prometheus_query, grafana_dashboards,
-         sentry_capture_event, goclaw_list_agents, shm_incidents, boltdiy_create,
-         chartdb_export, opennotebook_create, letsencrypt_list, hostinger_api_status,
-         tailscale_ping, tailscale_list_devices. All can be replicated via
-         `ssh docker exec` from `exec_in_container` or were rarely invoked.
+Squad 10 (2026-07-08) — cleanup final: 100 tools -> 60 tools.
+Removed redundant per-agent wrappers, deprecated stubs, tools tied to DOWN services,
+and broken direct-Docker-DNS monitoring/search/webhook helpers. Generic replacements kept:
+`chat_with_agent`, `redis_cmd`, `service_http_get`, `service_http_post`.
 
-Categories (15):
-  LLM (11): chat_minimax, list_models, chat_with_<agent> for 9 agents (crew-ai, goose,
-            hermes, kilo-org_kilocode, langgraph, openchamber, openclaw, opencode,
-            openhands)
-  STATUS (8): list_services, health_check_service, service_info, docker_stats,
-              swarm_info, node_list, network_list, volume_list
+Categories (13):
+  LLM (3): chat_minimax, chat_with_agent, list_models
+  STATUS (9): list_services, health_check_service, service_info, service_tasks,
+              docker_stats, swarm_info, node_list, network_list, volume_list
   DOCKER (6): service_logs, restart_service, scale_service, deploy_image,
               env_get, env_set
   EASYPANEL (4): ep_login, ep_list_projects, ep_list_services, ep_deploy
-  DB (6): postgres_query, postgres_list_tables, redis_ping, redis_get, redis_set,
-          redis_keys, elasticsearch_search
-  WORKFLOW (4): temporal_list_workflows, temporal_describe, paperclip_list_tasks,
-                langflow_run
-  CODE REVIEW (6): gerrit_list_changes, gerrit_get_change, sonarqube_projects,
-                   sonarqube_issues, sourcegraph_search, argilla_datasets
-  WEBSOCKET (6): centrifugo_publish, centrifugo_channels, centrifugo_history,
-                 mirotalk_create_room, snapdrop_peers, filepizza_create
-  WEBHOOK (4): request_basket_create, request_basket_list, request_basket_get,
-               webhook_send
-  RAG (5): langflow_list_flows, anythingllm_query, argilla_search, langfuse_traces,
-           evoai_generate
-  SEARCH (4): firecrawl_scrape, firecrawl_crawl, crwal4ai_scrape, flaresolverr_solve
-  DEV (1): opencode_run (kept as canonical coding agent entrypoint)
-  MONITORING (3): prometheus_metrics, sentry_list_issues, status_page_get
+  DB (6): postgres_query, postgres_list_tables, redis_cmd, redis_get,
+          redis_set, redis_keys
+  WORKFLOW (3): temporal_list_workflows, temporal_describe, langflow_run
+  CODE REVIEW (2): sonarqube_projects, sonarqube_issues
+  WEBSOCKET (4): centrifugo_publish, centrifugo_channels, centrifugo_history,
+                 mirotalk_create_room
+  WEBHOOK (1): webhook_send
+  RAG (3): langflow_list_flows, anythingllm_query, langfuse_traces
+  DEV (1): opencode_run
   NETWORKING (1): tailscale_status
-  UTILITY (15): exec_in_container, backup_volume, restore_volume, image_pull,
-                image_list, swarm_service_create, swarm_service_remove, file_read,
-                file_write, tail_file, port_scan, network_inspect, secret_get,
-                secret_set, openapi_spec
+  UTILITY (17): exec_in_container, service_http_get, service_http_post,
+                backup_volume, restore_volume, image_pull, image_list,
+                swarm_service_create, swarm_service_remove, file_read,
+                file_write, tail_file, port_scan, network_inspect,
+                secret_get, secret_set, openapi_spec
 
 Usage:
   CLI:     python scripts/coding_vps_mcp_orchestrator.py list
@@ -51,6 +41,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import socket
 import subprocess
 import sys
@@ -101,7 +92,47 @@ def docker_exec(container: str, cmd: str, timeout: int = 30) -> dict:
     return ssh(full_cmd, timeout=timeout)
 
 
+def _is_docker_service_url(url: str) -> bool:
+    parsed = urllib.parse.urlparse(url)
+    return bool(parsed.hostname and parsed.hostname.startswith("coding-vps_"))
+
+
+def _http_via_vps(url: str, method: str, data: bytes | None, headers: dict | None, timeout: int) -> dict:
+    body_text = data.decode() if data is not None else ""
+    request_headers = dict(headers or {})
+    parsed = urllib.parse.urlparse(url)
+    if parsed.hostname and parsed.hostname.startswith("coding-vps_") and "Host" not in request_headers:
+        request_headers["Host"] = f"localhost:{parsed.port}" if parsed.port else "localhost"
+    py = (
+        "import json, urllib.error, urllib.request\n"
+        f"url={json.dumps(url)}\n"
+        f"method={json.dumps(method)}\n"
+        f"headers={json.dumps(request_headers)}\n"
+        f"timeout={int(timeout)}\n"
+        f"data={json.dumps(body_text)}.encode() if {data is not None!r} else None\n"
+        "try:\n"
+        "    req=urllib.request.Request(url, data=data, method=method, headers=headers)\n"
+        "    r=urllib.request.urlopen(req, timeout=timeout)\n"
+        "    print(json.dumps({'status': r.status, 'body': r.read().decode(errors='replace')[:3000]}))\n"
+        "except urllib.error.HTTPError as e:\n"
+        "    print(json.dumps({'error': True, 'code': e.code, 'body': e.read().decode(errors='replace')[:500]}))\n"
+        "except Exception as e:\n"
+        "    print(json.dumps({'error': True, 'message': str(e)}))\n"
+    )
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_litellm-app",
+        "python3 -c " + shlex.quote(py) + " 2>&1 | head -c 3000",
+        timeout=timeout + 10,
+    )
+    try:
+        return json.loads(r["stdout"])
+    except Exception:
+        return {"error": True, "body": r["stdout"], "stderr": r["stderr"]}
+
+
 def http_get(url: str, headers: dict | None = None, timeout: int = 30) -> dict:
+    if _is_docker_service_url(url):
+        return _http_via_vps(url, "GET", None, headers, timeout)
     req = urllib.request.Request(url, headers=headers or {})
     try:
         r = urllib.request.urlopen(req, timeout=timeout)
@@ -114,7 +145,14 @@ def http_get(url: str, headers: dict | None = None, timeout: int = 30) -> dict:
 
 def http_post(url: str, data: dict, headers: dict | None = None, timeout: int = 60) -> dict:
     body = json.dumps(data).encode()
-    req = urllib.request.Request(url, data=body, method="POST", headers={"Content-Type": "application/json", **(headers or {})})
+    request_headers = {"Content-Type": "application/json", **(headers or {})}
+    if _is_docker_service_url(url):
+        proxied = _http_via_vps(url, "POST", body, request_headers, timeout)
+        try:
+            return json.loads(proxied["body"])
+        except Exception:
+            return proxied
+    req = urllib.request.Request(url, data=body, method="POST", headers=request_headers)
     try:
         r = urllib.request.urlopen(req, timeout=timeout)
         return json.loads(r.read().decode())
@@ -125,7 +163,7 @@ def http_post(url: str, data: dict, headers: dict | None = None, timeout: int = 
 
 
 # ============================================
-# LLM Tools (17)
+# LLM Tools (3 exposed; chat_with_agent covers all agents)
 # ============================================
 def chat_minimax(prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL) -> dict:
     """Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy (via docker cp + exec)."""
@@ -269,6 +307,17 @@ def service_info(service: str) -> dict:
     """Get full Docker service spec."""
     r = ssh(f"docker service inspect {service} --pretty 2>&1 | head -80")
     return {"service": service, "info": r["stdout"]}
+
+
+def service_tasks(service: str) -> dict:
+    """List Docker Swarm tasks for a service."""
+    r = ssh(f"docker service ps {service} --no-trunc --format '{{{{.Name}}}}|{{{{.CurrentState}}}}|{{{{.Error}}}}' 2>&1 | head -50")
+    tasks = []
+    for line in r["stdout"].strip().split("\n"):
+        if "|" in line:
+            name, state, error = (line.split("|", 2) + [""])[:3]
+            tasks.append({"name": name, "state": state, "error": error})
+    return {"service": service, "tasks": tasks, "raw": r["stdout"] if not tasks else ""}
 
 
 def docker_stats() -> dict:
@@ -490,6 +539,12 @@ def redis_keys(redis_service: str, pattern: str = "*") -> dict:
     return {"service": redis_service, "pattern": pattern, "keys": r["stdout"].strip().split("\n")}
 
 
+def redis_cmd(redis_service: str, command: str) -> dict:
+    """Run an arbitrary Redis command using the service redis-cli auto-auth wrapper."""
+    out = _redis_cmd(redis_service, *shlex.split(command))
+    return {"service": redis_service, "command": command, "result": out}
+
+
 def clickhouse_query(sql: str) -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with clickhouse-client."""
     return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_langfuse-clickhouse cmd='clickhouse-client --query \"...\""}
@@ -649,6 +704,16 @@ def request_basket_get(name: str) -> dict:
 def webhook_send(url: str, method: str = "POST", payload: dict = None) -> dict:
     """Send a webhook to a URL."""
     return http_post(url, payload or {}, timeout=15) if method == "POST" else http_get(url, timeout=15)
+
+
+def service_http_get(url: str) -> dict:
+    """GET any HTTP endpoint, including coding-vps Docker service DNS via VPS proxy."""
+    return http_get(url, timeout=30)
+
+
+def service_http_post(url: str, payload: dict = None) -> dict:
+    """POST JSON to any HTTP endpoint, including coding-vps Docker service DNS via VPS proxy."""
+    return http_post(url, payload or {}, timeout=60)
 
 
 # ============================================
@@ -917,25 +982,11 @@ def secret_set(name: str, value: str) -> dict:
 # Tool registry
 # ============================================
 def _register_llm() -> dict:
-    tools = {
+    return {
         "chat_minimax": {"func": chat_minimax, "args": ["prompt", "max_tokens?", "model?"], "category": "llm", "desc": "Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy"},
+        "chat_with_agent": {"func": chat_with_agent, "args": ["agent", "prompt", "max_tokens?", "stack?"], "category": "llm", "desc": "Send chat to any registered coding agent"},
         "list_models": {"func": list_models, "args": [], "category": "llm", "desc": "List all LiteLLM models available"},
     }
-    for agent in LLM_AGENTS:
-        def make_handler(a):
-            def handler(prompt: str, max_tokens: int = 500, stack: str = "auto"):
-                """Send chat to coding agent {0} (auto-generated wrapper).""".format(a)
-                return chat_with_agent(a, prompt, max_tokens=max_tokens, stack=stack)
-            handler.__name__ = f"chat_{a.replace('-', '_')}"
-            handler.__doc__ = f"Send chat to {a} coding agent"
-            return handler
-        tools[f"chat_{agent.replace('-','_')}"] = {
-            "func": make_handler(agent),
-            "args": ["prompt", "max_tokens?", "stack?"],
-            "category": "llm",
-            "desc": f"Send chat to {agent} coding agent",
-        }
-    return tools
 
 
 def _register_status() -> dict:
@@ -943,6 +994,7 @@ def _register_status() -> dict:
         "list_services": {"func": lambda stack="all": list_services(stack), "args": ["stack?"], "category": "status", "desc": "List all coding-vps services (main/side/all)"},
         "health_check_service": {"func": health_check_service, "args": ["service"], "category": "status", "desc": "TCP probe open ports of a service"},
         "service_info": {"func": service_info, "args": ["service"], "category": "status", "desc": "Get full Docker service spec"},
+        "service_tasks": {"func": service_tasks, "args": ["service"], "category": "status", "desc": "List Docker Swarm tasks for a service"},
         "docker_stats": {"func": docker_stats, "args": [], "category": "status", "desc": "CPU/Mem usage of all containers"},
         "swarm_info": {"func": swarm_info, "args": [], "category": "status", "desc": "Swarm manager/node info"},
         "node_list": {"func": node_list, "args": [], "category": "status", "desc": "List Docker swarm nodes"},
@@ -975,12 +1027,10 @@ def _register_db() -> dict:
     return {
         "postgres_query": {"func": postgres_query, "args": ["db", "sql"], "category": "db", "desc": "Run SQL on a Postgres DB"},
         "postgres_list_tables": {"func": postgres_list_tables, "args": ["db"], "category": "db", "desc": "List tables in a Postgres DB"},
-        "redis_ping": {"func": redis_ping, "args": ["redis_service"], "category": "db", "desc": "Ping a Redis instance"},
+        "redis_cmd": {"func": redis_cmd, "args": ["redis_service", "command"], "category": "db", "desc": "Run a Redis command with auto-auth"},
         "redis_get": {"func": redis_get, "args": ["redis_service", "key"], "category": "db", "desc": "Get a Redis key value"},
         "redis_set": {"func": redis_set, "args": ["redis_service", "key", "value"], "category": "db", "desc": "Set a Redis key value"},
         "redis_keys": {"func": redis_keys, "args": ["redis_service", "pattern?"], "category": "db", "desc": "List Redis keys matching pattern"},
-        "elasticsearch_search": {"func": elasticsearch_search, "args": ["index", "query"], "category": "db", "desc": "Search Argilla Elasticsearch"},
-        # Squad 1 2026-07-09: clickhouse_query, mongo_query, minio_list REMOVED (use exec_in_container)
     }
 
 
@@ -988,19 +1038,14 @@ def _register_workflow() -> dict:
     return {
         "temporal_list_workflows": {"func": temporal_list_workflows, "args": [], "category": "workflow", "desc": "List Temporal workflows"},
         "temporal_describe": {"func": temporal_describe, "args": ["workflow_id", "run_id"], "category": "workflow", "desc": "Describe a Temporal workflow"},
-        "paperclip_list_tasks": {"func": paperclip_list_tasks, "args": [], "category": "workflow", "desc": "List Paperclip tasks"},
         "langflow_run": {"func": langflow_run, "args": ["flow_id", "inputs"], "category": "workflow", "desc": "Run a LangFlow flow"},
     }
 
 
 def _register_code_review() -> dict:
     return {
-        "gerrit_list_changes": {"func": gerrit_list_changes, "args": ["query?"], "category": "code-review", "desc": "List Gerrit code review changes"},
-        "gerrit_get_change": {"func": gerrit_get_change, "args": ["change_id"], "category": "code-review", "desc": "Get Gerrit change details"},
         "sonarqube_projects": {"func": sonarqube_projects, "args": [], "category": "code-review", "desc": "List SonarQube projects"},
         "sonarqube_issues": {"func": sonarqube_issues, "args": ["project_key"], "category": "code-review", "desc": "Get SonarQube issues for a project"},
-        "sourcegraph_search": {"func": sourcegraph_search, "args": ["query"], "category": "code-review", "desc": "Search code via Sourcegraph"},
-        "argilla_datasets": {"func": argilla_datasets, "args": [], "category": "code-review", "desc": "List Argilla datasets for LLM feedback"},
     }
 
 
@@ -1010,16 +1055,11 @@ def _register_websocket() -> dict:
         "centrifugo_channels": {"func": centrifugo_channels, "args": ["pattern?"], "category": "websocket", "desc": "List Centrifugo channels"},
         "centrifugo_history": {"func": centrifugo_history, "args": ["channel", "limit?"], "category": "websocket", "desc": "Get Centrifugo channel history"},
         "mirotalk_create_room": {"func": mirotalk_create_room, "args": [], "category": "websocket", "desc": "Create MiroTalk video room (WebRTC)"},
-        "snapdrop_peers": {"func": snapdrop_peers, "args": [], "category": "websocket", "desc": "List active Snapdrop peers (P2P)"},
-        "filepizza_create": {"func": filepizza_create, "args": [], "category": "websocket", "desc": "Create FilePizza P2P file transfer room"},
     }
 
 
 def _register_webhook() -> dict:
     return {
-        "request_basket_create": {"func": request_basket_create, "args": ["name", "forward_url?"], "category": "webhook", "desc": "Create request-baskets bucket for webhook inspection"},
-        "request_basket_list": {"func": request_basket_list, "args": [], "category": "webhook", "desc": "List all request-baskets"},
-        "request_basket_get": {"func": request_basket_get, "args": ["name"], "category": "webhook", "desc": "Get requests captured by a basket"},
         "webhook_send": {"func": webhook_send, "args": ["url", "method?", "payload?"], "category": "webhook", "desc": "Send a webhook to a URL"},
     }
 
@@ -1028,19 +1068,12 @@ def _register_rag() -> dict:
     return {
         "langflow_list_flows": {"func": langflow_list_flows, "args": [], "category": "rag", "desc": "List LangFlow flows"},
         "anythingllm_query": {"func": anythingllm_query, "args": ["workspace", "query"], "category": "rag", "desc": "Query AnythingLLM workspace"},
-        "argilla_search": {"func": argilla_search, "args": ["dataset", "query"], "category": "rag", "desc": "Search Argilla dataset"},
         "langfuse_traces": {"func": langfuse_traces, "args": ["limit?"], "category": "rag", "desc": "Get recent LangFuse LLM traces"},
-        "evoai_generate": {"func": evoai_generate, "args": ["prompt"], "category": "rag", "desc": "Call Evo AI generation endpoint"},
     }
 
 
 def _register_search() -> dict:
-    return {
-        "firecrawl_scrape": {"func": firecrawl_scrape, "args": ["url"], "category": "search", "desc": "Scrape URL via Firecrawl (markdown)"},
-        "firecrawl_crawl": {"func": firecrawl_crawl, "args": ["url", "limit?"], "category": "search", "desc": "Crawl website via Firecrawl"},
-        "crwal4ai_scrape": {"func": crwal4ai_scrape, "args": ["url"], "category": "search", "desc": "Scrape via crwal4ai (LLM-friendly)"},
-        "flaresolverr_solve": {"func": flaresolverr_solve, "args": ["url"], "category": "search", "desc": "Bypass Cloudflare via FlareSolverr"},
-    }
+    return {}
 
 
 def _register_dev() -> dict:
@@ -1052,13 +1085,7 @@ def _register_dev() -> dict:
 
 
 def _register_monitoring() -> dict:
-    # Squad 1 2026-07-09: prometheus_query, sentry_capture_event, grafana_dashboards,
-    # letsencrypt_list, hostinger_api_status REMOVED. Kept 3 essentials.
-    return {
-        "prometheus_metrics": {"func": prometheus_metrics, "args": ["job?"], "category": "monitoring", "desc": "List Prometheus metric names (target discovery)"},
-        "sentry_list_issues": {"func": sentry_list_issues, "args": ["project"], "category": "monitoring", "desc": "List Sentry issues"},
-        "status_page_get": {"func": status_page_get, "args": [], "category": "monitoring", "desc": "Get SHM public status page"},
-    }
+    return {}
 
 
 def _register_networking() -> dict:
@@ -1071,6 +1098,8 @@ def _register_networking() -> dict:
 def _register_utility() -> dict:
     return {
         "exec_in_container": {"func": exec_in_container, "args": ["service", "cmd"], "category": "utility", "desc": "Execute command in a running container"},
+        "service_http_get": {"func": service_http_get, "args": ["url"], "category": "utility", "desc": "GET HTTP endpoint through local/VPS service gateway"},
+        "service_http_post": {"func": service_http_post, "args": ["url", "payload?"], "category": "utility", "desc": "POST JSON through local/VPS service gateway"},
         "backup_volume": {"func": backup_volume, "args": ["volume", "dest"], "category": "utility", "desc": "Backup a Docker volume to tar.gz"},
         "restore_volume": {"func": restore_volume, "args": ["tar_file", "volume"], "category": "utility", "desc": "Restore a tar.gz to a Docker volume"},
         "image_pull": {"func": image_pull, "args": ["image"], "category": "utility", "desc": "Pull a Docker image on VPS"},
@@ -1174,7 +1203,7 @@ def main():
 # MCP stdio server
 # ============================================
 def _run_mcp_server() -> int:
-    """Start FastMCP stdio server with all 100 tools registered via dynamic @mcp.tool()."""
+    """Start FastMCP stdio server with all registered tools."""
     try:
         from fastmcp import FastMCP
     except ImportError:
@@ -1242,7 +1271,7 @@ def _run_http_server() -> int:
         return 1
 
     app = FastAPI(title="coding-vps MCP Orchestrator", version="2.0.0",
-                  description=f"100+ tools across {len({t['category'] for t in TOOLS.values()})} categories")
+                  description=f"{len(TOOLS)} tools across {len({t['category'] for t in TOOLS.values()})} categories")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
     @app.get("/")
