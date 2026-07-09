@@ -4768,9 +4768,17 @@ def get_agendamentos_pendentes(
 
     agendamentos = AgendamentoService.listar_agendamentos_pendentes(db)
 
+    # Batch fetch clients to avoid N+1 query
+    cliente_ids = list({a.get("cliente_id") for a in agendamentos if a.get("cliente_id")})
+    clientes_map = {}
+    if cliente_ids:
+        from app.models.cliente import Cliente
+
+        clientes = db.execute(select(Cliente).where(Cliente.id.in_(cliente_ids))).scalars().all()
+        clientes_map = {c.id: c for c in clientes}
+
     result = []
     for agendamento in agendamentos:
-        # Buscar informações de contato do cliente
         cliente_info = {
             "cliente_telegram_chat_id": "",
             "cliente_whatsapp_number": "",
@@ -4778,19 +4786,13 @@ def get_agendamentos_pendentes(
         }
 
         cliente_id = agendamento.get("cliente_id")
-        if cliente_id:
-            from app.models.cliente import Cliente
-
-            cliente = db.execute(
-                select(Cliente).where(Cliente.id == cliente_id)
-            ).scalar_one_or_none()
-
-            if cliente:
-                cliente_info = {
-                    "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
-                    "cliente_whatsapp_number": cliente.whatsapp_number or "",
-                    "cliente_email": cliente.email or "",
-                }
+        if cliente_id and cliente_id in clientes_map:
+            cliente = clientes_map[cliente_id]
+            cliente_info = {
+                "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
+                "cliente_whatsapp_number": cliente.whatsapp_number or "",
+                "cliente_email": cliente.email or "",
+            }
 
         result.append(
             {
@@ -4854,9 +4856,17 @@ def get_agendamentos_proximos(
 
     agendamentos = AgendamentoService.listar_agendamentos_proximos(db)
 
+    # Batch fetch clients to avoid N+1 query
+    cliente_ids = list({a.get("cliente_id") for a in agendamentos if a.get("cliente_id")})
+    clientes_map = {}
+    if cliente_ids:
+        from app.models.cliente import Cliente
+
+        clientes = db.execute(select(Cliente).where(Cliente.id.in_(cliente_ids))).scalars().all()
+        clientes_map = {c.id: c for c in clientes}
+
     result = []
     for agendamento in agendamentos:
-        # Buscar informações de contato do cliente
         cliente_info = {
             "cliente_telegram_chat_id": "",
             "cliente_whatsapp_number": "",
@@ -4864,19 +4874,13 @@ def get_agendamentos_proximos(
         }
 
         cliente_id = agendamento.get("cliente_id")
-        if cliente_id:
-            from app.models.cliente import Cliente
-
-            cliente = db.execute(
-                select(Cliente).where(Cliente.id == cliente_id)
-            ).scalar_one_or_none()
-
-            if cliente:
-                cliente_info = {
-                    "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
-                    "cliente_whatsapp_number": cliente.whatsapp_number or "",
-                    "cliente_email": cliente.email or "",
-                }
+        if cliente_id and cliente_id in clientes_map:
+            cliente = clientes_map[cliente_id]
+            cliente_info = {
+                "cliente_telegram_chat_id": cliente.telegram_chat_id or "",
+                "cliente_whatsapp_number": cliente.whatsapp_number or "",
+                "cliente_email": cliente.email or "",
+            }
 
         result.append(
             {
