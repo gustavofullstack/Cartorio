@@ -134,8 +134,8 @@ class TestTelegramE2E:
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_fast_llm",
-                new=AsyncMock(return_value="Ok"),
+                "app.api.v1.telegram._call_cartorio_agent",
+                new=AsyncMock(return_value=("Ok", None)),
             ) as mock_llm,
             patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
         ):
@@ -184,8 +184,8 @@ class TestTelegramE2E:
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_fast_llm",
-                new=AsyncMock(return_value=""),
+                "app.api.v1.telegram._call_cartorio_agent",
+                new=AsyncMock(return_value=("", None)),
             ),
             patch(
                 "app.api.v1.telegram._send_message",
@@ -220,8 +220,8 @@ class TestTelegramE2E:
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_fast_llm",
-                new=AsyncMock(return_value=llm_response),
+                "app.api.v1.telegram._call_cartorio_agent",
+                new=AsyncMock(return_value=(llm_response, None)),
             ),
             patch(
                 "app.api.v1.telegram._send_message",
@@ -242,7 +242,7 @@ class TestTelegramE2E:
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_fast_llm",
+                "app.api.v1.telegram._call_cartorio_agent",
                 new=AsyncMock(),
             ) as mock_llm,
             patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
@@ -267,8 +267,8 @@ class TestTelegramE2E:
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
             patch(
-                "app.api.v1.telegram._call_fast_llm",
-                new=AsyncMock(return_value="Horarios: seg-sex 9h-17h"),
+                "app.api.v1.telegram._call_cartorio_agent",
+                new=AsyncMock(return_value=("Horarios: seg-sex 9h-17h", None)),
             ) as mock_llm,
             patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
         ):

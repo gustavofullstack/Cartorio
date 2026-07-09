@@ -279,12 +279,16 @@ def _mock_redis_from_url():
     class MockRedis:
         def incr(self, key):
             return 1
+
         def expire(self, key, seconds):
             return True
+
         def ping(self):
             raise redis.exceptions.ConnectionError("Redis offline mock")
+
         def close(self):
             pass
+
         def __getattr__(self, name):
             return MagicMock()
 

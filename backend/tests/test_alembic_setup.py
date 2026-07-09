@@ -37,7 +37,7 @@ def test_env_py_existe_e_importa() -> None:
     assert "from app.config import settings" in content
     assert "from app.models.base import Base" in content
     assert "target_metadata = Base.metadata" in content
-    assert 'config.set_main_option("sqlalchemy.url", settings.database_url)' in content
+    assert 'config.set_main_option("sqlalchemy.url", settings.database_url' in content
 
 
 def test_script_py_mako_existe() -> None:

@@ -56,8 +56,16 @@ def upgrade() -> None:
         """
     )
 
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    valid_tables = [t for t in TABLES_WITH_UPDATED_AT if t in existing_tables]
+
     # 1 trigger por tabela (BEFORE UPDATE)
-    for table in TABLES_WITH_UPDATED_AT:
+    for table in valid_tables:
         op.execute(f"DROP TRIGGER IF EXISTS trg_set_updated_at_{table} ON {table}")
         op.execute(
             f"""
@@ -69,6 +77,14 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    for table in TABLES_WITH_UPDATED_AT:
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    valid_tables = [t for t in TABLES_WITH_UPDATED_AT if t in existing_tables]
+
+    for table in valid_tables:
         op.execute(f"DROP TRIGGER IF EXISTS trg_set_updated_at_{table} ON {table}")
     op.execute("DROP FUNCTION IF EXISTS fn_set_updated_at()")

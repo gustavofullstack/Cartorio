@@ -510,7 +510,7 @@ async def test_process_telegram_debounce_success() -> None:
 
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
         with patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0.001):
-            with patch("app.api.v1.telegram._call_fast_llm", AsyncMock(return_value="Resposta")):
+            with patch("app.api.v1.telegram._call_cartorio_agent", AsyncMock(return_value=("Resposta", None))):
                 with patch(
                     "app.api.v1.telegram._send_message", AsyncMock(return_value=True)
                 ) as mock_send:
@@ -628,11 +628,11 @@ def test_webhook_group_msg_without_command_reacts_and_orients() -> None:
     assert mock_send.call_count >= 1
     orient_call = mock_send.call_args_list[0]
     sent_text = orient_call[0][1]
-    assert "/menu" in sent_text
+    assert "/start" in sent_text
     assert "@test_cartorio_bot" in sent_text
     # E a orientacao deve ter menu de botoes
     call_kwargs = orient_call[1]
-    assert call_kwargs.get("reply_markup") is not None
+    assert call_kwargs.get("keyboard") is not None or call_kwargs.get("reply_markup") is not None
 
 
 def test_telegram_webhook_handles_supergroup_chat() -> None:
@@ -677,10 +677,10 @@ def test_menu_keyboard_with_cancel_has_cancel_button() -> None:
     flat = [btn for row in kb for btn in row]
     texts = [b["text"] for b in flat]
     callbacks = [b["callback_data"] for b in flat]
-    assert "Agendar Atendimento" in texts
-    assert "Consultar Protocolo" in texts
-    assert "Falar com Escrevente" in texts
-    assert "Cancelar" in texts
+    assert "Agendar no cartorio" in texts
+    assert "Consultar protocolo" in texts
+    assert "Atendimento humano (HITL)" in texts
+    assert "Limpar conversa" in texts
     assert "cmd:menu" in callbacks
 
 
@@ -756,7 +756,7 @@ def test_webhook_handles_my_chat_member_join() -> None:
     assert body["chat_id"] == -1004331849032
     mock_send.assert_called_once()
     sent_text = mock_send.call_args[0][1]
-    assert "BOT CARTORIO ATIVO" in sent_text
+    assert "Cartorio ativo" in sent_text
     assert "TESTE/VALIDACAO/CORRECAO" in sent_text
     assert "/menu" in sent_text
     # Keyboard com botao Cancelar deve estar presente

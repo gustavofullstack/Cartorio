@@ -46,7 +46,21 @@ def upgrade() -> None:
     # ========================================================================
     # S05 — GraphQL via pg_graphql
     # ========================================================================
-    op.execute("CREATE EXTENSION IF NOT EXISTS pg_graphql")
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    # Garantir que as roles RLS existem no banco para os GRANTs
+    for role in ("service_role", "authenticated", "anon"):
+        res = bind.execute(sa.text(f"SELECT 1 FROM pg_roles WHERE rolname = '{role}'")).fetchone()
+        if not res:
+            op.execute(f"CREATE ROLE {role} WITH NOLOGIN")
+
+    res = bind.execute(
+        sa.text("SELECT 1 FROM pg_available_extensions WHERE name = 'pg_graphql'")
+    ).fetchone()
+    if res:
+        op.execute("CREATE EXTENSION IF NOT EXISTS pg_graphql")
+
     # Permissao: schema public (ja vem com grant usage, idempotente)
     op.execute("GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role")
     op.execute("GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role")

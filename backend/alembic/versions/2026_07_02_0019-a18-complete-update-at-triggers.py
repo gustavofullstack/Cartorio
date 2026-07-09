@@ -82,16 +82,19 @@ LANGUAGE plpgsql
 
 
 def upgrade() -> None:
-    """Cria funcao generica + 8 triggers idempotentes.
-
-    Cada CREATE TRIGGER eh precedido de DROP TRIGGER IF EXISTS pra
-    garantir idempotencia (rodar 2x eh no-op alem de sobrescrever a funcao).
-    """
     # 1) Funcao generica (1x, OR REPLACE)
     op.execute(FN_SET_UPDATED_AT_SQL)
 
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    valid_tables = [t for t in TABLES_WITH_UPDATED_AT if t in existing_tables]
+
     # 2) 1 trigger por tabela
-    for table in TABLES_WITH_UPDATED_AT:
+    for table in valid_tables:
         trigger_name = f"trg_set_updated_at_{table}"
         # Idempotente: drop se ja existe (e.g., 0009 rodou parcial em algum DB)
         op.execute(f"DROP TRIGGER IF EXISTS {trigger_name} ON {table}")
@@ -105,8 +108,15 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Dropa os 8 triggers + dropa a funcao (IF EXISTS)."""
-    for table in TABLES_WITH_UPDATED_AT:
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    valid_tables = [t for t in TABLES_WITH_UPDATED_AT if t in existing_tables]
+
+    for table in valid_tables:
         trigger_name = f"trg_set_updated_at_{table}"
         op.execute(f"DROP TRIGGER IF EXISTS {trigger_name} ON {table}")
     op.execute("DROP FUNCTION IF EXISTS fn_set_updated_at()")

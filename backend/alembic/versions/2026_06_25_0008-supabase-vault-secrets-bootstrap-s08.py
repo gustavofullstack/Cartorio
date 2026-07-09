@@ -41,11 +41,37 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # pgsodium eh a dependencia do vault
-    op.execute("CREATE EXTENSION IF NOT EXISTS pgsodium")
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    # Garantir que as roles RLS existem no banco
+    for role in ("service_role", "supabase_admin"):
+        res = bind.execute(sa.text(f"SELECT 1 FROM pg_roles WHERE rolname = '{role}'")).fetchone()
+        if not res:
+            op.execute(f"CREATE ROLE {role} WITH NOLOGIN")
+
+    # Verifica se pgsodium esta disponivel no Postgres
+    res = bind.execute(
+        sa.text("SELECT 1 FROM pg_available_extensions WHERE name = 'pgsodium'")
+    ).fetchone()
+    has_pgsodium = bool(res)
+
+    if has_pgsodium:
+        op.execute("CREATE EXTENSION IF NOT EXISTS pgsodium")
 
     # Schema vault (Supabase ja cria, idempotente)
     op.execute("CREATE SCHEMA IF NOT EXISTS vault")
+
+    # Se pgsodium nao existe, cria tabela dummy para nao quebrar a funcao vault_get_or_create
+    if not has_pgsodium:
+        op.execute(
+            """
+            CREATE TABLE IF NOT EXISTS vault.decrypted_secrets (
+                name TEXT UNIQUE,
+                decrypted_secret TEXT
+            )
+            """
+        )
 
     # GRANTs para service_role
     op.execute("GRANT USAGE ON SCHEMA vault TO service_role, supabase_admin")

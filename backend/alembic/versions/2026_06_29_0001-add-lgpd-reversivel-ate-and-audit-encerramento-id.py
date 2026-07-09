@@ -28,13 +28,50 @@ branch_labels = None
 depends_on = None
 
 
+def _add_column_if_not_exists(table_name: str, column_name: str, *args, **kwargs) -> None:
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    cols = inspector.get_columns(table_name)
+    if not any(c["name"] == column_name for c in cols):
+        op.add_column(table_name, sa.Column(column_name, *args, **kwargs))
+
+
+def _drop_column_if_exists(table_name: str, column_name: str) -> None:
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    cols = inspector.get_columns(table_name)
+    if any(c["name"] == column_name for c in cols):
+        op.drop_column(table_name, column_name)
+
+
+def _create_index_if_not_exists(index_name: str, table_name: str, columns: list[str]) -> None:
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    indexes = inspector.get_indexes(table_name)
+    if not any(idx["name"] == index_name for idx in indexes):
+        op.create_index(index_name, table_name, columns)
+
+
+def _drop_index_if_exists(index_name: str, table_name: str) -> None:
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    indexes = inspector.get_indexes(table_name)
+    if any(idx["name"] == index_name for idx in indexes):
+        op.drop_index(index_name, table_name)
+
+
 def upgrade() -> None:
     # LGPD direito ao esquecimento (art. 18 V): NULL = nao anonimizado.
-    op.add_column(
-        "clientes",
-        sa.Column("lgpd_reversivel_ate", sa.DateTime(), nullable=True),
-    )
-    op.create_index(
+    _add_column_if_not_exists("clientes", "lgpd_reversivel_ate", sa.DateTime(), nullable=True)
+    _create_index_if_not_exists(
         "ix_clientes_lgpd_reversivel_ate",
         "clientes",
         ["lgpd_reversivel_ate"],
@@ -42,16 +79,14 @@ def upgrade() -> None:
 
     # LGPD art. 37: rastrear qual entry do audit log documentou o encerramento.
     # FK com use_alter=True permite dropar audit_log sem cascade.
-    op.add_column(
+    _add_column_if_not_exists(
         "clientes",
-        sa.Column(
-            "audit_encerramento_id",
-            sa.Integer(),
-            sa.ForeignKey("audit_log.id", use_alter=True, ondelete="SET NULL"),
-            nullable=True,
-        ),
+        "audit_encerramento_id",
+        sa.Integer(),
+        sa.ForeignKey("audit_log.id", use_alter=True, ondelete="SET NULL"),
+        nullable=True,
     )
-    op.create_index(
+    _create_index_if_not_exists(
         "ix_clientes_audit_encerramento_id",
         "clientes",
         ["audit_encerramento_id"],
@@ -59,7 +94,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_clientes_audit_encerramento_id")
-    op.drop_column("clientes", "audit_encerramento_id")
-    op.drop_index("ix_clientes_lgpd_reversivel_ate")
-    op.drop_column("clientes", "lgpd_reversivel_ate")
+    _drop_index_if_exists("ix_clientes_audit_encerramento_id", "clientes")
+    _drop_column_if_exists("clientes", "audit_encerramento_id")
+    _drop_index_if_exists("ix_clientes_lgpd_reversivel_ate", "clientes")
+    _drop_column_if_exists("clientes", "lgpd_reversivel_ate")

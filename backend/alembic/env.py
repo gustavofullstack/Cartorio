@@ -53,7 +53,7 @@ ALEMBIC_LOCK_NAME = "alembic:migration"
 config = context.config
 
 # Sobrescreve sqlalchemy.url com a do settings
-config.set_main_option("sqlalchemy.url", settings.database_url)
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 # Configura logging
 if config.config_file_name is not None:

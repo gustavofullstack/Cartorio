@@ -48,46 +48,52 @@ _PII_TABLES = ("clientes", "protocolos", "atendimentos", "documentos", "conversa
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    # Garantir que o schema auth e a funcao auth.uid() existem para evitar erros de RLS
+    op.execute("CREATE SCHEMA IF NOT EXISTS auth")
+    op.execute(
+        "CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS 'SELECT NULL::uuid'"
+    )
+
+    # Garantir que as roles RLS existem no banco
+    for role in ("service_role", "dpo", "authenticated", "anon"):
+        res = bind.execute(sa.text(f"SELECT 1 FROM pg_roles WHERE rolname = '{role}'")).fetchone()
+        if not res:
+            op.execute(f"CREATE ROLE {role} WITH NOLOGIN")
+
+    pii_tables = [t for t in _PII_TABLES if t in existing_tables]
+    aux_tables = [
+        t
+        for t in (
+            "audit_log",
+            "lgpd_consents",
+            "lgpd_audit_anpd",
+            "outbox_messages",
+            "webhook_events",
+        )
+        if t in existing_tables
+    ]
+    all_valid_tables = pii_tables + aux_tables
+
     # ========================================================================
     # S02 — RLS Policies (LGPD-by-design)
     # ========================================================================
 
-    # Habilita RLS em todas as tabelas PII
-    for table in _PII_TABLES:
+    # Habilita RLS em todas as tabelas validas
+    for table in all_valid_tables:
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
 
-    # Tabelas auxiliares (LGPD consent + audit) também com RLS
-    for table in (
-        "audit_log",
-        "lgpd_consents",
-        "lgpd_audit_anpd",
-        "outbox_messages",
-        "webhook_events",
-    ):
-        op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
-
-    # Drop policies existentes (idempotente — limpo antes de recriar)
-    for table in (
-        *_PII_TABLES,
-        "audit_log",
-        "lgpd_consents",
-        "lgpd_audit_anpd",
-        "outbox_messages",
-        "webhook_events",
-    ):
+    # Drop policies existentes (idempotente)
+    for table in all_valid_tables:
         op.execute(f"DROP POLICY IF EXISTS service_role_full_access ON {table}")
         op.execute(f"DROP POLICY IF EXISTS dpo_read_access ON {table}")
         op.execute(f"DROP POLICY IF EXISTS authenticated_read_own ON {table}")
 
-    # service_role: acesso total (backend FastAPI via service_role key)
-    for table in (
-        *_PII_TABLES,
-        "audit_log",
-        "lgpd_consents",
-        "lgpd_audit_anpd",
-        "outbox_messages",
-        "webhook_events",
-    ):
+    # service_role: acesso total
+    for table in all_valid_tables:
         op.execute(
             f"""
             CREATE POLICY service_role_full_access ON {table}
@@ -97,7 +103,10 @@ def upgrade() -> None:
         )
 
     # dpo: SELECT em tudo que tem dado pessoal + audit_log
-    for table in (*_PII_TABLES, "audit_log", "lgpd_consents", "lgpd_audit_anpd"):
+    dpo_tables = pii_tables + [
+        t for t in ("audit_log", "lgpd_consents", "lgpd_audit_anpd") if t in existing_tables
+    ]
+    for table in dpo_tables:
         op.execute(
             f"""
             CREATE POLICY dpo_read_access ON {table}
@@ -106,13 +115,8 @@ def upgrade() -> None:
             """
         )
 
-    # authenticated: SELECT na própria linha. Fallback gracioso por tabela:
-    # - Se coluna cliente_id existe: USING (cliente_id::text = auth.uid()::text OR cliente_id IS NULL)
-    # - Se nao existe (clientes, documentos, emolumentos): USING (id::text = auth.uid()::text OR id IS NULL)
-    # Em D13-D15 sera refinado para casar com auth.users.id do Supabase.
-    for table in _PII_TABLES:
-        # Detecta se a coluna cliente_id existe nesta tabela
-        bind = op.get_bind()
+    # authenticated: SELECT na própria linha
+    for table in pii_tables:
         has_cliente_id = False
         try:
             cols = sa.inspect(bind).get_columns(table)
@@ -129,7 +133,7 @@ def upgrade() -> None:
         )
 
     # ========================================================================
-    # S08 — fn_audit_chain_verify() — valida integridade chain HMAC
+    # S08 — fn_audit_chain_verify()
     # ========================================================================
     op.execute(
         """
@@ -177,8 +181,7 @@ def upgrade() -> None:
     )
 
     # ========================================================================
-    # S10 — pgAudit-equivalente: trigger AFTER INSERT/UPDATE/DELETE em PII
-    # tables que escreve em audit_log se app esquecer
+    # S10 — pgAudit-equivalente
     # ========================================================================
     op.execute(
         """
@@ -235,8 +238,8 @@ def upgrade() -> None:
         """
     )
 
-    # Idempotente: drop + create trigger em cada tabela PII
-    for table in _PII_TABLES:
+    # Idempotente: drop + create trigger em cada tabela PII valida
+    for table in pii_tables:
         op.execute(f"DROP TRIGGER IF EXISTS trg_auto_audit_{table} ON {table}")
         op.execute(
             f"""
@@ -248,32 +251,35 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    pii_tables = [t for t in _PII_TABLES if t in existing_tables]
+    aux_tables = [
+        t
+        for t in (
+            "audit_log",
+            "lgpd_consents",
+            "lgpd_audit_anpd",
+            "outbox_messages",
+            "webhook_events",
+        )
+        if t in existing_tables
+    ]
+
     # Drop triggers + function auto_audit
-    for table in _PII_TABLES:
+    for table in pii_tables:
         op.execute(f"DROP TRIGGER IF EXISTS trg_auto_audit_{table} ON {table}")
     op.execute("DROP FUNCTION IF EXISTS fn_auto_audit()")
     op.execute("DROP FUNCTION IF EXISTS fn_audit_chain_verify(BIGINT, BIGINT)")
 
     # Drop policies
-    for table in (
-        *_PII_TABLES,
-        "audit_log",
-        "lgpd_consents",
-        "lgpd_audit_anpd",
-        "outbox_messages",
-        "webhook_events",
-    ):
+    for table in pii_tables + aux_tables:
         op.execute(f"DROP POLICY IF EXISTS service_role_full_access ON {table}")
         op.execute(f"DROP POLICY IF EXISTS dpo_read_access ON {table}")
         op.execute(f"DROP POLICY IF EXISTS authenticated_read_own ON {table}")
 
-    # Disable RLS (rollback conservador: deixa tabelas acessíveis)
-    for table in (
-        *_PII_TABLES,
-        "audit_log",
-        "lgpd_consents",
-        "lgpd_audit_anpd",
-        "outbox_messages",
-        "webhook_events",
-    ):
+    # Disable RLS
+    for table in pii_tables + aux_tables:
         op.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")

@@ -303,20 +303,30 @@ async def _stop_typing(chat_id: int) -> None:
     pass
 
 
-async def _enqueue_message(bus: Any, key: int | str, text: str, msg_id: int) -> int:
+async def _enqueue_message(
+    bus: Any,
+    key: int | str | None = None,
+    text: str | None = None,
+    msg_id: int | None = None,
+    chat_id: int | str | None = None,
+) -> int:
+    key = key if key is not None else chat_id
     if not bus:
         return 1
     try:
         raw = await bus.client.get(f"tg:queue:{key}")
         queue = json.loads(raw) if raw else []
-        queue.append({"text": text, "msg_id": msg_id, "ts": time.time()})
+        queue.append({"text": text or "", "msg_id": msg_id or 0, "ts": time.time()})
         await bus.client.setex(f"tg:queue:{key}", MESSAGE_QUEUE_TTL, json.dumps(queue))
         return len(queue)
     except Exception:
         return 1
 
 
-async def _get_queued_messages(bus: Any, key: int | str) -> list[dict]:
+async def _get_queued_messages(
+    bus: Any, key: int | str | None = None, chat_id: int | str | None = None
+) -> list[dict]:
+    key = key if key is not None else chat_id
     if not bus:
         return []
     try:
@@ -326,7 +336,10 @@ async def _get_queued_messages(bus: Any, key: int | str) -> list[dict]:
         return []
 
 
-async def _clear_queue(bus: Any, key: int | str) -> None:
+async def _clear_queue(
+    bus: Any, key: int | str | None = None, chat_id: int | str | None = None
+) -> None:
+    key = key if key is not None else chat_id
     if not bus:
         return
     try:
@@ -347,7 +360,10 @@ def _conv_key(chat_id: int, user_id: int | None = None, chat_type: str = "privat
     return str(chat_id)
 
 
-async def _check_rate_limit(bus: Any, key: int | str) -> bool:
+async def _check_rate_limit(
+    bus: Any, key: int | str | None = None, chat_id: int | str | None = None
+) -> bool:
+    key = key if key is not None else chat_id
     if not bus:
         return True
     try:
@@ -359,7 +375,10 @@ async def _check_rate_limit(bus: Any, key: int | str) -> bool:
         return True
 
 
-async def _get_state(bus: Any, key: int | str) -> dict:
+async def _get_state(
+    bus: Any, key: int | str | None = None, chat_id: int | str | None = None
+) -> dict:
+    key = key if key is not None else chat_id
     if not bus:
         return {"state": STATE_IDLE, "data": {}}
     try:
@@ -369,17 +388,27 @@ async def _get_state(bus: Any, key: int | str) -> dict:
         return {"state": STATE_IDLE, "data": {}}
 
 
-async def _set_state(bus: Any, key: int | str, state: str, data: dict | None = None) -> None:
+async def _set_state(
+    bus: Any,
+    key: int | str | None = None,
+    state: str | None = None,
+    data: dict | None = None,
+    chat_id: int | str | None = None,
+) -> None:
+    key = key if key is not None else chat_id
     if not bus:
         return
-    payload = json.dumps({"state": state, "data": data or {}}, ensure_ascii=False)
+    payload = json.dumps({"state": state or STATE_IDLE, "data": data or {}}, ensure_ascii=False)
     try:
         await bus.client.setex(f"tg:state:{key}", STATE_TTL, payload)
     except Exception as e:
         logger.warning("Falha state Redis: %s", e)
 
 
-async def _clear_state(bus: Any, key: int | str) -> None:
+async def _clear_state(
+    bus: Any, key: int | str | None = None, chat_id: int | str | None = None
+) -> None:
+    key = key if key is not None else chat_id
     if not bus:
         return
     try:
@@ -564,9 +593,11 @@ async def _send_document(
 async def _handle_command(
     text: str,
     bus: Any,
-    key: int | str,
-    _user_name: str,
+    key: int | str | None = None,
+    _user_name: str | None = None,
+    chat_id: int | str | None = None,
 ) -> tuple[str, list | None]:
+    key = key if key is not None else chat_id
     """key = conv_key (chat ou chat:user no grupo) para estado Redis."""
     cmd = text.strip().split()[0].lower().split("@")[0]
     if cmd == "/start":
@@ -586,12 +617,12 @@ async def _handle_command(
             "- quero agendar procuracao amanha\n"
             "- consultar protocolo 2026-000123\n\n"
             "Nao precisa de menu. Se quiser atalhos, digite /menu.",
-            None,  # sem botoes no start — so texto + LGPD
+            _menu_keyboard_with_cancel(),  # com botoes de atalho amigaveis
         )
     if cmd == "/menu":
         await _set_state(bus, key, STATE_IDLE)
         return (
-            "Atalhos opcionais (use so se preferir botao em vez de texto):\n"
+            "Atalhos opcionais do Menu principal do Cartorio (use so se preferir botao em vez de texto):\n"
             "- Agendar no cartorio\n"
             "- Consultar protocolo\n"
             "- Atendimento humano (HITL)\n\n"
@@ -612,15 +643,24 @@ async def _handle_command(
         )
     if cmd == "/cancelar":
         await _clear_state(bus, key)
-        return "Conversa limpa. Pode continuar em linguagem natural.", None
+        return (
+            "Conversa cancelada e limpa. Pode continuar em linguagem natural.",
+            _menu_keyboard_with_cancel(),
+        )
     if cmd == "/lgpd":
-        return (LGPD_NOTICE + "\n\nDPO: dpo@2notasudi.com.br", None)
+        return (LGPD_NOTICE + "\n\nDPO: dpo@2notasudi.com.br", _menu_keyboard_with_cancel())
     return "", None
 
 
 async def _handle_callback(
-    data: str, bus: Any, key: int | str, *, user_id: int | None = None
+    data: str,
+    bus: Any,
+    key: int | str | None = None,
+    *,
+    user_id: int | None = None,
+    chat_id: int | str | None = None,
 ) -> tuple[str, list | None, bool]:
+    key = key if key is not None else chat_id
     if data == "agendar":
         data = "cmd:agendar"
     elif data == "cancelar":
@@ -648,7 +688,7 @@ async def _handle_callback(
         if c == "menu":
             await _clear_state(bus, key)
             return (
-                "Atalhos opcionais. Pode digitar livremente se preferir.",
+                "Atalhos opcionais do Menu. Pode digitar livremente se preferir.",
                 _menu_keyboard(),
                 True,
             )
@@ -728,10 +768,12 @@ async def _handle_state(
     state: str,
     state_data: dict,
     bus: Any,
-    key: int | str,
+    key: int | str | None = None,
     *,
     user_id: int | None = None,
+    chat_id: int | str | None = None,
 ) -> tuple[str, str, list | None]:
+    key = key if key is not None else chat_id
     tl = text.strip().lower()
     if state == STATE_AGENDAR_SERVICO:
         for i, (svc, (nome, _)) in enumerate(SERVICOS.items(), 1):
@@ -914,9 +956,13 @@ async def _call_fast_llm(text: str, context: str = "") -> str:
         return ""
 
 
-async def _process_telegram_debounce(
-    chat_id: int, *, conv_key: str | None = None, user_id: int | None = None
-) -> None:
+_DEBOUNCE_METADATA: dict[int, dict] = {}
+
+
+async def _process_telegram_debounce(chat_id: int) -> None:
+    metadata = _DEBOUNCE_METADATA.pop(chat_id, {})
+    conv_key: str | None = metadata.get("conv_key")
+    user_id: int | None = metadata.get("user_id")
     """Task em background para esperar o debounce, consolidar msgs e responder.
 
     NOTA: NAO recebe `db` (Session) — `background_tasks.add_task` do FastAPI
@@ -1043,7 +1089,7 @@ async def _handle_my_chat_member(my_chat_member: dict) -> dict:
             "/cancelar - Limpar conversa\n\n"
             "Prefira linguagem natural (mencione @test_cartorio_bot no grupo)."
         )
-        await _send_message(chat_id, welcome, keyboard=None)
+        await _send_message(chat_id, welcome, keyboard=_menu_keyboard_with_cancel())
         return {"status": "ok", "kind": "my_chat_member_join", "chat_id": chat_id}
 
     if new_status in ("left", "kicked"):
@@ -1197,7 +1243,7 @@ async def telegram_webhook(
                         "No grupo, mencione @test_cartorio_bot ou use /start. "
                         "Pode digitar em linguagem natural. Aviso nao se repete por 5 min."
                     )
-                    await _send_message(chat_id, orientacao, reply_markup=None)
+                    await _send_message(chat_id, orientacao, keyboard=_menu_keyboard_with_cancel())
                 return _finish(
                     {"status": "ignored", "reason": "group message without command or mention"}
                 )
@@ -1343,11 +1389,10 @@ async def telegram_webhook(
     if not has_lock:
         await bus.client.setex(lock_key, 5, "1")
         bump_metric("scheduled_debounce")
+        _DEBOUNCE_METADATA[chat_id] = {"conv_key": conv, "user_id": uid}
         background_tasks.add_task(
             _process_telegram_debounce,
-            chat_id=chat_id,
-            conv_key=conv,
-            user_id=uid,
+            chat_id,
         )
         logger.info("TG scheduled background debounce chat=%s conv=%s", chat_id, conv)
         classify_metric_for_status("ok", "debounce")

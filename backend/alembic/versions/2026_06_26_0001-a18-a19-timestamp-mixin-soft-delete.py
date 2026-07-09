@@ -16,28 +16,50 @@ branch_labels = None
 depends_on = None
 
 
+def _add_column_if_not_exists(table_name: str, column_name: str, type_, **kwargs) -> None:
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    cols = inspector.get_columns(table_name)
+    if not any(c["name"] == column_name for c in cols):
+        op.add_column(table_name, sa.Column(column_name, type_, **kwargs))
+
+
+def _drop_column_if_exists(table_name: str, column_name: str) -> None:
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(bind)
+    cols = inspector.get_columns(table_name)
+    if any(c["name"] == column_name for c in cols):
+        op.drop_column(table_name, column_name)
+
+
 def upgrade() -> None:
     # A18: Add created_at + updated_at to agendamentos (TimestampMixin)
-    op.add_column("agendamentos", sa.Column("created_at", sa.DateTime(), nullable=True))
-    op.add_column("agendamentos", sa.Column("updated_at", sa.DateTime(), nullable=True))
+    _add_column_if_not_exists("agendamentos", "created_at", sa.DateTime(), nullable=True)
+    _add_column_if_not_exists("agendamentos", "updated_at", sa.DateTime(), nullable=True)
 
     # A18: Add created_at + updated_at to webhook_events (TimestampMixin)
-    op.add_column("webhook_events", sa.Column("created_at", sa.DateTime(), nullable=True))
-    op.add_column("webhook_events", sa.Column("updated_at", sa.DateTime(), nullable=True))
+    _add_column_if_not_exists("webhook_events", "created_at", sa.DateTime(), nullable=True)
+    _add_column_if_not_exists("webhook_events", "updated_at", sa.DateTime(), nullable=True)
 
     # A19: Add deleted_at (soft delete) to core models
-    op.add_column("protocolos", sa.Column("deleted_at", sa.DateTime(), nullable=True, index=True))
-    op.add_column("conversas", sa.Column("deleted_at", sa.DateTime(), nullable=True, index=True))
-    op.add_column("documentos", sa.Column("deleted_at", sa.DateTime(), nullable=True, index=True))
-    op.add_column("agendamentos", sa.Column("deleted_at", sa.DateTime(), nullable=True, index=True))
+    _add_column_if_not_exists("protocolos", "deleted_at", sa.DateTime(), nullable=True, index=True)
+    _add_column_if_not_exists("conversas", "deleted_at", sa.DateTime(), nullable=True, index=True)
+    _add_column_if_not_exists("documentos", "deleted_at", sa.DateTime(), nullable=True, index=True)
+    _add_column_if_not_exists(
+        "agendamentos", "deleted_at", sa.DateTime(), nullable=True, index=True
+    )
 
 
 def downgrade() -> None:
-    op.drop_column("agendamentos", "deleted_at")
-    op.drop_column("documentos", "deleted_at")
-    op.drop_column("conversas", "deleted_at")
-    op.drop_column("protocolos", "deleted_at")
-    op.drop_column("webhook_events", "updated_at")
-    op.drop_column("webhook_events", "created_at")
-    op.drop_column("agendamentos", "updated_at")
-    op.drop_column("agendamentos", "created_at")
+    _drop_column_if_exists("agendamentos", "deleted_at")
+    _drop_column_if_exists("documentos", "deleted_at")
+    _drop_column_if_exists("conversas", "deleted_at")
+    _drop_column_if_exists("protocolos", "deleted_at")
+    _drop_column_if_exists("webhook_events", "updated_at")
+    _drop_column_if_exists("webhook_events", "created_at")
+    _drop_column_if_exists("agendamentos", "updated_at")
+    _drop_column_if_exists("agendamentos", "created_at")

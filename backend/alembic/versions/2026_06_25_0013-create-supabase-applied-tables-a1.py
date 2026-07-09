@@ -27,29 +27,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create clientes table (identidade do usuario)
-    op.execute(
-        """
-        CREATE TABLE clientes (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            whatsapp_id TEXT UNIQUE NOT NULL,
-            nome TEXT,
-            cpf TEXT UNIQUE,
-            status TEXT DEFAULT 'ativo',
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
-            motivo_encerramento TEXT,
-            deleted_at TIMESTAMP WITH TIME ZONE
-        )
-        """
-    )
-
     # Create historico_atendimento table (memoria do agent)
     op.execute(
         """
-        CREATE TABLE historico_atendimento (
+        CREATE TABLE IF NOT EXISTS historico_atendimento (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE,
+            cliente_id INTEGER REFERENCES clientes(id) ON DELETE CASCADE,
             session_id TEXT,
             message_content TEXT NOT NULL,
             source TEXT DEFAULT 'operator',
@@ -65,9 +48,9 @@ def upgrade() -> None:
     # Create sessoes table (conversas ativas)
     op.execute(
         """
-        CREATE TABLE sessoes (
+        CREATE TABLE IF NOT EXISTS sessoes (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE,
+            cliente_id INTEGER REFERENCES clientes(id) ON DELETE CASCADE,
             session_id TEXT UNIQUE NOT NULL,
             status TEXT DEFAULT 'iniciada',
             started_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
@@ -81,39 +64,52 @@ def upgrade() -> None:
     )
 
     # Criar indexes para performance (compat com soft delete)
+    bind = op.get_bind()
+    import sqlalchemy as sa
+
+    # Verifica se a coluna whatsapp_id existe na tabela clientes
+    has_whatsapp_id = False
+    try:
+        cols = sa.inspect(bind).get_columns("clientes")
+        has_whatsapp_id = any(c["name"] == "whatsapp_id" for c in cols)
+    except Exception:
+        pass
+
+    if has_whatsapp_id:
+        op.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_clientes_whatsapp ON clientes (whatsapp_id)
+            """
+        )
+
     op.execute(
         """
-        CREATE INDEX idx_clientes_whatsapp ON clientes (whatsapp_id)
+        CREATE INDEX IF NOT EXISTS idx_clientes_deleted_at ON clientes (deleted_at)
         """
     )
     op.execute(
         """
-        CREATE INDEX idx_clientes_deleted_at ON clientes (deleted_at)
+        CREATE INDEX IF NOT EXISTS idx_historico_cliente ON historico_atendimento (cliente_id)
         """
     )
     op.execute(
         """
-        CREATE INDEX idx_historico_cliente ON historico_atendimento (cliente_id)
+        CREATE INDEX IF NOT EXISTS idx_historico_deleted_at ON historico_atendimento (deleted_at)
         """
     )
     op.execute(
         """
-        CREATE INDEX idx_historico_deleted_at ON historico_atendimento (deleted_at)
+        CREATE INDEX IF NOT EXISTS idx_sessoes_session_id ON sessoes (session_id)
         """
     )
     op.execute(
         """
-        CREATE INDEX idx_sessoes_session_id ON sessoes (session_id)
+        CREATE INDEX IF NOT EXISTS idx_sessoes_cliente ON sessoes (cliente_id)
         """
     )
     op.execute(
         """
-        CREATE INDEX idx_sessoes_cliente ON sessoes (cliente_id)
-        """
-    )
-    op.execute(
-        """
-        CREATE INDEX idx_sessoes_deleted_at ON sessoes (deleted_at)
+        CREATE INDEX IF NOT EXISTS idx_sessoes_deleted_at ON sessoes (deleted_at)
         """
     )
 
@@ -121,4 +117,3 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute("DROP TABLE IF EXISTS sessoes CASCADE")
     op.execute("DROP TABLE IF EXISTS historico_atendimento CASCADE")
-    op.execute("DROP TABLE IF EXISTS clientes CASCADE")

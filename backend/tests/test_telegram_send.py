@@ -88,7 +88,6 @@ async def test_send_message_migrate_supergroup_retry_ok() -> None:
         result = await _send_message(-5319980720, "menu")
     assert result is True
     assert client.post.await_count == 2
-    second_payload = client.post.await_args_list[1].kwargs.get("json") or client.post.await_args_list[1][1].get("json")
     # post(url, json=payload)
     second_call = client.post.await_args_list[1]
     payload = second_call.kwargs.get("json") if second_call.kwargs else second_call[1].get("json")

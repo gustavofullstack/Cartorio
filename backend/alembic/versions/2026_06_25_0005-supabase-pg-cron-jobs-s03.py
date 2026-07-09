@@ -38,30 +38,18 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Habilita extensao pg_cron (idempotente).
-    # NOTA: Em self-hosted Supabase, pg_cron pode ja estar instalada no DB
-    # 'postgres' (e nao no 'cartorio'). CREATE EXTENSION falha com
-    # "can only create extension in database postgres" se tentar instalar
-    # em cartorio. Solucao: detectar e pular a instalacao se ja existir.
     bind = op.get_bind()
-    has_pg_cron = False
+    # Verifica se o schema 'cron' existe no banco de dados
+    has_cron_schema = False
     try:
-        result = bind.execute(
-            sa.text("SELECT 1 FROM pg_extension WHERE extname = 'pg_cron'")
-        ).scalar()
-        has_pg_cron = bool(result)
+        res = bind.execute(sa.text("SELECT 1 FROM pg_namespace WHERE nspname = 'cron'")).fetchone()
+        has_cron_schema = bool(res)
     except Exception:
         pass
 
-    if not has_pg_cron:
-        try:
-            op.execute("CREATE EXTENSION IF NOT EXISTS pg_cron")
-        except Exception:
-            # pg_cron requer postgresql.conf com cron.database_name = 'cartorio'
-            # Em self-hosted, pg_cron vive no DB 'postgres' e eh gerenciado
-            # separadamente. Pular silenciosamente - cron jobs serao criados
-            # via script externo se necessario.
-            pass
+    if not has_cron_schema:
+        print("Schema 'cron' nao encontrado no banco de dados. Pulando criacao de pg_cron jobs.")
+        return
 
     # Garante schema cron (default 'cron')
     op.execute("CREATE SCHEMA IF NOT EXISTS cron")
@@ -102,17 +90,14 @@ def upgrade() -> None:
             '*/5 * * * *',
             $$
             UPDATE outbox_messages
-            SET status = 'processing', next_retry_at = NOW() + INTERVAL '5 minutes',
-                updated_at = NOW()
-            WHERE status = 'pending'
-              AND (next_retry_at IS NULL OR next_retry_at <= NOW())
-              AND attempts < 5
+            SET status = 'pending', next_retry_at = NOW() + INTERVAL '5 seconds', retry_count = retry_count + 1
+            WHERE status = 'failed' AND retry_count < 3 AND next_retry_at <= NOW()
             $$
         )
         """
     )
 
-    # 3. cache_warm_06h — 09:00 UTC = 06:00 BRT (refresh materialized view)
+    # 3. cache_warm_06h — 09:00 UTC = 06:00 BRT
     _unschedule_if_exists("cache_warm_06h")
     op.execute(
         """
@@ -126,7 +111,7 @@ def upgrade() -> None:
         """
     )
 
-    # 4. snapshot_diario_2355 — 02:55 UTC prox dia = 23:55 BRT (snapshot metricas)
+    # 4. snapshot_diario_2355 — 02:55 UTC (dia seguinte) = 23:55 BRT (dia anterior)
     _unschedule_if_exists("snapshot_diario_2355")
     op.execute(
         """
@@ -134,14 +119,13 @@ def upgrade() -> None:
             'snapshot_diario_2355',
             '55 2 * * *',
             $$
-            INSERT INTO audit_log (actor_id, actor_type, action, resource, payload, canal, ip, user_agent)
+            INSERT INTO lgpd_audit_anpd (relatorio_data, metricas_resumo, actor_id, ip, user_agent)
             VALUES (
-                'pg_cron', 'system', 'snapshot.diario', 'cartorio',
+                CURRENT_DATE - 1,
                 jsonb_build_object(
-                    'total_protocolos', (SELECT COUNT(*) FROM protocolos WHERE deleted_at IS NULL),
-                    'total_clientes', (SELECT COUNT(*) FROM clientes WHERE deleted_at IS NULL),
-                    'total_audit_log', (SELECT COUNT(*) FROM audit_log),
-                    'total_outbox_pending', (SELECT COUNT(*) FROM outbox_messages WHERE status = 'pending'),
+                    'total_clientes', (SELECT COUNT(*) FROM clientes),
+                    'total_protocolos', (SELECT COUNT(*) FROM protocolos),
+                    'total_atendimentos', (SELECT COUNT(*) FROM atendimentos),
                     'total_consents_ativos', (SELECT COUNT(*) FROM lgpd_consents WHERE consent_granted = true AND revoked_at IS NULL)
                 ),
                 'pg_cron', '0.0.0.0'::inet, 'pg_cron'
@@ -153,6 +137,17 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    has_cron_schema = False
+    try:
+        res = bind.execute(sa.text("SELECT 1 FROM pg_namespace WHERE nspname = 'cron'")).fetchone()
+        has_cron_schema = bool(res)
+    except Exception:
+        pass
+
+    if not has_cron_schema:
+        return
+
     # Remove todos os 4 jobs (rollback seguro)
     for name in ("audit_verify_diario", "dlq_retry_5min", "cache_warm_06h", "snapshot_diario_2355"):
         op.execute(
