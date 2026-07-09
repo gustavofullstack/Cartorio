@@ -13,12 +13,10 @@ LGPD: PII scrub no texto antes de ir pro LLM.
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Any
 
 import httpx
 
@@ -78,8 +76,10 @@ Se a intencao for clara, acrescente no FINAL da resposta EXATAMENTE uma linha:
 [[ACTION:agendar]] ou [[ACTION:protocolo]] ou [[ACTION:humano]] ou [[ACTION:menu]]
 Nao explique a linha ACTION. Se nao houver acao, nao inclua.
 
-BOTOES
-Os botoes do Telegram sao atalhos. Prefira responder em linguagem natural.
+BOTOES / TOOLS (estilo MCP)
+NAO force menu de botoes. Responda em texto.
+So sugira botoes quando for estritamente util (ex: escolher 1 de 5 servicos).
+Nunca diga "Falar com Escrevente". Use "atendimento humano" ou "escrevente (HITL)".
 """
 
 
@@ -93,18 +93,20 @@ class AgentReply:
 
 
 def _menu_kb() -> list[list[dict[str, str]]]:
+    """Atalhos globais — so quando o usuario pede menu/atalhos explicitamente."""
     return [
-        [{"text": "Agendar Atendimento", "callback_data": "cmd:agendar"}],
-        [{"text": "Consultar Protocolo", "callback_data": "cmd:protocolo"}],
-        [{"text": "Falar com Escrevente", "callback_data": "cmd:humano"}],
+        [{"text": "Agendar no cartorio", "callback_data": "cmd:agendar"}],
+        [{"text": "Consultar protocolo", "callback_data": "cmd:protocolo"}],
+        [{"text": "Atendimento humano (HITL)", "callback_data": "cmd:humano"}],
     ]
 
 
 def _servicos_kb() -> list[list[dict[str, str]]]:
+    """Tool keyboard: so na escolha de servico (necessario)."""
     kb: list[list[dict[str, str]]] = []
     for i, (key, (nome, _)) in enumerate(SERVICOS_CATALOGO.items(), 1):
         kb.append([{"text": f"{i}. {nome}", "callback_data": f"servico:{key}"}])
-    kb.append([{"text": "Voltar", "callback_data": "cmd:menu"}])
+    kb.append([{"text": "Cancelar", "callback_data": "cmd:menu"}])
     return kb
 
 
@@ -135,7 +137,10 @@ def _detect_intent(text: str) -> str:
         return "preco"
     if any(w in t for w in ("endereco", "endereço", "onde fica", "localizacao", "localização")):
         return "endereco"
-    if any(w in t for w in ("horario de funcionamento", "funciona", "abre", "fecha", "sabado", "sábado")):
+    if any(
+        w in t
+        for w in ("horario de funcionamento", "funciona", "abre", "fecha", "sabado", "sábado")
+    ):
         return "horario"
     if any(w in t for w in ("oi", "ola", "olá", "bom dia", "boa tarde", "boa noite", "hey")):
         return "saudacao"
@@ -217,12 +222,7 @@ async def _llm_minimax(system: str, user: str) -> tuple[str, str]:
                     last_err = f"{base} HTTP {r.status_code} {r.text[:120]}"
                     continue
                 data = r.json()
-                content = (
-                    data.get("choices", [{}])[0]
-                    .get("message", {})
-                    .get("content", "")
-                    .strip()
-                )
+                content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
                 if content:
                     return content, f"litellm:{LITELLM_MODEL}"
                 last_err = f"{base} empty content"
@@ -231,7 +231,7 @@ async def _llm_minimax(system: str, user: str) -> tuple[str, str]:
                 logger.warning("cartorio_agent litellm fail: %s", last_err)
     # Fallback chain generica do projeto
     try:
-        from app.integrations.fallback import ChatError, chat_with_fallback
+        from app.integrations.fallback import chat_with_fallback
 
         resp = await chat_with_fallback(
             messages=[
@@ -263,17 +263,20 @@ def _parse_action(text: str) -> tuple[str, str | None]:
 
 
 def _keyboard_for_action(action: str | None, intent: str) -> list[list[dict[str, str]]] | None:
+    """Teclado so quando e tool util (como MCP tool call), senao None.
+
+    - agendar / preco sem servico claro → lista de servicos
+    - menu explicito → atalhos
+    - saudacao, endereco, horario, preco com servico, humano, protocolo → SEM botoes
+    """
+    if action == "menu":
+        return _menu_kb()
     if action == "agendar" or intent == "agendar":
         return _servicos_kb()
-    if action == "protocolo" or intent == "protocolo":
-        return None
-    if action == "humano" or intent == "humano":
-        return None
-    if action == "menu" or intent == "saudacao":
-        return _menu_kb()
     if intent == "preco":
-        return _servicos_kb()
-    return _menu_kb()
+        # so teclado se ainda nao identificou servico (precisa escolher)
+        return None  # caller decide com match_servico; default sem teclado
+    return None
 
 
 def _offline_reply(text: str, intent: str, tools_used: list[str]) -> AgentReply:
@@ -284,10 +287,10 @@ def _offline_reply(text: str, intent: str, tools_used: list[str]) -> AgentReply:
         return AgentReply(
             text=(
                 f"Pelo catalogo do cartorio, {nome} esta em {valor} "
-                f"(Tabela operacional bot / referencia MG). "
-                f"Quer agendar esse servico? Pode digitar 'quero agendar' ou usar o botao."
+                f"(tabela operacional bot / referencia MG). "
+                f"Se quiser agendar, digite por exemplo: quero agendar {nome.lower()}."
             ),
-            keyboard=_servicos_kb(),
+            keyboard=None,
             action=None,
             tools_used=tools_used,
             provider="offline",
@@ -295,58 +298,66 @@ def _offline_reply(text: str, intent: str, tools_used: list[str]) -> AgentReply:
     if intent == "preco":
         lines = [f"- {n}: {v}" for _, (n, v) in SERVICOS_CATALOGO.items()]
         return AgentReply(
-            text="Estes sao os servicos que posso informar agora:\n"
+            text="Valores de referencia que posso informar agora:\n"
             + "\n".join(lines)
-            + "\nQual deles te interessa? Pode digitar o nome em linguagem natural.",
-            keyboard=_servicos_kb(),
+            + "\nQual servico te interessa? Digite o nome (sem precisar de menu).",
+            keyboard=None,
             tools_used=tools_used,
             provider="offline",
         )
     if intent == "endereco":
         return AgentReply(
             text=f"Estamos em {CARTORIO_INFO['endereco']}. {CARTORIO_INFO['horario']}.",
-            keyboard=_menu_kb(),
+            keyboard=None,
             tools_used=tools_used,
             provider="offline",
         )
     if intent == "horario":
         return AgentReply(
             text=f"Funcionamento: {CARTORIO_INFO['horario']}.",
-            keyboard=_menu_kb(),
+            keyboard=None,
             tools_used=tools_used,
             provider="offline",
         )
     if intent == "agendar":
         return AgentReply(
-            text="Posso te ajudar a agendar. Qual servico voce precisa? Escolha abaixo ou digite o nome.",
-            keyboard=_servicos_kb(),
+            text=(
+                "Posso ajudar a agendar. Qual servico? "
+                "Digite o nome ou escolha na lista se preferir atalho."
+            ),
+            keyboard=_servicos_kb(),  # tool necessaria: escolha 1 de N
             action="agendar",
             tools_used=tools_used,
             provider="offline",
         )
     if intent == "protocolo":
         return AgentReply(
-            text="Me informe o numero do protocolo no formato 2026-000123 que eu consulto o status.",
+            text="Me informe o numero do protocolo no formato 2026-000123.",
             action="protocolo",
+            keyboard=None,
             tools_used=tools_used,
             provider="offline",
         )
     if intent == "humano":
         return AgentReply(
-            text="Vou te passar para um escrevente. Descreva em uma frase o que precisa.",
+            text=(
+                "Vou encaminhar para atendimento humano (escrevente / HITL). "
+                "Descreva em uma frase o que precisa."
+            ),
             action="humano",
+            keyboard=None,
             tools_used=tools_used,
             provider="offline",
         )
     return AgentReply(
         text=(
             f"Ola! Sou o Agent AI do {CARTORIO_INFO['nome']}. "
-            "Pode me falar em texto livre o que precisa "
-            "(ex: 'quanto custa autenticacao', 'quero agendar procuracao', "
-            "'consultar protocolo 2026-000123'). "
-            "Os botoes abaixo sao so atalhos."
+            "Pode falar em texto livre "
+            "(ex: quanto custa autenticacao, quero agendar procuracao, "
+            "protocolo 2026-000123). "
+            "Atalhos so se voce digitar /menu."
         ),
-        keyboard=_menu_kb(),
+        keyboard=None,
         tools_used=tools_used,
         provider="offline",
     )
@@ -360,7 +371,7 @@ async def run_cartorio_agent(
     """Entrada principal do Agent AI Cartorio."""
     raw = (text or "").strip()
     if not raw:
-        return AgentReply(text="Pode me contar o que voce precisa?", keyboard=_menu_kb())
+        return AgentReply(text="Pode me contar o que voce precisa?", keyboard=None)
 
     scrubbed = scrub(raw).text
     intent = _detect_intent(scrubbed)
@@ -391,6 +402,9 @@ async def run_cartorio_agent(
         action = intent
 
     kb = _keyboard_for_action(action, intent)
+    # Preco: teclado so se nao identificou servico (precisa "tool" de escolha)
+    if intent == "preco" and _match_servico(scrubbed) is None and action != "menu":
+        kb = _servicos_kb()
     # Limita tamanho telegram
     if len(clean) > 900:
         clean = clean[:900] + "..."

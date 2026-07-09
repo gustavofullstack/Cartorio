@@ -35,8 +35,15 @@ def test_parse_action_strip() -> None:
 def test_offline_preco_lista() -> None:
     r = _offline_reply("quanto custa?", "preco", ["intent:preco"])
     assert "Autenticacao" in r.text or "autentic" in r.text.lower() or "Firma" in r.text
-    assert r.keyboard is not None
+    # preco generico: lista em texto, sem forcar teclado de menu
+    assert r.keyboard is None
     assert r.provider == "offline"
+
+
+def test_offline_saudacao_sem_botoes() -> None:
+    r = _offline_reply("oi", "saudacao", ["intent:saudacao"])
+    assert r.keyboard is None
+    assert "Agent AI" in r.text or "linguagem" in r.text.lower() or "Ola" in r.text
 
 
 @pytest.mark.asyncio

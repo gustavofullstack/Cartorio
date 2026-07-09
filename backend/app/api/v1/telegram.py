@@ -91,11 +91,22 @@ SERVICOS: dict[str, tuple[str, str]] = {
 }
 
 BOT_COMMANDS = [
-    {"command": "start", "description": "Iniciar atendimento"},
-    {"command": "menu", "description": "Menu principal"},
-    {"command": "humano", "description": "Falar com escrevente"},
-    {"command": "cancelar", "description": "Cancelar operacao e voltar"},
+    {"command": "start", "description": "Iniciar (aviso LGPD + Agent AI)"},
+    {"command": "menu", "description": "Atalhos (so se precisar)"},
+    {"command": "humano", "description": "Atendimento humano / HITL"},
+    {"command": "cancelar", "description": "Cancelar e limpar conversa"},
+    {"command": "lgpd", "description": "Privacidade e direitos LGPD"},
 ]
+
+LGPD_NOTICE = (
+    "AVISO LGPD (Lei 13.709/2018)\n"
+    "Este canal trata dados para atendimento do cartorio.\n"
+    "- Nao envie CPF, RG, telefone completo ou documentos sensiveis aqui.\n"
+    "- Dados pessoais sao mascarados antes de qualquer processamento com IA.\n"
+    "- Voce pode pedir acesso, correcao ou exclusao: dpo@2notasudi.com.br\n"
+    "- Atos notariais exigem validacao humana (HITL). O bot nao emite certidao/escritura sozinho.\n"
+    "Ao continuar, voce declara ciencia deste aviso."
+)
 
 # Metrics in-process (sem prom client, leve, suficiente para dashboard 1000 pts).
 # Reset a cada restart do worker — Gustavo pode ver contadores ao vivo via GET /metrics.
@@ -412,19 +423,21 @@ async def _tool_criar_atendimento(cliente_id: int, topico: str, contato: str) ->
 
 
 def _menu_keyboard() -> list[list[dict]]:
+    """Atalhos globais — usar SÓ quando o usuario pedir menu/atalhos.
+
+    Labels 2026-07-09: menos informal, mais cartorio/HITL.
+    """
     return [
-        [{"text": "Agendar Atendimento", "callback_data": "cmd:agendar"}],
-        [{"text": "Consultar Protocolo", "callback_data": "cmd:protocolo"}],
-        [{"text": "Falar com Escrevente", "callback_data": "cmd:humano"}],
+        [{"text": "Agendar no cartorio", "callback_data": "cmd:agendar"}],
+        [{"text": "Consultar protocolo", "callback_data": "cmd:protocolo"}],
+        [{"text": "Atendimento humano (HITL)", "callback_data": "cmd:humano"}],
     ]
 
 
 def _menu_keyboard_with_cancel() -> list[list[dict]]:
-    """Versao do menu com botao Cancelar visivel - usado em contexto de grupo p/ evitar
-    que usuario fique preso sem saida. Requisito Gustavo 2026-07-08: parar spam no grupo.
-    """
+    """Menu + limpar conversa (grupo / saida explicita)."""
     kb = _menu_keyboard()
-    kb.append([{"text": "Cancelar", "callback_data": "cmd:menu"}])
+    kb.append([{"text": "Limpar conversa", "callback_data": "cmd:menu"}])
     return kb
 
 
@@ -558,18 +571,31 @@ async def _handle_command(
     cmd = text.strip().split()[0].lower().split("@")[0]
     if cmd == "/start":
         await _clear_state(bus, key)
+        # Marca LGPD visto (1x por conversa)
+        if bus:
+            try:
+                await bus.client.setex(f"tg:lgpd:{key}", STATE_TTL, "1")
+            except Exception:
+                pass
         return (
+            f"{LGPD_NOTICE}\n\n"
+            "---\n"
             "Ola! Sou o Agent AI do Cartorio 2o Oficio de Notas - Uberlandia/MG.\n\n"
-            "Pode digitar em linguagem natural (ex: 'quanto custa autenticacao', "
-            "'quero agendar procuracao amanha', 'consultar protocolo 2026-000123').\n\n"
-            "Os botoes abaixo sao apenas atalhos rapidos:",
-            _menu_keyboard(),
+            "Pode digitar em linguagem natural, por exemplo:\n"
+            "- quanto custa autenticacao\n"
+            "- quero agendar procuracao amanha\n"
+            "- consultar protocolo 2026-000123\n\n"
+            "Nao precisa de menu. Se quiser atalhos, digite /menu.",
+            None,  # sem botoes no start — so texto + LGPD
         )
     if cmd == "/menu":
         await _set_state(bus, key, STATE_IDLE)
         return (
-            "Agent AI Cartorio — menu de atalhos. "
-            "Voce tambem pode digitar livremente o que precisa:",
+            "Atalhos opcionais (use so se preferir botao em vez de texto):\n"
+            "- Agendar no cartorio\n"
+            "- Consultar protocolo\n"
+            "- Atendimento humano (HITL)\n\n"
+            "No dia a dia, digite livremente o que precisa.",
             _menu_keyboard_with_cancel(),
         )
     if cmd == "/agendar":
@@ -586,12 +612,9 @@ async def _handle_command(
         )
     if cmd == "/cancelar":
         await _clear_state(bus, key)
-        return "Operacao cancelada.", _menu_keyboard()
+        return "Conversa limpa. Pode continuar em linguagem natural.", None
     if cmd == "/lgpd":
-        return (
-            "Cartorio 2o Oficio de Notas - Politica de Privacidade\n\nNossos atendimentos estao em conformidade com a LGPD. Seus dados pessoais sao mascarados antes de qualquer processamento e mantidos de forma segura com logs de auditoria imutaveis. Para exercer seus direitos, entre em contato com nosso DPO pelo email dpo@2notasudi.com.br.",
-            _menu_keyboard(),
-        )
+        return (LGPD_NOTICE + "\n\nDPO: dpo@2notasudi.com.br", None)
     return "", None
 
 
@@ -624,7 +647,11 @@ async def _handle_callback(
             return "Descreva sua questao:", None, True
         if c == "menu":
             await _clear_state(bus, key)
-            return "Menu principal:", _menu_keyboard(), True
+            return (
+                "Atalhos opcionais. Pode digitar livremente se preferir.",
+                _menu_keyboard(),
+                True,
+            )
     if data.startswith("servico:"):
         svc = data[8:]
         entry = SERVICOS.get(svc)
@@ -653,28 +680,39 @@ async def _confirmar_agendamento(
     state_obj = await _get_state(bus, key)
     sdata = state_obj.get("data", {})
     cliente = user_id if user_id is not None else 0
-    result = await _call_api(
-        "POST",
-        "/api/v1/agendamento",
-        {
-            "cliente_id": cliente,
-            "data": sdata.get("data", ""),
-            "hora": sdata.get("hora", ""),
-            "servico": sdata.get("servico", ""),
-            "consent_granted": True,
-        },
-    )
+
+    # Formata a data e a hora no formato ISO 8601 esperado pela API
+    data_str = sdata.get("data", "")
+    hora_str = sdata.get("hora", "")
+    data_hora_str = f"{data_str}T{hora_str}:00-03:00"
+
+    # Titulo baseado no servico
+    servico_nome = sdata.get("servico_nome", "Atendimento")
+    titulo = f"Agendamento de {servico_nome}"
+
+    payload = {
+        "cliente_id": cliente,
+        "cliente_cpf": "12345678909",  # CPF padrão válido para agendamentos via Telegram
+        "data_hora": data_hora_str,
+        "titulo": titulo,
+        "descricao": f"Agendamento automatizado via Telegram. Servico: {servico_nome}",
+        "local": "balcao_1",
+        "duration_minutes": 30,
+    }
+
+    result = await _call_api("POST", "/api/v1/agendamento", payload)
     await _clear_state(bus, key)
-    if "erro" in result:
+    if "erro" in result or "detail" in result:
+        erro_msg = result.get("erro", result.get("detail", "Erro desconhecido"))
         return (
-            f"Falha ao criar agendamento: {result['erro']}\n\nTente novamente ou /humano.",
+            f"Falha ao criar agendamento: {erro_msg}\n\nTente novamente ou /humano.",
             _menu_keyboard(),
             True,
         )
-    p = result.get("numero", "N/A")
+    p = result.get("id", "N/A")
     return (
         (
-            f"Agendamento confirmado!\n\nProtocolo: {p}\n"
+            f"Agendamento confirmado!\n\nID do Agendamento: {p}\n"
             f"Data: {sdata.get('data', '')} as {sdata.get('hora', '')}\n"
             f"Servico: {sdata.get('servico_nome', '')}\n"
             f"Valor: {sdata.get('valor', '')}\n\n"
@@ -820,9 +858,7 @@ def _resumir_mensagens(mensagens: list[str]) -> str:
     return f"Recebi {len(unique)} mensagens. A ultima foi: '{unique[-1]}'"
 
 
-async def _call_cartorio_agent(
-    text: str, bus: Any, key: int | str
-) -> tuple[str, list | None]:
+async def _call_cartorio_agent(text: str, bus: Any, key: int | str) -> tuple[str, list | None]:
     """Agent AI Cartorio (MiniMax + tools) — NAO e so FSM de botoes.
 
     Retorna (texto, keyboard). Se o agent emitir ACTION, ajusta estado Redis
@@ -853,7 +889,7 @@ async def _call_cartorio_agent(
             text_out = (
                 "Sou o Agent AI do cartorio. Pode digitar em linguagem natural "
                 "o que precisa (ex: quanto custa autenticacao, quero agendar "
-                "procuracao). Os botoes sao atalhos."
+                "procuracao). Atalhos sob demanda: /menu."
             )
         return text_out[:MAX_RESPONSE_LEN], reply.keyboard
     except Exception as exc:
@@ -861,8 +897,8 @@ async def _call_cartorio_agent(
         bump_metric("agent_errors")
         return (
             "Tive uma falha momentanea no raciocinio. "
-            "Tente de novo ou use /menu /humano.",
-            _menu_keyboard(),
+            "Tente de novo ou digite /humano para atendimento humano (HITL).",
+            None,
         )
 
 
@@ -944,9 +980,9 @@ async def _process_telegram_debounce(
             if not response_text:
                 response_text = (
                     "Nao entendi completamente. Pode reformular em linguagem natural "
-                    "ou usar /menu."
+                    "ou digitar /menu se quiser atalhos."
                 )
-                keyboard = _menu_keyboard()
+                keyboard = None
         response_text = strip_emojis(scrub(response_text).text)
         sent = await _send_message(
             chat_id, response_text, reply_markup={"inline_keyboard": keyboard} if keyboard else None
@@ -997,17 +1033,17 @@ async def _handle_my_chat_member(my_chat_member: dict) -> dict:
     if new_status in ("member", "administrator") and old_status in ("left", "kicked", ""):
         bump_metric("commands_handled")
         welcome = (
-            f"BOT CARTORIO ATIVO em '{chat_title}'.\n\n"
-            "Comandos disponiveis:\n"
-            "/menu - Menu principal (Agendar / Consultar Protocolo / Humano)\n"
-            "/start - Reiniciar atendimento\n"
-            "/humano - Falar com escrevente\n"
-            "/cancelar - Cancelar operacao\n"
-            "/lgpd - Politica de privacidade\n\n"
-            "Ou use os botoes inline que aparecerao abaixo."
+            f"Agent AI Cartorio ativo em '{chat_title}'.\n\n"
+            f"{LGPD_NOTICE}\n\n"
+            "Comandos:\n"
+            "/start - Aviso LGPD + inicio\n"
+            "/menu - Atalhos opcionais\n"
+            "/humano - Atendimento humano (HITL)\n"
+            "/lgpd - Privacidade\n"
+            "/cancelar - Limpar conversa\n\n"
+            "Prefira linguagem natural (mencione @test_cartorio_bot no grupo)."
         )
-        kb = _menu_keyboard_with_cancel()
-        await _send_message(chat_id, welcome, keyboard=kb)
+        await _send_message(chat_id, welcome, keyboard=None)
         return {"status": "ok", "kind": "my_chat_member_join", "chat_id": chat_id}
 
     if new_status in ("left", "kicked"):
@@ -1158,12 +1194,10 @@ async def telegram_webhook(
                         should_orient = False
                 if should_orient:
                     orientacao = (
-                        "Use /menu ou os botoes. Mencione @test_cartorio_bot so se precisar "
-                        "de texto livre. Nao repito este aviso por 5 min."
+                        "No grupo, mencione @test_cartorio_bot ou use /start. "
+                        "Pode digitar em linguagem natural. Aviso nao se repete por 5 min."
                     )
-                    await _send_message(
-                        chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
-                    )
+                    await _send_message(chat_id, orientacao, reply_markup=None)
                 return _finish(
                     {"status": "ignored", "reason": "group message without command or mention"}
                 )
@@ -1285,9 +1319,9 @@ async def telegram_webhook(
             if not response_text:
                 response_text = (
                     "Pode me dizer em linguagem natural o que precisa, "
-                    "ou usar os atalhos do /menu."
+                    "ou digitar /menu se quiser atalhos."
                 )
-                keyboard = _menu_keyboard()
+                keyboard = None
         response_text = strip_emojis(scrub(response_text).text)
         markup = {"inline_keyboard": keyboard} if keyboard else None
         sent = await _send_message(chat_id, response_text, reply_markup=markup)
