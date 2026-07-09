@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 
 import httpx
 
+from app.config import settings
 from app.services.pii import scrub
 
 logger = logging.getLogger(__name__)
@@ -46,10 +47,9 @@ LITELLM_URLS = [
         "CARTORIO_AGENT_LITELLM_URL",
         "http://coding-vps_apenas_para_auxilio_litellm-app:4000",
     ),
-    "http://cartorio_litellm-app:4000",
+    settings.litellm_base_url,
 ]
-LITELLM_KEY = os.environ.get("LITELLM_API_KEY", "e39dss0k1baohuqkprjv")
-LITELLM_MODEL = os.environ.get("CARTORIO_AGENT_MODEL", "MiniMax-M3")
+LITELLM_MODEL = os.environ.get("CARTORIO_AGENT_MODEL", settings.litellm_model)
 
 AGENT_SYSTEM = """Voce e o Agent AI oficial do Cartorio 2o Oficio de Notas de Uberlandia/MG.
 
@@ -208,13 +208,23 @@ async def _llm_minimax(system: str, user: str) -> tuple[str, str]:
         "max_tokens": 450,
         "temperature": 0.35,
     }
-    headers = {
-        "Authorization": f"Bearer {LITELLM_KEY}",
-        "Content-Type": "application/json",
-    }
-    last_err = ""
+
+    litellm_key = settings.litellm_api_key or os.environ.get("LITELLM_API_KEY")
+    if not litellm_key:
+        logger.warning("cartorio_agent litellm fail: LITELLM_API_KEY nao configurada")
+        # Forca cair pro fallback chain
+        last_err = "LITELLM_API_KEY nao configurada"
+        LITELLM_URLS_TO_TRY = []
+    else:
+        headers = {
+            "Authorization": f"Bearer {litellm_key}",
+            "Content-Type": "application/json",
+        }
+        last_err = ""
+        LITELLM_URLS_TO_TRY = LITELLM_URLS
+
     async with httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=5.0)) as client:
-        for base in LITELLM_URLS:
+        for base in LITELLM_URLS_TO_TRY:
             url = f"{base.rstrip('/')}/v1/chat/completions"
             try:
                 r = await client.post(url, headers=headers, json=payload)
