@@ -53,8 +53,8 @@ TELEGRAM_WEBHOOK_SECRET = (
 )
 
 STATE_TTL = 3600
-DEBOUNCE_WINDOW = 3.0
-RATE_LIMIT_SECONDS = 5
+DEBOUNCE_WINDOW = 1.2  # agent path: menos atraso, ainda anti-spam
+RATE_LIMIT_SECONDS = 3
 MESSAGE_QUEUE_TTL = 10
 MAX_RESPONSE_LEN = 800
 IDEMPOTENCY_TTL = 600  # 10min: evita reprocessar mesmo update_id
@@ -109,6 +109,8 @@ _METRICS: dict[str, int] = {
     "hitl_created": 0,
     "commands_handled": 0,
     "callbacks_ok": 0,
+    "agent_replies": 0,
+    "agent_errors": 0,
 }
 
 
@@ -477,9 +479,7 @@ async def _send_message(
             body = resp.json()
             migrate_to = (body.get("parameters") or {}).get("migrate_to_chat_id")
             if resp.status_code == 400 and migrate_to:
-                logger.warning(
-                    "TG chat migrated %s -> %s; retrying send", chat_id, migrate_to
-                )
+                logger.warning("TG chat migrated %s -> %s; retrying send", chat_id, migrate_to)
                 payload["chat_id"] = int(migrate_to)
                 resp2 = await client.post(url, json=payload)
                 if resp2.status_code == 200:
@@ -559,12 +559,19 @@ async def _handle_command(
     if cmd == "/start":
         await _clear_state(bus, key)
         return (
-            "Cartorio 2o Oficio de Notas - Uberlandia/MG\n\nSelecione uma opcao abaixo:",
+            "Ola! Sou o Agent AI do Cartorio 2o Oficio de Notas - Uberlandia/MG.\n\n"
+            "Pode digitar em linguagem natural (ex: 'quanto custa autenticacao', "
+            "'quero agendar procuracao amanha', 'consultar protocolo 2026-000123').\n\n"
+            "Os botoes abaixo sao apenas atalhos rapidos:",
             _menu_keyboard(),
         )
     if cmd == "/menu":
         await _set_state(bus, key, STATE_IDLE)
-        return "Cartorio 2o Oficio de Notas - Menu principal:", _menu_keyboard_with_cancel()
+        return (
+            "Agent AI Cartorio — menu de atalhos. "
+            "Voce tambem pode digitar livremente o que precisa:",
+            _menu_keyboard_with_cancel(),
+        )
     if cmd == "/agendar":
         await _set_state(bus, key, STATE_AGENDAR_SERVICO, {})
         return "Selecione o serviço desejado:", _servicos_keyboard()
@@ -813,47 +820,61 @@ def _resumir_mensagens(mensagens: list[str]) -> str:
     return f"Recebi {len(unique)} mensagens. A ultima foi: '{unique[-1]}'"
 
 
-async def _call_fast_llm(text: str, context: str = "") -> str:
-    """Fallback LLM para texto livre fora de estado de comando.
+async def _call_cartorio_agent(
+    text: str, bus: Any, key: int | str
+) -> tuple[str, list | None]:
+    """Agent AI Cartorio (MiniMax + tools) — NAO e so FSM de botoes.
 
-    Delega para o dispatcher unificado `chat_with_fallback` que respeita
-    `LLM_FALLBACK_CHAIN` configurada em settings. Isso garante que provedores
-    configurados em .env (opencode_free_*, opencode_go, openrouter, etc.)
-    sejam usados antes de retornar vazio.
-
-    Consentimento: True (interacao iniciada pelo usuario via chat Telegram
-    configura consent implicito LGPD art. 7 I, registrado via audit log).
+    Retorna (texto, keyboard). Se o agent emitir ACTION, ajusta estado Redis
+    (agendar/protocolo/humano) para o wizard continuar quando necessario.
     """
-    from app.integrations.fallback import ChatError, chat_with_fallback
+    from app.services.cartorio_agent import run_cartorio_agent
 
-    # System curto para evitar timeout em providers free (lesson-2026-07-02):
-    # nemotron-3-ultra-free retorna ERROR se system>~600 chars + max_tokens alto.
-    system = (
-        "Assistente do Cartorio 2o Oficio de Notas de Uberlandia/MG. "
-        "Sem emojis. Max 2 frases. Direto. /menu para agendamento/protocolo. "
-        "/humano para juridico complexo. Nunca invente valores."
-    )
-    if context:
-        system += f" Contexto: {context}"
-    messages = [{"role": "system", "content": system}, {"role": "user", "content": text}]
     try:
-        resp = await chat_with_fallback(
-            messages=messages,
-            temperature=0.2,
-            consent_granted=True,
-            actor_id="telegram:fallback",
-            db=None,
-            session_id=None,
-            rate_limit_per_minute=None,
-            request_id=None,
-            client_ip=None,
+        reply = await run_cartorio_agent(text)
+        bump_metric("agent_replies")
+        logger.info(
+            "TG agent provider=%s action=%s tools=%s",
+            reply.provider,
+            reply.action,
+            reply.tools_used,
         )
-        return (resp.content or "").strip()[:500]
-    except ChatError as exc:
-        logger.warning("Fast LLM chain falhou: kind=%s err=%s", exc.kind, exc)
-        return ""
+        # Aplica acao estruturada do agent no estado da conversa
+        if reply.action == "agendar":
+            await _set_state(bus, key, STATE_AGENDAR_SERVICO, {})
+        elif reply.action == "protocolo":
+            await _set_state(bus, key, STATE_PROTOCOLO, {})
+        elif reply.action == "humano":
+            await _set_state(bus, key, STATE_HUMANO, {})
+        elif reply.action == "menu":
+            await _clear_state(bus, key)
+        text_out = strip_emojis(reply.text) if reply.text else ""
+        if not text_out:
+            text_out = (
+                "Sou o Agent AI do cartorio. Pode digitar em linguagem natural "
+                "o que precisa (ex: quanto custa autenticacao, quero agendar "
+                "procuracao). Os botoes sao atalhos."
+            )
+        return text_out[:MAX_RESPONSE_LEN], reply.keyboard
     except Exception as exc:
-        logger.exception("Fast LLM erro inesperado: %s", exc)
+        logger.exception("TG agent error: %s", exc)
+        bump_metric("agent_errors")
+        return (
+            "Tive uma falha momentanea no raciocinio. "
+            "Tente de novo ou use /menu /humano.",
+            _menu_keyboard(),
+        )
+
+
+async def _call_fast_llm(text: str, context: str = "") -> str:
+    """Compat: delega ao Agent AI Cartorio (texto puro)."""
+    from app.services.cartorio_agent import run_cartorio_agent
+
+    try:
+        reply = await run_cartorio_agent(text if not context else f"{context}\n{text}")
+        return (reply.text or "").strip()[:500]
+    except Exception as exc:
+        logger.warning("Fast LLM/agent falhou: %s", exc)
         return ""
 
 
@@ -918,10 +939,14 @@ async def _process_telegram_debounce(
             if response_text and new_state == STATE_IDLE:
                 await _clear_state(bus, key)
         if not response_text:
-            llm_resp = await _call_fast_llm(text_to_process)
-            response_text = llm_resp if llm_resp else "Nao entendi. Use /menu para ver as opcoes."
-            keyboard = _menu_keyboard()
-            await _clear_state(bus, key)
+            # Agent AI Cartorio (MiniMax + tools) — conversa natural
+            response_text, keyboard = await _call_cartorio_agent(text_to_process, bus, key)
+            if not response_text:
+                response_text = (
+                    "Nao entendi completamente. Pode reformular em linguagem natural "
+                    "ou usar /menu."
+                )
+                keyboard = _menu_keyboard()
         response_text = strip_emojis(scrub(response_text).text)
         sent = await _send_message(
             chat_id, response_text, reply_markup={"inline_keyboard": keyboard} if keyboard else None
@@ -1100,11 +1125,7 @@ async def telegram_webhook(
     if not chat_id or (not text and not callback):
         return _finish({"status": "ignored", "reason": "non-text update"})
 
-    user_id = (
-        message.get("from", {}).get("id")
-        or callback.get("from", {}).get("id")
-        or None
-    )
+    user_id = message.get("from", {}).get("id") or callback.get("from", {}).get("id") or None
     chat_type = (
         message.get("chat", {}).get("type", "")
         or callback.get("message", {}).get("chat", {}).get("type", "")
@@ -1156,9 +1177,7 @@ async def telegram_webhook(
         already_processed = await _check_idempotency(bus, update_id)
         if already_processed:
             logger.warning("TG DUPLICATE update_id=%s chat=%s - ignorando", update_id, chat_id)
-            return _finish(
-                {"status": "duplicate", "update_id": update_id, "chat_id": chat_id}
-            )
+            return _finish({"status": "duplicate", "update_id": update_id, "chat_id": chat_id})
 
     # ====== TYPING VISIVEL ======
     asyncio.create_task(_send_typing_fast(chat_id))
@@ -1168,9 +1187,7 @@ async def telegram_webhook(
     if callback:
         data = callback.get("data", "")
         await _answer_callback_query(callback.get("id", ""))
-        response_text, keyboard, _ = await _handle_callback(
-            data, bus, conv, user_id=uid
-        )
+        response_text, keyboard, _ = await _handle_callback(data, bus, conv, user_id=uid)
         if response_text:
             response_text = strip_emojis(response_text)
             await _react(chat_id, msg_id, "eyes")
@@ -1264,17 +1281,25 @@ async def telegram_webhook(
             if response_text and new_state == STATE_IDLE:
                 await _clear_state(bus, conv)
         if not response_text:
-            llm_resp = await _call_fast_llm(text_scrubbed)
-            response_text = llm_resp if llm_resp else "Nao entendi. Use /menu para ver as opcoes."
-            keyboard = _menu_keyboard()
-            await _clear_state(bus, conv)
+            response_text, keyboard = await _call_cartorio_agent(text_scrubbed, bus, conv)
+            if not response_text:
+                response_text = (
+                    "Pode me dizer em linguagem natural o que precisa, "
+                    "ou usar os atalhos do /menu."
+                )
+                keyboard = _menu_keyboard()
         response_text = strip_emojis(scrub(response_text).text)
         markup = {"inline_keyboard": keyboard} if keyboard else None
         sent = await _send_message(chat_id, response_text, reply_markup=markup)
         if sent:
             await _react(chat_id, msg_id, "check")
         return _finish(
-            {"status": "ok" if sent else "partial", "chat_id": chat_id, "response_sent": sent}
+            {
+                "status": "ok" if sent else "partial",
+                "chat_id": chat_id,
+                "kind": "agent",
+                "response_sent": sent,
+            }
         )
 
     lock_key = f"tg:lock:{conv}"
