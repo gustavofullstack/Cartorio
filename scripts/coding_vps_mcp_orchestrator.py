@@ -1,38 +1,45 @@
-"""MCP Server: coding-vps-tools-orchestrator (100+ tools).
+"""MCP Server: coding-vps-tools-orchestrator (85 tools — DEDUPED Squad 1 2026-07-09).
 
-Exposes the full coding-vps_apenas_para_auxilio toolkit (89 services, 100+ tools) for
+Exposes the focused coding-vps_apenas_para_auxilio toolkit (89 services, 85 tools) for
 TRAE / Antigravity / Claude / MiniMax-M3 / any MCP client.
 
-Squad 3 (2026-07-08) — adicionado categoria NETWORKING (3 tools) + MONITORING (5 tools).
-Total atual: 100+ tools em 16 categorias.
+Squad 1 (2026-07-09) — dedupe: removed 15 redundant low-value tools. Quality > quantity.
+Previous total: 100 tools → NEW: 85 tools (15% reduction).
+Removed: clickhouse_query, mongo_query, minio_list, prometheus_query, grafana_dashboards,
+         sentry_capture_event, goclaw_list_agents, shm_incidents, boltdiy_create,
+         chartdb_export, opennotebook_create, letsencrypt_list, hostinger_api_status,
+         tailscale_ping, tailscale_list_devices. All can be replicated via
+         `ssh docker exec` from `exec_in_container` or were rarely invoked.
 
-Categories:
-  LLM (17):  chat_minimax, list_models, chat_with_<agent> for 17 agents
-  STATUS (8): list_services, health_check_*, service_info, docker_stats, swarm_info
-  DOCKER (6): service_logs, restart_service, scale_service, deploy_image, env_get, env_set
+Categories (15):
+  LLM (11): chat_minimax, list_models, chat_with_<agent> for 9 agents (crew-ai, goose,
+            hermes, kilo-org_kilocode, langgraph, openchamber, openclaw, opencode,
+            openhands)
+  STATUS (8): list_services, health_check_service, service_info, docker_stats,
+              swarm_info, node_list, network_list, volume_list
+  DOCKER (6): service_logs, restart_service, scale_service, deploy_image,
+              env_get, env_set
   EASYPANEL (4): ep_login, ep_list_projects, ep_list_services, ep_deploy
-  DB (10): postgres_query, redis_ping, redis_get, redis_set, redis_keys, clickhouse_query,
-           elasticsearch_search, mongo_query, surreal_query, minio_list
-  WORKFLOW (4): temporal_list_workflows, temporal_describe, paperclip_list, langflow_run
+  DB (6): postgres_query, postgres_list_tables, redis_ping, redis_get, redis_set,
+          redis_keys, elasticsearch_search
+  WORKFLOW (4): temporal_list_workflows, temporal_describe, paperclip_list_tasks,
+                langflow_run
   CODE REVIEW (6): gerrit_list_changes, gerrit_get_change, sonarqube_projects,
                    sonarqube_issues, sourcegraph_search, argilla_datasets
-  WEBSOCKET (6): centrifugo_publish, centrifugo_subscribe, centrifugo_channels,
-                 mirotalk_create, snapdrop_peers, filepizza_create
+  WEBSOCKET (6): centrifugo_publish, centrifugo_channels, centrifugo_history,
+                 mirotalk_create_room, snapdrop_peers, filepizza_create
   WEBHOOK (4): request_basket_create, request_basket_list, request_basket_get,
                webhook_send
-  RAG (5): langflow_run_flow, anythingllm_query, argilla_search, langfuse_traces,
+  RAG (5): langflow_list_flows, anythingllm_query, argilla_search, langfuse_traces,
            evoai_generate
   SEARCH (4): firecrawl_scrape, firecrawl_crawl, crwal4ai_scrape, flaresolverr_solve
-  DEV (6): goclaw_list, shm_incidents, boltdiy_create, chartdb_export,
-           opennotebook_create, opencode_run
-  MONITORING (8): prometheus_query, prometheus_metrics, sentry_list_issues,
-                  sentry_capture_event, status_page_get, grafana_dashboards,
-                  letsencrypt_list, hostinger_api_status
-  UTILITY (15): backup_volume, restore_volume, exec_in_container, file_read,
-                file_write, tail_file, network_inspect, port_scan,
-                swarm_service_create, swarm_service_remove, image_pull,
-                image_list, secret_get, secret_set, openapi_spec
-  NETWORKING (3) [SQUAD-3]: tailscale_status, tailscale_ping, tailscale_list_devices
+  DEV (1): opencode_run (kept as canonical coding agent entrypoint)
+  MONITORING (3): prometheus_metrics, sentry_list_issues, status_page_get
+  NETWORKING (1): tailscale_status
+  UTILITY (15): exec_in_container, backup_volume, restore_volume, image_pull,
+                image_list, swarm_service_create, swarm_service_remove, file_read,
+                file_write, tail_file, port_scan, network_inspect, secret_get,
+                secret_set, openapi_spec
 
 Usage:
   CLI:     python scripts/coding_vps_mcp_orchestrator.py list
@@ -484,10 +491,8 @@ def redis_keys(redis_service: str, pattern: str = "*") -> dict:
 
 
 def clickhouse_query(sql: str) -> dict:
-    """Query LangFuse Clickhouse."""
-    safe = sql.replace('"', "'")[:2000]
-    r = docker_exec("coding-vps_apenas_para_auxilio_langfuse-clickhouse", f"clickhouse-client --query \"{safe}\" 2>&1 | head -50")
-    return {"result": r["stdout"]}
+    """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with clickhouse-client."""
+    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_langfuse-clickhouse cmd='clickhouse-client --query \"...\""}
 
 
 def elasticsearch_search(index: str, query: str) -> dict:
@@ -501,17 +506,13 @@ def elasticsearch_search(index: str, query: str) -> dict:
 
 
 def mongo_query(db: str, collection: str, query: dict) -> dict:
-    """MongoDB query (lynx-db etc)."""
-    r = docker_exec(f"coding-vps_apenas_para_auxilio_{db}",
-                    f"mongo {db} --eval 'db.{collection}.find({json.dumps(query)}).limit(5).toArray()' 2>&1 | head -50")
-    return {"result": r["stdout"]}
+    """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with mongosh."""
+    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container with mongosh --eval"}
 
 
 def minio_list(bucket: str = "langfuse") -> dict:
-    """List files in a MinIO bucket."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_langfuse-minio",
-                    f"mc ls local/{bucket} 2>&1 | head -30")
-    return {"bucket": bucket, "files": r["stdout"]}
+    """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with mc ls."""
+    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_langfuse-minio cmd='mc ls local/<bucket>'"}
 
 
 # ============================================
@@ -711,29 +712,28 @@ def flaresolverr_solve(url: str) -> dict:
 # Dev Tools (6)
 # ============================================
 def goclaw_list_agents() -> dict:
-    """List Goclaw AI agents."""
-    return http_get("http://coding-vps_apenas_para_auxilio_goclaw:8080/api/agents")
+    """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with curl on goclaw:8080."""
+    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_goclaw cmd='curl -s http://localhost:8080/api/agents'"}
 
 
 def shm_incidents() -> dict:
-    """List SHM status page incidents."""
-    return http_get("http://coding-vps_apenas_para_auxilio_shm:8080/incidents")
+    """[DEPRECATED — Squad 1 2026-07-09] Use status_page_get or exec_in_container on shm:8080."""
+    return {"error": "removed by squad1 dedupe", "migration": "use status_page_get or exec_in_container service=coding-vps_apenas_para_auxilio_shm cmd='curl -s http://localhost:8080/incidents'"}
 
 
 def boltdiy_create(prompt: str) -> dict:
-    """Generate app code via Bolt.DIY."""
-    return http_post("http://coding-vps_apenas_para_auxilio_boltdiy:3000/api/generate", {"prompt": prompt})
+    """[DEPRECATED — Squad 1 2026-07-09] Use opencode_run or chat_with_agent(opencode)."""
+    return {"error": "removed by squad1 dedupe", "migration": "use opencode_run or chat_opencode for code generation tasks"}
 
 
 def chartdb_export(db_url: str) -> dict:
-    """Export DB schema visualization."""
-    return http_post("http://coding-vps_apenas_para_auxilio_chartdb:3001/api/export", {"connection": db_url})
+    """[DEPRECATED — Squad 1 2026-07-09] Schema introspection handled by postgres_list_tables + sqlacodegen."""
+    return {"error": "removed by squad1 dedupe", "migration": "use postgres_list_tables for table inventory; for visualization use sqlacodegen offline"}
 
 
 def opennotebook_create(title: str, content: str) -> dict:
-    """Create Open Notebook entry."""
-    return http_post("http://coding-vps_apenas_para_auxilio_open-notebook:8501/api/notebooks",
-                     {"title": title, "content": content})
+    """[DEPRECATED — Squad 1 2026-07-09] Use Notion CLI (ntn) instead."""
+    return {"error": "removed by squad1 dedupe", "migration": "use ntn create-page with workspace=cartorio"}
 
 
 def opencode_run(prompt: str) -> dict:
@@ -745,8 +745,8 @@ def opencode_run(prompt: str) -> dict:
 # Monitoring Tools (3)
 # ============================================
 def prometheus_query(query: str) -> dict:
-    """Query Prometheus metrics (if available)."""
-    return http_get(f"http://coding-vps_apenas_para_auxilio_prometheus:9090/api/v1/query?query={urllib.parse.quote(query)}")
+    """[DEPRECATED — Squad 1 2026-07-09] Use prometheus_metrics or exec_in_container on prometheus:9090."""
+    return {"error": "removed by squad1 dedupe", "migration": "use prometheus_metrics to list names, or exec_in_container service=coding-vps_apenas_para_auxilio_prometheus cmd='wget -qO- http://localhost:9090/api/v1/query?query=...'"}
 
 
 def sentry_list_issues(project: str) -> dict:
@@ -770,39 +770,23 @@ def prometheus_metrics(job: str = "coding-vps") -> dict:
 
 
 def sentry_capture_event(message: str, level: str = "info", tags: str = "coding-vps") -> dict:
-    """Capture a custom Sentry event for testing the Sentry pipeline.
-
-    Uses Sentry envelope API (no auth required for self-hosted relay). Safe to call.
-    """
-    payload = {
-        "event_id": __import__("uuid").uuid4().hex,
-        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
-        "platform": "python",
-        "level": level,
-        "logentry": {"formatted": message},
-        "tags": {"source": tags, "orchestrator": "squad3"},
-    }
-    return http_post(
-        "http://coding-vps_apenas_para_auxilio_sentry:9000/api/0/store/",
-        payload,
-        headers={"X-Sentry-Auth": "Sentry sentry_version=7, sentry_key=public"},
-    )
+    """[DEPRECATED — Squad 1 2026-07-09] Use Sentry SDK directly via exec_in_container."""
+    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container with sentry-cli send-event or Python sdk"}
 
 
 def grafana_dashboards() -> dict:
-    """List Grafana dashboards (no auth, anonymous mode)."""
-    return http_get("http://coding-vps_apenas_para_auxilio_grafana:3000/api/search?type=dash-db")
+    """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with curl on grafana:3000."""
+    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_grafana cmd='curl -s http://localhost:3000/api/search?type=dash-db'"}
 
 
 def letsencrypt_list() -> dict:
-    """List Let's Encrypt certificates expiring soon via Traefik acme.json."""
-    r = ssh("cat /letsencrypt/acme.json 2>/dev/null | head -200 || echo 'NO_ACME_FILE'")
-    return {"acme": r["stdout"][:3000], "stderr": r["stderr"][:300]}
+    """[DEPRECATED — Squad 1 2026-07-09] Use file_read on /letsencrypt/acme.json."""
+    return {"error": "removed by squad1 dedupe", "migration": "use file_read path=/letsencrypt/acme.json (or run 'docker exec traefik cat /acme.json' via exec_in_container)"}
 
 
 def hostinger_api_status() -> dict:
-    """Get Hostinger VPS API status (resource usage, uptime)."""
-    return http_get("https://developers.hostinger.com/api/vps/v1/virtual-machines", timeout=15)
+    """[DEPRECATED — Squad 1 2026-07-09] Use docker_stats + swarm_info for VPS health."""
+    return {"error": "removed by squad1 dedupe", "migration": "use docker_stats + swarm_info + node_list for in-VPS resource telemetry"}
 
 
 # ============================================
@@ -815,15 +799,13 @@ def tailscale_status() -> dict:
 
 
 def tailscale_ping(target: str = "100.99.172.84") -> dict:
-    """Ping a peer via Tailscale mesh (uses Tailscale ping not ICMP)."""
-    r = ssh(f"tailscale ping --c 4 {target} 2>&1 | head -30 || echo 'PING_FAILED'")
-    return {"target": target, "raw": r["stdout"][:1500]}
+    """[DEPRECATED — Squad 1 2026-07-09] Use tailscale_status or exec_in_container."""
+    return {"error": "removed by squad1 dedupe", "migration": "use tailscale_status for peers/online info, or exec_in_container for ICMP probes"}
 
 
 def tailscale_list_devices() -> dict:
-    """List all devices in the Tailscale tailnet (name, OS, IP, last seen)."""
-    r = ssh("tailscale status --peers=false 2>&1 | head -100 || echo 'TAILSCALE_OFFLINE'")
-    return {"devices": r["stdout"][:3000], "stderr": r["stderr"][:300]}
+    """[DEPRECATED — Squad 1 2026-07-09] Use tailscale_status (already returns devices)."""
+    return {"error": "removed by squad1 dedupe", "migration": "use tailscale_status — already returns peer list including devices"}
 
 
 # ============================================
@@ -997,10 +979,8 @@ def _register_db() -> dict:
         "redis_get": {"func": redis_get, "args": ["redis_service", "key"], "category": "db", "desc": "Get a Redis key value"},
         "redis_set": {"func": redis_set, "args": ["redis_service", "key", "value"], "category": "db", "desc": "Set a Redis key value"},
         "redis_keys": {"func": redis_keys, "args": ["redis_service", "pattern?"], "category": "db", "desc": "List Redis keys matching pattern"},
-        "clickhouse_query": {"func": clickhouse_query, "args": ["sql"], "category": "db", "desc": "Query LangFuse ClickHouse"},
         "elasticsearch_search": {"func": elasticsearch_search, "args": ["index", "query"], "category": "db", "desc": "Search Argilla Elasticsearch"},
-        "mongo_query": {"func": mongo_query, "args": ["db", "collection", "query"], "category": "db", "desc": "MongoDB query (lynx-db etc)"},
-        "minio_list": {"func": minio_list, "args": ["bucket?"], "category": "db", "desc": "List files in a MinIO bucket"},
+        # Squad 1 2026-07-09: clickhouse_query, mongo_query, minio_list REMOVED (use exec_in_container)
     }
 
 
@@ -1064,35 +1044,27 @@ def _register_search() -> dict:
 
 
 def _register_dev() -> dict:
+    # Squad 1 2026-07-09: goclaw_list_agents, shm_incidents, boltdiy_create,
+    # chartdb_export, opennotebook_create REMOVED. Kept only opencode_run.
     return {
-        "goclaw_list_agents": {"func": goclaw_list_agents, "args": [], "category": "dev", "desc": "List Goclaw AI agents"},
-        "shm_incidents": {"func": shm_incidents, "args": [], "category": "dev", "desc": "List SHM status page incidents"},
-        "boltdiy_create": {"func": boltdiy_create, "args": ["prompt"], "category": "dev", "desc": "Generate app code via Bolt.DIY"},
-        "chartdb_export": {"func": chartdb_export, "args": ["db_url"], "category": "dev", "desc": "Export DB schema visualization"},
-        "opennotebook_create": {"func": opennotebook_create, "args": ["title", "content"], "category": "dev", "desc": "Create Open Notebook entry"},
         "opencode_run": {"func": opencode_run, "args": ["prompt"], "category": "dev", "desc": "Run OpenCode Node.js coding agent"},
     }
 
 
 def _register_monitoring() -> dict:
+    # Squad 1 2026-07-09: prometheus_query, sentry_capture_event, grafana_dashboards,
+    # letsencrypt_list, hostinger_api_status REMOVED. Kept 3 essentials.
     return {
-        "prometheus_query": {"func": prometheus_query, "args": ["query"], "category": "monitoring", "desc": "Query Prometheus metrics"},
-        "prometheus_metrics": {"func": prometheus_metrics, "args": ["job?"], "category": "monitoring", "desc": "List Prometheus metric names (Squad 3)"},
+        "prometheus_metrics": {"func": prometheus_metrics, "args": ["job?"], "category": "monitoring", "desc": "List Prometheus metric names (target discovery)"},
         "sentry_list_issues": {"func": sentry_list_issues, "args": ["project"], "category": "monitoring", "desc": "List Sentry issues"},
-        "sentry_capture_event": {"func": sentry_capture_event, "args": ["message", "level?", "tags?"], "category": "monitoring", "desc": "Capture custom Sentry event (Squad 3)"},
         "status_page_get": {"func": status_page_get, "args": [], "category": "monitoring", "desc": "Get SHM public status page"},
-        "grafana_dashboards": {"func": grafana_dashboards, "args": [], "category": "monitoring", "desc": "List Grafana dashboards (Squad 3)"},
-        "letsencrypt_list": {"func": letsencrypt_list, "args": [], "category": "monitoring", "desc": "List Let's Encrypt certs (Squad 3)"},
-        "hostinger_api_status": {"func": hostinger_api_status, "args": [], "category": "monitoring", "desc": "Get Hostinger VPS API status (Squad 3)"},
     }
 
 
 def _register_networking() -> dict:
-    """Squad 3 (2026-07-08) — Tailscale mesh tools. Categoria nova."""
+    # Squad 1 2026-07-09: tailscale_ping, tailscale_list_devices REMOVED (use tailscale_status).
     return {
-        "tailscale_status": {"func": tailscale_status, "args": [], "category": "networking", "desc": "Tailscale mesh status JSON (Squad 3)"},
-        "tailscale_ping": {"func": tailscale_ping, "args": ["target?"], "category": "networking", "desc": "Ping Tailscale peer (Squad 3)"},
-        "tailscale_list_devices": {"func": tailscale_list_devices, "args": [], "category": "networking", "desc": "List Tailscale devices in tailnet (Squad 3)"},
+        "tailscale_status": {"func": tailscale_status, "args": [], "category": "networking", "desc": "Tailscale mesh status JSON (peers, IPs, online state)"},
     }
 
 
