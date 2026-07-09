@@ -64,6 +64,40 @@ async def test_send_message_sucesso_200() -> None:
 
 
 @pytest.mark.asyncio
+async def test_send_message_migrate_supergroup_retry_ok() -> None:
+    """FIX 2026-07-09: 400 migrate_to_chat_id deve reenviar e retornar True."""
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    fail = MagicMock()
+    fail.status_code = 400
+    fail.text = "migrated"
+    fail.json.return_value = {
+        "ok": False,
+        "error_code": 400,
+        "description": "Bad Request: group chat was upgraded to a supergroup chat",
+        "parameters": {"migrate_to_chat_id": -1004331849032},
+    }
+    ok = MagicMock()
+    ok.status_code = 200
+    ok.text = "ok"
+
+    client = MagicMock()
+    client.post = AsyncMock(side_effect=[fail, ok])
+
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=client):
+        result = await _send_message(-5319980720, "menu")
+    assert result is True
+    assert client.post.await_count == 2
+    second_payload = client.post.await_args_list[1].kwargs.get("json") or client.post.await_args_list[1][1].get("json")
+    # post(url, json=payload)
+    second_call = client.post.await_args_list[1]
+    payload = second_call.kwargs.get("json") if second_call.kwargs else second_call[1].get("json")
+    if payload is None:
+        # positional: post(url, json=payload) via kwargs only in our code
+        payload = second_call.kwargs["json"]
+    assert payload["chat_id"] == -1004331849032
+
+
 async def test_send_message_http_400_retorna_False() -> None:
     """_send_message retorna False quando API responde 400."""
     mock_pool = MagicMock()

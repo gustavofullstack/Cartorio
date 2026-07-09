@@ -429,6 +429,12 @@ async def _send_message(
     reply_markup: dict | None = None,
     keyboard: list[list[dict]] | None = None,
 ) -> bool:
+    """Envia mensagem ao Telegram.
+
+    FIX 2026-07-09: se o grupo foi migrado a supergroup, a API retorna 400 com
+    ``migrate_to_chat_id``. Reenvia automaticamente no ID novo (grupo de validacao
+    -5319980720 → -1004331849032). Sem isso botoes no grupo parecem mortos.
+    """
     cleaned_text = strip_emojis(text)
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload: dict[str, Any] = {
@@ -448,6 +454,22 @@ async def _send_message(
         resp = await client.post(url, json=payload)
         if resp.status_code == 200:
             return True
+        # Auto-migrate supergroup
+        try:
+            body = resp.json()
+            migrate_to = (body.get("parameters") or {}).get("migrate_to_chat_id")
+            if resp.status_code == 400 and migrate_to:
+                logger.warning(
+                    "TG chat migrated %s -> %s; retrying send", chat_id, migrate_to
+                )
+                payload["chat_id"] = int(migrate_to)
+                resp2 = await client.post(url, json=payload)
+                if resp2.status_code == 200:
+                    return True
+                logger.warning("TG send after migrate %d: %.200s", resp2.status_code, resp2.text)
+                return False
+        except Exception:
+            pass
         logger.warning("TG send %d: %.200s", resp.status_code, resp.text)
         return False
     except Exception as e:
@@ -1041,21 +1063,31 @@ async def telegram_webhook(
     if chat_type in ("group", "supergroup"):
         is_command = text.startswith("/")
         mentions_bot = "@test_cartorio_bot" in text
-        if not is_command and not mentions_bot:
-            # FIX 2026-07-08: reagir com eyes + mandar msg de orientacao
-            # para que o usuario saiba como chamar o bot (clicar no botao
-            # /menu ou mencionar @test_cartorio_bot). Antes: silencio total
-            # que parecia bug. Gustavo reclamou "botoes nao funcionam".
+        if not is_command and not mentions_bot and not callback:
+            # FIX 2026-07-09: NAO spammar orientacao a cada msg do grupo.
+            # Apenas reacao "eyes" (silenciosa). Orientacao no max 1x/5min por chat
+            # (Redis key). Usuario reclamou: "spam piora o problema".
             logger.info("TG group ignore chat=%s text=%.60s", chat_id, text)
             early_msg_id = message.get("message_id", 0)
             await _react(chat_id, early_msg_id, "eyes")
-            orientacao = (
-                "Use /menu para abrir o cartorio, ou me mencione "
-                "(@test_cartorio_bot) na sua mensagem."
-            )
-            await _send_message(
-                chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
-            )
+            bus_hint = get_bus()
+            should_orient = True
+            if bus_hint:
+                try:
+                    orient_key = f"tg:orient:{chat_id}"
+                    # SET NX EX 300 = so manda orientacao se nao mandou nos ultimos 5min
+                    set_ok = await bus_hint.client.set(orient_key, "1", nx=True, ex=300)
+                    should_orient = bool(set_ok)
+                except Exception:
+                    should_orient = False
+            if should_orient:
+                orientacao = (
+                    "Use /menu ou os botoes. Mencione @test_cartorio_bot so se precisar "
+                    "de texto livre. Nao repito este aviso por 5 min."
+                )
+                await _send_message(
+                    chat_id, orientacao, reply_markup={"inline_keyboard": _menu_keyboard()}
+                )
             return {"status": "ignored", "reason": "group message without command or mention"}
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
