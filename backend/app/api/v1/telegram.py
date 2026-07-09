@@ -815,7 +815,9 @@ async def _handle_state(
         )
     if state == STATE_AGENDAR_CONFIRMAR:
         if tl in ("sim", "s", "ok", "confirmar"):
-            r, kb, _ = await _confirmar_agendamento(bus, key if key is not None else 0, user_id=user_id)
+            r, kb, _ = await _confirmar_agendamento(
+                bus, key if key is not None else 0, user_id=user_id
+            )
             return r, STATE_IDLE, kb
         if tl in ("nao", "n", "cancelar"):
             await _clear_state(bus, key)
