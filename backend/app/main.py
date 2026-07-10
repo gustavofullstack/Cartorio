@@ -537,6 +537,9 @@ SWAGGER_UI_HTML = """<!DOCTYPE html>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css" />
   <style>
     body {{ margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }}
+    a:focus-visible, button:focus-visible, input:focus-visible {{ outline: 3px solid #f6e05e; outline-offset: 2px; }}
+    .skip-link {{ position: absolute; top: -40px; left: 0; background: #000; color: white; padding: 8px; z-index: 100; }}
+    .skip-link:focus {{ top: 0; }}
     .topbar {{ display: none; }}
     .swagger-ui .info .title {{ color: #1a365d; font-size: 2.2em; }}
     .swagger-ui .info .description p {{ line-height: 1.6; }}
@@ -560,16 +563,17 @@ SWAGGER_UI_HTML = """<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <div class="header-cartorio">
+  <a href="#swagger-ui" class="skip-link">Pular para o conteúdo principal</a>
+  <header class="header-cartorio">
     <h1>Cartorio 2 Notas Uberlandia - Backend API</h1>
-    <div class="links">
+    <nav class="links" aria-label="Navegação principal">
       <a href="/redoc">ReDoc</a>
       <a href="/openapi.json">openapi.json</a>
       <a href="/mcp">MCP</a>
       <a href="/mcp-servers">MCP Servers</a>
-    </div>
-  </div>
-  <div id="swagger-ui"></div>
+    </nav>
+  </header>
+  <main id="swagger-ui"></main>
   <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
     window.onload = () => {{
