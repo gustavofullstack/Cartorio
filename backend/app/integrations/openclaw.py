@@ -89,7 +89,7 @@ async def chat(
     scrubbed_messages, pii_redacted_count = _scrub_messages(messages)
 
     # ---- Monta request ----
-    url = f"{target_base_url.rstrip('/')}/v1/chat"
+    url = f"{target_base_url.rstrip('/')}/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {target_api_key}",
         "Content-Type": "application/json",
