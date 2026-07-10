@@ -715,7 +715,7 @@ async def _handle_callback(
 
 
 async def _confirmar_agendamento(
-    bus: Any, key: int | str, *, user_id: int | None = None
+    bus: Any, key: int | str | None, *, user_id: int | None = None
 ) -> tuple[str, list | None, bool]:
     state_obj = await _get_state(bus, key)
     sdata = state_obj.get("data", {})
