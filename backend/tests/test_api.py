@@ -73,10 +73,6 @@ def test_webhook_evolution_sem_pii(client):
     needs_human_handoff=False explicitamente (LGPD compliance signal).
     """
     from unittest.mock import AsyncMock, MagicMock, patch
-    from app.config import settings
-    settings.opencode_go_api_key = "sk-test"
-    import os
-    os.environ["OPENCODE_GO_API_KEY"] = "sk-test"
 
     mock_response = MagicMock()
     mock_response.status_code = 200
