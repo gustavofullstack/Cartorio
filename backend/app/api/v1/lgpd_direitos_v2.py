@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -144,15 +144,9 @@ def lgpd_dashboard(
         or 0
     )
 
-    # Detect dialect (PostgreSQL prod vs SQLite test) for cross-compatible time
-    dialect_name = db.bind.dialect.name if db.bind is not None else "postgresql"
-    is_sqlite = dialect_name == "sqlite"
-    if is_sqlite:
-        ts_30d_expr = "datetime('now', '-30 days')"
-        ts_1d_expr = "datetime('now', '-1 day')"
-    else:
-        ts_30d_expr = "NOW() - INTERVAL '30 days'"
-        ts_1d_expr = "NOW() - INTERVAL '1 day'"
+    now = datetime.now(timezone.utc)
+    ts_30d = now - timedelta(days=30)
+    ts_1d = now - timedelta(days=1)
 
     # 4. Consentimentos revogados nos ultimos 30 dias
     consents_revogados_30d = (
@@ -160,8 +154,9 @@ def lgpd_dashboard(
             text(
                 "SELECT COUNT(*) FROM audit_log "
                 "WHERE action = 'lgpd.consent.revoked' "
-                f"AND timestamp >= {ts_30d_expr}"
-            )
+                "AND timestamp >= :ts_30d"
+            ),
+            {"ts_30d": ts_30d},
         ).scalar()
         or 0
     )
@@ -172,15 +167,19 @@ def lgpd_dashboard(
             text(
                 "SELECT COUNT(*) FROM audit_log "
                 "WHERE action = 'lgpd.portabilidade.download' "
-                f"AND timestamp >= {ts_30d_expr}"
-            )
+                "AND timestamp >= :ts_30d"
+            ),
+            {"ts_30d": ts_30d},
         ).scalar()
         or 0
     )
 
     # 6. Audit entries nas ultimas 24h
     audit_24h = (
-        db.execute(text(f"SELECT COUNT(*) FROM audit_log WHERE timestamp >= {ts_1d_expr}")).scalar()
+        db.execute(
+            text("SELECT COUNT(*) FROM audit_log WHERE timestamp >= :ts_1d"),
+            {"ts_1d": ts_1d},
+        ).scalar()
         or 0
     )
 
