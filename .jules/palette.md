@@ -1,0 +1,3 @@
+## 2026-07-10 - Adding semantic landmarks to embedded HTML templates
+**Learning:** Even embedded strings functioning as HTML templates (like `SWAGGER_UI_HTML` in `main.py`) need full accessibility features including semantic landmarks (`<header>`, `<nav>`, `<main>`), skip links, and focus-visible outlines. It's easy to overlook them since they aren't standard React/UI components, but they represent a primary entry point for API documentation users.
+**Action:** When updating or rendering raw HTML templates within Python files, consistently apply modern semantic web practices and keyboard accessibility to ensure all user touchpoints, internal and external, meet standard UX guidelines.
