@@ -348,7 +348,7 @@ async def _clear_queue(
         pass
 
 
-def _conv_key(chat_id: int, user_id: int | None = None, chat_type: str = "private") -> str:
+def _conv_key(chat_id: int, user_id: int | str | None = None, chat_type: str = "private") -> str:
     """Chave de conversa / estado.
 
     FIX 2026-07-09: em grupo/supergroup o estado DEVE ser por usuario
@@ -657,7 +657,7 @@ async def _handle_callback(
     bus: Any,
     key: int | str | None = None,
     *,
-    user_id: int | None = None,
+    user_id: int | str | None = None,
     chat_id: int | str | None = None,
 ) -> tuple[str, list | None, bool]:
     key = key if key is not None else chat_id
@@ -710,12 +710,14 @@ async def _handle_callback(
             )
         return "Opcao invalida.", _servicos_keyboard(), True
     if data == "agendar:confirmar":
-        return await _confirmar_agendamento(bus, key, user_id=user_id)
+        return await _confirmar_agendamento(
+            bus, key if key is not None else 0, user_id=user_id if user_id is not None else 0
+        )
     return "", None, False
 
 
 async def _confirmar_agendamento(
-    bus: Any, key: int | str, *, user_id: int | None = None
+    bus: Any, key: int | str, *, user_id: int | str | None = None
 ) -> tuple[str, list | None, bool]:
     state_obj = await _get_state(bus, key)
     sdata = state_obj.get("data", {})
@@ -770,7 +772,7 @@ async def _handle_state(
     bus: Any,
     key: int | str | None = None,
     *,
-    user_id: int | None = None,
+    user_id: int | str | None = None,
     chat_id: int | str | None = None,
 ) -> tuple[str, str, list | None]:
     key = key if key is not None else chat_id
@@ -815,7 +817,9 @@ async def _handle_state(
         )
     if state == STATE_AGENDAR_CONFIRMAR:
         if tl in ("sim", "s", "ok", "confirmar"):
-            r, kb, _ = await _confirmar_agendamento(bus, key, user_id=user_id)
+            r, kb, _ = await _confirmar_agendamento(
+                bus, key if key is not None else 0, user_id=user_id if user_id is not None else 0
+            )
             return r, STATE_IDLE, kb
         if tl in ("nao", "n", "cancelar"):
             await _clear_state(bus, key)
@@ -836,7 +840,7 @@ async def _handle_state(
             _menu_keyboard(),
         )
     if state == STATE_HUMANO:
-        uid = user_id if user_id is not None else 0
+        uid = int(user_id) if user_id is not None and str(user_id).isdigit() else 0
         res_atendimento = await _tool_criar_atendimento(
             cliente_id=uid, topico=text.strip(), contato=f"telegram:{uid}"
         )
