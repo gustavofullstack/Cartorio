@@ -4768,6 +4768,15 @@ def get_agendamentos_pendentes(
 
     agendamentos = AgendamentoService.listar_agendamentos_pendentes(db)
 
+    # Batch fetch clientes para resolver N+1
+    cliente_ids = {a.get("cliente_id") for a in agendamentos if a.get("cliente_id")}
+    clientes_map = {}
+    if cliente_ids:
+        from app.models.cliente import Cliente
+
+        clientes = db.execute(select(Cliente).where(Cliente.id.in_(cliente_ids))).scalars().all()
+        clientes_map = {c.id: c for c in clientes}
+
     result = []
     for agendamento in agendamentos:
         # Buscar informações de contato do cliente
@@ -4779,11 +4788,7 @@ def get_agendamentos_pendentes(
 
         cliente_id = agendamento.get("cliente_id")
         if cliente_id:
-            from app.models.cliente import Cliente
-
-            cliente = db.execute(
-                select(Cliente).where(Cliente.id == cliente_id)
-            ).scalar_one_or_none()
+            cliente = clientes_map.get(cliente_id)
 
             if cliente:
                 cliente_info = {
@@ -4854,6 +4859,15 @@ def get_agendamentos_proximos(
 
     agendamentos = AgendamentoService.listar_agendamentos_proximos(db)
 
+    # Batch fetch clientes para resolver N+1
+    cliente_ids = {a.get("cliente_id") for a in agendamentos if a.get("cliente_id")}
+    clientes_map = {}
+    if cliente_ids:
+        from app.models.cliente import Cliente
+
+        clientes = db.execute(select(Cliente).where(Cliente.id.in_(cliente_ids))).scalars().all()
+        clientes_map = {c.id: c for c in clientes}
+
     result = []
     for agendamento in agendamentos:
         # Buscar informações de contato do cliente
@@ -4865,11 +4879,7 @@ def get_agendamentos_proximos(
 
         cliente_id = agendamento.get("cliente_id")
         if cliente_id:
-            from app.models.cliente import Cliente
-
-            cliente = db.execute(
-                select(Cliente).where(Cliente.id == cliente_id)
-            ).scalar_one_or_none()
+            cliente = clientes_map.get(cliente_id)
 
             if cliente:
                 cliente_info = {
