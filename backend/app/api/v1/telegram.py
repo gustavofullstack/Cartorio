@@ -710,6 +710,8 @@ async def _handle_callback(
             )
         return "Opcao invalida.", _servicos_keyboard(), True
     if data == "agendar:confirmar":
+        if key is None:
+            return "Erro interno.", None, False
         return await _confirmar_agendamento(bus, key, user_id=user_id)
     return "", None, False
 
@@ -815,6 +817,8 @@ async def _handle_state(
         )
     if state == STATE_AGENDAR_CONFIRMAR:
         if tl in ("sim", "s", "ok", "confirmar"):
+            if key is None:
+                return "Erro interno.", STATE_IDLE, None
             r, kb, _ = await _confirmar_agendamento(bus, key, user_id=user_id)
             return r, STATE_IDLE, kb
         if tl in ("nao", "n", "cancelar"):
