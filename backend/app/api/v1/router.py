@@ -28,7 +28,7 @@ import httpx
 import redis
 from fastapi import APIRouter, Depends, Form, Header, HTTPException, Path, Query, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, ConfigDict, Field  # noqa: F401  (usado nos schemas abaixo)
 
@@ -334,10 +334,10 @@ def _gerar_numero_protocolo(db: Session, ano: int) -> str:
     Estrategia: count + 1 do ano (boa o suficiente pra MVP; em prod usar sequence).
     """
     padrao = f"{ano}-%"
-    existentes = (
-        db.execute(select(Protocolo.numero).where(Protocolo.numero.like(padrao))).scalars().all()
+    count_existentes = db.scalar(
+        select(func.count()).select_from(Protocolo).where(Protocolo.numero.like(padrao))
     )
-    proximo = len(existentes) + 1
+    proximo = (count_existentes or 0) + 1
     return f"{ano}-{proximo:05d}"
 
 

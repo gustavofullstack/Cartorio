@@ -438,7 +438,7 @@ async def _tool_consultar_protocolo(numero: str) -> dict:
     return await _call_api("GET", f"/api/v1/protocolo/{numero}")
 
 
-async def _tool_criar_atendimento(cliente_id: int, topico: str, contato: str) -> dict:
+async def _tool_criar_atendimento(cliente_id: int | str, topico: str, contato: str) -> dict:
     return await _call_api(
         "POST",
         "/api/v1/atendimento",
@@ -657,7 +657,7 @@ async def _handle_callback(
     bus: Any,
     key: int | str | None = None,
     *,
-    user_id: int | None = None,
+    user_id: int | str | None = None,
     chat_id: int | str | None = None,
 ) -> tuple[str, list | None, bool]:
     key = key if key is not None else chat_id
@@ -710,12 +710,14 @@ async def _handle_callback(
             )
         return "Opcao invalida.", _servicos_keyboard(), True
     if data == "agendar:confirmar":
+        if key is None:
+            return "Erro interno: chave ausente.", None, False
         return await _confirmar_agendamento(bus, key, user_id=user_id)
     return "", None, False
 
 
 async def _confirmar_agendamento(
-    bus: Any, key: int | str, *, user_id: int | None = None
+    bus: Any, key: int | str, *, user_id: int | str | None = None
 ) -> tuple[str, list | None, bool]:
     state_obj = await _get_state(bus, key)
     sdata = state_obj.get("data", {})
@@ -770,7 +772,7 @@ async def _handle_state(
     bus: Any,
     key: int | str | None = None,
     *,
-    user_id: int | None = None,
+    user_id: int | str | None = None,
     chat_id: int | str | None = None,
 ) -> tuple[str, str, list | None]:
     key = key if key is not None else chat_id
@@ -815,6 +817,8 @@ async def _handle_state(
         )
     if state == STATE_AGENDAR_CONFIRMAR:
         if tl in ("sim", "s", "ok", "confirmar"):
+            if key is None:
+                return "Erro interno: chave ausente.", STATE_IDLE, None
             r, kb, _ = await _confirmar_agendamento(bus, key, user_id=user_id)
             return r, STATE_IDLE, kb
         if tl in ("nao", "n", "cancelar"):
