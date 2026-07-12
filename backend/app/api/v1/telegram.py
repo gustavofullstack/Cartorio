@@ -661,6 +661,8 @@ async def _handle_callback(
     chat_id: int | str | None = None,
 ) -> tuple[str, list | None, bool]:
     key = key if key is not None else chat_id
+    if key is None:
+        key = "unknown_key"
     if data == "agendar":
         data = "cmd:agendar"
     elif data == "cancelar":
@@ -715,7 +717,7 @@ async def _handle_callback(
 
 
 async def _confirmar_agendamento(
-    bus: Any, key: int | str, *, user_id: int | None = None
+    bus: Any, key: int | str, *, user_id: int | str | None = None
 ) -> tuple[str, list | None, bool]:
     state_obj = await _get_state(bus, key)
     sdata = state_obj.get("data", {})
@@ -774,6 +776,8 @@ async def _handle_state(
     chat_id: int | str | None = None,
 ) -> tuple[str, str, list | None]:
     key = key if key is not None else chat_id
+    if key is None:
+        key = "unknown_key"
     tl = text.strip().lower()
     if state == STATE_AGENDAR_SERVICO:
         for i, (svc, (nome, _)) in enumerate(SERVICOS.items(), 1):
