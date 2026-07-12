@@ -48,7 +48,7 @@ LITELLM_URLS = [
     ),
     "http://cartorio_litellm-app:4000",
 ]
-LITELLM_KEY = os.environ.get("LITELLM_API_KEY", "e39dss0k1baohuqkprjv")
+LITELLM_KEY = os.environ.get("LITELLM_API_KEY")
 LITELLM_MODEL = os.environ.get("CARTORIO_AGENT_MODEL", "MiniMax-M3")
 
 AGENT_SYSTEM = """Voce e o Agent AI oficial do Cartorio 2o Oficio de Notas de Uberlandia/MG.
