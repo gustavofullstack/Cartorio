@@ -348,7 +348,7 @@ async def _clear_queue(
         pass
 
 
-def _conv_key(chat_id: int, user_id: int | None = None, chat_type: str = "private") -> str:
+def _conv_key(chat_id: int, user_id: int | str | None = None, chat_type: str = "private") -> str:
     """Chave de conversa / estado.
 
     FIX 2026-07-09: em grupo/supergroup o estado DEVE ser por usuario
@@ -438,7 +438,7 @@ async def _tool_consultar_protocolo(numero: str) -> dict:
     return await _call_api("GET", f"/api/v1/protocolo/{numero}")
 
 
-async def _tool_criar_atendimento(cliente_id: int, topico: str, contato: str) -> dict:
+async def _tool_criar_atendimento(cliente_id: int | str, topico: str, contato: str) -> dict:
     return await _call_api(
         "POST",
         "/api/v1/atendimento",
@@ -657,7 +657,7 @@ async def _handle_callback(
     bus: Any,
     key: int | str | None = None,
     *,
-    user_id: int | None = None,
+    user_id: int | str | None = None,
     chat_id: int | str | None = None,
 ) -> tuple[str, list | None, bool]:
     key = key if key is not None else chat_id
@@ -715,7 +715,7 @@ async def _handle_callback(
 
 
 async def _confirmar_agendamento(
-    bus: Any, key: int | str, *, user_id: int | None = None
+    bus: Any, key: int | str | None, *, user_id: int | str | None = None
 ) -> tuple[str, list | None, bool]:
     state_obj = await _get_state(bus, key)
     sdata = state_obj.get("data", {})
@@ -770,7 +770,7 @@ async def _handle_state(
     bus: Any,
     key: int | str | None = None,
     *,
-    user_id: int | None = None,
+    user_id: int | str | None = None,
     chat_id: int | str | None = None,
 ) -> tuple[str, str, list | None]:
     key = key if key is not None else chat_id
