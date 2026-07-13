@@ -333,11 +333,16 @@ def _gerar_numero_protocolo(db: Session, ano: int) -> str:
     Formato: YYYY-NNNNN onde NNNNN e zero-padded sequencial por ano.
     Estrategia: count + 1 do ano (boa o suficiente pra MVP; em prod usar sequence).
     """
+    from sqlalchemy import func
+
     padrao = f"{ano}-%"
-    existentes = (
-        db.execute(select(Protocolo.numero).where(Protocolo.numero.like(padrao))).scalars().all()
+    # ⚡ Bolt Optimization: Replace `len(scalars().all())` with `func.count()`
+    # to avoid O(N) memory allocation and network transfer overhead.
+    count = (
+        db.scalar(select(func.count()).select_from(Protocolo).where(Protocolo.numero.like(padrao)))
+        or 0
     )
-    proximo = len(existentes) + 1
+    proximo = count + 1
     return f"{ano}-{proximo:05d}"
 
 
