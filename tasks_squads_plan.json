@@ -1,0 +1,426 @@
+{
+  "name": "Cart\u00f3rio 100 Tasks Improvement Plan",
+  "goal": "Orchestrate 100 improvements sequentially (1 or 2 agents max) to save tokens and prevent errors.",
+  "squads": {
+    "cartorio-dev": [
+      {
+        "id": "A1",
+        "title": "Refactor backend tests for HTTP mocks"
+      },
+      {
+        "id": "A2",
+        "title": "Complete integration tests for test_api.py"
+      },
+      {
+        "id": "A3",
+        "title": "Add rate limiting metrics dashboard"
+      },
+      {
+        "id": "A4",
+        "title": "Refactor /protocolos cache invalidation logic"
+      },
+      {
+        "id": "A5",
+        "title": "Add unit tests for PII scrubbing"
+      },
+      {
+        "id": "A6",
+        "title": "Verify caching mechanism for /protocolos"
+      },
+      {
+        "id": "A7",
+        "title": "Implement sliding window rate limit for login"
+      },
+      {
+        "id": "A8",
+        "title": "Add tests for DLQ processing"
+      },
+      {
+        "id": "A9",
+        "title": "Refactor Sentry integration environment tagging"
+      },
+      {
+        "id": "A10",
+        "title": "Fix all Ruff warnings in backend"
+      }
+    ],
+    "cartorio-n8n": [
+      {
+        "id": "B1",
+        "title": "Audit N8N Workflows"
+      },
+      {
+        "id": "B2",
+        "title": "Verify Chatwoot Telegram Inbox"
+      },
+      {
+        "id": "B3",
+        "title": "Automated backup for N8N workflows"
+      },
+      {
+        "id": "B4",
+        "title": "Optimize Chatwoot canned responses"
+      },
+      {
+        "id": "B5",
+        "title": "Verify N8N webhook idempotent responses"
+      },
+      {
+        "id": "B6",
+        "title": "Implement error handling loop in WF01"
+      },
+      {
+        "id": "B7",
+        "title": "Verify Evolution API webhook payloads"
+      },
+      {
+        "id": "B8",
+        "title": "Validate N8N DB connection pool"
+      },
+      {
+        "id": "B9",
+        "title": "Refactor N8N API Keys injection"
+      },
+      {
+        "id": "B10",
+        "title": "Check Evolution API health checks"
+      }
+    ],
+    "cartorio-zcode": [
+      {
+        "id": "C1",
+        "title": "Verify OpenClaw adaptive thinking"
+      },
+      {
+        "id": "C2",
+        "title": "Enhance ARCHITECTURE.md"
+      },
+      {
+        "id": "C3",
+        "title": "Create automated testing user guide"
+      },
+      {
+        "id": "C4",
+        "title": "Document orchestration process"
+      },
+      {
+        "id": "C5",
+        "title": "Validate 1M context limits"
+      },
+      {
+        "id": "C6",
+        "title": "Optimize memory index logic"
+      },
+      {
+        "id": "C7",
+        "title": "Update API.md"
+      },
+      {
+        "id": "C8",
+        "title": "Document Redis setup"
+      },
+      {
+        "id": "C9",
+        "title": "Review cross-agent knowledge"
+      },
+      {
+        "id": "C10",
+        "title": "Audit agent token consumption"
+      }
+    ],
+    "cartorio-lgpd": [
+      {
+        "id": "D1",
+        "title": "Verify data retention policies for audit logs"
+      },
+      {
+        "id": "D2",
+        "title": "Test /lgpd/direito-esquecimento endpoint idempotency"
+      },
+      {
+        "id": "D3",
+        "title": "Review DPO email notification templates"
+      },
+      {
+        "id": "D4",
+        "title": "Audit anonymization routines for /clientes"
+      },
+      {
+        "id": "D5",
+        "title": "Validate consent tracking in N8N workflows"
+      },
+      {
+        "id": "D6",
+        "title": "Review PII regex patterns (add passport validation)"
+      },
+      {
+        "id": "D7",
+        "title": "Test soft delete functionality across all models"
+      },
+      {
+        "id": "D8",
+        "title": "Verify pseudonymization in metrics endpoints"
+      },
+      {
+        "id": "D9",
+        "title": "Document procedure for handling ANPD data breach notifications"
+      },
+      {
+        "id": "D10",
+        "title": "Audit role-based access control (RBAC) in API"
+      }
+    ],
+    "cartorio-frontend": [
+      {
+        "id": "E1",
+        "title": "Review Chatwoot custom attributes mapping"
+      },
+      {
+        "id": "E2",
+        "title": "Update Pietra Agent custom avatar in Chatwoot"
+      },
+      {
+        "id": "E3",
+        "title": "Add skip-links to custom Swagger UI"
+      },
+      {
+        "id": "E4",
+        "title": "Ensure high contrast mode in custom Swagger UI"
+      },
+      {
+        "id": "E5",
+        "title": "Implement custom OpenAPI styling for the documentation portal"
+      },
+      {
+        "id": "E6",
+        "title": "Test UI accessibility with screen readers"
+      },
+      {
+        "id": "E7",
+        "title": "Optimize CSS bundle sizes"
+      },
+      {
+        "id": "E8",
+        "title": "Verify responsive layout for mobile admin views"
+      },
+      {
+        "id": "E9",
+        "title": "Review error message copy for user friendliness"
+      },
+      {
+        "id": "E10",
+        "title": "Implement visual progress indicators for long-running workflows"
+      }
+    ],
+    "cartorio-qa": [
+      {
+        "id": "F1",
+        "title": "Expand E2E Playwright test suite for Chatwoot handoff"
+      },
+      {
+        "id": "F2",
+        "title": "Add property-based testing for CPF validation logic"
+      },
+      {
+        "id": "F3",
+        "title": "Introduce mutation testing for PII scrubber"
+      },
+      {
+        "id": "F4",
+        "title": "Create load tests for /chat endpoint using Locust"
+      },
+      {
+        "id": "F5",
+        "title": "Set up chaos engineering experiments (Redis failure simulation)"
+      },
+      {
+        "id": "F6",
+        "title": "Review code coverage reports to identify missing edge cases"
+      },
+      {
+        "id": "F7",
+        "title": "Test fallback mechanism with simulated 503 errors"
+      },
+      {
+        "id": "F8",
+        "title": "Audit third-party library vulnerabilities (Snyk/Dependabot)"
+      },
+      {
+        "id": "F9",
+        "title": "Write test cases for idempotency key collisions"
+      },
+      {
+        "id": "F10",
+        "title": "Create parameterized tests for emolumento calculations"
+      }
+    ],
+    "cartorio-infra": [
+      {
+        "id": "G1",
+        "title": "Validate automated database backup restore procedures"
+      },
+      {
+        "id": "G2",
+        "title": "Optimize PostgreSQL connection pool settings"
+      },
+      {
+        "id": "G3",
+        "title": "Implement query logging for slow queries (>100ms)"
+      },
+      {
+        "id": "G4",
+        "title": "Review Docker Swarm deployment configurations"
+      },
+      {
+        "id": "G5",
+        "title": "Configure log rotation for application logs"
+      },
+      {
+        "id": "G6",
+        "title": "Set up automated SSL certificate renewal checks"
+      },
+      {
+        "id": "G7",
+        "title": "Add resource limits (CPU/Memory) to docker services"
+      },
+      {
+        "id": "G8",
+        "title": "Implement zero-downtime deployment pipeline"
+      },
+      {
+        "id": "G9",
+        "title": "Audit database indexes for missing coverage"
+      },
+      {
+        "id": "G10",
+        "title": "Set up network policies in docker swarm"
+      }
+    ],
+    "cartorio-metrics": [
+      {
+        "id": "H1",
+        "title": "Build custom Grafana dashboard for API metrics"
+      },
+      {
+        "id": "H2",
+        "title": "Implement custom Prometheus exporter for N8N queue length"
+      },
+      {
+        "id": "H3",
+        "title": "Set up alerting for high error rates (>1%)"
+      },
+      {
+        "id": "H4",
+        "title": "Trace OpenClaw API calls using OpenTelemetry"
+      },
+      {
+        "id": "H5",
+        "title": "Review Sentry grouping rules for better error triaging"
+      },
+      {
+        "id": "H6",
+        "title": "Create SLI/SLO dashboards for core services"
+      },
+      {
+        "id": "H7",
+        "title": "Monitor Redis cache hit/miss ratio"
+      },
+      {
+        "id": "H8",
+        "title": "Set up automated reports for API usage"
+      },
+      {
+        "id": "H9",
+        "title": "Audit application logs for sensitive information leaks"
+      },
+      {
+        "id": "H10",
+        "title": "Integrate metrics with Telegram bot for weekly summaries"
+      }
+    ],
+    "cartorio-security": [
+      {
+        "id": "I1",
+        "title": "Run SAST analysis on the codebase (Bandit)"
+      },
+      {
+        "id": "I2",
+        "title": "Review dependency tree for outdated packages"
+      },
+      {
+        "id": "I3",
+        "title": "Validate rate-limiting configurations against DDoS vectors"
+      },
+      {
+        "id": "I4",
+        "title": "Implement security headers (CSP, HSTS) in the API"
+      },
+      {
+        "id": "I5",
+        "title": "Audit webhook signature verification logic"
+      },
+      {
+        "id": "I6",
+        "title": "Set up automated dependency updates (Renovate)"
+      },
+      {
+        "id": "I7",
+        "title": "Review TLS configurations for obsolete ciphers"
+      },
+      {
+        "id": "I8",
+        "title": "Create incident response runbook for security breaches"
+      },
+      {
+        "id": "I9",
+        "title": "Perform threat modeling for the OpenClaw integration"
+      },
+      {
+        "id": "I10",
+        "title": "Test API endpoints for IDOR vulnerabilities"
+      }
+    ],
+    "cartorio-agent": [
+      {
+        "id": "J1",
+        "title": "Fine-tune OpenClaw system prompts for better accuracy"
+      },
+      {
+        "id": "J2",
+        "title": "Evaluate newer LLM models for potential integration"
+      },
+      {
+        "id": "J3",
+        "title": "Optimize RAG implementation (if applicable)"
+      },
+      {
+        "id": "J4",
+        "title": "Implement semantic caching for frequent queries"
+      },
+      {
+        "id": "J5",
+        "title": "Analyze LLM cost metrics and optimize token usage"
+      },
+      {
+        "id": "J6",
+        "title": "Test agent resilience against prompt injection"
+      },
+      {
+        "id": "J7",
+        "title": "Expand agent skill set with document OCR capabilities"
+      },
+      {
+        "id": "J8",
+        "title": "Review agent fallback logic for high latency scenarios"
+      },
+      {
+        "id": "J9",
+        "title": "Implement human-in-the-loop (HITL) quality checks for agent outputs"
+      },
+      {
+        "id": "J10",
+        "title": "Create a comprehensive training dataset from resolved conversations"
+      }
+    ]
+  }
+}
