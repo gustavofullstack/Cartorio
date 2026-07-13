@@ -19,7 +19,6 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -273,7 +272,7 @@ def test_process_message_aceita_request_id() -> None:
 
     # Mock do redis_bus para evitar conexao real
     with patch("app.services.chat_pipeline.get_bus", return_value=None):
-        result = asyncio.run(
+        asyncio.run(
             process_message(msg, adapter, request_id="trace-propagated")
         )
     # Pode retornar None (sem debounce) ou OutboundMessage

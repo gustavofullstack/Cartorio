@@ -32,13 +32,13 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 - **2026-07-13** Lesson 165 — YOLO orchestrator round 3: 4 surgical fixes applied (commit c8f9e6b) — /healthz/readyz/metrics root aliases (k8s/Traefik), mcp_server path="/" + 3 docstrings (clients use /mcp), Sentry SDK init hoisted to lifespan, ws_router /api/v1 prefix. PUSH BACK R3-4 (redlock asyncio would have hot-spin); SKIP R3-7 (TODO grep was CPF placeholders); DEFER R3-8 (secret sanitization needs rotation first). Round 4 candidates + LGPD review gates documented in `lesson-165-r3-routing-fixes-2026-07-13.md`
 - **2026-07-13** Lesson 166 — YOLO orchestrator round 4: 4 organizational fixes (commit 3f938fa) — 3 reins (data/evolution/front) aligned to dev/lgpd template; MEMORY.md trimmed 1366→506 lines (2026-06-24..2026-06-25 archived); .claude/settings.local.json gitignored; .harness/crons/ consolidated into .harness/loop-engineer/crons/. CRITICAL: R3 changes NOT in prod (lens R4-1 re-probed 404); deploy awaiting user/VPS action. PUSH BACK R4-8 (test_utils_ip density is legitimate). BLOCKED R4-9 (test_pii population needs LGPD sign-off). Full report in `lesson-166-r4-organizational-fixes-2026-07-13.md`
 ### Por tema (relevante)
-- **LOOP STATE Gustavo pattern**: Lesson 234 (ver ~/.mavis/agents/mavis/memory/MEMORY.md)
-- **Sk-cp key leak burn pattern** (NÃO rotacionar): ver ~/.mavis/agents/mavis/memory/MEMORY.md
+- **LOOP STATE Gustavo pattern**: 5-min `master-loop.sh` + 1-min `master-watchdog.sh` orquestram children loops (netloop, cartorio-yolo-100t); PROGRESS.md unificado + GOALS.md append-only + `.brain/loop-state.json` patched por round para TRAE reload retoma estado. Cross-project: vale para qualquer multi-loop system >2 paralelos. See lesson 141.
+- **Sk-cp key leak burn pattern** (NÃO rotacionar): chave MiniMax Coding Plan `sk-cp-kRIbiqKy9F-...` exposta 3x em 2026-07-08 — Gustavo optou por NÃO rotacionar sozinho (regra "NUNCA rotação chaves sob pressão" 2026-06-24); apenas rotacionar manualmente quando sessão terminar pra evitar invalidar contexto ativo. See `.brain/memory/2026-07-08.md` L188+224.
 - **NUNCA rotação chaves sob pressão** (decisão Gustavo 2026-06-24 14:50 BRT): ver `archive-2026-06-24-25-sprint5.md` (Lesson D29-G1 LGPD review deferida)
 - **Sprint 3 stop when** (6/7, tag v0.6.0 pushed): ver tags + LESSON do Pietra root
-- **DB pool exhaustion fix** (DB_POOL_SIZE 20+): ver ~/.mavis/agents/mavis/memory/cartorio-context.md
-- **Self-hosted Supabase init é MANUAL** (schemas + DBs + entrypoints): ver ~/.mavis/agents/mavis/memory/cartorio-context.md
-- **Docker Swarm standby vs Swarm management**: ver ~/.mavis/agents/mavis/memory/cartorio-context.md
+- **DB pool exhaustion fix** (DB_POOL_SIZE 20+): SQUAD A21 doubled capacity 10→25 (T042) — lesson 149 v22. Root cause: pool size 10 insufficient for chat_pipeline + audit + webhook concurrent loads. Fix shipped commit feat(services) SQUAD A Redlock + DB pool 25 + backup real.
+- **Self-hosted Supabase init é MANUAL** (schemas + DBs + entrypoints): DBs PostgreSQL não são auto-provisionadas pelo Supabase self-hosted; schemas (`storage`, `realtime`, `auth`) + extensions + entrypoints têm que ser criados manualmente via SQL no primeiro boot. Não confiar em auto-init.
+- **Docker Swarm standby vs Swarm management**: hot-patch via `docker cp` NÃO persiste em Swarm restart (env vars revertidas em redeploy); usar `docker service update --env-add` ou commit na imagem. Swarm resolve DNS interno via service name (Easypanel/Traefik) — NXDOMAINs externos não impedem WF #03 ativo internamente.
 
 ### Por arquivo de codigo (recente)
 - `backend/app/services/pii.py` — CNS/CNH check-digit (validate_cns, validate_cnh)

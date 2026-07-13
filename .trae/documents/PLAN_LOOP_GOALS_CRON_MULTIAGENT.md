@@ -34,7 +34,7 @@ Resultado esperado: o sistema **continua de onde parou** mesmo após Gustavo sum
 | Installer crontab | `.harness/loop-engineer/crons/install-crontab.sh` | Cria entry no crontab Linux (4h) |
 | Intensive launchd | `.harness/loop-engineer/crons/install-intensive-launchd.sh` | 30min cycle |
 | Plan gigante | `.harness/PLAN_100_TASKS_LOOP.md` | 100 tasks, squads S0/A/B/C/D/E/H/J |
-| Loop objective | `.harness/crons/LOOP_OBJECTIVE.md` | Goal atual + completion criteria |
+| Loop objective | `.harness/loop-engineer/crons/LOOP_OBJECTIVE.md` | Goal atual + completion criteria |
 | Paperclip board | `.harness/paperclip-board/board.json` + `.md` | 5 goals G1-G5, 11 tasks |
 | Progress | `PROGRESS.md` | Append-only log timestamped |
 | Memory | `.harness/memory/MEMORY.md` (61 KB) | Cross-rein lessons, index por data |

@@ -1,15 +1,19 @@
 """Test fixtures."""
 
 import os
+import subprocess
 import builtins as _builtins
 import warnings as _w_mod
 from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
+
+if TYPE_CHECKING:
+    from tests.test_telegram_e2e_5x import StatefulBus
 
 # CPython 3.11.15 / 3.12 / 3.13 bug + pytest interaction:
 # pytest_sessionfinish chama warnings.filterwarnings("always", ...) que
@@ -39,7 +43,6 @@ _w_mod.int = _builtins.int
 _w_mod.type = _builtins.type
 
 # Mock global para subprocess.run (impede rsync de travar nos testes com timeout de 60s)
-import subprocess
 _orig_run = subprocess.run
 
 def _mock_run(args, *args_list, **kwargs):

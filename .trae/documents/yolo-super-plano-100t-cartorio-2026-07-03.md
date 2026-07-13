@@ -36,7 +36,7 @@ Bootstrap de sessão multi-skill para orquestrar o loop autônomo de 100 tasks i
 - `/Users/gustavoalmeida/projetos/Cartorio/.harness/AGENTS.md` — operational multi-agent
 - `/Users/gustavoalmeida/projetos/Cartorio/.harness/PLAN_100_TASKS_LOOP.md` — plano dos squads
 - `/Users/gustavoalmeida/projetos/Cartorio/.harness/agents/01-analyze-agent.sh` ... `03-fix-agent.sh` — scripts do loop
-- `/Users/gustavoalmeida/projetos/Cartorio/.harness/crons/LOOP_OBJECTIVE.md` — objetivo G7 vigente
+- `/Users/gustavoalmeida/projetos/Cartorio/.harness/loop-engineer/crons/LOOP_OBJECTIVE.md` — objetivo G7 vigente
 - `/Users/gustavoalmeida/projetos/Cartorio/.brain/loop-state.json` — estado operacional atual
 - `/Users/gustavoalmeida/projetos/Cartorio/.brain/memory/2026-07-02.md` — log mais recente
 - `/Users/gustavoalmeida/projetos/Cartorio/.harness/memory/MEMORY.md` — mem cross-rein

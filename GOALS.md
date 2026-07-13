@@ -1,7 +1,7 @@
 # GOALS — Cartório 2º Notas · 2026-07-03
 
 > Single source of truth de metas do projeto. Formato: **letra → objetivo → status → % → evidência**.
-> Sincronizado com `.harness/paperclip-board/board.json` (G1-G5) e `.harness/crons/LOOP_OBJECTIVE.md`.
+> Sincronizado com `.harness/paperclip-board/board.json` (G1-G5) e `.harness/loop-engineer/crons/LOOP_OBJECTIVE.md`.
 > Atualizado por loop-engineer cron + agent harnesso. Append-only via PROGRESS.md.
 
 ---
