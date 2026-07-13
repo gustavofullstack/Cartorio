@@ -1,0 +1,100 @@
+[
+  {
+    "slot": 1,
+    "agent": "TRAE",
+    "nome": "Maria Silva Santos",
+    "idade": 67,
+    "cenario": "certidao_casamento",
+    "contact_id": 3,
+    "conversation_id": 3,
+    "messages": [
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "cpf_sintetico": "725.760.056-24",
+    "cpf_mascarado": "725.***.***-24",
+    "error": null
+  },
+  {
+    "slot": 2,
+    "agent": "TRAE",
+    "nome": "José Pereira Souza",
+    "idade": 28,
+    "cenario": "procuracao",
+    "contact_id": 4,
+    "conversation_id": 4,
+    "messages": [
+      19,
+      20,
+      21,
+      22,
+      23,
+      24
+    ],
+    "cpf_sintetico": "289.832.155-93",
+    "cpf_mascarado": "289.***.***-93",
+    "error": null
+  },
+  {
+    "slot": 3,
+    "agent": "TRAE",
+    "nome": "Helena Costa Oliveira",
+    "idade": 82,
+    "cenario": "escritura_imovel",
+    "contact_id": 5,
+    "conversation_id": 5,
+    "messages": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "cpf_sintetico": "728.213.191-00",
+    "cpf_mascarado": "728.***.***-00",
+    "error": null
+  },
+  {
+    "slot": 4,
+    "agent": "TRAE",
+    "nome": "Pedro Almeida Lima",
+    "idade": 45,
+    "cenario": "registro_nascimento",
+    "contact_id": 6,
+    "conversation_id": 6,
+    "messages": [
+      31,
+      32,
+      33,
+      34,
+      35,
+      36
+    ],
+    "cpf_sintetico": "674.835.602-40",
+    "cpf_mascarado": "674.***.***-40",
+    "error": null
+  },
+  {
+    "slot": 5,
+    "agent": "TRAE",
+    "nome": "Lucia Ferreira",
+    "idade": 55,
+    "cenario": "certidao_obito",
+    "contact_id": 7,
+    "conversation_id": 7,
+    "messages": [
+      37,
+      38,
+      39,
+      40
+    ],
+    "cpf_sintetico": "942.568.919-94",
+    "cpf_mascarado": "942.***.***-94",
+    "error": null
+  }
+]
