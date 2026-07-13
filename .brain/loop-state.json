@@ -1,8 +1,8 @@
 {
-  "version": "2.9.0",
-  "updated_at": "2026-07-09T01:56:06Z",
-  "status": "telegram_bot_e2e_9x + T1_OpenClaw_1M_DONE + SquadA_25/25_DONE_lesson139b + SUI3_DONE + yolo_super_plano_100t_setup_done + master_loop_infinito_activated + mega_batch_skills_mcps_agents_98_18_9",
-  "current_sprint": "Sprint 47 - 2026-07-02 (supremo + LiteLLM + Redis recovery + fallback chain)",
+  "version": "2.10.0",
+  "updated_at": "2026-07-13T20:30:00Z",
+  "status": "sessao_2026-07-13_chatwoot_sim_10_personas + F1_F2_F3_plan_completo + token_chatwoot_real",
+  "current_sprint": "Sprint 48 - 2026-07-13 (simulacao Chatwoot 10 personas + plano F1-F3)",
   "current_goal": "G7: Bot Telegram 100% via LiteLLM - 9 testes E2E + 1 CLI + 3 stress fallback",
   "metrics": {
     "services_swarm_up": "8/8 (api/litellm/openclaw/langfuse/argilla/evolution/anything-llm/lobechat/zeroclaw/open-notebook) + redis recovered",
