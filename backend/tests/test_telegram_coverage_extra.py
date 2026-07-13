@@ -1,12 +1,11 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, ANY
+from unittest.mock import AsyncMock, MagicMock, patch
 import json
 from app.api.v1.telegram import (
     _process_telegram_debounce,
     _handle_callback,
     _handle_command,
-    _DEBOUNCE_METADATA,
-    STATE_IDLE
+    _DEBOUNCE_METADATA
 )
 
 @pytest.mark.asyncio
