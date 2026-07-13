@@ -270,5 +270,5 @@ async def chat_with_settings(
         redis_url=settings.redis_url,
         request_id=request_id,
         client_ip=client_ip,
-        thinking_mode=getattr(settings, "llm_thinking_mode", "disabled"),
+        thinking_mode=settings.llm_thinking_mode,
     )

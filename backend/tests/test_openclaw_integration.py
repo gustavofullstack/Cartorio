@@ -75,7 +75,7 @@ class TestOpenClawConfig:
         import os
 
         ctx = os.environ.get("OPENCODE_GO_CONTEXT_WINDOW", "1048576")
-        assert int(ctx) >= 131072, f"Context window muito pequeno: {ctx}"
+        assert int(ctx) >= 1048576, f"Context window muito pequeno: {ctx}"
 
     def test_opencode_go_thinking_enabled(self) -> None:
         """Thinking mode deve estar habilitado."""
