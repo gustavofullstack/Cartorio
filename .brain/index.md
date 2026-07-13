@@ -1,19 +1,21 @@
 # Cartório 2º Notas - Brain Index
 
-**Última atualização**: 2026-06-26 16:30 BRT (sessão ZCode/Mavis + Gustavo Almeida)
+**Última atualização**: 2026-07-13 20:30 BRT (sessão TRAE SOLO M3 + Gustavo Almeida)
 
 ## 🚦 Status Global
 
-- **Gates**: 100% GREEN ✅
-  - mypy: 0 errors (103 source files)
-  - ruff: clean
-  - pytest: **1205 passed** (+253 vs 952 baseline)
+- **Gates**: 🟡 PARTIAL (5/7 health radar, pytest 2477, OpenAPI 103 paths)
+  - mypy: HOLD (venv não configurado local, roda no VPS)
+  - ruff: 45 violations pre-existentes (23 fixable com --fix)
+  - pytest: **2477 passed** (+1272 vs 1205 baseline, 15 falhas conhecidas infra)
   - coverage: ≥87% (Lesson 107 — APPROVED_WITH_NOTE)
-- **Tasks**: **~80/100** (~80% — SQUAD A24+B+BRAIN+DOCS completados nesta sessão + anteriores)
-- **OpenClaw**: live (1M context + deepseek-v4-flash + thinking ON)
-- **Telegram bot**: OK (webhook URL configurado em N8N workflow 31)
-- **Supabase**: schema public completo (10 tabelas + RLS + webhooks + storage + realtime + vault + pgcrypto)
-- **Health radar 7/7**: database, redis, n8n, openclaw, evolution, chatwoot, supabase — todos **online**
+- **Tasks**: ~85/100 (85% — sprint 48 adicionou 7 commits)
+- **OpenClaw**: live (WebSocket-ONLY, /v1/chat)
+- **Telegram bot**: 🔴 MORTO (token revogado, BotFather regenerar)
+- **Tailscale VPS**: 🔴 OFFLINE 2d (não-bloqueador via SSH público)
+- **Chatwoot**: ✅ 10 conversas inbox=2 whatsapp-sim + 10 contatos sintéticos
+- **LobeChat**: 🟡 container UP, sem DNS público + env `OPENAI_API_KEY=sk-xxxx` placeholder
+- **Health radar 5/7**: database, redis, openclaw, chatwoot, supabase — online (n8n, evolution offline)
 
 ## 📊 Squads (resumo)
 
