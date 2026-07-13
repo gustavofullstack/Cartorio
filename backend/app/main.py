@@ -22,7 +22,7 @@ logging.basicConfig(
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.openapi.docs import get_redoc_html  # noqa: E402
-from fastapi.responses import HTMLResponse  # noqa: E402
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 from app.api.v1.router import api_router  # noqa: E402
@@ -115,6 +115,12 @@ async def _retencao_scheduler_loop() -> None:
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Smoke test DB + create tables if missing + audit log init + tracing init (A3)."""
+    # 0a. Sentry SDK init (DSN-gated; no-op se SENTRY_DSN ausente).
+    # Hoisted para o lifespan para garantir init ANTES de qualquer captura
+    # de excecao em middleware/handlers. Sprint 5 — 2026-07-13.
+    from app.services.sentry import _init_sentry
+
+    _init_sentry()
     # 0. OpenTelemetry tracing init (A3 — squad A)
     init_tracing("cartorio-api")
     # 1. Smoke test: confirm DB is reachable
@@ -218,7 +224,7 @@ compartilhado com n8n (ver `N8N_WEBHOOK_SECRET` / `CARTORIO_API_KEY`).
 
 ## MCP (Model Context Protocol)
 
-A propria API expoe tools MCP no endpoint `/mcp/mcp` (sub-app FastMCP montado, protocolo 2025-03-26).
+A propria API expoe tools MCP no endpoint `/mcp` (sub-app FastMCP montado, protocolo 2025-03-26).
 Tools disponiveis:
 
 1. `cartorio_calcular_emolumento` - calculo MG 2026
@@ -419,6 +425,42 @@ def ready() -> dict:
     return {"status": "ready", "audit_chain_initialized": True}
 
 
+# Aliases para probes de orquestradores (k8s liveness/readiness, Traefik,
+# Prometheus scrapers) que esperam nomes canonicos (`/healthz`, `/readyz`,
+# `/metrics`). Mantemos `/health` e `/ready` para retrocompat. O `/metrics`
+# redireciona para `/api/v1/metrics/prometheus` (mesma fonte de verdade,
+# formato Prometheus text/plain). Sprint 5 — 2026-07-13.
+@app.get("/healthz", include_in_schema=False)
+def healthz() -> dict:
+    """Liveness probe (alias canônico para k8s/Traefik)."""
+    return health()
+
+
+@app.get("/readyz", include_in_schema=False)
+def readyz() -> dict:
+    """Readiness probe (alias canônico para k8s/Traefik)."""
+    return ready()
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics_root() -> Response:
+    """Redirect para `/api/v1/metrics/prometheus` (mesma exposicao Prometheus).
+
+    Orquestradores (k8s, Traefik, Prometheus scraper) costumam scrape
+    `/metrics` na raiz. Mantemos o endpoint canonico versionado em
+    `/api/v1/metrics/prometheus` e este alias devolve 410 com link no body
+    para evitar caching stale de respostas inconsistentes.
+    """
+    return PlainTextResponse(
+        status_code=410,
+        content=(
+            "Endpoint movido para /api/v1/metrics/prometheus\n"
+            "Status 410 Gone — use o endpoint versionado.\n"
+        ),
+        media_type="text/plain; charset=utf-8",
+    )
+
+
 @app.get("/", tags=["meta"], include_in_schema=False)
 def root() -> dict:
     """Root - redireciona para Swagger UI."""
@@ -520,8 +562,8 @@ if settings.mcp_server_enabled:
 
     app.router.lifespan_context = combined_lifespan
 
-    # Monta o MCP server em /mcp/mcp (sub-app root + mount prefix)
-    # Acesso: curl http://localhost:8000/mcp/mcp com headers MCP retorna JSON-RPC
+    # Monta o MCP server em /mcp (sub-app FastMCP com path="/" + mount prefix)
+    # Acesso: curl http://localhost:8000/mcp com headers MCP retorna JSON-RPC
     app.mount("/mcp", _mcp_subapp)
 
 
@@ -609,7 +651,9 @@ async def redoc_html() -> HTMLResponse:
 
 
 app.include_router(api_router, prefix="/api/v1")
-app.include_router(ws_router)  # WebSocket /ws/atendimentos (T2.API.T19)
+# WebSocket /api/v1/ws/atendimentos (T2.API.T19) — prefix /api/v1 alinha com
+# o contrato documentado para clients (consistente com /api/v1/*).
+app.include_router(ws_router, prefix="/api/v1")
 
 # Telegram bot webhook (CartorioBot)
 # Rota final: /api/v1/telegram/webhook

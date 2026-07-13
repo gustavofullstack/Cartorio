@@ -492,8 +492,13 @@ def mcp_app() -> Any:
     IMPORTANTE: ao montar na FastAPI, passar `lifespan=mcp_app.lifespan` no
     construtor do FastAPI para que o TaskGroup do StreamableHTTP seja inicializado.
     Ver https://gofastmcp.com/deployment/asgi
+
+    path="/" porque o sub-app sera montado em `app.mount("/mcp", ...)`. Se o
+    path interno tambem fosse "/mcp", a URL final seria /mcp/mcp (duplicada).
+    path="/" garante que clientes batem em `/mcp` direto (consistente com docs
+    e clients MCP configurados em ~/.mavis/mcp/clients/). Sprint 5 — 2026-07-13.
     """
-    return mcp.http_app(path="/mcp")
+    return mcp.http_app(path="/")
 
 
 # ============================================================================
@@ -506,7 +511,9 @@ if __name__ == "__main__":
 
     if os.getenv("MCP_SERVER_TRANSPORT", "http") == "http":
         # Modo standalone: serve em :8100/mcp
-        app = mcp.http_app(path="/mcp")
+        # path="/" + mount manual abaixo para manter /mcp no root do uvicorn.
+        # (Quando montado dentro da FastAPI principal, o mount ja faz isso.)
+        app = mcp.http_app(path="/")
         port = int(os.getenv("MCP_SERVER_PORT", "8100"))
         host = os.getenv("MCP_SERVER_HOST", "0.0.0.0")
         uvicorn.run(app, host=host, port=port)
