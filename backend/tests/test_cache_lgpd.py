@@ -54,3 +54,32 @@ async def test_set_cache_success():
         result = await set_("test_key", {"foo": "bar"}, ttl=60)
         assert result is True
         mock_client.setex.assert_called_once()
+
+
+# =============================================================================
+# Exception path tests (lifts coverage 89% -> ~95%)
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_set_and_invalidate_return_false_on_redis_exception(monkeypatch):
+    """set_ e invalidate retornam False quando client.setex/delete levanta exception."""
+    from app.services import cache_lgpd
+
+    # Mock get_redis retorna client que levanta exception
+    mock_client = AsyncMock()
+    mock_client.setex = AsyncMock(side_effect=Exception("redis setex failed"))
+    mock_client.delete = AsyncMock(side_effect=Exception("redis delete failed"))
+
+    async def _get_redis():
+        return mock_client
+
+    monkeypatch.setattr(cache_lgpd, "get_redis", _get_redis)
+
+    # set_ deve capturar a exception e retornar False
+    result_set = await cache_lgpd.set_("key_a", {"x": 1}, ttl=60)
+    assert result_set is False
+
+    # invalidate deve capturar a exception e retornar False
+    result_inv = await cache_lgpd.invalidate("key_a")
+    assert result_inv is False

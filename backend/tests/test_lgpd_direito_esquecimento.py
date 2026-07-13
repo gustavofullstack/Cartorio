@@ -407,3 +407,165 @@ def test_direito_esquecimento_else_branch_non_cliente_table(db, cliente, monkeyp
         assert result["total_rows_affected"] >= 1
     finally:
         mod.CASCADE_TABLES = original_tables
+
+
+# ============================================================================
+# bot_direito_esquecimento.py tests (lifts coverage 73% -> ~95%)
+# Test-only changes (NO pii.py / audit.py / lgpd/ service file modifications).
+# ============================================================================
+
+
+class TestMarcarComoDeletado:
+    """Tests para marcar_como_deletado() (happy + exception path)."""
+
+    def test_success_returns_true_when_rowcount_positive(self, db):
+        """marcar_como_deletado retorna True quando rowcount > 0."""
+        from unittest.mock import MagicMock, patch
+
+        from app.services.lgpd.bot_direito_esquecimento import marcar_como_deletado
+
+        # Mock db.execute para retornar rowcount=1
+        fake_result = MagicMock()
+        fake_result.rowcount = 1
+
+        with patch.object(db, "execute", return_value=fake_result):
+            result = marcar_como_deletado(db, "rev-id-123")
+
+        assert result is True
+
+    def test_failure_returns_false_on_operational_error(self, db):
+        """marcar_como_deletado retorna False quando OperationalError."""
+        from unittest.mock import patch
+        from sqlalchemy.exc import OperationalError
+
+        from app.services.lgpd.bot_direito_esquecimento import marcar_como_deletado
+
+        # db.execute levanta OperationalError; rollback deve ser chamado
+        with patch.object(db, "execute", side_effect=OperationalError("SELECT 1", {}, Exception("db down"))):
+            with patch.object(db, "rollback") as mock_rollback:
+                result = marcar_como_deletado(db, "rev-id-fail")
+
+        assert result is False
+        mock_rollback.assert_called_once()
+
+
+class TestRestaurarRevogacao:
+    """Tests para restaurar_revogacao() (happy + exception path)."""
+
+    def test_success_returns_true_when_rowcount_positive(self, db):
+        """restaurar_revogacao retorna True quando rowcount > 0."""
+        from unittest.mock import MagicMock, patch
+
+        from app.services.lgpd.bot_direito_esquecimento import restaurar_revogacao
+
+        fake_result = MagicMock()
+        fake_result.rowcount = 1
+
+        with patch.object(db, "execute", return_value=fake_result):
+            result = restaurar_revogacao(db, "rev-id-456")
+
+        assert result is True
+
+    def test_failure_returns_false_on_operational_error(self, db):
+        """restaurar_revogacao retorna False quando OperationalError; rollback chamado."""
+        from unittest.mock import patch
+        from sqlalchemy.exc import OperationalError
+
+        from app.services.lgpd.bot_direito_esquecimento import restaurar_revogacao
+
+        with patch.object(db, "execute", side_effect=OperationalError("SELECT 1", {}, Exception("db down"))):
+            with patch.object(db, "rollback") as mock_rollback:
+                result = restaurar_revogacao(db, "rev-id-fail")
+
+        assert result is False
+        mock_rollback.assert_called_once()
+
+
+class TestSenderToRemoteJid:
+    """Tests para _sender_to_remote_jid() (helper de normalizacao)."""
+
+    def test_telegram_returns_tg_prefix(self):
+        """Telegram channel prefixa 'tg:' para evitar colisao com whatsapp."""
+        from app.services.lgpd.bot_direito_esquecimento import _sender_to_remote_jid
+
+        assert _sender_to_remote_jid("1234", "telegram") == "tg:1234"
+
+    def test_whatsapp_adds_at_if_missing(self):
+        """WhatsApp adiciona '@s.whatsapp.net' se sender_id nao contem '@'."""
+        from app.services.lgpd.bot_direito_esquecimento import _sender_to_remote_jid
+
+        assert _sender_to_remote_jid("5511", "whatsapp") == "5511@s.whatsapp.net"
+
+    def test_whatsapp_passes_through_at_contains(self):
+        """WhatsApp passa direto quando sender_id ja contem '@'."""
+        from app.services.lgpd.bot_direito_esquecimento import _sender_to_remote_jid
+
+        jid = "5511@s.whatsapp.net"
+        assert _sender_to_remote_jid(jid, "whatsapp") == jid
+
+
+class TestListarRevogacoesPendentes:
+    """Tests para listar_revogacoes_pendentes() (happy path com dados reais)."""
+
+    def test_returns_dict_list_when_rows_present(self, db):
+        """listar_revogacoes_pendentes retorna dicts com chaves esperadas."""
+        import datetime as dt
+        from app.services.lgpd.bot_direito_esquecimento import (
+            _insert_revogacao,
+            listar_revogacoes_pendentes,
+        )
+
+        now = dt.datetime.now(dt.UTC)
+        past = now - dt.timedelta(days=1)  # scheduled no passado -> elegivel
+
+        # Seed 3 revogacoes pendentes com scheduled_delete_at no passado
+        for i in range(3):
+            _insert_revogacao(
+                db,
+                revogacao_id=f"rev-seed-{i}",
+                cliente_id=None,
+                sender_hash=f"hash{i}",
+                channel="whatsapp",
+                motivo="revogacao_consentimento",
+                requested_at=past - dt.timedelta(days=30),
+                scheduled_delete_at=past,
+                status="pending",
+            )
+
+        result = listar_revogacoes_pendentes(db)
+        assert len(result) == 3
+        for row in result:
+            assert "id" in row
+            assert "cliente_id" in row
+            assert "scheduled_delete_at" in row
+            assert "motivo" in row
+
+
+class TestAuditFailureDoesNotBreakFlow:
+    """Tests para o caminho de exception do audit (non-blocking rollback)."""
+
+    def test_solicitar_returns_revogacao_id_even_if_audit_raises(self, db, monkeypatch):
+        """solicitar_esquecimento_bot retorna revogacao_id mesmo se audit falhar."""
+        import asyncio
+        from unittest.mock import patch
+
+        from app.services.lgpd import bot_direito_esquecimento as bde
+        from app.services.lgpd.bot_direito_esquecimento import solicitar_esquecimento_bot
+
+        # Mock AuditService.log para levantar exception (audit best-effort)
+        with patch.object(bde.AuditService, "log", side_effect=Exception("audit down")):
+            with patch.object(db, "rollback") as mock_rollback:
+                result = asyncio.run(
+                    solicitar_esquecimento_bot(
+                        db,
+                        channel="whatsapp",
+                        sender_id="5511999999999@s.whatsapp.net",
+                        motivo=bde.MotivoEncerramento.REVOGACAO_CONSENTIMENTO,
+                    )
+                )
+
+        # Mesmo com audit falhando, a revogacao_id foi criada/retornada
+        assert result.revogacao_id is not None
+        assert len(result.revogacao_id) >= 8
+        # Rollback foi chamado (cleanup apos audit failure)
+        assert mock_rollback.called

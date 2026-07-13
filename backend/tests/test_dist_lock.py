@@ -68,3 +68,58 @@ async def test_try_lock_busy():
         acquired, token = await try_lock("test_key")
         assert acquired is False
         assert token is None
+
+
+# =============================================================================
+# Exception path tests (lifts coverage 88% -> ~95%)
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_release_lock_returns_false_on_eval_exception(monkeypatch):
+    """_release retorna False quando client.eval levanta exception."""
+    from app.services import dist_lock
+
+    # Mock get_redis retorna client que levanta exception em eval
+    mock_client = AsyncMock()
+    mock_client.eval = AsyncMock(side_effect=Exception("redis eval failed"))
+
+    async def _get_redis():
+        return mock_client
+
+    monkeypatch.setattr(dist_lock, "get_redis", _get_redis)
+
+    result = await dist_lock._release("test_key", "token")
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_release_returns_false_when_redis_unavailable(monkeypatch):
+    """_release retorna False quando Redis indisponivel (get_redis retorna None)."""
+    from app.services import dist_lock
+
+    async def _get_redis_none():
+        return None
+
+    monkeypatch.setattr(dist_lock, "get_redis", _get_redis_none)
+
+    result = await dist_lock._release("test_key", "token")
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_acquire_returns_false_when_set_raises(monkeypatch):
+    """_acquire retorna False quando client.set levanta exception."""
+    from app.services import dist_lock
+
+    # Mock get_redis retorna client que levanta exception em set
+    mock_client = AsyncMock()
+    mock_client.set = AsyncMock(side_effect=Exception("redis set failed"))
+
+    async def _get_redis():
+        return mock_client
+
+    monkeypatch.setattr(dist_lock, "get_redis", _get_redis)
+
+    result = await dist_lock._acquire("test_key", "token")
+    assert result is False

@@ -160,7 +160,7 @@ class MetricsStore:
             wf_name: nome canonico do workflow N8N
             duration_seconds: duracao total da execucao (segundos)
         """
-        self._make_metric_or_skip_test("n8n_wf_duration_seconds", "summary")
+        self._make_metric_or_skip_test("n8n_wf_duration_seconds", "histogram")
         self.observe_histogram(
             "n8n_wf_duration_seconds",
             duration_seconds,

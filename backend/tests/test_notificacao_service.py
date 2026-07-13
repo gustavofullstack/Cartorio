@@ -96,6 +96,28 @@ class _AsyncCtxTelegram:
         return await self._post(*args, **kwargs)
 
 
+class _AsyncCtxCapture:
+    """Fake AsyncClient que captura o payload enviado via post().
+
+    Usado para verificar campos especificos (emoji stripping, caption opcional).
+    """
+
+    def __init__(self, status_code: int = 200) -> None:
+        self.captured: list[dict] = []
+        self._status_code = status_code
+
+    async def __aenter__(self) -> _AsyncCtxCapture:
+        return self
+
+    async def __aexit__(self, *args: object) -> None:
+        pass
+
+    async def post(self, *args: object, **kwargs: object) -> MagicMock:
+        payload = kwargs.get("json", {})
+        self.captured.append(payload)
+        return MagicMock(status_code=self._status_code)
+
+
 # =============================================================================
 # _strip_emojis
 # =============================================================================
@@ -495,3 +517,123 @@ async def test_enviar_notificacao_grava_audit_log_em_sucesso() -> None:
     assert call_kwargs["actor_type"] == "system"
     assert "mensagem_len" in call_kwargs["payload"]
     assert call_kwargs["payload"]["context"] == {"origem": "test"}
+
+
+# =============================================================================
+# Evolution API: reaction / poll / media (lifts coverage 77% -> ~95%)
+# =============================================================================
+
+
+class TestEnviarWhatsappReaction:
+    """enviar_whatsapp_reaction (linhas 207-231): reaction via Evolution API."""
+
+    async def test_success_returns_true_with_mock_200(self, monkeypatch):
+        """enviar_whatsapp_reaction retorna True em HTTP 200."""
+        from app.services import notificacao
+
+        # settings.evolution_api_key precisa estar setado
+        monkeypatch.setattr(notificacao.settings, "evolution_api_key", "k")
+        monkeypatch.setattr(notificacao.settings, "evolution_base_url", "https://evo.test.com")
+        monkeypatch.setattr(notificacao.settings, "evolution_instance", "instance1")
+
+        # _AsyncCtxTelegram ja implementa __aenter__/__aexit__ corretamente
+        fake_client = _AsyncCtxTelegram(status_code=200)
+
+        with patch("app.services.notificacao.httpx.AsyncClient", return_value=fake_client):
+            result = await NotificationService.enviar_whatsapp_reaction(
+                "5511999999999", "msg-id-1", "👍"
+            )
+
+        assert result is True
+
+
+class TestEnviarWhatsappPoll:
+    """enviar_whatsapp_poll (linhas 234-255): poll via Evolution API com emoji strip."""
+
+    async def test_success_strips_emoji_from_options(self, monkeypatch):
+        """enviar_whatsapp_poll strippa emojis das options antes de enviar."""
+        from app.services import notificacao
+
+        monkeypatch.setattr(notificacao.settings, "evolution_api_key", "k")
+        monkeypatch.setattr(notificacao.settings, "evolution_base_url", "https://evo.test.com")
+        monkeypatch.setattr(notificacao.settings, "evolution_instance", "instance1")
+
+        # Captura o payload enviado para verificar que emojis foram stripped
+        fake_client = _AsyncCtxCapture(status_code=200)
+
+        with patch("app.services.notificacao.httpx.AsyncClient", return_value=fake_client):
+            result = await NotificationService.enviar_whatsapp_poll(
+                "5511999999999",
+                "Qual opcao voce prefere?",
+                ["opcao 1 👋", "opcao 2 😊", "opcao 3"],
+            )
+
+        assert result is True
+        assert len(fake_client.captured) == 1
+        captured_payload = fake_client.captured[0]
+        assert "options" in captured_payload
+        options = captured_payload["options"]
+        assert len(options) == 3
+        # Nenhum emoji nas options
+        for opt in options:
+            assert "👋" not in opt
+            assert "😊" not in opt
+        # Texto base preservado
+        assert any("opcao 1" in o for o in options)
+        assert any("opcao 2" in o for o in options)
+        assert any("opcao 3" in o for o in options)
+
+
+class TestEnviarWhatsappMedia:
+    """enviar_whatsapp_media (linhas 258-285): media via Evolution API com caption opcional."""
+
+    async def test_caption_omitted_when_none_vs_stripped_when_set(self, monkeypatch):
+        """enviar_whatsapp_media omite 'caption' quando None; strippa quando set."""
+        from app.services import notificacao
+
+        monkeypatch.setattr(notificacao.settings, "evolution_api_key", "k")
+        monkeypatch.setattr(notificacao.settings, "evolution_base_url", "https://evo.test.com")
+        monkeypatch.setattr(notificacao.settings, "evolution_instance", "instance1")
+
+        # ---- Case A: caption=None -> 'caption' NAO presente em mediaMessage ----
+        fake_client_a = _AsyncCtxCapture(status_code=200)
+
+        with patch("app.services.notificacao.httpx.AsyncClient", return_value=fake_client_a):
+            result_a = await NotificationService.enviar_whatsapp_media(
+                "5511999999999",
+                "https://example.com/file.pdf",
+                "document",
+                "doc.pdf",
+                caption=None,
+            )
+
+        assert result_a is True
+        assert len(fake_client_a.captured) == 1
+        captured_a = fake_client_a.captured[0]
+        assert "mediaMessage" in captured_a
+        assert "caption" not in captured_a["mediaMessage"]
+        # Outros campos basicos presentes
+        assert captured_a["mediaMessage"]["mediatype"] == "document"
+        assert captured_a["mediaMessage"]["fileName"] == "doc.pdf"
+        assert captured_a["mediaMessage"]["media"] == "https://example.com/file.pdf"
+
+        # ---- Case B: caption="Ola 👋" -> 'caption' presente e stripped ----
+        fake_client_b = _AsyncCtxCapture(status_code=200)
+
+        with patch("app.services.notificacao.httpx.AsyncClient", return_value=fake_client_b):
+            result_b = await NotificationService.enviar_whatsapp_media(
+                "5511999999999",
+                "https://example.com/image.png",
+                "image",
+                "img.png",
+                caption="Ola 👋",
+            )
+
+        assert result_b is True
+        assert len(fake_client_b.captured) == 1
+        captured_b = fake_client_b.captured[0]
+        assert "mediaMessage" in captured_b
+        assert "caption" in captured_b["mediaMessage"]
+        # Caption stripped (emoji removido)
+        assert "👋" not in captured_b["mediaMessage"]["caption"]
+        assert "Ola" in captured_b["mediaMessage"]["caption"]
