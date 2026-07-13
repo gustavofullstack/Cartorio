@@ -35,6 +35,8 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 - **2026-06-24** 23:45 BRT (Lesson 92 status tick — B1 aplicado, B2 PARCIAL, D0.1 delegado): linha ~178
 - **2026-06-24** 14:50 BRT (Cross-check prod 9 servicos + Telegram = todos UP): linha ~1
 
+### 2026-07-13 — Sessao YOLO round 2 (mypy 7→0)
+- **2026-07-13** Lesson 164 — YOLO orchestrator round 2: 10-lens panel identified 7 real mypy errors (incl. whatsapp.py:413 null-deref + bot_metrics PII Literal); commit c037f33 fixed surgically (no `# type: ignore`); ruff per-file-ignores added but INERT until `select = ["S"]`; lens agents HALLUCINATED audit_create.py/query/context.py as 0-byte stubs (actual: 2294/3360/2023 bytes); secrets in PROMPT.json NOT scrubbed (by-policy, Sprint 3 Goal #3); full report in `lesson-164-mypy-7-errors-resolved-2026-07-13.md`
 ### Por tema (relevante)
 - **LOOP STATE Gustavo pattern**: Lesson 234 (ver ~/.mavis/agents/mavis/memory/MEMORY.md)
 - **Sk-cp key leak burn pattern** (NÃO rotacionar): ver ~/.mavis/agents/mavis/memory/MEMORY.md
