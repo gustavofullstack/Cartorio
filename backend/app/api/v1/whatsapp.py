@@ -48,11 +48,14 @@ import json
 import logging
 import os
 import time
+from typing import Any
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.db import get_db
 from app.services.chat_pipeline import (
     Channel,
     ChannelAdapter,
@@ -181,7 +184,7 @@ class WhatsAppAdapter(ChannelAdapter):
         try:
             client = await self._get_client()
             url = f"{self.base_url}/message/sendText/{self.instance}"
-            payload = {
+            payload: dict[str, Any] = {
                 "number": msg.recipient_id.replace("@s.whatsapp.net", "").replace("@g.us", ""),
                 "text": msg.text[:MAX_RESPONSE_LEN],
             }
@@ -189,7 +192,7 @@ class WhatsAppAdapter(ChannelAdapter):
             if msg.keyboard:
                 flat = [b for row in msg.keyboard for b in row]
                 if len(flat) <= 3:
-                    buttons = []
+                    buttons: list[dict[str, Any]] = []
                     for i, btn in enumerate(flat[:3]):
                         buttons.append(
                             {
@@ -381,6 +384,7 @@ async def whatsapp_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
     payload: dict,
+    db: Session = Depends(get_db),
 ) -> dict:
     """Webhook Evolution → process_message via chat_pipeline.
 
@@ -410,12 +414,12 @@ async def whatsapp_webhook(
     try:
         # Reconstruir raw body se necessário
         ingest_result = ingest_evolution_event(
-            None, payload
-        )  # db=None, idempotency via DB é opcional
+            db, payload
+        )  # db injetado via Depends (null-deref guarded)
         if ingest_result.get("status") == "idempotent":
             return {"status": "idempotent", "detail": "already processed"}
     except Exception as e:
-        logger.debug("evolution_ingest não aplicável (db=None): %s", e)
+        logger.debug("evolution_ingest não aplicável (db error): %s", e)
 
     # 3. Parse → InboundMessage
     inbound = parse_evolution_payload(payload)

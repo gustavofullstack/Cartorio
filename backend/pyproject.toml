@@ -47,6 +47,17 @@ e2e = [
 line-length = 100
 target-version = "py311"
 
+[tool.ruff.lint]
+# S-prefixed (Bandit): testes podem usar assert, hardcoded secrets, try-except-pass sem risco LGPD.
+# alembic/versions: SQL raw, hardcoded credenciais em exemplos, linhas longas sao aceitas.
+# middleware: try/except-pass usado para fail-open em rate-limit (S110).
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S110"]
+"alembic/versions/*.py" = ["S608", "S104", "S105", "E501"]
+"backend/alembic/versions/*.py" = ["S608", "S104", "S105", "E501"]
+"app/middleware/*.py" = ["S110"]
+
 [tool.coverage.run]
 omit = [
     "app/api/v1/whatsapp.py",

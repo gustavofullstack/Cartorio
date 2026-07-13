@@ -148,10 +148,10 @@ def _install_json_logger() -> None:
         root.addHandler(h)
         root.setLevel(logging.INFO)
     else:
-        for h in root.handlers:
-            if not getattr(h, "_cartorio_json", False):
-                h.setFormatter(_JsonFormatter())
-                h._cartorio_json = True  # type: ignore[attr-defined]
+        for existing_handler in root.handlers:
+            if not getattr(existing_handler, "_cartorio_json", False):
+                existing_handler.setFormatter(_JsonFormatter())
+                existing_handler._cartorio_json = True  # type: ignore[attr-defined]
     root._cartorio_json_installed = True  # type: ignore[attr-defined]
 
 
@@ -462,7 +462,7 @@ async def call_llm_with_fallback(
             request_id=request_id,
         )
         # Scrub output (camada 3)
-        clean_text, _ = scrub_pii_3_layers(response.text)
+        clean_text, _ = scrub_pii_3_layers(response.content)
         return clean_text
     except ChatError as e:
         logger.warning("LLM fallback error: kind=%s msg=%s", e.kind, e)

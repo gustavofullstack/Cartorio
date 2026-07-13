@@ -385,7 +385,9 @@ def marcar_como_deletado(db: Session, revogacao_id: str) -> bool:
         )
         result = db.execute(stmt, {"now": datetime.now(timezone.utc), "id": revogacao_id})
         db.commit()
-        return result.rowcount > 0
+        # SQLAlchemy stubs declaram Result[Any] sem rowcount; em runtime eh CursorResult.
+        rowcount = getattr(result, "rowcount", 0) or 0
+        return rowcount > 0
     except Exception as e:
         logger.warning("marcar_como_deletado falhou: %s", e)
         db.rollback()
@@ -404,7 +406,9 @@ def restaurar_revogacao(db: Session, revogacao_id: str) -> bool:
         )
         result = db.execute(stmt, {"now": datetime.now(timezone.utc), "id": revogacao_id})
         db.commit()
-        return result.rowcount > 0
+        # SQLAlchemy stubs declaram Result[Any] sem rowcount; em runtime eh CursorResult.
+        rowcount = getattr(result, "rowcount", 0) or 0
+        return rowcount > 0
     except Exception as e:
         logger.warning("restaurar_revogacao falhou: %s", e)
         db.rollback()

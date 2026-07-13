@@ -25,7 +25,7 @@ LGPD compliance: nenhum PII em labels (apenas IDs hash).
 from __future__ import annotations
 
 import time
-from typing import Literal
+from typing import Literal, cast
 
 from app.services.metrics import MetricsStore, store as _global_store
 
@@ -178,9 +178,13 @@ def scrub_with_metric(text: str, channel: ChannelLabel) -> tuple[str, int]:
     if result.redaction_count > 0:
         # Incrementa contador por cada tipo detectado (findings eh dict tipo->count)
         for tipo, count in result.findings.items():
-            for _ in range(count):
-                # tipo ja vem como chave canonica do pii.py (cpf/rg/telefone/email/cns/cnh)
-                inc_bot_pii_redacted(channel, tipo)
+            # tipo ja vem como chave canonica do pii.py (cpf/rg/telefone/email/cns/cnh).
+            # PII.py pode retornar labels extras (cnpj/placa_veiculo/data/...) que NAO
+            # estao no Literal TipoScrubLabel; pula esses para preservar type-safety.
+            if tipo in ("cpf", "rg", "telefone", "email", "cns", "cnh"):
+                tipo_label = cast(TipoScrubLabel, tipo)
+                for _ in range(count):
+                    inc_bot_pii_redacted(channel, tipo_label)
         # Garantia: se findings vier vazio mas redaction_count > 0 (raro),
         # conta como 'none' para nao perder a observacao.
         if not result.findings:
