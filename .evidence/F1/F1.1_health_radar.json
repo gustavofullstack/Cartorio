@@ -1,0 +1,12 @@
+{
+    "status": "red",
+    "services": {
+        "database": "online",
+        "redis": "online",
+        "n8n": "offline",
+        "openclaw": "online",
+        "evolution": "offline",
+        "chatwoot": "online",
+        "supabase": "online"
+    }
+}
