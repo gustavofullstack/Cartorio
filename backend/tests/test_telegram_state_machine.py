@@ -30,9 +30,9 @@ from app.api.v1.telegram import (
 
 
 def _make_bus() -> MagicMock:
-    """Cria bus mockado com setex + delete."""
+    """Cria bus mockado com set(ex=) + delete (redis-py 5+)."""
     bus = MagicMock()
-    bus.client.setex = AsyncMock(return_value=True)
+    bus.client.set = AsyncMock(return_value=True)
     bus.client.delete = AsyncMock(return_value=True)
     return bus
 
@@ -52,7 +52,7 @@ async def test_state_agendar_servico_escolhe_numero_1() -> None:
     assert "Data" in text or "data" in text.lower()
     assert new_state == STATE_AGENDAR_DATA
     assert keyboard is None
-    assert bus.client.setex.called  # state updated
+    assert bus.client.set.called  # state updated via set(ex=)
 
 
 @pytest.mark.asyncio
@@ -243,19 +243,37 @@ async def test_state_protocolo_encontrado() -> None:
 
 @pytest.mark.asyncio
 async def test_state_humano_cria_ticket() -> None:
-    """_handle_state HUMANO cria ticket de atendimento."""
+    """_handle_state HUMANO cria ticket — API retorna atendimento_id (nao id)."""
     bus = _make_bus()
     with patch(
         "app.api.v1.telegram._tool_criar_atendimento",
-        new=AsyncMock(return_value={"id": 42}),
+        new=AsyncMock(return_value={"ok": True, "atendimento_id": 42}),
     ):
         text, new_state, keyboard = await _handle_state(
             "Minha duvida sobre certidao", STATE_HUMANO, {}, bus, chat_id=123
         )
-    assert "42" in text or "Ticket" in text
+    assert "42" in text
+    assert "Ticket" in text
     assert new_state == STATE_IDLE
     assert keyboard is not None
     assert bus.client.delete.called
+
+
+@pytest.mark.asyncio
+async def test_state_humano_falha_api_nao_inventa_ticket() -> None:
+    """Regressao P0: se API falhar, NAO diz Ticket #N/A — pede retry."""
+    bus = _make_bus()
+    with patch(
+        "app.api.v1.telegram._tool_criar_atendimento",
+        new=AsyncMock(return_value={"erro": "HTTP 500"}),
+    ):
+        text, new_state, keyboard = await _handle_state(
+            "Preciso de ajuda", STATE_HUMANO, {}, bus, chat_id=123, user_id=99
+        )
+    assert "Ticket criado" not in text
+    assert "N/A" not in text
+    assert "/humano" in text or "ticket" in text.lower() or "balcao" in text.lower()
+    assert new_state == STATE_IDLE
 
 
 # =============================================================================

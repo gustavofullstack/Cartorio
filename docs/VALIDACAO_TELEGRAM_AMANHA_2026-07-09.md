@@ -27,6 +27,12 @@
 6. **Metrics**  
    Callbacks OK contam em `responses_ok` + `callbacks_ok`. Debug last-updates grava resposta final.
 
+7. **P0 HITL 2026-07-09 (Lesson 160)**  
+   `fn_auto_audit` inseria `audit_log` sem `hash`/`hmac_signature` → 500 em
+   `POST /api/v1/atendimento` → `/humano` nao criava ticket.  
+   Fix live no Postgres + migration `0020`. Retest: `atendimento_id` OK.
+   Repo: payload HITL + `atendimento_id` na msg (precisa deploy da API).
+
 ## Smoke 30 segundos (antes da validacao humana)
 
 ```bash

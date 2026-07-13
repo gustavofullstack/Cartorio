@@ -1,0 +1,159 @@
+# Prometheus alert rules — Bot latency / LGPD / observability
+# Sprint 5 / Turno 57 (2026-07-09)
+# Squad G6 (Observability) — T57
+# Routing: alerts → Telegram GRUPO Pietra via AlertManager
+
+groups:
+  - name: cartorio-bots-p1-latency
+    interval: 1m
+    rules:
+      # P1: Latencia P95 LLM > 15s (afeta UX do bot)
+      - alert: CartorioBotLLMLatencyP95High
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (channel, le) (
+              rate(bot_request_duration_seconds_sum{stage="llm"}[5m])
+            )
+          ) > 15
+        for: 5m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-obs
+          route: telegram-grupo-pietra
+        annotations:
+          summary: "Latencia P95 LLM bot > 15s"
+          description: |
+            Canal {{ $labels.channel }} com P95 acima de 15s nos ultimos 5min.
+            Investigar: provedor LLM lento, rede degradada, ou carga no Redis bus.
+          runbook: "https://github.com/gustavofullstack/Cartorio/blob/master/docs/runbook/bot-latency.md"
+
+      # P1: Latencia P95 send > 5s (Evolution/Telegram API lenta)
+      - alert: CartorioBotSendLatencyP95High
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (channel, le) (
+              rate(bot_request_duration_seconds_sum{stage="send"}[5m])
+            )
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-obs
+          route: telegram-grupo-pietra
+        annotations:
+          summary: "Latencia P95 send bot > 5s"
+          description: |
+            Canal {{ $labels.channel }} com P95 do send acima de 5s. 
+            Pode indicar lentidao na Evolution API ou Telegram API.
+
+      # P1: Fallback chain hops > 3 (todos providers lentos)
+      - alert: CartorioBotFallbackChainExhausted
+        expr: |
+          rate(
+            bot_fallback_chain_hops_total[5m]
+          ) > 3
+        for: 10m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-obs
+        annotations:
+          summary: "Fallback chain sendo exercida constantemente"
+          description: |
+            Muitos hops na chain de fallback (>3/s nos ultimos 5min).
+            Indica que provedores principais estao DOWN ou lentos.
+
+  - name: cartorio-bots-p2-errors
+    interval: 2m
+    rules:
+      # P2: Error rate > 10% em qualquer canal
+      - alert: CartorioBotErrorRateHigh
+        expr: |
+          (
+            sum by (channel) (rate(bot_requests_total{status="failed"}[10m]))
+            /
+            sum by (channel) (rate(bot_requests_total[10m]))
+          ) > 0.10
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          squad: cartorio-obs
+        annotations:
+          summary: "Bot error rate > 10%"
+          description: |
+            Canal {{ $labels.channel }} com taxa de erro acima de 10% nos ultimos 10min.
+
+      # P2: Rate limited > 5 req/s (cliente abusando)
+      - alert: CartorioBotRateLimitHigh
+        expr: |
+          rate(bot_requests_total{status="rate_limited"}[5m]) > 5
+        for: 5m
+        labels:
+          severity: info
+          priority: P2
+          squad: cartorio-obs
+        annotations:
+          summary: "Rate limiting ativado frequentemente"
+          description: |
+            Mais de 5 req/s estao sendo bloqueadas por rate limit no canal {{ $labels.channel }}.
+            Pode indicar cliente abusivo ou bot scan.
+
+      # P2: Idempotent skips > 50% (mensagens duplicadas)
+      - alert: CartorioBotIdempotentSkipsHigh
+        expr: |
+          (
+            sum(rate(bot_requests_total{status="idempotent"}[10m]))
+            /
+            sum(rate(bot_requests_total[10m]))
+          ) > 0.50
+        for: 30m
+        labels:
+          severity: info
+          priority: P2
+          squad: cartorio-obs
+        annotations:
+          summary: "Mais de 50% mensagens sao idempotent (duplicadas)"
+          description: |
+            Webhook esta recebendo muitas mensagens duplicadas. Pode indicar retry 
+            excessivo da Evolution API ou Telegram.
+
+  - name: cartorio-bots-p2-lgpd
+    interval: 5m
+    rules:
+      # P2: PII redacted > 100/h (cliente enviando dados sensiveis)
+      - alert: CartorioBotPIIRedactedHigh
+        expr: |
+          sum by (channel, tipo_scrub) (
+            rate(bot_pii_redacted_total[1h])
+          ) * 3600 > 100
+        for: 1h
+        labels:
+          severity: info
+          priority: P2
+          squad: cartorio-lgpd
+        annotations:
+          summary: "Alto volume de PII redacted"
+          description: |
+            Canal {{ $labels.channel }} tipo {{ $labels.tipo_scrub }} teve mais de 
+            100 redacoes na ultima hora. Pode indicar tentativa de envio de 
+            dados sensiveis ou bug no canal.
+
+      # P2: Consentimento revogado > 10/h
+      - alert: CartorioBotConsentRevokedHigh
+        expr: |
+          rate(bot_consent_granted_total{granted="false"}[1h]) * 3600 > 10
+        for: 1h
+        labels:
+          severity: warning
+          priority: P2
+          squad: cartorio-lgpd
+        annotations:
+          summary: "Alto volume de revogacao de consentimento"
+          description: |
+            Mais de 10 revogacoes de consentimento na ultima hora. Pode indicar 
+            problemas no fluxo LGPD ou campanha de delete.

@@ -498,23 +498,26 @@ def ep_list_projects() -> dict:
     if "json" not in login or "token" not in login.get("json", {}):
         return {"error": "login failed", "response": login}
     token = login["json"]["token"]
-    return http_get(f"{EASYPANEL_URL}/api/rpc/projects.listProjectsAndServices",
-                    headers={"Authorization": f"Bearer {token}"})
-
-
-def ep_list_services(project: str = "coding-vps_apenas_para_auxilio") -> dict:
-    """List services of an Easypanel project."""
-    login = ep_login()
-    if "json" not in login:
-        return login
-    token = login["json"]["token"]
-    body = json.dumps({"json": {"projectName": project}}).encode()
-    req = urllib.request.Request(f"{EASYPANEL_URL}/api/rpc/services.list", data=body, method="POST",
+    body = json.dumps({"json": {}}).encode()
+    req = urllib.request.Request(f"{EASYPANEL_URL}/api/trpc/projects.listProjectsAndServices", data=body, method="POST",
                                  headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
     try:
         return json.loads(urllib.request.urlopen(req, timeout=15).read().decode())
     except Exception as e:
         return {"error": str(e)}
+
+
+def ep_list_services(project: str = "coding-vps_apenas_para_auxilio") -> dict:
+    """List services of an Easypanel project."""
+    projects_data = ep_list_projects()
+    if "error" in projects_data:
+        return projects_data
+    services_list = projects_data.get("json", {}).get("services", [])
+    project_services = []
+    for svc in services_list:
+        if svc.get("projectName") == project:
+            project_services.append(svc)
+    return {"project": project, "services": project_services}
 
 
 def ep_deploy(project: str, service: str) -> dict:
@@ -524,10 +527,28 @@ def ep_deploy(project: str, service: str) -> dict:
         return login
     token = login["json"]["token"]
     body = json.dumps({"json": {"projectName": project, "serviceName": service}}).encode()
-    req = urllib.request.Request(f"{EASYPANEL_URL}/api/rpc/services.deploy", data=body, method="POST",
+    req = urllib.request.Request(f"{EASYPANEL_URL}/api/trpc/services.app.deployService", data=body, method="POST",
                                  headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
     try:
-        return {"status": "deploying", "result": json.loads(urllib.request.urlopen(req, timeout=30).read().decode())}
+        res = urllib.request.urlopen(req, timeout=30).read().decode()
+        return {"status": "deploying", "result": json.loads(res) if res else {}}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def ep_destroy_service(project: str, service: str, service_type: str = "app") -> dict:
+    """Destroy/Delete a service in Easypanel (app, postgres, redis, mariadb, mongo, mysql, compose, box)."""
+    login = ep_login()
+    if "json" not in login:
+        return login
+    token = login["json"]["token"]
+    body = json.dumps({"json": {"projectName": project, "serviceName": service}}).encode()
+    route = f"services.{service_type}.destroyService"
+    req = urllib.request.Request(f"{EASYPANEL_URL}/api/trpc/{route}", data=body, method="POST",
+                                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    try:
+        res = urllib.request.urlopen(req, timeout=30).read().decode()
+        return {"status": "destroyed", "service": service, "type": service_type, "result": json.loads(res) if res else {}}
     except Exception as e:
         return {"error": str(e)}
 
@@ -1086,6 +1107,7 @@ def _register_easypanel() -> dict:
         "ep_list_projects": {"func": ep_list_projects, "args": [], "category": "easypanel", "desc": "List all Easypanel projects"},
         "ep_list_services": {"func": ep_list_services, "args": ["project?"], "category": "easypanel", "desc": "List services in an Easypanel project"},
         "ep_deploy": {"func": ep_deploy, "args": ["project", "service"], "category": "easypanel", "desc": "Trigger Easypanel deploy of a service"},
+        "ep_destroy_service": {"func": ep_destroy_service, "args": ["project", "service", "service_type?"], "category": "easypanel", "desc": "Destroy/Delete a service in Easypanel"},
     }
 
 

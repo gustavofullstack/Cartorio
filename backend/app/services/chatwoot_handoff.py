@@ -132,3 +132,150 @@ def _save_event(db: Session, source: str, event_id: str, payload: dict[str, Any]
     payload_hash = hashlib.sha256(str(payload).encode("utf-8")).hexdigest()
     db.add(WebhookEvent(source=source, event_id=event_id, payload_hash=payload_hash))
     db.flush()
+
+
+# ============================================================
+# FIX 2026-07-12: handoff Agent -> Chatwoot (HITL outbound)
+# ============================================================
+import os  # noqa: E402
+
+import httpx  # noqa: E402
+
+CHATWOOT_PUBLIC_URL = os.environ.get("CHATWOOT_PUBLIC_URL", "https://chatwoot.2notasudi.com.br").rstrip("/")
+CHATWOOT_API_BASE_URL = os.environ.get("CHATWOOT_BASE_URL", "http://cartorio_chatwoot:3000").rstrip("/")
+CHATWOOT_API_KEY = os.environ.get("CHATWOOT_API_KEY", "")
+CHATWOOT_ACCOUNT_ID = os.environ.get("CHATWOOT_ACCOUNT_ID", "")
+CHATWOOT_INBOX_ID = os.environ.get("CHATWOOT_INBOX_ID", "")
+
+
+async def handoff_to_chatwoot(
+    *,
+    chat_id: int | str,
+    text: str,
+    attachments: list[dict[str, Any]] | None = None,
+    history: list[str] | None = None,
+) -> tuple[bool, dict[str, Any]]:
+    """FIX 2026-07-12: cria conversa Chatwoot e envia contexto do cliente Telegram.
+
+    Retorna (ok, info). Falha silenciosa se Chatwoot offline.
+    """
+    if not CHATWOOT_API_KEY or not CHATWOOT_ACCOUNT_ID or not CHATWOOT_INBOX_ID:
+        return False, {"error": "chatwoot_not_configured", "api_key_present": bool(CHATWOOT_API_KEY)}
+
+    contact_id = await _ensure_contact(chat_id)
+    if not contact_id:
+        return False, {"error": "contact_create_failed"}
+
+    conv_id = await _create_conversation(contact_id)
+    if not conv_id:
+        return False, {"error": "conversation_create_failed", "contact_id": contact_id}
+
+    body = _format_body(text, attachments, history)
+    sent_ok = await _send_message_to_conversation(conv_id, body)
+
+    public_url = f"{CHATWOOT_PUBLIC_URL}/app/accounts/{CHATWOOT_ACCOUNT_ID}/conversations/{conv_id}"
+    return sent_ok, {
+        "conversation_id": conv_id,
+        "contact_id": contact_id,
+        "public_url": public_url,
+    }
+
+
+async def _ensure_contact(chat_id: int | str) -> str | None:
+    headers = {"api_access_token": CHATWOOT_API_KEY, "Content-Type": "application/json"}
+    source_id = f"telegram:{chat_id}"
+    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0)) as client:
+        try:
+            r = await client.get(
+                f"{CHATWOOT_API_BASE_URL}/api/v1/accounts/{CHATWOOT_ACCOUNT_ID}/contacts/search",
+                headers=headers,
+                params={"q": source_id},
+            )
+            if r.status_code == 200:
+                data = r.json()
+                found = data.get("payload") if isinstance(data, dict) else data
+                if isinstance(found, list):
+                    for c in found:
+                        if c.get("source_id") == source_id:
+                            return str(c.get("id"))
+        except Exception as exc:
+            log.warning("chatwoot search contact fail: %s", exc)
+        try:
+            r = await client.post(
+                f"{CHATWOOT_API_BASE_URL}/api/v1/accounts/{CHATWOOT_ACCOUNT_ID}/contacts",
+                headers=headers,
+                json={
+                    "name": f"Telegram {chat_id}",
+                    "source_id": source_id,
+                    "custom_attributes": {"telegram_chat_id": str(chat_id), "canal": "telegram"},
+                },
+            )
+            if r.status_code in (200, 201):
+                data = r.json()
+                contact = data.get("payload", data) if isinstance(data, dict) else data
+                return str(contact.get("id"))
+        except Exception as exc:
+            log.warning("chatwoot create contact fail: %s", exc)
+        return None
+
+
+async def _create_conversation(contact_id: str) -> str | None:
+    headers = {"api_access_token": CHATWOOT_API_KEY, "Content-Type": "application/json"}
+    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0)) as client:
+        try:
+            r = await client.post(
+                f"{CHATWOOT_API_BASE_URL}/api/v1/accounts/{CHATWOOT_ACCOUNT_ID}/conversations",
+                headers=headers,
+                json={"contact_id": contact_id, "inbox_id": CHATWOOT_INBOX_ID, "status": "open"},
+            )
+            if r.status_code in (200, 201):
+                data = r.json()
+                conv = data.get("payload", data) if isinstance(data, dict) else data
+                return str(conv.get("id"))
+        except Exception as exc:
+            log.warning("chatwoot create conversation fail: %s", exc)
+        return None
+
+
+def _format_body(text: str, attachments: list[dict[str, Any]] | None, history: list[str] | None) -> str:
+    lines = ["[HITL Telegram - Agent AI Cartorio]", ""]
+    lines.append("Mensagem atual:")
+    lines.append(text or "(vazio)")
+    if attachments:
+        lines.append("")
+        lines.append(f"Anexos recebidos: {len(attachments)}")
+        for a in attachments[:10]:
+            t = a.get("type", "?")
+            n = a.get("file_name") or a.get("file_unique_id", "?")
+            sz = a.get("file_size", "?")
+            cap = a.get("caption", "")
+            local = a.get("local_path", "")
+            lines.append(f"- [{t}] {n} ({sz} bytes)")
+            if cap:
+                lines.append(f"    caption: {cap}")
+            if local:
+                lines.append(f"    path servidor: {local}")
+    if history:
+        lines.append("")
+        lines.append(f"Historico recente (ultimos {min(len(history), 6)}):")
+        for h in history[-6:]:
+            lines.append(f"  {h[:200]}")
+    return "\n".join(lines)
+
+
+async def _send_message_to_conversation(conv_id: str, body: str) -> bool:
+    headers = {"api_access_token": CHATWOOT_API_KEY, "Content-Type": "application/json"}
+    async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
+        try:
+            r = await client.post(
+                f"{CHATWOOT_API_BASE_URL}/api/v1/accounts/{CHATWOOT_ACCOUNT_ID}/conversations/{conv_id}/messages",
+                headers=headers,
+                json={"content": body, "message_type": "incoming"},
+            )
+            return r.status_code in (200, 201)
+        except Exception as exc:
+            log.warning("chatwoot send message fail: %s", exc)
+            return False
+
+
+__all__ = ["process_chatwoot_event", "handoff_to_chatwoot"]

@@ -174,10 +174,10 @@ async def test_enqueue_message_appends_to_redis_queue():
     result = await _enqueue_message(bus=fake_bus, chat_id=42, text="hello", msg_id=99)
 
     assert result == 1
-    fake_bus.client.setex.assert_called_once()
-    setex_args = fake_bus.client.setex.call_args.args
-    assert setex_args[0] == "tg:queue:42"
-    payload = json.loads(setex_args[2])
+    fake_bus.client.set.assert_called_once()
+    set_args = fake_bus.client.set.call_args
+    assert set_args.args[0] == "tg:queue:42"
+    payload = json.loads(set_args.args[1])  # set(key, value, ex=)
     assert payload[0]["text"] == "hello"
     assert payload[0]["msg_id"] == 99
 

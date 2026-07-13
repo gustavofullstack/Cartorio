@@ -214,6 +214,171 @@ flowchart LR
 | `idempotency` | `app/services/idempotency*.py` | Redis SETNX TTL 24h | ~120 |
 | `rate_limit` | `app/services/rate_limit*.py` | Sliding window 60 req/min/IP | ~200 |
 | `crypto` | `app/services/crypto.py` | Fernet encrypt/decrypt pgcrypto | ~80 |
+| `chat_pipeline` | `app/services/chat_pipeline.py` | **Pipeline compartilhado Telegram + WhatsApp** (v3.0, 2026-07-09) | 553 |
+
+---
+
+## Chat Pipeline (v3.0) — Pipeline Compartilhado Telegram + WhatsApp
+
+> **Adicionado em 2026-07-09** (Sprint 4 / Turn 51). Extrai lógica comum do bot Telegram (1463 linhas) e espelha para WhatsApp via Evolution API.
+
+### C2 — Container (chat pipeline + adapters)
+
+```mermaid
+flowchart TB
+    subgraph Channels["Canais (cliente)"]
+        TG[Cliente Telegram<br/>@CartorioAssistantBot]
+        WA[Cliente WhatsApp<br/>+55 11 99999-9999]
+    end
+
+    subgraph Adapters["Channel Adapters"]
+        TGA[TelegramAdapter<br/>telegram.py]
+        WAA[WhatsAppAdapter<br/>whatsapp.py]
+    end
+
+    subgraph Pipeline["chat_pipeline.py (núcleo compartilhado)"]
+        IDEM[1. check_idempotency<br/>Redis SETNX TTL 600s]
+        PII[2. scrub_pii_3_layers<br/>input → pre-LLM → output]
+        QUEUE[3. enqueue + debounce 1.2s<br/>Redis RPUSH + asyncio.wait]
+        RL[4. rate_limit 3s/chat_id]
+        TYPING[5. typing_loop<br/>refresh 4s]
+        LLM[6. call_llm_with_fallback<br/>LiteLLM → 7 providers]
+        SEND[7. send_response<br/>via adapter]
+        REACT[8. react<br/>via adapter]
+        AUDIT[9. audit_log<br/>hash chain LGPD]
+    end
+
+    subgraph Providers["LLM Providers (fallback chain)"]
+        L1[1. LiteLLM Proxy]
+        L2[2. opencode_free_1<br/>nemotron]
+        L3[3. opencode_free_2<br/>mimo]
+        L4[4. opencode_free_3<br/>deepseek]
+        L5[5. opencode_go<br/>M3 Zen]
+        L6[6. openclaw<br/>local]
+        L7[7. cache local]
+    end
+
+    subgraph HITL["HITL (Chatwoot)"]
+        CW[Chatwoot CRM<br/>chatwoot.2notasudi.com.br]
+    end
+
+    TG -->|webhook POST| TGA
+    WA -->|webhook POST| WAA
+
+    TGA --> IDEM
+    WAA --> IDEM
+    IDEM --> PII
+    PII --> QUEUE
+    QUEUE --> RL
+    RL --> TYPING
+    TYPING --> LLM
+    LLM --> L1
+    L1 -.fail.-> L2
+    L2 -.fail.-> L3
+    L3 -.fail.-> L4
+    L4 -.fail.-> L5
+    L5 -.fail.-> L6
+    L6 -.fail.-> L7
+    LLM --> SEND
+    LLM --> REACT
+    LLM --> AUDIT
+    SEND -.-> TGA
+    SEND -.-> WAA
+
+    LLM -.confidence<0.7.-> CW
+    PII -.PII em output.-> CW
+```
+
+### Flow detalhado (sequência)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Cliente (TG ou WA)
+    participant AD as ChannelAdapter
+    participant CP as chat_pipeline
+    participant R as Redis
+    participant L as LLM Provider
+    participant CW as Chatwoot
+
+    C->>AD: mensagem
+    AD->>CP: process_message(InboundMessage)
+    CP->>R: SETNX idem:{channel}:{update_id} TTL 600s
+    R-->>CP: ok (novo) | exists (pular)
+    CP->>CP: scrub_pii_3_layers(text) [camada 1]
+    CP->>R: RPUSH queue:{channel}:{sender_id}
+    CP->>CP: asyncio.wait_for(debounce_event, 1.2s)
+    CP->>R: LRANGE+DEL queue
+    CP->>CP: resume_burst(messages)
+    CP->>R: SETNX rl:{channel}:{sender_id} TTL 3s
+    alt rate limited
+        CP-->>AD: rate_limit_exceeded (responder depois)
+    else permitido
+        CP->>AD: typing_loop (refresh 4s)
+        par typing refresh
+            loop a cada 4s
+                CP->>AD: sendChatAction('typing') / sendPresence('composing')
+            end
+        and LLM call
+            CP->>CP: scrub_pii_3_layers [camada 2 pre-LLM]
+            CP->>L: chat.completions(model=...)
+            alt sucesso
+                L-->>CP: text
+                CP->>CP: scrub_pii_3_layers [camada 3 output]
+            else fallback
+                L-->>CP: 5xx/timeout
+                CP->>L: opencode_free_1 (retry exp backoff 1s,2s,4s)
+                L-->>CP: text
+            end
+            CP->>AD: stop_event.set() (para typing)
+            CP->>AD: typing(recipient, "") (cancela)
+        end
+        CP->>AD: send(OutboundMessage)
+        AD->>C: mensagem
+        CP->>AD: react(message_id, '👍')
+        AD->>C: reação
+        CP->>CW: audit_log (hash chain)
+        CP->>CW: create_handover (se confidence<0.7 ou /humano)
+    end
+```
+
+### Componentes extraídos (10/10)
+
+1. `process_message()` — entry point por canal
+2. `enqueue_message()` + `fetch_queue()` — fila Redis
+3. `check_idempotency()` — Redis SETNX TTL 600s
+4. `check_rate_limit()` — Redis SETNX TTL 3s
+5. `scrub_pii_3_layers()` — LGPD defesa em profundidade
+6. `call_llm_with_fallback()` — 7 providers + circuit breaker
+7. `typing_loop()` — refresh 4s + finally cancela
+8. `send_response()` — via adapter polimórfico
+9. `react_to_message()` — via adapter polimórfico
+10. `ChannelAdapter` (ABC) — interface Telegram + WhatsApp
+
+### Proveniência (refactor histórico)
+
+| Função nova | Origem (telegram.py v2.0) |
+|---|---|
+| `check_idempotency()` | `_check_idempotency()` |
+| `check_rate_limit()` | `_check_rate_limit()` |
+| `enqueue_message()` + `fetch_queue()` | `_resumir_mensagens()` |
+| `process_debounced()` | `_process_telegram_debounce` |
+| `call_llm_with_fallback()` | `_call_cartorio_agent` |
+| `typing_loop()` | `_send_typing()` |
+| `audit_log()` | `_audit_log_inline()` |
+| `ChannelAdapter` (ABC) | novo (T19) |
+
+**Economia**: -60% código duplicado entre Telegram/WhatsApp. Manutenção unificada.
+
+### LGPD compliance no chat_pipeline
+
+- **3 camadas PII scrub** (input / pre-LLM / output) — LGPD art. 46
+- **Audit log imutável** (hash chain SHA256 + HMAC) em todo `process_message` — LGPD art. 37
+- **Consentimento WhatsApp** explícito (botão "Aceito") — LGPD art. 7 I
+- **Retenção 5 anos** após último contato — LGPD art. 16
+- **DPA assinado** com todos os 7 providers — LGPD art. 33
+
+Ver [`docs/LGPD_BOTS.md`](LGPD_BOTS.md) para detalhes.
 
 ---
 

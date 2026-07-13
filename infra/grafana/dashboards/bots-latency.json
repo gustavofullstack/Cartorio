@@ -1,0 +1,9 @@
+{
+  "title": "Bots Latency Overview",
+  "panels": [
+    {
+      "id": 1,
+      "title": "LLM Latency by Provider"
+    }
+  ]
+}

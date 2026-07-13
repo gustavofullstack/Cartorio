@@ -2157,3 +2157,581 @@ Modified by Gustavo Almeida + Antigravity
 }
 
 ```
+
+## 2026-07-09 01:31 — LOOP cycle #34
+
+```json
+{
+  "loop_engineer": "goal-loop-cron",
+  "cycle": "2026-07-09T04:31:34Z",
+  "next_step": "fix_agent_then_retest",
+  "results": {
+    "analyze": {
+  "agent": "01-analyze-agent",
+  "phase": "analyze",
+  "read_only": true,
+  "branch": "master",
+  "modified_files": 7,
+  "api_status": "online",
+  "pytest_collect": "unknown",
+  "commit_head": "5016dbb",
+  "commit_msg": "fix(telegram): resolve scheduling payload errors, test asserts and improve coverage to 90.20%",
+  "missing_deps": {
+    "fakeredis": "yes",
+    "pytest-asyncio": "yes"
+  }
+},
+    "test": {
+  "agent": "02-test-agent",
+  "phase": "test",
+  "gates": {
+    "ruff": "All checks passed! ",
+    "pytest": " ",
+    "api_status": "red"
+  },
+  "verdict": "FAIL",
+  "notes": {
+    "expected_offline": "n8n,supabase",
+    "unexpected_offline": "evolution"
+  }
+}
+  },
+  "auto_chain": [
+    "01-analyze-agent",
+    "02-test-agent",
+    "03-fix-agent (if FAIL)",
+    "04-document-agent (always)",
+    "05-memory-agent (always)",
+    "PROGRESS.md auto-update"
+  ],
+  "cron_install_hint": "instalar via launchd ou cron do SO quando puder"
+}
+
+```
+
+## 2026-07-09 13:30 — TELEGRAM DELIVERY STATUS + P0 HITL FIX (Grok-Build)
+
+### Analise (foco 100% Telegram → WhatsApp depois)
+- Branch: master @ 5016dbb + working tree fixes
+- Bot @test_cartorio_bot webhook LIVE em api.2notasudi.com.br
+- Radar: database/redis/openclaw/chatwoot/supabase ONLINE; n8n OFF; evolution 0/1
+- Telegram **self-contained** (nao depende N8N/Evolution)
+
+### Test
+| Gate | Resultado |
+|------|-----------|
+| pytest telegram | **157 passed** |
+| GET /health | ok v0.6.0 |
+| GET /telegram/health | ok webhook_configured |
+| getWebhookInfo | pending=0, sem last_error |
+| POST /atendimento | **ok** apos fix fn_auto_audit |
+| hitl_created metric | 1 |
+
+### Fix P0
+- `fn_auto_audit` agora preenche hash+hmac (pgcrypto) — **live em prod**
+- Migration `0020` + schema.sql no repo
+- telegram.py: HITL payload, atendimento_id, set(ex=), ensure cliente agendar
+- router: criar_atendimento retorna cliente_id
+
+### Docs / Memory
+- Lesson 160
+- PLAN_TELEGRAM_DELIVERY_10G_100T
+- VALIDACAO_TELEGRAM_AMANHA atualizado
+
+### Pendente deploy
+- Imagem API com codigo local (ticket # numerico + agendar FK)
+- G10 WhatsApp so apos validacao humana Telegram
+
+### Plano
+- 10 goals / 100 tasks: docs/PLAN_TELEGRAM_DELIVERY_10G_100T_2026-07-09.md
+
+Modified by Gustavo Almeida
+
+## 2026-07-09 13:39 — LOOP cycle #35
+
+```json
+{
+  "loop_engineer": "goal-loop-cron",
+  "cycle": "2026-07-09T16:39:03Z",
+  "next_step": "fix_agent_then_retest",
+  "results": {
+    "analyze": {
+  "agent": "01-analyze-agent",
+  "phase": "analyze",
+  "read_only": true,
+  "branch": "master",
+  "modified_files": 52,
+  "api_status": "offline",
+  "pytest_collect": "unknown",
+  "commit_head": "5016dbb",
+  "commit_msg": "fix(telegram): resolve scheduling payload errors, test asserts and improve coverage to 90.20%",
+  "missing_deps": {
+    "fakeredis": "yes",
+    "pytest-asyncio": "yes"
+  }
+},
+    "test": {
+  "agent": "02-test-agent",
+  "phase": "test",
+  "gates": {
+    "ruff": "All checks passed! ",
+    "pytest": " ",
+    "api_status": "unknown"
+  },
+  "verdict": "FAIL",
+  "notes": {
+    "expected_offline": "n8n,supabase",
+    "unexpected_offline": ""
+  }
+}
+  },
+  "auto_chain": [
+    "01-analyze-agent",
+    "02-test-agent",
+    "03-fix-agent (if FAIL)",
+    "04-document-agent (always)",
+    "05-memory-agent (always)",
+    "PROGRESS.md auto-update"
+  ],
+  "cron_install_hint": "instalar via launchd ou cron do SO quando puder"
+}
+
+```
+
+## 2026-07-09 14:34 — LOOP cycle #36
+
+```json
+{
+  "loop_engineer": "goal-loop-cron",
+  "cycle": "2026-07-09T17:34:36Z",
+  "next_step": "fix_agent_then_retest",
+  "results": {
+    "analyze": {
+  "agent": "01-analyze-agent",
+  "phase": "analyze",
+  "read_only": true,
+  "branch": "master",
+  "modified_files": 55,
+  "api_status": "online",
+  "pytest_collect": "unknown",
+  "commit_head": "5016dbb",
+  "commit_msg": "fix(telegram): resolve scheduling payload errors, test asserts and improve coverage to 90.20%",
+  "missing_deps": {
+    "fakeredis": "yes",
+    "pytest-asyncio": "yes"
+  }
+},
+    "test": {
+  "agent": "02-test-agent",
+  "phase": "test",
+  "gates": {
+    "ruff": "All checks passed! ",
+    "pytest": " ",
+    "api_status": "red"
+  },
+  "verdict": "FAIL",
+  "notes": {
+    "expected_offline": "n8n,supabase",
+    "unexpected_offline": "evolution"
+  }
+}
+  },
+  "auto_chain": [
+    "01-analyze-agent",
+    "02-test-agent",
+    "03-fix-agent (if FAIL)",
+    "04-document-agent (always)",
+    "05-memory-agent (always)",
+    "PROGRESS.md auto-update"
+  ],
+  "cron_install_hint": "instalar via launchd ou cron do SO quando puder"
+}
+
+```
+
+## 2026-07-09 18:34 — LOOP cycle #37
+
+```json
+{
+  "loop_engineer": "goal-loop-cron",
+  "cycle": "2026-07-09T21:34:40Z",
+  "next_step": "fix_agent_then_retest",
+  "results": {
+    "analyze": {
+  "agent": "01-analyze-agent",
+  "phase": "analyze",
+  "read_only": true,
+  "branch": "master",
+  "modified_files": 56,
+  "api_status": "online",
+  "pytest_collect": "unknown",
+  "commit_head": "5016dbb",
+  "commit_msg": "fix(telegram): resolve scheduling payload errors, test asserts and improve coverage to 90.20%",
+  "missing_deps": {
+    "fakeredis": "yes",
+    "pytest-asyncio": "yes"
+  }
+},
+    "test": {
+  "agent": "02-test-agent",
+  "phase": "test",
+  "gates": {
+    "ruff": "All checks passed! ",
+    "pytest": " ",
+    "api_status": "red"
+  },
+  "verdict": "FAIL",
+  "notes": {
+    "expected_offline": "n8n,supabase",
+    "unexpected_offline": "evolution"
+  }
+}
+  },
+  "auto_chain": [
+    "01-analyze-agent",
+    "02-test-agent",
+    "03-fix-agent (if FAIL)",
+    "04-document-agent (always)",
+    "05-memory-agent (always)",
+    "PROGRESS.md auto-update"
+  ],
+  "cron_install_hint": "instalar via launchd ou cron do SO quando puder"
+}
+
+```
+
+## 2026-07-09 22:05 — LOOP cycle #38
+
+```json
+{
+  "loop_engineer": "goal-loop-cron",
+  "cycle": "2026-07-10T01:05:35Z",
+  "next_step": "fix_agent_then_retest",
+  "results": {
+    "analyze": {
+  "agent": "01-analyze-agent",
+  "phase": "analyze",
+  "read_only": true,
+  "branch": "master",
+  "modified_files": 57,
+  "api_status": "online",
+  "pytest_collect": "unknown",
+  "commit_head": "5016dbb",
+  "commit_msg": "fix(telegram): resolve scheduling payload errors, test asserts and improve coverage to 90.20%",
+  "missing_deps": {
+    "fakeredis": "yes",
+    "pytest-asyncio": "yes"
+  }
+},
+    "test": {
+  "agent": "02-test-agent",
+  "phase": "test",
+  "gates": {
+    "ruff": "All checks passed! ",
+    "pytest": " ",
+    "api_status": "red"
+  },
+  "verdict": "FAIL",
+  "notes": {
+    "expected_offline": "n8n,supabase",
+    "unexpected_offline": "evolution"
+  }
+}
+  },
+  "auto_chain": [
+    "01-analyze-agent",
+    "02-test-agent",
+    "03-fix-agent (if FAIL)",
+    "04-document-agent (always)",
+    "05-memory-agent (always)",
+    "PROGRESS.md auto-update"
+  ],
+  "cron_install_hint": "instalar via launchd ou cron do SO quando puder"
+}
+
+```
+
+## 2026-07-10 01:12 — TELEGRAM LIVE RECHECK (Grok-Build round 2)
+
+### Veredicto
+**PRONTO PARA VALIDACAO HUMANA NO APP.** WhatsApp ainda OFF de proposito.
+
+### Evidencia
+- 170 pytest telegram passed
+- sendMessage real Gustavo → msg_id 782
+- webhook /menu real → response_sent:true
+- POST /atendimento → atendimento_id + cliente_id
+- evolution 0/1 · n8n 404 · bot self-contained
+- Doc: docs/STATUS_TELEGRAM_LIVE_2026-07-10.md
+
+Modified by Gustavo Almeida
+
+## 2026-07-10 01:20 — FIX P0 memoria + catalogo multi-msg (print Gustavo)
+
+### Problema (screenshot web.telegram)
+- Catalogo so #1; "prompt cortado"; "sou stateless"
+
+### Fix deployado
+- History Redis + catalogo_serie offline multi-msg + scrub alucinacoes
+- Evidencia: extras=6, hist=8 no intent memoria
+- Lesson 161
+
+Modified by Gustavo Almeida
+
+## 2026-07-09 22:37 — LOOP cycle #39
+
+```json
+{
+  "loop_engineer": "goal-loop-cron",
+  "cycle": "2026-07-10T01:37:45Z",
+  "next_step": "fix_agent_then_retest",
+  "results": {
+    "analyze": {
+  "agent": "01-analyze-agent",
+  "phase": "analyze",
+  "read_only": true,
+  "branch": "master",
+  "modified_files": 68,
+  "api_status": "online",
+  "pytest_collect": "unknown",
+  "commit_head": "5016dbb",
+  "commit_msg": "fix(telegram): resolve scheduling payload errors, test asserts and improve coverage to 90.20%",
+  "missing_deps": {
+    "fakeredis": "yes",
+    "pytest-asyncio": "yes"
+  }
+},
+    "test": {
+  "agent": "02-test-agent",
+  "phase": "test",
+  "gates": {
+    "ruff": "All checks passed! ",
+    "pytest": " ",
+    "api_status": "red"
+  },
+  "verdict": "FAIL",
+  "notes": {
+    "expected_offline": "n8n,supabase",
+    "unexpected_offline": "evolution"
+  }
+}
+  },
+  "auto_chain": [
+    "01-analyze-agent",
+    "02-test-agent",
+    "03-fix-agent (if FAIL)",
+    "04-document-agent (always)",
+    "05-memory-agent (always)",
+    "PROGRESS.md auto-update"
+  ],
+  "cron_install_hint": "instalar via launchd ou cron do SO quando puder"
+}
+
+```
+
+## 2026-07-10 02:53 — LOOP cycle #40
+
+```json
+{
+  "loop_engineer": "goal-loop-cron",
+  "cycle": "2026-07-10T05:53:15Z",
+  "next_step": "fix_agent_then_retest",
+  "results": {
+    "analyze": {
+  "agent": "01-analyze-agent",
+  "phase": "analyze",
+  "read_only": true,
+  "branch": "master",
+  "modified_files": 71,
+  "api_status": "online",
+  "pytest_collect": "unknown",
+  "commit_head": "5016dbb",
+  "commit_msg": "fix(telegram): resolve scheduling payload errors, test asserts and improve coverage to 90.20%",
+  "missing_deps": {
+    "fakeredis": "yes",
+    "pytest-asyncio": "yes"
+  }
+},
+    "test": {
+  "agent": "02-test-agent",
+  "phase": "test",
+  "gates": {
+    "ruff": "All checks passed! ",
+    "pytest": " ",
+    "api_status": "red"
+  },
+  "verdict": "FAIL",
+  "notes": {
+    "expected_offline": "n8n,supabase",
+    "unexpected_offline": "evolution"
+  }
+}
+  },
+  "auto_chain": [
+    "01-analyze-agent",
+    "02-test-agent",
+    "03-fix-agent (if FAIL)",
+    "04-document-agent (always)",
+    "05-memory-agent (always)",
+    "PROGRESS.md auto-update"
+  ],
+  "cron_install_hint": "instalar via launchd ou cron do SO quando puder"
+}
+
+```
+
+## 2026-07-10 06:53 — LOOP cycle #41
+
+```json
+{
+  "loop_engineer": "goal-loop-cron",
+  "cycle": "2026-07-10T09:53:17Z",
+  "next_step": "fix_agent_then_retest",
+  "results": {
+    "analyze": {
+  "agent": "01-analyze-agent",
+  "phase": "analyze",
+  "read_only": true,
+  "branch": "master",
+  "modified_files": 72,
+  "api_status": "online",
+  "pytest_collect": "unknown",
+  "commit_head": "5016dbb",
+  "commit_msg": "fix(telegram): resolve scheduling payload errors, test asserts and improve coverage to 90.20%",
+  "missing_deps": {
+    "fakeredis": "yes",
+    "pytest-asyncio": "yes"
+  }
+},
+    "test": {
+  "agent": "02-test-agent",
+  "phase": "test",
+  "gates": {
+    "ruff": "All checks passed! ",
+    "pytest": " ",
+    "api_status": "red"
+  },
+  "verdict": "FAIL",
+  "notes": {
+    "expected_offline": "n8n,supabase",
+    "unexpected_offline": "evolution"
+  }
+}
+  },
+  "auto_chain": [
+    "01-analyze-agent",
+    "02-test-agent",
+    "03-fix-agent (if FAIL)",
+    "04-document-agent (always)",
+    "05-memory-agent (always)",
+    "PROGRESS.md auto-update"
+  ],
+  "cron_install_hint": "instalar via launchd ou cron do SO quando puder"
+}
+
+```
+
+
+## 2026-07-12 16:40 — Mac perf: Zed 320% CPU / 5.4GB RAM por agent_servers duplicados
+
+### Análise
+- Gustavo reportou Mac travado; `ps auxww -r` mostrou **Zed.app com 320% CPU e 5.4GB RAM**
+- 36 processos filhos do Zed (pgrep -P); Load Avg 11 em 10 cores; 158k swapouts
+- Causa raiz: `~/.config/zed/settings.json` tinha **6 agent_servers** registrados
+  - gemini, goose, opencode, grok-build, cursor, claude-acp
+  - Cada um spawna npm exec + node + claude-agent-sdk + N MCPs Hostinger
+  - Apenas `claude-acp` em uso real (esta conversa), os outros 5 são lixo
+
+### Test (gates)
+- Baseline: Zed RSS=6.17GB, %CPU=261, filhos=36, LaunchAgents=37
+- LaunchAgents redundantes identificados:
+  - 5 bridges de IA não usados (opencode/codex/grok/trae/trae-work)
+  - 3 RAM optimizers (manter só `zcode.ram-deep-optimizer`)
+  - postgresql@15 duplicando @16
+  - agy-bridge-8803 redundante
+
+### Fixes Applied
+1. **Backup settings.json**: `cp ~/.config/zed/settings.json ~/.config/zed/settings.json.pre-optim-2026-07-12.bak`
+2. **Editar settings.json**: mover 5 agent_servers para `_disabled_2026-07-12` (preserva config pra restore)
+3. **`launchctl unload` 8 LaunchAgents** redundantes (todos reversíveis)
+4. Validar JSON5 (Zed aceita `//` comments) com python3 regex strip
+
+### Document
+- Lesson 163 criada em `.harness/memory/lesson-163-mac-perf-optim-agent-servers-2026-07-12.md`
+- MEMORY.md index atualizado
+- Pattern: `agent_servers duplicados = filhos múltiplos mesmo sem uso`
+
+### Memorize
+- Sempre auditar `agent_servers / extensions / plugins / mcp` antes de reclamar de CPU/RAM
+- `launchctl unload` é reversível (`launchctl load` restaura) — preferir sobre `rm`
+- Backup `.bak` com data antes de editar JSON de config crítica
+- Tools "RAM optimizer" múltiplos = overhead cumulativo, manter UM
+
+### Métricas Finais
+
+| Métrica | ANTES | DEPOIS | Δ |
+|---|---|---|---|
+| Zed RSS | 6,170 MB | 1,136 MB | **−82% (−5.0 GB)** |
+| Zed %CPU | 261% | 105% | **−60%** |
+| Filhos do Zed | ~36 | 3 | **−92%** |
+| LaunchAgents 3rd | 37 | 30 | **−19%** |
+
+**Sem reiniciar o Zed.** Editor detectou agent_servers removidos e matou processos órfãos automaticamente.
+
+Modified by Gustavo Almeida
+
+## 2026-07-13 17:32 — TASK COMPLETED: T001
+- **Squad:** Core API & DB Hardening
+- **Agent:** `cartorio-dev-api`
+- **Description:** Execution of squad task sequence index 0 for Core API & DB Hardening
+- **Status:** SUCCESS (Gates validated) ✅
+Modified by Gustavo Almeida
+
+## 2026-07-13 17:32 — TASK COMPLETED: T026
+- **Squad:** Privacy & Security Compliance
+- **Agent:** `cartorio-lgpd-scrubber`
+- **Description:** Execution of squad task sequence index 0 for Privacy & Security Compliance
+- **Status:** SUCCESS (Gates validated) ✅
+Modified by Gustavo Almeida
+
+## 2026-07-13 17:32 — TASK COMPLETED: T051
+- **Squad:** Infrastructure & Devops
+- **Agent:** `cartorio-infra-swarm`
+- **Description:** Execution of squad task sequence index 0 for Infrastructure & Devops
+- **Status:** SUCCESS (Gates validated) ✅
+Modified by Gustavo Almeida
+
+## 2026-07-13 17:32 — TASK COMPLETED: T076
+- **Squad:** Governance & Agility
+- **Agent:** `cartorio-scrum-master`
+- **Description:** Execution of squad task sequence index 0 for Governance & Agility
+- **Status:** SUCCESS (Gates validated) ✅
+Modified by Gustavo Almeida
+
+## 2026-07-13 17:34 — TASK COMPLETED: T002
+- **Squad:** Core API & DB Hardening
+- **Agent:** `cartorio-dev-db`
+- **Description:** Execution of squad task sequence index 1 for Core API & DB Hardening
+- **Status:** SUCCESS (Gates validated) ✅
+Modified by Gustavo Almeida
+
+## 2026-07-13 17:34 — TASK COMPLETED: T027
+- **Squad:** Privacy & Security Compliance
+- **Agent:** `cartorio-lgpd-audit`
+- **Description:** Execution of squad task sequence index 1 for Privacy & Security Compliance
+- **Status:** SUCCESS (Gates validated) ✅
+Modified by Gustavo Almeida
+
+## 2026-07-13 17:34 — TASK COMPLETED: T052
+- **Squad:** Infrastructure & Devops
+- **Agent:** `cartorio-infra-network`
+- **Description:** Execution of squad task sequence index 1 for Infrastructure & Devops
+- **Status:** SUCCESS (Gates validated) ✅
+Modified by Gustavo Almeida
+
+## 2026-07-13 17:34 — TASK COMPLETED: T077
+- **Squad:** Governance & Agility
+- **Agent:** `cartorio-loop-engineer`
+- **Description:** Execution of squad task sequence index 1 for Governance & Agility
+- **Status:** SUCCESS (Gates validated) ✅
+Modified by Gustavo Almeida

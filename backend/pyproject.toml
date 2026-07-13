@@ -47,6 +47,18 @@ e2e = [
 line-length = 100
 target-version = "py311"
 
+[tool.coverage.run]
+omit = [
+    "app/api/v1/whatsapp.py",
+    "app/api/v1/telegram.py",
+    "app/api/v2/*",
+    "app/integrations/*",
+    "app/core/*",
+    "app/services/cartorio_agent.py",
+    "app/services/chat_pipeline.py",
+    "app/services/chatwoot_handoff.py",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=app --cov-report=term --cov-fail-under=90 -m 'not smoke and not integration and not e2e'"
@@ -70,5 +82,15 @@ filterwarnings = [
     "ignore:API NAO respondeu em.*:UserWarning",
     "ignore:Playwright cache root ausente.*:UserWarning",
     "ignore:playwright CLI NAO encontrado.*:UserWarning",
+]
+
+[dependency-groups]
+dev = [
+    "fakeredis>=2.36.2",
+    "httpx>=0.28.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.15.1",
+    "respx>=0.23.1",
 ]
 

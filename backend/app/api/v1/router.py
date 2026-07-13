@@ -2182,6 +2182,10 @@ async def criar_atendimento(request: Request, payload: dict) -> dict:
         db.add(a)
         db.flush()
         atendimento_id = a.id
+        # FIX 2026-07-09: Telegram agendamento precisa do cliente_id FK
+        # (user_id do Telegram NAO e FK de clientes). Devolver cliente_id
+        # quando o handoff criou/resolveu o cadastro via CPF.
+        resolved_cliente_id = a.cliente_id
 
         AuditService.log(
             db,
@@ -2194,12 +2198,17 @@ async def criar_atendimento(request: Request, payload: dict) -> dict:
                 "tipo": tipo,
                 "chatwoot_conversation_id": chatwoot_conv,
                 "protocolo_id": protocolo_id,
+                "cliente_id": resolved_cliente_id,
                 "pii_scrubbed": True,
             },
             **audit_kwargs(request),
         )
 
-    return {"ok": True, "atendimento_id": atendimento_id}
+    return {
+        "ok": True,
+        "atendimento_id": atendimento_id,
+        "cliente_id": resolved_cliente_id,
+    }
 
 
 @api_router.post(

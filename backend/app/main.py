@@ -645,3 +645,15 @@ app.include_router(brain_router, prefix="/api/v1")
 from app.api.v1.auth_login import auth_router as auth_login_router  # noqa: E402
 
 app.include_router(auth_login_router, prefix="/api/v1")
+
+# Bot LGPD endpoints (T47-T50 Sprint 5 2026-07-09) - direito esquecimento,
+# acesso, portabilidade para clientes via bot (Telegram/WhatsApp).
+from app.api.v1.bot_lgpd import router as bot_lgpd_router  # noqa: E402
+
+app.include_router(bot_lgpd_router, prefix="/api/v1")
+
+# Bot WhatsApp webhook + endpoints (T21-T30 Sprint 4 2026-07-09)
+# Espelha telegram.py: webhook, health, metrics, debug, test send.
+from app.api.v1.whatsapp import router as whatsapp_router  # noqa: E402
+
+app.include_router(whatsapp_router, prefix="/api/v1")

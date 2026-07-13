@@ -22,7 +22,7 @@ from app.api.v1.telegram import _handle_callback, _handle_command
 async def test_handle_command_start_retorna_menu() -> None:
     """/start retorna texto inicial + menu keyboard."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
     mock_bus.client.delete = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command("/start", mock_bus, chat_id=123, _user_name="Joao")
@@ -35,10 +35,10 @@ async def test_handle_command_start_retorna_menu() -> None:
 async def test_handle_command_menu_retorna_menu_principal() -> None:
     """/menu reseta state para IDLE e retorna menu."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command("/menu", mock_bus, chat_id=123, _user_name="Joao")
-    assert "Menu" in text or "principal" in text.lower()
+    assert "menu" in text.lower() or "principal" in text.lower()
     assert keyboard is not None
 
 
@@ -46,7 +46,7 @@ async def test_handle_command_menu_retorna_menu_principal() -> None:
 async def test_handle_command_agendar_retorna_servicos() -> None:
     """/agendar muda state para AGENDAR_SERVICO e retorna servicos keyboard."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command("/agendar", mock_bus, chat_id=123, _user_name="Joao")
     assert "servi" in text.lower()
@@ -57,7 +57,7 @@ async def test_handle_command_agendar_retorna_servicos() -> None:
 async def test_handle_command_protocolo_pede_numero() -> None:
     """/protocolo muda state e pede numero do protocolo."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command("/protocolo", mock_bus, chat_id=123, _user_name="Joao")
     assert "protocolo" in text.lower() or "numero" in text.lower()
@@ -68,7 +68,7 @@ async def test_handle_command_protocolo_pede_numero() -> None:
 async def test_handle_command_humano_pede_handoff() -> None:
     """/humano aciona handoff para escrevente."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command("/humano", mock_bus, chat_id=123, _user_name="Joao")
     assert "escrev" in text.lower() or "contato" in text.lower() or "humano" in text.lower()
@@ -80,7 +80,7 @@ async def test_handle_command_cancelar_limpa_state() -> None:
     """/cancelar limpa state e retorna menu."""
     mock_bus = MagicMock()
     mock_bus.client.delete = AsyncMock(return_value=True)
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command("/cancelar", mock_bus, chat_id=123, _user_name="Joao")
     assert "cancel" in text.lower()
@@ -91,7 +91,7 @@ async def test_handle_command_cancelar_limpa_state() -> None:
 async def test_handle_command_lgpd_retorna_politica_privacidade() -> None:
     """/lgpd retorna texto LGPD + menu."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command("/lgpd", mock_bus, chat_id=123, _user_name="Joao")
     assert "LGPD" in text or "privacidade" in text.lower() or "DPO" in text
@@ -102,7 +102,7 @@ async def test_handle_command_lgpd_retorna_politica_privacidade() -> None:
 async def test_handle_command_ajuda_ou_help() -> None:
     """/ajuda ou /help retorna alguma resposta (texto ou keyboard)."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command("/ajuda", mock_bus, chat_id=123, _user_name="Joao")
     # Pode ser texto com comandos OU keyboard
@@ -117,7 +117,7 @@ async def test_handle_command_ajuda_ou_help() -> None:
 async def test_handle_command_desconhecido_volta_ao_menu() -> None:
     """Comando desconhecido tem alguma resposta (default)."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command(
         "/xyz_invalido", mock_bus, chat_id=123, _user_name="Joao"
@@ -132,7 +132,7 @@ async def test_handle_command_desconhecido_volta_ao_menu() -> None:
 async def test_handle_command_com_argumentos_pega_primeira_palavra() -> None:
     """/start com argumento ainda reconhece como /start."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
     mock_bus.client.delete = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command(
@@ -145,7 +145,7 @@ async def test_handle_command_com_argumentos_pega_primeira_palavra() -> None:
 async def test_handle_callback_menu_X_retorna_menu() -> None:
     """Callback 'menu_X' retorna tuple (text, keyboard, needs_back)."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     result = await _handle_callback("menu_principal", mock_bus, chat_id=123)
     assert isinstance(result, tuple)
@@ -162,7 +162,7 @@ async def test_handle_callback_cancelar_retorna_menu() -> None:
     """Callback 'cancelar' limpa state e retorna menu."""
     mock_bus = MagicMock()
     mock_bus.client.delete = AsyncMock(return_value=True)
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     text, keyboard, needs_back = await _handle_callback("cancelar", mock_bus, chat_id=123)
     assert "cancel" in text.lower() or "menu" in text.lower()
@@ -185,7 +185,7 @@ async def test_handle_callback_desconhecido_cai_no_default() -> None:
 async def test_handle_command_aceita_comando_com_arroba() -> None:
     """/start@bot_name eh tratado como /start."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
     mock_bus.client.delete = AsyncMock(return_value=True)
 
     text, keyboard = await _handle_command(

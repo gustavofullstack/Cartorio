@@ -14,6 +14,7 @@ All commands run from the repo root and delegate to `backend/Makefile` via the r
 
 ```bash
 make install           # cd backend && uv sync
+make setup             # install + hint to copy .env.example -> .env
 make dev               # uvicorn app.main:app --reload --port 8000
 make test              # full pytest with coverage gate ≥90%
 make test-fast         # pytest without coverage (faster, dev loop)
@@ -21,7 +22,14 @@ make test-one TEST=test_audit.py::test_x  # single test
 make lint              # ruff check + mypy app/ (gates: 0 errors)
 make format            # ruff format + ruff check --fix
 make qa                # lint + test (full quality gate, same as CI)
+make ci                # alias of `qa` — simulate GitHub Actions locally
+make pre-commit        # lint + fast test (run before pushing)
 make clean             # remove __pycache__, .mypy_cache, .ruff_cache, .coverage
+make shell             # open Python shell with backend context loaded
+make status            # git status + last 5 commits + coverage summary
+make n8n-list          # list live N8N workflows (needs N8N_API_KEY, N8N_BASE_URL)
+make n8n-export        # export all N8N workflows to infra/n8n-workflows/
+make n8n-test          # E2E test all N8N workflows
 ```
 
 Single test without make:
@@ -132,6 +140,7 @@ When delegating a cross-cutting task, declare upfront which rein owns review.
 - **Telegram `parse_mode=HTML`**: LLM output containing `<think>`/`<reasoning>` tags breaks `parse_mode=HTML` and causes silent 502. Wrap LLM response before sending, or use Markdown parse mode. (See `backend/app/api/v1/telegram.py` for the retry-with-backoff implemented 2026-07-01.)
 - **N8N `/mcp-server/http`**: needs correct auth header — returns 401 if token/header is broken.
 - **Chatwoot 4.x + AI Agents SDK**: requires `pgvector` extension in the Postgres database or Chatwoot crashloops on startup.
+- **LLM isolation in tests**: `backend/tests/conftest.py` force-sets `LLM_DEFAULT_PROVIDER="opencode_go"` so the test suite never hits a real upstream LLM. If you swap providers, update `conftest.py` too — otherwise tests will silently call Claude/GPT.
 
 ## Documentation map
 

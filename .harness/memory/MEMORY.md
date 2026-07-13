@@ -5,7 +5,15 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-08)
+## INDICE RAPIDO (atualizado 2026-07-09)
+
+### Por data (consolidado)
+- **2026-07-10** (MiniMax tools+TTS+/voz; LiteLLM master key; audit 90% TG): `docs/STATUS_TELEGRAM_MINIMAX_100_2026-07-10.md`
+- **2026-07-10** (Lesson 161 — memoria multi-turn Redis + catalogo multi-msg): `lesson-161-telegram-memory-catalog-series-2026-07-10.md`
+- **2026-07-10** (STATUS LIVE Telegram: 170 tests, real DM ok, HITL deployado, WhatsApp hold): `docs/STATUS_TELEGRAM_LIVE_2026-07-10.md`
+- **2026-07-09** (Lesson 160 — P0 Telegram HITL: fn_auto_audit sem hash/hmac → 500 em /atendimento; fix live + migration 0020 + ticket atendimento_id): ver `.harness/memory/lesson-160-telegram-hitl-fn-auto-audit-2026-07-09.md`
+- **2026-07-09** Plano entrega Telegram 10 goals / 100 tasks: `docs/PLAN_TELEGRAM_DELIVERY_10G_100T_2026-07-09.md`
+
 
 ### Por data (consolidado)
 - **2026-07-08** (Lesson 159 — coding-vps MCP **62 tools** real + TRAE/Antigravity/Cursor configs sem secrets + `redis_ping`/`health_check_all` + `validate_coding_vps_tools_60.sh`): ver `.harness/memory/lesson-159-coding-vps-mcp-62-tools-integration-2026-07-08.md` e `docs/platforms/coding-vps/MEMORY_2026-07-08.md`
@@ -1349,3 +1357,7 @@ Chamadas multiplas sao safe (segunda chamada = no-op).
 - **2026-07-08** (Lesson 157 — "0/1000" Gustavo = percepcao do painel UI OFF, NAO bot OFF; bot 7/7 OK): ver `.harness/memory/lesson-157-validation-telegram-panel-vs-real-2026-07-08.md`
 - **2026-07-08** (Lesson 150 — Incident P0 VPS Hostinger OFF: 6 dominios TIMEOUT, SSH timeout, ping 100% loss; user reportou bot com nota 0/1000): ver `.harness/memory/lesson-150-incident-vps-down-telegram-2026-07-08.md`
 - **2026-07-08** (Lesson 151 — RESOLVED: VPS Hostinger DOWN bypassado via Cloudflare tunnel trycloudflare.com; bot Telegram 7/7 comandos respondem 200 em <2s; score 1001/1000): ver `.harness/memory/lesson-151-cloudflare-tunnel-rescue-2026-07-08.md`
+
+- **2026-07-10** (Agent AI MiniMax DIRETO live: `minimax_direct:MiniMax-M3` via MINIMAX_API_KEY; free LLM off; offline so humanizado): ver logs cartorio_api
+
+- **2026-07-12** (Lesson 163 — Mac perf: Zed 320% CPU / 5.4GB RAM por 6 agent_servers duplicados; desabilitar 5 reduziu RAM −82% (−5GB) e CPU −60% SEM reiniciar Zed): ver `.harness/memory/lesson-163-mac-perf-optim-agent-servers-2026-07-12.md`

@@ -385,6 +385,9 @@ CREATE FUNCTION public.fn_audit_chain_verify(p_from_id bigint DEFAULT 0, p_to_id
 -- Name: fn_auto_audit(); Type: FUNCTION; Schema: public; Owner: -
 --
 
+-- FIX 2026-07-09 (P0 Telegram HITL): hash + hmac_signature NOT NULL.
+-- Versao anterior inseria audit_log sem hash → IntegrityError em
+-- POST /api/v1/atendimento (trigger trg_auto_audit_atendimentos).
 CREATE FUNCTION public.fn_auto_audit() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -393,6 +396,16 @@ CREATE FUNCTION public.fn_auto_audit() RETURNS trigger
             v_resource TEXT;
             v_actor_id TEXT;
             v_payload JSONB;
+            v_prev_hash TEXT;
+            v_ts TEXT;
+            v_canonical TEXT;
+            v_hash TEXT;
+            v_hmac TEXT;
+            v_key TEXT;
+            v_request_id TEXT;
+            v_canal TEXT;
+            v_ip TEXT;
+            v_ua TEXT;
         BEGIN
             v_resource := TG_TABLE_NAME;
 
@@ -407,7 +420,6 @@ CREATE FUNCTION public.fn_auto_audit() RETURNS trigger
                 v_payload := to_jsonb(OLD);
             END IF;
 
-            -- actor_id vem de current_setting('app.current_actor_id', true) ou 'system'
             BEGIN
                 v_actor_id := current_setting('app.current_actor_id', true);
             EXCEPTION WHEN OTHERS THEN
@@ -417,16 +429,38 @@ CREATE FUNCTION public.fn_auto_audit() RETURNS trigger
                 v_actor_id := 'auto_audit';
             END IF;
 
+            v_request_id := COALESCE(NULLIF(current_setting('app.request_id', true), ''), 'auto');
+            v_canal := COALESCE(NULLIF(current_setting('app.canal', true), ''), 'system');
+            v_ip := COALESCE(NULLIF(current_setting('app.ip', true), ''), '0.0.0.0');
+            v_ua := COALESCE(NULLIF(current_setting('app.user_agent', true), ''), 'auto_audit_trigger');
+
+            SELECT al.hash INTO v_prev_hash
+            FROM audit_log al
+            ORDER BY al.id DESC
+            LIMIT 1;
+            IF v_prev_hash IS NULL OR v_prev_hash = '' THEN
+                v_prev_hash := repeat('0', 64);
+            END IF;
+
+            v_ts := to_char(clock_timestamp(), 'YYYY-MM-DD"T"HH24:MI:SS.US');
+            v_canonical := '{"payload":' || v_payload::text
+                || ',"prev_hash":"' || v_prev_hash
+                || '","timestamp":"' || v_ts || '"}';
+            v_hash := encode(digest(v_canonical, 'sha256'), 'hex');
+            v_key := COALESCE(NULLIF(current_setting('app.audit_hmac_key', true), ''), 'auto_audit_local_key');
+            v_hmac := encode(
+                hmac(v_hash || ':' || v_ts || ':' || v_actor_id || ':' || v_action, v_key, 'sha256'),
+                'hex'
+            );
+
             INSERT INTO audit_log (
                 actor_id, actor_type, action, resource, payload,
-                request_id, canal, ip, user_agent, timestamp
+                request_id, canal, ip, user_agent,
+                prev_hash, hash, hmac_signature, timestamp
             ) VALUES (
                 v_actor_id, 'system', v_action, v_resource, v_payload,
-                COALESCE(current_setting('app.request_id', true), 'auto'),
-                COALESCE(current_setting('app.canal', true), 'system'),
-                COALESCE(current_setting('app.ip', true), '0.0.0.0')::inet,
-                COALESCE(current_setting('app.user_agent', true), 'auto_audit_trigger'),
-                NOW()
+                v_request_id, v_canal, v_ip, v_ua,
+                NULLIF(v_prev_hash, repeat('0', 64)), v_hash, v_hmac, NOW()
             );
 
             IF TG_OP = 'DELETE' THEN

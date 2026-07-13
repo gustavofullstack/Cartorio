@@ -122,7 +122,7 @@ async def test_send_message_exception_retorna_False() -> None:
 
 @pytest.mark.asyncio
 async def test_send_message_com_keyboard_inline() -> None:
-    """_send_message com keyboard adiciona inline_keyboard ao payload."""
+    """_send_message com keyboard ignora botões inline no payload (diretiva 2026-07-12)."""
     mock_pool = MagicMock()
     captured: dict = {}
     resp = _make_resp(200)
@@ -137,17 +137,13 @@ async def test_send_message_com_keyboard_inline() -> None:
     with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
         await _send_message(123, "test", keyboard=keyboard)
 
-    # reply_markup deve ter inline_keyboard
-    assert "reply_markup" in captured["json"]
-    import json
-
-    markup = json.loads(captured["json"]["reply_markup"])
-    assert "inline_keyboard" in markup
+    # reply_markup nao deve ser adicionado ao payload
+    assert "reply_markup" not in captured["json"]
 
 
 @pytest.mark.asyncio
 async def test_send_message_com_reply_markup_dict() -> None:
-    """_send_message com reply_markup dict usa direto."""
+    """_send_message com reply_markup dict ignora no payload (diretiva 2026-07-12)."""
     mock_pool = MagicMock()
     captured: dict = {}
 
@@ -161,11 +157,8 @@ async def test_send_message_com_reply_markup_dict() -> None:
     with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
         await _send_message(123, "test", reply_markup=reply_markup)
 
-    import json
-
-    markup = json.loads(captured["json"]["reply_markup"])
-    assert "keyboard" in markup
-    assert markup["one_time_keyboard"] is True
+    # reply_markup nao deve ser adicionado ao payload
+    assert "reply_markup" not in captured["json"]
 
 
 @pytest.mark.asyncio

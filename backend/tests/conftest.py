@@ -38,6 +38,18 @@ _builtins.isinstance = _safe_isinstance
 _w_mod.int = _builtins.int
 _w_mod.type = _builtins.type
 
+# Mock global para subprocess.run (impede rsync de travar nos testes com timeout de 60s)
+import subprocess
+_orig_run = subprocess.run
+
+def _mock_run(args, *args_list, **kwargs):
+    if isinstance(args, list) and "rsync" in args:
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout="mocked rsync output", stderr="")
+    return _orig_run(args, *args_list, **kwargs)
+
+subprocess.run = _mock_run
+
+
 # Set test env BEFORE importing app modules.
 # Sprint 4 S01: usa setdefault para permitir override via env var
 # (CI/prod tem DATABASE_URL=postgresql; dev local pode usar sqlite).
@@ -55,6 +67,10 @@ os.environ["DB_POOL_RECYCLE"] = "3600"
 os.environ["DB_POOL_TIMEOUT"] = "30"
 os.environ["DB_POOL_PRE_PING"] = "true"
 os.environ["AUDIT_DEAD_MANS_SWITCH_MINUTES"] = "60"
+os.environ["APP_ENV"] = "development"
+os.environ["PII_SCRUB_ENABLED"] = "true"
+os.environ["PII_BLOCK_ON_DETECT"] = "true"
+os.environ["N8N_API_KEY"] = "header.payload.signature"
 
 TEST_CARTORIO_API_KEY = "a" * 64
 os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
@@ -304,3 +320,74 @@ def sample_payload() -> dict[str, Any]:
         "valor": 87.50,
         "cliente_cpf_hash": "abc123",
     }
+
+
+# =============================================================================
+# WhatsApp fixtures (Sprint 4 / Turn 51 — 2026-07-09, lesson 156)
+#
+# Fixtures para teste do canal WhatsApp via Evolution API:
+# - StatefulBus: bus mockado com persistencia in-memory (state machine)
+# - evolution_payload: helper para construir payload de webhook Evolution
+# - evolution_mock_responses: mock httpx com respostas 200 padrao
+# =============================================================================
+
+
+@pytest.fixture
+def evolution_payload() -> callable:
+    """Helper para construir payload Evolution API valido para teste.
+
+    Returns:
+        Funcao que recebe (message_id, text, remote_jid) e retorna dict payload.
+    """
+
+    def _build(
+        message_id: str = "wa-msg-test-1",
+        text: str = "oi",
+        remote_jid: str = "5511999999999@s.whatsapp.net",
+        push_name: str = "Joao Teste",
+    ) -> dict[str, Any]:
+        return {
+            "event": "messages.upsert",
+            "instance": "cartorio-2notas",
+            "data": {
+                "key": {
+                    "remoteJid": remote_jid,
+                    "fromMe": False,
+                    "id": message_id,
+                },
+                "message": {"conversation": text},
+                "messageType": "conversation",
+                "pushName": push_name,
+            },
+        }
+
+    return _build
+
+
+@pytest.fixture
+def stateful_whatsapp_bus() -> "StatefulBus":
+    """Bus mockado com persistencia in-memory para WhatsApp state machine."""
+    from tests.test_telegram_e2e_5x import StatefulBus
+
+    bus = StatefulBus()
+    return bus
+
+
+@pytest.fixture
+def evolution_mock_responses():
+    """Mock das respostas HTTP do Evolution API (200 OK padrao).
+
+    Retorna MagicMock para httpx.AsyncClient com .post/.get/.aclose AsyncMock
+    configurados para retornar respostas 200 com body vazio.
+    """
+    from unittest.mock import AsyncMock, MagicMock
+
+    client = MagicMock()
+    resp_ok = MagicMock()
+    resp_ok.status_code = 200
+    resp_ok.text = "{}"
+    resp_ok.json = MagicMock(return_value={"status": "ok", "instance": "test"})
+    client.post = AsyncMock(return_value=resp_ok)
+    client.get = AsyncMock(return_value=resp_ok)
+    client.aclose = AsyncMock(return_value=None)
+    return client

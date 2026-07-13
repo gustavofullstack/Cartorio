@@ -13,10 +13,12 @@ LGPD: PII scrub no texto antes de ir pro LLM.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 import httpx
 
@@ -40,46 +42,86 @@ CARTORIO_INFO = {
     "telefone_humano": "use /humano para falar com escrevente",
 }
 
-# LiteLLM MiniMax no coding-vps (alcancavel do container cartorio_api via rede easypanel)
+# MiniMax direto (preferido) — validado 200 OK do container cartorio_api.
+# LiteLLM coding-vps fica como 2a opcao (rede resolve, mas master key costuma 401).
+MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
+MINIMAX_BASE_URL = os.environ.get("MINIMAX_BASE_URL", "https://api.minimax.io/v1").rstrip("/")
+MINIMAX_MODEL = os.environ.get(
+    "CARTORIO_AGENT_MODEL",
+    os.environ.get("MINIMAX_MODEL_PRIMARY", "MiniMax-M3"),
+)
 LITELLM_URLS = [
     os.environ.get(
         "CARTORIO_AGENT_LITELLM_URL",
         "http://coding-vps_apenas_para_auxilio_litellm-app:4000",
     ),
-    "http://cartorio_litellm-app:4000",
+    os.environ.get("LITELLM_BASE_URL", "http://cartorio_litellm-app:4000"),
 ]
-LITELLM_KEY = os.environ.get("LITELLM_API_KEY", "e39dss0k1baohuqkprjv")
+LITELLM_KEY = os.environ.get("LITELLM_API_KEY", "")
 LITELLM_MODEL = os.environ.get("CARTORIO_AGENT_MODEL", "MiniMax-M3")
 
-AGENT_SYSTEM = """Voce e o Agent AI oficial do Cartorio 2o Oficio de Notas de Uberlandia/MG.
+AGENT_SYSTEM = """Voce e o Agent AI do Cartorio 2o Oficio de Notas de Uberlandia/MG.
 
 IDENTIDADE
-- Assistente virtual do cartorio (nao e tabeliao). Apoia, informa, agenda e pre-qualifica.
-- PT-BR, tom cordial mineiro, direto. SEM emojis. SEM enrolacao.
-- Max 4 frases curtas por resposta, a menos que o cliente peca detalhe.
+- Voce e um assistente de IA do cartorio (nao e tabeliao). Conversa natural, util e humana.
+- PT-BR, tom cordial mineiro, claro. ZERO emoji. Nunca soe como menu automatico ou IVR.
+- Escreva como pessoa real: paragrafos curtos, linha em branco entre blocos.
+- Respostas CURTAS (3-6 linhas uteis). NAO despeje catalogo inteiro a cada mensagem.
+- Small talk ("tudo bem?", "oi", "obrigado"): responda em 1-2 linhas e pergunte o que a pessoa precisa.
+- Se o cliente reclamar do tom ("grosso", "robot"): peca desculpas, suavize e continue ajudando.
 
-REGRAS CRITICAS (NUNCA VIOLAR)
-1. NUNCA invente valores de emolumento. Use APENAS o bloco FERRAMENTAS/CATALOGO abaixo.
-2. NUNCA de conselho juridico definitivo (testamento, usucapiao, inventário, validade de doc).
-   Nessas duvidas: diga que vai acionar um escrevente humano (/humano).
-3. NUNCA peca CPF/RG/telefone completo no chat. Se o cliente enviar PII, oriente /humano.
-4. Voce NAO emite certidao/escritura sozinho. HITL humano e obrigatorio para atos.
-5. Se o cliente quiser agendar: confirme servico e diga que pode usar o botao ou digitar
-   "quero agendar [servico] para [data] as [hora]".
-6. Se o cliente quiser consultar protocolo: peca o numero no formato AAAA-NNNNNN.
+MODO 2026-07-12 (Gustavo directive): AUTONOMO + TEXTO PURO
+- ZERO botao inline. ZERO teclado. ZERO menu visual.
+- Responda TUDO em texto livre (paragrafos curtos + linhas em branco).
+- Quando precisar coletar info, peca em texto livre ("me diga a data no formato DD/MM/AAAA")
+  — nunca sugira "1, 2, 3" nem "Voltar".
+- Catalogo: mostre a lista consolidada em UMA unica mensagem (sem spam de 5 mensagens).
+- Cliente pode mandar midia (foto, doc, video, audio). Trate como pre-qualificacao:
+  baixe, salve, confirme o recebimento em 1-2 linhas, diga o proximo passo.
+- Aceite texto em CAPS, erros de portugues, e girias. NUNCA peca "reformule".
 
-FERRAMENTAS JA EXECUTADAS (use estes fatos; nao chute)
+FORMATACAO OBRIGATORIA
+- Quebras de linha. Nunca despeje tudo em um unico paragrafo denso.
+- Estrutura tipica:
+  1) saudacao ou confirmacao (1 linha)
+  2) linha em branco
+  3) conteudo principal (paragrafos ou lista com "- ")
+  4) linha em branco
+  5) proximo passo claro (o que o cliente pode digitar/enviar)
+- Texto limpo: zero markdown pesado, zero asterisco duplo, zero emoji.
+
+MEMORIA DA CONVERSA (OBRIGATORIO)
+- Voce RECEBE historico recente no bloco do usuario (Redis multi-turn).
+- Use o historico. NUNCA diga que e "stateless" ou que "perdeu a memoria".
+- Se perguntarem se perdeu a memoria: diga que o historico esta ativo e retome o ultimo topico.
+- NUNCA diga que o "prompt foi cortado" nem peca "cole o restante das instrucoes".
+
+DADOS PESSOAIS E LGPD (CARTORIO)
+- Canal de cartorio: PODE receber CPF, RG, doc, midia. Agradeça, confirme e siga.
+- Em 1-2 linhas: LGPD (criptografia em transito, finalidade, retencao), HITL obrigatorio.
+- Voce NAO emite certidao/escritura sozinho. Para atos oficiais, encaminhe ao escrevente.
+- Direitos LGPD: dpo@2notasudi.com.br ou /lgpd.
+
+REGRAS CRITICAS
+1. NUNCA invente valores de emolumento. Use APENAS o catalogo abaixo.
+2. NUNCA invente servicos fora do CATALOGO. Escritura complexa, usucapiao, inventario: acione humano.
+3. NUNCA de conselho juridico definitivo; acione humano via tool ou [[ACTION:humano]].
+4. Agendar: confirme servico e peca "data (DD/MM/AAAA) e horario (HH:MM)".
+5. Protocolo: peca numero no formato AAAA-NNNNNN. Use tool consultar_protocolo se tiver.
+6. Catalogo em varias mensagens: NAO envie mais. Responda consolidado em 1 msg.
+7. ZERO link externo. Unico dominio permitido: 2notasudi.com.br.
+8. ZERO emoji. Resposta limpa com paragrafos.
+
+FERRAMENTAS / FATOS (nao chute)
 {tools_context}
 
-ACOES ESTRUTURADAS (opcional, 1 linha no FINAL se aplicavel)
-Se a intencao for clara, acrescente no FINAL da resposta EXATAMENTE uma linha:
-[[ACTION:agendar]] ou [[ACTION:protocolo]] ou [[ACTION:humano]] ou [[ACTION:menu]]
-Nao explique a linha ACTION. Se nao houver acao, nao inclua.
+ACOES ESTRUTURADAS (opcional, 1 linha no FINAL)
+[[ACTION:agendar]] ou [[ACTION:protocolo]] ou [[ACTION:humano]]
+Se nao houver acao, nao inclua a linha.
 
-BOTOES / TOOLS (estilo MCP)
-NAO force menu de botoes. Responda em texto.
-So sugira botoes quando for estritamente util (ex: escolher 1 de 5 servicos).
-Nunca diga "Falar com Escrevente". Use "atendimento humano" ou "escrevente (HITL)".
+BOTOES
+NAO ENVIE botoes. NAO sugira numeros (1, 2, 3). NAO sugira "Voltar".
+Sempre instrua em texto livre.
 """
 
 
@@ -90,24 +132,18 @@ class AgentReply:
     action: str | None = None  # agendar|protocolo|humano|menu
     tools_used: list[str] = field(default_factory=list)
     provider: str = "none"
+    # Mensagens extras (catalogo multi-msg): telegram envia em sequencia apos `text`
+    extra_messages: list[str] = field(default_factory=list)
 
 
 def _menu_kb() -> list[list[dict[str, str]]]:
-    """Atalhos globais — so quando o usuario pede menu/atalhos explicitamente."""
-    return [
-        [{"text": "Agendar no cartorio", "callback_data": "cmd:agendar"}],
-        [{"text": "Consultar protocolo", "callback_data": "cmd:protocolo"}],
-        [{"text": "Atendimento humano (HITL)", "callback_data": "cmd:humano"}],
-    ]
+    """DEPRECATED 2026-07-12: botoes inline removidos. Mantido so p/ retro-compat."""
+    return []
 
 
 def _servicos_kb() -> list[list[dict[str, str]]]:
-    """Tool keyboard: so na escolha de servico (necessario)."""
-    kb: list[list[dict[str, str]]] = []
-    for i, (key, (nome, _)) in enumerate(SERVICOS_CATALOGO.items(), 1):
-        kb.append([{"text": f"{i}. {nome}", "callback_data": f"servico:{key}"}])
-    kb.append([{"text": "Cancelar", "callback_data": "cmd:menu"}])
-    return kb
+    """DEPRECATED 2026-07-12: botoes inline removidos. Mantido so p/ retro-compat."""
+    return []
 
 
 def _match_servico(text: str) -> str | None:
@@ -125,15 +161,104 @@ def _match_servico(text: str) -> str | None:
     return None
 
 
+def _wants_catalog_series(text: str) -> bool:
+    """Cliente pediu catalogo em varias mensagens / um por um."""
+    t = (text or "").lower()
+    keys = (
+        "varias mensagens",
+        "várias mensagens",
+        "mensagens separadas",
+        "um pouco de cada",
+        "cada um",
+        "cada servico",
+        "cada serviço",
+        "um por um",
+        "um depois do outro",
+        "1 depois",
+        "todos os servicos",
+        "todos os serviços",
+        "lista completa",
+        "catalogo completo",
+        "catálogo completo",
+        "me fale um pouco de cada",
+    )
+    return any(k in t for k in keys)
+
+
+def _wants_catalog_continue(text: str) -> bool:
+    """Cliente pediu o restante de uma serie de mensagens."""
+    t = (text or "").lower()
+    return any(
+        k in t
+        for k in (
+            "cade o restante",
+            "cadê o restante",
+            "e o restante",
+            "o restante",
+            "continua",
+            "continue",
+            "proximo",
+            "próximo",
+            "e o resto",
+            "falta",
+            "so veio",
+            "só veio",
+            "so mandou",
+            "só mandou",
+        )
+    )
+
+
+def _build_catalog_series() -> list[str]:
+    """FIX 2026-07-12: catalogo consolidado em UMA mensagem (sem flood).
+
+    Antes: 1 intro + 5 servicos + 1 fechar = 7 msgs (cliente reclamou de spam).
+    Agora: 1 msg so, lista limpa.
+    """
+    lines = [f"Catalogo do {CARTORIO_INFO['nome']}", ""]
+    lines.append("Servicos oficiais (valor de referencia MG):")
+    lines.append("")
+    for i, (_key, (nome, valor)) in enumerate(SERVICOS_CATALOGO.items(), 1):
+        lines.append(f"  {i}. {nome} - {valor}")
+    lines.append("")
+    lines.append("Para avancar, escreva em texto livre. Exemplos:")
+    lines.append('  - "quero agendar autenticacao amanha as 10h"')
+    lines.append('  - "quanto custa procuracao"')
+    lines.append('  - "consultar protocolo 2026-000123"')
+    lines.append('  - "falar com escrevente"')
+    lines.append("")
+    lines.append("Atos fora desta lista (escritura complexa, usucapiao, inventario) precisam de atendimento humano.")
+    return ["\n".join(lines)]
+
+
 def _detect_intent(text: str) -> str:
     t = text.lower()
+    if _wants_catalog_series(t) or _wants_catalog_continue(t):
+        return "catalogo_serie"
+    # Dados pessoais: cartorio PODE e DEVE aceitar (com LGPD) — path offline
+    if _has_personal_data(text):
+        return "dados"
     if any(w in t for w in ("humano", "escrevente", "atendente", "pessoa real", "falar com")):
         return "humano"
     if any(w in t for w in ("protocolo", "andamento", "status do", "consulta protocolo")):
         return "protocolo"
     if any(w in t for w in ("agendar", "marcar", "horario", "horário", "visita", "comparecer")):
         return "agendar"
-    if any(w in t for w in ("quanto custa", "valor", "preco", "preço", "emolumento", "custa")):
+    if any(
+        w in t
+        for w in (
+            "quanto custa",
+            "valor",
+            "preco",
+            "preço",
+            "emolumento",
+            "custa",
+            "servicos",
+            "serviços",
+            "o que voces fazem",
+            "o que vocês fazem",
+        )
+    ):
         return "preco"
     if any(w in t for w in ("endereco", "endereço", "onde fica", "localizacao", "localização")):
         return "endereco"
@@ -142,6 +267,19 @@ def _detect_intent(text: str) -> str:
         for w in ("horario de funcionamento", "funciona", "abre", "fecha", "sabado", "sábado")
     ):
         return "horario"
+    if any(
+        w in t
+        for w in (
+            "memoria",
+            "memória",
+            "esqueceu",
+            "perdeu a memoria",
+            "perdeu a memória",
+            "historico",
+            "histórico",
+        )
+    ):
+        return "memoria"
     if any(w in t for w in ("oi", "ola", "olá", "bom dia", "boa tarde", "boa noite", "hey")):
         return "saudacao"
     return "livre"
@@ -197,60 +335,390 @@ def _build_tools_context(text: str) -> tuple[str, list[str]]:
     return "\n\n".join(parts), used
 
 
-async def _llm_minimax(system: str, user: str) -> tuple[str, str]:
-    """Chama MiniMax-M3 via LiteLLM. Retorna (texto, provider_tag)."""
-    payload = {
-        "model": LITELLM_MODEL,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        "max_tokens": 450,
-        "temperature": 0.35,
-    }
-    headers = {
-        "Authorization": f"Bearer {LITELLM_KEY}",
-        "Content-Type": "application/json",
-    }
-    last_err = ""
-    async with httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=5.0)) as client:
-        for base in LITELLM_URLS:
-            url = f"{base.rstrip('/')}/v1/chat/completions"
-            try:
-                r = await client.post(url, headers=headers, json=payload)
-                if r.status_code != 200:
-                    last_err = f"{base} HTTP {r.status_code} {r.text[:120]}"
-                    continue
-                data = r.json()
-                content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-                if content:
-                    return content, f"litellm:{LITELLM_MODEL}"
-                last_err = f"{base} empty content"
-            except Exception as exc:
-                last_err = f"{base} {type(exc).__name__}: {exc}"
-                logger.warning("cartorio_agent litellm fail: %s", last_err)
-    # Fallback chain generica do projeto
-    try:
-        from app.integrations.fallback import chat_with_fallback
+def _strip_think_tags(text: str) -> str:
+    """Remove blocos <think>/<reasoning> do MiniMax XMax Thinking."""
+    if not text:
+        return text
+    cleaned = re.sub(
+        r"<think>[\s\S]*?</think>",
+        "",
+        text,
+        flags=re.I,
+    )
+    cleaned = re.sub(
+        r"<reasoning>[\s\S]*?</reasoning>",
+        "",
+        cleaned,
+        flags=re.I,
+    )
+    return cleaned.strip()
 
-        resp = await chat_with_fallback(
-            messages=[
-                {"role": "system", "content": system[:900]},
-                {"role": "user", "content": user},
-            ],
-            temperature=0.3,
-            consent_granted=True,
-            actor_id="telegram:cartorio_agent",
-            db=None,
-            session_id=None,
-            rate_limit_per_minute=None,
-            request_id=None,
-            client_ip=None,
+
+# Tools OpenAI-compatible (MiniMax-M3 tool use / agentic)
+AGENT_TOOLS: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "listar_servicos_precos",
+            "description": "Lista servicos oficiais e precos de referencia do bot cartorio.",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "consultar_preco_servico",
+            "description": "Preco oficial de um servico do catalogo.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "servico": {
+                        "type": "string",
+                        "description": "Nome ou chave do servico",
+                    }
+                },
+                "required": ["servico"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "info_cartorio",
+            "description": "Endereco e horario oficiais do cartorio.",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "iniciar_fluxo",
+            "description": "DEPRECATED 2026-07-12. Use acao estruturada [[ACTION:humano]] no lugar.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "fluxo": {
+                        "type": "string",
+                        "enum": ["agendar", "protocolo", "humano", "menu"],
+                    }
+                },
+                "required": ["fluxo"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "consultar_protocolo_real",
+            "description": (
+                "Consulta status real de um protocolo cartorio via API (Supabase/cartorio-api). "
+                "Use quando o cliente informar numero AAAA-NNNNNN. "
+                "Se API offline, retorna offline:true e instrui humano."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "numero": {
+                        "type": "string",
+                        "description": "Numero do protocolo no formato AAAA-NNNNNN (ex: 2026-000123)",
+                    }
+                },
+                "required": ["numero"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "criar_agendamento_real",
+            "description": (
+                "Cria agendamento REAL via N8N workflow (webhook agendamento). "
+                "Use quando cliente confirmou servico + data + hora. "
+                "Se N8N offline, retorna offline:true e oferece humano."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "servico": {"type": "string", "description": "Chave do servico (autenticacao, procuracao, etc)"},
+                    "data": {"type": "string", "description": "Data DD/MM/AAAA"},
+                    "hora": {"type": "string", "description": "Hora HH:MM"},
+                    "nome": {"type": "string", "description": "Nome do cliente (opcional, p/ pre-qualificacao)"},
+                },
+                "required": ["servico", "data", "hora"],
+            },
+        },
+    },
+]
+
+
+CARTORIO_API_BASE = os.environ.get("CARTORIO_API_BASE", "http://127.0.0.1:8000").rstrip("/")
+N8N_AGENDAMENTO_WEBHOOK = os.environ.get(
+    "N8N_AGENDAMENTO_WEBHOOK", "https://cartorio-n8n.dfgdxq.easypanel.host/webhook/agendar"
+)
+
+
+async def _run_remote_tool(name: str, args: dict[str, Any]) -> tuple[str, str | None, list[str]] | None:
+    """FIX 2026-07-12: tools que batem em API/MCP real. Retorna None se nao for remote."""
+    used = [f"tool_remote:{name}"]
+    if name == "consultar_protocolo_real":
+        numero = str(args.get("numero", "")).strip()
+        if not re.match(r"^20\d{2}-\d{4,6}$", numero):
+            return json.dumps({"erro": "formato_invalido", "esperado": "AAAA-NNNNNN"}, ensure_ascii=False), None, used
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=3.0)) as client:
+                r = await client.get(f"{CARTORIO_API_BASE}/api/v1/protocolo/{numero}")
+                if r.status_code == 200:
+                    data = r.json()
+                    return json.dumps(data, ensure_ascii=False), None, used
+                if r.status_code == 404:
+                    return json.dumps({"offline": False, "status": "nao_encontrado", "numero": numero}, ensure_ascii=False), None, used
+                return json.dumps({"offline": True, "status": r.status_code, "hint": "API cartorio offline"}, ensure_ascii=False), None, used
+        except Exception as exc:
+            logger.warning("cartorio_agent consultar_protocolo_real fail: %s", exc)
+            return json.dumps({"offline": True, "erro": str(exc), "hint": "cartorio-api offline, encaminhe a humano"}, ensure_ascii=False), None, used
+
+    if name == "criar_agendamento_real":
+        servico = str(args.get("servico", ""))
+        data = str(args.get("data", ""))
+        hora = str(args.get("hora", ""))
+        nome = str(args.get("nome", ""))
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=3.0)) as client:
+                r = await client.post(
+                    N8N_AGENDAMENTO_WEBHOOK,
+                    json={"servico": servico, "data": data, "hora": hora, "nome": nome},
+                )
+                if r.status_code in (200, 201):
+                    return json.dumps(r.json(), ensure_ascii=False), None, used
+                return json.dumps({"offline": True, "status": r.status_code, "hint": "N8N offline"}, ensure_ascii=False), None, used
+        except Exception as exc:
+            logger.warning("cartorio_agent criar_agendamento_real fail: %s", exc)
+            return json.dumps({"offline": True, "erro": str(exc), "hint": "N8N offline, agende manualmente ou /humano"}, ensure_ascii=False), None, used
+
+    return None
+
+
+def _run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, str | None, list[str]]:
+    used = [f"tool:{name}"]
+    if name == "listar_servicos_precos":
+        items = [{"id": k, "nome": n, "valor": v} for k, (n, v) in SERVICOS_CATALOGO.items()]
+        return json.dumps({"servicos": items}, ensure_ascii=False), None, used
+    if name == "consultar_preco_servico":
+        raw = str(args.get("servico", ""))
+        key = _match_servico(raw)
+        if not key and raw in SERVICOS_CATALOGO:
+            key = raw
+        if not key or key not in SERVICOS_CATALOGO:
+            return (
+                json.dumps(
+                    {"erro": "servico_nao_encontrado", "opcoes": list(SERVICOS_CATALOGO.keys())},
+                    ensure_ascii=False,
+                ),
+                None,
+                used,
+            )
+        nome, valor = SERVICOS_CATALOGO[key]
+        return (
+            json.dumps({"id": key, "nome": nome, "valor": valor}, ensure_ascii=False),
+            None,
+            used,
         )
-        return (resp.content or "").strip(), f"fallback:{getattr(resp, 'provider', '?')}"
-    except Exception as exc:
-        logger.warning("cartorio_agent fallback fail: %s | litellm=%s", exc, last_err)
+    if name == "info_cartorio":
+        return json.dumps(CARTORIO_INFO, ensure_ascii=False), None, used
+    if name == "iniciar_fluxo":
+        fluxo = str(args.get("fluxo", "")).lower()
+        # menu removido 2026-07-12 (no buttons)
+        if fluxo in ("agendar", "protocolo", "humano"):
+            return json.dumps({"ok": True, "fluxo": fluxo}), fluxo, used
+        return json.dumps({"erro": "fluxo_invalido_ou_descontinuado"}), None, used
+    return json.dumps({"erro": "tool_desconhecida"}), None, used
+
+
+async def _chat_completion(
+    messages: list[dict[str, Any]],
+    *,
+    tools: list[dict[str, Any]] | None = None,
+    temperature: float = 0.7,
+    max_tokens: int = 700,
+) -> tuple[dict[str, Any] | None, str, str]:
+    """Retorna (message, provider, err)."""
+    last_err = ""
+    payload_base: dict[str, Any] = {
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "thinking": {"type": "adaptive"},
+    }
+    if tools:
+        payload_base["tools"] = tools
+        payload_base["tool_choice"] = "auto"
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(50.0, connect=8.0)) as client:
+        if MINIMAX_API_KEY:
+            base = MINIMAX_BASE_URL
+            if base.endswith("/chat/completions"):
+                url = base
+            elif base.endswith("/v1"):
+                url = f"{base}/chat/completions"
+            else:
+                url = f"{base.rstrip('/')}/v1/chat/completions"
+            try:
+                r = await client.post(
+                    url,
+                    headers={
+                        "Authorization": f"Bearer {MINIMAX_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={**payload_base, "model": MINIMAX_MODEL},
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    msg = data.get("choices", [{}])[0].get("message") or {}
+                    return msg, f"minimax_direct:{MINIMAX_MODEL}", ""
+                last_err = f"minimax HTTP {r.status_code} {r.text[:160]}"
+            except Exception as exc:
+                last_err = f"minimax {type(exc).__name__}: {exc}"
+                logger.warning("cartorio_agent minimax_direct fail: %s", last_err)
+
+        if LITELLM_KEY:
+            headers = {
+                "Authorization": f"Bearer {LITELLM_KEY}",
+                "Content-Type": "application/json",
+            }
+            for base in LITELLM_URLS:
+                if not base:
+                    continue
+                url = f"{base.rstrip('/')}/v1/chat/completions"
+                try:
+                    r = await client.post(
+                        url,
+                        headers=headers,
+                        json={**payload_base, "model": LITELLM_MODEL or MINIMAX_MODEL},
+                    )
+                    if r.status_code != 200:
+                        last_err = f"{base} HTTP {r.status_code} {r.text[:120]}"
+                        continue
+                    data = r.json()
+                    msg = data.get("choices", [{}])[0].get("message") or {}
+                    return msg, f"litellm:{LITELLM_MODEL}", ""
+                except Exception as exc:
+                    last_err = f"{base} {type(exc).__name__}: {exc}"
+                    logger.warning("cartorio_agent litellm fail: %s", last_err)
+
+    return None, "none", last_err
+
+
+async def _llm_minimax(system: str, user: str) -> tuple[str, str]:
+    """Chat simples sem tools."""
+    msg, provider, err = await _chat_completion(
+        [{"role": "system", "content": system}, {"role": "user", "content": user}],
+        tools=None,
+    )
+    if not msg:
+        logger.warning("cartorio_agent: MiniMax offline — fallback local. err=%s", err)
         return "", "none"
+    return _strip_think_tags((msg.get("content") or "").strip()), provider
+
+
+async def _llm_agent_with_tools(system: str, user: str) -> tuple[str, str, str | None, list[str]]:
+    """Loop agentico MiniMax-M3 com tools (docs platform.minimax.io tool use)."""
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+    tools_used: list[str] = []
+    action: str | None = None
+    provider = "none"
+
+    for _ in range(3):
+        msg, provider, err = await _chat_completion(
+            messages, tools=AGENT_TOOLS, temperature=0.7, max_tokens=700
+        )
+        if not msg:
+            logger.warning("cartorio_agent tools fail: %s", err)
+            return "", "none", action, tools_used
+
+        tool_calls = msg.get("tool_calls") or []
+        if tool_calls:
+            messages.append(msg)
+            for tc in tool_calls:
+                fn = tc.get("function") or {}
+                name = fn.get("name") or ""
+                raw_args = fn.get("arguments") or "{}"
+                try:
+                    args = json.loads(raw_args) if isinstance(raw_args, str) else dict(raw_args)
+                except Exception:
+                    args = {}
+                # FIX 2026-07-12: tenta tool remoto primeiro, depois local
+                remote_result = await _run_remote_tool(name, args)
+                if remote_result is not None:
+                    result, act, used = remote_result
+                else:
+                    result, act, used = _run_local_tool(name, args)
+                tools_used.extend(used)
+                if act:
+                    action = act
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.get("id") or name,
+                        "name": name,
+                        "content": result,
+                    }
+                )
+            continue
+
+        text = _strip_think_tags((msg.get("content") or "").strip())
+        return text, provider, action, tools_used
+
+    return "", provider, action, tools_used
+
+
+async def minimax_tts_mp3(text: str) -> bytes | None:
+    """TTS MiniMax speech-2.6-turbo → MP3 bytes (Telegram sendVoice)."""
+    if not MINIMAX_API_KEY or not text:
+        return None
+    snippet = text.strip()[:480]
+    payload = {
+        "model": "speech-2.6-turbo",
+        "text": snippet,
+        "stream": False,
+        "language_boost": "Portuguese",
+        "output_format": "hex",
+        "voice_setting": {
+            "voice_id": "Portuguese_CaptivatingStoryteller",
+            "speed": 1.0,
+            "vol": 1.0,
+            "pitch": 0,
+        },
+        "audio_setting": {
+            "sample_rate": 32000,
+            "bitrate": 128000,
+            "format": "mp3",
+            "channel": 1,
+        },
+    }
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
+            r = await client.post(
+                "https://api.minimax.io/v1/t2a_v2",
+                headers={
+                    "Authorization": f"Bearer {MINIMAX_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+            if r.status_code != 200:
+                logger.warning("minimax_tts HTTP %s %.160s", r.status_code, r.text)
+                return None
+            data = r.json()
+            hex_audio = (data.get("data") or {}).get("audio") or ""
+            if not hex_audio:
+                return None
+            return bytes.fromhex(hex_audio)
+    except Exception as exc:
+        logger.warning("minimax_tts fail: %s", exc)
+        return None
 
 
 def _parse_action(text: str) -> tuple[str, str | None]:
@@ -263,32 +731,265 @@ def _parse_action(text: str) -> tuple[str, str | None]:
 
 
 def _keyboard_for_action(action: str | None, intent: str) -> list[list[dict[str, str]]] | None:
-    """Teclado so quando e tool util (como MCP tool call), senao None.
+    """FIX 2026-07-12 (Gustavo directive): SEM botoes inline. Sempre None.
 
-    - agendar / preco sem servico claro → lista de servicos
-    - menu explicito → atalhos
-    - saudacao, endereco, horario, preco com servico, humano, protocolo → SEM botoes
+    Cliente prefere texto puro + conversa autonoma. Botoes removidos.
+    Agendar/protocolo/humano: instrucoes em texto livre.
     """
-    if action == "menu":
-        return _menu_kb()
-    if action == "agendar" or intent == "agendar":
-        return _servicos_kb()
-    if intent == "preco":
-        # so teclado se ainda nao identificou servico (precisa escolher)
-        return None  # caller decide com match_servico; default sem teclado
     return None
 
 
-def _offline_reply(text: str, intent: str, tools_used: list[str]) -> AgentReply:
-    """Resposta deterministica se LLM cair — ainda e util, nao muda pra FSM cego."""
+def _is_clarification(text: str) -> bool:
+    t = (text or "").lower().strip()
+    keys = (
+        "como assim",
+        "tipo como",
+        "tipo o que",
+        "o que quer dizer",
+        "nao entendi",
+        "não entendi",
+        "explica",
+        "explique",
+        "pode explicar",
+        "??",
+        "como?",
+        "que isso",
+        "huh",
+        "hm",
+        "hein",
+    )
+    if t in ("?", "??", "???"):
+        return True
+    return any(k in t for k in keys)
+
+
+def _is_smalltalk(text: str) -> bool:
+    t = (text or "").lower().strip()
+    # remove pontuacao leve
+    t = re.sub(r"[!?.,]+$", "", t).strip()
+    exact = {
+        "tudo bem",
+        "tudo bom",
+        "td bem",
+        "blz",
+        "beleza",
+        "e ai",
+        "e aí",
+        "suave",
+        "valeu",
+        "obrigado",
+        "obrigada",
+        "obg",
+        "thanks",
+        "ok",
+        "certo",
+        "entendi",
+        "show",
+        "top",
+        "bom dia",
+        "boa tarde",
+        "boa noite",
+    }
+    if t in exact:
+        return True
+    if t.startswith("tudo bem") or t.startswith("tudo bom"):
+        return True
+    return False
+
+
+def _is_tone_complaint(text: str) -> bool:
+    t = (text or "").lower()
+    return any(
+        k in t
+        for k in (
+            "grosso",
+            "grosa",
+            "rude",
+            "robot",
+            "robô",
+            "automatico",
+            "automático",
+            "chato",
+            "lixo",
+            "merda",
+            "pessimo",
+            "péssimo",
+            "ruim",
+            "nao ajuda",
+            "não ajuda",
+        )
+    )
+
+
+def _last_bot_from_history(history: list[str] | None) -> str:
+    if not history:
+        return ""
+    for h in reversed(history):
+        if h.lower().startswith("bot:"):
+            return h[4:].strip()
+    return ""
+
+
+def _offline_reply(
+    text: str,
+    intent: str,
+    tools_used: list[str],
+    *,
+    history: list[str] | None = None,
+) -> AgentReply:
+    """Resposta deterministica se LLM cair — ainda e util, nao muda pra FSM cego.
+
+    FIX 2026-07-10: NUNCA repetir o cartao de boas-vindas em loop.
+    Saudacao curta 1x; follow-ups e "como assim?" usam historico.
+    """
+    if intent == "catalogo_serie":
+        series = _build_catalog_series()
+        tools_used = list(tools_used) + ["catalogo:serie"]
+        return AgentReply(
+            text=series[0],
+            extra_messages=series[1:],
+            keyboard=None,
+            tools_used=tools_used,
+            provider="offline:catalogo_serie",
+        )
+    if intent == "dados":
+        return AgentReply(
+            text=(
+                "Recebi seus dados para pre-qualificacao.\n"
+                "\n"
+                "LGPD (Lei 13.709/2018)\n"
+                "- Finalidade: atendimento do 2o Oficio de Notas de Uberlandia/MG\n"
+                "- Transito com criptografia (HTTPS/TLS)\n"
+                "- CPF/RG ficam com hash no servidor; nao reenviamos em claro\n"
+                "- Ato notarial so com validacao humana (HITL)\n"
+                "\n"
+                "Proximo passo\n"
+                "Informe o servico desejado (ex.: autenticacao, procuracao)\n"
+                "ou digite /humano para falar com o escrevente.\n"
+                "\n"
+                "Direitos LGPD: dpo@2notasudi.com.br ou /lgpd"
+            ),
+            keyboard=None,
+            tools_used=list(tools_used) + ["dados:lgpd_ack"],
+            provider="offline:dados",
+        )
+    if intent == "memoria":
+        return AgentReply(
+            text=(
+                "A memoria desta conversa esta ativa.\n"
+                "\n"
+                "Guardamos o historico recente neste chat (Redis) e o perfil "
+                "do seu Telegram (id, username e dados de pre-qualificacao com hash).\n"
+                "\n"
+                "Pode retomar de onde paramos: diga o servico, peca valores, "
+                "agendar, protocolo ou /humano."
+            ),
+            keyboard=None,
+            tools_used=list(tools_used) + ["memoria"],
+            provider="offline",
+        )
+    # Reclamacao de tom
+    if _is_tone_complaint(text):
+        return AgentReply(
+            text=(
+                "Desculpa se soou automatico ou seco — nao e a intencao.\n"
+                "\n"
+                "Estou aqui pra te ajudar de verdade no cartorio.\n"
+                "Me conta com suas palavras o que voce precisa "
+                "(valor, agendar, protocolo ou falar com escrevente)."
+            ),
+            keyboard=None,
+            tools_used=list(tools_used) + ["tom:desculpa"],
+            provider="offline:tom",
+        )
+    # Small talk curto
+    if _is_smalltalk(text):
+        return AgentReply(
+            text=(
+                "Tudo bem sim, obrigado por perguntar.\n\nEm que posso te ajudar no cartorio agora?"
+            ),
+            keyboard=None,
+            tools_used=list(tools_used) + ["smalltalk"],
+            provider="offline:smalltalk",
+        )
+    # Saudacao: CURTA. Nunca despejar o menu completo de novo se ja houve conversa.
+    if intent == "saudacao":
+        if history and any(h.lower().startswith("bot:") for h in history):
+            return AgentReply(
+                text="Oi. Em que posso te ajudar agora?",
+                keyboard=None,
+                tools_used=list(tools_used) + ["saudacao:curta"],
+                provider="offline:saudacao",
+            )
+        return AgentReply(
+            text=(
+                f"Ola. Sou o Agent AI do {CARTORIO_INFO['nome']}.\n"
+                "\n"
+                "Pode falar em texto livre — valores, agendamento, protocolo "
+                "ou /humano para escrevente.\n"
+                "\n"
+                "O que voce precisa?"
+            ),
+            keyboard=None,
+            tools_used=list(tools_used) + ["saudacao:welcome"],
+            provider="offline:saudacao",
+        )
+    # Esclarecimento — curto, sem dump de catalogo
+    if _is_clarification(text):
+        return AgentReply(
+            text=(
+                "Claro. Em resumo, eu ajudo com:\n"
+                "\n"
+                "- valor de servicos (ex.: quanto custa autenticacao)\n"
+                "- agendar atendimento\n"
+                "- consultar protocolo\n"
+                "- encaminhar para escrevente (/humano)\n"
+                "\n"
+                "Me diga o que voce quer fazer, com suas palavras."
+            ),
+            keyboard=None,
+            tools_used=list(tools_used) + ["livre:clarificacao"],
+            provider="offline:clarificacao",
+        )
+    # livre generico com historico: NAO despejar menu/catalogo
+    if intent == "livre" and history and any(h.lower().startswith("bot:") for h in history):
+        svc = _match_servico(text)
+        if svc:
+            nome, valor = SERVICOS_CATALOGO[svc]
+            return AgentReply(
+                text=(
+                    f"Sobre {nome}: valor de referencia {valor}.\n"
+                    "\n"
+                    f"Se quiser agendar, digite: quero agendar {nome.lower()}\n"
+                    "Se preferir pessoa: /humano"
+                ),
+                keyboard=None,
+                tools_used=list(tools_used) + [f"livre:servico:{svc}"],
+                provider="offline:livre",
+            )
+        return AgentReply(
+            text=(
+                "Pode me contar um pouco mais do que voce precisa?\n"
+                "\n"
+                "Por exemplo: autenticar um documento, reconhecimento de firma, "
+                "procuracao, agendar horario ou consultar um protocolo."
+            ),
+            keyboard=None,
+            tools_used=list(tools_used) + ["livre:pergunte"],
+            provider="offline:livre",
+        )
     svc = _match_servico(text)
     if intent == "preco" and svc:
         nome, valor = SERVICOS_CATALOGO[svc]
         return AgentReply(
             text=(
-                f"Pelo catalogo do cartorio, {nome} esta em {valor} "
-                f"(tabela operacional bot / referencia MG). "
-                f"Se quiser agendar, digite por exemplo: quero agendar {nome.lower()}."
+                f"Sobre {nome}:\n"
+                "\n"
+                f"Valor de referencia: {valor}\n"
+                "(tabela operacional do bot / referencia MG)\n"
+                "\n"
+                "Para agendar, digite por exemplo:\n"
+                f"quero agendar {nome.lower()}"
             ),
             keyboard=None,
             action=None,
@@ -298,23 +999,25 @@ def _offline_reply(text: str, intent: str, tools_used: list[str]) -> AgentReply:
     if intent == "preco":
         lines = [f"- {n}: {v}" for _, (n, v) in SERVICOS_CATALOGO.items()]
         return AgentReply(
-            text="Valores de referencia que posso informar agora:\n"
-            + "\n".join(lines)
-            + "\nQual servico te interessa? Digite o nome (sem precisar de menu).",
+            text=(
+                "Valores de referencia que posso informar agora:\n"
+                "\n" + "\n".join(lines) + "\n\n"
+                "Qual servico te interessa? Digite o nome (nao precisa de menu)."
+            ),
             keyboard=None,
             tools_used=tools_used,
             provider="offline",
         )
     if intent == "endereco":
         return AgentReply(
-            text=f"Estamos em {CARTORIO_INFO['endereco']}. {CARTORIO_INFO['horario']}.",
+            text=(f"Endereco\n{CARTORIO_INFO['endereco']}\n\nHorario\n{CARTORIO_INFO['horario']}"),
             keyboard=None,
             tools_used=tools_used,
             provider="offline",
         )
     if intent == "horario":
         return AgentReply(
-            text=f"Funcionamento: {CARTORIO_INFO['horario']}.",
+            text=(f"Horario de funcionamento\n\n{CARTORIO_INFO['horario']}"),
             keyboard=None,
             tools_used=tools_used,
             provider="offline",
@@ -322,17 +1025,20 @@ def _offline_reply(text: str, intent: str, tools_used: list[str]) -> AgentReply:
     if intent == "agendar":
         return AgentReply(
             text=(
-                "Posso ajudar a agendar. Qual servico? "
-                "Digite o nome ou escolha na lista se preferir atalho."
+                "Posso ajudar a agendar.\n"
+                "\n"
+                "Qual servico voce precisa?\n"
+                "\n"
+                "Digite o nome ou escolha um atalho na lista, se preferir."
             ),
-            keyboard=_servicos_kb(),  # tool necessaria: escolha 1 de N
+            keyboard=_servicos_kb(),
             action="agendar",
             tools_used=tools_used,
             provider="offline",
         )
     if intent == "protocolo":
         return AgentReply(
-            text="Me informe o numero do protocolo no formato 2026-000123.",
+            text=("Consulta de protocolo\n\nMe informe o numero no formato:\n2026-000123"),
             action="protocolo",
             keyboard=None,
             tools_used=tools_used,
@@ -341,73 +1047,257 @@ def _offline_reply(text: str, intent: str, tools_used: list[str]) -> AgentReply:
     if intent == "humano":
         return AgentReply(
             text=(
-                "Vou encaminhar para atendimento humano (escrevente / HITL). "
-                "Descreva em uma frase o que precisa."
+                "Vou encaminhar para atendimento humano (escrevente / HITL).\n"
+                "\n"
+                "Descreva em poucas linhas o que voce precisa.\n"
+                "\n"
+                "Se for enviar CPF, RG ou documentos para pre-qualificacao, "
+                "pode enviar. O tratamento segue a LGPD; o ato oficial "
+                "sempre passa por validacao humana."
             ),
             action="humano",
             keyboard=None,
             tools_used=tools_used,
             provider="offline",
         )
+    # Fallback final: welcome SO se nao houver historico de bot
+    if history and any(h.lower().startswith("bot:") for h in history):
+        return AgentReply(
+            text=(
+                "Pode detalhar o que precisa no cartorio?\n"
+                "\n"
+                "Exemplos curtos:\n"
+                "- quanto custa autenticacao\n"
+                "- quero agendar procuracao\n"
+                "- protocolo 2026-000123\n"
+                "- /humano"
+            ),
+            keyboard=None,
+            tools_used=list(tools_used) + ["fallback:curto"],
+            provider="offline:curto",
+        )
     return AgentReply(
         text=(
-            f"Ola! Sou o Agent AI do {CARTORIO_INFO['nome']}. "
-            "Pode falar em texto livre "
-            "(ex: quanto custa autenticacao, quero agendar procuracao, "
-            "protocolo 2026-000123). "
-            "Atalhos so se voce digitar /menu."
+            f"Ola. Sou o assistente do {CARTORIO_INFO['nome']}.\n"
+            "\n"
+            "Pode falar em texto livre. Exemplos:\n"
+            "\n"
+            "- quanto custa autenticacao\n"
+            "- quero agendar procuracao\n"
+            "- protocolo 2026-000123\n"
+            "\n"
+            "Atalhos: /menu · /humano · /lgpd"
         ),
         keyboard=None,
-        tools_used=tools_used,
-        provider="offline",
+        tools_used=list(tools_used) + ["fallback:welcome"],
+        provider="offline:welcome",
     )
+
+
+# URLs permitidas no texto de saida do bot (qualquer outra e removida).
+_URL_ALLOW = (
+    "2notasudi.com.br",
+    "t.me/test_cartorio_bot",
+    "telegram.me/test_cartorio_bot",
+)
+_URL_RE = re.compile(r"(https?://[^\s<>\"']+|www\.[^\s<>\"']+)", re.I)
+# Domínios/palavras que NUNCA podem sair no chat do cartorio
+_TOXIC_HINTS = (
+    "pornhub",
+    "xvideos",
+    "xnxx",
+    "xhamster",
+    "onlyfans",
+    "redtube",
+    "youporn",
+    "spankbang",
+    "chaturbate",
+    "stripchat",
+    "brazzers",
+    "hentai",
+    "xxx.",
+    "/xxx",
+    "nsfw",
+    "adult-video",
+    "porn",
+    "sexcam",
+    "camgirl",
+)
+
+
+def _url_allowed(url: str) -> bool:
+    low = url.lower()
+    return any(a in low for a in _URL_ALLOW)
+
+
+def sanitize_bot_output(text: str) -> str:
+    """Sanitiza saida do agent: zero URL toxica, zero spam, formatação limpa.
+
+    Se detectar conteudo adulto/spam, descarta o texto inteiro (caller usa offline).
+    """
+    if not text:
+        return text
+    low = text.lower()
+    if any(h in low for h in _TOXIC_HINTS):
+        logger.error("cartorio_agent BLOCKED toxic content in LLM output")
+        return ""
+
+    # Remove URLs nao permitidas (mantem so dominio oficial)
+    def _repl(m: re.Match[str]) -> str:
+        u = m.group(0)
+        return u if _url_allowed(u) else ""
+
+    cleaned = _URL_RE.sub(_repl, text)
+    # Se ainda sobrou URL suspeita curta tipo bit.ly generico fora allow — remove
+    cleaned = re.sub(r"\b(?:bit\.ly|t\.co|goo\.gl|tinyurl\.com)/\S+", "", cleaned, flags=re.I)
+    # Limpa espacos deixados por remocao de URL
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
+
+
+def _scrub_bad_llm_phrases(text: str) -> str:
+    """Remove alucinacoes tipicas de modelo free (stateless / prompt cortado / spam)."""
+    if not text:
+        return text
+    text = sanitize_bot_output(text)
+    if not text:
+        return ""
+    bad = (
+        "stateless",
+        "nao guardo o historico",
+        "não guardo o histórico",
+        "nao guardo historico",
+        "prompt anterior foi cortado",
+        "cole o restante das instrucoes",
+        "cole o restante das instruções",
+        "para eu assumir a persona",
+        "sou um modelo de linguagem",
+        "como ia generativa",
+        "como uma ia",
+    )
+    low = text.lower()
+    if any(b in low for b in bad):
+        return ""
+    return text
+
+
+def _has_personal_data(text: str) -> bool:
+    """Detecta CPF/RG/email no texto do cliente (pre-qualificacao cartorio).
+
+    Inclui tokens pos-scrub (`[CPF]`, `[RG]`, marcador DADOS_PESSOAIS_RECEBIDOS)
+    porque o webhook mascara PII ANTES de enfileirar no Redis.
+    """
+    if not text:
+        return False
+    low = text.lower()
+    # Tokens pos-scrub do pii.scrub (ex.: [CPF_REDACTED], [EMAIL_REDACTED])
+    if re.search(r"\[(cpf|rg|email|phone_br|cnh)_redacted\]", low):
+        return True
+    if "dados_pessoais_recebidos" in low:
+        return True
+    if re.search(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b", text):
+        return True
+    if re.search(r"\b\d{1,2}\.?\d{3}\.?\d{3}-?[\dXx]\b", text):
+        return True
+    if re.search(r"[\w.+-]+@[\w-]+\.[\w.-]+", text):
+        return True
+    if re.search(r"\b(?:cpf|rg|documento|identidade)\b", text, re.I) and (
+        re.search(r"\d{5,}", text) or "redacted" in low
+    ):
+        return True
+    return False
 
 
 async def run_cartorio_agent(
     text: str,
     *,
     history: list[str] | None = None,
+    attachments: list[dict[str, Any]] | None = None,
+    chat_id: int | str | None = None,
 ) -> AgentReply:
-    """Entrada principal do Agent AI Cartorio."""
-    raw = (text or "").strip()
-    if not raw:
-        return AgentReply(text="Pode me contar o que voce precisa?", keyboard=None)
+    """Entrada principal do Agent AI Cartorio.
 
+    FIX 2026-07-12: aceita attachments (foto/doc/video/audio) e chat_id
+    para acoes reais (HITL Chatwoot, WebSocket realtime).
+
+    FIX 2026-07-10: history multi-turn obrigatorio; catalogo consolidado
+    em 1 mensagem (sem flood).
+    """
+    raw = (text or "").strip()
+    if not raw and not attachments:
+        return AgentReply(text="Pode me contar o que voce precisa ou enviar uma foto/doc?", keyboard=None)
+
+    # Intent em texto RAW (antes do scrub) — CPF/RG devem ser detectados
+    intent_raw = _detect_intent(raw)
     scrubbed = scrub(raw).text
-    intent = _detect_intent(scrubbed)
+    intent = intent_raw if intent_raw == "dados" else _detect_intent(scrubbed)
     tools_ctx, tools_used = _build_tools_context(scrubbed)
     system = AGENT_SYSTEM.format(tools_context=tools_ctx)
 
+    # Hard offline: dados LGPD + serie multi-msg (deterministico)
+    hard_offline = ("catalogo_serie", "memoria", "dados")
+    if intent in hard_offline:
+        return _offline_reply(scrubbed or raw, intent, tools_used, history=history)
+    if _is_tone_complaint(raw) or _is_smalltalk(raw):
+        return _offline_reply(scrubbed or raw, intent, tools_used, history=history)
+
     user_block = scrubbed
     if history:
-        hist = "\n".join(f"- {h}" for h in history[-4:])
-        user_block = f"Historico recente:\n{hist}\n\nMensagem atual: {scrubbed}"
+        hist = "\n".join(f"- {h}" for h in history[-12:])
+        user_block = (
+            "Historico recente desta conversa (USE isto; voce tem memoria):\n"
+            f"{hist}\n\nMensagem atual do cliente: {scrubbed}"
+        )
+    # FIX 2026-07-12: contexto de midia recebida (foto/doc/video/audio)
+    if attachments:
+        att_lines = []
+        for a in attachments:
+            kind = a.get("type", "?")
+            name = a.get("file_name") or a.get("file_id", "?")
+            mime = a.get("mime_type", "?")
+            size = a.get("file_size", "?")
+            path = a.get("local_path", "")
+            caption = a.get("caption", "")
+            att_lines.append(
+                f"- {kind}: {name} | mime={mime} | size={size} | local={path}"
+                + (f" | caption={caption}" if caption else "")
+            )
+        user_block = (
+            (user_block + "\n\n" if user_block else "")
+            + "Anexos recebidos nesta mensagem:\n"
+            + "\n".join(att_lines)
+            + "\n\n(Trate como pre-qualificacao cartorio; confirme recebimento; LGPD)."
+        )
 
-    content, provider = await _llm_minimax(system, user_block)
+    # Agent AI com TOOLS (MiniMax-M3) — precos via tool, nao inventados
+    content, provider, tool_action, tool_used = await _llm_agent_with_tools(system, user_block)
+    tools_used = list(tools_used) + list(tool_used)
+
     if not content:
-        return _offline_reply(scrubbed, intent, tools_used)
+        # fallback simples sem tools
+        content, provider = await _llm_minimax(system, user_block)
+    if not content:
+        return _offline_reply(scrubbed, intent, tools_used, history=history)
 
     clean, action = _parse_action(content)
-    # strip residual emojis if any
+    if tool_action and not action:
+        action = tool_action
     clean = re.sub(
         "[\U0001f600-\U0001f64f\U0001f300-\U0001f5ff\U0001f680-\U0001f6ff]",
         "",
         clean,
     ).strip()
+    clean = _scrub_bad_llm_phrases(clean)
     if not clean:
-        return _offline_reply(scrubbed, intent, tools_used)
+        return _offline_reply(scrubbed, intent, tools_used, history=history)
 
-    # Se intent forte e LLM nao emitiu ACTION, injeta
     if action is None and intent in ("agendar", "protocolo", "humano"):
         action = intent
 
-    kb = _keyboard_for_action(action, intent)
-    # Preco: teclado so se nao identificou servico (precisa "tool" de escolha)
-    if intent == "preco" and _match_servico(scrubbed) is None and action != "menu":
-        kb = _servicos_kb()
-    # Limita tamanho telegram
-    if len(clean) > 900:
-        clean = clean[:900] + "..."
+    kb = _keyboard_for_action(action, intent)  # FIX 2026-07-12: sempre None (no-buttons)
+    if len(clean) > 3200:
+        clean = clean[:3200] + "\n\n..."
 
     return AgentReply(
         text=clean,
@@ -418,4 +1308,11 @@ async def run_cartorio_agent(
     )
 
 
-__all__ = ["AgentReply", "run_cartorio_agent", "SERVICOS_CATALOGO"]
+__all__ = [
+    "AgentReply",
+    "run_cartorio_agent",
+    "SERVICOS_CATALOGO",
+    "sanitize_bot_output",
+    "minimax_tts_mp3",
+    "AGENT_TOOLS",
+]

@@ -33,7 +33,7 @@ async def test_extra_coverage_debounce_with_metadata() -> None:
 @pytest.mark.asyncio
 async def test_extra_coverage_handle_callback_chat_id() -> None:
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
     mock_bus.client.delete = AsyncMock(return_value=True)
     
     # Testa _handle_callback com parametro chat_id explicito
@@ -45,7 +45,7 @@ async def test_extra_coverage_handle_callback_chat_id() -> None:
 @pytest.mark.asyncio
 async def test_extra_coverage_handle_commands() -> None:
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
     mock_bus.client.delete = AsyncMock(return_value=True)
     
     # Testa /cancelar

@@ -108,7 +108,7 @@ async def test_debounce_processes_message_without_touching_db() -> None:
     mock_bus = MagicMock()
     mock_bus.client.pipeline = MagicMock(return_value=mock_pipe)
     mock_bus.client.get = AsyncMock(return_value=None)  # sem state salvo
-    mock_bus.client.setex = AsyncMock()
+    mock_bus.client.set = AsyncMock()
 
     # Mocks das funções que _process_telegram_debounce chama após o queue
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):

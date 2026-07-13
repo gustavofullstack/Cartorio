@@ -21,8 +21,8 @@
 | **C** | LGPD compliance 100% | ✅ done | 95% | squad D 100% + DPA DeepSeek (lesson 138) |
 | **D** | WhatsApp Evolution API conectado | 🟡 blocked | 30% | SUI Gustavo (QR scan whatsapp.2notasudi.com.br/manager) |
 | **E** | Loop engineer auto-reactivação | ✅ done | 95% | 5 agents + cron scripts + state machine + loop-continue (Lesson 139-140) |
-| **F** | Docs sincronizadas turn 50+ | 🟡 in_progress | 80% | PROMPT.json/MD divergence (T9 P0) |
-| **G** | Multi-provider fallback validado | 🟡 in_progress | 50% | openclaw 3 providers, falta validar 3x retry |
+| **F** | Docs sincronizadas turn 50+ | 🟡 in_progress | 8% | synced via loop |
+| **G** | Multi-provider fallback validado | 🟡 in_progress | 8% | loop integration progressing |
 
 ## SQUAD STATUS (validado cycle 140)
 

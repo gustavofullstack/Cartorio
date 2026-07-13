@@ -26,6 +26,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 
@@ -43,8 +44,10 @@ def main() -> int:
     parser.add_argument("--api-base", default="https://api.2notasudi.com.br")
     parser.add_argument(
         "--bot-token",
-        default="8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q",
-        help="Telegram bot token (NAO rotacionar)",
+        # LGPD-P0 2026-07-09: token NAO deve ser hardcoded. Default agora
+        # vem de $TELEGRAM_BOT_TOKEN; passa explicitamente ou exporta env.
+        default=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+        help="Telegram bot token (use $TELEGRAM_BOT_TOKEN ou --bot-token)",
     )
     parser.add_argument(
         "--wait-seconds", type=int, default=10, help="tempo max de espera pela resposta"

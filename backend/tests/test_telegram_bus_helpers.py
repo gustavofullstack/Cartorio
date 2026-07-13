@@ -61,20 +61,21 @@ async def test_clear_state_sem_bus_retorna_silencioso() -> None:
 
 @pytest.mark.asyncio
 async def test_set_state_escreve_no_redis_com_payload_correto() -> None:
-    """_set_state chama client.setex com payload JSON {state, data}."""
+    """_set_state chama client.set(key, payload, ex=TTL) com JSON {state, data}."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     await _set_state(mock_bus, chat_id=999, state="confirmando", data={"protocolo_id": 42})
 
-    mock_bus.client.setex.assert_called_once()
-    args = mock_bus.client.setex.call_args
+    mock_bus.client.set.assert_called_once()
+    args = mock_bus.client.set.call_args
     assert args[0][0] == "tg:state:999"
-    # payload eh o 3o argumento
-    payload = args[0][2]
+    # set(key, payload, ex=TTL) — payload e o 2o posicional
+    payload = args[0][1]
     decoded = json.loads(payload)
     assert decoded["state"] == "confirmando"
     assert decoded["data"] == {"protocolo_id": 42}
+    assert args.kwargs.get("ex") is not None
 
 
 @pytest.mark.asyncio
@@ -114,7 +115,7 @@ async def test_clear_state_chama_delete_com_chave_correta() -> None:
 async def test_set_state_captura_exception_redis() -> None:
     """_set_state captura exception do Redis (best-effort)."""
     mock_bus = MagicMock()
-    mock_bus.client.setex = AsyncMock(side_effect=ConnectionError("redis down"))
+    mock_bus.client.set = AsyncMock(side_effect=ConnectionError("redis down"))
 
     # NAO deve levantar
     await _set_state(mock_bus, chat_id=999, state="menu")
@@ -133,20 +134,20 @@ async def test_enqueue_message_sem_bus_retorna_1() -> None:
 
 
 @pytest.mark.asyncio
-async def test_enqueue_message_chama_setex_e_retorna_tamanho() -> None:
-    """_enqueue_message chama client.setex com JSON queue."""
+async def test_enqueue_message_chama_set_e_retorna_tamanho() -> None:
+    """_enqueue_message chama client.set(key, json, ex=TTL) com JSON queue."""
     mock_bus = MagicMock()
     mock_bus.client.get = AsyncMock(return_value=None)
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     result = await _enqueue_message(mock_bus, chat_id=999, text="hi", msg_id=10)
     assert result == 1
 
-    mock_bus.client.setex.assert_called_once()
-    args = mock_bus.client.setex.call_args
+    mock_bus.client.set.assert_called_once()
+    args = mock_bus.client.set.call_args
     assert args[0][0] == "tg:queue:999"
-    # payload JSON eh o 3o argumento (key, ttl, payload)
-    decoded = json.loads(args[0][2])
+    # set(key, payload, ex=TTL)
+    decoded = json.loads(args[0][1])
     assert len(decoded) == 1
     assert decoded[0]["text"] == "hi"
     assert decoded[0]["msg_id"] == 10
@@ -190,13 +191,13 @@ async def test_enqueue_message_concatenate_a_queue_existente() -> None:
     mock_bus = MagicMock()
     queue_existente = [{"text": "msg1", "msg_id": 1}]
     mock_bus.client.get = AsyncMock(return_value=json.dumps(queue_existente))
-    mock_bus.client.setex = AsyncMock(return_value=True)
+    mock_bus.client.set = AsyncMock(return_value=True)
 
     result = await _enqueue_message(mock_bus, chat_id=999, text="msg2", msg_id=2)
     assert result == 2
 
-    args = mock_bus.client.setex.call_args
-    decoded = json.loads(args[0][2])
+    args = mock_bus.client.set.call_args
+    decoded = json.loads(args[0][1])  # set(key, payload, ex=)
     assert len(decoded) == 2
 
 

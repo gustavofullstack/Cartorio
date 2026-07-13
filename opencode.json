@@ -1,0 +1,113 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Cartório · opencode.json LOCAL · MacBook Pro · 2026-07-11
+  // Override do global: defaults específicos para este projeto.
+  // Modified by Gustavo Almeida
+  // ═══════════════════════════════════════════════════════════════════════
+
+  "model": "opencode-go/minimax-m3",
+  "small_model": "opencode-go/minimax-m2.7",
+
+  // ─── Default agent: cartorio (não usa o build built-in nativo) ────────
+  // O agent 'build' built-in do OpenCode 1.17 está fixo em
+  // google/gemini-3.1-pro-preview e não aceita override de model inline.
+  // Definimos 'cartorio' como primary e setamos como default_agent.
+  "default_agent": "cartorio",
+
+  // ─── Instructions: cascateiam com AGENTS.md raiz e .harness/AGENTS.md ──
+  "instructions": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".harness/AGENTS.md"
+  ],
+
+  // ─── Habilita o MCP server Cartório local (FastAPI backend) ────────────
+  "mcp": {
+    "cartorio": {
+      "type": "local",
+      "command": ["uv", "run", "--project", "./backend", "python", "-m", "mcp_server"],
+      "enabled": false,
+      "timeout": 15000,
+      "environment": {
+        "ENV": "development"
+      }
+    }
+  },
+
+  // ─── Agent override: build default = cartorio-dev focused ─────────────
+  "agent": {
+    "cartorio": {
+      "mode": "primary",
+      "model": "opencode-go/minimax-m3",
+      "description": "Primary agent do Cartório bot. Implementação FastAPI + SQLAlchemy + audit chain + PII scrubbing + n8n.",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "webfetch": "allow",
+        "external_directory": "allow",
+        "doom_loop": "ask"
+      },
+      "prompt": "Você trabalha no projeto Cartório bot. Stack: FastAPI + SQLAlchemy 2.0 (typed, Mapped/mapped_column) + Pydantic v2 + Supabase + n8n + Evolution API + LiteLLM (MiniMax-M3 XMax Thinking). Toda mudança segue workflow obrigatório: analisar→testar→corrigir→melhorar→otimizar→documentar→salvar memória. Coverage gate >= 90% (pyproject.toml). Toda mudança em audit/pii exige review do cartorio-lgpd antes de merge. Commits: Conventional Commits + 'Modified by Gustavo Almeida'. PII (CPF/RG/telefone/email) NUNCA pode sair do backend bruto — sempre passar por app/services/pii.py antes de LLM."
+    },
+    "build": {
+      "model": "opencode-go/minimax-m3",
+      "description": "Implementação FastAPI + SQLAlchemy + audit chain + PII scrubbing para Cartório bot.",
+      "prompt": "Você trabalha no Cartório bot. Stack: FastAPI + SQLAlchemy 2.0 (typed) + Pydantic v2 + Supabase + n8n + Evolution API + LiteLLM (MiniMax-M3). Toda mudança segue workflow analisar→testar→corrigir→melhorar→otimizar→documentar. Coverage gate >= 90%. Toda mudança em audit/pii exige review do cartorio-lgpd. Commits: Conventional Commits + 'Modified by Gustavo Almeida'."
+    }
+  },
+
+  // ─── Comandos específicos do projeto ───────────────────────────────────
+  "command": {
+    "cartorio-test": {
+      "description": "Roda pytest backend com coverage gate 90%.",
+      "agent": "cartorio-dev",
+      "template": "cd backend && uv run pytest --cov=app --cov-report=term-missing -v 2>&1 | tail -50"
+    },
+    "cartorio-audit": {
+      "description": "Valida audit chain SHA256 + HMAC.",
+      "agent": "cartorio-dev",
+      "template": "cd backend && uv run pytest tests/test_audit.py -v && uv run python -c \"from app.services.audit import verify_chain; print('chain OK:', verify_chain())\""
+    },
+    "cartorio-pii": {
+      "description": "Valida PII scrubbing 3 camadas.",
+      "agent": "cartorio-lgpd",
+      "template": "cd backend && uv run pytest tests/test_pii.py -v && uv run python -c \"from app.services.pii import scrub; print(scrub('CPF 123.456.789-00, telefone (11) 98765-4321, email teste@x.com'))\""
+    },
+    "cartorio-deploy": {
+      "description": "Verifica status deploy (api.2notasudi.com.br).",
+      "agent": "cartorio-n8n",
+      "template": "curl -sS https://api.2notasudi.com.br/healthz | head -c 300 && echo '' && curl -sS https://flow.2notasudi.com.br/healthz | head -c 300"
+    },
+    "cartorio-lint": {
+      "description": "Roda ruff + mypy no backend.",
+      "agent": "cartorio-dev",
+      "template": "cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy app/ 2>&1 | tail -30"
+    }
+  },
+
+  // ─── Permissões: bash sempre perguntar em paths sensíveis ──────────────
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "git *": "allow",
+      "uv *": "allow",
+      "pytest*": "allow",
+      "ruff*": "allow",
+      "mypy*": "allow",
+      "rm *": "ask",
+      "curl *": "allow",
+      "ssh *": "ask",
+      "*": "allow"
+    },
+    "external_directory": {
+      "~/MEMORY.md": "deny",
+      "~/.zcode/secrets/**": "deny",
+      "~/projetos/*/.git/**": "allow",
+      "*": "allow"
+    },
+    "webfetch": "allow",
+    "doom_loop": "ask"
+  }
+}
