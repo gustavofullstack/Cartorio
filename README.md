@@ -3,7 +3,7 @@
 > **Plataforma de atendimento jurídico via WhatsApp com IA, HITL, LGPD-by-design, audit chain imutável e 7 serviços integrados.**
 
 [![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/gustavofullstack/Cartorio/releases)
-[![Tests](https://img.shields.io/badge/tests-1211_passing-brightgreen.svg)](docs/DEPLOYMENT.md)
+[![Tests](https://img.shields.io/badge/tests-2513_collected-yellow.svg)](docs/DEPLOYMENT.md)
 [![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](docs/DEPLOYMENT.md)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](backend/pyproject.toml)
 [![LGPD](https://img.shields.io/badge/LGPD-compliant-success.svg)](docs/LGPD.md)
@@ -25,6 +25,8 @@
 
 *Supabase 401 = correto, exige API key em header (Kong auth gate).
 
+> ℹ️ Status acima congelado em **2026-06-24**. Para status vivo, ver `STATUS.md` ou rodar `make status`.
+
 ---
 
 ## Quickstart (5 minutos)
@@ -40,7 +42,7 @@ uv sync                                    # instala deps Python
 cp ../.env.example .env                    # cria .env (preencher com secrets reais)
 
 # 3. Validar
-uv run pytest --no-cov -q                  # 624 testes devem passar
+uv run pytest --no-cov -q                  # ~2500 testes (rodar `make test` para atual)
 uv run mypy app/                           # 0 erros
 uv run ruff check app/                     # 0 erros
 
@@ -69,7 +71,7 @@ flowchart LR
     API -->|audit| Audit[Audit Chain HMAC]
     API -->|metrics| Prom[Prometheus]
     API -->|errors| Sentry[Sentry + PII Scrubber]
-    API -.->|MCP tools| MCP[MCP Server 4 tools]
+    API -.->|MCP tools| MCP[MCP Server - ver backend/mcp_server.py]
 ```
 
 **Fluxo simplificado**: `EVOLUTION-API → OPENCLAW-GATEWAY → N8N → API → SUPABASE → API → EVOLUTION-API`
@@ -90,7 +92,7 @@ flowchart LR
 - ✅ **Encryption at-rest** pgcrypto + Fernet
 - ✅ **CPF/CNPJ validators** DV Receita Federal + check DB
 - ✅ **DLQ** com retry 3x exp backoff (1min/5min/15min)
-- ✅ **MCP server** nativo (4 tools: protocolo, atendimento, emolumento, audit)
+- ✅ **MCP server** nativo (tool inventory em `backend/mcp_server.py` — `grep '@mcp.tool('` para lista atual)
 - ✅ **Observabilidade** OpenTelemetry + Prometheus + Sentry
 - ✅ **Health probes** K8s/Portainer (`/live` + `/ready`)
 - ✅ **Redis caching** para agendamentos e listas frequentes (A26)
@@ -131,16 +133,16 @@ agendamento_cache_operation_duration_ms
 | LLM Router | OpenClaw Gateway 0.4.x | 0.4.x | Multi-model (MiniMax/Gemini/deepseek) |
 | Deploy | EasyPanel + Docker Swarm | — | Traefik + 6 domínios SSL |
 | Observabilidade | OTel + Prometheus + Sentry | — | Traces + metrics + errors |
-| MCP | Model Context Protocol | 2025-03-26 | 4 tools nativos |
+| MCP | Model Context Protocol | 2025-03-26 | tools em `backend/mcp_server.py` |
 | Túnel | Tailscale | — | SSH dev + browser AI |
 
 ---
 
-## Métricas de qualidade (2026-06-24)
+## Métricas de qualidade (snapshot 2026-06-24 — número de testes desatualizado)
 
 | Métrica | Valor | Gate |
 |---|---|---|
-| pytest passing | **624** | ≥500 |
+| pytest collected | **2513** (rodar `make test` para atual) | ≥500 |
 | Coverage | ≥90% | ≥90% |
 | Mypy --strict | **0 erros** (59 files) | 0 |
 | Ruff | **0 erros** | 0 |
@@ -199,11 +201,16 @@ agendamento_cache_operation_duration_ms
 - **Ruff**: 0 erros obrigatório
 - Ver [CONTRIBUTING.md](docs/CONTRIBUTING.md)
 
-### Squads
-- **SQUAD A (cartorio-dev)** - Backend, LGPD code, audit
-- **SQUAD B (cartorio-n8n)** - Workflows N8N + Evolution/Chatwoot
-- **SQUAD C (cartorio-zcode)** - Cross/integrador, docs
-- **SQUAD D (cartorio-lgpd)** - Compliance, DPA, audit ANPD
+### Squads (reins)
+
+Inventário vivo em `.harness/reins/` — 9 reins no total. Os 4 primários para o ciclo de produto:
+
+- **cartorio-dev** — Backend FastAPI / SQLAlchemy / audit / PII
+- **cartorio-n8n** — Workflows N8N + Evolution/Chatwoot + deploy
+- **cartorio-lgpd** — Compliance, DPA, audit ANPD
+- **cartorio-data** — Dados, métricas, retenção LGPD
+
+Outros 5 reins de apoio: `cartorio-evolution`, `cartorio-front`, `cartorio-security`, `cartorio-sre`, `cartorio-watchdog`. Cada um tem seu próprio `agent.md` em `.harness/reins/<nome>/agent.md`.
 
 ---
 

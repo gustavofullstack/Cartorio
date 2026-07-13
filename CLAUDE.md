@@ -44,7 +44,7 @@ cd backend && uv run pytest -v --no-cov tests/test_audit.py::test_x
 - **PostgreSQL 16** (Supabase self-hosted) — schema via Alembic in `backend/alembic/`
 - **Redis 8** (idempotency, rate limit, cache, locks)
 - **Observability**: OpenTelemetry traces + Prometheus metrics + Sentry (with PII before_send scrubber)
-- **MCP server** (`backend/mcp_server.py`) mounted at `/mcp` — protocol 2025-03-26, 7 tools
+- **MCP server** (`backend/mcp_server.py`) mounted at `/mcp` — protocol 2025-03-26. Tool inventory is in the file itself (grep `@mcp.tool(` for current count); do NOT hardcode a number — the inventory drifts
 
 ## High-level architecture
 
@@ -88,22 +88,32 @@ Evolution API ──► OpenClaw Gateway ──► N8N workflows ──► Cart�
 These come from `AGENTS.md` and `.harness/AGENTS.md`. Violating them is a P0 incident:
 
 1. **HITL mandatory**: protocolo always born as `DRAFT`. The escrevente (notary clerk) validates before processing. The bot must never decide alone on isenções, urgency, legal validation, or certidão/escritura emission.
-2. **PII never leaves raw**: CPF/RG/phone/email masked BEFORE any external LLM call or storage. 3 layers: Pydantic field validators → Sentry `before_send` → log `MaskingFilter`. See `backend/app/services/pii.py` before any new integration.
+2. **PII never leaves raw** (**DATASENSITIVE** — CPF/RG/protocolo/escritura): masked BEFORE any external LLM call or storage. 3 layers: Pydantic field validators → Sentry `before_send` → log `MaskingFilter`. See `backend/app/services/pii.py` BEFORE any new integration. Never echo a raw CPF back to the user, never log it, never send it to a public LLM.
 3. **Audit log is append-only** with SHA256 chain + HMAC. Any retro edit invalidates the chain. Tests must fail if implementation regresses.
 4. **Secrets never committed**: `.env` is gitignored. Template is `.env.example`.
 5. **No literal API key fallbacks**: `scripts/check_no_literal_keys.py` blocks `lin_api_*`, `sk-*`, `rnd_*`, `AQ.*`, `gAAAAA`, `ghp_*`, `xox*`, `AKIA*`, `AIza*` patterns. Opt-out: `# noqa: ALLOW_KEY_FALLBACK`.
 6. **Conventional Commits** only: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, `perf:` — commit message must end with `Modified by Gustavo Almeida`.
 7. **Always branch from `master`**, never push direct. One PR review required; changes in `audit` or `pii` require `cartorio-lgpd` sign-off.
 
+## Workflow obrigatório (do AGENTS.md)
+
+Toda mudança (task, bug, refactor) segue o ciclo abaixo. Pular etapa = bug. Especialmente em mudança de `audit` ou `pii`:
+
+```
+analisar → testar → corrigir → melhorar → otimizar → documentar → comentar → salvar na memória
+```
+
+Materializado em `.harness/agents/` (`01-analyze-agent.sh` ... `05-memory-agent.sh`). O ponto de "salvar na memória" escreve em `.harness/memory/MEMORY.md` (cross-rein) ou na sessão (ver "Session memory convention" abaixo).
+
 ## Multi-agent delegation
 
-Three reins under the Harness orquestrador (`.harness/agent.md`):
+Reins under the Harness orquestrador (`.harness/agent.md`). When delegating, declare upfront which rein owns review. The 3 primary reins for backend work:
 
 - **`cartorio-dev`** — backend FastAPI / SQLAlchemy / audit / PII
 - **`cartorio-n8n`** — N8N workflows / Evolution API / OpenClaw / multi-canal / deploy (JSON exports in `infra/n8n-workflows/`)
 - **`cartorio-lgpd`** — LGPD / RIPD / retenção / privacy policy / erasure rights
 
-When delegating a cross-cutting task, declare upfront which rein owns review.
+Full inventory of 9 reins in `.harness/reins/` (dev, n8n, lgpd, data, evolution, front, security, sre, watchdog). Each rein has its own `agent.md` defining scope.
 
 ## Testing
 
@@ -127,10 +137,11 @@ When delegating a cross-cutting task, declare upfront which rein owns review.
 
 - **Production**: EasyPanel + Docker Swarm. 6 SSL domains via Traefik reverse proxy.
 - **Other services** (in production but separate repos/processes): N8N, Evolution API 2.3.7, Chatwoot 3.x, OpenClaw Gateway 0.4.x, Supabase.
-- **MCP servers exposed** via `~/.mavis/mcp/clients/cartorio-mcp-config.json`: `n8n-mcp` (50 tools), `supabase-mcp` (30), `cartorio-api` (7), `easypanel-mcp` (57), `openclaw-mcp` (20).
+- **MCP servers exposed** via `~/.mavis/mcp/clients/cartorio-mcp-config.json`: `n8n-mcp` (50 tools), `supabase-mcp` (30), `cartorio-api` (count in `backend/mcp_server.py` — see Stack section), `easypanel-mcp` (57), `openclaw-mcp` (20).
 - **Real-time protocol exchange**: WebSocket at `/ws/atendimentos`.
 - **Backup**: `backend/scripts/` has backup/restore scripts; `infra/backup/` has cron jobs.
 - **Monitoring**: Prometheus metrics at `/metrics`; Sentry for errors.
+- **Go-live checklist**: `.harness/SUI_CHECKLIST.md` — required reading before any prod deploy.
 
 ## Notable integration gotchas (from AGENTS.md)
 
@@ -155,11 +166,18 @@ When delegating a cross-cutting task, declare upfront which rein owns review.
 - `.harness/memory/MEMORY.md` — cross-session lessons (loaded each session)
 - `.harness/STANDARDS.md` — code standards
 
+## PR requirements
+
+`.github/pull_request_template.md` is the source of truth and is enforced. PRs without a complete checklist (quality gates, LGPD if applicable, tests, docs, rollback plan, reviewers) will be rejected. Key points:
+
+- `make qa` must pass locally before opening the PR.
+- Any PR touching `audit/`, `pii/`, `cliente/`, or `conversa/` requires `cartorio-lgpd` review + audit log entry.
+- Tasks IDs follow `E_.S_.T_` pattern from `.harness/TASKS.md`.
+
 ## Session memory convention
 
-Cross-session lessons live at `/Users/gustavoalmeida/.claude/projects/-Users-gustavoalmeida-projetos-Cartorio/memory/MEMORY.md`. Patterns:
+Two distinct memory locations — don't conflate them:
 
-- New lesson? Write a single `.md` file with YAML frontmatter (`name`, `description`, `type`) + add one-line entry to MEMORY.md index.
-- Type values: `user`, `feedback`, `project`, `reference`. Use `[[name]]` links liberally.
-- Update existing files rather than creating duplicates; delete memories that turned out wrong.
-- Don't save what the repo already records (git history, code structure); save what's non-obvious.
+**Project memory** (cross-rein lessons, committed): `.harness/memory/MEMORY.md`. Add an entry when a lesson generalizes across reins.
+
+**Session memory** (per-user Claude Code memory, not in git): `/Users/gustavoalmeida/.claude/projects/-Users-gustavoalmeida-Projetos-Cartorio/memory/`. Add a one-file-per-fact with YAML frontmatter (`name`, `description`, `type` where type ∈ {user, feedback, project, reference}); reference index lives in `MEMORY.md` of that dir. Use `[[name]]` wikilinks liberally. Update existing files rather than creating duplicates; delete memories that turned out wrong. Don't save what the repo already records (git history, code structure); save what's non-obvious.
