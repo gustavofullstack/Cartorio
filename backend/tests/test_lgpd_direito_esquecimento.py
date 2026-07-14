@@ -441,9 +441,7 @@ class TestMarcarComoDeletado:
         from app.services.lgpd.bot_direito_esquecimento import marcar_como_deletado
 
         # db.execute levanta OperationalError; rollback deve ser chamado
-        with patch.object(
-            db, "execute", side_effect=OperationalError("SELECT 1", {}, Exception("db down"))
-        ):
+        with patch.object(db, "execute", side_effect=OperationalError("SELECT 1", {}, Exception("db down"))):
             with patch.object(db, "rollback") as mock_rollback:
                 result = marcar_como_deletado(db, "rev-id-fail")
 
@@ -475,9 +473,7 @@ class TestRestaurarRevogacao:
 
         from app.services.lgpd.bot_direito_esquecimento import restaurar_revogacao
 
-        with patch.object(
-            db, "execute", side_effect=OperationalError("SELECT 1", {}, Exception("db down"))
-        ):
+        with patch.object(db, "execute", side_effect=OperationalError("SELECT 1", {}, Exception("db down"))):
             with patch.object(db, "rollback") as mock_rollback:
                 result = restaurar_revogacao(db, "rev-id-fail")
 

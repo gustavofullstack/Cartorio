@@ -128,7 +128,6 @@ class TestChannelAdapter:
                 return True
 
             # typing/react/verify_signature faltando — deve falhar ao instanciar
-
         with pytest.raises(TypeError):
             IncompleteAdapter()  # type: ignore[abstract]
 
@@ -310,19 +309,8 @@ class TestQueueRoundtrip:
 
 class TestIsFastPath:
     def test_saudacoes_are_fast(self) -> None:
-        for txt in [
-            "oi",
-            "ola",
-            "olá",
-            "menu",
-            "ajuda",
-            "help",
-            "bom dia",
-            "boa tarde",
-            "boa noite",
-            "hi",
-            "hello",
-        ]:
+        for txt in ["oi", "ola", "olá", "menu", "ajuda", "help",
+                    "bom dia", "boa tarde", "boa noite", "hi", "hello"]:
             assert _is_fast_path(txt) is True, f"{txt} should be fast"
 
     def test_long_question_not_fast(self) -> None:

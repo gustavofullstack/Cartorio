@@ -5,9 +5,8 @@ from app.api.v1.telegram import (
     _process_telegram_debounce,
     _handle_callback,
     _handle_command,
-    _DEBOUNCE_METADATA,
+    _DEBOUNCE_METADATA
 )
-
 
 @pytest.mark.asyncio
 async def test_extra_coverage_debounce_with_metadata() -> None:
@@ -24,17 +23,11 @@ async def test_extra_coverage_debounce_with_metadata() -> None:
 
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
         with patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0.001):
-            with patch(
-                "app.api.v1.telegram._call_cartorio_agent",
-                AsyncMock(return_value=("Resposta", None)),
-            ):
-                with patch(
-                    "app.api.v1.telegram._send_message", AsyncMock(return_value=True)
-                ) as mock_send:
+            with patch("app.api.v1.telegram._call_cartorio_agent", AsyncMock(return_value=("Resposta", None))):
+                with patch("app.api.v1.telegram._send_message", AsyncMock(return_value=True)) as mock_send:
                     with patch("app.api.v1.telegram._react", AsyncMock(return_value=True)):
                         await _process_telegram_debounce(chat_id)
                         assert mock_send.called
-
 
 @pytest.mark.asyncio
 async def test_extra_coverage_handle_callback_chat_id() -> None:
@@ -47,7 +40,6 @@ async def test_extra_coverage_handle_callback_chat_id() -> None:
     assert "Menu" in text or "Atalhos" in text
     assert keyboard is not None
     assert needs_back is True
-
 
 @pytest.mark.asyncio
 async def test_extra_coverage_handle_commands() -> None:

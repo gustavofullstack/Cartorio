@@ -178,11 +178,7 @@ class TestBotLgpdCancelar:
         assert len(body["revogacao_id"]) >= 8
         assert body["janela_dias"] == 30
         assert body["scheduled_delete_at"]
-        assert (
-            "LGPD" in body["message"]
-            or "DPO" in body["message"]
-            or "dpo@" in body["message"].lower()
-        )
+        assert "LGPD" in body["message"] or "DPO" in body["message"] or "dpo@" in body["message"].lower()
 
     def test_422_missing_channel(self, client_with_db: TestClient) -> None:
         """Sem channel → 422 Pydantic ValidationError."""

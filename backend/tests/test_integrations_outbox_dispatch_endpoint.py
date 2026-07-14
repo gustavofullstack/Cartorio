@@ -207,7 +207,9 @@ class TestOutboxDispatchErrors:
 
 
 class TestOutboxDispatchLifecycle:
-    def test_happy_path_marks_done_evolution(self, client, test_session_factory, AUTH_HEADERS):
+    def test_happy_path_marks_done_evolution(
+        self, client, test_session_factory, AUTH_HEADERS
+    ):
         """Success: status=done, attempts=1, last_error=None; dispatcher chamado."""
         from app.models.outbox_message import OutboxStatus
 
@@ -280,7 +282,9 @@ class TestOutboxDispatchLifecycle:
             delta = (row.next_retry_at.replace(tzinfo=timezone.utc) - before).total_seconds()
             assert 290 <= delta <= 360  # 5min +/- margem
 
-    def test_idempotent_when_already_done(self, client, test_session_factory, AUTH_HEADERS):
+    def test_idempotent_when_already_done(
+        self, client, test_session_factory, AUTH_HEADERS
+    ):
         """Status=done: retorna idempotent=True SEM chamar dispatcher."""
         from app.models.outbox_message import OutboxStatus
 
@@ -307,11 +311,15 @@ class TestOutboxDispatchLifecycle:
         assert data["attempts"] == 2  # NAO incrementou
         mock_disp.assert_not_called()
 
-    def test_increments_attempts_on_each_call(self, client, test_session_factory, AUTH_HEADERS):
+    def test_increments_attempts_on_each_call(
+        self, client, test_session_factory, AUTH_HEADERS
+    ):
         """Cada call (mesmo com falha) incrementa attempts."""
         from app.models.outbox_message import OutboxStatus
 
-        outbox_id = _seed_outbox(test_session_factory, status=OutboxStatus.PENDING, attempts=0)
+        outbox_id = _seed_outbox(
+            test_session_factory, status=OutboxStatus.PENDING, attempts=0
+        )
 
         mock_disp = _patch_dispatcher("outbox")
         mock_disp.side_effect = RuntimeError("fail")
@@ -406,7 +414,9 @@ class TestOutboxDispatchLifecycle:
             assert resp.json()["status"] == "done"
             mock_disp.assert_awaited_once()
 
-    def test_supports_payload_in_record_wrapper(self, client, test_session_factory, AUTH_HEADERS):
+    def test_supports_payload_in_record_wrapper(
+        self, client, test_session_factory, AUTH_HEADERS
+    ):
         """Supabase nested: outbox_id/queue/payload vem de record.*."""
         from app.models.outbox_message import OutboxStatus
 
@@ -441,7 +451,9 @@ class TestOutboxDispatchLifecycle:
 
 
 class TestOutboxDispatchTestMode:
-    def test_outbox_queue_just_logs(self, client, test_session_factory, AUTH_HEADERS):
+    def test_outbox_queue_just_logs(
+        self, client, test_session_factory, AUTH_HEADERS
+    ):
         """queue=outbox apenas loga (modo de teste) sem chamar rede."""
         from app.models.outbox_message import OutboxStatus
 

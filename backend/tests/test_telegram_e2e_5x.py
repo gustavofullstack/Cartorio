@@ -39,9 +39,8 @@ class StatefulBus:
         self.store: dict[str, str] = {}
         self.client = self
 
-    async def set(
-        self, key: str, value: str, *, ex: int | None = None, nx: bool = False, **kwargs
-    ) -> str | None:
+    async def set(self, key: str, value: str, *, ex: int | None = None,
+                  nx: bool = False, **kwargs) -> str | None:
         if nx and key in self.store:
             return None
         self.store[key] = value
@@ -222,7 +221,9 @@ class TestE2ETelegramOiToMenu:
 class TestE2ETelegramProtocolo:
     """T62: comando /protocolo + numero -> state machine -> ferramenta _tool_consultar_protocolo."""
 
-    def test_protocolo_comando_inicial_retorna_pedido_numero(self, client: TestClient) -> None:
+    def test_protocolo_comando_inicial_retorna_pedido_numero(
+        self, client: TestClient
+    ) -> None:
         """Comando /protocolo (sem numero) inicializa state machine via bus."""
         bus = StatefulBus()
         update = _telegram_update(update_id=20001, text="/protocolo")
@@ -293,7 +294,9 @@ class TestE2ETelegramProtocolo:
         assert "12345" in sent_text
         assert "concluido" in sent_text.lower() or "Reconhecimento" in sent_text
 
-    def test_protocolo_nao_encontrado(self, client: TestClient, stateful_bus: StatefulBus) -> None:
+    def test_protocolo_nao_encontrado(
+        self, client: TestClient, stateful_bus: StatefulBus
+    ) -> None:
         """Se protocolo nao existe, retorna mensagem amigavel."""
         # Step 1: /protocolo (inicia state)
         update1 = _telegram_update(update_id=20004, text="/protocolo")
@@ -432,7 +435,9 @@ class TestE2ETelegramAgendar:
             sent_text = mock_send4.call_args[0][1]
             assert "Confirmar" in sent_text or "confirmar" in sent_text
 
-    def test_agendar_escolha_invalida(self, client: TestClient, stateful_bus: StatefulBus) -> None:
+    def test_agendar_escolha_invalida(
+        self, client: TestClient, stateful_bus: StatefulBus
+    ) -> None:
         """Opcao invalida no servico retorna 'opcao invalida'."""
         # Step 1: /agendar
         with (
@@ -583,6 +588,5 @@ class TestE2ETelegramLgpd:
         sent_text = mock_send.call_args[0][1]
         # Resposta nao contem CPF/RG/telefone
         import re
-
         assert not re.search(r"\d{3}\.\d{3}\.\d{3}-\d{2}", sent_text)
         assert not re.search(r"\(\d{2}\)\s*\d{4,5}-\d{4}", sent_text)

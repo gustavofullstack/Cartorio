@@ -227,9 +227,7 @@ def _build_catalog_series() -> list[str]:
     lines.append('  - "consultar protocolo 2026-000123"')
     lines.append('  - "falar com escrevente"')
     lines.append("")
-    lines.append(
-        "Atos fora desta lista (escritura complexa, usucapiao, inventario) precisam de atendimento humano."
-    )
+    lines.append("Atos fora desta lista (escritura complexa, usucapiao, inventario) precisam de atendimento humano.")
     return ["\n".join(lines)]
 
 
@@ -441,16 +439,10 @@ AGENT_TOOLS: list[dict[str, Any]] = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "servico": {
-                        "type": "string",
-                        "description": "Chave do servico (autenticacao, procuracao, etc)",
-                    },
+                    "servico": {"type": "string", "description": "Chave do servico (autenticacao, procuracao, etc)"},
                     "data": {"type": "string", "description": "Data DD/MM/AAAA"},
                     "hora": {"type": "string", "description": "Hora HH:MM"},
-                    "nome": {
-                        "type": "string",
-                        "description": "Nome do cliente (opcional, p/ pre-qualificacao)",
-                    },
+                    "nome": {"type": "string", "description": "Nome do cliente (opcional, p/ pre-qualificacao)"},
                 },
                 "required": ["servico", "data", "hora"],
             },
@@ -465,21 +457,13 @@ N8N_AGENDAMENTO_WEBHOOK = os.environ.get(
 )
 
 
-async def _run_remote_tool(
-    name: str, args: dict[str, Any]
-) -> tuple[str, str | None, list[str]] | None:
+async def _run_remote_tool(name: str, args: dict[str, Any]) -> tuple[str, str | None, list[str]] | None:
     """FIX 2026-07-12: tools que batem em API/MCP real. Retorna None se nao for remote."""
     used = [f"tool_remote:{name}"]
     if name == "consultar_protocolo_real":
         numero = str(args.get("numero", "")).strip()
         if not re.match(r"^20\d{2}-\d{4,6}$", numero):
-            return (
-                json.dumps(
-                    {"erro": "formato_invalido", "esperado": "AAAA-NNNNNN"}, ensure_ascii=False
-                ),
-                None,
-                used,
-            )
+            return json.dumps({"erro": "formato_invalido", "esperado": "AAAA-NNNNNN"}, ensure_ascii=False), None, used
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=3.0)) as client:
                 r = await client.get(f"{CARTORIO_API_BASE}/api/v1/protocolo/{numero}")
@@ -487,36 +471,11 @@ async def _run_remote_tool(
                     data = r.json()
                     return json.dumps(data, ensure_ascii=False), None, used
                 if r.status_code == 404:
-                    return (
-                        json.dumps(
-                            {"offline": False, "status": "nao_encontrado", "numero": numero},
-                            ensure_ascii=False,
-                        ),
-                        None,
-                        used,
-                    )
-                return (
-                    json.dumps(
-                        {"offline": True, "status": r.status_code, "hint": "API cartorio offline"},
-                        ensure_ascii=False,
-                    ),
-                    None,
-                    used,
-                )
+                    return json.dumps({"offline": False, "status": "nao_encontrado", "numero": numero}, ensure_ascii=False), None, used
+                return json.dumps({"offline": True, "status": r.status_code, "hint": "API cartorio offline"}, ensure_ascii=False), None, used
         except Exception as exc:
             logger.warning("cartorio_agent consultar_protocolo_real fail: %s", exc)
-            return (
-                json.dumps(
-                    {
-                        "offline": True,
-                        "erro": str(exc),
-                        "hint": "cartorio-api offline, encaminhe a humano",
-                    },
-                    ensure_ascii=False,
-                ),
-                None,
-                used,
-            )
+            return json.dumps({"offline": True, "erro": str(exc), "hint": "cartorio-api offline, encaminhe a humano"}, ensure_ascii=False), None, used
 
     if name == "criar_agendamento_real":
         servico = str(args.get("servico", ""))
@@ -531,28 +490,10 @@ async def _run_remote_tool(
                 )
                 if r.status_code in (200, 201):
                     return json.dumps(r.json(), ensure_ascii=False), None, used
-                return (
-                    json.dumps(
-                        {"offline": True, "status": r.status_code, "hint": "N8N offline"},
-                        ensure_ascii=False,
-                    ),
-                    None,
-                    used,
-                )
+                return json.dumps({"offline": True, "status": r.status_code, "hint": "N8N offline"}, ensure_ascii=False), None, used
         except Exception as exc:
             logger.warning("cartorio_agent criar_agendamento_real fail: %s", exc)
-            return (
-                json.dumps(
-                    {
-                        "offline": True,
-                        "erro": str(exc),
-                        "hint": "N8N offline, agende manualmente ou /humano",
-                    },
-                    ensure_ascii=False,
-                ),
-                None,
-                used,
-            )
+            return json.dumps({"offline": True, "erro": str(exc), "hint": "N8N offline, agende manualmente ou /humano"}, ensure_ascii=False), None, used
 
     return None
 
@@ -1285,9 +1226,7 @@ async def run_cartorio_agent(
     """
     raw = (text or "").strip()
     if not raw and not attachments:
-        return AgentReply(
-            text="Pode me contar o que voce precisa ou enviar uma foto/doc?", keyboard=None
-        )
+        return AgentReply(text="Pode me contar o que voce precisa ou enviar uma foto/doc?", keyboard=None)
 
     # Intent em texto RAW (antes do scrub) — CPF/RG devem ser detectados
     intent_raw = _detect_intent(raw)

@@ -529,10 +529,7 @@ async def test_process_telegram_debounce_success() -> None:
 
     with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
         with patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0.001):
-            with patch(
-                "app.api.v1.telegram._call_cartorio_agent",
-                AsyncMock(return_value=("Resposta", None)),
-            ):
+            with patch("app.api.v1.telegram._call_cartorio_agent", AsyncMock(return_value=("Resposta", None))):
                 with patch(
                     "app.api.v1.telegram._send_message", AsyncMock(return_value=True)
                 ) as mock_send:

@@ -183,8 +183,8 @@ def test_metrics_render_prometheus_inclui_bot() -> None:
     inc_bot_request("whatsapp", "ok")
     output = store.render_prometheus()
     assert "bot_requests_total" in output
-    assert 'channel="whatsapp"' in output
-    assert 'status="ok"' in output
+    assert "channel=\"whatsapp\"" in output
+    assert "status=\"ok\"" in output
 
 
 # ============================================================================
@@ -272,7 +272,9 @@ def test_process_message_aceita_request_id() -> None:
 
     # Mock do redis_bus para evitar conexao real
     with patch("app.services.chat_pipeline.get_bus", return_value=None):
-        asyncio.run(process_message(msg, adapter, request_id="trace-propagated"))
+        asyncio.run(
+            process_message(msg, adapter, request_id="trace-propagated")
+        )
     # Pode retornar None (sem debounce) ou OutboundMessage
     # O importante eh nao levantar
 
@@ -308,25 +310,13 @@ def test_health_pipeline_inclui_canais() -> None:
 
 def test_grafana_dashboard_bots_latency_existe() -> None:
     """T56: arquivo dashboard Grafana bots-latency.json existe."""
-    path = (
-        Path(__file__).parent.parent.parent
-        / "infra"
-        / "grafana"
-        / "dashboards"
-        / "bots-latency.json"
-    )
+    path = Path(__file__).parent.parent.parent / "infra" / "grafana" / "dashboards" / "bots-latency.json"
     assert path.exists(), f"Dashboard nao encontrado: {path}"
 
 
 def test_grafana_dashboard_bots_latency_valido() -> None:
     """T56: dashboard JSON tem schema Grafana valido."""
-    path = (
-        Path(__file__).parent.parent.parent
-        / "infra"
-        / "grafana"
-        / "dashboards"
-        / "bots-latency.json"
-    )
+    path = Path(__file__).parent.parent.parent / "infra" / "grafana" / "dashboards" / "bots-latency.json"
     with open(path) as f:
         data = json.load(f)
     # Campos canonicos de um dashboard Grafana
@@ -344,13 +334,7 @@ def test_grafana_dashboard_bots_latency_valido() -> None:
 
 def test_alerts_bots_latency_existe() -> None:
     """T57: arquivo alerts/bots-latency.yaml existe."""
-    path = (
-        Path(__file__).parent.parent.parent
-        / "infra"
-        / "prometheus"
-        / "alerts"
-        / "bots-latency.yaml"
-    )
+    path = Path(__file__).parent.parent.parent / "infra" / "prometheus" / "alerts" / "bots-latency.yaml"
     assert path.exists(), f"Alerta nao encontrado: {path}"
 
 
@@ -358,13 +342,7 @@ def test_alerts_bots_latency_yaml_valido() -> None:
     """T57: arquivo YAML tem groups + alert com expr + severity."""
     import yaml
 
-    path = (
-        Path(__file__).parent.parent.parent
-        / "infra"
-        / "prometheus"
-        / "alerts"
-        / "bots-latency.yaml"
-    )
+    path = Path(__file__).parent.parent.parent / "infra" / "prometheus" / "alerts" / "bots-latency.yaml"
     with open(path) as f:
         data = yaml.safe_load(f)
     assert "groups" in data
@@ -465,12 +443,7 @@ def test_capture_exception_log_quando_sentry_desabilitado() -> None:
 
 def test_otel_collector_config_up() -> None:
     """T60: otel-collector-config.yml existe com receivers OTLP."""
-    path = (
-        Path(__file__).parent.parent.parent
-        / "infra"
-        / "observability"
-        / "otel-collector-config.yml"
-    )
+    path = Path(__file__).parent.parent.parent / "infra" / "observability" / "otel-collector-config.yml"
     assert path.exists()
     content = path.read_text()
     assert "otlp" in content.lower()
@@ -483,7 +456,6 @@ def test_tracing_stack_yml_exists() -> None:
     assert path.exists()
     content = path.read_text()
     assert "jaeger" in content.lower() or "otel" in content.lower()
-
 
 # ============================================================================
 # TestBotMetricsEdgeCases — FIX 2 (R8 YOLO): cobre linhas 67, 86-87, 149-151, 153, 157, 191
@@ -498,10 +470,8 @@ class TestBotMetricsEdgeCases:
         store.counters.pop("bot_pii_redacted_total", None)
         inc_bot_pii_redacted("whatsapp", "none")
         # Counter NAO deve ter sido criado para 'none' (early return)
-        assert (
-            "bot_pii_redacted_total" not in store.counters
-            or len(store.counters.get("bot_pii_redacted_total", {})) == 0
-        )
+        assert "bot_pii_redacted_total" not in store.counters or \
+               len(store.counters.get("bot_pii_redacted_total", {})) == 0
 
     def test_inc_bot_fallback_hop_emits_counter(self) -> None:
         """inc_bot_fallback_hop incrementa counter {channel, from, to}."""
@@ -556,10 +526,8 @@ class TestBotMetricsEdgeCases:
         timer.mark_failed()
         assert timer._failed is True
         # Sem chamar __enter__/__exit__, counter NAO mudou
-        assert (
-            "bot_requests_total" not in store.counters
-            or len(store.counters.get("bot_requests_total", {})) == 0
-        )
+        assert "bot_requests_total" not in store.counters or \
+               len(store.counters.get("bot_requests_total", {})) == 0
 
     def test_scrub_with_metric_falls_back_to_none_when_findings_empty(self, monkeypatch) -> None:
         """scrub_with_metric: se findings vazio mas redaction_count>0, conta como 'none'."""
@@ -571,14 +539,12 @@ class TestBotMetricsEdgeCases:
 
         # pii eh import lazy dentro de scrub_with_metric -> patch no app.services.pii
         from app.services import pii as _pii
-
         monkeypatch.setattr(_pii, "scrub", lambda text: stub)
 
         # Patch inc_bot_pii_redacted para observar chamadas (early-return em 'none')
         called_with: list = []
         monkeypatch.setattr(
-            bot_metrics,
-            "inc_bot_pii_redacted",
+            bot_metrics, "inc_bot_pii_redacted",
             lambda channel, tipo: called_with.append((channel, tipo)),
         )
 
