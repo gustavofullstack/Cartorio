@@ -99,6 +99,146 @@
         "apiKey": "sk-xxx",
         "baseURL": "https://agent.minimax.io/mavis/api/v1/llm/v1"
       }
+    },
+    "antigravity": {
+      "name": "Antigravity (AGY)",
+      "npm": "@ai-sdk/openai-compatible",
+      "models": {
+        "gemini-3.5-flash-high": {
+          "name": "gemini-3.5-flash-high",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "context": 1048576,
+            "output": 8192
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gemini-3.5-flash-medium": {
+          "name": "gemini-3.5-flash-medium",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "context": 1048576,
+            "output": 8192
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gemini-3.5-flash-low": {
+          "name": "gemini-3.5-flash-low",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "context": 1048576,
+            "output": 8192
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gemini-3.1-pro-high": {
+          "name": "gemini-3.1-pro-high",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "context": 2097152,
+            "output": 8192
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gemini-3.1-pro-low": {
+          "name": "gemini-3.1-pro-low",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "context": 2097152,
+            "output": 8192
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "claude-4.6-opus": {
+          "name": "claude-4.6-opus",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "claude-4.6-sonnet": {
+          "name": "claude-4.6-sonnet",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-oss-120b-medium": {
+          "name": "gpt-oss-120b-medium",
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "tool_call": true,
+          "limit": {
+            "context": 131072,
+            "output": 4096
+          },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text" ]
+          }
+        }
+      },
+      "whitelist": [
+        "gemini-3.5-flash-high",
+        "gemini-3.5-flash-medium",
+        "gemini-3.5-flash-low",
+        "gemini-3.1-pro-high",
+        "gemini-3.1-pro-low",
+        "claude-4.6-opus",
+        "claude-4.6-sonnet",
+        "gpt-oss-120b-medium"
+      ],
+      "options": {
+        "apiKey": "sk-antigravity-local-bypass-2026",
+        "baseURL": "http://127.0.0.1:8805/v1"
+      }
     }
   },
   "permission": {
