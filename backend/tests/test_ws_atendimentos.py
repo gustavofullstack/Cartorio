@@ -295,3 +295,126 @@ class TestWSAtendimentosRedisIntegration:
         assert delivered_count == 1
         assert len(received) == 1
         assert received[0] == {"evento": "novo_atendimento", "id": 42}
+
+
+# ============================================================
+# GRUPO 6: Ping/pong protocol (T2.API.T19)
+# ============================================================
+
+
+class TestWSAtendimentosPingPong:
+    """Protocolo ping/pong do WebSocket /api/v1/ws/atendimentos.
+
+    O servidor deve responder {"type": "pong"} a {"type": "ping"} e
+    echo da mensagem para qualquer outro payload.
+    """
+
+    def _make_client(self) -> TestClient:
+        """Cria TestClient isolado com main app + prefix /api/v1."""
+        from app.api.v1.ws.atendimentos import ws_router
+
+        isolated_app = FastAPI()
+        isolated_app.include_router(ws_router, prefix="/api/v1")
+        return TestClient(isolated_app)
+
+    def test_ping_returns_pong(self) -> None:
+        """ping -> pong (handshake + echo)."""
+        client = self._make_client()
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+            ws.send_json({"type": "ping"})
+            response = ws.receive_json()
+            assert response["type"] == "pong"
+
+    def test_non_ping_returns_echo_with_data(self) -> None:
+        """Mensagem não-ping -> echo da mensagem."""
+        client = self._make_client()
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+            ws.send_json({"type": "msg", "text": "ola"})
+            response = ws.receive_json()
+            assert response["type"] == "echo"
+            assert response["data"] == {"type": "msg", "text": "ola"}
+
+    def test_invalid_json_returns_echo_raw(self) -> None:
+        """String nao-JSON → echo com data.raw."""
+        client = self._make_client()
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+            ws.send_text("not json")
+            response = ws.receive_json()
+            assert response["type"] == "echo"
+            assert "raw" in response["data"]
+            assert response["data"]["raw"] == "not json"
+
+    def test_plain_text_non_json_returns_echo_raw(self) -> None:
+        """Texto simples (nao-JSON) → echo raw."""
+        client = self._make_client()
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+            ws.send_text("hello world")
+            response = ws.receive_json()
+            assert response["type"] == "echo"
+            assert response["data"]["raw"] == "hello world"
+
+
+# ============================================================
+# GRUPO 7: WebSocket lifecycle (cleanup on disconnect)
+# ============================================================
+
+
+class TestWSAtendimentosLifecycle:
+    """Lifecycle: register, deregister, listener cleanup."""
+
+    def _make_client(self) -> TestClient:
+        from app.api.v1.ws.atendimentos import ws_router
+
+        isolated_app = FastAPI()
+        isolated_app.include_router(ws_router, prefix="/api/v1")
+        return TestClient(isolated_app)
+
+    def test_client_disconnect_cleans_manager_state(self) -> None:
+        """Disconnect limpa o ConnectionManager (total_connections=0)."""
+        from app.services.websocket_manager import get_manager
+
+        # Limpa estado global entre testes
+        mgr = get_manager()
+        mgr.connections.clear()
+
+        client = self._make_client()
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+            # Confirma que cliente foi registrado
+            assert mgr.total_connections() >= 1
+            ws.send_json({"type": "ping"})
+            ws.receive_json()
+        # Apos sair do context manager, cliente foi desconectado
+        assert mgr.total_connections() == 0
+
+    def test_double_register_same_ws_idempotent(self) -> None:
+        """Register 2x do mesmo ws na mesma room: Set garante unicidade."""
+        from app.services.websocket_manager import get_manager
+
+        mgr = get_manager()
+        mgr.connections.clear()
+
+        client = self._make_client()
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws1:
+            with client.websocket_connect("/api/v1/ws/atendimentos") as ws2:
+                ws1.send_json({"type": "ping"})
+                ws1.receive_json()
+                ws2.send_json({"type": "ping"})
+                ws2.receive_json()
+        # Cada context manager registra/desregistra independentemente
+        assert mgr.total_connections() == 0
+
+    def test_listener_task_cancelled_on_disconnect(self) -> None:
+        """Disconnect cancela o _redis_listener_loop (task cleanup)."""
+        from app.services.websocket_manager import get_manager
+
+        mgr = get_manager()
+        mgr.connections.clear()
+
+        client = self._make_client()
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+            ws.send_json({"type": "ping"})
+            ws.receive_json()
+            # Dentro do contexto: conexao ativa
+            assert mgr.total_connections() == 1
+        # Apos contexto: tudo limpo, sem task leak
+        assert mgr.total_connections() == 0

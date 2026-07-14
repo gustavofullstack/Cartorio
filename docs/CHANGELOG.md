@@ -32,7 +32,7 @@
   - nome: "Gustavo Almeida" → "G*** A***" via `_mask_nome()`
   - email: "gustavo@test.com" → "g***@com" via `_mask_email()`
   - `cpf_hash` e `telefone_hash` ja pseudonimizados (intocados)
-- **v1 endpoint** (`lgpd_direitos.py`): `_mask_bundle_pii()` em defesa em profundidade (idempotente)
+- **v1 endpoint** (`lgpd_direitos.py`): `_mask_nome()` and `_mask_email()` applied inline (idempotent)
 - **14 testes** cobrindo: basico, borda (1 parte, vazio, ja mascarado), idempotencia
 - Commit: `e669fb6`
 
