@@ -68,3 +68,4 @@ _tmp_alembic_test*.db
 # Per-machine Claude Code settings (shared .claude/ tracked, but not settings.local.json)
 .claude/settings.local.json
 
+trae-agent

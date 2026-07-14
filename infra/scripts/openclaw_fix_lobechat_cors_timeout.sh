@@ -34,22 +34,30 @@ if ! docker ps --format '{{.Names}}' | grep -q "$OPENCLAW_CONTAINER"; then
   exit 1
 fi
 
+# 0a. Resolve real container name (Swarm adiciona sufixo .1.<taskid>)
+REAL_CONTAINER=$(docker ps --format '{{.Names}}' | grep "$OPENCLAW_CONTAINER" | head -1)
+if [ -z "$REAL_CONTAINER" ]; then
+  echo "$LOG_PREFIX ERROR: nao foi possivel resolver container real para $OPENCLAW_CONTAINER"
+  exit 1
+fi
+echo "$LOG_PREFIX resolved container: $REAL_CONTAINER"
+
 # 1. Backup pre-patch
 echo "$LOG_PREFIX --- Backup pre-T5.1 ---"
-docker exec "$OPENCLAW_CONTAINER" cp "$OPENCLAW_CFG" "$BACKUP_PATH"
+docker exec "$REAL_CONTAINER" cp "$OPENCLAW_CFG" "$BACKUP_PATH"
 echo "$LOG_PREFIX backup criado: $BACKUP_PATH"
 
 # 2. Patch via openclaw config (openclaw valida contra schema; se campo rejeitar
 #    cai no passo 5 com patch manual por python)
 echo "$LOG_PREFIX --- Aplicando CORS allowedOrigins + timeoutSeconds ---"
 
-if docker exec "$OPENCLAW_CONTAINER" openclaw config set gateway.controlUi.allowedOrigins "$ORIGIN_LIST" 2>/dev/null; then
+if docker exec "$REAL_CONTAINER" openclaw config set gateway.controlUi.allowedOrigins "$ORIGIN_LIST" 2>/dev/null; then
   echo "$LOG_PREFIX OK gateway.controlUi.allowedOrigins patched (8 origins)"
 else
   echo "$LOG_PREFIX WARN openclaw config set falhou para allowedOrigins — ver passo 5"
 fi
 
-if docker exec "$OPENCLAW_CONTAINER" openclaw config set models.providers.openai.timeoutSeconds 30 2>/dev/null; then
+if docker exec "$REAL_CONTAINER" openclaw config set models.providers.openai.timeoutSeconds 30 2>/dev/null; then
   echo "$LOG_PREFIX OK models.providers.openai.timeoutSeconds = 30"
 else
   echo "$LOG_PREFIX WARN openclaw config set falhou para timeoutSeconds — ver passo 5"
@@ -57,9 +65,9 @@ fi
 
 # 3. Validate
 echo "$LOG_PREFIX --- Validando config ---"
-docker exec "$OPENCLAW_CONTAINER" openclaw config validate || {
+docker exec "$REAL_CONTAINER" openclaw config validate || {
   echo "$LOG_PREFIX ERROR: openclaw config validate falhou — restore backup"
-  docker exec "$OPENCLAW_CONTAINER" cp "$BACKUP_PATH" "$OPENCLAW_CFG"
+  docker exec "$REAL_CONTAINER" cp "$BACKUP_PATH" "$OPENCLAW_CFG"
   exit 1
 }
 
@@ -67,18 +75,18 @@ docker exec "$OPENCLAW_CONTAINER" openclaw config validate || {
 #    com hot-reload; safe porque o servico tem healthcheck)
 echo "$LOG_PREFIX --- Restart forcado do servico para garantir apply ---"
 docker service update --force "$OPENCLAW_CONTAINER" 2>/dev/null || \
-  docker restart "$OPENCLAW_CONTAINER" 2>/dev/null || true
+  docker restart "$REAL_CONTAINER" 2>/dev/null || true
 
 # 5. Fallback manual se openclaw config set rejeitar: patch JSON via python
 #    in-place (NAO usar se passos 2 funcionaram — duplicaria keys)
 sleep 3
 NEED_FALLBACK=false
-docker exec "$OPENCLAW_CONTAINER" openclaw config get models.providers.openai.timeoutSeconds 2>/dev/null | grep -q '^30$' || NEED_FALLBACK=true
-docker exec "$OPENCLAW_CONTAINER" openclaw config get gateway.controlUi.allowedOrigins 2>/dev/null | grep -q 'cartorio-lobechat' || NEED_FALLBACK=true
+docker exec "$REAL_CONTAINER" openclaw config get models.providers.openai.timeoutSeconds 2>/dev/null | grep -q '^30$' || NEED_FALLBACK=true
+docker exec "$REAL_CONTAINER" openclaw config get gateway.controlUi.allowedOrigins 2>/dev/null | grep -q 'cartorio-lobechat' || NEED_FALLBACK=true
 
 if [ "$NEED_FALLBACK" = "true" ]; then
   echo "$LOG_PREFIX --- FALLBACK: patching JSON via python in-container ---"
-  docker exec "$OPENCLAW_CONTAINER" python3 - <<PYEOF
+  docker exec "$REAL_CONTAINER" python3 - <<PYEOF
 import json, sys
 p = "$OPENCLAW_CFG"
 with open(p) as f:
@@ -91,7 +99,7 @@ print(f"FALLBACK OK wrote {p}")
 PYEOF
   echo "$LOG_PREFIX --- Restart forcado apos fallback ---"
   docker service update --force "$OPENCLAW_CONTAINER" 2>/dev/null || \
-    docker restart "$OPENCLAW_CONTAINER" 2>/dev/null || true
+    docker restart "$REAL_CONTAINER" 2>/dev/null || true
   sleep 3
 fi
 
@@ -99,7 +107,7 @@ fi
 echo "$LOG_PREFIX --- POST-DEPLOY VALIDATION ---"
 
 echo "  6.1 /health"
-HEALTH=$(docker exec "$OPENCLAW_CONTAINER" curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:18790/health || echo "FAIL")
+HEALTH=$(docker exec "$REAL_CONTAINER" curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:18790/health || echo "FAIL")
 echo "       /health = $HEALTH (esperado 200)"
 
 echo "  6.2 CORS preflight"

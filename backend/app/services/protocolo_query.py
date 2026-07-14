@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.cliente import Cliente
@@ -104,4 +105,31 @@ def listar_protocolos_recentes_concluidos(
     ]
 
 
-__all__ = ["ProtocoloRecente", "listar_protocolos_recentes_concluidos"]
+def buscar_protocolo_por_numero(
+    db: Session,
+    numero: str,
+    *,
+    include_deleted: bool = False,
+) -> Protocolo | None:
+    """Busca protocolo pelo numero ANO-SEQUENCIAL (YYYY-NNNNN).
+
+    Args:
+        db: SQLAlchemy session.
+        numero: Numero no formato YYYY-NNNNN.
+        include_deleted: A19 LGPD art. 18 V — default False (filtra soft-deleted).
+            Caller (router/DPO) deve garantir gating admin antes de passar True.
+
+    Returns:
+        Protocolo ou None se nao encontrado / soft-deletado (quando include_deleted=False).
+    """
+    stmt = select(Protocolo).where(Protocolo.numero == numero)
+    if not include_deleted:
+        stmt = stmt.where(Protocolo.deleted_at.is_(None))
+    return db.execute(stmt).scalar_one_or_none()
+
+
+__all__ = [
+    "ProtocoloRecente",
+    "buscar_protocolo_por_numero",
+    "listar_protocolos_recentes_concluidos",
+]

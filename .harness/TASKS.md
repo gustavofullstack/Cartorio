@@ -134,7 +134,7 @@ Status: **em andamento** (sprint 0 commitado em `81b4893`).
 - **D6**: AUTH inter-service N8N ↔ API via `CARTORIO_API_KEY` (header `X-API-Key`, openssl rand hex 32, rotação 90d).
 
 ### Sprint 2 (sem 5-6) — STATUS PROTOCOLO + SHADOW MODE
-- [ ] **E1.S2.T1** Endpoint `GET /api/v1/protocolo/{numero}` — owner: `cartorio-dev`
+- [x] **E1.S2.T1** Endpoint `GET /api/v1/protocolo/{numero}` — owner: `cartorio-dev` — **DONE 2026-07-13 22:55 BRT** (YOLO round 8): endpoint pre-existente em `router.py:146-322` extendido com (1) `buscar_protocolo_por_numero` service helper em `protocolo_query.py:108-128` filtrando soft-deletados (A19 LGPD art. 18 V); (2) `historico_map` dict-driven cobrindo todos os 7 `StatusProtocolo` (DRAFT/ABERTO/EM_ANDAMENTO/AGUARDANDO_DOC/CONCLUIDO/CANCELADO/EXPIRADO) — `etapa_atual` NAO mente para estados terminais; (3) audit warning `protocolo.read.unknown_status` para drift de enum; (4) parametrized test t046 sobre 7 statuses + A19 soft-delete test t046; (5) marker `t046` adicionado ao `pyproject.toml`. PENDENTE: user rodar `make format && make lint && cd backend && uv run pytest -v --no-cov tests/test_protocolo_endpoint.py && uv run pytest --no-cov -q` e commit com mensagem canonical. AGUARDANDO review `cartorio-lgpd` pre-merge.
 - [ ] **E1.S2.T2** Workflow n8n #2 (shadow mode): bot sugere resposta, escrevente envia, comparacao automatica — owner: `cartorio-n8n`
 - [ ] **E1.S2.T3** HITL escalonado nivel 1 (read_only bot responde sozinho com confidence >= 0.85) — owner: `cartorio-dev`
 - [ ] **E1.S2.T4** Dashboard escrevente: msg recebida, intencao detectada, resposta sugerida, quem enviou — owner: `cartorio-n8n` (UI) + `cartorio-dev` (API)

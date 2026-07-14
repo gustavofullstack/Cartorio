@@ -1,7 +1,7 @@
 """Testes de integracao dos endpoints /api/v1/protocolo.
 
 Cobre:
-- GET /api/v1/protocolo/{numero} (5 cenarios)
+- GET /api/v1/protocolo/{numero} (6 cenarios GET + parametrized over 7 statuses)
 - POST /api/v1/protocolo (5+ cenarios)
 - Gate LGPD (consentimento obrigatorio)
 - PII scrubbing do CPF antes de persistir
@@ -216,6 +216,108 @@ def test_get_protocolo_response_nao_contem_cpf_puro(client, cliente_existente):
     text = resp.text
     # Garante que nao ha vestigios de CPF (11 digitos) em texto puro no payload
     assert not re.search(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b", text)
+
+
+@pytest.mark.t046
+@pytest.mark.parametrize(
+    "status, etapa_esperada, autor_esperado",
+    [
+        ("DRAFT", "criado", "bot"),
+        ("aberto", "em_analise_juridica", "escrevente"),
+        ("em_andamento", "em_analise_juridica", "escrevente"),
+        ("aguardando_doc", "aguardando_documento", "bot"),
+        ("concluido", "concluido", "escrevente"),
+        ("cancelado", "cancelado", "escrevente"),
+        ("expirado", "cancelado", "sistema"),
+    ],
+)
+def test_get_protocolo_historico_para_cada_status(
+    client, test_engine, test_session_factory, status, etapa_esperada, autor_esperado
+):
+    """Cenario 7: cada StatusProtocolo produz historico + etapa_atual + autor corretos.
+
+    Garante que etapa_atual NAO mente para estados terminais (cancelado/expirado).
+    """
+    SessionLocal = test_session_factory
+    now = datetime.datetime.utcnow()
+    with SessionLocal() as db:
+        cliente = Cliente(
+            cpf_hash="b" * 64,
+            nome="Cliente Status",
+            consentimento_lgpd=True,
+            consentimento_em=now,
+        )
+        db.add(cliente)
+        db.flush()
+        protocolo = Protocolo(
+            numero="2026-00099",
+            cliente_id=cliente.id,
+            tipo="certidao_negativa",
+            status=status,
+            valor_base=87.50,
+            valor_total=87.50,
+            tabela_referencia="TABELA_2026_MG",
+            prazo_dias=5,
+            canal_origem="web",
+            created_at=now,
+            updated_at=now,
+            concluido_em=now if status == "concluido" else None,
+        )
+        db.add(protocolo)
+        db.commit()
+
+    resp = client.get("/api/v1/protocolo/2026-00099")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+
+    assert data["status"] == status
+    assert data["etapa_atual"] == etapa_esperada
+    assert len(data["historico"]) >= 2
+    # Ultima entrada deve corresponder ao status atual
+    assert data["historico"][-1]["etapa"] == etapa_esperada
+    assert data["historico"][-1]["autor"] == autor_esperado
+    # CRIADO sempre presente como primeira entrada
+    assert data["historico"][0]["etapa"] == "criado"
+
+
+@pytest.mark.t046
+def test_get_protocolo_soft_deletado_retorna_404(client, test_engine, test_session_factory):
+    """Cenario 8 (A19 LGPD): protocolo com deleted_at IS NOT NULL retorna 404.
+
+    Garante que cliente com direito ao esquecimento (LGPD art. 18 VI) nao tem
+    dados vazando via GET publico.
+    """
+    SessionLocal = test_session_factory
+    now = datetime.datetime.utcnow()
+    with SessionLocal() as db:
+        cliente = Cliente(
+            cpf_hash="c" * 64,
+            nome="Cliente Esquecido",
+            consentimento_lgpd=False,
+            consentimento_em=now,
+        )
+        db.add(cliente)
+        db.flush()
+        protocolo = Protocolo(
+            numero="2026-00077",
+            cliente_id=cliente.id,
+            tipo="certidao_negativa",
+            status="concluido",
+            valor_base=87.50,
+            valor_total=87.50,
+            tabela_referencia="TABELA_2026_MG",
+            prazo_dias=5,
+            canal_origem="web",
+            created_at=now,
+            updated_at=now,
+            deleted_at=now,  # LGPD art. 18 VI - direito ao esquecimento
+        )
+        db.add(protocolo)
+        db.commit()
+
+    resp = client.get("/api/v1/protocolo/2026-00077")
+    assert resp.status_code == 404
+    assert resp.json()["detail"]["erro"] == "PROTOCOLO_NOT_FOUND"
 
 
 # ============================================================================

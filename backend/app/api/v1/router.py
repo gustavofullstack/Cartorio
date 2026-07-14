@@ -67,6 +67,7 @@ from app.services.audit_context import audit_kwargs
 from app.services.audit_query import get_audit_log_by_id, list_audit_logs
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
+from app.services.protocolo_query import buscar_protocolo_por_numero
 
 # Integrations router (smoke test OpenCode-Go, etc)
 from app.api.v1.integrations import integrations_router  # noqa: E402
@@ -209,7 +210,7 @@ def get_protocolo(
     db: Annotated[Session, Depends(get_db)],
 ) -> ProtocoloResponse:
     """Consulta publica do protocolo + audit log obrigatorio."""
-    protocolo = db.execute(select(Protocolo).where(Protocolo.numero == numero)).scalar_one_or_none()
+    protocolo = buscar_protocolo_por_numero(db, numero)
 
     if protocolo is None:
         # Loga tentativa de consulta a protocolo inexistente (seguranca).
@@ -251,62 +252,114 @@ def get_protocolo(
     )
 
     # Constroi historico minimo a partir dos dados do protocolo.
-    historico: list[HistoricoEtapa] = [
-        HistoricoEtapa(
-            etapa=EtapaHistorico.CRIADO,
-            timestamp=protocolo.created_at,
-            descricao="Protocolo criado em modo DRAFT (HITL obrigatorio).",
-            autor="bot",
+    # Cobre todos os 7 valores de StatusProtocolo — etapa_atual NAO mente
+    # para estados terminais (cancelado/expirado).
+    etapa_criada = HistoricoEtapa(
+        etapa=EtapaHistorico.CRIADO,
+        timestamp=protocolo.created_at,
+        descricao="Protocolo criado em modo DRAFT (HITL obrigatorio).",
+        autor="bot",
+    )
+
+    historico_map: dict[StatusProtocolo, tuple[EtapaHistorico, str, str, datetime.datetime]] = {
+        StatusProtocolo.DRAFT: (
+            EtapaHistorico.CRIADO,
+            "Protocolo criado em modo DRAFT (HITL obrigatorio).",
+            "bot",
+            protocolo.created_at,
         ),
-    ]
-    if protocolo.status == StatusProtocolo.AGUARDANDO_DOC.value:
-        historico.append(
+        StatusProtocolo.ABERTO: (
+            EtapaHistorico.EM_ANALISE,
+            "Documentacao sendo conferida pelo escrevente.",
+            "escrevente",
+            protocolo.updated_at,
+        ),
+        StatusProtocolo.EM_ANDAMENTO: (
+            EtapaHistorico.EM_ANALISE,
+            "Em analise juridica pelo escrevente.",
+            "escrevente",
+            protocolo.updated_at,
+        ),
+        StatusProtocolo.AGUARDANDO_DOC: (
+            EtapaHistorico.AGUARDANDO_DOC,
+            "Aguardando envio de documentos pelo cliente.",
+            "bot",
+            protocolo.updated_at,
+        ),
+        StatusProtocolo.CONCLUIDO: (
+            EtapaHistorico.CONCLUIDO,
+            "Protocolo concluido.",
+            "escrevente",
+            protocolo.concluido_em or protocolo.updated_at,
+        ),
+        StatusProtocolo.CANCELADO: (
+            EtapaHistorico.CANCELADO,
+            "Protocolo cancelado pelo escrevente.",
+            "escrevente",
+            protocolo.updated_at,
+        ),
+        StatusProtocolo.EXPIRADO: (
+            EtapaHistorico.CANCELADO,
+            "Protocolo expirado por tempo limite.",
+            "sistema",
+            protocolo.updated_at,
+        ),
+    }
+
+    status_enum = StatusProtocolo(protocolo.status)
+    if status_enum in historico_map:
+        etapa_id, descricao, autor, ts = historico_map[status_enum]
+        historico: list[HistoricoEtapa] = [
+            etapa_criada,
+            HistoricoEtapa(etapa=etapa_id, timestamp=ts, descricao=descricao, autor=autor),
+        ]
+    else:
+        # Status desconhecido no banco (drift de enum). NUNCA colapsar silenciosamente:
+        # registrar warning no audit log + manter apenas CRIADO + etapa genérica.
+        AuditService.log(
+            db,
+            actor_id="system",
+            actor_type="system",
+            action="protocolo.read.unknown_status",
+            resource=f"protocolo:{protocolo.id}",
+            payload={"numero": protocolo.numero, "status_raw": protocolo.status},
+            **audit_kwargs(request),
+        )
+        historico = [
+            etapa_criada,
             HistoricoEtapa(
-                etapa=EtapaHistorico.AGUARDANDO_DOC,
+                etapa=EtapaHistorico.CRIADO,
                 timestamp=protocolo.updated_at,
-                descricao="Aguardando envio de documentos pelo cliente.",
-                autor="bot",
-            )
-        )
-    elif protocolo.status == StatusProtocolo.EM_ANDAMENTO.value:
-        historico.append(
-            HistoricoEtapa(
-                etapa=EtapaHistorico.EM_ANALISE,
-                timestamp=protocolo.updated_at,
-                descricao="Em analise juridica pelo escrevente.",
-                autor="escrevente",
-            )
-        )
-    elif protocolo.status == StatusProtocolo.CONCLUIDO.value:
-        historico.append(
-            HistoricoEtapa(
-                etapa=EtapaHistorico.CONCLUIDO,
-                timestamp=protocolo.concluido_em or protocolo.updated_at,
-                descricao="Protocolo concluido.",
-                autor="escrevente",
-            )
-        )
+                descricao="Status do protocolo nao reconhecido pelo sistema.",
+                autor="sistema",
+            ),
+        ]
 
     etapa_atual = historico[-1].etapa
 
-    proxima_acao = {
-        StatusProtocolo.DRAFT.value: (
+    proxima_acao_map: dict[StatusProtocolo, str] = {
+        StatusProtocolo.DRAFT: (
             "Aguardando validacao humana do escrevente. "
             "Acesse o painel admin ou aguarde contato via WhatsApp."
         ),
-        StatusProtocolo.ABERTO.value: "Documentacao sendo conferida pelo escrevente.",
-        StatusProtocolo.EM_ANDAMENTO.value: "Em analise juridica.",
-        StatusProtocolo.AGUARDANDO_DOC.value: (
+        StatusProtocolo.ABERTO: "Documentacao sendo conferida pelo escrevente.",
+        StatusProtocolo.EM_ANDAMENTO: "Em analise juridica.",
+        StatusProtocolo.AGUARDANDO_DOC: (
             "Envie os documentos solicitados pelo escrevente via WhatsApp."
         ),
-        StatusProtocolo.CONCLUIDO.value: "Protocolo concluido. PDF disponivel para download.",
-        StatusProtocolo.CANCELADO.value: "Protocolo cancelado. Procure o cartorio para mais detalhes.",
-        StatusProtocolo.EXPIRADO.value: "Protocolo expirado. Inicie nova solicitacao se ainda necessario.",
-    }.get(protocolo.status, "Consulte o cartorio para atualizacoes.")
+        StatusProtocolo.CONCLUIDO: "Protocolo concluido. PDF disponivel para download.",
+        StatusProtocolo.CANCELADO: "Protocolo cancelado. Procure o cartorio para mais detalhes.",
+        StatusProtocolo.EXPIRADO: "Protocolo expirado. Inicie nova solicitacao se ainda necessario.",
+    }
+
+    if status_enum in proxima_acao_map:
+        proxima_acao = proxima_acao_map[status_enum]
+    else:
+        proxima_acao = "Consulte o cartorio para atualizacoes."
 
     return ProtocoloResponse(
         numero=protocolo.numero,
-        status=StatusProtocolo(protocolo.status),
+        status=status_enum,
         etapa_atual=etapa_atual,
         cliente=ClienteResumo(nome=protocolo.cliente.nome, cpf_hash=protocolo.cliente.cpf_hash),
         tipo=protocolo.tipo,
