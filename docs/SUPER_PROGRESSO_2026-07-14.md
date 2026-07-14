@@ -47,4 +47,18 @@
 - T029: `ENABLE_ACCOUNT_SIGNUP` em chatwoot/sidekiq
 - T030: scale evolution-api=1
 
-Modified by Gustavo Almeida — auditoria automatizada 2026-07-14 18:15 BRT
+### 2026-07-14 18:35 BRT — Ciclo 1 fechado (S0-T001 + S0-T004)
+
+- T001: drift de versão corrigido (`app.__version__` canônica → main + mcp_server + radar).
+  - `app/main.py` agora importa `__version__ as APP_VERSION` e usa em `FastAPI(...)`, `/health`, `/`,
+    `/mcp-servers` e `audit.api.startup`.
+  - `mcp_server.py` alinha `version="0.6.0"` (era `0.4.0`).
+  - `/mcp-servers` corrige `tools_count: 7 → 13` (valor medido).
+- T004: gate `mutmut` verde — `uv pip install 'mutmut>=3.6.0'` (test_mutmut_installed_version passou).
+- Suite consolidada: `2626 passed, 19 skipped, 49 deselected, 0 failed`.
+- Cobertura: 95,10% (gate 90% PASS).
+- ruff=0, mypy=0 (128 arquivos).
+- 6 testes de versão/OpenAPI/MCP/radar: 29 passed, 1 skipped.
+- Commit: `9d82e97 fix(observability): consolidar versão 0.6.0 em main.py + mcp_server + radar (S0-T001)`.
+
+Modified by Gustavo Almeida — auditoria automatizada 2026-07-14 18:35 BRT
