@@ -25,6 +25,7 @@ from fastapi.openapi.docs import get_redoc_html  # noqa: E402
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
+from app import __version__ as APP_VERSION  # noqa: E402
 from app.api.v1.router import api_router  # noqa: E402
 from app.api.v1.ws.atendimentos import ws_router  # noqa: E402
 from app.config import settings  # noqa: E402
@@ -134,7 +135,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     Base.metadata.create_all(bind=engine)
 
     # 3. Audit log: write a startup entry (no-op if audit_log empty)
-    AuditService.log_system_action("api.startup", {"version": "0.6.0", "env": settings.app_env})
+    AuditService.log_system_action("api.startup", {"version": APP_VERSION, "env": settings.app_env})
 
     # 4. Dead man's switch scheduler in-process (A13)
     dms_task: asyncio.Task[None] | None = None
@@ -333,7 +334,7 @@ API_LICENSE_INFO = {
 app = FastAPI(
     title="Cartorio Backend API",
     description=API_DESCRIPTION,
-    version="0.5.4",
+    version=APP_VERSION,
     contact=API_CONTACT,
     license_info=API_LICENSE_INFO,
     openapi_tags=API_TAGS_METADATA,
@@ -416,7 +417,7 @@ app.add_middleware(SlowLogMiddleware, threshold_ms=500)
 @app.get("/health", tags=["meta"])
 def health() -> dict:
     """Liveness probe."""
-    return {"status": "ok", "service": settings.app_name, "version": "0.6.0"}
+    return {"status": "ok", "service": settings.app_name, "version": APP_VERSION}
 
 
 @app.get("/ready", tags=["meta"])
@@ -466,7 +467,7 @@ def root() -> dict:
     """Root - redireciona para Swagger UI."""
     return {
         "service": settings.app_name,
-        "version": "0.6.0",
+        "version": APP_VERSION,
         "docs": "/docs",
         "redoc": "/redoc",
         "openapi": "/openapi.json",
@@ -498,7 +499,7 @@ def mcp_servers() -> dict:
                 "transport": "http",
                 "url": f"http://localhost:{settings.app_port}/mcp",
                 "auth": "header: apikey",
-                "tools_count": 7,
+                "tools_count": 13,
                 "description": "API FastAPI como MCP tools (emolumento, protocolo, audit, segunda-via)",
                 "path": "backend/mcp_server.py",
             },
@@ -536,7 +537,7 @@ def mcp_servers() -> dict:
             },
         ],
         "config_path": "~/.mavis/mcp/clients/cartorio-mcp-config.json",
-        "version": "0.6.0",
+        "version": APP_VERSION,
     }
 
 

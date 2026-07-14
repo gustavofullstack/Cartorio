@@ -49,7 +49,7 @@ except ImportError:
 
 mcp = FastMCP(
     name="cartorio-mcp-cabuloso",
-    version="0.4.0",
+    version="0.6.0",
     instructions=(
         "MCP server do Cartorio 2 Notas Uberlandia. "
         "Use cartorio_calcular_emolumento para valores oficiais MG 2026, "
