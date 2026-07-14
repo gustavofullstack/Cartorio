@@ -226,6 +226,15 @@
       if (!event.target.closest(".toolbox")) {
         document.querySelectorAll(".menu").forEach((menu) => menu.classList.remove("open"));
       }
+      if (event.target.id === "modalBackdrop") {
+        window.closeModal();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        window.closeModal();
+        document.querySelectorAll(".menu").forEach((menu) => menu.classList.remove("open"));
+      }
     });
     window.addEventListener("resize", () => {
       Object.values(chartState).forEach((entry) => entry.chart.resize());
