@@ -37,23 +37,35 @@ def _fake_response(content: str, model: str = "minimax-m3") -> ChatResponse:
     )
 
 
-def _make_provider_dispatch(*, litellm_response: ChatResponse | None = None,
-                            litellm_error: Exception | None = None,
-                            opencode_response: ChatResponse | None = None,
-                            opencode_error: Exception | None = None,
-                            openclaw_response: ChatResponse | None = None,
-                            openclaw_error: Exception | None = None):
+def _make_provider_dispatch(
+    *,
+    litellm_response: ChatResponse | None = None,
+    litellm_error: Exception | None = None,
+    opencode_response: ChatResponse | None = None,
+    opencode_error: Exception | None = None,
+    openclaw_response: ChatResponse | None = None,
+    openclaw_error: Exception | None = None,
+):
     """Cria funcao que simula `_call_provider` discriminando por nome.
 
     Cada provider eh tratado independentemente conforme os parametros.
     """
+
     async def fake_call_provider(provider: str, *args, **kwargs):
         if provider == "litellm":
             if litellm_error:
                 raise litellm_error
             return litellm_response or _fake_response("LiteLLM default")
-        if provider in ("opencode_free_1", "opencode_free_2", "opencode_free_3",
-                        "opencode_go", "openrouter", "groq", "mistral", "google_ai_studio"):
+        if provider in (
+            "opencode_free_1",
+            "opencode_free_2",
+            "opencode_free_3",
+            "opencode_go",
+            "openrouter",
+            "groq",
+            "mistral",
+            "google_ai_studio",
+        ):
             if opencode_error:
                 raise opencode_error
             return opencode_response or _fake_response("opencode default")
