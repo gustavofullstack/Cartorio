@@ -482,7 +482,6 @@ async def outbox_dispatch(
     outbox_id_raw = body.get("outbox_id") or body.get("record", {}).get("id")
     queue_raw = body.get("queue") or body.get("record", {}).get("queue")
     payload = body.get("payload") or body.get("record", {}).get("payload") or {}
-    _attempts_in = int(body.get("attempts") or 0)  # placeholder p/ future attempt tracking
 
     if not outbox_id_raw or not queue_raw:
         raise HTTPException(

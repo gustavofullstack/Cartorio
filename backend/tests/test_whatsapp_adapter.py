@@ -15,18 +15,16 @@ from __future__ import annotations
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
 import pytest
 
 from app.api.v1.whatsapp import (
     ALLOWED_COMMANDS,
-    EVOLUTION_BASE_URL,
     MAX_RESPONSE_LEN,
     WhatsAppAdapter,
     get_adapter,
     parse_evolution_payload,
 )
-from app.services.chat_pipeline import Channel, InboundMessage, OutboundMessage
+from app.services.chat_pipeline import Channel, OutboundMessage
 
 
 def _make_response(status_code: int = 200, json_data: dict | None = None) -> MagicMock:

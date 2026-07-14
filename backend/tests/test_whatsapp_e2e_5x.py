@@ -12,7 +12,6 @@ Mocka Evolution API via httpx mock para nao depender de servico externo.
 
 from __future__ import annotations
 
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

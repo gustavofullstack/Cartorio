@@ -1818,9 +1818,8 @@ async def telegram_webhook(
     db: Session = Depends(get_db),
 ) -> dict:
     bump_metric("requests_total")
-    body_bytes = await request.body()
     update = await request.json()
-    _verify_telegram_secret(body_bytes, x_telegram_bot_api_secret_token)
+    _verify_telegram_secret(x_telegram_bot_api_secret_token)
     message = update.get("message", {})
     callback = update.get("callback_query", {})
     my_chat_member = update.get("my_chat_member", {})
@@ -2242,7 +2241,7 @@ async def telegram_set_commands() -> dict:
         return {"ok": False, "error": str(exc)}
 
 
-def _verify_telegram_secret(update_body: bytes, secret_token_header: str | None) -> None:
+def _verify_telegram_secret(secret_token_header: str | None) -> None:
     if not TELEGRAM_WEBHOOK_SECRET:
         return
     if not secret_token_header:

@@ -396,7 +396,7 @@ async def whatsapp_webhook(
       5. SEMPRE retorna 200 (evita retry infinito Evolution)
     """
     bump_metric("requests_total")
-    raw_body = await request.body() if False else json.dumps(payload).encode("utf-8")
+    raw_body = json.dumps(payload).encode("utf-8")
 
     # 1. HMAC validation
     signature = request.headers.get("X-Hub-Signature-256") or request.headers.get(

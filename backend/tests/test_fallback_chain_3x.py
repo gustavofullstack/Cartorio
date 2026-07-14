@@ -11,7 +11,7 @@ Patch no nivel de `_call_provider` para diferenciar providers (ambos usam
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 

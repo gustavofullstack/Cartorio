@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-from typing import Any, Iterator
+from typing import Iterator
 
 import pytest
 from fastapi.testclient import TestClient

@@ -720,8 +720,6 @@ async def process_debounced(
             return
         textos = [m["text"] for m in queue if m.get("text")]
         msg_ids = [m["msg_id"] for m in queue if m.get("msg_id")]
-        # update_id captured for tracing — see _get_audit_request_id helper if needed
-        _update_id_for_trace = queue[-1].get("update_id", "") if queue else ""
 
         # 2. Resume burst
         text_to_process = resume_burst(textos)
