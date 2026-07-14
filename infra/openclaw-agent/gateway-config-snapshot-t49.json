@@ -4,10 +4,18 @@
   "_rollback": "docker exec cartorio_openclaw-gateway.1.vpibdx7ecjnaz81mz7z1ou739 cp /home/node/.openclaw/openclaw.json.bak-pre-1m-think-20260625-054736 /home/node/.openclaw/openclaw.json",
   "_backup_inside_container": "/home/node/.openclaw/openclaw.json.bak-pre-1m-think-20260625-054736 (md5=28ea7f3b823b7458b90cd010d970cce3, 3824 bytes, pre-T5.0)",
   "_post_t50_md5": "bc46b2c2bd03ff123a0e20a19b0584aa (4931 bytes, +1107)",
+  "_t51_lobechat_fix_2026-07-14": "URGENT FIX LobeChat integration: (a) CORS preflight 405 sem ACAO para Origin https://cartorio-lobechat.dfgdxq.easypanel.host, (b) upstream provider 408 timeout em 2.37s para os 3 modelos deepseek-v4-flash / anthropic-claude-sonnet-4.5 / qwen3.7-max. Fix no snapshot: gateway.controlUi.allowedOrigins substituido wildcard por lista explicita (lobechat + dev); models.providers.openai.timeoutSeconds adicionado 30s. Snapshot NAO tem efeito em prod sem aplicacao na VPS - ver infra/scripts/openclaw_fix_lobechat_cors_timeout.sh. Modified by Gustavo Almeida.",
   "gateway": {
     "controlUi": {
       "allowedOrigins": [
-        "*"
+        "https://cartorio-lobechat.dfgdxq.easypanel.host",
+        "https://lobechat.dfgdxq.easypanel.host",
+        "http://localhost:3210",
+        "http://127.0.0.1:3210",
+        "https://agent.2notasudi.com.br",
+        "https://admin.2notasudi.com.br",
+        "https://app.2notasudi.com.br",
+        "tauri://localhost"
       ]
     },
     "trustedProxies": [
@@ -51,6 +59,8 @@
         "baseUrl": "https://opencode.ai/zen/go/v1",
         "apiKey": "sk-xcRwExjQjqmlc5swP8umqK2YqWUfVt23H3Xl6dpd9TqEyi16ssJXzHeUFGNNIfsJ",
         "api": "openai-completions",
+        "timeoutSeconds": 30,
+        "_t51_comment": "timeoutSeconds T5.1 2026-07-14: opencode-go upstream respondeu 200 em 0.57s no probe (curl -m 10), 408 vem do default 2-3s do OpenClaw. Bump 2 -> 30s. ATENCAO: OpenClaw docs usam SEGUNDOS, nao ms.",
         "models": [
           {
             "id": "deepseek-v4-flash",
@@ -90,7 +100,8 @@
   },
   "meta": {
     "lastTouchedVersion": "2026.6.10",
-    "lastTouchedAt": "2026-06-25T05:48:00.000Z"
+    "lastTouchedAt": "2026-07-14T00:00:00.000Z",
+    "lastTouchBy": "URGENT LobeChat fix T5.1 — Modified by Gustavo Almeida"
   },
   "_t50_changes_2026-06-25": {
     "_comment": "Mudancas aplicadas via openclaw config patch --file /tmp/openclaw-t50-patch.json5 em 2026-06-25 02:48 BRT. 13 operations validadas contra schema + resolvability. Backup pre-T5.0: /home/node/.openclaw/openclaw.json.bak-pre-1m-think-20260625-054736 (md5=28ea7f3b823b7458b90cd010d970cce3).",
@@ -149,5 +160,30 @@
       "validation": "JSON OK + curl /health {ok:true,status:live} + grep confirma contextWindow 1048576",
       "_t50_rework_note": "T5.0 (2026-06-25) SUBSTITUIU tentativa T4.9: agents.defaults.thinking era HALLUCINATED campo (NAO existe no schema). T5.0 usa thinkingDefault='adaptive' (campo VALIDO no schema enum). Model default T5.0 = openai/qwen3.7-max (1M ctx, reasoning)."
     }
+  },
+  "_t51_changes_2026-07-14": {
+    "_comment": "URGENT FIX LobeChat integration. Diagnostico live (curl da maquina local em 2026-07-14): OPTIONS preflight /v1/chat/completions retorna 405 com ACAO vazio (sem CORS handler). POST /v1/chat/completions com Bearer @Techno832466 retorna 408 em 2.37s com body 'upstream provider timeout'. Probe direto no upstream https://opencode.ai/zen/go/v1/models retorna 200 em 0.57s com a sk-j03KVdV6r... = upstream OK, problema e default timeout do OpenClaw (~2.5s).",
+    "1_cors_origins": {
+      "issue": "OPTIONS preflight nao retorna Access-Control-Allow-Origin para Origin: https://cartorio-lobechat.dfgdxq.easypanel.host. Sintoma: loke-chat browser aborta com 'CORS preflight channel didn't succeed' antes de chegar no POST. CAUSA: gateway.controlUi.allowedOrigins = ['*'] (wildcard para debug) mas para HTTP API endpoints, comportamento do OpenClaw 0.x/2026.6.10 e restritivo — nao emite ACAO/CORS headers em OPTIONS. Fix no snapshot: allowedOrigins explicito com origins do projeto.",
+      "fix_applied": "gateway.controlUi.allowedOrigins: ['*'] -> array com 8 origins explicitas (lobechat.dfgdxq + localhost:3210 + agent/admin/app.2notasudi + tauri://localhost).",
+      "validation_pending_on_vps": "docker exec openclaw config get gateway.controlUi.allowedOrigins deve retornar 8 entries (nao '*'); curl -X OPTIONS -H 'Origin: https://cartorio-lobechat.dfgdxq.easypanel.host' -H 'Access-Control-Request-Method: POST' https://agent.2notasudi.com.br/v1/chat/completions deve retornar ACAO com a origin do request.",
+      "rollback": "git checkout HEAD~1 -- infra/openclaw-agent/gateway-config-snapshot-t49.json (volta wildcard). Em prod, se o container ja foi patched, fazer cp /home/node/.openclaw/openclaw.json.bak-pre-t51-* /home/node/.openclaw/openclaw.json."
+    },
+    "2_upstream_timeout": {
+      "issue": "POST /v1/chat/completions retorna 408 upstream provider timeout em ~2.37s para TODOS os 3 models (deepseek-v4-flash, anthropic-claude-sonnet-4.5, qwen3.7-max). Opencode-go backend respondeu 200 OK em 0.57s no probe direto — upstream nao e o gargalo. OpenClaw aplica um timeout default muito curto em transport.upstream / models.providers.*.",
+      "fix_applied": "models.providers.openai.timeoutSeconds: (ausente/default ~2) -> 30 (30 segundos, nao 30000 ms — campo usa segundos em OpenClaw docs). Doc source: docs.openclaw.ai/gateway/configuration 'models.providers.<id>.timeoutSeconds'.",
+      "validation_pending_on_vps": "openclaw config get models.providers.openai.timeoutSeconds -> 30; curl -X POST https://agent.2notasudi.com.br/v1/chat/completions -H 'Authorization: Bearer @Techno832466' -d '{\"model\":\"openclaw\",\"messages\":[{\"role\":\"user\",\"content\":\"oi\"}],\"max_tokens\":20}' nao retorna 408; resposta 200 com id=chatcmpl-xxx.",
+      "rollback": "remover campo timeoutSeconds (deixa OpenClaw usar default)"
+    },
+    "3_alternative_paths_to_explore_if_snapshot_keys_reject": {
+      "_comment": "Se openclaw config validate reclamar dos campos acima (schema estrito), os caminhos alternativos abaixo devem funcionar. Pedro/Pietra/Gustavo podem testar em SSH cartorio.",
+      "alt_gateway_http_cors": "gateway.http.cors.allowedOrigins = [mesmo array] — NAO documentado oficialmente mas pode existir. Validar com: openclaw config validate + openclaw config schema | grep -i cors.",
+      "alt_agent_upstream_timeout": "agents.defaults.transportTimeoutSeconds ou agents.defaults.requestTimeoutSeconds ou agents.defaults.upstreamTimeoutMs — testar cada um se timeoutSeconds em providers nao for reconhecido.",
+      "alt_via_traefik": "Adicionar Traefik middleware CORS no servico docker cartorio_openclaw-gateway: --label-add 'traefik.http.middlewares.cors-lobechat.headers.accesscontrolalloworigin=https://cartorio-lobechat.dfgdxq.easypanel.host,http://localhost:3210' --label-add 'traefik.http.routers.openclaw-cors.middlewares=cors-lobechat@docker'. Bypass completo do OpenClaw — funciona mesmo se OpenClaw nao tiver knob CORS.",
+      "alt_via_env_var": "OPENCLAW_HTTP_CORS_ALLOWED_ORIGINS=https://cartorio-lobechat.dfgdxq.easypanel.host,http://localhost:3210 OPENCLAW_UPSTREAM_TIMEOUT_SECONDS=30 — Testar como env override (OpenClaw le esses via dotenv). Adicionar via docker service update --env-add."
+    },
+    "4_deploy_script_path": "infra/scripts/openclaw_fix_lobechat_cors_timeout.sh (gerado 2026-07-14, idempotente, faz patch + force-restart do servico cartorio_openclaw-gateway).",
+    "5_validated": false,
+    "6_follow_up": "Apos deploy em VPS, rodar validate cycle: (i) curl -X OPTIONS com Origin lobechat, (ii) curl POST com Bearer, (iii) curl /v1/models para confirmar 3 models ainda respondem, (iv) tail -f logs do container cartorio_openclaw-gateway para checar 'config patched' e novos requests sem 408."
   }
 }
