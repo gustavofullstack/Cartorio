@@ -2847,3 +2847,24 @@ Modified by Gustavo Almeida
 - **Description:** Execution of squad task sequence index 6 for Governance & Agility
 - **Status:** SUCCESS (Gates validated) ✅
 Modified by Gustavo Almeida
+
+## 2026-07-14 02:45 — SPRINT 8 COVERAGE PUSH: 94.09% → 95.04%
+- **Squad:** Core API & DB Hardening
+- **Agent:** `cartorio-dev`
+- **Description:** Sprint 8 — backend coverage push.
+  Identified bottom 5 modules by missing statements
+  (`app/main.py` 25 miss, `app/api/v1/lgpd_direitos_v2.py` 20 miss,
+  `app/services/notificacao.py` 15 miss, `app/api/v1/integrations.py`
+  10 miss, `app/api/v1/ws/atendimentos.py` 7 miss). Added focused
+  tests (happy + 2-3 edges each) in `tests/test_sprint8_coverage.py`
+  (48 tests, all green). Bonus: `app/services/protocolo.py`,
+  `app/services/backup_v2.py` now 100%; `app/api/deps.py` 97.5%;
+  `app/main.py` 83% → 92%. Total +0.95pp, gate `--cov-fail-under=95`
+  passed.
+- **Constraints honoured:** No real LLM calls (conftest
+  `LLM_DEFAULT_PROVIDER='opencode_go'` override stands); fakeredis
+  autouse fixture in conftest; `app/services/pii.py` UNTOUCHED (no
+  semantic change proposed — cartorio-lgpd sign-off not needed for
+  coverage tests on third-party code paths).
+- **Status:** SUCCESS (qa gate green) ✅
+Modified by Gustavo Almeida
