@@ -290,3 +290,175 @@ def test_endpoint_metrics_json_inclui_contagens_db(client) -> None:
     assert body["protocolos_total"].get("aberto") == 1
     assert body["protocolos_total"].get("concluido") == 1
     assert body["audit_chain_length"] >= 0  # pode ter entries de session_scope
+
+
+# ============================================================================
+# TestMetricsHelpersEdge — FIX 2 (R8 YOLO): cobre linhas 88, 100, 139, 150-151, 163-164, 182-188, 196-197, 206-207, 219-221, 247, 253, 324
+# ============================================================================
+
+
+class TestMetricsHelpersEdge:
+    def test_set_gauge_migrates_scalar_to_dict(self) -> None:
+        """set_gauge com labels: se gauge eh scalar, migra pra dict preservando o valor."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.set_gauge("test_gauge", 42.0)
+        # Agora adicionar com labels -> deve migrar scalar para dict
+        s.set_gauge("test_gauge", 99.0, labels={"queue": "evolution"})
+        assert isinstance(s.gauges["test_gauge"], dict)
+        # Valor antigo (sem labels) foi preservado como key=""
+        assert s.gauges["test_gauge"].get("") == 42.0
+        # Novo valor com labels
+        assert s.gauges["test_gauge"].get("queue=evolution") == 99.0
+
+    def test_make_metric_or_skip_test_invalid_type_raises_valueerror(self) -> None:
+        """_make_metric_or_skip_test com metric_type invalido lanca ValueError."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        with pytest.raises(ValueError) as exc_info:
+            s._make_metric_or_skip_test("foo", "invalid_type")
+        assert "metric_type invalido" in str(exc_info.value)
+        assert "invalid_type" in str(exc_info.value)
+
+    def test_audit_dead_mans_status_unknown_defaults_to_critical(self) -> None:
+        """set_audit_dead_mans_status: status_code fora de {0,1,2} vira 2 (critical)."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        # 99 eh desconhecido -> clamp para 2 (critical, fail-safe)
+        s.set_audit_dead_mans_status(99)
+        assert s.gauges["audit_dead_mans_status"] == 2.0
+        # -1 tambem
+        s.set_audit_dead_mans_status(-1)
+        assert s.gauges["audit_dead_mans_status"] == 2.0
+        # 0 eh healthy
+        s.set_audit_dead_mans_status(0)
+        assert s.gauges["audit_dead_mans_status"] == 0.0
+        # 1 eh warning
+        s.set_audit_dead_mans_status(1)
+        assert s.gauges["audit_dead_mans_status"] == 1.0
+
+    def test_inc_n8n_wf_execution_increments(self) -> None:
+        """inc_n8n_wf_execution incrementa counter n8n_wf_executions_total{wf_name,status}."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.inc_n8n_wf_execution("consulta-emolumento", "success")
+        s.inc_n8n_wf_execution("consulta-emolumento", "success")
+        s.inc_n8n_wf_execution("consulta-emolumento", "error")
+        key_ok = "status=success|wf_name=consulta-emolumento"
+        key_err = "status=error|wf_name=consulta-emolumento"
+        assert s.counters["n8n_wf_executions_total"][key_ok] == 2
+        assert s.counters["n8n_wf_executions_total"][key_err] == 1
+
+    def test_observe_n8n_wf_duration_records(self) -> None:
+        """observe_n8n_wf_duration registra histograma n8n_wf_duration_seconds{wf_name}."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.observe_n8n_wf_duration("consulta-emolumento", 0.5)
+        s.observe_n8n_wf_duration("consulta-emolumento", 1.2)
+        hists = s.histograms["n8n_wf_duration_seconds"]
+        key = "wf_name=consulta-emolumento"
+        assert len(hists[key]) == 2
+        assert sum(hists[key]) == pytest.approx(1.7)
+
+    def test_observe_agent_tokens_records_in_out(self) -> None:
+        """observe_agent_tokens registra histograms agent_tokens_in_total e _out_total."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.observe_agent_tokens(tokens_in=100, tokens_out=50, think_tokens=10)
+        assert len(s.histograms["agent_tokens_in_total"][""]) == 1
+        assert len(s.histograms["agent_tokens_out_total"][""]) == 1
+        assert len(s.histograms["agent_think_tokens_total"][""]) == 1
+        assert s.histograms["agent_tokens_in_total"][""][0] == 100.0
+        assert s.histograms["agent_tokens_out_total"][""][0] == 50.0
+        assert s.histograms["agent_think_tokens_total"][""][0] == 10.0
+
+    def test_observe_agent_tokens_no_think(self) -> None:
+        """observe_agent_tokens sem think_tokens NAO cria agent_think_tokens_total."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.observe_agent_tokens(tokens_in=5, tokens_out=3)
+        assert "agent_tokens_in_total" in s.histograms
+        assert "agent_tokens_out_total" in s.histograms
+        # Sem think -> NAO cria
+        assert "agent_think_tokens_total" not in s.histograms
+
+    def test_observe_agent_latency_records_histogram(self) -> None:
+        """observe_agent_latency registra agent_latency_seconds."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.observe_agent_latency(0.42)
+        assert s.histograms["agent_latency_seconds"][""] == [0.42]
+
+    def test_inc_agent_requests_total_increments(self) -> None:
+        """inc_agent_requests_total incrementa counter agent_requests_total{provider,status}."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.inc_agent_requests_total("opencode_go", "success")
+        s.inc_agent_requests_total("opencode_go", "success")
+        s.inc_agent_requests_total("openclaw", "rate_limited")
+        key_a = "provider=opencode_go|status=success"
+        key_b = "provider=openclaw|status=rate_limited"
+        assert s.counters["agent_requests_total"][key_a] == 2
+        assert s.counters["agent_requests_total"][key_b] == 1
+
+    def test_set_n8n_wf_error_rate_clamps(self) -> None:
+        """set_n8n_wf_error_rate: valores fora de [0,1] sao clamped."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.set_n8n_wf_error_rate("foo", 1.5)  # > 1.0 -> clamp 1.0
+        assert s.gauges["n8n_wf_error_rate"]["wf_name=foo"] == 1.0
+        s.set_n8n_wf_error_rate("bar", -0.5)  # < 0 -> clamp 0.0
+        assert s.gauges["n8n_wf_error_rate"]["wf_name=bar"] == 0.0
+        s.set_n8n_wf_error_rate("baz", 0.25)
+        assert s.gauges["n8n_wf_error_rate"]["wf_name=baz"] == 0.25
+
+    def test_set_backup_last_success_timestamp_none_returns_zero(self) -> None:
+        """set_backup_last_success_timestamp(None) -> gauge=0 (cold-start fail-safe)."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.set_backup_last_success_timestamp(None)
+        assert s.gauges["backup_last_success_timestamp_seconds"] == 0.0
+        # valor numerico valido eh preservado
+        s.set_backup_last_success_timestamp(1700000000.5)
+        assert s.gauges["backup_last_success_timestamp_seconds"] == 1700000000.5
+
+    def test_labels_key_and_parse_roundtrip(self) -> None:
+        """_labels_key e _parse_labels_key sao inversos (modulo dict equality)."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        labels = {"b": "2", "a": "1"}
+        key = s._labels_key(labels)
+        # Ordem sorted: a=1 vem antes de b=2
+        assert key == "a=1|b=2"
+        parsed = s._parse_labels_key(key)
+        assert parsed == labels
+
+    def test_labels_render_empty(self) -> None:
+        """_labels_render com labels=None retorna string vazia."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        assert s._labels_render(None) == ""
+        assert s._labels_render({}) == ""
+
+    def test_render_prometheus_gauge_dict_with_labels(self) -> None:
+        """render_prometheus expoe gauges com labels em formato key=\"value\"."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.set_gauge("my_gauge", 12.5, labels={"queue": "evolution"})
+        output = s.render_prometheus()
+        assert "# TYPE my_gauge gauge" in output
+        assert 'my_gauge{queue="evolution"} 12.500000' in output

@@ -456,3 +456,100 @@ def test_tracing_stack_yml_exists() -> None:
     assert path.exists()
     content = path.read_text()
     assert "jaeger" in content.lower() or "otel" in content.lower()
+
+# ============================================================================
+# TestBotMetricsEdgeCases — FIX 2 (R8 YOLO): cobre linhas 67, 86-87, 149-151, 153, 157, 191
+# ============================================================================
+
+
+class TestBotMetricsEdgeCases:
+    def test_inc_bot_pii_redacted_skips_when_tipo_none(self) -> None:
+        """inc_bot_pii_redacted com tipo_scrub='none' nao emite counter."""
+        from app.services.bot_metrics import inc_bot_pii_redacted, store
+
+        store.counters.pop("bot_pii_redacted_total", None)
+        inc_bot_pii_redacted("whatsapp", "none")
+        # Counter NAO deve ter sido criado para 'none' (early return)
+        assert "bot_pii_redacted_total" not in store.counters or \
+               len(store.counters.get("bot_pii_redacted_total", {})) == 0
+
+    def test_inc_bot_fallback_hop_emits_counter(self) -> None:
+        """inc_bot_fallback_hop incrementa counter {channel, from, to}."""
+        from app.services.bot_metrics import inc_bot_fallback_hop, store
+
+        store.counters.pop("bot_fallback_chain_hops_total", None)
+        inc_bot_fallback_hop("whatsapp", "openai", "groq")
+        inc_bot_fallback_hop("whatsapp", "groq", "gemini")
+
+        counter = store.counters.get("bot_fallback_chain_hops_total", {})
+        # Dois labels distintos -> dois buckets
+        assert len(counter) == 2
+        # Cada um foi incrementado exatamente 1x
+        assert all(v == 1 for v in counter.values())
+
+    def test_bot_stage_timer_exception_path_marks_failed(self) -> None:
+        """BotStageTimer com excecao dentro do bloco: status=failed counter incrementado."""
+        from app.services.bot_metrics import BotStageTimer, store
+
+        store.counters.pop("bot_requests_total", None)
+        store.histograms.pop("bot_request_duration_seconds", None)
+        with pytest.raises(RuntimeError):
+            with BotStageTimer(channel="whatsapp", stage="total"):
+                raise RuntimeError("boom")
+        failed = store.counters.get("bot_requests_total", {})
+        # Deve ter incrementado status=failed
+        assert any("status=failed" in k for k in failed)
+        # duration_seconds tb foi registrado
+        hist = store.histograms.get("bot_request_duration_seconds", {})
+        assert len(hist) >= 1
+
+    def test_bot_stage_timer_success_emits_ok(self) -> None:
+        """BotStageTimer sem excecao + stage='total': status=ok counter incrementado."""
+        from app.services.bot_metrics import BotStageTimer, store
+
+        store.counters.pop("bot_requests_total", None)
+        store.histograms.pop("bot_request_duration_seconds", None)
+        with BotStageTimer(channel="telegram", stage="total"):
+            pass
+        ok = store.counters.get("bot_requests_total", {})
+        # Deve ter incrementado status=ok
+        assert any("status=ok" in k for k in ok)
+
+    def test_bot_stage_timer_mark_failed(self) -> None:
+        """BotStageTimer.mark_failed() antes do __exit__ ainda nao incrementa
+        (incremento so acontece no __exit__ quando exc_type is not None)."""
+        from app.services.bot_metrics import BotStageTimer, store
+
+        store.counters.pop("bot_requests_total", None)
+        store.histograms.pop("bot_request_duration_seconds", None)
+        timer = BotStageTimer(channel="whatsapp", stage="llm", auto_inc_request=False)
+        timer.mark_failed()
+        assert timer._failed is True
+        # Sem chamar __enter__/__exit__, counter NAO mudou
+        assert "bot_requests_total" not in store.counters or \
+               len(store.counters.get("bot_requests_total", {})) == 0
+
+    def test_scrub_with_metric_falls_back_to_none_when_findings_empty(self, monkeypatch) -> None:
+        """scrub_with_metric: se findings vazio mas redaction_count>0, conta como 'none'."""
+        from app.services import bot_metrics
+        from app.services.pii import ScrubResult
+
+        # Stub do pii.scrub para retornar findings vazio mas count>0
+        stub = ScrubResult(text="x", redaction_count=3, findings={})
+
+        # pii eh import lazy dentro de scrub_with_metric -> patch no app.services.pii
+        from app.services import pii as _pii
+        monkeypatch.setattr(_pii, "scrub", lambda text: stub)
+
+        # Patch inc_bot_pii_redacted para observar chamadas (early-return em 'none')
+        called_with: list = []
+        monkeypatch.setattr(
+            bot_metrics, "inc_bot_pii_redacted",
+            lambda channel, tipo: called_with.append((channel, tipo)),
+        )
+
+        text, total = bot_metrics.scrub_with_metric("test", channel="whatsapp")
+        assert total == 3
+        # Garantia: scrub_with_metric chama inc_bot_pii_redacted(channel, "none")
+        # quando findings=={} mas redaction_count>0 (caso raro).
+        assert ("whatsapp", "none") in called_with
