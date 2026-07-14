@@ -430,12 +430,14 @@ async def _enqueue_message(
     try:
         raw = await bus.client.get(f"tg:queue:{key}")
         queue = json.loads(raw) if raw else []
-        queue.append({
-            "text": text or "",
-            "msg_id": msg_id or 0,
-            "ts": time.time(),
-            "attachments": attachments or [],
-        })
+        queue.append(
+            {
+                "text": text or "",
+                "msg_id": msg_id or 0,
+                "ts": time.time(),
+                "attachments": attachments or [],
+            }
+        )
         await bus.client.set(f"tg:queue:{key}", json.dumps(queue), ex=MESSAGE_QUEUE_TTL)
         return len(queue)
     except Exception:
@@ -1406,7 +1408,9 @@ async def _download_attachments(chat_id: int, attachments: list[dict]) -> None:
                 f.write(r2.content)
             att["local_path"] = local_path
             att["telegram_file_path"] = file_path
-            logger.info("TG media saved chat=%s path=%s size=%d", chat_id, local_path, len(r2.content))
+            logger.info(
+                "TG media saved chat=%s path=%s size=%d", chat_id, local_path, len(r2.content)
+            )
         except Exception as exc:
             logger.warning("TG media download error file_id=%s: %s", file_id, exc)
 
@@ -1420,7 +1424,11 @@ async def _download_attachments(chat_id: int, attachments: list[dict]) -> None:
 
 
 async def _call_cartorio_agent(
-    text: str, bus: Any, key: int | str, *, chat_id: int | None = None,
+    text: str,
+    bus: Any,
+    key: int | str,
+    *,
+    chat_id: int | None = None,
     attachments: list[dict] | None = None,
 ) -> tuple[str, list | None]:
     """Agent AI Cartorio (MiniMax + tools) — NAO e so FSM de botoes.
@@ -1441,15 +1449,22 @@ async def _call_cartorio_agent(
         history = await _hist_get(bus, key)
         await _hist_append(bus, key, "user", text)
         # WS: agent.start
-        await _publish_agent_event(bus, "agent.start", {
-            "chat_id": chat_id,
-            "key": str(key),
-            "text_preview": (text or "")[:120],
-            "attachments": len(attachments or []),
-            "history_len": len(history),
-        })
+        await _publish_agent_event(
+            bus,
+            "agent.start",
+            {
+                "chat_id": chat_id,
+                "key": str(key),
+                "text_preview": (text or "")[:120],
+                "attachments": len(attachments or []),
+                "history_len": len(history),
+            },
+        )
         reply = await run_cartorio_agent(
-            text, history=history, attachments=attachments, chat_id=chat_id,
+            text,
+            history=history,
+            attachments=attachments,
+            chat_id=chat_id,
         )
         bump_metric("agent_replies")
         logger.info(
@@ -1461,15 +1476,19 @@ async def _call_cartorio_agent(
             len(history),
         )
         # WS: agent.reply
-        await _publish_agent_event(bus, "agent.reply", {
-            "chat_id": chat_id,
-            "key": str(key),
-            "provider": reply.provider,
-            "action": reply.action,
-            "tools": reply.tools_used,
-            "text_preview": (reply.text or "")[:200],
-            "extra_messages": len(getattr(reply, "extra_messages", None) or []),
-        })
+        await _publish_agent_event(
+            bus,
+            "agent.reply",
+            {
+                "chat_id": chat_id,
+                "key": str(key),
+                "provider": reply.provider,
+                "action": reply.action,
+                "tools": reply.tools_used,
+                "text_preview": (reply.text or "")[:200],
+                "extra_messages": len(getattr(reply, "extra_messages", None) or []),
+            },
+        )
         # Aplica acao estruturada do agent no estado da conversa
         # menu removido 2026-07-12; apenas agendar/protocolo/humano
         if reply.action == "agendar":
@@ -1614,7 +1633,7 @@ async def _process_telegram_debounce(chat_id: int) -> None:
         # FIX 2026-07-12: coletar anexos de todas as mensagens do debounce
         attachments: list[dict] = []
         for m in queue:
-            for att in (m.get("attachments") or []):
+            for att in m.get("attachments") or []:
                 attachments.append(att)
         # Perfil do cliente (Redis) + extracao de campos informados no texto
         fields = _extract_client_fields(text_to_process)
@@ -1929,8 +1948,12 @@ async def telegram_webhook(
     # Download paralelo de cada attachment via getFile
     if attachments and chat_id:
         await _download_attachments(int(chat_id), attachments)
-        logger.info("TG media received chat=%s n=%d types=%s", chat_id, len(attachments),
-                    [a["type"] for a in attachments])
+        logger.info(
+            "TG media received chat=%s n=%d types=%s",
+            chat_id,
+            len(attachments),
+            [a["type"] for a in attachments],
+        )
         # Se veio so midia sem caption, gera um texto default
         if not text:
             text = f"[cliente enviou {len(attachments)} arquivo(s) sem legenda]"

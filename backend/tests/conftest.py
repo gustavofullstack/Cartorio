@@ -45,10 +45,14 @@ _w_mod.type = _builtins.type
 # Mock global para subprocess.run (impede rsync de travar nos testes com timeout de 60s)
 _orig_run = subprocess.run
 
+
 def _mock_run(args, *args_list, **kwargs):
     if isinstance(args, list) and "rsync" in args:
-        return subprocess.CompletedProcess(args=args, returncode=0, stdout="mocked rsync output", stderr="")
+        return subprocess.CompletedProcess(
+            args=args, returncode=0, stdout="mocked rsync output", stderr=""
+        )
     return _orig_run(args, *args_list, **kwargs)
+
 
 subprocess.run = _mock_run
 
@@ -83,6 +87,8 @@ os.environ["LLM_DEFAULT_PROVIDER"] = "opencode_go"
 os.environ["LLM_FALLBACK_CHAIN"] = "opencode_go,openclaw"
 os.environ["OPENCODE_GO_MODEL"] = "minimax-m3"
 os.environ["JWT_SECRET"] = "a" * 64
+os.environ["OPENCODE_GO_API_KEY"] = "sk-testkey"
+os.environ["OPENCLAW_API_KEY"] = "testkey1234"
 
 from app.config import get_settings, settings  # noqa: E402
 
@@ -311,7 +317,14 @@ def _mock_redis_from_url():
         def __getattr__(self, name):
             return MagicMock()
 
-    with patch("redis.from_url", return_value=MockRedis()):
+    class MockAsyncRedis(MagicMock):
+        async def ping(self):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+        async def aclose(self):
+            pass
+
+    with patch("redis.from_url", return_value=MockRedis()), \
+         patch("redis.asyncio.from_url", return_value=MockAsyncRedis()):
         yield
 
 

@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-BACKEND = Path("/Users/gustavoalmeida/projetos/Cartorio/backend")
+BACKEND = Path(__file__).resolve().parent.parent
 
 
 def test_alembic_ini_existe() -> None:
