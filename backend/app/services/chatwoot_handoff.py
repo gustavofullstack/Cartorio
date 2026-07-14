@@ -141,8 +141,12 @@ import os  # noqa: E402
 
 import httpx  # noqa: E402
 
-CHATWOOT_PUBLIC_URL = os.environ.get("CHATWOOT_PUBLIC_URL", "https://chatwoot.2notasudi.com.br").rstrip("/")
-CHATWOOT_API_BASE_URL = os.environ.get("CHATWOOT_BASE_URL", "http://cartorio_chatwoot:3000").rstrip("/")
+CHATWOOT_PUBLIC_URL = os.environ.get(
+    "CHATWOOT_PUBLIC_URL", "https://chatwoot.2notasudi.com.br"
+).rstrip("/")
+CHATWOOT_API_BASE_URL = os.environ.get("CHATWOOT_BASE_URL", "http://cartorio_chatwoot:3000").rstrip(
+    "/"
+)
 CHATWOOT_API_KEY = os.environ.get("CHATWOOT_API_KEY", "")
 CHATWOOT_ACCOUNT_ID = os.environ.get("CHATWOOT_ACCOUNT_ID", "")
 CHATWOOT_INBOX_ID = os.environ.get("CHATWOOT_INBOX_ID", "")
@@ -160,7 +164,10 @@ async def handoff_to_chatwoot(
     Retorna (ok, info). Falha silenciosa se Chatwoot offline.
     """
     if not CHATWOOT_API_KEY or not CHATWOOT_ACCOUNT_ID or not CHATWOOT_INBOX_ID:
-        return False, {"error": "chatwoot_not_configured", "api_key_present": bool(CHATWOOT_API_KEY)}
+        return False, {
+            "error": "chatwoot_not_configured",
+            "api_key_present": bool(CHATWOOT_API_KEY),
+        }
 
     contact_id = await _ensure_contact(chat_id)
     if not contact_id:
@@ -237,7 +244,9 @@ async def _create_conversation(contact_id: str) -> str | None:
         return None
 
 
-def _format_body(text: str, attachments: list[dict[str, Any]] | None, history: list[str] | None) -> str:
+def _format_body(
+    text: str, attachments: list[dict[str, Any]] | None, history: list[str] | None
+) -> str:
     lines = ["[HITL Telegram - Agent AI Cartorio]", ""]
     lines.append("Mensagem atual:")
     lines.append(text or "(vazio)")
