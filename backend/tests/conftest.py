@@ -317,7 +317,14 @@ def _mock_redis_from_url():
         def __getattr__(self, name):
             return MagicMock()
 
-    with patch("redis.from_url", return_value=MockRedis()):
+    class MockAsyncRedis(MagicMock):
+        async def ping(self):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+        async def aclose(self):
+            pass
+
+    with patch("redis.from_url", return_value=MockRedis()), \
+         patch("redis.asyncio.from_url", return_value=MockAsyncRedis()):
         yield
 
 
