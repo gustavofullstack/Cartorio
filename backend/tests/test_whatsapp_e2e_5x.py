@@ -83,7 +83,9 @@ def client(test_engine, test_session_factory):
             app.dependency_overrides.clear()
 
 
-def _evolution_payload(message_id: str, text: str, remote_jid: str = "5511999999999@s.whatsapp.net") -> dict:
+def _evolution_payload(
+    message_id: str, text: str, remote_jid: str = "5511999999999@s.whatsapp.net"
+) -> dict:
     """Helper para construir payload Evolution API."""
     return {
         "event": "messages.upsert",
@@ -139,9 +141,7 @@ class TestE2EWhatsAppOiToMenu:
                 new=AsyncMock(return_value=None),
             ) as mock_pipeline,
         ):
-            resp = client.post(
-                "/api/v1/whatsapp/webhook", json=payload
-            )
+            resp = client.post("/api/v1/whatsapp/webhook", json=payload)
 
         assert resp.status_code == 200
         data = resp.json()

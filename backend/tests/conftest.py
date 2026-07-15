@@ -45,10 +45,14 @@ _w_mod.type = _builtins.type
 # Mock global para subprocess.run (impede rsync de travar nos testes com timeout de 60s)
 _orig_run = subprocess.run
 
+
 def _mock_run(args, *args_list, **kwargs):
     if isinstance(args, list) and "rsync" in args:
-        return subprocess.CompletedProcess(args=args, returncode=0, stdout="mocked rsync output", stderr="")
+        return subprocess.CompletedProcess(
+            args=args, returncode=0, stdout="mocked rsync output", stderr=""
+        )
     return _orig_run(args, *args_list, **kwargs)
+
 
 subprocess.run = _mock_run
 
