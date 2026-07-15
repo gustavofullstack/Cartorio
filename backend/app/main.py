@@ -39,6 +39,7 @@ from app.middleware.request_context import RequestContextMiddleware  # noqa: E40
 from app.middleware.idempotency import IdempotencyMiddleware  # noqa: E402
 from app.middleware.slow_log import SlowLogMiddleware  # noqa: E402
 from app.middleware.openapi_validator import install_openapi_validation_middleware  # noqa: E402
+from app.middleware.openapi_enhancer import install_openapi_enhancer  # noqa: E402
 from app.middleware.version_header import VersionHeaderMiddleware, install_version_endpoint  # noqa: E402
 from app.middleware.problem_details import install_problem_handlers  # noqa: E402
 from app.services.idempotency_store import RedisIdempotencyStore  # noqa: E402
@@ -355,6 +356,11 @@ install_problem_handlers(app)
 # com spectree. Por enquanto: log de paths/components detectados.
 install_openapi_validation_middleware(app)
 
+# OpenAPI enhancer (F6 [P2] 2026-07-15 — squad front): customiza
+# info.contact/license, servers, tags ordenados e security schemes.
+# NAO mexe em paths. Hook em app.openapi para cache idempotente.
+install_openapi_enhancer(app)
+
 # API versioning (A20 — squad A): headers X-API-Version + Link (RFC 8594)
 # + endpoint /version com metadata completa.
 app.add_middleware(VersionHeaderMiddleware)
@@ -662,6 +668,12 @@ app.include_router(ws_router, prefix="/api/v1")
 from app.api.v1.telegram import router as telegram_router  # noqa: E402
 
 app.include_router(telegram_router, prefix="/api/v1")
+
+# Health Radar Expanded (F6 [P2] 2026-07-15) - 5 categorias: DNS, Traefik,
+# SSH VPS, Tailscale, Disk. Falha em qualquer check nao quebra endpoint.
+from app.api.v1.health_radar_expanded import expanded_router  # noqa: E402
+
+app.include_router(expanded_router, prefix="/api/v1")
 
 # LGPD direitos do titular (Art. 18) - 5 endpoints + 1 ja em router.py
 # Adicionado 2026-06-24 (anonimizar, corrigir, oposicao, optout, portabilidade)
