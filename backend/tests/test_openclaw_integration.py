@@ -66,12 +66,8 @@ class TestOpenClawConfig:
 
     def test_opencode_go_api_key_existe(self) -> None:
         """settings.opencode_go_api_key deve existir."""
-        if settings.opencode_go_api_key is None:
-            pytest.skip("OPENCODE_GO_API_KEY nao configurada (env var ausente)")
         assert settings.opencode_go_api_key is not None
-        assert (
-            settings.opencode_go_api_key.startswith("sk-") or len(settings.opencode_go_api_key) > 5
-        )
+        assert settings.opencode_go_api_key.startswith("sk-")
 
     def test_opencode_go_context_window_1m(self) -> None:
         """Context window deve ser 1M (1048576) conforme configurado."""
