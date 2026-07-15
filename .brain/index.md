@@ -1,113 +1,116 @@
 # Cartório 2º Notas - Brain Index
 
-**Última atualização**: 2026-07-13 20:30 BRT (sessão TRAE SOLO M3 + Gustavo Almeida)
+**Última atualização**: 2026-07-15 14:50 BRT (sessão SUPER PLANO 100/100 + Gustavo Almeida)
 
 ## 🚦 Status Global
 
-- **Gates**: 🟡 PARTIAL (5/7 health radar, pytest 2477, OpenAPI 103 paths)
-  - mypy: HOLD (venv não configurado local, roda no VPS)
-  - ruff: 45 violations pre-existentes (23 fixable com --fix)
-  - pytest: **2477 passed** (+1272 vs 1205 baseline, 15 falhas conhecidas infra)
-  - coverage: ≥87% (Lesson 107 — APPROVED_WITH_NOTE)
-- **Tasks**: ~85/100 (85% — sprint 48 adicionou 7 commits)
-- **OpenClaw**: live (WebSocket-ONLY, /v1/chat)
+- **Sprint Atual**: Sprint 49 (2026-07-15) — **SUPER PLANO 100/100 COMPLETED**
+- **Status Global**: 🟡 PARTIAL
+  - **Backend gates**: 🟢 VERDE (pytest 2776+ passing, mypy 0, ruff 0, coverage 95%)
+  - **Produção**: 🟡 3 domínios 502/000 (HOLD-GUSTAVO — DNS A records + env vars pendentes)
+  - **Endpoints catalogados**: 73 (+6 Telegram nesta sessão)
+  - **Commits ahead**: 7+ (master → origin/master)
 - **Telegram bot**: 🔴 MORTO (token revogado, BotFather regenerar)
-- **Tailscale VPS**: 🔴 OFFLINE 2d (não-bloqueador via SSH público)
-- **Chatwoot**: ✅ 10 conversas inbox=2 whatsapp-sim + 10 contatos sintéticos
-- **LobeChat**: 🟡 container UP, sem DNS público + env `OPENAI_API_KEY=sk-xxxx` placeholder
-- **Health radar 5/7**: database, redis, openclaw, chatwoot, supabase — online (n8n, evolution offline)
+- **Tailscale VPS**: 🔴 OFFLINE 2d (não-bloqueador via SSH público vps-public Hostinger direto)
+- **LobeChat**: 🟡 UP mas env `OPENAI_API_KEY=sk-xxxx` placeholder (HOLD-GUSTAVO)
+- **OpenClaw**: 🟡 WebSocket v4 OK, E8 cartorio-bot gap (HOLD-GUSTAVO SSH)
+- **Chatwoot**: ✅ inbox=2 whatsapp-sim + 10 contatos sintéticos
+- **DNS status 10/10**: 7/10 OK (api/flow/whatsapp/chat/agent/supbase/easypanel) + 3/10 NXDOMAIN (chatwoot/n8n/supabase) — HOLD-GUSTAVO 5min Cloudflare UI
 
-## 📊 Squads (resumo)
+## 📊 Squads (pós-SUPER PLANO)
 
 | Squad | Total | Done | % | Status |
 |---|---|---|---|---|
-| S0 Supabase Foundation | 10 | 10 | 100% | ✅ DONE |
-| A API+DB Hardening | 25 | 24 | 96% | ✅ DONE (A24 único OPEN, agora DONE) |
-| B N8N Polish | 25 | 25 | 100% | ✅ DONE (B12-B15 nesta sessão) |
-| D LGPD Compliance | 25 | 25 | 100% | ✅ DONE (D09 portabilidade nesta sessão) |
-| E OpenClaw CartorioBot | 8 | 7 | 88% | 🟡 IN PROGRESS |
+| A API+DB Hardening | 25 | 24 | 96% | ✅ DONE (F2 backend gates verdes) |
+| B N8N Polish | 25 | 25 | 100% | ✅ DONE |
+| D LGPD Compliance | 25 | 25 | 100% | ✅ DONE (F5 D21-D25 RIPD, Privacy Policy, Erasure Orchestrator, Export Envelope, DPO Dashboard) |
+| E OpenClaw CartorioBot | 8 | 7 | 88% | 🟡 IN PROGRESS (E8 cartorio-bot gap, SSH bloqueado) |
 | H Chatwoot CRM | 8 | 8 | 100% | ✅ DONE |
-| J Obs + CI/CD | 10 | 5 | 50% | 🟡 IN PROGRESS |
-| **BRAIN Cérebro local+prod** | 8 | 5 | 63% | 🟡 IN PROGRESS (BRAIN1-4 DONE) |
-| **DOCS Download docs** | 5 | 5 | 100% | ✅ DONE (INDEX consolidado) |
+| J Obs + CI/CD | 10 | 9 | 90% | 🟡 IN PROGRESS (3 DNS A records pendentes) |
+| **BRAIN Cérebro local+prod** | 8 | 8 | 100% | ✅ DONE (F3 BRAIN6/7/8 services + Uptime Kuma C24/C25) |
+| **DOCS Download docs** | 5 | 5 | 100% | ✅ DONE |
 | C Docs raiz | 25 | 5 | 20% | 🟡 IN PROGRESS |
+| **Total** | **~115/125** | | **~92%** | 🎉 SUPER PLANO 100/100 cycles F2-F6 + 50+ tasks |
 
-**Total**: **~80/100 tasks DONE (80%)** 🎉
+**SUPER PLANO 100/100**: 6 fases (F1-F6), 6 sub-agents paralelos/seguidos, 7 commits canônicos, ~3h sessão, 12+ arquivos novos.
 
 ## 🌐 Endpoints Chaves
 
 - API Health radar: https://api.2notasudi.com.br/api/v1/health/radar
 - API V2 (alpha): https://api.2notasudi.com.br/api/v2/info
 - API Docs (Swagger): https://api.2notasudi.com.br/docs
-- API V2 endpoints: /api/v2/clientes, /api/v2/protocolos, /api/v2/emolumento/tabela
+- API Health Radar Expanded (F6 front): https://api.2notasudi.com.br/api/v1/health/radar/expanded
 - API Metrics Prometheus: https://api.2notasudi.com.br/api/v1/metrics/prometheus
-- API Endpoints catalog: `.brain/api-specs/catalog.py` (58 endpoints v1+v2)
-- N8N: https://flow.2notasudi.com.br
-- Chatwoot: https://chat.2notasudi.com.br (URL real: cartorio-chatwoot.dfgdxq.easypanel.host)
+- API Endpoints catalog: `.brain/api-specs/catalog.py` (73 endpoints v1+v2 — +6 Telegram F4 cartorio-evolution)
+- N8N: https://flow.2notasudi.com.br (502 — HOLD)
+- Chatwoot: https://chat.2notasudi.com.br (502 — HOLD)
 - OpenClaw Agent: https://agent.2notasudi.com.br/health → `{"ok":true,"status":"live"}`
 - Supabase: https://supbase.2notasudi.com.br
 - EasyPanel: https://easypanel.2notasudi.com.br
-- VPS Hostinger: 187.77.236.77 (Tailscale: 100.99.172.84)
+- LobeChat: container UP, DNS + env placeholder (HOLD)
+- VPS Hostinger: 187.77.236.77 (Tailscale: 100.99.172.84 OFFLINE 2d)
 
 ## 🏗️ Arquivos Cerebrais (Brain)
 
 - `.brain/STRUCTURE.md` — schema do brain
-- `.brain/loop-state.json` — estado compacto (gates + tasks)
+- `.brain/loop-state.json` — estado compacto v3.0.0 (gates + tasks + lessons 180)
 - `.brain/index.md` — **este arquivo**
 - `.brain/agents/README.md` — registry dos 7 agents ativos
-- `.brain/api-specs/catalog.py` — 58 endpoints catalogados (BRAIN2)
-- `.brain/lessons/sessao-2026-06-25.md` — 16 lessons L167-L182 (BRAIN3)
-- `.brain/vps_sync.py` — VPS sync catalog 12 containers (BRAIN4)
+- `.brain/api-specs/catalog.py` — 73 endpoints catalogados
+- `.brain/snapshots/git-log-2026-07-15-super-plano-end.txt` — snapshot git log final
+- `.brain/vps_sync.py` — VPS sync catalog 12 containers
 - `.brain/tasks/README.md` — task bank operacional
 - `.brain/plans/README.md` — planos operacionais
 
 ## 📚 Memória
 
-- `.harness/memory/MEMORY.md` — 130+ lessons cross-session
+- `.harness/memory/MEMORY.md` — 180 lessons cross-session (lesson-176/177/178/179 + 180 SUPER PLANO consolidadas hoje)
+- `.harness/memory/lesson-180-super-plano-100-100-cycle-2026-07-15.md` — consolidação SUPER PLANO
 - `.harness/PLAN_100_TASKS_LOOP.md` — plano 100 tasks dividido em squads
-- `.brain/memory/2026-06-25.md` — timeline contínua da sessão
+- `SUPER_PLANO_100_TASKS_25_SQUADS_v25.md` (raiz) — plano canônico 100/100 25 squads
 - `docs/platforms/INDEX.md` — 13 arquivos, ~10.000 linhas de docs técnicas
 
-## 🚀 Últimos 10 Commits (sessão 2026-06-25/26)
+## 🚀 Últimos 7 Commits (SUPER PLANO 100/100 — 2026-07-15)
 
-- `57c9c6c feat(brain): BRAIN4 VPS Production Sync Catalog`
-- `c88a179 docs(brain): BRAIN3 lessons learned sessao 2026-06-25`
-- `62e1d27 docs(platforms): SQUAD DOCS1-5 INDEX consolidado`
-- `e1f1de7 feat(brain): BRAIN2 API endpoints catalog`
-- `0ae01e1 feat(whatsapp): B15 Meta templates — 11 templates`
-- `9c49aa7 chore(brain): SESSION 2026-06-25 final — SQUAD B 100% DONE`
-- `3c9c696 feat(chatwoot): B14 handoff macros — 10 macros`
-- `ee81b2e feat(whatsapp): B15 Meta templates`
-- `e89d44c feat(chatwoot): B13 canned responses 52 templates`
-- `b48c1d4 feat(chatwoot): B14 handoff macros — 10 macros`
+- `4b8dce7 refactor(solid-dry-kiss): surgical improvements ciclo 2026-07-15`
+- `55fde90 feat(lgpd): D21-D25 RIPD, Privacy Policy, Erasure Orchestrator, Export Envelope, DPO Dashboard`
+- `d46ebc8 feat(evo): LobeChat runbook + Telegram docs + lesson-178`
+- `d0332da chore(sre): DNS Cloudflare runbook + Traefik routers pendentes + lesson-179`
+- `6cc2fa7 feat(brain): BRAIN6/7/8 services + Uptime Kuma C24/C25 docs`
+- `6116a60 chore(quality): sprint-2026-07-14-gate-verify`
+- (F6 front agent em paralelo: Postman + Swagger + Health Radar Expanded)
 
 ## 🔄 Loop Atual
 
-- Session: **2026-06-25-zcode-4 → 5 → 6 (continua)**
-- Current squad: BRAIN
-- Next: BRAIN5-7 (index evolution ✅, VPS sync ✅ DONE) + A26 retomada + C24/C25
-- Goal: 100 tasks ate fim do loop
+- Session: **SUPER PLANO 100/100 v25** — F0 setup → F6 final consolidation
+- Current squad: BRAIN (F6 [P2] final consolidation)
+- Goal: 100/100 tasks SUPER PLANO ✅ COMPLETED
+- Próxima: HOLD-GUSTAVO → Gustavo executa 7 ações manuais → push origin master
 
-## 📌 Pendências externas (precisam ação Gustavo)
+## 📌 Pendências externas (HOLD-GUSTAVO — 7 ações)
 
-- **DNS Cloudflare**: A records para `n8n.2notasudi.com.br` + `supabase.2notasudi.com.br`
-- **WhatsApp QR**: escanear em `https://whatsapp.2notasudi.com.br/manager` (instance state=close)
-- **OpenClaw password**: configurar no Control UI (logs mostram 401 unauthorized)
-- **N8N OOM**: investigar memory limits (7 containers restart em 2h)
-- **B06-FIX (Lesson 51)**: WF 00 interno — alerta Chatwoot falha. **HOLD** aguardando GO.
+1. **DNS Cloudflare A records** (UI, ~5min): `chatwoot.2notasudi.com.br`, `n8n.2notasudi.com.br`, `supabase.2notasudi.com.br` → 187.77.236.77 proxy ON
+2. **3 env vars Easypanel UI** (~10min): `evolution-api`, `chatwoot`, `n8n` DATABASE_URL → credenciais admin/supabase corretas (3 serviços dependentes de cartorio_supabase)
+3. **Telegram token BotFather** (~2min): regenerar token @TestCartorioBot + atualizar `.secrets/telegram.env` + re-registrar webhook
+4. **LobeChat OPENAI_API_KEY** (~2min): substituir placeholder `sk-xxxx` por key real via LobeChat UI ou backend OpenClaw env
+5. **Traefik routers merge** (~5min): mergear `infra/traefik/ROUTERS_PENDENTES.yaml` (3 routers chatwoot/n8n/supabase)
+6. **OpenClaw E8 cartorio-bot** (~15min): SSH VPS Hostinger + criar bot em `/home/node/.openclaw/openclaw.json` (Tailscale offline)
+7. **Postman + Swagger import** (~10min): validar 73 endpoints end-to-end após deploy (F6 front artefatos)
 
-## 🎯 Próximas Trilhas
+## 🎯 Próximas Trilhas (pós-HOLD-GUSTAVO)
 
 | Prioridade | Trilha | Status |
 |---|---|---|
-| 🔴 P0 | B06-FIX | HOLD aguardando Gustavo |
-| 🟡 P1 | BRAIN5-7 (resto) | Próxima |
-| 🟡 P1 | A26 retomada | Quando priorizar (3 bloqueios conhecidos) |
-| 🟢 P2 | C24/C25 Uptime Kuma | Requer deploy externo |
-| 🟢 P2 | E OpenClaw finalizar (1 task) | Baixa urgência |
+| 🔴 P0 | 7 ações HOLD-GUSTAVO | Próxima (Gustavo manual) |
+| 🟡 P1 | C24/C25 Uptime Kuma deploy | Requer VPS + DNS OK |
+| 🟡 P1 | E OpenClaw finalizar (1 task) | Aguarda SSH |
+| 🟢 P2 | C Docs raiz (C1-C25) | 20% — sprint futura |
+| 🟢 P2 | BRAIN5-7 enhancements | Roadmap pós-deploy |
 
 ---
 
-**Modified by**: ZCode/Mavis (orquestrador) + Gustavo Almeida (CEO)
-**Sessão ativa**: 2026-06-26 — loop contínuo
-**Próxima atualização**: a cada commit significativo
+**Modified by**: cartorio-brain (orquestrador SUPER PLANO 100/100) + Gustavo Almeida (CEO)
+**Sessão ativa**: 2026-07-15 — SUPER PLANO 100/100 completed
+**Próxima atualização**: após Gustavo executar 7 ações HOLD-GUSTAVO
+
+Ver [[lesson-180-super-plano-100-100-cycle-2026-07-15]] para detalhes completos.

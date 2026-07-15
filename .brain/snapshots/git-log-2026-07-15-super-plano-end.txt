@@ -1,0 +1,19 @@
+SUPER PLANO 100/100 - 2026-07-15 - snapshot final
+
+4b8dce7 refactor(solid-dry-kiss): surgical improvements ciclo 2026-07-15
+55fde90 feat(lgpd): D21-D25 RIPD, Privacy Policy, Erasure Orchestrator, Export Envelope, DPO Dashboard
+d46ebc8 feat(evo): LobeChat runbook + Telegram docs + lesson-178
+d0332da chore(sre): DNS Cloudflare runbook + Traefik routers pendentes + lesson-179
+6cc2fa7 feat(brain): BRAIN6/7/8 services + Uptime Kuma C24/C25 docs
+6116a60 chore(quality): sprint-2026-07-14-gate-verify
+af78a6b docs(progresso): ciclo 1 fechado (S0-T001+T004) — 9d82e97
+9d82e97 fix(observability): consolidar versão 0.6.0 em main.py + mcp_server + radar (S0-T001)
+1783863 feat(opencode): integrate Antigravity (AGY) provider, models, and YOLO permissions. Modified by Gustavo Almeida
+203e4b9 docs(incident): OUTAGE_RECOVERY_RUNBOOK + lesson-172 P0 escalation (T2/T5 7/9 canais 502)
+68cf140 test(coverage): Sprint 8 bottom-5 modules 94.09% -> 95.04% (gate --cov-fail-under=95 PASS)
+7a7cf60 docs(r3-deploy): R8 probe + P0 outage report + recovery/deploy checklist
+7ea0f86 feat: add buscar_protocolo_por_numero service and GET /api/v1/protocolo/{numero} endpoint implementation
+fbc5360 chore(cleanup): YOLO round 8 ruff 0→0 + dead code surgical removal
+d0a1d03 test(audit): standalone E2E verifier for hash chain + HMAC + dead-mans-switch
+
+Modified by Gustavo Almeida

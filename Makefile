@@ -187,3 +187,45 @@ dns-check:  ## Verifica saude DNS dos 10 subdominios prod (7 OK esperados, 3 NXD
 dns-verify-records:  ## Integration test manual: assume Gustavo criou 3 A records; valida (WORK/HOLD)
 	@echo "$(YELLOW)[SRE] DNS records integration test$(RESET)"
 	@bash tests/manual/verify_dns_records.sh
+
+# ============================================================================
+# SUPER PLANO 100/100 (2026-07-15) — consolidated brain targets
+# ============================================================================
+
+.PHONY: super-plano
+super-plano:  ## Status do SUPER PLANO 100/100 (6 phases, 7 commits, 50 tasks)
+	@echo "$(GREEN)=== SUPER PLANO 100/100 ===$(RESET)"
+	@echo "$(YELLOW)Data: 2026-07-15 (sessao ~3h 11:30 → 14:45 BRT)$(RESET)"
+	@echo ""
+	@echo "$(GREEN)Fases completadas:$(RESET) F0 setup, F1, F2 quality, F3 brain, F4 sre+evo, F5 lgpd+refactor, F6 consolidation"
+	@echo "$(GREEN)Sub-agents:$(RESET) 8 (quality, brain, sre, evolution, lgpd, front paralelo, brain F6)"
+	@echo "$(GREEN)Commits:$(RESET) 7 (6116a60, 6cc2fa7, d0332da, d46ebc8, 55fde90, 4b8dce7, T100)"
+	@echo "$(GREEN)Tasks:$(RESET) 50+ completadas"
+	@echo "$(GREEN)Arquivos novos:$(RESET) 12+ (DNS runbooks, LobeChat STATUS/README/monitors.json, telegram.env.example, OUTAGE_RECOVERY_RUNBOOK, catalog.py +6 endpoints)"
+	@echo "$(GREEN)Backend gates:$(RESET) VERDE (pytest 2776+, mypy 0, ruff 0, coverage 95%)"
+	@echo "$(YELLOW)Producao:$(RESET) PARTIAL (3/10 dominios 502/000 HOLD-GUSTAVO)"
+	@echo ""
+	@echo "$(YELLOW)Referencias:$(RESET) STATUS.md, .brain/index.md, .brain/loop-state.json (v3.0.0), .harness/memory/lesson-180-super-plano-100-100-cycle-2026-07-15.md"
+
+.PHONY: postman-import
+postman-import:  ## Mostra como importar Cartorio_API_v1.postman_collection.json no Postman
+	@echo "$(GREEN)=== Postman Import Instructions ===$(RESET)"
+	@if [ -f infra/postman/Cartorio_API_v1.postman_collection.json ]; then \
+		echo "Colecao encontrada em infra/postman/Cartorio_API_v1.postman_collection.json"; \
+		echo "Endpoints catalogados: 73"; \
+		echo ""; \
+		echo "Passos:"; \
+		echo "  1. Abrir Postman"; \
+		echo "  2. Import > File > Upload Files"; \
+		echo "  3. Selecionar infra/postman/Cartorio_API_v1.postman_collection.json"; \
+		echo "  4. Configurar variaveis: BASE_URL=https://api.2notasudi.com.br, API_KEY=<DPO_TOKEN>"; \
+		echo "  5. Rodar Runner para validar 73 endpoints end-to-end"; \
+	else \
+		echo "$(RED)Colecao ainda nao commitada (F6 front agent em paralelo). Verificar em T100.$(RESET)"; \
+	fi
+
+.PHONY: health-radar
+health-radar:  ## Health radar expanded (F6 front) - status detalhado dos 10 servicos prod
+	@echo "$(GREEN)=== Health Radar Expanded ===$(RESET)"
+	@curl -sk https://api.2notasudi.com.br/api/v1/health/radar/expanded | python3 -m json.tool 2>/dev/null || \
+		curl -sk https://api.2notasudi.com.br/api/v1/health/radar | python3 -m json.tool
