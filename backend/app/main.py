@@ -674,6 +674,21 @@ from app.api.v1.lgpd_direitos_v2 import lgpd_v2_router  # noqa: E402
 
 app.include_router(lgpd_v2_router, prefix="/api/v1")
 
+# LGPD RIPD — D21 Relatorio de Impacto a Protecao de Dados
+from app.api.v1.lgpd_ripd import ripd_router  # noqa: E402
+
+app.include_router(ripd_router, prefix="/api/v1")
+
+# LGPD Privacy Policy — D22 Privacy Policy personalizada por titular
+from app.api.v1.lgpd_privacy_policy_endpoint import privacy_policy_router  # noqa: E402
+
+app.include_router(privacy_policy_router, prefix="/api/v1")
+
+# LGPD DPO Dashboard — D25 endpoints administrativos (X-API-Key + JWT DPO)
+from app.api.v1.lgpd_dpo_dashboard import dpo_dashboard_router  # noqa: E402
+
+app.include_router(dpo_dashboard_router, prefix="/api/v1")
+
 # API v2 (alpha) - sunset 2027-12-31 (A24 SQUAD A versionamento)
 from app.api.v2 import api_v2_router  # noqa: E402
 
