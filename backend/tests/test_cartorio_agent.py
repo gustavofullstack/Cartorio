@@ -23,9 +23,7 @@ def test_detect_intent_agendar() -> None:
 
 def test_detect_intent_catalogo_serie() -> None:
     assert (
-        _detect_intent(
-            "Me fale um pouco de cada em varias mensagens separadas 1 depois da outra"
-        )
+        _detect_intent("Me fale um pouco de cada em varias mensagens separadas 1 depois da outra")
         == "catalogo_serie"
     )
 
