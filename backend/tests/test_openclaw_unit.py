@@ -67,6 +67,7 @@ async def test_openclaw_chat_empty_messages():
     with pytest.raises(ChatError) as exc:
         await chat(
             messages=[],
+            api_key="test_api_key",
             base_url="http://localhost:8080",
             consent_granted=True,
         )
@@ -79,6 +80,7 @@ async def test_openclaw_chat_consent_blocked():
     with pytest.raises(ChatError) as exc:
         await chat(
             messages=[{"role": "user", "content": "oi"}],
+            api_key="test_api_key",
             base_url="http://localhost:8080",
             consent_granted=False,
         )
@@ -106,6 +108,7 @@ async def test_openclaw_chat_happy_path():
         mock_post.return_value = mock_resp
         resp = await chat(
             messages=[{"role": "user", "content": "oi"}],
+            api_key="test_api_key",
             base_url="http://localhost:18790",
             consent_granted=True,
         )
@@ -126,6 +129,7 @@ async def test_openclaw_chat_http_4xx():
         with pytest.raises(ChatError) as exc:
             await chat(
                 messages=[{"role": "user", "content": "oi"}],
+                api_key="test_api_key",
                 base_url="http://localhost:18790",
                 consent_granted=True,
             )
@@ -142,6 +146,7 @@ async def test_openclaw_chat_http_5xx():
         with pytest.raises(ChatError) as exc:
             await chat(
                 messages=[{"role": "user", "content": "oi"}],
+                api_key="test_api_key",
                 base_url="http://localhost:18790",
                 consent_granted=True,
             )
@@ -157,6 +162,7 @@ async def test_openclaw_chat_timeout():
         with pytest.raises(ChatError) as exc:
             await chat(
                 messages=[{"role": "user", "content": "oi"}],
+                api_key="test_api_key",
                 base_url="http://localhost:18790",
                 consent_granted=True,
                 timeout_seconds=1.0,
@@ -172,6 +178,7 @@ async def test_openclaw_chat_network_error():
         with pytest.raises(ChatError) as exc:
             await chat(
                 messages=[{"role": "user", "content": "oi"}],
+                api_key="test_api_key",
                 base_url="http://localhost:18790",
                 consent_granted=True,
             )
@@ -189,6 +196,7 @@ async def test_openclaw_chat_invalid_json():
         with pytest.raises(ChatError) as exc:
             await chat(
                 messages=[{"role": "user", "content": "oi"}],
+                api_key="test_api_key",
                 base_url="http://localhost:18790",
                 consent_granted=True,
             )
@@ -205,6 +213,7 @@ async def test_openclaw_chat_unexpected_structure():
         with pytest.raises(ChatError) as exc:
             await chat(
                 messages=[{"role": "user", "content": "oi"}],
+                api_key="test_api_key",
                 base_url="http://localhost:18790",
                 consent_granted=True,
             )
@@ -232,6 +241,7 @@ async def test_openclaw_chat_output_pii_scrubbed():
         mock_post.return_value = mock_resp
         resp = await chat(
             messages=[{"role": "user", "content": "oi"}],
+            api_key="test_api_key",
             base_url="http://localhost:18790",
             consent_granted=True,
         )
@@ -258,6 +268,7 @@ async def test_openclaw_chat_with_db_records_audit():
         mock_post.return_value = mock_resp
         await chat(
             messages=[{"role": "user", "content": "oi"}],
+            api_key="test_api_key",
             base_url="http://localhost:18790",
             consent_granted=True,
             db=db,
@@ -293,6 +304,7 @@ async def test_openclaw_chat_with_db_and_output_pii_records_audit_twice():
         mock_post.return_value = mock_resp
         await chat(
             messages=[{"role": "user", "content": "oi"}],
+            api_key="test_api_key",
             base_url="http://localhost:18790",
             consent_granted=True,
             db=db,
@@ -325,6 +337,7 @@ async def test_openclaw_chat_audit_log_failure_swallowed():
         mock_post.return_value = mock_resp
         resp = await chat(
             messages=[{"role": "user", "content": "oi"}],
+            api_key="test_api_key",
             base_url="http://localhost:18790",
             consent_granted=True,
             db=db,
@@ -349,6 +362,7 @@ async def test_openclaw_chat_with_rate_limit_invoked():
         mock_post.return_value = mock_resp
         await chat(
             messages=[{"role": "user", "content": "oi"}],
+            api_key="test_api_key",
             base_url="http://localhost:18790",
             consent_granted=True,
             session_id="sess-1",
@@ -367,7 +381,10 @@ async def test_openclaw_chat_with_settings_wrapper():
         "usage": {"prompt_tokens": 1, "completion_tokens": 1},
     }
     mock_resp = _make_httpx_response(200, json_data=payload)
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+    with (
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post,
+        patch("app.config.settings.openclaw_api_key", "test_api_key"),
+    ):
         mock_post.return_value = mock_resp
         resp = await chat_with_settings(
             messages=[{"role": "user", "content": "oi"}],
