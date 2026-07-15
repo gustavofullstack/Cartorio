@@ -66,15 +66,15 @@ class TestWhatsAppSend:
         call_url = mock_client.post.call_args.args[0]
         assert "/message/sendText/cartorio-test" in call_url
         # Payload correto
-        payload = mock_client.post.call_args.kwargs.get("json") or mock_client.post.call_args.args[1]
+        payload = (
+            mock_client.post.call_args.kwargs.get("json") or mock_client.post.call_args.args[1]
+        )
         assert payload["number"] == "5511999999999"
         assert "Ola" in payload["text"]
 
     @pytest.mark.asyncio
     async def test_send_with_buttons(self) -> None:
-        adapter = WhatsAppAdapter(
-            base_url="http://fake:8080", api_key="k", instance="i"
-        )
+        adapter = WhatsAppAdapter(base_url="http://fake:8080", api_key="k", instance="i")
         msg = OutboundMessage(
             channel=Channel.WHATSAPP,
             recipient_id="55119@s.whatsapp.net",
@@ -171,9 +171,7 @@ class TestWhatsAppReact:
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=_make_response(200))
         with patch.object(adapter, "_get_client", AsyncMock(return_value=mock_client)):
-            result = await adapter.react(
-                "55119@s.whatsapp.net", "msg-1", "thumbsup"
-            )
+            result = await adapter.react("55119@s.whatsapp.net", "msg-1", "thumbsup")
         assert result is True
         payload = mock_client.post.call_args.kwargs.get("json")
         assert payload["reaction"] == "\U0001f44d"  # 👍
@@ -213,6 +211,7 @@ class TestVerifySignature:
         # Calcula HMAC valido
         import hashlib
         import hmac as hmac_mod
+
         sig = hmac_mod.new(b"test-secret-123", body, hashlib.sha256).hexdigest()
         with patch("app.api.v1.whatsapp.validate_evolution_signature", return_value=True):
             result = await adapter.verify_signature(body, sig)
@@ -309,6 +308,7 @@ class TestParseEvolutionPayload:
 class TestAdapterSingleton:
     def test_get_adapter_returns_singleton(self) -> None:
         from app.api.v1 import whatsapp as wa_module
+
         wa_module._adapter_instance = None  # reset
         a1 = get_adapter()
         a2 = get_adapter()
