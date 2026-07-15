@@ -60,11 +60,17 @@ async def chat(
     from app.config import settings
 
     target_base_url = base_url or settings.openclaw_base_url
-    target_api_key = api_key or settings.openclaw_api_key or "@Techno832466"
+    target_api_key = api_key or settings.openclaw_api_key
 
     if not target_base_url or target_base_url.strip() == "":
         raise ChatError(
             "Base URL do OpenClaw nao configurada.",
+            kind=ChatErrorKind.CONFIG,
+        )
+
+    if not target_api_key or target_api_key.strip() == "":
+        raise ChatError(
+            "API key do OpenClaw nao configurada.",
             kind=ChatErrorKind.CONFIG,
         )
 
