@@ -102,7 +102,6 @@ def registrar_consentimento(
         ValueError: se cliente nao existe ou finalidades invalidas
     """
     from app.models.cliente import Cliente
-    from app.services.audit import AuditService
 
     # Validar cliente existe
     cliente = db.get(Cliente, cliente_id)
@@ -120,8 +119,10 @@ def registrar_consentimento(
     cliente.consentimento_canal = canal
     db.commit()
 
-    # Audit
-    AuditService.log(
+    # Audit (F5 [P2] 2026-07-15 DRY — log_mutation wrapper)
+    from app.services.audit_helper import log_mutation
+
+    log_mutation(
         db=db,
         actor_id=str(cliente_id),
         actor_type="cliente",
@@ -175,7 +176,6 @@ def revogar_consentimento(
         ValueError: se tenta revogar finalidade obrigatoria
     """
     from app.models.cliente import Cliente
-    from app.services.audit import AuditService
 
     cliente = db.get(Cliente, cliente_id)
     if cliente is None:
@@ -204,8 +204,10 @@ def revogar_consentimento(
 
     db.commit()
 
-    # Audit
-    AuditService.log(
+    # Audit (F5 [P2] 2026-07-15 DRY — log_mutation wrapper)
+    from app.services.audit_helper import log_mutation
+
+    log_mutation(
         db=db,
         actor_id=str(cliente_id),
         actor_type="cliente",

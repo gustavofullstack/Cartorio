@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.cliente import Cliente
-from app.services.audit import AuditService
+from app.services.audit import AuditService  # noqa: F401  # re-exportado para compat com testes (F5 [P2] 2026-07-15)
 
 
 def _strip_emojis(text: str) -> str:
@@ -140,7 +140,10 @@ class NotificationService:
                     return False
                 success = await NotificationService._enviar_sms(cliente.telefone_hash, mensagem)
 
-        # Audit log
+        # Audit log (reverted to direct AuditService.log — testes legacy patch
+        # 'notificacao.AuditService' e romperiam o caminho via log_mutation.
+        # F5 [P2] 2026-07-15 DRY aplicou-se a lgpd_consent + lgpd_direito_esquecimento
+        # onde o patch legacy nao existe.)
         if success:
             AuditService.log(
                 db,

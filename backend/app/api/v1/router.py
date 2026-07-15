@@ -78,6 +78,11 @@ from app.api.deps import (  # noqa: E402
     require_cartorio_api_key,
 )
 
+# Helpers SOLID-S (F5 [P2] 2026-07-15) — extraidos de router.py para _helpers.py
+from app.api.v1._helpers import (  # noqa: E402
+    build_pagination_params,
+)
+
 # ============================================================================
 # Router com tags PT-BR para o Swagger/OpenAPI
 # ============================================================================
@@ -88,6 +93,11 @@ api_router.include_router(integrations_router)
 
 # Regex do formato ANO-SEQUENCIAL (YYYY-NNNNN)
 _NUMERO_PROTOCOLO_REGEX = r"^\d{4}-\d{5}$"
+
+# Defaults canonicos de paginacao (F5 [P2] 2026-07-15) — extraido para _helpers.py.
+# Reuso em endpoints `/audit/logs` (page+page_size) e `/agendamento/cliente/{id}`
+# (limit+offset). Manter compat 100% com clients existentes.
+_PAGINATION = build_pagination_params()
 
 
 # ============================================================================
@@ -3454,7 +3464,14 @@ async def list_audit_logs_endpoint(
         datetime.datetime | None, Query(description="Entries <= until (ISO 8601).")
     ] = None,
     page: Annotated[int, Query(ge=1, description="Pagina (1-indexed).")] = 1,
-    page_size: Annotated[int, Query(ge=1, le=200, description="Tamanho da pagina.")] = 50,
+    page_size: Annotated[
+        int,
+        Query(
+            ge=1,
+            le=_PAGINATION["max_page_size"],
+            description="Tamanho da pagina.",
+        ),
+    ] = _PAGINATION["default_page_size"],
     db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> AuditLogListResponse:
     """Lista audit logs paginados (DPO/escrevente)."""

@@ -136,8 +136,8 @@ def direito_esquecimento(
             continue
 
     # 4. Audit log (obrigatorio LGPD art. 37)
-    # Usa AuditService.log() para garantir hash chain + HMAC corretos
-    from app.services.audit import AuditService
+    # F5 [P2] 2026-07-15 DRY — usa log_mutation() wrapper (chain + HMAC preservados)
+    from app.services.audit_helper import log_mutation
 
     audit_payload = {
         "cliente_id": cliente_id,
@@ -149,7 +149,7 @@ def direito_esquecimento(
         "hashes_para_restauracao": hashes,
     }
 
-    audit_entry = AuditService.log(
+    audit_id = log_mutation(
         db,
         actor_id=actor_id,
         actor_type="user",
@@ -157,7 +157,6 @@ def direito_esquecimento(
         resource=f"cliente:{cliente_id}",
         payload=audit_payload,
     )
-    audit_id = audit_entry.id
 
     db.commit()
 
@@ -250,10 +249,10 @@ def restore_direito_esquecimento(
         {"cid": cliente_id},
     )
 
-    # Audit log
-    from app.services.audit import AuditService
+    # Audit log (F5 [P2] 2026-07-15 DRY — log_mutation wrapper)
+    from app.services.audit_helper import log_mutation
 
-    audit_entry = AuditService.log(
+    audit_id = log_mutation(
         db,
         actor_id=actor_id,
         actor_type="user",
@@ -267,7 +266,6 @@ def restore_direito_esquecimento(
             "lgpd_article": "art. 18 V §2 (revogacao)",
         },
     )
-    audit_id = audit_entry.id
 
     db.commit()
 
