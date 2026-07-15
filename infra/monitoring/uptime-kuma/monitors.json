@@ -1,0 +1,151 @@
+{
+  "$schema_note": "Uptime Kuma 1.x monitor schema — used as INPUT to the UI/API; not consumed directly by the app. Export via Settings → Backup OR POST /api/monitors. Each entry maps 1:1 to a Uptime Kuma monitor object (https://github.com/louislam/uptime-kuma-api).",
+  "version": "1.23.16",
+  "monitors": [
+    {
+      "id": "cartorio-api",
+      "type": "https",
+      "name": "Cartorio API",
+      "url": "https://api.2notasudi.com.br/api/v1/health/radar",
+      "method": "GET",
+      "interval": 300,
+      "retryInterval": 60,
+      "maxretries": 2,
+      "timeout": 30,
+      "accepted_statuscodes": ["200-299"],
+      "tags": ["cartorio", "core", "api"],
+      "description": "Health radar 7 servicos (api/flow/whatsapp/chat/agent/supbase/easypanel). DOWN = incidente P0.",
+      "notificationIDList": []
+    },
+    {
+      "id": "n8n-flow",
+      "type": "https",
+      "name": "N8N Flow",
+      "url": "https://flow.2notasudi.com.br/healthz",
+      "method": "GET",
+      "interval": 300,
+      "retryInterval": 60,
+      "maxretries": 2,
+      "timeout": 30,
+      "accepted_statuscodes": ["200-299"],
+      "tags": ["cartorio", "core", "n8n"],
+      "description": "N8N workflow engine health. DOWN = workflows parados, handoff Chatwoot quebra.",
+      "notificationIDList": []
+    },
+    {
+      "id": "whatsapp-evolution",
+      "type": "https",
+      "name": "WhatsApp Evolution",
+      "url": "https://whatsapp.2notasudi.com.br/instance/connectionState/cartorio-2notas",
+      "method": "GET",
+      "interval": 300,
+      "retryInterval": 60,
+      "maxretries": 2,
+      "timeout": 30,
+      "accepted_statuscodes": ["200-299"],
+      "headers": {
+        "apikey": "REPLACE_ME_FROM_EASYPANEL_EVOLUTION_ENV"
+      },
+      "bodyType": null,
+      "tags": ["cartorio", "core", "whatsapp"],
+      "description": "Evolution API v2.3.7 instance state. Exige header apikey (RBAC). Alvo: state=open.",
+      "notificationIDList": []
+    },
+    {
+      "id": "chatwoot-crm",
+      "type": "https",
+      "name": "Chatwoot CRM",
+      "url": "https://cartorio-chatwoot.dfgdxq.easypanel.host/api/v1/accounts",
+      "method": "GET",
+      "interval": 300,
+      "retryInterval": 60,
+      "maxretries": 2,
+      "timeout": 30,
+      "accepted_statuscodes": ["200-299"],
+      "headers": {
+        "api_access_token": "REPLACE_ME_FROM_CHATWOOT_RAILS_CONSOLE"
+      },
+      "tags": ["cartorio", "core", "chatwoot"],
+      "description": "Chatwoot 3.x /api/v1/accounts. DOWN = CRM sem atendimento humano.",
+      "notificationIDList": []
+    },
+    {
+      "id": "openclaw-agent",
+      "type": "https",
+      "name": "OpenClaw Agent",
+      "url": "https://agent.2notasudi.com.br/health",
+      "method": "GET",
+      "interval": 300,
+      "retryInterval": 60,
+      "maxretries": 2,
+      "timeout": 30,
+      "accepted_statuscodes": ["200-299"],
+      "tags": ["cartorio", "core", "openclaw"],
+      "description": "OpenClaw Gateway /health. DOWN = LLM cartorio offline (fallback para OpenCode-Go).",
+      "notificationIDList": []
+    },
+    {
+      "id": "supabase-db",
+      "type": "https",
+      "name": "Supabase DB",
+      "url": "https://supbase.2notasudi.com.br/rest/v1/",
+      "method": "GET",
+      "interval": 300,
+      "retryInterval": 60,
+      "maxretries": 2,
+      "timeout": 30,
+      "accepted_statuscodes": ["200-299"],
+      "headers": {
+        "apikey": "REPLACE_ME_ANON_KEY_SUPABASE"
+      },
+      "tags": ["cartorio", "core", "supabase"],
+      "description": "Supabase REST v1 root. 401 = chave invalida; 200 = DB UP.",
+      "notificationIDList": []
+    },
+    {
+      "id": "easypanel-panel",
+      "type": "https",
+      "name": "EasyPanel",
+      "url": "https://easypanel.2notasudi.com.br/api/health",
+      "method": "GET",
+      "interval": 300,
+      "retryInterval": 60,
+      "maxretries": 2,
+      "timeout": 30,
+      "accepted_statuscodes": ["200-299"],
+      "tags": ["cartorio", "infra", "easypanel"],
+      "description": "EasyPanel panel API. DOWN = painel de deploy inacessivel (containers continuam rodando).",
+      "notificationIDList": []
+    }
+  ],
+  "status_pages": [
+    {
+      "id": "cartorio-public",
+      "slug": "cartorio",
+      "title": "Cartorio 2o Notas - Uberlandia",
+      "description": "Status publico dos 7 servicos criticos. Atualizado a cada 60s.",
+      "theme": "auto",
+      "published": true,
+      "showTags": true,
+      "domainNameList": ["status.2notasudi.com.br"],
+      "googleAnalyticsId": null,
+      "monitorTags": [
+        {"name": "core", "color": "#1f2937"},
+        {"name": "infra", "color": "#0ea5e9"}
+      ]
+    }
+  ],
+  "notification_providers_hint": {
+    "telegram": {
+      "type": "telegram",
+      "name": "Telegram Cartorio Alerts",
+      "config": {
+        "bot_token": "REPLACE_ME_FROM_BOTFATHER",
+        "chat_id": "REPLACE_ME_CHAT_ID_GUSTAVO",
+        "send_resolved": true
+      },
+      "is_default": true,
+      "apply_existing": true
+    }
+  }
+}
