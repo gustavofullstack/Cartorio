@@ -1,0 +1,100 @@
+# Traefik Routers Pendentes — 3 hosts NXDOMAIN ate merge manual
+#
+# STATUS: [HOLD-GUSTAVO-DEPLOY]
+# Data:   2026-07-15
+# Autor:  cartorio-sre F4 [P1] / T054
+# Refs:   infra/dns/CLOUDFLARE_DNS_RECORDS.md, infra/dns/CLOUDFLARE_RUNBOOK.md
+#
+# Este arquivo NAO e o dynamic config ativo. E o TEMPLATE que o Gustavo (ou admin SRE
+# com SSH ao VPS) precisa fazer merge no /etc/traefik/dynamic/main.yaml do servidor.
+#
+# Pre-requisitos (NAO skipeave):
+#   1. Cloudflare A records criados em dash.cloudflare.com para chatwoot/n8n/supabase
+#      (ver infra/dns/CLOUDFLARE_RUNBOOK.md)
+#   2. dig +short <host>.2notasudi.com.br A @1.1.1.1 retorna IP Cloudflare ou 187.77.236.77
+#   3. App backend do servico esta UP no Docker Swarm (docker ps | grep cartorio_<servico>)
+#
+# Como mergear (via SSH ao VPS, Gustavo):
+#   1. Backup: cp /etc/traefik/dynamic/main.yaml{,.bak-$(date +%Y%m%d)}
+#   2. Copiar a secao http abaixo para dentro do bloco http: existente
+#   3. Validar sintaxe: docker exec easypanel-traefik traefik --configFile=/etc/traefik/dynamic/main.yaml --check
+#   4. Recarregar: docker exec easypanel-traefik traefik --configFile=/etc/traefik/dynamic/main.yaml (SIGHUP via kill -HUP)
+#   5. Validar: curl -sk -o /dev/null -w "%{http_code}\n" https://chatwoot.2notasudi.com.br/
+
+http:
+  routers:
+
+    # ===== chatwoot.2notasudi.com.br =====
+    # Backend: Chatwoot 3.x (servico: cartorio_chatwoot)
+    # Porta interna Swarm: 3000 (padrao Chatwoot Rails)
+    # Health: GET /api/v1/accounts/{id}/contacts (autenticado) ou GET / (200 root)
+    cartorio-chatwoot:
+      rule: "Host(`chatwoot.2notasudi.com.br`)"
+      service: cartorio-chatwoot
+      tls:
+        certResolver: letsencrypt
+      entryPoints:
+        - websecure
+      middlewares:
+        - default-security-headers@file
+        - rate-limit-anon@file
+
+    # ===== n8n.2notasudi.com.br =====
+    # Backend: N8N 1.x (servico: cartorio_n8n) — UI admin separada de flow.2notasudi.com.br
+    # Porta interna Swarm: 5678 (padrao N8N)
+    # Health: GET /healthz (200 OK)
+    cartorio-n8n:
+      rule: "Host(`n8n.2notasudi.com.br`)"
+      service: cartorio-n8n
+      tls:
+        certResolver: letsencrypt
+      entryPoints:
+        - websecure
+      middlewares:
+        - default-security-headers@file
+        - rate-limit-authenticated@file
+
+    # ===== supabase.2notasudi.com.br =====
+    # Backend: Supabase self-hosted (servico: cartorio_supabase)
+    # Porta interna Swarm: 8000 (Supabase Kong API gateway)
+    # Health: GET /auth/v1/health (200 OK)
+    # NOTA: O subdominio canonico em uso e supbase (typo aceito). Este router e OPCIONAL.
+    # Ver infra/dns/DOMAIN_TYPO_DECISION.md.
+    cartorio-supabase:
+      rule: "Host(`supabase.2notasudi.com.br`)"
+      service: cartorio-supabase
+      tls:
+        certResolver: letsencrypt
+      entryPoints:
+        - websecure
+      middlewares:
+        - default-security-headers@file
+
+  services:
+
+    cartorio-chatwoot:
+      loadBalancer:
+        servers:
+          - url: "http://cartorio_chatwoot:3000"
+        healthCheck:
+          path: /
+          interval: 30s
+          timeout: 5s
+
+    cartorio-n8n:
+      loadBalancer:
+        servers:
+          - url: "http://cartorio_n8n:5678"
+        healthCheck:
+          path: /healthz
+          interval: 30s
+          timeout: 5s
+
+    cartorio-supabase:
+      loadBalancer:
+        servers:
+          - url: "http://cartorio_supabase:8000"
+        healthCheck:
+          path: /auth/v1/health
+          interval: 30s
+          timeout: 5s

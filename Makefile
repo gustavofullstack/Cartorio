@@ -173,3 +173,17 @@ setup: install  ## Setup completo do ambiente de desenvolvimento
 pre-commit:  ## Pre-commit: lint + test rapido
 	@$(MAKE) lint
 	@cd backend && uv run pytest --tb=line -q --no-cov -x 2>&1 | tail -5
+
+# ============================================================================
+# SRE / DNS health checks
+# ============================================================================
+
+.PHONY: dns-check
+dns-check:  ## Verifica saude DNS dos 10 subdominios prod (7 OK esperados, 3 NXDOMAIN ate Gustavo provisionar)
+	@echo "$(YELLOW)[SRE] DNS health check$(RESET)"
+	@bash scripts/check_dns_health.sh
+
+.PHONY: dns-verify-records
+dns-verify-records:  ## Integration test manual: assume Gustavo criou 3 A records; valida (WORK/HOLD)
+	@echo "$(YELLOW)[SRE] DNS records integration test$(RESET)"
+	@bash tests/manual/verify_dns_records.sh
