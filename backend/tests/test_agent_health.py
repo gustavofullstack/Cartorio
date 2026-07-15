@@ -80,7 +80,8 @@ def client():
 def test_agent_health_quando_tudo_ok(client) -> None:
     """OpenClaw alive + LLM reachable -> status=ok, 200."""
     responses = [_mock_response(200, {"x-openclaw-version": "1.2.3"}), _mock_response(200)]
-    with patch("app.api.v1.integrations.httpx.AsyncClient") as MockClient:
+    with patch("app.api.v1.integrations.httpx.AsyncClient") as MockClient, \
+         patch("app.config.settings.opencode_go_api_key", "test_key"):
         instance = AsyncMock()
         instance.__aenter__ = AsyncMock(return_value=instance)
         instance.__aexit__ = AsyncMock(return_value=None)
@@ -102,7 +103,8 @@ def test_agent_health_quando_openclaw_down(client) -> None:
     """OpenClaw down + LLM ok -> status=degraded."""
     from httpx import RequestError
 
-    with patch("app.api.v1.integrations.httpx.AsyncClient") as MockClient:
+    with patch("app.api.v1.integrations.httpx.AsyncClient") as MockClient, \
+         patch("app.config.settings.opencode_go_api_key", "test_key"):
         instance = AsyncMock()
         instance.__aenter__ = AsyncMock(return_value=instance)
         instance.__aexit__ = AsyncMock(return_value=None)
@@ -125,7 +127,8 @@ def test_agent_health_quando_tudo_down(client) -> None:
     """OpenClaw down + LLM down -> status=down."""
     from httpx import RequestError
 
-    with patch("app.api.v1.integrations.httpx.AsyncClient") as MockClient:
+    with patch("app.api.v1.integrations.httpx.AsyncClient") as MockClient, \
+         patch("app.config.settings.opencode_go_api_key", "test_key"):
         instance = AsyncMock()
         instance.__aenter__ = AsyncMock(return_value=instance)
         instance.__aexit__ = AsyncMock(return_value=None)
@@ -145,9 +148,9 @@ def test_agent_health_response_shape(client) -> None:
     mock.__aexit__ = AsyncMock(return_value=None)
     mock.get = AsyncMock(return_value=_mock_response(200))
 
-    with patch("app.api.v1.integrations.httpx.AsyncClient", return_value=mock):
-        with patch("app.api.v1.integrations.httpx.AsyncClient", return_value=mock):
-            resp = client.get("/api/v1/integrations/agent/health")
+    with patch("app.api.v1.integrations.httpx.AsyncClient", return_value=mock), \
+         patch("app.config.settings.opencode_go_api_key", "test_key"):
+        resp = client.get("/api/v1/integrations/agent/health")
 
     body = resp.json()
     assert set(body.keys()) == {"status", "openclaw", "llm_provider", "timestamp"}
@@ -162,9 +165,9 @@ def test_agent_health_nao_vaza_api_key(client) -> None:
     mock.__aexit__ = AsyncMock(return_value=None)
     mock.get = AsyncMock(return_value=_mock_response(200))
 
-    with patch("app.api.v1.integrations.httpx.AsyncClient", return_value=mock):
-        with patch("app.api.v1.integrations.httpx.AsyncClient", return_value=mock):
-            resp = client.get("/api/v1/integrations/agent/health")
+    with patch("app.api.v1.integrations.httpx.AsyncClient", return_value=mock), \
+         patch("app.config.settings.opencode_go_api_key", "test_key"):
+        resp = client.get("/api/v1/integrations/agent/health")
 
     body_str = str(resp.json())
     # api_key nao pode aparecer em lugar nenhum
