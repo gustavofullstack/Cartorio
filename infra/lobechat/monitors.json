@@ -1,0 +1,95 @@
+[
+  {
+    "id": "lobechat-http-prod",
+    "name": "LobeChat Production HTTP",
+    "description": "LobeChat container rodando em EasyPanel + Traefik. Probe /api/health espera 200. Falha = chatbot escreventes DOWN.",
+    "type": "http",
+    "url": "https://lobe.2notasudi.com.br/api/health",
+    "method": "GET",
+    "interval": 60,
+    "retryInterval": 30,
+    "maxretries": 3,
+    "timeout": 10,
+    "accepted_statuscodes": ["200"],
+    "tags": ["lobechat", "production", "cartorio", "p1"],
+    "notification": {
+      "telegram": {
+        "chat_id": "6682284055",
+        "parse_mode": "MarkdownV2",
+        "message_template": ":red_circle: *LobeChat DOWN*\\n\\nURL: {{url}}\\nStatus: {{status}}\\nLatency: {{latency}}ms\\nTime: {{datetime}}"
+      }
+    },
+    "owner": "cartorio-evolution",
+    "created_at": "2026-07-15T14:45:00-03:00",
+    "updated_at": "2026-07-15T14:45:00-03:00",
+    "fallback_urls": [
+      "https://cartorio-lobechat.dfgdxq.easypanel.host/api/health"
+    ],
+    "cross_refs": {
+      "lesson_170": "CORS+timeout fix OpenClaw",
+      "lesson_177": "OpenClaw E8 catalog",
+      "lesson_178": "F4 [P1] RETRY snapshot",
+      "lesson_179": "DNS Cloudflare runbook"
+    }
+  },
+  {
+    "id": "telegram-webhook-prod",
+    "name": "Telegram Bot Webhook",
+    "description": "Telegram webhook handler /api/v1/telegram/health. Probe retorna 200 quando backend UP. Falha = bot @TestCartorioBot inacessível. Token revogado em 2026-07-XX — endpoint OK mas bot MORTO até regenerar via BotFather.",
+    "type": "http",
+    "url": "https://api.2notasudi.com.br/api/v1/telegram/health",
+    "method": "GET",
+    "interval": 120,
+    "retryInterval": 60,
+    "maxretries": 3,
+    "timeout": 10,
+    "accepted_statuscodes": ["200"],
+    "tags": ["telegram", "production", "cartorio", "p1"],
+    "notification": {
+      "telegram": {
+        "chat_id": "6682284055",
+        "parse_mode": "MarkdownV2",
+        "message_template": ":red_circle: *Telegram webhook DOWN*\\n\\nURL: {{url}}\\nStatus: {{status}}\\nLatency: {{latency}}ms\\nTime: {{datetime}}\\n\\n_Lembre: token do bot pode estar revogado. Verificar @BotFather._"
+      }
+    },
+    "owner": "cartorio-evolution",
+    "created_at": "2026-07-15T14:45:00-03:00",
+    "updated_at": "2026-07-15T14:45:00-03:00",
+    "current_status": "DOWN_5XX",
+    "current_status_reason": "Token revogado por Gustavo — webhook health endpoint UP mas bot não envia/recebe mensagens até regenerar token via @BotFather /revoke + /token",
+    "cross_refs": {
+      "lesson_160": "Telegram HITL + auto audit",
+      "lesson_161": "Telegram memory + catalog",
+      "lesson_162": "Telegram PII + DPO email",
+      "lesson_178": "F4 [P1] RETRY snapshot"
+    }
+  },
+  {
+    "id": "openclaw-gateway-prod",
+    "name": "OpenClaw Gateway Health",
+    "description": "OpenClaw Gateway /health endpoint. Probe retorna 200 com {ok:true}. Falha = LobeChat e Telegram agent quebram (sem upstream). Cross-ref Lesson 170 (CORS+timeout) + Lesson 177 (E8 catalog).",
+    "type": "http",
+    "url": "https://agent.2notasudi.com.br/health",
+    "method": "GET",
+    "interval": 60,
+    "retryInterval": 30,
+    "maxretries": 3,
+    "timeout": 10,
+    "accepted_statuscodes": ["200"],
+    "tags": ["openclaw", "production", "cartorio", "p1"],
+    "notification": {
+      "telegram": {
+        "chat_id": "6682284055",
+        "parse_mode": "MarkdownV2",
+        "message_template": ":red_circle: *OpenClaw Gateway DOWN*\\n\\nURL: {{url}}\\nStatus: {{status}}\\nLatency: {{latency}}ms\\nTime: {{datetime}}\\n\\n_LobeChat e Telegram agent vao quebrar. Investigar agent container._"
+      }
+    },
+    "owner": "cartorio-evolution",
+    "created_at": "2026-07-15T14:45:00-03:00",
+    "updated_at": "2026-07-15T14:45:00-03:00",
+    "cross_refs": {
+      "lesson_170": "CORS+timeout fix",
+      "lesson_177": "E8 catalog (218 methods + 30 events)"
+    }
+  }
+]

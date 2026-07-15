@@ -96,6 +96,16 @@ API_ENDPOINTS: tuple[ApiEndpoint, ...] = (
     # --- Webhooks (2) ---
     ApiEndpoint("POST", "/api/v1/webhooks/evo-in", "v1", "webhooks", "Webhook Evolution API inbound", False, False, "stable"),
     ApiEndpoint("POST", "/api/v1/webhooks/chatwoot", "v1", "webhooks", "Webhook Chatwoot", False, False, "stable"),
+    # --- Telegram bot (6) --- F4 [P1] RETRY 2026-07-15 / Lesson 178
+    # Source: backend/app/api/v1/telegram.py (router prefix /telegram, tags=["telegram"])
+    # Auth: webhook usa X-Telegram-Bot-Api-Secret-Token (HMAC compare_digest, timing-safe).
+    #       health/metrics sao publicos. set-commands precisa de X-API-Key.
+    ApiEndpoint("POST", "/api/v1/telegram/webhook", "v1", "telegram-webhook", "Telegram bot webhook handler (PII scrub 3 camadas + debounce + idempotency Redis SETNX)", False, True, "stable"),
+    ApiEndpoint("GET", "/api/v1/telegram/health", "v1", "telegram-health", "Telegram bot health check (200 ok)", False, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/telegram/metrics", "v1", "telegram-metrics", "Telegram bot metrics Prometheus (counter/histogram)", False, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/telegram/debug/last-updates", "v1", "telegram-debug", "Debug buffer ultimas updates (apenas se TELEGRAM_DEBUG_MODE=true)", True, True, "beta"),
+    ApiEndpoint("GET", "/api/v1/telegram/webhook/info", "v1", "telegram-webhook-info", "Info do webhook configurado (url + pending + last_error)", True, False, "stable"),
+    ApiEndpoint("POST", "/api/v1/telegram/set-commands", "v1", "telegram-admin", "Registra command list do bot via BotFather API (X-API-Key required)", True, False, "alpha"),
 )
 
 
@@ -111,9 +121,66 @@ API_V2_ENDPOINTS: tuple[ApiEndpoint, ...] = (
 )
 
 
+# ============================================================================
+# OpenClaw Gateway — WS + OpenAI-compatible REST (Squad E / E8)
+# ============================================================================
+# Endpoint externo gerenciado por `cartorio_openclaw-gateway` no Swarm
+# (host `agent.2notasudi.com.br`, porta interna 18789 + TLS Traefik 443).
+# Protocolo proprio (WS) + camada REST OpenAI-compat.
+# Auth: `gateway.auth.token` (env `OPENCLAW_GATEWAY_TOKEN`) + opcional
+# `gateway.auth.password` (env `OPENCLAW_GATEWAY_PASSWORD`). Scope
+# `operator.read|operator.write|operator.admin` exigido para metodos nao-health.
+#
+# Validado 2026-07-15 (lesson-177-openclaw-e8-finalize-2026-07-14):
+#   - GET /health                              -> 200 JSON {"ok":true,...}
+#   - GET /v1/models                           -> 401 sem auth; 200 com token
+#   - POST /v1/chat/completions                -> 401 sem auth; OpenAI-compat
+#   - WS  wss://.../v1/chat                    -> handshake connect.challenge
+#     -> connect req(method=connect, params={auth.token, role=operator})
+#     -> hello-ok {protocol:4, server:2026.7.1, 218 methods, 30 events}
+#
+# Frame shapes:
+#   req:  {type:"req", id, method, params}
+#   res:  {type:"res", id, ok, payload|error}
+#   event:{type:"event", event, payload, seq?, stateVersion?}
+#
+# Metodos relevantes (subset, ver features.methods em hello-ok):
+#   agents.list / agents.create / agents.update / agents.delete
+#   models.list / models.authStatus
+#   skills.status / skills.search / skills.install / skills.update
+#   tools.catalog / tools.invoke
+#   config.get / config.set / config.apply / config.schema
+#   sessions.send / sessions.list / sessions.subscribe
+#   status / health / diagnostics.stability / logs.tail
+#   node.pair.request / node.pair.approve
+#   device.pair.list / device.pair.approve
+#   channels.status / channels.start / channels.stop
+#
+# Gaps E8 conhecidos:
+#   - defaultAgentId="main" (agent padrao). `cartorio-bot` NAO existe.
+#   - hello-ok.auth.scopes=[] para o token atual (health-only). Bloqueia
+#     agents.list / agents.create ate Gustavo ajustar openclaw.json ou
+#     gerar operator token com scopes no gateway.
+
+OPENCLAW_GATEWAY_BASE = "https://agent.2notasudi.com.br"
+OPENCLAW_GATEWAY_WS = "wss://agent.2notasudi.com.br/v1/chat"
+
+OPENCLAW_GATEWAY_ENDPOINTS: tuple[ApiEndpoint, ...] = (
+    ApiEndpoint("GET", "/health", "oc", "openclaw-health", "Health snapshot (event loop + plugins + model pricing)", False, False, "stable"),
+    ApiEndpoint("GET", "/v1/models", "oc", "openclaw-models", "Lista modelos agent-first (openclaw, openclaw/<agentId>)", True, False, "stable"),
+    ApiEndpoint("GET", "/v1/models/{id}", "oc", "openclaw-models", "Detalhe de um modelo", True, False, "stable"),
+    ApiEndpoint("POST", "/v1/chat/completions", "oc", "openclaw-chat", "Chat completions (formato OpenAI-compatible)", True, True, "stable"),
+    ApiEndpoint("POST", "/v1/responses", "oc", "openclaw-chat", "Agent-native responses endpoint", True, True, "beta"),
+    ApiEndpoint("POST", "/v1/embeddings", "oc", "openclaw-models", "Embeddings (RAG pipelines)", True, False, "stable"),
+    ApiEndpoint("POST", "/tools/invoke", "oc", "openclaw-tools", "Invoca tool registrada no gateway", True, True, "stable"),
+    ApiEndpoint("WS", "/v1/chat", "oc", "openclaw-ws", "Gateway WS protocol v4 (connect/hello-ok + 218 methods + 30 events)", True, True, "stable"),
+    ApiEndpoint("POST", "/api/v1/admin/rpc", "oc", "openclaw-admin", "Admin HTTP RPC (plugin default-off)", True, False, "alpha"),
+)
+
+
 def get_all_endpoints() -> tuple[ApiEndpoint, ...]:
-    """Retorna TODOS endpoints v1 + v2."""
-    return API_ENDPOINTS + API_V2_ENDPOINTS
+    """Retorna TODOS endpoints v1 + v2 + openclaw gateway."""
+    return API_ENDPOINTS + API_V2_ENDPOINTS + OPENCLAW_GATEWAY_ENDPOINTS
 
 
 def get_endpoints_by_tag(tag: str) -> tuple[ApiEndpoint, ...]:
