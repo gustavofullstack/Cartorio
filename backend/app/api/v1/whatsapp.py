@@ -300,9 +300,13 @@ def get_adapter() -> WhatsAppAdapter:
 
 
 def parse_evolution_payload(payload: dict) -> InboundMessage | None:
-    """Extrai mensagem normalizada do payload Evolution API.
+    """Extrai mensagem normalizada do payload Evolution API (dual-format).
 
-    Evolution webhook payload:
+    Formatos aceitos (ambos aparecem em prod — AGENTS.md):
+    1) Nested moderno: payload["data"]["message"] + data["key"]
+    2) Root-level legado: payload["message"] + payload["key"]
+
+    Exemplo nested:
     {
       "event": "messages.upsert",
       "instance": "cartorio-2notas",
@@ -316,31 +320,58 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
     """
     try:
         event = payload.get("event", "")
-        if event != "messages.upsert":
+        if event and event != "messages.upsert":
+            # Alguns exports omitem event; so rejeita se event presente e diferente
             return None
-        data = payload.get("data", {})
-        key = data.get("key", {})
-        message = data.get("message", {})
-        remote_jid = key.get("remoteJid", "")
-        msg_id = key.get("id", "")
+
+        # Dual-format: nested data.* OU root-level (G7.04.T3)
+        _data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+        _key = _data.get("key") if isinstance(_data.get("key"), dict) else None  # type: ignore[union-attr]
+        _message = _data.get("message") if isinstance(_data.get("message"), dict) else None  # type: ignore[union-attr]
+        if not _key:
+            _key = payload.get("key") if isinstance(payload.get("key"), dict) else {}
+        if not _message:
+            _message = payload.get("message") if isinstance(payload.get("message"), dict) else {}
+        data = _data
+        if not isinstance(_key, dict):
+            _key = {}
+        if not isinstance(_message, dict):
+            _message = {}
+        key = _key
+        message = _message
+
+        remote_jid = key.get("remoteJid", "") or ""
+        msg_id = key.get("id", "") or ""
         # Texto: conversation OU extendedTextMessage.text
-        text = message.get("conversation") or message.get("extendedTextMessage", {}).get("text", "")
-        push_name = data.get("pushName", "")
+        ext = message.get("extendedTextMessage")
+        ext_text = ext.get("text", "") if isinstance(ext, dict) else ""
+        text = message.get("conversation") or ext_text or ""
+        push_name = (
+            data.get("pushName", "")
+            if isinstance(data, dict)
+            else ""
+        ) or payload.get("pushName", "") or ""
         is_group = "@g.us" in remote_jid
         if not remote_jid or not msg_id:
             return None
+        message_type = ""
+        if isinstance(data, dict):
+            message_type = str(data.get("messageType") or "")
+        if not message_type:
+            message_type = str(payload.get("messageType") or "")
         return InboundMessage(
             channel=Channel.WHATSAPP,
             sender_id=remote_jid,
-            sender_name=push_name,
-            text=text,
+            sender_name=str(push_name),
+            text=str(text),
             update_id=msg_id,  # message_id do WhatsApp = idempotency key
             message_ids=[msg_id],
             is_group=is_group,
             extra={
                 "instance": payload.get("instance", EVOLUTION_INSTANCE),
                 "from_me": key.get("fromMe", False),
-                "message_type": data.get("messageType", ""),
+                "message_type": message_type,
+                "format": "nested" if payload.get("data") else "root",
             },
         )
     except Exception as e:
