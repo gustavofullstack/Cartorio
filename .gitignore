@@ -69,3 +69,4 @@ _tmp_alembic_test*.db
 .claude/settings.local.json
 
 trae-agent
+backups/
