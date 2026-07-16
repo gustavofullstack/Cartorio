@@ -8,6 +8,7 @@ Validates:
 - snapshot nao vazio quando brain tem arquivos
 - snapshot retorna estrutura esperada
 """
+
 from __future__ import annotations
 
 import json
@@ -58,9 +59,7 @@ def test_create_snapshot_writes_dated_file(tmp_brain: Path, fake_containers: lis
     assert result["snapshot_file"] == str(snap_path)
 
 
-def test_snapshot_contains_container_state(
-    tmp_brain: Path, fake_containers: list[dict]
-) -> None:
+def test_snapshot_contains_container_state(tmp_brain: Path, fake_containers: list[dict]) -> None:
     """Snapshot deve ter state completo dos containers (added/removed/changed)."""
     with patch.object(brain_sync, "_list_containers", return_value=fake_containers):
         brain_sync.sync_vps_incremental(brain_dir=tmp_brain)
@@ -84,9 +83,7 @@ def test_diff_detects_added_container(tmp_brain: Path) -> None:
     with patch.object(
         brain_sync,
         "_list_containers",
-        return_value=initial + [
-            {"name": "cartorio_redis", "replicas": "1/1", "image": "redis:7"}
-        ],
+        return_value=initial + [{"name": "cartorio_redis", "replicas": "1/1", "image": "redis:7"}],
     ):
         diff = brain_sync.diff_against_last(brain_dir=tmp_brain)
 
