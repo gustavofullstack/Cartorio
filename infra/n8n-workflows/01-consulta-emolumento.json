@@ -57,6 +57,39 @@
     },
     {
       "parameters": {
+        "jsCode": "// Idempotency via Redis SETNX TTL 24h (lesson 22 super-prompt).\nconst webhookId = $input.item.json.headers?.['x-webhook-id']\n  || $input.item.json.body?.id\n  || $input.item.json.body?.messageId\n  || crypto.randomUUID();\n\nconst dedupKey = `webhook:consulta-emolumento:${webhookId}`;\n\n// SETNX retorna 'OK' se inserido, null se ja existe\nconst result = await this.helpers.redis.set(dedupKey, '1', 'EX', 86400, 'NX');\n\nif (!result) {\n  throw new Error('DUPLICATE_WEBHOOK');\n}\n\nreturn [{ json: { ...$input.item.json, _dedup_key: dedupKey } }];\n"
+      },
+      "name": "Dedup Webhook (SETNX)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "dedup-webhook-idempotency"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{$json._dedup_key}}",
+        "value": "1",
+        "expire": true,
+        "ttl": 86400,
+        "options": {
+          "NX": true
+        }
+      },
+      "name": "Redis SETNX 24h",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        640,
+        400
+      ],
+      "id": "redis-setnx-24h"
+    },
+    {
+      "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || (item.body && item.body.data && item.body.data.message && (item.body.data.message.conversation || item.body.data.message.extendedTextMessage?.text || '')) || '';\nconst sender = (item.body && (item.body.sender || item.body.data?.key?.remoteJid)) || 'unknown';\nconst patterns = { cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g, rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g, phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g, email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g };\nlet scrubbed = raw; let count = 0;\nfor (const [t, p] of Object.entries(patterns)) { const m = scrubbed.match(p); if (m) { count += m.length; scrubbed = scrubbed.replace(p, '[' + t.toUpperCase() + '_REDACTED]'); } }\nreturn { json: { raw_text: raw, scrubbed_text: scrubbed, redaction_count: count, sender: sender } };"
       },
@@ -72,7 +105,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doa\u00e7|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"
+        "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doaç|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"
       },
       "id": "parse-01",
       "name": "Parse Tipo",
@@ -310,6 +343,28 @@
           }
         ]
       ]
+    },
+    "webhook-01": {
+      "main": [
+        [
+          {
+            "node": "dedup-webhook-idempotency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dedup-webhook-idempotency": {
+      "main": [
+        [
+          {
+            "node": "redis-setnx-24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -416,7 +471,7 @@
       {
         "parameters": {
           "mode": "runOnceForEachItem",
-          "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doa\u00e7|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"
+          "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doaç|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"
         },
         "id": "parse-01",
         "name": "Parse Tipo",

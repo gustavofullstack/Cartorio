@@ -53,6 +53,39 @@
     },
     {
       "parameters": {
+        "jsCode": "// Idempotency via Redis SETNX TTL 24h (lesson 22 super-prompt).\nconst webhookId = $input.item.json.headers?.['x-webhook-id']\n  || $input.item.json.body?.id\n  || $input.item.json.body?.messageId\n  || crypto.randomUUID();\n\nconst dedupKey = `webhook:telegram-cartoriobot:${webhookId}`;\n\n// SETNX retorna 'OK' se inserido, null se ja existe\nconst result = await this.helpers.redis.set(dedupKey, '1', 'EX', 86400, 'NX');\n\nif (!result) {\n  throw new Error('DUPLICATE_WEBHOOK');\n}\n\nreturn [{ json: { ...$input.item.json, _dedup_key: dedupKey } }];\n"
+      },
+      "name": "Dedup Webhook (SETNX)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "dedup-webhook-idempotency"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{$json._dedup_key}}",
+        "value": "1",
+        "expire": true,
+        "ttl": 86400,
+        "options": {
+          "NX": true
+        }
+      },
+      "name": "Redis SETNX 24h",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        640,
+        400
+      ],
+      "id": "redis-setnx-24h"
+    },
+    {
+      "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "// Extrai campos relevantes do update do Telegram\n// N8N 2.x Code node: $input JÁ É o item, $json é o shortcut\n// O webhook body vem em $json.body (NÃO em $json)\nconst item = $json || $input.json || {};\nconst body = item.body || item || {};\nconst message = body.message || {};\nconst chat = message.chat || {};\nconst from_user = message.from || {};\n\nreturn {\n  json: {\n    update_id: body.update_id,\n    message_id: message.message_id,\n    chat_id: chat.id,\n    chat_type: chat.type,\n    text: message.text || '',\n    from_user: {\n      id: from_user.id,\n      first_name: from_user.first_name || '',\n      username: from_user.username || '',\n      is_bot: from_user.is_bot || false\n    },\n    date: message.date,\n    is_command: (message.text || '').startsWith('/'),\n    is_bot_message: from_user.is_bot === true\n  }\n};"
       },
@@ -379,6 +412,28 @@
         [
           {
             "node": "Respond OK (200)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "webhook-telegram": {
+      "main": [
+        [
+          {
+            "node": "dedup-webhook-idempotency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dedup-webhook-idempotency": {
+      "main": [
+        [
+          {
+            "node": "redis-setnx-24h",
             "type": "main",
             "index": 0
           }

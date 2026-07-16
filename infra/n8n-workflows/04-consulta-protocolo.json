@@ -57,6 +57,39 @@
     },
     {
       "parameters": {
+        "jsCode": "// Idempotency via Redis SETNX TTL 24h (lesson 22 super-prompt).\nconst webhookId = $input.item.json.headers?.['x-webhook-id']\n  || $input.item.json.body?.id\n  || $input.item.json.body?.messageId\n  || crypto.randomUUID();\n\nconst dedupKey = `webhook:consulta-protocolo:${webhookId}`;\n\n// SETNX retorna 'OK' se inserido, null se ja existe\nconst result = await this.helpers.redis.set(dedupKey, '1', 'EX', 86400, 'NX');\n\nif (!result) {\n  throw new Error('DUPLICATE_WEBHOOK');\n}\n\nreturn [{ json: { ...$input.item.json, _dedup_key: dedupKey } }];\n"
+      },
+      "name": "Dedup Webhook (SETNX)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "dedup-webhook-idempotency"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{$json._dedup_key}}",
+        "value": "1",
+        "expire": true,
+        "ttl": 86400,
+        "options": {
+          "NX": true
+        }
+      },
+      "name": "Redis SETNX 24h",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        640,
+        400
+      ],
+      "id": "redis-setnx-24h"
+    },
+    {
+      "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "// Extrai numero de protocolo do texto; PII scrubber (defesa em profundidade)\nconst item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\n// PII patterns (mesmo set do workflow #1)\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet findings = [];\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    findings.push({ type, count: matches.length });\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Detectar numero de protocolo (formato: PROT-YYYY-NNNNNN ou similar)\nconst m = scrubbed.match(/\\b(PROT[-\\s]?\\d{4}[-\\s]?\\d{4,8})\\b/i)\n  || scrubbed.match(/\\b(\\d{4,8})\\b/);\nconst numeroProtocolo = m ? m[1].toUpperCase().replace(/\\s/g, '-') : null;\n\nreturn { json: { sender, raw, scrubbed, findings, redactionCount, numeroProtocolo } };"
       },
@@ -269,6 +302,28 @@
         [
           {
             "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "webhook-trigger": {
+      "main": [
+        [
+          {
+            "node": "dedup-webhook-idempotency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dedup-webhook-idempotency": {
+      "main": [
+        [
+          {
+            "node": "redis-setnx-24h",
             "type": "main",
             "index": 0
           }

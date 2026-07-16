@@ -57,6 +57,39 @@
     },
     {
       "parameters": {
+        "jsCode": "// Idempotency via Redis SETNX TTL 24h (lesson 22 super-prompt).\nconst webhookId = $input.item.json.headers?.['x-webhook-id']\n  || $input.item.json.body?.id\n  || $input.item.json.body?.messageId\n  || crypto.randomUUID();\n\nconst dedupKey = `webhook:faq:${webhookId}`;\n\n// SETNX retorna 'OK' se inserido, null se ja existe\nconst result = await this.helpers.redis.set(dedupKey, '1', 'EX', 86400, 'NX');\n\nif (!result) {\n  throw new Error('DUPLICATE_WEBHOOK');\n}\n\nreturn [{ json: { ...$input.item.json, _dedup_key: dedupKey } }];\n"
+      },
+      "name": "Dedup Webhook (SETNX)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "dedup-webhook-idempotency"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{$json._dedup_key}}",
+        "value": "1",
+        "expire": true,
+        "ttl": 86400,
+        "options": {
+          "NX": true
+        }
+      },
+      "name": "Redis SETNX 24h",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        640,
+        400
+      ],
+      "id": "redis-setnx-24h"
+    },
+    {
+      "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "// FAQ knowledge base (local, sem LLM). PII scrubber.\nconst item = $input.item.json;\nconst raw = ((item.body && item.body.message && item.body.message.text) || '').toLowerCase().trim();\n\n// PII patterns\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// FAQ knowledge base (intencao -> resposta)\nconst kb = {\n  'horario': 'Atendemos de segunda a sexta, 09h-17h. Em urgente, procure o plantao no 1o andar.',\n  'endereco|local|onde': 'Cartorio 2 Notas Uberlandia - Av. Paulo Gracindo, 150 - Centro. Estacionamento no local.',\n  'documento|rg|cpf': 'Para tirar 2a via de RG, procurar SEJUSP. Para CPF, procurar Receita Federal. No cartorio fazemos autenticacao e reconhecimento de firma.',\n  'cust|emolumento|valor|tabela': 'Valores conforme tabela MG 2026. Posso consultar agora - me diga o tipo de servico (certidao, escritura, procuracao, etc).',\n  'agendar|agendamento|horario': 'Quer agendar atendimento? Me diga dia da semana e horario de preferencia.',\n  'pix|pagament|cartao': 'Aceitamos PIX, cartao (credito/debito) e dinheiro. Pagamento apos conclusao do servico.',\n  'certidao': 'Emitamos certidoes: casamento, negativa, positiva, nascimento, obito. Me diga qual precisa.',\n  'escritura': 'Fazemos escrituras de compra/venda, doacao, permuta, procurações. Agende com um escrevente.',\n  'procuracao': 'Procuracao precisa de comparecimento pessoal do outorgante + 2 testemunhas com RG/CPF.',\n  'protesto': 'Protesto de titulos: 2a a 6a, das 09h-16h. Pagamento ou cancelamento tira o protesto em 5 dias uteis.'\n};\n\nlet resposta = null;\nlet intencao = null;\nfor (const [pattern, resp] of Object.entries(kb)) {\n  if (new RegExp(pattern, 'i').test(scrubbed)) {\n    resposta = resp;\n    intencao = pattern.split('|')[0];\n    break;\n  }\n}\n\nif (!resposta) {\n  resposta = 'Nao encontrei resposta automatica. Vou transferir para um atendente humano. Aguarde.';\n  intencao = 'unknown';\n}\n\nreturn { json: { sender: (item.body && item.body.sender) || 'unknown', scrubbed, redactionCount, intencao, resposta } };"
       },
@@ -167,6 +200,28 @@
         [
           {
             "node": "Respond FAQ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "webhook-trigger": {
+      "main": [
+        [
+          {
+            "node": "dedup-webhook-idempotency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dedup-webhook-idempotency": {
+      "main": [
+        [
+          {
+            "node": "redis-setnx-24h",
             "type": "main",
             "index": 0
           }

@@ -57,6 +57,39 @@
     },
     {
       "parameters": {
+        "jsCode": "// Idempotency via Redis SETNX TTL 24h (lesson 22 super-prompt).\nconst webhookId = $input.item.json.headers?.['x-webhook-id']\n  || $input.item.json.body?.id\n  || $input.item.json.body?.messageId\n  || crypto.randomUUID();\n\nconst dedupKey = `webhook:criar-protocolo:${webhookId}`;\n\n// SETNX retorna 'OK' se inserido, null se ja existe\nconst result = await this.helpers.redis.set(dedupKey, '1', 'EX', 86400, 'NX');\n\nif (!result) {\n  throw new Error('DUPLICATE_WEBHOOK');\n}\n\nreturn [{ json: { ...$input.item.json, _dedup_key: dedupKey } }];\n"
+      },
+      "name": "Dedup Webhook (SETNX)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "dedup-webhook-idempotency"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{$json._dedup_key}}",
+        "value": "1",
+        "expire": true,
+        "ttl": 86400,
+        "options": {
+          "NX": true
+        }
+      },
+      "name": "Redis SETNX 24h",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        640,
+        400
+      ],
+      "id": "redis-setnx-24h"
+    },
+    {
+      "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "// PII scrub + LGPD consentimento check\nconst item = $input.item.json;\nconst body = item.body || {};\nconst sender = body.sender || 'unknown';\nconst text = (body.message && body.message.text) || '';\nconst consentimento_lgpd = body.consentimento_lgpd === true;\n\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\n\nlet scrubbed = text;\nlet findings = [];\nlet redactionCount = 0;\n\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    findings.push({ type, count: matches.length });\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// LGPD gate: consentimento explicito obrigatorio para criar protocolo\nconst lgpd_blocked = !consentimento_lgpd;\n\n// Extrair tipo de ato do texto\nconst lower = scrubbed.toLowerCase();\nlet tipo_ato = 'certidao_casamento';\nif (/escritur/.test(lower)) tipo_ato = 'escritura';\nelse if (/procur/.test(lower)) tipo_ato = 'procuracao';\n\nreturn { json: {\n  sender,\n  raw: text,\n  scrubbed,\n  findings,\n  redactionCount,\n  consentimento_lgpd,\n  lgpd_blocked,\n  tipo_ato,\n  instance: body.instance || 'unknown'\n}};"
       },
@@ -290,6 +323,28 @@
         [
           {
             "node": "Respond Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "webhook-trigger": {
+      "main": [
+        [
+          {
+            "node": "dedup-webhook-idempotency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dedup-webhook-idempotency": {
+      "main": [
+        [
+          {
+            "node": "redis-setnx-24h",
             "type": "main",
             "index": 0
           }

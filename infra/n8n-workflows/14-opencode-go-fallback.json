@@ -1,1 +1,232 @@
-{"name": "14 - OpenCode-Go LLM Fallback (direct OpenAI-compat)", "nodes": [{"parameters": {"httpMethod": "POST", "path": "openclaw-fallback", "responseMode": "responseNode", "options": {}}, "id": "openclaw-fallback-trigger", "name": "OpenClaw Fallback Trigger", "type": "n8n-nodes-base.webhook", "position": [240, 300], "typeVersion": 2.1, "webhookId": "515ce269-4ddb-4dff-a713-647804b8ac57"}, {"parameters": {"assignments": {"assignments": [{"id": "prompt", "name": "prompt", "value": "={{ $json.body.prompt }}", "type": "string"}, {"id": "session_id", "name": "session_id", "value": "={{ $json.body.session_id || 'n8n-fallback' }}", "type": "string"}, {"id": "model", "name": "model", "value": "={{ $json.body.model || 'deepseek-v4-flash' }}", "type": "string"}]}, "options": {}}, "id": "extract-prompt", "name": "Extract Prompt", "type": "n8n-nodes-base.set", "position": [460, 300], "typeVersion": 3.4}, {"parameters": {"method": "POST", "url": "https://api.2notasudi.com.br/api/v1/integrations/opencode/test", "sendHeaders": true, "headerParameters": {"parameters": [{"name": "X-API-Key", "value": "dffe2d0321dcf03f729d5967da45eb7b04cc478935f86131a52b0d649889c69b"}, {"name": "Content-Type", "value": "application/json"}]}, "sendBody": true, "specifyBody": "json", "jsonBody": "={\n  \"prompt\": \"{{ $json.prompt }}\",\n  \"model\": \"deepseek-v4-flash-free\",\n  \"consent_granted\": true,\n  \"use_fallback\": true,\n  \"session_id\": \"wf14-fallback-{{ $json.session_id || \"n/a\" }}\"\n}", "options": {"timeout": 30000, "response": {"response": {"neverError": true}}}}, "id": "post-opencode-go-direct", "name": "POST OpenCode-Go Direct", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [680, 300]}, {"parameters": {"mode": "runOnceForAllItems", "language": "javaScript", "jsCode": "const items = $input.all();\nconst out = [];\nfor (const item of items) {\n  const r = item.json || {};\n  out.push({ json: {\n    status: r.status || 'erro',\n    response: r.response || 'sem_resposta',\n    model: r.model || 'deepseek-v4-flash-free',\n    tokens_in: r.tokens_in || 0,\n    tokens_out: r.tokens_out || 0,\n    latency_ms: r.latency_ms || 0,\n    provider: r.provider || 'opencode_go',\n    session_id: $('Extract Prompt').item.json.session_id,\n  }});\n}\nreturn out;\n"}, "id": "parse-opencode-response", "name": "Parse OpenCode Response", "type": "n8n-nodes-base.code", "position": [900, 300], "typeVersion": 2}, {"parameters": {"respondWith": "json", "responseBody": "={\"status\":\"{{ $json.status }}\",\"response\":{{ JSON.stringify($json.response) }},\"model\":{{ JSON.stringify($json.model) }},\"provider\":{{ JSON.stringify($json.provider) }},\"tokens_in\":{{ $json.tokens_in || 0 }},\"tokens_out\":{{ $json.tokens_out || 0 }}}"}, "id": "respond-opencode-go", "name": "Respond OpenCode-Go", "type": "n8n-nodes-base.respondToWebhook", "position": [1120, 300], "typeVersion": 1}], "connections": {"OpenClaw Fallback Trigger": {"main": [[{"node": "Extract Prompt", "type": "main", "index": 0}]]}, "Extract Prompt": {"main": [[{"node": "POST OpenCode-Go Direct", "type": "main", "index": 0}]]}, "POST OpenCode-Go Direct": {"main": [[{"node": "Parse OpenCode Response", "type": "main", "index": 0}]]}, "Parse OpenCode Response": {"main": [[{"node": "Respond OpenCode-Go", "type": "main", "index": 0}]]}}, "settings": {"callerPolicy": "workflowsFromSameOwner", "errorWorkflow": "4IS5oiLyHWGhtb8g", "availableInMCP": true, "executionOrder": "v1"}, "staticData": null}
+{
+  "name": "14 - OpenCode-Go LLM Fallback (direct OpenAI-compat)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "openclaw-fallback",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "openclaw-fallback-trigger",
+      "name": "OpenClaw Fallback Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 2.1,
+      "webhookId": "515ce269-4ddb-4dff-a713-647804b8ac57"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Idempotency via Redis SETNX TTL 24h (lesson 22 super-prompt).\nconst webhookId = $input.item.json.headers?.['x-webhook-id']\n  || $input.item.json.body?.id\n  || $input.item.json.body?.messageId\n  || crypto.randomUUID();\n\nconst dedupKey = `webhook:openclaw-fallback:${webhookId}`;\n\n// SETNX retorna 'OK' se inserido, null se ja existe\nconst result = await this.helpers.redis.set(dedupKey, '1', 'EX', 86400, 'NX');\n\nif (!result) {\n  throw new Error('DUPLICATE_WEBHOOK');\n}\n\nreturn [{ json: { ...$input.item.json, _dedup_key: dedupKey } }];\n"
+      },
+      "name": "Dedup Webhook (SETNX)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "dedup-webhook-idempotency"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{$json._dedup_key}}",
+        "value": "1",
+        "expire": true,
+        "ttl": 86400,
+        "options": {
+          "NX": true
+        }
+      },
+      "name": "Redis SETNX 24h",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        640,
+        400
+      ],
+      "id": "redis-setnx-24h"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.body.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "session_id",
+              "name": "session_id",
+              "value": "={{ $json.body.session_id || 'n8n-fallback' }}",
+              "type": "string"
+            },
+            {
+              "id": "model",
+              "name": "model",
+              "value": "={{ $json.body.model || 'deepseek-v4-flash' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-prompt",
+      "name": "Extract Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/integrations/opencode/test",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "dffe2d0321dcf03f729d5967da45eb7b04cc478935f86131a52b0d649889c69b"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.prompt }}\",\n  \"model\": \"deepseek-v4-flash-free\",\n  \"consent_granted\": true,\n  \"use_fallback\": true,\n  \"session_id\": \"wf14-fallback-{{ $json.session_id || \"n/a\" }}\"\n}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "post-opencode-go-direct",
+      "name": "POST OpenCode-Go Direct",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const items = $input.all();\nconst out = [];\nfor (const item of items) {\n  const r = item.json || {};\n  out.push({ json: {\n    status: r.status || 'erro',\n    response: r.response || 'sem_resposta',\n    model: r.model || 'deepseek-v4-flash-free',\n    tokens_in: r.tokens_in || 0,\n    tokens_out: r.tokens_out || 0,\n    latency_ms: r.latency_ms || 0,\n    provider: r.provider || 'opencode_go',\n    session_id: $('Extract Prompt').item.json.session_id,\n  }});\n}\nreturn out;\n"
+      },
+      "id": "parse-opencode-response",
+      "name": "Parse OpenCode Response",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        900,
+        300
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\":\"{{ $json.status }}\",\"response\":{{ JSON.stringify($json.response) }},\"model\":{{ JSON.stringify($json.model) }},\"provider\":{{ JSON.stringify($json.provider) }},\"tokens_in\":{{ $json.tokens_in || 0 }},\"tokens_out\":{{ $json.tokens_out || 0 }}}"
+      },
+      "id": "respond-opencode-go",
+      "name": "Respond OpenCode-Go",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1120,
+        300
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "OpenClaw Fallback Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Prompt": {
+      "main": [
+        [
+          {
+            "node": "POST OpenCode-Go Direct",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST OpenCode-Go Direct": {
+      "main": [
+        [
+          {
+            "node": "Parse OpenCode Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse OpenCode Response": {
+      "main": [
+        [
+          {
+            "node": "Respond OpenCode-Go",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "openclaw-fallback-trigger": {
+      "main": [
+        [
+          {
+            "node": "dedup-webhook-idempotency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dedup-webhook-idempotency": {
+      "main": [
+        [
+          {
+            "node": "redis-setnx-24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "4IS5oiLyHWGhtb8g",
+    "availableInMCP": true,
+    "executionOrder": "v1"
+  },
+  "staticData": null
+}
