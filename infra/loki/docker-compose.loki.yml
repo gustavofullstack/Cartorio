@@ -1,0 +1,48 @@
+# Docker Compose — Loki stack (G6.D.T5)
+# Sobe Loki + Promtail no mesmo Docker network do cartorio.
+# Gustavo deve adicionar este stack ao deploy:
+#   docker compose -f infra/loki/docker-compose.loki.yml up -d
+
+services:
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: cartorio-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/var/lib/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - cartorio-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: cartorio-promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtail_data:/tmp
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - cartorio-net
+    depends_on:
+      loki:
+        condition: service_healthy
+
+volumes:
+  loki_data:
+  promtail_data:
+
+networks:
+  cartorio-net:
+    external: true
+    name: cartorio-net

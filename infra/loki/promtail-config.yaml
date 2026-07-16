@@ -1,0 +1,94 @@
+# Promtail config — Cartorio 2o Notas Uberlandia (G6.D.T5)
+# Envia logs de backend (Docker container stdout), N8N, e syslog
+# para o Loki via http://loki:3100/loki/api/v1/push.
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: info
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    batchwait: 1m
+    batchsize: 1048576
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+
+scrape_configs:
+  # Backend FastAPI (Docker container stdout)
+  - job_name: backend
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=cartorio"]
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        target_label: "container"
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "service"
+      - source_labels: ["__meta_docker_container_log_stream"]
+        target_label: "stream"
+    pipeline_stages:
+      # Parsear JSON logs
+      - docker: {}
+      - match:
+          selector: '{service="backend"}'
+          stages:
+            - regex:
+                expression: '(?P<timestamp>\S+)\s+(?P<level>\S+)\s+(?P<logger>\S+)\s+(?P<message>.*)'
+            - labels:
+                level:
+                logger:
+      # LGPD scrub antes de enviar ao Loki
+      - match:
+          selector: '{service=~"backend|n8n"}'
+          stages:
+            - regex:
+                # Mascara CPF/CNPJ/email/telefone/CEP
+                expression: '(\b\d{3}\.\d{3}\.\d{3}-\d{2}\b)|(\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b)|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(\b\(\d{2}\)\s*\d{4,5}-\d{4}\b)'
+            - replace:
+                expression: '(\b\d{3}\.\d{3}\.\d{3}-\d{2}\b)'
+                replace: '[CPF]'
+            - replace:
+                expression: '(\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b)'
+                replace: '[CNPJ]'
+            - replace:
+                expression: '([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
+                replace: '[EMAIL]'
+            - replace:
+                expression: '(\b\(\d{2}\)\s*\d{4,5}-\d{4}\b)'
+                replace: '[PHONE]'
+
+  # N8N (logs locais em /var/log/n8n/)
+  - job_name: n8n
+    static_configs:
+      - targets: ["localhost"]
+        labels:
+          service: n8n
+          path: /var/log/n8n/
+    pipeline_stages:
+      - match:
+          selector: '{service="n8n"}'
+          stages:
+            - regex:
+                expression: '^\[(?P<timestamp>[^\]]+)\]\s+(?P<level>\S+)\s+(?P<message>.*)'
+
+  # Syslog geral
+  - job_name: syslog
+    static_configs:
+      - targets: ["localhost"]
+        labels:
+          service: syslog
+          path: /var/log/syslog
+
+# Limites
+limits_config:
+  readline_rate: 10000
+  readline_burst: 10000
