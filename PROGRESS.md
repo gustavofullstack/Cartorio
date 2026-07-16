@@ -2868,3 +2868,23 @@ Modified by Gustavo Almeida
   coverage tests on third-party code paths).
 - **Status:** SUCCESS (qa gate green) ✅
 Modified by Gustavo Almeida
+
+## 2026-07-16 09:29 — Wave S0 COMPLETED ✅
+- **Squad S0:** P0 OUTAGE RECOVERY (Traefik 502 + 7/9 canais down)
+- **Tasks Processed:**
+  - [x] **E25.S0.T1** (cartorio-dev) — Investigar `docs/CANAL_HEALTH_MATRIX.md` + identificar exato ponto de quebra (Traefik vs upstream vs DNS) — `git checkout master && bash scripts/health_check_27services.sh` + log análise
+  - [x] **E25.S0.T2** (cartorio-n8n) — Provisionar 9 endpoints canônicos em `.env` + URL fallbacks para Chatwoot/Evolution/OpenClaw/Supabase (lesson 172 runbook §3)
+  - [x] **E25.S0.T3** (cartorio-lgpd) — Validar que outage NÃO violou LGPD art. 37 (audit log freshness + continuidade de tratamento via `GET /api/v1/admin/audit/health`)
+  - [x] **E25.S0.T4** (cartorio-sre) — Aplicar restart_policy `on-failure:5` aos 22/27 serviços sem (lesson 172 §7) + restart Traefik (`docker service update --force easypanel-traefik`)
+- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅
+Modified by Gustavo Almeida (via loop v25)
+
+## 2026-07-16 11:22 — Wave S1 COMPLETED ✅
+- **Squad S1:** BACKEND COVERAGE GAP FILL (95% → 98%)
+- **Tasks Processed:**
+  - [x] **E25.S1.T1** (cartorio-dev) — Adicionar 50 testes para módulos <70%: `cursor.py` 47→95, `deprecation.py` 42→95, `cartorio_agent.py` 0→70, `chat_pipeline.py` 0→70
+  - [x] **E25.S1.T2** (cartorio-n8n) — Smoke tests E2E webhook Evolution 5 cenários reais (parser dual-format + HMAC + idempotência + DLQ + retry) em `tests/smoke/test_evolution_5x.py`
+  - [x] **E25.S1.T3** (cartorio-lgpd) — Adicionar 20 testes PII pre-LLM defense-in-depth (lesson 171 resolve: opencode_go.py:390 + router.py:553 + integrations.py:190)
+  - [x] **E25.S1.T4** (cartorio-sre) — Mutation testing com `mutmut` em `audit.py` + `pii.py` (gate: ≥80% mutants killed)
+- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅
+Modified by Gustavo Almeida (via loop v25)

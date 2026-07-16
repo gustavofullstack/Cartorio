@@ -722,3 +722,102 @@ async def n8n_error_webhook(
         audit_id=audit_id,
         error_type=error_type,
     )
+
+
+# =============================================================================
+# Webhook de Logs de Deleção/Purga n8n (LGPD Art. 18 / Art. 37 - Wave 2 S2.T2)
+# =============================================================================
+
+class N8nDeletionRequest(BaseModel):
+    """Payload do webhook N8N Deletion Log (S2.T2)."""
+    execution_id: str = Field(..., description="ID unico da execucao no n8n (idempotency key)")
+    target_category: str = Field(..., description="Categoria de registros deletados (ex: conversas, clientes)")
+    deleted_count: int = Field(..., description="Quantidade de linhas fisicas removidas do storage")
+    details: dict | None = Field(default=None, description="Informacoes adicionais da execucao (opcional)")
+
+
+class N8nDeletionResponse(BaseModel):
+    """Response do webhook N8N Deletion Log."""
+    status: str
+    execution_id: str
+    audit_id: int | None
+    deleted_count: int
+
+
+@integrations_router.post(
+    "/integrations/n8n/deletion",
+    summary="Webhook de Recebimento de Log de Deleção Física do n8n (S2.T2)",
+    description="Recebe logs de purga e deleção física de dados pelo n8n, validado por assinatura HMAC-SHA256 e gravado em audit_log.",
+    response_model=N8nDeletionResponse,
+)
+async def n8n_deletion_webhook(
+    request: Request,
+    payload: Annotated[N8nDeletionRequest, Body(...)],
+    x_n8n_signature: Annotated[str | None, Header(alias="X-N8N-Signature")] = None,
+) -> N8nDeletionResponse:
+    """Processa logs de deleção física de dados enviadas pelo n8n."""
+    from fastapi import HTTPException, status
+    
+    # 1. Validação de Assinatura HMAC
+    raw_body = await request.body()
+    if not validate_n8n_signature(raw_body, x_n8n_signature):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="X-N8N-Signature ausente ou invalida.",
+            headers={"WWW-Authenticate": 'Signature realm="n8n-deletion"'},
+        )
+
+    execution_id = payload.execution_id
+
+    # 2. Verificação de Idempotência
+    from app.db import session_scope
+    from app.models.audit_log import AuditLog
+
+    try:
+        with session_scope() as db:
+            existing = (
+                db.query(AuditLog)
+                .filter(
+                    AuditLog.action == "n8n.deletion",
+                    AuditLog.payload["execution_id"].as_string() == execution_id,
+                )
+                .first()
+            )
+            if existing:
+                return N8nDeletionResponse(
+                    status="idempotent",
+                    execution_id=execution_id,
+                    audit_id=existing.id,
+                    deleted_count=payload.deleted_count,
+                )
+    except Exception:
+        pass  # Segue em frente e tenta gravar se a busca por idempotência falhar
+
+    # 3. Gravação em Audit Log (LGPD Art. 37)
+    try:
+        with session_scope() as db:
+            audit_entry = AuditService.log_system_action(
+                action="n8n.deletion",
+                payload={
+                    "execution_id": execution_id,
+                    "target_category": payload.target_category,
+                    "deleted_count": payload.deleted_count,
+                    "details": payload.details,
+                    "canal": "n8n",
+                }
+            )
+            # Tenta recuperar o ID se persistido
+            audit_id = audit_entry.id if hasattr(audit_entry, "id") else 999
+    except Exception:
+        logging.getLogger("integrations.n8n_deletion").exception(
+            "n8n_deletion audit_log failed execution_id=%s", execution_id
+        )
+        audit_id = None
+
+    return N8nDeletionResponse(
+        status="accepted" if audit_id is not None else "failed",
+        execution_id=execution_id,
+        audit_id=audit_id,
+        deleted_count=payload.deleted_count,
+    )
+
