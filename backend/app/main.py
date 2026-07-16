@@ -796,6 +796,11 @@ from app.api.v1.lgpd_privacy_policy_endpoint import privacy_policy_router  # noq
 
 app.include_router(privacy_policy_router, prefix="/api/v1")
 
+# N8N Execution Metrics (G6.B.T9) - prometheus format + JSON summary
+from app.api.v1.n8n_metrics import router as n8n_metrics_router  # noqa: E402
+
+app.include_router(n8n_metrics_router, prefix="/api/v1")
+
 # LGPD Consent (G6.C.T9) - banner widget backend endpoint
 from app.api.v1.lgpd_consent import router as lgpd_consent_router  # noqa: E402
 
