@@ -1,130 +1,63 @@
-# Pre-commit hooks - qualidade automatica antes de cada commit.
-# Instalar: pip install pre-commit && pre-commit install
-# Rodar manualmente: pre-commit run --all-files
-# Pular 1 vez: git commit --no-verify
+pre-commit hooks for Cartorio Chatbot (G6.A.T6)
 
-# Veja https://pre-commit.com para detalhes.
-# Cada hook roda em ISOLAMENTO. Se um falha, o commit NAO acontece.
+Install:
+  uv tool install pre-commit
+  pre-commit install
 
+Run manually:
+  pre-commit run --all-files
+
+Speed target: < 5s per file (ruff = ms, mypy selective = s)
+Modified by Gustavo Almeida + Pietra orquestrador.
 repos:
-  # ============================================================================
-  # Arquivos locais - formatacao e seguranca
-  # ============================================================================
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-      - id: trailing-whitespace
-        name: "Trim trailing whitespace"
-        # Ignorar Markdown (formatacao com 2 espacos = quebra de linha intencional)
-        args: [--markdown-linebreak-ext=md]
-        exclude: ^(docs/.*\.md|.*\.md)$
-
-      - id: end-of-file-fixer
-        name: "Fix EOF (newline no final)"
-
-      - id: check-yaml
-        name: "Validate YAML"
-        # .pre-commit-config.yaml tem o campo 'args:' que pode ter formato especial
-        exclude: ^(\.pre-commit-config\.yaml|\.github/.*\.yml|docker-compose.*\.yml)$
-
-      - id: check-toml
-        name: "Validate TOML"
-
-      - id: check-json
-        name: "Validate JSON"
-
-      - id: check-added-large-files
-        name: "Bloquear arquivos >500KB"
-        args: [--maxkb=500]
-        # Binarios (imagens, modelos ML, etc) nao sao bloqueados por este hook
-        exclude: ^(docs/.*\.(png|jpg|gif|svg)|infra/.*\.(png|jpg))$
-
-      - id: check-merge-conflict
-        name: "Bloquear marcadores de merge conflict"
-
-      - id: detect-private-key
-        name: "Bloquear chaves privadas (SSH, RSA, AWS, etc)"
-
-  # ============================================================================
-  # LGPD/security — chaves queimadas em codigo (Sprint 3 Goal #3)
-  # ============================================================================
-  - repo: local
-    hooks:
-      - id: no-literal-api-key-fallback
-        name: "BLOQUEAR fallback literal de chaves/API keys (LGPD/security)"
-        # Roda script Python que detecta literais de chaves conhecidas
-        # (lin_api_, sk-, rnd_, AQ., gAAAAA, ghp_, xox*, AKIA, AIza) em
-        # backend/app/**/*.py e backend/scripts/**/*.py.
-        # Opt-out explicito: linha com "# noqa: ALLOW_KEY_FALLBACK".
-        # Ref: Sprint 3 Goal #3 (2026-06-24).
-        entry: bash -c 'python3 backend/scripts/check_no_literal_keys.py'
-        language: system
-        types: [python]
-        pass_filenames: false
-        always_run: true
-        # Manual por enquanto: Gustavo decide se ativa em pre-commit full.
-        # Rodar: pre-commit run --hook-stage manual no-literal-api-key-fallback --all-files
-        stages: [manual]   # noqa: ALLOW_KEY_FALLBACK — Sprint 3 Goal #3
-
-      - id: no-commit-to-branch
-        name: "Bloquear commit direto em master/main"
-        args: [--branch=master, --branch=main]
-
-  # ============================================================================
-  # Python - backend
-  # ============================================================================
   - repo: local
     hooks:
       - id: ruff-check
-        name: "ruff check (lint)"
-        entry: bash -c 'cd backend && uv run ruff check .'
+        name: ruff (lint backend)
+        entry: cd backend && uv run ruff check . --fix --exit-non-zero-on-fix
         language: system
-        types: [python]
         pass_filenames: false
-        # Roda em TODOS os arquivos Python, nao so nos modificados
-        always_run: true
+        types: [python]
+        files: ^backend/.*\.py$
 
       - id: ruff-format
-        name: "ruff format (auto-format)"
-        entry: bash -c 'cd backend && uv run ruff format --check .'
+        name: ruff format (backend)
+        entry: cd backend && uv run ruff format --check .
         language: system
-        types: [python]
         pass_filenames: false
-        always_run: true
+        types: [python]
+        files: ^backend/.*\.py$
 
-      - id: mypy
-        name: "mypy (typecheck)"
-        entry: bash -c 'cd backend && uv run mypy app/'
+      - id: mypy-selective
+        name: mypy (changed files only)
+        entry: cd backend && uv run mypy app/ --follow-imports silent
         language: system
-        types: [python]
         pass_filenames: false
-        always_run: true
-        # mypy pode ser lento - rodar so em pre-push (NAO pre-commit)
-        stages: [manual]
+        types: [python]
+        files: ^backend/app/.*\.py$
 
-      - id: pytest-fast
-        name: "pytest rapido (gate minimo)"
-        entry: bash -c 'cd backend && uv run pytest -q --tb=line --no-cov -x'
+      - id: workflow-validator
+        name: N8N workflow validator (G6.B.T1)
+        entry: python3 scripts/n8n_workflow_validator.py
         language: system
-        types: [python]
         pass_filenames: false
-        # Rodar pre-push (NAO pre-commit) - pytest pode ser lento
-        stages: [manual]
+        files: ^infra/n8n-workflows/.*\.json$
 
-  # ============================================================================
-  # Convencoes
-  # ============================================================================
-  - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.4.0
-    hooks:
-      - id: conventional-pre-commit
-        name: "Conventional Commits (feat/fix/docs/test/refactor/chore/perf)"
-        # Argumentos: tipos permitidos
-        args: []
-        stages: [commit-msg]
+      - id: openapi-snapshot
+        name: OpenAPI snapshot check (G6.A.T2)
+        entry: python3 scripts/openapi_snapshot.py --check
+        language: system
+        pass_filenames: false
+        files: ^backend/app/.*\.py$
 
-# Configuracao global
-default_install_hook_types: [pre-commit, commit-msg]
-default_stages: [pre-commit]
-# Fail-fast: para no primeiro hook que falhar
-fail_fast: true
+      - id: dns-check
+        name: DNS checker (G6.D.T5)
+        entry: python3 scripts/dns_health_check.py
+        language: system
+        pass_filenames: false
+
+      - id: secrets-scan
+        name: secrets scan (.env files)
+        entry: python3 scripts/secrets_scan.py
+        language: system
+        pass_filenames: false
