@@ -24,9 +24,10 @@ def test_v2_tem_pelo_menos_3_endpoints() -> None:
 
 
 def test_cada_endpoint_tem_method_e_path() -> None:
-    """Cada endpoint tem method e path nao-vazios."""
+    """Cada endpoint tem method e path nao-vazios (WS permitido para gateway/realtime)."""
+    allowed = {"GET", "POST", "PUT", "PATCH", "DELETE", "WS", "HEAD", "OPTIONS"}
     for e in get_all_endpoints():
-        assert e.method in {"GET", "POST", "PUT", "PATCH", "DELETE"}
+        assert e.method in allowed, f"method invalido: {e.method} {e.path}"
         assert e.path.startswith("/")
 
 
@@ -37,6 +38,15 @@ def test_paths_sao_unicos_por_method() -> None:
         key = (e.method, e.path)
         assert key not in seen, f"Duplicado: {key}"
         seen.add(key)
+
+
+def test_g7_wave15_integration_endpoints_present() -> None:
+    """Wave 15: radar expanded, WS, brain, evolution health catalogados."""
+    paths = {(e.method, e.path) for e in get_all_endpoints()}
+    assert ("GET", "/api/v1/health/radar/expanded") in paths
+    assert ("WS", "/api/v1/ws/atendimentos") in paths
+    assert ("GET", "/api/v1/brain/loop-state") in paths
+    assert ("GET", "/api/v1/webhook/evolution/health") in paths
 
 
 def test_get_endpoints_by_tag_filtra() -> None:
@@ -64,9 +74,12 @@ def test_get_endpoints_with_lgpd_scope() -> None:
 
 
 def test_stats_agregadas_corretas() -> None:
-    """Stats tem totais coerentes."""
+    """Stats tem totais coerentes (v1+v2+openclaw; status includes beta)."""
     stats = get_stats()
-    assert stats["total"] == stats["v1"] + stats["v2"]
+    assert stats["total"] == stats["v1"] + stats["v2"] + stats["openclaw"]
     assert stats["v1"] >= 50
     assert stats["v2"] >= 3
-    assert stats["stable"] + stats["alpha"] == stats["total"]
+    assert stats["openclaw"] >= 8
+    status_sum = stats["stable"] + stats["alpha"] + stats["beta"] + stats["deprecated"]
+    assert status_sum == stats["total"]
+    assert stats["websocket"] >= 1

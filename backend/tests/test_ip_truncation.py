@@ -46,3 +46,50 @@ class TestTruncateIp:
     def test_ip_invalido_retorna_none(self) -> None:
         """IP completamente invalido retorna None."""
         assert truncate_ip("not_an_ip_at_all") is None
+
+
+# ============================================================================
+# G6.C.T4 — D5 regression: payloads de output NUNCA carregam IP full
+# ============================================================================
+
+
+class TestD5IpNeverLeaksInTruncatedForm:
+    """Prova que truncate_ip remove o host identifier (LGPD D5 / art. 5 II)."""
+
+    def test_ipv4_host_octet_zeroed(self) -> None:
+        full = "198.51.100.42"
+        truncated = truncate_ip(full)
+        assert truncated is not None
+        assert full not in truncated
+        assert truncated.endswith("/24")
+        assert truncated.startswith("198.51.100.")
+        assert truncated == "198.51.100.0/24"
+
+    def test_ipv6_host_not_in_output(self) -> None:
+        full = "2001:db8:85a3::8a2e:370:7334"
+        truncated = truncate_ip(full)
+        assert truncated is not None
+        assert "8a2e" not in truncated
+        assert "7334" not in truncated
+        assert truncated.endswith("/32")
+
+    def test_audit_style_payload_uses_only_truncated(self) -> None:
+        """Simula payload de export/API: so ip_truncated deve ir ao cliente."""
+        raw_ip = "203.0.113.99"
+        public_payload = {
+            "action": "protocolo.read",
+            "ip_truncated": truncate_ip(raw_ip),
+            # campo full proibido em response default
+        }
+        serialized = str(public_payload)
+        assert "203.0.113.99" not in serialized
+        assert public_payload["ip_truncated"] == "203.0.113.0/24"
+
+    def test_xff_first_hop_truncation(self) -> None:
+        """X-Forwarded-For multi-hop: truncar o primeiro (cliente real)."""
+        xff = "203.0.113.50, 10.0.0.1, 172.16.0.5"
+        client_ip = xff.split(",")[0].strip()
+        assert truncate_ip(client_ip) == "203.0.113.0/24"
+
+    def test_case_insensitive_ipv6_mapped(self) -> None:
+        assert truncate_ip("::FFFF:192.168.1.200") == "192.168.1.0/24"

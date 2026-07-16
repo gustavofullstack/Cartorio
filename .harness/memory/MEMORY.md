@@ -5,9 +5,12 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-09)
+## INDICE RAPIDO (atualizado 2026-07-16)
 
 ### Por data (consolidado)
+- **2026-07-16** (Lesson 187 — G7 Wave 15 integration matrix + catalog/postman/openclaw JSON + Redis ops): `.harness/memory/lesson-187-g7-wave15-integration-matrix-2026-07-16.md`
+- **2026-07-16** (Lesson 186 — G6 Wave 13 + SUPER GOALS/PLANO G7 100 tasks: mutation killers audit, D5 IP, RIPD v1.4, health matrix live, radar fallback): `.harness/memory/lesson-186-g6-wave13-g7-super-plano-2026-07-16.md` + `SUPER_GOALS_G7.md` + `SUPER_PLANO_G7_100_TASKS.md`
+- **2026-07-16** (Lessons 181-185 — G6 waves 1-12: mutmut, hypothesis, n8n idempotency, AlertManager, pre-commit): `lesson-181`…`lesson-185`
 - **2026-07-10** (MiniMax tools+TTS+/voz; LiteLLM master key; audit 90% TG): `docs/STATUS_TELEGRAM_MINIMAX_100_2026-07-10.md`
 - **2026-07-10** (Lesson 161 — memoria multi-turn Redis + catalogo multi-msg): `lesson-161-telegram-memory-catalog-series-2026-07-10.md`
 - **2026-07-10** (STATUS LIVE Telegram: 170 tests, real DM ok, HITL deployado, WhatsApp hold): `docs/STATUS_TELEGRAM_LIVE_2026-07-10.md`

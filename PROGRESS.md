@@ -2918,3 +2918,40 @@ Modified by Gustavo Almeida (via loop v25)
   - [x] **E25.S4.T4** (cartorio-sre) — Grafana dashboard 9 painéis (API/N8N/EVO/CW/OCL/SUP/RED/DMS/health) + alerting rules (5min DOWN → Telegram)
 - **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅
 Modified by Gustavo Almeida (via loop v25)
+
+## 2026-07-16 — Wave 13 G6 + SUPER PLANO G7 ATIVADO ✅
+- **Squad:** 4 slots (cartorio-dev / cartorio-sre / cartorio-lgpd ×2)
+- **Tasks:**
+  - [x] G6.A.T7 / G7.01.T3 — audit mutation killers (test_audit_mutation_killers_g6.py)
+  - [x] G6.C.T4 / G7.02.T2 — D5 IP truncation regression payloads
+  - [x] G6.C.T1 / G7.19.T1 — RIPD v1.4 + addendum T13–T18
+  - [x] G6.D.T6 / G7.18.T2 — CANAL_HEALTH_MATRIX live + radar domains + smoke fallback
+- **Gates:** 75 related tests passed; radar_smoke fallback WORK (prod expanded 404)
+- **Orquestração:** SUPER_GOALS_G7.md + SUPER_PLANO_G7_100_TASKS.md (100 tasks / 25 squads)
+- **Next:** Wave 14 (redeploy expanded + DNS SUI + Evolution env + Telegram token)
+- **Lesson:** `.harness/memory/lesson-186-g6-wave13-g7-super-plano-2026-07-16.md`
+Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 14 G7 (agent-executable, SUI-prepared) ✅
+- **Squad:** cartorio-dev + cartorio-sre + cartorio-n8n prep + cartorio-lgpd (SUI checklist)
+- **Tasks:**
+  - [x] G7.24.T1 — scripts/g7_super_validator.py (composite exit 0/1/2)
+  - [x] G7.09.T1 — docs/platforms/MCP_TOOLS_INVENTORY.md (13 tools)
+  - [x] G7 SUI checklist — docs/G7_SUI_WAVE14_CHECKLIST.md (8 blocos Gustavo)
+  - [x] Validator report — docs/G7_VALIDATOR_REPORT.md overall **HOLD** (radar+dns)
+- **Validator:** MCP 13 WORK · N8N 37 WORK · pytest collect WORK · radar HOLD · dns HOLD · idempotency WORK
+- **Blockers:** SUI Gustavo (DNS/env/redeploy/tokens) — agents cannot close green alone
+- **Next:** Gustavo executa G7_SUI_WAVE14_CHECKLIST → re-run `python3 scripts/g7_super_validator.py`
+Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 15 G7 INTEGRATION MATRIX ✅
+- **4 agents/slots:**
+  - [x] G7.14.T1 — infra/openclaw/cartorio-bot.openclaw.json (deploy SUI remaining)
+  - [x] G7.10.T1 — catalog radar/WS/brain/evo + Postman fix 47 double /api/v1
+  - [x] G7.15.T1 — .agents/skills/INDEX.md skill→stack G7
+  - [x] G7.07.T1 — REDIS_OPS_G7.md + INTEGRATION_MATRIX_G7.md
+- **Tests:** test_g7_wave15_integration.py 6 passed
+- **Validator:** HOLD prod (dns+radar); WORK artifacts openclaw+matrix
+- **Lesson:** lesson-187-g7-wave15-integration-matrix-2026-07-16.md
+- **Next W16:** SUI Gustavo (DNS/env/redeploy/tokens) → g7-validate WORK
+Modified by Gustavo Almeida

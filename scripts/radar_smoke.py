@@ -27,6 +27,7 @@ from pathlib import Path
 import httpx
 
 DEFAULT_URL = "https://api.2notasudi.com.br/api/v1/health/radar/expanded"
+FALLBACK_URL = "https://api.2notasudi.com.br/api/v1/health/radar"
 TIMEOUT = 30.0
 
 
@@ -104,8 +105,18 @@ def main() -> int:
     parser.add_argument("--timeout", type=float, default=TIMEOUT, help="timeout em segundos")
     args = parser.parse_args()
 
+    url_used = args.url
     try:
         resp = httpx.get(args.url, timeout=args.timeout, verify=False)
+        # G6.D.T6: prod image pode ainda nao ter /radar/expanded (404) —
+        # fallback automatico para /radar classico (7 servicos).
+        if resp.status_code == 404 and args.url.rstrip("/").endswith("/expanded"):
+            print(
+                f"[WARN] {args.url} → HTTP 404; fallback {FALLBACK_URL}",
+                file=sys.stderr,
+            )
+            url_used = FALLBACK_URL
+            resp = httpx.get(FALLBACK_URL, timeout=args.timeout, verify=False)
     except Exception as exc:
         print(f"[ERROR] Failed to fetch {args.url}: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
@@ -120,7 +131,28 @@ def main() -> int:
         print(f"[ERROR] JSON decode failed: {exc}", file=sys.stderr)
         return 2
 
-    data["_url"] = args.url
+    # Normaliza shape legado /radar (services: dict) → categories.health
+    if "categories" not in data and "services" in data:
+        services = data.get("services") or {}
+        checks = {
+            name: {
+                "status": "up" if state == "online" else "down",
+                "latency_ms": None,
+                "detail": state,
+            }
+            for name, state in services.items()
+        }
+        data = {
+            "status": data.get("status", "red"),
+            "categories": {"health": checks},
+            "metadata": {
+                "source": "legacy_radar_fallback",
+                "note": "Deploy API with /radar/expanded to get DNS/Traefik/SSH/disk",
+            },
+            "_legacy": True,
+        }
+
+    data["_url"] = url_used
     status = data.get("status", "?")
 
     if args.json:
@@ -133,6 +165,8 @@ def main() -> int:
             warn = sum(1 for p in checks.values() if p.get("status") == "warn")
             down = sum(1 for p in checks.values() if p.get("status") == "down")
             print(f"  {cat:12} up={up} warn={warn} down={down} (total={len(checks)})")
+        if data.get("_legacy"):
+            print("[HOLD] using legacy /radar (expanded not deployed yet)")
         if status == "green":
             print("[WORK] todos up")
         elif status == "yellow":

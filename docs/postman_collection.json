@@ -133,7 +133,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/integrations/opencode/test",
+          "raw": "https://api.2notasudi.com.br/api/v1/integrations/opencode/test",
           "protocol": "https",
           "host": [
             "api",
@@ -142,8 +142,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "integrations",
@@ -169,7 +167,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/integrations/agent/health",
+          "raw": "https://api.2notasudi.com.br/api/v1/integrations/agent/health",
           "protocol": "https",
           "host": [
             "api",
@@ -178,8 +176,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "integrations",
@@ -205,7 +201,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/integrations/outbox/dispatch",
+          "raw": "https://api.2notasudi.com.br/api/v1/integrations/outbox/dispatch",
           "protocol": "https",
           "host": [
             "api",
@@ -214,8 +210,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "integrations",
@@ -241,7 +235,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/emolumento/calcular",
+          "raw": "https://api.2notasudi.com.br/api/v1/emolumento/calcular",
           "protocol": "https",
           "host": [
             "api",
@@ -250,8 +244,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "emolumento",
@@ -276,7 +268,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/protocolo/{numero}",
+          "raw": "https://api.2notasudi.com.br/api/v1/protocolo/{numero}",
           "protocol": "https",
           "host": [
             "api",
@@ -285,8 +277,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "protocolo",
@@ -311,7 +301,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/protocolo",
+          "raw": "https://api.2notasudi.com.br/api/v1/protocolo",
           "protocol": "https",
           "host": [
             "api",
@@ -320,8 +310,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "protocolo"
@@ -345,7 +333,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/protocolo/criar-api",
+          "raw": "https://api.2notasudi.com.br/api/v1/protocolo/criar-api",
           "protocol": "https",
           "host": [
             "api",
@@ -354,8 +342,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "protocolo",
@@ -380,7 +366,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/webhook/evolution",
+          "raw": "https://api.2notasudi.com.br/api/v1/webhook/evolution",
           "protocol": "https",
           "host": [
             "api",
@@ -389,8 +375,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "webhook",
@@ -415,7 +399,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/audit/verify",
+          "raw": "https://api.2notasudi.com.br/api/v1/audit/verify",
           "protocol": "https",
           "host": [
             "api",
@@ -424,8 +408,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "audit",
@@ -450,7 +432,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/live",
+          "raw": "https://api.2notasudi.com.br/api/v1/health/live",
           "protocol": "https",
           "host": [
             "api",
@@ -459,8 +441,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "health",
@@ -485,7 +465,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/ready",
+          "raw": "https://api.2notasudi.com.br/api/v1/health/ready",
           "protocol": "https",
           "host": [
             "api",
@@ -494,8 +474,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "health",
@@ -520,7 +498,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/db",
+          "raw": "https://api.2notasudi.com.br/api/v1/health/db",
           "protocol": "https",
           "host": [
             "api",
@@ -529,8 +507,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "health",
@@ -555,7 +531,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/redis",
+          "raw": "https://api.2notasudi.com.br/api/v1/health/redis",
           "protocol": "https",
           "host": [
             "api",
@@ -564,8 +540,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "health",
@@ -590,7 +564,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/llm",
+          "raw": "https://api.2notasudi.com.br/api/v1/health/llm",
           "protocol": "https",
           "host": [
             "api",
@@ -599,8 +573,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "health",
@@ -625,7 +597,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/radar",
+          "raw": "https://api.2notasudi.com.br/api/v1/health/radar",
           "protocol": "https",
           "host": [
             "api",
@@ -634,8 +606,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "health",
@@ -660,7 +630,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/integracoes",
+          "raw": "https://api.2notasudi.com.br/api/v1/health/integracoes",
           "protocol": "https",
           "host": [
             "api",
@@ -669,8 +639,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "health",
@@ -695,7 +663,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/health/backup",
+          "raw": "https://api.2notasudi.com.br/api/v1/health/backup",
           "protocol": "https",
           "host": [
             "api",
@@ -704,8 +672,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "health",
@@ -730,7 +696,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/agendamento/disponibilidade",
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento/disponibilidade",
           "protocol": "https",
           "host": [
             "api",
@@ -739,8 +705,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "agendamento",
@@ -765,7 +729,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/documento/segunda-via",
+          "raw": "https://api.2notasudi.com.br/api/v1/documento/segunda-via",
           "protocol": "https",
           "host": [
             "api",
@@ -774,8 +738,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "documento",
@@ -800,7 +762,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimentos/ultimas-24h",
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimentos/ultimas-24h",
           "protocol": "https",
           "host": [
             "api",
@@ -809,8 +771,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "atendimentos",
@@ -835,7 +795,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento/{atendimento_id}/pesquisa-enviada",
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/{atendimento_id}/pesquisa-enviada",
           "protocol": "https",
           "host": [
             "api",
@@ -844,8 +804,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "atendimento",
@@ -871,7 +829,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento",
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento",
           "protocol": "https",
           "host": [
             "api",
@@ -880,8 +838,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "atendimento"
@@ -905,7 +861,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento/{atendimento_id}/concluir",
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/{atendimento_id}/concluir",
           "protocol": "https",
           "host": [
             "api",
@@ -914,8 +870,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "atendimento",
@@ -941,7 +895,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento/{session_id}/historico",
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/{session_id}/historico",
           "protocol": "https",
           "host": [
             "api",
@@ -950,8 +904,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "atendimento",
@@ -977,7 +929,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/atendimento/list-active",
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/list-active",
           "protocol": "https",
           "host": [
             "api",
@@ -986,8 +938,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "atendimento",
@@ -1012,7 +962,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/webhook/chatwoot",
+          "raw": "https://api.2notasudi.com.br/api/v1/webhook/chatwoot",
           "protocol": "https",
           "host": [
             "api",
@@ -1021,8 +971,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "webhook",
@@ -1047,7 +995,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cron/stale-detector",
+          "raw": "https://api.2notasudi.com.br/api/v1/cron/stale-detector",
           "protocol": "https",
           "host": [
             "api",
@@ -1056,8 +1004,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "cron",
@@ -1082,7 +1028,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}",
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/{cliente_id}",
           "protocol": "https",
           "host": [
             "api",
@@ -1091,8 +1037,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "cliente",
@@ -1117,7 +1061,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/admin/retencao/run",
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/retencao/run",
           "protocol": "https",
           "host": [
             "api",
@@ -1126,8 +1070,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "admin",
@@ -1153,7 +1095,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/postman",
+          "raw": "https://api.2notasudi.com.br/api/v1/postman",
           "protocol": "https",
           "host": [
             "api",
@@ -1162,8 +1104,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "postman"
@@ -1187,7 +1127,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/audit/logs",
+          "raw": "https://api.2notasudi.com.br/api/v1/audit/logs",
           "protocol": "https",
           "host": [
             "api",
@@ -1196,8 +1136,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "audit",
@@ -1222,7 +1160,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/audit/logs/{log_id}",
+          "raw": "https://api.2notasudi.com.br/api/v1/audit/logs/{log_id}",
           "protocol": "https",
           "host": [
             "api",
@@ -1231,8 +1169,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "audit",
@@ -1258,7 +1194,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/historico",
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/{cliente_id}/historico",
           "protocol": "https",
           "host": [
             "api",
@@ -1267,8 +1203,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "cliente",
@@ -1294,7 +1228,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/protocolo/recentes-concluidos",
+          "raw": "https://api.2notasudi.com.br/api/v1/protocolo/recentes-concluidos",
           "protocol": "https",
           "host": [
             "api",
@@ -1303,8 +1237,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "protocolo",
@@ -1329,7 +1261,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/documento/upload",
+          "raw": "https://api.2notasudi.com.br/api/v1/documento/upload",
           "protocol": "https",
           "host": [
             "api",
@@ -1338,8 +1270,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "documento",
@@ -1364,7 +1294,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/metrics/prometheus",
+          "raw": "https://api.2notasudi.com.br/api/v1/metrics/prometheus",
           "protocol": "https",
           "host": [
             "api",
@@ -1373,8 +1303,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "metrics",
@@ -1399,7 +1327,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/metrics",
+          "raw": "https://api.2notasudi.com.br/api/v1/metrics",
           "protocol": "https",
           "host": [
             "api",
@@ -1408,8 +1336,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "metrics"
@@ -1433,7 +1359,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/metrics/n8n",
+          "raw": "https://api.2notasudi.com.br/api/v1/metrics/n8n",
           "protocol": "https",
           "host": [
             "api",
@@ -1442,8 +1368,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "metrics",
@@ -1468,7 +1392,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/dlq/{queue}/enqueue",
+          "raw": "https://api.2notasudi.com.br/api/v1/dlq/{queue}/enqueue",
           "protocol": "https",
           "host": [
             "api",
@@ -1477,8 +1401,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "dlq",
@@ -1504,7 +1426,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/dlq/refresh-gauges",
+          "raw": "https://api.2notasudi.com.br/api/v1/dlq/refresh-gauges",
           "protocol": "https",
           "host": [
             "api",
@@ -1513,8 +1435,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "dlq",
@@ -1539,7 +1459,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/telegram/webhook",
+          "raw": "https://api.2notasudi.com.br/api/v1/telegram/webhook",
           "protocol": "https",
           "host": [
             "api",
@@ -1548,8 +1468,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "telegram",
@@ -1574,7 +1492,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/telegram/webhook/info",
+          "raw": "https://api.2notasudi.com.br/api/v1/telegram/webhook/info",
           "protocol": "https",
           "host": [
             "api",
@@ -1583,8 +1501,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "telegram",
@@ -1610,7 +1526,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/anonimizar",
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/{cliente_id}/lgpd/anonimizar",
           "protocol": "https",
           "host": [
             "api",
@@ -1619,8 +1535,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "cliente",
@@ -1647,7 +1561,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/corrigir",
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/{cliente_id}/lgpd/corrigir",
           "protocol": "https",
           "host": [
             "api",
@@ -1656,8 +1570,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "cliente",
@@ -1684,7 +1596,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/oposicao",
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/{cliente_id}/lgpd/oposicao",
           "protocol": "https",
           "host": [
             "api",
@@ -1693,8 +1605,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "cliente",
@@ -1721,7 +1631,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/optout",
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/{cliente_id}/lgpd/optout",
           "protocol": "https",
           "host": [
             "api",
@@ -1730,8 +1640,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "cliente",
@@ -1758,7 +1666,7 @@
           }
         ],
         "url": {
-          "raw": "https://api.2notasudi.com.br/api/v1/api/v1/cliente/{cliente_id}/lgpd/portabilidade",
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/{cliente_id}/lgpd/portabilidade",
           "protocol": "https",
           "host": [
             "api",
@@ -1767,8 +1675,6 @@
             "br"
           ],
           "path": [
-            "api",
-            "v1",
             "api",
             "v1",
             "cliente",

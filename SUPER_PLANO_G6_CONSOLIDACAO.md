@@ -2,7 +2,7 @@
 **Cartório 2º Notas Uberlândia — Projeto Agent AI Multicanal**
 **Versão:** G6.0 — 2026-07-16
 **Modified by:** Gustavo Almeida + Pietra orquestrador
-**Status:** 🟢 WAVE 1 ATIVA (1-2 agents/loop, regra projeto)
+**Status:** 🟢 WAVES 1–13 DONE · herda em **G7** (`SUPER_PLANO_G7_100_TASKS.md`)
 
 ---
 

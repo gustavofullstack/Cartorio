@@ -1,5 +1,9 @@
 # RIPD — Relatório de Impacto à Proteção de Dados Pessoais
-**Cartório 2º Notas de Uberlândia** | **Versão:** 1.3 | **Atualizado:** 2026-07-06
+**Cartório 2º Notas de Uberlândia** | **Versão:** 1.4 | **Atualizado:** 2026-07-16
+
+> **Addendum v1.4:** integrações LobeChat + OpenClaw + LiteLLM + MiniMax +
+> multicanal Telegram/WhatsApp/Chatwoot. Detalhe completo em
+> [`docs/lgpd/RIPD_v1.4_ADDENDUM.md`](lgpd/RIPD_v1.4_ADDENDUM.md) (G6.C.T1).
 
 ## 1. Identificação do Controlador
 - **Razão social**: 2º Serviço Notarial de Uberlândia
@@ -53,9 +57,28 @@
 
 ## 7. Revisão Periódica
 - Trimestral: DPO + cartorio-lgpd
-- Anual:董事会 (conselho)
+- Anual: conselho / tableholder
 - Ad-hoc: mudança de stack, novo canal, incidente
+
+## 8. Addendum v1.4 — Novos canais e sub-processadores (2026-07-16)
+
+Incluídos no tratamento (ver addendum completo):
+
+| # | Tratamento | Sistema |
+|---|---|---|
+| T13 | UI agente cartório | LobeChat |
+| T14 | Router multi-agent + skills | OpenClaw Gateway |
+| T15 | Fallback multi-provider | LiteLLM |
+| T16 | LLM coding/ops | MiniMax-M3 (DPA pending) |
+| T17 | Canais titular | Telegram + WhatsApp/Evolution |
+| T18 | Handoff humano HITL | Chatwoot |
+
+**Medidas extras v1.4:** scrub 3 camadas em todo caminho LLM; idempotência
+Redis em 21/21 webhooks N8N; dead-man switch audit → Telegram GRUPO PIETRA;
+radar expanded (DNS/Traefik/SSH/disk); inventory 18 campos PII.
+
+**HOLD sign-off DPO:** DPA MiniMax + DNS 3 A records + tokens LobeChat/Telegram.
 
 ---
 
-**Modified by ZCode/Mavis + Gustavo Almeida — 2026-07-06 17:42 BRT**
+**Modified by Gustavo Almeida + cartorio-lgpd — 2026-07-16 (G6.C.T1 Wave 13)**

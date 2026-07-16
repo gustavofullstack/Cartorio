@@ -1,9 +1,9 @@
 {
-  "version": "3.0.0",
-  "updated_at": "2026-07-15T14:50:00Z",
-  "status": "super_plano_100_100_completed_F0_F6_session_2026_07_15",
-  "current_sprint": "Sprint 49 - 2026-07-15 (SUPER PLANO 100/100 cycle completed)",
-  "current_goal": "G8: SUPER PLANO 100/100 consolidation - 6 sub-agents F2-F6 + 7 commits + 50+ tasks em ~3h",
+  "version": "3.2.0",
+  "updated_at": "2026-07-16T17:17:02Z",
+  "status": "g7_wave15_done_awaiting_sui_wave16",
+  "current_sprint": "G7 Wave 15 complete → Wave 16 SUI",
+  "current_goal": "G7 integração total — ~14/100 tasks; matrix+catalog+openclaw JSON ready",
   "metrics": {
     "services_swarm_up": "8/8 api/litellm/openclaw/langfuse/argilla/evolution/anything-llm/lobechat/zeroclaw/open-notebook",
     "litellm_providers": "7 free models + MiniMax-M3 XMax Thinking",
@@ -13,14 +13,26 @@
     "ruff_violations": "0",
     "endpoints_cataloged": "73 (+6 Telegram F4 cartorio-evolution)",
     "commits_ahead_origin": "7+",
-    "lessons_total": "180 (lesson-176/177/178/179 + 180 SUPER PLANO consolidadas hoje)",
+    "lessons_total": "187",
     "files_created_session": "12+ (DNS runbooks, LobeChat STATUS, monitors.json, telegram.env.example, OUTAGE_RECOVERY_RUNBOOK, etc)",
     "squads_auditadas": "92/115 (~92%)",
     "production_status": "3/10 domínios 502/000 (chatwoot/n8n/supabase) - HOLD-GUSTAVO",
     "telegram_pending": "Telegram bot MORTO (token revogado, BotFather regenerar pendente)",
     "telegram_sendMessage_200": "9/9 (sessions anteriores)",
     "lobechat_status": "UP mas env OPENAI_API_KEY=sk-xxxx placeholder (HOLD-GUSTAVO)",
-    "openclaw_status": "WS v4 OK, E8 cartorio-bot gap (SSH bloqueado - HOLD-GUSTAVO)"
+    "openclaw_status": "WS v4 OK, E8 cartorio-bot gap (SSH bloqueado - HOLD-GUSTAVO)",
+    "pytest_related_wave13": "75 passed",
+    "g6_waves_done": "13",
+    "g7_tasks_done": "4",
+    "g7_tasks_total": "100",
+    "ripd_version": "1.4",
+    "radar_expanded_prod": "404_need_redeploy",
+    "radar_classic": "red_4up_3down",
+    "g7_wave": 15,
+    "g7_tasks_approx": "14/100",
+    "postman_double_prefix_fixed": 47,
+    "catalog_endpoints_note": "v1+v2+openclaw+ws+brain+radar_expanded",
+    "openclaw_bot_json": "infra/openclaw/cartorio-bot.openclaw.json"
   },
   "milestones": [
     {
@@ -231,7 +243,15 @@
     "squad-docs": 5
   },
   "super_plano_summary": {
-    "phases_completed": ["F0", "F1", "F2", "F3", "F4", "F5", "F6"],
+    "phases_completed": [
+      "F0",
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5",
+      "F6"
+    ],
     "sub_agents_deployed": 8,
     "commits_delivered": 7,
     "files_created": 12,

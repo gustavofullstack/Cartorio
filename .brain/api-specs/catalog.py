@@ -63,12 +63,14 @@ API_ENDPOINTS: tuple[ApiEndpoint, ...] = (
     ApiEndpoint("POST", "/api/v1/cliente/{id}/lgpd/optout", "v1", "lgpd", "LGPD opt-out marketing", True, True, "stable"),
     ApiEndpoint("POST", "/api/v1/cliente/{id}/lgpd/portabilidade", "v1", "lgpd", "LGPD portabilidade", True, True, "stable"),
     ApiEndpoint("POST", "/api/v1/cliente/{id}/lgpd/esquecimento", "v1", "lgpd", "LGPD esquecimento (revoga consentimento)", True, True, "stable"),
-    # --- Admin / Health (8) ---
-    ApiEndpoint("GET", "/health", "v1", "admin", "Health basico", False, False, "stable"),
-    ApiEndpoint("GET", "/health/radar", "v1", "admin", "Health 7 servicos", False, False, "stable"),
-    ApiEndpoint("GET", "/health/db", "v1", "admin", "Health DB", False, False, "stable"),
-    ApiEndpoint("GET", "/health/redis", "v1", "admin", "Health Redis", False, False, "stable"),
-    ApiEndpoint("GET", "/health/llm", "v1", "admin", "Health LLM provider", False, False, "stable"),
+    # --- Admin / Health (10) --- G7 Wave 15: paths canonicos /api/v1/*
+    ApiEndpoint("GET", "/health", "v1", "admin", "Health basico (root alias)", False, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/health/radar", "v1", "admin", "Health 7 servicos (db/redis/n8n/openclaw/evo/chatwoot/supabase)", False, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/health/radar/expanded", "v1", "admin", "Radar expandido DNS+Traefik+SSH+disk (G6/G7)", False, False, "beta"),
+    ApiEndpoint("GET", "/api/v1/health/db", "v1", "admin", "Health DB", False, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/health/redis", "v1", "admin", "Health Redis", False, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/health/llm", "v1", "admin", "Health LLM provider", False, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/health/backup", "v1", "admin", "Health ultimo backup", False, False, "stable"),
     ApiEndpoint("GET", "/admin/audit/health", "v1", "admin", "Audit log dead man's switch", True, False, "stable"),
     ApiEndpoint("POST", "/admin/audit/check-now", "v1", "admin", "Trigger manual dead man's switch", True, False, "stable"),
     ApiEndpoint("GET", "/admin/locks", "v1", "admin", "Lista redlocks ativos", True, False, "stable"),
@@ -93,9 +95,20 @@ API_ENDPOINTS: tuple[ApiEndpoint, ...] = (
     ApiEndpoint("GET", "/api/v1/atendimento/{id}", "v1", "atendimento", "Busca atendimento", True, True, "stable"),
     ApiEndpoint("GET", "/api/v1/atendimento", "v1", "atendimento", "Lista atendimentos", True, True, "stable"),
     ApiEndpoint("POST", "/api/v1/atendimento/{id}/finalizar", "v1", "atendimento", "Finaliza atendimento", True, True, "stable"),
-    # --- Webhooks (2) ---
+    # --- Webhooks (4) ---
     ApiEndpoint("POST", "/api/v1/webhooks/evo-in", "v1", "webhooks", "Webhook Evolution API inbound", False, False, "stable"),
+    ApiEndpoint("POST", "/api/v1/webhook/evolution", "v1", "webhooks", "Webhook Evolution dual-format (legacy path)", False, True, "stable"),
+    ApiEndpoint("GET", "/api/v1/webhook/evolution/health", "v1", "webhooks", "Health ingest Evolution", False, False, "stable"),
     ApiEndpoint("POST", "/api/v1/webhooks/chatwoot", "v1", "webhooks", "Webhook Chatwoot", False, False, "stable"),
+    # --- WebSocket (1) ---
+    ApiEndpoint("WS", "/api/v1/ws/atendimentos", "v1", "websocket", "WS atendimentos tempo real (ping/pong)", True, True, "stable"),
+    # --- BRAIN meta (6) ---
+    ApiEndpoint("GET", "/api/v1/brain/tasks", "v1", "brain", "Lista tasks harness/brain", True, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/brain/lessons", "v1", "brain", "Lista lessons MEMORY", True, False, "stable"),
+    ApiEndpoint("POST", "/api/v1/brain/lessons", "v1", "brain", "Cria lesson", True, False, "stable"),
+    ApiEndpoint("POST", "/api/v1/brain/sync", "v1", "brain", "Trigger sync brain", True, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/brain/loop-state", "v1", "brain", "Estado do loop engineer", True, False, "stable"),
+    ApiEndpoint("GET", "/api/v1/brain/context", "v1", "brain", "Contexto atual snapshot", True, False, "stable"),
     # --- Telegram bot (6) --- F4 [P1] RETRY 2026-07-15 / Lesson 178
     # Source: backend/app/api/v1/telegram.py (router prefix /telegram, tags=["telegram"])
     # Auth: webhook usa X-Telegram-Bot-Api-Secret-Token (HMAC compare_digest, timing-safe).
@@ -199,14 +212,21 @@ def get_endpoints_with_lgpd_scope() -> tuple[ApiEndpoint, ...]:
 
 
 def get_stats() -> dict[str, int]:
-    """Estatisticas agregadas do catalogo."""
+    """Estatisticas agregadas do catalogo (v1 + v2 + openclaw)."""
     all_eps = get_all_endpoints()
+    by_status: dict[str, int] = {}
+    for e in all_eps:
+        by_status[e.status] = by_status.get(e.status, 0) + 1
     return {
         "total": len(all_eps),
         "v1": len(get_endpoints_by_version("v1")),
         "v2": len(get_endpoints_by_version("v2")),
+        "openclaw": len(get_endpoints_by_version("oc")),
         "lgpd_scope": len(get_endpoints_with_lgpd_scope()),
         "auth_required": sum(1 for e in all_eps if e.auth_required),
-        "alpha": sum(1 for e in all_eps if e.status == "alpha"),
-        "stable": sum(1 for e in all_eps if e.status == "stable"),
+        "alpha": by_status.get("alpha", 0),
+        "beta": by_status.get("beta", 0),
+        "stable": by_status.get("stable", 0),
+        "deprecated": by_status.get("deprecated", 0),
+        "websocket": sum(1 for e in all_eps if e.method == "WS"),
     }

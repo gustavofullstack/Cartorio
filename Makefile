@@ -114,6 +114,11 @@ coverage-gate:  ## Coverage gate fail-safe (G6.A.T5)
 	@echo "$(YELLOW)[Coverage] Validando gate >=95%...$(RESET)"
 	@python3 scripts/coverage_gate.py
 
+.PHONY: g7-validate
+g7-validate:  ## G7 super teste validador (local+prod composite)
+	@echo "$(YELLOW)[G7] Super validator...$(RESET)"
+	@python3 scripts/g7_super_validator.py --report docs/G7_VALIDATOR_REPORT.md
+
 .PHONY: radar-smoke
 radar-smoke:  ## Health radar smoke CLI (G6.D.T1)
 	@echo "$(YELLOW)[Radar] Smoke test /api/v1/health/radar/expanded...$(RESET)"

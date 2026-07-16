@@ -46,27 +46,33 @@ logger = logging.getLogger("cartorio.health_radar_expanded")
 
 expanded_router = APIRouter()
 
-# Dominios monitorados pelo F4 SRE (carta do DNS-check runbook).
+# Dominios monitorados (F4 SRE + Lesson 179 Cloudflare + Wave 13 G6.D.T6).
+# Inclui aliases NXDOMAIN (chatwoot/n8n/supabase) e canonicos em uso
+# (chat/flow/whatsapp/supbase typo ACEITO — ver DOMAIN_TYPO_DECISION.md).
 RADAR_DNS_DOMAINS: tuple[str, ...] = (
     "2notasudi.com.br",
     "api.2notasudi.com.br",
     "agent.2notasudi.com.br",
-    "n8n.2notasudi.com.br",
+    "whatsapp.2notasudi.com.br",
     "chat.2notasudi.com.br",
-    "evo.2notasudi.com.br",
-    "supabase.2notasudi.com.br",
-    "traefik.2notasudi.com.br",
     "flow.2notasudi.com.br",
     "easypanel.2notasudi.com.br",
+    "supbase.2notasudi.com.br",  # typo ACEITO em prod (Lesson 179)
+    "n8n.2notasudi.com.br",  # NXDOMAIN HOLD-GUSTAVO (alias desejado)
+    "chatwoot.2notasudi.com.br",  # NXDOMAIN HOLD-GUSTAVO
+    "supabase.2notasudi.com.br",  # NXDOMAIN HOLD-GUSTAVO
+    "evo.2notasudi.com.br",
 )
 
 # Endpoints HTTPS para check Traefik router (HEAD para performance).
 RADAR_TRAEFIK_DOMAINS: tuple[str, ...] = (
     "api.2notasudi.com.br",
     "agent.2notasudi.com.br",
-    "n8n.2notasudi.com.br",
+    "whatsapp.2notasudi.com.br",
     "chat.2notasudi.com.br",
-    "evo.2notasudi.com.br",
+    "flow.2notasudi.com.br",
+    "easypanel.2notasudi.com.br",
+    "supbase.2notasudi.com.br",
 )
 
 # SSH / Tailscale endpoints (host:port).
