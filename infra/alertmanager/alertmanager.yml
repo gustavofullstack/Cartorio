@@ -1,0 +1,140 @@
+# AlertManager config — Cartório 2º Notas Uberlândia (G6.D.T4)
+# Roteia Prometheus alerts para Telegram GRUPO PIETRA.
+# Routing:
+#   - P0 (critical) -> Telegram GRUPO PIETRA (imediato)
+#   - P1 (warning) -> Telegram GRUPO PIETRA (resumido)
+#   - P2 (info) -> silencioso (apenas log)
+
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: "localhost:25"
+  smtp_from: "alerts@2notasudi.com.br"
+  smtp_require_tls: false
+
+templates:
+  - "/etc/alertmanager/templates/*.tmpl"
+
+route:
+  receiver: "telegram-grupo-pietra-default"
+  group_by: ["alertname", "priority", "squad"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # P0 critical -> GRUPO PIETRA + repetir a cada 1h
+    - match:
+        priority: P0
+      receiver: "telegram-grupo-pietra-p0"
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: false  # NAO continua para proximas rotas
+
+    # P1 warning -> GRUPO PIETRA
+    - match:
+        priority: P1
+      receiver: "telegram-grupo-pietra-p1"
+      group_wait: 1m
+      repeat_interval: 6h
+
+    # LGPD alerts (qualquer prioridade) -> squad cartorio-lgpd
+    - match:
+        squad: cartorio-lgpd
+      receiver: "telegram-grupo-lgpd"
+      group_wait: 1m
+      repeat_interval: 12h
+
+    # N8N alerts -> squad cartorio-n8n
+    - match:
+        squad: cartorio-n8n
+      receiver: "telegram-grupo-n8n"
+      group_wait: 1m
+
+# Suppress: nao alertar mesmo alerta 2x em <30min (exceto P0)
+inhibit_rules:
+  - source_match:
+      priority: P0
+    target_match:
+      priority: P1
+    equal: ["alertname", "instance"]
+  # LGPD bloqueia se cartorio LGPD offline (ex: N8N offline impede LGPD)
+  - source_match:
+      alertname: CartorioServiceDown5Min
+    target_match:
+      squad: cartorio-lgpd
+    equal: ["instance"]
+
+receivers:
+  # P0 (critical): GRUPO PIETRA com prefixo vermelho + retry 3x
+  - name: "telegram-grupo-pietra-p0"
+    telegram_configs:
+      - bot_token_file: "/etc/alertmanager/secrets/telegram_bot_token"
+        chat_id_file: "/etc/alertmanager/secrets/telegram_grupo_pietra_chat_id"
+        parse_mode: "HTML"
+        message: |
+          🔴 <b>P0 ALERTA — {{ .CommonLabels.alertname }}</b>
+          Squad: {{ .CommonLabels.squad }}
+          Instance: {{ .CommonLabels.instance }}
+
+          {{ .CommonAnnotations.summary }}
+
+          {{ range .Alerts }}
+          <b>{{ .Annotations.description }}</b>
+          {{ end }}
+
+          Runbook: {{ .CommonAnnotations.runbook }}
+        send_resolved: true
+
+  # P1 (warning): GRUPO PIETRA com formato resumido
+  - name: "telegram-grupo-pietra-p1"
+    telegram_configs:
+      - bot_token_file: "/etc/alertmanager/secrets/telegram_bot_token"
+        chat_id_file: "/etc/alertmanager/secrets/telegram_grupo_pietra_chat_id"
+        parse_mode: "HTML"
+        message: |
+          ⚠️ <b>P1 {{ .CommonLabels.alertname }}</b>
+          {{ .CommonAnnotations.summary }}
+        send_resolved: true
+
+  # Default: GRUPO PIETRA generico
+  - name: "telegram-grupo-pietra-default"
+    telegram_configs:
+      - bot_token_file: "/etc/alertmanager/secrets/telegram_bot_token"
+        chat_id_file: "/etc/alertmanager/secrets/telegram_grupo_pietra_chat_id"
+        parse_mode: "HTML"
+        message: |
+          ℹ️ {{ .CommonLabels.alertname }}
+          {{ .CommonAnnotations.summary }}
+
+  # LGPD specific: grupo LGPD (DPO + cartorio-lgpd)
+  - name: "telegram-grupo-lgpd"
+    telegram_configs:
+      - bot_token_file: "/etc/alertmanager/secrets/telegram_bot_token"
+        chat_id_file: "/etc/alertmanager/secrets/telegram_grupo_lgpd_chat_id"
+        parse_mode: "HTML"
+        message: |
+          🔒 <b>LGPD ALERTA — {{ .CommonLabels.alertname }}</b>
+          {{ .CommonAnnotations.summary }}
+          Squad: {{ .CommonLabels.squad }}
+          Description: {{ .CommonAnnotations.description }}
+        send_resolved: true
+
+  # N8N specific
+  - name: "telegram-grupo-n8n"
+    telegram_configs:
+      - bot_token_file: "/etc/alertmanager/secrets/telegram_bot_token"
+        chat_id_file: "/etc/alertmanager/secrets/telegram_grupo_n8n_chat_id"
+        parse_mode: "HTML"
+        message: |
+          ⚙️ <b>N8N ALERTA — {{ .CommonLabels.alertname }}</b>
+          {{ .CommonAnnotations.description }}
+
+# Webhook opcional para Chatwoot (squad human-in-the-loop)
+# - name: "chatwoot-inbox"
+#   webhook_configs:
+#     - url: "https://chat.2notasudi.com.br/api/v1/accounts/1/conversations"
+#       send_resolved: true
+
+# Squad routing (metadata para alertas avancados)
+# Configurar em alerts.yml como labels:
+#   squad: cartorio-lgpd, cartorio-n8n, cartorio-dev, cartorio-sre
+#   priority: P0, P1, P2
