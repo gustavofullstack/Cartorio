@@ -107,7 +107,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"chat_id\":\"{{ $env.TELEGRAM_GUSTAVO_CHAT_ID }}\",\"text\":\"\ud83d\udea8 [{{ $json.severity | upper }}] {{ $json.service }}: {{ $json.message }}\",\"parse_mode\":\"HTML\"}",
+        "jsonBody": "={\"chat_id\":\"{{ $env.TELEGRAM_GUSTAVO_CHAT_ID }}\",\"text\":\"🚨 [{{ $json.severity | upper }}] {{ $json.service }}: {{ $json.message }}\",\"parse_mode\":\"HTML\"}",
         "options": {
           "timeout": 10000
         }
@@ -316,7 +316,8 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": true
+    "availableInMCP": true,
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
   },
   "staticData": null,
   "tags": [],

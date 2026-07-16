@@ -131,7 +131,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Protocolo {{ $json.numero }}: {{ $json.status }} (atualizado em {{ $json.updated_at }}). Pr\u00f3ximo passo: {{ $json.proximo_passo }}\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
+        "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Protocolo {{ $json.numero }}: {{ $json.status }} (atualizado em {{ $json.updated_at }}). Próximo passo: {{ $json.proximo_passo }}\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
       },
       "id": "respond-ok",
       "name": "Respond OK",
@@ -278,7 +278,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
   },
   "staticData": null,
   "meta": null,
@@ -406,7 +407,7 @@
       {
         "parameters": {
           "respondWith": "json",
-          "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Protocolo {{ $json.numero }}: {{ $json.status }} (atualizado em {{ $json.updated_at }}). Pr\u00f3ximo passo: {{ $json.proximo_passo }}\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
+          "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"Protocolo {{ $json.numero }}: {{ $json.status }} (atualizado em {{ $json.updated_at }}). Próximo passo: {{ $json.proximo_passo }}\",\n  \"details\": {{ JSON.stringify($json) }}\n}"
         },
         "id": "respond-ok",
         "name": "Respond OK",

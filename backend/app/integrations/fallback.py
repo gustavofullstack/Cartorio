@@ -235,6 +235,12 @@ async def chat_with_fallback(
 
     last_exc: ChatError | None = None
     for idx, provider in enumerate(chain):
+        # Circuit Breaker check
+        if await _is_circuit_open(provider):
+            logger.warning("Circuit breaker is OPEN for provider: %s. Fast-failing.", provider)
+            last_exc = ChatError(f"Circuit breaker open for {provider}", kind=ChatErrorKind.HTTP_5XX)
+            continue
+
         if idx > 0 and last_exc is not None:
             logger.warning(
                 "Chain step %d provider (%s) failed kind=%s, attempting next (%s). Error: %s",
@@ -259,6 +265,9 @@ async def chat_with_fallback(
                 request_id=request_id,
                 client_ip=client_ip,
             )
+            # Sucesso: Reseta falhas e fecha o circuito
+            await _record_success(provider)
+
             logger.info(
                 "LLM call successful idx=%d provider=%s model=%s latency_ms=%d",
                 idx,
@@ -300,7 +309,7 @@ async def chat_with_fallback(
             return resp
 
         except ChatError as exc:
-            # LGPD/CONFIG: baila sem tentar chain
+            # LGPD/CONFIG: baila sem tentar chain (não contam para o circuit breaker)
             if exc.kind in (ChatErrorKind.LGPD_BLOCKED, ChatErrorKind.CONFIG):
                 logger.error(
                     "Provider %s abort chain (kind=%s): %s",
@@ -309,9 +318,13 @@ async def chat_with_fallback(
                     exc,
                 )
                 raise
+            # Registra falha para o Circuit Breaker
+            await _record_failure(provider)
             last_exc = exc
             continue
         except Exception as exc:
+            # Registra erro inesperado para o Circuit Breaker
+            await _record_failure(provider)
             logger.error(
                 "Erro inesperado em provider=%s: %s",
                 provider,
@@ -354,3 +367,50 @@ async def chat_with_fallback(
             pass
 
     raise last_exc
+
+
+async def _is_circuit_open(provider: str) -> bool:
+    """Verifica se o circuito está aberto (bloqueado) para o provedor no Redis."""
+    try:
+        from app.services.redis_bus import get_bus
+        bus = get_bus()
+        if not bus or not bus.client:
+            return False
+        is_open = await bus.client.get(f"cb:open:{provider}")
+        return is_open in (b"1", "1")
+    except Exception as e:
+        logger.warning("Circuit breaker Redis check failed for %s (fail-open): %s", provider, e)
+        return False
+
+
+async def _record_failure(provider: str, threshold: int = 3, open_time_seconds: int = 300) -> None:
+    """Incrementa falhas consecutivas do provedor no Redis. Abre o circuito se atingir o limite."""
+    try:
+        from app.services.redis_bus import get_bus
+        bus = get_bus()
+        if not bus or not bus.client:
+            return
+            
+        key_fail = f"cb:fail:{provider}"
+        fails = await bus.client.incr(key_fail)
+        await bus.client.expire(key_fail, 60)  # Expira a contagem de falhas em 60 segundos
+        
+        if fails >= threshold:
+            logger.error("Circuit breaker OPENING for provider %s for %d seconds (fails=%d)", provider, open_time_seconds, fails)
+            await bus.client.setex(f"cb:open:{provider}", open_time_seconds, "1")
+            await bus.client.delete(key_fail)
+    except Exception as e:
+        logger.warning("Circuit breaker failure record failed for %s: %s", provider, e)
+
+
+async def _record_success(provider: str) -> None:
+    """Reseta as falhas acumuladas e fecha o circuito se estiver aberto no Redis."""
+    try:
+        from app.services.redis_bus import get_bus
+        bus = get_bus()
+        if not bus or not bus.client:
+            return
+        await bus.client.delete(f"cb:fail:{provider}")
+        await bus.client.delete(f"cb:open:{provider}")
+    except Exception as e:
+        logger.warning("Circuit breaker success record failed for %s: %s", provider, e)

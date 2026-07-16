@@ -152,7 +152,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"created\",\n  \"protocolo\": \"CART-{{ new Date().getFullYear() }}-{{ Math.floor(Math.random()*1000000) }}\",\n  \"message\": \"Protocolo criado com sucesso. Prazo estimado: 5 dias uteis.\",\n  \"backend_status\": \"{{ $json.statusCode || 'pending' }}\",\n  \"sender\": \"{{ $json.sender }}\",\n  \"tipo_ato\": \"{{ $json.tipo_ato }}\",\n  \"scrubbed\": \"{{ $json.scrubbed }}\",\n  \"consentimento_lgpd\": {{ $json.consentimento_lgpd || false }},\n  \"note\": \"Backend /protocolo retornou 404 \u2014 endpoint ainda nao implementado (Sprint 3). Workflow gerou numero provisional.\"\n}"
+        "responseBody": "={\n  \"status\": \"created\",\n  \"protocolo\": \"CART-{{ new Date().getFullYear() }}-{{ Math.floor(Math.random()*1000000) }}\",\n  \"message\": \"Protocolo criado com sucesso. Prazo estimado: 5 dias uteis.\",\n  \"backend_status\": \"{{ $json.statusCode || 'pending' }}\",\n  \"sender\": \"{{ $json.sender }}\",\n  \"tipo_ato\": \"{{ $json.tipo_ato }}\",\n  \"scrubbed\": \"{{ $json.scrubbed }}\",\n  \"consentimento_lgpd\": {{ $json.consentimento_lgpd || false }},\n  \"note\": \"Backend /protocolo retornou 404 — endpoint ainda nao implementado (Sprint 3). Workflow gerou numero provisional.\"\n}"
       },
       "id": "respond-created",
       "name": "Respond Created",
@@ -301,7 +301,8 @@
     "executionOrder": "v1",
     "saveExecutionProgress": true,
     "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
   },
   "staticData": null,
   "meta": null,
@@ -446,7 +447,7 @@
       {
         "parameters": {
           "respondWith": "json",
-          "responseBody": "={\n  \"status\": \"created\",\n  \"protocolo\": \"CART-{{ new Date().getFullYear() }}-{{ Math.floor(Math.random()*1000000) }}\",\n  \"message\": \"Protocolo criado com sucesso. Prazo estimado: 5 dias uteis.\",\n  \"backend_status\": \"{{ $json.statusCode || 'pending' }}\",\n  \"sender\": \"{{ $json.sender }}\",\n  \"tipo_ato\": \"{{ $json.tipo_ato }}\",\n  \"scrubbed\": \"{{ $json.scrubbed }}\",\n  \"consentimento_lgpd\": {{ $json.consentimento_lgpd || false }},\n  \"note\": \"Backend /protocolo retornou 404 \u2014 endpoint ainda nao implementado (Sprint 3). Workflow gerou numero provisional.\"\n}"
+          "responseBody": "={\n  \"status\": \"created\",\n  \"protocolo\": \"CART-{{ new Date().getFullYear() }}-{{ Math.floor(Math.random()*1000000) }}\",\n  \"message\": \"Protocolo criado com sucesso. Prazo estimado: 5 dias uteis.\",\n  \"backend_status\": \"{{ $json.statusCode || 'pending' }}\",\n  \"sender\": \"{{ $json.sender }}\",\n  \"tipo_ato\": \"{{ $json.tipo_ato }}\",\n  \"scrubbed\": \"{{ $json.scrubbed }}\",\n  \"consentimento_lgpd\": {{ $json.consentimento_lgpd || false }},\n  \"note\": \"Backend /protocolo retornou 404 — endpoint ainda nao implementado (Sprint 3). Workflow gerou numero provisional.\"\n}"
         },
         "id": "respond-created",
         "name": "Respond Created",

@@ -322,6 +322,7 @@
     "executionOrder": "v1",
     "saveExecutionProgress": true,
     "saveDataSuccessExecution": "all",
-    "saveDataErrorExecution": "all"
+    "saveDataErrorExecution": "all",
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
   }
 }

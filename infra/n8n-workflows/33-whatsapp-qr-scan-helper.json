@@ -103,7 +103,9 @@
     }
   },
   "active": true,
-  "settings": {},
+  "settings": {
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
+  },
   "id": "bR7qIo3bFpG4zgx3",
   "meta": {
     "instanceId": "n8n-production-cartorio-2026"

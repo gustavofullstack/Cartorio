@@ -2,7 +2,7 @@
   "updatedAt": "2026-06-23T16:23:03.402Z",
   "createdAt": "2026-06-23T16:23:03.402Z",
   "id": "5ABAZCQVRLd7AmM5",
-  "name": "11 - Monitor Cart\u00f3rio",
+  "name": "11 - Monitor Cartório",
   "description": null,
   "active": true,
   "isArchived": false,
@@ -241,7 +241,7 @@
             {
               "id": "alert_text",
               "name": "alert_text",
-              "value": "=Cart\u00f3rio 2\u00ba Notas \u2014 Alerta de Sa\u00fade. Verifique o dashboard. Timestamp: {{ $now.toISO() }}",
+              "value": "=Cartório 2º Notas — Alerta de Saúde. Verifique o dashboard. Timestamp: {{ $now.toISO() }}",
               "type": "string"
             }
           ]
@@ -279,7 +279,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"inbox_id\": 1, \"source_id\": \"monitor-cartorio\", \"contact\": { \"name\": \"Monitor Cart\u00f3rio\" }, \"message\": $json.alert_text } }}",
+        "jsonBody": "={{ { \"inbox_id\": 1, \"source_id\": \"monitor-cartorio\", \"contact\": { \"name\": \"Monitor Cartório\" }, \"message\": $json.alert_text } }}",
         "options": {
           "timeout": 10000
         }
@@ -561,7 +561,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": true
+    "availableInMCP": true,
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
   },
   "staticData": {
     "node:Cron 5min": {
@@ -791,7 +792,7 @@
               {
                 "id": "alert_text",
                 "name": "alert_text",
-                "value": "=Cart\u00f3rio 2\u00ba Notas \u2014 Alerta de Sa\u00fade. Verifique o dashboard. Timestamp: {{ $now.toISO() }}",
+                "value": "=Cartório 2º Notas — Alerta de Saúde. Verifique o dashboard. Timestamp: {{ $now.toISO() }}",
                 "type": "string"
               }
             ]
@@ -825,7 +826,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={{ { \"inbox_id\": 1, \"source_id\": \"monitor-cartorio\", \"contact\": { \"name\": \"Monitor Cart\u00f3rio\" }, \"message\": $json.alert_text } }}",
+          "jsonBody": "={{ { \"inbox_id\": 1, \"source_id\": \"monitor-cartorio\", \"contact\": { \"name\": \"Monitor Cartório\" }, \"message\": $json.alert_text } }}",
           "options": {
             "timeout": 10000
           }

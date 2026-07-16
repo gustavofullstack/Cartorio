@@ -54,7 +54,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Extrai campos relevantes do update do Telegram\n// N8N 2.x Code node: $input J\u00c1 \u00c9 o item, $json \u00e9 o shortcut\n// O webhook body vem em $json.body (N\u00c3O em $json)\nconst item = $json || $input.json || {};\nconst body = item.body || item || {};\nconst message = body.message || {};\nconst chat = message.chat || {};\nconst from_user = message.from || {};\n\nreturn {\n  json: {\n    update_id: body.update_id,\n    message_id: message.message_id,\n    chat_id: chat.id,\n    chat_type: chat.type,\n    text: message.text || '',\n    from_user: {\n      id: from_user.id,\n      first_name: from_user.first_name || '',\n      username: from_user.username || '',\n      is_bot: from_user.is_bot || false\n    },\n    date: message.date,\n    is_command: (message.text || '').startsWith('/'),\n    is_bot_message: from_user.is_bot === true\n  }\n};"
+        "jsCode": "// Extrai campos relevantes do update do Telegram\n// N8N 2.x Code node: $input JÁ É o item, $json é o shortcut\n// O webhook body vem em $json.body (NÃO em $json)\nconst item = $json || $input.json || {};\nconst body = item.body || item || {};\nconst message = body.message || {};\nconst chat = message.chat || {};\nconst from_user = message.from || {};\n\nreturn {\n  json: {\n    update_id: body.update_id,\n    message_id: message.message_id,\n    chat_id: chat.id,\n    chat_type: chat.type,\n    text: message.text || '',\n    from_user: {\n      id: from_user.id,\n      first_name: from_user.first_name || '',\n      username: from_user.username || '',\n      is_bot: from_user.is_bot || false\n    },\n    date: message.date,\n    is_command: (message.text || '').startsWith('/'),\n    is_bot_message: from_user.is_bot === true\n  }\n};"
       },
       "id": "extract-fields",
       "name": "Extract Telegram fields",
@@ -388,7 +388,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
   },
   "tags": [
     {

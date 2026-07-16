@@ -130,7 +130,7 @@
             },
             {
               "name": "message",
-              "value": "=\ud83d\uddc2\ufe0f Retencao Diaria (LGPD):\n\u2022 Escaneados: {{ $json.scanned }}\n\u2022 Soft delete 5y: {{ $json.soft_deleted_5y.length }}\n\u2022 Soft delete inativo: {{ $json.soft_deleted_inativo.length }}\n\u2022 Erros: {{ $json.errors.length }}\n\u2022 Duracao: {{ $json.duration_ms }}ms\n\u2022 Cutoff 5y: {{ $json.cutoff_5y }}\n\u2022 Cutoff inativo: {{ $json.cutoff_inativo }}"
+              "value": "=🗂️ Retencao Diaria (LGPD):\n• Escaneados: {{ $json.scanned }}\n• Soft delete 5y: {{ $json.soft_deleted_5y.length }}\n• Soft delete inativo: {{ $json.soft_deleted_inativo.length }}\n• Erros: {{ $json.errors.length }}\n• Duracao: {{ $json.duration_ms }}ms\n• Cutoff 5y: {{ $json.cutoff_5y }}\n• Cutoff inativo: {{ $json.cutoff_inativo }}"
             }
           ]
         },
@@ -281,7 +281,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
   },
   "tags": [
     {

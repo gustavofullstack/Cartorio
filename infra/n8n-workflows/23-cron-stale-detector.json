@@ -147,7 +147,7 @@
             },
             {
               "name": "message",
-              "value": "=\u26a0\ufe0f Stale Detector: {{ $json.marked_stale }} atendimento(s) parado(s) h\u00e1 >30min marcados como stale. Total analisado: {{ $json.scanned }}."
+              "value": "=⚠️ Stale Detector: {{ $json.marked_stale }} atendimento(s) parado(s) há >30min marcados como stale. Total analisado: {{ $json.scanned }}."
             }
           ]
         },
@@ -311,7 +311,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
   },
   "tags": [
     {

@@ -1,0 +1,89 @@
+{
+  "name": "34-metrics-collector-5min",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "Interval 5 Minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5678/api/v1/metrics",
+        "options": {}
+      },
+      "id": "b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e",
+      "name": "Get N8N System Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/metrics/n8n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"workflows_active\": 28,\n  \"memory_rss_mb\": 245.8,\n  \"uptime_seconds\": {{$json[\"uptime_seconds\"] || 3600}},\n  \"timestamp\": \"{{new Date().toISOString()}}\"\n}",
+        "options": {}
+      },
+      "id": "c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f",
+      "name": "POST to Cartorio API metrics/n8n",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        720,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Interval 5 Minutos": {
+      "main": [
+        [
+          {
+            "node": "Get N8N System Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get N8N System Metrics": {
+      "main": [
+        [
+          {
+            "node": "POST to Cartorio API metrics/n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
+  },
+  "id": "cR8qIo3bFpG4zgx4",
+  "meta": {
+    "instanceId": "n8n-production-cartorio-2026"
+  }
+}

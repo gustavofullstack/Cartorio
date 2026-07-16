@@ -1,0 +1,178 @@
+{
+  "name": "35-llm-fallback-3x",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "llm-fallback-chain",
+        "options": {}
+      },
+      "id": "e1f2g3h4-i5j6-7k8l-9m0n-1o2p3q4r5s6t",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/integrations/opencode/test",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"{{$json.body.message}}\",\n  \"consent_granted\": true,\n  \"actor_id\": \"n8n_fallback_workflow\"\n}",
+        "options": {}
+      },
+      "id": "f2g3h4i5-j6k7-8l9m-0n1o-2p3q4r5s6t7u",
+      "name": "Try Primary (opencode_go)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        450,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/llm/test/openclaw",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"{{$json.body.message}}\",\n  \"consent_granted\": true,\n  \"actor_id\": \"n8n_fallback_workflow\"\n}",
+        "options": {}
+      },
+      "id": "g3h4i5j6-k7l8-9m0n-1o2p-3q4r5s6t7u8v",
+      "name": "Try Secondary (openclaw)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        680,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/llm/test/openrouter",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"{{$json.body.message}}\",\n  \"consent_granted\": true,\n  \"actor_id\": \"n8n_fallback_workflow\"\n}",
+        "options": {}
+      },
+      "id": "h4i5j6k7-l8m9-0n1o-2p3q-4r5s6t7u8v9w",
+      "name": "Try Tertiary (openrouter)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        900,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/llm/test/google_ai_studio",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"{{$json.body.message}}\",\n  \"consent_granted\": true,\n  \"actor_id\": \"n8n_fallback_workflow\"\n}",
+        "options": {}
+      },
+      "id": "i5j6k7l8-m9n0-1o2p-3q4r-5s6t7u8v9w0x",
+      "name": "Try Quaternary (gemini)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chat.2notasudi.com.br/api/v1/accounts/1/conversations/{{$json.body.conversation_id}}/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"Desculpe pela demora. Estamos com instabilidade em nossos servidores. Um atendente humano foi acionado.\",\n  \"message_type\": \"outgoing\"\n}",
+        "options": {}
+      },
+      "id": "j6k7l8m9-n0o1-2p3q-4r5s-6t7u8v9w0x1y",
+      "name": "Handoff to Human (Fallback Fail)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1350,
+        700
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Try Primary (opencode_go)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Try Primary (opencode_go)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Try Secondary (openclaw)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Try Secondary (openclaw)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Try Tertiary (openrouter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Try Tertiary (openrouter)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Try Quaternary (gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Try Quaternary (gemini)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Handoff to Human (Fallback Fail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "errorWorkflow": "ERROR_HANDLER_PLACEHOLDER_REPLACE_WITH_REAL_ID"
+  },
+  "id": "lRm7Kp3aFpG4zgx5",
+  "meta": {
+    "instanceId": "n8n-production-cartorio-2026"
+  }
+}
