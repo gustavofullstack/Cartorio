@@ -1,0 +1,180 @@
+# Prometheus SLO (Service Level Objectives) — Cartorio 2o Notas (G6.D.T6)
+# Defines: SLI metrics, SLO targets, multi-window/multi-burn-rate alerts
+#
+# SLOs oficiais:
+#   1. API Availability: 99.5% sucesso em 30 dias
+#   2. API Latency: 95% de requests < 500ms em 30 dias
+#   3. N8N Workflow Success: 99% workflows completos em 7 dias
+#   4. OpenClaw Agent Response: 95% respostas < 5s em 30 dias
+#
+# Burn-rate alerts: detecta violacoes RAPIDO (curto prazo) E EXAUSTAO (longo prazo).
+# Ref: Google SRE workbook cap. 5
+
+groups:
+  # ============================================================================
+  # SLO 1: API Availability (99.5% sucesso mensal)
+  # ============================================================================
+  - name: slo-api-availability
+    interval: 30s
+    rules:
+      # SLI: ratio de probe_success{job="cartorio-api"}
+      - record: sli:api_availability:ratio_30d
+        expr: avg_over_time(probe_success{job="cartorio-api"}[30d])
+
+      # Error budget remaining (30 dias)
+      - record: slo:api_availability:error_budget_remaining:30d
+        expr: 1 - (1 - sli:api_availability:ratio_30d) / (1 - 0.995)
+
+      # Multi-window burn-rate alerts
+      # Fast burn (1h window, 5min burn): 14.4x = budget exhausto em ~2 dias
+      - alert: SLO_API_Availability_FastBurn
+        expr: |
+          (
+            sum(rate(probe_success{job="cartorio-api"}[1h]))
+            /
+            sum(rate(probe_total{job="cartorio-api"}[1h]))
+          ) < (1 - (1 - 0.995) * 14.4)
+        for: 2m
+        labels:
+          severity: critical
+          priority: P0
+          squad: cartorio-dev
+          slo: api_availability
+        annotations:
+          summary: "API SLO fast burn (1h window, 14.4x)"
+          description: "API availability dropping fast. Burn rate: 14.4x (budget exhausto em ~2 dias)."
+          runbook: "https://github.com/gustavofullstack/Cartorio/blob/master/docs/runbook/slo-api-burn.md"
+
+      # Slow burn (6h window, 30min burn): 6x = budget exhausto em ~5 dias
+      - alert: SLO_API_Availability_SlowBurn
+        expr: |
+          (
+            sum(rate(probe_success{job="cartorio-api"}[6h]))
+            /
+            sum(rate(probe_total{job="cartorio-api"}[6h]))
+          ) < (1 - (1 - 0.995) * 6)
+        for: 30m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-dev
+          slo: api_availability
+        annotations:
+          summary: "API SLO slow burn (6h window, 6x)"
+          description: "API availability slowly degrading. Burn rate: 6x (budget exhausto em ~5 dias)."
+
+  # ============================================================================
+  # SLO 2: API Latency (95% < 500ms)
+  # ============================================================================
+  - name: slo-api-latency
+    interval: 30s
+    rules:
+      # SLI: ratio de requests abaixo do threshold
+      - record: sli:api_latency:ratio_30d
+        expr: |
+          (
+            sum(rate(http_request_duration_seconds_bucket{le="0.5",job="cartorio-api"}[30d]))
+            /
+            sum(rate(http_request_duration_seconds_count{job="cartorio-api"}[30d]))
+          )
+
+      - alert: SLO_API_Latency_Burn
+        expr: |
+          (
+            sum(rate(http_request_duration_seconds_bucket{le="0.5",job="cartorio-api"}[1h]))
+            /
+            sum(rate(http_request_duration_seconds_count{job="cartorio-api"}[1h]))
+          ) < (1 - (1 - 0.95) * 14.4)
+        for: 5m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-dev
+          slo: api_latency
+        annotations:
+          summary: "API latency SLO burn (p95 > 500ms)"
+          description: "Mais de 5% das requests estao > 500ms. SLO target 95%."
+
+  # ============================================================================
+  # SLO 3: N8N Workflow Success (99% em 7 dias)
+  # ============================================================================
+  - name: slo-n8n-success
+    interval: 1m
+    rules:
+      - record: sli:n8n_workflow_success:ratio_7d
+        expr: |
+          (
+            sum(rate(n8n_workflow_execution_status{status="success"}[7d]))
+            /
+            sum(rate(n8n_workflow_execution_status[7d]))
+          )
+
+      - alert: SLO_N8N_Success_Burn
+        expr: |
+          (
+            sum(rate(n8n_workflow_execution_status{status="success"}[3h]))
+            /
+            sum(rate(n8n_workflow_execution_status[3h]))
+          ) < (1 - (1 - 0.99) * 14.4)
+        for: 10m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-n8n
+          slo: n8n_workflow_success
+        annotations:
+          summary: "N8N workflow success rate SLO burn"
+          description: "Mais de 1% dos workflows falhando. SLO target 99%."
+
+  # ============================================================================
+  # SLO 4: OpenClaw Agent Response (95% < 5s)
+  # ============================================================================
+  - name: slo-openclaw-response
+    interval: 30s
+    rules:
+      - record: sli:openclaw_response:ratio_30d
+        expr: |
+          (
+            sum(rate(openclaw_request_duration_seconds_bucket{le="5.0"}[30d]))
+            /
+            sum(rate(openclaw_request_duration_seconds_count[30d]))
+          )
+
+      - alert: SLO_OpenClaw_Response_Burn
+        expr: |
+          (
+            sum(rate(openclaw_request_duration_seconds_bucket{le="5.0"}[1h]))
+            /
+            sum(rate(openclaw_request_duration_seconds_count[1h]))
+          ) < (1 - (1 - 0.95) * 14.4)
+        for: 5m
+        labels:
+          severity: warning
+          priority: P1
+          squad: cartorio-llm
+          slo: openclaw_response
+        annotations:
+          summary: "OpenClaw agent response time SLO burn (p95 > 5s)"
+          description: "Cartorio-bot respondendo lento. SLO target 95% em <5s."
+
+  # ============================================================================
+  # Composite SLO report (mensal)
+  # ============================================================================
+  - name: slo-composite-report
+    interval: 5m
+    rules:
+      - record: slo:composite:cartorio:availability_30d
+        expr: |
+          (
+            sli:api_availability:ratio_30d
+            +
+            sli:n8n_workflow_success:ratio_7d
+          ) / 2
+
+      - record: slo:composite:cartorio:latency_30d
+        expr: |
+          (
+            sli:api_latency:ratio_30d
+            +
+            sli:openclaw_response:ratio_30d
+          ) / 2

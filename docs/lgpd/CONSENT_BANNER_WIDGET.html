@@ -1,0 +1,261 @@
+<!-- LGPD Consent Banner Widget (G6.C.T8) for LobeChat
+     Include this snippet in LobeChat settings > Custom CSS or before </body>
+     Style: moderno, discreto, conforme LGPD art. 7 I + art. 18 IX (oposicao)
+-->
+<style>
+  #lgpd-consent-banner {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    right: 24px;
+    max-width: 720px;
+    margin: 0 auto;
+    z-index: 999999;
+    background: #1f2937;
+    color: #f9fafb;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    display: none;
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  #lgpd-consent-banner.visible { display: block; }
+
+  #lgpd-consent-banner .lgpd-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #fbbf24;
+  }
+
+  #lgpd-consent-banner .lgpd-text {
+    margin-bottom: 16px;
+  }
+
+  #lgpd-consent-banner .lgpd-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  #lgpd-consent-banner .lgpd-btn {
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  #lgpd-consent-banner .lgpd-btn-accept {
+    background: #10b981;
+    color: white;
+  }
+
+  #lgpd-consent-banner .lgpd-btn-accept:hover {
+    background: #059669;
+  }
+
+  #lgpd-consent-banner .lgpd-btn-reject {
+    background: #ef4444;
+    color: white;
+  }
+
+  #lgpd-consent-banner .lgpd-btn-reject:hover {
+    background: #dc2626;
+  }
+
+  #lgpd-consent-banner .lgpd-btn-settings {
+    background: transparent;
+    color: #9ca3af;
+    border: 1px solid #4b5563;
+  }
+
+  #lgpd-consent-banner .lgpd-btn-settings:hover {
+    background: #374151;
+    color: #f9fafb;
+  }
+
+  #lgpd-consent-banner .lgpd-link {
+    color: #60a5fa;
+    text-decoration: underline;
+  }
+
+  /* Mini badge para header (sempre visivel quando consentido) */
+  #lgpd-consent-badge {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    z-index: 999998;
+    cursor: pointer;
+    display: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  #lgpd-consent-badge.visible { display: inline-block; }
+</style>
+
+<div id="lgpd-consent-banner" role="dialog" aria-live="polite" aria-label="Banner de consentimento LGPD">
+  <div class="lgpd-title">🛡️ Seus dados pessoais (LGPD)</div>
+  <div class="lgpd-text">
+    O <strong>2o Tabelionato de Notas e Protesto de Uberlandia</strong> utiliza cookies e
+    processa conversas para melhorar o atendimento via IA.
+    Conforme a <a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm" target="_blank" class="lgpd-link" rel="noopener">Lei 13.709/2018 (LGPD)</a>,
+    voce tem 7 direitos garantidos, incluindo acesso, correcao e oposicao.
+    <a href="/lgpd/privacy" target="_blank" class="lgpd-link">Politica de Privacidade v3</a>.
+  </div>
+  <div class="lgpd-buttons">
+    <button class="lgpd-btn lgpd-btn-accept" id="lgpd-accept" aria-label="Aceitar todos os cookies">
+      Aceitar todos
+    </button>
+    <button class="lgpd-btn lgpd-btn-reject" id="lgpd-reject" aria-label="Recusar cookies nao essenciais">
+      Recusar
+    </button>
+    <button class="lgpd-btn lgpd-btn-settings" id="lgpd-settings" aria-label="Configuracoes avancadas">
+      Configuracoes
+    </button>
+  </div>
+</div>
+
+<div id="lgpd-consent-badge" role="status" aria-label="Status do consentimento">
+  ✓ LGPD OK
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // Storage key para consentimento (versionado para invalidacao LGPD v3)
+  var CONSENT_KEY = 'cartorio_lgpd_consent_v3';
+  var CONSENT_API = 'https://api.2notasudi.com.br/api/v1/lgpd/consent';
+
+  function getConsent() {
+    try {
+      var stored = localStorage.getItem(CONSENT_KEY);
+      if (!stored) return null;
+      var parsed = JSON.parse(stored);
+      // Valido por 365 dias
+      if (Date.now() - parsed.timestamp > 365 * 24 * 60 * 60 * 1000) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setConsent(consent) {
+    var payload = {
+      accepted: consent.accepted,
+      analytics: consent.analytics || false,
+      marketing: consent.marketing || false,
+      timestamp: Date.now(),
+      version: 'v3'
+    };
+    try {
+      localStorage.setItem(CONSENT_KEY, JSON.stringify(payload));
+      // Backend audit trail (LGPD art. 37)
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(CONSENT_API, JSON.stringify(payload));
+      } else {
+        fetch(CONSENT_API, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+          keepalive: true
+        }).catch(function(){});
+      }
+    } catch (e) {
+      console.warn('LGPD consent storage failed:', e);
+    }
+  }
+
+  function showBanner() {
+    var banner = document.getElementById('lgpd-consent-banner');
+    if (banner) banner.classList.add('visible');
+  }
+
+  function hideBanner() {
+    var banner = document.getElementById('lgpd-consent-banner');
+    if (banner) banner.classList.remove('visible');
+  }
+
+  function showBadge() {
+    var badge = document.getElementById('lgpd-consent-badge');
+    if (badge) badge.classList.add('visible');
+  }
+
+  function init() {
+    var consent = getConsent();
+    if (!consent) {
+      showBanner();
+    } else {
+      showBadge();
+    }
+
+    document.getElementById('lgpd-accept').addEventListener('click', function() {
+      setConsent({ accepted: true, analytics: true, marketing: true });
+      hideBanner();
+      showBadge();
+    });
+
+    document.getElementById('lgpd-reject').addEventListener('click', function() {
+      setConsent({ accepted: false, analytics: false, marketing: false });
+      hideBanner();
+      showBadge();
+    });
+
+    document.getElementById('lgpd-settings').addEventListener('click', function() {
+      // Redirecionar para pagina de configuracoes avancadas
+      window.location.href = '/lgpd/settings';
+    });
+
+    document.getElementById('lgpd-consent-badge').addEventListener('click', function() {
+      // Permitir revogar consentimento
+      if (confirm('Deseja revogar seu consentimento LGPD?')) {
+        setConsent({ accepted: false, analytics: false, marketing: false });
+        hideBanner();
+        showBadge();
+      }
+    });
+  }
+
+  // Aguardar DOM pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+<!--
+Conformidade:
+- LGPD art. 7 I (consentimento) - opt-in explicito
+- LGPD art. 8 (confirmacao clara) - banner com botoes distintos
+- LGPD art. 9 (finalidade) - texto explica uso
+- LGPD art. 18 IX (oposicao) - botao "Recusar" sempre disponivel
+- LGPD art. 37 (registro operacoes) - POST /api/v1/lgpd/consent (audit trail)
+- LGPD art. 46 (seguranca) - navigator.sendBeacon + localStorage
+
+Refs:
+- docs/lgpd/policy/D23-site-privacy-policy-v3.md
+- scripts/anpd_report.py (relatorio ANPD)
+- backend/app/api/v1/lgpd.py (endpoint POST /consent)
+
+Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 17 (T8)
+-->
