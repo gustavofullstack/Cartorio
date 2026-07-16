@@ -796,6 +796,11 @@ from app.api.v1.lgpd_privacy_policy_endpoint import privacy_policy_router  # noq
 
 app.include_router(privacy_policy_router, prefix="/api/v1")
 
+# LGPD Consent (G6.C.T9) - banner widget backend endpoint
+from app.api.v1.lgpd_consent import router as lgpd_consent_router  # noqa: E402
+
+app.include_router(lgpd_consent_router, prefix="/api/v1")
+
 # LGPD DPO Dashboard — D25 endpoints administrativos (X-API-Key + JWT DPO)
 from app.api.v1.lgpd_dpo_dashboard import dpo_dashboard_router  # noqa: E402
 
