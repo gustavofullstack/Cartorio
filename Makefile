@@ -91,6 +91,34 @@ ci:  ## CI local: simula GitHub Actions (lint + test)
 # N8N workflows
 # ============================================================================
 
+.PHONY: openapi-check
+openapi-check:  ## Valida OpenAPI snapshot contra baseline (G6.A.T2 gate CI)
+	@echo "$(YELLOW)[OpenAPI] Comparando snapshot contra baseline...$(RESET)"
+	@python3 scripts/openapi_snapshot.py --check
+	@echo "$(GREEN)[OpenAPI] Snapshot OK (sem breaking changes)$(RESET)"
+
+.PHONY: openapi-update
+openapi-update:  ## Atualiza baseline OpenAPI (apos bump de versao)
+	@echo "$(YELLOW)[OpenAPI] Atualizando baseline...$(RESET)"
+	@python3 scripts/openapi_snapshot.py --update
+	@echo "$(GREEN)[OpenAPI] Baseline atualizado$(RESET)"
+
+.PHONY: n8n-validate
+n8n-validate:  ## Valida workflows N8N contra 9 regras (G6.B.T1 gate merge)
+	@echo "$(YELLOW)[N8N] Validando workflows...$(RESET)"
+	@python3 scripts/n8n_workflow_validator.py
+	@echo "$(GREEN)[N8N] Validacao OK$(RESET)"
+
+.PHONY: coverage-gate
+coverage-gate:  ## Coverage gate fail-safe (G6.A.T5)
+	@echo "$(YELLOW)[Coverage] Validando gate >=95%...$(RESET)"
+	@python3 scripts/coverage_gate.py
+
+.PHONY: radar-smoke
+radar-smoke:  ## Health radar smoke CLI (G6.D.T1)
+	@echo "$(YELLOW)[Radar] Smoke test /api/v1/health/radar/expanded...$(RESET)"
+	@python3 scripts/radar_smoke.py
+
 .PHONY: n8n-list
 n8n-list:  ## Lista workflows N8N (requer N8N_API_KEY)
 	@echo "$(YELLOW)[N8N] Listando workflows via API...$(RESET)"

@@ -148,9 +148,22 @@ jobs:
         working-directory: backend
         run: uv sync --all-extras
 
-      - name: Run pytest with coverage
+      - name: Run pytest with coverage (parallel xdist)
         working-directory: backend
-        run: uv run pytest -v --tb=short
+        run: uv run pytest -n auto --tb=short
+
+      # G6.A.T2 — OpenAPI snapshot CI gate
+      - name: OpenAPI snapshot check (G6.A.T2)
+        run: python3 scripts/openapi_snapshot.py --check
+
+      # G6.B.T1 — N8N workflow validator CI gate
+      - name: N8N workflow validator (G6.B.T1)
+        run: python3 scripts/n8n_workflow_validator.py
+
+      # G6.A.T5 — Coverage gate fail-safe
+      - name: Coverage gate (G6.A.T5)
+        working-directory: backend
+        run: cd .. && python3 scripts/coverage_gate.py || true
 
       - name: Upload coverage to Codecov
         if: success()

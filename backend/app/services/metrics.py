@@ -64,6 +64,16 @@ class MetricsStore:
         self._metric_registry: dict[str, _MetricHandle] = {}
         self._started_at: float = time.time()
 
+        # Inicializa contadores de cold-start (evita Grafana no-data)
+        self.inc_counter("cartorio_emolumento_consultado_total", value=0)
+        self.inc_counter("cartorio_emolumento_erros_total", value=0)
+        self.inc_counter("cartorio_telegram_mensagens_total", labels={"direction": "in"}, value=0)
+        self.inc_counter("cartorio_telegram_mensagens_total", labels={"direction": "out"}, value=0)
+        self.inc_counter("cartorio_telegram_erros_total", value=0)
+        self.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "in"}, value=0)
+        self.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "out"}, value=0)
+        self.inc_counter("cartorio_whatsapp_erros_total", value=0)
+
     def inc_counter(self, name: str, labels: dict[str, str] | None = None, value: int = 1) -> None:
         key = self._labels_key(labels)
         self.counters.setdefault(name, {}).setdefault(key, 0)
@@ -326,12 +336,25 @@ class _MetricHandle:
 
 def collect_db_metrics(db: Session) -> dict[str, Any]:
     """Coleta metrics do DB (gauge snapshot). Chamado pelo endpoint /metrics/prometheus."""
+    from app.models.outbox_message import OutboxMessage, OutboxStatus
+    
     metrics: dict[str, Any] = {}
     metrics["clientes_total"] = db.query(func.count(Cliente.id)).scalar() or 0
+    metrics["lgpd_consent_total"] = db.query(func.count(Cliente.id)).filter(Cliente.consentimento_lgpd.is_(True)).scalar() or 0
+    metrics["audit_chain_length"] = db.query(func.count(AuditLog.id)).scalar() or 0
+    metrics["audit_chain_size"] = metrics["audit_chain_length"]
+    
+    # DLQ/outbox pending
+    metrics["dlq_pending"] = db.query(func.count(OutboxMessage.id)).filter(
+        OutboxMessage.status.in_([OutboxStatus.PENDING, OutboxStatus.FAILED])
+    ).scalar() or 0
+    
     rows = db.query(Protocolo.status, func.count(Protocolo.id)).group_by(Protocolo.status).all()
     for status, count in rows:
         metrics[f'protocolos_total{{status="{status}"}}'] = count
-    metrics["audit_chain_length"] = db.query(func.count(AuditLog.id)).scalar() or 0
+        metrics[f'protocolo_status_total{{status="{status}"}}'] = count
+        
+    metrics["protocolo_total_total"] = db.query(func.count(Protocolo.id)).scalar() or 0
     return metrics
 
 
@@ -367,7 +390,13 @@ def render_full_prometheus(db: Session | None = None) -> str:
     """Renderiza todos os metrics incluindo snapshot do DB + pool stats (A15)."""
     if db is not None:
         for name, value in collect_db_metrics(db).items():
-            store.set_gauge(name, value)
+            p_name = name
+            if not name.startswith("cartorio_") and not name.startswith("pii_blocked_total") and not name.startswith("dlq_depth"):
+                p_name = f"cartorio_{name}"
+            # Força o prefixo no dlq_pending para cartorio_dlq_pending
+            if name == "dlq_pending":
+                p_name = "cartorio_dlq_pending"
+            store.set_gauge(p_name, value)
     # Pool stats sao in-process (sem dependencia de db), sempre populados
     for name, value in collect_pool_metrics().items():
         store.set_gauge(name, value)
@@ -394,6 +423,18 @@ def render_metrics_json(db: Session | None = None) -> dict[str, Any]:
     db_snapshot: dict[str, Any] = {}
     if db is not None:
         db_snapshot = collect_db_metrics(db)
+        # Popula a store.gauges in-memory com as db metrics para consistência no JSON
+        for name, value in db_snapshot.items():
+            p_name = name
+            if not name.startswith("cartorio_") and not name.startswith("pii_blocked_total") and not name.startswith("dlq_depth"):
+                p_name = f"cartorio_{name}"
+            if name == "dlq_pending":
+                p_name = "cartorio_dlq_pending"
+            store.set_gauge(p_name, value)
+            
+    # Popula a store.gauges in-memory com as pool metrics para consistência no JSON
+    for name, value in collect_pool_metrics().items():
+        store.set_gauge(name, value)
 
     # Processa db_snapshot -> campos canonicos
     clientes_total = int(db_snapshot.get("clientes_total", 0))
@@ -439,6 +480,9 @@ def render_metrics_json(db: Session | None = None) -> dict[str, Any]:
         "clientes_total": clientes_total,
         "protocolos_total": protocolos_total,
         "audit_chain_length": audit_chain_length,
+        "audit_chain_size": audit_chain_length,
+        "lgpd_consent_total": int(db_snapshot.get("lgpd_consent_total", 0)),
+        "dlq_pending": int(db_snapshot.get("dlq_pending", 0)),
         "db_pool": db_pool,
         "uptime_seconds": uptime_seconds,
         "counters": counters,
