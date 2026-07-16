@@ -32,6 +32,7 @@ dev = [
     "fakeredis>=2.26.0",
     "lupa>=2.0",  # A20: fakeredis lua support (eval usado em release_lock)
     "mutmut>=3.6.0",
+    "pytest-xdist>=3.5.0",  # G6.A.T4: paraleliza suite (~30% mais rapido em 4 cores)
 ]
 # F05 E2E suite (Playwright + chromium). SEPARADO de `dev` para nao
 # inflar CI unit (~200MB+ do chromium + 60MB Playwright). Instalar
