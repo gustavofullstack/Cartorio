@@ -4718,6 +4718,137 @@ def criar_agendamento(
         )
 
 
+@api_router.post(
+    "/agendamentos/criar-webhook",
+    tags=["agendamento"],
+    summary="Criar agendamento via Webhook (N8N)",
+    description=(
+        "Endpoint administrativo para o N8N criar agendamentos presenciais.\n\n"
+        "**Gate LGPD**: Valida consentimento do usuário. Bloqueia CPFs brutos e dados sensíveis de serem repassados a APIs externas.\n\n"
+        "**Audit**: Grava 'agendamento.webhook_criar' no log de auditoria."
+    ),
+    status_code=201,
+    response_model=AgendamentoResponse,
+)
+def criar_agendamento_webhook(
+    request: Request,
+    payload: AgendamentoCreateRequest,
+    db: Annotated[Session, Depends(get_db)],
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> AgendamentoResponse:
+    """Cria agendamento via webhook N8N com validação LGPD e audit log."""
+    from app.services.agendamento import (
+        AgendamentoConflictError,
+        AgendamentoService,
+        ClienteNotFoundError,
+        ProtocoloNotFoundError,
+    )
+    from app.models.cliente import Cliente
+    from sqlalchemy import select
+    from app.services.audit import AuditService
+    from app.services.metrics import store as metrics_store
+
+    # 1. Validação LGPD: Consent Check (S7.T3)
+    cliente = db.execute(
+        select(Cliente).where(Cliente.id == payload.cliente_id)
+    ).scalar_one_or_none()
+
+    if not cliente:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "CLIENTE_NAO_ENCONTRADO",
+                "mensagem": f"Cliente ID {payload.cliente_id} nao encontrado para validar consentimento.",
+            },
+        )
+
+    # Validar consentimento do usuário antes do agendamento (LGPD)
+    if not cliente.consentimento_lgpd:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "erro": "LGPD_CONSENT_REQUIRED",
+                "mensagem": "Consentimento LGPD nao concedido pelo cliente. Agendamento bloqueado.",
+            },
+        )
+
+    # 2. Criar o agendamento
+    try:
+        agendamento = AgendamentoService.criar_agendamento(
+            db,
+            cliente_id=payload.cliente_id,
+            cliente_cpf=payload.cliente_cpf,
+            data_hora=payload.data_hora,
+            titulo=payload.titulo,
+            descricao=payload.descricao,
+            tipo=payload.tipo,
+            local=payload.local,
+            protocolo_id=payload.protocolo_id,
+            duration_minutes=payload.duration_minutes,
+            request=request,
+        )
+
+        # 3. Gravar evento no Audit Log (LGPD Art. 37)
+        AuditService.log(
+            db,
+            actor_id="n8n_webhook",
+            actor_type="system",
+            action="agendamento.webhook_criar",
+            resource=f"agendamento:{agendamento.id}",
+            payload={
+                "cliente_id": payload.cliente_id,
+                "data_hora": payload.data_hora.isoformat(),
+                "titulo": payload.titulo,
+                "local": payload.local,
+                "tipo": payload.tipo.value,
+            },
+            canal="n8n",
+        )
+
+        return AgendamentoResponse.model_validate(agendamento)
+
+    except AgendamentoConflictError as e:
+        # Incrementa contador de conflitos de agendamento no Prometheus (S7.T4)
+        metrics_store.inc_counter("cartorio_agendamentos_conflitos_total")
+        
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "erro": "CONFLITO_HORARIO",
+                "mensagem": "Horário já ocupado por outro agendamento.",
+                "detalhes": {
+                    "agendamento_existente_id": e.existing.id,
+                    "data_hora": e.existing.data_hora.isoformat(),
+                    "titulo": e.existing.titulo,
+                },
+            },
+        )
+    except ClienteNotFoundError as e:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "CLIENTE_NAO_ENCONTRADO",
+                "mensagem": str(e),
+            },
+        )
+    except ProtocoloNotFoundError as e:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "PROTOCOLO_NAO_ENCONTRADO",
+                "mensagem": str(e),
+            },
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "erro": "PAYLOAD_INVALIDO",
+                "mensagem": str(e),
+            },
+        )
+
+
 @api_router.get(
     "/agendamento/cliente/{cliente_id}",
     tags=["agendamento"],

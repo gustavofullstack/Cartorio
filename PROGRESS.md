@@ -3001,3 +3001,25 @@ Modified by Gustavo Almeida
 - **Tests:** wave19+18 9 passed
 - **Lesson:** lesson-191-g7-wave19-pii-openapi-handoff-2026-07-16.md
 Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 20 G7 TG multi-turn + HMAC drill + Evolution checklist + STATUS ✅
+- **4 agents:**
+  - [x] G7.03.T4 — tests tg:hist multi-turn + catalog series single-msg + CPF scrub in hist
+  - [x] G7.02.T4 — docs/AUDIT_HMAC_ROTATION_DRILL_G7.md (dual-key gap explicit)
+  - [x] G7.04.T1/T2 — docs/EVOLUTION_DATABASE_URL_QR_CHECKLIST_G7.md (SUI exec)
+  - [x] G7.24.T4 — docs/SUPER_STATUS.html G7 banner ~38%
+- **Master:** MiniMax continues G6 (41b2fb1 lesson 188 G6 19-21) — Grok stack still uncommitted
+- **Tests:** 6 passed wave20
+- **Lesson:** lesson-192-g7-wave20-tg-hist-hmac-evo-2026-07-16.md
+Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 21 G7 Telegram webhook + smoke + LobeChat scrub + mutmut status ✅
+- **4 agents:**
+  - [x] G7.03.T1 — TELEGRAM_WEBHOOK_REREGISTER_G7.md + scripts/telegram_set_webhook.py
+  - [x] G7.03.T2 — smoke_inventory.py → 26 tests / 4 files
+  - [x] G7.06.T2 — LobeChat import: **removed literal apiKey** + LOBCHAT_OPENCLAW_IMPORT_G7.md
+  - [x] G7.02.T1 — MUTMUT_REPORT_G7_WAVE21.md (partial; full re-run pending)
+- **Security:** agent_cartorio_import.json had hardcoded password → placeholder (rotate if leaked)
+- **Tests:** 5 passed wave21
+- **Lesson:** lesson-193-g7-wave21-tg-smoke-lobechat-2026-07-16.md
+Modified by Gustavo Almeida

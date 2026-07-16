@@ -42,7 +42,7 @@
       "name": "OpenClaw Cartório (Custom OpenAI)",
       "type": "openai",
       "baseURL": "https://agent.2notasudi.com.br/v1",
-      "apiKey": "@Techno832466",
+      "apiKey": "${OPENCLAW_GATEWAY_TOKEN_OR_PASSWORD}",
       "models": ["openclaw", "openclaw/default", "openclaw/main"],
       "enabled": true,
       "config": {

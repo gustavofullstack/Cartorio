@@ -39,6 +39,7 @@ from sqlalchemy.orm import Session
 from app.models.audit_log import AuditLog
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
+from app.models.agendamento import Agendamento, StatusAgendamento
 
 
 class MetricsStore:
@@ -73,6 +74,7 @@ class MetricsStore:
         self.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "in"}, value=0)
         self.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "out"}, value=0)
         self.inc_counter("cartorio_whatsapp_erros_total", value=0)
+        self.inc_counter("cartorio_agendamentos_conflitos_total", value=0)
 
     def inc_counter(self, name: str, labels: dict[str, str] | None = None, value: int = 1) -> None:
         key = self._labels_key(labels)
@@ -368,6 +370,14 @@ def collect_db_metrics(db: Session) -> dict[str, Any]:
         metrics[f'protocolo_status_total{{status="{status}"}}'] = count
         
     metrics["protocolo_total_total"] = db.query(func.count(Protocolo.id)).scalar() or 0
+    
+    # Gauge de agendamentos ativos futuros (S7.T4)
+    import datetime
+    metrics["agendamentos_ativos_total"] = db.query(func.count(Agendamento.id)).filter(
+        Agendamento.status.in_([StatusAgendamento.AGENDADO, StatusAgendamento.CONFIRMADO]),
+        Agendamento.data_hora >= datetime.datetime.now()
+    ).scalar() or 0
+    
     return metrics
 
 
