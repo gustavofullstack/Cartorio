@@ -47,8 +47,9 @@ jobs:
           path: |
             backend/.venv
             ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
+          key: ${{ runner.os }}-py${{ matrix.python-version }}-uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
           restore-keys: |
+            ${{ runner.os }}-py${{ matrix.python-version }}-uv-
             ${{ runner.os }}-uv-
 
       - name: Install dependencies
