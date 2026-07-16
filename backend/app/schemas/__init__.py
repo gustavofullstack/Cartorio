@@ -18,6 +18,7 @@ from app.schemas.audit import (
     AuditLogResponse,
 )
 from app.schemas.metrics import MetricsResponse, N8nMetricsIngest, N8nMetricsIngestResponse
+from app.schemas.emolumento import EmolumentoCalculoResponse
 from app.schemas.protocolo import (
     CanalOrigem,
     ClienteResumo,
@@ -61,4 +62,6 @@ __all__ = [
     "ProtocoloNotFoundResponse",
     "ProtocoloResponse",
     "StatusProtocolo",
+    # emolumento
+    "EmolumentoCalculoResponse",
 ]

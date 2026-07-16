@@ -8,6 +8,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-16)
 
 ### Por data (consolidado)
+- **2026-07-16** (Lesson 194 — G7 Wave 22 coverage gap 12 mods + canned v4 +10 + WA emolumento synthetic + DNS/Traefik SUI pack): `.harness/memory/lesson-194-g7-wave22-cov-canned-wa-dns-2026-07-16.md`
 - **2026-07-16** (Lesson 193 — G7 Wave 21 TG setWebhook helper + smoke inventory 26 + LobeChat apiKey scrub + mutmut status): `.harness/memory/lesson-193-g7-wave21-tg-smoke-lobechat-2026-07-16.md`
 - **2026-07-16** (Lesson 192 — G7 Wave 20 TG multi-turn Redis hist + catalog anti-flood + HMAC audit drill + Evolution QR/DB checklist + SUPER_STATUS): `.harness/memory/lesson-192-g7-wave20-tg-hist-hmac-evo-2026-07-16.md`
 - **2026-07-16** (Lesson 191 — G7 Wave 19 PII pre-LLM 8/8 + OpenAPI baseline 126 + Chatwoot handoff checklist + redlock peer skip): `.harness/memory/lesson-191-g7-wave19-pii-openapi-handoff-2026-07-16.md`

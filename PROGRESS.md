@@ -3023,3 +3023,14 @@ Modified by Gustavo Almeida
 - **Tests:** 5 passed wave21
 - **Lesson:** lesson-193-g7-wave21-tg-smoke-lobechat-2026-07-16.md
 Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 22 G7 coverage gap + canned v4 + WA emolumento synth + DNS pack ✅
+- **4 agents:**
+  - [x] G7.01.T2 — coverage_gap_report.py + docs/COVERAGE_GAP_G7.md (12 mods <90%)
+  - [x] G7.05.T4 — chatwoot_canned_responses_v4.py +10 (v3+v4=20 jurídicas code)
+  - [x] G7.04.T4 — synthetic WA→parse→emolumento (156.40 procuraçao) tests
+  - [x] G7.05.T1 — docs/DNS_TRAEFIK_SUI_PACK_G7.md one-pager
+- **Bonus:** dead_mans_switch + evolution PREV tests (coverage leverage)
+- **Tests:** 8 passed wave22
+- **Lesson:** lesson-194-g7-wave22-cov-canned-wa-dns-2026-07-16.md
+Modified by Gustavo Almeida

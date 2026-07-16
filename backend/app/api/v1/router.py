@@ -62,6 +62,7 @@ from app.schemas.agendamento import (
     AgendamentoCreateRequest,
     AgendamentoResponse,
 )
+from app.schemas.emolumento import EmolumentoCalculoResponse
 from app.services.audit import AuditService
 from app.services.audit_context import audit_kwargs
 from app.services.audit_query import get_audit_log_by_id, list_audit_logs
@@ -150,6 +151,135 @@ async def calcular_emolumento(
         "tabela_referencia": resultado.tabela_referencia,
         "valido_ate": resultado.valido_ate,
     }
+
+
+@api_router.get(
+    "/emolumentos/calcular-api",
+    tags=["emolumento"],
+    summary="Calcular emolumento estendido (N8N / API)",
+    description=(
+        "Endpoint estendido para cálculo de emolumentos notariais de Minas Gerais 2026.\n\n"
+        "**Isenções**: Suporta a aplicação de gratuidade baseada em motivo legal (justiça gratuita, programas sociais, etc.).\n\n"
+        "**Conformidade LGPD**: Se o ato for de alto valor (compra e venda, doação ou acima de R$ 1.000,00) e houver "
+        "um cliente associado (cliente_id), exige consentimento ativo (consentimento_lgpd = True).\n\n"
+        "**Audit**: Registra o cálculo no log de auditoria."
+    ),
+    response_model=EmolumentoCalculoResponse,
+)
+async def calcular_emolumento_api(
+    tipo: Annotated[str, Query(description="Tipo do ato cartorário.")],
+    folhas: Annotated[int, Query(ge=1, le=1000, description="Quantidade de folhas.")] = 1,
+    urgencia: Annotated[bool, Query(description="Aplica adicional de 50% por urgência.")] = False,
+    isencao_motivo: Annotated[str | None, Query(description="Motivo legal de isenção, se aplicável.")] = None,
+    cliente_id: Annotated[int | None, Query(description="ID do cliente para validação de consentimento em consultas sensíveis.")] = None,
+    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+) -> EmolumentoCalculoResponse:
+    """Calcula emolumento com tratamento de isenções e controle de privacidade LGPD."""
+    from app.services.metrics import store
+    from app.services.audit import AuditService
+    from app.models.cliente import Cliente
+    from app.services.emolumento import isencao_aplicavel
+    from sqlalchemy import select
+    from decimal import Decimal
+
+    store.inc_counter("cartorio_emolumento_consultado_total")
+
+    # 1. Validação de Entrada & Cálculo Básico
+    try:
+        resultado = calcular_emolumento_svc(tipo, folhas=folhas, urgencia=urgencia)
+    except ValueError as e:
+        store.inc_counter("cartorio_emolumento_erros_total")
+        raise HTTPException(status_code=400, detail={"erro": str(e)})
+
+    # Determinar se o ato é sensível de alto valor (escritura ou total > R$ 1.000,00)
+    is_sensivel = tipo in ("escritura_compra_venda", "escritura_doacao") or resultado.total > 1000
+
+    # 2. Validação LGPD: Consent Check se ato sensível e cliente fornecido
+    if is_sensivel and cliente_id is not None and db is not None:
+        cliente = db.execute(
+            select(Cliente).where(Cliente.id == cliente_id)
+        ).scalar_one_or_none()
+
+        if not cliente:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "erro": "CLIENTE_NAO_ENCONTRADO",
+                    "mensagem": f"Cliente ID {cliente_id} nao encontrado para validar consentimento.",
+                },
+            )
+
+        if not cliente.consentimento_lgpd:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "erro": "LGPD_CONSENT_REQUIRED",
+                    "mensagem": "Consentimento LGPD nao concedido pelo cliente. Consulta de emolumento sensivel bloqueada.",
+                },
+            )
+
+    # 3. Tratamento de Isenções (se aplicável)
+    isento = False
+    motivo_legal = None
+    
+    # Valores finais do cálculo
+    base_val = resultado.base
+    adicional_folhas_val = resultado.adicional_folhas
+    adicional_urgencia_val = resultado.adicional_urgencia
+    total_val = resultado.total
+
+    if isencao_motivo:
+        if isencao_aplicavel(tipo, motivo=isencao_motivo):
+            isento = True
+            motivo_legal = isencao_motivo
+            base_val = Decimal("0.00")
+            adicional_folhas_val = Decimal("0.00")
+            adicional_urgencia_val = Decimal("0.00")
+            total_val = Decimal("0.00")
+        else:
+            # Motivo de isenção inválido
+            store.inc_counter("cartorio_emolumento_erros_total")
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "erro": "ISENCAO_INVALIDA",
+                    "mensagem": f"Motivo de isencao '{isencao_motivo}' nao eh valido para o tipo '{tipo}'.",
+                },
+            )
+
+    # 4. Gravação de Auditoria (LGPD Art. 37)
+    if db is not None:
+        AuditService.log(
+            db,
+            actor_id="api_emolumento",
+            actor_type="system",
+            action="emolumento.calcular_api",
+            resource=f"emolumento:{tipo}",
+            payload={
+                "tipo": tipo,
+                "folhas": folhas,
+                "urgencia": urgencia,
+                "total": str(total_val),
+                "is_sensivel": is_sensivel,
+                "isento": isento,
+                "isencao_motivo": motivo_legal,
+                "cliente_id": cliente_id,
+            },
+        )
+
+    return EmolumentoCalculoResponse(
+        tipo=tipo,
+        folhas=folhas,
+        urgencia=urgencia,
+        base=base_val,
+        adicional_folhas=adicional_folhas_val,
+        adicional_urgencia=adicional_urgencia_val,
+        total=total_val,
+        isento=isento,
+        isencao_motivo=motivo_legal,
+        tabela_referencia=resultado.tabela_referencia,
+        valido_ate=resultado.valido_ate,
+    )
 
 
 # ============================================================================
