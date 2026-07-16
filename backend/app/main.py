@@ -801,6 +801,11 @@ from app.api.v1.n8n_metrics import router as n8n_metrics_router  # noqa: E402
 
 app.include_router(n8n_metrics_router, prefix="/api/v1")
 
+# Dead Man's Switch admin (G6.A.T11) - inspect/control audit watchdog
+from app.api.v1.dead_mans_switch import router as dead_mans_switch_router  # noqa: E402
+
+app.include_router(dead_mans_switch_router, prefix="/api/v1")
+
 # LGPD Consent (G6.C.T9) - banner widget backend endpoint
 from app.api.v1.lgpd_consent import router as lgpd_consent_router  # noqa: E402
 
