@@ -4,7 +4,6 @@ Valida:
 - _is_circuit_open retorna False se Redis offline (fail-open)
 - _record_failure incrementa e abre circuito ao atingir threshold
 - _record_success reseta falhas e fecha circuito
-- chat_with_fallback pula provider com circuito aberto
 
 Modified by Gustavo Almeida.
 """
@@ -21,11 +20,16 @@ from app.integrations.fallback import (
     _record_success,
 )
 
+# As funções CB fazem lazy import: `from app.services.redis_bus import get_bus`
+# Portanto, o patch deve ser no módulo de origem com create=True,
+# já que o import acontece dentro da chamada da função.
+PATCH_TARGET = "app.services.redis_bus.get_bus"
+
 
 @pytest.mark.asyncio
 async def test_circuit_breaker_fail_open_when_redis_down() -> None:
     """Se Redis estiver offline, _is_circuit_open retorna False (fail-open)."""
-    with patch("app.integrations.fallback.get_bus", side_effect=Exception("Connection refused")):
+    with patch(PATCH_TARGET, side_effect=Exception("Connection refused")):
         result = await _is_circuit_open("opencode_go")
         assert result is False
 
@@ -38,7 +42,7 @@ async def test_circuit_breaker_closed_by_default() -> None:
     mock_bus = MagicMock()
     mock_bus.client = mock_client
 
-    with patch("app.integrations.fallback.get_bus", return_value=mock_bus):
+    with patch(PATCH_TARGET, return_value=mock_bus):
         result = await _is_circuit_open("opencode_go")
         assert result is False
         mock_client.get.assert_called_once_with("cb:open:opencode_go")
@@ -52,7 +56,7 @@ async def test_circuit_breaker_open_when_key_set() -> None:
     mock_bus = MagicMock()
     mock_bus.client = mock_client
 
-    with patch("app.integrations.fallback.get_bus", return_value=mock_bus):
+    with patch(PATCH_TARGET, return_value=mock_bus):
         result = await _is_circuit_open("opencode_go")
         assert result is True
 
@@ -68,7 +72,7 @@ async def test_record_failure_opens_circuit_at_threshold() -> None:
     mock_bus = MagicMock()
     mock_bus.client = mock_client
 
-    with patch("app.integrations.fallback.get_bus", return_value=mock_bus):
+    with patch(PATCH_TARGET, return_value=mock_bus):
         await _record_failure("test_provider", threshold=3, open_time_seconds=300)
         mock_client.setex.assert_called_once_with("cb:open:test_provider", 300, "1")
         mock_client.delete.assert_called_once_with("cb:fail:test_provider")
@@ -83,7 +87,7 @@ async def test_record_failure_below_threshold_no_open() -> None:
     mock_bus = MagicMock()
     mock_bus.client = mock_client
 
-    with patch("app.integrations.fallback.get_bus", return_value=mock_bus):
+    with patch(PATCH_TARGET, return_value=mock_bus):
         await _record_failure("test_provider", threshold=3)
         mock_client.setex.assert_not_called()
 
@@ -96,7 +100,7 @@ async def test_record_success_resets_circuit() -> None:
     mock_bus = MagicMock()
     mock_bus.client = mock_client
 
-    with patch("app.integrations.fallback.get_bus", return_value=mock_bus):
+    with patch(PATCH_TARGET, return_value=mock_bus):
         await _record_success("test_provider")
         assert mock_client.delete.call_count == 2
         mock_client.delete.assert_any_call("cb:fail:test_provider")
@@ -106,12 +110,12 @@ async def test_record_success_resets_circuit() -> None:
 @pytest.mark.asyncio
 async def test_record_failure_silent_on_redis_down() -> None:
     """Se Redis estiver offline, _record_failure não levanta exceção."""
-    with patch("app.integrations.fallback.get_bus", side_effect=Exception("offline")):
+    with patch(PATCH_TARGET, side_effect=Exception("offline")):
         await _record_failure("test_provider")  # Não deve levantar
 
 
 @pytest.mark.asyncio
 async def test_record_success_silent_on_redis_down() -> None:
     """Se Redis estiver offline, _record_success não levanta exceção."""
-    with patch("app.integrations.fallback.get_bus", side_effect=Exception("offline")):
+    with patch(PATCH_TARGET, side_effect=Exception("offline")):
         await _record_success("test_provider")  # Não deve levantar
