@@ -94,38 +94,43 @@ def get_dpo_metrics(
 ) -> dict[str, Any]:
     """Dashboard metrics (D25)."""
     from app.models.audit_log import AuditLog
+    from app.models.cliente import Cliente
+    from app.models.conversa import Conversa
+    from sqlalchemy import select, func
+    from datetime import datetime, timezone, timedelta
 
-    # Cross-dialect: usa expressoes raw compativeis
-    ts_30d = _now_minus_days_expr(db, 30)
-    ts_1d = _now_minus_days_expr(db, 1)
+    ts_30d = datetime.now(timezone.utc) - timedelta(days=30)
+    ts_1d = datetime.now(timezone.utc) - timedelta(days=1)
 
     # Clientes ativos vs anonimizados
-    total_clientes = int(db.execute(text("SELECT COUNT(*) FROM clientes")).scalar() or 0)
+    total_clientes = int(db.scalar(select(func.count()).select_from(Cliente)) or 0)
     clientes_ativos = int(
-        db.execute(text("SELECT COUNT(*) FROM clientes WHERE deleted_at IS NULL")).scalar() or 0
+        db.scalar(select(func.count()).select_from(Cliente).where(Cliente.deleted_at.is_(None)))
+        or 0
     )
     clientes_anonimizados = total_clientes - clientes_ativos
 
     # Conversas totais
     try:
-        total_conversas = int(db.execute(text("SELECT COUNT(*) FROM conversas")).scalar() or 0)
+        total_conversas = int(db.scalar(select(func.count()).select_from(Conversa)) or 0)
     except Exception:
         total_conversas = 0
 
     # Audit entries: total + ultimas 24h
-    total_audit = int(db.execute(text("SELECT COUNT(*) FROM audit_log")).scalar() or 0)
+    total_audit = int(db.scalar(select(func.count()).select_from(AuditLog)) or 0)
     audit_24h = int(
-        db.execute(text(f"SELECT COUNT(*) FROM audit_log WHERE timestamp >= {ts_1d}")).scalar() or 0
+        db.scalar(select(func.count()).select_from(AuditLog).where(AuditLog.timestamp >= ts_1d))
+        or 0
     )
 
     # Rights exercised (ultimos 30 dias) — ações LGPD no audit
     rights_30d = int(
-        db.execute(
-            text(
-                f"SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' "
-                f"AND timestamp >= {ts_30d}"
-            )
-        ).scalar()
+        db.scalar(
+            select(func.count())
+            .select_from(AuditLog)
+            .where(AuditLog.action.like("lgpd.%"))
+            .where(AuditLog.timestamp >= ts_30d)
+        )
         or 0
     )
 

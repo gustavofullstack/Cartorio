@@ -71,6 +71,7 @@ def test_serialize_orm_with_pii_mask_dataclass() -> None:
 
 def test_serialize_orm_with_pii_mask_sa_attrs() -> None:
     """Atributos SA (sa_instance_state, sa_*) sao strippados via sa_ prefix."""
+
     @dataclass
     class WithSa:
         id: int = 1
@@ -95,6 +96,7 @@ def test_serialize_orm_with_pii_mask_primitive() -> None:
 
 def test_serialize_orm_with_pii_mask_filters_sa_prefix() -> None:
     """Atributos comecados com _ sao strippados; samsa (sem _) preservado."""
+
     @dataclass
     class WithMixed:
         id: int = 1
@@ -152,9 +154,7 @@ def sa_session():
 
 def test_list_with_pagination_excludes_soft_deleted(sa_session: Session) -> None:
     """Default: include_deleted=False exclui deleted_at IS NOT NULL."""
-    items, total = list_with_pagination(
-        sa_session, model=_FakeEntidade, page=1, page_size=10
-    )
+    items, total = list_with_pagination(sa_session, model=_FakeEntidade, page=1, page_size=10)
     assert total == 5  # 5 ativos; 1 soft-deletado excluido
     assert all(it.deleted_at is None for it in items)
 
@@ -174,12 +174,8 @@ def test_list_with_pagination_include_deleted(sa_session: Session) -> None:
 
 def test_list_with_pagination_paging_works(sa_session: Session) -> None:
     """Paginacao: page=1 size=2 -> 2 items; page=2 size=2 -> 2 items; page=3 size=2 -> 1 item."""
-    items_p1, total_p1 = list_with_pagination(
-        sa_session, model=_FakeEntidade, page=1, page_size=2
-    )
-    items_p3, total_p3 = list_with_pagination(
-        sa_session, model=_FakeEntidade, page=3, page_size=2
-    )
+    items_p1, total_p1 = list_with_pagination(sa_session, model=_FakeEntidade, page=1, page_size=2)
+    items_p3, total_p3 = list_with_pagination(sa_session, model=_FakeEntidade, page=3, page_size=2)
     assert total_p1 == 5
     assert total_p3 == 5
     assert len(items_p1) == 2

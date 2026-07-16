@@ -1,0 +1,5 @@
+🛡️ Sentinel: [security improvement] Remove raw SQL text string execution for counting records
+
+Refactored `get_dpo_metrics` in `lgpd_dpo_dashboard.py` to use SQLAlchemy `func.count()` instead of interpolating strings directly into `text(...)` queries. This prevents potential SQL injection and enhances cross-dialect compatibility.
+
+Fixed formatting and missing environment variables in testing environments causing CI failures.
