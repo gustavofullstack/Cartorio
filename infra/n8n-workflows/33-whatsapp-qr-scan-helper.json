@@ -1,0 +1,111 @@
+{
+  "name": "33-whatsapp-qr-scan-helper",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook/evolution/connection",
+        "options": {}
+      },
+      "id": "e9a0fcd5-3cb4-4db2-944a-e4907a3f8901",
+      "name": "Webhook Evolution Connection Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"data\"][\"status\"]}}",
+              "value2": "close"
+            }
+          ]
+        }
+      },
+      "id": "f5c1dbe4-d1ab-40a2-9b2f-762b66236bb1",
+      "name": "Is Connection Closed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "6682284055",
+        "text": "⚠️ *ALERTA SRE - WHATSAPP DESCONECTADO*\nA instância *{{$json[\"instance\"]}}* perdeu a conexão com o WhatsApp!\n\n🔗 *Acesse para escanear o QR Code*:\nhttps://whatsapp.2notasudi.com.br/manager\n\n_Modified by Gustavo Almeida._",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "b3e0f49c-f9d2-4309-913a-a1b9206d2a71",
+      "name": "Notify Closed to Admin (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        720,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "6682284055",
+        "text": "✅ *WHATSAPP RECONECTADO*\nA instância *{{$json[\"instance\"]}}* restabeleceu a conexão com sucesso! A state machine retornou para o modo OPEN.\n\n_Modified by Gustavo Almeida._",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "c4d0a1b2-c3d4-4e5f-8678-9012345bcdef",
+      "name": "Notify Open to Admin (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        720,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Evolution Connection Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is Connection Closed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Connection Closed?": {
+      "main": [
+        [
+          {
+            "node": "Notify Closed to Admin (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Open to Admin (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": "bR7qIo3bFpG4zgx3",
+  "meta": {
+    "instanceId": "n8n-production-cartorio-2026"
+  }
+}

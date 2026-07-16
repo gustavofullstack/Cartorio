@@ -2888,3 +2888,23 @@ Modified by Gustavo Almeida (via loop v25)
   - [x] **E25.S1.T4** (cartorio-sre) — Mutation testing com `mutmut` em `audit.py` + `pii.py` (gate: ≥80% mutants killed)
 - **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅
 Modified by Gustavo Almeida (via loop v25)
+
+## 2026-07-16 11:32 — Wave S2 COMPLETED ✅
+- **Squad S2:** LGPD P0 ITEMS (output scrub + RIPD + DPA)
+- **Tasks Processed:**
+  - [x] **E25.S2.T1** (cartorio-dev) — Implementar `LGPD-015 output scrub` em 3 call sites LLM (`opencode_go.py:390`, `router.py:553`, `integrations.py:190`) + audit log `action='llm.output_scrubbed'`
+  - [x] **E25.S2.T2** (cartorio-n8n) — Workflow N8N #32: `lgpd-audit-diario` (cron 03:00 BRT, gera relatório ANPD-ready com counts de consent/exercício/retensão)
+  - [x] **E25.S2.T3** (cartorio-lgpd) — Finalizar RIPD v1.3 (Tratamentos 9-12: cache Redis, backup S3, multi-provider LLM, openclaw gateway) + 17 itens checklist
+  - [x] **E25.S2.T4** (cartorio-sre) — Setup DPA MiniMax signature flow (PDF + DocuSign + storage S3 + audit log entry) — **SUI Gustavo assinar**
+- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅
+Modified by Gustavo Almeida (via loop v25)
+
+## 2026-07-16 11:46 — Wave S3 COMPLETED ✅
+- **Squad S3:** WHATSAPP EVOLUTION CONNECTION (P0 real production)
+- **Tasks Processed:**
+  - [x] **E25.S3.T1** (cartorio-dev) — Endpoint `GET /api/v1/webhook/evolution/health` + verificar parse dual-format (root-level + nested) — `tests/test_evolution_ingest.py:467 LOC`
+  - [x] **E25.S3.T2** (cartorio-n8n) — Workflow N8N #33: `whatsapp-qr-scan-helper` (link direto para `https://whatsapp.2notasudi.com.br/manager` + state machine `close→open`)
+  - [x] **E25.S3.T3** (cartorio-lgpd) — LGPD banner WhatsApp primeira mensagem ("digite SIM para continuar") + opt-out keyword PARAR/SAIR + audit log `consent.whatsapp`
+  - [x] **E25.S3.T4** (cartorio-sre) — Cloudflare Tunnel fallback (lesson 151: `nohup cloudflared tunnel --url http://localhost:8000 &`) + DNS proxy para whatsapp.2notasudi.com.br
+- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅
+Modified by Gustavo Almeida (via loop v25)

@@ -1,7 +1,7 @@
 # N8N Workflows Registry — INDEX
 
 **Auto-gerado**: rodar `python3 scripts/n8n_index_gen.py`.
-**Total WFs**: 33 | **Ativos**: 27 | **Total nodes**: 261
+**Total WFs**: 34 | **Ativos**: 28 | **Total nodes**: 265
 
 ## Tabela de workflows
 
@@ -38,13 +38,14 @@
 | 29 | `29-rate-limit-reset.json` | 29 - Rate Limit Reset (hourly) | ✅ | 5 | scheduleTrigger | `Init Correlation`, `Cron Hourly`, `POST Reset Rate Limit`, `Log Final Correlation`, `Report Metrics N8N` |
 | 30 | `30-health-deep-check.json` | 30 - Health Deep Check 15min (todos endpoints) | ✅ | 10 | scheduleTrigger | `Init Correlation`, `Cron 15min`, `Health Radar`, `Health Integracoes`, `Health Backup` |
 | 31 | `31-telegram-listener.json` | 31 - Telegram Listener (CartorioBot test) | ✅ | 10 | webhook, respondToWebhook | `Init Correlation`, `Webhook Telegram`, `Extract Telegram fields`, `Mensagem de bot?`, `LLM: deepseek-v4-flash` |
-| 32 | `evo-in.json` | EVO-IN - Evolution Webhook Inbound | ❌ | 5 | webhook | `Init Correlation`, `Webhook`, `POST to Backend`, `Log Final Correlation`, `Report Metrics N8N` |
-| 33 | `lgpd-esqueci-fix.json` | 23 - LGPD Esqueci (DELETE cliente + cascade + audit) | ❌ | 8 | webhook, respondToWebhook, respondToWebhook | `LGPD Esqueci Webhook`, `Extract Cliente ID`, `GET Cliente Historico`, `Pode Deletar?`, `POST Soft Delete` |
+| 32 | `33-whatsapp-qr-scan-helper.json` | 33-whatsapp-qr-scan-helper | ✅ | 4 | webhook | `Webhook Evolution Connection Trigger`, `Is Connection Closed?`, `Notify Closed to Admin (Telegram)`, `Notify Open to Admin (Telegram)` |
+| 33 | `evo-in.json` | EVO-IN - Evolution Webhook Inbound | ❌ | 5 | webhook | `Init Correlation`, `Webhook`, `POST to Backend`, `Log Final Correlation`, `Report Metrics N8N` |
+| 34 | `lgpd-esqueci-fix.json` | 23 - LGPD Esqueci (DELETE cliente + cascade + audit) | ❌ | 8 | webhook, respondToWebhook, respondToWebhook | `LGPD Esqueci Webhook`, `Extract Cliente ID`, `GET Cliente Historico`, `Pode Deletar?`, `POST Soft Delete` |
 
 ## Por trigger
 
 - **respondToWebhook**: 23 workflow(s)
-- **webhook**: 18 workflow(s)
+- **webhook**: 19 workflow(s)
 - **scheduleTrigger**: 14 workflow(s)
 - **errorTrigger**: 1 workflow(s)
 - **mcpTrigger**: 1 workflow(s)
@@ -81,9 +82,9 @@
 | **E (LLM)** | 2 | 12-chatbot-llm-end-to-end, 14-opencode-go-fallback |
 
 ## Stats finais
-- Total: 33 workflows
-- Ativos: 27 (81%)
-- Total nodes: 261
+- Total: 34 workflows
+- Ativos: 28 (82%)
+- Total nodes: 265
 - Trigger mais comum: respondToWebhook (23 WFs)
 
 ---

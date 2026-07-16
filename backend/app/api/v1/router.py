@@ -132,9 +132,12 @@ async def calcular_emolumento(
     ] = False,
 ) -> dict:
     """Calcula emolumento. Publico - sem PII envolvida."""
+    from app.services.metrics import store
+    store.inc_counter("cartorio_emolumento_consultado_total")
     try:
         resultado = calcular_emolumento_svc(tipo, folhas=folhas, urgencia=urgencia)
     except ValueError as e:
+        store.inc_counter("cartorio_emolumento_erros_total")
         return {"erro": str(e)}
     return {
         "tipo": resultado.tipo,
@@ -735,6 +738,79 @@ def post_protocolo_criar_api(
 # ============================================================================
 # Webhook Evolution (WhatsApp)
 # ============================================================================
+
+def _parse_dual_format(payload: dict) -> tuple[str, str, str]:
+    """Auxiliar para extração de dados do payload da Evolution."""
+    _data = payload.get("data") or {}
+    _key_raw = _data.get("key") if isinstance(_data, dict) else None
+    
+    _msg = (
+        _data.get("message")
+        if (_data and isinstance(_data, dict))
+        else (payload.get("message") or {})
+    )
+    sender = (
+        _key_raw.get("remoteJid", "unknown")
+        if (_key_raw and isinstance(_key_raw, dict))
+        else (payload.get("sender") or "unknown")
+    )
+    instance = payload.get("instance", "")
+
+    raw_text = ""
+    if isinstance(_msg, dict):
+        raw_text = (
+            _msg.get("text")
+            or _msg.get("conversation")
+            or _msg.get("extendedTextMessage", {}).get("text", "")
+            or ""
+        )
+    return sender, raw_text, instance
+
+
+@api_router.get(
+    "/webhook/evolution/health",
+    tags=["webhook"],
+    summary="Health check do webhook Evolution e validador de parse (S3.T1)",
+    description="Valida a saúde do webhook de mensagens e simula o parser dual-format (root-level legado + nested moderno) para conformidade.",
+)
+async def webhook_evolution_health() -> dict:
+    # 1. Simula payload legado (root-level)
+    legado = {
+        "message": {"conversation": "Teste legado"},
+        "sender": "553499999999",
+        "instance": "cartorio-2notas",
+    }
+    s_leg, t_leg, i_leg = _parse_dual_format(legado)
+    
+    # 2. Simula payload moderno (nested)
+    moderno = {
+        "event": "messages.upsert",
+        "instance": "cartorio-2notas",
+        "data": {
+            "key": {
+                "remoteJid": "553499999999@s.whatsapp.net",
+                "fromMe": False,
+                "id": "MSG_ID_MODERNO",
+            },
+            "message": {
+                "conversation": "Teste moderno",
+            },
+            "pushName": "Contato Teste",
+        }
+    }
+    s_mod, t_mod, i_mod = _parse_dual_format(moderno)
+    
+    parse_ok = (
+        s_leg == "553499999999" and t_leg == "Teste legado" and i_leg == "cartorio-2notas"
+        and s_mod == "553499999999@s.whatsapp.net" and t_mod == "Teste moderno" and i_mod == "cartorio-2notas"
+    )
+    
+    return {
+        "status": "ok" if parse_ok else "degraded",
+        "dual_format_parse": "healthy" if parse_ok else "fail",
+        "legado": {"sender": s_leg, "text": t_leg, "instance": i_leg},
+        "moderno": {"sender": s_mod, "text": t_mod, "instance": i_mod},
+    }
 
 
 @api_router.post(

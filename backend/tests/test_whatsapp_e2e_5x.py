@@ -76,6 +76,23 @@ def client(test_engine, test_session_factory):
         patch("app.main.engine", test_engine),
     ):
         Base.metadata.create_all(test_engine)
+
+        # Popula o cliente de teste padrão com consentimento LGPD ativo
+        db = test_session_factory()
+        try:
+            from app.models.cliente import Cliente
+            from app.services.pii import hash_pii
+            c = Cliente(
+                cpf_hash=hash_pii("123.456.789-00", salt="a" * 32),
+                nome="Cliente de Teste",
+                whatsapp_number="5511999999999",
+                consentimento_lgpd=True,
+            )
+            db.add(c)
+            db.commit()
+        finally:
+            db.close()
+
         try:
             with TestClient(app) as c:
                 yield c

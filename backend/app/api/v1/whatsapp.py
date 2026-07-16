@@ -426,6 +426,131 @@ async def whatsapp_webhook(
     if inbound is None:
         return {"status": "ignored", "detail": "not a messages.upsert event"}
 
+    # =========================================================================
+    # LGPD Consent Banner + Opt-out (PARAR/SAIR) + Audit Log - Wave 3 (S3.T3)
+    # =========================================================================
+    from datetime import datetime, timezone
+    
+    sender_id = inbound.sender_id
+    num_puro = sender_id.replace("@s.whatsapp.net", "").replace("@g.us", "")
+    text_clean = inbound.text.strip().lower()
+
+    if not inbound.is_group:
+        bus = get_bus()
+        has_consent = False
+        
+        # 1. Verifica no Redis
+        if bus:
+            try:
+                consent_flag = await bus.client.get(f"consent:wa:{sender_id}")
+                if consent_flag in (b"1", "1"):
+                    has_consent = True
+            except Exception as e:
+                logger.warning("Redis consent check failed: %s", e)
+
+        # 2. Verifica no DB
+        if not has_consent:
+            try:
+                from app.models.cliente import Cliente
+                from sqlalchemy import select
+                cliente_db = db.execute(
+                    select(Cliente).where(Cliente.whatsapp_number == num_puro)
+                ).scalar_one_or_none()
+                if cliente_db and cliente_db.consentimento_lgpd:
+                    has_consent = True
+                    if bus:
+                        await bus.client.set(f"consent:wa:{sender_id}", "1")
+            except Exception as e:
+                logger.warning("DB consent check failed: %s", e)
+
+        # 3. Tratamento se não tiver consentimento
+        if not has_consent:
+            # Caso 3A: Conceder consentimento
+            if text_clean in ("sim", "s", "ok", "concordo", "confirmar"):
+                if bus:
+                    try:
+                        await bus.client.set(f"consent:wa:{sender_id}", "1")
+                    except Exception as e:
+                        logger.warning("Redis consent write failed: %s", e)
+                
+                try:
+                    from app.models.cliente import Cliente
+                    from sqlalchemy import select
+                    cliente_db = db.execute(
+                        select(Cliente).where(Cliente.whatsapp_number == num_puro)
+                    ).scalar_one_or_none()
+                    if cliente_db:
+                        cliente_db.consentimento_lgpd = True
+                        cliente_db.consentimento_em = datetime.now(timezone.utc)
+                        cliente_db.consentimento_canal = "whatsapp"
+                        db.commit()
+                except Exception as e:
+                    logger.warning("DB consent update failed: %s", e)
+
+                from app.services.audit import AuditService
+                AuditService.log_system_action(
+                    action="consent.whatsapp",
+                    payload={"sender_id": sender_id, "status": "granted", "canal": "whatsapp"}
+                )
+
+                from app.services.chat_pipeline import OutboundMessage
+                msg_welcome = OutboundMessage(
+                    channel=inbound.channel,
+                    recipient_id=sender_id,
+                    text="Obrigado! Seu consentimento foi registrado em nosso audit log.\n\nComo posso ajudar voce hoje?",
+                )
+                await adapter.send(msg_welcome)
+                return {"status": "ok", "detail": "consent_granted"}
+
+            # Caso 3B: Banner de consentimento obrigatório
+            else:
+                from app.services.chat_pipeline import OutboundMessage
+                msg_notice = OutboundMessage(
+                    channel=inbound.channel,
+                    recipient_id=sender_id,
+                    text=f"{LGPD_NOTICE}\n\n👉 Para continuar e conversar com nosso assistente de IA, digite *SIM* para confirmar seu consentimento.",
+                )
+                await adapter.send(msg_notice)
+                return {"status": "ok", "detail": "consent_required"}
+
+        # 4. Se já tem consentimento, trata opt-out (PARAR/SAIR)
+        else:
+            if text_clean in ("parar", "sair", "optout", "opt-out", "cancelar"):
+                if bus:
+                    try:
+                        await bus.client.delete(f"consent:wa:{sender_id}")
+                    except Exception as e:
+                        logger.warning("Redis consent delete failed: %s", e)
+
+                try:
+                    from app.models.cliente import Cliente
+                    from app.models.cliente import MotivoEncerramento
+                    from sqlalchemy import select
+                    cliente_db = db.execute(
+                        select(Cliente).where(Cliente.whatsapp_number == num_puro)
+                    ).scalar_one_or_none()
+                    if cliente_db:
+                        cliente_db.consentimento_lgpd = False
+                        cliente_db.motivo_encerramento = MotivoEncerramento.REVOGACAO_CONSENTIMENTO
+                        db.commit()
+                except Exception as e:
+                    logger.warning("DB consent revocation failed: %s", e)
+
+                from app.services.audit import AuditService
+                AuditService.log_system_action(
+                    action="consent.whatsapp.revoked",
+                    payload={"sender_id": sender_id, "status": "revoked", "canal": "whatsapp"}
+                )
+
+                from app.services.chat_pipeline import OutboundMessage
+                msg_optout = OutboundMessage(
+                    channel=inbound.channel,
+                    recipient_id=sender_id,
+                    text="Entendido. Seu consentimento foi revogado com sucesso. Seus dados de atendimento nao serao mais processados por nossa IA. Caso queira reativar, basta enviar uma nova mensagem e digitar SIM.",
+                )
+                await adapter.send(msg_optout)
+                return {"status": "ok", "detail": "consent_revoked"}
+
     # 4. Pipeline compartilhado
     request_id = request.headers.get("X-Request-ID", f"wa-{int(time.time() * 1000)}")
     background_tasks.add_task(
