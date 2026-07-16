@@ -85,10 +85,7 @@ def process_chatwoot_event(
     if event == "conversation_status_changed":
         _handle_status_changed(db, payload)
     elif event == "message_created":
-        log.info(
-            "chatwoot_handoff: message_created em conv %s",
-            payload.get("conversation", {}).get("id"),
-        )
+        _handle_message_created(db, payload)
     else:
         if event_id:
             _save_event(db, source="chatwoot", event_id=event_id, payload=payload)
@@ -125,6 +122,95 @@ def _handle_status_changed(db: Session, payload: dict[str, Any]) -> None:
             actor_type="agent",
             payload={"chatwoot_conversation_id": conv_id},
         )
+
+
+def _handle_message_created(db: Session, payload: dict[str, Any]) -> None:
+    """Processa message_created do Chatwoot.
+
+    Se message_type == 'outgoing' (escrevente respondeu),
+    reenvia a mensagem ao Telegram do cliente correspondente.
+    Mensagens 'incoming' (do cliente) são apenas logadas (já vieram do Telegram).
+    """
+    message_type = payload.get("message_type")
+    content = payload.get("content", "")
+    conv = payload.get("conversation", {})
+    conv_id = conv.get("id")
+    sender = payload.get("sender", {})
+    sender_name = sender.get("name", "Escrevente")
+
+    log.info(
+        "chatwoot_handoff: message_created conv=%s type=%s sender=%s",
+        conv_id,
+        message_type,
+        sender_name,
+    )
+
+    # Só faz sync bidirecional para mensagens outgoing (escrevente → cliente)
+    if message_type != "outgoing" or not content or not conv_id:
+        return
+
+    # Busca o atendimento para encontrar o chat_id do Telegram
+    atendimento = db.execute(
+        select(Atendimento).where(Atendimento.chatwoot_conversation_id == conv_id)
+    ).scalar_one_or_none()
+
+    if not atendimento:
+        log.warning("chatwoot sync: atendimento nao encontrado para conv %s", conv_id)
+        return
+
+    telegram_chat_id = atendimento.canal  # canal armazena telegram_chat_id quando aplicavel
+    if not telegram_chat_id:
+        log.warning("chatwoot sync: chat_id Telegram nao encontrado para atendimento %s", atendimento.id)
+        return
+
+    # Envia a mensagem de volta ao Telegram via bot API (async fire-and-forget)
+    import asyncio
+
+    asyncio.create_task(_send_to_telegram(telegram_chat_id, content, sender_name, conv_id))
+
+    # Audit log da mensagem bidirecional
+    AuditService.log(
+        db,
+        actor_id=f"chatwoot:{sender.get('id', 'unknown')}",
+        action="chatwoot.sync.outgoing_to_telegram",
+        resource=f"atendimento:{atendimento.id}",
+        actor_type="agent",
+        payload={
+            "chatwoot_conversation_id": conv_id,
+            "telegram_chat_id": str(telegram_chat_id),
+            "sender_name": sender_name,
+            "content_length": len(content),
+        },
+    )
+
+
+async def _send_to_telegram(chat_id: str | int, content: str, sender_name: str, conv_id: Any) -> None:
+    """Envia mensagem do escrevente (Chatwoot) de volta ao Telegram."""
+    token = settings.telegram_bot_token
+    if not token:
+        log.warning("chatwoot sync: TELEGRAM_BOT_TOKEN nao configurado, mensagem nao enviada")
+        return
+
+    text = f"👤 *{sender_name}* (Atendente):\n{content}"
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+        try:
+            r = await client.post(
+                url,
+                json={"chat_id": str(chat_id), "text": text, "parse_mode": "Markdown"},
+            )
+            if r.status_code == 200:
+                log.info("chatwoot sync: mensagem enviada ao Telegram chat=%s conv=%s", chat_id, conv_id)
+            else:
+                log.warning(
+                    "chatwoot sync: Telegram API retornou %d para chat=%s conv=%s",
+                    r.status_code,
+                    chat_id,
+                    conv_id,
+                )
+        except Exception as exc:
+            log.warning("chatwoot sync: falha ao enviar ao Telegram chat=%s: %s", chat_id, exc)
 
 
 def _save_event(db: Session, source: str, event_id: str, payload: dict[str, Any]) -> None:
