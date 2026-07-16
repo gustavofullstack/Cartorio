@@ -125,7 +125,7 @@ def test_get_config_for_opencode_go() -> None:
     """get_config_for('opencode_go') retorna ProviderConfig com settings."""
     with patch("app.config.settings") as mock_settings:
         mock_settings.opencode_go_base_url = "https://go.test.com"
-        settings.opencode_go_api_key = "k-go"
+        mock_settings.opencode_go_api_key = "k-go"
         mock_settings.opencode_go_model = "model-go"
         cfg = get_config_for("opencode_go")
     assert cfg is not None

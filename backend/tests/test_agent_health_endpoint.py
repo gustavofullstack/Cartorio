@@ -51,7 +51,7 @@ async def test_agent_health_status_ok_quando_openclaw_e_llm_up() -> None:
     with patch("app.api.v1.integrations.httpx.AsyncClient", factory):
         with patch("app.api.v1.integrations.settings") as mock_settings:
             mock_settings.openclaw_base_url = "https://claw.example.com"
-            settings.opencode_go_api_key = "k"
+            mock_settings.opencode_go_api_key = "k"
             mock_settings.opencode_go_base_url = "https://llm.example.com"
             mock_settings.opencode_go_model = "test-model"
             mock_settings.llm_default_provider = "opencode_go"
@@ -77,7 +77,7 @@ async def test_agent_health_status_degraded_quando_apenas_openclaw_up() -> None:
     with patch("app.api.v1.integrations.httpx.AsyncClient", factory):
         with patch("app.api.v1.integrations.settings") as mock_settings:
             mock_settings.openclaw_base_url = "https://claw.example.com"
-            settings.opencode_go_api_key = "k"
+            mock_settings.opencode_go_api_key = "k"
             mock_settings.opencode_go_base_url = "https://llm.example.com"
             mock_settings.opencode_go_model = "test-model"
             mock_settings.llm_default_provider = "opencode_go"
@@ -102,7 +102,7 @@ async def test_agent_health_status_down_quando_ambos_down() -> None:
     with patch("app.api.v1.integrations.httpx.AsyncClient", factory):
         with patch("app.api.v1.integrations.settings") as mock_settings:
             mock_settings.openclaw_base_url = "https://claw.example.com"
-            settings.opencode_go_api_key = "k"
+            mock_settings.opencode_go_api_key = "k"
             mock_settings.opencode_go_base_url = "https://llm.example.com"
             mock_settings.opencode_go_model = "test-model"
             mock_settings.llm_default_provider = "opencode_go"
@@ -125,7 +125,7 @@ async def test_agent_health_status_down_quando_api_key_ausente() -> None:
     with patch("app.api.v1.integrations.httpx.AsyncClient", factory):
         with patch("app.api.v1.integrations.settings") as mock_settings:
             mock_settings.openclaw_base_url = "https://claw.example.com"
-            settings.opencode_go_api_key = ""  # SEM API key
+            mock_settings.opencode_go_api_key = ""  # SEM API key
             mock_settings.opencode_go_base_url = "https://llm.example.com"
             mock_settings.opencode_go_model = "test-model"
             mock_settings.llm_default_provider = "opencode_go"
@@ -151,7 +151,7 @@ async def test_agent_health_trata_request_error_em_openclaw() -> None:
     with patch("app.api.v1.integrations.httpx.AsyncClient", factory):
         with patch("app.api.v1.integrations.settings") as mock_settings:
             mock_settings.openclaw_base_url = "https://claw.example.com"
-            settings.opencode_go_api_key = "k"
+            mock_settings.opencode_go_api_key = "k"
             mock_settings.opencode_go_base_url = "https://llm.example.com"
             mock_settings.opencode_go_model = "test-model"
             mock_settings.llm_default_provider = "opencode_go"
