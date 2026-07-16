@@ -1,0 +1,209 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Cartorio SLO Dashboard — 4 SLOs (API Availability 99.5%, API Latency p95 500ms, N8N Success 99%, OpenClaw Response 95% < 5s) + composite. SRE multi-window burn-rate alerts ativos. Refs: infra/prometheus/slo_rules.yml + backend/app/services/slo_metrics.py.",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "API Availability (30d SLO target: 99.5%)",
+      "id": 1,
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0.9,
+          "max": 1.0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 0.99},
+              {"color": "green", "value": 0.995}
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sli:api_availability:ratio_30d",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "API Latency p95 (SLO target: < 500ms)",
+      "id": 2,
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 0.3},
+              {"color": "red", "value": 0.5}
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"cartorio-api\"}[5m])) by (le))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "N8N Workflow Success (7d SLO target: 99%)",
+      "id": 3,
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0.95,
+          "max": 1.0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 0.98},
+              {"color": "green", "value": 0.99}
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sli:n8n_workflow_success:ratio_7d",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "OpenClaw Response (SLO target: 95% < 5s)",
+      "id": 4,
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 3.0},
+              {"color": "red", "value": 5.0}
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(openclaw_request_duration_seconds_bucket{le=\"5.0\"}[5m])) by (le))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Error Budget Remaining (30d, lower=worse)",
+      "id": 5,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1.0,
+          "custom": {"drawStyle": "line", "lineWidth": 2}
+        }
+      },
+      "targets": [
+        {
+          "expr": "slo_error_budget_remaining_30d",
+          "legendFormat": "{{slo_name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Composite SLO (30d, availability vs latency)",
+      "id": 6,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0.9,
+          "max": 1.0,
+          "custom": {"drawStyle": "line", "lineWidth": 2}
+        }
+      },
+      "targets": [
+        {
+          "expr": "slo_composite_cartorio_availability_30d",
+          "legendFormat": "availability",
+          "refId": "A"
+        },
+        {
+          "expr": "slo_composite_cartorio_latency_30d",
+          "legendFormat": "latency",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "SLO Status Summary",
+      "id": 7,
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 14},
+      "datasource": "Prometheus",
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "sli:api_availability:ratio_30d",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 30,
+  "style": "dark",
+  "tags": ["cartorio", "slo", "sre", "g6"],
+  "templating": {"list": []},
+  "time": {"from": "now-7d", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Cartorio SLO Dashboard (G6.D.T7)",
+  "uid": "cartorio-slo-dashboard",
+  "version": 1,
+  "weekStart": ""
+}
