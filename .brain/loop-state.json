@@ -1,9 +1,9 @@
 {
-  "version": "3.5.0",
-  "updated_at": "2026-07-16T17:30:02Z",
-  "status": "g7_wave18_done_coord_minimax",
-  "current_sprint": "G7 Wave 18 complete",
-  "current_goal": "G7 ~32/100 — rate limit metrics + DLQ drill + TG plain + MCP example",
+  "version": "3.6.0",
+  "updated_at": "2026-07-16T17:59:35Z",
+  "status": "g7_wave19_done_32to36pct",
+  "current_sprint": "G7 Wave 19 complete",
+  "current_goal": "G7 ~36/100 — PII inventory 8/8 + OpenAPI baseline + handoff doc + redlock peer",
   "metrics": {
     "services_swarm_up": "8/8 api/litellm/openclaw/langfuse/argilla/evolution/anything-llm/lobechat/zeroclaw/open-notebook",
     "litellm_providers": "7 free models + MiniMax-M3 XMax Thinking",
@@ -13,7 +13,7 @@
     "ruff_violations": "0",
     "endpoints_cataloged": "73 (+6 Telegram F4 cartorio-evolution)",
     "commits_ahead_origin": "7+",
-    "lessons_total": "190",
+    "lessons_total": "191",
     "files_created_session": "12+ (DNS runbooks, LobeChat STATUS, monitors.json, telegram.env.example, OUTAGE_RECOVERY_RUNBOOK, etc)",
     "squads_auditadas": "92/115 (~92%)",
     "production_status": "3/10 domínios 502/000 (chatwoot/n8n/supabase) - HOLD-GUSTAVO",
@@ -23,12 +23,12 @@
     "openclaw_status": "WS v4 OK, E8 cartorio-bot gap (SSH bloqueado - HOLD-GUSTAVO)",
     "pytest_related_wave13": "75 passed",
     "g6_waves_done": "13",
-    "g7_tasks_done": 32,
+    "g7_tasks_done": 36,
     "g7_tasks_total": 100,
     "ripd_version": "1.4",
     "radar_expanded_prod": "404_need_redeploy",
     "radar_classic": "red_4up_3down",
-    "g7_wave": 18,
+    "g7_wave": 19,
     "g7_tasks_approx": "18/100",
     "postman_double_prefix_fixed": 47,
     "catalog_endpoints_note": "v1+v2+openclaw+ws+brain+radar_expanded",
@@ -36,9 +36,12 @@
     "hmac_prev_secret": true,
     "ci_g7_gates": true,
     "bare_exception_gate": true,
-    "g7_progress_pct": 32,
+    "g7_progress_pct": 36,
     "postman_generated_items": 128,
-    "minimax_coord": "badge_left_to_minimax"
+    "minimax_coord": "badge_left_to_minimax",
+    "openapi_paths": 126,
+    "pii_pre_llm_sites": "8/8",
+    "minimax_head": "48637b6"
   },
   "milestones": [
     {

@@ -1254,6 +1254,41 @@
         "title": "ClientesV2Response",
         "type": "object"
       },
+      "ConsentPropagationRequest": {
+        "description": "Payload para propagar consentimento LGPD entre canais.",
+        "properties": {
+          "chatwoot_conversation_id": {
+            "description": "ID da conversa no Chatwoot.",
+            "title": "Chatwoot Conversation Id",
+            "type": "integer"
+          },
+          "consent_source": {
+            "default": "telegram",
+            "description": "Canal de origem do consentimento.",
+            "title": "Consent Source",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Labels LGPD a aplicar na conversa Chatwoot.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "telegram_chat_id": {
+            "description": "Chat ID do Telegram do cliente.",
+            "title": "Telegram Chat Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chatwoot_conversation_id",
+          "telegram_chat_id"
+        ],
+        "title": "ConsentPropagationRequest",
+        "type": "object"
+      },
       "ConsentRequest": {
         "description": "D27 — Consentimento granular por finalidade.",
         "properties": {
@@ -1796,6 +1831,150 @@
         "title": "LGPDBlockedResponse",
         "type": "object"
       },
+      "LLMModelInfo": {
+        "description": "Informações de conformidade e rota de um modelo de linguagem.",
+        "properties": {
+          "dpa_status": {
+            "description": "Status de DPA (Data Processing Agreement) assinado com o DPO do cartório.",
+            "enum": [
+              "SIGNED",
+              "PENDING",
+              "NOT_APPLICABLE"
+            ],
+            "title": "Dpa Status",
+            "type": "string"
+          },
+          "name": {
+            "description": "Nome de exibição ou ID do modelo.",
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provedor de infraestrutura (ex: opencode_go, litellm).",
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "provider",
+          "dpa_status"
+        ],
+        "title": "LLMModelInfo",
+        "type": "object"
+      },
+      "LLMTestRequest": {
+        "description": "Payload de requisição para execução do teste ativo (smoke check) de um provedor.",
+        "properties": {
+          "actor_id": {
+            "default": "smoke_test_admin",
+            "description": "ID do operador/administrador executando o teste.",
+            "maxLength": 200,
+            "title": "Actor Id",
+            "type": "string"
+          },
+          "consent_granted": {
+            "default": false,
+            "description": "Confirmação de consentimento LGPD para envio do payload ao provedor.",
+            "title": "Consent Granted",
+            "type": "boolean"
+          },
+          "message": {
+            "default": "ping",
+            "description": "Mensagem de teste a ser enviada ao LLM.",
+            "maxLength": 2000,
+            "title": "Message",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Override opcional do modelo do provedor.",
+            "title": "Model"
+          },
+          "temperature": {
+            "default": 0.2,
+            "description": "Temperatura para amostragem das respostas.",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Temperature",
+            "type": "number"
+          }
+        },
+        "title": "LLMTestRequest",
+        "type": "object"
+      },
+      "LLMTestResponse": {
+        "description": "Resultado da execução do teste de fumaça e latência do provedor.",
+        "properties": {
+          "dpa_status": {
+            "description": "Status de DPA do provedor testado.",
+            "title": "Dpa Status",
+            "type": "string"
+          },
+          "erro": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Metadata da falha caso status='erro'.",
+            "title": "Erro"
+          },
+          "latency_ms": {
+            "description": "Tempo decorrido para processamento da chamada em milissegundos.",
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "description": "Modelo utilizado na chamada.",
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provedor acionado no teste.",
+            "title": "Provider",
+            "type": "string"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Conteúdo retornado pelo LLM.",
+            "title": "Response"
+          },
+          "status": {
+            "description": "'ok' se resposta obtida com sucesso, 'erro' caso contrário.",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "provider",
+          "model",
+          "latency_ms",
+          "dpa_status"
+        ],
+        "title": "LLMTestResponse",
+        "type": "object"
+      },
       "LessonCreate": {
         "description": "Payload para criar 1 lesson (BRAIN6).",
         "properties": {
@@ -2009,6 +2188,13 @@
             "title": "Audit Chain Length",
             "type": "integer"
           },
+          "audit_chain_size": {
+            "default": 0,
+            "description": "Tamanho do audit log.",
+            "minimum": 0.0,
+            "title": "Audit Chain Size",
+            "type": "integer"
+          },
           "clientes_total": {
             "description": "Total de clientes ativos no DB.",
             "minimum": 0.0,
@@ -2021,11 +2207,33 @@
             "title": "Counters",
             "type": "object"
           },
+          "db_pool": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Métricas de pool de conexões do banco de dados (checked_out, size, overflow, etc).",
+            "title": "Db Pool",
+            "type": "object"
+          },
+          "dlq_pending": {
+            "default": 0,
+            "description": "Total de mensagens pendentes na DLQ.",
+            "minimum": 0.0,
+            "title": "Dlq Pending",
+            "type": "integer"
+          },
           "gauges": {
             "additionalProperties": true,
             "description": "Gauges in-process (dlq_depth, cartorio_uptime_seconds).",
             "title": "Gauges",
             "type": "object"
+          },
+          "lgpd_consent_total": {
+            "default": 0,
+            "description": "Total de consentimentos LGPD ativos.",
+            "minimum": 0.0,
+            "title": "Lgpd Consent Total",
+            "type": "integer"
           },
           "protocolos_total": {
             "additionalProperties": {
@@ -6212,6 +6420,120 @@
         ]
       }
     },
+    "/api/v1/chatwoot/consent-propagation": {
+      "post": {
+        "description": "Quando o cliente consente via Telegram (\"SIM\" ou /start), este endpoint aplica labels de consentimento na conversa Chatwoot correspondente e registra no audit log (LGPD Art. 7 I).",
+        "operationId": "chatwoot_consent_propagation_api_v1_chatwoot_consent_propagation_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentPropagationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Chatwoot Consent Propagation Api V1 Chatwoot Consent Propagation Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Propaga consentimento LGPD do Telegram para Chatwoot",
+        "tags": [
+          "lgpd"
+        ]
+      }
+    },
+    "/api/v1/chatwoot/health": {
+      "get": {
+        "description": "Verifica a conectividade com o Chatwoot via health endpoint e retorna latência.",
+        "operationId": "chatwoot_health_check_api_v1_chatwoot_health_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Chatwoot Health Check Api V1 Chatwoot Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Health check dedicado do Chatwoot CRM",
+        "tags": [
+          "health"
+        ]
+      }
+    },
     "/api/v1/cliente/{cliente_id}": {
       "delete": {
         "description": "Encerra tratamento de dados pessoais do cliente.\n\n- Cliente SEM protocolo: HARD DELETE (remove do DB).\n- Cliente COM protocolo: SOFT DELETE (anonimiza PII, marca motivo_encerramento).\n  Mantem integridade referencial dos atos cartorarios (Provimento CNJ 74/2018).\n\nRequer `X-API-Key` (escrevente autorizado). Idempotente: 2a chamada = 409.\n\nVer ADR-018 para detalhes.",
@@ -8432,6 +8754,129 @@
         "summary": "RIPD — Relatorio de Impacto a Protecao de Dados",
         "tags": [
           "lgpd-ripd"
+        ]
+      }
+    },
+    "/api/v1/llm/models": {
+      "get": {
+        "description": "Retorna os 27 provedores/modelos unificados com o respectivo status DPA sob a LGPD.",
+        "operationId": "list_llm_models_api_v1_llm_models_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LLMModelInfo"
+                  },
+                  "title": "Response List Llm Models Api V1 Llm Models Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lista os 27 LLM models/providers (DPA matrix)",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/v1/llm/test/{provider}": {
+      "post": {
+        "description": "Invoca o provedor de LLM fornecido para smoke test ativo, medindo a latência da chamada e audita no audit log.",
+        "operationId": "test_llm_provider_api_v1_llm_test__provider__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LLMTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMTestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Smoke test de provedor LLM com medição de latência",
+        "tags": [
+          "meta"
         ]
       }
     },

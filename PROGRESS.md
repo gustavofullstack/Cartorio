@@ -2989,3 +2989,15 @@ Modified by Gustavo Almeida
 - **Coord:** MiniMax G6.A.T8 badge — Grok NÃO tocou coverage_badge.py
 - **Lesson:** lesson-190-g7-wave18-ratelimit-dlq-tg-2026-07-16.md
 Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 19 G7 PII inventory + OpenAPI + handoff + redlock ✅
+- **4 agents:**
+  - [x] G7.02.T3 — scripts/pii_pre_llm_inventory.py 8/8 scrub sites WORK
+  - [x] G7.01.T1 — openapi baseline updated 126 paths (--update + --check green)
+  - [x] G7.05.T3 — docs/CHATWOOT_HANDOFF_G7.md checklist (prod still HOLD)
+  - [x] G7.07.T4 — redlock peer skip dms-loop test
+- **Master note:** MiniMax pushed G6.A.T8 badge + G6 waves 16-18 memory (48637b6)
+- **Grok uncommitted:** waves 13-19 stack still local — commit when MiniMax idle
+- **Tests:** wave19+18 9 passed
+- **Lesson:** lesson-191-g7-wave19-pii-openapi-handoff-2026-07-16.md
+Modified by Gustavo Almeida

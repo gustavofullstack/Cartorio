@@ -122,6 +122,10 @@ postman-export:  ## Gera Postman collection do OpenAPI local (G7.17.T1)
 g7-status:  ## Status super plano G7 (orchestrator)
 	@python3 scripts/g7_orchestrator.py status
 
+.PHONY: pii-inventory
+pii-inventory:  ## G7.02.T3 PII pre-LLM call-site inventory
+	@python3 scripts/pii_pre_llm_inventory.py --strict
+
 .PHONY: bare-exception
 bare-exception:  ## Gate: zero raise Exception( em app/ (G7.21.T4)
 	@python3 scripts/check_no_bare_exception.py
