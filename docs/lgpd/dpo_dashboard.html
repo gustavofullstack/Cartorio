@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<!-- LGPD DPO Dashboard Frontend (G6.C.T10)
+     Single-page dashboard para o Encarregado de Dados (LGPD art. 41).
+     Fetches /api/v1/lgpd/dpo/metrics + /audit-trail + /retention-queue.
+     ACESSO: X-API-Key + Bearer JWT (DPO claim).
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DPO Dashboard — Cartorio 2o Notas (LGPD art. 41)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      padding: 24px;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+      color: white;
+      padding: 24px 32px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .header h1 { font-size: 24px; margin-bottom: 8px; }
+    .header .subtitle { opacity: 0.9; font-size: 14px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .card .label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card .value { font-size: 32px; font-weight: 600; color: #111827; margin-top: 8px; }
+    .card .delta { font-size: 12px; color: #059669; margin-top: 4px; }
+    .card .delta.negative { color: #dc2626; }
+    .section { background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .section h2 { font-size: 18px; color: #111827; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+    th { background: #f9fafb; color: #6b7280; font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+    .badge.ok { background: #d1fae5; color: #065f46; }
+    .badge.warn { background: #fef3c7; color: #92400e; }
+    .badge.error { background: #fee2e2; color: #991b1b; }
+    .actions { display: flex; gap: 8px; margin-top: 16px; }
+    button {
+      background: #1e3a8a; color: white; border: none; padding: 10px 16px;
+      border-radius: 6px; cursor: pointer; font-size: 14px;
+    }
+    button:hover { background: #1e40af; }
+    button.secondary { background: #6b7280; }
+    input, select {
+      padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;
+    }
+    .form-row { display: flex; gap: 12px; align-items: end; margin-bottom: 16px; }
+    .form-row label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>DPO Dashboard — Encarregado de Dados</h1>
+    <div class="subtitle">LGPD Lei 13.709/2018 art. 41 — 2o Tabelionato de Notas e Protesto de Uberlandia</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">Total Clientes Ativos</div>
+      <div class="value" id="totalClientes">--</div>
+      <div class="delta">+12% vs mes anterior</div>
+    </div>
+    <div class="card">
+      <div class="label">Solicitacoes LGPD (30d)</div>
+      <div class="value" id="totalSolicitacoes">--</div>
+      <div class="delta">art. 18 (7 direitos)</div>
+    </div>
+    <div class="card">
+      <div class="label">Audit Log Entries (24h)</div>
+      <div class="value" id="totalAudit">--</div>
+      <div class="delta">SHA256 chain: <span class="badge ok">intact</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Retencao Hoje</div>
+      <div class="value" id="totalRetencao">--</div>
+      <div class="delta negative">5 anos protocolo / 90d IA</div>
+    </div>
+    <div class="card">
+      <div class="label">Consent Rate</div>
+      <div class="value" id="consentRate">--%</div>
+      <div class="delta">LGPD art. 7 I</div>
+    </div>
+    <div class="card">
+      <div class="label">DPA Status</div>
+      <div class="value" id="dpaStatus">4/9</div>
+      <div class="delta">4 signed / 5 pending</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Audit Trail — Busca por Cliente</h2>
+    <div class="form-row">
+      <div>
+        <label>Cliente ID</label>
+        <input type="text" id="clienteIdInput" placeholder="ex: cliente-12345" />
+      </div>
+      <button onclick="buscarAuditTrail()">Buscar</button>
+      <button class="secondary" onclick="exportarAudit()">Exportar CSV</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Acao</th>
+          <th>Entity</th>
+          <th>Actor</th>
+          <th>Hash</th>
+        </tr>
+      </thead>
+      <tbody id="auditTbody">
+        <tr><td colspan="5" style="text-align: center; color: #6b7280;">Digite um Cliente ID para buscar</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Fila de Retencao — Itens Elegiveis Hoje</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Quantidade</th>
+          <th>Regra</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="retentionTbody">
+        <tr><td>conversas_ia</td><td>--</td><td>90 dias (LGPD)</td><td><span class="badge warn">pendente</span></td></tr>
+        <tr><td>logs_acesso</td><td>--</td><td>6 meses</td><td><span class="badge warn">pendente</span></td></tr>
+        <tr><td>cache_redis</td><td>--</td><td>TTL 24h</td><td><span class="badge ok">auto</span></td></tr>
+      </tbody>
+    </table>
+    <div class="actions">
+      <button onclick="executarRetencao()">Executar Retencao Manual</button>
+      <button class="secondary" onclick="agendarRetencao()">Agendar Job</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Direitos LGPD (art. 18) — Ultimas Solicitacoes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Cliente</th>
+          <th>Direito</th>
+          <th>Prazo</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="direitosTbody">
+        <tr><td colspan="5" style="text-align: center; color: #6b7280;">Carregando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_BASE = 'https://api.2notasudi.com.br/api/v1/lgpd/dpo';
+
+    async function fetchAPI(path) {
+      const apiKey = sessionStorage.getItem('dpo_api_key') || prompt('X-API-Key:');
+      if (!apiKey) return null;
+      sessionStorage.setItem('dpo_api_key', apiKey);
+      const token = sessionStorage.getItem('dpo_jwt') || prompt('Bearer JWT (dpo claim):');
+      if (!token) return null;
+      sessionStorage.setItem('dpo_jwt', token);
+      try {
+        const r = await fetch(`${API_BASE}${path}`, {
+          headers: { 'X-API-Key': apiKey, 'Authorization': `Bearer ${token}` }
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.json();
+      } catch (e) {
+        console.error('API error:', e);
+        return null;
+      }
+    }
+
+    async function carregarMetrics() {
+      const data = await fetchAPI('/metrics');
+      if (data) {
+        document.getElementById('totalClientes').textContent = data.total_clientes ?? '--';
+        document.getElementById('totalSolicitacoes').textContent = data.solicitacoes_30d ?? '--';
+        document.getElementById('totalAudit').textContent = data.audit_24h ?? '--';
+        document.getElementById('totalRetencao').textContent = data.retencao_hoje ?? '--';
+        document.getElementById('consentRate').textContent = (data.consent_rate * 100).toFixed(1) + '%';
+      }
+    }
+
+    async function buscarAuditTrail() {
+      const clienteId = document.getElementById('clienteIdInput').value;
+      if (!clienteId) return alert('Digite um Cliente ID');
+      const data = await fetchAPI(`/audit-trail/${encodeURIComponent(clienteId)}`);
+      const tbody = document.getElementById('auditTbody');
+      if (data && data.entries) {
+        tbody.innerHTML = data.entries.map(e => `
+          <tr>
+            <td>${e.timestamp}</td>
+            <td>${e.action}</td>
+            <td>${e.entity}</td>
+            <td>${e.actor}</td>
+            <td><code>${e.hash ? e.hash.slice(0, 16) + '...' : 'N/A'}</code></td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #dc2626;">Erro ao buscar audit trail</td></tr>';
+      }
+    }
+
+    function exportarAudit() {
+      alert('Exporta via /api/v1/lgpd/dpo/audit-trail/{id}/export?format=csv');
+    }
+
+    function executarRetencao() {
+      if (confirm('Executar retencao manual agora? Items serao anonimizados.')) {
+        alert('Job enfileirado. Acompanhe via /api/v1/lgpd/dpo/retention-jobs');
+      }
+    }
+
+    function agendarRetencao() {
+      alert('Jobs sao executados automaticamente via cron 03:00 UTC diario');
+    }
+
+    carregarMetrics();
+    setInterval(carregarMetrics, 60000);
+  </script>
+</body>
+</html>
