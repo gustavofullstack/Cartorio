@@ -114,6 +114,92 @@ async def _retencao_scheduler_loop() -> None:
     )
 
 
+async def _llm_providers_health_loop() -> None:
+    """Loop async de monitoramento de saúde dos provedores de LLM.
+
+    Roda a cada 1 hora. Realiza smoke check nos provedores primários.
+    Se falhar, faz retentativa imediata. Se falhar de novo,
+    abre o circuito no Redis e alerta o SRE via Telegram.
+    """
+    import httpx
+    import time
+    from app.integrations.fallback import _call_provider
+    from app.services.redis_bus import get_bus
+
+    # Sleep inicial para esperar inicialização completa
+    await asyncio.sleep(45)
+
+    while True:
+        providers_to_check = ["opencode_go"]
+        if settings.llm_default_provider and settings.llm_default_provider not in providers_to_check:
+            providers_to_check.append(settings.llm_default_provider)
+
+        for provider in providers_to_check:
+            if provider == "local":
+                continue
+            try:
+                with session_scope() as db:
+                    await _call_provider(
+                        provider=provider,
+                        messages=[{"role": "user", "content": "ping"}],
+                        model=None,
+                        temperature=0.0,
+                        consent_granted=True,
+                        actor_id="sre_health_monitor",
+                        db=db,
+                        session_id=None,
+                        rate_limit_per_minute=None,
+                        request_id=f"health-{int(time.time())}",
+                        client_ip=None,
+                    )
+                logger.info("LLM MONITOR: Provider %s is HEALTHY", provider)
+            except Exception as e:
+                logger.warning("LLM MONITOR: First check failed for %s: %s. Retrying in 5 seconds...", provider, e)
+                await asyncio.sleep(5)
+                try:
+                    with session_scope() as db:
+                        await _call_provider(
+                            provider=provider,
+                            messages=[{"role": "user", "content": "ping"}],
+                            model=None,
+                            temperature=0.0,
+                            consent_granted=True,
+                            actor_id="sre_health_monitor",
+                            db=db,
+                            session_id=None,
+                            rate_limit_per_minute=None,
+                            request_id=f"health-retry-{int(time.time())}",
+                            client_ip=None,
+                        )
+                    logger.info("LLM MONITOR: Provider %s recovered on retry", provider)
+                except Exception as retry_err:
+                    logger.error("LLM MONITOR: Provider %s is OFFLINE (double failure): %s", provider, retry_err)
+                    
+                    try:
+                        bus = get_bus()
+                        if bus and bus.client:
+                            await bus.client.setex(f"cb:open:{provider}", 900, "1")
+                    except Exception:
+                        pass
+
+                    token = settings.telegram_bot_token or "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+                    chat_id = settings.audit_alert_telegram_chat_id or "6682284055"
+                    if token and chat_id:
+                        alert_text = (
+                            f"🚨 *[LLM MONITOR]* Provedor `{provider}` está fora do ar na VPS!\n"
+                            f"Erro: `{type(retry_err).__name__}`\n"
+                            f"Ação: Circuito aberto no Redis (bloqueado por 15min)."
+                        )
+                        url = f"https://api.telegram.org/bot{token}/sendMessage"
+                        try:
+                            async with httpx.AsyncClient() as client:
+                                await client.post(url, json={"chat_id": chat_id, "text": alert_text, "parse_mode": "Markdown"}, timeout=5.0)
+                        except Exception as telegram_exc:
+                            logger.warning("Falha ao enviar alerta Telegram: %s", telegram_exc)
+
+        await asyncio.sleep(3600)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Smoke test DB + create tables if missing + audit log init + tracing init (A3)."""

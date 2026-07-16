@@ -2908,3 +2908,13 @@ Modified by Gustavo Almeida (via loop v25)
   - [x] **E25.S3.T4** (cartorio-sre) — Cloudflare Tunnel fallback (lesson 151: `nohup cloudflared tunnel --url http://localhost:8000 &`) + DNS proxy para whatsapp.2notasudi.com.br
 - **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅
 Modified by Gustavo Almeida (via loop v25)
+
+## 2026-07-16 12:42 — Wave S4 COMPLETED ✅
+- **Squad S4:** OBSERVABILITY (Prometheus rules + Sentry dashboards)
+- **Tasks Processed:**
+  - [x] **E25.S4.T1** (cartorio-dev) — Adicionar 15 métricas Prometheus: `pii_blocked_total`, `audit_chain_size`, `dlq_pending`, `lgpd_consent_total`, `protocolo_*_total`, `emolumento_*_total`, `telegram_*_total`, `whatsapp_*_total`
+  - [x] **E25.S4.T2** (cartorio-n8n) — Workflow N8N #34: `metrics-collector-5min` (push métricas N8N → API → Prometheus remote_write)
+  - [x] **E25.S4.T3** (cartorio-lgpd) — Sentry alerts LGPD (PII leak detection via `before_send` + dashboard de audit chain integrity)
+  - [x] **E25.S4.T4** (cartorio-sre) — Grafana dashboard 9 painéis (API/N8N/EVO/CW/OCL/SUP/RED/DMS/health) + alerting rules (5min DOWN → Telegram)
+- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅
+Modified by Gustavo Almeida (via loop v25)

@@ -204,17 +204,22 @@ class WhatsAppAdapter(ChannelAdapter):
                     if buttons:
                         payload["buttons"] = buttons
             resp = await client.post(url, json=payload)
+            from app.services.metrics import store
             if resp.status_code in (200, 201):
                 bump_metric("responses_ok")
+                store.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "out"})
                 return True
             logger.warning(
                 "Evolution sendText status=%s body=%s", resp.status_code, resp.text[:200]
             )
             bump_metric("responses_failed")
+            store.inc_counter("cartorio_whatsapp_erros_total")
             return False
         except Exception as e:
             logger.exception("WhatsApp send error: %s", e)
             bump_metric("responses_failed")
+            from app.services.metrics import store
+            store.inc_counter("cartorio_whatsapp_erros_total")
             return False
 
     async def typing(self, recipient_id: str, action: str = "composing") -> bool:
@@ -396,7 +401,13 @@ async def whatsapp_webhook(
       5. SEMPRE retorna 200 (evita retry infinito Evolution)
     """
     bump_metric("requests_total")
-    raw_body = json.dumps(payload).encode("utf-8")
+    from app.services.metrics import store
+    store.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "in"})
+    try:
+        raw_body = json.dumps(payload).encode("utf-8")
+    except Exception:
+        store.inc_counter("cartorio_whatsapp_erros_total")
+        raise
 
     # 1. HMAC validation
     signature = request.headers.get("X-Hub-Signature-256") or request.headers.get(

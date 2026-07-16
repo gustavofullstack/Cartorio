@@ -33,8 +33,21 @@ class MetricsResponse(BaseModel):
     audit_chain_length: int = Field(
         ..., ge=0, description="Total de entries no audit log (LGPD art. 37)."
     )
+    audit_chain_size: int = Field(
+        0, ge=0, description="Tamanho do audit log."
+    )
+    lgpd_consent_total: int = Field(
+        0, ge=0, description="Total de consentimentos LGPD ativos."
+    )
+    dlq_pending: int = Field(
+        0, ge=0, description="Total de mensagens pendentes na DLQ."
+    )
     uptime_seconds: float = Field(
         ..., ge=0.0, description="Tempo de vida do processo backend em segundos."
+    )
+    db_pool: dict[str, float] = Field(
+        default_factory=dict,
+        description="Métricas de pool de conexões do banco de dados (checked_out, size, overflow, etc)."
     )
     counters: dict[str, Any] = Field(
         default_factory=dict,

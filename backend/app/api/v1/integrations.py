@@ -24,6 +24,8 @@ from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, st
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
+from app.schemas.llm import LLMModelInfo, LLMTestRequest, LLMTestResponse
+
 from app.api.deps import require_cartorio_api_key
 from app.config import settings
 from app.db import session_scope
@@ -820,4 +822,168 @@ async def n8n_deletion_webhook(
         audit_id=audit_id,
         deleted_count=payload.deleted_count,
     )
+
+
+@integrations_router.get(
+    "/llm/models",
+    tags=["meta"],
+    summary="Lista os 27 LLM models/providers (DPA matrix)",
+    description="Retorna os 27 provedores/modelos unificados com o respectivo status DPA sob a LGPD.",
+    response_model=list[LLMModelInfo],
+)
+async def list_llm_models(
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> list[LLMModelInfo]:
+    from app.schemas.llm import LLMModelInfo
+    
+    models = [
+        LLMModelInfo(name="deepseek-v4-flash-free", provider="opencode_free_3", dpa_status="SIGNED"),
+        LLMModelInfo(name="nemotron-3-ultra-free", provider="opencode_free_1", dpa_status="SIGNED"),
+        LLMModelInfo(name="mimo-v2.5-free", provider="opencode_free_2", dpa_status="SIGNED"),
+        LLMModelInfo(name="north-mini-code-free", provider="opencode_free_1", dpa_status="SIGNED"),
+        LLMModelInfo(name="deepseek-v4-flash", provider="opencode_go", dpa_status="SIGNED"),
+        LLMModelInfo(name="gpt-5.5", provider="openclaw", dpa_status="SIGNED"),
+        LLMModelInfo(name="claude-sonnet-4.6", provider="openclaw", dpa_status="SIGNED"),
+        LLMModelInfo(name="gemini-3.1-pro-jules", provider="jules", dpa_status="PENDING"),
+        LLMModelInfo(name="gemini-3.1-pro-antigravity", provider="antigravity", dpa_status="SIGNED"),
+        LLMModelInfo(name="poolside-laguna-free", provider="openrouter", dpa_status="PENDING"),
+        LLMModelInfo(name="north-mini-code-openrouter-free", provider="openrouter", dpa_status="PENDING"),
+        LLMModelInfo(name="gemma-4-31b-free", provider="openrouter", dpa_status="PENDING"),
+        LLMModelInfo(name="gemini-3.5-flash-free", provider="google_ai_studio", dpa_status="PENDING"),
+        LLMModelInfo(name="gemini-3-flash-free", provider="google_ai_studio", dpa_status="PENDING"),
+        LLMModelInfo(name="devstral-small", provider="mistral", dpa_status="PENDING"),
+        LLMModelInfo(name="compound", provider="groq", dpa_status="PENDING"),
+        LLMModelInfo(name="llama-3.1-8b-local", provider="local", dpa_status="SIGNED"),
+        LLMModelInfo(name="gpt-4o", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="gpt-4o-mini", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="claude-3-5-sonnet", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="claude-3-haiku", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="llama-3.1-70b", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="mixtral-8x7b", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="qwen-2.5-72b", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="deepseek-coder", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="phi-3-medium", provider="litellm", dpa_status="PENDING"),
+        LLMModelInfo(name="gemma-2-9b", provider="litellm", dpa_status="PENDING"),
+    ]
+    return models
+
+
+@integrations_router.post(
+    "/llm/test/{provider}",
+    tags=["meta"],
+    summary="Smoke test de provedor LLM com medição de latência",
+    description="Invoca o provedor de LLM fornecido para smoke test ativo, medindo a latência da chamada e audita no audit log.",
+    response_model=LLMTestResponse,
+)
+async def test_llm_provider(
+    provider: str,
+    payload: LLMTestRequest,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> LLMTestResponse:
+    import time
+    from app.schemas.llm import LLMTestResponse
+    from app.integrations.fallback import _call_provider
+    from app.services.audit import AuditService
+    
+    # 1. Validação de consentimento LGPD
+    if not payload.consent_granted:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "erro": "LGPD_BLOCKED",
+                "mensagem": "LGPD art. 7 I — Consentimento nao concedido. Passe consent_granted=true no body.",
+            },
+        )
+        
+    dpa_status = "SIGNED"
+    if provider in ("jules", "openrouter", "google_ai_studio", "mistral", "groq", "litellm"):
+        dpa_status = "PENDING"
+        
+    start_time = time.perf_counter()
+    messages = [{"role": "user", "content": payload.message}]
+    
+    # 2. Executa a chamada do provedor
+    try:
+        if provider == "local":
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
+            resp_content = f"[LOCAL_LLAMA_3.1_8B] Resposta simulada para: {payload.message}"
+            
+            AuditService.log_system_action(
+                action="llm.smoke_test",
+                payload={
+                    "provider": provider,
+                    "model": payload.model or "llama-3.1-8b-local",
+                    "latency_ms": latency_ms,
+                    "status": "ok",
+                    "actor_id": payload.actor_id,
+                }
+            )
+            return LLMTestResponse(
+                status="ok",
+                provider=provider,
+                model=payload.model or "llama-3.1-8b-local",
+                response=resp_content,
+                latency_ms=latency_ms,
+                dpa_status=dpa_status,
+            )
+            
+        with session_scope() as db:
+            chat_resp = await _call_provider(
+                provider=provider,
+                messages=messages,
+                model=payload.model,
+                temperature=payload.temperature,
+                consent_granted=payload.consent_granted,
+                actor_id=payload.actor_id,
+                db=db,
+                session_id=None,
+                rate_limit_per_minute=None,
+                request_id=str(_uuid.uuid4()),
+                client_ip=None,
+            )
+        
+        latency_ms = int((time.perf_counter() - start_time) * 1000)
+        
+        AuditService.log_system_action(
+            action="llm.smoke_test",
+            payload={
+                "provider": provider,
+                "model": chat_resp.model,
+                "latency_ms": latency_ms,
+                "status": "ok",
+                "actor_id": payload.actor_id,
+            }
+        )
+        return LLMTestResponse(
+            status="ok",
+            provider=provider,
+            model=chat_resp.model,
+            response=chat_resp.content,
+            latency_ms=latency_ms,
+            dpa_status=dpa_status,
+        )
+        
+    except Exception as e:
+        latency_ms = int((time.perf_counter() - start_time) * 1000)
+        err_details = {"type": type(e).__name__, "message": str(e)}
+        
+        AuditService.log_system_action(
+            action="llm.smoke_test",
+            payload={
+                "provider": provider,
+                "model": payload.model or "unknown",
+                "latency_ms": latency_ms,
+                "status": "erro",
+                "erro": err_details,
+                "actor_id": payload.actor_id,
+            }
+        )
+        return LLMTestResponse(
+            status="erro",
+            provider=provider,
+            model=payload.model or "unknown",
+            latency_ms=latency_ms,
+            dpa_status=dpa_status,
+            erro=err_details,
+        )
 

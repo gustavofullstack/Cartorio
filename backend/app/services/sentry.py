@@ -91,6 +91,13 @@ def _init_sentry() -> bool:
 
 def _before_send(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any] | None:
     """Hook Sentry: scrub PII em todo evento antes de enviar."""
+    import json
+
+    try:
+        orig_str = json.dumps(event)
+    except Exception:
+        orig_str = ""
+
     # Scrub mensagem de excecao
     if "message" in event:
         event["message"] = _scrub_string(event["message"])
@@ -108,6 +115,17 @@ def _before_send(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any]
     # Scrub user (se vier)
     if "user" in event:
         event["user"] = scrub_pii(event["user"])
+
+    try:
+        scrubbed_str = json.dumps(event)
+    except Exception:
+        scrubbed_str = ""
+
+    if orig_str and scrubbed_str and orig_str != scrubbed_str:
+        logger.warning("LGPD Sentry Alert: raw PII leak detected and prevented in Sentry payload!")
+        from app.services.metrics import store
+        store.inc_counter("cartorio_pii_leak_prevented_total")
+
     return event
 
 
