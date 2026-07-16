@@ -1,7 +1,7 @@
 # API Endpoints Catalog — Cartório 2º Notas
 
 > Auto-generated from FastAPI OpenAPI spec
-> Last updated: 2026-06-25
+> Last updated: 2026-07-16 (G7 Wave 16)
 
 ## Base URL
 
@@ -24,6 +24,14 @@ All endpoints require `X-API-Key` header unless noted.
 | GET | `/api/v1/health/radar` | Yes | All services status |
 | GET | `/api/v1/health/integracoes` | Yes | Integration details |
 | GET | `/api/v1/health/backup` | Yes | Backup status |
+| GET | `/api/v1/health/radar/expanded` | No | Radar DNS+Traefik+SSH+disk (beta; redeploy) |
+| WS | `/api/v1/ws/atendimentos` | Yes | WebSocket atendimentos tempo real |
+| GET | `/api/v1/brain/loop-state` | Yes | Loop engineer state |
+| GET | `/api/v1/webhook/evolution/health` | No | Health ingest Evolution |
+| POST | `/api/v1/telegram/webhook` | Secret | Telegram bot webhook |
+
+> Full catalog: `.brain/api-specs/catalog.py` (`get_stats()`). Postman: `docs/postman_collection.json` (double-prefix fixed W15).
+
 
 ---
 

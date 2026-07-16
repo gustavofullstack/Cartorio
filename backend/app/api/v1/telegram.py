@@ -192,6 +192,14 @@ def format_bot_text(text: str) -> str:
     if not text:
         return text
     t = text.replace("\r\n", "\n").replace("\r", "\n")
+    # G7.03.T3: strip MiniMax <think>/<reasoning> ANTES de enviar (HTML-safe)
+    try:
+        from app.services.cartorio_agent import _strip_think_tags
+
+        t = _strip_think_tags(t) or t
+    except Exception:
+        t = re.sub(r"<think>[\s\S]*?</think>", "", t, flags=re.I)
+        t = re.sub(r"<reasoning>[\s\S]*?</reasoning>", "", t, flags=re.I)
     # Camada de defesa: remove URLs nao oficiais (anti-spam / anti-porn)
     try:
         from app.services.cartorio_agent import sanitize_bot_output
@@ -650,12 +658,15 @@ async def _send_message(
     """
     cleaned_text = strip_emojis(format_bot_text(text))
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    # G7.03.T3: NUNCA enviar parse_mode=HTML (tags think/reasoning → 502 silencioso).
+    # Plain text only — MarkdownV2 exige escape agressivo; plain eh KISS/HITL-safe.
     payload: dict[str, Any] = {
         "chat_id": chat_id,
         "text": cleaned_text[:MAX_RESPONSE_LEN],
         "disable_web_page_preview": True,
-        # Plain text + quebras de linha (sem parse_mode: evita quebra com < > &)
     }
+    # defense-in-depth: nunca HTML/MarkdownV2 no sendMessage (G7.03.T3)
+    payload.pop("parse_mode", None)
     # reply_markup/keyboard intencionalmente NAO adicionados ao payload
     try:
         # FIX v2: usa pool singleton (evita DNS+TLS+TCP a cada call)

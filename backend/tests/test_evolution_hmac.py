@@ -76,6 +76,31 @@ def test_validate_signature_sha256_prefix(monkeypatch: pytest.MonkeyPatch) -> No
     assert validate_evolution_signature(body, sig) is True
 
 
+def test_validate_signature_accepts_previous_secret_during_rotation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """G7.10.T3: durante rotacao, PREV secret ainda valida (zero-downtime)."""
+    monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "new-secret-xyz")
+    monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET_PREV", "old-secret-abc")
+    body = b'{"event": "messages.upsert", "id": "rot-1"}'
+    sig_old = _compute_sig("old-secret-abc", body)
+    sig_new = _compute_sig("new-secret-xyz", body)
+    assert validate_evolution_signature(body, sig_old) is True
+    assert validate_evolution_signature(body, sig_new) is True
+    assert validate_evolution_signature(body, _compute_sig("other", body)) is False
+
+
+def test_validate_signature_prev_only_when_current_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Se current vazio mas PREV setado, ainda exige signature valida (nao dev mode)."""
+    monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "")
+    monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET_PREV", "only-prev")
+    body = b'{"event": "messages.upsert"}'
+    assert validate_evolution_signature(body, None) is False
+    assert validate_evolution_signature(body, _compute_sig("only-prev", body)) is True
+
+
 def test_validate_signature_timing_safe(monkeypatch: pytest.MonkeyPatch) -> None:
     """Comparacao usa hmac.compare_digest (timing-safe)."""
     monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "my-secret-123")

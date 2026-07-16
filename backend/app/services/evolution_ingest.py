@@ -35,17 +35,21 @@ def validate_evolution_signature(raw_body: bytes, signature: Optional[str]) -> b
 
     Retorna True se:
     - Signature corresponde ao HMAC-SHA256(raw_body, EVOLUTION_WEBHOOK_SECRET), ou
+    - Signature corresponde ao secret anterior (EVOLUTION_WEBHOOK_SECRET_PREV)
+      durante janela de rotacao 90d (G7.10.T3), ou
     - Secret NAO esta configurado (dev mode - loga warning).
 
     Retorna False se:
     - Secret configurado mas signature ausente, ou
-    - Signature fornecida mas nao corresponde (timing-safe via hmac.compare_digest).
+    - Signature fornecida mas nao corresponde a nenhum secret ativo.
 
     Suporta formato `sha256=<hex>` (estilo GitHub/Stripe) alem do hex puro.
+    Comparacao sempre timing-safe via hmac.compare_digest.
     """
     # Le env var dinamicamente (NAO usa settings cache) - permite teste monkeypatch
     secret = os.getenv("EVOLUTION_WEBHOOK_SECRET") or ""
-    if not secret:
+    secret_prev = os.getenv("EVOLUTION_WEBHOOK_SECRET_PREV") or ""
+    if not secret and not secret_prev:
         log.warning("evolution webhook: EVOLUTION_WEBHOOK_SECRET nao configurado, dev mode")
         return True
     if not signature:
@@ -54,8 +58,17 @@ def validate_evolution_signature(raw_body: bytes, signature: Optional[str]) -> b
     sig_hex = signature
     if sig_hex.startswith("sha256="):
         sig_hex = sig_hex[len("sha256=") :]
-    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, sig_hex)
+
+    def _match(key: str) -> bool:
+        if not key:
+            return False
+        expected = hmac.new(key.encode(), raw_body, hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, sig_hex)
+
+    # Aceita current OU previous (rotacao zero-downtime).
+    if _match(secret) or _match(secret_prev):
+        return True
+    return False
 
 
 def ingest_evolution_event(

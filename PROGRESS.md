@@ -2955,3 +2955,37 @@ Modified by Gustavo Almeida
 - **Lesson:** lesson-187-g7-wave15-integration-matrix-2026-07-16.md
 - **Next W16:** SUI Gustavo (DNS/env/redeploy/tokens) → g7-validate WORK
 Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 16 G7 CI + HMAC + Agility ✅
+- **4 agents/slots:**
+  - [x] G7.10.T3 — Evolution HMAC PREV secret rotation (zero-downtime) + docs
+  - [x] G7.22.T1/T4 — CI gates bare-exception + secrets_scan + g7 validator
+  - [x] G7.16.T2/T3 + G7.23.T1/T2 — TASKS epic G7 + paperclip board + DoR/DoD
+  - [x] G7.21.T4 + G7.17.T3 — check_no_bare_exception.py + API catalog sync
+- **Tests:** 14 passed (hmac + wave15 integration)
+- **Validator:** HOLD prod; WORK bare_exception + artifacts
+- **Lesson:** lesson-188-g7-wave16-hmac-ci-agility-2026-07-16.md
+- **Next W17:** SUI Gustavo only path to radar WORK — or CONTINUE code (coverage/mutmut/Postman regen)
+Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 17 G7 dual-format + WS50 + Postman + orchestrator ✅
+- **4 agents:**
+  - [x] G7.04.T3 — Evolution parse dual-format (root+nested) + Hypothesis
+  - [x] G7.01.T4 — WebSocket 50 concurrent mock broadcast
+  - [x] G7.17.T1/T2/T4 — postman_export X-API-Key 128 items + swagger persistAuthorization
+  - [x] G7.11.T3 + G7.16.T4 — TAILSCALE_OFFLINE_FALLBACK.md + g7_orchestrator.py
+- **Progress:** g7_orchestrator → **27/100 done (27%)**
+- **Lesson:** lesson-189-g7-wave17-dual-ws-postman-2026-07-16.md
+- **Next:** W18 SUI ou coverage/mutmut code
+Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 18 G7 metrics + DLQ + TG plain + MCP ✅
+- **4 agents (evitou colisão MiniMax badge):**
+  - [x] G7.07.T3 — cartorio_rate_limit_total{layer,tier} em ddos/sliding/tier
+  - [x] G7.10.T2 — scripts/dlq_admin_drill.py (backoff 60/300/900 WORK)
+  - [x] G7.03.T3 — format_bot_text strip think/reasoning; sendMessage sem parse_mode
+  - [x] G7.09.T2 + G7.12.T4 — mcp_config.cartorio-api.example.json + typo supbase ratificado
+- **Tests:** 22 passed wave17+18+hmac
+- **Coord:** MiniMax G6.A.T8 badge — Grok NÃO tocou coverage_badge.py
+- **Lesson:** lesson-190-g7-wave18-ratelimit-dlq-tg-2026-07-16.md
+Modified by Gustavo Almeida

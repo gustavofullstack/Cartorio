@@ -1360,3 +1360,33 @@ Modified by Gustavo Almeida (Pietra orquestrou)
 - api.2notasudi.com.br → 200
 
 Modified by Gustavo Almeida
+
+---
+
+## EPIC G7 — Integração Total (100 tasks · Super Plano)
+
+> Fonte executável: `SUPER_PLANO_G7_100_TASKS.md` + goals `SUPER_GOALS_G7.md`.
+> Orquestração: 4 agents/squad (dev · n8n · lgpd · sre). Loop até 100/100.
+> Atualizado Wave 16 — 2026-07-16.
+
+### Meta
+Integração completa API–Telegram–Chatwoot–LobeChat–Redis–Postgres–MCP–WS–
+Webhooks–Tailscale–Proxy–DNS–OpenClaw–skills–brain–harness–Postman–Swagger–
+radar com SOLID/DRY/KISS, tipagem forte, CI/CD, MVP live.
+
+### Waves done (agent-side)
+- [x] W13 — mutation killers audit · D5 IP · RIPD v1.4 · health matrix
+- [x] W14 — g7_super_validator · MCP inventory · SUI checklist
+- [x] W15 — openclaw JSON · catalog/postman fix · skills INDEX · Redis ops + matrix
+- [x] W16 — HMAC rotation PREV · CI G7 gates · bare Exception gate · DoR/DoD · board
+
+### Waves SUI-blocked (Gustavo)
+- [ ] W16+/SUI — DNS 3 A records · DATABASE_URL · redeploy expanded radar · tokens TG/Lobe · WA QR · OpenClaw deploy
+
+### Progresso
+Ver `PROGRESS.md` + `.brain/loop-state.json` + `make g7-validate`.
+
+### DoR / DoD
+`docs/G7_DOR_DOD.md`
+
+Modified by Gustavo Almeida — G7 Wave 16

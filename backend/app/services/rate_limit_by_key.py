@@ -258,6 +258,12 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
                 ip_result.limit,
                 request.url.path,
             )
+            try:
+                from app.services.metrics import store as metrics_store
+
+                metrics_store.inc_rate_limit_total(layer="ddos", tier="none")
+            except Exception:  # noqa: BLE001 — metrics never block path
+                pass
             return Response(
                 content=(
                     f'{{"erro":"RATE_LIMITED_DDOS","mensagem":"Limite absoluto de '
@@ -283,6 +289,12 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
                 sliding_result.limit,
                 request.url.path,
             )
+            try:
+                from app.services.metrics import store as metrics_store
+
+                metrics_store.inc_rate_limit_total(layer="sliding", tier="none")
+            except Exception:  # noqa: BLE001
+                pass
             return Response(
                 content=(
                     f'{{"erro":"RATE_LIMITED_SLIDING","mensagem":"Limite sliding window '
@@ -320,6 +332,12 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
                 result.current,
                 result.limit,
             )
+            try:
+                from app.services.metrics import store as metrics_store
+
+                metrics_store.inc_rate_limit_total(layer="tier", tier=str(tier))
+            except Exception:  # noqa: BLE001
+                pass
             return Response(
                 content=(
                     f'{{"erro":"RATE_LIMITED","mensagem":"Limite de {result.limit} req/min '

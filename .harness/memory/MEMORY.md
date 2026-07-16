@@ -8,6 +8,9 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-16)
 
 ### Por data (consolidado)
+- **2026-07-16** (Lesson 190 — G7 Wave 18 rate_limit metrics + DLQ drill + TG think-strip + MCP example; coord MiniMax badge): `.harness/memory/lesson-190-g7-wave18-ratelimit-dlq-tg-2026-07-16.md`
+- **2026-07-16** (Lesson 189 — G7 Wave 17 dual-format Evolution + WS50 + Postman gen + g7_orchestrator 27%): `.harness/memory/lesson-189-g7-wave17-dual-ws-postman-2026-07-16.md`
+- **2026-07-16** (Lesson 188 — G7 Wave 16 HMAC PREV + CI gates + DoR/DoD + paperclip): `.harness/memory/lesson-188-g7-wave16-hmac-ci-agility-2026-07-16.md`
 - **2026-07-16** (Lesson 187 — G7 Wave 15 integration matrix + catalog/postman/openclaw JSON + Redis ops): `.harness/memory/lesson-187-g7-wave15-integration-matrix-2026-07-16.md`
 - **2026-07-16** (Lesson 186 — G6 Wave 13 + SUPER GOALS/PLANO G7 100 tasks: mutation killers audit, D5 IP, RIPD v1.4, health matrix live, radar fallback): `.harness/memory/lesson-186-g6-wave13-g7-super-plano-2026-07-16.md` + `SUPER_GOALS_G7.md` + `SUPER_PLANO_G7_100_TASKS.md`
 - **2026-07-16** (Lessons 181-185 — G6 waves 1-12: mutmut, hypothesis, n8n idempotency, AlertManager, pre-commit): `lesson-181`…`lesson-185`

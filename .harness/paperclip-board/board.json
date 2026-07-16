@@ -1,6 +1,6 @@
 {
-  "board": "paperclip-cartorio-2026-07-02",
-  "owner": "Minimax-M3 (single-agent orchestrator)",
+  "board": "paperclip-cartorio-g7-2026-07-16",
+  "owner": "Pietra orquestrador + 4 reins",
   "vision": "Cartório 2º Notas 100% production-ready com WhatsApp produção conectado via Evolution API + LGPD 100% + fallback chain validado 9x",
   "goals": [
     {
@@ -51,9 +51,22 @@
         "loop-continue.sh (retomada de sessão)"
       ],
       "note": "Lesson 139 — launchd pendente install; cycle state machine ativo"
+    },
+    {
+      "id": "G7",
+      "name": "Super Plano 100 tasks integração total",
+      "status": "in_progress",
+      "pct": 18,
+      "wave": 16
+    },
+    {
+      "id": "G7-SUI",
+      "name": "SUI Gustavo DNS+env+tokens",
+      "status": "blocked",
+      "pct": 0
     }
   ],
-  "goals_canonical_ref": "GOALS.md (raiz) — letras A-G",
+  "goals_canonical_ref": "SUPER_GOALS_G7.md + GOALS.md",
   "skill_mapping": ".harness/loop-engineer/SKILLS-MAP.md",
   "tasks_in_progress": [
     {
@@ -174,5 +187,23 @@
       "commits": 1,
       "agent": "parallel session"
     }
-  ]
+  ],
+  "g7": {
+    "plan": "SUPER_PLANO_G7_100_TASKS.md",
+    "goals": "SUPER_GOALS_G7.md",
+    "validator": "make g7-validate",
+    "dor_dod": "docs/G7_DOR_DOD.md",
+    "wave_done": 16,
+    "tasks_approx": "18/100",
+    "updated_at": "2026-07-16T17:24:16.068483+00:00",
+    "sui_blockers": [
+      "DNS Cloudflare 3 A records",
+      "Easypanel DATABASE_URL evo/cw/n8n",
+      "Redeploy API radar/expanded",
+      "Telegram token",
+      "LobeChat OPENAI_API_KEY",
+      "WhatsApp QR",
+      "OpenClaw cartorio-bot deploy"
+    ]
+  }
 }

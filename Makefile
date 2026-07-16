@@ -114,6 +114,18 @@ coverage-gate:  ## Coverage gate fail-safe (G6.A.T5)
 	@echo "$(YELLOW)[Coverage] Validando gate >=95%...$(RESET)"
 	@python3 scripts/coverage_gate.py
 
+.PHONY: postman-export
+postman-export:  ## Gera Postman collection do OpenAPI local (G7.17.T1)
+	@cd backend && DATABASE_URL=$${DATABASE_URL:-sqlite:///:memory:} uv run python ../scripts/postman_export.py --from-app
+
+.PHONY: g7-status
+g7-status:  ## Status super plano G7 (orchestrator)
+	@python3 scripts/g7_orchestrator.py status
+
+.PHONY: bare-exception
+bare-exception:  ## Gate: zero raise Exception( em app/ (G7.21.T4)
+	@python3 scripts/check_no_bare_exception.py
+
 .PHONY: g7-validate
 g7-validate:  ## G7 super teste validador (local+prod composite)
 	@echo "$(YELLOW)[G7] Super validator...$(RESET)"

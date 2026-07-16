@@ -1,7 +1,7 @@
 # Domain Typo Decision — supbase.2notasudi.com.br
 
-**Data da decisao:** 2026-06-25 | **Reconfirmado:** 2026-07-15 (cartorio-sre F4)
-**Owner da decisao:** Gustavo Almeida | **Ref:** cartorio-sre F4 / T053
+**Data da decisao:** 2026-06-25 | **Reconfirmado:** 2026-07-15 (cartorio-sre F4) | **G7.12.T4 ratificado:** 2026-07-16
+**Owner da decisao:** Gustavo Almeida | **Ref:** cartorio-sre F4 / T053 / SUPER_PLANO_G7
 
 ---
 

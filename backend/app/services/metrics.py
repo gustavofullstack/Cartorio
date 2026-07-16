@@ -219,6 +219,19 @@ class MetricsStore:
             labels={"provider": provider, "status": status},
         )
 
+    def inc_rate_limit_total(self, layer: str, tier: str = "none") -> None:
+        """G7.07.T3: counter cartorio_rate_limit_total{layer,tier}.
+
+        Args:
+            layer: 'ddos' | 'sliding' | 'tier' | 'ip'
+            tier: 'n8n' | 'dpo' | 'padrao' | 'none' (when IP layers)
+        """
+        self._make_metric_or_skip_test("cartorio_rate_limit_total", "counter")
+        self.inc_counter(
+            "cartorio_rate_limit_total",
+            labels={"layer": layer, "tier": tier},
+        )
+
     def set_n8n_wf_error_rate(self, wf_name: str, error_rate: float) -> None:
         """Helper B10: gauge n8n_wf_error_rate{wf_name} (0.0-1.0).
 

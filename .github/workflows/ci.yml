@@ -166,6 +166,34 @@ jobs:
         working-directory: backend
         run: cd .. && python3 scripts/coverage_gate.py || true
 
+      # G7.21.T4 — no bare raise Exception(
+      - name: Bare Exception gate (G7.21.T4)
+        run: python3 scripts/check_no_bare_exception.py
+
+      # G7.22.T4 — secrets pattern scan (non-blocking until baseline clean)
+      - name: Secrets scan (G7.22.T4)
+        run: |
+          if [ -f scripts/secrets_scan.py ]; then
+            python3 scripts/secrets_scan.py --all-files || echo "WARN secrets_scan exit non-zero (review)"
+          else
+            echo "secrets_scan.py missing — skip"
+          fi
+
+      # G7.22.T1 — composite local artifacts (prod radar HOLD expected in CI)
+      - name: G7 super validator local-only (G7.22.T1)
+        run: |
+          set +e
+          python3 scripts/g7_super_validator.py --skip-ruff --skip-pytest --json > /tmp/g7_ci.json
+          code=$?
+          set -e
+          # exit 2 = hard fail local; exit 1 = HOLD prod (expected in CI)
+          if [ "$code" -ge 2 ]; then
+            cat /tmp/g7_ci.json || true
+            exit 2
+          fi
+          echo "G7 validator CI ok (exit=$code — HOLD prod allowed)"
+          python3 -c "import json; d=json.load(open('/tmp/g7_ci.json')); print(d.get('overall'), list(d.get('checks',{}).keys()))"
+
       - name: Upload coverage to Codecov
         if: success()
         uses: codecov/codecov-action@v4
