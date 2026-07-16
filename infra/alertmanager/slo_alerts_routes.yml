@@ -1,0 +1,116 @@
+# SLO AlertManager Routes (G6.D.T9)
+# Adiciona rotas SLO priorizadas por severidade
+# Apply com: amtool config routes test --config.file=alertmanager.yml
+#
+# Severidade SLO (Google SRE workbook cap. 5):
+# - critical: budget exhausto em <2 dias (fast burn 1h)
+# - high: budget exhausto em <5 dias (slow burn 6h)
+# - medium: warning (composite SLO drift)
+#
+# Refs:
+# - infra/prometheus/slo_rules.yml (12 SLO rules)
+# - infra/grafana/slo_dashboard.json (7 panels)
+# - infra/alertmanager/alertmanager.yml (5 receivers base)
+#
+# Modified by Gustavo Almeida + cartorio-sre — G6 wave 27
+
+# Exemplo de routes para merge com alertmanager.yml
+# (recomendado: integrar via amtool ou AlertManager UI)
+
+slo_routes:
+  - slo: api_availability
+    severity: critical
+    receiver: slo_pager_team
+    group_wait: 10s
+    group_interval: 1m
+    repeat_interval: 30m
+    runbook: https://runbooks.cartonio.com.br/slo/api-availability
+
+  - slo: api_latency
+    severity: critical
+    receiver: slo_pager_team
+    group_wait: 10s
+    group_interval: 1m
+    repeat_interval: 30m
+    runbook: https://runbooks.cartonio.com.br/slo/api-latency
+
+  - slo: n8n_workflow_success
+    severity: critical
+    receiver: slo_n8n_team
+    group_wait: 10s
+    group_interval: 1m
+    repeat_interval: 30m
+    runbook: https://runbooks.cartonio.com.br/slo/n8n-success
+
+  - slo: openclaw_response
+    severity: critical
+    receiver: slo_llm_team
+    group_wait: 10s
+    group_interval: 1m
+    repeat_interval: 30m
+    runbook: https://runbooks.cartonio.com.br/slo/openclaw
+
+  - slo: api_availability
+    severity: high
+    receiver: slo_backend_warning
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 2h
+
+  - slo: api_latency
+    severity: high
+    receiver: slo_backend_warning
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 2h
+
+  - slo: n8n_workflow_success
+    severity: high
+    receiver: slo_n8n_warning
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 2h
+
+  - slo: openclaw_response
+    severity: high
+    receiver: slo_llm_warning
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 2h
+
+  - slo: composite
+    severity: medium
+    receiver: slo_email_daily
+    group_wait: 5m
+    group_interval: 30m
+    repeat_interval: 24h
+
+  # LGPD-specific (G6.D.T9)
+  - alertgroup: lgpd
+    receiver: lgpd_dpo_telegram
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+
+  # Fallback
+  - receiver: default_telegram
+    group_wait: 1m
+    group_interval: 10m
+    repeat_interval: 6h
+
+# Receivers (resumo)
+receivers_summary:
+  - slo_pager_team: "PagerDuty + Telegram slo_critical"
+  - slo_n8n_team: "Telegram n8n_ops"
+  - slo_llm_team: "Telegram llm_ops"
+  - slo_backend_warning: "Telegram backend_warning"
+  - slo_n8n_warning: "Telegram n8n_warning"
+  - slo_llm_warning: "Telegram llm_warning"
+  - slo_email_daily: "SMTP sre@cartorio"
+  - lgpd_dpo_telegram: "Telegram dpo_channel"
+  - default_telegram: "Telegram default_alerts"
+
+# Total routes: 11
+# Total receivers: 9
+# Modified by: Gustavo Almeida + Pietra orquestrador
+# Date: 2026-07-16 19:15 BRT
