@@ -1,0 +1,11 @@
+domain,type,value,proxy,ttl,status,created_at_estimated,service
+api.2notasudi.com.br,A,187.77.236.77,DNS-only,Auto,OK,2026-06-24T14:00:00-03:00,cartorio_api
+flow.2notasudi.com.br,A,187.77.236.77,DNS-only,Auto,OK,2026-06-24T14:05:00-03:00,n8n_workflow_engine
+whatsapp.2notasudi.com.br,A,187.77.236.77,DNS-only,Auto,OK,2026-06-24T14:10:00-03:00,evolution_api_2.3.7
+chat.2notasudi.com.br,A,187.77.236.77,DNS-only,Auto,OK,2026-06-24T14:15:00-03:00,chatwoot_3.x_legacy
+agent.2notasudi.com.br,A,187.77.236.77,DNS-only,Auto,OK,2026-06-24T14:20:00-03:00,openclaw_0.4.x
+supbase.2notasudi.com.br,A,187.77.236.77,DNS-only,Auto,OK,2026-06-24T14:25:00-03:00,supabase_self_hosted_typo
+easypanel.2notasudi.com.br,A,187.77.236.77,DNS-only,Auto,OK,2026-06-24T14:30:00-03:00,easypanel_admin_ui
+chatwoot.2notasudi.com.br,A,187.77.236.77,PENDENTE,Auto,NXDOMAIN,,chatwoot_canonico
+n8n.2notasudi.com.br,A,187.77.236.77,PENDENTE,Auto,NXDOMAIN,,n8n_admin_ui
+supabase.2notasudi.com.br,A,187.77.236.77,PENDENTE,Auto,NXDOMAIN,,supabase_canonico

@@ -252,6 +252,14 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             settings.retencao_enabled,
         )
 
+    # 6. LLM providers health monitor (Wave 5 S5.T4 — hourly smoke check)
+    llm_health_task: asyncio.Task[None] | None = None
+    llm_health_task = asyncio.create_task(
+        _llm_providers_health_loop(),
+        name="llm_providers_health_loop",
+    )
+    logger.info("LLM_PROVIDERS_HEALTH_MONITOR_STARTED: interval=3600s")
+
     try:
         yield
     finally:
@@ -266,6 +274,12 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             retencao_task.cancel()
             try:
                 await retencao_task
+            except asyncio.CancelledError:
+                pass
+        if llm_health_task is not None:
+            llm_health_task.cancel()
+            try:
+                await llm_health_task
             except asyncio.CancelledError:
                 pass
         AuditService.log_system_action("api.shutdown", {})

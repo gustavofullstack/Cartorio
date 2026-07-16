@@ -1,0 +1,198 @@
+{
+  "name": "36-chatwoot-telegram-sync",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "chatwoot-telegram-sync",
+        "options": {}
+      },
+      "id": "cw-sync-01-webhook",
+      "name": "Chatwoot Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.event}}",
+              "operation": "equals",
+              "value2": "message_created"
+            }
+          ]
+        }
+      },
+      "id": "cw-sync-02-filter-event",
+      "name": "Filter: message_created only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.message_type}}",
+              "operation": "equals",
+              "value2": "outgoing"
+            }
+          ]
+        }
+      },
+      "id": "cw-sync-03-filter-outgoing",
+      "name": "Filter: outgoing messages only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.2notasudi.com.br/api/v1/atendimentos/by-chatwoot/{{$json.body.conversation.id}}",
+        "options": {}
+      },
+      "id": "cw-sync-04-lookup-atendimento",
+      "name": "Lookup Atendimento by Chatwoot Conv",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        920,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{$json.telegram_chat_id}}\",\n  \"text\": \"👤 *{{$json.body.sender.name}}* (Atendente):\\n{{$json.body.content}}\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "cw-sync-05-send-telegram",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/audit/log",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"action\": \"n8n.chatwoot_telegram_sync\",\n  \"actor_id\": \"n8n_workflow_36\",\n  \"resource\": \"chatwoot:{{$json.body.conversation.id}}\",\n  \"payload\": {\n    \"direction\": \"chatwoot_to_telegram\",\n    \"conversation_id\": {{$json.body.conversation.id}},\n    \"message_id\": \"{{$json.body.id}}\",\n    \"sender_name\": \"{{$json.body.sender.name}}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "cw-sync-06-audit-log",
+      "name": "Audit Log (LGPD Art. 37)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1360,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.2notasudi.com.br/api/v1/integrations/chatwoot/consent-propagation",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chatwoot_conversation_id\": {{$json.body.conversation.id}},\n  \"telegram_chat_id\": \"{{$json.telegram_chat_id}}\",\n  \"labels\": [\"consent-lgpd-telegram\"],\n  \"consent_source\": \"telegram\"\n}",
+        "options": {}
+      },
+      "id": "cw-sync-07-consent-propagation",
+      "name": "LGPD Consent Propagation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1360,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Chatwoot Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter: message_created only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: message_created only": {
+      "main": [
+        [
+          {
+            "node": "Filter: outgoing messages only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: outgoing messages only": {
+      "main": [
+        [
+          {
+            "node": "Lookup Atendimento by Chatwoot Conv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Atendimento by Chatwoot Conv": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Telegram": {
+      "main": [
+        [
+          {
+            "node": "Audit Log (LGPD Art. 37)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LGPD Consent Propagation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": "nVp8Rq2bHsK5yxw7",
+  "meta": {
+    "instanceId": "n8n-production-cartorio-2026"
+  }
+}

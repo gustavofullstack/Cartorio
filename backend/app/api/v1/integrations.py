@@ -987,3 +987,111 @@ async def test_llm_provider(
             erro=err_details,
         )
 
+
+# ============================================================
+# Chatwoot LGPD Consent Propagation (Wave 6 S6.T3)
+# ============================================================
+
+
+class ConsentPropagationRequest(BaseModel):
+    """Payload para propagar consentimento LGPD entre canais."""
+
+    chatwoot_conversation_id: int = Field(..., description="ID da conversa no Chatwoot.")
+    telegram_chat_id: str = Field(..., description="Chat ID do Telegram do cliente.")
+    labels: list[str] = Field(
+        default_factory=lambda: ["consent-lgpd-telegram"],
+        description="Labels LGPD a aplicar na conversa Chatwoot.",
+    )
+    consent_source: str = Field(
+        default="telegram",
+        description="Canal de origem do consentimento.",
+    )
+
+
+@integrations_router.post(
+    "/chatwoot/consent-propagation",
+    tags=["lgpd"],
+    summary="Propaga consentimento LGPD do Telegram para Chatwoot",
+    description=(
+        "Quando o cliente consente via Telegram (\"SIM\" ou /start), "
+        "este endpoint aplica labels de consentimento na conversa Chatwoot "
+        "correspondente e registra no audit log (LGPD Art. 7 I)."
+    ),
+)
+async def chatwoot_consent_propagation(
+    payload: ConsentPropagationRequest,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> dict[str, Any]:
+    from app.services.audit import AuditService
+
+    chatwoot_base = settings.chatwoot_base_url
+    chatwoot_key = settings.chatwoot_api_key
+    account_id = settings.chatwoot_account_id
+
+    if not chatwoot_base or not chatwoot_key or not account_id:
+        return {"status": "skipped", "reason": "chatwoot_not_configured"}
+
+    headers = {"api_access_token": chatwoot_key, "Content-Type": "application/json"}
+    labels_applied = False
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+        try:
+            url = f"{chatwoot_base}/api/v1/accounts/{account_id}/conversations/{payload.chatwoot_conversation_id}/labels"
+            resp = await client.post(url, headers=headers, json={"labels": payload.labels})
+            labels_applied = resp.status_code in (200, 201)
+        except Exception as e:
+            _log.warning("consent_propagation: Chatwoot label failed: %s", e)
+
+    AuditService.log_system_action(
+        action="lgpd.consent_propagation",
+        payload={
+            "chatwoot_conversation_id": payload.chatwoot_conversation_id,
+            "telegram_chat_id": payload.telegram_chat_id,
+            "labels": payload.labels,
+            "consent_source": payload.consent_source,
+            "labels_applied": labels_applied,
+        },
+    )
+
+    return {
+        "status": "propagated" if labels_applied else "partial",
+        "chatwoot_conversation_id": payload.chatwoot_conversation_id,
+        "labels_applied": labels_applied,
+    }
+
+
+@integrations_router.get(
+    "/chatwoot/health",
+    tags=["health"],
+    summary="Health check dedicado do Chatwoot CRM",
+    description="Verifica a conectividade com o Chatwoot via health endpoint e retorna latência.",
+)
+async def chatwoot_health_check(
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> dict[str, Any]:
+    import time
+
+    chatwoot_base = settings.chatwoot_base_url
+    if not chatwoot_base:
+        return {"status": "not_configured", "latency_ms": 0}
+
+    start = time.perf_counter()
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+        try:
+            resp = await client.get(f"{chatwoot_base}/auth/sign_in")
+            latency_ms = int((time.perf_counter() - start) * 1000)
+            is_up = resp.status_code < 500
+            return {
+                "status": "online" if is_up else "degraded",
+                "http_status": resp.status_code,
+                "latency_ms": latency_ms,
+                "base_url": chatwoot_base,
+            }
+        except Exception as e:
+            latency_ms = int((time.perf_counter() - start) * 1000)
+            return {
+                "status": "offline",
+                "error": str(e),
+                "latency_ms": latency_ms,
+                "base_url": chatwoot_base,
+            }
