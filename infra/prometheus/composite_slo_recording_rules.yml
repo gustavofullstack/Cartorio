@@ -1,0 +1,169 @@
+# Prometheus Composite SLO Recording Rules (G6.D.T10)
+#
+# Recording rules para calcular SLIs e composite SLOs pre-agregados.
+# Evaluation interval: 30s (padrao)
+# Aplicar: promtool check rules composite_slo_recording_rules.yml
+#
+# Beneficios:
+# - Query Grafana/Prometheus muito mais rapida (pre-agregado)
+# - Dashboards consistentes (mesma formula)
+# - Alertas mais simples (sli:api_availability:ratio_30d < 0.995)
+#
+# Refs:
+# - infra/prometheus/slo_rules.yml (12 SLO alert rules)
+# - infra/grafana/slo_dashboard.json (7 panels)
+# - Google SRE Workbook cap. 5 (composite SLIs)
+#
+# Modified by Gustavo Almeida + cartorio-sre — G6 wave 29
+
+groups:
+  # ============================================================================
+  # Grupo 1: SLIs pre-agregados (4 SLIs oficiais)
+  # ============================================================================
+  - name: slis_composite
+    interval: 30s
+    rules:
+      # API Availability SLI (30d)
+      - record: sli:api_availability:ratio_30d
+        expr: |
+          sum(rate(http_requests_total{job="cartorio-api",code!~"5.."}[30d]))
+          /
+          sum(rate(http_requests_total{job="cartorio-api"}[30d]))
+
+      # API Latency p95 SLI (30d, success rate < 500ms)
+      - record: sli:api_latency_p95:ratio_30d
+        expr: |
+          sum(rate(http_request_duration_seconds_bucket{job="cartorio-api",le="0.5"}[30d]))
+          /
+          sum(rate(http_request_duration_seconds_count{job="cartorio-api"}[30d]))
+
+      # N8N Workflow Success SLI (7d)
+      - record: sli:n8n_workflow_success:ratio_7d
+        expr: |
+          sum(rate(n8n_workflow_execution_total{status="success"}[7d]))
+          /
+          sum(rate(n8n_workflow_execution_total[7d]))
+
+      # OpenClaw Response Time SLI (30d, success rate < 5s)
+      - record: sli:openclaw_response:ratio_30d
+        expr: |
+          sum(rate(openclaw_request_duration_seconds_bucket{le="5.0"}[30d]))
+          /
+          sum(rate(openclaw_request_duration_seconds_count[30d]))
+
+  # ============================================================================
+  # Grupo 2: Composite SLOs (media ponderada de SLIs)
+  # ============================================================================
+  - name: composite_slos
+    interval: 1m
+    rules:
+      # Composite Availability = media geometrica 2 SLIs
+      # Pesos: API 60% (mais critico), N8N 40%
+      - record: slo_composite_cartorio_availability_30d
+        expr: |
+          (
+            (sli:api_availability:ratio_30d ^ 0.6) *
+            (sli:n8n_workflow_success:ratio_7d ^ 0.4)
+          )
+
+      # Composite Latency = media geometrica 2 SLIs
+      # Pesos: API 70%, OpenClaw 30%
+      - record: slo_composite_cartorio_latency_30d
+        expr: |
+          (
+            (sli:api_latency_p95:ratio_30d ^ 0.7) *
+            (sli:openclaw_response:ratio_30d ^ 0.3)
+          )
+
+      # Composite SLO Global = media dos 2 composite SLIs
+      - record: slo_composite_cartorio_global_30d
+        expr: |
+          (
+            (sli:api_availability:ratio_30d ^ 0.4) *
+            (sli:api_latency_p95:ratio_30d ^ 0.3) *
+            (sli:n8n_workflow_success:ratio_7d ^ 0.2) *
+            (sli:openclaw_response:ratio_30d ^ 0.1)
+          )
+
+  # ============================================================================
+  # Grupo 3: Error budget remaining (30d)
+  # ============================================================================
+  - name: error_budget
+    interval: 1m
+    rules:
+      # Budget API Availability: 0.5% (100% - 99.5% SLO)
+      - record: slo_error_budget_remaining_30d
+        expr: |
+          (
+            (sli:api_availability:ratio_30d - 0.995)
+            /
+            (1 - 0.995)
+          )
+        labels:
+          slo_name: api_availability
+
+      - record: slo_error_budget_remaining_30d
+        expr: |
+          (
+            (sli:n8n_workflow_success:ratio_7d - 0.99)
+            /
+            (1 - 0.99)
+          )
+        labels:
+          slo_name: n8n_workflow_success
+
+      - record: slo_error_budget_remaining_30d
+        expr: |
+          (
+            (sli:openclaw_response:ratio_30d - 0.95)
+            /
+            (1 - 0.95)
+          )
+        labels:
+          slo_name: openclaw_response
+
+      - record: slo_error_budget_remaining_30d
+        expr: |
+          (
+            (slo_composite_cartorio_global_30d - 0.97)
+            /
+            (1 - 0.97)
+          )
+        labels:
+          slo_name: composite_global
+
+  # ============================================================================
+  # Grupo 4: Burn-rate windows (para alertas multi-window)
+  # ============================================================================
+  - name: burn_rates
+    interval: 30s
+    rules:
+      # Fast burn (1h) - 14.4x error budget consumption
+      - record: slo_burn_rate_fast_1h
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{job="cartorio-api",code!~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total{job="cartorio-api"}[1h]))
+          )
+        labels:
+          slo_name: api_availability
+          window: 1h
+          severity: critical
+
+      # Slow burn (6h) - 6x error budget consumption
+      - record: slo_burn_rate_slow_6h
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{job="cartorio-api",code!~"5.."}[6h]))
+            /
+            sum(rate(http_requests_total{job="cartorio-api"}[6h]))
+          )
+        labels:
+          slo_name: api_availability
+          window: 6h
+          severity: high
+
+# Total recording rules: 10
+# Modified by: Gustavo Almeida + Pietra orquestrador
+# Date: 2026-07-17 09:00 BRT
