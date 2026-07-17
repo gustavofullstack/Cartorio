@@ -8,6 +8,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-17 ~19:30 BRT)
 
 ### G7 consolidada (Waves 13–29) — START HERE
+- **2026-07-17** (**Lesson 211 — Mega-commit dos 148 artefatos G7 W13-28**: 155 files / 36k+ LOC; secrets scan CLEAN; working tree 148→2 untracked; SUI #14 resolvido): `.harness/memory/lesson-211-g7-artifacts-mega-commit-2026-07-17.md`
 - **2026-07-17** (**Lesson 210 — Testes do g7_orchestrator (15 PASSED) Wave 29 A1**: 6 parse_tasks + 2 status_cmd + 2 next_cmd + 3 main + 2 integration; pytest 3176→3191; gates verdes; 8 [~] abertas SUI-only → Wave 30 não há código): `.harness/memory/lesson-210-g7-orchestrator-tests-wave29-2026-07-17.md`
 - **2026-07-17** (**Lesson 209 — G7 Wave 29 closeout**: super_loop → G7 canônico; N8N inv 38 dual-format PASS; LGPD go-live dashboard; canal matrix live radar red; 8 [~] ainda SUI; W30-SUI next): `.harness/memory/lesson-209-g7-wave29-closeout-orchestrator-2026-07-17.md`
   - Artefatos: `scripts/super_loop_orchestrator.py` · `scripts/n8n_wf_inventory.py` · `docs/N8N_WF_INVENTORY_WAVE29_G7.md` · `docs/LGPD_GO_LIVE_DASHBOARD_G7.md` · `docs/CANAL_HEALTH_MATRIX_WAVE29_G7.md`
