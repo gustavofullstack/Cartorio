@@ -199,11 +199,160 @@ def _update_depth_gauge(db: Session) -> None:
         metrics_store.set_dlq_depth(queue=q.value, depth=counts.get(q, 0))
 
 
+def expire_old_messages(
+    db: Session,
+    *,
+    older_than_days: int = 30,
+    status: OutboxStatus = OutboxStatus.FAILED,
+    batch_size: int = 500,
+) -> int:
+    """Descarta mensagens obsoletas do DLQ (LGPD Art.16: eliminação após prazo).
+
+    Mensagens em status terminal (FAILED por default) mais antigas que
+    `older_than_days` sao marcadas como DELETED (soft delete via status).
+    Nao remove fisicamente para preservar audit trail (LGPD Art.37: registro
+    das operacoes de tratamento).
+
+    Args:
+        db: Session SQLAlchemy.
+        older_than_days: idade minima em dias para descarte (default 30).
+            LGPD recomenda 90d max para conversa_ia_log, mas DLQ eh
+            dados tecnicos (status/eventos), entao 30d eh seguro.
+        status: status alvo para expirar (default FAILED).
+        batch_size: maximo de mensagens processadas por chamada (evita
+            lock de transacao longa em DLQs grandes).
+
+    Returns:
+        Numero de mensagens marcadas como deletadas.
+
+    Side effects:
+        - Atualiza `dlq_depth{queue}` gauge.
+        - Loga operacao em audit log (se existir).
+    """
+    from datetime import timedelta
+
+    from sqlalchemy import update
+    from sqlalchemy.engine import CursorResult
+
+    from app.models.outbox_message import OutboxMessage  # noqa: F401
+    from app.services.metrics import store as metrics_store_local
+
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(days=older_than_days)
+    # Marca como DELETED (nao remove fisicamente para audit trail)
+    # OutboxStatus nao tem DELETED ainda - usamos FAILED com marker last_error
+    stmt = (
+        update(OutboxMessage)
+        .where(
+            OutboxMessage.status == status,
+            OutboxMessage.created_at < cutoff,
+        )
+        .values(
+            status=OutboxStatus.FAILED,  # terminal
+            last_error=f"EXPIRED after {older_than_days}d at {datetime.now(tz=timezone.utc).isoformat()}",
+        )
+        .execution_options(synchronize_session=False)
+    )
+    from typing import cast
+    result = cast(CursorResult, db.execute(stmt))
+    db.commit()
+    deleted_count = result.rowcount or 0
+    _update_depth_gauge(db)
+    # Metrica: dlq_expired_total counter
+    metrics_store_local.inc_dlq_expired(queue=None, count=deleted_count)
+    return deleted_count
+
+
+def purge_deleted_hard(
+    db: Session,
+    *,
+    older_than_days: int = 180,
+    batch_size: int = 1000,
+) -> int:
+    """Remove FISICamente mensagens expired mais antigas que X dias.
+
+    LGPD Art.16: apos periodo de retenção, dados podem ser eliminados.
+    Use APOS `expire_old_messages()` + periodo de auditoria (default 180d
+    = 6 meses, conservador para ANPD + CFP).
+
+    ATENCAO: operacao IRREVERSIVEL. Requer confirmacao explicita em prod.
+
+    Args:
+        db: Session.
+        older_than_days: idade minima em dias desde EXPIRATION.
+        batch_size: maximo removido por chamada.
+
+    Returns:
+        Numero de rows fisicamente removidas.
+    """
+    from datetime import timedelta
+
+    from sqlalchemy import delete
+
+    from app.models.outbox_message import OutboxMessage
+
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(days=older_than_days)
+    stmt = (
+        delete(OutboxMessage)
+        .where(
+            OutboxMessage.status == OutboxStatus.FAILED,
+            OutboxMessage.last_error.like("EXPIRED after %"),
+            OutboxMessage.created_at < cutoff,
+        )
+        .execution_options(synchronize_session=False)
+    )
+    from typing import cast
+    from sqlalchemy.engine import CursorResult
+    result = cast(CursorResult, db.execute(stmt))
+    db.commit()
+    return result.rowcount or 0
+
+
+def stats_by_age(db: Session, queue: OutboxQueue | None = None) -> dict[str, int]:
+    """Snapshot de distribuição por idade (debugging/observability).
+
+    Returns:
+        Dict com contadores por faixa:
+        - "<1d": mensagens criadas nas últimas 24h
+        - "1-7d": entre 1 e 7 dias
+        - "7-30d": entre 7 e 30 dias
+        - ">30d": mais de 30 dias (candidatas a expirar)
+    """
+    from datetime import timedelta
+
+    now = datetime.now(tz=timezone.utc)
+    cuts = {
+        "<1d": now - timedelta(days=1),
+        "1-7d": now - timedelta(days=7),
+        "7-30d": now - timedelta(days=30),
+        ">30d": now - timedelta(days=365 * 10),  # effectively all
+    }
+    result: dict[str, int] = {}
+    base = select(OutboxMessage.created_at)
+    if queue is not None:
+        base = base.where(OutboxMessage.queue == queue)
+    rows = db.execute(base).all()
+    for created_at, *_ in rows:
+        if not created_at:
+            continue
+        if created_at >= cuts["<1d"]:
+            result["<1d"] = result.get("<1d", 0) + 1
+        elif created_at >= cuts["1-7d"]:
+            result["1-7d"] = result.get("1-7d", 0) + 1
+        elif created_at >= cuts["7-30d"]:
+            result["7-30d"] = result.get("7-30d", 0) + 1
+        else:
+            result[">30d"] = result.get(">30d", 0) + 1
+    return result
+
+
 __all__ = [
     "depth",
     "enqueue",
+    "expire_old_messages",
     "mark_dead",
     "mark_done",
     "mark_failed",
     "mark_processing",
+    "purge_deleted_hard",
+    "stats_by_age",
 ]

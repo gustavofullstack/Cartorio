@@ -140,6 +140,23 @@ class MetricsStore:
         self._make_metric_or_skip_test("dlq_depth", "gauge")
         self.set_gauge("dlq_depth", float(depth), labels={"queue": queue})
 
+    def inc_dlq_expired(self, queue: str | None, count: int) -> None:
+        """Helper G8.08.T1: counter dlq_expired_total{queue}.
+
+        Chamado apos `dlq.expire_old_messages()` para observability de
+        retencao LGPD Art.16 (quanto foi descartado por idade).
+
+        Args:
+            queue: enum queue (evolution|chatwoot|telegram|outbox) ou None
+                para totais agregados.
+            count: numero de mensagens expiradas (soma no counter).
+        """
+        self._make_metric_or_skip_test("dlq_expired_total", "counter")
+        labels = {"queue": queue} if queue else {}
+        key = self._labels_key(labels)
+        current = self.counters.get("dlq_expired_total", {}).get(key, 0)
+        self.counters.setdefault("dlq_expired_total", {})[key] = current + count
+
     def set_audit_dead_mans_status(self, status_code: int) -> None:
         """Helper A13: gauge `audit_dead_mans_status` (3 niveis).
 
