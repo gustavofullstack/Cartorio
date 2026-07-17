@@ -3649,3 +3649,13 @@ Modified by Gustavo Almeida — 2026-07-17T21:27:14.486416+00:00
 - G8.09.T2 MagicDNS private host inventory
 - **Tests:** 88 passed (wave 40 suite)
 Modified by Gustavo Almeida — 2026-07-17T21:31:30.053585+00:00
+
+## 2026-07-17 — Wave 41 REAL COMPLETED ✅ (Hermes)
+
+- **Honest count:** 35 → **39/100** (+4)
+- G8.09.T3 private tunnel PII/log sink policy
+- G8.09.T4 SSH Tailscale ACL peers
+- G8.10.T1 X-Cartorio-Processing-Host middleware
+- G8.10.T2 DNS CI checks (socket + optional CF flag)
+- **Tests:** 24 passed (wave 41 suite)
+Modified by Gustavo Almeida — 2026-07-17T21:43:47.753107+00:00

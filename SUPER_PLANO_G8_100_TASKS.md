@@ -5,7 +5,7 @@
 
 ---
 
-> **HONESTY GATE:** `[x]` só com evidência. **35/100** (Wave 40: G8.04.T4, G8.06.T3/T4, G8.09.T2).
+> **HONESTY GATE:** `[x]` só com evidência. **39/100** (Wave 41: G8.09.T3/T4, G8.10.T1/T2).
 
 ## META
 
@@ -87,14 +87,14 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.09.T1 | Criar probe interna de conectividade para testar latência dentro da VPN Tailscale. | [x] | cartorio-sre |
 | G8.09.T2 | Configurar MagicDNS para redirecionar tráfego interno de banco e API sem expor portas publicamente. | [x] | cartorio-sre |
-| G8.09.T3 | Assegurar que dados pessoais e logs trafeguem estritamente por túneis privados. | [ ] | cartorio-lgpd |
-| G8.09.T4 | Validar o fluxo de acesso SSH seguro apenas a partir de nós autorizados na Tailscale. | [ ] | cartorio-sre |
+| G8.09.T3 | Assegurar que dados pessoais e logs trafeguem estritamente por túneis privados. | [x] | cartorio-lgpd |
+| G8.09.T4 | Validar o fluxo de acesso SSH seguro apenas a partir de nós autorizados na Tailscale. | [x] | cartorio-sre |
 
 ### Squad 10 — Proxy Traefik & DNS Cloudflare Routing (sre)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.10.T1 | Adicionar identificador dinâmico de host de processamento nas respostas HTTP. | [ ] | cartorio-sre |
-| G8.10.T2 | Integrar verificação de DNS automatizada via API Cloudflare no pipeline CI/CD. | [ ] | cartorio-sre |
+| G8.10.T1 | Adicionar identificador dinâmico de host de processamento nas respostas HTTP. | [x] | cartorio-sre |
+| G8.10.T2 | Integrar verificação de DNS automatizada via API Cloudflare no pipeline CI/CD. | [x] | cartorio-sre |
 | G8.10.T3 | Configurar mascaramento de requisições de auditoria nos arquivos de log do Traefik. | [ ] | cartorio-lgpd |
 | G8.10.T4 | Criar testes automatizados de roteamento externo simulando perda de pacotes. | [ ] | cartorio-sre |
 
