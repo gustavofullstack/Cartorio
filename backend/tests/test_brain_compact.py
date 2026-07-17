@@ -9,6 +9,7 @@ Validates:
 - compact loop-state preserva estrutura canonica (version, status, current_sprint)
 - edge cases: lista <30 mantem intacta, lista >30 trunca
 """
+
 from __future__ import annotations
 
 import json

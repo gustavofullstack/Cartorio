@@ -28,7 +28,7 @@ def test_list_llm_models_returns_27_items() -> None:
     body = resp.json()
     assert isinstance(body, list)
     assert len(body) == 27
-    
+
     # Verifica estrutura de um dos itens
     item = body[0]
     assert "name" in item

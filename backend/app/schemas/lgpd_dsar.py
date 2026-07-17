@@ -23,10 +23,16 @@ class LGPDRight(str, Enum):
 class DSARCreate(BaseModel):
     """Payload para criar DSAR (LGPD art. 18)."""
 
-    cpf: str = Field(..., min_length=11, max_length=14, description="CPF do titular (com ou sem formatacao)")
+    cpf: str = Field(
+        ..., min_length=11, max_length=14, description="CPF do titular (com ou sem formatacao)"
+    )
     email: EmailStr | None = Field(None, description="Email de contato")
-    phone: str | None = Field(None, min_length=10, max_length=15, description="Telefone (10-15 chars)")
-    rights: list[LGPDRight] = Field(..., min_length=1, max_length=7, description="Direitos exercidos (1-7)")
+    phone: str | None = Field(
+        None, min_length=10, max_length=15, description="Telefone (10-15 chars)"
+    )
+    rights: list[LGPDRight] = Field(
+        ..., min_length=1, max_length=7, description="Direitos exercidos (1-7)"
+    )
     justification: str | None = Field(None, max_length=500, description="Justificativa opcional")
 
 

@@ -92,6 +92,8 @@ def test_invalid_signature_rejected(mock_db: MagicMock) -> None:
         mock_settings.chatwoot_webhook_secret = "test_secret_key"
         payload = {"event": "message_created", "id": "evt_004"}
         raw_body = b'{"event":"message_created","id":"evt_004"}'
-        result = process_chatwoot_event(mock_db, payload, signature="invalid_sig", raw_body=raw_body)
+        result = process_chatwoot_event(
+            mock_db, payload, signature="invalid_sig", raw_body=raw_body
+        )
         assert result["status"] == "rejected"
         assert result["reason"] == "invalid_signature"

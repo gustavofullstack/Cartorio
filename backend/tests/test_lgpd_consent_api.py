@@ -86,6 +86,7 @@ def test_schema_consent_stats_com_breakdown() -> None:
 def test_schema_consent_stats_ratio_range() -> None:
     """consent_ratio deve ser 0.0-1.0 (Field constraint)."""
     import pytest
+
     with pytest.raises(Exception):  # ValidationError
         LGPDConsentStats(
             total=10,
@@ -100,6 +101,7 @@ def test_schema_consent_stats_ratio_range() -> None:
 def test_schema_consent_request_version_invalida() -> None:
     """version != v3 deve ser rejeitado."""
     import pytest
+
     with pytest.raises(Exception):  # ValidationError
         LGPDConsentRequest(accepted=True, version="v99")
 
@@ -113,6 +115,7 @@ def test_schema_consent_request_aceite_mesmo_sem_session() -> None:
 def test_schema_consent_endpoint_path() -> None:
     """Validar path do endpoint."""
     from app.api.v1.lgpd_consent import router
+
     routes = [r.path for r in router.routes]
     assert "/api/v1/lgpd/consent" in routes or "" in routes  # router tem prefix
     # Path completo
