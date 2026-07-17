@@ -7,8 +7,10 @@ Tools expostas:
 - cartorio_criar_protocolo: cria protocolo (com consentimento LGPD)
 - cartorio_gerar_segunda_via: gera link de download de PDF (segunda via)
 - cartorio_audit_verify: verifica integridade do audit log
+- cartorio_audit_hash_sequence: valida sequência de hashes offline (G8.07.T2)
 - cartorio_saudacao: health check
 - super_server_info: meta info
+- scrub_mcp_output em tools sensíveis (G8.07.T3)
 
 Modos de execucao:
 1. **Standalone** (`python mcp_server.py`): sobe uvicorn em :8100/MCP_SERVER_PORT.
@@ -139,6 +141,7 @@ async def cartorio_consultar_protocolo(numero: str) -> dict:
     from sqlalchemy import select
     from app.db import session_scope
     from app.models.protocolo import Protocolo
+    from app.services.mcp_pii import scrub_mcp_output
 
     try:
         with session_scope() as db:
@@ -147,29 +150,35 @@ async def cartorio_consultar_protocolo(numero: str) -> dict:
             ).scalar_one_or_none()
 
             if protocolo is None:
-                return {
-                    "erro": "PROTOCOLO_NOT_FOUND",
-                    "mensagem": f"Protocolo {numero} nao encontrado.",
-                    "numero": numero,
-                }
+                return scrub_mcp_output(
+                    {
+                        "erro": "PROTOCOLO_NOT_FOUND",
+                        "mensagem": f"Protocolo {numero} nao encontrado.",
+                        "numero": numero,
+                    }
+                )
 
-            return {
-                "numero": protocolo.numero,
-                "status": protocolo.status,
-                "etapa_atual": "criado",
-                "tipo": protocolo.tipo,
-                "canal_origem": protocolo.canal_origem,
-                "valor_base": str(protocolo.valor_base) if protocolo.valor_base else None,
-                "valor_total": str(protocolo.valor_total) if protocolo.valor_total else None,
-                "tabela_referencia": protocolo.tabela_referencia,
-                "prazo_estimado": f"{protocolo.prazo_dias} dias uteis"
-                if protocolo.prazo_dias
-                else None,
-                "proxima_acao": "Aguardando validacao humana do escrevente.",
-                "created_at": protocolo.created_at.isoformat() if protocolo.created_at else None,
-            }
+            return scrub_mcp_output(
+                {
+                    "numero": protocolo.numero,
+                    "status": protocolo.status,
+                    "etapa_atual": "criado",
+                    "tipo": protocolo.tipo,
+                    "canal_origem": protocolo.canal_origem,
+                    "valor_base": str(protocolo.valor_base) if protocolo.valor_base else None,
+                    "valor_total": str(protocolo.valor_total) if protocolo.valor_total else None,
+                    "tabela_referencia": protocolo.tabela_referencia,
+                    "prazo_estimado": f"{protocolo.prazo_dias} dias uteis"
+                    if protocolo.prazo_dias
+                    else None,
+                    "proxima_acao": "Aguardando validacao humana do escrevente.",
+                    "created_at": protocolo.created_at.isoformat()
+                    if protocolo.created_at
+                    else None,
+                }
+            )
     except Exception as e:
-        return {"erro": "INTERNAL_ERROR", "mensagem": str(e)[:200]}
+        return scrub_mcp_output({"erro": "INTERNAL_ERROR", "mensagem": str(e)[:200]})
 
 
 # ============================================================================
@@ -300,6 +309,7 @@ async def cartorio_audit_verify() -> dict:
     """Verifica integridade do audit log (hash chain + HMAC)."""
     from app.db import session_scope
     from app.services.audit import AuditService
+    from app.services.mcp_pii import scrub_mcp_output
 
     try:
         with session_scope() as db:
@@ -307,13 +317,55 @@ async def cartorio_audit_verify() -> dict:
             from app.models.audit_log import AuditLog
 
             total = db.query(AuditLog).count()
-        return {
-            "chain_ok": ok,
-            "last_valid_position": last_valid,
-            "total_entries": total,
-        }
+        return scrub_mcp_output(
+            {
+                "chain_ok": ok,
+                "last_valid_position": last_valid,
+                "total_entries": total,
+            }
+        )
     except Exception as e:
-        return {"erro": "INTERNAL_ERROR", "mensagem": str(e)[:200]}
+        return scrub_mcp_output({"erro": "INTERNAL_ERROR", "mensagem": str(e)[:200]})
+
+
+@mcp.tool(
+    name="cartorio_audit_hash_sequence",
+    description=(
+        "G8.07.T2: valida sequência de hashes SHA256 da audit chain **offline** "
+        "(sem DB). Recebe lista de entries {payload, timestamp, hash, prev_hash}. "
+        "Use para drills, mutmut killers e validação de samples exportados. "
+        "Para chain live no DB use cartorio_audit_verify."
+    ),
+)
+async def cartorio_audit_hash_sequence(entries: list[dict]) -> dict:
+    """Valida sequência de hashes da audit chain (offline).
+
+    Args:
+        entries: Lista ordenada (mais antiga → mais nova). Cada item:
+            payload (dict), timestamp (ISO str), hash (hex), prev_hash (hex|null).
+
+    Returns:
+        chain_ok, last_valid_position, total, broken_at, detail (sem PII raw).
+    """
+    from app.services.audit import AuditService
+    from app.services.mcp_pii import scrub_mcp_output
+
+    if not isinstance(entries, list):
+        return scrub_mcp_output(
+            {
+                "erro": "INVALID_ENTRIES",
+                "mensagem": "entries deve ser uma lista de objetos audit.",
+            }
+        )
+    if len(entries) > 5000:
+        return scrub_mcp_output(
+            {
+                "erro": "TOO_MANY_ENTRIES",
+                "mensagem": "limite 5000 entries por chamada MCP.",
+            }
+        )
+    result = AuditService.verify_hash_sequence(entries)
+    return scrub_mcp_output(result)
 
 
 # ============================================================================

@@ -20,7 +20,7 @@ Como usar:
         nome: Mapped[str] = ...
 
     obj = db.get(MinhaEntidade, 1)
-    obj.soft_delete()  # seta deleted_at = utcnow()
+    obj.soft_delete()  # seta deleted_at = now(UTC)
     obj.restore()      # seta deleted_at = None
     obj.is_deleted     # bool
 
@@ -39,7 +39,7 @@ Tabelas que NAO devem ter (system / audit):
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Select
@@ -87,7 +87,7 @@ class SoftDeleteMixin:
         `obj.deleted_at.replace(tzinfo=timezone.utc)`.
         """
         if self.deleted_at is None:
-            self.deleted_at = datetime.utcnow()
+            self.deleted_at = datetime.now(UTC).replace(tzinfo=None)
 
     def restore(self) -> None:
         """Desfaz soft delete (deleted_at=None)."""

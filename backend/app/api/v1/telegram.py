@@ -28,7 +28,7 @@ import logging
 import os
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -1262,7 +1262,7 @@ async def _client_profile_upsert(
                 profile["cpf_hash"] = hashlib.sha256(digits.encode()).hexdigest()[:32]
         if extra:
             profile.update(extra)
-        profile["updated_at"] = datetime.utcnow().isoformat() + "Z"
+        profile["updated_at"] = datetime.now(UTC).isoformat() + "Z"
         profile["key"] = str(key)
         await bus.client.set(
             f"tg:client:{key}",

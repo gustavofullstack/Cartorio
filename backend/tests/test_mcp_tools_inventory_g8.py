@@ -113,6 +113,7 @@ class TestMCPInventory:
             "cartorio_criar_protocolo",
             "cartorio_gerar_segunda_via",
             "cartorio_audit_verify",
+            "cartorio_audit_hash_sequence",  # G8.07.T2
             "cartorio_saudacao",
             "super_server_info",
         }
@@ -155,13 +156,16 @@ class TestMCPSourceCode:
         import re
 
         text = MCP_SERVER.read_text(encoding="utf-8")
-        # Extrai apenas linhas que NÃO estão em docstrings (heurística simples).
+        # Ignorar linhas de comentário inteiras para evitar falsos-positivos
+        code_lines = [line for line in text.splitlines() if not line.strip().startswith("#")]
+        code_text = "\n".join(code_lines)
+
         # Procura padrões de URL em chamadas de função (.get, .post, AsyncClient).
         bad_pattern = re.compile(
             r'(httpx\.|requests\.|url\s*=\s*|base_url\s*=\s*)["\'](https?://)?(localhost|127\.0\.0\.1):8000',
             re.IGNORECASE,
         )
-        matches = bad_pattern.findall(text)
+        matches = bad_pattern.findall(code_text)
         assert not matches, f"Self-loop HTTP detectado em código: {matches}"
         # Docstring pode conter "localhost:8000" explicando o que evitar (OK)
 

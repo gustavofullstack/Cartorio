@@ -1,10 +1,10 @@
 # API — Cartório Chatbot
 
-> **34 endpoints REST + 4 MCP tools + 16 N8N workflows + 6 webhooks.**
+> **126 OpenAPI paths · 13 MCP tools · 38 N8N WF exports (33 active) · webhooks dual-format Evolution.**
 > Base URL prod: `https://api.2notasudi.com.br`
 > OpenAPI/Swagger: `https://api.2notasudi.com.br/docs`
 > ReDoc: `https://api.2notasudi.com.br/redoc`
-> Versão: 0.6.0 (master)
+> Versão: 0.6.0 (master) · inventário N8N: `docs/N8N_WF_INVENTORY_WAVE29_G7.md`
 
 ---
 

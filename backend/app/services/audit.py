@@ -179,3 +179,56 @@ class AuditService:
             prev_hash = entry.hash
             last_valid = i + 1
         return True, len(entries)
+
+    @classmethod
+    def verify_hash_sequence(
+        cls,
+        entries: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """G8.07.T2 — valida sequência de hashes **offline** (sem DB).
+
+        Cada item de `entries` deve ter:
+          - payload: dict
+          - timestamp: str ISO (com T, microseconds se possível)
+          - hash: str hex SHA256
+          - prev_hash: str | None (None ou zeros = head)
+
+        Returns:
+            dict com chain_ok, last_valid_position, total, broken_at (ou None),
+            detail (mensagem curta sem PII).
+        """
+        prev_hash: str | None = None
+        last_valid = 0
+        for i, entry in enumerate(entries):
+            payload = entry.get("payload") or {}
+            if not isinstance(payload, dict):
+                return {
+                    "chain_ok": False,
+                    "last_valid_position": last_valid,
+                    "total": len(entries),
+                    "broken_at": i,
+                    "detail": "payload_not_dict",
+                }
+            ts = str(entry.get("timestamp") or "").replace(" ", "T")
+            stored_hash = str(entry.get("hash") or "")
+            entry_prev_raw = entry.get("prev_hash")
+            entry_prev = entry_prev_raw if entry_prev_raw else "0" * 64
+            prev_for_hash = prev_hash if prev_hash else "0" * 64
+            expected = cls._compute_hash(prev_for_hash, payload, ts)
+            if entry_prev != prev_for_hash or stored_hash != expected:
+                return {
+                    "chain_ok": False,
+                    "last_valid_position": last_valid,
+                    "total": len(entries),
+                    "broken_at": i,
+                    "detail": "hash_mismatch_or_prev_break",
+                }
+            prev_hash = stored_hash
+            last_valid = i + 1
+        return {
+            "chain_ok": True,
+            "last_valid_position": last_valid,
+            "total": len(entries),
+            "broken_at": None,
+            "detail": "ok",
+        }

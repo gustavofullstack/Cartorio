@@ -182,9 +182,16 @@ async def _llm_providers_health_loop() -> None:
                     except Exception:
                         pass
 
-                    token = settings.telegram_bot_token or "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
-                    chat_id = settings.audit_alert_telegram_chat_id or "6682284055"
-                    if token and chat_id:
+                    token = settings.telegram_bot_token
+                    chat_id = settings.audit_alert_telegram_chat_id
+                    if not token or not chat_id:
+                        logger.warning(
+                            'LLM MONITOR: TELEGRAM_BOT_TOKEN or '
+                            'AUDIT_ALERT_TELEGRAM_CHAT_ID not set, '
+                            'skipping Telegram alert for provider %s',
+                            provider,
+                        )
+                    else:
                         alert_text = (
                             f"🚨 *[LLM MONITOR]* Provedor `{provider}` está fora do ar na VPS!\n"
                             f"Erro: `{type(retry_err).__name__}`\n"
@@ -605,7 +612,7 @@ def mcp_servers() -> dict:
                 "transport": "http",
                 "url": f"http://localhost:{settings.app_port}/mcp",
                 "auth": "header: apikey",
-                "tools_count": 13,
+                "tools_count": 14,
                 "description": "API FastAPI como MCP tools (emolumento, protocolo, audit, segunda-via)",
                 "path": "backend/mcp_server.py",
             },

@@ -1,7 +1,7 @@
 # Integration Matrix G7 — Stack Completo (Wave 15)
 
 Mapa **driver de arquitetura** da integração total pedida no super plano.
-Status live: 2026-07-16 (radar + probes).
+Status live: 2026-07-17 Wave 32 (radar red 4↑3↓ · DNS soft 7/7 · N8N exports **38**).
 
 ---
 
@@ -21,7 +21,7 @@ Status live: 2026-07-16 (radar + probes).
      │ WhatsApp │              └────┬─────┘            │ LobeChat UI │
      └──────────┘                   │                  └─────────────┘
      ┌──────────┐   handoff    ┌────▼─────┐
-     │ Chatwoot │◄─────────────│  N8N 34+ │
+     │ Chatwoot │◄─────────────│  N8N 38  │
      └──────────┘              │ workflows│
                                └────┬─────┘
                     ┌───────────────┼───────────────┐

@@ -97,16 +97,22 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         if not self._should_intercept(request.method, request.url.path):
             return await call_next(request)
 
-        # Le header (case-insensitive: aceita Idempotency-Key, idempotency-key, etc)
+        # Le header (case-insensitive).
+        # G8.05.T2: aceita Idempotency-Key **e** X-Idempotency-Key (N8N/Evolution
+        # costumam prefixar X-; Starlette normaliza headers para lowercase).
         idem_key = (
             request.headers.get("idempotency-key")
             or request.headers.get("Idempotency-Key")
             or request.headers.get("IDEMPOTENCY-KEY")
+            or request.headers.get("x-idempotency-key")
+            or request.headers.get("X-Idempotency-Key")
+            or request.headers.get("X-IDEMPOTENCY-KEY")
         )
         if idem_key is None:
             # Tenta tambem chaves Title-case (Starlette Headers normaliza lowercase)
             for k, v in request.headers.items():
-                if k.lower() == "idempotency-key":
+                kl = k.lower()
+                if kl in ("idempotency-key", "x-idempotency-key"):
                     idem_key = v
                     break
 

@@ -166,3 +166,13 @@ All endpoints require `X-API-Key` header unless noted.
 **Auth**: Most endpoints require `X-API-Key` header
 **LGPD**: PII scrubbed before logging, audit trail on all mutations
 **Rate Limiting**: Redis-based, fail-open if Redis offline
+
+## Evolution dual-format (G7/G8)
+
+POST `/api/v1/webhook/evolution` aceita **ambos**:
+- legado root-level: `payload.message` / `payload.key`
+- aninhado: `payload.data.message` / `payload.data.key`
+
+Parser: `whatsapp.parse_evolution_payload` + `router._parse_dual_format`.
+Inventário N8N: **38** exports — `docs/N8N_WF_INVENTORY_WAVE29_G7.md`.
+Modified by Gustavo Almeida — Wave 32 honesty/docs.
