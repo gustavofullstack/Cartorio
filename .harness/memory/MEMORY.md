@@ -5,11 +5,14 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-17 ~17:30 BRT)
+## INDICE RAPIDO (atualizado 2026-07-17 ~19:30 BRT)
 
-### G7 consolidada (Waves 13–28) — START HERE
-- **2026-07-17** (**Lesson 208 — G7 loop state resync após sessão interrompida**: 3 commits ahead pushed, gates verdes (pytest 3176, mypy 155/155, ruff 0), NÃO re-empacotar Wave 30 G6 (já G7), 148 untracked identificados, 15 SUI list atualizada): `.harness/memory/lesson-208-g7-loop-state-resync-2026-07-17.md`
-- **2026-07-17** (**Lesson 206 — G7 Waves 13–28 CONSOLIDADA**: ~92% [x] / ~96% weighted agent-side; HOLD mestra DNS×3+env+tokens+QR+DPA+Privacy+AM+TS; 72h tracker ready NOT_STARTED; SUI pack Wave28): `.harness/memory/lesson-206-g7-waves-13-28-consolidada-2026-07-17.md`
+### G7 consolidada (Waves 13–29) — START HERE
+- **2026-07-17** (**Lesson 210 — Testes do g7_orchestrator (15 PASSED) Wave 29 A1**: 6 parse_tasks + 2 status_cmd + 2 next_cmd + 3 main + 2 integration; pytest 3176→3191; gates verdes; 8 [~] abertas SUI-only → Wave 30 não há código): `.harness/memory/lesson-210-g7-orchestrator-tests-wave29-2026-07-17.md`
+- **2026-07-17** (**Lesson 209 — G7 Wave 29 closeout**: super_loop → G7 canônico; N8N inv 38 dual-format PASS; LGPD go-live dashboard; canal matrix live radar red; 8 [~] ainda SUI; W30-SUI next): `.harness/memory/lesson-209-g7-wave29-closeout-orchestrator-2026-07-17.md`
+  - Artefatos: `scripts/super_loop_orchestrator.py` · `scripts/n8n_wf_inventory.py` · `docs/N8N_WF_INVENTORY_WAVE29_G7.md` · `docs/LGPD_GO_LIVE_DASHBOARD_G7.md` · `docs/CANAL_HEALTH_MATRIX_WAVE29_G7.md`
+- **2026-07-17** (**Lesson 208 — G7 loop state resync**: push 3 commits, gates 3176/mypy0/ruff0, gap orchestrator v25→G7 identificado): `.harness/memory/lesson-208-g7-loop-state-resync-2026-07-17.md`
+- **2026-07-17** (**Lesson 206 — G7 Waves 13–28 CONSOLIDADA**: ~92% [x] / ~96% weighted; HOLD mestra; 72h NOT_STARTED): `.harness/memory/lesson-206-g7-waves-13-28-consolidada-2026-07-17.md`
   - SUI residual: `docs/SUI_CHECKLIST_G7_WAVE28.md`
   - 72h window: `docs/STABILITY_WINDOW_72H_G7.md`
   - Trackers: `SUPER_PLANO_G7_100_TASKS.md` · `SUPER_GOALS_G7.md`
