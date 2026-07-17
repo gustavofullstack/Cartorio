@@ -3629,3 +3629,13 @@ Modified by Gustavo Almeida — 2026-07-17T21:13:56.040211+00:00
 - G8.09.T1 Tailscale TCP latency probe
 - **Tests:** 40 passed wave38 subset
 Modified by Gustavo Almeida — 2026-07-17T21:21:55.789770+00:00
+
+## 2026-07-17 — Wave 39 REAL COMPLETED ✅ (Hermes)
+
+- **Honest count:** 27 → **31/100** (+4)
+- G8.03.T4 Chatwoot LGPD erasure/anonymization service
+- G8.04.T2 LobeChat system prompt export package
+- G8.04.T3 OpenClaw credential rotation validation (fingerprints only)
+- G8.06.T2 Encrypted dump envelope + restore route checklist
+- **Tests:** 58 passed (wave 39 suite)
+Modified by Gustavo Almeida — 2026-07-17T21:27:14.486416+00:00

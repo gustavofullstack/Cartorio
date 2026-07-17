@@ -5,7 +5,7 @@
 
 ---
 
-> **HONESTY GATE:** `[x]` só com evidência. **27/100** evidenced (Wave 38: G8.03.T1/T3, G8.04.T1, G8.09.T1).
+> **HONESTY GATE:** `[x]` só com evidência. **31/100** (Wave 39: G8.03.T4, G8.04.T2/T3, G8.06.T2).
 
 ## META
 
@@ -40,14 +40,14 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.03.T1 | Desenvolver webhook receiver na API FastAPI para eventos `conversation_status_changed` do Chatwoot. | [x] | cartorio-dev |
 | G8.03.T2 | Desativar respostas automáticas do bot no Redis assim que o escrevente assumir a conversa (HITL). | [x] | cartorio-dev |
 | G8.03.T3 | Implementar workflow n8n que sincroniza estados do Chatwoot para desvio de mensagens a humanos. | [x] | cartorio-n8n |
-| G8.03.T4 | Validar o fluxo de exclusão/anonimização de dados no Chatwoot para cumprir Art. 18 LGPD. | [ ] | cartorio-lgpd |
+| G8.03.T4 | Validar o fluxo de exclusão/anonimização de dados no Chatwoot para cumprir Art. 18 LGPD. | [x] | cartorio-lgpd |
 
 ### Squad 04 — LobeChat & OpenClaw Agent Sync (dev+sre)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.04.T1 | Integrar OpenClaw no radar de status da API FastAPI (`/health/radar/expanded`). | [x] | cartorio-dev |
-| G8.04.T2 | Desenvolver script para empacotamento e export do prompt de sistema do LobeChat. | [ ] | cartorio-dev |
-| G8.04.T3 | Validar rotação de credenciais do OpenClaw no ambiente local de forma segura. | [ ] | cartorio-lgpd |
+| G8.04.T2 | Desenvolver script para empacotamento e export do prompt de sistema do LobeChat. | [x] | cartorio-dev |
+| G8.04.T3 | Validar rotação de credenciais do OpenClaw no ambiente local de forma segura. | [x] | cartorio-lgpd |
 | G8.04.T4 | Configurar roteamento de requisições de LobeChat para múltiplos nós do OpenClaw no Traefik. | [ ] | cartorio-sre |
 
 ### Squad 05 — Redis Caching & Idempotency (dev+n8n)
@@ -62,7 +62,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.06.T1 | Otimizar índices nas tabelas `atendimento`, `protocolo` e `audit_log` para acelerar relatórios. | [x] | cartorio-dev |
-| G8.06.T2 | Implementar dumps criptografados automatizados e verificar rotas de restauração seguras. | [ ] | cartorio-sre |
+| G8.06.T2 | Implementar dumps criptografados automatizados e verificar rotas de restauração seguras. | [x] | cartorio-sre |
 | G8.06.T3 | Validar políticas de RLS (Row Level Security) em todas as tabelas com informações de clientes. | [ ] | cartorio-lgpd |
 | G8.06.T4 | Criar triggers no Supabase para alertar o n8n sobre modificações críticas em metadados. | [ ] | cartorio-n8n |
 
