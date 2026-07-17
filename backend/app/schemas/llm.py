@@ -52,10 +52,16 @@ class LLMTestRequest(BaseModel):
 class LLMTestResponse(BaseModel):
     """Resultado da execução do teste de fumaça e latência do provedor."""
 
-    status: str = Field(..., description="'ok' se resposta obtida com sucesso, 'erro' caso contrário.")
+    status: str = Field(
+        ..., description="'ok' se resposta obtida com sucesso, 'erro' caso contrário."
+    )
     provider: str = Field(..., description="Provedor acionado no teste.")
     model: str = Field(..., description="Modelo utilizado na chamada.")
     response: Optional[str] = Field(default=None, description="Conteúdo retornado pelo LLM.")
-    latency_ms: int = Field(..., ge=0, description="Tempo decorrido para processamento da chamada em milissegundos.")
+    latency_ms: int = Field(
+        ..., ge=0, description="Tempo decorrido para processamento da chamada em milissegundos."
+    )
     dpa_status: str = Field(..., description="Status de DPA do provedor testado.")
-    erro: Optional[dict[str, Any]] = Field(default=None, description="Metadata da falha caso status='erro'.")
+    erro: Optional[dict[str, Any]] = Field(
+        default=None, description="Metadata da falha caso status='erro'."
+    )

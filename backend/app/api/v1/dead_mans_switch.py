@@ -16,6 +16,7 @@ Refs:
 
 Modified by Gustavo Almeida + cartorio-dev — G6 wave 26.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -55,11 +56,7 @@ def get_status(db: Session = Depends(get_db)) -> DeadMansSwitchStatus:
         )
 
     # Ultimo AuditLog entry
-    last_log = (
-        db.query(AuditLog)
-        .order_by(desc(AuditLog.timestamp))
-        .first()
-    )
+    last_log = db.query(AuditLog).order_by(desc(AuditLog.timestamp)).first()
 
     if not last_log or not last_log.timestamp:
         return DeadMansSwitchStatus(

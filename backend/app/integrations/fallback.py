@@ -238,7 +238,9 @@ async def chat_with_fallback(
         # Circuit Breaker check
         if await _is_circuit_open(provider):
             logger.warning("Circuit breaker is OPEN for provider: %s. Fast-failing.", provider)
-            last_exc = ChatError(f"Circuit breaker open for {provider}", kind=ChatErrorKind.HTTP_5XX)
+            last_exc = ChatError(
+                f"Circuit breaker open for {provider}", kind=ChatErrorKind.HTTP_5XX
+            )
             continue
 
         if idx > 0 and last_exc is not None:
@@ -373,6 +375,7 @@ async def _is_circuit_open(provider: str) -> bool:
     """Verifica se o circuito está aberto (bloqueado) para o provedor no Redis."""
     try:
         from app.services.redis_bus import get_bus
+
         bus = get_bus()
         if not bus or not bus.client:
             return False
@@ -387,16 +390,22 @@ async def _record_failure(provider: str, threshold: int = 3, open_time_seconds: 
     """Incrementa falhas consecutivas do provedor no Redis. Abre o circuito se atingir o limite."""
     try:
         from app.services.redis_bus import get_bus
+
         bus = get_bus()
         if not bus or not bus.client:
             return
-            
+
         key_fail = f"cb:fail:{provider}"
         fails = await bus.client.incr(key_fail)
         await bus.client.expire(key_fail, 60)  # Expira a contagem de falhas em 60 segundos
-        
+
         if fails >= threshold:
-            logger.error("Circuit breaker OPENING for provider %s for %d seconds (fails=%d)", provider, open_time_seconds, fails)
+            logger.error(
+                "Circuit breaker OPENING for provider %s for %d seconds (fails=%d)",
+                provider,
+                open_time_seconds,
+                fails,
+            )
             await bus.client.setex(f"cb:open:{provider}", open_time_seconds, "1")
             await bus.client.delete(key_fail)
     except Exception as e:
@@ -407,6 +416,7 @@ async def _record_success(provider: str) -> None:
     """Reseta as falhas acumuladas e fecha o circuito se estiver aberto no Redis."""
     try:
         from app.services.redis_bus import get_bus
+
         bus = get_bus()
         if not bus or not bus.client:
             return

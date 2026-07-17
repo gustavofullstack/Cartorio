@@ -101,8 +101,7 @@ API_TAGS_ORDERED = [
     {
         "name": "Auth",
         "description": (
-            "Auth login/refresh (JWT para DPO/operador). "
-            "Sprint 4+: substituir por Supabase Auth."
+            "Auth login/refresh (JWT para DPO/operador). Sprint 4+: substituir por Supabase Auth."
         ),
     },
     {
@@ -112,8 +111,7 @@ API_TAGS_ORDERED = [
     {
         "name": "Protocolo",
         "description": (
-            "Ciclo de vida do protocolo (DRAFT -> EM_ANDAMENTO -> CONCLUIDO). "
-            "HITL obrigatorio."
+            "Ciclo de vida do protocolo (DRAFT -> EM_ANDAMENTO -> CONCLUIDO). HITL obrigatorio."
         ),
     },
     {
@@ -127,8 +125,7 @@ API_TAGS_ORDERED = [
     {
         "name": "Integrations",
         "description": (
-            "Integracoes externas (OpenCode-Go, OpenClaw, N8N, Chatwoot). "
-            "X-API-Key required."
+            "Integracoes externas (OpenCode-Go, OpenClaw, N8N, Chatwoot). X-API-Key required."
         ),
     },
     {
@@ -172,17 +169,14 @@ SECURITY_SCHEMES = {
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "description": (
-            "JWT para endpoints LGPD v2 / DPO dashboard. "
-            "Mint via POST /api/v1/auth/login."
+            "JWT para endpoints LGPD v2 / DPO dashboard. Mint via POST /api/v1/auth/login."
         ),
     },
     "TelegramWebhookSecret": {
         "type": "apiKey",
         "in": "header",
         "name": "X-Telegram-Bot-Api-Secret-Token",
-        "description": (
-            "Telegram webhook HMAC secret. Compare_digest (timing-safe)."
-        ),
+        "description": ("Telegram webhook HMAC secret. Compare_digest (timing-safe)."),
     },
 }
 

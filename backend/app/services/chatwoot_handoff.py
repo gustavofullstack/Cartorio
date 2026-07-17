@@ -160,7 +160,9 @@ def _handle_message_created(db: Session, payload: dict[str, Any]) -> None:
 
     telegram_chat_id = atendimento.canal  # canal armazena telegram_chat_id quando aplicavel
     if not telegram_chat_id:
-        log.warning("chatwoot sync: chat_id Telegram nao encontrado para atendimento %s", atendimento.id)
+        log.warning(
+            "chatwoot sync: chat_id Telegram nao encontrado para atendimento %s", atendimento.id
+        )
         return
 
     # Envia a mensagem de volta ao Telegram via bot API (async fire-and-forget)
@@ -184,7 +186,9 @@ def _handle_message_created(db: Session, payload: dict[str, Any]) -> None:
     )
 
 
-async def _send_to_telegram(chat_id: str | int, content: str, sender_name: str, conv_id: Any) -> None:
+async def _send_to_telegram(
+    chat_id: str | int, content: str, sender_name: str, conv_id: Any
+) -> None:
     """Envia mensagem do escrevente (Chatwoot) de volta ao Telegram."""
     token = settings.telegram_bot_token
     if not token:
@@ -201,7 +205,9 @@ async def _send_to_telegram(chat_id: str | int, content: str, sender_name: str, 
                 json={"chat_id": str(chat_id), "text": text, "parse_mode": "Markdown"},
             )
             if r.status_code == 200:
-                log.info("chatwoot sync: mensagem enviada ao Telegram chat=%s conv=%s", chat_id, conv_id)
+                log.info(
+                    "chatwoot sync: mensagem enviada ao Telegram chat=%s conv=%s", chat_id, conv_id
+                )
             else:
                 log.warning(
                     "chatwoot sync: Telegram API retornou %d para chat=%s conv=%s",

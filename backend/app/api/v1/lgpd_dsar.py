@@ -18,6 +18,7 @@ Prazo legal: 15 dias (LGPD art. 18 §5o)
 
 Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 27.
 """
+
 from __future__ import annotations
 
 import hashlib
