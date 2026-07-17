@@ -41,6 +41,7 @@ from app.middleware.slow_log import SlowLogMiddleware  # noqa: E402
 from app.middleware.openapi_validator import install_openapi_validation_middleware  # noqa: E402
 from app.middleware.openapi_enhancer import install_openapi_enhancer  # noqa: E402
 from app.middleware.version_header import VersionHeaderMiddleware, install_version_endpoint  # noqa: E402
+from app.middleware.processing_host import ProcessingHostMiddleware  # noqa: E402
 from app.middleware.problem_details import install_problem_handlers  # noqa: E402
 from app.services.idempotency_store import RedisIdempotencyStore  # noqa: E402
 
@@ -472,6 +473,10 @@ install_openapi_enhancer(app)
 # + endpoint /version com metadata completa.
 app.add_middleware(VersionHeaderMiddleware)
 install_version_endpoint(app)
+
+# G8.10.T1 — processing host id on every response (X-Cartorio-Processing-Host).
+# Env PROCESSING_HOST_ID or socket.gethostname(); never PII.
+app.add_middleware(ProcessingHostMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
