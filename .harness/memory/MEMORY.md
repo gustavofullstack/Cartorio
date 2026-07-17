@@ -5,9 +5,13 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-16)
+## INDICE RAPIDO (atualizado 2026-07-17)
 
 ### Por data (consolidado)
+- **2026-07-17** (Lesson 199 — G7 Wave 26 metrics coverage raised to 94% + socket bind sandbox bypass + N8N idempotency calculator notice): `.harness/memory/lesson-199-g7-wave26-metrics-coverage-and-idempotency-2026-07-17.md`
+- **2026-07-17** (Lesson 198 — G7 Wave 26 MCP 13 tools + coding-vps 63 + WS ping 6 + Tailscale runbook + OpenClaw skills/1M + LGPD inventory 25 + N8N KISS + pre-commit + TG1000 31/31): `.harness/memory/lesson-198-g7-wave26-mcp-ws-openclaw-2026-07-17.md`
+- **2026-07-17** (Lesson 197 — G7 Wave 25 RLS audit + pool report + skills 6/6 + SOLID dead-code + Mapped 100% + CD EasyPanel + MVP cut-line + LE cert): `.harness/memory/lesson-197-g7-wave25-rls-skills-solid-mvp-2026-07-17.md`
+- **2026-07-17** (Lesson 196 — G7 Wave 24 Alembic head 0020 + backup dry-run + 502 playbook + mypy gate + composite 0/1/2 + 18 cov tests): `.harness/memory/lesson-196-g7-wave24-alembic-backup-composite-2026-07-17.md`
 - **2026-07-16** (Lesson 195 — G7 Wave 23 DMS/evo coverage tests + Chatwoot agent bot + LobeChat key runbooks + G7_PROGRESS_DASHBOARD): `.harness/memory/lesson-195-g7-wave23-cov-chatwoot-lobe-2026-07-16.md`
 - **2026-07-16** (Lesson 194 — G7 Wave 22 coverage gap 12 mods + canned v4 +10 + WA emolumento synthetic + DNS/Traefik SUI pack): `.harness/memory/lesson-194-g7-wave22-cov-canned-wa-dns-2026-07-16.md`
 - **2026-07-16** (Lesson 193 — G7 Wave 21 TG setWebhook helper + smoke inventory 26 + LobeChat apiKey scrub + mutmut status): `.harness/memory/lesson-193-g7-wave21-tg-smoke-lobechat-2026-07-16.md`
