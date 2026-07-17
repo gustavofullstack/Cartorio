@@ -37,7 +37,6 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import get_db
-from app.services.dialog_history import DialogHistoryConfig
 from app.services.pii import scrub
 from app.services.redis_bus import get_bus
 
