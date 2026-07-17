@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 class EmolumentoCalculoResponse(BaseModel):
     valor_total: float
