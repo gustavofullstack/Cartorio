@@ -8,6 +8,7 @@ Idempotente: rodar 2x na mesma entrada produz mesmo resultado.
 
 LGPD-safe: nao toca PII.
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -15,9 +16,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-DEFAULT_LOOP_STATE_PATH = Path(
-    "/Users/gustavoalmeida/projetos/Cartorio/.brain/loop-state.json"
-)
+DEFAULT_LOOP_STATE_PATH = Path("/Users/gustavoalmeida/projetos/Cartorio/.brain/loop-state.json")
 MAX_COMPLETED_TASKS = 30
 MAX_SESSIONS = 5
 

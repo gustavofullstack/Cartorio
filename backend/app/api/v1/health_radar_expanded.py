@@ -185,7 +185,9 @@ async def _check_traefik(domain: str) -> dict[str, Any]:
         }
 
 
-async def _check_socket(host: str, port: int, timeout: float = SSH_SOCKET_TIMEOUT) -> dict[str, Any]:
+async def _check_socket(
+    host: str, port: int, timeout: float = SSH_SOCKET_TIMEOUT
+) -> dict[str, Any]:
     """TCP socket connect check (host:port). UP = open; DOWN = connection refused/timeout.
 
     Args:
@@ -245,8 +247,8 @@ def _check_disk(path: str) -> dict[str, Any]:
     start = time.perf_counter()
     try:
         usage = shutil.disk_usage(path)
-        free_gb = usage.free / (1024 ** 3)
-        total_gb = usage.total / (1024 ** 3)
+        free_gb = usage.free / (1024**3)
+        total_gb = usage.total / (1024**3)
         percent_used = (usage.used / usage.total) * 100 if usage.total else 0
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         status = "warn" if percent_used > 85 else "up"

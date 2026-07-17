@@ -73,16 +73,12 @@ class TestLGPDPrivacyPolicyEndpoint:
 
     def test_endpoint_404_cliente_inexistente(self, http_client) -> None:
         """Cliente inexistente -> 404."""
-        resp = http_client.get(
-            "/api/v1/lgpd/privacy-policy/99999", headers=AUTH_HEADERS
-        )
+        resp = http_client.get("/api/v1/lgpd/privacy-policy/99999", headers=AUTH_HEADERS)
         assert resp.status_code == 404
 
     def test_endpoint_markdown_default(self, http_client, cliente_ativo) -> None:
         """GET sem query format -> markdown default."""
-        resp = http_client.get(
-            f"/api/v1/lgpd/privacy-policy/{cliente_ativo}", headers=AUTH_HEADERS
-        )
+        resp = http_client.get(f"/api/v1/lgpd/privacy-policy/{cliente_ativo}", headers=AUTH_HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         assert body["format"] == "markdown"
@@ -122,9 +118,7 @@ class TestLGPDPrivacyPolicyEndpoint:
 
     def test_endpoint_marca_nome_cliente_no_md(self, http_client, cliente_ativo) -> None:
         """policy_markdown NAO contem nome completo do cliente."""
-        resp = http_client.get(
-            f"/api/v1/lgpd/privacy-policy/{cliente_ativo}", headers=AUTH_HEADERS
-        )
+        resp = http_client.get(f"/api/v1/lgpd/privacy-policy/{cliente_ativo}", headers=AUTH_HEADERS)
         md = resp.json()["policy_markdown"]
         titular_section = md.split("---")[0]
         assert "Teste Endpoint Policy" not in titular_section
@@ -132,18 +126,14 @@ class TestLGPDPrivacyPolicyEndpoint:
 
     def test_endpoint_marca_email_no_md(self, http_client, cliente_ativo) -> None:
         """policy_markdown contem email mascarado."""
-        resp = http_client.get(
-            f"/api/v1/lgpd/privacy-policy/{cliente_ativo}", headers=AUTH_HEADERS
-        )
+        resp = http_client.get(f"/api/v1/lgpd/privacy-policy/{cliente_ativo}", headers=AUTH_HEADERS)
         md = resp.json()["policy_markdown"]
         assert "policy@example.com" not in md
         assert "p***@" in md
 
     def test_endpoint_contem_contact_dpo(self, http_client, cliente_ativo) -> None:
         """Endpoint inclui contact do DPO (Gustavo Almeida)."""
-        resp = http_client.get(
-            f"/api/v1/lgpd/privacy-policy/{cliente_ativo}", headers=AUTH_HEADERS
-        )
+        resp = http_client.get(f"/api/v1/lgpd/privacy-policy/{cliente_ativo}", headers=AUTH_HEADERS)
         md = resp.json()["policy_markdown"]
         assert "Gustavo Almeida" in md
         assert "6682284055" in md
