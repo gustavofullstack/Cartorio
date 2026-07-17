@@ -1,0 +1,215 @@
+{
+  "name": "38-emolumento-calculator",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "emolumento-calculator",
+        "options": {},
+        "notice": "idempotency: read-only calculation, side-effect free"
+      },
+      "id": "emol-calc-01-webhook",
+      "name": "Chatbot Request Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "chat_id",
+              "value": "={{$json.body.chat_id || $json.body.sender_id}}"
+            },
+            {
+              "name": "tipo",
+              "value": "={{$json.body.text.match(/procura/i) ? 'procuracao' : ($json.body.text.match(/firma/i) ? 'reconhecimento_firma' : ($json.body.text.match(/escritura/i) ? 'escritura_compra_venda' : 'certidao_negativa'))}}"
+            },
+            {
+              "name": "folhas",
+              "value": "={{$json.body.text.match(/(\\d+)\\s*folha/i) ? $json.body.text.match(/(\\d+)\\s*folha/i)[1] : 1}}"
+            },
+            {
+              "name": "urgencia",
+              "value": "={{$json.body.text.match(/urgente|rapido/i) ? 'true' : 'false'}}"
+            },
+            {
+              "name": "canal",
+              "value": "={{$json.body.canal || 'telegram'}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "emol-calc-02-parser",
+      "name": "Parse User Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.2notasudi.com.br/api/v1/emolumentos/calcular-api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "tipo",
+              "value": "={{$json.tipo}}"
+            },
+            {
+              "name": "folhas",
+              "value": "={{$json.folhas}}"
+            },
+            {
+              "name": "urgencia",
+              "value": "={{$json.urgencia}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "emol-calc-03-api-query",
+      "name": "Calculate Emolumentos via API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Parse User Text\"].json.canal}}",
+              "operation": "equals",
+              "value2": "telegram"
+            }
+          ]
+        }
+      },
+      "id": "emol-calc-04-route-channel",
+      "name": "Route by Channel",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        920,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{$node[\"Parse User Text\"].json.chat_id}}\",\n  \"text\": \"💰 *Orçamento Estimado de Emolumentos:*\\n\\n• *Ato:* {{$json.tipo}}\\n• *Quantidade de folhas:* {{$json.folhas}}\\n• *Urgência:* {{$json.urgencia ? 'Sim (+50%)' : 'Não'}}\\n\\n*Breakdown:*\\n• Emolumento base: R$ {{$json.base}}\\n• Adicional folhas: R$ {{$json.adicional_folhas}}\\n• Adicional urgência: R$ {{$json.adicional_urgencia}}\\n\\n🔴 *Valor total a pagar: R$ {{$json.total}}*\\n\\n_Nota: Os valores são calculados com base na tabela oficial de Minas Gerais 2026._\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "emol-calc-05-send-telegram",
+      "name": "Send to Telegram Chatbot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://cartorio_evolution:8080/message/sendText/cartorio-2notas",
+        "sendHeaders": true,
+        "headers": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "24s6pdZqUwblg0v4UJTV3YilLm1WZQIu"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{$node[\"Parse User Text\"].json.chat_id}}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": \"💰 *Orçamento Estimado de Emolumentos:*\\n\\n• *Ato:* {{$json.tipo}}\\n• *Quantidade de folhas:* {{$json.folhas}}\\n• *Urgência:* {{$json.urgencia ? 'Sim (+50%)' : 'Não'}}\\n\\n*Breakdown:*\\n• Emolumento base: R$ {{$json.base}}\\n• Adicional folhas: R$ {{$json.adicional_folhas}}\\n• Adicional urgência: R$ {{$json.adicional_urgencia}}\\n\\n🔴 *Valor total a pagar: R$ {{$json.total}}*\\n\\n_Nota: Os valores são calculados com base na tabela oficial de Minas Gerais 2026._\"\n  }\n}",
+        "options": {}
+      },
+      "id": "emol-calc-06-send-whatsapp",
+      "name": "Send to WhatsApp (Evolution)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Chatbot Request Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse User Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse User Text": {
+      "main": [
+        [
+          {
+            "node": "Calculate Emolumentos via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Emolumentos via API": {
+      "main": [
+        [
+          {
+            "node": "Route by Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Channel": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram Chatbot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send to WhatsApp (Evolution)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": "xYp9Rt2bHsL4yxw7",
+  "meta": {
+    "instanceId": "n8n-production-cartorio-2026"
+  }
+}

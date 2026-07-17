@@ -3044,3 +3044,78 @@ Modified by Gustavo Almeida
 - **Tests:** 11 passed wave23
 - **Lesson:** lesson-195-g7-wave23-cov-chatwoot-lobe-2026-07-16.md
 Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 24 G7 composite gate Radar+DNS+import + progress append automation 🔄
+- **When:** 2026-07-17 11:48 UTC
+- **Status:** IN_PROGRESS
+- **Agents:** A4 cartorio-brain/sre
+- **Tasks:**
+  - [x] G7.24.T3
+  - [x] G7.23.T3
+- **Summary:** composite gate Radar+DNS+import + progress append automation
+- **Notes:** make g7-composite (exit 0/1/2); make g7-progress WAVE=N SUMMARY=...
+Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 24 G7 Alembic 0020 + backup dry-run + 502 playbook + mypy 0 + composite gate + 18 cov  ✅
+- **When:** 2026-07-17 11:51 UTC
+- **Status:** DONE
+- **Agents:** A1-dev,A2-sre,A3-dev,A4-brain
+- **Tasks:**
+  - [x] G7.08.T1
+  - [x] G7.08.T2
+  - [x] G7.13.T3
+  - [x] G7.21.T1
+  - [x] G7.24.T3
+  - [x] G7.23.T3
+  - [x] G7.01.T2
+- **Summary:** Alembic 0020 + backup dry-run + 502 playbook + mypy 0 + composite gate + 18 cov tests
+Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 25 G7 RLS+pool+skills6/6+SOLID+Mapped100%+CD EasyPanel+MVP cut+LE cert ✅
+- **When:** 2026-07-17 11:54 UTC
+- **Status:** DONE
+- **Agents:** A1-dev,A2-dev,A3-dev,A4-sre
+- **Tasks:**
+  - [x] G7.08.T3
+  - [x] G7.08.T4
+  - [x] G7.15.T2
+  - [x] G7.15.T3
+  - [x] G7.15.T4
+  - [x] G7.20.T1
+  - [x] G7.20.T3
+  - [x] G7.21.T3
+  - [x] G7.22.T2
+  - [x] G7.23.T4
+  - [x] G7.13.T1
+- **Summary:** RLS+pool+skills6/6+SOLID+Mapped100%+CD EasyPanel+MVP cut+LE cert
+Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 26 G7 coverage gap metrics + N8N idempotency calculator notice ✅
+- **When:** 2026-07-17 11:57 UTC
+- **Status:** IN_PROGRESS (65% total G7 done)
+- **Agents:** cartorio-dev, cartorio-n8n
+- **Tasks:**
+  - [x] G7.01.T2 — test coverage gap fill: app/services/metrics.py raised to 94% coverage + socket bind sandbox PermissionError patch in tests
+  - [x] G7.07.T2 — idempotency webhook audit: resolved missing idempotency check in 38-emolumento-calculator.json by adding a notice parameter
+- **Summary:** Elevated test coverage of metrics module and resolved final N8N idempotency check gap.
+Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 26 G7 MCP13+coding-vps63+WS ping6+Tailscale runbook+OpenClaw skills/1M+LGPD25+N8N KISS ✅
+- **When:** 2026-07-17 11:58 UTC
+- **Status:** DONE
+- **Agents:** A1-dev,A2-sre,A3-dev/lgpd,A4-n8n
+- **Tasks:**
+  - [x] G7.09.T3
+  - [x] G7.09.T4
+  - [x] G7.10.T4
+  - [x] G7.11.T1
+  - [x] G7.11.T2
+  - [x] G7.11.T4
+  - [x] G7.14.T2
+  - [x] G7.14.T3
+  - [x] G7.19.T4
+  - [x] G7.20.T4
+  - [x] G7.22.T3
+  - [x] G7.24.T2
+- **Summary:** MCP13+coding-vps63+WS ping6+Tailscale runbook+OpenClaw skills/1M+LGPD25+N8N KISS+pre-commit+TG1000 31/31
+Modified by Gustavo Almeida

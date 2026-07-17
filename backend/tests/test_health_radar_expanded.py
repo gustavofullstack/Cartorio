@@ -205,10 +205,14 @@ def test_socket_check_handles_unreachable(host: str, port: int) -> None:
 
 def test_socket_check_open_port() -> None:
     """Porta aberta (loopback) -> up."""
+    import pytest
     import socket as stdlib_socket
 
     server = stdlib_socket.socket(stdlib_socket.AF_INET, stdlib_socket.SOCK_STREAM)
-    server.bind(("127.0.0.1", 0))
+    try:
+        server.bind(("127.0.0.1", 0))
+    except PermissionError:
+        pytest.skip("Socket bind nao permitido no sandbox do Trae/Gemini")
     server.listen(1)
     port = server.getsockname()[1]
     try:
@@ -221,11 +225,15 @@ def test_socket_check_open_port() -> None:
 
 def test_socket_check_closed_port() -> None:
     """Porta explicitamente nao-escuta -> down com ConnectionRefusedError."""
+    import pytest
     import socket as stdlib_socket
 
-    with stdlib_socket.socket(stdlib_socket.AF_INET, stdlib_socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
+    try:
+        with stdlib_socket.socket(stdlib_socket.AF_INET, stdlib_socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+    except PermissionError:
+        pytest.skip("Socket bind nao permitido no sandbox do Trae/Gemini")
     result = asyncio.run(_check_socket("127.0.0.1", port, timeout=1.0))
     assert result["status"] == "down"
 

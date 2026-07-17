@@ -462,3 +462,37 @@ class TestMetricsHelpersEdge:
         output = s.render_prometheus()
         assert "# TYPE my_gauge gauge" in output
         assert 'my_gauge{queue="evolution"} 12.500000' in output
+
+    def test_inc_rate_limit_total(self) -> None:
+        """inc_rate_limit_total incrementa o contador cartorio_rate_limit_total."""
+        from app.services.metrics import MetricsStore
+
+        s = MetricsStore()
+        s.inc_rate_limit_total("sliding", "n8n")
+        assert s.counters["cartorio_rate_limit_total"]["layer=sliding|tier=n8n"] == 1
+
+    def test_render_metrics_json(self, client) -> None:
+        """render_metrics_json retorna dicionario estruturado com as metricas."""
+        from app.services.metrics import render_metrics_json
+        from app.db import session_scope
+
+        # Executando sem DB session
+        res_no_db = render_metrics_json(db=None)
+        assert isinstance(res_no_db, dict)
+        assert "uptime_seconds" in res_no_db
+        assert "db_pool" in res_no_db
+
+        # Executando com DB session
+        with session_scope() as db:
+            res_db = render_metrics_json(db=db)
+        assert isinstance(res_db, dict)
+        assert "clientes_total" in res_db
+        assert "protocolos_total" in res_db
+
+    def test_collect_pool_metrics(self) -> None:
+        """collect_pool_metrics retorna os gauges do pool do banco."""
+        from app.services.metrics import collect_pool_metrics
+        res = collect_pool_metrics()
+        assert isinstance(res, dict)
+        assert "cartorio_db_pool_checked_out" in res
+        assert "cartorio_db_pool_size" in res
