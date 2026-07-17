@@ -1,9 +1,8 @@
 {
   "$schema": "https://cartorio.com/schemas/agent-tools-v1.json",
   "version": "1.0.0",
-  "updated_at": "2026-06-25",
+  "updated_at": "2026-07-17",
   "purpose": "SQUAD E E4 - registry canonico das tools que OpenClaw CartorioBot pode chamar. Cada tool tem: name, provider, endpoint, auth, pii_safe, rate_limit, version. OpenClaw le este JSON e expoe as tools no MCP server para o agent runtime.",
-
   "tools": [
     {
       "name": "cartorio_api_health",
@@ -206,7 +205,6 @@
       "description": "Status do proprio OpenClaw. LGPD-safe. Retorna {ok, status}"
     }
   ],
-
   "metrics": {
     "tool_call_total": "cartorio_agent_tool_calls_total{tool,status}",
     "tool_latency_ms": "cartorio_agent_tool_latency_ms{tool}",
@@ -215,7 +213,6 @@
     "tokens_out": "cartorio_agent_tokens_out_total{model}",
     "think_tokens": "cartorio_agent_thinking_tokens_total{model}"
   },
-
   "thinking": {
     "enabled_always": true,
     "mode": "adaptive",
@@ -223,18 +220,38 @@
     "model": "minimax-m3",
     "context_window_tokens": 1048576
   },
-
   "failover_chain": {
-    "order": ["opencode_go", "openclaw", "openrouter"],
+    "order": [
+      "opencode_go",
+      "openclaw",
+      "openrouter"
+    ],
     "trigger": "rate_limit_429 OR timeout_5s OR error_5xx",
     "retries_per_provider": 2,
-    "backoff_ms": [1000, 2000]
+    "backoff_ms": [
+      1000,
+      2000
+    ]
   },
-
   "metadata": {
     "total_tools": 20,
-    "providers": ["api", "n8n", "supabase", "redis", "chatwoot", "evolution", "opencode_go", "openclaw"],
+    "providers": [
+      "api",
+      "n8n",
+      "supabase",
+      "redis",
+      "chatwoot",
+      "evolution",
+      "opencode_go",
+      "openclaw"
+    ],
     "pii_safe_tools": 7,
-    "lgpd_compliance": "Todas as tools com pii_safe=false exigem consent_granted=true antes de chamar. Audit log obrigatorio em cada tool call"
+    "lgpd_compliance": "Todas as tools com pii_safe=false exigem consent_granted=true antes de chamar. Audit log obrigatorio em cada tool call",
+    "skills_registry_sync": {
+      "doc": "docs/OPENCLAW_SKILLS_REGISTRY_G7.md",
+      "runtime_skills": 7,
+      "platform_skills_agents_dir": 12,
+      "wave": "G7.14.T2 / Wave26"
+    }
   }
 }

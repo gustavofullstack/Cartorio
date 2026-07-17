@@ -38,24 +38,19 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.services.crypto import mask_email_display, mask_nome
+
 logger = logging.getLogger(__name__)
 
 
 def _mask_nome(nome: str) -> str:
-    """Mascara nome: primeira letra de cada parte + asteriscos. LGPD D29."""
-    parts = nome.strip().split()
-    masked = " ".join(f"{p[0]}***" if p else "" for p in parts)
-    return masked or "[nome indisponivel]"
+    """Mascara nome (thin wrapper — implementacao em crypto.mask_nome)."""
+    return mask_nome(nome, empty="[nome indisponivel]")
 
 
 def _mask_email(email: str | None) -> str:
-    """Mascara email: primeira letra local + TLD completo. LGPD D29."""
-    if not email or "@" not in email:
-        return "[email indisponivel]"
-    local, domain = email.rsplit("@", 1)
-    # Mostra apenas TLD (gmail.com, uol.com.br) sem subdomínio
-    tld = domain.split(".")[-1] if domain else ""
-    return f"{local[:1]}***@{tld}"
+    """Mascara email com TLD-only (LGPD D29 export)."""
+    return mask_email_display(email, empty="[email indisponivel]", domain_mode="tld")
 
 
 @dataclass

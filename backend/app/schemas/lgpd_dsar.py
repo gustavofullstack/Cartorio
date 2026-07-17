@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class LGPDRight(str, Enum):
@@ -22,6 +22,12 @@ class LGPDRight(str, Enum):
 
 class DSARCreate(BaseModel):
     """Payload para criar DSAR (LGPD art. 18)."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
 
     cpf: str = Field(..., min_length=11, max_length=14, description="CPF do titular (com ou sem formatacao)")
     email: EmailStr | None = Field(None, description="Email de contato")

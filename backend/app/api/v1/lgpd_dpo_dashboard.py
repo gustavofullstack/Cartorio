@@ -36,12 +36,6 @@ dpo_dashboard_router = APIRouter(tags=["lgpd-dpo-dashboard"], prefix="/lgpd/dpo"
 # ============================================================================
 
 
-def _interval_sql(days: int) -> str:
-    """Retorna expressao SQL para now - N days, compativel com SQLite/Postgres."""
-    # Ambos: -N days via NOW() ou datetime('now')
-    return f"-{days} days"
-
-
 def _interval_days_sqlite(days: int) -> str:
     """Expressao SQL compativel com SQLite test para now - N days."""
     return f"datetime('now', '-{days} days')"

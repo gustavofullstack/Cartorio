@@ -5,9 +5,24 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-17)
+## INDICE RAPIDO (atualizado 2026-07-17 Wave 28)
+
+### G7 consolidada (Waves 13–28) — START HERE
+- **2026-07-17** (**Lesson 206 — G7 Waves 13–28 CONSOLIDADA**: ~92% [x] / ~96% weighted agent-side; HOLD mestra DNS×3+env+tokens+QR+DPA+Privacy+AM+TS; 72h tracker ready NOT_STARTED; SUI pack Wave28): `.harness/memory/lesson-206-g7-waves-13-28-consolidada-2026-07-17.md`
+  - SUI residual: `docs/SUI_CHECKLIST_G7_WAVE28.md`
+  - 72h window: `docs/STABILITY_WINDOW_72H_G7.md`
+  - Trackers: `SUPER_PLANO_G7_100_TASKS.md` · `SUPER_GOALS_G7.md`
+
+### Lessons 200–207 (Wave 27–28)
+- **2026-07-17** (Lesson 207 — G7 Wave 28 A4: SUI one-pagers WA emolumento + Chatwoot go-live master + OpenClaw deploy + Tailscale SSH radar; SUPER_PLANO partials Wave28 SUI pack refreshed; live still [~]): `.harness/memory/lesson-207-g7-wave28-a4-sui-packs-2026-07-17.md`
+- **2026-07-17** (Lesson 206 — consolidada G7 W13–28 + HOLD mestra + métricas + anti-padrões + go-live pack): `.harness/memory/lesson-206-g7-waves-13-28-consolidada-2026-07-17.md`
+- **2026-07-17** (Lesson 203 — G7 Wave 27 A4: 3 intents LobeChat→OpenClaw synthetic + Traefik routers-merged-g7 + radar/expanded redeploy runbook): `.harness/memory/lesson-203-g7-wave27-a4-intents-radar-2026-07-17.md`
+- **2026-07-17** (Lesson 202 — G7 Wave 27 A3 LGPD: DPA MiniMax READY_TO_SIGN + Privacy Policy v3 draft + publish checklist; sign/publish SUI): `.harness/memory/lesson-202-g7-wave27-a3-lgpd-2026-07-17.md`
+- **2026-07-17** (Lesson 201 — G7 Wave 27 A2 Traefik obs: access log debug + edge rate-limit middleware HOLD): `.harness/memory/lesson-201-g7-wave27-a2-traefik-obs-2026-07-17.md`
+- **2026-07-17** (Lesson 200 — G7 Wave 27 A1: Pydantic strict key inputs + service DRY mask_nome/email_display): `.harness/memory/lesson-200-g7-wave27-a1-pydantic-dry-2026-07-17.md`
 
 ### Por data (consolidado)
+- **2026-07-17** (Lesson 207/206/203/202 — ver blocos acima)
 - **2026-07-17** (Lesson 199 — G7 Wave 26 metrics coverage raised to 94% + socket bind sandbox bypass + N8N idempotency calculator notice): `.harness/memory/lesson-199-g7-wave26-metrics-coverage-and-idempotency-2026-07-17.md`
 - **2026-07-17** (Lesson 198 — G7 Wave 26 MCP 13 tools + coding-vps 63 + WS ping 6 + Tailscale runbook + OpenClaw skills/1M + LGPD inventory 25 + N8N KISS + pre-commit + TG1000 31/31): `.harness/memory/lesson-198-g7-wave26-mcp-ws-openclaw-2026-07-17.md`
 - **2026-07-17** (Lesson 197 — G7 Wave 25 RLS audit + pool report + skills 6/6 + SOLID dead-code + Mapped 100% + CD EasyPanel + MVP cut-line + LE cert): `.harness/memory/lesson-197-g7-wave25-rls-skills-solid-mvp-2026-07-17.md`

@@ -31,6 +31,8 @@ from app.services.crypto import (  # noqa: E402
     mask_cpf,
     mask_email,
     mask_cnpj,
+    mask_email_display,
+    mask_nome,
 )
 
 
@@ -134,3 +136,18 @@ def test_mask_email_sem_arroba() -> None:
 def test_mask_email_vazio() -> None:
     """Email vazio retorna string vazia."""
     assert mask_email("") == ""
+
+
+# ============================================================================
+# mask_nome / mask_email_display (G7.20.T2 DRY shared helpers)
+# ============================================================================
+
+
+def test_mask_nome_partes() -> None:
+    assert mask_nome("Gustavo Almeida") == "G*** A***"
+    assert mask_nome("") == "[nome indisponivel]"
+
+
+def test_mask_email_display_modes() -> None:
+    assert mask_email_display("a@b.com") == "a***@b.com"
+    assert mask_email_display("a@b.com", domain_mode="tld") == "a***@com"

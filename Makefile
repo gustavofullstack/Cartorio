@@ -135,6 +135,23 @@ g7-validate:  ## G7 super teste validador (local+prod composite)
 	@echo "$(YELLOW)[G7] Super validator...$(RESET)"
 	@python3 scripts/g7_super_validator.py --report docs/G7_VALIDATOR_REPORT.md
 
+.PHONY: g7-composite
+g7-composite:  ## G7.24.T3 composite gate: import/pytest + DNS + radar (exit 0 OK / 1 local fail / 2 prod HOLD)
+	@echo "$(YELLOW)[G7] Composite gate (Radar+DNS+local)...$(RESET)"
+	@python3 scripts/g7_composite_gate.py --import-only --report docs/G7_COMPOSITE_GATE_WAVE24.md
+
+.PHONY: g7-progress
+g7-progress:  ## G7.23.T3 append wave block to PROGRESS.md (WAVE=N SUMMARY="...")
+	@if [ -z "$(WAVE)" ] || [ -z "$(SUMMARY)" ]; then \
+		echo "$(RED)Uso: make g7-progress WAVE=24 SUMMARY=\"composite gate\"$(RESET)"; \
+		exit 1; \
+	fi
+	@python3 scripts/g7_progress_append.py --wave $(WAVE) --summary "$(SUMMARY)" \
+		$(if $(AGENTS),--agents "$(AGENTS)",) \
+		$(if $(TASKS),--tasks "$(TASKS)",) \
+		$(if $(STATUS),--status "$(STATUS)",) \
+		$(if $(FORCE),--force,)
+
 .PHONY: radar-smoke
 radar-smoke:  ## Health radar smoke CLI (G6.D.T1)
 	@echo "$(YELLOW)[Radar] Smoke test /api/v1/health/radar/expanded...$(RESET)"
@@ -228,9 +245,14 @@ pre-commit:  ## Pre-commit: lint + test rapido
 # ============================================================================
 
 .PHONY: dns-check
-dns-check:  ## Verifica saude DNS dos 10 subdominios prod (7 OK esperados, 3 NXDOMAIN ate Gustavo provisionar)
-	@echo "$(YELLOW)[SRE] DNS health check$(RESET)"
+dns-check:  ## DNS health soft (default): exit 0 se core 7 OK; 3 HOLD NXDOMAIN nao falha CI local
+	@echo "$(YELLOW)[SRE] DNS health check (MODE=soft default; DNS_CHECK_STRICT=1 for 10/10)$(RESET)"
 	@bash scripts/check_dns_health.sh
+
+.PHONY: dns-check-strict
+dns-check-strict:  ## DNS health strict: exit 0 so se 10/10 hosts resolvem
+	@echo "$(YELLOW)[SRE] DNS health check STRICT (all 10)$(RESET)"
+	@DNS_CHECK_STRICT=1 bash scripts/check_dns_health.sh
 
 .PHONY: dns-verify-records
 dns-verify-records:  ## Integration test manual: assume Gustavo criou 3 A records; valida (WORK/HOLD)

@@ -13,7 +13,7 @@
 
 | DPA | Provider | Função | Status | Template | Bloqueio LGPD |
 |-----|----------|--------|--------|----------|---------------|
-| D01 | MiniMax (MiniMax-M2.7/M3) | LLM provider (harness operacional) | TEMPLATE | [dpa_minimax_template.md](dpa_minimax_template.md) | LGPD-015 |
+| D01 | MiniMax (MiniMax-M2.7/M3) | LLM bot multi-canal + ops scrubbed | **READY_TO_SIGN** | [dpa_minimax_template.md](dpa_minimax_template.md) + [../DPA_MINIMAX_READY_TO_SIGN_G7.md](../DPA_MINIMAX_READY_TO_SIGN_G7.md) | LGPD-015 |
 | D02 | Evolution API | WhatsApp Business API gateway | TEMPLATE | [dpa_evolution_api_template.md](dpa_evolution_api_template.md) | LGPD-013 |
 | D03 | Opencode-Go (DeepSeek-v4 flash) | LLM provider (clientes finais) | TEMPLATE | [dpa_opencode_go_template.md](dpa_opencode_go_template.md) | LGPD-014 |
 | D04 | Cloudflare | CDN/WAF/DNS/Edge | **TEMPLATE NOVO** | [dpa_cloudflare_template.md](dpa_cloudflare_template.md) | LGPD-018 |
@@ -24,10 +24,10 @@
 ## Status por DPA
 
 ### D01 — MiniMax (SQUAD D D01)
-- **Status:** TEMPLATE PRONTO (16k bytes, 2026-06-23 20:12)
-- **Diferencial:** processa PII **operacional do harness** (código-fonte com PII hardcoded)
-- **Pendente:** assinatura Gustavo + DPO + contraparte MiniMax
-- **Bloqueio:** LGPD-015
+- **Status:** **READY_TO_SIGN** (G7 Wave 27 — 2026-07-17) — pacote em `docs/DPA_MINIMAX_READY_TO_SIGN_G7.md`
+- **Diferencial:** inferência LLM do **bot multi-canal** + harness; **somente inputs scrubbed** (NO raw CPF)
+- **Pendente (SUI):** assinatura Gustavo + DPO + contraparte MiniMax → PDF `dpa_minimax.pdf`
+- **Bloqueio:** LGPD-015 até SIGNED
 
 ### D02 — Evolution API (SQUAD D D02)
 - **Status:** TEMPLATE PRONTO (16k bytes, 2026-06-23 19:35)

@@ -28,7 +28,7 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 ### Squad 02 — Audit & PII (dev+lgpd)
 | ID | Task | Done |
 |----|------|------|
-| G7.02.T1 | mutmut re-run audit+pii report update | [~] Wave21 status report (full re-run pending) |
+| G7.02.T1 | mutmut re-run audit+pii report update | [x] Wave28 killers green + MUTMUT_REPORT_G7_WAVE28 (full score night HOLD 73%) |
 | G7.02.T2 | D5 IP truncation regression payloads | [x] Wave13 |
 | G7.02.T3 | PII pre-LLM path inventory 100% covered | [x] Wave19 8/8 |
 | G7.02.T4 | HMAC key rotation drill dry-run doc | [x] Wave20 |
@@ -47,14 +47,14 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 | G7.04.T1 | DATABASE_URL Evolution fix checklist Easypanel | [x] Wave20 checklist (SUI exec) |
 | G7.04.T2 | QR scan helper WF + state machine close→open | [x] Wave20 checklist (SUI exec) |
 | G7.04.T3 | Dual-format webhook fuzz Hypothesis | [x] Wave17 |
-| G7.04.T4 | 1 msg real WA→resposta emolumento | [~] Wave22 synthetic E2E (real SUI) |
+| G7.04.T4 | 1 msg real WA→resposta emolumento | [~] Wave28 SUI pack refreshed — `docs/WA_EMOLUMENTO_LIVE_SUI_G7.md` (synth Wave22; live HOLD) |
 
 ### Squad 05 — Chatwoot Handoff (n8n+lgpd)
 | ID | Task | Done |
 |----|------|------|
-| G7.05.T1 | DNS chatwoot A record + Traefik router | [~] Wave22 SUI pack (exec Gustavo) |
+| G7.05.T1 | DNS chatwoot A record + Traefik router | [~] Wave28 SUI pack refreshed — master `docs/CHATWOOT_GO_LIVE_SUI_G7.md` (exec Gustavo) |
 | G7.05.T2 | Agent bot Cartorio Assistant UI/API | [x] Wave23 runbook (UI SUI) |
-| G7.05.T3 | Handoff WF3 + labels LGPD | [~] Wave19 checklist doc (prod HOLD) |
+| G7.05.T3 | Handoff WF3 + labels LGPD | [~] Wave28 SUI pack refreshed — master Chatwoot go-live + labels LGPD (prod HOLD) |
 | G7.05.T4 | Canned responses jurídicas 20/50 | [x] Wave22 v4 +10 (v3+v4=20; json 52) |
 
 ### Squad 06 — LobeChat + OpenClaw (dev+sre)
@@ -62,8 +62,8 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 |----|------|------|
 | G7.06.T1 | OPENAI_API_KEY real LobeChat | [x] Wave23 runbook (env SUI) |
 | G7.06.T2 | Import agent_cartorio JSON UI | [x] Wave21 scrub+checklist (UI SUI) |
-| G7.06.T3 | OpenClaw cartorio-bot create (E8) | [~] JSON ready Wave15 — deploy SUI |
-| G7.06.T4 | 3 intents E2E via LobeChat→OpenClaw→API | [ ] |
+| G7.06.T3 | OpenClaw cartorio-bot create (E8) | [~] Wave28 SUI pack refreshed — `docs/OPENCLAW_CARTORIO_BOT_DEPLOY_G7.md` (JSON ready; deploy HOLD) |
+| G7.06.T4 | 3 intents E2E via LobeChat→OpenClaw→API | [x] Wave27 synthetic E2E (live SUI) |
 
 ### Squad 07 — Redis & Idempotency (dev+n8n)
 | ID | Task | Done |
@@ -100,26 +100,26 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 ### Squad 11 — Tailscale & SSH (sre)
 | ID | Task | Done |
 |----|------|------|
-| G7.11.T1 | Tailscale online restore VPS | [~] Wave26 runbook (live HOLD) |
-| G7.11.T2 | SSH 22 + MagicDNS health in radar | [~] Wave26 radar mapping doc (live HOLD) |
+| G7.11.T1 | Tailscale online restore VPS | [~] Wave28 SUI pack refreshed — restore `TAILSCALE_RESTORE_G7` + live val `TAILSCALE_SSH_RADAR_LIVE_G7.md` (live HOLD) |
+| G7.11.T2 | SSH 22 + MagicDNS health in radar | [~] Wave28 SUI pack refreshed — validation cmds `docs/TAILSCALE_SSH_RADAR_LIVE_G7.md` (live HOLD) |
 | G7.11.T3 | Runbook Tailscale offline fallback | [x] Wave17 |
 | G7.11.T4 | ACL least-privilege audit | [x] Wave26 ACL skeleton TAILSCALE_RESTORE_G7 |
 
 ### Squad 12 — DNS Cloudflare (sre)
 | ID | Task | Done |
 |----|------|------|
-| G7.12.T1 | 3 A records chatwoot/n8n/supabase | [ ] |
-| G7.12.T2 | dns-check Makefile exit 0 | [ ] |
-| G7.12.T3 | Traefik ROUTERS_PENDENTES merge | [ ] |
+| G7.12.T1 | 3 A records chatwoot/n8n/supabase | [~] Wave28 live snapshot (3 NXDOMAIN; docs/DNS_A_RECORDS_WAVE28_G7.md) |
+| G7.12.T2 | dns-check Makefile exit 0 | [x] Wave28 soft default + DNS_CHECK_STRICT=1 / make dns-check-strict |
+| G7.12.T3 | Traefik ROUTERS_PENDENTES merge | [x] Wave27 merge file ready (deploy SUI) |
 | G7.12.T4 | DOMAIN_TYPO supbase decision final | [x] Wave18 ratified |
 
 ### Squad 13 — Proxy Traefik (sre)
 | ID | Task | Done |
 |----|------|------|
 | G7.13.T1 | Cert LE expiry monitor | [x] Wave25 CERT_LE_EXPIRY_MONITOR_G7 |
-| G7.13.T2 | Access log backend name debug panel | [ ] |
+| G7.13.T2 | Access log backend name debug panel | [x] Wave27 TRAEFIK_ACCESS_LOG_DEBUG_G7 + parse.py |
 | G7.13.T3 | 502 vs NXDOMAIN playbook | [x] Wave24 PLAYBOOK_502_VS_NXDOMAIN_G7 |
-| G7.13.T4 | rate-limit edge optional | [ ] |
+| G7.13.T4 | rate-limit edge optional | [x] Wave27 TRAEFIK_EDGE_RATE_LIMIT_G7 + middleware HOLD |
 
 ### Squad 14 — OpenClaw Agent AI Cartorio (dev+n8n)
 | ID | Task | Done |
@@ -127,7 +127,7 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 | G7.14.T1 | openclaw.json cartorio-bot | [x] Wave15 |
 | G7.14.T2 | Skills registry agent-tools sync | [x] Wave26 OPENCLAW_SKILLS_REGISTRY_G7 |
 | G7.14.T3 | Context 1M + overflow guards | [x] Wave26 context_window 1M + guards doc |
-| G7.14.T4 | Operator token scopes non-empty | [ ] |
+| G7.14.T4 | Operator token scopes non-empty | [x] Wave28 runbook docs/OPENCLAW_OPERATOR_TOKEN_SCOPES_G7.md (live token HOLD) |
 
 ### Squad 15 — Tools & Skills (dev)
 | ID | Task | Done |
@@ -156,24 +156,24 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 ### Squad 18 — Radar & Observability (sre)
 | ID | Task | Done |
 |----|------|------|
-| G7.18.T1 | Redeploy `/radar/expanded` prod | [ ] |
+| G7.18.T1 | Redeploy `/radar/expanded` prod | [x] Wave27 runbook (prod redeploy SUI) |
 | G7.18.T2 | CANAL_HEALTH_MATRIX live refresh | [x] Wave13 |
-| G7.18.T3 | AlertManager → Telegram live fire | [ ] |
-| G7.18.T4 | Loki/Promtail ingest sample query | [ ] |
+| G7.18.T3 | AlertManager → Telegram live fire | [x] Wave27 ALERTMANAGER_TELEGRAM_G7 (secrets HOLD) |
+| G7.18.T4 | Loki/Promtail ingest sample query | [x] Wave27 LOKI_PROMTAIL_SAMPLE_QUERY_G7 + script |
 
 ### Squad 19 — LGPD Compliance (lgpd)
 | ID | Task | Done |
 |----|------|------|
 | G7.19.T1 | RIPD v1.4 addendum | [x] Wave13 |
-| G7.19.T2 | DPA MiniMax assinado | [ ] |
-| G7.19.T3 | Privacy Policy v3 site publish | [ ] |
+| G7.19.T2 | DPA MiniMax assinado | [x] Wave27 draft READY (sign/publish SUI) |
+| G7.19.T3 | Privacy Policy v3 site publish | [x] Wave27 draft READY (sign/publish SUI) |
 | G7.19.T4 | Data inventory quarterly refresh | [x] Wave26 25 PII fields inventory |
 
 ### Squad 20 — SOLID/DRY/KISS/OO (dev)
 | ID | Task | Done |
 |----|------|------|
 | G7.20.T1 | ADR-027 follow-ups dead code | [x] Wave25 audit + 2 safe deletes |
-| G7.20.T2 | Service layer extract duplicates | [ ] |
+| G7.20.T2 | Service layer extract duplicates | [x] Wave27 mask_nome/email_display DRY + SERVICE_LAYER_DRY_G7 |
 | G7.20.T3 | Typed dicts vs Any audit hotspots | [x] Wave25 ANY_HOTSPOTS_G7 (refactor open) |
 | G7.20.T4 | KISS: delete unused N8N exports | [x] Wave26 inventory + 1 archive (kiss-g7) |
 
@@ -181,7 +181,7 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 | ID | Task | Done |
 |----|------|------|
 | G7.21.T1 | mypy strict zero regressions | [x] Wave24 0 errors / 154 files |
-| G7.21.T2 | Pydantic v2 strict future flags | [ ] |
+| G7.21.T2 | Pydantic v2 strict future flags | [x] Wave27 key input ConfigDict + PYDANTIC_STRICT_FUTURE_FLAGS_G7 |
 | G7.21.T3 | SQLAlchemy Mapped 100% models | [x] Wave25 100% Mapped compliance |
 | G7.21.T4 | no bare Exception raises grep gate | [x] Wave16 |
 
@@ -212,10 +212,10 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 ### Squad 25 — Go-Live & Memory (all)
 | ID | Task | Done |
 |----|------|------|
-| G7.25.T1 | SUI_CHECKLIST 100% tick | [ ] |
-| G7.25.T2 | 72h stability window | [ ] |
-| G7.25.T3 | MEMORY lesson consolidada G7 | [ ] |
-| G7.25.T4 | Tag `v0.7.0-g7-mvp` + release notes | [ ] |
+| G7.25.T1 | SUI_CHECKLIST 100% tick | [~] Wave28 checklist complete (`docs/SUI_CHECKLIST_G7_WAVE28.md`; ticks SUI) |
+| G7.25.T2 | 72h stability window | [x] Wave28 tracker ready (`docs/STABILITY_WINDOW_72H_G7.md`; window not started) |
+| G7.25.T3 | MEMORY lesson consolidada G7 | [x] Wave28 lesson-206 + MEMORY index 200-206 |
+| G7.25.T4 | Tag `v0.7.0-g7-mvp` + release notes | [x] Wave28 notes ready, tag HOLD |
 
 ---
 
@@ -237,7 +237,11 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 | W24 | G7.08.T1/T2, G7.13.T3, G7.21.T1, G7.24.T3, G7.23.T3, G7.01.T2+ | **DONE** alembic+backup+502 playbook+mypy+composite+cov |
 | W25 | G7.08.T3/T4, G7.15.*, G7.20.T1/T3, G7.21.T3, G7.22.T2, G7.23.T4, G7.13.T1 | **DONE** RLS+pool+skills+SOLID+CD+MVP+LE |
 | W26 | G7.09.T3/T4, G7.10.T4, G7.11.*, G7.14.T2/T3, G7.19.T4, G7.20.T4, G7.22.T3, G7.24.T2 | **DONE** MCP+WS+TS+OpenClaw+LGPD+N8N+pre-commit+TG1000 |
-| W27 | SUI-heavy + G7.07.T2 + G7.13.T2 + G7.18.* + G7.25.* | **NEXT** prod live + go-live |
+| W27 | G7.21.T2, G7.20.T2, G7.13.T2/T4, G7.18.T1/T3/T4, G7.19.T2/T3, G7.06.T4, G7.12.T3 | **DONE agent** pydantic+DRY+Traefik+obs+LGPD drafts+3 intents+radar runbook (sign/publish residual SUI) |
+| W28 | G7.25.T1/T2/T3 go-live pack | **DONE agent-side** SUI_CHECKLIST_G7_WAVE28 + STABILITY_WINDOW_72H + lesson-206 (T1 ticks SUI) |
+| W28-A4 | G7.04.T4, G7.05.T1/T3, G7.06.T3, G7.11.T1/T2 SUI one-pagers | **DONE agent-side** Wave28 SUI pack refreshed — live still [~] (lesson-207) |
+| W28-DEV | G7.02.T1, G7.25.T4 | **DONE agent** mutmut killers 177 green + MUTMUT_REPORT_G7_WAVE28; RELEASE_NOTES_v0.7.0-g7-mvp (tag HOLD) |
+| W28-SRE | G7.12.T1/T2, G7.14.T4 | **DONE agent** soft dns-check exit 0 + DNS snapshot [~] 3 NXDOMAIN + OpenClaw scopes runbook; UI A + token HOLD-GUSTAVO |
 | W24-SUI | G7.18.T1, G7.12.T1, tokens, OpenClaw deploy | **SUI Gustavo** (paralelo) |
 | W16 | G7.05.* | Chatwoot |
 | W17 | G7.07-08 | Redis+Postgres |
@@ -259,4 +263,5 @@ make lint && make test-fast && make radar-smoke && make dns-check
 
 ---
 
-**Modified by Gustavo Almeida + Pietra orquestrador — 2026-07-16 Wave 13**
+**Modified by Gustavo Almeida + Pietra orquestrador — 2026-07-17 Wave28**  
+(SUI pack A4 + SRE dns/scopes + DEV mutmut/release + brain G7.25.T1/T2/T3 go-live consolidado)

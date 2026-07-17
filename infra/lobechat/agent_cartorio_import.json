@@ -68,7 +68,9 @@
       "infra/openclaw-agent/skills/cartorio-emolumento-calc.md",
       "infra/openclaw-agent/skills/cartorio-protocolo-tracker.md",
       "infra/openclaw-agent/skills/cartorio-agendamento.md",
-      "infra/openclaw-agent/skills/cartorio-handoff-trigger.md"
+      "infra/openclaw-agent/skills/cartorio-handoff-trigger.md",
+      "infra/openclaw-agent/skills/cartorio-segunda-via.md",
+      "infra/openclaw-agent/skills/cartorio-pesquisa-satisfacao.md"
     ],
     "license": "Proprietary - Internal Cartório 2º Notas de Uberlândia",
     "lobechatCompatibility": "v1.143+ (schemaVersion 1)"

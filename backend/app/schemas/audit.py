@@ -45,7 +45,11 @@ class AuditLogCreate(BaseModel):
         Caller NAO confia no proprio `ip` — usar o que o servidor gravou.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
 
     actor_id: str = Field(
         default="system",

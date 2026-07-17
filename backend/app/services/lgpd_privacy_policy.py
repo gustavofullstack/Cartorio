@@ -31,6 +31,8 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.services.crypto import mask_email_display, mask_nome
+
 # ============================================================================
 # Constantes — referencias globais do cartorio
 # ============================================================================
@@ -55,22 +57,15 @@ CARTORIO_API_BASE = "/api/v1"  # path dos endpoints (v1)
 def _mask_nome_personalizado(nome: str | None) -> str:
     """Mascara o nome pessoal: 'Gustavo Almeida' -> 'G*** A***'.
 
-    Mesmo padrao de app/services/lgpd_export.py (LGPD D29).
-    Se o nome ja estiver anonimizado (deleted_at setado), retorna placeholder.
+    Thin wrapper sobre crypto.mask_nome (G7.20.T2 DRY com lgpd_export).
+    Placeholder distinto quando titular ja anonimizado / nome ausente.
     """
-    if not nome:
-        return "[titular anonimizado]"
-    parts = nome.strip().split()
-    masked = " ".join(f"{p[0]}***" if p else "" for p in parts)
-    return masked or "[nome indisponivel]"
+    return mask_nome(nome, empty="[titular anonimizado]")
 
 
 def _mask_email_personalizado(email: str | None) -> str:
     """Mascara email: 'fulano@dominio.com' -> 'f***@dominio.com' (1a letra + dominio)."""
-    if not email or "@" not in email:
-        return "[email indisponivel]"
-    local, domain = email.rsplit("@", 1)
-    return f"{local[:1]}***@{domain}"
+    return mask_email_display(email, empty="[email indisponivel]", domain_mode="full")
 
 
 # ============================================================================

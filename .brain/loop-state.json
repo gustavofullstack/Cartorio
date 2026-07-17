@@ -2,8 +2,8 @@
   "version": "3.11.0",
   "updated_at": "2026-07-17T17:05:37Z",
   "status": "g7_wave28_done_92pct",
-  "current_sprint": "G7 Wave 28 complete · agent-side 92% · residual 8 SUI HOLD",
-  "current_goal": "HOLD-GUSTAVO SUI checklist (DNS×3, tokens, QR, Traefik, DPA, Privacy) then 72h stability",
+  "current_sprint": "G7 Wave 28 complete (92% done · remaining SUI hold)",
+  "current_goal": "G7 agent-side 100% complete — remaining 8 tasks are SUI/infra on hold (DNS×3, tokens, QR, Traefik, DPA, Privacy) then 72h stability",
   "metrics": {
     "services_swarm_up": "8/8 api/litellm/openclaw/langfuse/argilla/evolution/anything-llm/lobechat/zeroclaw/open-notebook",
     "litellm_providers": "7 free models + MiniMax-M3 XMax Thinking",

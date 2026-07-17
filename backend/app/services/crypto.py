@@ -13,12 +13,15 @@ API:
 - mask_cpf(plaintext) -> "***.***.***-**" (para logs/UI)
 - mask_cnpj(plaintext) -> "**.***.***/****-**"
 - mask_email(email) -> "j***@example.com"
+- mask_nome(nome, empty=...) -> "G*** A***" (export / privacy policy)
+- mask_email_display(email, empty=..., domain_mode=...) -> display-safe email
 """
 
 from __future__ import annotations
 
 import base64
 import hashlib
+from typing import Literal
 
 from cryptography.fernet import Fernet
 
@@ -90,10 +93,46 @@ def mask_email(email: str) -> str:
     return f"{local[0]}***@{domain}"
 
 
+def mask_nome(nome: str | None, *, empty: str = "[nome indisponivel]") -> str:
+    """Mascara nome: 1a letra de cada parte + `***`.
+
+    Shared by lgpd_export + lgpd_privacy_policy (G7.20.T2 DRY).
+    `empty` customiza placeholder (export vs titular anonimizado).
+    """
+    if not nome or not str(nome).strip():
+        return empty
+    parts = str(nome).strip().split()
+    masked = " ".join(f"{p[0]}***" if p else "" for p in parts)
+    return masked or empty
+
+
+def mask_email_display(
+    email: str | None,
+    *,
+    empty: str = "[email indisponivel]",
+    domain_mode: Literal["full", "tld"] = "full",
+) -> str:
+    """Mascara email para exibicao (export LGPD / privacy policy).
+
+    - domain_mode='full': `fulano@dominio.com` -> `f***@dominio.com`
+    - domain_mode='tld':  `fulano@sub.dominio.com` -> `f***@com` (LGPD D29 export)
+    """
+    if not email or "@" not in email:
+        return empty
+    local, _, domain = email.partition("@")
+    if domain_mode == "tld":
+        domain = domain.split(".")[-1] if domain else ""
+    if not local:
+        return f"***@{domain or '***'}"
+    return f"{local[0]}***@{domain}"
+
+
 __all__ = [
     "decrypt_pii",
     "encrypt_pii",
     "mask_cnpj",
     "mask_cpf",
     "mask_email",
+    "mask_email_display",
+    "mask_nome",
 ]

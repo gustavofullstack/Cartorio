@@ -24,7 +24,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.deps import require_cartorio_api_key
 from app.config import Settings, get_settings
@@ -48,6 +48,12 @@ class LoginRequest(BaseModel):
     LGPD: user_id nao expoe PII, apenas UUID.
     """
 
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
+
     user_id: str = Field(
         ...,
         description="UUID do usuario para quem o JWT sera emitido",
@@ -68,6 +74,12 @@ class LoginRequest(BaseModel):
 
 class RefreshRequest(BaseModel):
     """Request do /auth/refresh - troca refresh token por novo access."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
 
     refresh_token: str = Field(
         ...,

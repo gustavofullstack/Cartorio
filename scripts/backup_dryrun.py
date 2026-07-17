@@ -1,4 +1,4 @@
-"""Backup Dry-Run script (G6.D.T3).
+"""Backup Dry-Run script (G6.D.T3 / G7.08.T2).
 
 Valida que um backup .sql.gz pode ser restaurado SEM de fato rodar pg_restore
 em prod. Usa sqlite in-memory + parsing SQL para garantir:
@@ -10,6 +10,9 @@ em prod. Usa sqlite in-memory + parsing SQL para garantir:
 5. Checksum SHA256 calculado e comparado com .sha256 sidecar
 6. Restore simulado em sqlite (cria tabelas, sem dados)
 
+Tambem aceita (opcional) bundle tar.gz no estilo `infra/backup/cartorio-backup.sh`
+via `--tar-list` (so lista conteudo — nao restaura dumps -Fc).
+
 Exit codes:
     0 = backup integro, pode ser usado em restore real
     1 = backup corrompido ou faltando tabelas
@@ -19,8 +22,9 @@ Uso:
     python3 scripts/backup_dryrun.py /var/backups/cartorio/db-2026-07-16.sql.gz
     python3 scripts/backup_dryrun.py --latest  # pega o mais recente em /var/backups/cartorio/
     python3 scripts/backup_dryrun.py --report backup_dryrun.md
+    python3 scripts/backup_dryrun.py --tar-list /var/backups/cartorio/cartorio_backup_X.tar.gz
 
-Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 6.
+Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 6 / G7 Wave 24.
 """
 from __future__ import annotations
 
@@ -93,8 +97,16 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
         problems.append("nenhuma CREATE TABLE encontrada (backup nao eh pg_dump?)")
 
     # 6. Tabelas canonicas presentes
+    # Aceita: CREATE TABLE cliente | "cliente" | public.cliente | "public"."cliente"
+    # pg_dump real costuma emitir schema-qualified (public.tabela).
     tables_found: set[str] = set()
-    for m in re.finditer(r"CREATE TABLE\s+(?:IF NOT EXISTS\s+)?\"?(\w+)\"?", sql, re.IGNORECASE):
+    create_table_re = re.compile(
+        r"CREATE TABLE\s+(?:IF NOT EXISTS\s+)?"
+        r"(?:\"?(?:\w+)\"?\.)?"  # schema opcional
+        r"\"?(\w+)\"?",
+        re.IGNORECASE,
+    )
+    for m in create_table_re.finditer(sql):
         tables_found.add(m.group(1).lower())
     stats["tables_found"] = sorted(tables_found)
 
@@ -118,6 +130,14 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
         for stmt in create_stmts[:100]:  # limite de seguranca
             # Converte tipos Postgres -> SQLite (basico)
             sqlite_stmt = stmt
+            # Strip schema qualification (public.tabela / "public"."tabela")
+            sqlite_stmt = re.sub(
+                r"CREATE TABLE\s+(?:IF NOT EXISTS\s+)?(?:\"?\w+\"?\.)",
+                "CREATE TABLE ",
+                sqlite_stmt,
+                count=1,
+                flags=re.IGNORECASE,
+            )
             # Remove tipos nao suportados em SQLite (BIGSERIAL, etc)
             sqlite_stmt = re.sub(r"BIGSERIAL", "INTEGER", sqlite_stmt, flags=re.IGNORECASE)
             sqlite_stmt = re.sub(r"SERIAL", "INTEGER", sqlite_stmt, flags=re.IGNORECASE)
@@ -126,6 +146,13 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
             sqlite_stmt = re.sub(r"TIMESTAMP(?:\s+WITH(?:OUT)?\s+TIME\s+ZONE)?", "TEXT", sqlite_stmt, flags=re.IGNORECASE)
             sqlite_stmt = re.sub(r"BOOLEAN", "INTEGER", sqlite_stmt, flags=re.IGNORECASE)
             sqlite_stmt = re.sub(r"BYTEA", "BLOB", sqlite_stmt, flags=re.IGNORECASE)
+            sqlite_stmt = re.sub(r"NUMERIC\(\d+,\s*\d+\)", "REAL", sqlite_stmt, flags=re.IGNORECASE)
+            sqlite_stmt = re.sub(
+                r"DEFAULT\s+now\(\)",
+                "DEFAULT CURRENT_TIMESTAMP",
+                sqlite_stmt,
+                flags=re.IGNORECASE,
+            )
             try:
                 sqlite_cur.execute(sqlite_stmt)
                 applied += 1
@@ -143,10 +170,58 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
 
 def find_latest_backup(backup_dir: Path = Path("/var/backups/cartorio")) -> Path | None:
     """Encontra o backup mais recente em backup_dir."""
-    if not backup_dir.exists():
+    try:
+        if not backup_dir.exists():
+            return None
+        candidates = sorted(
+            backup_dir.glob("*.sql.gz"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+    except PermissionError:
+        print(
+            f"[ERROR] sem permissao para ler {backup_dir} "
+            "(HOLD-GUSTAVO: rodar no VPS como root/cron user)",
+            file=sys.stderr,
+        )
         return None
-    candidates = sorted(backup_dir.glob("*.sql.gz"), key=lambda p: p.stat().st_mtime, reverse=True)
     return candidates[0] if candidates else None
+
+
+def tar_list_validate(path: Path) -> tuple[bool, list[str], dict]:
+    """Lista e valida bundle tar.gz no formato cartorio-backup.sh (sem extrair dumps).
+
+    Criterios minimos (sample restore check):
+    - arquivo existe e > 1KB
+    - gzip/tar legivel via tarfile
+    - contem ao menos um artefato supabase_*.dump OU *.sql / *.sql.gz
+    """
+    import tarfile
+
+    problems: list[str] = []
+    stats: dict = {}
+    if not path.exists():
+        return False, [f"arquivo nao existe: {path}"], stats
+    size = path.stat().st_size
+    stats["size_bytes"] = size
+    if size < 1024:
+        problems.append(f"tar.gz muito pequeno: {size} bytes (< 1KB)")
+    try:
+        with tarfile.open(path, "r:gz") as tf:
+            names = [m.name for m in tf.getmembers() if m.isfile()]
+        stats["tar_members"] = names
+        stats["tar_member_count"] = len(names)
+        has_dump = any(
+            n.endswith(".dump") or n.endswith(".sql") or n.endswith(".sql.gz") for n in names
+        )
+        if not has_dump:
+            problems.append(
+                "bundle sem dump SQL/custom (esperado supabase_*.dump ou *.sql.gz)"
+            )
+        stats["tar_has_dump"] = has_dump
+    except Exception as exc:
+        return False, [f"tar list falhou: {type(exc).__name__}: {exc}"], stats
+    return len(problems) == 0, problems, stats
 
 
 def render_markdown(path: Path, integro: bool, problems: list[str], stats: dict) -> str:
@@ -195,7 +270,29 @@ def main() -> int:
     parser.add_argument("backup_file", nargs="?", help="caminho do backup .sql.gz")
     parser.add_argument("--latest", action="store_true", help="usar o backup mais recente em /var/backups/cartorio/")
     parser.add_argument("--report", type=Path, help="gerar report markdown")
+    parser.add_argument(
+        "--tar-list",
+        type=Path,
+        help="valida bundle tar.gz (lista membros; nao restaura dumps -Fc)",
+    )
     args = parser.parse_args()
+
+    if args.tar_list:
+        path = args.tar_list
+        print(f"Validando tar bundle: {path}")
+        integro, problems, stats = tar_list_validate(path)
+        if integro:
+            print(f"[WORK] tar list OK ({stats.get('tar_member_count', 0)} membros)")
+            for n in stats.get("tar_members", []):
+                print(f"  - {n}")
+        else:
+            print(f"[HOLD] {len(problems)} problemas:")
+            for p in problems:
+                print(f"  - {p}")
+        if args.report:
+            args.report.write_text(render_markdown(path, integro, problems, stats))
+            print(f"  Report: {args.report}", file=sys.stderr)
+        return 0 if integro else 1
 
     if args.latest:
         path = find_latest_backup()
@@ -206,7 +303,7 @@ def main() -> int:
     elif args.backup_file:
         path = Path(args.backup_file)
     else:
-        print("[ERROR] especifique backup_file ou --latest", file=sys.stderr)
+        print("[ERROR] especifique backup_file, --latest ou --tar-list", file=sys.stderr)
         return 2
 
     print(f"Validando backup: {path}")

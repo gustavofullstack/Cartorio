@@ -44,6 +44,20 @@ Para mitigar os riscos de compartilhamento não autorizado de dados pessoais (PI
 | 25 | deepseek-coder | litellm | **PENDING** | Proxy LiteLLM (Pendente DPA com agregadores) |
 | 26 | phi-3-medium | litellm | **PENDING** | Proxy LiteLLM (Pendente DPA com agregadores) |
 | 27 | gemma-2-9b | litellm | **PENDING** | Proxy LiteLLM (Pendente DPA com agregadores) |
+| 28 | **MiniMax-M3 / M2.7** | **minimax** (LiteLLM / OpenClaw / bot multi-canal) | **READY_TO_SIGN** | Pacote G7.19.T2: `docs/DPA_MINIMAX_READY_TO_SIGN_G7.md` — só inputs **scrubbed** (NO raw CPF). Assinatura SUI Gustavo+DPO+MiniMax; após assinar → **SIGNED** + `LGPD_DPA_MINIMAX_SIGNED=true` |
+
+---
+
+### Status MiniMax (G7 Wave 27)
+
+| Campo | Valor |
+|-------|--------|
+| DPA package | `docs/DPA_MINIMAX_READY_TO_SIGN_G7.md` |
+| Template cláusulas | `docs/lgpd/dpa_minimax_template.md` |
+| Status | **READY_TO_SIGN** (não é SIGNED) |
+| Finalidade | Inferência LLM bot multi-canal + ops scrubbed |
+| Dados | Scrubbed only — **proibido CPF/RG/protocolo raw** |
+| Residual | HOLD-GUSTAVO checklist §11 do pacote |
 
 ---
 
@@ -52,3 +66,8 @@ O orquestrador do Cartório aplica a seguinte heurística de privacidade:
 * Se `consentimento_lgpd = False`, o envio ao LLM é abortado imediatamente (Consent Gate).
 * Se o payload possui qualquer tag `DATASENSITIVE` (mesmo com consentimento), o roteamento prioriza estritamente os provedores com status **SIGNED** (como o Llama 3.1 local e opencode_go local).
 * Modelos com status **PENDING** são acionados apenas como fallback secundário/terciário de dados gerais, nunca para processamento de PII brutas.
+* Modelos com status **READY_TO_SIGN** (ex.: MiniMax) podem rodar em homologação / prompts já scrubbed, mas **não** devem ser preferidos para cargas com qualquer risco residual de PII até virarem **SIGNED**. Priorizar Llama local e providers **SIGNED**.
+
+---
+
+**Modified by Gustavo Almeida + cartorio-lgpd — G7 Wave 27 (MiniMax READY_TO_SIGN)**

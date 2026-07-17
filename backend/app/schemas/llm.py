@@ -6,7 +6,8 @@ Modified by Gustavo Almeida.
 from __future__ import annotations
 
 from typing import Any, Literal, Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LLMModelInfo(BaseModel):
@@ -22,6 +23,12 @@ class LLMModelInfo(BaseModel):
 
 class LLMTestRequest(BaseModel):
     """Payload de requisição para execução do teste ativo (smoke check) de um provedor."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
 
     message: str = Field(
         default="ping",

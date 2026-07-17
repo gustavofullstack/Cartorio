@@ -136,11 +136,6 @@ class AgentReply:
     extra_messages: list[str] = field(default_factory=list)
 
 
-def _menu_kb() -> list[list[dict[str, str]]]:
-    """DEPRECATED 2026-07-12: botoes inline removidos. Mantido so p/ retro-compat."""
-    return []
-
-
 def _servicos_kb() -> list[list[dict[str, str]]]:
     """DEPRECATED 2026-07-12: botoes inline removidos. Mantido so p/ retro-compat."""
     return []

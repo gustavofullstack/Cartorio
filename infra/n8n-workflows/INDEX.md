@@ -1,7 +1,7 @@
 # N8N Workflows Registry — INDEX
 
 **Auto-gerado**: rodar `python3 scripts/n8n_index_gen.py`.
-**Total WFs**: 39 | **Ativos**: 33 | **Total nodes**: 362
+**Total WFs**: 38 | **Ativos**: 33 | **Total nodes**: 338
 
 ## Tabela de workflows
 
@@ -45,12 +45,11 @@
 | 36 | `37-agendamento-notarial-sync.json` | 37-agendamento-notarial-sync | ✅ | 7 | googleCalendarTrigger | `Google Calendar Event Created`, `Create Agendamento in API`, `Check Creation Status`, `Confirm via Telegram`, `Is Concurrency Conflict (409)?` |
 | 37 | `38-emolumento-calculator.json` | 38-emolumento-calculator | ✅ | 6 | webhook | `Chatbot Request Webhook`, `Parse User Text`, `Calculate Emolumentos via API`, `Route by Channel`, `Send to Telegram Chatbot` |
 | 38 | `evo-in.json` | EVO-IN - Evolution Webhook Inbound | ❌ | 7 | webhook | `Init Correlation`, `Webhook`, `Dedup Webhook (SETNX)`, `Redis SETNX 24h`, `POST to Backend` |
-| 39 | `lgpd-esqueci-fix.json` | 23 - LGPD Esqueci (DELETE cliente + cascade + audit) | ❌ | 24 | webhook, respondToWebhook, respondToWebhook | `LGPD Esqueci Webhook`, `Dedup Webhook (SETNX)`, `Redis SETNX 24h`, `Extract Cliente ID`, `Dedup Webhook (SETNX)` |
 
 ## Por trigger
 
-- **respondToWebhook**: 23 workflow(s)
-- **webhook**: 22 workflow(s)
+- **webhook**: 21 workflow(s)
+- **respondToWebhook**: 21 workflow(s)
 - **scheduleTrigger**: 15 workflow(s)
 - **errorTrigger**: 1 workflow(s)
 - **mcpTrigger**: 1 workflow(s)
@@ -88,10 +87,10 @@
 | **E (LLM)** | 2 | 12-chatbot-llm-end-to-end, 14-opencode-go-fallback |
 
 ## Stats finais
-- Total: 39 workflows
-- Ativos: 33 (84%)
-- Total nodes: 362
-- Trigger mais comum: respondToWebhook (23 WFs)
+- Total: 38 workflows
+- Ativos: 33 (86%)
+- Total nodes: 338
+- Trigger mais comum: webhook (21 WFs)
 
 ---
 
