@@ -1,0 +1,3 @@
+## 2026-07-17 - [SQLAlchemy count optimization]
+**Learning:** In the backend `app/api/v1/_helpers.py`, pagination queries were previously calculating the total count of records by fetching all objects with `.scalars().all()` and then applying `len()` in Python (e.g. `total = len(db.execute(count_stmt).scalars().all())`). This is an O(N) memory and data transfer bottleneck, especially when the total number of records is large.
+**Action:** Replace `len(db.execute(...).scalars().all())` with `db.scalar(select(func.count()).select_from(...))` to let the database handle counting natively (O(1) transfer). Always apply this pattern for counting queries in SQLAlchemy.

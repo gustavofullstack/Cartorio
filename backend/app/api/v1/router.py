@@ -62,7 +62,6 @@ from app.schemas.agendamento import (
     AgendamentoCreateRequest,
     AgendamentoResponse,
 )
-from app.schemas.emolumento import EmolumentoCalculoResponse
 from app.services.audit import AuditService
 from app.services.audit_context import audit_kwargs
 from app.services.audit_query import get_audit_log_by_id, list_audit_logs
@@ -164,7 +163,7 @@ async def calcular_emolumento(
         "um cliente associado (cliente_id), exige consentimento ativo (consentimento_lgpd = True).\n\n"
         "**Audit**: Registra o cálculo no log de auditoria."
     ),
-    response_model=EmolumentoCalculoResponse,
+    response_model=Any,
 )
 async def calcular_emolumento_api(
     tipo: Annotated[str, Query(description="Tipo do ato cartorário.")],
