@@ -12,6 +12,8 @@ Categorias:
 - ssh       : porta SSH do VPS Hostinger (187.77.236.77:22) UP/DOWN
 - tailscale : porta SSH Tailscale (100.99.172.84:22) UP/DOWN
 - disk      : espaco livre em /var/lib/docker/volumes (free GB)
+- mcp       : inventário de tools MCP (G8.07.T4)
+- openclaw  : status dedicado do gateway OpenClaw (G8.04.T1)
 
 Cada check retorna:
 {
@@ -454,6 +456,27 @@ async def _check_mcp_category() -> dict[str, dict[str, Any]]:
         }
 
 
+async def _check_openclaw_category() -> dict[str, dict[str, Any]]:
+    """G8.04.T1 — status OpenClaw gateway no radar (sync probe, fail-open)."""
+
+    def _run() -> dict[str, Any]:
+        from app.services.openclaw_radar import build_openclaw_radar
+
+        return build_openclaw_radar().to_dict()
+
+    try:
+        payload = await asyncio.to_thread(_run)
+        return {"gateway": payload}
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "gateway": {
+                "status": "warn",
+                "latency_ms": 0,
+                "detail": f"openclaw radar error: {type(exc).__name__}",
+            }
+        }
+
+
 def _aggregate_overall(categories: dict[str, dict[str, dict[str, Any]]]) -> str:
     """Calcula status agregado.
 
@@ -516,6 +539,7 @@ async def health_radar_expanded() -> dict[str, Any]:
     ssh_coro = _check_ssh_category()
     disk_coro = _check_disk_category()
     mcp_coro = _check_mcp_category()
+    openclaw_coro = _check_openclaw_category()
 
     health: Any
     dns: Any
@@ -523,13 +547,15 @@ async def health_radar_expanded() -> dict[str, Any]:
     ssh: Any
     disk: Any
     mcp: Any
-    health, dns, traefik, ssh, disk, mcp = await asyncio.gather(
+    openclaw: Any
+    health, dns, traefik, ssh, disk, mcp, openclaw = await asyncio.gather(
         health_coro,
         dns_coro,
         traefik_coro,
         ssh_coro,
         disk_coro,
         mcp_coro,
+        openclaw_coro,
         return_exceptions=True,
     )
 
@@ -548,6 +574,7 @@ async def health_radar_expanded() -> dict[str, Any]:
         "ssh": _coerce(ssh, {}),
         "disk": _coerce(disk, {}),
         "mcp": _coerce(mcp, {}),
+        "openclaw": _coerce(openclaw, {}),
     }
 
     overall = _aggregate_overall(categories)

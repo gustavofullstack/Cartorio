@@ -1,0 +1,93 @@
+{
+  "name": "G8.03.T3 - Chatwoot Status Sync → API HITL Mute",
+  "description": "Recebe conversation_status_changed do Chatwoot e repassa à API cartorio (process_chatwoot_event + bot mute). G8.03.T3. Modified by Gustavo Almeida.",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatwoot-status-sync",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-cw-status",
+      "name": "Webhook Chatwoot Status",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "chatwoot-status-sync-g8"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// G8.03.T3 — normaliza conversation_status_changed e gera Idempotency-Key\nconst item = $input.item.json;\nconst body = item.body || item || {};\nconst event = body.event || 'conversation_status_changed';\nconst conv = body.conversation || {};\nconst status = body.status || conv.status || 'unknown';\nconst convId = conv.id || body.id || '0';\nconst assignee = body.assignee || (conv.meta && conv.meta.assignee) || conv.assignee || null;\nconst eventId = String(body.id || `${convId}-${status}-${Date.now()}`);\nconst idem = `cw-status-${eventId}`;\n\nreturn {\n  json: {\n    event,\n    id: eventId,\n    status,\n    conversation: { id: convId, status },\n    assignee,\n    idempotency_key: idem,\n    // destino API (env override em prod)\n    api_url: $env.CARTORIO_API_BASE || 'https://api.2notasudi.com.br',\n    path: '/api/v1/webhooks/chatwoot'\n  }\n};"
+      },
+      "id": "code-normalize",
+      "name": "Normalize Status Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_url }}{{ $json.path }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-Idempotency-Key", "value": "={{ $json.idempotency_key }}" },
+            { "name": "X-Source", "value": "n8n-g8-03-t3" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ event: $json.event, id: $json.id, status: $json.status, conversation: $json.conversation, assignee: $json.assignee }) }}",
+        "options": {
+          "timeout": 10000,
+          "response": { "response": { "neverError": true } }
+        }
+      },
+      "id": "http-api-forward",
+      "name": "POST Cartorio API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, event: $('Normalize Status Payload').item.json.event, status: $('Normalize Status Payload').item.json.status, api_status: $json.statusCode || $json.status || 'forwarded' } }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [960, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Chatwoot Status": {
+      "main": [[{ "node": "Normalize Status Payload", "type": "main", "index": 0 }]]
+    },
+    "Normalize Status Payload": {
+      "main": [[{ "node": "POST Cartorio API", "type": "main", "index": 0 }]]
+    },
+    "POST Cartorio API": {
+      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "g8_task": "G8.03.T3",
+    "purpose": "Chatwoot status → API HITL mute/unmute path",
+    "version": "1.0.0"
+  },
+  "tags": [
+    { "name": "g8" },
+    { "name": "chatwoot" },
+    { "name": "hitl" }
+  ]
+}

@@ -16,6 +16,8 @@ Modified by Gustavo Almeida — G8.03.T2 Wave 36.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -50,6 +52,17 @@ def mute_key(channel: str, conversation_key: str, *, prefix: str = MUTE_KEY_PREF
     return f'{prefix}:{ch}:{ck}'
 
 
+def _maybe_close_coro(result: Any) -> Any:
+    """Se client async retornou coroutine sem await, fecha e retorna None (fail-open)."""
+    if asyncio.iscoroutine(result) or inspect.isawaitable(result):
+        try:
+            result.close()  # type: ignore[attr-defined]
+        except Exception:  # noqa: BLE001
+            pass
+        return None
+    return result
+
+
 def mute_bot(
     redis: Any,
     channel: str,
@@ -62,12 +75,13 @@ def mute_bot(
     """Ativa mute. Retorna a chave escrita.
 
     `redis` pode ser client sync (redis.Redis) com .set(name, value, ex=...).
+    Clients async sem await → fail-open (não muta).
     """
     cfg = config or BotMuteConfig(ttl_sec=ttl_sec)
     key = mute_key(channel, conversation_key, prefix=cfg.key_prefix)
     value = f'1|{reason}'
     try:
-        redis.set(key, value, ex=int(cfg.ttl_sec))
+        _maybe_close_coro(redis.set(key, value, ex=int(cfg.ttl_sec)))
         logger.info('bot_mute.on key=%s reason=%s ttl=%s', key, reason, cfg.ttl_sec)
     except Exception as exc:  # noqa: BLE001
         logger.warning('bot_mute.on.fail key=%s err=%s', key, type(exc).__name__)
@@ -85,7 +99,7 @@ def unmute_bot(
     cfg = config or BotMuteConfig()
     key = mute_key(channel, conversation_key, prefix=cfg.key_prefix)
     try:
-        redis.delete(key)
+        _maybe_close_coro(redis.delete(key))
         logger.info('bot_mute.off key=%s', key)
         return True
     except Exception as exc:  # noqa: BLE001
@@ -107,7 +121,7 @@ def is_bot_muted(
     except ValueError:
         return False
     try:
-        raw = redis.get(key)
+        raw = _maybe_close_coro(redis.get(key))
         if raw is None:
             return False
         if isinstance(raw, bytes):

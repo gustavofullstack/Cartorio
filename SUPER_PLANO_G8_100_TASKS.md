@@ -5,7 +5,7 @@
 
 ---
 
-> **HONESTY GATE (Lesson 216–219):** `[x]` só com evidência. Evidenced **23/100** (Wave 35–37 REAL: + G8.02.T3 debounce, G8.05.T4 idempotency stress, G8.16.T2 DoR/DoD).
+> **HONESTY GATE:** `[x]` só com evidência. **27/100** evidenced (Wave 38: G8.03.T1/T3, G8.04.T1, G8.09.T1).
 
 ## META
 
@@ -37,15 +37,15 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 03 — Chatwoot Handoff & HITL (n8n+lgpd)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.03.T1 | Desenvolver webhook receiver na API FastAPI para eventos `conversation_status_changed` do Chatwoot. | [ ] | cartorio-dev |
+| G8.03.T1 | Desenvolver webhook receiver na API FastAPI para eventos `conversation_status_changed` do Chatwoot. | [x] | cartorio-dev |
 | G8.03.T2 | Desativar respostas automáticas do bot no Redis assim que o escrevente assumir a conversa (HITL). | [x] | cartorio-dev |
-| G8.03.T3 | Implementar workflow n8n que sincroniza estados do Chatwoot para desvio de mensagens a humanos. | [ ] | cartorio-n8n |
+| G8.03.T3 | Implementar workflow n8n que sincroniza estados do Chatwoot para desvio de mensagens a humanos. | [x] | cartorio-n8n |
 | G8.03.T4 | Validar o fluxo de exclusão/anonimização de dados no Chatwoot para cumprir Art. 18 LGPD. | [ ] | cartorio-lgpd |
 
 ### Squad 04 — LobeChat & OpenClaw Agent Sync (dev+sre)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.04.T1 | Integrar OpenClaw no radar de status da API FastAPI (`/health/radar/expanded`). | [ ] | cartorio-dev |
+| G8.04.T1 | Integrar OpenClaw no radar de status da API FastAPI (`/health/radar/expanded`). | [x] | cartorio-dev |
 | G8.04.T2 | Desenvolver script para empacotamento e export do prompt de sistema do LobeChat. | [ ] | cartorio-dev |
 | G8.04.T3 | Validar rotação de credenciais do OpenClaw no ambiente local de forma segura. | [ ] | cartorio-lgpd |
 | G8.04.T4 | Configurar roteamento de requisições de LobeChat para múltiplos nós do OpenClaw no Traefik. | [ ] | cartorio-sre |
@@ -85,7 +85,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 09 — Tailscale & SSH Private Routing (sre)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.09.T1 | Criar probe interna de conectividade para testar latência dentro da VPN Tailscale. | [ ] | cartorio-sre |
+| G8.09.T1 | Criar probe interna de conectividade para testar latência dentro da VPN Tailscale. | [x] | cartorio-sre |
 | G8.09.T2 | Configurar MagicDNS para redirecionar tráfego interno de banco e API sem expor portas publicamente. | [ ] | cartorio-sre |
 | G8.09.T3 | Assegurar que dados pessoais e logs trafeguem estritamente por túneis privados. | [ ] | cartorio-lgpd |
 | G8.09.T4 | Validar o fluxo de acesso SSH seguro apenas a partir de nós autorizados na Tailscale. | [ ] | cartorio-sre |

@@ -3619,3 +3619,13 @@ Modified by Gustavo Almeida — 2026-07-17T21:11:41.360406+00:00
 - G8.16.T2 `docs/G8_DOR_DOD.md`
 - **Tests:** 36 passed (debounce+idempotency stress); Wave 35 core 18 passed
 Modified by Gustavo Almeida — 2026-07-17T21:13:56.040211+00:00
+
+## 2026-07-17 — Wave 38 REAL COMPLETED ✅ (Hermes)
+
+- **Honest count:** 23 → **27/100** (+4)
+- G8.03.T1 Chatwoot webhook Pydantic schemas + process soft-validate
+- G8.03.T3 n8n workflow `30-chatwoot-status-sync-g8.json` + structure tests
+- G8.04.T1 OpenClaw category on `/health/radar/expanded`
+- G8.09.T1 Tailscale TCP latency probe
+- **Tests:** 40 passed wave38 subset
+Modified by Gustavo Almeida — 2026-07-17T21:21:55.789770+00:00

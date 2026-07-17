@@ -66,7 +66,21 @@ def process_chatwoot_event(
         log.warning("chatwoot_handoff: signature invalida (len=%d)", len(signature or ""))
         return {"status": "rejected", "reason": "invalid_signature"}
 
-    event = payload.get("event", "unknown")
+    # 1b. Schema soft-validation (G8.03.T1): known events must match shape;
+    # empty/missing event → invalid_payload (fail soft, no exception).
+    if not isinstance(payload, dict) or not payload:
+        return {"status": "rejected", "reason": "invalid_payload"}
+
+    event = payload.get("event") or "unknown"
+    if event in {"conversation_status_changed", "message_created"}:
+        from app.schemas.chatwoot_webhook import parse_chatwoot_payload
+
+        if parse_chatwoot_payload(payload) is None:
+            log.warning("chatwoot_handoff: invalid_payload event=%s", event)
+            return {"status": "rejected", "reason": "invalid_payload", "event": event}
+    elif event == "unknown" or payload.get("event") in (None, ""):
+        return {"status": "rejected", "reason": "invalid_payload"}
+
     event_id = str(payload.get("id") or payload.get("message_id") or "")
 
     # 2. Idempotencia

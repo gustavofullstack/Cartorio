@@ -6,7 +6,8 @@
     34,
     35,
     36,
-    37
+    37,
+    38
   ],
   "completed_tasks": [
     "G8.01.T1",
@@ -17,7 +18,10 @@
     "G8.02.T2",
     "G8.02.T3",
     "G8.02.T4",
+    "G8.03.T1",
     "G8.03.T2",
+    "G8.03.T3",
+    "G8.04.T1",
     "G8.05.T1",
     "G8.05.T2",
     "G8.05.T3",
@@ -31,19 +35,20 @@
     "G8.08.T2",
     "G8.08.T3",
     "G8.08.T4",
+    "G8.09.T1",
     "G8.16.T2"
   ],
-  "last_wave": 37,
-  "status": "g8_23pct_honest_wave37_done",
-  "honest_count": 23,
+  "last_wave": 38,
+  "status": "g8_27pct_honest_wave38_done",
+  "honest_count": 27,
   "honest_total": 100,
-  "last_updated": "2026-07-17T21:13:56.041792+00:00",
+  "last_updated": "2026-07-17T21:21:55.791007+00:00",
   "evidence_policy": "checkbox only with commit+tests+lesson",
-  "next_wave": 38,
+  "next_wave": 39,
   "next_wave_tasks": [
-    "G8.03.T1",
-    "G8.03.T3",
     "G8.03.T4",
-    "G8.09.T1"
+    "G8.04.T2",
+    "G8.04.T3",
+    "G8.06.T2"
   ]
 }
