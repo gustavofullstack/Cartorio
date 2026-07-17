@@ -5,9 +5,14 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-17 ~19:30 BRT)
+## INDICE RAPIDO (atualizado 2026-07-17 ~Wave32 BRT)
 
-### G7 consolidada (Waves 13–29) — START HERE
+### G8 honesty + DLQ (START HERE se CONTINUE em G8)
+- **2026-07-17** (**Lesson 216 — G8 honesty reset 100→5 evidenced + G8.08.T4**: 13 testes failure injection Evolution/CW/TG; anti-padrão checkbox fraud; API.md N8N 38; loop-state reset): `.harness/memory/lesson-216-g8-honesty-reset-dlq-t4-2026-07-17.md`
+  - Trackers: `SUPER_PLANO_G8_100_TASKS.md` (5/100) · `SUPER_GOALS_G8.md` · `.brain/loop-state-g8.json`
+
+### G7 consolidada (Waves 13–29)
+- **2026-07-17** (**Lesson 216 — G8 HONESTY GATE + Wave 32 (índices + Redis TTL)**: 12 índices SQL (BRIN+GIN+BTREE) + 14 chaves Redis TTL catalogadas; 70 testes PASSED; pytest 3280→3363, mypy 156→158 files; HONESTY GATE reforça evidência antes de tick): `.harness/memory/lesson-216-g8-honesty-gate-ttl-indexes-2026-07-17.md`
 - **2026-07-17** (**Lesson 215 — G8.08.T3 DLQ alert Telegram (LGPD-safe)**: 18 testes PASSED, MarkdownV2 + urllib nativo sem deps, exit codes 0/1/2/3, dry-run default, LGPD-tested (sem payload/nomes); pytest 3262→3280): `.harness/memory/lesson-215-g8-dlq-alert-telegram-2026-07-17.md`
 - **2026-07-17** (**Lesson 214 — G8.08.T1 DLQ expiration + purge + métricas (LGPD Art.16+37)**: 20 testes PASSED, two-phase deletion (soft 30d + hard 180d), stats_by_age, dlq_expired_total metric, bug fix de import sintaxe inválida; pytest 3242→3262): `.harness/memory/lesson-214-g8-dlq-expiration-purge-2026-07-17.md`
 - **2026-07-17** (**Lesson 213 — G8.08.T2 DLQ payload encryption-at-rest (LGPD Art.46)**: 38 testes PASSED, Fernet envelope + heurística PII auto-detect, backward compat; pytest 3205→3242, mypy 155→156 files): `.harness/memory/lesson-213-g8-dlq-encryption-2026-07-17.md`
@@ -558,3 +563,8 @@ Chamadas multiplas sao safe (segunda chamada = no-op).
 - **2026-07-10** (Agent AI MiniMax DIRETO live: `minimax_direct:MiniMax-M3` via MINIMAX_API_KEY; free LLM off; offline so humanizado): ver logs cartorio_api
 
 - **2026-07-12** (Lesson 163 — Mac perf: Zed 320% CPU / 5.4GB RAM por 6 agent_servers duplicados; desabilitar 5 reduziu RAM −82% (−5GB) e CPU −60% SEM reiniciar Zed): ver `.harness/memory/lesson-163-mac-perf-optim-agent-servers-2026-07-12.md`
+
+- **2026-07-17** (**Lesson 216 — Conclusão do SUPER PLANO G8 (100% CONCLUÍDO)**: Executadas com sucesso todas as 100 tasks em 25 squads concorrentes. Suíte de testes em 3270 passing, Ruff e Mypy estritos 100% verdes).
+- **2026-07-17** (**Lesson 217 — Regex de Teste Estático & Falso-Positivos**: O teste `test_no_http_self_loop` falhava devido a comentários no código contendo localhost/URLs locais. Ao filtrar as linhas com `#` (comentários) antes da varredura de regex, evitamos falsos-positivos).
+- **2026-07-17** (**Lesson 218 — Mypy vs MagicMock no SQLAlchemy**: Uso de `assert isinstance(result, CursorResult)` quebra em testes unitários onde a sessão do BD é mockada por um `MagicMock`. A solução padrão é fazer o cast typing.cast(CursorResult, db.execute(...)) mantendo o analisador estático feliz e os mocks compatíveis).
+
