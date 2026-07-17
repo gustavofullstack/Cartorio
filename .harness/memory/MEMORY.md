@@ -7,12 +7,14 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ## INDICE RAPIDO (atualizado 2026-07-17 ~Wave32 BRT)
 
-### G8 honesty + DLQ (START HERE se CONTINUE em G8)
-- **2026-07-17** (**Lesson 216 — G8 honesty reset 100→5 evidenced + G8.08.T4**: 13 testes failure injection Evolution/CW/TG; anti-padrão checkbox fraud; API.md N8N 38; loop-state reset): `.harness/memory/lesson-216-g8-honesty-reset-dlq-t4-2026-07-17.md`
-  - Trackers: `SUPER_PLANO_G8_100_TASKS.md` (5/100) · `SUPER_GOALS_G8.md` · `.brain/loop-state-g8.json`
+### G8 honesty + waves (START HERE se CONTINUE em G8)
+- **2026-07-17** (**Lesson 217 — G8 Wave 33**: audit hash sequence MCP + scrub_mcp_output + X-Idempotency-Key webhooks + WS 50/20 concurrent; **9/100** evidenced; 35 tests): `.harness/memory/lesson-217-g8-wave33-mcp-idempotency-ws-2026-07-17.md`
+- **2026-07-17** (**Lesson 216 — G8 honesty reset 100→5 + G8.08.T4**): `.harness/memory/lesson-216-g8-honesty-reset-dlq-t4-2026-07-17.md`
+  - Trackers: `SUPER_PLANO_G8_100_TASKS.md` (9/100) · `SUPER_GOALS_G8.md` · `.brain/loop-state-g8.json`
 
 ### G7 consolidada (Waves 13–29)
-- **2026-07-17** (**Lesson 216 — G8 HONESTY GATE + Wave 32 (índices + Redis TTL)**: 12 índices SQL (BRIN+GIN+BTREE) + 14 chaves Redis TTL catalogadas; 70 testes PASSED; pytest 3280→3363, mypy 156→158 files; HONESTY GATE reforça evidência antes de tick): `.harness/memory/lesson-216-g8-honesty-gate-ttl-indexes-2026-07-17.md`
+- **2026-07-17** (**Lesson 217 — G8 Wave 32 índices + Redis TTL (rec-numbered post Honesty Gate)**: 12 índices SQL (BRIN+GIN+BTREE) + 14 chaves Redis TTL catalogadas; 70 testes PASSED; pytest 3280→3384; lesson numbering drift entre sessões paralelas; banner Honesty Gate atualizado para 11/100): `.harness/memory/lesson-217-g8-wave32-indexes-ttl-2026-07-17.md`
+- **2026-07-17** (**Lesson 216 — G8 honesty reset + G8.08.T4 DLQ failure injection**: 13 testes PASSED, 5/100 evidenced (antes 100/100 paper); reset do plano G8 + SUPER_GOALS_G8; G8.08.T4 com injection Evolution/Chatwoot/Telegram): `.harness/memory/lesson-216-g8-honesty-reset-dlq-t4-2026-07-17.md`
 - **2026-07-17** (**Lesson 215 — G8.08.T3 DLQ alert Telegram (LGPD-safe)**: 18 testes PASSED, MarkdownV2 + urllib nativo sem deps, exit codes 0/1/2/3, dry-run default, LGPD-tested (sem payload/nomes); pytest 3262→3280): `.harness/memory/lesson-215-g8-dlq-alert-telegram-2026-07-17.md`
 - **2026-07-17** (**Lesson 214 — G8.08.T1 DLQ expiration + purge + métricas (LGPD Art.16+37)**: 20 testes PASSED, two-phase deletion (soft 30d + hard 180d), stats_by_age, dlq_expired_total metric, bug fix de import sintaxe inválida; pytest 3242→3262): `.harness/memory/lesson-214-g8-dlq-expiration-purge-2026-07-17.md`
 - **2026-07-17** (**Lesson 213 — G8.08.T2 DLQ payload encryption-at-rest (LGPD Art.46)**: 38 testes PASSED, Fernet envelope + heurística PII auto-detect, backward compat; pytest 3205→3242, mypy 155→156 files): `.harness/memory/lesson-213-g8-dlq-encryption-2026-07-17.md`
