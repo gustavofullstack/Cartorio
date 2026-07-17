@@ -1,0 +1,4 @@
+## 2024-05-18 - Parameterized Queries Over String Interpolation
+**Vulnerability:** Code constructed SQL queries using `f-strings` to inject dynamic timestamp expressions based on dialect conditions (e.g., `f"AND timestamp >= {ts_30d_expr}"`).
+**Learning:** While the interpolated values were not directly derived from user input, utilizing string formatting for SQL queries is inherently unsafe and creates a maintenance hazard that could lead to SQL injection vulnerabilities if later modified. Furthermore, it relied on injecting dialect-specific raw SQL functions.
+**Prevention:** Always compute dynamic values (like time offsets) in Python using standard libraries (e.g., `datetime`, `timedelta`) and bind them as parameters to SQLAlchemy queries (e.g., `:ts_30d` with `{"ts_30d": ts_30d}`). This leverages SQLAlchemy's parameter binding, ensuring cross-dialect compatibility and robust protection against SQL injection.
