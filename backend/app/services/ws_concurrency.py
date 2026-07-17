@@ -63,8 +63,6 @@ async def stress_register_broadcast(
     delivered = await manager.broadcast(room, payload)
     # count errors as those that failed send (manager unregisters them)
     errors = len(failed_idx)
-    # after broadcast, dead ones may be unregistered
-    still = manager.total_connections()
     elapsed = (time.perf_counter() - start) * 1000.0
     return ConcurrentWSReport(
         target=n_clients,
