@@ -1,15 +1,19 @@
-from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional
+from pydantic import BaseModel
+from typing import Optional
 from decimal import Decimal
+from datetime import datetime
 
 
 class EmolumentoCalculoResponse(BaseModel):
-    valor_total: Decimal = Field(..., description="Valor total calculado")
-    parcelas: Optional[Dict[str, Any]] = Field(
-        default=None, description="Detalhamento das parcelas"
-    )
-
-    # Extra fields based on router
-    tipo: Optional[str] = None
-    folhas: Optional[int] = None
-    tabela: Optional[str] = None
+    # From router
+    tipo: str
+    folhas: int
+    urgencia: bool
+    base: Decimal
+    adicional_folhas: Decimal
+    adicional_urgencia: Decimal
+    total: Decimal
+    isento: bool
+    isencao_motivo: Optional[str] = None
+    tabela_referencia: str
+    valido_ate: datetime
