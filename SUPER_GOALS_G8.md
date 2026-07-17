@@ -56,12 +56,12 @@ Cada wave de 4 tarefas executadas pelos agentes/subagentes **só é declarada DO
 5. **Logs de Progresso**: Relatório de conclusão adicionado à respectiva seção no `PROGRESS.md` com assinatura convencional de commit: `Modified by Gustavo Almeida`.
 6. **Criação de Lesson**: Registro de aprendizados em `.harness/memory/lesson-XXX-...md` no caso de modificações críticas.
 
-## SUPER PROGRESSO (honestidade — Wave 33 · 2026-07-17)
+## SUPER PROGRESSO (honestidade — Wave 35/36 · 2026-07-17)
 
 | Métrica | Valor |
 |---|---|
-| Tasks G8 evidenced | **11/100** (Wave 32 +2 + Wave 33 +4 + DLQ 5) |
-| % progress honesto | **11%** |
+| Tasks G8 evidenced | **20/100** (Wave 35/36 +7 real) |
+| % progress honesto | **20%** |
 | Wave 32 | G8.05.T1 · G8.06.T1 (Lesson 217 — Redis TTL + DB indexes) |
 | Wave 33 | G8.07.T2 · G8.07.T3 · G8.05.T2 · G8.01.T4 (test_g8_wave33 + Lesson 216) |
 | Tests Wave 32+33 | 27 + 43 + 13 + 21 = **104 passed** |

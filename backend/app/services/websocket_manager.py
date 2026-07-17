@@ -11,6 +11,7 @@ Padroes:
 - broadcast() envia JSON para todos clients em uma room
 - send_personal() envia para um client especifico
 - Falha de envio (cliente desconectado) NAO bloqueia outros clientes
+- last_seen: timestamp monotônico por WS (G8.01.T3 heartbeat)
 
 Backpressure policy (fail-loud — preferido para cartorio/auditoria):
 1. send_json() exception em 1 cliente -> log warning + unregister cliente
@@ -29,6 +30,7 @@ Ver app/services/pii.py pra scrubbing antes de chamar broadcast.
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from fastapi import WebSocket
@@ -49,14 +51,17 @@ class ConnectionManager:
 
     def __init__(self) -> None:
         self.connections: dict[str, set[WebSocket]] = {}
+        # last activity (monotonic) por websocket — G8.01.T3
+        self._last_seen: dict[WebSocket, float] = {}
 
     def register(self, ws: WebSocket, room: str) -> None:
-        """Adiciona WebSocket a uma room. Idempotente."""
+        """Adiciona WebSocket a uma room. Idempotente. Atualiza last_seen."""
         if room not in self.connections:
             self.connections[room] = set()
         self.connections[room].add(ws)
+        self.touch(ws)
         logger.debug(
-            "ws.register room=%s total_in_room=%d grand_total=%d",
+            'ws.register room=%s total_in_room=%d grand_total=%d',
             room,
             len(self.connections[room]),
             self.total_connections(),
@@ -69,11 +74,23 @@ class ConnectionManager:
             if not self.connections[room]:
                 del self.connections[room]
             logger.debug(
-                "ws.unregister room=%s total_in_room=%d grand_total=%d",
+                'ws.unregister room=%s total_in_room=%d grand_total=%d',
                 room,
                 len(self.connections.get(room, set())),
                 self.total_connections(),
             )
+        # Limpa last_seen se WS nao esta em nenhuma room restante
+        still_registered = any(ws in clients for clients in self.connections.values())
+        if not still_registered:
+            self._last_seen.pop(ws, None)
+
+    def touch(self, ws: WebSocket, *, now: float | None = None) -> None:
+        """Atualiza last_seen do websocket (atividade / pong)."""
+        self._last_seen[ws] = time.monotonic() if now is None else now
+
+    def last_seen(self, ws: WebSocket) -> float | None:
+        """Retorna monotonic last_seen ou None se desconhecido."""
+        return self._last_seen.get(ws)
 
     def total_connections(self) -> int:
         """Total de conexoes ativas em todas rooms."""
@@ -101,7 +118,7 @@ class ConnectionManager:
             except Exception as e:  # noqa: BLE001
                 # Cliente provavelmente desconectou. Loga e segue.
                 logger.warning(
-                    "ws.broadcast.send_failed room=%s err=%s - unregistering",
+                    'ws.broadcast.send_failed room=%s err=%s - unregistering',
                     room,
                     type(e).__name__,
                 )
@@ -118,7 +135,7 @@ class ConnectionManager:
             await ws.send_json(payload)
             return True
         except Exception as e:  # noqa: BLE001
-            logger.warning("ws.send_personal.send_failed err=%s", type(e).__name__)
+            logger.warning('ws.send_personal.send_failed err=%s', type(e).__name__)
             return False
 
 
@@ -134,4 +151,4 @@ def get_manager() -> ConnectionManager:
     return _manager
 
 
-__all__ = ["ConnectionManager", "get_manager"]
+__all__ = ['ConnectionManager', 'get_manager']

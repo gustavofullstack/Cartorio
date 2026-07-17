@@ -37,6 +37,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import get_db
+from app.services.dialog_history import DialogHistoryConfig
 from app.services.pii import scrub
 from app.services.redis_bus import get_bus
 
@@ -1165,36 +1166,26 @@ def _resumir_mensagens(mensagens: list[str]) -> str:
 
 HIST_TTL = 7200  # 2h de memoria multi-turn por conversa
 HIST_MAX = 40  # entradas user/bot (~20 turnos)
+# G8.02.T1: entry cap + dynamic token budget (not fixed HIST_MAX only)
 
 
 async def _hist_get(bus: Any, key: int | str) -> list[str]:
     """Le historico multi-turn do Redis (lista de strings 'user:..' / 'bot:..')."""
-    if not bus:
-        return []
-    try:
-        raw = await bus.client.get(f"tg:hist:{key}")
-        if not raw:
-            return []
-        data = json.loads(raw)
-        return data if isinstance(data, list) else []
-    except Exception:
-        return []
+    from app.services.dialog_history import hist_get
+
+    return await hist_get(bus, key)
 
 
 async def _hist_append(bus: Any, key: int | str, role: str, text: str) -> None:
     """Append turn no historico (LGPD: texto ja deve vir scrubado)."""
-    if not bus or not text:
+    from app.services.dialog_history import DialogHistoryConfig, hist_append
+
+    if not text:
         return
+    snippet = scrub(text).text
+    cfg = DialogHistoryConfig(max_entries=HIST_MAX, ttl_sec=HIST_TTL, max_tokens=2000)
     try:
-        hist = await _hist_get(bus, key)
-        snippet = scrub(text).text[:400]
-        hist.append(f"{role}: {snippet}")
-        hist = hist[-HIST_MAX:]
-        await bus.client.set(
-            f"tg:hist:{key}",
-            json.dumps(hist, ensure_ascii=False),
-            ex=HIST_TTL,
-        )
+        await hist_append(bus, key, role, snippet, config=cfg)
     except Exception as exc:
         logger.warning("TG hist append fail key=%s: %s", key, exc)
 

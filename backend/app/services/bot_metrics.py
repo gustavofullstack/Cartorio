@@ -41,7 +41,7 @@ store: MetricsStore = _global_store
 
 
 ChannelLabel = Literal["telegram", "whatsapp"]
-StatusLabel = Literal["ok", "failed", "rate_limited", "idempotent"]
+StatusLabel = Literal["ok", "failed", "rate_limited", "idempotent", "hitl_muted"]
 StageLabel = Literal["debounce", "llm", "send", "total"]
 TipoScrubLabel = Literal["cpf", "rg", "telefone", "email", "cns", "cnh", "none"]
 ConsentLabel = Literal["true", "false"]

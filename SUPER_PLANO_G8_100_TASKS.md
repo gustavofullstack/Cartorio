@@ -5,7 +5,7 @@
 
 ---
 
-> **HONESTY GATE (Lesson 216/217/218):** `[x]` só com evidência. Evidenced: G8.01.T2, G8.01.T4, G8.02.T2, G8.05.T1, G8.05.T2, G8.06.T1, G8.07.T1, G8.07.T2, G8.07.T3, G8.08.T1, G8.08.T2, G8.08.T3, G8.08.T4 (**13/100**). Wave 32: G8.05.T1 + G8.06.T1 (Lesson 217). Wave 33: G8.07.T2/T3 + G8.05.T2 + G8.01.T4 (test_g8_wave33). Wave 34: G8.02.T2 + G8.01.T2 (Lesson 218).
+> **HONESTY GATE (Lesson 216/217/218/219):** `[x]` só com evidência. Evidenced Wave35/36: G8.01.T1/T2/T3/T4, G8.02.T1/T2/T4, G8.03.T2, G8.05.T1/T2/T3, G8.06.T1, G8.07.T1/T2/T3/T4, G8.08.T1-T4 (**20/100**). Wave 35+36 REAL (Hermes 2026-07-17).
 
 ## META
 
@@ -20,24 +20,24 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
 ### Squad 01 — API Core & WebSockets Hardening (dev×4)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.01.T1 | Testar resiliência de conexões WebSocket sob concorrência de 100+ conexões simultâneas simuladas. | [ ] | cartorio-dev |
+| G8.01.T1 | Testar resiliência de conexões WebSocket sob concorrência de 100+ conexões simultâneas simuladas. | [x] | cartorio-dev |
 | G8.01.T2 | Otimizar buffering de mensagens grandes em streams de logs e radar endpoints. | [x] | cartorio-dev |
-| G8.01.T3 | Implementar heartbeat ping/pong robusto no WebSocket de atendimento. | [ ] | cartorio-dev |
+| G8.01.T3 | Implementar heartbeat ping/pong robusto no WebSocket de atendimento. | [x] | cartorio-dev |
 | G8.01.T4 | Criar testes automatizados para conexões de WebSocket concorrentes no mock da API. | [x] | cartorio-dev |
 
 ### Squad 02 — Telegram Production & Multi-Turn (dev+n8n)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.02.T1 | Configurar histórico multi-turn Redis com limite de profundidade dinâmica de tokens. | [ ] | cartorio-dev |
+| G8.02.T1 | Configurar histórico multi-turn Redis com limite de profundidade dinâmica de tokens. | [x] | cartorio-dev |
 | G8.02.T2 | Tratar erros de payload e formatação do Telegram de modo amigável e sem vazamento de stacktrace. | [x] | cartorio-dev |
 | G8.02.T3 | Desenhar workflow de debounce para mensagens duplicadas vindas da API do Telegram. | [ ] | cartorio-n8n |
-| G8.02.T4 | Criar 10 cenários de teste de integração para o bot de Telegram simulando sessões longas. | [ ] | cartorio-dev |
+| G8.02.T4 | Criar 10 cenários de teste de integração para o bot de Telegram simulando sessões longas. | [x] | cartorio-dev |
 
 ### Squad 03 — Chatwoot Handoff & HITL (n8n+lgpd)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.03.T1 | Desenvolver webhook receiver na API FastAPI para eventos `conversation_status_changed` do Chatwoot. | [ ] | cartorio-dev |
-| G8.03.T2 | Desativar respostas automáticas do bot no Redis assim que o escrevente assumir a conversa (HITL). | [ ] | cartorio-dev |
+| G8.03.T2 | Desativar respostas automáticas do bot no Redis assim que o escrevente assumir a conversa (HITL). | [x] | cartorio-dev |
 | G8.03.T3 | Implementar workflow n8n que sincroniza estados do Chatwoot para desvio de mensagens a humanos. | [ ] | cartorio-n8n |
 | G8.03.T4 | Validar o fluxo de exclusão/anonimização de dados no Chatwoot para cumprir Art. 18 LGPD. | [ ] | cartorio-lgpd |
 
@@ -52,9 +52,9 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
 ### Squad 05 — Redis Caching & Idempotency (dev+n8n)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.05.T1 | Revisar configurações de expiração (TTL) e eviction no Redis para dados temporários de sessões. | [ ] | cartorio-dev |
+| G8.05.T1 | Revisar configurações de expiração (TTL) e eviction no Redis para dados temporários de sessões. | [x] | cartorio-dev |
 | G8.05.T2 | Padronizar validação de `X-Idempotency-Key` em todos os webhooks de entrada. | [x] | cartorio-n8n |
-| G8.05.T3 | Criptografar chaves de busca baseadas em CPF/CNPJ no cache do Redis. | [ ] | cartorio-lgpd |
+| G8.05.T3 | Criptografar chaves de busca baseadas em CPF/CNPJ no cache do Redis. | [x] | cartorio-lgpd |
 | G8.05.T4 | Criar testes de estresse para validação de chaves idempotentes sob alta concorrência. | [ ] | cartorio-dev |
 
 ### Squad 06 — Postgres & Supabase Database Engineering (dev+sre)
@@ -71,7 +71,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
 | G8.07.T1 | Implementar testes de integração mockados para todas as tools expostas no `mcp_server.py`. | [x] | cartorio-dev |
 | G8.07.T2 | Criar nova ferramenta MCP para validação de hash sequencial da cadeia de auditoria. | [x] | cartorio-dev |
 | G8.07.T3 | Adicionar interceptor no MCP server para filtrar e mascarar dados sensíveis de saída. | [x] | cartorio-lgpd |
-| G8.07.T4 | Integrar status de execução de tools MCP no painel de radar. | [ ] | cartorio-dev |
+| G8.07.T4 | Integrar status de execução de tools MCP no painel de radar. | [x] | cartorio-dev |
 
 ### Squad 08 — Webhooks, DLQ & Retry (dev+n8n)
 | ID | Task | Done | Agent |

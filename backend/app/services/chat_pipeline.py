@@ -590,6 +590,34 @@ async def process_message(
         inc_bot_request(msg.channel.value, "idempotent")
         return None
 
+    # 1b. G8.03.T2 — HITL mute: escrevente assumiu no Chatwoot → bot silencioso
+    try:
+        from app.services.bot_mute import is_bot_muted
+
+        bus = get_bus()
+        client = getattr(bus, "client", None) if bus else None
+        if client is not None and is_bot_muted(client, msg.channel.value, msg.sender_id):
+            _emit(
+                logging.INFO,
+                "bot muted (HITL)",
+                event="bot.hitl_muted",
+                channel=msg.channel.value,
+                chat_id=hashlib.sha256(msg.sender_id.encode()).hexdigest()[:16],
+                correlation_id=correlation_id,
+            )
+            await audit_log(
+                msg.channel,
+                msg.sender_id,
+                hash_content(msg.text),
+                "receive",
+                "hitl_muted",
+                correlation_id,
+            )
+            inc_bot_request(msg.channel.value, "hitl_muted")
+            return None
+    except Exception:  # noqa: BLE001 — fail-open
+        pass
+
     # 2. PII scrub input (camada 1) + métrica
     clean_text, n_redacted = scrub_with_metric(msg.text, msg.channel.value)
     msg.text = clean_text

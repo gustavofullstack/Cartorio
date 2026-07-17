@@ -99,11 +99,48 @@ def process_chatwoot_event(
 
 
 def _handle_status_changed(db: Session, payload: dict[str, Any]) -> None:
-    """Se status=resolved, marca atendimento como concluido."""
-    status = payload.get("status") or payload.get("conversation", {}).get("status")
-    conv_id = payload.get("conversation", {}).get("id")
+    """Se status=resolved, marca atendimento como concluido.
 
-    if status != "resolved" or not conv_id:
+    G8.03.T2: status open/pending com assignee humano → mute bot (HITL).
+    status resolved → unmute bot para novas interações.
+    """
+    status = payload.get("status") or payload.get("conversation", {}).get("status")
+    conv = payload.get("conversation") or {}
+    conv_id = conv.get("id") or payload.get("id")
+    assignee = payload.get("assignee") or conv.get("meta", {}).get("assignee") or conv.get(
+        "assignee"
+    )
+
+    if not conv_id:
+        return
+
+    # HITL mute/unmute (best-effort Redis)
+    try:
+        from app.services.bot_mute import mute_bot, unmute_bot
+        from app.services.redis_bus import get_bus
+
+        bus = get_bus()
+        client = getattr(bus, "client", None) if bus else None
+        if client is not None:
+            if status in {"open", "pending"} and assignee:
+                mute_bot(client, "chatwoot", str(conv_id), reason="hitl_assignee")
+                # também mute por canal telegram se houver mapping no atendimento
+                at = db.execute(
+                    select(Atendimento).where(Atendimento.chatwoot_conversation_id == conv_id)
+                ).scalar_one_or_none()
+                if at is not None and getattr(at, "canal", None):
+                    mute_bot(client, "telegram", str(at.canal), reason="hitl_assignee")
+            elif status == "resolved":
+                unmute_bot(client, "chatwoot", str(conv_id))
+                at = db.execute(
+                    select(Atendimento).where(Atendimento.chatwoot_conversation_id == conv_id)
+                ).scalar_one_or_none()
+                if at is not None and getattr(at, "canal", None):
+                    unmute_bot(client, "telegram", str(at.canal))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("chatwoot_handoff mute hook fail: %s", type(exc).__name__)
+
+    if status != "resolved":
         return
 
     atendimento = db.execute(
@@ -148,6 +185,18 @@ def _handle_message_created(db: Session, payload: dict[str, Any]) -> None:
     # Só faz sync bidirecional para mensagens outgoing (escrevente → cliente)
     if message_type != "outgoing" or not content or not conv_id:
         return
+
+    # G8.03.T2: primeira resposta humana → mute bot no canal do cliente
+    try:
+        from app.services.bot_mute import mute_bot
+        from app.services.redis_bus import get_bus
+
+        bus = get_bus()
+        client = getattr(bus, "client", None) if bus else None
+        if client is not None:
+            mute_bot(client, "chatwoot", str(conv_id), reason="hitl_outgoing")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("chatwoot_handoff mute on outgoing fail: %s", type(exc).__name__)
 
     # Busca o atendimento para encontrar o chat_id do Telegram
     atendimento = db.execute(

@@ -431,6 +431,29 @@ async def _check_disk_category() -> dict[str, dict[str, Any]]:
     return {"docker_volumes": _check_disk(RADAR_DISK_PATH)}
 
 
+async def _check_mcp_category() -> dict[str, dict[str, Any]]:
+    """G8.07.T4 — inventário de tools MCP no radar (sync, fail-open)."""
+
+    def _run() -> dict[str, Any]:
+        from app.services.mcp_radar_status import build_mcp_radar
+
+        return build_mcp_radar().to_dict()
+
+    try:
+        payload = await asyncio.to_thread(_run)
+        return {"mcp_tools": payload}
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "mcp_tools": {
+                "status": "warn",
+                "latency_ms": 0,
+                "detail": f"mcp radar error: {type(exc).__name__}",
+                "tool_count": 0,
+                "tools": [],
+            }
+        }
+
+
 def _aggregate_overall(categories: dict[str, dict[str, dict[str, Any]]]) -> str:
     """Calcula status agregado.
 
@@ -492,18 +515,21 @@ async def health_radar_expanded() -> dict[str, Any]:
     traefik_coro = _check_traefik_category()
     ssh_coro = _check_ssh_category()
     disk_coro = _check_disk_category()
+    mcp_coro = _check_mcp_category()
 
     health: Any
     dns: Any
     traefik: Any
     ssh: Any
     disk: Any
-    health, dns, traefik, ssh, disk = await asyncio.gather(
+    mcp: Any
+    health, dns, traefik, ssh, disk, mcp = await asyncio.gather(
         health_coro,
         dns_coro,
         traefik_coro,
         ssh_coro,
         disk_coro,
+        mcp_coro,
         return_exceptions=True,
     )
 
@@ -521,6 +547,7 @@ async def health_radar_expanded() -> dict[str, Any]:
         "traefik": _coerce(traefik, {}),
         "ssh": _coerce(ssh, {}),
         "disk": _coerce(disk, {}),
+        "mcp": _coerce(mcp, {}),
     }
 
     overall = _aggregate_overall(categories)

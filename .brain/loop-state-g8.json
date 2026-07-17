@@ -1,10 +1,5 @@
 {
-  "completed_waves": [
-    1,
-    2,
-    3,
-    4
-  ],
+  "completed_waves": [8, 32, 33, 34, 35, 36],
   "completed_tasks": [
     "G8.01.T1",
     "G8.01.T2",
@@ -12,18 +7,36 @@
     "G8.01.T4",
     "G8.02.T1",
     "G8.02.T2",
-    "G8.02.T3",
     "G8.02.T4",
-    "G8.03.T1",
     "G8.03.T2",
-    "G8.03.T3",
-    "G8.03.T4",
-    "G8.04.T1",
-    "G8.04.T2",
-    "G8.04.T3",
-    "G8.04.T4"
+    "G8.05.T1",
+    "G8.05.T2",
+    "G8.05.T3",
+    "G8.06.T1",
+    "G8.07.T1",
+    "G8.07.T2",
+    "G8.07.T3",
+    "G8.07.T4",
+    "G8.08.T1",
+    "G8.08.T2",
+    "G8.08.T3",
+    "G8.08.T4"
   ],
-  "last_wave": 4,
-  "status": "ready",
-  "last_updated": "2026-07-17T16:24:19.948477"
+  "last_wave": 36,
+  "status": "g8_20pct_honest_wave35_36_done",
+  "last_updated": "2026-07-17T21:30:00+00:00",
+  "evidence_policy": "checkbox only with commit+tests+lesson",
+  "honest_count": 20,
+  "honest_total": 100,
+  "wave35": {
+    "tasks": ["G8.01.T1", "G8.01.T3", "G8.02.T1"],
+    "tests": "ws_concurrency + ws_heartbeat + dialog_history",
+    "passed": 47
+  },
+  "wave36": {
+    "tasks": ["G8.03.T2", "G8.07.T4", "G8.05.T3", "G8.02.T4"],
+    "tests": "bot_mute + mcp_radar + redis_doc_keys + long_session"
+  },
+  "next_wave": 37,
+  "next_wave_tasks": ["G8.02.T3", "G8.03.T1", "G8.03.T3", "G8.05.T4"]
 }
