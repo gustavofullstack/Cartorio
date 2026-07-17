@@ -17,23 +17,26 @@ from app.api.v1.n8n_metrics import fetch_n8n_executions  # noqa: E402
 
 def test_fetch_n8n_executions_sucesso() -> None:
     """Mock simples: endpoint calcula metricas."""
+    from datetime import datetime, timezone
     from unittest.mock import patch
 
+    recent_ts = datetime.now(timezone.utc).isoformat()
     mock_response = {
         "data": [
             {
                 "id": "exec-1",
                 "workflowId": "wf-1",
                 "status": "success",
-                "startedAt": "2026-07-16T10:00:00.000Z",
-                "stoppedAt": "2026-07-16T10:00:05.000Z",
+                "startedAt": recent_ts,
+                "stoppedAt": recent_ts,
                 "workflow": {"name": "test-wf"},
             }
         ]
     }
-    with patch("httpx.Client.get") as mock_get:
-        mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = mock_response
+    with patch("app.api.v1.n8n_metrics.httpx.Client") as mock_client_cls:
+        mock_client = mock_client_cls.return_value.__enter__.return_value
+        mock_client.get.return_value.status_code = 200
+        mock_client.get.return_value.json.return_value = mock_response
         result = fetch_n8n_executions("https://n8n.test", "test-key", hours=24, timeout=10.0)
     assert len(result) == 1
     assert result[0]["workflowId"] == "wf-1"
@@ -41,29 +44,34 @@ def test_fetch_n8n_executions_sucesso() -> None:
 
 def test_fetch_n8n_executions_filtra_janela() -> None:
     """Filtra execucoes fora da janela."""
+    from datetime import datetime, timedelta, timezone
     from unittest.mock import patch
 
+    now = datetime.now(timezone.utc)
+    recent = now.isoformat()
+    old = (now - timedelta(days=30)).isoformat()
     mock_response = {
         "data": [
             {
                 "id": "exec-recent",
                 "workflowId": "wf-1",
                 "status": "success",
-                "startedAt": "2026-07-16T10:00:00.000Z",
-                "stoppedAt": "2026-07-16T10:00:01.000Z",
+                "startedAt": recent,
+                "stoppedAt": recent,
             },
             {
                 "id": "exec-old",
                 "workflowId": "wf-1",
                 "status": "success",
-                "startedAt": "2026-07-01T10:00:00.000Z",
-                "stoppedAt": "2026-07-01T10:00:01.000Z",
+                "startedAt": old,
+                "stoppedAt": old,
             },
         ]
     }
-    with patch("httpx.Client.get") as mock_get:
-        mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = mock_response
+    with patch("app.api.v1.n8n_metrics.httpx.Client") as mock_client_cls:
+        mock_client = mock_client_cls.return_value.__enter__.return_value
+        mock_client.get.return_value.status_code = 200
+        mock_client.get.return_value.json.return_value = mock_response
         result = fetch_n8n_executions("https://n8n.test", "test-key", hours=24, timeout=10.0)
     assert len(result) == 1
     assert result[0]["id"] == "exec-recent"
