@@ -1,0 +1,30 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/mcp-client.json",
+  "mcpServers": {
+    "cartorio-api": {
+      "url": "https://api.2notasudi.com.br/mcp",
+      "transport": "http",
+      "headers": {
+        "X-API-Key": "${CARTORIO_API_KEY}"
+      },
+      "description": "FastMCP cartorio-mcp-cabuloso (emolumento, protocolo, audit_verify). Sem secrets commitados — use env."
+    },
+    "cartorio-api-local": {
+      "command": "uv",
+      "args": ["run", "--directory", "backend", "python", "mcp_server.py"],
+      "cwd": "/Users/gustavoalmeida/Projetos/Cartorio",
+      "env": {
+        "MCP_SERVER_PORT": "8765",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "AUDIT_HMAC_KEY": "${AUDIT_HMAC_KEY}"
+      },
+      "description": "Standalone local MCP (make -C backend mcp-server)"
+    }
+  },
+  "_meta": {
+    "task": "G7.09.T2",
+    "note": "Copy to ~/.mavis/mcp/clients/cartorio-mcp-config.json and fill env. Never commit real keys.",
+    "inventory": "docs/platforms/MCP_TOOLS_INVENTORY.md",
+    "count_command": "rg -c '@mcp.tool' backend/mcp_server.py"
+  }
+}

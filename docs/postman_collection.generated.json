@@ -1,0 +1,3734 @@
+{
+  "info": {
+    "name": "Cartório 2º Notas API (generated)",
+    "description": "Generated from OpenAPI. Use variable cartorio_api_key. Do not prefix paths with /api/v1 twice.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "0.5.4"
+  },
+  "item": [
+    {
+      "name": "health_health_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/health",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": "Health"
+      },
+      "response": []
+    },
+    {
+      "name": "ready_ready_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/ready",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "ready"
+          ]
+        },
+        "description": "Ready"
+      },
+      "response": []
+    },
+    {
+      "name": "mcp_servers_mcp_servers_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/mcp-servers",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "mcp-servers"
+          ]
+        },
+        "description": "Mcp Servers"
+      },
+      "response": []
+    },
+    {
+      "name": "opencode_test_api_v1_integrations_opencode_test_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/integrations/opencode/test",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "integrations",
+            "opencode",
+            "test"
+          ]
+        },
+        "description": "Smoke test do OpenCode-Go (LLM provider)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "openclaw_status_endpoint_api_v1_integrations_openclaw_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/integrations/openclaw",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "integrations",
+            "openclaw"
+          ]
+        },
+        "description": "Status direto do OpenClaw Agent (Turno 38)"
+      },
+      "response": []
+    },
+    {
+      "name": "agent_health_api_v1_integrations_agent_health_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/integrations/agent/health",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "integrations",
+            "agent",
+            "health"
+          ]
+        },
+        "description": "Health check do OpenClaw Agent + LLM"
+      },
+      "response": []
+    },
+    {
+      "name": "outbox_dispatch_api_v1_integrations_outbox_dispatch_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/integrations/outbox/dispatch",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "integrations",
+            "outbox",
+            "dispatch"
+          ]
+        },
+        "description": "Despachar mensagem do outbox (webhook Supabase)"
+      },
+      "response": []
+    },
+    {
+      "name": "n8n_error_webhook_api_v1_integrations_n8n_error_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/integrations/n8n/error",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "integrations",
+            "n8n",
+            "error"
+          ]
+        },
+        "description": "Webhook do N8N Error Workflow Global (B6)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "calcular_emolumento_api_v1_emolumento_calcular_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/emolumento/calcular",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "emolumento",
+            "calcular"
+          ]
+        },
+        "description": "Calcular emolumento (tabela oficial MG 2026)"
+      },
+      "response": []
+    },
+    {
+      "name": "get_protocolo_api_v1_protocolo__numero__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/protocolo/:numero",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "protocolo",
+            ":numero"
+          ]
+        },
+        "description": "Consultar protocolo por numero"
+      },
+      "response": []
+    },
+    {
+      "name": "post_protocolo_api_v1_protocolo_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/protocolo",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "protocolo"
+          ]
+        },
+        "description": "Criar protocolo (HITL DRAFT obrigatorio)",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"canal_origem\": \"web\",\n  \"cliente_cpf\": \"123.456.789-09\",\n  \"cliente_nome\": \"Joao da Silva\",\n  \"consentimento_lgpd\": true,\n  \"tipo\": \"certidao_negativa\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "post_protocolo_criar_api_api_v1_protocolo_criar_api_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/protocolo/criar-api",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "protocolo",
+            "criar-api"
+          ]
+        },
+        "description": "Criar protocolo via API (auth X-API-Key, HITL DRAFT obrigatorio)",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ato\": \"escritural\",\n  \"cliente_id\": 1,\n  \"hitl_draft\": true,\n  \"observacoes\": \"Cliente pediu urgencia\",\n  \"valor_snapshot\": \"150.50\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "webhook_evolution_api_v1_webhook_evolution_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/webhook/evolution",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "webhook",
+            "evolution"
+          ]
+        },
+        "description": "Webhook WhatsApp (Evolution API)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "audit_verify_api_v1_audit_verify_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/audit/verify",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "audit",
+            "verify"
+          ]
+        },
+        "description": "Verificar integridade da cadeia de audit log"
+      },
+      "response": []
+    },
+    {
+      "name": "health_live_api_v1_health_live_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/live",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "live"
+          ]
+        },
+        "description": "Liveness probe (sem dependencias externas)"
+      },
+      "response": []
+    },
+    {
+      "name": "health_ready_api_v1_health_ready_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/ready",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "ready"
+          ]
+        },
+        "description": "Readiness probe (verifica dependencias criticas)"
+      },
+      "response": []
+    },
+    {
+      "name": "health_db_api_v1_health_db_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/db",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "db"
+          ]
+        },
+        "description": "Health check granular: PostgreSQL"
+      },
+      "response": []
+    },
+    {
+      "name": "health_redis_api_v1_health_redis_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/redis",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "redis"
+          ]
+        },
+        "description": "Health check granular: Redis"
+      },
+      "response": []
+    },
+    {
+      "name": "health_audit_api_v1_health_audit_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/audit",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "audit"
+          ]
+        },
+        "description": "Health check granular: audit log (dead man's switch A23)"
+      },
+      "response": []
+    },
+    {
+      "name": "health_audit_freshness_api_v1_health_audit_freshness_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/audit-freshness",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "audit-freshness"
+          ]
+        },
+        "description": "Health check: audit log freshness (dead man's switch A13)"
+      },
+      "response": []
+    },
+    {
+      "name": "health_llm_api_v1_health_llm_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/llm",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "llm"
+          ]
+        },
+        "description": "Health check granular: LLM provider (Opencode-Go / OpenClaw)"
+      },
+      "response": []
+    },
+    {
+      "name": "health_radar_api_v1_health_radar_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/radar",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "radar"
+          ]
+        },
+        "description": "Health radar multi-servico"
+      },
+      "response": []
+    },
+    {
+      "name": "health_integracoes_api_v1_health_integracoes_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/integracoes",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "integracoes"
+          ]
+        },
+        "description": "Status de TODAS integracoes externas (N8N workflow #30)"
+      },
+      "response": []
+    },
+    {
+      "name": "health_backup_api_v1_health_backup_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/backup",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "backup"
+          ]
+        },
+        "description": "Status do backup diario (N8N workflow #09)"
+      },
+      "response": []
+    },
+    {
+      "name": "update_backup_status_api_v1_health_backup_status_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/backup/status",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "backup",
+            "status"
+          ]
+        },
+        "description": "Atualiza status do backup via Redis (chamado pelo backup.sh)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "health_backup_v2_api_v1_health_backup_v2_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/health/backup-v2",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            "backup-v2"
+          ]
+        },
+        "description": "Status do backup pg_basebackup 4x/dia (A14)"
+      },
+      "response": []
+    },
+    {
+      "name": "agendamento_disponibilidade_api_v1_agendamento_disponibilidade_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento/disponibilidade",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agendamento",
+            "disponibilidade"
+          ]
+        },
+        "description": "Consultar disponibilidade de agenda (N8N workflow #05)"
+      },
+      "response": []
+    },
+    {
+      "name": "documento_segunda_via_api_v1_documento_segunda_via_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/documento/segunda-via",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documento",
+            "segunda-via"
+          ]
+        },
+        "description": "Emitir segunda via de documento (N8N workflow #06)"
+      },
+      "response": []
+    },
+    {
+      "name": "atendimentos_ultimas_24h_api_v1_atendimento_ultimas_24h_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/ultimas-24h",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "atendimento",
+            "ultimas-24h"
+          ]
+        },
+        "description": "Listar atendimentos concluidos nas ultimas 24h (N8N workflow #07)"
+      },
+      "response": []
+    },
+    {
+      "name": "marcar_pesquisa_enviada_api_v1_atendimento__atendimento_id__pesquisa_enviada_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/:atendimento_id/pesquisa-enviada",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "atendimento",
+            ":atendimento_id",
+            "pesquisa-enviada"
+          ]
+        },
+        "description": "Marcar pesquisa de satisfacao como enviada (N8N workflow #07)"
+      },
+      "response": []
+    },
+    {
+      "name": "criar_atendimento_api_v1_atendimento_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "atendimento"
+          ]
+        },
+        "description": "Criar atendimento (handoff Chatwoot ou webhook externo)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "concluir_atendimento_api_v1_atendimento__atendimento_id__concluir_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/:atendimento_id/concluir",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "atendimento",
+            ":atendimento_id",
+            "concluir"
+          ]
+        },
+        "description": "Concluir atendimento (registra timestamp para pesquisa 24h)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "obter_historico_atendimento_api_v1_atendimento__session_id__historico_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/:session_id/historico",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "atendimento",
+            ":session_id",
+            "historico"
+          ]
+        },
+        "description": "Obter historico de atendimento (Redis + Supabase)"
+      },
+      "response": []
+    },
+    {
+      "name": "listar_sessoes_ativas_api_v1_atendimento_list_active_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/atendimento/list-active",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "atendimento",
+            "list-active"
+          ]
+        },
+        "description": "Lista sessoes ativas (ultimas N horas)"
+      },
+      "response": []
+    },
+    {
+      "name": "webhook_chatwoot_api_v1_webhook_chatwoot_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/webhook/chatwoot",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "webhook",
+            "chatwoot"
+          ]
+        },
+        "description": "Webhook Chatwoot (HMAC + idempotency)"
+      },
+      "response": []
+    },
+    {
+      "name": "cron_stale_detector_api_v1_cron_stale_detector_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cron/stale-detector",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cron",
+            "stale-detector"
+          ]
+        },
+        "description": "CRON: marca atendimentos parados como stale (N8N workflow #23)"
+      },
+      "response": []
+    },
+    {
+      "name": "delete_cliente_api_v1_cliente__cliente_id__delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id"
+          ]
+        },
+        "description": "Direito ao esquecimento (LGPD art. 18 VI)"
+      },
+      "response": []
+    },
+    {
+      "name": "get_cliente_api_v1_cliente__cliente_id__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id"
+          ]
+        },
+        "description": "Dados basicos do cliente (LGPD-safe)"
+      },
+      "response": []
+    },
+    {
+      "name": "patch_cliente_api_v1_cliente__cliente_id__patch",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id"
+          ]
+        },
+        "description": "Direito de correcao (LGPD art. 18 III)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "admin_run_retencao_api_v1_admin_retencao_run_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/retencao/run",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "retencao",
+            "run"
+          ]
+        },
+        "description": "Executa job de retenção LGPD (5y/2y)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "admin_audit_dead_mans_switch_check_api_v1_admin_audit_dead_mans_switch_check_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/audit/dead-mans-switch/check",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "audit",
+            "dead-mans-switch",
+            "check"
+          ]
+        },
+        "description": "Forca check de freshness do audit log (admin)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "admin_audit_health_api_v1_admin_audit_health_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/audit/health",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "audit",
+            "health"
+          ]
+        },
+        "description": "Health check audit log (3-level: healthy/warning/critical)"
+      },
+      "response": []
+    },
+    {
+      "name": "admin_audit_check_now_api_v1_admin_audit_check_now_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/audit/check-now",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "audit",
+            "check-now"
+          ]
+        },
+        "description": "Forca check 3-level + envia alerta Telegram se stale",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "postman_collection_api_v1_postman_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/postman",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "postman"
+          ]
+        },
+        "description": "Exportar colecao Postman v2.1.0"
+      },
+      "response": []
+    },
+    {
+      "name": "create_audit_log_endpoint_api_v1_audit_log_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/audit/log",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "audit",
+            "log"
+          ]
+        },
+        "description": "Cria entry de audit log via API (LGPD art. 37 chain)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "list_audit_logs_endpoint_api_v1_audit_logs_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/audit/logs",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "audit",
+            "logs"
+          ]
+        },
+        "description": "Lista audit logs paginados (LGPD art. 37)"
+      },
+      "response": []
+    },
+    {
+      "name": "get_audit_log_endpoint_api_v1_audit_logs__log_id__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/audit/logs/:log_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "audit",
+            "logs",
+            ":log_id"
+          ]
+        },
+        "description": "Busca 1 entry de audit log por ID"
+      },
+      "response": []
+    },
+    {
+      "name": "get_cliente_historico_api_v1_cliente__cliente_id__historico_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id/historico",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id",
+            "historico"
+          ]
+        },
+        "description": "Historico completo do cliente (timeline LGPD)"
+      },
+      "response": []
+    },
+    {
+      "name": "get_protocolos_recentes_concluidos_api_v1_protocolo_recentes_concluidos_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/protocolo/recentes-concluidos",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "protocolo",
+            "recentes-concluidos"
+          ]
+        },
+        "description": "Lista protocolos concluidos nos ultimos N minutos (N8N workflow #25)"
+      },
+      "response": []
+    },
+    {
+      "name": "upload_documento_api_v1_documento_upload_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/documento/upload",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documento",
+            "upload"
+          ]
+        },
+        "description": "Upload de documento (PDF assinado) com hash SHA256"
+      },
+      "response": []
+    },
+    {
+      "name": "stats_protocolos_api_v1_stats_protocolos_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/stats/protocolos",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "stats",
+            "protocolos"
+          ]
+        },
+        "description": "Stats de protocolos por status/tipo/canal (A16 materialized view)"
+      },
+      "response": []
+    },
+    {
+      "name": "admin_list_locks_api_v1_admin_locks_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/locks",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "locks"
+          ]
+        },
+        "description": "Lista locks distribuidos ativos (A25 redlock)"
+      },
+      "response": []
+    },
+    {
+      "name": "admin_validate_n8n_wfs_api_v1_admin_n8n_validate_wfs_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/n8n/validate-wfs",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "n8n",
+            "validate-wfs"
+          ]
+        },
+        "description": "Valida TODOS os workflows N8N sem subir N8N (B11)"
+      },
+      "response": []
+    },
+    {
+      "name": "admin_slow_queries_api_v1_admin_slow_queries_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/slow-queries",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "slow-queries"
+          ]
+        },
+        "description": "Lista queries lentas armazenadas (A16)"
+      },
+      "response": []
+    },
+    {
+      "name": "admin_lgpd_relatorio_anual_api_v1_admin_lgpd_relatorio_anual_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/lgpd/relatorio-anual",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "lgpd",
+            "relatorio-anual"
+          ]
+        },
+        "description": "Relatorio anual ANPD (LGPD art. 38) - D9"
+      },
+      "response": []
+    },
+    {
+      "name": "get_metrics_prometheus_api_v1_metrics_prometheus_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/metrics/prometheus",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "metrics",
+            "prometheus"
+          ]
+        },
+        "description": "Metrics em formato Prometheus (open source)"
+      },
+      "response": []
+    },
+    {
+      "name": "get_metrics_json_api_v1_metrics_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/metrics",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "metrics"
+          ]
+        },
+        "description": "Metrics em formato JSON (N8N-friendly)"
+      },
+      "response": []
+    },
+    {
+      "name": "post_metrics_n8n_api_v1_metrics_n8n_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/metrics/n8n",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "metrics",
+            "n8n"
+          ]
+        },
+        "description": "Ingest metrics do N8N (auth X-API-Key)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "post_dlq_enqueue_api_v1_dlq__queue__enqueue_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/dlq/:queue/enqueue",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "dlq",
+            ":queue",
+            "enqueue"
+          ]
+        },
+        "description": "Enfileirar mensagem na DLQ (auth X-API-Key)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "criar_agendamento_api_v1_agendamento_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agendamento"
+          ]
+        },
+        "description": "Criar agendamento (LGPD + audit log)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "listar_agendamentos_cliente_api_v1_agendamento_cliente__cliente_id__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento/cliente/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agendamento",
+            "cliente",
+            ":cliente_id"
+          ]
+        },
+        "description": "Listar agendamentos de um cliente"
+      },
+      "response": []
+    },
+    {
+      "name": "listar_agendamentos_data_api_v1_agendamento_data__data__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento/data/:data",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agendamento",
+            "data",
+            ":data"
+          ]
+        },
+        "description": "Listar agendamentos por data"
+      },
+      "response": []
+    },
+    {
+      "name": "cancelar_agendamento_api_v1_agendamento__agendamento_id__cancelar_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento/:agendamento_id/cancelar",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agendamento",
+            ":agendamento_id",
+            "cancelar"
+          ]
+        },
+        "description": "Cancelar agendamento"
+      },
+      "response": []
+    },
+    {
+      "name": "confirmar_agendamento_api_v1_agendamento__agendamento_id__confirmar_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento/:agendamento_id/confirmar",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agendamento",
+            ":agendamento_id",
+            "confirmar"
+          ]
+        },
+        "description": "Confirmar agendamento"
+      },
+      "response": []
+    },
+    {
+      "name": "get_agendamentos_pendentes_api_v1_agendamento_pendentes_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento/pendentes",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agendamento",
+            "pendentes"
+          ]
+        },
+        "description": "Lista agendamentos pendentes para notificação (N8N)"
+      },
+      "response": []
+    },
+    {
+      "name": "get_agendamentos_proximos_api_v1_agendamento_proximos_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/agendamento/proximos",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agendamento",
+            "proximos"
+          ]
+        },
+        "description": "Lista agendamentos próximos para lembrete (N8N)"
+      },
+      "response": []
+    },
+    {
+      "name": "post_dlq_refresh_gauges_api_v1_dlq_refresh_gauges_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/dlq/refresh-gauges",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "dlq",
+            "refresh-gauges"
+          ]
+        },
+        "description": "Refresh DLQ depth gauges (auth X-API-Key)"
+      },
+      "response": []
+    },
+    {
+      "name": "get_admin_pool_api_v1_admin_pool_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/admin/pool",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "admin",
+            "pool"
+          ]
+        },
+        "description": "Pool de conexoes do DB (A15)"
+      },
+      "response": []
+    },
+    {
+      "name": "telegram_health_api_v1_telegram_health_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/telegram/health",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "telegram",
+            "health"
+          ]
+        },
+        "description": "Telegram Health"
+      },
+      "response": []
+    },
+    {
+      "name": "telegram_metrics_api_v1_telegram_metrics_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/telegram/metrics",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "telegram",
+            "metrics"
+          ]
+        },
+        "description": "Telegram Metrics"
+      },
+      "response": []
+    },
+    {
+      "name": "telegram_debug_last_updates_api_v1_telegram_debug_last_updates_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/telegram/debug/last-updates",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "telegram",
+            "debug",
+            "last-updates"
+          ]
+        },
+        "description": "Telegram Debug Last Updates"
+      },
+      "response": []
+    },
+    {
+      "name": "telegram_webhook_api_v1_telegram_webhook_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/telegram/webhook",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "telegram",
+            "webhook"
+          ]
+        },
+        "description": "Telegram Webhook"
+      },
+      "response": []
+    },
+    {
+      "name": "telegram_webhook_info_api_v1_telegram_webhook_info_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/telegram/webhook/info",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "telegram",
+            "webhook",
+            "info"
+          ]
+        },
+        "description": "Telegram Webhook Info"
+      },
+      "response": []
+    },
+    {
+      "name": "telegram_set_commands_api_v1_telegram_set_commands_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/telegram/set-commands",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "telegram",
+            "set-commands"
+          ]
+        },
+        "description": "Telegram Set Commands"
+      },
+      "response": []
+    },
+    {
+      "name": "direito_anonimizar_api_v1_cliente__cliente_id__lgpd_anonimizar_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id/lgpd/anonimizar",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id",
+            "lgpd",
+            "anonimizar"
+          ]
+        },
+        "description": "Direito Anonimizar"
+      },
+      "response": []
+    },
+    {
+      "name": "direito_corrigir_api_v1_cliente__cliente_id__lgpd_corrigir_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id/lgpd/corrigir",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id",
+            "lgpd",
+            "corrigir"
+          ]
+        },
+        "description": "Direito Corrigir"
+      },
+      "response": []
+    },
+    {
+      "name": "direito_oposicao_api_v1_cliente__cliente_id__lgpd_oposicao_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id/lgpd/oposicao",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id",
+            "lgpd",
+            "oposicao"
+          ]
+        },
+        "description": "Direito Oposicao"
+      },
+      "response": []
+    },
+    {
+      "name": "direito_optout_api_v1_cliente__cliente_id__lgpd_optout_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id/lgpd/optout",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id",
+            "lgpd",
+            "optout"
+          ]
+        },
+        "description": "Direito Optout"
+      },
+      "response": []
+    },
+    {
+      "name": "direito_portabilidade_api_v1_cliente__cliente_id__lgpd_portabilidade_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id/lgpd/portabilidade",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id",
+            "lgpd",
+            "portabilidade"
+          ]
+        },
+        "description": "Direito Portabilidade"
+      },
+      "response": []
+    },
+    {
+      "name": "download_portabilidade_api_v1_cliente__cliente_id__lgpd_portabilidade_download_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/cliente/:cliente_id/lgpd/portabilidade/download",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "cliente",
+            ":cliente_id",
+            "lgpd",
+            "portabilidade",
+            "download"
+          ]
+        },
+        "description": "Download dos dados do titular (portabilidade LGPD)"
+      },
+      "response": []
+    },
+    {
+      "name": "lgpd_dashboard_api_v1_lgpd_dashboard_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/lgpd/dashboard",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lgpd",
+            "dashboard"
+          ]
+        },
+        "description": "Dashboard DPO — KPIs LGPD agregados"
+      },
+      "response": []
+    },
+    {
+      "name": "direito_acesso_v2_api_v1_lgpd_access__cliente_id__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/lgpd/access/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lgpd",
+            "access",
+            ":cliente_id"
+          ]
+        },
+        "description": "Confirmacao de existencia e acesso aos dados (LGPD art. 18 II)"
+      },
+      "response": []
+    },
+    {
+      "name": "registrar_consentimento_v2_api_v1_lgpd_consent_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/lgpd/consent",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lgpd",
+            "consent"
+          ]
+        },
+        "description": "Registrar consentimento granular LGPD",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "direito_esquecimento_v2_api_v1_lgpd_cliente__cliente_id__delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/lgpd/cliente/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lgpd",
+            "cliente",
+            ":cliente_id"
+          ]
+        },
+        "description": "Direito ao esquecimento (LGPD art. 18 V)"
+      },
+      "response": []
+    },
+    {
+      "name": "exportar_dados_v2_api_v1_lgpd_export__cliente_id__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/lgpd/export/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lgpd",
+            "export",
+            ":cliente_id"
+          ]
+        },
+        "description": "Exportar dados do titular (LGPD art. 18 V)"
+      },
+      "response": []
+    },
+    {
+      "name": "corrigir_dados_v2_api_v1_lgpd_correct__cliente_id__post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/lgpd/correct/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lgpd",
+            "correct",
+            ":cliente_id"
+          ]
+        },
+        "description": "Corrigir dados pessoais (LGPD art. 18 III)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "revogar_consent_v2_api_v1_lgpd_revogar_consent_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/lgpd/revogar-consent",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lgpd",
+            "revogar-consent"
+          ]
+        },
+        "description": "Revogar consentimento LGPD (art. 9)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "audit_log_titular_api_v1_lgpd_audit__cliente_id__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/lgpd/audit/:cliente_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lgpd",
+            "audit",
+            ":cliente_id"
+          ]
+        },
+        "description": "Audit log do titular (LGPD art. 37 — transparencia)"
+      },
+      "response": []
+    },
+    {
+      "name": "listar_clientes_v2_api_v2_clientes_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v2/clientes",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v2",
+            "clientes"
+          ]
+        },
+        "description": "Lista clientes (v2, cursor pagination)"
+      },
+      "response": []
+    },
+    {
+      "name": "listar_protocolos_v2_api_v2_protocolos_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v2/protocolos",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v2",
+            "protocolos"
+          ]
+        },
+        "description": "Lista protocolos (v2, cursor pagination)"
+      },
+      "response": []
+    },
+    {
+      "name": "listar_tabela_emolumento_v2_api_v2_emolumento_tabela_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v2/emolumento/tabela",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v2",
+            "emolumento",
+            "tabela"
+          ]
+        },
+        "description": "Lista tabela oficial de emolumentos (v2, publico)"
+      },
+      "response": []
+    },
+    {
+      "name": "v2_info_api_v2_info_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v2/info",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v2",
+            "info"
+          ]
+        },
+        "description": "API v2 metadata (alpha)"
+      },
+      "response": []
+    },
+    {
+      "name": "list_tasks_api_v1_brain_tasks_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/tasks",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "tasks"
+          ]
+        },
+        "description": "Lista tasks do .brain/tasks"
+      },
+      "response": []
+    },
+    {
+      "name": "list_lessons_api_v1_brain_lessons_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/lessons",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "lessons"
+          ]
+        },
+        "description": "Lista lessons do .brain/lessons"
+      },
+      "response": []
+    },
+    {
+      "name": "create_lesson_api_v1_brain_lesson_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/lesson",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "lesson"
+          ]
+        },
+        "description": "Cria 1 lesson no .brain/lessons",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "trigger_sync_api_v1_brain_sync_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/sync",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "sync"
+          ]
+        },
+        "description": "Forca sync .brain local <-> VPS"
+      },
+      "response": []
+    },
+    {
+      "name": "get_loop_state_api_v1_brain_loop_state_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/loop-state",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "loop-state"
+          ]
+        },
+        "description": "Estado compacto do loop"
+      },
+      "response": []
+    },
+    {
+      "name": "list_snapshots_api_v1_brain_snapshots_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/snapshots",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "snapshots"
+          ]
+        },
+        "description": "Lista snapshots cross-session (BRAIN8)"
+      },
+      "response": []
+    },
+    {
+      "name": "get_snapshot_detail_api_v1_brain_snapshots__snapshot_id__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/snapshots/:snapshot_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "snapshots",
+            ":snapshot_id"
+          ]
+        },
+        "description": "Detalhes de 1 snapshot (BRAIN8)"
+      },
+      "response": []
+    },
+    {
+      "name": "list_sessions_api_v1_brain_sessions_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/sessions",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "sessions"
+          ]
+        },
+        "description": "Lista sessoes anteriores (BRAIN8 — context loop)"
+      },
+      "response": []
+    },
+    {
+      "name": "restore_context_api_v1_brain_context_restore__snapshot_id__get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/context/restore/:snapshot_id",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "context",
+            "restore",
+            ":snapshot_id"
+          ]
+        },
+        "description": "Restaura contexto completo de 1 snapshot (BRAIN8)"
+      },
+      "response": []
+    },
+    {
+      "name": "current_context_api_v1_brain_context_current_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/brain/context/current",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "brain",
+            "context",
+            "current"
+          ]
+        },
+        "description": "Contexto atual (alias para restoration live)"
+      },
+      "response": []
+    },
+    {
+      "name": "login_api_v1_auth_login_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/auth/login",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Mint JWT para um user_id (modo admin)",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "refresh_api_v1_auth_refresh_post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/auth/refresh",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "refresh"
+          ]
+        },
+        "description": "Trocar refresh token por novo access token",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "me_api_v1_auth_me_get",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{cartorio_api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.2notasudi.com.br/api/v1/auth/me",
+          "protocol": "https",
+          "host": [
+            "api.2notasudi.com.br"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "me"
+          ]
+        },
+        "description": "Info do usuario autenticado via JWT"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.2notasudi.com.br",
+      "type": "string"
+    },
+    {
+      "key": "cartorio_api_key",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{cartorio_api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  }
+}

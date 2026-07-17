@@ -1,0 +1,107 @@
+# Traefik edge rate-limit middlewares — OPTIONAL (G7.13.T4)
+# =============================================================================
+# STATUS: HOLD — NÃO APLICAR em prod sem GO Gustavo (Telegram / SUI).
+#           Docs: docs/TRAEFIK_EDGE_RATE_LIMIT_G7.md
+#
+# Stack: Traefik 2.x/3.x + EasyPanel Docker Swarm (provider file)
+# Autor: cartorio-sre — G7 Wave 27
+#
+# Onde aplicar (somente após GO):
+#   1. Copiar para dynamic config na VPS, ex.:
+#        /etc/traefik/dynamic/cartorio-rate-limit-optional.yaml
+#      OU mergear sob http.middlewares no arquivo dynamic já watchado.
+#   2. Confirmar providers.file.directory + watch: true no static config.
+#   3. Referenciar nos routers:
+#        middlewares:
+#          - rate-limit-public@file
+#   4. Validar 429 sob carga controlada (ver doc).
+#   5. Rollback: remover arquivo / labels e SIGHUP ou
+#        docker service update easypanel-traefik --force
+#
+# Relação com app:
+#   - App já tem RateLimit (60/min IP sliding) + RateLimitByKey (tiers) +
+#     DDoS layer 100/min IP (ADR-022). Edge rate-limit é DEFESA EM PROFUNDIDADE,
+#     não substituto. Preferir fail-open no app; edge 429 antes de saturar workers.
+#
+# Placeholders: nenhum secret neste arquivo.
+# =============================================================================
+
+http:
+  middlewares:
+
+    # --- Público (anônimo / internet) ----------------------------------------
+    # Uso: UIs e APIs expostas sem API key (landing, health público, webhooks
+    # com volume baixo). NÃO aplicar em rotas N8N internas de alto throughput
+    # sem exceção (ver rate-limit-internal).
+    rate-limit-public:
+      rateLimit:
+        average: 30          # 30 req/s média por source (≈ 1800/min theoretical)
+        burst: 60            # pico curto
+        period: 1s
+        # sourceCriterion omitido = peer IP (atrás de Cloudflare: confiar
+        # em X-Forwarded-For via entrypoint/proxy protocol — ver doc).
+
+    # Variante mais conservadora (auth pages, login, formulários)
+    rate-limit-public-strict:
+      rateLimit:
+        average: 5
+        burst: 10
+        period: 1s
+
+    # Alias usado em ROUTERS_PENDENTES.yaml (chatwoot/n8n hosts)
+    rate-limit-anon:
+      rateLimit:
+        average: 20
+        burst: 40
+        period: 1s
+
+    rate-limit-authenticated:
+      rateLimit:
+        average: 50
+        burst: 100
+        period: 1s
+
+    # --- Interno (swarm / N8N / high-throughput) -----------------------------
+    # Rotas que já são rate-limited por API key no app (N8N tier 600/min).
+    # Edge aqui é só teto anti-bug/loop, bem acima do tier legítimo.
+    rate-limit-internal:
+      rateLimit:
+        average: 200
+        burst: 400
+        period: 1s
+
+    # Webhooks de canal (Telegram/Evolution) — bursts legítimos
+    rate-limit-webhook:
+      rateLimit:
+        average: 100
+        burst: 250
+        period: 1s
+
+    # --- Chains de exemplo (compor com headers se desejado) ------------------
+    chain-edge-public:
+      chain:
+        middlewares:
+          - rate-limit-public
+          # - default-security-headers   # se já existir @file no host
+
+    chain-edge-internal:
+      chain:
+        middlewares:
+          - rate-limit-internal
+
+# =============================================================================
+# EXEMPLO de attach em router (NÃO é config ativa — ilustrativo):
+#
+# http:
+#   routers:
+#     cartorio-api-public:
+#       rule: "Host(`api.2notasudi.com.br`)"
+#       service: cartorio-api
+#       middlewares:
+#         - rate-limit-public@file
+#       tls:
+#         certResolver: letsencrypt
+#
+# Labels EasyPanel (alternativa):
+#   traefik.http.routers.cartorio-api.middlewares=rate-limit-public@file
+# =============================================================================

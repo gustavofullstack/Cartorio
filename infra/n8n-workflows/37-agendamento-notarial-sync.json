@@ -1,0 +1,218 @@
+{
+  "name": "37-agendamento-notarial-sync",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list"
+        },
+        "events": [
+          "eventCreated"
+        ],
+        "options": {}
+      },
+      "id": "gcal-trigger-01",
+      "name": "Google Calendar Event Created",
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2notasudi.com.br/api/v1/agendamentos/criar-webhook",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"cliente_id\": \"{{$json.description.match(/ID:\\\\s*(\\\\d+)/)[1]}}\",\n  \"cliente_cpf\": \"{{$json.description.match(/CPF:\\\\s*([\\\\d\\\\.\\\\-]+)/)[1]}}\",\n  \"data_hora\": \"{{$json.start.dateTime}}\",\n  \"titulo\": \"{{$json.summary}}\",\n  \"tipo\": \"normal\",\n  \"local\": \"balcao_1\",\n  \"duration_minutes\": 30\n}",
+        "options": {}
+      },
+      "id": "gcal-sync-02-api-create",
+      "name": "Create Agendamento in API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.statusCode}}",
+              "operation": "equal",
+              "value2": 201
+            }
+          ]
+        }
+      },
+      "id": "gcal-sync-03-check-status",
+      "name": "Check Creation Status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{$node[\"Google Calendar Event Created\"].json.description.match(/Telegram:\\\\s*(\\\\d+)/)[1]}}\",\n  \"text\": \"✅ *Agendamento Confirmado!*\\nSua reserva para *{{$json.titulo}}* no dia *{{$json.data_hora}}* foi registrada no cartório presencial.\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "gcal-sync-04-confirm-telegram",
+      "name": "Confirm via Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        920,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.statusCode}}",
+              "operation": "equal",
+              "value2": 409
+            }
+          ]
+        }
+      },
+      "id": "gcal-sync-05-check-conflict",
+      "name": "Is Concurrency Conflict (409)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        920,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{$node[\"Google Calendar Event Created\"].json.description.match(/Telegram:\\\\s*(\\\\d+)/)[1]}}\",\n  \"text\": \"⚠️ *Conflito de Horário!*\\nInfelizmente o horário solicitado já está ocupado no balcão presencial do cartório. Por favor, escolha outro slot de agendamento.\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "gcal-sync-06-notify-conflict",
+      "name": "Notify Conflict to User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list"
+        },
+        "eventId": "={{$node[\"Google Calendar Event Created\"].json.id}}",
+        "options": {}
+      },
+      "id": "gcal-sync-07-delete-gcal-event",
+      "name": "Remove Conflicted GCal Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Google Calendar Event Created": {
+      "main": [
+        [
+          {
+            "node": "Create Agendamento in API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Agendamento in API": {
+      "main": [
+        [
+          {
+            "node": "Check Creation Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Creation Status": {
+      "main": [
+        [
+          {
+            "node": "Confirm via Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Concurrency Conflict (409)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Concurrency Conflict (409)": {
+      "main": [
+        [
+          {
+            "node": "Notify Conflict to User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Conflict to User": {
+      "main": [
+        [
+          {
+            "node": "Remove Conflicted GCal Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": "zWk7Mn9aJpG3zgx6",
+  "meta": {
+    "instanceId": "n8n-production-cartorio-2026"
+  }
+}

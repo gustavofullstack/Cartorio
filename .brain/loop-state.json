@@ -1,19 +1,19 @@
 {
-  "version": "3.11.0",
-  "updated_at": "2026-07-17T17:05:37Z",
-  "status": "g7_wave28_done_92pct",
-  "current_sprint": "G7 Wave 28 complete (92% done · remaining SUI hold)",
-  "current_goal": "G7 agent-side 100% complete — remaining 8 tasks are SUI/infra on hold (DNS×3, tokens, QR, Traefik, DPA, Privacy) then 72h stability",
+  "version": "3.12.0",
+  "updated_at": "2026-07-17T19:19:43Z",
+  "status": "g7_wave29_closeout_done_92pct_sui_hold",
+  "current_sprint": "G7 Wave 29 agent closeout DONE · 8 [~] SUI hold · W30-SUI next",
+  "current_goal": "Gustavo executes SUI checklist (DNS×3, env, tokens, QR, OpenClaw, DPA, Privacy) then start 72h + tag v0.7.0-g7-mvp",
   "metrics": {
     "services_swarm_up": "8/8 api/litellm/openclaw/langfuse/argilla/evolution/anything-llm/lobechat/zeroclaw/open-notebook",
     "litellm_providers": "7 free models + MiniMax-M3 XMax Thinking",
-    "pytest": "2776+ passing",
+    "pytest": "3176+ passing (lesson 208 baseline)",
     "coverage": "95%",
     "mypy_errors": "0",
     "ruff_violations": "0",
     "endpoints_cataloged": "73 (+6 Telegram F4 cartorio-evolution)",
     "commits_ahead_origin": "7+",
-    "lessons_total": 207,
+    "lessons_total": 209,
     "files_created_session": "12+ (DNS runbooks, LobeChat STATUS, monitors.json, telegram.env.example, OUTAGE_RECOVERY_RUNBOOK, etc)",
     "squads_auditadas": "92/115 (~92%)",
     "production_status": "3/10 domínios 502/000 (chatwoot/n8n/supabase) - HOLD-GUSTAVO",
@@ -28,7 +28,7 @@
     "ripd_version": "1.4",
     "radar_expanded_prod": "404_need_redeploy",
     "radar_classic": "red_4up_3down",
-    "g7_wave": 28,
+    "g7_wave": 29,
     "g7_tasks_approx": "18/100",
     "postman_double_prefix_fixed": 47,
     "catalog_endpoints_note": "v1+v2+openclaw+ws+brain+radar_expanded",
@@ -53,7 +53,20 @@
     "g7_tasks_open": 0,
     "dns_soft": "7/7 core OK, 3 HOLD NXDOMAIN",
     "sui_checklist": "docs/SUI_CHECKLIST_G7_WAVE28.md",
-    "stability_72h": "NOT_STARTED tracker ready"
+    "stability_72h": "NOT_STARTED tracker ready",
+    "g7_weighted_pct": 96,
+    "super_loop_canonical": "SUPER_PLANO_G7_100_TASKS.md",
+    "super_loop_fixed_wave": 29,
+    "n8n_wf_exports": 38,
+    "n8n_wf_active_export": 33,
+    "composite_gate_prod": "exit_2_PROD_HOLD",
+    "wave29_artifacts": [
+      "scripts/super_loop_orchestrator.py",
+      "scripts/n8n_wf_inventory.py",
+      "docs/N8N_WF_INVENTORY_WAVE29_G7.md",
+      "docs/LGPD_GO_LIVE_DASHBOARD_G7.md",
+      "docs/CANAL_HEALTH_MATRIX_WAVE29_G7.md"
+    ]
   },
   "milestones": [
     {
