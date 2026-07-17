@@ -76,6 +76,7 @@ class Settings(BaseSettings):
     # ========================================================================
     pii_scrub_enabled: bool = True
     pii_block_on_detect: bool = True  # bloqueia fluxo se PII detectado antes do LLM
+    pydantic_strict_mode: bool = False  # strict validation for critical schemas (G7.21.T2)
 
     # ========================================================================
     # LLM providers (chain completo Turno 37 2026-06-30)

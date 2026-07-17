@@ -31,6 +31,7 @@ Implementacao:
 
 from __future__ import annotations
 
+import socket
 import uuid
 from datetime import datetime, UTC
 
@@ -111,14 +112,16 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
         from app.utils.ip import truncate_ip
 
+        server_name = socket.gethostname()
         logger = logging.getLogger("cartorio.request")
         logger.info(
-            "request.start method=%s path=%s correlation_id=%s client_ip=%s canal=%s",
+            "request.start method=%s path=%s correlation_id=%s client_ip=%s canal=%s server=%s",
             request.method,
             request.url.path,
             request_id,
             truncate_ip(client_ip) or "unknown",
             canal,
+            server_name,
         )
 
         response = await call_next(request)
@@ -126,15 +129,17 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         # Ecoa no response pra tracing distribuido (curl -i mostra)
         response.headers["X-Request-Id"] = request_id
         response.headers["X-Correlation-Id"] = request_id  # W3C standard
+        response.headers["X-Backend-Server"] = server_name
 
         # Log do fim do request
         logger.info(
-            "request.end method=%s path=%s status=%d correlation_id=%s duration_ms=%.2f",
+            "request.end method=%s path=%s status=%d correlation_id=%s duration_ms=%.2f server=%s",
             request.method,
             request.url.path,
             response.status_code,
             request_id,
             (datetime.now(UTC) - datetime.fromisoformat(timestamp_iso)).total_seconds() * 1000,
+            server_name,
         )
         return response
 

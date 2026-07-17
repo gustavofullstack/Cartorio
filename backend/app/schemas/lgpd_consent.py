@@ -5,11 +5,19 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from app.config import settings
 
 
 class LGPDConsentRequest(BaseModel):
     """Payload do banner LGPD enviado via sendBeacon."""
+
+    model_config = ConfigDict(
+        strict=settings.pydantic_strict_mode,
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
 
     accepted: bool = Field(..., description="Aceita todos os cookies?")
     analytics: bool = Field(default=False, description="Aceita analytics?")

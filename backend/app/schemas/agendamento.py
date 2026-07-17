@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
+from app.config import settings
 
 from app.models.agendamento import StatusAgendamento, TipoAtendimento
 
@@ -34,6 +35,14 @@ class AgendamentoBase(BaseModel):
 
 class AgendamentoCreateRequest(AgendamentoBase):
     """Request para criação de agendamento."""
+
+    model_config = ConfigDict(
+        strict=settings.pydantic_strict_mode,
+        from_attributes=True,
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
 
     cliente_id: int = Field(..., gt=0, description="ID do cliente (FK)")
     cliente_cpf: str = Field(

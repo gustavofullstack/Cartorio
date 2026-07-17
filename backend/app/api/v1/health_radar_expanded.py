@@ -32,6 +32,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import shutil
+import socket
 import time
 from typing import Any, cast
 
@@ -533,5 +534,6 @@ async def health_radar_expanded() -> dict[str, Any]:
             "ssh_host": RADAR_SSH_HOST,
             "tailscale_host": RADAR_TAILSCALE_HOST,
             "disk_path": RADAR_DISK_PATH,
+            "backend_server": socket.gethostname(),
         },
     }

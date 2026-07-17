@@ -13,6 +13,7 @@ Tambem expoe endpoint /version que retorna metadata completa.
 from __future__ import annotations
 
 import logging
+import socket
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI, Request, Response
@@ -56,6 +57,7 @@ def install_version_endpoint(app: FastAPI) -> None:
             "released": API_RELEASED,
             "next_version": API_NEXT_VERSION,
             "deprecated": False,
+            "backend_server": socket.gethostname(),
             "links": {
                 "docs": "/docs",
                 "openapi": "/openapi.json",

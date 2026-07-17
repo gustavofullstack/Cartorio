@@ -3119,3 +3119,55 @@ Modified by Gustavo Almeida
   - [x] G7.24.T2
 - **Summary:** MCP13+coding-vps63+WS ping6+Tailscale runbook+OpenClaw skills/1M+LGPD25+N8N KISS+pre-commit+TG1000 31/31
 Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 27 G7 access log backend name + Pydantic v2 strict schemas + Chatwoot canned responses DRY ✅
+- **When:** 2026-07-17 14:04 UTC
+- **Status:** DONE (86% total G7 done)
+- **Agents:** A1-dev, A2-sre, A3-dev/lgpd
+- **Tasks:**
+  - [x] G7.13.T2 — Log and expose container/hostname in RequestContextMiddleware (X-Backend-Server header), /version and /health/radar/expanded responses
+  - [x] G7.21.T2 — Implement settings.pydantic_strict_mode and configure strict=True validation for AgendamentoCreateRequest, ProtocoloCreateRequest, ProtocoloApiCreateRequest, and LGPDConsentRequest
+  - [x] G7.20.T2 — Otimização DRY: extração de get_vX_short_codes para helper genérico extract_short_codes em chatwoot_canned_responses.py
+- **Summary:** Access log server identification, strong type checking strict validation configurations, and Chatwoot canned responses helper DRY optimization.
+Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 27 G7 Pydantic strict+DRY masks; Traefik access-log+edge RL; AlertManager+Loki docs; D ✅
+- **When:** 2026-07-17 17:02 UTC
+- **Status:** DONE
+- **Agents:** A1-dev,A2-sre,A3-lgpd,A4-evo
+- **Tasks:**
+  - [x] G7.21.T2
+  - [x] G7.20.T2
+  - [x] G7.13.T2
+  - [x] G7.13.T4
+  - [x] G7.18.T3
+  - [x] G7.18.T4
+  - [x] G7.19.T2
+  - [x] G7.19.T3
+  - [x] G7.06.T4
+  - [x] G7.12.T3
+  - [x] G7.18.T1
+- **Summary:** Pydantic strict+DRY masks; Traefik access-log+edge RL; AlertManager+Loki docs; DPA MiniMax READY; Privacy v3 draft; 3 intents E2E synth 13t; Traefik merge file; radar redeploy runbook
+Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 28 G7 DNS soft-mode + A-records snapshot + OpenClaw scopes ✅
+- **When:** 2026-07-17 ~17:02 UTC
+- **Status:** DONE (agent) / HOLD-GUSTAVO (3 A records UI + operator token live)
+- **Agents:** cartorio-sre
+- **Tasks:**
+  - [~] G7.12.T1 — dig 7/10 OK; chatwoot/n8n/supabase NXDOMAIN; `docs/DNS_A_RECORDS_WAVE28_G7.md`
+  - [x] G7.12.T2 — soft default exit 0; strict via `DNS_CHECK_STRICT=1` / `make dns-check-strict`
+  - [x] G7.14.T4 — `docs/OPENCLAW_OPERATOR_TOKEN_SCOPES_G7.md` runbook (token real HOLD)
+- **Summary:** make dns-check green on expected 7/10 HOLD; live dig snapshot; OpenClaw hello-ok scopes drill documented
+Modified by Gustavo Almeida
+
+## 2026-07-17 — Wave 28 G7 mutmut killers report + release notes v0.7.0-g7-mvp (tag HOLD) ✅
+- **When:** 2026-07-17
+- **Status:** DONE (agent-side)
+- **Agents:** A1 cartorio-dev
+- **Tasks:**
+  - [x] G7.02.T1 — killers audit+pii 177 passed; docs/MUTMUT_REPORT_G7_WAVE28.md (baseline 73% remains; full mutmut night HOLD)
+  - [x] G7.25.T4 — docs/RELEASE_NOTES_v0.7.0-g7-mvp.md (notes ready, **no git tag** — Gustavo approval)
+- **Tests:** 177 passed (audit mutation killers + pii + audit regression selection)
+- **Lesson:** lesson-204-g7-wave28-a1-mutmut-release-2026-07-17.md
+Modified by Gustavo Almeida

@@ -20,7 +20,13 @@ Uso:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
+
+
+def extract_short_codes(responses: Iterable[CannedResponse]) -> tuple[str, ...]:
+    """Helper genérico para extrair short codes de respostas rápidas."""
+    return tuple(r.short_code for r in responses)
 
 
 @dataclass(frozen=True)
@@ -855,7 +861,7 @@ CANNED_RESPONSES: tuple[CannedResponse, ...] = (
 
 def get_all_short_codes() -> tuple[str, ...]:
     """Retorna todos os short codes (para validacao)."""
-    return tuple(cr.short_code for cr in CANNED_RESPONSES)
+    return extract_short_codes(CANNED_RESPONSES)
 
 
 def get_by_tag(tag: str) -> tuple[CannedResponse, ...]:

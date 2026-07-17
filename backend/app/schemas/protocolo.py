@@ -21,6 +21,7 @@ from enum import Enum
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.config import settings
 
 
 # ============================================================================
@@ -234,6 +235,10 @@ class ProtocoloCreateRequest(BaseModel):
     """
 
     model_config = ConfigDict(
+        strict=settings.pydantic_strict_mode,
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
         json_schema_extra={
             "example": {
                 "cliente_cpf": "123.456.789-09",
@@ -242,7 +247,7 @@ class ProtocoloCreateRequest(BaseModel):
                 "canal_origem": "web",
                 "consentimento_lgpd": True,
             }
-        }
+        },
     )
 
     cliente_cpf: Annotated[
@@ -531,6 +536,10 @@ class ProtocoloApiCreateRequest(BaseModel):
     """
 
     model_config = ConfigDict(
+        strict=settings.pydantic_strict_mode,
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
         json_schema_extra={
             "example": {
                 "cliente_id": 1,
@@ -539,7 +548,7 @@ class ProtocoloApiCreateRequest(BaseModel):
                 "observacoes": "Cliente pediu urgencia",
                 "hitl_draft": True,
             }
-        }
+        },
     )
 
     cliente_id: Annotated[
