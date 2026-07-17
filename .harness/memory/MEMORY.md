@@ -13,6 +13,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
   - Trackers: `SUPER_PLANO_G8_100_TASKS.md` (9/100) · `SUPER_GOALS_G8.md` · `.brain/loop-state-g8.json`
 
 ### G7 consolidada (Waves 13–29)
+- **2026-07-17** (**Lesson 218 — G8 Wave 34: Telegram error handler + Stream buffer**: 38+38 testes PASSED; 13/100 evidenced; pytest 3384→3460; lesson aprende dataclass+importlib workaround Python 3.14): `.harness/memory/lesson-218-g8-wave34-telegram-stream-2026-07-17.md`
 - **2026-07-17** (**Lesson 217 — G8 Wave 32 índices + Redis TTL (rec-numbered post Honesty Gate)**: 12 índices SQL (BRIN+GIN+BTREE) + 14 chaves Redis TTL catalogadas; 70 testes PASSED; pytest 3280→3384; lesson numbering drift entre sessões paralelas; banner Honesty Gate atualizado para 11/100): `.harness/memory/lesson-217-g8-wave32-indexes-ttl-2026-07-17.md`
 - **2026-07-17** (**Lesson 216 — G8 honesty reset + G8.08.T4 DLQ failure injection**: 13 testes PASSED, 5/100 evidenced (antes 100/100 paper); reset do plano G8 + SUPER_GOALS_G8; G8.08.T4 com injection Evolution/Chatwoot/Telegram): `.harness/memory/lesson-216-g8-honesty-reset-dlq-t4-2026-07-17.md`
 - **2026-07-17** (**Lesson 215 — G8.08.T3 DLQ alert Telegram (LGPD-safe)**: 18 testes PASSED, MarkdownV2 + urllib nativo sem deps, exit codes 0/1/2/3, dry-run default, LGPD-tested (sem payload/nomes); pytest 3262→3280): `.harness/memory/lesson-215-g8-dlq-alert-telegram-2026-07-17.md`

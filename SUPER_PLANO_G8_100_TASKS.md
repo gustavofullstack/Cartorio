@@ -5,7 +5,7 @@
 
 ---
 
-> **HONESTY GATE (Lesson 216/217):** `[x]` só com evidência. Evidenced: G8.01.T4, G8.05.T1, G8.05.T2, G8.06.T1, G8.07.T1, G8.07.T2, G8.07.T3, G8.08.T1, G8.08.T2, G8.08.T3, G8.08.T4 (**11/100**). Wave 32: G8.05.T1 + G8.06.T1 (Lesson 217). Wave 33: G8.07.T2/T3 + G8.05.T2 + G8.01.T4 (test_g8_wave33).
+> **HONESTY GATE (Lesson 216/217/218):** `[x]` só com evidência. Evidenced: G8.01.T2, G8.01.T4, G8.02.T2, G8.05.T1, G8.05.T2, G8.06.T1, G8.07.T1, G8.07.T2, G8.07.T3, G8.08.T1, G8.08.T2, G8.08.T3, G8.08.T4 (**13/100**). Wave 32: G8.05.T1 + G8.06.T1 (Lesson 217). Wave 33: G8.07.T2/T3 + G8.05.T2 + G8.01.T4 (test_g8_wave33). Wave 34: G8.02.T2 + G8.01.T2 (Lesson 218).
 
 ## META
 
@@ -21,7 +21,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.01.T1 | Testar resiliência de conexões WebSocket sob concorrência de 100+ conexões simultâneas simuladas. | [ ] | cartorio-dev |
-| G8.01.T2 | Otimizar buffering de mensagens grandes em streams de logs e radar endpoints. | [ ] | cartorio-dev |
+| G8.01.T2 | Otimizar buffering de mensagens grandes em streams de logs e radar endpoints. | [x] | cartorio-dev |
 | G8.01.T3 | Implementar heartbeat ping/pong robusto no WebSocket de atendimento. | [ ] | cartorio-dev |
 | G8.01.T4 | Criar testes automatizados para conexões de WebSocket concorrentes no mock da API. | [x] | cartorio-dev |
 
@@ -29,7 +29,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.02.T1 | Configurar histórico multi-turn Redis com limite de profundidade dinâmica de tokens. | [ ] | cartorio-dev |
-| G8.02.T2 | Tratar erros de payload e formatação do Telegram de modo amigável e sem vazamento de stacktrace. | [ ] | cartorio-dev |
+| G8.02.T2 | Tratar erros de payload e formatação do Telegram de modo amigável e sem vazamento de stacktrace. | [x] | cartorio-dev |
 | G8.02.T3 | Desenhar workflow de debounce para mensagens duplicadas vindas da API do Telegram. | [ ] | cartorio-n8n |
 | G8.02.T4 | Criar 10 cenários de teste de integração para o bot de Telegram simulando sessões longas. | [ ] | cartorio-dev |
 
