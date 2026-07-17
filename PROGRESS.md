@@ -3034,3 +3034,13 @@ Modified by Gustavo Almeida
 - **Tests:** 8 passed wave22
 - **Lesson:** lesson-194-g7-wave22-cov-canned-wa-dns-2026-07-16.md
 Modified by Gustavo Almeida
+
+## 2026-07-16 — Wave 23 G7 coverage leverage + Chatwoot bot + LobeChat key + dashboard ✅
+- **4 agents:**
+  - [x] G7.01.T2+ — 11 tests DMS send_alert + evolution reject/caption paths
+  - [x] G7.05.T2 — docs/CHATWOOT_AGENT_BOT_SETUP_G7.md
+  - [x] G7.06.T1 — docs/LOBECHAT_OPENAI_KEY_G7.md + g7_meta sidecar
+  - [x] dashboard — docs/G7_PROGRESS_DASHBOARD.md + SUPER_STATUS wave 23
+- **Tests:** 11 passed wave23
+- **Lesson:** lesson-195-g7-wave23-cov-chatwoot-lobe-2026-07-16.md
+Modified by Gustavo Almeida

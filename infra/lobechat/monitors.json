@@ -10,8 +10,15 @@
     "retryInterval": 30,
     "maxretries": 3,
     "timeout": 10,
-    "accepted_statuscodes": ["200"],
-    "tags": ["lobechat", "production", "cartorio", "p1"],
+    "accepted_statuscodes": [
+      "200"
+    ],
+    "tags": [
+      "lobechat",
+      "production",
+      "cartorio",
+      "p1"
+    ],
     "notification": {
       "telegram": {
         "chat_id": "6682284055",
@@ -43,8 +50,15 @@
     "retryInterval": 60,
     "maxretries": 3,
     "timeout": 10,
-    "accepted_statuscodes": ["200"],
-    "tags": ["telegram", "production", "cartorio", "p1"],
+    "accepted_statuscodes": [
+      "200"
+    ],
+    "tags": [
+      "telegram",
+      "production",
+      "cartorio",
+      "p1"
+    ],
     "notification": {
       "telegram": {
         "chat_id": "6682284055",
@@ -75,8 +89,15 @@
     "retryInterval": 30,
     "maxretries": 3,
     "timeout": 10,
-    "accepted_statuscodes": ["200"],
-    "tags": ["openclaw", "production", "cartorio", "p1"],
+    "accepted_statuscodes": [
+      "200"
+    ],
+    "tags": [
+      "openclaw",
+      "production",
+      "cartorio",
+      "p1"
+    ],
     "notification": {
       "telegram": {
         "chat_id": "6682284055",
