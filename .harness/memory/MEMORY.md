@@ -8,6 +8,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-17 ~19:30 BRT)
 
 ### G7 consolidada (Waves 13–29) — START HERE
+- **2026-07-17** (**Lesson 215 — G8.08.T3 DLQ alert Telegram (LGPD-safe)**: 18 testes PASSED, MarkdownV2 + urllib nativo sem deps, exit codes 0/1/2/3, dry-run default, LGPD-tested (sem payload/nomes); pytest 3262→3280): `.harness/memory/lesson-215-g8-dlq-alert-telegram-2026-07-17.md`
 - **2026-07-17** (**Lesson 214 — G8.08.T1 DLQ expiration + purge + métricas (LGPD Art.16+37)**: 20 testes PASSED, two-phase deletion (soft 30d + hard 180d), stats_by_age, dlq_expired_total metric, bug fix de import sintaxe inválida; pytest 3242→3262): `.harness/memory/lesson-214-g8-dlq-expiration-purge-2026-07-17.md`
 - **2026-07-17** (**Lesson 213 — G8.08.T2 DLQ payload encryption-at-rest (LGPD Art.46)**: 38 testes PASSED, Fernet envelope + heurística PII auto-detect, backward compat; pytest 3205→3242, mypy 155→156 files): `.harness/memory/lesson-213-g8-dlq-encryption-2026-07-17.md`
 - **2026-07-17** (**Lesson 212 — G8.07.T1 MCP tools inventory tests (14 PASSED)**: 13 tools verificadas, 7 canônicos protegidos, anti-self-loop HTTP regex, count margin [13-20]; pytest 3191→3205): `.harness/memory/lesson-212-g8-mcp-tools-inventory-tests-2026-07-17.md`
