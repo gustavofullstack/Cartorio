@@ -45,31 +45,47 @@
 
 ---
 
-## DEFINITION OF DONE (DoD) POR TASK / WAVE
+## DEFINITION OF READY / DONE (canônico)
 
-Cada wave de 4 tarefas executadas pelos agentes/subagentes **só é declarada DONE** se passar pelos seguintes critérios:
+**Documento completo (DoR + DoD + honesty gate):** [`docs/G8_DOR_DOD.md`](docs/G8_DOR_DOD.md)  
+Precedente G7: [`docs/G7_DOR_DOD.md`](docs/G7_DOR_DOD.md) · Plano: [`SUPER_PLANO_G8_100_TASKS.md`](SUPER_PLANO_G8_100_TASKS.md)
 
-1. **Linting Aprovado**: `uv run ruff check app/` sem avisos ou erros.
-2. **Tipagem Forte**: `uv run mypy app/` sem falhas.
-3. **Testes Unitários e Integração**: `uv run pytest --no-cov -q` retornando all passed.
-4. **Sem Vazamento de Segredos**: Análise com scanner local garantindo que chaves e senhas reais não estão em código.
-5. **Logs de Progresso**: Relatório de conclusão adicionado à respectiva seção no `PROGRESS.md` com assinatura convencional de commit: `Modified by Gustavo Almeida`.
-6. **Criação de Lesson**: Registro de aprendizados em `.harness/memory/lesson-XXX-...md` no caso de modificações críticas.
+### Honesty gate (resumo)
 
-## SUPER PROGRESSO (honestidade — Wave 35/36 · 2026-07-17)
+`[x]` / % / “wave COMPLETED” **só** com evidência: **artefato (código|docs) + testes/verificação PASS + lesson ou PROGRESS honesto**.  
+Orquestrador paper-tick (Lesson 216) **não** conta. HOLD-SUI = `[~]`, não fake green.
+
+### DoD por task / wave (checklist rápido)
+
+Cada wave de 4 tarefas **só é declarada DONE** se:
+
+1. **Linting**: `uv run ruff check app/` (ou `make lint`) sem erros na superfície tocada.
+2. **Tipagem**: `uv run mypy app/` sem falhas novas (se tocou `app/`).
+3. **Testes**: pytest da área **PASS** com comando reproduzível (preferir `unset PYTHONPATH` + venv backend — Lesson 219).
+4. **Sem vazamento de segredos**: scanner/review; zero secrets no diff.
+5. **Progresso honesto**: append em `PROGRESS.md` com IDs + paths + N passed + `Modified by Gustavo Almeida` — **proibido** bloco COMPLETED sem evidência.
+6. **Lesson**: `.harness/memory/lesson-XXX-…md` em mudanças críticas / multi-rein / anti-pattern.
+7. **Plano**: `SUPER_PLANO_G8_100_TASKS.md` checkbox `[x]` **somente** após 1–6.
+
+Detalhe, DoR, anti-padrões e DoD por goal G8.1–G8.12 → **[`docs/G8_DOR_DOD.md`](docs/G8_DOR_DOD.md)**.
+
+## SUPER PROGRESSO (honestidade — Wave 35–37 · 2026-07-17)
 
 | Métrica | Valor |
 |---|---|
-| Tasks G8 evidenced | **20/100** (Wave 35/36 +7 real) |
-| % progress honesto | **20%** |
+| Tasks G8 evidenced | **23/100** (Wave 35–37 REAL) |
+| % progress honesto | **23%** |
 | Wave 32 | G8.05.T1 · G8.06.T1 (Lesson 217 — Redis TTL + DB indexes) |
 | Wave 33 | G8.07.T2 · G8.07.T3 · G8.05.T2 · G8.01.T4 (test_g8_wave33 + Lesson 216) |
 | Tests Wave 32+33 | 27 + 43 + 13 + 21 = **104 passed** |
+| Wave 37 | G8.02.T3 debounce · G8.05.T4 idempotency stress · G8.16.T2 DoR/DoD |
+| G8 suite (local) | **156 passed**, 1 skipped (subset waves 33–37) |
 | G7 residual SUI | 8 [~] |
 | Prod radar | red (SUI) |
 
 
 ---
 
-**Modified by Gustavo Almeida + Antigravity AI orquestrador — 2026-07-17**
-(SUPER_GOALS_G8.md estruturado e pronto para execução)
+**Modified by Gustavo Almeida + Antigravity AI orquestrador — 2026-07-17**  
+(SUPER_GOALS_G8.md estruturado e pronto para execução)  
+**G8.16.T2:** DoR/DoD canônico em [`docs/G8_DOR_DOD.md`](docs/G8_DOR_DOD.md) — Modified by Gustavo Almeida

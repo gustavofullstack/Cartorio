@@ -122,6 +122,14 @@ postman-export:  ## Gera Postman collection do OpenAPI local (G7.17.T1)
 g7-status:  ## Status super plano G7 (orchestrator)
 	@python3 scripts/g7_orchestrator.py status
 
+.PHONY: super-loop
+super-loop:  ## Super loop orchestrator (G7 default; status|next|validate|legacy-status)
+	@python3 scripts/super_loop_orchestrator.py $(or $(CMD),status)
+
+.PHONY: g7-next
+g7-next:  ## Próximas 4 tasks abertas G7 (4 agents / squad)
+	@python3 scripts/g7_orchestrator.py next
+
 .PHONY: pii-inventory
 pii-inventory:  ## G7.02.T3 PII pre-LLM call-site inventory
 	@python3 scripts/pii_pre_llm_inventory.py --strict
@@ -130,8 +138,10 @@ pii-inventory:  ## G7.02.T3 PII pre-LLM call-site inventory
 bare-exception:  ## Gate: zero raise Exception( em app/ (G7.21.T4)
 	@python3 scripts/check_no_bare_exception.py
 
+# G8 DoR/DoD (honesty gate: code+tests+lesson, no fake PROGRESS ticks): docs/G8_DOR_DOD.md
+# Cross-ref: SUPER_GOALS_G8.md · SUPER_PLANO_G8_100_TASKS.md · docs/G7_DOR_DOD.md
 .PHONY: g7-validate
-g7-validate:  ## G7 super teste validador (local+prod composite)
+g7-validate:  ## G7 super teste validador (local+prod composite); G8 DoR/DoD: docs/G8_DOR_DOD.md
 	@echo "$(YELLOW)[G7] Super validator...$(RESET)"
 	@python3 scripts/g7_super_validator.py --report docs/G7_VALIDATOR_REPORT.md
 
