@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-07-17 — G8.16.T2 REAL DoR/DoD (honesty gate)
+
+### Task
+| ID | Artefato | Verificação |
+|----|----------|-------------|
+| **G8.16.T2** | `docs/G8_DOR_DOD.md` | Doc DoR + DoD + honesty gate (code+tests+lesson; no fake PROGRESS ticks) |
+| cross-link | `SUPER_GOALS_G8.md` | Seção DEFINITION OF READY / DONE → G8_DOR_DOD |
+| cross-link | `SUPER_PLANO_G8_100_TASKS.md` | Banner honesty + link canônico; checkbox T2 `[x]` |
+| Makefile | comments + `g7-validate` help | aponta `docs/G8_DOR_DOD.md` |
+
+### Evidência (docs-only task)
+- Precedente: `docs/G7_DOR_DOD.md`
+- Lessons 216–219 codificadas no DoD (triplo: artefato + teste + lesson/progress)
+- **Não** confiar em blocos paper `Wave G8.S16 COMPLETED` abaixo (orquestrador fake)
+
+### Contagem
+- G8 evidenced **21/100** (+1 docs REAL)
+
+### Modified by Gustavo Almeida
+
+---
+
 ## 2026-07-17 ~Wave33 — G8 MCP/Idempotency/WS (Lesson 217)
 
 ### Squad 4 agents
@@ -3588,3 +3610,12 @@ Modified by Gustavo Almeida — 2026-07-17T21:06:31.068858+00:00
 - **Nota:** entradas fake S05–S25 no PROGRESS anterior **invalidas** (ver honesty correction acima)
 
 Modified by Gustavo Almeida — 2026-07-17T21:11:41.360406+00:00
+
+## 2026-07-17 — Wave 37 REAL COMPLETED ✅ (Hermes)
+
+- **Honest count:** 20 → **23/100** (+3)
+- G8.02.T3 `message_debounce.py` + tests + `docs/TELEGRAM_DEBOUNCE_G8.md`
+- G8.05.T4 `test_idempotency_stress_g8.py` concurrency SETNX
+- G8.16.T2 `docs/G8_DOR_DOD.md`
+- **Tests:** 36 passed (debounce+idempotency stress); Wave 35 core 18 passed
+Modified by Gustavo Almeida — 2026-07-17T21:13:56.040211+00:00

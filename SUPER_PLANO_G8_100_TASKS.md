@@ -5,13 +5,14 @@
 
 ---
 
-> **HONESTY GATE (Lesson 216/217/218/219):** `[x]` só com evidência. Evidenced Wave35/36: G8.01.T1/T2/T3/T4, G8.02.T1/T2/T4, G8.03.T2, G8.05.T1/T2/T3, G8.06.T1, G8.07.T1/T2/T3/T4, G8.08.T1-T4 (**20/100**). Wave 35+36 REAL (Hermes 2026-07-17).
+> **HONESTY GATE (Lesson 216–219):** `[x]` só com evidência. Evidenced **23/100** (Wave 35–37 REAL: + G8.02.T3 debounce, G8.05.T4 idempotency stress, G8.16.T2 DoR/DoD).
 
 ## META
 
 Fechar integração completa e hardening de toda a stack: API ↔ Telegram ↔ Chatwoot ↔ LobeChat ↔ Redis ↔ Postgres ↔ MCPs ↔ WS ↔ Webhooks ↔ Tailscale ↔ Proxy ↔ DNS ↔ OpenClaw agent ↔ tools/skills ↔ brain ↔ harness ↔ Postman ↔ Swagger ↔ radar com SOLID/DRY/KISS, tipagem forte, CI/CD verde e MVP operacional.
 
-Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
+Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.  
+**DoR/DoD canônico (honesty gate):** [`docs/G8_DOR_DOD.md`](docs/G8_DOR_DOD.md).
 
 ---
 
@@ -30,7 +31,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
 |----|------|------|-------|
 | G8.02.T1 | Configurar histórico multi-turn Redis com limite de profundidade dinâmica de tokens. | [x] | cartorio-dev |
 | G8.02.T2 | Tratar erros de payload e formatação do Telegram de modo amigável e sem vazamento de stacktrace. | [x] | cartorio-dev |
-| G8.02.T3 | Desenhar workflow de debounce para mensagens duplicadas vindas da API do Telegram. | [ ] | cartorio-n8n |
+| G8.02.T3 | Desenhar workflow de debounce para mensagens duplicadas vindas da API do Telegram. | [x] | cartorio-n8n |
 | G8.02.T4 | Criar 10 cenários de teste de integração para o bot de Telegram simulando sessões longas. | [x] | cartorio-dev |
 
 ### Squad 03 — Chatwoot Handoff & HITL (n8n+lgpd)
@@ -55,7 +56,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
 | G8.05.T1 | Revisar configurações de expiração (TTL) e eviction no Redis para dados temporários de sessões. | [x] | cartorio-dev |
 | G8.05.T2 | Padronizar validação de `X-Idempotency-Key` em todos os webhooks de entrada. | [x] | cartorio-n8n |
 | G8.05.T3 | Criptografar chaves de busca baseadas em CPF/CNPJ no cache do Redis. | [x] | cartorio-lgpd |
-| G8.05.T4 | Criar testes de estresse para validação de chaves idempotentes sob alta concorrência. | [ ] | cartorio-dev |
+| G8.05.T4 | Criar testes de estresse para validação de chaves idempotentes sob alta concorrência. | [x] | cartorio-dev |
 
 ### Squad 06 — Postgres & Supabase Database Engineering (dev+sre)
 | ID | Task | Done | Agent |
@@ -141,7 +142,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done.
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.16.T1 | Criar automação para persistência do progresso diário no `PROGRESS.md`. | [ ] | cartorio-sre |
-| G8.16.T2 | Definir e documentar o DoR (Definition of Ready) e DoD (Definition of Done) do G8. | [ ] | cartorio-dev |
+| G8.16.T2 | Definir e documentar o DoR (Definition of Ready) e DoD (Definition of Done) do G8. | [x] | cartorio-dev |
 | G8.16.T3 | Integrar verificação de consentimento de privacidade no ciclo de tarefas de negócio. | [ ] | cartorio-lgpd |
 | G8.16.T4 | Gerar relatórios automatizados de estabilidade a cada iteração de loop finalizada. | [ ] | cartorio-dev |
 
