@@ -5,7 +5,7 @@
 
 ---
 
-> **HONESTY GATE:** `[x]` só com evidência. **31/100** (Wave 39: G8.03.T4, G8.04.T2/T3, G8.06.T2).
+> **HONESTY GATE:** `[x]` só com evidência. **35/100** (Wave 40: G8.04.T4, G8.06.T3/T4, G8.09.T2).
 
 ## META
 
@@ -48,7 +48,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.04.T1 | Integrar OpenClaw no radar de status da API FastAPI (`/health/radar/expanded`). | [x] | cartorio-dev |
 | G8.04.T2 | Desenvolver script para empacotamento e export do prompt de sistema do LobeChat. | [x] | cartorio-dev |
 | G8.04.T3 | Validar rotação de credenciais do OpenClaw no ambiente local de forma segura. | [x] | cartorio-lgpd |
-| G8.04.T4 | Configurar roteamento de requisições de LobeChat para múltiplos nós do OpenClaw no Traefik. | [ ] | cartorio-sre |
+| G8.04.T4 | Configurar roteamento de requisições de LobeChat para múltiplos nós do OpenClaw no Traefik. | [x] | cartorio-sre |
 
 ### Squad 05 — Redis Caching & Idempotency (dev+n8n)
 | ID | Task | Done | Agent |
@@ -63,8 +63,8 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.06.T1 | Otimizar índices nas tabelas `atendimento`, `protocolo` e `audit_log` para acelerar relatórios. | [x] | cartorio-dev |
 | G8.06.T2 | Implementar dumps criptografados automatizados e verificar rotas de restauração seguras. | [x] | cartorio-sre |
-| G8.06.T3 | Validar políticas de RLS (Row Level Security) em todas as tabelas com informações de clientes. | [ ] | cartorio-lgpd |
-| G8.06.T4 | Criar triggers no Supabase para alertar o n8n sobre modificações críticas em metadados. | [ ] | cartorio-n8n |
+| G8.06.T3 | Validar políticas de RLS (Row Level Security) em todas as tabelas com informações de clientes. | [x] | cartorio-lgpd |
+| G8.06.T4 | Criar triggers no Supabase para alertar o n8n sobre modificações críticas em metadados. | [x] | cartorio-n8n |
 
 ### Squad 07 — MCP Servers & Tools Expansion (dev)
 | ID | Task | Done | Agent |
@@ -86,7 +86,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.09.T1 | Criar probe interna de conectividade para testar latência dentro da VPN Tailscale. | [x] | cartorio-sre |
-| G8.09.T2 | Configurar MagicDNS para redirecionar tráfego interno de banco e API sem expor portas publicamente. | [ ] | cartorio-sre |
+| G8.09.T2 | Configurar MagicDNS para redirecionar tráfego interno de banco e API sem expor portas publicamente. | [x] | cartorio-sre |
 | G8.09.T3 | Assegurar que dados pessoais e logs trafeguem estritamente por túneis privados. | [ ] | cartorio-lgpd |
 | G8.09.T4 | Validar o fluxo de acesso SSH seguro apenas a partir de nós autorizados na Tailscale. | [ ] | cartorio-sre |
 

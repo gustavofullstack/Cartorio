@@ -3639,3 +3639,13 @@ Modified by Gustavo Almeida — 2026-07-17T21:21:55.789770+00:00
 - G8.06.T2 Encrypted dump envelope + restore route checklist
 - **Tests:** 58 passed (wave 39 suite)
 Modified by Gustavo Almeida — 2026-07-17T21:27:14.486416+00:00
+
+## 2026-07-17 — Wave 40 REAL COMPLETED ✅ (Hermes)
+
+- **Honest count:** 31 → **35/100** (+4)
+- G8.04.T4 Traefik LobeChat → multi OpenClaw routing template + validator
+- G8.06.T3 RLS inventory/validator for PII tables
+- G8.06.T4 Postgres NOTIFY triggers + n8n meta consumer
+- G8.09.T2 MagicDNS private host inventory
+- **Tests:** 88 passed (wave 40 suite)
+Modified by Gustavo Almeida — 2026-07-17T21:31:30.053585+00:00

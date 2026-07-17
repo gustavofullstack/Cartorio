@@ -1,0 +1,164 @@
+# Traefik lobechat-openclaw-routing-g8.yaml — LobeChat → multi OpenClaw nodes (G8.04.T4)
+# =============================================================================
+# STATUS: artifact only — NÃO aplicar em prod sem GO Gustavo (SUI / HOLD-DEPLOY).
+# Stack:  Traefik 2.x/3.x file-provider (EasyPanel Swarm dynamic config)
+# Owner:  cartorio-sre — G8 Wave 32 / Squad 04
+# Date:   2026-07-17
+#
+# Objetivo:
+#   Documentar + validar (unit) o roteamento de:
+#     1) UI LobeChat (Host lobe / cartorio-lobechat)
+#     2) OpenClaw multi-node: openclaw-a (primary) + openclaw-b (fallback)
+#        exposto em agent.2notasudi.com.br via weighted + healthCheck
+#
+# Arquitetura target (sem secrets):
+#
+#   Cliente (escrevente)
+#        │ HTTPS
+#        ▼
+#   lobe.2notasudi.com.br ──► Traefik ──► cartorio_lobechat:3210
+#                                              │
+#                                              │ OpenAI-compatible provider
+#                                              ▼
+#   agent.2notasudi.com.br ──► Traefik ──► openclaw-pool (weighted)
+#                                              ├─ openclaw-a (weight 90)  http://cartorio_openclaw-gateway:18789
+#                                              └─ openclaw-b (weight 10)  http://cartorio_openclaw-gateway-b:18789
+#                                                 (ou mesmo serviço com 2 réplicas DNS)
+#
+# Pre-requisitos:
+#   1. Serviços Swarm: cartorio_lobechat, cartorio_openclaw-gateway (+ optional -b)
+#   2. Mesma overlay network do easypanel-traefik
+#   3. DNS A/CNAME: lobe.2notasudi.com.br, agent.2notasudi.com.br
+#   4. Middlewares @file (default-security-headers, rate-limit-*) no dynamic base
+#
+# Merge no VPS (somente com GO):
+#   1. cp /etc/easypanel/traefik/config/main.yaml{,.bak-$(date +%Y%m%d)}
+#   2. Mergear http.routers / http.services (não sobrescrever routers existentes)
+#   3. Validar: python -c "from app.services.traefik_lobechat_routing import ..."
+#      ou: pytest tests/test_traefik_lobechat_routing_g8.py
+#   4. SIGHUP Traefik / docker service update --force easypanel-traefik
+#   5. curl -sk https://lobe.2notasudi.com.br/api/health
+#      curl -sk https://agent.2notasudi.com.br/health
+#
+# Cross-refs:
+#   - infra/lobechat/README.md
+#   - infra/traefik/routers-merged-g7.yaml
+#   - infra/openclaw-agent/TROUBLESHOOTING_LOBECHAT_2026-07-14.md
+#   - backend/app/services/traefik_lobechat_routing.py
+#   - backend/app/services/openclaw_radar.py
+#
+# Placeholders: NENHUM secret neste arquivo (sem tokens, API keys, passwords).
+# =============================================================================
+
+http:
+  routers:
+
+    # ===== LobeChat UI (public branded host) =====
+    # Backend: cartorio_lobechat — porta interna Swarm 3210
+    lobechat:
+      rule: "Host(`lobe.2notasudi.com.br`) || Host(`cartorio-lobechat.dfgdxq.easypanel.host`)"
+      service: lobechat
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - default-security-headers@file
+        - rate-limit-anon@file
+      priority: 100
+
+    # ===== OpenClaw pool (LobeChat upstream + public agent API) =====
+    # Backend: weighted openclaw-a / openclaw-b (health-checked)
+    openclaw-pool:
+      rule: "Host(`agent.2notasudi.com.br`)"
+      service: openclaw-pool
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - default-security-headers@file
+        - rate-limit-authenticated@file
+      priority: 100
+
+    # Path-based alternate (Tailscale / single-host lab): agent path under same host
+    # Descomente no merge se precisar de PathPrefix em vez de Host dedicado.
+    # openclaw-pool-path:
+    #   rule: "Host(`vps-cartorio.tail2fe279.ts.net`) && PathPrefix(`/openclaw`)"
+    #   service: openclaw-pool
+    #   entryPoints:
+    #     - websecure
+    #   middlewares:
+    #     - default-security-headers@file
+
+  services:
+
+    # --- LobeChat UI ---------------------------------------------------------
+    lobechat:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://cartorio_lobechat:3210"
+        healthCheck:
+          path: /api/health
+          interval: 30s
+          timeout: 5s
+
+    # --- OpenClaw multi-node: weighted primary (a) + secondary (b) -----------
+    # Traefik weighted + per-node healthCheck = soft failover:
+    # se openclaw-a falhar health, peso efetivo zera e tráfego vai para b.
+    openclaw-pool:
+      weighted:
+        services:
+          - name: openclaw-a
+            weight: 90
+          - name: openclaw-b
+            weight: 10
+        # sticky opcional (sessões longas LobeChat) — desligado por default
+        # sticky:
+        #   cookie:
+        #     name: openclaw_pool
+
+    # Primary node (existing prod gateway)
+    openclaw-a:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://cartorio_openclaw-gateway:18789"
+        healthCheck:
+          path: /health
+          interval: 10s
+          timeout: 3s
+
+    # Fallback / secondary node
+    # Em cluster single-node: apontar para a mesma URL ou segunda réplica Swarm.
+    # Nome canônico openclaw-b é exigido pelo validador G8.04.T4.
+    openclaw-b:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://cartorio_openclaw-gateway-b:18789"
+        healthCheck:
+          path: /health
+          interval: 10s
+          timeout: 3s
+
+  # Middlewares locais opcionais (CORS LobeChat → agent). Preferir @file base.
+  middlewares:
+
+    cors-lobechat-to-openclaw:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        accessControlAllowHeaders:
+          - Authorization
+          - Content-Type
+          - X-Request-Id
+        accessControlAllowOriginList:
+          - "https://lobe.2notasudi.com.br"
+          - "https://cartorio-lobechat.dfgdxq.easypanel.host"
+          - "http://localhost:3210"
+        accessControlMaxAge: 100
+        addVaryHeader: true
