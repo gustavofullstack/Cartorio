@@ -5,7 +5,7 @@
 
 ---
 
-> **HONESTY GATE:** `[x]` só com evidência. **39/100** (Wave 41: G8.09.T3/T4, G8.10.T1/T2).
+> **HONESTY GATE:** `[x]` só com evidência. **43/100** (Wave 42: G8.10.T3/T4, G8.11.T1/T2).
 
 ## META
 
@@ -95,14 +95,14 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.10.T1 | Adicionar identificador dinâmico de host de processamento nas respostas HTTP. | [x] | cartorio-sre |
 | G8.10.T2 | Integrar verificação de DNS automatizada via API Cloudflare no pipeline CI/CD. | [x] | cartorio-sre |
-| G8.10.T3 | Configurar mascaramento de requisições de auditoria nos arquivos de log do Traefik. | [ ] | cartorio-lgpd |
-| G8.10.T4 | Criar testes automatizados de roteamento externo simulando perda de pacotes. | [ ] | cartorio-sre |
+| G8.10.T3 | Configurar mascaramento de requisições de auditoria nos arquivos de log do Traefik. | [x] | cartorio-lgpd |
+| G8.10.T4 | Criar testes automatizados de roteamento externo simulando perda de pacotes. | [x] | cartorio-sre |
 
 ### Squad 11 — SOLID & Clean Architecture Drivers (dev)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.11.T1 | Refatorar controllers FastAPI para isolar lógica de negócio em services desacoplados. | [ ] | cartorio-dev |
-| G8.11.T2 | Implementar injeção de dependências explícita para serviços de e-mail e mensageria. | [ ] | cartorio-dev |
+| G8.11.T1 | Refatorar controllers FastAPI para isolar lógica de negócio em services desacoplados. | [x] | cartorio-dev |
+| G8.11.T2 | Implementar injeção de dependências explícita para serviços de e-mail e mensageria. | [x] | cartorio-dev |
 | G8.11.T3 | Isolar a lógica de validação fiscal de emolumentos notariais de outras regras da API. | [ ] | cartorio-dev |
 | G8.11.T4 | Adicionar testes de unidade focados em acoplamento e independência de camadas. | [ ] | cartorio-dev |
 

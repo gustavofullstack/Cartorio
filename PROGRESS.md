@@ -3659,3 +3659,13 @@ Modified by Gustavo Almeida — 2026-07-17T21:31:30.053585+00:00
 - G8.10.T2 DNS CI checks (socket + optional CF flag)
 - **Tests:** 24 passed (wave 41 suite)
 Modified by Gustavo Almeida — 2026-07-17T21:43:47.753107+00:00
+
+## 2026-07-17 — Wave 42 REAL COMPLETED ✅ (Hermes)
+
+- **Honest count:** 39 → **43/100** (+4)
+- G8.10.T3 Traefik log PII masker
+- G8.10.T4 routing resilience / packet-loss simulator
+- G8.11.T1 SOLID AtendimentoQueryService (thin controller pattern)
+- G8.11.T2 DI ports email/messaging (NotificationService)
+- **Tests:** 18 passed (wave 42 suite)
+Modified by Gustavo Almeida — 2026-07-17T21:46:04.501835+00:00
