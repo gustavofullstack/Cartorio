@@ -6,6 +6,59 @@
 
 ---
 
+## 2026-07-17 ~17:30 — G7 Loop Resync Session (Lesson 208)
+
+### Análise
+- Repo: master, **3 commits ahead origin antes** (da176f9, 67d7a53, 6720d10) → **0 unpushed depois**
+- Gustavo pediu `CONTINUE!!` mas estado real já era G7 Wave 28 consolidada (92/100 tasks)
+- Working tree: 0 modified + 148 untracked (artefatos G7 W13-28 não-comitados)
+
+### Test (gates) — VALIDADOS
+| Gate | Resultado | Threshold |
+|------|-----------|-----------|
+| ruff | **0 errors** ✅ | 0 |
+| mypy strict | **0 / 155 source files** ✅ | 0 |
+| pytest -q --no-cov | **3176 passed / 20 skipped / 49 deselected** ✅ | ≥90% coverage |
+
+### Fixes Applied
+- ✅ `git push origin master` (sync 3 commits: b7ae85f → 6720d10)
+- ✅ Diagnóstico correto: NÃO re-empacotar Wave 30 G6 (já entregue como G7 squads)
+- ✅ Orquestrador status capturado (revela gap: script lê v25 mas trabalho migrou pra G7)
+
+### Document
+- ✅ Created `.harness/memory/lesson-208-g7-loop-state-resync-2026-07-17.md`
+- ✅ Atualizado MEMORY.md com Lesson 208 (próximo bloco)
+- ✅ Atualizado SUPER_GOALS_G7.md (snapshot pós-sessão)
+
+### Memorize
+- Lesson 208: **Push first, analyze second** — sempre validar `git status -sb` antes de empacotar nova wave
+- Anti-padrão: empacotar Wave 30 G6.A.T13 quando G7 já cobriu (lesson 207 W28-A4)
+- Cross-refs: lesson-206 (G7 consolidada) + lesson-185 (1-2 agents max) + lesson-141 (multi-loop)
+
+### SUI residual (HOLD Gustavo)
+1. DNS A records: chatwoot / n8n / supabase → 187.77.236.77 (Cloudflare UI, ~5min)
+2. Easypanel env vars: 3 DATABASE_URL Evolution/Chatwoot/N8N
+3. Telegram bot token: regenerar @TestCartorioBot no BotFather
+4. LobeChat: OPENAI_API_KEY real
+5. Tailscale SSH online (radar fica 100%)
+6. DPA MiniMax assinatura (Gustavo + Mavis)
+7. Privacy Policy v3 publish site
+8. OpenClaw cartorio-bot deploy (SUI-6)
+9. WhatsApp QR pareamento TriQ Hub
+10. AlertManager secrets (WEBHOOK_URL + Telegram token)
+11. GitHub Secrets (VPS_SSH_KEY + TELEGRAM_BOT_TOKEN)
+12. AWS creds para S3 backup
+13. PROMETHEUS_PASSWORD + N8N_API_KEY + VPS_SSH_KEY para scripts Wave 29
+14. Commit consolidado dos 148 untracked (1 mega-commit `chore(loop-gustavo)`)
+15. Atualizar `scripts/super_loop_orchestrator.py` → ler G7 ao invés de v25
+
+### Próxima ação Gustavo
+- OU: rodar `chore(loop-gustavo): commit G7 wave 13-28 artifacts` (1 mega-commit dos 148 untracked)
+- OU: me chamar com tasks específicas (ex: implementar T96-T100 que ainda não planejei)
+- OU: atacar SUI #1 (DNS A records, 5min) para fechar G7.8 100%
+
+---
+
 ## 2026-07-02 19:15 — /goal FULL CYCLE TRIGGERED
 
 ### Análise

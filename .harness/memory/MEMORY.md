@@ -5,9 +5,10 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-17 Wave 28)
+## INDICE RAPIDO (atualizado 2026-07-17 ~17:30 BRT)
 
 ### G7 consolidada (Waves 13–28) — START HERE
+- **2026-07-17** (**Lesson 208 — G7 loop state resync após sessão interrompida**: 3 commits ahead pushed, gates verdes (pytest 3176, mypy 155/155, ruff 0), NÃO re-empacotar Wave 30 G6 (já G7), 148 untracked identificados, 15 SUI list atualizada): `.harness/memory/lesson-208-g7-loop-state-resync-2026-07-17.md`
 - **2026-07-17** (**Lesson 206 — G7 Waves 13–28 CONSOLIDADA**: ~92% [x] / ~96% weighted agent-side; HOLD mestra DNS×3+env+tokens+QR+DPA+Privacy+AM+TS; 72h tracker ready NOT_STARTED; SUI pack Wave28): `.harness/memory/lesson-206-g7-waves-13-28-consolidada-2026-07-17.md`
   - SUI residual: `docs/SUI_CHECKLIST_G7_WAVE28.md`
   - 72h window: `docs/STABILITY_WINDOW_72H_G7.md`
