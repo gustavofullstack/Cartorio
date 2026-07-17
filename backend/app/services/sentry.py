@@ -124,6 +124,7 @@ def _before_send(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any]
     if orig_str and scrubbed_str and orig_str != scrubbed_str:
         logger.warning("LGPD Sentry Alert: raw PII leak detected and prevented in Sentry payload!")
         from app.services.metrics import store
+
         store.inc_counter("cartorio_pii_leak_prevented_total")
 
     return event

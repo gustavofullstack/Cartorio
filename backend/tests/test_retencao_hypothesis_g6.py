@@ -124,7 +124,9 @@ retention_days_inativo = st.integers(min_value=1, max_value=3000)
     d_inativo=retention_days_inativo,
     now=date_with_offset,
 )
-@h_settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@h_settings(
+    max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None
+)
 def test_cutoff_5y_always_before_cutoff_inativo(d5: int, d_inativo: int, now: datetime) -> None:
     """cutoff_5y (5y back) deve sempre ser ANTERIOR a cutoff_inativo (2y back).
 
@@ -148,7 +150,9 @@ def test_cutoff_5y_always_before_cutoff_inativo(d5: int, d_inativo: int, now: da
 
 
 @given(days_ago=st.integers(min_value=0, max_value=1824))
-@h_settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@h_settings(
+    max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None
+)
 def test_cliente_com_protocolo_recente_nao_eh_soft_deletado(days_ago: int, db_session) -> None:
     """Cliente COM protocolo com updated_at <5y: NUNCA soft-deletado por retencao_5y."""
     _reset_db(db_session)
@@ -175,7 +179,9 @@ def test_cliente_com_protocolo_recente_nao_eh_soft_deletado(days_ago: int, db_se
     cpf=unique_hash,
     proto_num=unique_hash,
 )
-@h_settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@h_settings(
+    max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None
+)
 def test_cliente_com_protocolo_muito_antigo_eh_soft_deletado(
     days_ago: int, cpf: str, proto_num: str, db_session
 ) -> None:
@@ -201,7 +207,9 @@ def test_cliente_com_protocolo_muito_antigo_eh_soft_deletado(
 
 
 @given(days_ago=st.integers(min_value=731, max_value=3000))
-@h_settings(max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@h_settings(
+    max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None
+)
 def test_cliente_sem_protocolo_inativo_eh_soft_deletado(days_ago: int, db_session) -> None:
     """Cliente SEM protocolo + updated_at >2y: SOFT-DELETADO (motivo=OUTROS)."""
     _reset_db(db_session)
@@ -223,7 +231,9 @@ def test_cliente_sem_protocolo_inativo_eh_soft_deletado(days_ago: int, db_sessio
 
 
 @given(n=st.integers(min_value=1, max_value=20))
-@h_settings(max_examples=15, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@h_settings(
+    max_examples=15, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None
+)
 def test_scanned_count_igual_a_total_ativos(n: int, db_session) -> None:
     """O contador scanned no resultado == total clientes com deleted_at IS NULL."""
     _reset_db(db_session)
@@ -236,9 +246,7 @@ def test_scanned_count_igual_a_total_ativos(n: int, db_session) -> None:
 
     assert result.scanned == n, f"scanned={result.scanned} != n={n}"
     # Antes do run: n ativos. Apos run: os soft-deletados sao removidos do count de ativos.
-    ativos_pos = (
-        db_session.query(Cliente).filter(Cliente.deleted_at.is_(None)).count()
-    )
+    ativos_pos = db_session.query(Cliente).filter(Cliente.deleted_at.is_(None)).count()
     expected_pos = n - len(result.soft_deleted_5y) - len(result.soft_deleted_inativo)
     assert ativos_pos == expected_pos, (
         f"Ativos pos-run={ativos_pos} != esperado={expected_pos} "
@@ -255,7 +263,9 @@ def test_scanned_count_igual_a_total_ativos(n: int, db_session) -> None:
     has_old_protocol=st.booleans(),
     is_inactive=st.booleans(),
 )
-@h_settings(max_examples=15, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@h_settings(
+    max_examples=15, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None
+)
 def test_run_retencao_idempotente(has_old_protocol: bool, is_inactive: bool, db_session) -> None:
     """Rodar run_retencao 2x seguidas: 2a run NAO deve fazer novos soft-deletes.
 
@@ -326,10 +336,10 @@ def test_run_retencao_idempotente(has_old_protocol: bool, is_inactive: bool, db_
 
 
 @given(days_ago=st.integers(min_value=1826, max_value=4000), cpf=unique_hash)
-@h_settings(max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
-def test_exercicio_direito_titular_nunca_purgado(
-    days_ago: int, cpf: str, db_session
-) -> None:
+@h_settings(
+    max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None
+)
+def test_exercicio_direito_titular_nunca_purgado(days_ago: int, cpf: str, db_session) -> None:
     """Cliente soft-deletado por EXERCICIO_DIREITO_TITULAR >5y: NUNCA eh purgado (art. 18 III).
 
     A politica preserva correcoes do titular indefinidamente.

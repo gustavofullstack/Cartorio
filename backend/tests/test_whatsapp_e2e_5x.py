@@ -82,6 +82,7 @@ def client(test_engine, test_session_factory):
         try:
             from app.models.cliente import Cliente
             from app.services.pii import hash_pii
+
             c = Cliente(
                 cpf_hash=hash_pii("123.456.789-00", salt="a" * 32),
                 nome="Cliente de Teste",

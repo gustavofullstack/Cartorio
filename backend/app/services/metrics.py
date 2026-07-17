@@ -352,32 +352,43 @@ class _MetricHandle:
 def collect_db_metrics(db: Session) -> dict[str, Any]:
     """Coleta metrics do DB (gauge snapshot). Chamado pelo endpoint /metrics/prometheus."""
     from app.models.outbox_message import OutboxMessage, OutboxStatus
-    
+
     metrics: dict[str, Any] = {}
     metrics["clientes_total"] = db.query(func.count(Cliente.id)).scalar() or 0
-    metrics["lgpd_consent_total"] = db.query(func.count(Cliente.id)).filter(Cliente.consentimento_lgpd.is_(True)).scalar() or 0
+    metrics["lgpd_consent_total"] = (
+        db.query(func.count(Cliente.id)).filter(Cliente.consentimento_lgpd.is_(True)).scalar() or 0
+    )
     metrics["audit_chain_length"] = db.query(func.count(AuditLog.id)).scalar() or 0
     metrics["audit_chain_size"] = metrics["audit_chain_length"]
-    
+
     # DLQ/outbox pending
-    metrics["dlq_pending"] = db.query(func.count(OutboxMessage.id)).filter(
-        OutboxMessage.status.in_([OutboxStatus.PENDING, OutboxStatus.FAILED])
-    ).scalar() or 0
-    
+    metrics["dlq_pending"] = (
+        db.query(func.count(OutboxMessage.id))
+        .filter(OutboxMessage.status.in_([OutboxStatus.PENDING, OutboxStatus.FAILED]))
+        .scalar()
+        or 0
+    )
+
     rows = db.query(Protocolo.status, func.count(Protocolo.id)).group_by(Protocolo.status).all()
     for status, count in rows:
         metrics[f'protocolos_total{{status="{status}"}}'] = count
         metrics[f'protocolo_status_total{{status="{status}"}}'] = count
-        
+
     metrics["protocolo_total_total"] = db.query(func.count(Protocolo.id)).scalar() or 0
-    
+
     # Gauge de agendamentos ativos futuros (S7.T4)
     import datetime
-    metrics["agendamentos_ativos_total"] = db.query(func.count(Agendamento.id)).filter(
-        Agendamento.status.in_([StatusAgendamento.AGENDADO, StatusAgendamento.CONFIRMADO]),
-        Agendamento.data_hora >= datetime.datetime.now()
-    ).scalar() or 0
-    
+
+    metrics["agendamentos_ativos_total"] = (
+        db.query(func.count(Agendamento.id))
+        .filter(
+            Agendamento.status.in_([StatusAgendamento.AGENDADO, StatusAgendamento.CONFIRMADO]),
+            Agendamento.data_hora >= datetime.datetime.now(),
+        )
+        .scalar()
+        or 0
+    )
+
     return metrics
 
 
@@ -414,7 +425,11 @@ def render_full_prometheus(db: Session | None = None) -> str:
     if db is not None:
         for name, value in collect_db_metrics(db).items():
             p_name = name
-            if not name.startswith("cartorio_") and not name.startswith("pii_blocked_total") and not name.startswith("dlq_depth"):
+            if (
+                not name.startswith("cartorio_")
+                and not name.startswith("pii_blocked_total")
+                and not name.startswith("dlq_depth")
+            ):
                 p_name = f"cartorio_{name}"
             # Força o prefixo no dlq_pending para cartorio_dlq_pending
             if name == "dlq_pending":
@@ -449,12 +464,16 @@ def render_metrics_json(db: Session | None = None) -> dict[str, Any]:
         # Popula a store.gauges in-memory com as db metrics para consistência no JSON
         for name, value in db_snapshot.items():
             p_name = name
-            if not name.startswith("cartorio_") and not name.startswith("pii_blocked_total") and not name.startswith("dlq_depth"):
+            if (
+                not name.startswith("cartorio_")
+                and not name.startswith("pii_blocked_total")
+                and not name.startswith("dlq_depth")
+            ):
                 p_name = f"cartorio_{name}"
             if name == "dlq_pending":
                 p_name = "cartorio_dlq_pending"
             store.set_gauge(p_name, value)
-            
+
     # Popula a store.gauges in-memory com as pool metrics para consistência no JSON
     for name, value in collect_pool_metrics().items():
         store.set_gauge(name, value)

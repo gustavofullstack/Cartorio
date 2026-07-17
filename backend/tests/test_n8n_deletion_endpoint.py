@@ -64,7 +64,7 @@ def test_n8n_deletion_success(clean_n8n_env, db_session) -> None:
         "deleted_count": 15,
         "details": {"reason": "expired_365d"},
     }
-    body_bytes = json.dumps(payload, separators=(',', ':')).encode()
+    body_bytes = json.dumps(payload, separators=(",", ":")).encode()
     sig = _compute_sig(N8N_SECRET, body_bytes)
 
     resp = client.post(
@@ -81,6 +81,7 @@ def test_n8n_deletion_success(clean_n8n_env, db_session) -> None:
 
     # Validar se persistiu no audit_log real do banco
     from app.models.audit_log import AuditLog
+
     entry = db_session.query(AuditLog).filter(AuditLog.id == res["audit_id"]).first()
     assert entry is not None
     assert entry.action == "n8n.deletion"
@@ -95,7 +96,7 @@ def test_n8n_deletion_idempotency(clean_n8n_env, db_session) -> None:
         "target_category": "clientes",
         "deleted_count": 5,
     }
-    body_bytes = json.dumps(payload, separators=(',', ':')).encode()
+    body_bytes = json.dumps(payload, separators=(",", ":")).encode()
     sig = _compute_sig(N8N_SECRET, body_bytes)
 
     # Primeira chamada
@@ -128,11 +129,14 @@ def test_n8n_deletion_audit_log_fail_soft(clean_n8n_env) -> None:
         "target_category": "conversas",
         "deleted_count": 2,
     }
-    body_bytes = json.dumps(payload, separators=(',', ':')).encode()
+    body_bytes = json.dumps(payload, separators=(",", ":")).encode()
     sig = _compute_sig(N8N_SECRET, body_bytes)
 
     # Simula erro de banco no service
-    with patch("app.services.audit.AuditService.log_system_action", side_effect=Exception("DB connection timeout")):
+    with patch(
+        "app.services.audit.AuditService.log_system_action",
+        side_effect=Exception("DB connection timeout"),
+    ):
         resp = client.post(
             "/api/v1/integrations/n8n/deletion",
             json=payload,

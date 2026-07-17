@@ -93,19 +93,18 @@ def get_dpo_metrics(
     total_audit = int(db.execute(text("SELECT COUNT(*) FROM audit_log")).scalar() or 0)
     audit_24h = int(
         db.execute(
-            text("SELECT COUNT(*) FROM audit_log WHERE timestamp >= :ts_1d"),
-            {"ts_1d": ts_1d}
-        ).scalar() or 0
+            text("SELECT COUNT(*) FROM audit_log WHERE timestamp >= :ts_1d"), {"ts_1d": ts_1d}
+        ).scalar()
+        or 0
     )
 
     # Rights exercised (ultimos 30 dias) — ações LGPD no audit
     rights_30d = int(
         db.execute(
             text(
-                "SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' "
-                "AND timestamp >= :ts_30d"
+                "SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' AND timestamp >= :ts_30d"
             ),
-            {"ts_30d": ts_30d}
+            {"ts_30d": ts_30d},
         ).scalar()
         or 0
     )
@@ -120,7 +119,7 @@ def get_dpo_metrics(
                 "WHERE c.deleted_at IS NULL "
                 "AND (p.created_at IS NULL OR p.created_at < :ts_5y)"
             ),
-            {"ts_5y": ts_5y}
+            {"ts_5y": ts_5y},
         ).scalar()
         or 0
     )

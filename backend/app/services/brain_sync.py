@@ -12,6 +12,7 @@ Funcoes publicas:
 - diff_against_last(): compara snapshot atual com o ultimo gravado
 - _list_containers(): mocked por testes; em prod usa `docker service ls`
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -72,7 +73,10 @@ def _latest_snapshot(brain_dir: Path) -> dict[str, Any] | None:
 
 def _containers_to_state(containers: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
     """Normaliza lista de containers para dict {name: {replicas, image}}."""
-    return {c["name"]: {"replicas": c.get("replicas", ""), "image": c.get("image", "")} for c in containers}
+    return {
+        c["name"]: {"replicas": c.get("replicas", ""), "image": c.get("image", "")}
+        for c in containers
+    }
 
 
 def _diff_states(
@@ -104,7 +108,9 @@ def _diff_states(
     }
 
 
-def _update_index_containers_section(index_path: Path, containers: dict[str, dict[str, str]]) -> None:
+def _update_index_containers_section(
+    index_path: Path, containers: dict[str, dict[str, str]]
+) -> None:
     """Atualiza (ou cria) secao '## Containers prod' em index.md."""
     today = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [
@@ -122,9 +128,7 @@ def _update_index_containers_section(index_path: Path, containers: dict[str, dic
     section = "\n".join(lines) + "\n"
 
     if not index_path.exists():
-        index_path.write_text(
-            f"# Brain Index\n\n{section}\n", encoding="utf-8"
-        )
+        index_path.write_text(f"# Brain Index\n\n{section}\n", encoding="utf-8")
         return
 
     content = index_path.read_text(encoding="utf-8")

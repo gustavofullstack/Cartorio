@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 # Testes do cursor.py
 # =============================================================================
 
+
 def test_cursor_helpers_nominal() -> None:
     from app.services.cursor import encode_cursor, decode_cursor, decode_cursor_safe
 
@@ -46,6 +47,7 @@ def test_cursor_helpers_erros() -> None:
 
     # JSON malformado codificado em base64
     import base64
+
     invalid_json_b64 = base64.urlsafe_b64encode(b"{malformed_json").decode("utf-8")
     with pytest.raises(ValueError):
         decode_cursor(invalid_json_b64)
@@ -59,6 +61,7 @@ def test_cursor_helpers_erros() -> None:
 # =============================================================================
 # Testes do deprecation.py
 # =============================================================================
+
 
 def test_deprecation_middleware_headers() -> None:
     from app.middleware.deprecation import DeprecationHeadersMiddleware, _build_v2_link

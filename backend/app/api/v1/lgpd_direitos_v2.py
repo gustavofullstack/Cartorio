@@ -157,7 +157,7 @@ def lgpd_dashboard(
                 "WHERE action = 'lgpd.consent.revoked' "
                 "AND timestamp >= :ts_30d"
             ),
-            {"ts_30d": ts_30d}
+            {"ts_30d": ts_30d},
         ).scalar()
         or 0
     )
@@ -170,7 +170,7 @@ def lgpd_dashboard(
                 "WHERE action = 'lgpd.portabilidade.download' "
                 "AND timestamp >= :ts_30d"
             ),
-            {"ts_30d": ts_30d}
+            {"ts_30d": ts_30d},
         ).scalar()
         or 0
     )
@@ -178,8 +178,7 @@ def lgpd_dashboard(
     # 6. Audit entries nas ultimas 24h
     audit_24h = (
         db.execute(
-            text("SELECT COUNT(*) FROM audit_log WHERE timestamp >= :ts_1d"),
-            {"ts_1d": ts_1d}
+            text("SELECT COUNT(*) FROM audit_log WHERE timestamp >= :ts_1d"), {"ts_1d": ts_1d}
         ).scalar()
         or 0
     )
