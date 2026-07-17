@@ -8,6 +8,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-17 ~19:30 BRT)
 
 ### G7 consolidada (Waves 13–29) — START HERE
+- **2026-07-17** (**Lesson 213 — G8.08.T2 DLQ payload encryption-at-rest (LGPD Art.46)**: 38 testes PASSED, Fernet envelope + heurística PII auto-detect, backward compat; pytest 3205→3242, mypy 155→156 files): `.harness/memory/lesson-213-g8-dlq-encryption-2026-07-17.md`
 - **2026-07-17** (**Lesson 212 — G8.07.T1 MCP tools inventory tests (14 PASSED)**: 13 tools verificadas, 7 canônicos protegidos, anti-self-loop HTTP regex, count margin [13-20]; pytest 3191→3205): `.harness/memory/lesson-212-g8-mcp-tools-inventory-tests-2026-07-17.md`
 - **2026-07-17** (**Lesson 211 — Mega-commit dos 148 artefatos G7 W13-28**: 155 files / 36k+ LOC; secrets scan CLEAN; working tree 148→2 untracked; SUI #14 resolvido): `.harness/memory/lesson-211-g7-artifacts-mega-commit-2026-07-17.md`
 - **2026-07-17** (**Lesson 210 — Testes do g7_orchestrator (15 PASSED) Wave 29 A1**: 6 parse_tasks + 2 status_cmd + 2 next_cmd + 3 main + 2 integration; pytest 3176→3191; gates verdes; 8 [~] abertas SUI-only → Wave 30 não há código): `.harness/memory/lesson-210-g7-orchestrator-tests-wave29-2026-07-17.md`
