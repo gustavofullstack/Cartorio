@@ -26,7 +26,7 @@ from typing import Annotated, Any, cast
 
 import httpx
 import redis
-from fastapi import APIRouter, Depends, Form, Header, HTTPException, Path, Query, Request
+from fastapi import APIRouter, Body, Depends, Form, Header, HTTPException, Path, Query, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -956,11 +956,46 @@ async def webhook_evolution_health() -> dict:
         "(input, pre-LLM, output), detecta intencao via LLM, retorna resposta. "
         "Bloqueia fluxo automaticamente se PII for detectado antes do LLM "
         "(handoff humano obrigatorio). \n\n"
-        "Registra **tudo** no audit log (chain SHA256 + HMAC)."
+        "Registra **tudo** no audit log (chain SHA256 + HMAC).\n\n"
+        "Aceita ambos formatos Evolution: **nested moderno** (`data.key`/`data.message`) "
+        "e **root-level legado** (`sender`/`message` na raiz). Schema documentado em "
+        "`app.schemas.webhook_payloads.EvolutionPayload`."
     ),
     response_description="Status do processamento + resposta do bot + texto scrubbed.",
 )
-async def webhook_evolution(request: Request, payload: dict) -> dict:
+async def webhook_evolution(
+    request: Request,
+    payload: Annotated[
+        dict,
+        Body(
+            description=(
+                "Payload Evolution API (WhatsApp). LGPD PII: `data.key.remoteJid`, "
+                "`data.message.conversation` carregam dados pessoais. Schema canonico "
+                "em `EvolutionPayload` (app.schemas.webhook_payloads)."
+            ),
+            examples=[
+                {
+                    "event": "messages.upsert",
+                    "instance": "cartorio-2notas",
+                    "data": {
+                        "key": {
+                            "remoteJid": "5511999999999@s.whatsapp.net",
+                            "fromMe": False,
+                            "id": "MSG_ID_EXAMPLE",
+                        },
+                        "message": {"conversation": "Quero agendar uma procura\u00e7\u00e3o"},
+                        "pushName": "Maria Cliente",
+                    },
+                },
+                {
+                    "message": {"conversation": "Quanto custa autenticacao?"},
+                    "sender": "553499999999",
+                    "instance": "cartorio-2notas",
+                },
+            ],
+        ),
+    ],
+) -> dict:
     """Webhook do Evolution API (WhatsApp).
 
     Recebe mensagem, aplica PII scrubbing, detecta intencao via LLM,
@@ -2693,8 +2728,46 @@ async def listar_sessoes_ativas(
         "Recebe webhooks do Chatwoot. Valida signature HMAC-SHA256 (se "
         "CHATWOOT_WEBHOOK_SECRET configurado), deduplica por event_id, e "
         "processa conversation_status_changed -> resolved marcando o "
-        "atendimento como concluido (workflow #07 pesquisa 24h depois)."
+        "atendimento como concluido (workflow #07 pesquisa 24h depois).\n\n"
+        "Eventos suportados (discriminator `event`):\n"
+        "- `conversation_status_changed` - atualizou status da conversa\n"
+        "- `message_created` - nova mensagem (incoming/outgoing)\n\n"
+        "LGPD: campos `assignee.name/email`, `content`, `sender.*` carregam "
+        "dados pessoais (marcados com `**LGPD PII**` no schema). Schema canonico "
+        "em `app.schemas.chatwoot_webhook.ChatwootWebhookModel`."
     ),
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/ChatwootWebhookModel"},
+                    "examples": {
+                        "conversation_status_changed": {
+                            "summary": "Status changed to resolved",
+                            "value": {
+                                "event": "conversation_status_changed",
+                                "id": 42,
+                                "status": "resolved",
+                                "conversation": {"id": 42, "status": "resolved"},
+                                "assignee": {"id": 7, "name": "Escrevente"},
+                            },
+                        },
+                        "message_created": {
+                            "summary": "New incoming message",
+                            "value": {
+                                "event": "message_created",
+                                "id": 99,
+                                "message_id": 999,
+                                "message_type": "incoming",
+                                "content": "Quero falar com um humano",
+                                "conversation": {"id": 42, "status": "open"},
+                            },
+                        },
+                    },
+                }
+            }
+        }
+    },
 )
 async def webhook_chatwoot(request: Request) -> dict:
     """Processa webhook do Chatwoot com HMAC + idempotency (Sprint 2)."""

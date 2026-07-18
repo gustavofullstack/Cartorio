@@ -122,6 +122,18 @@ coverage-gate:  ## Coverage gate fail-safe (G6.A.T5)
 postman-export:  ## Gera Postman collection do OpenAPI local (G7.17.T1)
 	@cd backend && DATABASE_URL=$${DATABASE_URL:-sqlite:///:memory:} uv run python ../scripts/postman_export.py --from-app
 
+.PHONY: postman-sync
+postman-sync:  ## Regenera Postman collection do OpenAPI (G8.17.T1 - sync, tag-folders, LGPD-safe)
+	@cd backend && uv run python ../scripts/postman_sync.py --from-app --output ../infra/postman/cartorio-api.postman_collection.json --base-url https://api.2notasudi.com.br
+
+.PHONY: postman-sync-offline
+postman-sync-offline:  ## Sync sem network (cached openapi.json em backend/docs/openapi.json)
+	@cd backend && uv run python ../scripts/postman_sync.py --bypass-network --output ../infra/postman/cartorio-api.postman_collection.json --base-url https://api.2notasudi.com.br
+
+.PHONY: postman-sync-test
+postman-sync-test:  ## Roda pytest tests/test_postman_sync_g8.py
+	@cd backend && uv run pytest -v --no-cov --tb=short tests/test_postman_sync_g8.py
+
 .PHONY: g7-status
 g7-status:  ## Status super plano G7 (orchestrator)
 	@python3 scripts/g7_orchestrator.py status

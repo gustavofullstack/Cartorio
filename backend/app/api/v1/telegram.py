@@ -1837,7 +1837,87 @@ async def telegram_debug_last_updates() -> dict:
     }
 
 
-@router.post("/webhook", status_code=200)
+@router.post(
+    "/webhook",
+    status_code=200,
+    summary="Webhook do Telegram Bot API (HMAC secret + idempotency + LGPD scrub)",
+    description=(
+        "Recebe updates do Telegram Bot API (https://core.telegram.org/bots/api#update).\n\n"
+        "**Auth**: header `X-Telegram-Bot-Api-Secret-Token` validado contra "
+        "`TELEGRAM_WEBHOOK_SECRET` (HMAC).\n\n"
+        "**Idempotency**: `update_id` eh deduplicado via Redis SETNX (TTL 10min).\n\n"
+        "**LGPD**: payload NAO eh persistido cru; `message.text`/`from` passam "
+        "por scrubber antes de qualquer LLM call. Schema canonico documentado "
+        "em `app.schemas.webhook_payloads.TelegramUpdate`.\n\n"
+        "**Handler paths**:\n"
+        "- `message` (texto/comando/midia) - flow principal\n"
+        "- `callback_query` (botao inline) - callback handler\n"
+        "- `edited_message` - re-processa edicao\n"
+        "- `my_chat_member` - auto-detect entrada/saida de grupo\n"
+    ),
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/TelegramUpdate"},
+                    "examples": {
+                        "text_message": {
+                            "summary": "Mensagem de texto privada",
+                            "value": {
+                                "update_id": 123456789,
+                                "message": {
+                                    "message_id": 42,
+                                    "date": 1721308800,
+                                    "from": {
+                                        "id": 987654321,
+                                        "first_name": "Maria",
+                                        "username": "mariacliente",
+                                    },
+                                    "chat": {"id": 987654321, "type": "private"},
+                                    "text": "Quero agendar uma procura\u00e7\u00e3o amanh\u00e3",
+                                },
+                            },
+                        },
+                        "callback_button": {
+                            "summary": "Clique em botao inline",
+                            "value": {
+                                "update_id": 123456790,
+                                "callback_query": {
+                                    "id": "cb_abc123",
+                                    "from": {"id": 987654321, "first_name": "Maria"},
+                                    "chat_instance": "chat_inst_xyz",
+                                    "data": "cmd:agendar",
+                                    "message": {
+                                        "message_id": 41,
+                                        "date": 1721308500,
+                                        "chat": {"id": 987654321, "type": "private"},
+                                    },
+                                },
+                            },
+                        },
+                        "group_command": {
+                            "summary": "Comando em grupo",
+                            "value": {
+                                "update_id": 123456791,
+                                "message": {
+                                    "message_id": 50,
+                                    "date": 1721308900,
+                                    "from": {"id": 111, "first_name": "Joao"},
+                                    "chat": {
+                                        "id": -1004331849032,
+                                        "type": "supergroup",
+                                        "title": "Clientes Cartorio",
+                                    },
+                                    "text": "/menu",
+                                },
+                            },
+                        },
+                    },
+                }
+            }
+        }
+    },
+)
 async def telegram_webhook(
     request: Request,
     background_tasks: BackgroundTasks,

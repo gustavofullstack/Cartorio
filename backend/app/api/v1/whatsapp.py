@@ -415,7 +415,61 @@ async def whatsapp_metrics() -> dict:
     }
 
 
-@router.post("/webhook", status_code=200)
+@router.post(
+    "/webhook",
+    status_code=200,
+    summary="Webhook Evolution API (WhatsApp - HMAC + dual-format + LGPD consent)",
+    description=(
+        "Recebe mensagens do WhatsApp via Evolution API (https://doc.evolution-api.com/v2/api-reference).\n\n"
+        "**Auth**: header `X-Hub-Signature-256` validado contra `EVOLUTION_API_KEY` (HMAC-SHA256).\n\n"
+        "**Dual-format**: aceita **nested moderno** (`data.key.remoteJid`/`data.message.conversation`) "
+        "e **root-level legado** (`sender`/`message` na raiz). Schema canonico em "
+        "`app.schemas.webhook_payloads.EvolutionPayload`.\n\n"
+        "**Idempotency**: `data.key.id` dedup via `evolution_ingest` (DB) + "
+        "Redis SETNX (`chat_pipeline.check_idempotency`).\n\n"
+        "**LGPD consent gate**: cliente deve aceitar LGPD via `SIM` antes do "
+        "primeiro atendimento. Opt-out via `PARAR`/`SAIR` revoga consentimento.\n\n"
+        "**Flow**: HMAC -> idempotency -> parse -> consent gate -> pipeline "
+        "(debounce 1.2s -> rate limit 3s -> LLM com fallback chain -> scrub output)."
+    ),
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/EvolutionPayload"},
+                    "examples": {
+                        "nested_moderno": {
+                            "summary": "Formato nested moderno (recomendado)",
+                            "value": {
+                                "event": "messages.upsert",
+                                "instance": "cartorio-2notas",
+                                "data": {
+                                    "key": {
+                                        "remoteJid": "5511999999999@s.whatsapp.net",
+                                        "fromMe": False,
+                                        "id": "MSG_ID_EXAMPLE",
+                                    },
+                                    "message": {
+                                        "conversation": "Quanto custa autenticacao?"
+                                    },
+                                    "pushName": "Maria Cliente",
+                                },
+                            },
+                        },
+                        "root_legado": {
+                            "summary": "Formato root-level legado (pre-Sprint 1.2)",
+                            "value": {
+                                "message": {"conversation": "Quero agendar"},
+                                "sender": "553499999999",
+                                "instance": "cartorio-2notas",
+                            },
+                        },
+                    },
+                }
+            }
+        }
+    },
+)
 async def whatsapp_webhook(
     request: Request,
     background_tasks: BackgroundTasks,

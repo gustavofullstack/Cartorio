@@ -35,7 +35,6 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import settings
 
@@ -54,61 +53,14 @@ ALERTMANAGER_WEBHOOK_SECRET: str | None = (
 ALERTMANAGER_DEDUP_TTL = 60  # seconds
 
 # --- Pydantic schemas (strict — extra=forbid pra bloquear campos não documentados) ---
-
-
-class AlertLabel(BaseModel):
-    """Labels canônicos aceitos (whitelist LGPD). Outros campos rejeitados."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    alertname: str = Field(..., min_length=1, max_length=200)
-    severity: str = Field(default="warning", pattern="^(critical|warning|info)$")
-    instance: str = Field(default="unknown", max_length=300)
-    squad: str = Field(default="cartorio-sre", max_length=100)
-    job: str | None = Field(default=None, max_length=100)
-
-
-class AlertAnnotation(BaseModel):
-    """Annotations — summary/description/runbook opcionais."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    summary: str | None = Field(default=None, max_length=2000)
-    description: str | None = Field(default=None, max_length=4000)
-    runbook_url: str | None = Field(default=None, max_length=500)
-    runbook: str | None = Field(default=None, max_length=500)
-
-
-class AlertEntry(BaseModel):
-    """Um alerta individual dentro do payload AlertManager v4."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    status: str = Field(..., pattern="^(firing|resolved)$")
-    labels: AlertLabel
-    annotations: AlertAnnotation = Field(default_factory=AlertAnnotation)
-    startsAt: str | None = None
-    endsAt: str | None = None
-    generatorURL: str | None = Field(default=None, max_length=500)
-    fingerprint: str | None = Field(default=None, max_length=64)
-
-
-class AlertManagerPayload(BaseModel):
-    """Payload completo de webhook AlertManager v4.
-
-    Documentado em https://prometheus.io/docs/alerting/latest/configuration/#webhook_config
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    version: str = Field(default="4", pattern=r"^[1-9][0-9]*$")
-    groupKey: str = Field(..., max_length=500)
-    status: str = Field(..., pattern="^(firing|resolved)$")
-    receiver: str = Field(..., max_length=200)
-    groupLabels: dict[str, str] = Field(default_factory=dict)
-    commonLabels: dict[str, str] = Field(default_factory=dict)
-    commonAnnotations: dict[str, str] = Field(default_factory=dict)
-    alerts: list[AlertEntry] = Field(..., min_length=1, max_length=100)
+# G8.17.T2: reusa os schemas de `app.schemas.webhook_alertmanager` que ja tem
+# `Field(description=...)` em 100% dos campos para Swagger documentado.
+from app.schemas.webhook_alertmanager import (  # noqa: E402,F401
+    AlertAnnotation,
+    AlertEntry,
+    AlertLabel,
+    AlertManagerPayload,
+)
 
 
 # --- LGPD PII scrubber (defesa em profundidade) ---

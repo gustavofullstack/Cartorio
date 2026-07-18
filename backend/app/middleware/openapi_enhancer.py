@@ -265,8 +265,64 @@ def custom_openapi(app: FastAPI) -> dict[str, Any]:
     for scheme_name, scheme_def in SECURITY_SCHEMES.items():
         security_schemes[scheme_name] = scheme_def
 
+    _register_webhook_schemas(components)
+
     app.openapi_schema = openapi_schema
     return app.openapi_schema
+
+
+def _register_webhook_schemas(components: dict[str, Any]) -> None:
+    """Force-register webhook schemas (G8.17.T2).
+
+    Webhooks cobertos:
+    - Telegram (Update/Message/User/Chat/CallbackQuery)
+    - Evolution (Payload/Key/Message) - WhatsApp dual-format
+    - Chatwoot (MessageCreated/ConversationStatusChanged)
+    - N8N (ErrorRequest/DeletionRequest/MetricsIngest)
+    - AlertManager (Payload/Entry/Label/Annotation) - ja auto-registrado
+    - Outbox (DispatchRequest) - Supabase outbox
+    """
+    from app.schemas.webhook_payloads import (
+        ChatwootConversationRef,
+        ChatwootConversationStatusChanged,
+        ChatwootMessageCreated,
+        EvolutionKey,
+        EvolutionMessage,
+        EvolutionPayload,
+        N8nDeletionRequest,
+        N8nErrorRequest,
+        N8nMetricsIngest,
+        OutboxDispatchRequest,
+        TelegramCallbackQuery,
+        TelegramChat,
+        TelegramMessage,
+        TelegramUpdate,
+        TelegramUser,
+    )
+
+    schemas = components.setdefault("schemas", {})
+    force_register = [
+        TelegramUpdate,
+        TelegramMessage,
+        TelegramUser,
+        TelegramChat,
+        TelegramCallbackQuery,
+        EvolutionPayload,
+        EvolutionKey,
+        EvolutionMessage,
+        ChatwootMessageCreated,
+        ChatwootConversationStatusChanged,
+        ChatwootConversationRef,
+        N8nErrorRequest,
+        N8nDeletionRequest,
+        N8nMetricsIngest,
+        OutboxDispatchRequest,
+    ]
+    for schema in force_register:
+        try:
+            schemas[schema.__name__] = schema.model_json_schema()  # type: ignore[attr-defined]
+        except Exception:  # noqa: BLE001
+            continue
 
 
 def install_openapi_enhancer(app: FastAPI) -> None:

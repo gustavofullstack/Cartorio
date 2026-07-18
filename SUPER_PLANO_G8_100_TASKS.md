@@ -118,7 +118,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.13.T1 | Forçar Pydantic ConfigDict strict=True em todos os modelos de requisição notarial. | [ ] | cartorio-dev |
-| G8.13.T2 | Validar schemas de imports JSON no n8n de forma estrita. | [ ] | cartorio-n8n |
+| G8.13.T2 | Validar schemas de imports JSON no n8n de forma estrita. | [x] | cartorio-n8n |
 | G8.13.T3 | Implementar tipos personalizados Pydantic (ex: CPFStr, CNPJStr) para validações de formato rígidas. | [ ] | cartorio-lgpd |
 | G8.13.T4 | Resolver quaisquer advertências remanescentes do mypy strict no backend. | [x] | cartorio-dev |
 
@@ -128,7 +128,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.14.T1 | Otimizar cache e tempos de execução do pytest no GitHub Actions. | [ ] | cartorio-sre |
 | G8.14.T2 | Configurar deploys condicionais baseados no sucesso absoluto de todas as quality gates. | [ ] | cartorio-sre |
 | G8.14.T3 | Adicionar secrets scanning avançado no CI para detectar chaves brutas de homologação. | [ ] | cartorio-lgpd |
-| G8.14.T4 | Automatizar export e linting dos workflows JSON do n8n pré-commit. | [ ] | cartorio-n8n |
+| G8.14.T4 | Automatizar export e linting dos workflows JSON do n8n pré-commit. | [x] | cartorio-n8n |
 
 ### Squad 15 — Radar, Metrics & Observability (sre)
 | ID | Task | Done | Agent |
@@ -149,8 +149,8 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 17 — Postman & Swagger Real Sync (dev)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.17.T1 | Criar script python para regenerar e sincronizar Postman Collection a partir do Swagger OpenAPI. | [ ] | cartorio-dev |
-| G8.17.T2 | Documentar schemas de payload detalhados para todos os webhooks no Swagger. | [ ] | cartorio-dev |
+| G8.17.T1 | Criar script python para regenerar e sincronizar Postman Collection a partir do Swagger OpenAPI. | [x] | cartorio-dev |
+| G8.17.T2 | Documentar schemas de payload detalhados para todos os webhooks no Swagger. | [x] | cartorio-dev |
 | G8.17.T3 | Identificar e marcar campos que possuem dados sensíveis nos schemas OpenAPI. | [ ] | cartorio-lgpd |
 | G8.17.T4 | Validar o fluxo de autenticação persistida (persistAuthorization) do Swagger local. | [ ] | cartorio-dev |
 

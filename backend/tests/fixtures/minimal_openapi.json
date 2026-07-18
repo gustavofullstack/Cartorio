@@ -1,0 +1,85 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Cartorio API (test fixture)",
+    "version": "0.6.0",
+    "description": "Minimal OpenAPI for postman_sync tests (G8.17.T1)"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Liveness probe",
+        "operationId": "health_get",
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/cliente/{cpf}": {
+      "get": {
+        "tags": ["cliente"],
+        "summary": "Buscar cliente por CPF",
+        "operationId": "cliente_get_by_cpf",
+        "parameters": [
+          {"name": "cpf", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {"200": {"description": "OK"}}
+      },
+      "delete": {
+        "tags": ["cliente"],
+        "summary": "Anonimizar cliente (LGPD)",
+        "operationId": "cliente_delete",
+        "parameters": [
+          {"name": "cpf", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {"204": {"description": "Deleted"}}
+      }
+    },
+    "/cliente": {
+      "post": {
+        "tags": ["cliente"],
+        "summary": "Criar cliente",
+        "operationId": "cliente_create",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {"nome": "Maria Silva", "cpf": "12345678900"}
+              }
+            }
+          }
+        },
+        "responses": {"201": {"description": "Created"}}
+      }
+    },
+    "/audit/logs": {
+      "get": {
+        "tags": ["audit"],
+        "summary": "List audit logs",
+        "operationId": "audit_list",
+        "parameters": [
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "example": 50}},
+          {"name": "offset", "in": "query", "schema": {"type": "integer", "example": 0}}
+        ],
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/telegram/webhook": {
+      "post": {
+        "tags": ["telegram"],
+        "summary": "Telegram webhook",
+        "operationId": "telegram_webhook",
+        "responses": {"200": {"description": "OK"}}
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClienteCreate": {
+        "type": "object",
+        "example": {"nome": "Maria Silva", "cpf": "12345678900"}
+      }
+    }
+  }
+}
