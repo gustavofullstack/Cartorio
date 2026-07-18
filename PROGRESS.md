@@ -3697,3 +3697,40 @@ Modified by Gustavo Almeida — 2026-07-18T14:24:00.000000+00:00
 - Ruff: clean · Mypy: 0 errors (17 arquivos changed) · pytest: 3841 passed (+23)
 - Lesson: `.harness/memory/lesson-222-g8-13-t1-pydantic-strict-2026-07-17.md`
 Modified by Gustavo Almeida — 2026-07-18T14:35:00.000000+00:00
+
+## 2026-07-18 — Wave 45+closure consolidation (commit f2aac13)
+
+### VERIFIED HONEST TALLY: 50/100
+
+`grep -E "^\| G8\." SUPER_PLANO_G8_100_TASKS.md | awk -F'|' '{print $4}' | sort | uniq -c` → **50 [x]** | 50 [ ].
+
+### Branch strand recovery
+
+5 branches stranded Wave 45 + T3 retry fundidas em `f2aac13` via `git checkout <branch> -- <files>` (9 commits absorbed):
+- G8.11.T3 (emolumento SOLID split) + lesson 225
+- G8.12.T1 (PII mask unify, 47 tests, **LGPD-REVIEW-PENDING**) + lesson 226
+- G8.12.T2 (N8N orphan detector, 0 órfãos de 58) + lesson 227
+- G8.12.T3 (RedisKey helper, 19 tests, 5 callers refactored) + lesson 228
+- G8.12.T4 (dead code audit, 0 unused, 2 HITL orphans) + lesson 229
+
+### Pos-merge fixes aplicados em f2aac13
+
+- `emolumento.py` agora re-exporta 12 símbolos via `__all__` (preserva API pública após split)
+- `tests/test_redlock.py` 4 assertions: `redlock:X` → `cartorio:lock:redlock:X`
+- `tests/test_bot_mute_g8.py` 3 assertions: `bot:mute:X` → `cartorio:bot_mute:X`
+- `tests/test_redlock_a20_v2.py` 2 assertions: `_key` format canonical
+
+### Gates
+
+- `uv run pytest --no-cov -q` → **3942 passed, 23 skipped** (verde)
+- `uv run ruff check app/` → clean
+- `uv run mypy app/` → 0 errors
+
+### HITL follow-ups flagados
+
+- ✋ **P0 URGENTE**: `app/api/v1/telegram.py:1213` importa `hash_cpf` não existente — cai em `sha256` unsalted
+- ✋ LGPD review do G8.12.T1 PII changes
+- ✋ Decisão: `app/services/materialized_views.py` (F-1), `app/api/v1/lgpd_dsar.py` (F-2), `router.py:1937` dead branch (F-3)
+- ✋ 10 RedisKey callers pendientes (rate_limit, sliding_window, dist_lock, ...)
+
+Modified by Gustavo Almeida — 2026-07-18T16:30
