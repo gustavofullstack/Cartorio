@@ -109,6 +109,10 @@ n8n-validate:  ## Valida workflows N8N contra 9 regras (G6.B.T1 gate merge)
 	@python3 scripts/n8n_workflow_validator.py
 	@echo "$(GREEN)[N8N] Validacao OK$(RESET)"
 
+.PHONY: n8n-audit
+n8n-audit:  ## Audita modificacoes Git em workflows N8N criticos (offline)
+	@python3 scripts/n8n_wf_audit.py $(ARGS)
+
 .PHONY: n8n-orphans
 n8n-orphans:  ## Relatorio CSV de JSONs N8N sem referencias (offline)
 	@uv run python scripts/n8n_orphan_detector.py
