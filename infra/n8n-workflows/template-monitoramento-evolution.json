@@ -1,0 +1,194 @@
+{
+  "name": "WF-TEMPLATE Monitoramento Evolution",
+  "nodes": [
+    {
+      "name": "Cron",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /instance/connectionState",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "parameters": {
+        "url": "={{ $env.EVOLUTION_API_URL }}/instance/connectionState/{{ $env.EVOLUTION_INSTANCE }}",
+        "method": "GET",
+        "headers": {
+          "apikey": "={{ $env.EVOLUTION_API_KEY }}"
+        },
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "name": "If State=open",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.instance.state }}",
+              "operation": "equal",
+              "value2": "open"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "NoOp (online)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [900, 200],
+      "parameters": {}
+    },
+    {
+      "name": "GET /instance/status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [900, 400],
+      "parameters": {
+        "url": "={{ $env.EVOLUTION_API_URL }}/instance/status/{{ $env.EVOLUTION_INSTANCE }}",
+        "method": "GET",
+        "headers": {
+          "apikey": "={{ $env.EVOLUTION_API_KEY }}"
+        },
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "name": "Alert Telegram Escrevente",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1120, 400],
+      "parameters": {
+        "chatId": "={{ $env.ESCREVENTE_TELEGRAM_CHAT_ID }}",
+        "text": "⚠️ Evolution {{ $env.EVOLUTION_INSTANCE }} desconectou! Status: {{ $json.status }}. Reconectar via whatsapp.2notasudi.com.br/manager",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "name": "Audit LGPD Art.37",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1340, 400],
+      "parameters": {
+        "url": "http://cartorio-api:8000/api/v1/audit",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "evolution_disconnect_alert"
+            },
+            {
+              "name": "entity",
+              "value": "evolution_instance"
+            },
+            {
+              "name": "protocolo",
+              "value": "ALERT"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron": {
+      "main": [
+        [
+          {
+            "node": "GET /instance/connectionState",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /instance/connectionState": {
+      "main": [
+        [
+          {
+            "node": "If State=open",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If State=open": {
+      "main": [
+        [
+          {
+            "node": "NoOp (online)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GET /instance/status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /instance/status": {
+      "main": [
+        [
+          {
+            "node": "Alert Telegram Escrevente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Telegram Escrevente": {
+      "main": [
+        [
+          {
+            "node": "Audit LGPD Art.37",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": [
+    "evolution",
+    "monitoramento",
+    "alert",
+    "template"
+  ]
+}
