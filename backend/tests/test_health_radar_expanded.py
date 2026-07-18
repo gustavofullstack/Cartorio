@@ -333,7 +333,7 @@ def test_radar_endpoint_metadata_includes_version() -> None:
             resp = c.get("/api/v1/health/radar/expanded")
             assert resp.status_code == 200
             meta = resp.json()["metadata"]
-            assert meta["version"] == "0.6.0"
+            assert meta["version"] == "0.6.1"
             assert meta["domain_count_dns"] >= 10
             assert meta["domain_count_traefik"] >= 5
 

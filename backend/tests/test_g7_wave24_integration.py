@@ -460,7 +460,7 @@ async def test_health_radar_expanded_coerce_non_dict_fallback() -> None:
 
     assert out["categories"]["health"] == {}
     assert out["status"] in ("green", "yellow", "red")
-    assert out["metadata"]["version"] == "0.6.0"
+    assert out["metadata"]["version"] == "0.6.1"
 
 
 def test_disk_check_warn_when_usage_over_85() -> None:
