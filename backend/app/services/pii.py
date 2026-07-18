@@ -38,6 +38,30 @@ Conflitos documentados (resolveram via ordem + tightening):
   ponto, CEP nao - evita match de CEP puro como RG.
 - cartao (4-4-4-4 ou 4-6-5 agrupado) ANTES de phone_br loose: formato
   agrupado eh mais especifico que phone.
+- pix_cpf_keyword ANTES de cpf loose: keyword "pix cpf" desambigua.
+  Sem keyword, 11 digitos continua cpf.
+- passport ANCHORED \b: 2 letras + 7 digitos alfanum. Formato unico,
+  sem colisao com CNH/CPF/phone.
+- ip roda por ULTIMO: 4 grupos 1-3 digitos. CEP (5-3 com hifen) e
+  CNPJ (14 com pontos) ja consumiram match anterior - sem colisao.
+
+Inventario atual de patterns (16 entries, 2026-07-18 Wave 49 G8.18.T1):
+- email           (1)  formato padrao
+- data            (2)  DD/MM/YYYY BR + YYYY-MM-DD ISO
+- placa_veiculo   (3)  Mercosul + antiga
+- cnpj            (4)  14 digitos matriz+filial
+- cns             (5)  15/17 digitos ANCHORED keyword CNS/SUS
+- cnh             (6)  11 digitos ANCHORED keyword CNH/habilitacao
+- pix_cpf_keyword (7)  NEW Wave 49: "pix cpf <11dig>" (ANTES de cpf)
+- cpf             (8)  11 digitos 3-3-3-2
+- pis             (9)  11 digitos 3-5-3
+- rg              (10) 7-9 digitos + DV com ponto obrigatorio
+- titulo_eleitor  (11) 12 digitos 4-4-4
+- phone_br        (12) BR 10-11 digitos com DDD
+- cep             (13) 8 digitos 5-3
+- cartao          (14) 13-19 digitos 4-4-4-4 / 4-6-5
+- passport        (15) NEW Wave 49: AA1234567 (passaporte BR)
+- ip              (16) NEW Wave 49: IPv4 para LGPD v2 contexto
 
 Testes que dependem desta ordem (NAO REMOVER):
 - tests/test_pii.py::test_scrub_cns_15_digitos_contiguos_com_keyword
@@ -47,13 +71,15 @@ Testes que dependem desta ordem (NAO REMOVER):
 
 REGRA: ao adicionar novo pattern, perguntar:
 1. Colide com vizinho (mesmo N de digitos)? Adicionar ANTES do vizinho.
-2. Keyword-anchored (CNS, CNH) ou loose? Keyword antes de loose.
+2. Keyword-anchored (CNS, CNH, pix_cpf) ou loose? Keyword antes de loose.
 3. Se trocar a ordem, rodar pytest tests/test_pii.py -v --tb=short
    E verificar test_scrub_cep_puro_is_redacted,
    test_scrub_isbn_is_not_redacted (FP tests).
 
 LGPD review desta ordem: cartorio-lgpd 2026-06-23 (Sprint 3 LGPD-015
 follow-up). Cross-review formal pre-merge em ADR-019 (P0.5).
+Wave 49 (G8.18.T1): 3 patterns novos (pix_cpf_keyword, passport, ip)
++ 3 mask helpers (mask_cns, mask_cnh, mask_pis). LGPD-REVIEW-PENDING.
 """
 
 from __future__ import annotations
@@ -132,26 +158,50 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
         r"[^\d\n]{0,30}?"
         r"(?:\d{11}|\d{9}[\s.\-]?\d{2})\b"
     ),
-    # 7. CPF - 11 digitos em formato 3-3-3-2 (3 grupos + verificador)
+    # 7. PIX-CPF keyword (Wave 49 G8.18.T1) - LGPD cartorio-lgpd review.
+    # ANCHORED em keyword "pix" + "cpf" para desambiguar de CPF puro.
+    # Sem keyword, 11 digitos continua cpf (comportamento preservado).
+    # Caso real: cliente informa chave PIX via texto livre em chatbot.
+    # Aceita CPF com OU sem pontuacao (123.456.789-00 OU 12345678900).
+    # ORDEM CRITICA: ANTES do cpf loose (senao cpf engole os 11 digitos
+    # primeiro e o keyword nao consegue mais matchear).
+    "pix_cpf_keyword": re.compile(
+        r"(?i)\bpix\b[^\d\n]{0,20}?\bcpf\b[^\d\n]{0,20}?"
+        r"(?:\d{11}|\d{3}\.?\d{3}\.?\d{3}-?\d{2})\b"
+    ),
+    # 8. CPF - 11 digitos em formato 3-3-3-2 (3 grupos + verificador)
     "cpf": re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b"),
-    # 8. PIS - 11 digitos em formato 3-5-3 (3 grupos, sem verificador)
+    # 9. PIS - 11 digitos em formato 3-5-3 (3 grupos, sem verificador)
     # Diferenciado de CPF por ter 3 grupos em vez de 4.
     "pis": re.compile(r"\b\d{3}\.?\d{5}\.?\d{3}\b"),
-    # 9. RG - 7-9 digitos + verificador (digito ou X). EXIGE pelo menos
+    # 10. RG - 7-9 digitos + verificador (digito ou X). EXIGE pelo menos
     # um ponto para nao colidir com CEP.
     "rg": re.compile(r"\b\d{1,2}\.\d{3}\.?\d{3}-?[\dxX]\b"),
-    # 10. TITULO_ELEITOR - 12 digitos com espacos opcionais (3 grupos de 4)
+    # 11. TITULO_ELEITOR - 12 digitos com espacos opcionais (3 grupos de 4)
     "titulo_eleitor": re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b"),
-    # 11. PHONE_BR - telefone brasileiro 10-11 digitos
+    # 12. PHONE_BR - telefone brasileiro 10-11 digitos
     "phone_br": re.compile(r"(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}[\s-]?\d{4}"),
-    # 12. CEP - 8 digitos (5+3 com hifen opcional). Roda DEPOIS de RG.
+    # 13. CEP - 8 digitos (5+3 com hifen opcional). Roda DEPOIS de RG.
     "cep": re.compile(r"\b\d{5}-?\d{3}\b"),
-    # 13. CARTAO - cartao de credito 16 (Visa/MC) ou 15 (Amex) digitos.
+    # 14. CARTAO - cartao de credito 16 (Visa/MC) ou 15 (Amex) digitos.
     # Agrupamento explicito (4-4-4-4 ou 4-6-5) para nao colidir com phone.
     "cartao": re.compile(
         r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"
         r"|\b\d{4}[\s-]?\d{6}[\s-]?\d{5}\b"
     ),
+    # 14. PASSPORT (Wave 49 G8.18.T1) - LGPD art. 6 (identificacao pessoal).
+    # Passaporte brasileiro: 2 letras + 7 digitos (formato ICAO 9303).
+    # Sem normalizacao: pattern eh literal AA1234567. \b evita match
+    # em meio de palavras. Letras uppercase porque e sempre emitido
+    # em caixa alta (ICAO MRZ). Roda DEPOIS de cpf/cnh (que sao
+    # numericos puros) - formato alfanumerico unico.
+    "passport": re.compile(r"\b[A-Z]{2}\d{7}\b"),
+    # 15. IP (Wave 49 G8.18.T1) - LGPD v2 contexto (logs de acesso).
+    # IPv4: 4 grupos de 1-3 digitos separados por ponto. Roda por
+    # ULTIMO porque CEP (5-3 com hifen) e CNPJ (14 com pontos) ja
+    # consumiram match anterior. Anti-FP: requer exatamente 4 grupos
+    # com \b nos extremos.
+    "ip": re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"),
 }
 
 
@@ -214,6 +264,86 @@ def hash_pii(value: str, salt: str) -> str:
     Nao confundir com criptografia - hash nao eh reversivel.
     """
     return hashlib.sha256(f"{salt}:{value}".encode("utf-8")).hexdigest()
+
+
+# ============================================================================
+# Mask helpers (Wave 49 G8.18.T1) - utilitarios de mascaramento parcial.
+# Distintos de scrub() (full LGPD redaction): estes preservam o formato
+# mas escondem o conteudo, uteis pra UI interna / debug / telemetria.
+# NUNCA usar em output HTTP publico (usar scrub() / mask full).
+# LGPD-REVIEW-PENDING: cross-review cartorio-lgpd antes de merge prod.
+# ============================================================================
+
+
+def mask_cns(cns: str) -> str:
+    """Mascara CNS preservando formato.
+
+    Entrada: CNS normalizado (so digitos, 15 ou 16 chars).
+    Saida: 15 digitos -> "***.***.***-***"
+           16 digitos -> "***.***.***-****" (com DV)
+           Se entrada ja estiver mascarada (sem digitos), retorna
+           entrada como esta (idempotente).
+
+    Exemplo:
+        >>> mask_cns("898000764735600")
+        '***.***.***-***'
+        >>> mask_cns("8980007647356000")
+        '***.***.***-****'
+        >>> mask_cns("***.***.***-****")
+        '***.***.***-****'
+    """
+    digits = "".join(c for c in cns if c.isdigit())
+    if not digits:
+        return cns
+    if len(digits) == 15:
+        return "***.***.***-***"
+    if len(digits) == 16:
+        return "***.***.***-****"
+    return "***.***.***-***"
+
+
+def mask_cnh(cnh: str) -> str:
+    """Mascara CNH preservando formato (11 digitos).
+
+    Entrada: CNH normalizada (so digitos, 11 chars).
+    Saida: "***********" (11 asteriscos)
+           Se entrada ja estiver mascarada (sem digitos), retorna
+           entrada como esta (idempotente).
+
+    Exemplo:
+        >>> mask_cnh("12345678978")
+        '***********'
+        >>> mask_cnh("***********")
+        '***********'
+    """
+    digits = "".join(c for c in cnh if c.isdigit())
+    if not digits:
+        return cnh
+    if len(digits) == 11:
+        return "*" * 11
+    return "*" * 11
+
+
+def mask_pis(pis: str) -> str:
+    """Mascara PIS/PASEP preservando formato 3-5-3.
+
+    Entrada: PIS normalizado (so digitos, 11 chars).
+    Saida: "***.***.***-**" (com DV)
+           Se entrada ja estiver mascarada (sem digitos), retorna
+           entrada como esta (idempotente).
+
+    Exemplo:
+        >>> mask_pis("12345678901")
+        '***.***.***-**'
+        >>> mask_pis("***.***.***-**")
+        '***.***.***-**'
+    """
+    digits = "".join(c for c in pis if c.isdigit())
+    if not digits:
+        return pis
+    if len(digits) == 11:
+        return "***.***.***-**"
+    return "***.***.***-**"
 
 
 # ============================================================================

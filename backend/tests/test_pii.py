@@ -659,10 +659,206 @@ def test_pii_pre_llm_hash_pii_entropy():
 def test_pii_pre_llm_scrub_performance():
     import time
     from app.services.pii import scrub
-    
+
     start = time.perf_counter()
     scrub("Texto limpo comum para testar performance de regex no pipeline.")
     elapsed = time.perf_counter() - start
     # O processamento básico sem PII deve levar menos de 10ms (0.01s)
     assert elapsed < 0.01
+
+
+# ============================================================================
+# Wave 49 — G8.18.T1 — 3 patterns novos + 3 mask helpers
+# LGPD Art. 6 (identificacao pessoal) e Art. 46 (seguranca)
+# LGPD-REVIEW-PENDING antes de merge prod.
+# ============================================================================
+
+
+def test_scrub_pix_cpf_keyword():
+    """Wave 49: chave PIX CPF detectada via keyword 'pix' + 'cpf'."""
+    r = scrub("Minha chave pix e cpf 12345678900")
+    assert "12345678900" not in r.text
+    assert "pix_cpf_keyword" in r.findings
+    assert "[PIX_CPF_KEYWORD_REDACTED]" in r.text
+
+
+def test_scrub_pix_cpf_keyword_with_separators():
+    """Wave 49: chave PIX CPF com pontuacao."""
+    r = scrub("transferir via pix - cpf: 123.456.789-00")
+    assert "123.456.789-00" not in r.text
+    assert "pix_cpf_keyword" in r.findings
+
+
+def test_scrub_pix_cpf_keyword_case_insensitive():
+    """Wave 49: PIX/CPF keywords sao case-insensitive."""
+    r = scrub("PIX CPF 98765432100 como chave")
+    assert "98765432100" not in r.text
+    assert "pix_cpf_keyword" in r.findings
+
+
+def test_scrub_pix_sem_cpf_nao_detectado():
+    """Wave 49: 'pix' sozinho (sem 'cpf') NAO matcheia pix_cpf_keyword.
+    O CPF subsequente ainda eh detectado pelo pattern cpf regular."""
+    r = scrub("pagar via pix 12345678900")
+    assert "pix_cpf_keyword" not in r.findings
+    # O CPF sozinho continua sendo detectado via cpf pattern
+    assert "cpf" in r.findings
+    assert "12345678900" not in r.text
+
+
+def test_scrub_passport_br():
+    """Wave 49: passaporte brasileiro 2 letras + 7 digitos."""
+    r = scrub("meu passaporte e AB1234567")
+    assert "AB1234567" not in r.text
+    assert "passport" in r.findings
+    assert "[PASSPORT_REDACTED]" in r.text
+
+
+def test_scrub_passport_lowercase_nao_matcheia():
+    """Wave 49: passaporte e sempre emitido em caixa alta (ICAO MRZ)."""
+    r = scrub("passaporte ab1234567 nao bate")
+    # Lowercase NAO matcheia (anti-FP - texto natural sem caps)
+    assert "passport" not in r.findings
+
+
+def test_scrub_passport_oab_nao_confundido():
+    """Wave 49: numero OAB AA123456 (6 digitos) NAO eh passaporte (7 digitos)."""
+    r = scrub("OAB SP 123456")
+    assert "passport" not in r.findings
+
+
+def test_scrub_ip_pattern():
+    """Wave 49: IPv4 detectado para LGPD v2 contexto (logs de acesso)."""
+    r = scrub("acesso registrado do IP 192.168.0.1")
+    assert "192.168.0.1" not in r.text
+    assert "ip" in r.findings
+    assert "[IP_REDACTED]" in r.text
+
+
+def test_scrub_ip_pattern_public():
+    """Wave 49: IP publico (8.8.8.8) tambem eh detectado."""
+    r = scrub("origem: 8.8.8.8 (DNS publico)")
+    assert "8.8.8.8" not in r.text
+    assert "ip" in r.findings
+
+
+def test_scrub_ip_versao_ipv6_nao_matcheia():
+    """Wave 49: IPv6 NAO eh detectado (regex so cobre IPv4)."""
+    r = scrub("IPv6 2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+    assert "ip" not in r.findings
+
+
+def test_scrub_no_false_positive_phone_vs_cnh():
+    """Wave 49: telefone 11-digit NAO deve ser confundido com CNH (keyword obrigatoria)."""
+    r = scrub("ligar para (11) 98765-4321")
+    assert "cnh" not in r.findings
+    assert "98765-4321" not in r.text
+
+
+def test_scrub_no_false_positive_iso_date():
+    """Wave 49: data ISO 2024-01-15 NAO trigga FP em outras patterns (apenas 'data')."""
+    r = scrub("evento em 2024-01-15 conforme protocolo")
+    assert "2024-01-15" not in r.text
+    # So 'data' deve triggar (ISO format)
+    assert "cpf" not in r.findings
+    assert "ip" not in r.findings
+    assert "passport" not in r.findings
+
+
+def test_scrub_combined_all_new_patterns():
+    """Wave 49: input com TODOS os patterns novos deve ser 100% masked."""
+    text = (
+        "Resumo: pix cpf 12345678900, "
+        "passaporte AB1234567, "
+        "IP 10.0.0.1"
+    )
+    r = scrub(text)
+    assert "12345678900" not in r.text
+    assert "AB1234567" not in r.text
+    assert "10.0.0.1" not in r.text
+    assert "pix_cpf_keyword" in r.findings
+    assert "passport" in r.findings
+    assert "ip" in r.findings
+    assert r.redaction_count >= 3
+
+
+def test_scrub_combined_with_existing_patterns():
+    """Wave 49: patterns novos coexistem com CPF/CNS/CNH existentes."""
+    text = (
+        "CPF 123.456.789-09, "
+        "CNS 123456789012345, "
+        "CNH 12345678901, "
+        "pix cpf 98765432100, "
+        "passaporte XY9876543, "
+        "IP 192.168.1.100"
+    )
+    r = scrub(text)
+    assert "123.456.789-09" not in r.text
+    assert "123456789012345" not in r.text
+    assert "12345678901" not in r.text
+    assert "98765432100" not in r.text
+    assert "XY9876543" not in r.text
+    assert "192.168.1.100" not in r.text
+    assert "cpf" in r.findings
+    assert "cns" in r.findings
+    assert "cnh" in r.findings
+    assert "pix_cpf_keyword" in r.findings
+    assert "passport" in r.findings
+    assert "ip" in r.findings
+
+
+# ============================================================================
+# Mask helpers (Wave 49 G8.18.T1) - mascaramento parcial preservando formato
+# ============================================================================
+
+
+def test_mask_cns_15_digitos():
+    """mask_cns com 15 digitos -> formato 3-3-3-3 com 12 asteriscos."""
+    from app.services.pii import mask_cns
+    assert mask_cns("898000764735600") == "***.***.***-***"
+
+
+def test_mask_cns_16_digitos_com_dv():
+    """mask_cns com 16 digitos (15+DV) -> formato 3-3-3-4 com 13 asteriscos."""
+    from app.services.pii import mask_cns
+    assert mask_cns("8980007647356000") == "***.***.***-****"
+
+
+def test_mask_cns_com_formatacao_strip():
+    """mask_cns ignora formatacao (pontos/espacos) e usa apenas digitos."""
+    from app.services.pii import mask_cns
+    assert mask_cns("898 0007 6473 5600") == "***.***.***-***"
+
+
+def test_mask_cnh_11_digitos():
+    """mask_cnh com 11 digitos -> 11 asteriscos."""
+    from app.services.pii import mask_cnh
+    assert mask_cnh("12345678978") == "***********"
+
+
+def test_mask_cnh_com_formatacao_strip():
+    """mask_cnh ignora formatacao (hifens/espacos)."""
+    from app.services.pii import mask_cnh
+    assert mask_cnh("1234-56789-78") == "***********"
+
+
+def test_mask_pis_11_digitos():
+    """mask_pis com 11 digitos -> formato 3-3-3-2 com asteriscos."""
+    from app.services.pii import mask_pis
+    assert mask_pis("12345678901") == "***.***.***-**"
+
+
+def test_mask_pis_com_formatacao_strip():
+    """mask_pis ignora formatacao (pontos/hifens)."""
+    from app.services.pii import mask_pis
+    assert mask_pis("123.45678.901-00") == "***.***.***-**"
+
+
+def test_mask_helpers_idempotente():
+    """mask helpers sao idempotentes (mask(mask(x)) == mask(x))."""
+    from app.services.pii import mask_cnh, mask_cns, mask_pis
+
+    assert mask_cns(mask_cns("8980007647356000")) == "***.***.***-****"
+    assert mask_cnh(mask_cnh("12345678978")) == "***********"
+    assert mask_pis(mask_pis("12345678901")) == "***.***.***-**"
 
