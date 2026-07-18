@@ -1,14 +1,14 @@
-pre-commit hooks for Cartorio Chatbot (G6.A.T6)
-
-Install:
-  uv tool install pre-commit
-  pre-commit install
-
-Run manually:
-  pre-commit run --all-files
-
-Speed target: < 5s per file (ruff = ms, mypy selective = s)
-Modified by Gustavo Almeida + Pietra orquestrador.
+# pre-commit hooks for Cartorio Chatbot (G6.A.T6)
+#
+# Install:
+#   uv tool install pre-commit
+#   pre-commit install
+#
+# Run manually:
+#   pre-commit run --all-files
+#
+# Speed target: < 5s per file (ruff = ms, mypy selective = s)
+# Modified by Gustavo Almeida + Pietra orquestrador.
 repos:
   - repo: local
     hooks:
@@ -61,3 +61,10 @@ repos:
         entry: python3 scripts/secrets_scan.py
         language: system
         pass_filenames: false
+
+      - id: secrets-scan-compose
+        name: Secrets scan compose (G8.23.T2) — literal_keys + gitleaks
+        entry: python3 scripts/check_no_literal_keys_compose.py --severity critical --report-only
+        language: system
+        pass_filenames: false
+        always_run: true

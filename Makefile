@@ -107,6 +107,25 @@ openapi-update:  ## Atualiza baseline OpenAPI (apos bump de versao)
 n8n-validate:  ## Valida workflows N8N contra 9 regras (G6.B.T1 gate merge)
 	@echo "$(YELLOW)[N8N] Validando workflows...$(RESET)"
 	@python3 scripts/n8n_workflow_validator.py
+
+# ============================================================================
+# Secrets scanning (G8.23.T2 — Wave 52)
+# ============================================================================
+
+.PHONY: secrets-scan
+secrets-scan:  ## Compose secrets scanner (literal_keys + gitleaks + trufflehog opt-in)
+	@echo "$(YELLOW)[secrets] Compondo literal_keys + gitleaks (trufflehog opt-in)...$(RESET)"
+	@python3 scripts/check_no_literal_keys_compose.py
+
+.PHONY: secrets-scan-strict
+secrets-scan-strict:  ## Secrets scan strict (severity=critical, fail-fast)
+	@echo "$(YELLOW)[secrets] Strict scan — critical only$(RESET)"
+	@python3 scripts/check_no_literal_keys_compose.py --severity critical --no-fail-fast
+
+.PHONY: secrets-scan-trufflehog
+secrets-scan-trufflehog:  ## Secrets scan com trufflehog (opt-in, mais lento)
+	@echo "$(YELLOW)[secrets] Trufflehog full scan...$(RESET)"
+	@python3 scripts/check_no_literal_keys_compose.py --scanner trufflehog --scanner literal_keys
 	@echo "$(GREEN)[N8N] Validacao OK$(RESET)"
 
 .PHONY: n8n-audit
