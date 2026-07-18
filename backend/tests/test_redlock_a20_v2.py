@@ -531,6 +531,7 @@ class TestConstantesELGPD:
         assert reloaded.DEFAULT_LOCK_TTL_SECONDS == 300
 
     def test_key_formato_canonico(self):
-        """_key('X') == 'redlock:X' (formato canonico)."""
-        assert _key("alembic:migration") == "redlock:alembic:migration"
-        assert _key("seed:vault_secrets") == "redlock:seed:vault_secrets"
+        """_key('X') == 'cartorio:lock:redlock:X' (formato canonico G8.12.T3)."""
+        # safe_name converte : -> _
+        assert _key("alembic:migration") == "cartorio:lock:redlock:alembic_migration"
+        assert _key("seed:vault_secrets") == "cartorio:lock:redlock:seed_vault_secrets"

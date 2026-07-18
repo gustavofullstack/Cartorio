@@ -3,6 +3,10 @@
 Implementacao: Redis SET NX EX (atomic lock distribuido).
 LGPD: nome do lock NAO expoe dados pessoais, apenas identificador tecnico.
 
+Updated by Gustavo Almeida — G8.12.T3 (Wave 47):
+    chave canonica via ``app.core.redis_keys.RedisKey.lock(name)`` →
+    ``cartorio:lock:redlock:<name>``.
+
 API publica:
     - acquire_lock(name, ttl_seconds)        -> str | None
     - release_lock(name, token)               -> bool
@@ -22,11 +26,14 @@ import uuid
 from contextlib import contextmanager
 from typing import Any, Iterator
 
+from app.core.redis_keys import RedisKey
+
 logger = logging.getLogger(__name__)
 
 # TTL padrao para migrations/seed (segundos). Configuravel via env.
 DEFAULT_LOCK_TTL_SECONDS = int(os.getenv("REDIS_LOCK_TTL_SECONDS", "300"))
-DEFAULT_LOCK_PREFIX = os.getenv("REDIS_LOCK_PREFIX", "redlock:")
+# Mantido por retro-compat: testes/logs antigos que checam a string.
+DEFAULT_LOCK_PREFIX = "cartorio:lock:redlock:"
 
 # Exit code para falhas de lock em migrations/seed (EX_TEMPFAIL do sysv init).
 EXIT_LOCK_BUSY = 75
@@ -51,12 +58,15 @@ def _get_redis_client() -> Any:
 
 
 def _key(name: str) -> str:
-    """Constroi a chave Redis para o lock.
+    """Constroi a chave Redis CANONICA para o lock (G8.12.T3).
 
-    Formato canonico: '<prefix><name>' onde prefix e configuravel
-    (default 'redlock:'). NUNCA inclui dados pessoais (LGPD-safe).
+    Formato: ``cartorio:lock:redlock:<name>`` (helper ``RedisKey.lock``).
+    LGPD-safe: ``name`` deve ser apenas identificador tecnico
+    (ex.: 'alembic:migration', 'seed:vault_secrets').
     """
-    return f"{DEFAULT_LOCK_PREFIX}{name}"
+    # Substitui ':' por '_' para casar o pattern canonico do helper.
+    safe_name = (name or "").replace(":", "_")
+    return RedisKey.lock(safe_name)
 
 
 def acquire_lock(name: str, ttl_seconds: int = DEFAULT_LOCK_TTL_SECONDS) -> str | None:

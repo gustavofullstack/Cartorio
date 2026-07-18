@@ -103,16 +103,16 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.11.T1 | Refatorar controllers FastAPI para isolar lógica de negócio em services desacoplados. | [x] | cartorio-dev |
 | G8.11.T2 | Implementar injeção de dependências explícita para serviços de e-mail e mensageria. | [x] | cartorio-dev |
-| G8.11.T3 | Isolar a lógica de validação fiscal de emolumentos notariais de outras regras da API. | [ ] | cartorio-dev |
+| G8.11.T3 | Isolar a lógica de validação fiscal de emolumentos notariais de outras regras da API. | [x] | cartorio-dev |
 | G8.11.T4 | Adicionar testes de unidade focados em acoplamento e independência de camadas. | [x] | cartorio-dev |
 
 ### Squad 12 — DRY, KISS & Codebase Cleanup (dev)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.12.T1 | Identificar e unificar rotinas duplicadas de PII masking no backend. | [ ] | cartorio-dev |
-| G8.12.T2 | Remover arquivos e diretórios n8n órfãos da pasta de infraestrutura. | [ ] | cartorio-n8n |
-| G8.12.T3 | Padronizar formatação e nomenclatura de chaves no Redis em todas as classes de serviço. | [ ] | cartorio-dev |
-| G8.12.T4 | Validar ausência de código morto no diretório `/app` via análise estática. | [ ] | cartorio-dev |
+| G8.12.T1 | Identificar e unificar rotinas duplicadas de PII masking no backend. | [x] | cartorio-dev |
+| G8.12.T2 | Remover arquivos e diretórios n8n órfãos da pasta de infraestrutura. | [x] | cartorio-n8n |
+| G8.12.T3 | Padronizar formatação e nomenclatura de chaves no Redis em todas as classes de serviço. | [x] | cartorio-dev |
+| G8.12.T4 | Validar ausência de código morto no diretório `/app` via análise estática. | [x] | cartorio-dev |
 
 ### Squad 13 — Strong Typing & Strict Validation (dev)
 | ID | Task | Done | Agent |

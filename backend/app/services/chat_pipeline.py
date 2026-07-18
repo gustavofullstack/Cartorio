@@ -50,6 +50,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from app.core.redis_keys import RedisKey
 from app.services.pii import scrub
 from app.services.redis_bus import get_bus
 from app.services.tracing import current_trace_id, llm_span, get_tracer
@@ -285,7 +286,8 @@ async def check_idempotency(update_id: str, channel: Channel) -> bool:
     bus = get_bus()
     if not bus:
         return False
-    key = f"idem:{channel.value}:{update_id}"
+    # G8.12.T3: chave canonica via helper central.
+    key = RedisKey.idempotency("chat_pipeline", f"{channel.value}_{update_id}")
     # SETNX com TTL atômico
     is_new = await bus.client.set(key, "1", ex=IDEMPOTENCY_TTL_SEC, nx=True)
     return not bool(is_new)  # True se já existia (pular)
@@ -305,7 +307,8 @@ async def check_rate_limit(conv_key: str, channel: Channel) -> bool:
     bus = get_bus()
     if not bus:
         return True
-    key = f"rl:{channel.value}:{conv_key}"
+    # G8.12.T3: chave canonica via helper central.
+    key = RedisKey.rate_limit("chat", f"{channel.value}_{conv_key}")
     # SETNX EX 3 — se já existia, nega
     is_new = await bus.client.set(key, "1", ex=RATE_LIMIT_SECONDS, nx=True)
     return bool(is_new)

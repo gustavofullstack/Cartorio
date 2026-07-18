@@ -87,6 +87,7 @@ markers = [
     "t044: test for emolumento value above teto",
     "t045: test for emolumento isencao",
     "t046: regression test for GET /api/v1/protocolo/{numero} soft-delete + status coverage",
+    "t047: regression test for emolumento fiscal validation split (G8.11.T3 SOLID — pure rules module)",
     "coupling: architecture coupling tests (AST inspection of layer imports — G8.11.T4)",
 ] 
 filterwarnings = [

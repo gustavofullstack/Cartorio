@@ -59,13 +59,15 @@ class TestRedlock:
 
         assert token is not None
         assert len(token) == 32  # UUID4 hex
-        assert "redlock:test:lock" in fake.store
-        assert fake.store["redlock:test:lock"] == token
+        # G8.12.T3: chave canonica via RedisKey.lock (cartorio:lock:redlock:<name>)
+        assert "cartorio:lock:redlock:test_lock" in fake.store
+        assert fake.store["cartorio:lock:redlock:test_lock"] == token
 
     def test_acquire_lock_returns_none_if_already_locked(self):
         """acquire_lock retorna None se lock ja existe."""
         fake = FakeRedis()
-        fake.store["redlock:busy"] = "outro-token"
+        # G8.12.T3: helper normaliza : -> _
+        fake.store["cartorio:lock:redlock:busy"] = "outro-token"
 
         with patch("app.services.redlock._get_redis_client", return_value=fake):
             token = acquire_lock("busy", ttl_seconds=60)
@@ -87,7 +89,7 @@ class TestRedlock:
             result = release_lock("test:lock", token)
 
         assert result is True
-        assert "redlock:test:lock" not in fake.store
+        assert "cartorio:lock:redlock:test_lock" not in fake.store
 
     def test_release_lock_with_wrong_token_fails(self):
         """release_lock com token errado NAO deleta (Lua script atomico)."""
@@ -99,8 +101,8 @@ class TestRedlock:
             result = release_lock("test:lock", "wrong-token")
 
         assert result is False
-        # Lock continua ativo
-        assert "redlock:test:lock" in fake.store
+        # Lock continua ativo (formato canonico G8.12.T3)
+        assert "cartorio:lock:redlock:test_lock" in fake.store
 
     def test_release_lock_fail_safe_if_redis_offline(self):
         """Se Redis offline, release retorna False (nao levanta)."""
@@ -110,7 +112,7 @@ class TestRedlock:
     def test_is_locked_true_when_locked(self):
         """is_locked retorna True se lock existe."""
         fake = FakeRedis()
-        fake.store["redlock:present"] = "x"
+        fake.store["cartorio:lock:redlock:present"] = "x"
 
         with patch("app.services.redlock._get_redis_client", return_value=fake):
             assert is_locked("present") is True
@@ -128,15 +130,15 @@ class TestRedlock:
             assert is_locked("test") is False
 
     def test_lock_namespacing(self):
-        """Lock name eh prefixado com 'redlock:' (LGPD: sem PII)."""
+        """Lock name eh prefixado com 'cartorio:lock:redlock:' (LGPD: sem PII)."""
         fake = FakeRedis()
         with patch("app.services.redlock._get_redis_client", return_value=fake):
             acquire_lock("migrations:run", ttl_seconds=30)
 
-        # Chave SEMPRE prefixada
-        assert "redlock:migrations:run" in fake.store
+        # Chave SEMPRE prefixada (formato canonico G8.12.T3; : -> _)
+        assert "cartorio:lock:redlock:migrations_run" in fake.store
         # NAO expoe PII no nome
-        assert "cpf" not in "redlock:migrations:run"
+        assert "cpf" not in "cartorio:lock:redlock:migrations_run"
 
     def test_acquire_lock_handles_redis_error(self):
         """acquire_lock retorna None se Redis lanca excecao."""
@@ -155,7 +157,7 @@ class TestRedlock:
     def test_release_lock_handles_redis_error(self):
         """release_lock retorna False se Redis lanca excecao no eval."""
         fake = FakeRedis()
-        fake.store["redlock:err"] = "mytoken"
+        fake.store["cartorio:lock:redlock:err"] = "mytoken"
         orig_eval = fake.eval
 
         def broken_eval(*args: object, **kwargs: object) -> None:

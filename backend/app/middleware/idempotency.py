@@ -5,7 +5,8 @@ no store (Redis) com TTL 24h. Se ja existe, retorna resposta cacheada
 sem duplicar a mutacao. Se body eh diferente, retorna 422.
 
 LGPD: cache armazena APENAS o response (sem PII).
-Chave = sha256(Idempotency-Key + endpoint + method).
+Chave (G8.12.T3 — canonica via ``app.core.redis_keys``):
+  ``cartorio:idem:default_post:sha256(method+endpoint+key)``
 
 Comportamento:
 - Sem Idempotency-Key: passa direto.
@@ -27,6 +28,7 @@ from typing import Any
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.redis_keys import RedisKey
 from app.services.idempotency_store import (
     IdempotencyStore,
     RedisIdempotencyStore,
@@ -39,12 +41,13 @@ DEFAULT_PATHS = ("/api/v1/",)
 
 
 def _hash_idempotency_key(key: str, endpoint: str, method: str) -> str:
-    """Gera chave de cache deterministica a partir do header + endpoint + method.
+    """Gera chave de cache canonica a partir do header + endpoint + method.
 
     LGPD: hash garante que o Idempotency-Key original nao vaza no Redis.
+    G8.12.T3: chave canonica → ``cartorio:idem:default_post:<sha256>``.
     """
     payload = f"{method}:{endpoint}:{key}"
-    return f"idempotency:{hashlib.sha256(payload.encode()).hexdigest()}"
+    return RedisKey.idempotency("default_post", hashlib.sha256(payload.encode()).hexdigest())
 
 
 def _body_hash(body_bytes: bytes) -> str:

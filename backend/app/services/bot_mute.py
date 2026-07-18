@@ -12,6 +12,7 @@ LGPD: chaves usam IDs opacos (chat_id / conversation_id), sem PII.
 Default fail-open se Redis indisponível (não travar atendimento).
 
 Modified by Gustavo Almeida — G8.03.T2 Wave 36.
+Updated by Gustavo Almeida — G8.12.T3 (Wave 47): chave canonica `cartorio:bot_mute:<channel>:<conv>` via `app.core.redis_keys.RedisKey`.
 """
 
 from __future__ import annotations
@@ -22,11 +23,14 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from app.core.redis_keys import RedisKey
+
 logger = logging.getLogger(__name__)
 
-# Prefixo canônico (DRY com redis_ttl_inventory se inventariado depois)
-MUTE_KEY_PREFIX = 'bot:mute'
 DEFAULT_TTL_SEC = 8 * 3600  # 8h jornada do escrevente
+
+# Mantido apenas para retro-compat (tests antigos + dataclass). Use RedisKey.bot_mute().
+MUTE_KEY_PREFIX = 'cartorio:bot_mute'
 
 
 class RedisLike(Protocol):
@@ -40,16 +44,23 @@ class RedisLike(Protocol):
 @dataclass(frozen=True, slots=True)
 class BotMuteConfig:
     ttl_sec: int = DEFAULT_TTL_SEC
+    # Aceito mas ignorado pelo helper canonico; mantido apenas p/ retro-compat
+    # de testes externos que customizam prefix. O idiomatico agora eh usar
+    # RedisKey.bot_mute(channel, conversation_key) direto.
     key_prefix: str = MUTE_KEY_PREFIX
 
 
-def mute_key(channel: str, conversation_key: str, *, prefix: str = MUTE_KEY_PREFIX) -> str:
-    """Monta chave Redis normalizada (sem PII)."""
+def mute_key(channel: str, conversation_key: str, *, prefix: str | None = None) -> str:
+    """Monta chave Redis canonica via helper central (G8.12.T3).
+
+    O argumento ``prefix`` eh ignorado (back-compat shim). A chave eh
+    sempre ``cartorio:bot_mute:<channel>:<conversation_key>``.
+    """
     ch = (channel or 'unknown').strip().lower()
     ck = str(conversation_key or '').strip()
     if not ck:
         raise ValueError('conversation_key required')
-    return f'{prefix}:{ch}:{ck}'
+    return RedisKey.bot_mute(ch, ck)
 
 
 def _maybe_close_coro(result: Any) -> Any:

@@ -109,6 +109,10 @@ n8n-validate:  ## Valida workflows N8N contra 9 regras (G6.B.T1 gate merge)
 	@python3 scripts/n8n_workflow_validator.py
 	@echo "$(GREEN)[N8N] Validacao OK$(RESET)"
 
+.PHONY: n8n-orphans
+n8n-orphans:  ## Relatorio CSV de JSONs N8N sem referencias (offline)
+	@uv run python scripts/n8n_orphan_detector.py
+
 .PHONY: coverage-gate
 coverage-gate:  ## Coverage gate fail-safe (G6.A.T5)
 	@echo "$(YELLOW)[Coverage] Validando gate >=95%...$(RESET)"

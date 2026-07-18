@@ -1,6 +1,8 @@
 """Cache Redis 24h para emolumento (A21).
 
-Chave: emolumento:{tipo_documento}:{valor}
+Chave (G8.12.T3 — canonica via `app.core.redis_keys`):
+  cartorio:cache:emolumento:<tipo_documento>_<valor_centavos>
+
 TTL: 86400s (24h)
 LGPD: chave NAO expoe PII (tipo+valor sao publicos).
 """
@@ -12,9 +14,14 @@ import logging
 import os
 from typing import Any
 
+from app.core.redis_keys import RedisKey
+
 logger = logging.getLogger(__name__)
 
 CACHE_TTL_SECONDS = 86400  # 24h
+
+# Pattern canonico p/ SCAN (invalidate). Reflete a chave canonica atual.
+CACHE_SCAN_PATTERN_ALL = "cartorio:cache:emolumento:*"
 
 
 def _get_redis_client() -> Any:
@@ -28,9 +35,10 @@ def _get_redis_client() -> Any:
 
 
 def _cache_key(tipo_documento: str, valor: float) -> str:
-    """Constroi chave de cache deterministica."""
+    """Constroi chave de cache canonica via helper central (G8.12.T3)."""
     valor_int = int(valor * 100)  # centavos para evitar float precision
-    return f"emolumento:{tipo_documento}:{valor_int}"
+    # id combina tipo + valor para casar o pattern ^cartorio:cache:emolumento:<id>$
+    return RedisKey.cache("emolumento", f"{tipo_documento}_{valor_int}")
 
 
 def get_cached(tipo_documento: str, valor: float) -> dict | None:
@@ -76,12 +84,14 @@ def invalidate(tipo_documento: str | None = None) -> int:
         return 0
     try:
         if tipo_documento is None:
-            keys = list(r.scan_iter(match="emolumento:*", count=100))
+            keys = list(r.scan_iter(match=CACHE_SCAN_PATTERN_ALL, count=100))
             if keys:
                 r.delete(*keys)
             return len(keys)
         else:
-            keys = list(r.scan_iter(match=f"emolumento:{tipo_documento}:*", count=100))
+            # Por tipo: filtra prefixo + tipo canonico
+            pattern = f"cartorio:cache:emolumento:{tipo_documento}_*"
+            keys = list(r.scan_iter(match=pattern, count=100))
             if keys:
                 r.delete(*keys)
             return len(keys)

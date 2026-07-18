@@ -16,6 +16,35 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 
+from app.services.emolumento_validacao import (
+    ADICIONAL_FOLHA_PERCENTUAL,
+    ADICIONAL_URGENCIA_PERCENTUAL,
+    MAX_FOLHAS,
+    MIN_FOLHAS,
+    MOTIVOS_ISENCAO,
+    TIPOS_GRATUITOS,
+    isencao_aplicavel,
+    validar_quantidade_folhas,
+    validar_tipo,
+)
+
+# Re-exports preservam compat: callers que importavam de emolumento continuam OK
+__all__ = [
+    "CalculoEmolumento",
+    "EMOLUMENTOS_2026",
+    "TIPOS_VALIDOS",
+    "calcular",
+    "isencao_aplicavel",
+    "ADICIONAL_FOLHA_PERCENTUAL",
+    "ADICIONAL_URGENCIA_PERCENTUAL",
+    "MIN_FOLHAS",
+    "MAX_FOLHAS",
+    "TIPOS_GRATUITOS",
+    "MOTIVOS_ISENCAO",
+    "validar_tipo",
+    "validar_quantidade_folhas",
+]  # noqa: F401
+
 
 # Tabela placeholder - MG 2026 (substituir por carga real do estado)
 EMOLUMENTOS_2026: dict[str, Decimal] = {

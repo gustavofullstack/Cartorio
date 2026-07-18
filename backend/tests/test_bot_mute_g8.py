@@ -37,7 +37,8 @@ class FakeRedis:
 
 
 def test_mute_key_normalized() -> None:
-    assert mute_key('Telegram', '123') == 'bot:mute:telegram:123'
+    """G8.12.T3: chave canonica via RedisKey.bot_mute."""
+    assert mute_key('Telegram', '123') == 'cartorio:bot_mute:telegram:123'
 
 
 def test_mute_key_requires_conversation() -> None:
@@ -48,7 +49,7 @@ def test_mute_key_requires_conversation() -> None:
 def test_mute_and_check() -> None:
     r = FakeRedis()
     key = mute_bot(r, 'telegram', '42', reason='escrevente', ttl_sec=60)
-    assert key == 'bot:mute:telegram:42'
+    assert key == 'cartorio:bot_mute:telegram:42'
     assert is_bot_muted(r, 'telegram', '42') is True
     assert r.ttls[key] == 60
 
@@ -81,7 +82,9 @@ def test_parse_mute_value() -> None:
 
 
 def test_config_prefix() -> None:
+    """G8.12.T3: prefix eh ignorado — chave canonica via RedisKey.bot_mute."""
     r = FakeRedis()
     cfg = BotMuteConfig(ttl_sec=10, key_prefix='x:mute')
     mute_bot(r, 'tg', '7', config=cfg)
-    assert 'x:mute:tg:7' in r.store
+    # Formato canonico G8.12.T3 (prefix eh back-compat shim)
+    assert 'cartorio:bot_mute:tg:7' in r.store
