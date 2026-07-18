@@ -1,0 +1,4 @@
+## 2026-07-28 - Refactoring Dialect-Specific SQL Interpolations
+**Vulnerability:** String concatenation of dynamic components inside SQLAlchemy `text()` wrappers.
+**Learning:** Hardcoding static SQL dialects (`NOW() - INTERVAL 'X days'` vs `datetime('now', '-X days')`) into Python format strings bypassing parameterization opens the potential for SQL Injection, and often breaks downstream SQL query caching. The abstraction helper `_now_minus_days_expr()` constructed these static string interpolations.
+**Prevention:** Rather than pushing dynamic logic into the RDBMS using unparameterized f-strings, construct standard UTC `datetime` objects in Python using `datetime.now(timezone.utc) - timedelta(days=X)` and pass them securely via SQLAlchemy bind parameters (e.g., `:ts_30d`). This eliminates injection vulnerabilities and natively bridges RDBMS differences.
