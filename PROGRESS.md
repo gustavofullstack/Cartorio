@@ -3788,3 +3788,46 @@ git branch -d chore/g8-16-t1-progress-audit
 - ✋ Squad 18/19 (PII/Audit) devem aguardar revisão antes de merge público
 
 Modified by Gustavo Almeida — 2026-07-18T17:30
+
+## 2026-07-18 — Wave 47 closure (commit def348f) — 58/100 honest
+
+### Tasks done in Wave 47
+
+- **G8.13.T2** N8N JSON strict validation (`feat/g8-13-t2-...`) — 34 tests, 39/39 real WFs validate strict, Pydantic extra=forbid, regex anti-PII em node names (LGPD Art. 46), IANA timezone via zoneinfo stdlib.
+- **G8.14.T4** N8N precommit lint (`chore/g8-14-t4-...`) — 16 tests, 4 PII regex (CPF/CNPJ/PHONE-BR-mandatory-dash/PHONE-BR-parenthesized). Hook `n8n-workflow-lint` registrado. Anti-FP regression para N8N assignment IDs.
+- **G8.17.T1** Postman OpenAPI sync (`feat/g8-17-t1-...`) — 23 tests, 143 endpoints convertidos, 29 folders por tag, 82 GET / 58 POST / 2 DELETE / 1 PATCH. **LGPD-safe bearer via `{{bearer_token}}` variable**. Cache TTL 5min, gzip auto >1MB.
+- **G8.17.T2** Swagger webhook schemas (`feat/g8-17-t2-...`) — 18 tests, 11 webhooks documentados (telegram/evolution/chatwoot/n8n-error/n8n-deletion/alertmanager×5/supabase-outbox), 109 fields com description, **30 fields com marker `**LGPD PII**`**. `Annotated[..., Field(...)]` em todos os campos type-safe. PIIField marker (LGPD-aware metadata para revisão automática).
+
+### Gates finais pós-consolidação
+
+| Gate | Resultado |
+|------|-----------|
+| `uv run pytest --no-cov -q` | **4085 passed, 23 skipped** (+91 vs Wave 46) |
+| `uv run ruff check app/` | **All checks passed** |
+| `uv run mypy app/` | **0 errors / 195 source files** |
+| SUPER_PLANO_G8 honest | **58/100** (54 → 58, +4) |
+| Branches absorbed | 4 |
+| Commits trazidos | 9 |
+
+### Anti-padrões gerenciados
+
+- ❌ → ✅ **master-only pre-commit hook + parallel agents = stranded branches** (lesson 231)
+- ❌ → ✅ **parallel agents SUPER_PLANO_G8 race** (resolver via manual consolidation)
+- ❌ → ✅ **Lesson-237 G8.13.T2 perdida** (commit só mencionou; reverter dos patches via commit message)
+
+### Pendências LGPD gates
+
+- ✋ G8.12.T1 PII unify (Wave 45) — cross-review pendente
+- ✋ G8.15.T1/T2 label whitelists (Wave 46) — assinatura
+- ✋ G8.17.T2 webhook PII markers (Wave 47) — assinatura
+
+### Wave 48 picks (next 4 [ ])
+
+- G8.13.T3 (lgpd) — Custom Pydantic types CPFStr/CNPJStr [LGPD REVIEW]
+- G8.16.T3 (lgpd) — Integrar verificação de consentimento no cycle de tasks
+- G8.18.T1 (lgpd) — Ampliar regex PII do interceptor pré-LLM [LGPD REVIEW]
+- G8.18.T4 (lgpd) — Sentry before_send PII removal
+
+→ 4 tasks LGPD-heavy exigem cross-review humano antes de merge. Honesto count 58 → 62.
+
+Modified by Gustavo Almeida — 2026-07-18T18:30
