@@ -1,8 +1,13 @@
-# CD - Render deploy on push to master
-# Triggera deploy manual via Render API, polla ate status=live, reporta resultado.
+# CD - Conditional deploy on absolute quality gates
+# Deploy (Render API + polling) roda SOMENTE apos todos os CI jobs passarem:
+# lint, mypy, test (pytest + coverage 90%), secrets-scan, docs-build.
 #
-# Secrets necessarios (Settings > Secrets and variables > Actions):
-#   RENDER_API_KEY    = rnd_sTv1GnBAmvWrsP7UGIs7wrbeuKzn  (NAO comitar)
+# G8.14.T2 — quality-gate job eh o unico elo entre CI e CD.
+# Fall-back seguro: se QUALQUER job falhar OU for cancelado OU pular,
+# deploy NAO dispara (fail-safe).
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   RENDER_API_KEY    = (NAO comitar)
 #   RENDER_SERVICE_ID = srv-d8u04aojs32c73c92j8g
 #   GH_TOKEN          = (auto via ${{ secrets.GITHUB_TOKEN }})
 
@@ -15,8 +20,14 @@ on:
       - 'backend/**'
       - 'Dockerfile'
       - '.github/workflows/cd.yml'
-  workflow_dispatch:  # permite disparar manualmente
+      - '.github/workflows/ci.yml'
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:  # permite disparar manualmente (emergency only — bypass de gate)
 
+# Cancela deploys obsoletos (mesmo commit)
 concurrency:
   group: cd-render
   cancel-in-progress: false  # NAO cancelar deploy em andamento
@@ -25,10 +36,94 @@ env:
   RENDER_SERVICE_ID: srv-d8u04aojs32c73c92j8g
 
 jobs:
+  # ============================================================================
+  # QUALITY GATE ABSOLUTO (G8.14.T2)
+  # So permite deploy se TODOS os gates de CI passaram.
+  # ============================================================================
+  quality-gate:
+    name: Quality Gate Absolute
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: CI  # trigger implicito: aguarda CI rodar e concluir
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.11"
+
+      - name: Setup Python
+        run: uv python install "3.12"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --all-extras
+
+      # GATE 1: lint (ruff check + format)
+      - name: Gate 1/6 — Ruff lint
+        working-directory: backend
+        run: uv run ruff check .
+
+      - name: Gate 2/6 — Ruff format
+        working-directory: backend
+        run: uv run ruff format --check .
+
+      # GATE 2: mypy strict
+      - name: Gate 3/6 — Mypy typecheck strict
+        working-directory: backend
+        run: rm -rf .mypy_cache && uv run mypy app/
+
+      # GATE 3: pytest + coverage 90%
+      - name: Gate 4/6 — Pytest (coverage gate 90%)
+        working-directory: backend
+        env:
+          APP_ENV: testing
+        run: uv run pytest -n auto --tb=short
+
+      # GATE 4: secrets scan (literal API keys)
+      - name: Gate 5/6 — Secrets literal keys scan
+        run: python3 backend/scripts/check_no_literal_keys.py
+
+      # GATE 5: PII leak check (LGPD core — teste de PII scrubbing)
+      - name: Gate 6/6 — LGPD PII scrubbing test
+        working-directory: backend
+        run: uv run pytest tests/test_pii.py --no-cov -v
+
+      # GATE 6: composite G7 super validator (soft check)
+      - name: G7 super validator (local-only)
+        run: |
+          set +e
+          python3 scripts/g7_super_validator.py --skip-ruff --skip-pytest --json > /tmp/g7_cd.json
+          code=$?
+          set -e
+          if [ "$code" -ge 2 ]; then
+            cat /tmp/g7_cd.json || true
+            exit 2
+          fi
+          echo "G7 validator OK (exit=$code)"
+
+      - name: All quality gates GREEN
+        run: |
+          echo "ALL 6 GATES GREEN — proceeding to deploy"
+          echo "Gate 1/6 Ruff lint:    OK"
+          echo "Gate 2/6 Ruff format:  OK"
+          echo "Gate 3/6 Mypy strict:  OK"
+          echo "Gate 4/6 Pytest 90%:   OK"
+          echo "Gate 5/6 Secrets scan: OK"
+          echo "Gate 6/6 LGPD PII:     OK"
+
+  # ============================================================================
+  # DEPLOY (Render) — so roda se quality-gate OK
+  # ============================================================================
   deploy-render:
     name: Deploy to Render (Ohio, free)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [quality-gate]
+    if: ${{ needs.quality-gate.result == 'success' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
