@@ -134,6 +134,7 @@ async def calcular_emolumento(
 ) -> dict:
     """Calcula emolumento. Publico - sem PII envolvida."""
     from app.services.metrics import store
+
     store.inc_counter("cartorio_emolumento_consultado_total")
     try:
         resultado = calcular_emolumento_svc(tipo, folhas=folhas, urgencia=urgencia)
@@ -170,8 +171,13 @@ async def calcular_emolumento_api(
     tipo: Annotated[str, Query(description="Tipo do ato cartorário.")],
     folhas: Annotated[int, Query(ge=1, le=1000, description="Quantidade de folhas.")] = 1,
     urgencia: Annotated[bool, Query(description="Aplica adicional de 50% por urgência.")] = False,
-    isencao_motivo: Annotated[str | None, Query(description="Motivo legal de isenção, se aplicável.")] = None,
-    cliente_id: Annotated[int | None, Query(description="ID do cliente para validação de consentimento em consultas sensíveis.")] = None,
+    isencao_motivo: Annotated[
+        str | None, Query(description="Motivo legal de isenção, se aplicável.")
+    ] = None,
+    cliente_id: Annotated[
+        int | None,
+        Query(description="ID do cliente para validação de consentimento em consultas sensíveis."),
+    ] = None,
     db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> EmolumentoCalculoResponse:
     """Calcula emolumento com tratamento de isenções e controle de privacidade LGPD."""
@@ -196,9 +202,7 @@ async def calcular_emolumento_api(
 
     # 2. Validação LGPD: Consent Check se ato sensível e cliente fornecido
     if is_sensivel and cliente_id is not None and db is not None:
-        cliente = db.execute(
-            select(Cliente).where(Cliente.id == cliente_id)
-        ).scalar_one_or_none()
+        cliente = db.execute(select(Cliente).where(Cliente.id == cliente_id)).scalar_one_or_none()
 
         if not cliente:
             raise HTTPException(
@@ -221,7 +225,7 @@ async def calcular_emolumento_api(
     # 3. Tratamento de Isenções (se aplicável)
     isento = False
     motivo_legal = None
-    
+
     # Valores finais do cálculo
     base_val = resultado.base
     adicional_folhas_val = resultado.adicional_folhas
@@ -869,11 +873,12 @@ def post_protocolo_criar_api(
 # Webhook Evolution (WhatsApp)
 # ============================================================================
 
+
 def _parse_dual_format(payload: dict) -> tuple[str, str, str]:
     """Auxiliar para extração de dados do payload da Evolution."""
     _data = payload.get("data") or {}
     _key_raw = _data.get("key") if isinstance(_data, dict) else None
-    
+
     _msg = (
         _data.get("message")
         if (_data and isinstance(_data, dict))
@@ -911,7 +916,7 @@ async def webhook_evolution_health() -> dict:
         "instance": "cartorio-2notas",
     }
     s_leg, t_leg, i_leg = _parse_dual_format(legado)
-    
+
     # 2. Simula payload moderno (nested)
     moderno = {
         "event": "messages.upsert",
@@ -926,15 +931,19 @@ async def webhook_evolution_health() -> dict:
                 "conversation": "Teste moderno",
             },
             "pushName": "Contato Teste",
-        }
+        },
     }
     s_mod, t_mod, i_mod = _parse_dual_format(moderno)
-    
+
     parse_ok = (
-        s_leg == "553499999999" and t_leg == "Teste legado" and i_leg == "cartorio-2notas"
-        and s_mod == "553499999999@s.whatsapp.net" and t_mod == "Teste moderno" and i_mod == "cartorio-2notas"
+        s_leg == "553499999999"
+        and t_leg == "Teste legado"
+        and i_leg == "cartorio-2notas"
+        and s_mod == "553499999999@s.whatsapp.net"
+        and t_mod == "Teste moderno"
+        and i_mod == "cartorio-2notas"
     )
-    
+
     return {
         "status": "ok" if parse_ok else "degraded",
         "dual_format_parse": "healthy" if parse_ok else "fail",
@@ -4940,7 +4949,7 @@ def criar_agendamento_webhook(
     except AgendamentoConflictError as e:
         # Incrementa contador de conflitos de agendamento no Prometheus (S7.T4)
         metrics_store.inc_counter("cartorio_agendamentos_conflitos_total")
-        
+
         raise HTTPException(
             status_code=409,
             detail={

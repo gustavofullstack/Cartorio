@@ -133,7 +133,9 @@ class TestSQLGeneration:
         create_count = len(re.findall(r"^CREATE\s+(?:UNIQUE\s+)?INDEX\b", sql, re.MULTILINE))
         assert create_count == 12, f"Esperado 12 CREATE INDEX, achou {create_count}"
         # Cada linha 'ON tabela USING tipo (...)' deve terminar com ;
-        on_lines = [line for line in sql.split("\n") if line.strip().startswith("ON ") and "USING" in line]
+        on_lines = [
+            line for line in sql.split("\n") if line.strip().startswith("ON ") and "USING" in line
+        ]
         assert len(on_lines) == 12, f"Esperado 12 ON ... USING, achou {len(on_lines)}"
         for line in on_lines:
             assert line.rstrip().endswith(";"), f"Statement sem ;: {line}"
@@ -185,7 +187,11 @@ class TestLGPDCoverage:
     def test_audit_log_has_index_for_resource_action(self, opt_module):
         """LGPD Art.37 (registro de operações): auditoria por recurso."""
         res_idx = next(
-            (i for i in opt_module.INDICES if "resource" in i["colunas"] and "action" in i["colunas"]),
+            (
+                i
+                for i in opt_module.INDICES
+                if "resource" in i["colunas"] and "action" in i["colunas"]
+            ),
             None,
         )
         assert res_idx is not None, "Falta índice composto resource+action"
@@ -193,7 +199,11 @@ class TestLGPDCoverage:
     def test_protocolo_has_index_for_cliente_status(self, opt_module):
         """LGPD Art.18 II (acesso): cliente consulta seus protocolos."""
         cliente_idx = next(
-            (i for i in opt_module.INDICES if i["tabela"] == "protocolos" and "cliente_id" in i["colunas"]),
+            (
+                i
+                for i in opt_module.INDICES
+                if i["tabela"] == "protocolos" and "cliente_id" in i["colunas"]
+            ),
             None,
         )
         assert cliente_idx is not None, "Falta índice em protocolo.cliente_id"

@@ -70,13 +70,21 @@ def send_alert(message: str, *, chat_id: str | None = None) -> bool:
     import os
 
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    target_chat_id = chat_id or os.environ.get("TELEGRAM_GRUPO_PIEIRA_CHAT_ID") or os.environ.get("TELEGRAM_CHAT_ID")
+    target_chat_id = (
+        chat_id
+        or os.environ.get("TELEGRAM_GRUPO_PIEIRA_CHAT_ID")
+        or os.environ.get("TELEGRAM_CHAT_ID")
+    )
 
     # Fail-open: log sempre, mesmo se Telegram offline
     logger.error("DEAD_MANS_SWITCH_ALERT: %s", message)
 
     if not bot_token or not target_chat_id:
-        logger.warning("Telegram nao configurado (bot_token=%s, chat_id=%s). Apenas log.", bool(bot_token), bool(target_chat_id))
+        logger.warning(
+            "Telegram nao configurado (bot_token=%s, chat_id=%s). Apenas log.",
+            bool(bot_token),
+            bool(target_chat_id),
+        )
         return False
 
     try:
@@ -93,7 +101,9 @@ def send_alert(message: str, *, chat_id: str | None = None) -> bool:
         )
         ok = resp.status_code == 200
         if not ok:
-            logger.error("Telegram alert failed: HTTP %s body=%s", resp.status_code, resp.text[:200])
+            logger.error(
+                "Telegram alert failed: HTTP %s body=%s", resp.status_code, resp.text[:200]
+            )
         return ok
     except Exception as exc:
         logger.error("Telegram alert exception: %s: %s", type(exc).__name__, exc)

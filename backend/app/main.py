@@ -131,7 +131,10 @@ async def _llm_providers_health_loop() -> None:
 
     while True:
         providers_to_check = ["opencode_go"]
-        if settings.llm_default_provider and settings.llm_default_provider not in providers_to_check:
+        if (
+            settings.llm_default_provider
+            and settings.llm_default_provider not in providers_to_check
+        ):
             providers_to_check.append(settings.llm_default_provider)
 
         for provider in providers_to_check:
@@ -154,7 +157,11 @@ async def _llm_providers_health_loop() -> None:
                     )
                 logger.info("LLM MONITOR: Provider %s is HEALTHY", provider)
             except Exception as e:
-                logger.warning("LLM MONITOR: First check failed for %s: %s. Retrying in 5 seconds...", provider, e)
+                logger.warning(
+                    "LLM MONITOR: First check failed for %s: %s. Retrying in 5 seconds...",
+                    provider,
+                    e,
+                )
                 await asyncio.sleep(5)
                 try:
                     with session_scope() as db:
@@ -173,8 +180,12 @@ async def _llm_providers_health_loop() -> None:
                         )
                     logger.info("LLM MONITOR: Provider %s recovered on retry", provider)
                 except Exception as retry_err:
-                    logger.error("LLM MONITOR: Provider %s is OFFLINE (double failure): %s", provider, retry_err)
-                    
+                    logger.error(
+                        "LLM MONITOR: Provider %s is OFFLINE (double failure): %s",
+                        provider,
+                        retry_err,
+                    )
+
                     try:
                         bus = get_bus()
                         if bus and bus.client:
@@ -186,9 +197,9 @@ async def _llm_providers_health_loop() -> None:
                     chat_id = settings.audit_alert_telegram_chat_id
                     if not token or not chat_id:
                         logger.warning(
-                            'LLM MONITOR: TELEGRAM_BOT_TOKEN or '
-                            'AUDIT_ALERT_TELEGRAM_CHAT_ID not set, '
-                            'skipping Telegram alert for provider %s',
+                            "LLM MONITOR: TELEGRAM_BOT_TOKEN or "
+                            "AUDIT_ALERT_TELEGRAM_CHAT_ID not set, "
+                            "skipping Telegram alert for provider %s",
                             provider,
                         )
                     else:
@@ -200,7 +211,15 @@ async def _llm_providers_health_loop() -> None:
                         url = f"https://api.telegram.org/bot{token}/sendMessage"
                         try:
                             async with httpx.AsyncClient() as client:
-                                await client.post(url, json={"chat_id": chat_id, "text": alert_text, "parse_mode": "Markdown"}, timeout=5.0)
+                                await client.post(
+                                    url,
+                                    json={
+                                        "chat_id": chat_id,
+                                        "text": alert_text,
+                                        "parse_mode": "Markdown",
+                                    },
+                                    timeout=5.0,
+                                )
                         except Exception as telegram_exc:
                             logger.warning("Falha ao enviar alerta Telegram: %s", telegram_exc)
 

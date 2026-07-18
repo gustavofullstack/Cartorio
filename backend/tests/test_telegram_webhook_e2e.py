@@ -153,19 +153,19 @@ def test_telegram_webhook_rejects_missing_signature_when_secret_configured(
 # =============================================================================
 
 
-def test_telegram_webhook_idempotency(
-    client: TestClient, telegram_private_update: dict
-) -> None:
+def test_telegram_webhook_idempotency(client: TestClient, telegram_private_update: dict) -> None:
     """Mesmo update_id 2x: primeira processa, segunda retorna duplicate.
 
     Lesson 160/161: Redis SETNX tg:idem:{update_id} TTL 24h.
     O spec da task pediu 24h (86400s); o codigo atual usa 600s mas a
     intencao canonica (anti-replay 24h) e o que validamos aqui.
     """
+
     class FakeRedisClient:
         def __init__(self):
             self.idem_calls = 0
             self.call_args_list = []
+
         async def set(self, key, val, nx=False, ex=None):
             if "tg:idem:" in key:
                 self.idem_calls += 1
@@ -184,13 +184,9 @@ def test_telegram_webhook_idempotency(
             with patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
                 with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
                     # 1a chamada — processa
-                    resp1 = client.post(
-                        "/api/v1/telegram/webhook", json=telegram_private_update
-                    )
+                    resp1 = client.post("/api/v1/telegram/webhook", json=telegram_private_update)
                     # 2a chamada — mesmo update_id
-                    resp2 = client.post(
-                        "/api/v1/telegram/webhook", json=telegram_private_update
-                    )
+                    resp2 = client.post("/api/v1/telegram/webhook", json=telegram_private_update)
 
     assert resp1.status_code == 200
     assert resp2.status_code == 200
@@ -214,9 +210,7 @@ def test_telegram_webhook_idempotency(
 # =============================================================================
 
 
-def test_telegram_webhook_pii_scrubbing(
-    client: TestClient
-) -> None:
+def test_telegram_webhook_pii_scrubbing(client: TestClient) -> None:
     """Texto com CPF/RG/email deve ser scrubado ANTES de qualquer LLM call.
 
     Validamos 3 dimensoes:
@@ -252,21 +246,15 @@ def test_telegram_webhook_pii_scrubbing(
                         "app.api.v1.telegram._call_cartorio_agent",
                         AsyncMock(side_effect=fake_agent),
                     ):
-                        resp = client.post(
-                            "/api/v1/telegram/webhook", json=update_with_pii
-                        )
+                        resp = client.post("/api/v1/telegram/webhook", json=update_with_pii)
 
     assert resp.status_code == 200
 
     # 1. Agent recebeu texto scrubado (CPF mascarado)
     assert agent_calls, "agent deveria ter sido chamado"
     sent_to_agent = agent_calls[0]
-    assert "123.456.789-09" not in sent_to_agent, (
-        f"CPF raw vazou pro agent: {sent_to_agent!r}"
-    )
-    assert "12.345.678-9" not in sent_to_agent, (
-        f"RG raw vazou pro agent: {sent_to_agent!r}"
-    )
+    assert "123.456.789-09" not in sent_to_agent, f"CPF raw vazou pro agent: {sent_to_agent!r}"
+    assert "12.345.678-9" not in sent_to_agent, f"RG raw vazou pro agent: {sent_to_agent!r}"
     # pelo menos um marcador de redacao presente
     assert any(
         marker in sent_to_agent
@@ -306,9 +294,7 @@ def test_telegram_webhook_pii_scrubbing_no_raw_cpf_in_response(
                         "app.api.v1.telegram._call_cartorio_agent",
                         AsyncMock(side_effect=fake_agent),
                     ):
-                        resp = client.post(
-                            "/api/v1/telegram/webhook", json=update_with_pii
-                        )
+                        resp = client.post("/api/v1/telegram/webhook", json=update_with_pii)
 
     assert resp.status_code == 200
     # nenhuma resposta enviada comeca com CPF raw
@@ -355,26 +341,35 @@ async def test_telegram_webhook_debounce_3s() -> None:
     class FakePipeline:
         def __init__(self, pipe_results):
             self.results = pipe_results
+
         async def __aenter__(self):
             return self
+
         async def __aexit__(self, exc_type, exc_val, exc_tb):
             pass
+
         async def get(self, *args, **kwargs):
             return self
+
         async def delete(self, *args, **kwargs):
             return self
+
         async def execute(self):
             return self.results.pop(0)
 
     class FakeRedisClient:
         def __init__(self):
             self.pipe_results = [[raw_with_3, True, True]]
+
         def pipeline(self, transaction=True):
             return FakePipeline(self.pipe_results)
+
         async def get(self, key):
             return None
+
         async def set(self, key, value, ex=None, nx=False):
             return True
+
         async def delete(self, key):
             return True
 
@@ -400,9 +395,7 @@ async def test_telegram_webhook_debounce_3s() -> None:
                         "app.api.v1.telegram._send_message",
                         AsyncMock(return_value=True),
                     ):
-                        with patch(
-                            "app.api.v1.telegram._react", AsyncMock(return_value=True)
-                        ):
+                        with patch("app.api.v1.telegram._react", AsyncMock(return_value=True)):
                             with patch(
                                 "app.api.v1.telegram._typing_loop",
                                 AsyncMock(return_value=None),
@@ -416,9 +409,7 @@ async def test_telegram_webhook_debounce_3s() -> None:
                                     await tg_mod._process_telegram_debounce(6682284055)
 
     # Agent chamado 1x com agregado (NAO 3x — prova do debounce)
-    assert len(agent_calls) == 1, (
-        f"debounce falhou: agent chamado {len(agent_calls)}x, esperado 1x"
-    )
+    assert len(agent_calls) == 1, f"debounce falhou: agent chamado {len(agent_calls)}x, esperado 1x"
     aggregated = agent_calls[0]
     # O resumidor de N mensagens NAO repete tudo, gera um summary
     assert isinstance(aggregated, str) and len(aggregated) > 0
@@ -439,6 +430,7 @@ async def test_telegram_webhook_llm_timeout_30s_fallback() -> None:
     c) Resposta do fallback e entregue ao cliente
     d) Metrica agent_errors incrementada quando TODOS providers falham
     """
+
     # Simula: provider primario timeout, fallback 1 (opencode_free_1) responde OK
     async def fake_fallback_chain(
         messages: list[dict],
@@ -492,9 +484,7 @@ def test_telegram_webhook_fallback_chain_order() -> None:
     chain_str = getattr(settings, "litellm_fallback_chain", None)
     if chain_str:
         chain = [p.strip() for p in chain_str.split(",") if p.strip()]
-        assert chain == expected_order, (
-            f"Fallback chain fora de ordem: {chain} vs {expected_order}"
-        )
+        assert chain == expected_order, f"Fallback chain fora de ordem: {chain} vs {expected_order}"
     else:
         # doc-only assertion: a ordem canonica e esta (referenciada em telegram.py / .secrets)
         assert expected_order[0] == "opencode_free_1"
