@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-18T17:16:02.575974+00:00",
+    "generated_at": "2026-07-18T19:26:43.139849+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -153,8 +153,8 @@
         {
           "file": "app/api/v1/health_radar_expanded.py",
           "summary_pct": 0.0,
-          "statements": 214,
-          "missing_lines": 214,
+          "statements": 323,
+          "missing_lines": 323,
           "excluded_lines": 0
         },
         {
@@ -1328,8 +1328,8 @@
     {
       "kind": "orphan_module",
       "file": "app/api/v1/health_radar_expanded.py",
-      "stmts": 214,
-      "missing_lines": 214,
+      "stmts": 323,
+      "missing_lines": 323,
       "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
     },
     {

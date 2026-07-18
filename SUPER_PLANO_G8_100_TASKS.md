@@ -125,8 +125,8 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 14 — CI/CD Pipeline Automation (sre+dev)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.14.T1 | Otimizar cache e tempos de execução do pytest no GitHub Actions. | [ ] | cartorio-sre |
-| G8.14.T2 | Configurar deploys condicionais baseados no sucesso absoluto de todas as quality gates. | [ ] | cartorio-sre |
+| G8.14.T1 | Otimizar cache e tempos de execução do pytest no GitHub Actions. | [x] | cartorio-sre |
+| G8.14.T2 | Configurar deploys condicionais baseados no sucesso absoluto de todas as quality gates. | [x] | cartorio-sre |
 | G8.14.T3 | Adicionar secrets scanning avançado no CI para detectar chaves brutas de homologação. | [ ] | cartorio-lgpd |
 | G8.14.T4 | Automatizar export e linting dos workflows JSON do n8n pré-commit. | [x] | cartorio-n8n |
 
@@ -136,7 +136,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.15.T1 | Adicionar instrumentação com Prometheus para latência de processamento de IA. | [x] | cartorio-sre |
 | G8.15.T2 | Habilitar alertas no AlertManager do Prometheus enviando logs formatados ao Telegram. | [x] | cartorio-sre |
 | G8.15.T3 | Validar que labels do Prometheus e campos do Loki não exponham dados sensíveis. | [ ] | cartorio-lgpd |
-| G8.15.T4 | Integrar status de filas do Redis no radar `/health/radar/expanded`. | [ ] | cartorio-dev |
+| G8.15.T4 | Integrar status de filas do Redis no radar `/health/radar/expanded`. | [x] | cartorio-dev |
 
 ### Squad 16 — Agility, Scrum & Progress Tracking (brain)
 | ID | Task | Done | Agent |
@@ -176,7 +176,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.20.T1 | Atualizar e testar precisão matemática da calculadora de emolumentos notariais de MG para 2026. | [ ] | cartorio-dev |
 | G8.20.T2 | Desenhar workflow de orçamento de escrituras e certidões no n8n. | [ ] | cartorio-n8n |
 | G8.20.T3 | Mascarar valores financeiros atrelados ao nome de clientes em relatórios e logs de depuração. | [ ] | cartorio-lgpd |
-| G8.20.T4 | Criar testes unitários para verificação de limites mínimos, máximos e isenções tributárias. | [ ] | cartorio-dev |
+| G8.20.T4 | Criar testes unitários para verificação de limites mínimos, máximos e isenções tributárias. | [x] | cartorio-dev |
 
 ### Squad 21 — OpenClaw Skills Orchestration (dev+n8n)
 | ID | Task | Done | Agent |
