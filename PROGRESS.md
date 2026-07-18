@@ -4009,3 +4009,35 @@ Acumulado (12 tasks):
 → 74 → 78.
 
 Modified by Gustavo Almeida — 2026-07-18T20:30
+
+## 2026-07-18 — Wave 52 — Squad 21+22 (OpenClaw + Evolution) — 78/100 honest
+
+### Wave 52 results
+
+| ID | Status | Commit | Tests | Notas |
+|----|--------|--------|-------|-------|
+| **G8.21.T1** | done | `210271a` | +8 | `scripts/openclaw_skill_registry.py`: parse YAML frontmatter SKILL.md. 12 skills discovereadas. Validate required fields (name/description). Makefile target `openclaw-skills-list`. |
+| **G8.21.T2** | done | `f39c88a` | +18 | OpenClaw↔N8N async bus architecture (WS + Redis Stream `cartorio:openclaw:jobs` + DLQ). Offline simulator em `openclaw_n8n_bus_sim.py` com asyncio.Queue fan-out. LGPD-safe: payload scrub pré-envelope. |
+| **G8.22.T1** | done | `6d96ba9` | +23 | 8 fixtures parametrized (text/image/audio/document/video/sticker/location/contact). Testa que webhook Evolution aceita cada tipo sem 500 + rejeita oversized/malformed/bot-muted. |
+| **G8.22.T2** | done | `8fceb3f` | +11 | JSON template N8N `template-monitoramento-evolution.json`: cron 5min + state check + Telegram alert (zero PII) + audit LGPD Art. 37. 41 total wfs catalogados. |
+
+### Gates
+
+| Gate | Resultado |
+|------|-----------|
+| `pytest --no-cov -q` | **4379 passed, 23 skipped, 2 pre-existing fails** |
+| `ruff check app/` | All checks passed |
+| `mypy app/` | 0 errors |
+| SUPER_PLANO honest | **78/100** (74 → 78, +4) |
+
+### Wave 53 picks (final stretch para 100/100)
+
+22 tasks remaining = 5.5 waves. Wave 53 = Squad 23 (Security):
+- **G8.23.T1** (sre) — Segredos env vars não vazam stderr/stdout
+- **G8.23.T2** (sre) — Escaneamento credenciais pre-commit + CI (já parcial em G8.14.T3 — completar)
+- **G8.23.T3** (lgpd) — Envelope encryption at-rest
+- **G8.23.T4** (n8n) — Rotação tokens N8N backend
+
+→ 78 → 82.
+
+Modified by Gustavo Almeida — 2026-07-18T21:00
