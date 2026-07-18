@@ -117,6 +117,10 @@ n8n-audit:  ## Audita modificacoes Git em workflows N8N criticos (offline)
 n8n-orphans:  ## Relatorio CSV de JSONs N8N sem referencias (offline)
 	@uv run python scripts/n8n_orphan_detector.py
 
+.PHONY: openclaw-skills-list
+openclaw-skills-list:  ## Lista + valida skills em .agents/skills/ (G8.21.T1)
+	@python3 scripts/openclaw_skill_registry.py
+
 .PHONY: coverage-gate
 coverage-gate:  ## Coverage gate fail-safe (G6.A.T5)
 	@echo "$(YELLOW)[Coverage] Validando gate >=95%...$(RESET)"
