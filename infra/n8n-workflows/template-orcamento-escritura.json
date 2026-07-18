@@ -1,0 +1,78 @@
+{
+  "name": "WF-TEMPLATE Orcamento Escritura",
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {
+        "path": "orcamento",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "name": "Validar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const b = $json.body || {}; if (!['certidao_negativa','certidao_positiva','certidao_casamento','escritura_compra_venda','escritura_doacao','procuracao','autenticacao','reconhecimento_firma'].includes(b.tipo)) throw new Error('tipo_invalido'); return b;"
+      }
+    },
+    {
+      "name": "Calc Emolumento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "parameters": {
+        "url": "http://cartorio-api:8000/api/v1/emolumento/calculate",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "tipo", "value": "={{ $json.tipo }}"},
+            {"name": "folhas", "value": "={{ $json.folhas || 1 }}"},
+            {"name": "urgencia", "value": "={{ $json.urgencia || false }}"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Format Response DRAFT",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "parameters": {
+        "jsCode": "const r = $json; return { tipo: r.tipo, base: parseFloat(r.base), adicional_folhas: parseFloat(r.adicional_folhas || 0), adicional_urgencia: parseFloat(r.adicional_urgencia || 0), total: parseFloat(r.total), validade_ate: r.valido_ate, referencia: r.tabela_referencia, draft: true /* HITL: escrevente valida */ };"
+      }
+    },
+    {
+      "name": "Audit LGPD Art.37",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "parameters": {
+        "url": "http://cartorio-api:8000/api/v1/audit",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {"name": "action", "value": "orcamento_draft"},
+            {"name": "entity", "value": "emolumento"},
+            {"name": "protocolo", "value": "DRAFT"}
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "Validar", "type": "main", "index": 0}]]},
+    "Validar": {"main": [[{"node": "Calc Emolumento", "type": "main", "index": 0}]]},
+    "Calc Emolumento": {"main": [[{"node": "Format Response DRAFT", "type": "main", "index": 0}]]},
+    "Format Response DRAFT": {"main": [[{"node": "Audit LGPD Art.37", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "active": false,
+  "tags": ["emolumento", "orcamento", "template", "draft"]
+}
