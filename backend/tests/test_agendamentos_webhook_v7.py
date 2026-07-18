@@ -32,7 +32,9 @@ def test_criar_agendamento_webhook_without_auth_fails() -> None:
 
 def test_criar_agendamento_webhook_with_invalid_auth_fails() -> None:
     """POST /api/v1/agendamentos/criar-webhook com auth header inválido deve falhar com 401."""
-    resp = client.post("/api/v1/agendamentos/criar-webhook", json={}, headers={"X-API-Key": "wrong-key"})
+    resp = client.post(
+        "/api/v1/agendamentos/criar-webhook", json={}, headers={"X-API-Key": "wrong-key"}
+    )
     assert resp.status_code == 401
 
 
@@ -55,7 +57,7 @@ def test_criar_agendamento_webhook_without_lgpd_consent_fails(db_session: Sessio
         "titulo": "Agendamento de Teste",
         "tipo": "normal",
         "local": "balcao_1",
-        "duration_minutes": 30
+        "duration_minutes": 30,
     }
 
     resp = client.post("/api/v1/agendamentos/criar-webhook", json=payload, headers=TEST_HEADERS)
@@ -84,7 +86,7 @@ def test_criar_agendamento_webhook_success(db_session: Session) -> None:
         "titulo": "Reconhecimento de Firma",
         "tipo": "normal",
         "local": "balcao_1",
-        "duration_minutes": 30
+        "duration_minutes": 30,
     }
 
     resp = client.post("/api/v1/agendamentos/criar-webhook", json=payload, headers=TEST_HEADERS)
@@ -128,7 +130,7 @@ def test_criar_agendamento_webhook_concurrency_conflict(db_session: Session) -> 
         "titulo": "Agendamento Colidente",
         "tipo": "normal",
         "local": "balcao_1",
-        "duration_minutes": 30
+        "duration_minutes": 30,
     }
 
     # Zera contador de conflitos antes do teste

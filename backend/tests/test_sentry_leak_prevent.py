@@ -6,7 +6,6 @@ Modified by Gustavo Almeida.
 from __future__ import annotations
 
 
-
 from app.services.sentry import _before_send
 from app.services.metrics import store
 
@@ -15,12 +14,8 @@ def test_before_send_detects_and_prevents_pii_leak() -> None:
     """Valida se o before_send mascara PIIs cruas e incrementa a métrica de leak contido."""
     event = {
         "message": "Erro processando CPF 111.222.333-44 e email dpo@2notasudi.com.br",
-        "exception": {
-            "values": [
-                {"value": "Falhou no CPF 99988877766"}
-            ]
-        },
-        "tags": {"user_email": "vazamento@gmail.com"}
+        "exception": {"values": [{"value": "Falhou no CPF 99988877766"}]},
+        "tags": {"user_email": "vazamento@gmail.com"},
     }
 
     # Zera contador da métrica antes do teste
@@ -42,12 +37,8 @@ def test_before_send_allows_generic_error_without_increment() -> None:
     """Valida se erros genéricos sem PII passam sem alteração e sem incrementar o contador."""
     event = {
         "message": "Erro de timeout na conexao com a Evolution API",
-        "exception": {
-            "values": [
-                {"value": "TimeoutError: connection refused"}
-            ]
-        },
-        "tags": {"component": "whatsapp_adapter"}
+        "exception": {"values": [{"value": "TimeoutError: connection refused"}]},
+        "tags": {"component": "whatsapp_adapter"},
     }
 
     # Zera contador da métrica antes do teste

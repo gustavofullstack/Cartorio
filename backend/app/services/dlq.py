@@ -253,6 +253,7 @@ def expire_old_messages(
         .execution_options(synchronize_session=False)
     )
     from typing import cast
+
     result = cast(CursorResult, db.execute(stmt))
     db.commit()
     deleted_count = result.rowcount or 0
@@ -302,6 +303,7 @@ def purge_deleted_hard(
     )
     from typing import cast
     from sqlalchemy.engine import CursorResult
+
     result = cast(CursorResult, db.execute(stmt))
     db.commit()
     return result.rowcount or 0

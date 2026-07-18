@@ -186,13 +186,9 @@ class TestMain:
 
         monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
         monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
-        monkeypatch.setattr(
-            sys, "argv", ["dlq_alert_telegram.py", "--apply"]
-        )
+        monkeypatch.setattr(sys, "argv", ["dlq_alert_telegram.py", "--apply"])
         # .secrets/telegram.env pode existir com token real. Forcar file inexistente.
-        monkeypatch.setattr(
-            alert_module, "_load_env_file", lambda path: {}
-        )
+        monkeypatch.setattr(alert_module, "_load_env_file", lambda path: {})
         rc = alert_module.main()
         assert rc == 2
 

@@ -156,9 +156,7 @@ class TestSafeTelegramReply:
 
     def test_does_not_leak_pii_raw(self, err_module):
         """Mensagem amigável NÃO pode conter CPF raw da exception."""
-        result = err_module.safe_telegram_reply(
-            Exception("user 123.456.789-09 failed")
-        )
+        result = err_module.safe_telegram_reply(Exception("user 123.456.789-09 failed"))
         # scrub aplicado ANTES de logar, mas mensagem final é fixa do ERROR_MESSAGES
         # Garantir que log resultado é mascarado
         assert "123.456.789-09" not in result
@@ -212,8 +210,9 @@ class TestErrorMessagesCatalog:
     def test_all_messages_have_emojis(self, err_module):
         """UX: mensagens amigáveis devem ter emoji inicial."""
         for cat, msg in err_module.ERROR_MESSAGES.items():
-            assert any(c in msg for c in ("⏳", "🔌", "⚠️", "📝", "🤔", "❌")), \
+            assert any(c in msg for c in ("⏳", "🔌", "⚠️", "📝", "🤔", "❌")), (
                 f"Categoria {cat} sem emoji: {msg}"
+            )
 
     def test_messages_contain_no_paths(self, err_module):
         for cat, msg in err_module.ERROR_MESSAGES.items():
@@ -229,7 +228,14 @@ class TestErrorMessagesCatalog:
 
     def test_all_categories_documented(self, err_module):
         """Todas as categorias do classifier devem ter mensagem."""
-        expected = {"rate_limit", "network", "validation", "payload_too_long", "payload_empty", "unknown"}
+        expected = {
+            "rate_limit",
+            "network",
+            "validation",
+            "payload_too_long",
+            "payload_empty",
+            "unknown",
+        }
         actual = set(err_module.ERROR_MESSAGES.keys())
         assert expected == actual, f"Faltando: {expected - actual}, Extra: {actual - expected}"
 
@@ -292,8 +298,9 @@ class TestLGPDCompliance:
             HTTPError("msg"),
         ]:
             result = err_module.safe_telegram_reply(exc)
-            assert "error" not in result.lower() or "Algo deu errado" in result, \
+            assert "error" not in result.lower() or "Algo deu errado" in result, (
                 f"Exception class leaked: {result}"
+            )
             assert "TimeoutError" not in result
             assert "HTTPError" not in result
 

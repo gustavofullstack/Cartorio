@@ -16,7 +16,9 @@ class EmolumentoCalculoResponse(BaseModel):
     folhas: int = Field(..., description="Quantidade de folhas processadas.")
     urgencia: bool = Field(..., description="Se foi aplicado acréscimo de urgência.")
     base: Decimal = Field(..., description="Valor emolumento base de tabela.")
-    adicional_folhas: Decimal = Field(..., description="Adicional calculado pelas folhas excedentes.")
+    adicional_folhas: Decimal = Field(
+        ..., description="Adicional calculado pelas folhas excedentes."
+    )
     adicional_urgencia: Decimal = Field(..., description="Adicional de 50% para atos urgentes.")
     total: Decimal = Field(..., description="Valor total a ser cobrado.")
     isento: bool = Field(..., description="Flag indicando se foi aplicada isenção total.")

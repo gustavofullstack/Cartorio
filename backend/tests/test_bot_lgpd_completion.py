@@ -70,9 +70,7 @@ async def test_access_continua_quando_audit_falha() -> None:
     )
     db.get.return_value = cliente
 
-    with patch(
-        "app.api.v1.bot_lgpd.AuditService.log", side_effect=RuntimeError("audit down")
-    ):
+    with patch("app.api.v1.bot_lgpd.AuditService.log", side_effect=RuntimeError("audit down")):
         response = await post_access(
             _request(),
             AccessRequest(channel="telegram", sender_id="sender-7", cliente_id=7),

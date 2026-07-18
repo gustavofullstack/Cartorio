@@ -85,7 +85,9 @@ class TestEncryptDLQPayload:
         # Segunda chamada não re-criptografa
         assert envelope2 == envelope1
 
-    def test_encrypt_with_different_keys_produces_different_ciphertext(self, sample_payload_with_pii):
+    def test_encrypt_with_different_keys_produces_different_ciphertext(
+        self, sample_payload_with_pii
+    ):
         env1 = encrypt_dlq_payload(sample_payload_with_pii, "key-A-2026")
         env2 = encrypt_dlq_payload(sample_payload_with_pii, "key-B-2026")
         assert env1["ciphertext"] != env2["ciphertext"]
@@ -152,8 +154,22 @@ class TestIsEncryptedPayload:
 class TestShouldEncryptPayload:
     @pytest.mark.parametrize(
         "field",
-        ["cpf", "rg", "cnpj", "nome", "name", "email", "telefone", "phone",
-         "endereco", "address", "data_nascimento", "birth_date", "cnh", "passaporte"],
+        [
+            "cpf",
+            "rg",
+            "cnpj",
+            "nome",
+            "name",
+            "email",
+            "telefone",
+            "phone",
+            "endereco",
+            "address",
+            "data_nascimento",
+            "birth_date",
+            "cnh",
+            "passaporte",
+        ],
     )
     def test_detects_pii_field_top_level(self, field):
         payload = {"queue": "evolution", field: "value"}

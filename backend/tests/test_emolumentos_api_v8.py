@@ -49,7 +49,9 @@ def test_calcular_emolumento_api_com_adicionais() -> None:
 
 def test_calcular_emolumento_api_isencao_valida() -> None:
     """GET /api/v1/emolumentos/calcular-api deve zerar taxas se isencao_motivo for justica_gratuita."""
-    resp = client.get("/api/v1/emolumentos/calcular-api?tipo=procuracao&isencao_motivo=justica_gratuita")
+    resp = client.get(
+        "/api/v1/emolumentos/calcular-api?tipo=procuracao&isencao_motivo=justica_gratuita"
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["isento"] is True
@@ -59,7 +61,9 @@ def test_calcular_emolumento_api_isencao_valida() -> None:
 
 def test_calcular_emolumento_api_isencao_invalida_fails() -> None:
     """GET /api/v1/emolumentos/calcular-api deve falhar com 400 se isencao_motivo for inválido."""
-    resp = client.get("/api/v1/emolumentos/calcular-api?tipo=procuracao&isencao_motivo=motivo_errado")
+    resp = client.get(
+        "/api/v1/emolumentos/calcular-api?tipo=procuracao&isencao_motivo=motivo_errado"
+    )
     assert resp.status_code == 400
     body = resp.json()
     assert body["detail"]["erro"] == "ISENCAO_INVALIDA"

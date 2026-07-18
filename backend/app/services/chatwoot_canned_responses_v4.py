@@ -152,6 +152,7 @@ V4_CANNED_RESPONSES: tuple[CannedResponse, ...] = (
 
 def get_v4_short_codes() -> tuple[str, ...]:
     from app.services.chatwoot_canned_responses import extract_short_codes
+
     return extract_short_codes(V4_CANNED_RESPONSES)
 
 
