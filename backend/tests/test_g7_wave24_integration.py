@@ -195,9 +195,7 @@ async def test_rate_limit_ip_ddos_redis_error_fail_open() -> None:
     """_check_ip_ddos: RedisError no pipeline → fail-open."""
     mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake", ddos_per_minute=50)
     client = _pipe_client()
-    client.pipeline.return_value.execute = AsyncMock(
-        side_effect=redis_async.RedisError("timeout")
-    )
+    client.pipeline.return_value.execute = AsyncMock(side_effect=redis_async.RedisError("timeout"))
     mw._client = client  # type: ignore[assignment]
 
     result = await mw._check_ip_ddos("203.0.113.99")

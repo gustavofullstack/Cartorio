@@ -10,6 +10,7 @@ Validates:
 - content sem frontmatter ainda funciona (degrada graciosamente)
 - arquivo gerado tem secao 'Context', 'Solution' canonicas
 """
+
 from __future__ import annotations
 
 from pathlib import Path

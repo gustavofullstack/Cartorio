@@ -172,9 +172,7 @@ class TestIntegrationWithMetrics:
         ms = MetricsStore()
         ms.inc_dlq_expired(queue="evolution", count=5)
         # Deve existir entry com queue=evolution
-        dlq_keys = [
-            k for k in ms.counters.get("dlq_expired_total", {}).keys() if "evolution" in k
-        ]
+        dlq_keys = [k for k in ms.counters.get("dlq_expired_total", {}).keys() if "evolution" in k]
         assert len(dlq_keys) > 0
 
     def test_metric_helper_with_none_queue(self):

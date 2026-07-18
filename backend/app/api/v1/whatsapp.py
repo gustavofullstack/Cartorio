@@ -205,6 +205,7 @@ class WhatsAppAdapter(ChannelAdapter):
                         payload["buttons"] = buttons
             resp = await client.post(url, json=payload)
             from app.services.metrics import store
+
             if resp.status_code in (200, 201):
                 bump_metric("responses_ok")
                 store.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "out"})
@@ -219,6 +220,7 @@ class WhatsAppAdapter(ChannelAdapter):
             logger.exception("WhatsApp send error: %s", e)
             bump_metric("responses_failed")
             from app.services.metrics import store
+
             store.inc_counter("cartorio_whatsapp_erros_total")
             return False
 
@@ -347,10 +349,10 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
         ext_text = ext.get("text", "") if isinstance(ext, dict) else ""
         text = message.get("conversation") or ext_text or ""
         push_name = (
-            data.get("pushName", "")
-            if isinstance(data, dict)
-            else ""
-        ) or payload.get("pushName", "") or ""
+            (data.get("pushName", "") if isinstance(data, dict) else "")
+            or payload.get("pushName", "")
+            or ""
+        )
         is_group = "@g.us" in remote_jid
         if not remote_jid or not msg_id:
             return None
@@ -433,6 +435,7 @@ async def whatsapp_webhook(
     """
     bump_metric("requests_total")
     from app.services.metrics import store
+
     store.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "in"})
     try:
         raw_body = json.dumps(payload).encode("utf-8")
@@ -472,7 +475,7 @@ async def whatsapp_webhook(
     # LGPD Consent Banner + Opt-out (PARAR/SAIR) + Audit Log - Wave 3 (S3.T3)
     # =========================================================================
     from datetime import datetime, timezone
-    
+
     sender_id = inbound.sender_id
     num_puro = sender_id.replace("@s.whatsapp.net", "").replace("@g.us", "")
     text_clean = inbound.text.strip().lower()
@@ -480,7 +483,7 @@ async def whatsapp_webhook(
     if not inbound.is_group:
         bus = get_bus()
         has_consent = False
-        
+
         # 1. Verifica no Redis
         if bus:
             try:
@@ -495,6 +498,7 @@ async def whatsapp_webhook(
             try:
                 from app.models.cliente import Cliente
                 from sqlalchemy import select
+
                 cliente_db = db.execute(
                     select(Cliente).where(Cliente.whatsapp_number == num_puro)
                 ).scalar_one_or_none()
@@ -514,10 +518,11 @@ async def whatsapp_webhook(
                         await bus.client.set(f"consent:wa:{sender_id}", "1")
                     except Exception as e:
                         logger.warning("Redis consent write failed: %s", e)
-                
+
                 try:
                     from app.models.cliente import Cliente
                     from sqlalchemy import select
+
                     cliente_db = db.execute(
                         select(Cliente).where(Cliente.whatsapp_number == num_puro)
                     ).scalar_one_or_none()
@@ -530,12 +535,14 @@ async def whatsapp_webhook(
                     logger.warning("DB consent update failed: %s", e)
 
                 from app.services.audit import AuditService
+
                 AuditService.log_system_action(
                     action="consent.whatsapp",
-                    payload={"sender_id": sender_id, "status": "granted", "canal": "whatsapp"}
+                    payload={"sender_id": sender_id, "status": "granted", "canal": "whatsapp"},
                 )
 
                 from app.services.chat_pipeline import OutboundMessage
+
                 msg_welcome = OutboundMessage(
                     channel=inbound.channel,
                     recipient_id=sender_id,
@@ -547,6 +554,7 @@ async def whatsapp_webhook(
             # Caso 3B: Banner de consentimento obrigatório
             else:
                 from app.services.chat_pipeline import OutboundMessage
+
                 msg_notice = OutboundMessage(
                     channel=inbound.channel,
                     recipient_id=sender_id,
@@ -568,6 +576,7 @@ async def whatsapp_webhook(
                     from app.models.cliente import Cliente
                     from app.models.cliente import MotivoEncerramento
                     from sqlalchemy import select
+
                     cliente_db = db.execute(
                         select(Cliente).where(Cliente.whatsapp_number == num_puro)
                     ).scalar_one_or_none()
@@ -579,12 +588,14 @@ async def whatsapp_webhook(
                     logger.warning("DB consent revocation failed: %s", e)
 
                 from app.services.audit import AuditService
+
                 AuditService.log_system_action(
                     action="consent.whatsapp.revoked",
-                    payload={"sender_id": sender_id, "status": "revoked", "canal": "whatsapp"}
+                    payload={"sender_id": sender_id, "status": "revoked", "canal": "whatsapp"},
                 )
 
                 from app.services.chat_pipeline import OutboundMessage
+
                 msg_optout = OutboundMessage(
                     channel=inbound.channel,
                     recipient_id=sender_id,

@@ -92,6 +92,7 @@ def test_history_com_items() -> None:
 def test_endpoint_path_registrado() -> None:
     """Endpoints registrados."""
     from app.api.v1.dead_mans_switch import router
+
     paths = [r.path for r in router.routes]
     assert "/api/v1/admin/dead-mans-switch/status" in paths
     assert "/api/v1/admin/dead-mans-switch/heartbeat" in paths
@@ -108,6 +109,7 @@ def test_threshold_default_15min() -> None:
 def test_age_calculation() -> None:
     """Idade em segundos = now - last."""
     from datetime import datetime, timezone
+
     now = datetime(2026, 7, 16, 18, 0, 0, tzinfo=timezone.utc)
     last = datetime(2026, 7, 16, 17, 45, 0, tzinfo=timezone.utc)
     age = (now - last).total_seconds()

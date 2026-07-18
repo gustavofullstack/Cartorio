@@ -24,12 +24,12 @@ TEST_HEADERS = {"X-API-Key": "a" * 64}
 def test_chatwoot_health_check_online() -> None:
     """GET /api/v1/integrations/chatwoot/health deve retornar online se o Chatwoot responder com sucesso."""
     settings.chatwoot_base_url = "https://chat.test.com"
-    
+
     # Mock do endpoint de login do Chatwoot
     respx.get("https://chat.test.com/auth/sign_in").mock(
         return_value=httpx.Response(200, text="Sign In Page")
     )
-    
+
     resp = client.get("/api/v1/integrations/chatwoot/health", headers=TEST_HEADERS)
     assert resp.status_code == 200
     body = resp.json()
@@ -42,11 +42,11 @@ def test_chatwoot_health_check_online() -> None:
 def test_chatwoot_health_check_offline() -> None:
     """GET /api/v1/integrations/chatwoot/health deve retornar offline se a chamada falhar ou der timeout."""
     settings.chatwoot_base_url = "https://chat.test.com"
-    
+
     respx.get("https://chat.test.com/auth/sign_in").mock(
         side_effect=httpx.ConnectError("Connection refused")
     )
-    
+
     resp = client.get("/api/v1/integrations/chatwoot/health", headers=TEST_HEADERS)
     assert resp.status_code == 200
     body = resp.json()
@@ -60,20 +60,22 @@ def test_chatwoot_consent_propagation_success() -> None:
     settings.chatwoot_base_url = "https://chat.test.com"
     settings.chatwoot_api_key = "test_key"
     settings.chatwoot_account_id = 1
-    
+
     # Mock do endpoint de labels do Chatwoot
     respx.post("https://chat.test.com/api/v1/accounts/1/conversations/42/labels").mock(
         return_value=httpx.Response(200, json={"payload": ["consent-lgpd-telegram"]})
     )
-    
+
     payload = {
         "chatwoot_conversation_id": 42,
         "telegram_chat_id": "12345678",
         "labels": ["consent-lgpd-telegram"],
-        "consent_source": "telegram"
+        "consent_source": "telegram",
     }
-    
-    resp = client.post("/api/v1/integrations/chatwoot/consent-propagation", json=payload, headers=TEST_HEADERS)
+
+    resp = client.post(
+        "/api/v1/integrations/chatwoot/consent-propagation", json=payload, headers=TEST_HEADERS
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "propagated"
@@ -85,15 +87,17 @@ def test_chatwoot_consent_propagation_success() -> None:
 def test_chatwoot_consent_propagation_skipped_when_not_configured() -> None:
     """POST /api/v1/integrations/chatwoot/consent-propagation deve retornar skipped se chaves do Chatwoot não configuradas."""
     settings.chatwoot_base_url = None  # Desliga config
-    
+
     payload = {
         "chatwoot_conversation_id": 42,
         "telegram_chat_id": "12345678",
         "labels": ["consent-lgpd-telegram"],
-        "consent_source": "telegram"
+        "consent_source": "telegram",
     }
-    
-    resp = client.post("/api/v1/integrations/chatwoot/consent-propagation", json=payload, headers=TEST_HEADERS)
+
+    resp = client.post(
+        "/api/v1/integrations/chatwoot/consent-propagation", json=payload, headers=TEST_HEADERS
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "skipped"

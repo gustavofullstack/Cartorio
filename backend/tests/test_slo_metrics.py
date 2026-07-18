@@ -73,7 +73,9 @@ def test_record_openclaw_request_com_prometheus() -> None:
     """record_openclaw_request deve funcionar se prometheus client disponivel."""
     if not slo_metrics.PROMETHEUS_ENABLED:
         return  # skip
-    slo_metrics.record_openclaw_request(agent="cartorio-bot", endpoint="/v1/chat", duration_seconds=3.5)
+    slo_metrics.record_openclaw_request(
+        agent="cartorio-bot", endpoint="/v1/chat", duration_seconds=3.5
+    )
 
 
 def test_update_composite_slo_com_prometheus() -> None:
