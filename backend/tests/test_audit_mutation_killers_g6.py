@@ -97,12 +97,14 @@ class TestComputeHmac:
     """_compute_hmac binds server key — kills constant-return mutants."""
 
     def test_hmac_is_64_hex(self) -> None:
-        sig = AuditService._compute_hmac("message")
+        _kid, sig = AuditService._compute_hmac("message")
         assert len(sig) == 64
         assert all(c in "0123456789abcdef" for c in sig)
 
     def test_different_message_different_hmac(self) -> None:
-        assert AuditService._compute_hmac("a") != AuditService._compute_hmac("b")
+        _k1, s1 = AuditService._compute_hmac("a")
+        _k2, s2 = AuditService._compute_hmac("b")
+        assert s1 != s2
 
     def test_matches_hmac_sha256_with_settings_key(self) -> None:
         from app.config import settings
@@ -113,11 +115,12 @@ class TestComputeHmac:
             msg.encode("utf-8"),
             hashlib.sha256,
         ).hexdigest()
-        assert AuditService._compute_hmac(msg) == expected
+        _kid, sig = AuditService._compute_hmac(msg)
+        assert sig == expected
 
     def test_wrong_key_does_not_match(self) -> None:
         msg = "forged"
-        real = AuditService._compute_hmac(msg)
+        _kid, real = AuditService._compute_hmac(msg)
         forged = hmac.new(b"wrong-key", msg.encode("utf-8"), hashlib.sha256).hexdigest()
         assert real != forged
 

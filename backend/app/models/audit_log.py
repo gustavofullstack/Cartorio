@@ -48,6 +48,10 @@ class AuditLog(Base):
     prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     hmac_signature: Mapped[str] = mapped_column(String(128))
+    # G8.19.T2 — kid (key id) HMAC usada para assinar esta entry.
+    # NULL para entries pre-rotacao (legacy key do settings).
+    hmac_kid: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    # LGPD Art. 37: rastreabilidade da chave; permite rotacao sem invalidar historico.
 
     timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False, index=True)
 

@@ -38,15 +38,14 @@ Shape 4-level legacy (mantido para compat com `/health/audit-freshness` e
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
 from datetime import datetime, UTC
 from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.models.audit_log import AuditLog
+from app.services.audit_keys import sign_audit_entry as _sign_via_registry
 
 
 class AuditIntegrityError(Exception):
@@ -69,9 +68,19 @@ class AuditService:
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     @staticmethod
-    def _compute_hmac(message: str) -> str:
-        key = settings.audit_hmac_key.encode("utf-8")
-        return hmac.new(key, message.encode("utf-8"), hashlib.sha256).hexdigest()
+    def _compute_hmac(message: str) -> tuple[str, str]:
+        """Assina message via registry de chaves HMAC (G8.19.T2).
+
+        Returns:
+            Tupla ``(kid, hmac_sig)``. ``kid`` identifica qual chave
+            do registry foi usada; ``hmac_sig`` eh o hex digest SHA256.
+
+        Backward-compat:
+            Continua funcionando sem mudanca de comportamento (kid=""
+            eh registrado via bootstrap para a chave historica).
+        """
+        kid, sig = _sign_via_registry(message.encode("utf-8"))
+        return kid, sig
 
     @classmethod
     def log(
@@ -104,7 +113,9 @@ class AuditService:
         now = datetime.now(UTC)
         timestamp = now.replace(tzinfo=None).isoformat(timespec="microseconds")
         new_hash = cls._compute_hash(prev_hash, payload, timestamp)
-        hmac_sig = cls._compute_hmac(f"{new_hash}:{timestamp}:{actor_id}:{action}")
+        hmac_kid, hmac_sig = cls._compute_hmac(
+            f"{new_hash}:{timestamp}:{actor_id}:{action}"
+        )
 
         entry = AuditLog(
             actor_id=actor_id,
@@ -120,6 +131,7 @@ class AuditService:
             prev_hash=prev_hash,
             hash=new_hash,
             hmac_signature=hmac_sig,
+            hmac_kid=hmac_kid,
             timestamp=now,
         )
         db.add(entry)

@@ -132,7 +132,7 @@ def test_compute_hash_prev_hash_altera_resultado() -> None:
 def test_compute_hmac_usa_chave_das_settings() -> None:
     """HMAC DEVE usar settings.audit_hmac_key (NAO string vazia / chave hardcoded)."""
     msg = "abc123"
-    sig = AuditService._compute_hmac(msg)
+    _kid, sig = AuditService._compute_hmac(msg)
     assert sig != msg, "HMAC nao pode ser identidade"
     assert len(sig) == 64, "SHA256 hex = 64 chars"
     # Recalcular manualmente para garantir que usa a mesma chave
@@ -146,8 +146,8 @@ def test_compute_hmac_usa_chave_das_settings() -> None:
 
 def test_compute_hmac_mensagens_diferentes_produzem_sig_diferente() -> None:
     """Mensagens diferentes -> HMACs diferentes."""
-    sig1 = AuditService._compute_hmac("message-1")
-    sig2 = AuditService._compute_hmac("message-2")
+    _k1, sig1 = AuditService._compute_hmac("message-1")
+    _k2, sig2 = AuditService._compute_hmac("message-2")
     assert sig1 != sig2
 
 
@@ -250,7 +250,9 @@ def test_log_hmac_contem_actor_e_action(db_session) -> None:
         payload={},
     )
     # Recalcular HMAC com a string canônica
-    expected = AuditService._compute_hmac(f"{e.hash}:{e.timestamp.replace(tzinfo=None).isoformat()}:u-critico-123:acao-especial-xyz")
+    _kid, expected = AuditService._compute_hmac(
+        f"{e.hash}:{e.timestamp.replace(tzinfo=None).isoformat()}:u-critico-123:acao-especial-xyz"
+    )
     assert e.hmac_signature == expected, (
         f"HMAC deve incluir actor_id/action. Got {e.hmac_signature[:16]}... "
         f"expected {expected[:16]}..."
