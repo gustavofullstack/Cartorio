@@ -6,6 +6,8 @@ Cobre:
 - AuditLogResponse: saida paginada de GET /api/v1/audit/logs (DPO/escrevente)
 - AuditLogListResponse: envelope com items + pagination metadata
 - AuditLogFilter: query params para filtrar por actor/action/resource/periodo
+
+G8.13.T1: AuditLogCreate recebe strict=True (recusa coerção implicita int/bool).
 """
 
 from __future__ import annotations
@@ -14,6 +16,8 @@ from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.config import settings
 
 
 # ============================================================================
@@ -45,7 +49,9 @@ class AuditLogCreate(BaseModel):
         Caller NAO confia no proprio `ip` — usar o que o servidor gravou.
     """
 
+    # G8.13.T1 — strict=True recusa coerção: actor_id=123 (int) eh rejeitado.
     model_config = ConfigDict(
+        strict=settings.pydantic_strict_mode,
         extra="forbid",
         str_strip_whitespace=True,
         validate_assignment=True,
@@ -65,6 +71,7 @@ class AuditLogCreate(BaseModel):
     actor_type: Literal["user", "system", "bot", "escrevente", "tabeliao"] = Field(
         default="system",
         description="Tipo de ator (LGPD-by-design, default 'system' para n8n/cron).",
+        # G8.13.T1: Literal aceita str wire nativamente (sem strict override).
     )
     action: str = Field(
         ...,
@@ -94,6 +101,7 @@ class AuditLogCreate(BaseModel):
     ) = Field(
         default=None,
         description="Canal de origem. None para chamadas externas sem canal definido.",
+        # G8.13.T1: Literal aceita str wire nativamente.
     )
     ip: str | None = Field(
         default=None,

@@ -21,7 +21,9 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.config import settings
 
 brain_router = APIRouter(prefix="/brain", tags=["brain", "meta"])
 
@@ -32,6 +34,14 @@ MEMORY_DIR = BRAIN_DIR / "memory"
 
 class LessonCreate(BaseModel):
     """Payload para criar 1 lesson (BRAIN6)."""
+
+    # G8.13.T1 — strict=True (campos sao str | None; sem coerção problemática).
+    model_config = ConfigDict(
+        strict=settings.pydantic_strict_mode,
+        extra="forbid",
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
 
     titulo: str = Field(..., min_length=5, max_length=200)
     contexto: str = Field(..., min_length=10, max_length=2000)

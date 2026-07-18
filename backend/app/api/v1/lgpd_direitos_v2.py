@@ -25,11 +25,12 @@ from datetime import datetime, timezone
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_dpo_role, require_cliente_or_dpo, _require_jwt_payload
+from app.config import settings
 from app.db import get_db
 from app.services.audit import AuditService
 from app.services.audit_context import audit_kwargs
@@ -41,11 +42,25 @@ lgpd_v2_router = APIRouter(tags=["lgpd-v2"])
 
 # ============================================================================
 # Pydantic request/response models
+#
+# G8.13.T1: schemas *Request recebem ConfigDict(strict=True) para recusar
+# coerção implicita. Literal[...] aceita str wire nativamente em strict mode,
+# então nao precisa de field-level override.
 # ============================================================================
+
+_STRICT_REQ = ConfigDict(
+    strict=settings.pydantic_strict_mode,
+    extra="forbid",
+    str_strip_whitespace=True,
+    validate_assignment=True,
+)
 
 
 class ConsentRequest(BaseModel):
     """D27 — Consentimento granular por finalidade."""
+
+    # G8.13.T1 — strict=True.
+    model_config = _STRICT_REQ
 
     cliente_id: int
     finalidade: Literal[
@@ -62,6 +77,9 @@ class ConsentRequest(BaseModel):
 class CorrectionRequest(BaseModel):
     """D30 — Correcao de dados pessoais (LGPD art. 18 III)."""
 
+    # G8.13.T1 — strict=True (campos sao str | None).
+    model_config = _STRICT_REQ
+
     nome: str | None = None
     email: str | None = None
     telefone: str | None = None
@@ -71,6 +89,9 @@ class CorrectionRequest(BaseModel):
 
 class RevogarConsentRequest(BaseModel):
     """D31 — Revogacao de consentimento."""
+
+    # G8.13.T1 — strict=True (cliente_id é int; demais sao str | None | list[str]).
+    model_config = _STRICT_REQ
 
     cliente_id: int
     finalidades: list[str] | None = None

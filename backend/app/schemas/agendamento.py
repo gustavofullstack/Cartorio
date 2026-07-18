@@ -2,6 +2,10 @@
 
 Validação de entrada/saída para endpoints de agendamento.
 Usa enums compartilhados com models.agendamento para consistência.
+
+G8.13.T1: AgendamentoCreateRequest recebe strict=True (recusa coerção
+"1" string para int, "true" para bool, etc). Field-level override strict=False
+em enum (tipo) e datetime (data_hora) por causa do wire-format JSON.
 """
 
 from __future__ import annotations
@@ -24,6 +28,8 @@ class AgendamentoBase(BaseModel):
     tipo: TipoAtendimento = Field(
         default=TipoAtendimento.NORMAL,
         description="Tipo de atendimento (normal, prioritário, urgente)",
+        # G8.13.T1: enum aceita str wire nativamente (JSON envia "normal").
+        strict=False,
     )
     local: str = Field(
         default="balcao_1",
@@ -36,6 +42,7 @@ class AgendamentoBase(BaseModel):
 class AgendamentoCreateRequest(AgendamentoBase):
     """Request para criação de agendamento."""
 
+    # G8.13.T1 — strict=True (recusa coerção "1" string para int cliente_id).
     model_config = ConfigDict(
         strict=settings.pydantic_strict_mode,
         from_attributes=True,
@@ -56,6 +63,8 @@ class AgendamentoCreateRequest(AgendamentoBase):
         ...,
         description="Data/hora do agendamento (ISO 8601)",
         examples=["2026-07-01T14:30:00-03:00"],
+        # G8.13.T1: JSON wire envia string ISO 8601.
+        strict=False,
     )
     protocolo_id: int | None = Field(
         None,

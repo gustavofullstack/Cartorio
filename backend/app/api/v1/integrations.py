@@ -21,7 +21,7 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
 from app.schemas.llm import LLMModelInfo, LLMTestRequest, LLMTestResponse
@@ -51,7 +51,17 @@ integrations_router = APIRouter()
 
 # ============================================================================
 # Schemas
+#
+# G8.13.T1: schemas *Request recebem ConfigDict(strict=True) para recusar
+# coerção implicita (temperature="0.2" string para float eh rejeitado).
 # ============================================================================
+
+_STRICT_REQ = ConfigDict(
+    strict=settings.pydantic_strict_mode,
+    extra="forbid",
+    str_strip_whitespace=True,
+    validate_assignment=True,
+)
 
 
 class OpenCodeTestRequest(BaseModel):
@@ -68,6 +78,9 @@ class OpenCodeTestRequest(BaseModel):
         actor_id: Quem esta invocando (para audit log LGPD art. 37).
                  Default 'smoke_test_admin'.
     """
+
+    # G8.13.T1 — strict=True.
+    model_config = _STRICT_REQ
 
     message: str = Field(
         default="ping",
@@ -574,6 +587,9 @@ class N8nErrorRequest(BaseModel):
         timestamp: ISO 8601 UTC (opcional).
     """
 
+    # G8.13.T1 — strict=True.
+    model_config = _STRICT_REQ
+
     workflow_name: str = Field(..., min_length=1, max_length=256)
     workflow_id: str | None = Field(default=None, max_length=128)
     execution_id: str = Field(..., min_length=1, max_length=128)
@@ -730,16 +746,26 @@ async def n8n_error_webhook(
 # Webhook de Logs de Deleção/Purga n8n (LGPD Art. 18 / Art. 37 - Wave 2 S2.T2)
 # =============================================================================
 
+
 class N8nDeletionRequest(BaseModel):
     """Payload do webhook N8N Deletion Log (S2.T2)."""
+
+    # G8.13.T1 — strict=True recusa coerção: deleted_count="3" string eh rejeitado.
+    model_config = _STRICT_REQ
+
     execution_id: str = Field(..., description="ID unico da execucao no n8n (idempotency key)")
-    target_category: str = Field(..., description="Categoria de registros deletados (ex: conversas, clientes)")
+    target_category: str = Field(
+        ..., description="Categoria de registros deletados (ex: conversas, clientes)"
+    )
     deleted_count: int = Field(..., description="Quantidade de linhas fisicas removidas do storage")
-    details: dict | None = Field(default=None, description="Informacoes adicionais da execucao (opcional)")
+    details: dict | None = Field(
+        default=None, description="Informacoes adicionais da execucao (opcional)"
+    )
 
 
 class N8nDeletionResponse(BaseModel):
     """Response do webhook N8N Deletion Log."""
+
     status: str
     execution_id: str
     audit_id: int | None
@@ -759,7 +785,7 @@ async def n8n_deletion_webhook(
 ) -> N8nDeletionResponse:
     """Processa logs de deleção física de dados enviadas pelo n8n."""
     from fastapi import HTTPException, status
-    
+
     # 1. Validação de Assinatura HMAC
     raw_body = await request.body()
     if not validate_n8n_signature(raw_body, x_n8n_signature):
@@ -806,7 +832,7 @@ async def n8n_deletion_webhook(
                     "deleted_count": payload.deleted_count,
                     "details": payload.details,
                     "canal": "n8n",
-                }
+                },
             )
             # Tenta recuperar o ID se persistido
             audit_id = audit_entry.id if hasattr(audit_entry, "id") else 999
@@ -835,9 +861,11 @@ async def list_llm_models(
     _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> list[LLMModelInfo]:
     from app.schemas.llm import LLMModelInfo
-    
+
     models = [
-        LLMModelInfo(name="deepseek-v4-flash-free", provider="opencode_free_3", dpa_status="SIGNED"),
+        LLMModelInfo(
+            name="deepseek-v4-flash-free", provider="opencode_free_3", dpa_status="SIGNED"
+        ),
         LLMModelInfo(name="nemotron-3-ultra-free", provider="opencode_free_1", dpa_status="SIGNED"),
         LLMModelInfo(name="mimo-v2.5-free", provider="opencode_free_2", dpa_status="SIGNED"),
         LLMModelInfo(name="north-mini-code-free", provider="opencode_free_1", dpa_status="SIGNED"),
@@ -845,11 +873,17 @@ async def list_llm_models(
         LLMModelInfo(name="gpt-5.5", provider="openclaw", dpa_status="SIGNED"),
         LLMModelInfo(name="claude-sonnet-4.6", provider="openclaw", dpa_status="SIGNED"),
         LLMModelInfo(name="gemini-3.1-pro-jules", provider="jules", dpa_status="PENDING"),
-        LLMModelInfo(name="gemini-3.1-pro-antigravity", provider="antigravity", dpa_status="SIGNED"),
+        LLMModelInfo(
+            name="gemini-3.1-pro-antigravity", provider="antigravity", dpa_status="SIGNED"
+        ),
         LLMModelInfo(name="poolside-laguna-free", provider="openrouter", dpa_status="PENDING"),
-        LLMModelInfo(name="north-mini-code-openrouter-free", provider="openrouter", dpa_status="PENDING"),
+        LLMModelInfo(
+            name="north-mini-code-openrouter-free", provider="openrouter", dpa_status="PENDING"
+        ),
         LLMModelInfo(name="gemma-4-31b-free", provider="openrouter", dpa_status="PENDING"),
-        LLMModelInfo(name="gemini-3.5-flash-free", provider="google_ai_studio", dpa_status="PENDING"),
+        LLMModelInfo(
+            name="gemini-3.5-flash-free", provider="google_ai_studio", dpa_status="PENDING"
+        ),
         LLMModelInfo(name="gemini-3-flash-free", provider="google_ai_studio", dpa_status="PENDING"),
         LLMModelInfo(name="devstral-small", provider="mistral", dpa_status="PENDING"),
         LLMModelInfo(name="compound", provider="groq", dpa_status="PENDING"),
@@ -884,7 +918,7 @@ async def test_llm_provider(
     from app.schemas.llm import LLMTestResponse
     from app.integrations.fallback import _call_provider
     from app.services.audit import AuditService
-    
+
     # 1. Validação de consentimento LGPD
     if not payload.consent_granted:
         raise HTTPException(
@@ -894,20 +928,20 @@ async def test_llm_provider(
                 "mensagem": "LGPD art. 7 I — Consentimento nao concedido. Passe consent_granted=true no body.",
             },
         )
-        
+
     dpa_status = "SIGNED"
     if provider in ("jules", "openrouter", "google_ai_studio", "mistral", "groq", "litellm"):
         dpa_status = "PENDING"
-        
+
     start_time = time.perf_counter()
     messages = [{"role": "user", "content": payload.message}]
-    
+
     # 2. Executa a chamada do provedor
     try:
         if provider == "local":
             latency_ms = int((time.perf_counter() - start_time) * 1000)
             resp_content = f"[LOCAL_LLAMA_3.1_8B] Resposta simulada para: {payload.message}"
-            
+
             AuditService.log_system_action(
                 action="llm.smoke_test",
                 payload={
@@ -916,7 +950,7 @@ async def test_llm_provider(
                     "latency_ms": latency_ms,
                     "status": "ok",
                     "actor_id": payload.actor_id,
-                }
+                },
             )
             return LLMTestResponse(
                 status="ok",
@@ -926,7 +960,7 @@ async def test_llm_provider(
                 latency_ms=latency_ms,
                 dpa_status=dpa_status,
             )
-            
+
         with session_scope() as db:
             chat_resp = await _call_provider(
                 provider=provider,
@@ -941,9 +975,9 @@ async def test_llm_provider(
                 request_id=str(_uuid.uuid4()),
                 client_ip=None,
             )
-        
+
         latency_ms = int((time.perf_counter() - start_time) * 1000)
-        
+
         AuditService.log_system_action(
             action="llm.smoke_test",
             payload={
@@ -952,7 +986,7 @@ async def test_llm_provider(
                 "latency_ms": latency_ms,
                 "status": "ok",
                 "actor_id": payload.actor_id,
-            }
+            },
         )
         return LLMTestResponse(
             status="ok",
@@ -962,11 +996,11 @@ async def test_llm_provider(
             latency_ms=latency_ms,
             dpa_status=dpa_status,
         )
-        
+
     except Exception as e:
         latency_ms = int((time.perf_counter() - start_time) * 1000)
         err_details = {"type": type(e).__name__, "message": str(e)}
-        
+
         AuditService.log_system_action(
             action="llm.smoke_test",
             payload={
@@ -976,7 +1010,7 @@ async def test_llm_provider(
                 "status": "erro",
                 "erro": err_details,
                 "actor_id": payload.actor_id,
-            }
+            },
         )
         return LLMTestResponse(
             status="erro",
@@ -996,6 +1030,9 @@ async def test_llm_provider(
 class ConsentPropagationRequest(BaseModel):
     """Payload para propagar consentimento LGPD entre canais."""
 
+    # G8.13.T1 — strict=True recusa coerção: chatwoot_conversation_id="42" string.
+    model_config = _STRICT_REQ
+
     chatwoot_conversation_id: int = Field(..., description="ID da conversa no Chatwoot.")
     telegram_chat_id: str = Field(..., description="Chat ID do Telegram do cliente.")
     labels: list[str] = Field(
@@ -1013,7 +1050,7 @@ class ConsentPropagationRequest(BaseModel):
     tags=["lgpd"],
     summary="Propaga consentimento LGPD do Telegram para Chatwoot",
     description=(
-        "Quando o cliente consente via Telegram (\"SIM\" ou /start), "
+        'Quando o cliente consente via Telegram ("SIM" ou /start), '
         "este endpoint aplica labels de consentimento na conversa Chatwoot "
         "correspondente e registra no audit log (LGPD Art. 7 I)."
     ),

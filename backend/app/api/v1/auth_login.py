@@ -27,7 +27,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.deps import require_cartorio_api_key
-from app.config import Settings, get_settings
+from app.config import Settings, get_settings, settings
 from app.services.auth_jwt import (
     JWTError,
     issue_access_token,
@@ -48,7 +48,9 @@ class LoginRequest(BaseModel):
     LGPD: user_id nao expoe PII, apenas UUID.
     """
 
+    # G8.13.T1 — strict=True recusa coerção: dpo="true" string, ttl_minutes="30" string.
     model_config = ConfigDict(
+        strict=settings.pydantic_strict_mode,
         extra="forbid",
         str_strip_whitespace=True,
         validate_assignment=True,
@@ -75,7 +77,9 @@ class LoginRequest(BaseModel):
 class RefreshRequest(BaseModel):
     """Request do /auth/refresh - troca refresh token por novo access."""
 
+    # G8.13.T1 — strict=True (refresh_token e str; sem coerção problemática).
     model_config = ConfigDict(
+        strict=settings.pydantic_strict_mode,
         extra="forbid",
         str_strip_whitespace=True,
         validate_assignment=True,

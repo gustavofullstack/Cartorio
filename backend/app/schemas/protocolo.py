@@ -284,9 +284,12 @@ class ProtocoloCreateRequest(BaseModel):
     ]
     canal_origem: Annotated[
         CanalOrigem,
+        # G8.13.T1: enum aceita str wire nativamente (JSON envia "web");
+        # strict=False field-level override nao quebra wire-format.
         Field(
             default=CanalOrigem.WEB,
             description="Canal pelo qual o cliente iniciou a solicitacao.",
+            strict=False,
         ),
     ]
     consentimento_lgpd: Annotated[
@@ -560,13 +563,16 @@ class ProtocoloApiCreateRequest(BaseModel):
     ]
     ato: Annotated[
         AtoProtocolar,
+        # G8.13.T1: enum aceita str wire nativamente.
         Field(
             description="Tipo do ato juridico. Catalogo em AtoProtocolar enum.",
             examples=["escritural"],
+            strict=False,
         ),
     ]
     valor_snapshot: Annotated[
         Decimal,
+        # G8.13.T1: JSON wire NAO tem Decimal nativo; aceita str "150.50" ou float 150.50.
         Field(
             gt=Decimal("0"),
             max_digits=10,
@@ -576,6 +582,7 @@ class ProtocoloApiCreateRequest(BaseModel):
                 "Snapshot obrigatorio. Deve ser > 0."
             ),
             examples=["150.50"],
+            strict=False,
         ),
     ]
     observacoes: Annotated[

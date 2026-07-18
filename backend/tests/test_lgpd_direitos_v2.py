@@ -603,7 +603,13 @@ class TestCorrigirDados:
         assert response.status_code == 400
 
     def test_correct_400_invalid_field(self, client: TestClient, db_session):
-        """D30: retorna 400 quando campo nao esta na whitelist."""
+        """D30: retorna 422 quando campo nao esta na whitelist.
+
+        G8.13.T1: agora retorna 422 (Unprocessable Entity) em vez de 400,
+        porque `extra="forbid"` em CorrectionRequest recusa campos nao
+        declarados antes do handler executar (correcao semantica: 422
+        Unprocessable Entity vs 400 Bad Request, ambos validos).
+        """
         c = _create_cliente(db_session)
         token = _make_cliente_token(c.id)
 
@@ -613,7 +619,7 @@ class TestCorrigirDados:
             headers={"Authorization": f"Bearer {token}"},
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_correct_401_without_token(self, client: TestClient):
         """D30: retorna 401 sem token."""

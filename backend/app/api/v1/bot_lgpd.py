@@ -26,9 +26,10 @@ import logging
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db import get_db
 from app.models.cliente import Cliente, MotivoEncerramento
 from app.services.audit import AuditService
@@ -48,11 +49,24 @@ router = APIRouter(prefix="/bot/lgpd", tags=["bot-lgpd"])
 
 # ============================================================================
 # Pydantic models
+#
+# G8.13.T1: schemas *Request recebem ConfigDict(strict=True) para recusar
+# coerção implicita (cliente_id="42" string para int eh rejeitado).
 # ============================================================================
+
+_STRICT_REQ = ConfigDict(
+    strict=settings.pydantic_strict_mode,
+    extra="forbid",
+    str_strip_whitespace=True,
+    validate_assignment=True,
+)
 
 
 class CancelarRequest(BaseModel):
     """T47 - /cancelar command."""
+
+    # G8.13.T1 — strict=True. channel eh Literal, aceita str wire nativamente.
+    model_config = _STRICT_REQ
 
     channel: Literal["telegram", "whatsapp"]
     sender_id: str = Field(..., min_length=1, max_length=128)
@@ -73,6 +87,8 @@ class CancelarResponse(BaseModel):
 class ExportRequest(BaseModel):
     """T49 - /lgpd export command."""
 
+    model_config = _STRICT_REQ
+
     channel: Literal["telegram", "whatsapp"]
     sender_id: str = Field(..., min_length=1, max_length=128)
     cliente_id: int | None = Field(default=None, ge=1)
@@ -92,6 +108,8 @@ class ExportResponse(BaseModel):
 
 class AccessRequest(BaseModel):
     """T48 - /lgpd command (acesso aos dados)."""
+
+    model_config = _STRICT_REQ
 
     channel: Literal["telegram", "whatsapp"]
     sender_id: str = Field(..., min_length=1, max_length=128)
@@ -114,6 +132,8 @@ class AccessResponse(BaseModel):
 
 class RestaurarRequest(BaseModel):
     """Restaurar revogacao antes dos 30 dias."""
+
+    model_config = _STRICT_REQ
 
     revogacao_id: str = Field(..., min_length=8, max_length=64)
     request_id: str | None = None

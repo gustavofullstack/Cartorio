@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     # ========================================================================
     pii_scrub_enabled: bool = True
     pii_block_on_detect: bool = True  # bloqueia fluxo se PII detectado antes do LLM
-    pydantic_strict_mode: bool = False  # strict validation for critical schemas (G7.21.T2)
+    pydantic_strict_mode: bool = True  # FORCED True (G8.13.T1) — strict=True em todos os schemas de request notarial; field-level strict=False para campos com wire-format string (Decimal/datetime/enum)
 
     # ========================================================================
     # LLM providers (chain completo Turno 37 2026-06-30)
@@ -181,7 +181,7 @@ class Settings(BaseSettings):
     chatwoot_webhook_secret: Optional[str] = None
     evolution_webhook_secret: Optional[str] = None
     telegram_webhook_secret: Optional[str] = None
-    telegram_api_base: str = 'https://api.telegram.org'
+    telegram_api_base: str = "https://api.telegram.org"
 
     # ========================================================================
     # Stale detector (atendimento sem update > N min vira flag 'stale')

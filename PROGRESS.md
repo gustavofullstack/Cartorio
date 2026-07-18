@@ -3684,3 +3684,16 @@ Modified by Gustavo Almeida — 2026-07-17T21:46:04.501835+00:00
 - Lesson: `.harness/memory/lesson-223-g8-16-t4-stability-report-2026-07-17.md`
 - **Sample output**: `/tmp/test_report.md` (offline, 72h)
 Modified by Gustavo Almeida — 2026-07-18T14:24:00.000000+00:00
+
+## 2026-07-18 — Wave 43 G8.13.T1 REAL COMPLETED ✅ (cartorio-dev)
+
+- **Honest count:** 48 → **49/100** (+1)
+- **G8.13.T1** Forçar Pydantic `ConfigDict(strict=True)` em todos os schemas de request notarial.
+- `pydantic_strict_mode = True` virou default em `app/config.py`
+- 17+ request schemas refatorados: `ProtocoloCreateRequest`, `ProtocoloApiCreateRequest`, `AgendamentoCreateRequest`, `LGPDConsentRequest`, `DSARCreate`, `AuditLogCreate`, `LLMTestRequest`, `LoginRequest`, `RefreshRequest`, `CancelarRequest`, `ExportRequest`, `AccessRequest`, `RestaurarRequest`, `OpenCodeTestRequest`, `N8nErrorRequest`, `N8nDeletionRequest`, `ConsentPropagationRequest`, `ConsentRequest`/`CorrectionRequest`/`RevogarConsentRequest`, `LessonCreate`
+- Pattern aplicado: class-level `strict=True` + field-level `Annotated[T, Field(strict=False)]` para Decimal/datetime/enum (JSON wire-format). Literal fields NAO precisam de override (Pydantic ja aceita str nativamente).
+- 23 regression tests em `tests/test_pydantic_strict_g8.py` (5+ obrigatorios: int/bool/float/extra/datetime + 18 bonus)
+- 1 legacy test ajustado: `test_correct_400_invalid_field` 400 → 422 (semantica HTTP correta com `extra="forbid"`)
+- Ruff: clean · Mypy: 0 errors (17 arquivos changed) · pytest: 3841 passed (+23)
+- Lesson: `.harness/memory/lesson-222-g8-13-t1-pydantic-strict-2026-07-17.md`
+Modified by Gustavo Almeida — 2026-07-18T14:35:00.000000+00:00
