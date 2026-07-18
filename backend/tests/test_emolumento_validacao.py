@@ -36,6 +36,7 @@ from app.services.emolumento import (
 )
 from app.services.emolumento_validacao import (
     TIPOS_GRATUITOS as VALIDACAO_TIPOS_GRATUITOS,
+    aplicar_limite_faixa,
     calcular_adicional_folhas,
     calcular_adicional_urgencia,
     isencao_aplicavel,
@@ -616,3 +617,37 @@ def test_calcular_isencao_gratuito_total_zero():
     assert r.adicional_folhas == Decimal("0.00")
     assert r.adicional_urgencia == Decimal("0.00")
     assert r.total == Decimal("0.00")
+
+
+# ============================================================================
+# G8.20.T1 — Faixas placeholder MG 2026 (função pura, sem regra automática)
+# ============================================================================
+
+
+def test_aplicar_limite_abaixo_min():
+    """G8.20.T1: valor abaixo de zero respeita o mínimo placeholder da certidão."""
+    assert aplicar_limite_faixa("certidao_negativa", Decimal("-0.01")) == Decimal("0.00")
+
+
+def test_aplicar_limite_acima_max():
+    """G8.20.T1: valor acima da faixa respeita o máximo placeholder da certidão."""
+    assert aplicar_limite_faixa("certidao_negativa", Decimal("9999")) == Decimal("200.00")
+
+
+def test_aplicar_limite_dentro_faixa():
+    """G8.20.T1: valor dentro da faixa permanece inalterado."""
+    assert aplicar_limite_faixa("certidao_negativa", Decimal("100")) == Decimal("100")
+
+
+def test_aplicar_limite_tipo_desconhecido():
+    """G8.20.T1: tipo sem faixa permanece inalterado para preservar compatibilidade."""
+    assert aplicar_limite_faixa("tipo_desconhecido", Decimal("100")) == Decimal("100")
+
+
+def test_calcular_usa_limite_faixa():
+    """G8.20.T1: limite puro compõe com calcular sem automatizar decisão jurídica."""
+    valor_limitado = aplicar_limite_faixa("certidao_negativa", Decimal("9999"))
+    resultado = calcular("certidao_negativa", tabela={"certidao_negativa": valor_limitado})
+
+    assert resultado.base == Decimal("200.00")
+    assert resultado.total == Decimal("200.00")

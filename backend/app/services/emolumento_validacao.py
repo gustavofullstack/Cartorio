@@ -95,6 +95,25 @@ def validar_quantidade_folhas(folhas: int) -> None:
         )
 
 
+def aplicar_limite_faixa(tipo: str, valor: Decimal) -> Decimal:
+    """G8.20.T1: respeita limites MG 2026 (min/max por tipo).
+
+    Se valor < min: retorna min.
+    Se valor > max: retorna max.
+    Caso contrário: retorna valor original.
+    """
+    from app.services.emolumento import FAIXAS_EMOLUMENTO_2026
+
+    faixa = FAIXAS_EMOLUMENTO_2026.get(tipo)
+    if faixa is None:
+        return valor
+    if valor < faixa["min"]:
+        return faixa["min"]
+    if valor > faixa["max"]:
+        return faixa["max"]
+    return valor
+
+
 # ============================================================================
 # Cálculos de adicionais (funções puras — sem I/O)
 # ============================================================================

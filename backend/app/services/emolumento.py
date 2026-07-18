@@ -62,6 +62,21 @@ EMOLUMENTOS_2026: dict[str, Decimal] = {
     "registro_obito": Decimal("0.00"),  # gratuito
 }
 
+# Faixas de validacao MG 2026 (min/max em R$)
+# TODO Gustavo: substituir por carga automatizada do Diario Oficial
+FAIXAS_EMOLUMENTO_2026: dict[str, dict[str, Decimal]] = {
+    "certidao_negativa": {"min": Decimal("0.00"), "max": Decimal("200.00")},
+    "certidao_positiva": {"min": Decimal("0.00"), "max": Decimal("250.00")},
+    "certidao_casamento": {"min": Decimal("0.00"), "max": Decimal("300.00")},
+    "escritura_compra_venda": {"min": Decimal("1500.00"), "max": Decimal("30000.00")},
+    "escritura_doacao": {"min": Decimal("1000.00"), "max": Decimal("25000.00")},
+    "procuracao": {"min": Decimal("50.00"), "max": Decimal("500.00")},
+    "autenticacao": {"min": Decimal("0.00"), "max": Decimal("100.00")},
+    "reconhecimento_firma": {"min": Decimal("0.00"), "max": Decimal("100.00")},
+    "registro_nascimento": {"min": Decimal("0.00"), "max": Decimal("0.00")},
+    "registro_obito": {"min": Decimal("0.00"), "max": Decimal("0.00")},
+}
+
 TIPOS_VALIDOS = frozenset(EMOLUMENTOS_2026.keys())
 
 
