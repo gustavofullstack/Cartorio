@@ -1143,6 +1143,13 @@ def build_html(payload: dict) -> str:
       padding: 0;
     }
     .theme-switch svg { width: 16px; height: 16px; stroke-width: 2; }
+
+    .segmented button:focus-visible, .theme-switch button:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: -2px;
+      position: relative;
+      z-index: 1;
+    }
     .date-fields { display: inline-flex; align-items: center; gap: 6px; }
     input[type="date"] {
       height: 34px;
@@ -1289,6 +1296,11 @@ def build_html(payload: dict) -> str:
     }
     .edit-panel.open { display: flex; }
     .edit-panel label { padding-left: 8px; white-space: nowrap; }
+
+    .edit-panel select:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: -2px;
+    }
     .edit-panel select {
       height: 26px;
       border: 0;
@@ -1317,7 +1329,8 @@ def build_html(payload: dict) -> str:
     }
     .menu button:hover, .menu button:focus-visible {
       background: var(--soft-blue);
-      outline: none;
+      outline: 2px solid var(--brand);
+      outline-offset: -2px;
     }
     .table-scroll {
       overflow: auto;
@@ -1383,7 +1396,7 @@ def build_html(payload: dict) -> str:
       cursor: pointer; padding: 0;
     }
     .close svg { width: 18px; height: 18px; stroke-width: 2.1; }
-    .close:hover, .close:focus-visible { background: var(--soft); outline: none; }
+    .close:hover, .close:focus-visible { background: var(--soft); outline: 2px solid var(--brand); outline-offset: 2px; }
     .copy-button {
       position: absolute;
       right: 8px; top: 8px;
@@ -1396,7 +1409,7 @@ def build_html(payload: dict) -> str:
       cursor: pointer;
     }
     .copy-button svg { width: 15px; height: 15px; stroke-width: 2; }
-    .copy-button:hover, .copy-button:focus-visible { background: var(--soft); color: var(--ink); outline: none; }
+    .copy-button:hover, .copy-button:focus-visible { background: var(--soft); color: var(--ink); outline: 2px solid var(--brand); outline-offset: 2px; }
     @media (max-width: 1100px) {
       .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
