@@ -3969,3 +3969,43 @@ Wave 50 = 100% LGPD-touching tasks. Decisão: commit direto em master com tag ex
 → 70 → 74.
 
 Modified by Gustavo Almeida — 2026-07-18T20:00
+
+## 2026-07-18 — Wave 51 — Squad 19 (Audit HMAC Chain) — 74/100 honest
+
+### Wave 51 results (4 commits diretos em master)
+
+| ID | Status | Commit | Tests | Notas |
+|----|--------|--------|-------|-------|
+| **G8.19.T1** | done | `2c486cb` | +12 (test_audit_integrity_g8) | `verify_hash_sequence` pure function (chain + HMAC rules). `verify_full_chain(Session)` retorna integrity_score. CLI `scripts/audit_integrity_check.py`. |
+| **G8.19.T2** | done | `83a64db` | +18 (test_audit_keys_g8) | `audit_keys.py` HmacKeyRouter RLock thread-safe. Migration 0021 (T3 foi 0022 pq 0021 ocupado). sign/verify com kid tracking. Grace period 30 dias. |
+| **G8.19.T3** | done | `5dc9d93` | migration + 6 postgres-only skipped | Alembic 0022: ENABLE+FORCE RLS + 4 policies (INSERT permit / SELECT permit / UPDATE block / DELETE block). LGPD Art. 37 + tamper-evident no DB layer. |
+| **G8.19.T4** | done | `8107eb7` | +9 (test_n8n_wf_audit) | `scripts/n8n_wf_audit.py`: git log + JSON canonical hash para wfs críticos. Makefile target `n8n-audit`. `--since` / `--critical-only` filters. |
+
+### Gates
+
+| Gate | Resultado |
+|------|-----------|
+| `pytest --no-cov -q` | **4319 passed, 23 skipped, 2 failed** |
+| Failed tests | `test_output_safety::test_scrub_response_nao_altera_audit_metadata` + `test_swagger_persist_auth_g8::test_openapi_security_scheme_defined` — ambos **PRE-EXISTING** state-leak issues (passam em isolação). |
+| `ruff check app/` | All checks passed |
+| `mypy app/` | 0 errors |
+| SUPER_PLANO honest | **74/100** (70 → 74, +4) |
+
+### LGPD-REVIEW-PENDING queue updated
+
+Acumulado (12 tasks):
+- G8.12.T1, G8.14.T3, G8.15.T1/T2, G8.17.T2, G8.18.T1/T3/T4 (waves 45-50)
+- G8.19.T1 hash verifier, G8.19.T2 HMAC rotation, G8.19.T3 audit RLS (wave 51)
+
+→ Cross-review batch recomendada (junta tudo + assina uma vez).
+
+### Wave 52 picks (mix dev-safe + LGPD para review queue)
+
+- **G8.21.T1** (dev) — Registrar/testar skills OpenClaw em `.agents/skills/`
+- **G8.21.T2** (n8n) — Barramento mensageria assíncrona OpenClaw↔N8N
+- **G8.22.T1** (n8n) — Testar robustez Evolution API (audio/imagem/doc)
+- **G8.22.T2** (n8n) — Workflows monitoramento/perda conexão Evolution
+
+→ 74 → 78.
+
+Modified by Gustavo Almeida — 2026-07-18T20:30

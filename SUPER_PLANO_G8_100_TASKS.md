@@ -165,10 +165,10 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 19 — Audit Logging & HMAC Chain (lgpd+dev)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.19.T1 | Validar a integridade da blockchain de auditoria comparando hashes salvos vs recalculados. | [ ] | cartorio-dev |
-| G8.19.T2 | Criar roteador de chaves para rotação de HMAC sem parada ou rejeição de logs ativos. | [ ] | cartorio-dev |
-| G8.19.T3 | Implementar travas de banco de dados (rules/RLS) que impeçam edits e deletes na tabela `audit_log`. | [ ] | cartorio-lgpd |
-| G8.19.T4 | Desenhar auditoria interna para modificações nos workflows críticos do n8n. | [ ] | cartorio-n8n |
+| G8.19.T1 | Validar a integridade da blockchain de auditoria comparando hashes salvos vs recalculados. | [x] | cartorio-dev |
+| G8.19.T2 | Criar roteador de chaves para rotação de HMAC sem parada ou rejeição de logs ativos. | [x] | cartorio-dev |
+| G8.19.T3 | Implementar travas de banco de dados (rules/RLS) que impeçam edits e deletes na tabela `audit_log`. | [x] | cartorio-lgpd |
+| G8.19.T4 | Desenhar auditoria interna para modificações nos workflows críticos do n8n. | [x] | cartorio-n8n |
 
 ### Squad 20 — Emolumentos MG 2026 Upgrades (dev)
 | ID | Task | Done | Agent |
