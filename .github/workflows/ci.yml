@@ -57,28 +57,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      # uv e o cache primario; pip fica disponivel para ferramentas Python auxiliares.
+      - name: Install uv with dependency cache
+        uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
 
-      - name: Setup Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
+      - name: Setup Python with pip cache
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: backend/uv.lock
 
-      - name: Cache uv dependencies
+      # Estado incremental muda com fontes/config, sem invalidar wheels do cache uv.
+      - name: Cache lint and typecheck state
         uses: actions/cache@v4
         with:
           path: |
-            backend/.venv
-            ~/.cache/uv
-          key: ${{ runner.os }}-py${{ matrix.python-version }}-uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
+            backend/.mypy_cache
+            backend/.ruff_cache
+          key: ${{ runner.os }}-py${{ env.PYTHON_VERSION }}-quality-${{ hashFiles('backend/uv.lock', 'backend/pyproject.toml', 'backend/app/**/*.py') }}
           restore-keys: |
-            ${{ runner.os }}-py${{ matrix.python-version }}-uv-
-            ${{ runner.os }}-uv-
+            ${{ runner.os }}-py${{ env.PYTHON_VERSION }}-quality-
 
       - name: Install dependencies
         working-directory: backend
-        run: uv sync --all-extras
+        run: uv sync --frozen --extra dev
 
       - name: Ruff check
         working-directory: backend
@@ -88,9 +95,9 @@ jobs:
         working-directory: backend
         run: uv run ruff format --check .
 
-      - name: Mypy typecheck (fresh, no cache — Lesson 64)
+      - name: Mypy typecheck (incremental cache)
         working-directory: backend
-        run: rm -rf .mypy_cache && uv run mypy app/
+        run: uv run mypy app/
 
       # A23 - valida OpenAPI spec contra openapi-spec-validator (Sprint 4)
       - name: OpenAPI spec validation (A23)
@@ -152,27 +159,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      # uv e o cache primario; pip fica disponivel para ferramentas Python auxiliares.
+      - name: Install uv with dependency cache
+        uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
 
-      - name: Setup Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
+      - name: Setup Python with pip cache
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: backend/uv.lock
 
-      - name: Cache uv dependencies
+      # Pytest metadata e relatorio HTML ficam separados do cache de dependencias.
+      - name: Cache pytest artifacts
         uses: actions/cache@v4
         with:
           path: |
-            backend/.venv
-            ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
+            backend/.pytest_cache
+            backend/htmlcov/
+          key: ${{ runner.os }}-py${{ env.PYTHON_VERSION }}-pytest-${{ hashFiles('backend/uv.lock', 'backend/pyproject.toml', 'backend/app/**/*.py', 'backend/tests/**/*.py') }}
           restore-keys: |
-            ${{ runner.os }}-uv-
+            ${{ runner.os }}-py${{ env.PYTHON_VERSION }}-pytest-
 
       - name: Install dependencies
         working-directory: backend
-        run: uv sync --all-extras
+        run: uv sync --frozen --extra dev
 
       - name: Run pytest with coverage (parallel xdist)
         working-directory: backend
