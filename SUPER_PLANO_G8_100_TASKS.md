@@ -104,7 +104,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.11.T1 | Refatorar controllers FastAPI para isolar lógica de negócio em services desacoplados. | [x] | cartorio-dev |
 | G8.11.T2 | Implementar injeção de dependências explícita para serviços de e-mail e mensageria. | [x] | cartorio-dev |
 | G8.11.T3 | Isolar a lógica de validação fiscal de emolumentos notariais de outras regras da API. | [ ] | cartorio-dev |
-| G8.11.T4 | Adicionar testes de unidade focados em acoplamento e independência de camadas. | [ ] | cartorio-dev |
+| G8.11.T4 | Adicionar testes de unidade focados em acoplamento e independência de camadas. | [x] | cartorio-dev |
 
 ### Squad 12 — DRY, KISS & Codebase Cleanup (dev)
 | ID | Task | Done | Agent |

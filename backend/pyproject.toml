@@ -87,7 +87,8 @@ markers = [
     "t044: test for emolumento value above teto",
     "t045: test for emolumento isencao",
     "t046: regression test for GET /api/v1/protocolo/{numero} soft-delete + status coverage",
-]
+    "coupling: architecture coupling tests (AST inspection of layer imports — G8.11.T4)",
+] 
 filterwarnings = [
     "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*:DeprecationWarning",
     "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*:starlette.exceptions.StarletteDeprecationWarning",
