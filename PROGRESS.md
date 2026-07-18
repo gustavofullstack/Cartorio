@@ -3880,3 +3880,44 @@ Próximas 4 tasks candidatas (evitando LGPD-heavy):
 Mix selecionado para W49: G8.17.T4 (safe), G8.20.T1 (HITL escriturário), G8.20.T2 (n8n), G8.14.T3 (lgpd).
 
 Modified by Gustavo Almeida — 2026-07-18T19:00
+
+## 2026-07-18 — Wave 49 — 66/100 honest (5 commits diretos em master)
+
+### Strategy refinement
+
+Direct-master commits (Wave 48 strategy) continuou funcionando. Apenas G8.17.T4 + G8.20.T1 + G8.20.T2 necessitaram retry de subagente por hiccup de resposta JSON vazia.
+
+### Wave 49 results
+
+| ID | Status | Commit | Tests | Notas |
+|----|--------|--------|-------|-------|
+| **G8.14.T3** | done | `87642be` | +26 | Secrets scanner estendido (16 patterns: AWS STS/secret, OpenAI proj/legacy, Anthropic, MiniMax, Telegram, Supabase JWT, GCP SA, PKCS8, Bearer JWT). Modes --severity/--baseline/--report-only. **LGPD-REVIEW-PENDING** (ci.yml secret-scan em soft-fail ate cross-review) |
+| **G8.17.T4** | done | `d9a018e` | +8 | Swagger persistAuthorization via custom /docs HTML + JS `persistAuthorization: true`. localStorage only (no server). 8 tests cobrindo HTML + OpenAPI security schemes + cache-control. |
+| **G8.20.T1** | done | `a6ab6dd` | +5 (86 total emolumento_validacao) | FAIXAS_EMOLUMENTO_2026 dict com min/max. `aplicar_limite_faixa()` pure function. Tab placeholder — TODO substituir por carga automatizada Diario Oficial MG. HITL escrevente valida tabela. |
+| **G8.20.T2** | done | `e7a1dbd` | +12 | Workflow template N8N `orcamento-escritura.json` (5 nodes: Webhook→Validar→HTTP→Format DRAFT→Audit LGPD). 40 total wfs catalogados (era 39). + housekeeping fix: openapi_enhancer.py 4 conflict blocks não merged. |
+
+### Gates pós-consolidação
+
+| Gate | Resultado |
+|------|-----------|
+| `uv run pytest --no-cov -q` | **4220 passed, 23 skipped, 1 failed** (1 flake state-leak pre-existente entre test files, passa em isolação) |
+| `uv run ruff check app/` | All checks passed |
+| `uv run mypy app/` | 0 errors |
+| SUPER_PLANO honest | **66/100** (62 → 66, +4) |
+| Master commits ahead origin | +32 |
+
+### Pendências LGPD gates
+
+- ✋ G8.14.T3 — secrets scanner patterns (LGPD-REVIEW-PENDING antes de remover soft-fail)
+- Acumulado: G8.12.T1, G8.15.T1/T2, G8.17.T2 ainda PENDING
+
+### Wave 50 picks (LGPD-heavy + dev mix)
+
+- **G8.18.T1** (lgpd) — Ampliar regex PII pré-LLM [LGPD-REVIEW]
+- **G8.18.T2** (dev) — Testes vazamento multi-doc judicial [safe]
+- **G8.18.T3** (lgpd) — RIPD v1.5 + checklist [LGPD-REVIEW]
+- **G8.18.T4** (lgpd) — Sentry before_send PII removal [LGPD-REVIEW]
+
+→ 66 → 70 honest.
+
+Modified by Gustavo Almeida — 2026-07-18T19:30

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-18T19:26:43.139849+00:00",
+    "generated_at": "2026-07-18T20:01:19.291556+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -293,8 +293,8 @@
         {
           "file": "app/main.py",
           "summary_pct": 0.0,
-          "statements": 221,
-          "missing_lines": 221,
+          "statements": 223,
+          "missing_lines": 223,
           "excluded_lines": 2
         },
         {
@@ -790,8 +790,8 @@
         {
           "file": "app/services/emolumento.py",
           "summary_pct": 0.0,
-          "statements": 31,
-          "missing_lines": 31,
+          "statements": 32,
+          "missing_lines": 32,
           "excluded_lines": 0
         },
         {
@@ -804,8 +804,8 @@
         {
           "file": "app/services/emolumento_validacao.py",
           "summary_pct": 0.0,
-          "statements": 25,
-          "missing_lines": 25,
+          "statements": 35,
+          "missing_lines": 35,
           "excluded_lines": 0
         },
         {

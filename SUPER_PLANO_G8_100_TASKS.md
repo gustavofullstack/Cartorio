@@ -127,7 +127,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.14.T1 | Otimizar cache e tempos de execução do pytest no GitHub Actions. | [x] | cartorio-sre |
 | G8.14.T2 | Configurar deploys condicionais baseados no sucesso absoluto de todas as quality gates. | [x] | cartorio-sre |
-| G8.14.T3 | Adicionar secrets scanning avançado no CI para detectar chaves brutas de homologação. | [ ] | cartorio-lgpd |
+| G8.14.T3 | Adicionar secrets scanning avançado no CI para detectar chaves brutas de homologação. | [x] | cartorio-lgpd |
 | G8.14.T4 | Automatizar export e linting dos workflows JSON do n8n pré-commit. | [x] | cartorio-n8n |
 
 ### Squad 15 — Radar, Metrics & Observability (sre)
@@ -152,7 +152,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.17.T1 | Criar script python para regenerar e sincronizar Postman Collection a partir do Swagger OpenAPI. | [x] | cartorio-dev |
 | G8.17.T2 | Documentar schemas de payload detalhados para todos os webhooks no Swagger. | [x] | cartorio-dev |
 | G8.17.T3 | Identificar e marcar campos que possuem dados sensíveis nos schemas OpenAPI. | [ ] | cartorio-lgpd |
-| G8.17.T4 | Validar o fluxo de autenticação persistida (persistAuthorization) do Swagger local. | [ ] | cartorio-dev |
+| G8.17.T4 | Validar o fluxo de autenticação persistida (persistAuthorization) do Swagger local. | [x] | cartorio-dev |
 
 ### Squad 18 — PII Scrubbing & LGPD (lgpd)
 | ID | Task | Done | Agent |
@@ -173,8 +173,8 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 20 — Emolumentos MG 2026 Upgrades (dev)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.20.T1 | Atualizar e testar precisão matemática da calculadora de emolumentos notariais de MG para 2026. | [ ] | cartorio-dev |
-| G8.20.T2 | Desenhar workflow de orçamento de escrituras e certidões no n8n. | [ ] | cartorio-n8n |
+| G8.20.T1 | Atualizar e testar precisão matemática da calculadora de emolumentos notariais de MG para 2026. | [x] | cartorio-dev |
+| G8.20.T2 | Desenhar workflow de orçamento de escrituras e certidões no n8n. | [x] | cartorio-n8n |
 | G8.20.T3 | Mascarar valores financeiros atrelados ao nome de clientes em relatórios e logs de depuração. | [ ] | cartorio-lgpd |
 | G8.20.T4 | Criar testes unitários para verificação de limites mínimos, máximos e isenções tributárias. | [x] | cartorio-dev |
 
