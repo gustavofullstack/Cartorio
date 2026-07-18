@@ -181,7 +181,7 @@ class Settings(BaseSettings):
     chatwoot_webhook_secret: Optional[str] = None
     evolution_webhook_secret: Optional[str] = None
     telegram_webhook_secret: Optional[str] = None
-    telegram_api_base: str = 'https://api.telegram.org'
+    telegram_api_base: str = "https://api.telegram.org"
 
     # ========================================================================
     # Stale detector (atendimento sem update > N min vira flag 'stale')

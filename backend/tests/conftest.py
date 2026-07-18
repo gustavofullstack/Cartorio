@@ -289,9 +289,6 @@ def _reset_jwt_secret(monkeypatch):
     monkeypatch.setenv("OPENCODE_GO_API_KEY", "sk-test-12345")
     monkeypatch.setenv("OPENCLAW_API_KEY", "testkey1234567890")
     monkeypatch.setenv("LLM_DEFAULT_PROVIDER", "opencode_go")
-    monkeypatch.setenv("OPENCODE_GO_API_KEY", "sk-test-12345")
-    monkeypatch.setenv("OPENCLAW_API_KEY", "testkey1234567890")
-    monkeypatch.setenv("LLM_DEFAULT_PROVIDER", "opencode_go")
     from app.config import get_settings, settings  # noqa: PLC0415
 
     get_settings.cache_clear()
