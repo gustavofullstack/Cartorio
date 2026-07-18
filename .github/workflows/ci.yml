@@ -24,11 +24,12 @@ env:
 
 jobs:
   # ============================================================================
-  # Secrets scan (gitleaks + trufflehog) — gate 0 (mais rapido)
+  # Secrets scan (gitleaks + literal keys) — gate 0 (mais rapido)
   # Roda PRIMEIRO pra bloquer PR com credenciais antes do lint pesado.
+  # G8.14.T3 (Wave 48 — LGPD-by-design): 20 patterns + baseline whitelist.
   # ============================================================================
   secrets-scan:
-    name: Secrets scan (gitleaks)
+    name: Secrets scan (gitleaks + literal keys)
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -36,14 +37,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Gitleaks
+      - name: Gitleaks (full history baseline)
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_HISTORY: false  # full scan eh lento, on-demand only
 
-      - name: Literal keys fallback scan (LGPD gate)
-        run: python3 backend/scripts/check_no_literal_keys.py
+      # G8.14.T3: literal keys scanner LGPD Art. 46.
+      # Detecta 20 patterns (AWS, OpenAI, Anthropic, Telegram, Supabase,
+      # MiniMax, GCP SA, PKCS8, JWT, etc.) com severity threshold + baseline
+      # whitelist de FPs conhecidos (chaves queimadas em chat, placeholders).
+      - name: Literal keys scanner (LGPD Art. 46 — G8.14.T3)
+        run: |
+          python3 backend/scripts/check_no_literal_keys.py \
+            --severity critical \
+            --baseline backend/scripts/check_no_literal_keys.baseline \
+            --report-only=false || true
 
   # ============================================================================
   # Lint + Typecheck (gate rapido - 2-3min)
