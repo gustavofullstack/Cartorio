@@ -157,10 +157,10 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 18 — PII Scrubbing & LGPD (lgpd)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.18.T1 | Ampliar expressões regulares e dicionários de termos sensíveis do interceptor pré-LLM. | [ ] | cartorio-lgpd |
-| G8.18.T2 | Escrever testes simulando vazamento de múltiplos documentos judiciais no chat. | [ ] | cartorio-dev |
-| G8.18.T3 | Concluir e revisar o Relatório de Impacto à Proteção de Dados (RIPD) do Cartório v1.5. | [ ] | cartorio-lgpd |
-| G8.18.T4 | Configurar o Sentry before_send para remover PII dos metadados de requisição em falhas de produção. | [ ] | cartorio-lgpd |
+| G8.18.T1 | Ampliar expressões regulares e dicionários de termos sensíveis do interceptor pré-LLM. | [x] | cartorio-lgpd |
+| G8.18.T2 | Escrever testes simulando vazamento de múltiplos documentos judiciais no chat. | [x] | cartorio-dev |
+| G8.18.T3 | Concluir e revisar o Relatório de Impacto à Proteção de Dados (RIPD) do Cartório v1.5. | [x] | cartorio-lgpd |
+| G8.18.T4 | Configurar o Sentry before_send para remover PII dos metadados de requisição em falhas de produção. | [x] | cartorio-lgpd |
 
 ### Squad 19 — Audit Logging & HMAC Chain (lgpd+dev)
 | ID | Task | Done | Agent |
