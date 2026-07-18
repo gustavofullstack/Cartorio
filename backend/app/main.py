@@ -447,8 +447,12 @@ app = FastAPI(
     contact=API_CONTACT,
     license_info=API_LICENSE_INFO,
     openapi_tags=API_TAGS_METADATA,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    # G8.17.T4 — disable FastAPI's built-in /docs (e nosso custom /docs ganha
+    # precedencia de rota). Sem isso, FastAPI registra Route(/docs) PRIMEIRO,
+    # fazendo o builtin servir a pagina default (sem `persistAuthorization`,
+    # sem header institucional, sem tema dark blue). Ver test_docs_returns_custom_html.
+    docs_url=None,
+    redoc_url=None,
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
@@ -755,8 +759,25 @@ SWAGGER_UI_HTML = """<!DOCTYPE html>
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html() -> HTMLResponse:
-    """Swagger UI customizado com header institucional e tema dark blue."""
-    return HTMLResponse(SWAGGER_UI_HTML)
+    """Swagger UI customizado com header institucional e tema dark blue.
+
+    G8.17.T4 — `persistAuthorization: true` no JS faz o Swagger UI
+    armazenar o bearer token em `localStorage` do browser (e nao em cookie
+    nem em storage server). Isso garante que:
+
+    1. O token NAO vaza pro backend (LGPD art. 46 — seguranca).
+    2. O token PERSISTE entre reloads (F5/refresh) ate a aba fechar.
+    3. Cada aba/dominio tem storage isolado (same-origin policy).
+
+    Cache-Control: no-store evita que browsers/CDNs cacheiem a pagina e
+    sirvam uma versao antiga do schema OpenAPI ao desenvolvedor que
+    acabou de adicionar endpoints novos.
+
+    Ver docs/SWAGGER_PERSIST_AUTH_G8.md para detalhes do fluxo completo.
+    """
+    response = HTMLResponse(SWAGGER_UI_HTML)
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
 
 
 @app.get("/redoc", include_in_schema=False)
