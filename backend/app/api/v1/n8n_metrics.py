@@ -18,6 +18,7 @@ Refs:
 
 Modified by Gustavo Almeida + cartorio-n8n — G6 wave 25.
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -65,7 +66,9 @@ def fetch_n8n_executions(
 
 @router.get(
     "/prometheus",
-    response_class=__import__("fastapi.responses", fromlist=["PlainTextResponse"]).PlainTextResponse,
+    response_class=__import__(
+        "fastapi.responses", fromlist=["PlainTextResponse"]
+    ).PlainTextResponse,
     summary="Metricas N8N em formato Prometheus",
 )
 def prometheus_metrics(
@@ -98,7 +101,9 @@ def prometheus_metrics(
         error = sum(1 for e in execs if e.get("status") in ("error", "failed", "crashed"))
         total = len(execs)
         error_rate = error / total if total > 0 else 0
-        lines.append(f'n8n_workflow_execution_total{{workflow="{wf_name}",status="success"}} {success}')
+        lines.append(
+            f'n8n_workflow_execution_total{{workflow="{wf_name}",status="success"}} {success}'
+        )
         lines.append(f'n8n_workflow_execution_total{{workflow="{wf_name}",status="error"}} {error}')
         lines.append(f'n8n_workflow_error_rate{{workflow="{wf_name}"}} {error_rate:.4f}')
 
@@ -119,9 +124,15 @@ def prometheus_metrics(
         if durations:
             for bucket in (0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0):
                 count = sum(1 for d in durations if d <= bucket)
-                lines.append(f'n8n_workflow_execution_duration_seconds_bucket{{workflow="{wf_name}",le="{bucket}"}} {count}')
-            lines.append(f'n8n_workflow_execution_duration_seconds_count{{workflow="{wf_name}"}} {len(durations)}')
-            lines.append(f'n8n_workflow_execution_duration_seconds_sum{{workflow="{wf_name}"}} {sum(durations):.3f}')
+                lines.append(
+                    f'n8n_workflow_execution_duration_seconds_bucket{{workflow="{wf_name}",le="{bucket}"}} {count}'
+                )
+            lines.append(
+                f'n8n_workflow_execution_duration_seconds_count{{workflow="{wf_name}"}} {len(durations)}'
+            )
+            lines.append(
+                f'n8n_workflow_execution_duration_seconds_sum{{workflow="{wf_name}"}} {sum(durations):.3f}'
+            )
         lines.append("")
 
     return "\n".join(lines)
@@ -185,17 +196,19 @@ def summary_metrics(
         p99_idx = max(0, int(len(sorted_d) * 0.99) - 1)
         p99 = sorted_d[p99_idx] if sorted_d else 0
 
-        top_wfs.append({
-            "workflow_id": wf_id,
-            "workflow_name": wf_name,
-            "total": total,
-            "success": success,
-            "error": error,
-            "error_rate": round(error / total, 4) if total else 0,
-            "duration_p50": p50,
-            "duration_p95": p95,
-            "duration_p99": p99,
-        })
+        top_wfs.append(
+            {
+                "workflow_id": wf_id,
+                "workflow_name": wf_name,
+                "total": total,
+                "success": success,
+                "error": error,
+                "error_rate": round(error / total, 4) if total else 0,
+                "duration_p50": p50,
+                "duration_p95": p95,
+                "duration_p99": p99,
+            }
+        )
 
     top_wfs.sort(key=lambda x: x["total"], reverse=True)
 

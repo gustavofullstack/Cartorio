@@ -49,9 +49,7 @@ def test_catalog_stats_include_openclaw_and_ws(catalog) -> None:
     assert stats["v1"] >= 55  # wave15 added radar/ws/brain
     assert stats["openclaw"] >= 8
     assert stats["websocket"] >= 1
-    status_sum = (
-        stats["stable"] + stats["alpha"] + stats["beta"] + stats["deprecated"]
-    )
+    status_sum = stats["stable"] + stats["alpha"] + stats["beta"] + stats["deprecated"]
     assert status_sum == stats["total"]
 
 
@@ -72,7 +70,11 @@ def test_openclaw_cartorio_bot_json_valid() -> None:
     data = json.loads(OPENCLAW_BOT.read_text(encoding="utf-8"))
     assert data["name"] == "cartorio-bot"
     assert data["slug"] == "cartorio-bot"
-    assert "HITL" in data["system_prompt"] or "HITL" in data["system_prompt"].upper() or "HITL" in json.dumps(data)
+    assert (
+        "HITL" in data["system_prompt"]
+        or "HITL" in data["system_prompt"].upper()
+        or "HITL" in json.dumps(data)
+    )
     assert len(data["tools"]) >= 8
     assert any(t["name"] == "criar_protocolo" and t.get("hitl") for t in data["tools"])
     assert "operator.read" in data["auth"]["required_scopes"]

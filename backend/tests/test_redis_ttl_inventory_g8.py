@@ -86,10 +86,9 @@ class TestGetKeysByScope:
         assert len(session_keys) >= 3
         # session_keys inclui session:*, lgpd:consent, chat:memory (TTL-based session)
         for k in session_keys:
-            assert any(
-                tag in k.lower()
-                for tag in ("session", "consent", "memory", "user")
-            ), f"Session key '{k}' não tem tag esperada"
+            assert any(tag in k.lower() for tag in ("session", "consent", "memory", "user")), (
+                f"Session key '{k}' não tem tag esperada"
+            )
 
     def test_cache_keys(self, ttl_module):
         cache_keys = ttl_module.get_keys_by_scope("cache")
@@ -131,8 +130,7 @@ class TestGetKeysByLGPD:
             if matches:
                 for k in matches:
                     art = ttl_module.TTL_REGISTRY[k].get("lgpd_art", "")
-                    assert "Art.16" in art or "Art.18" in art, \
-                        f"PII key '{k}' sem Art.16/18: {art}"
+                    assert "Art.16" in art or "Art.18" in art, f"PII key '{k}' sem Art.16/18: {art}"
 
 
 class TestValidateTTLConfig:
@@ -298,5 +296,4 @@ class TestLGPDCompliance:
         for key, meta in ttl_module.TTL_REGISTRY.items():
             if any(p in key for p in pii_patterns):
                 ttl = meta["ttl_seconds"]
-                assert ttl <= 30 * 86400, \
-                    f"PII key '{key}' TTL={ttl}s ({ttl // 86400}d) > 30d"
+                assert ttl <= 30 * 86400, f"PII key '{key}' TTL={ttl}s ({ttl // 86400}d) > 30d"

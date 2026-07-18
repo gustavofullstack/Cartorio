@@ -56,13 +56,9 @@ ERROR_MESSAGES: dict[str, str] = {
         "Por favor, envie em partes menores (máximo 4000 caracteres)."
     ),
     "payload_empty": (
-        "🤔 Não recebi nenhuma mensagem. "
-        "Por favor, envie uma mensagem de texto para continuar."
+        "🤔 Não recebi nenhuma mensagem. Por favor, envie uma mensagem de texto para continuar."
     ),
-    "unknown": (
-        "❌ Algo deu errado. "
-        "Nossa equipe foi notificada e vamos resolver em breve."
-    ),
+    "unknown": ("❌ Algo deu errado. Nossa equipe foi notificada e vamos resolver em breve."),
 }
 
 

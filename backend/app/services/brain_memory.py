@@ -8,6 +8,7 @@ Idempotente via `lesson_id` explicito: 2a chamada com mesmo ID = skip.
 
 LGPD-safe: caller e responsavel por nao passar PII em title/content.
 """
+
 from __future__ import annotations
 
 import re

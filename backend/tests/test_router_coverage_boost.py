@@ -114,6 +114,7 @@ def test_protocolo_unknown_status_falls_back_to_generic_history() -> None:
         updated_at=datetime.now(timezone.utc),
         concluido_em=None,
     )
+
     class FakeStatus:
         DRAFT = object()
         ABERTO = object()
@@ -130,7 +131,9 @@ def test_protocolo_unknown_status_falls_back_to_generic_history() -> None:
         patch("app.api.v1.router.buscar_protocolo_por_numero", return_value=protocolo),
         patch("app.api.v1.router.AuditService.log"),
         patch.object(router_module, "StatusProtocolo", FakeStatus),
-        patch.object(router_module, "ProtocoloResponse", return_value=MagicMock()) as response_model,
+        patch.object(
+            router_module, "ProtocoloResponse", return_value=MagicMock()
+        ) as response_model,
     ):
         router_module.get_protocolo(_request(), "2026-00001", MagicMock())
     assert response_model.called
@@ -197,7 +200,9 @@ async def test_update_backup_status_success_and_failure() -> None:
     redis_client = MagicMock()
     with patch("app.api.v1.router.redis.from_url", return_value=redis_client):
         result = await router_module.update_backup_status(
-            router_module.BackupStatusUpdate(ok=True, last_backup_size_bytes=1024, backup_count_7d=2)
+            router_module.BackupStatusUpdate(
+                ok=True, last_backup_size_bytes=1024, backup_count_7d=2
+            )
         )
     assert result == {"ok": True, "stored": "redis", "ttl_hours": 28}
     redis_client.setex.assert_called_once()
@@ -273,7 +278,10 @@ async def test_webhook_evolution_empty_payload_uses_handoff() -> None:
 @pytest.mark.parametrize(
     ("exception", "status_code"),
     [
-        (AgendamentoConflictError(SimpleNamespace(id=1, data_hora=datetime.now(), titulo="X")), 409),  # type: ignore[arg-type]
+        (
+            AgendamentoConflictError(SimpleNamespace(id=1, data_hora=datetime.now(), titulo="X")),
+            409,
+        ),  # type: ignore[arg-type]
         (ClienteNotFoundError(1), 404),
         (ProtocoloNotFoundError(1), 404),
         (ValueError("invalid"), 400),
@@ -291,7 +299,9 @@ def test_criar_agendamento_maps_domain_errors(exception: Exception, status_code:
         protocolo_id=None,
         duration_minutes=30,
     )
-    with patch("app.services.agendamento.AgendamentoService.criar_agendamento", side_effect=exception):
+    with patch(
+        "app.services.agendamento.AgendamentoService.criar_agendamento", side_effect=exception
+    ):
         with pytest.raises(HTTPException) as exc_info:
             router_module.criar_agendamento(_request(), payload, MagicMock())
     assert exc_info.value.status_code == status_code
@@ -370,7 +380,9 @@ async def test_admin_relatorio_json_and_markdown() -> None:
     request.headers = {"x-api-key": "a" * 64}
     report = {"hash_anchor": "hash", "titulares": 1}
     with patch("app.services.lgpd_relatorio.gerar_relatorio_anual", return_value=report):
-        json_response = await router_module.admin_lgpd_relatorio_anual(request, 2026, "json", MagicMock())
+        json_response = await router_module.admin_lgpd_relatorio_anual(
+            request, 2026, "json", MagicMock()
+        )
     assert json_response.status_code == 200
 
     with (

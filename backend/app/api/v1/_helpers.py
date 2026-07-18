@@ -152,9 +152,7 @@ def list_with_pagination(
     if where_clauses:
         stmt = stmt.where(and_(*where_clauses))
     stmt = (
-        stmt.order_by(getattr(model, "id").desc())
-        .limit(page_size)
-        .offset((page - 1) * page_size)
+        stmt.order_by(getattr(model, "id").desc()).limit(page_size).offset((page - 1) * page_size)
     )
 
     items = db.execute(stmt).scalars().all()  # type: ignore[arg-type]
