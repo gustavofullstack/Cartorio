@@ -3734,3 +3734,57 @@ Modified by Gustavo Almeida — 2026-07-18T14:35:00.000000+00:00
 - ✋ 10 RedisKey callers pendientes (rate_limit, sliding_window, dist_lock, ...)
 
 Modified by Gustavo Almeida — 2026-07-18T16:30
+
+## 2026-07-18 — Wave 46 SQUAD 13/15/16 closure (commit 9cbe42e)
+
+### VERIFIED HONEST TALLY: 54/100
+
+`grep ... | sort | uniq -c` → **54 [x]** | 46 [ ].
+
+### Branches absorbed (4)
+
+Wave 46 — 4 subagentes paralelos. Mesmo padrão de stranded branches resolved via `git checkout <branch> -- <files>`. 4 branches absorbed + 6 commits trazidos.
+
+| Task | Status | Commit branch | Tests | Notas |
+|------|--------|---------------|-------|-------|
+| G8.13.T4 mypy strict | done | `chore/g8-13-t4-mypy-resolve` 16ed13d | 0 new | 2 errors → 0. `types-PyYAML` dep em vez de `# type: ignore`. Removida `isencao_aplicavel` redundante (já re-exportada). |
+| G8.15.T1 Prometheus AI | done | `feat/g8-15-t1-prometheus-ai-metrics` 164946f | +23 | 4 metrics via MetricsStore interno (não `prometheus_client`). LGPD-safe whitelist em labels. 2 callers instrumentados. |
+| G8.15.T2 AlertManager Telegram | done | `feat/g8-15-t2-alertmanager-telegram` 129fe4b | +22 | 5 receivers config canônica. LGPD Art. 46 com 3 camadas (Pydantic + regex + _safe_str). Dedup 2 níveis. |
+| G8.16.T1 PROGRESS audit | done | `chore/g8-16-t1-progress-audit` 897340c | +7 | Script idempotente 228 LOC. Regex `^## YYYY-MM-DD — Wave N` substitui in-place. Makefile target `progress-audit`. |
+
+### Pós-merge fixes aplicados em 9cbe42e
+
+- `tests/test_dead_code_audit_g8.py`: `test_top_candidates_lists_orphans` hardcoded para 2 específicos, mas audit real tem >10 órfãos. Atualizado para validar `>=1` orphan_module + sanity `app/` prefix.
+
+### Gates finais pós-consolidação
+
+| Gate | Resultado |
+|------|-----------|
+| `uv run pytest --no-cov -q` | **3994 passed, 23 skipped** (verde) |
+| `uv run ruff check app/` | **All checks passed** |
+| `uv run mypy app/` | **Success: no issues found in 191 source files** |
+
+### Branches stranded para cleanup
+
+11 branches feat/chore g8-* ainda existem localmente. Cleanup opcional:
+```bash
+git branch -d feat/g8-11-t3-emolumento-validation-split
+git branch -d feat/g8-11-t4-architecture-coupling-tests
+git branch -d feat/g8-12-t1-pii-mask-unify
+git branch -d feat/g8-12-t3-redis-key-pattern
+git branch -d chore/g8-12-t2-n8n-orphan-cleanup
+git branch -d chore/g8-12-t4-dead-code-audit
+git branch -d chore/g8-13-t4-mypy-resolve
+git branch -d feat/g8-15-t1-prometheus-ai-metrics
+git branch -d feat/g8-15-t2-alertmanager-telegram
+git branch -d feat/g8-16-t4-stability-report
+git branch -d chore/g8-16-t1-progress-audit
+```
+
+### TODO LGPD gates open
+
+- ✋ G8.12.T1 PII cross-review pendente (3 callers refatorados para `pii_unified`)
+- ✋ G8.15.T1 + G8.15.T2 Label whitelists assinado LGPD
+- ✋ Squad 18/19 (PII/Audit) devem aguardar revisão antes de merge público
+
+Modified by Gustavo Almeida — 2026-07-18T17:30
