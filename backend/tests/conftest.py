@@ -82,12 +82,11 @@ os.environ["N8N_API_KEY"] = "header.payload.signature"
 TEST_CARTORIO_API_KEY = "a" * 64
 os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
 os.environ["JWT_SECRET"] = "a" * 64
-os.environ["OPENCODE_GO_API_KEY"] = "sk-test-12345"
-os.environ["OPENCLAW_API_KEY"] = "testkey1234567890"
 
 os.environ["LLM_DEFAULT_PROVIDER"] = "opencode_go"
 os.environ["LLM_FALLBACK_CHAIN"] = "opencode_go,openclaw"
 os.environ["OPENCODE_GO_MODEL"] = "minimax-m3"
+os.environ["JWT_SECRET"] = "a" * 64
 
 from app.config import get_settings, settings  # noqa: E402
 
@@ -165,8 +164,6 @@ def _patch_db_session_for_all_tests():
     from app.config import get_settings, settings
 
     os.environ["JWT_SECRET"] = "a" * 64
-    os.environ["OPENCODE_GO_API_KEY"] = "sk-test-12345"
-    os.environ["OPENCLAW_API_KEY"] = "testkey1234567890"
     get_settings.cache_clear()
     settings.jwt_secret = "a" * 64
 
@@ -289,6 +286,9 @@ def _reset_jwt_secret(monkeypatch):
     Adicionado em 2026-07-07 — flakiness SQUAD A fix.
     """
     monkeypatch.setenv("JWT_SECRET", "a" * 64)
+    monkeypatch.setenv("OPENCODE_GO_API_KEY", "sk-test-12345")
+    monkeypatch.setenv("OPENCLAW_API_KEY", "testkey1234567890")
+    monkeypatch.setenv("LLM_DEFAULT_PROVIDER", "opencode_go")
     monkeypatch.setenv("OPENCODE_GO_API_KEY", "sk-test-12345")
     monkeypatch.setenv("OPENCLAW_API_KEY", "testkey1234567890")
     monkeypatch.setenv("LLM_DEFAULT_PROVIDER", "opencode_go")
