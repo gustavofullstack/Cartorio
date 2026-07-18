@@ -190,7 +190,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | ID | Task | Done | Agent |
 |----|------|------|-------|
 | G8.22.T1 | Testar robustez de tratamento de mensagens de áudio, imagem e documentos na Evolution API. | [ ] | cartorio-n8n |
-| G8.22.T2 | Criar workflows de monitoramento e alertas se a instância Evolution perder conexão. | [ ] | cartorio-n8n |
+| G8.22.T2 | Criar workflows de monitoramento e alertas se a instância Evolution perder conexão. | [x] | cartorio-n8n |
 | G8.22.T3 | Implementar TTL rígido de 24 horas no banco de dados temporário de mensagens de WhatsApp. | [ ] | cartorio-lgpd |
 | G8.22.T4 | Otimizar concorrência de chamadas entre a API do Evolution e o backend via Redis. | [ ] | cartorio-sre |
 
