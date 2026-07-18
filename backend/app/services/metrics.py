@@ -9,7 +9,7 @@ Por que Prometheus e nao vendor:
 - Sem lock-in (vendor migracao = 1 dia)
 - Sem dados enviados pra terceiros
 
-Metricas expostas (A1+A2):
+Metricas expostas (A1+A2 + G8.15.T1):
 - cartorio_http_requests_total{endpoint, method, status} - counter
 - cartorio_http_request_duration_seconds{endpoint, method} - histogram
 - cartorio_protocolos_total{status} - gauge (snapshot)
@@ -26,12 +26,23 @@ Metricas expostas (A1+A2):
 - cartorio_db_pool_total_capacity - gauge (A15)
 - cartorio_db_pool_utilization_pct - gauge (A15)
 - cartorio_uptime_seconds - gauge
+
+G8.15.T1 — Prometheus AI/LLM instrumentation (LGPD-safe labels):
+- cartorio_llm_call_seconds{model,operation} - histogram (latency por chamada)
+- cartorio_llm_calls_total{model,operation,status} - counter (success|error|timeout)
+- cartorio_llm_tokens_total{model,direction} - counter (input|output cumulativo)
+- cartorio_llm_errors_total{model,operation,error_type} - counter (tipo do erro)
+
+LGPD: APENAS labels categoricos (model, operation, status, direction, error_type).
+ZERO PII em labels. Ver app/services/metrics.py::instrument_llm.
 """
 
 from __future__ import annotations
 
+import functools
+import inspect
 import time
-from typing import Any, cast
+from typing import Any, Callable, TypeVar, cast
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -40,6 +51,8 @@ from app.models.audit_log import AuditLog
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
 from app.models.agendamento import Agendamento, StatusAgendamento
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class MetricsStore:
@@ -279,6 +292,86 @@ class MetricsStore:
         self._make_metric_or_skip_test("backup_last_success_timestamp_seconds", "gauge")
         self.set_gauge("backup_last_success_timestamp_seconds", value)
 
+    # -------------------------------------------------------------------
+    # G8.15.T1 — Prometheus AI/LLM instrumentation (LGPD-safe)
+    # -------------------------------------------------------------------
+    #
+    # Cardinalidade controlada por enums canonicos:
+    #   model:      opencode_go | MiniMax_direct | litellm | openclaw | cache
+    #   operation:  chat | tool_use | embedding | tts | fast_path
+    #   status:     success | error | timeout | rate_limited
+    #   direction:  input | output
+    #   error_type: TimeoutException | HTTPError | ChatError | ValueError | ...
+    #
+    # SEM cpf / rg / email / protocolo / escritura / session_id nos labels.
+
+    def observe_llm_call_seconds(self, model: str, operation: str, duration_seconds: float) -> None:
+        """G8.15.T1: histogram `cartorio_llm_call_seconds{model,operation}`.
+
+        Args:
+            model: nome canonico do modelo (enum restrito, ex: 'opencode_go').
+            operation: tipo de chamada (enum restrito, ex: 'chat').
+            duration_seconds: duracao da chamada em segundos.
+        """
+        self._make_metric_or_skip_test("cartorio_llm_call_seconds", "histogram")
+        self.observe_histogram(
+            "cartorio_llm_call_seconds",
+            float(duration_seconds),
+            labels={"model": model, "operation": operation},
+        )
+
+    def inc_llm_calls_total(self, model: str, operation: str, status: str) -> None:
+        """G8.15.T1: counter `cartorio_llm_calls_total{model,operation,status}`.
+
+        Args:
+            model: enum (opencode_go | MiniMax_direct | litellm | openclaw | cache).
+            operation: enum (chat | tool_use | embedding | tts | fast_path).
+            status: enum (success | error | timeout | rate_limited).
+        """
+        self._make_metric_or_skip_test("cartorio_llm_calls_total", "counter")
+        self.inc_counter(
+            "cartorio_llm_calls_total",
+            labels={"model": model, "operation": operation, "status": status},
+        )
+
+    def inc_llm_tokens_total(self, model: str, direction: str, count: int) -> None:
+        """G8.15.T1: counter cumulativo `cartorio_llm_tokens_total{model,direction}`.
+
+        Nota: tokens sao cumulativos no tempo (Counter) porque a taxa de
+        consumo (`rate()` no PromQL) eh a metrica de negocio relevante
+        (custo do provider). Gauge seria util apenas para "tokens em vôo"
+        e nao para "tokens consumidos historicamente".
+
+        Args:
+            model: enum (opencode_go | MiniMax_direct | litellm | openclaw).
+            direction: enum (input | output).
+            count: quantidade de tokens a incrementar (>= 0).
+        """
+        if count <= 0:
+            return
+        self._make_metric_or_skip_test("cartorio_llm_tokens_total", "counter")
+        self.inc_counter(
+            "cartorio_llm_tokens_total",
+            labels={"model": model, "direction": direction},
+            value=int(count),
+        )
+
+    def inc_llm_errors_total(self, model: str, operation: str, error_type: str) -> None:
+        """G8.15.T1: counter `cartorio_llm_errors_total{model,operation,error_type}`.
+
+        Args:
+            model: enum (opencode_go | MiniMax_direct | litellm | openclaw | cache).
+            operation: enum (chat | tool_use | embedding | tts | fast_path).
+            error_type: nome canonico do tipo de erro (ex: 'TimeoutException',
+                'HTTP_5XX', 'HTTP_4XX', 'ChatError', 'JSONDecodeError').
+                Cardinalidade controlada via classe de excecao, NAO mensagem.
+        """
+        self._make_metric_or_skip_test("cartorio_llm_errors_total", "counter")
+        self.inc_counter(
+            "cartorio_llm_errors_total",
+            labels={"model": model, "operation": operation, "error_type": error_type},
+        )
+
     def _labels_key(self, labels: dict[str, str] | None) -> str:
         if not labels:
             return ""
@@ -341,6 +434,210 @@ class MetricsStore:
 
 # Singleton global
 store = MetricsStore()
+
+
+# ============================================================================
+# G8.15.T1 — Decorator @instrument_llm
+# ============================================================================
+#
+# Helper reutilizavel para instrumentar QUALQUER chamada LLM/AI sem acoplar
+# o codigo de chamada ao codigo de metricas. Funciona para funcoes sync e
+# async. Captura latencia, status (success/error), e tipo de erro.
+#
+# Uso:
+#     from app.services.metrics import instrument_llm
+#
+#     @instrument_llm(model="opencode_go", operation="chat")
+#     async def my_chat(messages): ...
+#
+#     @instrument_llm(model="MiniMax_direct", operation="tool_use")
+#     def my_tool_call(payload): ...
+#
+# LGPD: NAO ha parametros opcionais com PII. model+operation vem de enums
+# restritos do projeto (ver validate_label abaixo).
+
+
+def _validate_label(name: str, value: str, allowed: set[str]) -> None:
+    """Valida que um label value eh canonico (LGPD-safe).
+
+    Args:
+        name: nome do label (apenas para log).
+        value: valor a ser usado como label.
+        allowed: set canonico de valores permitidos.
+
+    Raises:
+        ValueError: se value nao estiver em allowed.
+    """
+    if value not in allowed:
+        raise ValueError(
+            f"metric label {name}={value!r} nao esta em whitelist canonica "
+            f"(LGPD: nunca use valores dinamicos como CPF/RG/email). "
+            f"Permitidos: {sorted(allowed)}"
+        )
+
+
+def instrument_llm(
+    model: str,
+    operation: str,
+    *,
+    extract_tokens: Callable[[Any], tuple[int, int]] | None = None,
+) -> Callable[[F], F]:
+    """G8.15.T1: decorator para instrumentar chamadas LLM/AI.
+
+    Captura automaticamente:
+    - latencia (cartorio_llm_call_seconds{model,operation})
+    - status (cartorio_llm_calls_total{model,operation,status})
+    - erros (cartorio_llm_errors_total{model,operation,error_type})
+    - tokens (cartorio_llm_tokens_total{model,direction}) via extract_tokens
+
+    Args:
+        model: enum canonico (ex: 'opencode_go', 'MiniMax_direct', 'openclaw').
+        operation: enum canonico (ex: 'chat', 'tool_use', 'embedding', 'tts').
+        extract_tokens: funcao opcional `(result) -> (tokens_in, tokens_out)`
+            para extrair contagem de tokens de um response object. Se None,
+            token counting eh pulado (decorator funciona sem).
+
+    Returns:
+        decorator que envolve a funcao preservando __name__/__doc__/__wrapped__
+        via functools.wraps. Funciona para sync e async.
+
+    Raises:
+        ValueError: se model ou operation nao estiver em whitelist.
+
+    Example:
+        @instrument_llm(model="opencode_go", operation="chat")
+        async def call_opencode(messages):
+            ...
+
+        @instrument_llm(
+            model="MiniMax_direct",
+            operation="chat",
+            extract_tokens=lambda r: (r.usage.prompt_tokens, r.usage.completion_tokens),
+        )
+        def call_minimax(payload): ...
+    """
+    _validate_label("model", model, _ALLOWED_LLM_MODELS)
+    _validate_label("operation", operation, _ALLOWED_LLM_OPERATIONS)
+
+    def decorator(func: F) -> F:
+        @functools.wraps(func)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            start = time.perf_counter()
+            try:
+                result = await func(*args, **kwargs)
+                elapsed = time.perf_counter() - start
+                store.observe_llm_call_seconds(model, operation, elapsed)
+                store.inc_llm_calls_total(model, operation, "success")
+                if extract_tokens is not None:
+                    try:
+                        tok_in, tok_out = extract_tokens(result)
+                        store.inc_llm_tokens_total(model, "input", tok_in)
+                        store.inc_llm_tokens_total(model, "output", tok_out)
+                    except Exception:
+                        pass
+                return result
+            except Exception as exc:
+                elapsed = time.perf_counter() - start
+                store.observe_llm_call_seconds(model, operation, elapsed)
+                store.inc_llm_calls_total(model, operation, "error")
+                store.inc_llm_errors_total(
+                    model,
+                    operation,
+                    _classify_error(exc),
+                )
+                raise
+
+        @functools.wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            start = time.perf_counter()
+            try:
+                result = func(*args, **kwargs)
+                elapsed = time.perf_counter() - start
+                store.observe_llm_call_seconds(model, operation, elapsed)
+                store.inc_llm_calls_total(model, operation, "success")
+                if extract_tokens is not None:
+                    try:
+                        tok_in, tok_out = extract_tokens(result)
+                        store.inc_llm_tokens_total(model, "input", tok_in)
+                        store.inc_llm_tokens_total(model, "output", tok_out)
+                    except Exception:
+                        pass
+                return result
+            except Exception as exc:
+                elapsed = time.perf_counter() - start
+                store.observe_llm_call_seconds(model, operation, elapsed)
+                store.inc_llm_calls_total(model, operation, "error")
+                store.inc_llm_errors_total(
+                    model,
+                    operation,
+                    _classify_error(exc),
+                )
+                raise
+
+        if inspect.iscoroutinefunction(func):
+            return cast(F, async_wrapper)
+        return cast(F, sync_wrapper)
+
+    return decorator
+
+
+# Whitelist canonica (LGPD: cardinalidade controlada).
+# Adicionar novo valor aqui APENAS via PR com justificativa.
+_ALLOWED_LLM_MODELS: set[str] = {
+    "opencode_go",
+    "MiniMax_direct",
+    "litellm",
+    "openclaw",
+    "cache",
+    "multi_provider",  # chat_with_fallback: chain tenta varios ate um dar certo
+    "test",  # usado apenas em testes
+}
+
+_ALLOWED_LLM_OPERATIONS: set[str] = {
+    "chat",
+    "tool_use",
+    "embedding",
+    "tts",
+    "fast_path",
+    "test",  # usado apenas em testes
+}
+
+# Whitelist canonica de tipos de erro (LGPD: cardinalidade controlada).
+# Adicionar novo valor aqui APENAS via PR com justificativa.
+_ALLOWED_LLM_ERROR_TYPES: set[str] = {
+    "TimeoutException",
+    "HTTP_4XX",
+    "HTTP_5XX",
+    "ChatError",
+    "JSONDecodeError",
+    "ValueError",
+    "TypeError",
+    "KeyError",
+    "RuntimeError",
+    "ConnectionError",
+    "UnknownError",
+}
+
+
+def _classify_error(exc: BaseException) -> str:
+    """Classifica um erro em uma categoria canonica (LGPD-safe).
+
+    Usa SOMENTE o nome da classe de excecao (nao a mensagem), garantindo
+    que nenhum PII apareca no label error_type. Mensagens vao para log
+    estruturado (que ja passa pelo log_masker PII scrubber).
+
+    Args:
+        exc: a excecao capturada.
+
+    Returns:
+        Categoria canonica do erro. Se nao houver match exato, retorna
+        'UnknownError' (nunca o nome cru da classe para evitar cardinalidade
+        explosiva).
+    """
+    name = type(exc).__name__
+    if name in _ALLOWED_LLM_ERROR_TYPES:
+        return name
+    return "UnknownError"
 
 
 class _MetricHandle:

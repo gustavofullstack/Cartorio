@@ -73,6 +73,9 @@ from app.services.protocolo_query import buscar_protocolo_por_numero
 # Integrations router (smoke test OpenCode-Go, etc)
 from app.api.v1.integrations import integrations_router  # noqa: E402
 
+# AlertManager webhook router (G8.15.T2) — Prometheus → Telegram LGPD-safe
+from app.api.v1.alertmanager import router as alertmanager_router  # noqa: E402
+
 # Shared deps (B0.3 2026-06-25)
 from app.api.deps import (  # noqa: E402
     assert_dpo_for_include_deleted,
@@ -90,6 +93,7 @@ from app.api.v1._helpers import (  # noqa: E402
 
 api_router = APIRouter()
 api_router.include_router(integrations_router)
+api_router.include_router(alertmanager_router)
 
 
 # Regex do formato ANO-SEQUENCIAL (YYYY-NNNNN)

@@ -22,6 +22,7 @@ from typing import Any
 
 import httpx
 
+from app.services.metrics import instrument_llm
 from app.services.pii import scrub
 
 logger = logging.getLogger(__name__)
@@ -588,6 +589,7 @@ def _run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, str | None, l
     return json.dumps({"erro": "tool_desconhecida"}), None, used
 
 
+@instrument_llm(model="MiniMax_direct", operation="chat")
 async def _chat_completion(
     messages: list[dict[str, Any]],
     *,

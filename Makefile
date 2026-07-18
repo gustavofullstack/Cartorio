@@ -166,6 +166,20 @@ g7-progress:  ## G7.23.T3 append wave block to PROGRESS.md (WAVE=N SUMMARY="..."
 		$(if $(STATUS),--status "$(STATUS)",) \
 		$(if $(FORCE),--force,)
 
+.PHONY: progress-audit
+progress-audit:  ## G8.16.T1 PROGRESS.md audit/persist (WAVE=N AGENT=sre BULLET="..." PRE=50 POST=51 TESTS=5)
+	@if [ -z "$(WAVE)" ]; then \
+		echo "$(RED)Uso: make progress-audit WAVE=46 AGENT=sre PRE=50 POST=51 TESTS=5 BULLET=\"**G8.16.T1** descr\"$(RESET)"; \
+		exit 1; \
+	fi
+	@python3 scripts/progress_audit.py --wave $(WAVE) \
+		$(if $(AGENT),--agent $(AGENT),--agent sre) \
+		$(if $(PRE),--honest-pre $(PRE),) \
+		$(if $(POST),--honest-post $(POST),) \
+		$(if $(TESTS),--tests $(TESTS),) \
+		$(if $(BULLET),--bullet "$(BULLET)",) \
+		--apply
+
 .PHONY: radar-smoke
 radar-smoke:  ## Health radar smoke CLI (G6.D.T1)
 	@echo "$(YELLOW)[Radar] Smoke test /api/v1/health/radar/expanded...$(RESET)"

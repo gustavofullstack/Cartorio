@@ -28,7 +28,9 @@ from app.services.emolumento_validacao import (
     validar_tipo,
 )
 
-# Re-exports preservam compat: callers que importavam de emolumento continuam OK
+# Re-exports preservam compat: callers que importavam de emolumento continuam OK.
+# `isencao_aplicavel` é a regra fiscal pura (G8.11.T3 — SOLID SRP) — vem de
+# ``emolumento_validacao`` para evitar duplicação que disparava mypy ``[no-redef]``.
 __all__ = [
     "CalculoEmolumento",
     "EMOLUMENTOS_2026",
@@ -114,20 +116,3 @@ def calcular(
         tabela_referencia=tabela_referencia,
         valido_ate=valido_ate,
     )
-
-
-def isencao_aplicavel(tipo: str, *, motivo: str) -> bool:
-    """Verifica se tipo eh candidato a isencao pelo motivo.
-
-    APENAS indica elegibilidade - aplicacao real exige validacao humana
-    do tabeliao. Bot NAO concede isencao sozinho.
-    """
-    gratuítos = {"registro_nascimento", "registro_obito"}
-    if tipo in gratuítos:
-        return True
-    motivos_validos = {
-        "justica_gratuita",
-        "entidade_filantropica",
-        "programa_social",
-    }
-    return motivo in motivos_validos

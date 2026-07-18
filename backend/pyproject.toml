@@ -107,5 +107,6 @@ dev = [
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.15.1",
     "respx>=0.23.1",
-]
+    "types-pyyaml>=6.0.12.20260518",
+] 
 

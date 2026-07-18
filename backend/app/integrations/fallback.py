@@ -28,6 +28,17 @@ from app.integrations.opencode_go import ChatError, ChatErrorKind, ChatResponse
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
+from app.services.metrics import instrument_llm
+
+
+def _extract_chat_response_tokens(response: ChatResponse) -> tuple[int, int]:
+    """Extract tokens from a ChatResponse for Prometheus metrics (G8.15.T1).
+
+    Returns (tokens_in, tokens_out), defaulting to 0 when API did not
+    include a usage block. LGPD-safe: only counts numbers, never content.
+    """
+    return (response.tokens_in or 0, response.tokens_out or 0)
+
 logger = logging.getLogger(__name__)
 
 
@@ -164,6 +175,7 @@ async def _call_provider(
     )
 
 
+@instrument_llm(model="multi_provider", operation="chat", extract_tokens=_extract_chat_response_tokens)
 async def chat_with_fallback(
     messages: list[dict[str, str]],
     *,

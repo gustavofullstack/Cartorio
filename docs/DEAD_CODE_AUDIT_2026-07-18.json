@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-18T15:43:50.350261+00:00",
+    "generated_at": "2026-07-18T16:22:25.617448+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -13,8 +13,8 @@
     "pyflakes_total": 0,
     "vulture_suspicions": 8,
     "vulture_min_confidence": 80,
-    "uncovered_files": 87,
-    "zero_coverage_files": 2,
+    "uncovered_files": 151,
+    "zero_coverage_files": 145,
     "ruff_clean": true,
     "pyflakes_clean": true,
     "vulture_clean": false
@@ -30,12 +30,10 @@
     },
     "pyflakes": {
       "tool": "pyflakes",
-      "returncode": 1,
+      "returncode": 0,
       "stderr": "",
       "findings": [],
-      "raw_lines": [
-        "app/services/emolumento.py:119:1: redefinition of unused 'isencao_aplicavel' from line 19"
-      ],
+      "raw_lines": [],
       "count": 0
     },
     "vulture": {
@@ -48,7 +46,7 @@
           "raw": "app/api/v1/brain.py:119: unused variable 'from_date' (100% confidence)"
         },
         {
-          "raw": "app/api/v1/router.py:1937: unreachable 'else' block (100% confidence)"
+          "raw": "app/api/v1/router.py:1941: unreachable 'else' block (100% confidence)"
         },
         {
           "raw": "app/api/v1/telegram.py:647: unused variable 'reply_markup' (100% confidence)"
@@ -71,7 +69,7 @@
       ],
       "raw_lines": [
         "app/api/v1/brain.py:119: unused variable 'from_date' (100% confidence)",
-        "app/api/v1/router.py:1937: unreachable 'else' block (100% confidence)",
+        "app/api/v1/router.py:1941: unreachable 'else' block (100% confidence)",
         "app/api/v1/telegram.py:647: unused variable 'reply_markup' (100% confidence)",
         "app/services/bot_metrics.py:145: unused variable 'exc_tb' (100% confidence)",
         "app/services/bot_metrics.py:145: unused variable 'exc_val' (100% confidence)",
@@ -102,9 +100,9 @@
         },
         {
           "file": "app/api/deps.py",
-          "summary_pct": 97.5,
+          "summary_pct": 0.0,
           "statements": 80,
-          "missing_lines": 2,
+          "missing_lines": 80,
           "excluded_lines": 1
         },
         {
@@ -116,79 +114,79 @@
         },
         {
           "file": "app/api/v1/_helpers.py",
-          "summary_pct": 94.44,
+          "summary_pct": 0.0,
           "statements": 36,
-          "missing_lines": 2,
+          "missing_lines": 36,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/auth_login.py",
-          "summary_pct": 95.52,
+          "summary_pct": 0.0,
           "statements": 67,
-          "missing_lines": 3,
+          "missing_lines": 67,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/bot_lgpd.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 126,
-          "missing_lines": 0,
+          "missing_lines": 126,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/brain.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 241,
-          "missing_lines": 0,
+          "missing_lines": 241,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/dead_mans_switch.py",
-          "summary_pct": 35.56,
+          "summary_pct": 0.0,
           "statements": 45,
-          "missing_lines": 29,
+          "missing_lines": 45,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/health_radar_expanded.py",
-          "summary_pct": 99.07,
+          "summary_pct": 0.0,
           "statements": 214,
-          "missing_lines": 2,
+          "missing_lines": 214,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/integrations.py",
-          "summary_pct": 97.26,
+          "summary_pct": 0.0,
           "statements": 329,
-          "missing_lines": 9,
+          "missing_lines": 329,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/lgpd_consent.py",
-          "summary_pct": 44.44,
+          "summary_pct": 0.0,
           "statements": 27,
-          "missing_lines": 15,
+          "missing_lines": 27,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/lgpd_direitos.py",
-          "summary_pct": 97.1,
+          "summary_pct": 0.0,
           "statements": 69,
-          "missing_lines": 2,
+          "missing_lines": 69,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/lgpd_direitos_v2.py",
-          "summary_pct": 95.19,
+          "summary_pct": 0.0,
           "statements": 208,
-          "missing_lines": 10,
+          "missing_lines": 208,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/lgpd_dpo_dashboard.py",
-          "summary_pct": 88.57,
+          "summary_pct": 0.0,
           "statements": 105,
-          "missing_lines": 12,
+          "missing_lines": 105,
           "excluded_lines": 0
         },
         {
@@ -200,30 +198,30 @@
         },
         {
           "file": "app/api/v1/lgpd_privacy_policy_endpoint.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 21,
-          "missing_lines": 0,
+          "missing_lines": 21,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/lgpd_ripd.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 62,
-          "missing_lines": 0,
+          "missing_lines": 62,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/n8n_metrics.py",
-          "summary_pct": 20.37,
+          "summary_pct": 0.0,
           "statements": 108,
-          "missing_lines": 86,
+          "missing_lines": 108,
           "excluded_lines": 0
         },
         {
           "file": "app/api/v1/router.py",
-          "summary_pct": 86.08,
-          "statements": 1257,
-          "missing_lines": 175,
+          "summary_pct": 0.0,
+          "statements": 1259,
+          "missing_lines": 1259,
           "excluded_lines": 0
         },
         {
@@ -235,9 +233,9 @@
         },
         {
           "file": "app/api/v1/ws/atendimentos.py",
-          "summary_pct": 72.34,
+          "summary_pct": 0.0,
           "statements": 94,
-          "missing_lines": 26,
+          "missing_lines": 94,
           "excluded_lines": 0
         },
         {
@@ -249,51 +247,51 @@
         },
         {
           "file": "app/db.py",
-          "summary_pct": 97.44,
+          "summary_pct": 38.46,
           "statements": 39,
-          "missing_lines": 1,
+          "missing_lines": 24,
           "excluded_lines": 0
         },
         {
           "file": "app/jobs/__init__.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 5,
-          "missing_lines": 0,
+          "missing_lines": 5,
           "excluded_lines": 0
         },
         {
           "file": "app/jobs/cron_dead_mans_switch.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 46,
-          "missing_lines": 0,
+          "missing_lines": 46,
           "excluded_lines": 0
         },
         {
           "file": "app/jobs/dead_mans_switch.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 71,
-          "missing_lines": 0,
+          "missing_lines": 71,
           "excluded_lines": 0
         },
         {
           "file": "app/jobs/retencao.py",
-          "summary_pct": 96.51,
+          "summary_pct": 0.0,
           "statements": 86,
-          "missing_lines": 3,
+          "missing_lines": 86,
           "excluded_lines": 0
         },
         {
           "file": "app/jobs/retencao_scheduler.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 50,
-          "missing_lines": 0,
+          "missing_lines": 50,
           "excluded_lines": 0
         },
         {
           "file": "app/main.py",
-          "summary_pct": 77.38,
+          "summary_pct": 0.0,
           "statements": 221,
-          "missing_lines": 50,
+          "missing_lines": 221,
           "excluded_lines": 2
         },
         {
@@ -305,65 +303,65 @@
         },
         {
           "file": "app/middleware/deprecation.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 24,
-          "missing_lines": 0,
+          "missing_lines": 24,
           "excluded_lines": 0
         },
         {
           "file": "app/middleware/idempotency.py",
-          "summary_pct": 66.22,
+          "summary_pct": 0.0,
           "statements": 74,
-          "missing_lines": 25,
+          "missing_lines": 74,
           "excluded_lines": 0
         },
         {
           "file": "app/middleware/openapi_enhancer.py",
-          "summary_pct": 92.0,
+          "summary_pct": 0.0,
           "statements": 50,
-          "missing_lines": 4,
+          "missing_lines": 50,
           "excluded_lines": 0
         },
         {
           "file": "app/middleware/openapi_validator.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 40,
-          "missing_lines": 0,
+          "missing_lines": 40,
           "excluded_lines": 0
         },
         {
           "file": "app/middleware/problem_details.py",
-          "summary_pct": 98.04,
+          "summary_pct": 0.0,
           "statements": 51,
-          "missing_lines": 1,
+          "missing_lines": 51,
           "excluded_lines": 0
         },
         {
           "file": "app/middleware/processing_host.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 21,
-          "missing_lines": 0,
+          "missing_lines": 21,
           "excluded_lines": 2
         },
         {
           "file": "app/middleware/request_context.py",
-          "summary_pct": 97.78,
+          "summary_pct": 0.0,
           "statements": 45,
-          "missing_lines": 1,
+          "missing_lines": 45,
           "excluded_lines": 0
         },
         {
           "file": "app/middleware/slow_log.py",
-          "summary_pct": 94.12,
+          "summary_pct": 0.0,
           "statements": 34,
-          "missing_lines": 2,
+          "missing_lines": 34,
           "excluded_lines": 0
         },
         {
           "file": "app/middleware/version_header.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 21,
-          "missing_lines": 0,
+          "missing_lines": 21,
           "excluded_lines": 0
         },
         {
@@ -375,9 +373,9 @@
         },
         {
           "file": "app/models/agendamento.py",
-          "summary_pct": 95.45,
+          "summary_pct": 72.73,
           "statements": 66,
-          "missing_lines": 3,
+          "missing_lines": 18,
           "excluded_lines": 0
         },
         {
@@ -417,9 +415,9 @@
         },
         {
           "file": "app/models/cpf_cnpj_validator.py",
-          "summary_pct": 94.74,
+          "summary_pct": 0.0,
           "statements": 57,
-          "missing_lines": 3,
+          "missing_lines": 57,
           "excluded_lines": 0
         },
         {
@@ -431,16 +429,16 @@
         },
         {
           "file": "app/models/lgpd_consent.py",
-          "summary_pct": 94.74,
+          "summary_pct": 0.0,
           "statements": 19,
-          "missing_lines": 1,
+          "missing_lines": 19,
           "excluded_lines": 0
         },
         {
           "file": "app/models/mixins.py",
-          "summary_pct": 100.0,
+          "summary_pct": 68.18,
           "statements": 22,
-          "missing_lines": 0,
+          "missing_lines": 7,
           "excluded_lines": 2
         },
         {
@@ -466,93 +464,93 @@
         },
         {
           "file": "app/repositories/__init__.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 2,
-          "missing_lines": 0,
+          "missing_lines": 2,
           "excluded_lines": 0
         },
         {
           "file": "app/repositories/base.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 37,
-          "missing_lines": 0,
+          "missing_lines": 37,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/__init__.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 6,
-          "missing_lines": 0,
+          "missing_lines": 6,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/agendamento.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 29,
-          "missing_lines": 0,
+          "missing_lines": 29,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/audit.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 60,
-          "missing_lines": 0,
+          "missing_lines": 60,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/chatwoot_webhook.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 44,
-          "missing_lines": 0,
+          "missing_lines": 44,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/dead_mans_switch.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 17,
-          "missing_lines": 0,
+          "missing_lines": 17,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/emolumento.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 15,
-          "missing_lines": 0,
+          "missing_lines": 15,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/lgpd_consent.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 25,
-          "missing_lines": 0,
+          "missing_lines": 25,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/lgpd_dsar.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 37,
-          "missing_lines": 0,
+          "missing_lines": 37,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/llm.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 23,
-          "missing_lines": 0,
+          "missing_lines": 23,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/metrics.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 32,
-          "missing_lines": 0,
+          "missing_lines": 32,
           "excluded_lines": 0
         },
         {
           "file": "app/schemas/protocolo.py",
-          "summary_pct": 99.25,
+          "summary_pct": 0.0,
           "statements": 134,
-          "missing_lines": 1,
+          "missing_lines": 134,
           "excluded_lines": 0
         },
         {
@@ -564,268 +562,275 @@
         },
         {
           "file": "app/services/agendamento.py",
-          "summary_pct": 97.89,
+          "summary_pct": 0.0,
           "statements": 142,
-          "missing_lines": 3,
+          "missing_lines": 142,
           "excluded_lines": 0
         },
         {
           "file": "app/services/agendamento_cache.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 134,
-          "missing_lines": 0,
+          "missing_lines": 134,
           "excluded_lines": 0
         },
         {
           "file": "app/services/agendamento_metrics.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 38,
-          "missing_lines": 0,
+          "missing_lines": 38,
           "excluded_lines": 0
         },
         {
           "file": "app/services/atendimento_cache.py",
-          "summary_pct": 94.44,
+          "summary_pct": 25.93,
           "statements": 54,
-          "missing_lines": 3,
+          "missing_lines": 40,
           "excluded_lines": 0
         },
         {
           "file": "app/services/audit.py",
-          "summary_pct": 98.75,
+          "summary_pct": 0.0,
           "statements": 80,
-          "missing_lines": 1,
+          "missing_lines": 80,
           "excluded_lines": 0
         },
         {
           "file": "app/services/audit_context.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 10,
-          "missing_lines": 0,
+          "missing_lines": 10,
           "excluded_lines": 0
         },
         {
           "file": "app/services/audit_create.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 10,
-          "missing_lines": 0,
+          "missing_lines": 10,
           "excluded_lines": 0
         },
         {
           "file": "app/services/audit_helper.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 25,
-          "missing_lines": 0,
+          "missing_lines": 25,
           "excluded_lines": 0
         },
         {
           "file": "app/services/audit_query.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 44,
-          "missing_lines": 0,
+          "missing_lines": 44,
           "excluded_lines": 0
         },
         {
           "file": "app/services/auth_jwt.py",
-          "summary_pct": 97.1,
+          "summary_pct": 0.0,
           "statements": 69,
-          "missing_lines": 2,
+          "missing_lines": 69,
           "excluded_lines": 0
         },
         {
           "file": "app/services/backup_v2.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 76,
-          "missing_lines": 0,
+          "missing_lines": 76,
           "excluded_lines": 0
         },
         {
           "file": "app/services/bot_metrics.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 62,
-          "missing_lines": 0,
+          "missing_lines": 62,
           "excluded_lines": 0
         },
         {
           "file": "app/services/bot_mute.py",
-          "summary_pct": 87.01,
+          "summary_pct": 0.0,
           "statements": 77,
-          "missing_lines": 10,
+          "missing_lines": 77,
           "excluded_lines": 6
         },
         {
           "file": "app/services/brain_compact.py",
-          "summary_pct": 93.33,
+          "summary_pct": 0.0,
           "statements": 30,
-          "missing_lines": 2,
+          "missing_lines": 30,
           "excluded_lines": 0
         },
         {
           "file": "app/services/brain_memory.py",
-          "summary_pct": 92.59,
+          "summary_pct": 0.0,
           "statements": 54,
-          "missing_lines": 4,
+          "missing_lines": 54,
           "excluded_lines": 0
         },
         {
           "file": "app/services/brain_sync.py",
-          "summary_pct": 81.05,
+          "summary_pct": 0.0,
           "statements": 95,
-          "missing_lines": 18,
+          "missing_lines": 95,
           "excluded_lines": 0
         },
         {
           "file": "app/services/cache_lgpd.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 37,
-          "missing_lines": 0,
+          "missing_lines": 37,
           "excluded_lines": 0
         },
         {
           "file": "app/services/cache_warming.py",
-          "summary_pct": 93.55,
+          "summary_pct": 0.0,
           "statements": 31,
-          "missing_lines": 2,
+          "missing_lines": 31,
           "excluded_lines": 0
         },
         {
           "file": "app/services/chatwoot_canned_responses.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 73,
-          "missing_lines": 0,
+          "missing_lines": 73,
           "excluded_lines": 0
         },
         {
           "file": "app/services/chatwoot_canned_responses_v3.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 17,
-          "missing_lines": 0,
+          "missing_lines": 17,
           "excluded_lines": 0
         },
         {
           "file": "app/services/chatwoot_canned_responses_v4.py",
-          "summary_pct": 92.0,
+          "summary_pct": 0.0,
           "statements": 25,
-          "missing_lines": 2,
+          "missing_lines": 25,
           "excluded_lines": 0
         },
         {
           "file": "app/services/chatwoot_handoff_macros.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 32,
-          "missing_lines": 0,
+          "missing_lines": 32,
           "excluded_lines": 0
         },
         {
           "file": "app/services/chatwoot_lgpd_erasure.py",
-          "summary_pct": 98.61,
+          "summary_pct": 0.0,
           "statements": 72,
-          "missing_lines": 1,
+          "missing_lines": 72,
           "excluded_lines": 0
         },
         {
           "file": "app/services/crypto.py",
-          "summary_pct": 94.12,
+          "summary_pct": 0.0,
           "statements": 51,
-          "missing_lines": 3,
+          "missing_lines": 51,
           "excluded_lines": 0
         },
         {
           "file": "app/services/cursor.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 19,
-          "missing_lines": 0,
-          "excluded_lines": 0
-        },
-        {
-          "file": "app/services/db_index_optimizer.py",
-          "summary_pct": 50.0,
-          "statements": 52,
-          "missing_lines": 26,
-          "excluded_lines": 0
-        },
-        {
-          "file": "app/services/dead_mans_switch.py",
-          "summary_pct": 100.0,
-          "statements": 40,
-          "missing_lines": 0,
-          "excluded_lines": 0
-        },
-        {
-          "file": "app/services/dialog_history.py",
-          "summary_pct": 86.96,
-          "statements": 69,
-          "missing_lines": 9,
-          "excluded_lines": 0
-        },
-        {
-          "file": "app/services/dist_lock.py",
-          "summary_pct": 97.92,
-          "statements": 48,
-          "missing_lines": 1,
-          "excluded_lines": 1
-        },
-        {
-          "file": "app/services/dlq.py",
-          "summary_pct": 99.17,
-          "statements": 120,
-          "missing_lines": 1,
-          "excluded_lines": 0
-        },
-        {
-          "file": "app/services/dlq_encryption.py",
-          "summary_pct": 100.0,
-          "statements": 38,
-          "missing_lines": 0,
-          "excluded_lines": 0
-        },
-        {
-          "file": "app/services/dns_ci_check.py",
-          "summary_pct": 97.83,
-          "statements": 46,
-          "missing_lines": 1,
-          "excluded_lines": 0
-        },
-        {
-          "file": "app/services/emolumento.py",
-          "summary_pct": 48.65,
-          "statements": 37,
           "missing_lines": 19,
           "excluded_lines": 0
         },
         {
+          "file": "app/services/db_index_optimizer.py",
+          "summary_pct": 0.0,
+          "statements": 52,
+          "missing_lines": 52,
+          "excluded_lines": 0
+        },
+        {
+          "file": "app/services/dead_mans_switch.py",
+          "summary_pct": 0.0,
+          "statements": 40,
+          "missing_lines": 40,
+          "excluded_lines": 0
+        },
+        {
+          "file": "app/services/dialog_history.py",
+          "summary_pct": 0.0,
+          "statements": 69,
+          "missing_lines": 69,
+          "excluded_lines": 0
+        },
+        {
+          "file": "app/services/dist_lock.py",
+          "summary_pct": 0.0,
+          "statements": 48,
+          "missing_lines": 48,
+          "excluded_lines": 1
+        },
+        {
+          "file": "app/services/dlq.py",
+          "summary_pct": 0.0,
+          "statements": 120,
+          "missing_lines": 120,
+          "excluded_lines": 0
+        },
+        {
+          "file": "app/services/dlq_encryption.py",
+          "summary_pct": 0.0,
+          "statements": 38,
+          "missing_lines": 38,
+          "excluded_lines": 0
+        },
+        {
+          "file": "app/services/dns_ci_check.py",
+          "summary_pct": 0.0,
+          "statements": 46,
+          "missing_lines": 46,
+          "excluded_lines": 0
+        },
+        {
+          "file": "app/services/emolumento.py",
+          "summary_pct": 0.0,
+          "statements": 31,
+          "missing_lines": 31,
+          "excluded_lines": 0
+        },
+        {
           "file": "app/services/emolumento_cache.py",
-          "summary_pct": 96.61,
+          "summary_pct": 0.0,
           "statements": 59,
-          "missing_lines": 2,
+          "missing_lines": 59,
+          "excluded_lines": 0
+        },
+        {
+          "file": "app/services/emolumento_validacao.py",
+          "summary_pct": 0.0,
+          "statements": 25,
+          "missing_lines": 25,
           "excluded_lines": 0
         },
         {
           "file": "app/services/encrypted_dump.py",
-          "summary_pct": 80.77,
+          "summary_pct": 0.0,
           "statements": 78,
-          "missing_lines": 15,
+          "missing_lines": 78,
           "excluded_lines": 0
         },
         {
           "file": "app/services/evolution_ingest.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 57,
-          "missing_lines": 0,
+          "missing_lines": 57,
           "excluded_lines": 0
         },
         {
           "file": "app/services/idempotency_store.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 32,
-          "missing_lines": 0,
+          "missing_lines": 32,
           "excluded_lines": 7
         },
         {
           "file": "app/services/idempotency_store_fake.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 25,
-          "missing_lines": 0,
+          "missing_lines": 25,
           "excluded_lines": 0
         },
         {
@@ -837,114 +842,114 @@
         },
         {
           "file": "app/services/lgpd/anonymize.py",
-          "summary_pct": 97.62,
+          "summary_pct": 0.0,
           "statements": 42,
-          "missing_lines": 1,
+          "missing_lines": 42,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd/bot_direito_esquecimento.py",
-          "summary_pct": 96.12,
+          "summary_pct": 0.0,
           "statements": 129,
-          "missing_lines": 5,
+          "missing_lines": 129,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd/direito_esquecimento.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 48,
-          "missing_lines": 0,
+          "missing_lines": 48,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd/opposition.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 6,
-          "missing_lines": 0,
+          "missing_lines": 6,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd/portability.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 7,
-          "missing_lines": 0,
+          "missing_lines": 7,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd_anonimizacao.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 41,
-          "missing_lines": 0,
+          "missing_lines": 41,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd_consent.py",
-          "summary_pct": 98.61,
+          "summary_pct": 0.0,
           "statements": 72,
-          "missing_lines": 1,
+          "missing_lines": 72,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd_direito_esquecimento.py",
-          "summary_pct": 91.67,
+          "summary_pct": 0.0,
           "statements": 72,
-          "missing_lines": 6,
+          "missing_lines": 72,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd_erasure_orchestrator.py",
-          "summary_pct": 90.12,
+          "summary_pct": 0.0,
           "statements": 81,
-          "missing_lines": 8,
+          "missing_lines": 81,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd_export.py",
-          "summary_pct": 92.86,
+          "summary_pct": 0.0,
           "statements": 70,
-          "missing_lines": 5,
+          "missing_lines": 70,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd_export_envelope.py",
-          "summary_pct": 93.48,
+          "summary_pct": 0.0,
           "statements": 92,
-          "missing_lines": 6,
+          "missing_lines": 92,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd_privacy_policy.py",
-          "summary_pct": 91.18,
+          "summary_pct": 0.0,
           "statements": 102,
-          "missing_lines": 9,
+          "missing_lines": 102,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lgpd_relatorio.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 93,
-          "missing_lines": 0,
+          "missing_lines": 93,
           "excluded_lines": 0
         },
         {
           "file": "app/services/lobechat_prompt_export.py",
-          "summary_pct": 86.81,
+          "summary_pct": 0.0,
           "statements": 144,
-          "missing_lines": 19,
+          "missing_lines": 144,
           "excluded_lines": 0
         },
         {
           "file": "app/services/log_masker.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 21,
-          "missing_lines": 0,
+          "missing_lines": 21,
           "excluded_lines": 0
         },
         {
           "file": "app/services/magicdns_inventory.py",
-          "summary_pct": 91.23,
+          "summary_pct": 0.0,
           "statements": 57,
-          "missing_lines": 5,
+          "missing_lines": 57,
           "excluded_lines": 0
         },
         {
@@ -956,289 +961,289 @@
         },
         {
           "file": "app/services/mcp_pii.py",
-          "summary_pct": 74.42,
+          "summary_pct": 0.0,
           "statements": 43,
-          "missing_lines": 11,
+          "missing_lines": 43,
           "excluded_lines": 0
         },
         {
           "file": "app/services/mcp_radar_status.py",
-          "summary_pct": 88.46,
+          "summary_pct": 0.0,
           "statements": 52,
-          "missing_lines": 6,
+          "missing_lines": 52,
           "excluded_lines": 0
         },
         {
           "file": "app/services/message_debounce.py",
-          "summary_pct": 97.22,
+          "summary_pct": 0.0,
           "statements": 36,
-          "missing_lines": 1,
+          "missing_lines": 36,
           "excluded_lines": 0
         },
         {
           "file": "app/services/messaging_ports.py",
-          "summary_pct": 96.0,
+          "summary_pct": 0.0,
           "statements": 50,
-          "missing_lines": 2,
+          "missing_lines": 50,
           "excluded_lines": 6
         },
         {
           "file": "app/services/metrics.py",
-          "summary_pct": 99.55,
-          "statements": 222,
-          "missing_lines": 1,
-          "excluded_lines": 0
+          "summary_pct": 58.28,
+          "statements": 302,
+          "missing_lines": 126,
+          "excluded_lines": 1
         },
         {
           "file": "app/services/n8n_error.py",
-          "summary_pct": 97.96,
+          "summary_pct": 0.0,
           "statements": 49,
-          "missing_lines": 1,
+          "missing_lines": 49,
           "excluded_lines": 0
         },
         {
           "file": "app/services/n8n_meta_triggers.py",
-          "summary_pct": 94.5,
+          "summary_pct": 0.0,
           "statements": 109,
-          "missing_lines": 6,
+          "missing_lines": 109,
           "excluded_lines": 0
         },
         {
           "file": "app/services/n8n_workflow_validator.py",
-          "summary_pct": 98.04,
+          "summary_pct": 0.0,
           "statements": 102,
-          "missing_lines": 2,
+          "missing_lines": 102,
           "excluded_lines": 0
         },
         {
           "file": "app/services/notificacao.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 161,
-          "missing_lines": 0,
+          "missing_lines": 161,
           "excluded_lines": 0
         },
         {
           "file": "app/services/openclaw_cred_rotation.py",
-          "summary_pct": 94.87,
+          "summary_pct": 0.0,
           "statements": 78,
-          "missing_lines": 4,
+          "missing_lines": 78,
           "excluded_lines": 0
         },
         {
           "file": "app/services/openclaw_radar.py",
-          "summary_pct": 83.33,
+          "summary_pct": 0.0,
           "statements": 90,
-          "missing_lines": 15,
+          "missing_lines": 90,
           "excluded_lines": 0
         },
         {
           "file": "app/services/pii.py",
-          "summary_pct": 100.0,
+          "summary_pct": 23.86,
           "statements": 88,
-          "missing_lines": 0,
+          "missing_lines": 67,
           "excluded_lines": 0
         },
         {
           "file": "app/services/pii_unified.py",
-          "summary_pct": 55.32,
+          "summary_pct": 0.0,
           "statements": 47,
-          "missing_lines": 21,
+          "missing_lines": 47,
           "excluded_lines": 0
         },
         {
           "file": "app/services/private_tunnel_policy.py",
-          "summary_pct": 81.25,
+          "summary_pct": 0.0,
           "statements": 32,
-          "missing_lines": 6,
+          "missing_lines": 32,
           "excluded_lines": 0
         },
         {
           "file": "app/services/protocolo.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 48,
-          "missing_lines": 0,
+          "missing_lines": 48,
           "excluded_lines": 0
         },
         {
           "file": "app/services/protocolo_query.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 34,
-          "missing_lines": 0,
+          "missing_lines": 34,
           "excluded_lines": 0
         },
         {
           "file": "app/services/rate_limit.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 56,
-          "missing_lines": 0,
+          "missing_lines": 56,
           "excluded_lines": 0
         },
         {
           "file": "app/services/rate_limit_by_key.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 143,
-          "missing_lines": 0,
+          "missing_lines": 143,
           "excluded_lines": 0
         },
         {
           "file": "app/services/redis_bus.py",
-          "summary_pct": 96.03,
+          "summary_pct": 0.0,
           "statements": 126,
-          "missing_lines": 5,
+          "missing_lines": 126,
           "excluded_lines": 0
         },
         {
           "file": "app/services/redis_doc_keys.py",
-          "summary_pct": 90.91,
+          "summary_pct": 0.0,
           "statements": 33,
-          "missing_lines": 3,
+          "missing_lines": 33,
           "excluded_lines": 0
         },
         {
           "file": "app/services/redis_ttl_inventory.py",
-          "summary_pct": 71.7,
+          "summary_pct": 0.0,
           "statements": 106,
-          "missing_lines": 30,
+          "missing_lines": 106,
           "excluded_lines": 0
         },
         {
           "file": "app/services/redlock.py",
-          "summary_pct": 97.56,
+          "summary_pct": 0.0,
           "statements": 82,
-          "missing_lines": 2,
+          "missing_lines": 82,
           "excluded_lines": 0
         },
         {
           "file": "app/services/rls_inventory.py",
-          "summary_pct": 74.05,
+          "summary_pct": 0.0,
           "statements": 158,
-          "missing_lines": 41,
+          "missing_lines": 158,
           "excluded_lines": 0
         },
         {
           "file": "app/services/routing_resilience.py",
-          "summary_pct": 98.51,
+          "summary_pct": 0.0,
           "statements": 67,
-          "missing_lines": 1,
+          "missing_lines": 67,
           "excluded_lines": 0
         },
         {
           "file": "app/services/sentry.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 82,
-          "missing_lines": 0,
+          "missing_lines": 82,
           "excluded_lines": 0
         },
         {
           "file": "app/services/sliding_window.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 53,
-          "missing_lines": 0,
+          "missing_lines": 53,
           "excluded_lines": 6
         },
         {
           "file": "app/services/slo_metrics.py",
-          "summary_pct": 38.1,
+          "summary_pct": 0.0,
           "statements": 42,
-          "missing_lines": 26,
+          "missing_lines": 42,
           "excluded_lines": 0
         },
         {
           "file": "app/services/slow_queries.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 83,
-          "missing_lines": 0,
+          "missing_lines": 83,
           "excluded_lines": 0
         },
         {
           "file": "app/services/solid_atendimento_query.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 27,
-          "missing_lines": 0,
+          "missing_lines": 27,
           "excluded_lines": 0
         },
         {
           "file": "app/services/ssh_tailscale_acl.py",
-          "summary_pct": 96.2,
+          "summary_pct": 0.0,
           "statements": 79,
-          "missing_lines": 3,
+          "missing_lines": 79,
           "excluded_lines": 0
         },
         {
           "file": "app/services/stale_detector.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 21,
-          "missing_lines": 0,
+          "missing_lines": 21,
           "excluded_lines": 0
         },
         {
           "file": "app/services/stream_buffer.py",
-          "summary_pct": 78.33,
+          "summary_pct": 0.0,
           "statements": 120,
-          "missing_lines": 26,
+          "missing_lines": 120,
           "excluded_lines": 0
         },
         {
           "file": "app/services/tailscale_probe.py",
-          "summary_pct": 89.66,
+          "summary_pct": 0.0,
           "statements": 87,
-          "missing_lines": 9,
+          "missing_lines": 87,
           "excluded_lines": 0
         },
         {
           "file": "app/services/telegram_error_handler.py",
-          "summary_pct": 74.14,
+          "summary_pct": 0.0,
           "statements": 58,
-          "missing_lines": 15,
+          "missing_lines": 58,
           "excluded_lines": 0
         },
         {
           "file": "app/services/tracing.py",
-          "summary_pct": 98.25,
+          "summary_pct": 0.0,
           "statements": 57,
-          "missing_lines": 1,
+          "missing_lines": 57,
           "excluded_lines": 0
         },
         {
           "file": "app/services/traefik_lobechat_routing.py",
-          "summary_pct": 88.43,
+          "summary_pct": 0.0,
           "statements": 216,
-          "missing_lines": 25,
+          "missing_lines": 216,
           "excluded_lines": 4
         },
         {
           "file": "app/services/traefik_log_masker.py",
-          "summary_pct": 94.74,
+          "summary_pct": 0.0,
           "statements": 19,
-          "missing_lines": 1,
+          "missing_lines": 19,
           "excluded_lines": 0
         },
         {
           "file": "app/services/websocket_manager.py",
-          "summary_pct": 92.98,
+          "summary_pct": 0.0,
           "statements": 57,
-          "missing_lines": 4,
+          "missing_lines": 57,
           "excluded_lines": 0
         },
         {
           "file": "app/services/whatsapp_meta_templates.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 39,
-          "missing_lines": 0,
+          "missing_lines": 39,
           "excluded_lines": 0
         },
         {
           "file": "app/services/ws_concurrency.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 38,
-          "missing_lines": 0,
+          "missing_lines": 38,
           "excluded_lines": 0
         },
         {
           "file": "app/services/ws_heartbeat.py",
-          "summary_pct": 90.41,
+          "summary_pct": 0.0,
           "statements": 73,
-          "missing_lines": 7,
+          "missing_lines": 73,
           "excluded_lines": 0
         },
         {
@@ -1250,43 +1255,99 @@
         },
         {
           "file": "app/utils/ip.py",
-          "summary_pct": 97.83,
+          "summary_pct": 0.0,
           "statements": 46,
-          "missing_lines": 1,
+          "missing_lines": 46,
           "excluded_lines": 0
         },
         {
           "file": "app/utils/output_safety.py",
-          "summary_pct": 100.0,
+          "summary_pct": 0.0,
           "statements": 32,
-          "missing_lines": 0,
+          "missing_lines": 32,
           "excluded_lines": 0
         },
         {
           "file": "app/utils/pii_sanitizer.py",
-          "summary_pct": 44.9,
+          "summary_pct": 0.0,
           "statements": 49,
-          "missing_lines": 27,
+          "missing_lines": 49,
           "excluded_lines": 0
         }
       ],
-      "total_uncovered_files": 87,
-      "total_zero_coverage_files": 2
+      "total_uncovered_files": 151,
+      "total_zero_coverage_files": 145
     }
   },
   "top_candidates_hitl": [
     {
       "kind": "orphan_module",
-      "file": "app/api/v1/lgpd_dsar.py",
+      "file": "app/api/deps.py",
+      "stmts": 80,
+      "missing_lines": 80,
+      "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
+    },
+    {
+      "kind": "orphan_module",
+      "file": "app/api/v1/_helpers.py",
+      "stmts": 36,
+      "missing_lines": 36,
+      "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
+    },
+    {
+      "kind": "orphan_module",
+      "file": "app/api/v1/auth_login.py",
+      "stmts": 67,
+      "missing_lines": 67,
+      "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
+    },
+    {
+      "kind": "orphan_module",
+      "file": "app/api/v1/bot_lgpd.py",
+      "stmts": 126,
+      "missing_lines": 126,
+      "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
+    },
+    {
+      "kind": "orphan_module",
+      "file": "app/api/v1/brain.py",
+      "stmts": 241,
+      "missing_lines": 241,
+      "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
+    },
+    {
+      "kind": "orphan_module",
+      "file": "app/api/v1/dead_mans_switch.py",
+      "stmts": 45,
+      "missing_lines": 45,
+      "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
+    },
+    {
+      "kind": "orphan_module",
+      "file": "app/api/v1/health_radar_expanded.py",
+      "stmts": 214,
+      "missing_lines": 214,
+      "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
+    },
+    {
+      "kind": "orphan_module",
+      "file": "app/api/v1/integrations.py",
+      "stmts": 329,
+      "missing_lines": 329,
+      "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
+    },
+    {
+      "kind": "orphan_module",
+      "file": "app/api/v1/lgpd_consent.py",
       "stmts": 27,
       "missing_lines": 27,
       "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
     },
     {
       "kind": "orphan_module",
-      "file": "app/services/materialized_views.py",
-      "stmts": 14,
-      "missing_lines": 14,
+      "file": "app/api/v1/lgpd_direitos.py",
+      "stmts": 69,
+      "missing_lines": 69,
       "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
     }
   ],

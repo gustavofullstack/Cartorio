@@ -120,7 +120,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.13.T1 | Forçar Pydantic ConfigDict strict=True em todos os modelos de requisição notarial. | [ ] | cartorio-dev |
 | G8.13.T2 | Validar schemas de imports JSON no n8n de forma estrita. | [ ] | cartorio-n8n |
 | G8.13.T3 | Implementar tipos personalizados Pydantic (ex: CPFStr, CNPJStr) para validações de formato rígidas. | [ ] | cartorio-lgpd |
-| G8.13.T4 | Resolver quaisquer advertências remanescentes do mypy strict no backend. | [ ] | cartorio-dev |
+| G8.13.T4 | Resolver quaisquer advertências remanescentes do mypy strict no backend. | [x] | cartorio-dev |
 
 ### Squad 14 — CI/CD Pipeline Automation (sre+dev)
 | ID | Task | Done | Agent |
@@ -133,15 +133,15 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 15 — Radar, Metrics & Observability (sre)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.15.T1 | Adicionar instrumentação com Prometheus para latência de processamento de IA. | [ ] | cartorio-sre |
-| G8.15.T2 | Habilitar alertas no AlertManager do Prometheus enviando logs formatados ao Telegram. | [ ] | cartorio-sre |
+| G8.15.T1 | Adicionar instrumentação com Prometheus para latência de processamento de IA. | [x] | cartorio-sre |
+| G8.15.T2 | Habilitar alertas no AlertManager do Prometheus enviando logs formatados ao Telegram. | [x] | cartorio-sre |
 | G8.15.T3 | Validar que labels do Prometheus e campos do Loki não exponham dados sensíveis. | [ ] | cartorio-lgpd |
 | G8.15.T4 | Integrar status de filas do Redis no radar `/health/radar/expanded`. | [ ] | cartorio-dev |
 
 ### Squad 16 — Agility, Scrum & Progress Tracking (brain)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.16.T1 | Criar automação para persistência do progresso diário no `PROGRESS.md`. | [ ] | cartorio-sre |
+| G8.16.T1 | Criar automação para persistência do progresso diário no `PROGRESS.md`. | [x] | cartorio-sre |
 | G8.16.T2 | Definir e documentar o DoR (Definition of Ready) e DoD (Definition of Done) do G8. | [x] | cartorio-dev |
 | G8.16.T3 | Integrar verificação de consentimento de privacidade no ciclo de tarefas de negócio. | [ ] | cartorio-lgpd |
 | G8.16.T4 | Gerar relatórios automatizados de estabilidade a cada iteração de loop finalizada. | [x] | cartorio-dev |

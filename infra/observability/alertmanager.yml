@@ -1,0 +1,135 @@
+# AlertManager — Cartório 2º Notas Uberlândia (G8.15.T2)
+#
+# Pipeline: Prometheus → AlertManager → webhook receiver (FastAPI /webhook/alertmanager)
+#           → script LGPD-safe → Telegram do escrevente.
+#
+# LGPD Art. 46 (segurança e sigilo):
+#   - Alertas contém APENAS metadata categórica (alertname, severity, instance,
+#     status, summary SEM payload, description SEM dados pessoais).
+#   - Payload bruto (annotations.runbook_url, labels com CPF/RG) é AUTO-PURGE
+#     no receiver backend — nunca chega ao Telegram.
+#   - Inhibit rule: critical silencia warning do mesmo alerta (evita ruído).
+#
+# Severity tiers:
+#   - critical: incidente em produção. Telegram IMEDIATO, repeat 1h, group_wait 10s.
+#   - warning: degradação. Telegram, repeat 6h, group_wait 1m.
+#   - info:    informativo. Telegram resumido, repeat 24h.
+#   - DLQOverflow: alerta dedicado ao squad sre (contadores de fila).
+#
+# Routing:
+#   - Padrão `cartorio-telegram-default` → webhook FastAPI `/webhook/alertmanager`.
+#   - `cartorio-telegram-critical` → `/webhook/alertmanager/critical` (sem dedup).
+#   - `cartorio-telegram-dlq`       → `/webhook/alertmanager/dlq` (NO resolved,
+#     DLQ já não é "resolved" — é um contador que volta ao zero).
+#
+# Secrets (NUNCA commitados):
+#   - /etc/alertmanager/secrets/telegram_bot_token
+#   - /etc/alertmanager/secrets/telegram_grupo_pietra_chat_id
+#   - /etc/alertmanager/secrets/telegram_grupo_lgpd_chat_id
+#
+# Modified by Gustavo Almeida — G8.15.T2.
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'cartorio-telegram-default'
+  group_by: ['alertname', 'severity', 'squad']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # P0 critical → webhook dedicated (sem dedup agressivo, repeat 1h)
+    - match:
+        severity: critical
+      receiver: 'cartorio-telegram-critical'
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true
+
+    # P1 warning → mesmo webhook, repeat 6h
+    - match:
+        severity: warning
+      receiver: 'cartorio-telegram-default'
+      group_wait: 1m
+      repeat_interval: 6h
+      continue: true
+
+    # LGPD-specific → squad cartorio-lgpd (receiver dedicado)
+    - match:
+        squad: cartorio-lgpd
+      receiver: 'cartorio-telegram-lgpd'
+      group_wait: 1m
+      repeat_interval: 12h
+      continue: true
+
+    # N8N-specific → squad cartorio-n8n
+    - match:
+        squad: cartorio-n8n
+      receiver: 'cartorio-telegram-n8n'
+      group_wait: 1m
+      repeat_interval: 12h
+
+    # DLQ Overflow → receiver dedicado, sem resolved (DLQ é contador, não alerta binário)
+    - match:
+        alertname: DLQOverflow
+      receiver: 'cartorio-telegram-dlq'
+      send_resolved: false
+
+# Inhibit: critical silencia warning do mesmo alerta/instance (reduz ruído)
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+
+  # LGPD down silencia alertas de squad cartorio-lgpd (LGPD depende do backend up)
+  - source_match:
+      alertname: CartorioServiceDown5Min
+    target_match:
+      squad: cartorio-lgpd
+    equal: ['instance']
+
+receivers:
+  # Default: webhook FastAPI que formata e envia ao Telegram via Bot API
+  - name: 'cartorio-telegram-default'
+    webhook_configs:
+      - url: 'http://cartorio-api:8000/api/v1/webhook/alertmanager'
+        send_resolved: true
+        max_alerts: 0  # sem limite — webhook backend faz dedup por 1h
+
+  # Critical: webhook dedicado (sem dedup no AlertManager, repeat 1h já basta)
+  - name: 'cartorio-telegram-critical'
+    webhook_configs:
+      - url: 'http://cartorio-api:8000/api/v1/webhook/alertmanager/critical'
+        send_resolved: true
+        max_alerts: 10
+
+  # DLQ: webhook dedicado sem send_resolved (DLQ é métrica contínua)
+  - name: 'cartorio-telegram-dlq'
+    webhook_configs:
+      - url: 'http://cartorio-api:8000/api/v1/webhook/alertmanager/dlq'
+        send_resolved: false
+        max_alerts: 5
+
+  # LGPD squad: webhook com chat_id dedicado (DPO + cartorio-lgpd)
+  - name: 'cartorio-telegram-lgpd'
+    webhook_configs:
+      - url: 'http://cartorio-api:8000/api/v1/webhook/alertmanager/lgpd'
+        send_resolved: true
+        max_alerts: 0
+
+  # N8N squad: webhook com chat_id dedicado
+  - name: 'cartorio-telegram-n8n'
+    webhook_configs:
+      - url: 'http://cartorio-api:8000/api/v1/webhook/alertmanager/n8n'
+        send_resolved: true
+        max_alerts: 0
+
+# Templates opcionais (Go template) para custom message
+templates:
+  - '/etc/alertmanager/templates/cartorio.tmpl'
+
+# Health check path (para orquestrador / load balancer)
+# Não expor publicamente — porta 9093 interna.
