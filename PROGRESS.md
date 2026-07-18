@@ -3669,3 +3669,18 @@ Modified by Gustavo Almeida — 2026-07-17T21:43:47.753107+00:00
 - G8.11.T2 DI ports email/messaging (NotificationService)
 - **Tests:** 18 passed (wave 42 suite)
 Modified by Gustavo Almeida — 2026-07-17T21:46:04.501835+00:00
+
+## 2026-07-18 — Wave 44 REAL COMPLETED ✅ (cartorio-dev)
+
+- **Honest count:** 47 → **48/100** (+1)
+- **G8.16.T4** Stability Report automatizado (`scripts/stability_report.py`)
+- 11 serviços monitorados (API/N8N/Evolution/OpenClaw/Chatwoot/Supabase/Redis/Traefik/LiteLLM/EasyPanel/Tailscale)
+- Janelas configuráveis 1h/6h/24h/72h/7d + `--since` ISO override
+- Modo `--offline` para CI/laptop isolado + modo live com ThreadPoolExecutor
+- LGPD-safe: 4ª camada de PII scrubber (CPF/RG/telefone/email/protocolo/escritura)
+- 16 unit tests passed (5 obrigatórios + 11 extras: fail-soft, gates, JSON, scrub)
+- Ruff: clean · Mypy: n/a (script raiz, sem pyproject)
+- Docs: `docs/STABILITY_REPORT.md` (1 página quick-start)
+- Lesson: `.harness/memory/lesson-223-g8-16-t4-stability-report-2026-07-17.md`
+- **Sample output**: `/tmp/test_report.md` (offline, 72h)
+Modified by Gustavo Almeida — 2026-07-18T14:24:00.000000+00:00

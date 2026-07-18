@@ -5,7 +5,7 @@
 
 ---
 
-> **HONESTY GATE:** `[x]` só com evidência. **43/100** (Wave 42: G8.10.T3/T4, G8.11.T1/T2).
+> **HONESTY GATE:** `[x]` só com evidência. **48/100** (Wave 44: G8.16.T4).
 
 ## META
 
@@ -144,7 +144,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 | G8.16.T1 | Criar automação para persistência do progresso diário no `PROGRESS.md`. | [ ] | cartorio-sre |
 | G8.16.T2 | Definir e documentar o DoR (Definition of Ready) e DoD (Definition of Done) do G8. | [x] | cartorio-dev |
 | G8.16.T3 | Integrar verificação de consentimento de privacidade no ciclo de tarefas de negócio. | [ ] | cartorio-lgpd |
-| G8.16.T4 | Gerar relatórios automatizados de estabilidade a cada iteração de loop finalizada. | [ ] | cartorio-dev |
+| G8.16.T4 | Gerar relatórios automatizados de estabilidade a cada iteração de loop finalizada. | [x] | cartorio-dev |
 
 ### Squad 17 — Postman & Swagger Real Sync (dev)
 | ID | Task | Done | Agent |
