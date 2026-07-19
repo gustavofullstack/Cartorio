@@ -1,8 +1,9 @@
 # GitHub Actions — Deploy (G6.J.T6)
 # Trigger:
-#   - push em master (deploy automatico para staging)
-#   - tag v* (deploy para prod)
-#   - manual workflow_dispatch (com environment choice)
+#   - manual workflow_dispatch (com environment choice e confirmacao explicita)
+#
+# O deploy automatico foi removido: este workflow aciona VPS e reinicia servicos
+# externos. O CD canonico (`cd.yml`) permanece condicionado ao CI + SUI checklist.
 #
 # Requer secrets:
 #   - VPS_HOST (187.77.236.77)
@@ -20,9 +21,6 @@
 name: Deploy
 
 on:
-  push:
-    branches: [master]
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       environment:
@@ -33,6 +31,11 @@ on:
         options:
           - staging
           - production
+      confirm_deploy:
+        description: "Digite true somente apos revisar .harness/SUI_CHECKLIST.md"
+        required: true
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -49,6 +52,37 @@ jobs:
   quality:
     name: Quality Gates
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql+psycopg://cartorio_test:test_password@localhost:5432/cartorio_test
+      REDIS_URL: redis://localhost:6379/0
+      COVERAGE_GATE_REUSE_EXISTING: "1"
+      APP_ENV: test
+      AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      CARTORIO_API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: cartorio_test
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: cartorio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,6 +129,13 @@ jobs:
     name: Deploy to VPS
     runs-on: ubuntu-latest
     needs: quality
+    if: >-
+      ${{
+        needs.quality.result == 'success' &&
+        inputs.confirm_deploy == true &&
+        vars.VPS_DEPLOY_ENABLED == 'true' &&
+        vars.SUI_CHECKLIST_APPROVED == 'true'
+      }}
     environment:
       name: ${{ github.event.inputs.environment || 'staging' }}
     steps:
