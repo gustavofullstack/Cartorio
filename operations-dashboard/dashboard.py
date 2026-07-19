@@ -1665,6 +1665,9 @@ input[type="date"] {
   outline: none;
   cursor: pointer;
 }
+.edit-panel select:focus-visible {
+  outline: 2px solid var(--brand);
+}
 .menu button {
   display: block;
   width: 100%;
@@ -1678,9 +1681,12 @@ input[type="date"] {
   font: inherit;
   font-size: 13px;
 }
-.menu button:hover, .menu button:focus-visible {
+.menu button:hover {
   background: var(--soft-blue);
-  outline: none;
+}
+.menu button:focus-visible {
+  background: var(--soft-blue);
+  outline: 2px solid var(--brand);
 }
 .table-scroll {
   overflow: auto;
@@ -1816,7 +1822,8 @@ pre {
   padding: 0;
 }
 .close svg { width: 18px; height: 18px; stroke-width: 2.1; }
-.close:hover, .close:focus-visible { background: var(--soft); outline: none; }
+.close:hover { background: var(--soft); }
+.close:focus-visible { background: var(--soft); outline: 2px solid var(--brand); }
 .copy-button {
   position: absolute;
   right: 8px;
@@ -1833,10 +1840,14 @@ pre {
   cursor: pointer;
 }
 .copy-button svg { width: 15px; height: 15px; stroke-width: 2; }
-.copy-button:hover, .copy-button:focus-visible {
+.copy-button:hover {
   background: var(--soft);
   color: var(--ink);
-  outline: none;
+}
+.copy-button:focus-visible {
+  background: var(--soft);
+  color: var(--ink);
+  outline: 2px solid var(--brand);
 }
 @media (max-width: 1100px) {
   .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
