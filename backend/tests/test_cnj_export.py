@@ -104,6 +104,17 @@ def test_manifest_hashes_are_verifiable_and_chain_state_is_declared(db: Session)
     assert artifact.report["controls"]["automatic_external_transmission"] is False
 
 
+def test_export_fails_closed_when_audit_chain_is_invalid(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.services.cnj_export.AuditService.verify_chain", lambda _db: (False, 0)
+    )
+
+    with pytest.raises(CNJExportError, match="cadeia de auditoria invalida"):
+        build_approved_export(db, request_id=_approved_request(db).id)
+
+
 def test_period_validation_rejects_non_calendar_values(db: Session) -> None:
     with pytest.raises(CNJExportError, match="intervalo permitido"):
         create_request(db, reference_period="2026-13", requested_by="dpo-1")

@@ -22,6 +22,7 @@ from app.models.cnj_export_request import CNJExportRequest
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
 from app.services.audit import AuditService
+from app.services.pii import scrub
 
 
 class CNJExportError(ValueError):
@@ -94,7 +95,7 @@ def create_request(db: Session, *, reference_period: str, requested_by: str) -> 
         requested_at=datetime.now(UTC).replace(tzinfo=None),
     )
     db.add(request)
-    db.commit()
+    db.flush()
     db.refresh(request)
     return request
 
@@ -114,14 +115,17 @@ def approve_request(
         raise CNJExportError("pedido CNJ nao esta pendente de aprovacao")
     if request.requested_by == approved_by:
         raise CNJExportError("aprovacao exige DPO diferente do solicitante")
-    if len(reason.strip()) < 10:
+    normalized_reason = reason.strip()
+    if not 10 <= len(normalized_reason) <= 500:
         raise CNJExportError("justificativa de aprovacao deve ter ao menos 10 caracteres")
+    if scrub(normalized_reason).redaction_count:
+        raise CNJExportError("justificativa de aprovacao nao pode conter dados pessoais")
 
     request.status = "approved"
     request.approved_by = approved_by
     request.approved_at = datetime.now(UTC).replace(tzinfo=None)
-    request.approval_reason = reason.strip()
-    db.commit()
+    request.approval_reason = normalized_reason
+    db.flush()
     db.refresh(request)
     return request
 
@@ -132,7 +136,9 @@ def build_approved_export(db: Session, *, request_id: str) -> CNJExportArtifact:
     O resultado nao inclui os IDs dos DPOs nem a justificativa de aprovacao,
     pois ambos sao metadados internos e nao sao necessarios ao destinatario.
     """
-    request = db.get(CNJExportRequest, request_id)
+    request = db.execute(
+        select(CNJExportRequest).where(CNJExportRequest.id == request_id).with_for_update()
+    ).scalar_one_or_none()
     if request is None:
         raise CNJExportError("pedido CNJ inexistente")
     if request.status != "approved" or request.approved_at is None:
@@ -141,6 +147,8 @@ def build_approved_export(db: Session, *, request_id: str) -> CNJExportArtifact:
     year, month = _validate_period(request.reference_period)
     generated_at = datetime.now(UTC).isoformat()
     chain_ok, chain_length = AuditService.verify_chain(db)
+    if not chain_ok:
+        raise CNJExportError("cadeia de auditoria invalida; exportacao CNJ bloqueada")
     chain_head = db.execute(
         select(AuditLog.hash).order_by(AuditLog.id.desc()).limit(1)
     ).scalar_one_or_none()
@@ -219,7 +227,7 @@ def build_approved_export(db: Session, *, request_id: str) -> CNJExportArtifact:
     request.generated_at = datetime.now(UTC).replace(tzinfo=None)
     request.report_sha256 = report_sha256
     request.manifest_sha256 = manifest["manifest_sha256"]
-    db.commit()
+    db.flush()
     return CNJExportArtifact(report=report, manifest=manifest)
 
 

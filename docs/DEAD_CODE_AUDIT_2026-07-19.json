@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-19T17:17:25.749134+00:00",
+    "generated_at": "2026-07-19T17:21:52.189335+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -625,9 +625,9 @@
         },
         {
           "file": "app/services/audit.py",
-          "summary_pct": 25.32,
-          "statements": 79,
-          "missing_lines": 59,
+          "summary_pct": 25.93,
+          "statements": 81,
+          "missing_lines": 60,
           "excluded_lines": 0
         },
         {

@@ -5,7 +5,7 @@
     "returncode": 0,
     "stdout": "[baseline] 6 fingerprints whitelisted from /Users/gustavoalmeida/Projetos/Cartorio/backend/scripts/check_no_literal_keys.baseline\n========================================================================\nSECRETS SCANNER (G8.14.T3) — severity>=critical\n========================================================================\nOK: zero violacoes detectadas.\n",
     "stderr": "",
-    "duration_ms": 315,
+    "duration_ms": 279,
     "skipped_reason": "",
     "findings": []
   },
@@ -14,8 +14,8 @@
     "status": "ok",
     "returncode": 0,
     "stdout": "",
-    "stderr": "2:16PM INF 0 commits scanned.\n2:16PM INF scanned ~0 bytes (0) in 29.1ms\n2:16PM INF no leaks found\n",
-    "duration_ms": 64,
+    "stderr": "2:22PM INF 0 commits scanned.\n2:22PM INF scanned ~0 bytes (0) in 25.9ms\n2:22PM INF no leaks found\n",
+    "duration_ms": 62,
     "skipped_reason": "",
     "findings": []
   }

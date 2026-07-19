@@ -49,15 +49,19 @@ def request_cnj_export(
         )
     except CNJExportError as exc:
         raise _http_error(exc) from exc
-    AuditService.log(
-        db,
-        actor_id=requester,
-        actor_type="dpo",
-        action="cnj.export.requested",
-        resource=f"cnj_export:{export_request.id}",
-        payload={"reference_period": export_request.reference_period},
-        **audit_kwargs(request),
-    )
+    try:
+        AuditService.log(
+            db,
+            actor_id=requester,
+            actor_type="dpo",
+            action="cnj.export.requested",
+            resource=f"cnj_export:{export_request.id}",
+            payload={"reference_period": export_request.reference_period},
+            **audit_kwargs(request),
+        )
+    except Exception:
+        db.rollback()
+        raise
     return {"request_id": export_request.id, "status": export_request.status}
 
 
@@ -80,15 +84,19 @@ def approve_cnj_export(
         )
     except CNJExportError as exc:
         raise _http_error(exc) from exc
-    AuditService.log(
-        db,
-        actor_id=approver,
-        actor_type="dpo",
-        action="cnj.export.approved",
-        resource=f"cnj_export:{export_request.id}",
-        payload={"reference_period": export_request.reference_period},
-        **audit_kwargs(request),
-    )
+    try:
+        AuditService.log(
+            db,
+            actor_id=approver,
+            actor_type="dpo",
+            action="cnj.export.approved",
+            resource=f"cnj_export:{export_request.id}",
+            payload={"reference_period": export_request.reference_period},
+            **audit_kwargs(request),
+        )
+    except Exception:
+        db.rollback()
+        raise
     return {"request_id": export_request.id, "status": export_request.status}
 
 
@@ -108,19 +116,23 @@ def generate_cnj_export(
         artifact = build_approved_export(db, request_id=request_id)
     except CNJExportError as exc:
         raise _http_error(exc) from exc
-    AuditService.log(
-        db,
-        actor_id=generator,
-        actor_type="dpo",
-        action="cnj.export.generated",
-        resource=f"cnj_export:{request_id}",
-        payload={
-            "reference_period": artifact.report["reference_period"],
-            "report_sha256": artifact.manifest["report_sha256"],
-            "manifest_sha256": artifact.manifest["manifest_sha256"],
-        },
-        **audit_kwargs(request),
-    )
+    try:
+        AuditService.log(
+            db,
+            actor_id=generator,
+            actor_type="dpo",
+            action="cnj.export.generated",
+            resource=f"cnj_export:{request_id}",
+            payload={
+                "reference_period": artifact.report["reference_period"],
+                "report_sha256": artifact.manifest["report_sha256"],
+                "manifest_sha256": artifact.manifest["manifest_sha256"],
+            },
+            **audit_kwargs(request),
+        )
+    except Exception:
+        db.rollback()
+        raise
     return artifact.as_dict()
 
 

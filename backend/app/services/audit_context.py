@@ -12,12 +12,12 @@ Por que isso existe:
   o request.
 """
 
-from __future__ import annotations
+from typing import Any
 
 from fastapi import Request
 
 
-def extract_audit_context(request: Request | None) -> dict[str, str | None]:
+def extract_audit_context(request: Request | None) -> dict[str, Any]:
     """Extrai request_id, ip, user_agent, canal do request.state.
 
     Args:
@@ -39,7 +39,7 @@ def extract_audit_context(request: Request | None) -> dict[str, str | None]:
     }
 
 
-def audit_kwargs(request: Request | None) -> dict[str, str | None]:
+def audit_kwargs(request: Request | None) -> dict[str, Any]:
     """Retorna dict pronto pra **unpack em AuditService.log().
 
     Uso:
