@@ -21,6 +21,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "ck_cnj_export_independent_approval", "cnj_export_requests", type_="check"
-    )
+    op.drop_constraint("ck_cnj_export_independent_approval", "cnj_export_requests", type_="check")

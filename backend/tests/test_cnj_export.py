@@ -107,9 +107,7 @@ def test_manifest_hashes_are_verifiable_and_chain_state_is_declared(db: Session)
 def test_export_fails_closed_when_audit_chain_is_invalid(
     db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(
-        "app.services.cnj_export.AuditService.verify_chain", lambda _db: (False, 0)
-    )
+    monkeypatch.setattr("app.services.cnj_export.AuditService.verify_chain", lambda _db: (False, 0))
 
     with pytest.raises(CNJExportError, match="cadeia de auditoria invalida"):
         build_approved_export(db, request_id=_approved_request(db).id)

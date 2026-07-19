@@ -26,12 +26,39 @@ import argparse
 import json
 import subprocess
 import sys
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 SNAPSHOT_DIR = Path("snapshots")
 BASELINE = SNAPSHOT_DIR / "openapi.baseline.json"
 CURRENT = SNAPSHOT_DIR / "openapi.current.json"
+HTTP_METHODS = frozenset({"delete", "get", "head", "options", "patch", "post", "put", "trace"})
+
+
+@dataclass
+class SemanticDiff:
+    """Mudancas OpenAPI classificadas pelo impacto para consumidores."""
+
+    added_paths: list[str] = field(default_factory=list)
+    removed_paths: list[str] = field(default_factory=list)
+    removed_operations: list[str] = field(default_factory=list)
+    changed_parameters: list[str] = field(default_factory=list)
+    changed_request_bodies: list[str] = field(default_factory=list)
+    removed_success_responses: list[str] = field(default_factory=list)
+    changed_security: list[str] = field(default_factory=list)
+
+    @property
+    def breaking(self) -> list[str]:
+        return (
+            self.removed_paths
+            + self.removed_operations
+            + self.changed_parameters
+            + self.changed_request_bodies
+            + self.removed_success_responses
+            + self.changed_security
+        )
 
 
 def get_openapi_spec() -> dict:
@@ -62,26 +89,120 @@ def save_snapshot(spec: dict, path: Path) -> None:
     path.write_text(json.dumps(spec, indent=2, ensure_ascii=False, sort_keys=True))
 
 
-def diff_specs(baseline: dict, current: dict) -> tuple[list[str], list[str], list[str]]:
-    """Compara baseline vs current. Retorna (added, removed, changed) endpoints."""
+def _resolve_local_ref(document: dict[str, Any], ref: str) -> bool:
+    """Confirma que um JSON Pointer local existe no documento OpenAPI."""
+    if not ref.startswith("#/"):
+        return False
+    value: Any = document
+    for token in ref[2:].split("/"):
+        token = token.replace("~1", "/").replace("~0", "~")
+        if not isinstance(value, dict) or token not in value:
+            return False
+        value = value[token]
+    return True
+
+
+def validate_internal_refs(document: dict[str, Any], *, label: str) -> list[str]:
+    """Lista refs OpenAPI invalidos sem buscar documentos externos."""
+    problems: list[str] = []
+
+    def walk(value: Any, location: str) -> None:
+        if isinstance(value, dict):
+            ref = value.get("$ref")
+            if isinstance(ref, str) and not _resolve_local_ref(document, ref):
+                problems.append(f"{label}:{location} -> {ref}")
+            for key, child in value.items():
+                walk(child, f"{location}/{key}")
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, f"{location}/{index}")
+
+    walk(document, "$")
+    return problems
+
+
+def _operation_parameters(operation: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
+    return {
+        (str(parameter.get("in", "")), str(parameter.get("name", ""))): parameter
+        for parameter in operation.get("parameters", [])
+        if isinstance(parameter, dict)
+    }
+
+
+def _effective_security(document: dict[str, Any], operation: dict[str, Any]) -> Any:
+    if "security" in operation:
+        return operation["security"]
+    return document.get("security", [])
+
+
+def semantic_diff(baseline: dict[str, Any], current: dict[str, Any]) -> SemanticDiff:
+    """Detecta somente regressao de contrato, ignorando documentacao cosmetica."""
     base_paths = set(baseline.get("paths", {}).keys())
     curr_paths = set(current.get("paths", {}).keys())
+    result = SemanticDiff(
+        added_paths=sorted(curr_paths - base_paths),
+        removed_paths=[f"path removed: {path}" for path in sorted(base_paths - curr_paths)],
+    )
+    base_schemes = baseline.get("components", {}).get("securitySchemes", {})
+    curr_schemes = current.get("components", {}).get("securitySchemes", {})
+    for name, base_scheme in base_schemes.items():
+        current_scheme = curr_schemes.get(name)
+        critical = ("type", "scheme", "in", "name", "bearerFormat", "flows")
+        if not isinstance(current_scheme, dict) or any(
+            base_scheme.get(key) != current_scheme.get(key) for key in critical
+        ):
+            result.changed_security.append(f"security scheme changed: {name}")
 
-    added = sorted(curr_paths - base_paths)
-    removed = sorted(base_paths - curr_paths)
-
-    # Endpoints alterados (mesmo path mas assinatura diferente)
-    changed: list[str] = []
     for path in sorted(base_paths & curr_paths):
-        base_ops = baseline["paths"][path]
-        curr_ops = current["paths"][path]
-        if json.dumps(base_ops, sort_keys=True) != json.dumps(curr_ops, sort_keys=True):
-            changed.append(path)
+        base_operations = baseline["paths"][path]
+        current_operations = current["paths"][path]
+        for method, base_operation in base_operations.items():
+            if method not in HTTP_METHODS or not isinstance(base_operation, dict):
+                continue
+            current_operation = current_operations.get(method)
+            operation_id = f"{method.upper()} {path}"
+            if not isinstance(current_operation, dict):
+                result.removed_operations.append(f"operation removed: {operation_id}")
+                continue
+            if _effective_security(baseline, base_operation) != _effective_security(
+                current, current_operation
+            ):
+                result.changed_security.append(f"operation security changed: {operation_id}")
+            base_parameters = _operation_parameters(base_operation)
+            current_parameters = _operation_parameters(current_operation)
+            for parameter_key, base_parameter in base_parameters.items():
+                current_parameter = current_parameters.get(parameter_key)
+                if current_parameter is None:
+                    result.changed_parameters.append(
+                        f"parameter removed: {operation_id} {parameter_key[0]} {parameter_key[1]}"
+                    )
+                elif not base_parameter.get("required", False) and current_parameter.get("required", False):
+                    result.changed_parameters.append(
+                        f"parameter became required: {operation_id} {parameter_key[0]} {parameter_key[1]}"
+                    )
+            base_body = base_operation.get("requestBody")
+            current_body = current_operation.get("requestBody")
+            if isinstance(base_body, dict) and current_body is None:
+                result.changed_request_bodies.append(f"request body removed: {operation_id}")
+            elif (
+                isinstance(base_body, dict)
+                and isinstance(current_body, dict)
+                and not base_body.get("required", False)
+                and current_body.get("required", False)
+            ):
+                result.changed_request_bodies.append(f"request body became required: {operation_id}")
+            base_success = {code for code in base_operation.get("responses", {}) if str(code).startswith("2")}
+            current_success = {
+                code for code in current_operation.get("responses", {}) if str(code).startswith("2")
+            }
+            for code in sorted(base_success - current_success):
+                result.removed_success_responses.append(
+                    f"success response removed: {operation_id} {code}"
+                )
+    return result
 
-    return added, removed, changed
 
-
-def render_markdown(added: list[str], removed: list[str], changed: list[str], current: dict) -> str:
+def render_markdown(diff: SemanticDiff, current: dict[str, Any]) -> str:
     md: list[str] = []
     md.append("# OpenAPI Snapshot Report")
     md.append("")
@@ -90,28 +211,21 @@ def render_markdown(added: list[str], removed: list[str], changed: list[str], cu
     md.append("")
     md.append("## Diff vs baseline")
     md.append("")
-    md.append(f"- **Adicionados**: {len(added)}")
-    md.append(f"- **Removidos**: {len(removed)}")
-    md.append(f"- **Alterados**: {len(changed)}")
+    md.append(f"- **Paths adicionados**: {len(diff.added_paths)}")
+    md.append(f"- **Quebras detectadas**: {len(diff.breaking)}")
     md.append("")
-    if added:
+    if diff.added_paths:
         md.append("### Adicionados (novos endpoints)")
         md.append("")
-        for p in added:
+        for p in diff.added_paths:
             methods = ", ".join(current["paths"][p].keys())
             md.append(f"- `{p}` ({methods})")
         md.append("")
-    if removed:
-        md.append("### Removidos (breaking change!)")
+    if diff.breaking:
+        md.append("### Quebras de contrato")
         md.append("")
-        for p in removed:
-            md.append(f"- `{p}`")
-        md.append("")
-    if changed:
-        md.append("### Alterados (signature diff)")
-        md.append("")
-        for p in changed:
-            md.append(f"- `{p}`")
+        for item in diff.breaking:
+            md.append(f"- `{item}`")
         md.append("")
     md.append("---")
     md.append("")
@@ -141,30 +255,26 @@ def main() -> int:
             print(f"  Rode: python3 scripts/openapi_snapshot.py --update", file=sys.stderr)
             return 2
         baseline = json.loads(BASELINE.read_text())
-        added, removed, changed = diff_specs(baseline, spec)
-
-        if removed:
-            print(f"[HOLD] {len(removed)} endpoints REMOVIDOS (breaking change!)")
-            for p in removed:
-                print(f"  - {p}")
-            return 1
-
-        if changed:
-            print(f"[HOLD] {len(changed)} endpoints ALTERADOS (signature diff)")
-            for p in changed[:10]:
-                print(f"  - {p}")
-
-        if added:
-            print(f"[WORK] {len(added)} endpoints ADICIONADOS (non-breaking)")
-
-        if not removed and not changed:
-            print(f"[WORK] Sem diff vs baseline")
-            return 0
-
-        # Tem mudancas, mas nenhuma breaking. Report.
+        invalid_refs = validate_internal_refs(baseline, label="baseline") + validate_internal_refs(
+            spec, label="current"
+        )
+        if invalid_refs:
+            print(f"[ERROR] {len(invalid_refs)} refs OpenAPI invalidos")
+            for problem in invalid_refs[:10]:
+                print(f"  - {problem}")
+            return 2
+        diff = semantic_diff(baseline, spec)
+        if diff.added_paths:
+            print(f"[WORK] {len(diff.added_paths)} paths adicionados (non-breaking)")
         if args.report:
-            args.report.write_text(render_markdown(added, removed, changed, spec))
-        return 1  # changed sem removed ainda e diff
+            args.report.write_text(render_markdown(diff, spec))
+        if diff.breaking:
+            print(f"[HOLD] {len(diff.breaking)} quebras de contrato")
+            for item in diff.breaking[:10]:
+                print(f"  - {item}")
+            return 1
+        print("[WORK] Sem quebra de contrato vs baseline")
+        return 0
 
     print(f"Gerado: {CURRENT}")
     print(f"Para comparar: --check")

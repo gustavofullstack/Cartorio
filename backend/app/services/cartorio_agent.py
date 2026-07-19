@@ -456,6 +456,8 @@ AGENT_TOOLS: list[dict[str, Any]] = [
 
 
 CARTORIO_API_BASE = os.environ.get("CARTORIO_API_BASE", "http://127.0.0.1:8000").rstrip("/")
+
+
 async def _run_remote_tool(
     name: str, args: dict[str, Any]
 ) -> tuple[str, str | None, list[str]] | None:
