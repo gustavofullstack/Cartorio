@@ -51,8 +51,7 @@ router = APIRouter(prefix="/telegram", tags=["telegram"])
 TELEGRAM_BOT_TOKEN: str = (
     getattr(settings, "telegram_bot_token", None) or os.environ.get("TELEGRAM_BOT_TOKEN", "") or ""
 )
-# Direct IP routing to bypass broken local macOS DNS resolving for api.telegram.org
-TELEGRAM_API_BASE = "https://149.154.166.110"
+TELEGRAM_API_BASE = "https://api.telegram.org"
 
 TELEGRAM_WEBHOOK_SECRET: str | None = (
     getattr(settings, "telegram_webhook_secret", None)
