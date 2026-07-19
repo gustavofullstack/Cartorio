@@ -60,3 +60,15 @@ def test_uv_lock_in_dependency_path() -> None:
         steps = _steps(ci_config, job_name)
         setup_uv = next(step for step in steps if step.get("uses") == "astral-sh/setup-uv@v4")
         assert setup_uv["with"]["cache-dependency-glob"] == "backend/uv.lock"
+
+
+def test_test_job_avoids_xdist_with_in_memory_sqlite() -> None:
+    ci_config = _load_ci()
+    steps = _steps(ci_config, "test")
+    pytest_step = next(
+        step for step in steps if "pytest" in str(step.get("run", "")).lower()
+    )
+    command = str(pytest_step["run"])
+
+    assert "uv run pytest" in command
+    assert "-n auto" not in command
