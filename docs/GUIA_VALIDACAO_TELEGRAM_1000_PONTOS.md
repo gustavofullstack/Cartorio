@@ -9,7 +9,7 @@ Bot @test_cartorio_bot **ESTÁ respondendo** 7/7 comandos em <2s. VPS Hostinger 
 
 ## Pre-requisitos (assumidos)
 
-- Token bot: `8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q`
+- Token bot: `<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>`
 - Chat ID Gustavo: `6682284055`
 - Webhook registrado: `https://set-advanced-aquarium-complete.trycloudflare.com/api/v1/telegram/webhook`
 

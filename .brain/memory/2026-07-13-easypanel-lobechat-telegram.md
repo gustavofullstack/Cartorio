@@ -36,7 +36,7 @@ Confirmado via API:
 
 ## Telegram bot MORTO
 
-Token `8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q` (da skill e do .secrets) retorna **401 Unauthorized**.
+Token `<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>` (da skill e do .secrets) retorna **401 Unauthorized**.
 Todas as cópias testadas falham:
 - /Users/gustavoalmeida/projetos/Cartorio/.secrets/telegram.env → 401
 - /etc/easypanel/projects/cartorio/api/code/.secrets/telegram.env → 401

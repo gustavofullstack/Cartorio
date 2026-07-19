@@ -9,7 +9,7 @@
 
 **Sintoma:** Gustavo respondendo no DM @udiapods_bot nao eh capturado pelo Mavis ha SEMANAS.
 
-**Causa raiz:** `~/.mavis/credentials/mavis/telegram.json` so contem botToken de **@pietra_ceo_bot** (8921906164:AAEgpyeDx9svIv_wIB5IG5MYJWmyYbmHZVc). @udiapods_bot nunca foi exportado na env (TELEGRAM_BOT_TOKEN=INVALID).
+**Causa raiz:** `~/.mavis/credentials/mavis/telegram.json` so contem botToken de **@pietra_ceo_bot** (<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>). @udiapods_bot nunca foi exportado na env (TELEGRAM_BOT_TOKEN=INVALID).
 
 **Confirmado em:** `~/.mavis/memory/archive/2026-06-23/telegram-squad.md` — "Bot token @udiapods_bot nao exportado na env (TELEGRAM_BOT_TOKEN=INVALID)".
 
@@ -33,7 +33,7 @@
 
 | Bot | Token | Chat DM Gustavo | Status |
 |-----|-------|-----------------|--------|
-| @pietra_ceo_bot | 8921906164:AAEgpyeDx9svIv_wIB5IG5MYJWmyYbmHZVc | 6682284055 | FUNCIONAL (cross-post best effort) |
+| @pietra_ceo_bot | <TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER> | 6682284055 | FUNCIONAL (cross-post best effort) |
 | @udiapods_bot | INVALID | 6682284055 (esperado) | OFFLINE — Gustavo precisa recuperar via BotFather |
 | @pietra_udia_pods | (squad bot) | (squad bot) | OK |
 | @udiapods_bot | INVALID | n/a | OFFLINE |

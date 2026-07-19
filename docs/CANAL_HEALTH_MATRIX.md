@@ -1,5 +1,10 @@
 # Canal Health Matrix — Live Probe 2026-07-16 (G6.D.T6 Wave 13)
 
+> **Histórico.** Para o estado operacional corrente, use
+> [`RUNTIME_STATUS_2026-07-19.md`](RUNTIME_STATUS_2026-07-19.md). Este snapshot
+> registra somente a sondagem de 16/07 e não deve ser usado para afirmar o estado
+> atual de produção.
+
 > **Status global: 🟡 YELLOW** — API core UP (database/redis/openclaw/supabase
 > online); canais N8N / Evolution / Chatwoot DOWN ou NXDOMAIN; WhatsApp/Chat
 > 502; 3 A records Cloudflare faltando (HOLD-GUSTAVO).

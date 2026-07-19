@@ -37,7 +37,7 @@
 
 ```bash
 # 1) Webhook sem erro
-curl -s "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/getWebhookInfo" | python3 -m json.tool
+curl -s "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getWebhookInfo" | python3 -m json.tool
 # Esperado: url=api.2notasudi.com.br/...  pending=0  SEM last_error_message
 
 # 2) Health bot
@@ -92,7 +92,7 @@ curl -s https://api.2notasudi.com.br/api/v1/telegram/metrics | python3 -m json.t
 ssh -i ~/.ssh/id_ed25519_cartorio root@100.99.172.84 'bash -s' < infra/firewall/f2-public-https-telegram.sh
 
 # Reset webhook
-curl -s "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/setWebhook" \
+curl -s "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/setWebhook" \
   -d "url=https://api.2notasudi.com.br/api/v1/telegram/webhook" \
   -d 'allowed_updates=["message","callback_query","my_chat_member"]'
 

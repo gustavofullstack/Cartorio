@@ -243,7 +243,7 @@
       "rotate": false
     },
     "telegram_bot": {
-      "token": "8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q",
+      "token": "<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>",
       "bot": "@test_cartorio_bot",
       "use": "pre_test_before_whatsapp",
       "rotate": false

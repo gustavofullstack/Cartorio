@@ -805,7 +805,7 @@ https://flow.2notasudi.com.br/mcp-server/http
 | Item | Valor |
 |------|-------|
 | **Bot** | @test_cartorio_bot |
-| **Token** | 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q |
+| **Token** | <TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER> |
 | **Webhook** | https://api.2notasudi.com.br/webhook/telegram |
 | **Uso** | Pré-teste (NÃO é canal oficial) |
 

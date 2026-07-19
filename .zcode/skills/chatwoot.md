@@ -15,7 +15,7 @@ Manage Chatwoot CRM for customer conversations.
 - Teams: Support teams
 - Reports: Attendance and SLA reports
 ## Telegram Webhook
-- URL: https://chat.2notasudi.com.br/webhooks/telegram/8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q
+- URL: https://chat.2notasudi.com.br/webhooks/telegram/<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>
 - Status: ACTIVE, pending=0
 ## Sidekiq
 - Background jobs active

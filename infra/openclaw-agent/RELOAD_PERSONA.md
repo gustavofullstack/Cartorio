@@ -82,7 +82,7 @@ Ou, no chat, envie: `"Quem é você?"` e veja se responde como **CartórioBot** 
 - `TOOLS.md` - notas tecnicas (4161 bytes)
 - `GOALS.md` - objetivos do agent
 - `AGENTS.md` - **NOVO 2026-06-24** - regras operacionais (thinkings, contexto 1M, modelo deepseek-v4-flash)
-- `TELEGRAM.md` - **NOVO 2026-06-24** - bot Telegram 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q
+- `TELEGRAM.md` - **NOVO 2026-06-24** - bot Telegram <TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>
 
 ## Contexto 1M (NAO 131k)
 

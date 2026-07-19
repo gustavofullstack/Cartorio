@@ -7,7 +7,8 @@
 set -eo pipefail
 
 RED="\033[0;31m"; GREEN="\033[0;32m"; NC="\033[0m"
-BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q}"
+: "${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN deve ser injetado pelo secret manager}"
+BOT_TOKEN="$TELEGRAM_BOT_TOKEN"
 TG_URL="https://api.telegram.org/bot${BOT_TOKEN}"
 
 echo "🤖 Telegram Bot Status Check..."

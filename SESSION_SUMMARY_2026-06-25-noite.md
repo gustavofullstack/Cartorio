@@ -172,7 +172,7 @@
 
 - Workspace: /Users/gustavoalmeida/projetos/Cartorio
 - VPS: root@100.99.172.84 (Tailscale) / 187.77.236.77 (public) via `~/.ssh/id_ed25519_cartorio`
-- Telegram bot (test): 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q (@test_cartorio_bot)
+- Telegram bot (test): <TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER> (@test_cartorio_bot)
 - Gustavo Telegram DM: 6682284055
 - Squad GRUPO: -5006771024
 

@@ -21,7 +21,7 @@ curl -s https://api.2notasudi.com.br/api/v1/admin/audit/dead-mans-switch/check \
 
 ### 1.3 Check Telegram bot (1 min)
 ```bash
-curl -s "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/getWebhookInfo"
+curl -s "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getWebhookInfo"
 # Esperado: url=https://api.2notasudi.com.br/api/v1/telegram/webhook, pending_update_count=0
 ```
 

@@ -2,7 +2,7 @@
 
 > **Configuracao do bot de teste do Cartorio no Telegram.**
 > Bot: `@CartorioBot` (nome provisorio ate Gustavo registrar oficial)
-> Token: `8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q`
+> Token: `<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>`
 > Status: **CONECTAR** (NÃO rotacionar token)
 
 ## Visao geral
@@ -35,7 +35,7 @@ https://api.2notasudi.com.br/api/v1/webhook/telegram
 ### 3. Configurar webhook via curl
 
 ```bash
-curl -X POST "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/setWebhook" \
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/setWebhook" \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://api.2notasudi.com.br/api/v1/webhook/telegram",
@@ -73,7 +73,7 @@ TTL: 24h
 ### Enviar mensagem
 
 ```bash
-curl -X POST "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/sendMessage" \
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/sendMessage" \
   -H "Content-Type: application/json" \
   -d '{
     "chat_id": 123456789,
@@ -85,7 +85,7 @@ curl -X POST "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4
 ### Responder callback (botao)
 
 ```bash
-curl -X POST "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/answerCallbackQuery" \
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/answerCallbackQuery" \
   -H "Content-Type: application/json" \
   -d '{
     "callback_query_id": "abc123",
@@ -97,7 +97,7 @@ curl -X POST "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4
 ### Setar comandos do bot (menu)
 
 ```bash
-curl -X POST "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/setMyCommands" \
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/setMyCommands" \
   -H "Content-Type: application/json" \
   -d '{
     "commands": [
@@ -112,7 +112,7 @@ curl -X POST "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4
 ### Get updates (long polling - alternativa a webhook)
 
 ```bash
-curl "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/getUpdates?timeout=30"
+curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getUpdates?timeout=30"
 ```
 
 ## Fluxo completo
@@ -159,11 +159,11 @@ curl "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q
 
 ```bash
 # Enviar msg ao bot via curl (bypass webhook)
-curl -X POST "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/sendMessage" \
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/sendMessage" \
   -d "chat_id=SEU_CHAT_ID&text=Ola"
 
 # Listar updates recebidos (para ver se webhook esta funcionando)
-curl "https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/getUpdates"
+curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getUpdates"
 ```
 
 ## LGPD Compliance

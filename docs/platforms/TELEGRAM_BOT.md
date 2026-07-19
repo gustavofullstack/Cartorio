@@ -63,7 +63,7 @@ BotFather: Done! Congratulations on your new bot.
            You will find it at t.me/test_cartorio_bot
 
            Use this token to access the HTTP API:
-           8859206262:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+           <TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>
 
            Keep your token secure and store it safely.
 ```

@@ -56,7 +56,7 @@ Grupo: `-1004331849032` (NAO usar `-5319980720`)
 
 ```bash
 curl -s https://api.2notasudi.com.br/api/v1/telegram/health
-curl -s https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/getWebhookInfo
+curl -s https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getWebhookInfo
 curl -s https://api.2notasudi.com.br/api/v1/telegram/metrics
 ```
 

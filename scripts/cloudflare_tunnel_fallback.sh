@@ -11,7 +11,7 @@ set -euo pipefail
 # Configs
 PROJECT_ROOT="/Users/gustavoalmeida/Projetos/Cartorio"
 LOG_FILE="/tmp/cloudflare_tunnel_fallback.log"
-TELEGRAM_BOT_TOKEN="8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q"
+: "${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN deve ser injetado pelo secret manager}"
 TELEGRAM_CHAT_ID="6682284055"
 
 echo "=============================================================="

@@ -23,7 +23,8 @@ fi
 # Force required
 export APP_ENV=development
 export AUDIT_HMAC_KEY="${AUDIT_HMAC_KEY:-470e2d9738e946fd41f556101c6796c700956c7291836c8fc493a94cd3e404f3}"
-export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q}"
+: "${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN deve ser injetado pelo secret manager}"
+export TELEGRAM_BOT_TOKEN
 
 cd "$PROJECT_ROOT/backend"
 source "$PROJECT_ROOT/backend/.venv/bin/activate"

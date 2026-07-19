@@ -159,7 +159,7 @@ L185 — BRAIN8 cross-session snapshot 144K
 
 - Workspace: /Users/gustavoalmeida/projetos/Cartorio
 - VPS: root@100.99.172.84 (Tailscale) / 187.77.236.77 (public)
-- Telegram bot (test): 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q
+- Telegram bot (test): <TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>
 - Gustavo Telegram DM: 6682284055
 - Squad GRUPO: -5006771024
 - DPO: dpo@2notasudi.com.br

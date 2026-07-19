@@ -171,7 +171,7 @@ Status: J08 PENDENTE (script de setup em `infra/logging/loki-stack.yml`).
 
 ### 4.2 Configuração
 
-Token Telegram: `8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q`
+Token Telegram: `<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>`
 Bot: `@test_cartorio_bot`
 Chat: Gustavo DM (6682284055) + Squad (-5006771024)
 

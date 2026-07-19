@@ -1,5 +1,10 @@
 # Integration Matrix G7 — Stack Completo (Wave 15)
 
+> **Arquitetura e histórico de Wave 15.** Para estado runtime corrente e datado,
+> consulte [`RUNTIME_STATUS_2026-07-19.md`](RUNTIME_STATUS_2026-07-19.md). Os
+> indicadores “Prod” abaixo representam a evidência disponível na Wave 15, não uma
+> declaração de disponibilidade atual.
+
 Mapa **driver de arquitetura** da integração total pedida no super plano.
 Status live: 2026-07-17 Wave 32 (radar red 4↑3↓ · DNS soft 7/7 · N8N exports **38**).
 

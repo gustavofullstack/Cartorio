@@ -212,7 +212,7 @@ jobs:
       # G6.A.T5 — Coverage gate fail-safe
       - name: Coverage gate (G6.A.T5)
         working-directory: backend
-        run: cd .. && python3 scripts/coverage_gate.py || true
+        run: cd .. && python3 scripts/coverage_gate.py
 
       # G7.21.T4 — no bare raise Exception(
       - name: Bare Exception gate (G7.21.T4)

@@ -289,7 +289,7 @@ curl -sS -H "api_access_token: X6fRdztdTA2Z2seBwm9PHJgy" \
   https://chat.2notasudi.com.br/api/v1/accounts/1/contacts | jq
 
 # Telegram webhook info
-curl -sS https://api.telegram.org/bot8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q/getWebhookInfo | jq
+curl -sS https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getWebhookInfo | jq
 
 # Evolution instances
 curl -sS -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" \

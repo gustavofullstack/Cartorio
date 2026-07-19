@@ -155,7 +155,7 @@ agent:
 
 ### Telegram bot - SESSAO 3+
 
-Bot @CartorioBot: `8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q`
+Bot @CartorioBot: `<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>`
 
 **NAO ROTACIONAR** - Gustavo + ZCode unicos com acesso. Token NAO tem risco.
 

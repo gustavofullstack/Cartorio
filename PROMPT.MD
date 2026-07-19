@@ -1342,7 +1342,7 @@ ssh root@100.99.172.84 "docker ps --format 'table {{.Names}}\t{{.Status}}'"
 
 | Item | Valor |
 |------|-------|
-| **Token** | 8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q |
+| **Token** | <TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER> |
 | **Bot** | @test_cartorio_bot |
 | **Uso** | Pré-teste do agent AI antes do WhatsApp |
 | **Status** | Conectado via API/N8N/Chatwoot/Redis/Supabase |

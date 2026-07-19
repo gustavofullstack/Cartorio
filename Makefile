@@ -82,10 +82,16 @@ qa:  ## Quality gate completo: lint + typecheck + tests
 	@echo "$(GREEN)=== Quality Gate PASSOU ===$(RESET)"
 
 .PHONY: ci
-ci:  ## CI local: simula GitHub Actions (lint + test)
+ci:  ## CI local: reproduz os gates bloqueantes do GitHub Actions
 	@echo "$(YELLOW)=== CI Local ===$(RESET)"
+	@$(MAKE) secrets-scan-strict
+	@cd backend && uv run ruff format --check .
 	@$(MAKE) lint
 	@$(MAKE) test
+	@$(MAKE) openapi-check
+	@$(MAKE) n8n-validate
+	@$(MAKE) coverage-gate
+	@python3 scripts/check_no_bare_exception.py
 	@echo "$(GREEN)=== CI PASSOU ===$(RESET)"
 
 # ============================================================================

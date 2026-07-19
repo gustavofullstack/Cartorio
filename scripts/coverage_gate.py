@@ -48,17 +48,17 @@ def run_pytest_with_coverage() -> dict | None:
             "--cov=app",
             "--cov-report=json:coverage_gate.json",
             "-q",
+            "--tb=short",
         ],
         cwd="backend",
-        capture_output=True,
-        text=True,
     )
-    # pytest pode sair com 0 ou 1 (com coverage report). Aceitar ambos.
+    if result.returncode != 0:
+        print(f"[ERROR] pytest falhou (exit={result.returncode})", file=sys.stderr)
+        return None
+
     cov_path = Path("backend/coverage_gate.json")
     if not cov_path.exists():
         print(f"[ERROR] coverage_gate.json nao foi gerado", file=sys.stderr)
-        print(f"  pytest stdout: {result.stdout[-500:]}", file=sys.stderr)
-        print(f"  pytest stderr: {result.stderr[-500:]}", file=sys.stderr)
         return None
     return json.loads(cov_path.read_text())
 
