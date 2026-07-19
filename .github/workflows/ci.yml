@@ -128,7 +128,9 @@ jobs:
   test:
     name: Tests (pytest)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # A suíte completa (~4.6k testes) precisa de buffer no runner compartilhado;
+    # o limite anterior cancelava sem erro de teste em ~15 min.
+    timeout-minutes: 20
     needs: lint  # so roda apos lint passar
 
     services:
