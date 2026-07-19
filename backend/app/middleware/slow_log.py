@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from datetime import UTC, datetime
 from typing import Awaitable, Callable
 
 from fastapi import Request, Response
@@ -80,7 +81,9 @@ class SlowLogMiddleware(BaseHTTPMiddleware):
                 "threshold_ms": self.threshold_ms,
                 "request_id": request_id,
                 "client_ip": client_ip,
-                "timestamp": time.time(),
+                # ISO 8601 avoids being mistaken for a Brazilian phone number by
+                # the global PII masking filter, preserving valid JSON logs.
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             # WARNING para >=2x threshold, INFO para >=1x threshold
             level = logging.WARNING if elapsed_ms >= self.threshold_ms * 2 else logging.INFO

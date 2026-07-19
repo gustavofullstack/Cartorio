@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import json
 import logging
+from contextlib import contextmanager
 from unittest.mock import MagicMock
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -42,26 +44,47 @@ def _build_app(threshold_ms: int = 500) -> tuple[FastAPI, MagicMock]:
     return app, handler
 
 
-def _assert_log_emitted(caplog, threshold_ms: int = 50, max_attempts: int = 7) -> dict:
-    """Tenta ate max_attempts se o log nao foi emitido por contencao.
+@contextmanager
+def _capture_slow_logger(caplog, level: int = logging.INFO):
+    """Captura o logger alvo mesmo se outro import reconfigurar o root logger.
 
-    Aumentado para 7 attempts para evitar flaky em full suite (pytest caplog
-    contention com 4000+ tests). Em suite grande, caplog pode perder registros
-    nas primeiras tentativas devido a race condition no handler.
+    ``app.main`` usa ``basicConfig(force=True)`` para substituir handlers do
+    Uvicorn. Em uma suite grande, isto pode remover o handler raiz do
+    ``caplog``. Vincular o handler diretamente ao logger sob teste evita essa
+    dependência global e não altera o comportamento de produção.
     """
+    slow_logger = logging.getLogger("cartorio.slow")
+    slow_logger.addHandler(caplog.handler)
+    try:
+        with caplog.at_level(level, logger=slow_logger.name):
+            yield
+    finally:
+        slow_logger.removeHandler(caplog.handler)
+
+
+@pytest.fixture(autouse=True)
+def _stub_slow_query_storage(monkeypatch):
+    """Evita conexões Redis nas tasks fire-and-forget do middleware."""
+
+    class _InMemorySlowQueryStore:
+        async def add_slow_query(self, _query: dict) -> bool:
+            return True
+
+    monkeypatch.setattr(
+        "app.middleware.slow_log.get_slow_queries_store", lambda: _InMemorySlowQueryStore()
+    )
+
+
+def _assert_log_emitted(caplog, threshold_ms: int = 50) -> dict:
+    """Executa uma request lenta e retorna seu log estruturado."""
     app, _ = _build_app(threshold_ms=threshold_ms)
     client = TestClient(app)
-    for attempt in range(max_attempts):
-        caplog.clear()
-        with caplog.at_level(logging.INFO, logger="cartorio.slow"):
-            response = client.get("/slow")
-        assert response.status_code == 200
-        logs = _capture_logs(caplog)
-        if len(logs) >= 1:
-            return logs[0]
-    raise AssertionError(
-        f"slow_request log not emitted after {max_attempts} attempts (possible contention)"
-    )
+    with _capture_slow_logger(caplog):
+        response = client.get("/slow")
+    assert response.status_code == 200
+    logs = _capture_logs(caplog)
+    assert logs, "slow_request log was not emitted"
+    return logs[0]
 
 
 def _capture_logs(caplog, level: int = logging.INFO) -> list[dict]:
@@ -85,7 +108,7 @@ class TestSlowLogMiddleware:
         app, _ = _build_app(threshold_ms=500)
         client = TestClient(app)
 
-        with caplog.at_level(logging.INFO, logger="cartorio.slow"):
+        with _capture_slow_logger(caplog):
             response = client.get("/fast")
 
         assert response.status_code == 200
@@ -101,6 +124,7 @@ class TestSlowLogMiddleware:
         assert log["duration_ms"] >= 1
         assert log["threshold_ms"] == 50
         assert "request_id" in log
+        assert isinstance(log["timestamp"], str)
 
     def test_skip_paths_no_log(self, caplog):
         """Skip paths (/health, /metrics) NAO emitem log mesmo se lentas."""
@@ -123,7 +147,7 @@ class TestSlowLogMiddleware:
 
         client = TestClient(app)
 
-        with caplog.at_level(logging.INFO, logger="cartorio.slow"):
+        with _capture_slow_logger(caplog):
             client.get("/health/live")
             client.get("/metrics")
 
@@ -166,7 +190,7 @@ class TestSlowLogMiddleware:
         app, _ = _build_app(threshold_ms=30)  # threshold 30ms
         client = TestClient(app)
 
-        with caplog.at_level(logging.INFO, logger="cartorio.slow"):
+        with _capture_slow_logger(caplog):
             client.get("/slow")  # 60ms >= 2*30=60ms
 
         # Deve ter pelo menos 1 WARNING
