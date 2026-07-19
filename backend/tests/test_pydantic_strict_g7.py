@@ -126,8 +126,6 @@ def test_mask_nome_custom_empty_privacy() -> None:
 
 def test_mask_email_display_full_and_tld() -> None:
     assert mask_email_display("joao@example.com") == "j***@example.com"
-    assert (
-        mask_email_display("teste@sub.dominio.com", domain_mode="tld") == "t***@com"
-    )
+    assert mask_email_display("teste@sub.dominio.com", domain_mode="tld") == "t***@com"
     assert mask_email_display(None) == "[email indisponivel]"
     assert mask_email_display("sem-arroba") == "[email indisponivel]"

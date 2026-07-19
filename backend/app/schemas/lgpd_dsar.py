@@ -37,9 +37,7 @@ class DSARCreate(BaseModel):
         validate_assignment=True,
     )
 
-    cpf: CPFStr = Field(
-        ..., description="CPF do titular (com ou sem formatacao)"
-    )
+    cpf: CPFStr = Field(..., description="CPF do titular (com ou sem formatacao)")
     email: EmailStr | None = Field(None, description="Email de contato")
     phone: str | None = Field(
         None, min_length=10, max_length=15, description="Telefone (10-15 chars)"

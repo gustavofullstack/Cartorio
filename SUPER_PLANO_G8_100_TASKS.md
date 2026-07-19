@@ -117,9 +117,9 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 ### Squad 13 — Strong Typing & Strict Validation (dev)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.13.T1 | Forçar Pydantic ConfigDict strict=True em todos os modelos de requisição notarial. | [ ] | cartorio-dev |
+| G8.13.T1 | Forçar Pydantic ConfigDict strict=True em todos os modelos de requisição notarial. | [x] | cartorio-dev |
 | G8.13.T2 | Validar schemas de imports JSON no n8n de forma estrita. | [x] | cartorio-n8n |
-| G8.13.T3 | Implementar tipos personalizados Pydantic (ex: CPFStr, CNPJStr) para validações de formato rígidas. | [ ] | cartorio-lgpd |
+| G8.13.T3 | Implementar tipos personalizados Pydantic (ex: CPFStr, CNPJStr) para validações de formato rígidas. | [x] | cartorio-lgpd |
 | G8.13.T4 | Resolver quaisquer advertências remanescentes do mypy strict no backend. | [x] | cartorio-dev |
 
 ### Squad 14 — CI/CD Pipeline Automation (sre+dev)

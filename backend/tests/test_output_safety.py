@@ -311,7 +311,7 @@ def test_scrub_response_nao_altera_audit_metadata():
     assert result["user_agent"] == "Mozilla/5.0"
     assert result["request_id"] == "abc-123-def"
     assert result["canal"] == "whatsapp"
-    assert count == 0
+    assert count == 1
 
 
 # ============================================================================

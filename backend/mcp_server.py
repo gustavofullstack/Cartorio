@@ -13,11 +13,12 @@ Tools expostas:
 - scrub_mcp_output em tools sensíveis (G8.07.T3)
 
 Modos de execucao:
-1. **Standalone** (`python mcp_server.py`): sobe uvicorn em :8100/MCP_SERVER_PORT.
+1. **Standalone** (`python mcp_server.py`): sobe uvicorn em :8100 (ou
+   `MCP_SERVER_PORT`) com o endpoint MCP na raiz `/`.
    Util para clients MCP que preferem endpoint dedicado.
 2. **Montado na FastAPI** (`mcp_app()`): retorna sub-app Starlette que pode ser
    `app.mount("/mcp", mcp_server.mcp_app())` em main.py. Criterio do projeto:
-   `curl https://api.2notasudi.com.br/mcp` deve retornar JSON de tools MCP.
+   o cliente MCP deve enviar JSON-RPC para `https://api.2notasudi.com.br/mcp`.
 
 Implementacao chama os services do app diretamente (sem HTTP self-loop) para
 evitar timeout em recursao localhost:8000 -> /mcp -> localhost:8000.
@@ -562,9 +563,8 @@ if __name__ == "__main__":
     import uvicorn
 
     if os.getenv("MCP_SERVER_TRANSPORT", "http") == "http":
-        # Modo standalone: serve em :8100/mcp
-        # path="/" + mount manual abaixo para manter /mcp no root do uvicorn.
-        # (Quando montado dentro da FastAPI principal, o mount ja faz isso.)
+        # Modo standalone: o endpoint Streamable HTTP fica na raiz `/`.
+        # O mount da API principal adiciona o prefixo externo `/mcp`.
         app = mcp.http_app(path="/")
         port = int(os.getenv("MCP_SERVER_PORT", "8100"))
         host = os.getenv("MCP_SERVER_HOST", "0.0.0.0")

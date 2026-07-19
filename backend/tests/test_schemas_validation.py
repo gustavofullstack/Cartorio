@@ -60,17 +60,21 @@ class TestProtocoloSchemas:
         """ProtocoloCreateRequest raises ValidationError on coercion under strict mode."""
         # Test dynamic strict validation
         with pytest.raises(ValidationError) as exc_info:
-            ProtocoloCreateRequest.model_validate({
-                "cliente_cpf": "12345678901",
-                "cliente_nome": "João",
-                "tipo": "certidao_negativa",
-                "canal_origem": CanalOrigem.WHATSAPP,
-                "consentimento_lgpd": "True",  # String coercion rejected in strict mode
-            }, strict=True)
+            ProtocoloCreateRequest.model_validate(
+                {
+                    "cliente_cpf": "12345678901",
+                    "cliente_nome": "João",
+                    "tipo": "certidao_negativa",
+                    "canal_origem": CanalOrigem.WHATSAPP,
+                    "consentimento_lgpd": "True",  # String coercion rejected in strict mode
+                },
+                strict=True,
+            )
         assert "Input should be a valid boolean" in str(exc_info.value)
 
         # Test normal validation when global strict mode is False
         from app.config import settings
+
         if not settings.pydantic_strict_mode:
             p = ProtocoloCreateRequest(
                 cliente_cpf="12345678901",

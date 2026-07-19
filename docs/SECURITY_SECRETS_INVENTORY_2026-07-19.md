@@ -14,6 +14,8 @@ prova de que a credencial ainda esteja válida.
 - 38 têm ao menos um achado de severidade `critical`.
 - O scanner local de chaves literais é agora um gate rígido no CI: uma falha encerra
   o job antes de lint e testes. Gitleaks permanece como scanner complementar.
+- A saída do scanner identifica caminho, linha e regra, mas redige o valor encontrado
+  para não copiar credenciais para logs de CI ou do terminal.
 
 ## Arquivos a tratar por canal seguro
 

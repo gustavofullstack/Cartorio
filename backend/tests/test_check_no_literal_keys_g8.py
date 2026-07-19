@@ -244,6 +244,21 @@ class TestSeverity:
         assert cnlk.SEVERITY_RANK["medium"] > cnlk.SEVERITY_RANK["low"]
 
 
+def test_cli_redacts_detected_value_from_output(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """A failing scanner must identify the location without leaking the matched value."""
+    secret_like_value = "sk-proj-FAKE1234567890abcdefghij"
+    source = tmp_path / "unsafe.py"
+    source.write_text(f'KEY = "{secret_like_value}"\n', encoding="utf-8")
+
+    rc = cnlk.main(["--root", str(tmp_path), "--severity", "critical"])
+
+    output = capsys.readouterr().out
+    assert rc == 1
+    assert "unsafe.py:1 [CRITICAL][OPENAI_PROJECT_KEY]" in output
+    assert "[valor redigido]" in output
+    assert secret_like_value not in output
+
+
 # ============================================================================
 # Skip / vendor dirs.
 # ============================================================================

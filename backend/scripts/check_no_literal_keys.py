@@ -469,8 +469,10 @@ def main(argv: list[str] | None = None) -> int:
         rel = _relpath(path)
         marker = " " if v.severity in (SEVERITY_HIGH, SEVERITY_MEDIUM) else "*"
         in_threshold = " (GATE)" if v.severity_rank() >= SEVERITY_RANK.get(args.severity, 1) else ""
+        # Achados podem ser segredos reais. Localizacao e regra bastam para
+        # remediacao; nunca ecoar o match em logs de CI, terminal ou artefatos.
         print(f"  {marker} {rel}:{v.lineno} [{v.severity.upper()}][{v.rule}]{in_threshold}")
-        print(f"      {v.snippet}")
+        print("      [valor redigido]")
 
     print()
     print(f"Threshold: {args.severity} ({SEVERITY_RANK.get(args.severity, 1)})")

@@ -14,7 +14,7 @@
 | Modo | Como sobe | URL típica |
 |------|-----------|------------|
 | **Montado na FastAPI** | `settings.mcp_server_enabled` → `app.mount("/mcp", mcp_app())` | `http://localhost:8000/mcp` |
-| **Standalone** | `make -C backend mcp-server` / `uv run python mcp_server.py` | `http://localhost:8100` (ou `MCP_SERVER_PORT`) |
+| **Standalone** | `make -C backend mcp-server` / `uv run python mcp_server.py` | `POST http://localhost:8100/` (ou `MCP_SERVER_PORT`) |
 
 ### Wiring em `main.py` (ordem importa)
 
@@ -73,7 +73,7 @@ Template: `backend/.env.example` (chaves placeholder, sem secrets reais).
 | `GET /` | público | meta; inclui `"mcp": "/mcp"`, `"mcp_servers": "/mcp-servers"` |
 | `GET /mcp-servers` | público | discovery JSON dos servers MCP conhecidos |
 | `POST /mcp` (e SSE stream) | client MCP / opcional API key | protocolo MCP (tools/list, tools/call, …) |
-| Standalone `:8100` | client MCP | mesmo FastMCP app sem o resto da API |
+| Standalone `POST /` em `:8100` | client MCP | mesmo FastMCP app sem o resto da API |
 
 **Não hardcode** o número de tools no código de produto — inventário muda. Conte com:
 
@@ -145,7 +145,7 @@ Se o client MCP oficial for preferível (Claude / Cursor / TRAE), use configs em
 
 ```bash
 make -C backend mcp-server
-# uv run python mcp_server.py  → host 0.0.0.0:8100 (MCP_SERVER_PORT)
+# uv run python mcp_server.py  → host 0.0.0.0:8100, endpoint MCP em POST /
 ```
 
 ### 5.3 Prod (referência)

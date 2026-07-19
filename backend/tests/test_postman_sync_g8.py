@@ -102,6 +102,25 @@ class TestConversion:
         actual = sum(len(f["item"]) for f in collection_min["item"])
         assert actual == expected
 
+    def test_trailing_slash_compatibility_route_is_emitted_once(self) -> None:
+        """Postman must not execute FastAPI's slash compatibility alias twice."""
+        openapi = {
+            "info": {"title": "Cartorio", "version": "test"},
+            "paths": {
+                "/api/v1/webhook/alertmanager": {
+                    "post": {"tags": ["alertmanager"], "operationId": "canonical"}
+                },
+                "/api/v1/webhook/alertmanager/": {
+                    "post": {"tags": ["alertmanager"], "operationId": "compatibility"}
+                },
+            },
+        }
+        collection = postman_sync.convert_to_postman_v21(openapi, "https://api.example.com")
+        entries = collection["item"][0]["item"]
+
+        assert len(entries) == 1
+        assert entries[0]["request"]["url"]["raw"].endswith("/webhook/alertmanager")
+
 
 class TestLGPDAuth:
     def test_pii_safe_collection_no_literal_bearer(self, collection_min: dict) -> None:
@@ -192,11 +211,13 @@ class TestOfflineAndCache:
             postman_sync.load_openapi_from_file(tmp_path / "nonexistent.json")
 
     def test_load_openapi_from_app_returns_dict(self) -> None:
-        """Smoke: app.main monta e retorna openapi dict (requer backend deps)."""
+        """Smoke: app.main expõe o contrato completo, não um schema vazio."""
         pytest.importorskip("fastapi")
         try:
             data = postman_sync.load_openapi_from_app()
             assert "paths" in data
+            assert "/api/v1/health/radar" in data["paths"]
+            assert len(data["paths"]) >= 100
             assert "openapi" in data
         except Exception as exc:
             pytest.skip(f"app.main nao carrega em ambiente de teste: {exc}")

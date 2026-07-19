@@ -4,7 +4,7 @@
     "description": "\n# Cartorio Backend API\n\nAPI REST do **2o Servico Notarial de Uberlandia** para consulta de emolumentos,\nprotocolizacao de atos, gestao de atendimentos e auditoria imutavel.\n\n## Pilares\n\n- **Audit log imutavel**: hash chain SHA256 + HMAC. Cada acao deixa rastro verificavel.\n- **PII scrubbing**: CPF/telefone/email nunca saem crus pra LLM. Hasheados no DB (SHA256+salt).\n- **HITL obrigatorio**: protocolo sempre nasce em `DRAFT`. Escrevente valida antes de processar.\n- **LGPD compliance**: consentimento explicito, retencao 365 dias (conversas) / 1825 (audit).\n- **MCP nativo**: API expoe tools MCP via /mcp (protocolo 2025-03-26).\n\n## Tags disponiveis (10 tags, 15 endpoints)\n\n| Tag | Endpoints | Descricao |\n|-----|-----------|-----------|\n| `emolumento`  | 1   | Calculo de custas (TABELA_2026_MG) |\n| `protocolo`   | 2   | Criar e consultar protocolos |\n| `documento`   | 1   | Segunda via de documento |\n| `audit`       | 1   | Verificacao de cadeia de audit log |\n| `health`      | 2   | Liveness, readiness, radar |\n| `atendimento` | 4   | Handoff humano + pesquisa satisfacao |\n| `webhook`     | 2   | Integracao Evolution API / Chatwoot |\n| `meta`        | 3   | Health, MCP servers discovery |\n| `agendamento` | 1   | Disponibilidade de agenda |\n| `dev`         | 1   | Exports (Postman collection) |\n\n## Autenticacao\n\nAPI em si **NAO exige auth** (LGPD art. 7o, IV - finalidade publica do servico notarial).\nPara endpoints sensiveis (audit verify, webhook), usamos **HMAC ou header X-API-Key**\ncompartilhado com n8n (ver `N8N_WEBHOOK_SECRET` / `CARTORIO_API_KEY`).\n\n## MCP (Model Context Protocol)\n\nA propria API expoe tools MCP no endpoint `/mcp` (sub-app FastMCP montado, protocolo 2025-03-26).\nTools disponiveis:\n\n1. `cartorio_calcular_emolumento` - calculo MG 2026\n2. `cartorio_consultar_protocolo` - status, historico, proxima acao\n3. `cartorio_criar_protocolo` - criar DRAFT com gate LGPD\n4. `cartorio_gerar_segunda_via` - link download PDF\n5. `cartorio_audit_verify` - integridade hash chain + HMAC\n6. `cartorio_saudacao` - health check\n7. `super_server_info` - meta info (versao, tools_count, etc)\n\nLista de tools em `/mcp-servers`. Config em `~/.mavis/mcp/clients/cartorio-mcp-config.json`.\nTools description em `/tools_description.json`.\n\n## Compliance LGPD\n\n- Art. 7o, I  - Consentimento explicito (gate no POST /protocolo)\n- Art. 37    - Registro de operacoes de tratamento (audit log)\n- Art. 46    - Medidas de seguranca (HMAC + hash chain)\n- Retencao: 365 dias conversas, 1825 dias (5 anos) audit log\n- DPO: dpo@2notasudi.com.br\n\n## Stack\n\n- **API**: FastAPI 0.115 + SQLAlchemy 2 + Pydantic 2 + Pydantic Settings\n- **DB**: Supabase (PostgreSQL 15) via SQLAlchemy + Alembic\n- **Cache/Session**: Redis 7\n- **WhatsApp**: Evolution API (http://cartorio_evolution-api:8080)\n- **CRM**: Chatwoot\n- **Workflows**: n8n (https://cartorio-n8n.dfgdxq.easypanel.host)\n- **LLM primario**: Opencode-Go (deepseek-v4-flash, low cost)\n- **LLM secundario**: OpenClaw gateway (gpt-5.5 / anthropic-sonnet)\n- **MCP**: FastMCP 3.4.2 (protocolo 2025-03-26)\n\n## Contato\n\n- DPO: dpo@2notasudi.com.br\n- Repo: https://github.com/2notas/cartorio-backend\n- Issues: https://github.com/2notas/cartorio-backend/issues\n- Site: https://2notasudi.com.br\n\n\nGerado por scripts/postman_sync.py (G8.17.T1). Authorization SEMPRE via {{bearer_token}} variable. NUNCA persistir tokens reais.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "0.6.0",
-    "_postman_id": "cartorio-sync-1784392172"
+    "_postman_id": "cartorio-sync-1784479441"
   },
   "item": [
     {
@@ -42,7 +42,7 @@
               ],
               "variable": []
             },
-            "description": "Health Radar expandido (F6 [P2] 2026-07-15)\n\nEstende `/health/radar` com 5 categorias adicionais: DNS (10 dominios), Traefik routers (5 dominios), SSH VPS Hostinger, Tailscale SSH e Disk space em /var/lib/docker/volumes.\n\nCategorias: health, dns, traefik, ssh, tailscale, disk. Cada check retorna `{status: up|down|warn, latency_ms, detail}`. Falha em qualquer check NAO quebra o endpoint (fail-open).\n\nStatus agregado: green (tudo up), yellow (algum warn ou down nao-critico), red (database ou redis down). Use em conjunto com N8N workflow #30 para alerting.\n\noperationId: health_radar_expanded_api_v1_health_radar_expanded_get"
+            "description": "Health Radar expandido (F6 [P2] 2026-07-15 + G8.15.T4 2026-07-18)\n\nEstende `/health/radar` com 5 categorias adicionais: DNS (10 dominios), Traefik routers (5 dominios), SSH VPS Hostinger, Tailscale SSH e Disk space em /var/lib/docker/volumes. **G8.15.T4** adiciona a categoria `redis_queues` com snapshot de 6 namespaces (idempotency, rate_limit, dlq via DB outbox_message, lock, bot_mute, session) — contagens LGPD-safe (zero PII raw, apenas inteiros).\n\nCategorias: health, dns, traefik, ssh, tailscale, disk, mcp, openclaw, redis_queues. Cada check retorna `{status: up|down|warn, latency_ms, detail}`. Falha em qualquer check NAO quebra o endpoint (fail-open).\n\nStatus agregado: green (tudo up), yellow (algum warn ou down nao-critico), red (database ou redis down). Use em conjunto com N8N workflow #30 para alerting.\n\noperationId: health_radar_expanded_api_v1_health_radar_expanded_get"
           },
           "response": []
         }
@@ -954,51 +954,8 @@
     },
     {
       "name": "alertmanager",
-      "description": "6 endpoints (tag: alertmanager)",
+      "description": "5 endpoints (tag: alertmanager)",
       "item": [
-        {
-          "name": "POST /api/v1/webhook/alertmanager/",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "X-API-Key",
-                "value": "{{cartorio_api_key}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "https://api.2notasudi.com.br/api/v1/webhook/alertmanager",
-              "protocol": "https",
-              "host": [
-                "api.2notasudi.com.br"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "webhook",
-                "alertmanager"
-              ],
-              "variable": []
-            },
-            "description": "Alertmanager Default\n\nWebhook default — todos os alertas que não casam rota específica.\n\nReceiver: `cartorio-telegram-default`.\n\noperationId: alertmanager_default_api_v1_webhook_alertmanager__post",
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
         {
           "name": "POST /api/v1/webhook/alertmanager",
           "request": {
@@ -1029,7 +986,7 @@
               ],
               "variable": []
             },
-            "description": "Alertmanager Default\n\nWebhook default — todos os alertas que não casam rota específica.\n\nReceiver: `cartorio-telegram-default`.\n\noperationId: alertmanager_default_api_v1_webhook_alertmanager_post",
+            "description": "Alertmanager Default\n\nWebhook default — todos os alertas que não casam rota específica.\n\nReceiver: `cartorio-telegram-default`.\n\noperationId: alertmanager_default_api_v1_webhook_alertmanager__post",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -5462,7 +5419,7 @@
               ],
               "variable": []
             },
-            "description": "Telegram Debug Last Updates\n\nFIX 2026-07-08: endpoint de debug que mostra os ultimos 20 updates\nrecebidos pelo webhook + a resposta dada. Gustavo pode usar pra\nconfirmar se o callback chegou ate o backend.\n\nUso: GET /api/v1/telegram/debug/last-updates\n\noperationId: telegram_debug_last_updates_api_v1_telegram_debug_last_updates_get"
+            "description": "Telegram Debug Last Updates\n\nExibe somente metadados de processamento para operador autorizado.\n\nUso: ``GET /api/v1/telegram/debug/last-updates`` com ``X-API-Key``.\n\noperationId: telegram_debug_last_updates_api_v1_telegram_debug_last_updates_get"
           },
           "response": []
         },
@@ -5496,7 +5453,16 @@
               ],
               "variable": []
             },
-            "description": "Telegram Webhook\n\noperationId: telegram_webhook_api_v1_telegram_webhook_post"
+            "description": "Webhook do Telegram Bot API (HMAC secret + idempotency + LGPD scrub)\n\nRecebe updates do Telegram Bot API (https://core.telegram.org/bots/api#update).\n\n**Auth**: header `X-Telegram-Bot-Api-Secret-Token` validado contra `TELEGRAM_WEBHOOK_SECRET` (HMAC).\n\n**Idempotency**: `update_id` eh deduplicado via Redis SETNX (TTL 10min).\n\n**LGPD**: payload NAO eh persistido cru; `message.text`/`from` passam por scrubber antes de qualquer LLM call. Schema canonico documentado em `app.schemas.webhook_payloads.TelegramUpdate`.\n\n**Handler paths**:\n- `message` (texto/comando/midia) - flow principal\n- `callback_query` (botao inline) - callback handler\n- `edited_message` - re-processa edicao\n- `my_chat_member` - auto-detect entrada/saida de grupo\n\noperationId: telegram_webhook_api_v1_telegram_webhook_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -5857,7 +5823,7 @@
               ],
               "variable": []
             },
-            "description": "Webhook WhatsApp (Evolution API)\n\nRecebe mensagem do Evolution API, aplica **PII scrubbing em 3 camadas** (input, pre-LLM, output), detecta intencao via LLM, retorna resposta. Bloqueia fluxo automaticamente se PII for detectado antes do LLM (handoff humano obrigatorio). \n\nRegistra **tudo** no audit log (chain SHA256 + HMAC).\n\noperationId: webhook_evolution_api_v1_webhook_evolution_post",
+            "description": "Webhook WhatsApp (Evolution API)\n\nRecebe mensagem do Evolution API, aplica **PII scrubbing em 3 camadas** (input, pre-LLM, output), detecta intencao via LLM, retorna resposta. Bloqueia fluxo automaticamente se PII for detectado antes do LLM (handoff humano obrigatorio). \n\nRegistra **tudo** no audit log (chain SHA256 + HMAC).\n\nAceita ambos formatos Evolution: **nested moderno** (`data.key`/`data.message`) e **root-level legado** (`sender`/`message` na raiz). Schema documentado em `app.schemas.webhook_payloads.EvolutionPayload`.\n\noperationId: webhook_evolution_api_v1_webhook_evolution_post",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -5900,7 +5866,16 @@
               ],
               "variable": []
             },
-            "description": "Webhook Chatwoot (HMAC + idempotency)\n\nRecebe webhooks do Chatwoot. Valida signature HMAC-SHA256 (se CHATWOOT_WEBHOOK_SECRET configurado), deduplica por event_id, e processa conversation_status_changed -> resolved marcando o atendimento como concluido (workflow #07 pesquisa 24h depois).\n\noperationId: webhook_chatwoot_api_v1_webhook_chatwoot_post"
+            "description": "Webhook Chatwoot (HMAC + idempotency)\n\nRecebe webhooks do Chatwoot. Valida signature HMAC-SHA256 (se CHATWOOT_WEBHOOK_SECRET configurado), deduplica por event_id, e processa conversation_status_changed -> resolved marcando o atendimento como concluido (workflow #07 pesquisa 24h depois).\n\nEventos suportados (discriminator `event`):\n- `conversation_status_changed` - atualizou status da conversa\n- `message_created` - nova mensagem (incoming/outgoing)\n\nLGPD: campos `assignee.name/email`, `content`, `sender.*` carregam dados pessoais (marcados com `**LGPD PII**` no schema). Schema canonico em `app.schemas.chatwoot_webhook.ChatwootWebhookModel`.\n\noperationId: webhook_chatwoot_api_v1_webhook_chatwoot_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
@@ -6008,7 +5983,7 @@
               ],
               "variable": []
             },
-            "description": "Whatsapp Webhook\n\nWebhook Evolution → process_message via chat_pipeline.\n\nFluxo:\n  1. Validar HMAC X-Hub-Signature-256 (validate_evolution_signature)\n  2. Idempotency via evolution_ingest (DB) + chat_pipeline.check_idempotency (Redis)\n  3. Parse payload → InboundMessage\n  4. process_message (pipeline compartilhado)\n  5. SEMPRE retorna 200 (evita retry infinito Evolution)\n\noperationId: whatsapp_webhook_api_v1_whatsapp_webhook_post",
+            "description": "Webhook Evolution API (WhatsApp - HMAC + dual-format + LGPD consent)\n\nRecebe mensagens do WhatsApp via Evolution API (https://doc.evolution-api.com/v2/api-reference).\n\n**Auth**: header `X-Hub-Signature-256` validado contra `EVOLUTION_API_KEY` (HMAC-SHA256).\n\n**Dual-format**: aceita **nested moderno** (`data.key.remoteJid`/`data.message.conversation`) e **root-level legado** (`sender`/`message` na raiz). Schema canonico em `app.schemas.webhook_payloads.EvolutionPayload`.\n\n**Idempotency**: `data.key.id` dedup via `evolution_ingest` (DB) + Redis SETNX (`chat_pipeline.check_idempotency`).\n\n**LGPD consent gate**: cliente deve aceitar LGPD via `SIM` antes do primeiro atendimento. Opt-out via `PARAR`/`SAIR` revoga consentimento.\n\n**Flow**: HMAC -> idempotency -> parse -> consent gate -> pipeline (debounce 1.2s -> rate limit 3s -> LLM com fallback chain -> scrub output).\n\noperationId: whatsapp_webhook_api_v1_whatsapp_webhook_post",
             "body": {
               "mode": "raw",
               "raw": "{}",

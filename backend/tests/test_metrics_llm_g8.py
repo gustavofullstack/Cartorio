@@ -529,3 +529,37 @@ class TestDecoratorTransparency:
 
         with pytest.raises(_SpecificErr, match="original message preserved"):
             failing()
+
+
+# ============================================================================
+# Tests — Loki / MaskingFilter log security (G8.15.T3)
+# ============================================================================
+
+
+def test_log_masking_filter_intercepts_pii() -> None:
+    """G8.15.T3: O MaskingFilter deve interceptar e mascarar dados sensíveis nos logs."""
+    from app.services.log_masker import MaskingFilter
+
+    logger = logging.getLogger("test_masking_loki")
+    logger.setLevel(logging.INFO)
+
+    # Capturar log output
+    from _pytest.logging import LogCaptureHandler
+
+    handler = LogCaptureHandler()
+    handler.addFilter(MaskingFilter())
+    logger.addHandler(handler)
+
+    logger.info("Cliente cpf=123.456.789-09 e email=teste@email.com acessou o sistema")
+    logger.info("IP de acesso: 192.168.1.100")
+
+    records = handler.records
+    assert len(records) == 2
+
+    assert "[MASKED:cpf]" in records[0].msg
+    assert "[MASKED:email]" in records[0].msg
+    assert "123.456.789-09" not in records[0].msg
+    assert "teste@email.com" not in records[0].msg
+
+    assert "[MASKED:ip]" in records[1].msg
+    assert "192.168.1.100" not in records[1].msg

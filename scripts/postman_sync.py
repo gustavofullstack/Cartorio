@@ -246,11 +246,22 @@ def convert_to_postman_v21(openapi: dict[str, Any], base_url: str) -> dict[str, 
 
     by_tag: dict[str, list[dict[str, Any]]] = {}
     method_counter: Counter[str] = Counter()
+    seen_operations: set[tuple[str, str]] = set()
     for path, method, op in _openapi_to_paths(paths):
+        # FastAPI can expose both a route and its trailing-slash compatibility
+        # alias. Postman must execute each HTTP operation once; retain the
+        # canonical no-trailing-slash form and omit the compatibility duplicate.
+        canonical_path = path.rstrip("/") or "/"
+        operation_key = (method, canonical_path)
+        if operation_key in seen_operations:
+            continue
+        seen_operations.add(operation_key)
         method_counter[method.upper()] += 1
         tags = op.get("tags") or ["default"]
         tag = str(tags[0]) if tags else "default"
-        by_tag.setdefault(tag, []).append(build_request(path, method, op, openapi, base_url))
+        by_tag.setdefault(tag, []).append(
+            build_request(canonical_path, method, op, openapi, base_url)
+        )
 
     folders: list[dict[str, Any]] = []
     for tag_name in sorted(by_tag.keys()):

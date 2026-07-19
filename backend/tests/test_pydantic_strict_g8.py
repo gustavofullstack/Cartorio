@@ -608,4 +608,3 @@ def test_cpf_cnpj_custom_types_validation() -> None:
 
     with pytest.raises(ValidationError):
         _MockSchema(cpf=valid_cpf_formatted, cnpj="12345")
-

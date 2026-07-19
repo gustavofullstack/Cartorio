@@ -62,7 +62,7 @@
   "status": "g8_43pct_honest_wave42_done",
   "honest_count": 43,
   "honest_total": 100,
-  "last_updated": "2026-07-17T21:46:04.503863+00:00",
+  "last_updated": "2026-07-19T13:43:02.987164",
   "evidence_policy": "checkbox only with commit+tests+lesson",
   "next_wave": 43,
   "next_wave_tasks": [

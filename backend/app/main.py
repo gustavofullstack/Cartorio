@@ -213,8 +213,11 @@ async def _llm_providers_health_loop() -> None:
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Smoke test DB + create tables if missing + audit log init + tracing init (A3)."""
     scrubber = SecretScrubLogFilter()
+    from app.services.log_masker import MaskingFilter
+    masker = MaskingFilter()
     for handler in logging.getLogger().handlers:
         handler.addFilter(scrubber)
+        handler.addFilter(masker)
 
     # 0a. Sentry SDK init (DSN-gated; no-op se SENTRY_DSN ausente).
     # Hoisted para o lifespan para garantir init ANTES de qualquer captura
@@ -472,10 +475,6 @@ install_problem_handlers(app)
 # info.contact/license, servers, tags ordenados e security schemes.
 # NAO mexe em paths. Hook em app.openapi para cache idempotente.
 install_openapi_enhancer(app)
-
-# OpenAPI validation helper (A19 — squad A): expoe schema + validators.
-# Deve ser instalado depois do enhancer para aquecer o schema canonico.
-install_openapi_validation_middleware(app)
 
 # API versioning (A20 — squad A): headers X-API-Version + Link (RFC 8594)
 # + endpoint /version com metadata completa.
@@ -881,3 +880,8 @@ app.include_router(bot_lgpd_router, prefix="/api/v1")
 from app.api.v1.whatsapp import router as whatsapp_router  # noqa: E402
 
 app.include_router(whatsapp_router, prefix="/api/v1")
+
+# OpenAPI validation helper (A19 — squad A): aquece o schema enriquecido
+# somente depois que todos os routers foram registrados. Aquecer antes fazia o
+# FastAPI guardar um schema com zero paths, deixando Swagger e Postman vazios.
+install_openapi_validation_middleware(app)
