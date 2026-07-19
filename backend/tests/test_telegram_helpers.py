@@ -11,6 +11,7 @@ de 46% -> >=70%:
 
 from __future__ import annotations
 
+import inspect
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -22,6 +23,7 @@ from app.api.v1.telegram import (
     _servicos_keyboard,
     strip_emojis,
 )
+from app.api.v1.telegram import TELEGRAM_API_BASE
 
 
 def test_strip_emojis_remove_emojis_basicos() -> None:
@@ -52,6 +54,14 @@ def test_get_tg_pool_retorna_client() -> None:
     # Verifica que tem os atributos minimos de httpx.AsyncClient
     assert hasattr(pool, "post")
     assert hasattr(pool, "get")
+
+
+def test_get_tg_pool_uses_canonical_verified_tls() -> None:
+    """O transporte Telegram não pode voltar ao bypass TLS/IP legado."""
+    source = inspect.getsource(_get_tg_pool)
+    assert TELEGRAM_API_BASE == "https://api.telegram.org"
+    assert "verify=False" not in source
+    assert '"Host"' not in source
 
 
 def test_menu_keyboard_estrutura_correta() -> None:
