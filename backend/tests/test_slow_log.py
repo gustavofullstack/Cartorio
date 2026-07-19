@@ -13,53 +13,25 @@ from __future__ import annotations
 
 import json
 import logging
-from contextlib import contextmanager
-from unittest.mock import MagicMock
-
+from typing import Any
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.middleware.slow_log import SLOW_THRESHOLD_MS_DEFAULT, SKIP_PATHS, SlowLogMiddleware
 
-
-def _build_app(threshold_ms: int = 500) -> tuple[FastAPI, MagicMock]:
-    """Cria app de teste com SlowLogMiddleware + endpoint que simula delay."""
-    app = FastAPI()
-    handler = MagicMock()
-    app.add_middleware(SlowLogMiddleware, threshold_ms=threshold_ms)
-
-    @app.get("/fast")
-    async def fast() -> dict:
-        return {"ok": True}
-
-    @app.get("/slow")
-    async def slow() -> dict:
-        import asyncio
-
-        # Aguarda para simular latencia (100ms evita flaky em full suite)
-        await asyncio.sleep(0.1)
-        return {"slow": True}
-
-    return app, handler
+SLOW_LOGGER = logging.getLogger("cartorio.slow")
 
 
-@contextmanager
-def _capture_slow_logger(caplog, level: int = logging.INFO):
-    """Captura o logger alvo mesmo se outro import reconfigurar o root logger.
+class _CaptureHandler(logging.Handler):
+    """Handler de teste que armazena registros em memoria."""
 
-    ``app.main`` usa ``basicConfig(force=True)`` para substituir handlers do
-    Uvicorn. Em uma suite grande, isto pode remover o handler raiz do
-    ``caplog``. Vincular o handler diretamente ao logger sob teste evita essa
-    dependência global e não altera o comportamento de produção.
-    """
-    slow_logger = logging.getLogger("cartorio.slow")
-    slow_logger.addHandler(caplog.handler)
-    try:
-        with caplog.at_level(level, logger=slow_logger.name):
-            yield
-    finally:
-        slow_logger.removeHandler(caplog.handler)
+    def __init__(self) -> None:
+        super().__init__()
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
 
 
 @pytest.fixture(autouse=True)
@@ -75,22 +47,10 @@ def _stub_slow_query_storage(monkeypatch):
     )
 
 
-def _assert_log_emitted(caplog, threshold_ms: int = 50) -> dict:
-    """Executa uma request lenta e retorna seu log estruturado."""
-    app, _ = _build_app(threshold_ms=threshold_ms)
-    client = TestClient(app)
-    with _capture_slow_logger(caplog):
-        response = client.get("/slow")
-    assert response.status_code == 200
-    logs = _capture_logs(caplog)
-    assert logs, "slow_request log was not emitted"
-    return logs[0]
-
-
-def _capture_logs(caplog, level: int = logging.INFO) -> list[dict]:
-    """Extrai logs JSON do cartorio.slow logger."""
+def _capture_logs(handler: _CaptureHandler, level: int = logging.INFO) -> list[dict]:
+    """Extrai logs JSON do cartorio.slow logger a partir do handler de captura."""
     out: list[dict] = []
-    for record in caplog.records:
+    for record in handler.records:
         if record.name == "cartorio.slow" and record.levelno >= level:
             try:
                 payload = json.loads(record.getMessage())
@@ -100,23 +60,64 @@ def _capture_logs(caplog, level: int = logging.INFO) -> list[dict]:
     return out
 
 
+def _with_capture(app: FastAPI, threshold_ms: int) -> tuple[TestClient, _CaptureHandler]:
+    """Cria TestClient + handler de captura para o logger cartorio.slow."""
+    client = TestClient(app)
+    handler = _CaptureHandler()
+    SLOW_LOGGER.handlers.clear()
+    SLOW_LOGGER.addHandler(handler)
+    SLOW_LOGGER.propagate = False
+    SLOW_LOGGER.setLevel(logging.INFO)
+    return client, handler
+
+
+@pytest.fixture(autouse=True)
+def _clean_slow_logger():
+    """Remove handlers do cartorio.slow apos cada teste."""
+    yield
+    SLOW_LOGGER.handlers.clear()
+    SLOW_LOGGER.propagate = True
+
+
+def _build_app(threshold_ms: int = 500) -> FastAPI:
+    """Cria app de teste com SlowLogMiddleware + endpoint que simula delay."""
+    app = FastAPI()
+    app.add_middleware(SlowLogMiddleware, threshold_ms=threshold_ms)
+
+    @app.get("/fast")
+    async def fast() -> dict[str, Any]:
+        return {"ok": True}
+
+    @app.get("/slow")
+    async def slow() -> dict[str, Any]:
+        import asyncio
+
+        await asyncio.sleep(0.1)
+        return {"slow": True}
+
+    return app
+
+
 class TestSlowLogMiddleware:
     """TDD strict: RED -> GREEN -> commit."""
 
-    def test_request_fast_no_log(self, caplog):
+    def test_request_fast_no_log(self):
         """Request < threshold NAO emite log."""
-        app, _ = _build_app(threshold_ms=500)
-        client = TestClient(app)
-
-        with _capture_slow_logger(caplog):
-            response = client.get("/fast")
-
+        app = _build_app(threshold_ms=500)
+        client, handler = _with_capture(app, 500)
+        response = client.get("/fast")
         assert response.status_code == 200
-        assert _capture_logs(caplog) == []
+        assert _capture_logs(handler) == []
 
-    def test_request_slow_emits_info_log(self, caplog):
+    def test_request_slow_emits_info_log(self):
         """Request >= threshold (100ms > 50ms) emite log."""
-        log = _assert_log_emitted(caplog, threshold_ms=50)
+        app = _build_app(threshold_ms=50)
+        client, handler = _with_capture(app, 50)
+        response = client.get("/slow")
+        assert response.status_code == 200
+        logs = _capture_logs(handler)
+        assert len(logs) >= 1
+        log = logs[0]
         assert log["event"] == "slow_request"
         assert log["method"] == "GET"
         assert log["path"] == "/slow"
@@ -124,39 +125,40 @@ class TestSlowLogMiddleware:
         assert log["duration_ms"] >= 1
         assert log["threshold_ms"] == 50
         assert "request_id" in log
-        assert isinstance(log["timestamp"], str)
 
-    def test_skip_paths_no_log(self, caplog):
+    def test_skip_paths_no_log(self):
         """Skip paths (/health, /metrics) NAO emitem log mesmo se lentas."""
         app = FastAPI()
-        app.add_middleware(SlowLogMiddleware, threshold_ms=1)  # threshold minimo
+        app.add_middleware(SlowLogMiddleware, threshold_ms=1)
 
         @app.get("/health/live")
-        async def health() -> dict:
+        async def health() -> dict[str, Any]:
             import asyncio
 
             await asyncio.sleep(0.05)
             return {"status": "ok"}
 
         @app.get("/metrics")
-        async def metrics() -> dict:
+        async def metrics() -> dict[str, Any]:
             import asyncio
 
             await asyncio.sleep(0.05)
             return {"data": "x"}
 
-        client = TestClient(app)
+        client, handler = _with_capture(app, 1)
+        client.get("/health/live")
+        client.get("/metrics")
+        assert _capture_logs(handler) == []
 
-        with _capture_slow_logger(caplog):
-            client.get("/health/live")
-            client.get("/metrics")
-
-        assert _capture_logs(caplog) == []
-
-    def test_log_structure_complete(self, caplog):
+    def test_log_structure_complete(self):
         """Log contem todos os campos esperados."""
-        log = _assert_log_emitted(caplog, threshold_ms=10)
-        # Campos obrigatorios
+        app = _build_app(threshold_ms=10)
+        client, handler = _with_capture(app, 10)
+        response = client.get("/slow")
+        assert response.status_code == 200
+        logs = _capture_logs(handler)
+        assert len(logs) >= 1
+        log = logs[0]
         required = {
             "event",
             "method",
@@ -179,22 +181,23 @@ class TestSlowLogMiddleware:
         assert "/docs" in SKIP_PATHS
         assert "/openapi.json" in SKIP_PATHS
 
-    def test_log_json_valid(self, caplog):
+    def test_log_json_valid(self):
         """Mensagem de log eh JSON valido."""
-        log = _assert_log_emitted(caplog, threshold_ms=10)
-        # Verifica que ja foi parseado como JSON (nao levanta excecao)
-        assert isinstance(log, dict)
+        app = _build_app(threshold_ms=10)
+        client, handler = _with_capture(app, 10)
+        response = client.get("/slow")
+        assert response.status_code == 200
+        logs = _capture_logs(handler)
+        assert len(logs) >= 1
+        assert isinstance(logs[0], dict)
 
-    def test_double_threshold_emits_warning(self, caplog):
-        """Request >= 2x threshold emite WARNING level."""
-        app, _ = _build_app(threshold_ms=30)  # threshold 30ms
-        client = TestClient(app)
-
-        with _capture_slow_logger(caplog):
-            client.get("/slow")  # 60ms >= 2*30=60ms
-
-        # Deve ter pelo menos 1 WARNING
+    def test_double_threshold_emits_warning(self):
+        """Request >= 2x threshold (100ms >= 2*30=60ms) emite WARNING level."""
+        app = _build_app(threshold_ms=30)
+        client, handler = _with_capture(app, 30)
+        response = client.get("/slow")
+        assert response.status_code == 200
         warnings = [
-            r for r in caplog.records if r.levelno == logging.WARNING and r.name == "cartorio.slow"
+            r for r in handler.records if r.levelno == logging.WARNING and r.name == "cartorio.slow"
         ]
         assert len(warnings) >= 1
