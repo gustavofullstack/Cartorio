@@ -15,7 +15,7 @@ Fechar NXDOMAIN / 404 edge para:
 |------|-------------|---------------|-------|
 | `chatwoot.2notasudi.com.br` | `cartorio-chatwoot` | `cartorio_chatwoot` | 3000 |
 | `n8n.2notasudi.com.br` | `cartorio-n8n` | `cartorio_n8n` | 5678 |
-| `supbase.2notasudi.com.br` **e** `supabase.2notasudi.com.br` | `cartorio-supabase` | `cartorio_supabase` | 8000 (Kong) |
+| `supbase.2notasudi.com.br` **e** `supabase.2notasudi.com.br` | `cartorio-supabase` | `cartorio_supabase-kong` | 8000 (Kong) |
 
 **Já OK (não re-mergear):** `api`, `chat`, `flow`, `whatsapp`, `agent`, `easypanel`
 **Aliases:** `supbase` é canônico legado; o artefato cobre também `supabase` para
