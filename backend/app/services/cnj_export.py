@@ -38,9 +38,7 @@ def _canonical_sha256(data: dict[str, Any]) -> str:
 
 def _validate_period(reference_period: str) -> tuple[int, int]:
     """Aceita exclusivamente o periodo calendario YYYY-MM."""
-    if not isinstance(reference_period, str) or not re.fullmatch(
-        r"\d{4}-\d{2}", reference_period
-    ):
+    if not isinstance(reference_period, str) or not re.fullmatch(r"\d{4}-\d{2}", reference_period):
         raise CNJExportError("reference_period deve seguir YYYY-MM")
     try:
         year_text, month_text = reference_period.split("-", maxsplit=1)
