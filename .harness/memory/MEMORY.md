@@ -8,6 +8,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-17 ~Wave32 BRT)
 
 ### G8 honesty + waves (START HERE se CONTINUE em G8)
+- **2026-07-19** (**Lesson 254 — Telegram Token Recovery, Evolution Redis Fix & OpenCode Zen Validation**: recuperação token Telegram Bot, correção Redis Evolution, OpenClaw model fix e 2833 testes passando 100%): `.harness/memory/lesson-254-telegram-token-opencode-zen-final-validation-2026-07-19.md`
 - **2026-07-19** (**Lesson 253 — G8 Final Cycle**: Enriquecimento de schemas Swagger com x-sensivel, validação de consentimento ativa nas rotas de upload e segunda via de documentos, log masking de valores financeiros e de clientes; 100/100 tasks completadas): `.harness/memory/lesson-253-g8-final-cycle-2026-07-19.md`
 - **2026-07-17** (**Lesson 217 — G8 Wave 33**: audit hash sequence MCP + scrub_mcp_output + X-Idempotency-Key webhooks + WS 50/20 concurrent; **9/100** evidenced; 35 tests): `.harness/memory/lesson-217-g8-wave33-mcp-idempotency-ws-2026-07-17.md`
 - **2026-07-17** (**Lesson 216 — G8 honesty reset 100→5 + G8.08.T4**): `.harness/memory/lesson-216-g8-honesty-reset-dlq-t4-2026-07-17.md`
