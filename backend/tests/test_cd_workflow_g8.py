@@ -15,6 +15,7 @@ Modified by Gustavo Almeida — cartorio-sre / Wave 48.
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 import pytest
 import yaml
@@ -43,17 +44,23 @@ def test_cd_yaml_is_valid_yaml_with_required_jobs(cd_yaml: dict[str, object]) ->
     assert "deploy-render" in jobs
 
 
-def test_quality_gate_job_depends_on_ci(cd_yaml: dict[str, object]) -> None:
-    """quality-gate runs only after CI completed (workflow_run trigger)."""
+def test_quality_gate_is_driven_by_successful_ci_workflow(cd_yaml: dict[str, object]) -> None:
+    """quality-gate follows the canonical CI workflow and cannot self-trigger."""
     qg = cd_yaml["jobs"]["quality-gate"]
     assert isinstance(qg, dict)
-    assert "needs" not in qg or qg["needs"] == "CI", (
-        "quality-gate must be implicit (workflow_run trigger on CI), not an explicit needs:"
-    )
+    assert "needs" not in qg, "needs cannot reference a job in another workflow"
     assert "if" in qg, "quality-gate must have an `if:` guard"
     if_str = str(qg["if"])
-    assert "success" in if_str or "CI" in if_str, (
-        f"quality-gate guard must reference CI success, got: {if_str!r}"
+    for required in (
+        "workflow_run",
+        "workflow_run.name == 'CI'",
+        "workflow_run.event == 'push'",
+        "workflow_run.head_branch == 'master'",
+        "workflow_run.conclusion == 'success'",
+    ):
+        assert required in if_str, f"quality gate guard missing {required!r}: {if_str!r}"
+    assert "\n  push:" not in CD_PATH.read_text(), (
+        "CD must not self-trigger on push independently of CI"
     )
     steps = qg["steps"]
     assert isinstance(steps, list)
@@ -63,6 +70,28 @@ def test_quality_gate_job_depends_on_ci(cd_yaml: dict[str, object]) -> None:
     assert any("Pytest" in n for n in step_names), "pytest gate missing"
     assert any("Secrets" in n for n in step_names), "secrets gate missing"
     assert any("PII" in n for n in step_names), "LGPD PII gate missing"
+
+
+def test_quality_gate_has_valid_synthetic_runtime_environment(cd_yaml: dict[str, object]) -> None:
+    """CD's isolated pytest gate must satisfy the Settings contract."""
+    qg = cd_yaml["jobs"]["quality-gate"]
+    assert isinstance(qg, dict)
+    assert qg["timeout-minutes"] >= 20
+    services = qg.get("services")
+    assert isinstance(services, dict)
+    assert "postgres" in services and "redis" in services
+    pytest_step = next(step for step in qg["steps"] if "Pytest" in step.get("name", ""))
+    env = pytest_step["env"]
+    assert env["APP_ENV"] == "test"
+    assert len(env["AUDIT_HMAC_KEY"]) >= 32
+    assert re.fullmatch(r"[a-f0-9]{64}", env["CARTORIO_API_KEY"])
+    assert "--dist loadfile" in pytest_step["run"]
+
+
+def test_checkout_pins_validated_ci_sha(cd_yaml: dict[str, object]) -> None:
+    qg = cd_yaml["jobs"]["quality-gate"]
+    checkout = next(step for step in qg["steps"] if step.get("uses") == "actions/checkout@v4")
+    assert checkout["with"]["ref"] == "${{ github.event.workflow_run.head_sha }}"
 
 
 def test_deploy_render_needs_quality_gate(cd_yaml: dict[str, object]) -> None:
@@ -81,9 +110,10 @@ def test_deploy_render_needs_quality_gate(cd_yaml: dict[str, object]) -> None:
             f"deploy-render needs list must contain 'quality-gate', got {needs!r}"
         )
     guard = str(deploy.get("if", ""))
-    assert "quality-gate.result" in guard or "workflow_dispatch" in guard, (
-        f"deploy must be gated by quality-gate.result == 'success', got: {guard!r}"
-    )
+    assert "quality-gate.result" in guard
+    assert "vars.RENDER_DEPLOY_ENABLED == 'true'" in guard
+    assert "vars.SUI_CHECKLIST_APPROVED == 'true'" in guard
+    assert "workflow_dispatch" not in guard, "manual dispatch must not bypass SUI/CI gates"
 
 
 def test_ci_yaml_has_secrets_scan_job(ci_yaml: dict[str, object]) -> None:

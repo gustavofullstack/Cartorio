@@ -14,18 +14,13 @@
 name: CD
 
 on:
-  push:
-    branches: [master]
-    paths:
-      - 'backend/**'
-      - 'Dockerfile'
-      - '.github/workflows/cd.yml'
-      - '.github/workflows/ci.yml'
+  # CD is driven exclusively by a completed CI workflow.  A direct push
+  # trigger would let this workflow run its own (different) gates and could
+  # deploy without the canonical CI `all-green` job.
   workflow_run:
     workflows: [CI]
     types: [completed]
     branches: [master]
-  workflow_dispatch:  # permite disparar manualmente (emergency only — bypass de gate)
 
 # Cancela deploys obsoletos (mesmo commit)
 concurrency:
@@ -43,12 +38,47 @@ jobs:
   quality-gate:
     name: Quality Gate Absolute
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: CI  # trigger implicito: aguarda CI rodar e concluir
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+    timeout-minutes: 20
+    # `needs` cannot reference another workflow.  workflow_run already starts
+    # this job after CI completes; require the canonical successful push run
+    # on master and fail closed for manual/other workflow events.
+    if: >-
+      ${{
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.name == 'CI' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'master' &&
+        github.event.workflow_run.conclusion == 'success'
+      }}
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: cartorio_test
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: cartorio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Test exactly the commit that CI validated, not a newer master tip.
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -80,8 +110,14 @@ jobs:
       - name: Gate 4/6 — Pytest (coverage gate 90%)
         working-directory: backend
         env:
-          APP_ENV: testing
-        run: uv run pytest -n auto --tb=short
+          DATABASE_URL: postgresql+psycopg://cartorio_test:test_password@localhost:5432/cartorio_test
+          REDIS_URL: redis://localhost:6379/0
+          COVERAGE_GATE_REUSE_EXISTING: "1"
+          # Settings accepts `test`; `testing` is only a pytest marker.
+          APP_ENV: test
+          AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          CARTORIO_API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+        run: uv run pytest -n auto --dist loadfile --maxfail=1 --tb=short
 
       # GATE 4: secrets scan (literal API keys)
       - name: Gate 5/6 — Secrets literal keys scan
@@ -123,7 +159,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [quality-gate]
-    if: ${{ needs.quality-gate.result == 'success' || github.event_name == 'workflow_dispatch' }}
+    # Deliberately opt-in: setting both repository variables is a human SUI
+    # action after `.harness/SUI_CHECKLIST.md` is completed.  No manual event
+    # or failed/skipped quality gate can bypass this guard.
+    if: >-
+      ${{
+        needs.quality-gate.result == 'success' &&
+        github.event_name == 'workflow_run' &&
+        vars.RENDER_DEPLOY_ENABLED == 'true' &&
+        vars.SUI_CHECKLIST_APPROVED == 'true'
+      }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
