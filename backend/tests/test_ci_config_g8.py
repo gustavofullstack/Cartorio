@@ -65,9 +65,7 @@ def test_uv_lock_in_dependency_path() -> None:
 def test_test_job_avoids_xdist_with_in_memory_sqlite() -> None:
     ci_config = _load_ci()
     steps = _steps(ci_config, "test")
-    pytest_step = next(
-        step for step in steps if "pytest" in str(step.get("run", "")).lower()
-    )
+    pytest_step = next(step for step in steps if "pytest" in str(step.get("run", "")).lower())
     command = str(pytest_step["run"])
 
     assert "uv run pytest" in command
