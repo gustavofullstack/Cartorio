@@ -161,6 +161,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://cartorio_test:test_password@localhost:5432/cartorio_test
       REDIS_URL: redis://localhost:6379/0
+      COVERAGE_GATE_REUSE_EXISTING: "1"
       # The Settings contract accepts `test` (not the pytest marker name
       # `testing`). These values are synthetic CI-only credentials required
       # for importing the application during the OpenAPI snapshot gate.
@@ -204,7 +205,7 @@ jobs:
       # per-test SQLite engine patch in conftest.py cannot cross workers.
       - name: Run pytest with coverage (xdist by file)
         working-directory: backend
-        run: uv run pytest -n auto --dist loadfile --maxfail=1 --tb=short
+        run: uv run pytest -n auto --dist loadfile --maxfail=1 --tb=short --cov-report=json:coverage_gate.json
 
       # G6.A.T2 — OpenAPI snapshot CI gate
       - name: OpenAPI snapshot check (G6.A.T2)

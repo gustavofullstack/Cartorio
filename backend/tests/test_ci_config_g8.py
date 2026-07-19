@@ -73,6 +73,8 @@ def test_test_job_uses_file_scoped_xdist_and_fast_failure() -> None:
     assert "-n auto" in command
     assert "--dist loadfile" in command
     assert "--maxfail=1" in command
+    assert "--cov-report=json:coverage_gate.json" in command
+    assert ci_config["jobs"]["test"]["timeout-minutes"] >= 20
 
 
 def test_test_job_uses_valid_synthetic_settings_environment() -> None:
