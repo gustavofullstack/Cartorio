@@ -125,6 +125,8 @@ def test_top_candidates_lists_orphans(mod):
     Aceitamos qualquer orphan_module (>=1) — Top 10 do audit pega os piores.
     """
     payload = json.loads(_read_report(mod))
+    if not payload["results"]["coverage_gaps"].get("coverage_data_present", True):
+        pytest.skip("coverage is generated after the active pytest session")
     candidates = payload["top_candidates_hitl"]
     orphan_kinds = [c for c in candidates if c.get("kind") == "orphan_module"]
     # Pelo menos 1 orphan_module sempre esperado — listagem é top-10

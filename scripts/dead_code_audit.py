@@ -21,6 +21,10 @@ Usage:
   python3 scripts/dead_code_audit.py --no-cache     # bypassa cache
   python3 scripts/dead_code_audit.py --vulture-min 90  # vulture mais estrito
 
+Coverage rebuild is opt-in: set ``DEAD_CODE_AUDIT_ALLOW_PYTEST=1`` when running
+the auditor in isolation. During an active pytest session, the audit reports
+coverage as unavailable instead of recursively starting another suite.
+
 Modified by Gustavo Almeida + cartorio-dev - G8.12.T4 (2026-07-18).
 """
 
@@ -28,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -208,7 +213,25 @@ def run_coverage_gaps() -> dict[str, Any]:
     """
     coverage_file = BACKEND_DIR / ".coverage"
     if not coverage_file.exists():
-        # Fall back: roda test suite com cov mas SEM gate
+        # A própria suíte pytest pode executar este auditor antes de gravar
+        # `.coverage`. Nunca iniciar uma segunda suíte implicitamente: isso
+        # causa recursão/timeout em xdist. A reconstrução é opt-in para uma
+        # execução operacional isolada.
+        allow_rebuild = os.getenv(
+            "DEAD_CODE_AUDIT_ALLOW_PYTEST"
+        ) == "1" and not os.getenv("PYTEST_CURRENT_TEST")
+        if not allow_rebuild:
+            return {
+                "tool": "coverage",
+                "coverage_data_present": False,
+                "pytest_invoked": False,
+                "reason": "coverage data unavailable during active pytest session",
+                "files": [],
+                "total_uncovered_files": 0,
+                "total_zero_coverage_files": 0,
+            }
+
+        # Fallback explícito: roda test suite com cov mas SEM gate.
         out = run_subprocess(
             [
                 "uv",
