@@ -13,16 +13,9 @@ Strategy:
 from __future__ import annotations
 
 import datetime
-import hashlib
-import hmac
-import json
-import os
-import time
-from dataclasses import dataclass
 from decimal import Decimal
 from types import SimpleNamespace
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -609,7 +602,9 @@ class TestCalcularEmolumentoApi:
     @patch("app.api.v1.router.calcular_emolumento_svc")
     @patch("app.api.v1.router.store", create=True)
     @pytest.mark.asyncio
-    async def test_invalid_isencao_raises_400(self, mock_store, mock_calc, mock_isencao, mock_audit):
+    async def test_invalid_isencao_raises_400(
+        self, mock_store, mock_calc, mock_isencao, mock_audit
+    ):
         from app.api.v1.router import calcular_emolumento_api
         from fastapi import HTTPException
 
@@ -654,9 +649,7 @@ class TestCalcularEmolumentoApi:
             valido_ate="2026-12-31",
         )
         mock_calc.return_value = mock_result
-        result = await calcular_emolumento_api(
-            tipo="autenticacao", folhas=1, urgencia=False, db=None
-        )
+        await calcular_emolumento_api(tipo="autenticacao", folhas=1, urgencia=False, db=None)
         mock_audit.log.assert_not_called()
 
 
@@ -1167,16 +1160,14 @@ class TestWebhookEvolution:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_empty_message_handoff(
         self, mock_ingest, mock_audit, mock_scrub, mock_session_scope, mock_request
     ):
         from app.api.v1.router import webhook_evolution
 
-        mock_session_scope.return_value.__enter__ = MagicMock(
-            return_value=MagicMock()
-        )
+        mock_session_scope.return_value.__enter__ = MagicMock(return_value=MagicMock())
         mock_session_scope.return_value.__exit__ = MagicMock(return_value=False)
 
         payload = {
@@ -1194,16 +1185,14 @@ class TestWebhookEvolution:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_idempotent_replay(
         self, mock_ingest, mock_audit, mock_scrub, mock_session_scope, mock_request
     ):
         from app.api.v1.router import webhook_evolution
 
-        mock_session_scope.return_value.__enter__ = MagicMock(
-            return_value=MagicMock()
-        )
+        mock_session_scope.return_value.__enter__ = MagicMock(return_value=MagicMock())
         mock_session_scope.return_value.__exit__ = MagicMock(return_value=False)
         mock_ingest.return_value = {"status": "idempotent", "message_id": "MSG1"}
 
@@ -1221,16 +1210,14 @@ class TestWebhookEvolution:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_rejected_event(
         self, mock_ingest, mock_audit, mock_scrub, mock_session_scope, mock_request
     ):
         from app.api.v1.router import webhook_evolution
 
-        mock_session_scope.return_value.__enter__ = MagicMock(
-            return_value=MagicMock()
-        )
+        mock_session_scope.return_value.__enter__ = MagicMock(return_value=MagicMock())
         mock_session_scope.return_value.__exit__ = MagicMock(return_value=False)
         mock_ingest.return_value = {"status": "rejected", "reason": "spam"}
 
@@ -1258,7 +1245,7 @@ class TestWebhookEvolutionLegacy:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_legacy_format(
         self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
@@ -1315,7 +1302,7 @@ class TestWebhookEvolutionPIIBlock:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_pii_detected_blocks(
         self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
@@ -1363,7 +1350,7 @@ class TestWebhookTextFragments:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_text_as_fragments_list(
         self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
@@ -1449,9 +1436,7 @@ class TestWebhookEvolutionLLMErrors:
             "instance": "cartorio-2notas",
         }
 
-        with patch(
-            "app.api.v1.router.chat_with_fallback", new_callable=AsyncMock
-        ) as mock_chat:
+        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
             mock_chat.side_effect = ChatError(kind="RATE_LIMITED", status_code=429)
             result = await webhook_evolution(mock_request, payload)
 
@@ -1488,9 +1473,7 @@ class TestWebhookEvolutionLLMErrors:
             "instance": "cartorio-2notas",
         }
 
-        with patch(
-            "app.api.v1.router.chat_with_fallback", new_callable=AsyncMock
-        ) as mock_chat:
+        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
             mock_chat.side_effect = ChatError(kind="LGPD_BLOCKED")
             result = await webhook_evolution(mock_request, payload)
 
@@ -1527,9 +1510,7 @@ class TestWebhookEvolutionLLMErrors:
             "instance": "cartorio-2notas",
         }
 
-        with patch(
-            "app.api.v1.router.chat_with_fallback", new_callable=AsyncMock
-        ) as mock_chat:
+        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
             mock_chat.side_effect = ChatError(kind="UNKNOWN")
             result = await webhook_evolution(mock_request, payload)
 
@@ -1573,9 +1554,7 @@ class TestWebhookEvolutionHumanoTag:
             "instance": "cartorio-2notas",
         }
 
-        with patch(
-            "app.api.v1.router.chat_with_fallback", new_callable=AsyncMock
-        ) as mock_chat:
+        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
             mock_chat.return_value = SimpleNamespace(
                 content="Preciso de um humano [HUMANO]",
                 tokens_in=5,
@@ -1661,9 +1640,7 @@ class TestWebhookNoKeyId:
             "instance": "cartorio-2notas",
         }
 
-        with patch(
-            "app.api.v1.router.chat_with_fallback", new_callable=AsyncMock
-        ) as mock_chat:
+        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
             mock_chat.return_value = SimpleNamespace(
                 content="Hi!", tokens_in=5, tokens_out=3, latency_ms=50
             )
