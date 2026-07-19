@@ -39,6 +39,18 @@ def test_chatwoot_health_check_online() -> None:
 
 
 @respx.mock
+def test_chatwoot_health_legacy_alias_remains_available() -> None:
+    """Clientes v1 antigos mantem health enquanto migram ao prefixo integrations."""
+    settings.chatwoot_base_url = "https://chat.test.com"
+    respx.get("https://chat.test.com/auth/sign_in").mock(return_value=httpx.Response(200))
+
+    resp = client.get("/api/v1/chatwoot/health", headers=TEST_HEADERS)
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "online"
+
+
+@respx.mock
 def test_chatwoot_health_check_offline() -> None:
     """GET /api/v1/integrations/chatwoot/health deve retornar offline se a chamada falhar ou der timeout."""
     settings.chatwoot_base_url = "https://chat.test.com"
@@ -81,6 +93,26 @@ def test_chatwoot_consent_propagation_success() -> None:
     assert body["status"] == "propagated"
     assert body["labels_applied"] is True
     assert body["chatwoot_conversation_id"] == 42
+
+
+@respx.mock
+def test_chatwoot_consent_propagation_legacy_alias_remains_available() -> None:
+    """A mudanca de namespace nao pode quebrar automacoes Chatwoot existentes."""
+    settings.chatwoot_base_url = "https://chat.test.com"
+    settings.chatwoot_api_key = "test_key"
+    settings.chatwoot_account_id = 1
+    respx.post("https://chat.test.com/api/v1/accounts/1/conversations/42/labels").mock(
+        return_value=httpx.Response(200, json={"payload": ["consent-lgpd-telegram"]})
+    )
+
+    resp = client.post(
+        "/api/v1/chatwoot/consent-propagation",
+        json={"chatwoot_conversation_id": 42, "telegram_chat_id": "12345678"},
+        headers=TEST_HEADERS,
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "propagated"
 
 
 @respx.mock

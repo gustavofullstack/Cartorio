@@ -1046,6 +1046,16 @@ class ConsentPropagationRequest(BaseModel):
 
 
 @integrations_router.post(
+    "/chatwoot/consent-propagation",
+    tags=["lgpd"],
+    summary="Propaga consentimento LGPD do Telegram para Chatwoot",
+    description=(
+        'Quando o cliente consente via Telegram ("SIM" ou /start), '
+        "este endpoint aplica labels de consentimento na conversa Chatwoot "
+        "correspondente e registra no audit log (LGPD Art. 7 I)."
+    ),
+)
+@integrations_router.post(
     "/integrations/chatwoot/consent-propagation",
     tags=["lgpd"],
     summary="Propaga consentimento LGPD do Telegram para Chatwoot",
@@ -1097,6 +1107,12 @@ async def chatwoot_consent_propagation(
     }
 
 
+@integrations_router.get(
+    "/chatwoot/health",
+    tags=["health"],
+    summary="Health check dedicado do Chatwoot CRM",
+    description="Verifica a conectividade com o Chatwoot via health endpoint e retorna latência.",
+)
 @integrations_router.get(
     "/integrations/chatwoot/health",
     tags=["health"],

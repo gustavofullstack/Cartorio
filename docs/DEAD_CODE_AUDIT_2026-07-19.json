@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-19T17:40:22.464668+00:00",
+    "generated_at": "2026-07-19T17:55:09.886356+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -800,9 +800,9 @@
         },
         {
           "file": "app/services/cnj_export.py",
-          "summary_pct": 91.95,
+          "summary_pct": 95.4,
           "statements": 87,
-          "missing_lines": 7,
+          "missing_lines": 4,
           "excluded_lines": 0
         },
         {

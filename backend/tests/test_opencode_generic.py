@@ -79,14 +79,17 @@ def test_provider_config_timeout_default_30s() -> None:
     assert cfg.timeout_seconds == 30.0
 
 
-def test_provider_dispatch_tem_11_providers() -> None:
-    """Tabela PROVIDER_DISPATCH tem 11 providers (Sprint 47+)."""
-    assert len(PROVIDER_DISPATCH) == 11
+def test_provider_dispatch_tem_14_providers() -> None:
+    """Tabela PROVIDER_DISPATCH tem 14 providers (Sprint 47 + Zen accounts)."""
+    assert len(PROVIDER_DISPATCH) == 14
     # Alguns providers canonicos devem estar presentes
     assert "opencode_go" in PROVIDER_DISPATCH
     assert "jules" in PROVIDER_DISPATCH
     assert "openclaw" in PROVIDER_DISPATCH
     assert "litellm" in PROVIDER_DISPATCH  # Turno 47
+    assert "opencode_zen_account_1" in PROVIDER_DISPATCH
+    assert "opencode_zen_account_2" in PROVIDER_DISPATCH
+    assert "opencode_zen_account_3" in PROVIDER_DISPATCH
 
 
 def test_chat_levanta_CONFIG_quando_provider_nao_configurado() -> None:
