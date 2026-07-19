@@ -295,7 +295,7 @@ def _reset_jwt_secret(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _mock_redis_from_url():
-    """Mocka redis.from_url globalmente para evitar conexoes reais em testes."""
+    """Mocka Redis sync/async globalmente para evitar estado compartilhado."""
     import redis
     from unittest.mock import MagicMock, patch
 
@@ -315,7 +315,44 @@ def _mock_redis_from_url():
         def __getattr__(self, name):
             return MagicMock()
 
-    with patch("redis.from_url", return_value=MockRedis()):
+    class MockAsyncRedis:
+        async def ping(self):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def incr(self, key):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def expire(self, key, seconds):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def zadd(self, *args, **kwargs):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def zremrangebyscore(self, *args, **kwargs):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def zcount(self, *args, **kwargs):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        def pipeline(self):
+            return self
+
+        async def execute(self):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def aclose(self):
+            return None
+
+        def __getattr__(self, name):
+            async def _offline(*args, **kwargs):
+                raise redis.exceptions.ConnectionError("Redis offline mock")
+
+            return _offline
+
+    with (
+        patch("redis.from_url", return_value=MockRedis()),
+        patch("redis.asyncio.from_url", return_value=MockAsyncRedis()),
+    ):
         yield
 
 
