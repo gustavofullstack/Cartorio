@@ -216,6 +216,7 @@ def run_coverage_gaps() -> dict[str, Any]:
                 "pytest",
                 "tests/",
                 "-q",
+                "--ignore=tests/test_dead_code_audit_g8.py",
                 "--override-ini=addopts=--cov=app --cov-report= -m 'not smoke and not integration and not e2e'",
             ],
             timeout=600,

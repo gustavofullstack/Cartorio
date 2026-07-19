@@ -33,7 +33,8 @@ prod:  ## Uvicorn prod (4 workers)
 
 .PHONY: test
 test:  ## Pytest com coverage
-	uv run pytest --tb=short
+	uv run pytest --tb=short --ignore=tests/test_dead_code_audit_g8.py
+	uv run pytest --tb=short --no-cov tests/test_dead_code_audit_g8.py
 
 .PHONY: test-fast
 test-fast:  ## Pytest rapido sem coverage

@@ -143,6 +143,12 @@ def test_no_cache_bypasses_ttl(mod):
     assert payload.get("_cache_hit") is False, "_cache_hit deveria ser False apos --no-cache"
 
 
+def test_coverage_collection_does_not_recurse_into_its_own_test() -> None:
+    """O subprocesso de coverage nao pode chamar novamente este teste."""
+    source = SCRIPT.read_text()
+    assert "--ignore=tests/test_dead_code_audit_g8.py" in source
+
+
 def _read_report(mod) -> str:
     p = ROOT / "docs" / f"DEAD_CODE_AUDIT_{mod.RUN_DATE}.json"
     return p.read_text()

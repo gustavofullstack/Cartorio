@@ -34,7 +34,8 @@ install:  ## Instala dependencias do backend (uv sync)
 .PHONY: test
 test:  ## Roda pytest com coverage gate 90%
 	@echo "$(GREEN)[backend] pytest$(RESET)"
-	@cd backend && uv run pytest --tb=short
+	@cd backend && uv run pytest --tb=short --ignore=tests/test_dead_code_audit_g8.py
+	@cd backend && uv run pytest --tb=short --no-cov tests/test_dead_code_audit_g8.py
 
 .PHONY: test-fast
 test-fast:  ## Pytest rapido sem coverage (desenvolvimento)
