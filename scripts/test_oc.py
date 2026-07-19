@@ -1,11 +1,14 @@
+import os
 import re
+import sys
 
 import httpx
 
-base = "http://cartorio_openclaw-gateway:18789"
-hdr = {
-    "Authorization": "Bearer fz1qzo2xka8n82rn62irscuqws75mm1e17mpsnxzqlp13z1p35skrbg2ck8yg8pg"
-}
+base = os.environ.get("OPENCLAW_BASE_URL", "http://cartorio_openclaw-gateway:18789").rstrip("/")
+token = os.environ.get("OPENCLAW_API_KEY", "").strip()
+if not token:
+    raise SystemExit("OPENCLAW_API_KEY deve ser injetada pelo secret manager")
+hdr = {"Authorization": f"Bearer {token}"}
 
 # 1) GET root para ver UI
 r = httpx.get(f"{base}/", headers=hdr, timeout=10)

@@ -7,14 +7,13 @@
 
 set -euo pipefail
 
+: "${OPENCODE_FREE_1_KEY:?OPENCODE_FREE_1_KEY deve ser injetada pelo secret manager}"
+: "${OPENCODE_FREE_3_KEY:?OPENCODE_FREE_3_KEY deve ser injetada pelo secret manager}"
+
 OPENCLAW_DIR="/etc/easypanel/projects/cartorio/openclaw-gateway/volumes/config/agents/main/agent"
 MODELS_JSON="${OPENCLAW_DIR}/models.json"
 AGENT_JSON="${OPENCLAW_DIR}/agent.json"
 BACKUP_DIR="/home/easypanel/backups/openclaw_free_chain_$(date +%Y%m%d_%H%M%S)"
-
-# Chaves dos provedores free (passadas via env para nao commitar no repo)
-OPENCODE_FREE_1_KEY="${OPENCODE_FREE_1_KEY:-}"
-OPENCODE_FREE_3_KEY="${OPENCODE_FREE_3_KEY:-}"
 
 echo "=========================================="
 echo "FIX OpenClaw: 5 provedores FREE em paralelo"
@@ -40,13 +39,6 @@ ssh cartorio "python3 -c 'import json; d=json.load(open(\"${MODELS_JSON}\")); pr
 
 # 4. Adicionar opencode_free_1 e opencode_free_3 ao models.json
 echo "[4/8] Adicionando opencode_free_1 e opencode_free_3 ao models.json..."
-if [ -z "${OPENCODE_FREE_1_KEY}" ] || [ -z "${OPENCODE_FREE_3_KEY}" ]; then
-    echo "  ⚠️  OPENCODE_FREE_1_KEY ou OPENCODE_FREE_3_KEY nao definidos"
-    echo "     usando placeholders - substitua manualmente depois"
-    OPENCODE_FREE_1_KEY="${OPENCODE_FREE_1_KEY:-sk-PLACEHOLDER_FREE_1}"
-    OPENCODE_FREE_3_KEY="${OPENCODE_FREE_3_KEY:-sk-PLACEHOLDER_FREE_3}"
-fi
-
 ssh cartorio "OPENCODE_FREE_1_KEY='${OPENCODE_FREE_1_KEY}' OPENCODE_FREE_3_KEY='${OPENCODE_FREE_3_KEY}' python3 << 'PYEOF'
 import json
 import os

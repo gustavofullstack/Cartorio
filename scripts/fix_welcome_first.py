@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Corrige o workflow 27 - Welcome First Time que retorna 500 por falta de respondToWebhook."""
 
+import os
 import sys
 import time
 
@@ -22,7 +23,11 @@ def login(email, pwd):
 
 
 def main():
-    s = login("admin@cartorio.local", "@Techno832466")
+    email = os.environ.get("N8N_LOGIN_EMAIL", "")
+    password = os.environ.get("N8N_LOGIN_PASS", "")
+    if not email or not password:
+        raise SystemExit("N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager")
+    s = login(email, password)
     time.sleep(2)
     wfs = s.get(f"{BASE}/rest/workflows?limit=50", timeout=30).json()["data"]
     target = None

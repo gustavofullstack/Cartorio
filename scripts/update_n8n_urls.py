@@ -17,19 +17,17 @@ def login(email: str, password: str) -> requests.Session:
     return s
 
 def main():
-    email = os.environ.get("N8N_LOGIN_EMAIL", "gustavomar.fullstack@gmail.com")
-    password = os.environ.get("N8N_LOGIN_PASS", "@Techno832466")
+    email = os.environ.get("N8N_LOGIN_EMAIL", "")
+    password = os.environ.get("N8N_LOGIN_PASS", "")
+    if not email or not password:
+        raise SystemExit("N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager")
     
     # Tentativa de login
     try:
         s = login(email, password)
     except Exception as e:
         print(f"Login error with {email}: {e}")
-        try:
-            s = login("admin@cartorio.local", "@Techno832466")
-        except Exception as e2:
-            print(f"Login error with admin@cartorio.local: {e2}")
-            return
+        return
             
     print("Login successful. Checking credentials...")
     r = s.get(BASE + "/rest/credentials")

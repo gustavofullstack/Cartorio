@@ -1,9 +1,10 @@
 """dump_antigrav.py — Salva JSON dos 5 contatos ANTIGRAV."""
 import json
+import os
 
 import httpx
 
-TOKEN = "TgSMyCg134D2GWZ38PaV3N5S"
+TOKEN = os.environ["CHATWOOT_API_KEY"]
 HDR = {"api_access_token": TOKEN}
 BASE = "http://cartorio_chatwoot:3000"
 

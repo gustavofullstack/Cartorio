@@ -5,6 +5,7 @@ Uso: python3 scripts/reset_n8n_password.py
 Imprime os comandos SQL para colar no psql.
 """
 
+import os
 import sys
 
 try:
@@ -16,13 +17,15 @@ except ImportError:
     subprocess.run([sys.executable, "-m", "pip", "install", "bcrypt", "-q"], check=True)
     import bcrypt
 
-PW = "@Techno832466"
+PW = os.environ.get("N8N_ADMIN_PASSWORD", "")
+if not PW:
+    raise SystemExit("N8N_ADMIN_PASSWORD deve ser injetada pelo secret manager")
 PW_HASH = bcrypt.hashpw(PW.encode(), bcrypt.gensalt(rounds=10)).decode()
 
 # Para o user já existente admin@cartorio.local
 ADMIN_ID = "a65815fb-a12a-4bc8-a3eb-293f22c50a4b"
 
-print(f"-- Hash bcrypt para senha '{PW}': {PW_HASH[:30]}...\n")
+print(f"-- Hash bcrypt gerado: {PW_HASH[:30]}...\n")
 print("-- 1) auth_identity para admin@cartorio.local (já existente):")
 print(f"""INSERT INTO auth_identity ("userId", "providerId", "providerType", "createdAt", "updatedAt")
 VALUES ('{ADMIN_ID}', 'admin@cartorio.local', 'email', NOW(), NOW())

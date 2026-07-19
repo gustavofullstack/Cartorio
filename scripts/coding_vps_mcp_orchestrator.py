@@ -59,11 +59,11 @@ from typing import Any, Callable
 SSH_KEY = os.environ.get("SSH_PRIVATE_KEY", os.path.expanduser("~/.ssh/id_ed25519_cartorio"))
 SSH_HOST = os.environ.get("SSH_TAILSCALE_HOST", "100.99.172.84")
 SSH_USER = "root"
-LITELLM_API_KEY = os.environ.get("LITELLM_API_KEY", "e39dss0k1baohuqkprjv")
+LITELLM_API_KEY = os.environ.get("LITELLM_API_KEY", "")
 MINIMAX_MODEL = "MiniMax-M3"
 EASYPANEL_URL = "http://100.99.172.84:3000"
 EASYPANEL_USER = "gustavomar.fullstack@gmail.com"
-EASYPANEL_PASSWORD = "@Techno832466"
+EASYPANEL_PASSWORD = os.environ.get("EASYPANEL_PASSWORD", "")
 
 # Port mapping for coding agents (FastAPI = 8001-8007,8009; Node = 8004,8008)
 AGENT_PORTS = {
@@ -170,6 +170,8 @@ def http_post(url: str, data: dict, headers: dict | None = None, timeout: int = 
 # ============================================
 def chat_minimax(prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL) -> dict:
     """Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy (via docker cp + exec)."""
+    if not LITELLM_API_KEY:
+        return {"error": "LITELLM_API_KEY deve ser injetada pelo secret manager"}
     safe_prompt = prompt.replace('"', "'").replace("\n", " ")[:2000]
     py = (
         f"import urllib.request, json, time\n"
@@ -294,6 +296,8 @@ def chat_with_agent(agent: str, prompt: str, max_tokens: int = 500, stack: str =
 
 def list_models() -> dict:
     """List LiteLLM models."""
+    if not LITELLM_API_KEY:
+        return {"error": "LITELLM_API_KEY deve ser injetada pelo secret manager"}
     r = docker_exec("coding-vps_apenas_para_auxilio_litellm-app",
                     f"python3 -c \"import urllib.request,json; r=urllib.request.urlopen(urllib.request.Request('http://localhost:4000/v1/models', headers={{'Authorization':'Bearer {LITELLM_API_KEY}'}}), timeout=10); print(r.read().decode())\"")
     try:
@@ -487,6 +491,8 @@ def env_set(service: str, key: str, value: str) -> dict:
 # ============================================
 def ep_login() -> dict:
     """Login to Easypanel, return JWT token."""
+    if not EASYPANEL_PASSWORD:
+        return {"error": "EASYPANEL_PASSWORD deve ser injetada pelo secret manager"}
     r = http_post(f"{EASYPANEL_URL}/api/rpc/auth/login",
                   {"json": {"email": EASYPANEL_USER, "password": EASYPANEL_PASSWORD, "rememberMe": True}})
     return r

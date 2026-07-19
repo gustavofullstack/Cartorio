@@ -5,16 +5,13 @@
 
 set -u
 
-CARTORIO="/Users/gustavoalmeida/projetos/Cartorio"
-ENV="$CARTORIO/.env"
-TOKEN="${TELEGRAM_BOT_TOKEN:-$(grep '^TELEGRAM_BOT_TOKEN=' "$ENV" 2>/dev/null | cut -d= -f2)}"
+TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 WEBHOOK_URL="https://api.2notasudi.com.br/api/v1/telegram/webhook"
 CHAT_ID=6682284055  # Gustavo (do PROMPT.json)
 
 if [ -z "$TOKEN" ] || [ "$TOKEN" = "dummy" ]; then
-  echo "❌ TELEGRAM_BOT_TOKEN vazio em $ENV"
-  echo "   Bot validado E2E 20/20 (2026-07-01) — token guardado no VPS."
-  echo "   Para testar localmente, faça ssh root@100.99.172.84 'grep TOKEN /home/node/cartorio/.env'"
+  echo "❌ TELEGRAM_BOT_TOKEN ausente no ambiente"
+  echo "   Injete-o pelo secret manager antes de executar este smoke test."
   exit 2
 fi
 

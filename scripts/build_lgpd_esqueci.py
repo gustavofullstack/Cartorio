@@ -2,6 +2,7 @@
 """Cria o workflow 23 - LGPD Esqueci com respondToWebhook (fix P0)."""
 
 import json
+import os
 from pathlib import Path
 
 WF = {
@@ -211,12 +212,17 @@ print(f"Wrote {out} ({out.stat().st_size} bytes)")
 
 import requests
 
+email = os.environ.get("N8N_LOGIN_EMAIL", "")
+password = os.environ.get("N8N_LOGIN_PASS", "")
+if not email or not password:
+    raise SystemExit("N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager")
+
 s = requests.Session()
 r = s.post(
     "https://flow.2notasudi.com.br/rest/login",
     json={
-        "emailOrLdapLoginId": "gustavomar.fullstack@gmail.com",
-        "password": "@Techno832466",
+        "emailOrLdapLoginId": email,
+        "password": password,
     },
     timeout=20,
 )

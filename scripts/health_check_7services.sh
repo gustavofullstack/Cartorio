@@ -6,8 +6,8 @@
 
 set -u
 
-# TGB token — resolve a partir do backend/.env caso não esteja setado no env
-TELEGRAM_TOKEN="${TELEGRAM_BOT_TOKEN:-$(grep '^TELEGRAM_BOT_TOKEN=' /Users/gustavoalmeida/projetos/Cartorio/backend/.env 2>/dev/null | cut -d= -f2 | tr -d '\"')}"
+# Nunca lê um .env local: o token precisa ser injetado pelo ambiente/secret manager.
+TELEGRAM_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 
 # Formato: NOME|TIPO|ENDERECO|EXPECTED
 SERVICES=(
@@ -15,10 +15,15 @@ SERVICES=(
   "EVO|HTTP|https://whatsapp.2notasudi.com.br/|200-299"
   "CW|HTTP|https://chat.2notasudi.com.br/api|200-299"
   "OC|HTTP|https://agent.2notasudi.com.br/health|200-299"
-  "TGB|HTTP|https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe|200-299"
   "SUP|TCP|100.99.172.84:5094|open"
   "REDIS|TCP|100.99.172.84:1001|open"
 )
+
+if [[ -n "$TELEGRAM_TOKEN" ]]; then
+  SERVICES+=("TGB|HTTP|https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe|200-299")
+else
+  printf 'SKIP TGB token=missing source=TELEGRAM_BOT_TOKEN\n'
+fi
 
 DOWN=0
 for entry in "${SERVICES[@]}"; do

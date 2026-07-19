@@ -5,6 +5,11 @@
 # Gustavo pediu "CORRIJA TODOS OS 21" - esse script entrega
 
 set -uo pipefail
+
+: "${MINIMAX_API_KEY:?MINIMAX_API_KEY deve ser injetada pelo secret manager}"
+: "${LITELLM_API_KEY:?LITELLM_API_KEY deve ser injetada pelo secret manager}"
+: "${LANGFUSE_NEXTAUTH_SECRET:?LANGFUSE_NEXTAUTH_SECRET deve ser injetada pelo secret manager}"
+: "${LANGFUSE_SALT:?LANGFUSE_SALT deve ser injetada pelo secret manager}"
 SSH_KEY="${SSH_PRIVATE_KEY:-~/.ssh/id_ed25519_cartorio}"
 HOST="${SSH_TAILSCALE_HOST:-100.99.172.84}"
 
@@ -42,8 +47,8 @@ if ! ssh_cmd "echo connected" >/dev/null 2>&1; then
 fi
 log "✓ SSH connected"
 
-# Source/cred
-MINIMAX_KEY="${MINIMAX_API_KEY:-sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s}"
+# Credenciais são injetadas pelo ambiente; nunca usar fallbacks versionados.
+MINIMAX_KEY="$MINIMAX_API_KEY"
 
 # ============================================================================
 # TASK 2: litellm-app - adicionar MiniMax-M3 como provider
@@ -64,7 +69,7 @@ sleep 8
 
 # Adicionar model via API (assumindo LiteLLM_PROXY_URL=http://localhost:4000)
 LITELLM_URL="http://localhost:4000"
-LITELLM_MASTER="e39dss0k1baohuqkprjv"
+LITELLM_MASTER="$LITELLM_API_KEY"
 
 # Verificar se já tem
 CURRENT_MODELS=$(ssh_eval "curl -s -m 5 -H 'Authorization: Bearer $LITELLM_MASTER' $LITELLM_URL/v1/models 2>/dev/null | jq -r '.data[].id' 2>/dev/null" 2>/dev/null)
@@ -134,8 +139,8 @@ else
       --env-add DATABASE_URL='postgresql://postgres:postgres@coding-vps_apenas_para_auxilio_langfuse-db:5432/langfuse' \\
       --env-add REDIS_URL='redis://coding-vps_apenas_para_auxilio_langfuse-redis:6379' \\
       --env-add CLICKHOUSE_URL='http://coding-vps_apenas_para_auxilio_langfuse-clickhouse:8123' \\
-      --env-add NEXTAUTH_SECRET='lF-secret-placeholder-update-me' \\
-      --env-add SALT='lF-salt-placeholder-update-me' \\
+      --env-add NEXTAUTH_SECRET="$LANGFUSE_NEXTAUTH_SECRET" \\
+      --env-add SALT="$LANGFUSE_SALT" \\
       coding-vps_apenas_para_auxilio_langfuse-web 2>&1 | tail -3
   " 2>&1 | tee -a "$LOGFILE"
 fi

@@ -2,6 +2,7 @@
 """Corrige os workflows quebrados: importa o 03-Handoff-Humano, ativa MCP, deleta test, e testa todos webhooks."""
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -25,7 +26,11 @@ def login(email: str, password: str) -> requests.Session:
 
 
 def main():
-    s = login("admin@cartorio.local", "@Techno832466")
+    email = os.environ.get("N8N_LOGIN_EMAIL", "")
+    password = os.environ.get("N8N_LOGIN_PASS", "")
+    if not email or not password:
+        raise SystemExit("N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager")
+    s = login(email, password)
     time.sleep(2)
 
     # 1. Deletar test_criado_2026-07-01

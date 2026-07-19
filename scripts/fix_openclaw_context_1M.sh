@@ -74,29 +74,14 @@ models_path.write_text(json.dumps(data, indent=2))
 print('  models.json updated successfully')
 PYEOF"
 
-# 5. Atualizar agent.json (nova chave OpenCode-Go + modelo minimax-m3)
-echo "[5/6] Aplicando nova chave OpenCode-Go + modelo minimax-m3 em agent.json..."
+# 5. Atualizar agent.json (modelo minimax-m3). Credenciais são geridas externamente.
+echo "[5/6] Aplicando modelo minimax-m3 em agent.json..."
 ssh cartorio "python3 << 'PYEOF'
 import json
 from pathlib import Path
 
 agent_path = Path('${AGENT_JSON}')
 data = json.loads(agent_path.read_text())
-
-# Nova chave OpenCode-Go (NÃO rotacionar — Gustavo autorizou)
-NEW_KEY = 'sk-xcRwExjQjqmlc5swP8umqK2YqWUfVt23H3Xl6dpd9TqEyi16ssJXzHeUFGNNIfsJ'
-
-# Update API key em providers
-if 'providers' in data:
-    for provider_name, provider_config in data['providers'].items():
-        if provider_name == 'openai' or 'opencode' in provider_name.lower():
-            if 'api_key' in provider_config:
-                old_key = provider_config['api_key']
-                if 'xcRwExjQ' not in old_key:
-                    provider_config['api_key'] = NEW_KEY
-                    print(f'  Updated provider key: {provider_name}')
-                else:
-                    print(f'  Already updated: {provider_name}')
 
 # Update thinking config (adaptive)
 if 'thinking' in data:

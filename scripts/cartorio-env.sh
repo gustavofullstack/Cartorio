@@ -22,7 +22,8 @@ fi
 
 # Force required
 export APP_ENV=development
-export AUDIT_HMAC_KEY="${AUDIT_HMAC_KEY:-470e2d9738e946fd41f556101c6796c700956c7291836c8fc493a94cd3e404f3}"
+: "${AUDIT_HMAC_KEY:?AUDIT_HMAC_KEY deve ser injetado pelo secret manager}"
+export AUDIT_HMAC_KEY
 : "${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN deve ser injetado pelo secret manager}"
 export TELEGRAM_BOT_TOKEN
 

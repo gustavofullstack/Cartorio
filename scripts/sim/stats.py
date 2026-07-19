@@ -1,7 +1,8 @@
 """stats.py — Estatísticas pós-simulação."""
 import httpx
+import os
 
-TOKEN = "TgSMyCg134D2GWZ38PaV3N5S"
+TOKEN = os.environ["CHATWOOT_API_KEY"]
 HDR = {"api_access_token": TOKEN}
 BASE = "http://cartorio_chatwoot:3000"
 

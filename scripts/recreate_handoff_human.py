@@ -2,6 +2,7 @@
 """Recria o workflow 03 - Handoff Humano (Chatwoot v2) — estava deletado."""
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -270,7 +271,11 @@ WF = {
 
 
 def main():
-    s = login("admin@cartorio.local", "@Techno832466")
+    email = os.environ.get("N8N_LOGIN_EMAIL", "")
+    password = os.environ.get("N8N_LOGIN_PASS", "")
+    if not email or not password:
+        raise SystemExit("N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager")
+    s = login(email, password)
     time.sleep(2)
     r = s.post(BASE + "/rest/workflows", json=WF, timeout=30)
     print(f"CREATE: {r.status_code}")
