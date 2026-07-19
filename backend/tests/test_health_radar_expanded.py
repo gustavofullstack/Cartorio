@@ -57,11 +57,28 @@ def test_radar_returns_all_categories(client: TestClient) -> None:
         patch("app.api.v1.health_radar_expanded._check_ssh_category") as mock_ssh,
         patch("app.api.v1.health_radar_expanded._check_disk_category") as mock_disk,
     ):
-        mock_health.side_effect = AsyncMock(return_value={"database": {"status": "up", "latency_ms": 5, "detail": "ok"}})
-        mock_dns.side_effect = AsyncMock(return_value={"2notasudi.com.br": {"status": "up", "latency_ms": 100, "detail": "ok"}})
-        mock_traefik.side_effect = AsyncMock(return_value={"api.2notasudi.com.br": {"status": "up", "latency_ms": 50, "detail": "HTTP 200"}})
-        mock_ssh.side_effect = AsyncMock(return_value={"ssh_vps": {"status": "up", "latency_ms": 10, "detail": "open"}, "tailscale": {"status": "down", "latency_ms": 3000, "detail": "timeout"}})
-        mock_disk.side_effect = AsyncMock(return_value={"docker_volumes": {"status": "up", "latency_ms": 1, "detail": "free=10GB"}})
+        mock_health.side_effect = AsyncMock(
+            return_value={"database": {"status": "up", "latency_ms": 5, "detail": "ok"}}
+        )
+        mock_dns.side_effect = AsyncMock(
+            return_value={"2notasudi.com.br": {"status": "up", "latency_ms": 100, "detail": "ok"}}
+        )
+        mock_traefik.side_effect = AsyncMock(
+            return_value={
+                "api.2notasudi.com.br": {"status": "up", "latency_ms": 50, "detail": "HTTP 200"}
+            }
+        )
+        mock_ssh.side_effect = AsyncMock(
+            return_value={
+                "ssh_vps": {"status": "up", "latency_ms": 10, "detail": "open"},
+                "tailscale": {"status": "down", "latency_ms": 3000, "detail": "timeout"},
+            }
+        )
+        mock_disk.side_effect = AsyncMock(
+            return_value={
+                "docker_volumes": {"status": "up", "latency_ms": 1, "detail": "free=10GB"}
+            }
+        )
 
         resp = client.get("/api/v1/health/radar/expanded")
         assert resp.status_code == 200

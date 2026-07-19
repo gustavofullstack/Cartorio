@@ -194,7 +194,12 @@ def test_openclaw_spec_lists_tools_for_three_intents() -> None:
     if not OPENCLAW_SPEC.is_file():
         pytest.skip("OpenClaw cartorio-bot spec missing")
     text = OPENCLAW_SPEC.read_text(encoding="utf-8")
-    for tool in ("consultar_emolumento", "consultar_protocolo", "criar_protocolo", "handoff_humano"):
+    for tool in (
+        "consultar_emolumento",
+        "consultar_protocolo",
+        "criar_protocolo",
+        "handoff_humano",
+    ):
         assert tool in text, f"tool {tool} missing from E6 spec"
 
 
@@ -366,11 +371,7 @@ def test_intent_handoff_macro_contract() -> None:
     assert "assign_team" in action_types
     assert "add_label" in action_types
     assert "send_message" in action_types
-    labels = [
-        a.payload.get("label")
-        for a in macro.actions
-        if a.type == "add_label"
-    ]
+    labels = [a.payload.get("label") for a in macro.actions if a.type == "add_label"]
     assert "handoff-humano" in labels
     assert len(HANDOFF_MACROS) >= 10
 
@@ -509,11 +510,7 @@ def test_synthetic_chain_three_intents_end_to_end(
             "intent": skill3["name"],
             "tool": "handoff_humano",
             "macro": macro.name,
-            "labels": [
-                a.payload.get("label")
-                for a in macro.actions
-                if a.type == "add_label"
-            ],
+            "labels": [a.payload.get("label") for a in macro.actions if a.type == "add_label"],
         }
     )
 

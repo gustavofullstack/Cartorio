@@ -202,6 +202,7 @@ V3_CANNED_RESPONSES: tuple[CannedResponse, ...] = (
 def get_v3_short_codes() -> tuple[str, ...]:
     """Retorna short codes das v3 canned responses."""
     from app.services.chatwoot_canned_responses import extract_short_codes
+
     return extract_short_codes(V3_CANNED_RESPONSES)
 
 

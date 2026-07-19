@@ -10,6 +10,7 @@ Refresh: cron job 03:00 UTC diario (backend/app/jobs/cron_refresh_views.py)
 
 Modified by Gustavo Almeida + cartorio-dev — G6 wave 28.
 """
+
 from __future__ import annotations
 
 # DDL das 4 materialized views (Postgres)

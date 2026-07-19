@@ -42,6 +42,7 @@ def stream_module():
     if backend_root not in sys.path:
         sys.path.insert(0, backend_root)
     from app.services import stream_buffer as mod  # noqa: PLC0415
+
     return mod
 
 
@@ -256,10 +257,7 @@ class TestOptimizeRadarResponse:
         assert "queue_evolution" in chunks[0]
 
     def test_large_data_splits_into_chunks(self, stream_module):
-        data = {
-            f"queue_{i}": {"big_value": "x" * 1000}
-            for i in range(10)
-        }
+        data = {f"queue_{i}": {"big_value": "x" * 1000} for i in range(10)}
         chunks = stream_module.optimize_radar_response(data, max_size_per_chunk=2048)
         # Cada chunk com ~2 entries de 1000 bytes
         assert len(chunks) >= 3

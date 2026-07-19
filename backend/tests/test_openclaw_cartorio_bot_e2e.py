@@ -15,6 +15,7 @@ Skip se settings.openclaw_password nao configurado (prod-only).
 
 Modified by Gustavo Almeida + cartorio-llm — G6 wave 10.
 """
+
 from __future__ import annotations
 
 import os
@@ -64,9 +65,19 @@ def test_tools_contam_com_apidocs() -> None:
     # Recursivo em todos arquivos .py da arvore api/
     api_files = [str(f.relative_to(api_dir)) for f in api_dir.rglob("*.py")]
     # Tools principais devem ter router correspondente
-    expected_routers = ["protocolo", "emolumento", "agendamento", "lgpd", "cliente", "documento", "integracoes"]
+    expected_routers = [
+        "protocolo",
+        "emolumento",
+        "agendamento",
+        "lgpd",
+        "cliente",
+        "documento",
+        "integracoes",
+    ]
     found = [r for r in expected_routers if any(r in f for f in api_files)]
-    assert len(found) >= 4, f"poucos routers para tools: {found} (esperado >=4 de {expected_routers})"
+    assert len(found) >= 4, (
+        f"poucos routers para tools: {found} (esperado >=4 de {expected_routers})"
+    )
 
 
 # ============================================================================
@@ -146,6 +157,7 @@ def test_minimax_e_primario(spec_text: str) -> None:
 # ============================================================================
 # LGPD-by-design
 # ============================================================================
+
 
 def test_spec_mencoa_lgpd_by_design(spec_text: str) -> None:
     """Spec DEVE mencionar LGPD-by-design."""

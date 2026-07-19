@@ -14,6 +14,7 @@ Refs:
 
 Modified by Gustavo Almeida + cartorio-sre — G6 wave 19.
 """
+
 from __future__ import annotations
 
 import os
@@ -126,7 +127,9 @@ def record_openclaw_request(agent: str, endpoint: str, duration_seconds: float) 
     """Registra 1 request OpenClaw agent."""
     if not PROMETHEUS_ENABLED:
         return
-    openclaw_request_duration_seconds.labels(agent=agent, endpoint=endpoint).observe(duration_seconds)
+    openclaw_request_duration_seconds.labels(agent=agent, endpoint=endpoint).observe(
+        duration_seconds
+    )
 
 
 def update_composite_slo(availability: float, latency: float) -> None:
