@@ -430,9 +430,9 @@ AGENT_TOOLS: list[dict[str, Any]] = [
         "function": {
             "name": "criar_agendamento_real",
             "description": (
-                "Cria agendamento REAL via N8N workflow (webhook agendamento). "
-                "Use quando cliente confirmou servico + data + hora. "
-                "Se N8N offline, retorna offline:true e oferece humano."
+                "Prepara um rascunho de agendamento para confirmacao humana. "
+                "Use quando cliente informou servico, data e hora; nunca cria um "
+                "agendamento real nem aciona o workflow sem um atendente."
             ),
             "parameters": {
                 "type": "object",
@@ -456,11 +456,6 @@ AGENT_TOOLS: list[dict[str, Any]] = [
 
 
 CARTORIO_API_BASE = os.environ.get("CARTORIO_API_BASE", "http://127.0.0.1:8000").rstrip("/")
-N8N_AGENDAMENTO_WEBHOOK = os.environ.get(
-    "N8N_AGENDAMENTO_WEBHOOK", "https://cartorio-n8n.dfgdxq.easypanel.host/webhook/agendar"
-)
-
-
 async def _run_remote_tool(
     name: str, args: dict[str, Any]
 ) -> tuple[str, str | None, list[str]] | None:
@@ -480,8 +475,10 @@ async def _run_remote_tool(
             async with httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=3.0)) as client:
                 r = await client.get(f"{CARTORIO_API_BASE}/api/v1/protocolo/{numero}")
                 if r.status_code == 200:
-                    data = r.json()
-                    return json.dumps(data, ensure_ascii=False), None, used
+                    # Tool output becomes LLM context; scrub before crossing
+                    # the provider boundary even when the API contract changes.
+                    safe_data = scrub(json.dumps(r.json(), ensure_ascii=False)).text
+                    return safe_data, None, used
                 if r.status_code == 404:
                     return (
                         json.dumps(
@@ -499,13 +496,13 @@ async def _run_remote_tool(
                     None,
                     used,
                 )
-        except Exception as exc:
-            logger.warning("cartorio_agent consultar_protocolo_real fail: %s", exc)
+        except Exception:
+            logger.warning("cartorio_agent consultar_protocolo_real unavailable")
             return (
                 json.dumps(
                     {
                         "offline": True,
-                        "erro": str(exc),
+                        "erro": "indisponivel",
                         "hint": "cartorio-api offline, encaminhe a humano",
                     },
                     ensure_ascii=False,
@@ -518,37 +515,22 @@ async def _run_remote_tool(
         servico = str(args.get("servico", ""))
         data = str(args.get("data", ""))
         hora = str(args.get("hora", ""))
-        nome = str(args.get("nome", ""))
-        try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=3.0)) as client:
-                r = await client.post(
-                    N8N_AGENDAMENTO_WEBHOOK,
-                    json={"servico": servico, "data": data, "hora": hora, "nome": nome},
-                )
-                if r.status_code in (200, 201):
-                    return json.dumps(r.json(), ensure_ascii=False), None, used
-                return (
-                    json.dumps(
-                        {"offline": True, "status": r.status_code, "hint": "N8N offline"},
-                        ensure_ascii=False,
-                    ),
-                    None,
-                    used,
-                )
-        except Exception as exc:
-            logger.warning("cartorio_agent criar_agendamento_real fail: %s", exc)
-            return (
-                json.dumps(
-                    {
-                        "offline": True,
-                        "erro": str(exc),
-                        "hint": "N8N offline, agende manualmente ou /humano",
-                    },
-                    ensure_ascii=False,
-                ),
-                None,
-                used,
-            )
+        # HITL: modelo nunca cria um agendamento real. A confirmacao de um
+        # atendente dispara o workflow com idempotencia fora desta tool.
+        return (
+            json.dumps(
+                {
+                    "status": "draft_requires_human_confirmation",
+                    "servico": scrub(servico).text,
+                    "data": data,
+                    "hora": hora,
+                    "hint": "encaminhar para atendente confirmar antes de agendar",
+                },
+                ensure_ascii=False,
+            ),
+            "humano",
+            used,
+        )
 
     return None
 
@@ -1302,7 +1284,7 @@ async def run_cartorio_agent(
 
     user_block = scrubbed
     if history:
-        hist = "\n".join(f"- {h}" for h in history[-12:])
+        hist = "\n".join(f"- {scrub(str(h)).text}" for h in history[-12:])
         user_block = (
             "Historico recente desta conversa (USE isto; voce tem memoria):\n"
             f"{hist}\n\nMensagem atual do cliente: {scrubbed}"
@@ -1312,13 +1294,12 @@ async def run_cartorio_agent(
         att_lines = []
         for a in attachments:
             kind = a.get("type", "?")
-            name = a.get("file_name") or a.get("file_id", "?")
+            name = scrub(str(a.get("file_name") or a.get("file_id", "?"))).text
             mime = a.get("mime_type", "?")
             size = a.get("file_size", "?")
-            path = a.get("local_path", "")
-            caption = a.get("caption", "")
+            caption = scrub(str(a.get("caption", ""))).text
             att_lines.append(
-                f"- {kind}: {name} | mime={mime} | size={size} | local={path}"
+                f"- {kind}: {name} | mime={mime} | size={size}"
                 + (f" | caption={caption}" if caption else "")
             )
         user_block = (
@@ -1347,6 +1328,7 @@ async def run_cartorio_agent(
         clean,
     ).strip()
     clean = _scrub_bad_llm_phrases(clean)
+    clean = scrub(clean).text
     if not clean:
         return _offline_reply(scrubbed, intent, tools_used, history=history)
 

@@ -9,6 +9,7 @@ from app.services.cartorio_agent import (
     _match_servico,
     _offline_reply,
     _parse_action,
+    _run_remote_tool,
     run_cartorio_agent,
 )
 
@@ -140,3 +141,53 @@ async def test_run_agent_offline_path(monkeypatch: pytest.MonkeyPatch) -> None:
     assert reply.text
     assert "6,80" in reply.text or "Autentic" in reply.text or "autentic" in reply.text.lower()
     assert reply.provider == "offline"
+
+
+@pytest.mark.asyncio
+async def test_agendamento_tool_requires_human_confirmation() -> None:
+    """HITL: dados do cliente nunca podem disparar um workflow pelo LLM."""
+    result = await _run_remote_tool(
+        "criar_agendamento_real",
+        {
+            "servico": "autenticacao",
+            "data": "20/07/2026",
+            "hora": "10:00",
+            "nome": "Cliente 123.456.789-09",
+        },
+    )
+
+    assert result is not None
+    payload, action, used = result
+    assert action == "humano"
+    assert "draft_requires_human_confirmation" in payload
+    assert "123.456.789-09" not in payload
+    assert used == ["tool_remote:criar_agendamento_real"]
+
+
+@pytest.mark.asyncio
+async def test_llm_context_scrubs_history_and_attachment_paths(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Histórico e metadados de mídia também cruzam a fronteira LLM sem PII."""
+    captured: dict[str, str] = {}
+
+    async def _llm(system: str, user: str) -> tuple[str, str]:
+        captured["user"] = user
+        return "Seu CPF 123.456.789-09 foi recebido.", "test"
+
+    monkeypatch.setattr("app.services.cartorio_agent._llm_minimax", _llm)
+    reply = await run_cartorio_agent(
+        "preciso de orientacao sobre autenticacao",
+        history=["cliente informou CPF 123.456.789-09"],
+        attachments=[
+            {
+                "type": "document",
+                "file_name": "cpf-123.456.789-09.pdf",
+                "local_path": "/private/tmp/cliente/123.456.789-09.pdf",
+            }
+        ],
+    )
+
+    assert "123.456.789-09" not in captured["user"]
+    assert "/private/tmp" not in captured["user"]
+    assert "123.456.789-09" not in reply.text
