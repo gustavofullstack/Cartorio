@@ -74,6 +74,21 @@ async def test_openclaw_chat_empty_messages():
 
 
 @pytest.mark.asyncio
+async def test_openclaw_chat_missing_api_key_never_calls_upstream() -> None:
+    """Ausencia de segredo falha fechado, sem Authorization nem chamada HTTP."""
+    with patch("app.config.settings.openclaw_api_key", None):
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            with pytest.raises(ChatError) as exc:
+                await chat(
+                    messages=[{"role": "user", "content": "oi"}],
+                    base_url="http://localhost:18790",
+                    consent_granted=True,
+                )
+    assert exc.value.kind == ChatErrorKind.CONFIG
+    mock_post.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_openclaw_chat_consent_blocked():
     """Sem consentimento -> ChatError LGPD_BLOCKED (LGPD art. 7 I)."""
     with pytest.raises(ChatError) as exc:
@@ -115,6 +130,7 @@ async def test_openclaw_chat_happy_path():
     assert resp.tokens_in == 10
     assert resp.tokens_out == 5
     assert resp.finish_reason == "stop"
+    assert mock_post.await_args.args[0] == "http://localhost:18790/v1/chat/completions"
 
 
 @pytest.mark.asyncio

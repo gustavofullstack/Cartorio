@@ -60,11 +60,16 @@ async def chat(
     from app.config import settings
 
     target_base_url = base_url or settings.openclaw_base_url
-    target_api_key = api_key or settings.openclaw_api_key or "@Techno832466"
+    target_api_key = api_key or settings.openclaw_api_key
 
     if not target_base_url or target_base_url.strip() == "":
         raise ChatError(
             "Base URL do OpenClaw nao configurada.",
+            kind=ChatErrorKind.CONFIG,
+        )
+    if not target_api_key or target_api_key.strip() == "":
+        raise ChatError(
+            "Credencial do OpenClaw nao configurada.",
             kind=ChatErrorKind.CONFIG,
         )
 
@@ -89,7 +94,7 @@ async def chat(
     scrubbed_messages, pii_redacted_count = _scrub_messages(messages)
 
     # ---- Monta request ----
-    url = f"{target_base_url.rstrip('/')}/v1/chat"
+    url = f"{target_base_url.rstrip('/')}/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {target_api_key}",
         "Content-Type": "application/json",

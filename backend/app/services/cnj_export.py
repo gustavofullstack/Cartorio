@@ -108,7 +108,9 @@ def approve_request(
     reason: str,
 ) -> CNJExportRequest:
     """Aprova pedido pendente; solicitante e aprovador precisam ser pessoas distintas."""
-    request = db.get(CNJExportRequest, request_id)
+    request = db.execute(
+        select(CNJExportRequest).where(CNJExportRequest.id == request_id).with_for_update()
+    ).scalar_one_or_none()
     if request is None:
         raise CNJExportError("pedido CNJ inexistente")
     if request.status != "requested":
