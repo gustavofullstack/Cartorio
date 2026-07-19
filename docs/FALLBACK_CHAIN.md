@@ -1,8 +1,19 @@
-# Fallback Chain — 7 LLM Providers + Circuit Breaker
+# Fallback Chain — Runtime Contract and Historical Scenarios
 
-> **Versão**: 3.0 (2026-07-09)
-> **Status**: ✅ Implementado · 🟡 Validado 1x (LiteLLM DOWN → opencode_free_1 salvou em 12s)
-> **Goal**: validar 3x retry com troca modelo (T31-T40)
+> **Versão**: 4.0 (2026-07-19)
+> **Status**: contrato de runtime atualizado; cenários abaixo são históricos e
+> precisam de revalidação antes de serem usados como procedimento operacional.
+
+## Contrato vigente (fonte: `backend/app/config.py` e `fallback.py`)
+
+O código atual usa uma cadeia configurável de **14 slots**, nesta ordem padrão:
+
+`opencode_zen_account_1 → opencode_zen_account_2 → opencode_zen_account_3 → opencode_free_3 → opencode_free_1 → opencode_free_2 → opencode_go → openrouter → groq → mistral → google_ai_studio → openclaw → jules → antigravity`.
+
+O circuit breaker é persistido no Redis e o cooldown padrão é de **300 segundos**.
+Não existe provider `cache` implementado em `_call_provider`; a documentação não
+deve prometer resposta local automática. Providers Zen sem credencial podem ser
+ignorados, mas providers não configurados continuam fail-closed por contrato.
 
 ## 🎯 Visão Geral
 

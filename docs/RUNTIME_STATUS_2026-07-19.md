@@ -67,3 +67,28 @@ precisam de validação E2E.
    históricos para simular uma nova sondagem.
 
 **Atualizado por equipe de integração — 2026-07-19**
+
+## Addendum de sondagem — 2026-07-19 20:48 UTC
+
+Uma segunda sondagem somente leitura refinou os itens acima. O radar agregado
+continuou verde e as sondagens granulares de Postgres e Redis responderam `200`.
+Já `/api/v1/health/integracoes` permaneceu vermelho de forma determinística:
+o host Supabase configurado respondeu `404` em `/auth/v1/health` (e nas rotas
+REST/Auth/Storage/GraphQL), indicando host/rota pública incorreta, não uma falha
+transitória do banco.
+
+O MCP público foi exercitado com cliente de protocolo: `/mcp/mcp` aceitou
+`initialize`, `tools/list` e `cartorio_saudacao`. A imagem publicada anuncia
+servidor `v0.4.0` e 12 tools, enquanto o código local é `v0.6.0` com 14 tools;
+isso é drift de deploy e exige publicação revisada antes de declarar paridade.
+
+O N8N respondeu em `/healthz` e recusou corretamente chamadas não autenticadas
+(401). A auditoria offline encontrou 41 exports válidos (33 ativos, 8 inativos)
+e seis workflows sem `settings.errorWorkflow`; o resultado deve permanecer em
+HOLD até a configuração ser aplicada e validada no N8N real.
+
+Os aliases canônicos `chatwoot.2notasudi.com.br`, `n8n.2notasudi.com.br` e
+`supabase.2notasudi.com.br` continuam NXDOMAIN; os aliases legados respondem.
+As rotas de health novas do Chatwoot e `/api/v1/health/radar/expanded` ainda
+retornam 404 na imagem pública. Nenhum desses itens pode ser corrigido por
+commit local sem mudança operacional aprovada (DNS, proxy, secrets e deploy).

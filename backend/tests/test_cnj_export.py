@@ -60,6 +60,12 @@ def test_export_requires_independent_human_approval(db: Session) -> None:
         )
 
 
+@pytest.mark.parametrize("period", ["2026-1", "02026-01", "2026-001", "2026/01"])
+def test_service_rejects_non_canonical_period(db: Session, period: str) -> None:
+    with pytest.raises(CNJExportError, match="YYYY-MM"):
+        create_request(db, reference_period=period, requested_by="dpo-1")
+
+
 def test_approval_reason_rejects_detectable_personal_data(db: Session) -> None:
     """Justificativas operacionais nao podem virar um canal de PII persistida."""
     request = create_request(db, reference_period="2026-07", requested_by="dpo-1")

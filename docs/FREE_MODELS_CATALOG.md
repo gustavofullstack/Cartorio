@@ -5,11 +5,11 @@
 
 ## OpenCode Zen Free Models (3 Contas)
 
-| Conta | Email | Model | Contexto | API Key (no .env) |
-|-------|-------|-------|----------|-------------------|
-| 1 | gustavomar.fullstack@gmail.com | deepseek-v4-flash-free | 1M tokens | `opencode_zen_account_1_api_key` |
-| 2 | almeida.me@icoud.com | mimo-v2.5-free | 1M tokens | `opencode_zen_account_2_api_key` |
-| 3 | suporte@udiapods.com | nemotron-3-ultra-free | 1M tokens | `opencode_zen_account_3_api_key` |
+| Slot | Model | Contexto | Secret no `.env` |
+|------|-------|----------|-------------------|
+| 1 | deepseek-v4-flash-free | 1M tokens | `OPENCODE_ZEN_ACCOUNT_1_API_KEY` |
+| 2 | mimo-v2.5-free | 1M tokens | `OPENCODE_ZEN_ACCOUNT_2_API_KEY` |
+| 3 | nemotron-3-ultra-free | 1M tokens | `OPENCODE_ZEN_ACCOUNT_3_API_KEY` |
 
 ## Chain de Fallback Completa
 
@@ -25,8 +25,9 @@ opencode_zen_account_1 (deepseek-v4-flash-free, 1M ctx)
                 → groq (mixtral-8x7b, llama-3.3-70b)
                   → mistral (devstral-small, 256K ctx)
                     → google_ai_studio (gemini-3.5-flash, 1M ctx)
-                      → openclaw (gpt-5.5 / claude-sonnet)
-                        → cache
+                        → openclaw (gpt-5.5 / claude-sonnet)
+                          → jules (Gemini async)
+                            → antigravity (Gemini OAuth)
 ```
 
 ## Provedores Gratuitos Mapeados
@@ -51,22 +52,22 @@ Todas as chaves estão no `.env` local (gitignorado):
 LLM_DEFAULT_PROVIDER=opencode_zen_account_1
 
 # Chain completa
-LLM_FALLBACK_CHAIN=opencode_zen_account_1,opencode_zen_account_2,opencode_zen_account_3,opencode_free_1,opencode_free_2,opencode_free_3,opencode_go,openrouter,groq,mistral,google_ai_studio,openclaw,cache
+LLM_FALLBACK_CHAIN=opencode_zen_account_1,opencode_zen_account_2,opencode_zen_account_3,opencode_free_3,opencode_free_1,opencode_free_2,opencode_go,openrouter,groq,mistral,google_ai_studio,openclaw,jules,antigravity
 
 # Conta 1
-opencode_zen_account_1_api_key=sk-...
-opencode_zen_account_1_model=deepseek-v4-flash-free
-opencode_zen_account_1_base_url=https://opencode.ai/zen/v1
+OPENCODE_ZEN_ACCOUNT_1_API_KEY=<secret-manager-value>
+OPENCODE_ZEN_ACCOUNT_1_MODEL=deepseek-v4-flash-free
+OPENCODE_ZEN_ACCOUNT_1_BASE_URL=https://opencode.ai/zen/v1
 
 # Conta 2
-opencode_zen_account_2_api_key=sk-...
-opencode_zen_account_2_model=mimo-v2.5-free
-opencode_zen_account_2_base_url=https://opencode.ai/zen/v1
+OPENCODE_ZEN_ACCOUNT_2_API_KEY=<secret-manager-value>
+OPENCODE_ZEN_ACCOUNT_2_MODEL=mimo-v2.5-free
+OPENCODE_ZEN_ACCOUNT_2_BASE_URL=https://opencode.ai/zen/v1
 
 # Conta 3
-opencode_zen_account_3_api_key=sk-...
-opencode_zen_account_3_model=nemotron-3-ultra-free
-opencode_zen_account_3_base_url=https://opencode.ai/zen/v1
+OPENCODE_ZEN_ACCOUNT_3_API_KEY=<secret-manager-value>
+OPENCODE_ZEN_ACCOUNT_3_MODEL=nemotron-3-ultra-free
+OPENCODE_ZEN_ACCOUNT_3_BASE_URL=https://opencode.ai/zen/v1
 ```
 
 ## Segurança

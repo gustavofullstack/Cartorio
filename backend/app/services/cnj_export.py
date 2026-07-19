@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -37,10 +38,14 @@ def _canonical_sha256(data: dict[str, Any]) -> str:
 
 def _validate_period(reference_period: str) -> tuple[int, int]:
     """Aceita exclusivamente o periodo calendario YYYY-MM."""
+    if not isinstance(reference_period, str) or not re.fullmatch(
+        r"\d{4}-\d{2}", reference_period
+    ):
+        raise CNJExportError("reference_period deve seguir YYYY-MM")
     try:
         year_text, month_text = reference_period.split("-", maxsplit=1)
         year, month = int(year_text), int(month_text)
-    except (AttributeError, TypeError, ValueError) as exc:
+    except ValueError as exc:
         raise CNJExportError("reference_period deve seguir YYYY-MM") from exc
     if not 2000 <= year <= 2100 or not 1 <= month <= 12:
         raise CNJExportError("reference_period fora do intervalo permitido")

@@ -34,41 +34,44 @@ build_approved_export() ──► status=generated
 | **Justificativa com PII scrubbing** | `pii.scrub()` na justificativa de aprovação |
 | **Período calendário válido** | Apenas YYYY-MM, entre 2000-2100 |
 
+> **Ponto de consistência:** `audit_integrity` é um snapshot da cadeia validado
+> imediatamente antes da geração. O evento `cnj.export.generated` é acrescentado
+> depois, como trilha append-only da própria operação; portanto, uma verificação
+> posterior da cadeia pode ter uma cabeça/contagem maior que a declarada no
+> artefato. O manifesto continua válido para o conteúdo exportado.
+
 ## Endpoints da API
 
 ### 1. Criar Pedido de Exportação
 
 ```http
-POST /api/v1/cnj-exports/requests
+POST /api/v1/lgpd/cnj-exports/requests
 Content-Type: application/json
 Authorization: Bearer <dpo_token>
+X-API-Key: <cartorio_api_key>
 
 {
-  "reference_period": "2026-06",
-  "requested_by": "dpo@cartorio.com"
+  "reference_period": "2026-06"
 }
 ```
 
 **Response (201):**
 ```json
 {
-  "id": "uuid-do-pedido",
-  "reference_period": "2026-06",
-  "status": "requested",
-  "requested_by": "dpo@cartorio.com",
-  "requested_at": "2026-07-19T12:00:00"
+  "request_id": "uuid-do-pedido",
+  "status": "requested"
 }
 ```
 
 ### 2. Aprovar Pedido (Dual Control)
 
 ```http
-POST /api/v1/cnj-exports/requests/{id}/approval
+POST /api/v1/lgpd/cnj-exports/requests/{id}/approval
 Content-Type: application/json
 Authorization: Bearer <dpo_token_diferente>
+X-API-Key: <cartorio_api_key>
 
 {
-  "approved_by": "dpo-senior@cartorio.com",
   "reason": "Exportacao mensal para atendimento a requisicao CNJ referente ao periodo junho/2026"
 }
 ```
@@ -81,8 +84,9 @@ Authorization: Bearer <dpo_token_diferente>
 ### 3. Gerar Artefato (após aprovação)
 
 ```http
-POST /api/v1/cnj-exports/requests/{id}/generate
+POST /api/v1/lgpd/cnj-exports/requests/{id}/generate
 Authorization: Bearer <dpo_token>
+X-API-Key: <cartorio_api_key>
 ```
 
 **Response (200):**
@@ -182,7 +186,7 @@ O relatório gerado pode ser enviado ao CNJ como evidência de conformidade LGPD
 
 ## Testes
 
-O sistema possui **5 testes dedicados** no arquivo `tests/test_cnj_export.py`, todos passando:
+O sistema possui **8 testes dedicados** (6 de serviço e 2 de API), todos passando:
 
 - `test_create_request_success` — Criação de pedido
 - `test_approve_request_dual_control` — Dupla aprovação (DPO diferente)
