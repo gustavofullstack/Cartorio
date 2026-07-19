@@ -298,6 +298,64 @@ class TestSkipRules:
         assert fake_self not in results
 
 
+class TestTrackedTextScope:
+    """Repo-wide mode must be Git-scoped and safe for CI reporting."""
+
+    def test_tracked_iterator_uses_git_and_minimal_fixture_allowlist(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        tracked = tmp_path / "backend" / "app" / "tracked.py"
+        tracked.parent.mkdir(parents=True)
+        tracked.write_text("VALUE = 1\n", encoding="utf-8")
+        synthetic = tmp_path / "backend" / "tests" / "test_check_no_literal_keys_g8.py"
+        synthetic.parent.mkdir(parents=True, exist_ok=True)
+        synthetic.write_text("VALUE = 2\n", encoding="utf-8")
+        ignored_binary = tmp_path / "assets" / "payload.bin"
+        ignored_binary.parent.mkdir()
+        ignored_binary.write_bytes(b"binary")
+
+        class _Result:
+            stdout = (
+                b"backend/app/tracked.py\0"
+                b"backend/tests/test_check_no_literal_keys_g8.py\0"
+                b"assets/payload.bin\0"
+            )
+
+        monkeypatch.setattr(cnlk, "REPO_ROOT", tmp_path)
+        monkeypatch.setattr(cnlk.subprocess, "run", lambda *args, **kwargs: _Result())
+
+        assert list(cnlk.iter_tracked_text_files()) == [tracked]
+
+    def test_tracked_report_is_redacted_and_report_only_does_not_block(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        secret_like_value = "sk-proj-FAKE1234567890abcdefghij"
+        source = tmp_path / "tracked.py"
+        source.write_text(f'KEY = "{secret_like_value}"\n', encoding="utf-8")
+        report = tmp_path / "report.md"
+        monkeypatch.setattr(cnlk, "iter_tracked_text_files", lambda: iter([source]))
+
+        rc = cnlk.main(
+            [
+                "--tracked-files",
+                "--severity",
+                "critical",
+                "--report-only",
+                "--report",
+                str(report),
+            ]
+        )
+
+        output = capsys.readouterr().out
+        assert rc == 0
+        assert secret_like_value not in output
+        assert secret_like_value not in report.read_text(encoding="utf-8")
+        assert "[valor redigido]" in report.read_text(encoding="utf-8")
+
+    def test_tracked_files_and_root_are_mutually_exclusive(self) -> None:
+        assert cnlk.main(["--tracked-files", "--root", "backend"]) == 2
+
+
 # ============================================================================
 # Integration: main() exit codes.
 # ============================================================================

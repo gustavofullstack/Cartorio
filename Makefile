@@ -129,6 +129,11 @@ secrets-scan-strict:  ## Secrets scan strict (severity=critical, fail-fast)
 	@echo "$(YELLOW)[secrets] Strict scan — critical only$(RESET)"
 	@python3 scripts/check_no_literal_keys_compose.py --severity critical --no-fail-fast
 
+.PHONY: secrets-scan-tracked-report
+secrets-scan-tracked-report:  ## Inventario redigido de arquivos textuais rastreados (nao bloqueia)
+	@echo "$(YELLOW)[secrets] Inventario Git redigido (report-only)...$(RESET)"
+	@python3 backend/scripts/check_no_literal_keys.py --tracked-files --severity critical --report-only
+
 .PHONY: secrets-scan-trufflehog
 secrets-scan-trufflehog:  ## Secrets scan com trufflehog (opt-in, mais lento)
 	@echo "$(YELLOW)[secrets] Trufflehog full scan...$(RESET)"

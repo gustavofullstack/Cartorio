@@ -1,6 +1,9 @@
 # Ruff
 .ruff_cache/
 
+# Ephemeral scanner summaries can contain diagnostic output. Keep them local.
+.cache/secrets_compose/
+
 # Python
 __pycache__/
 *.py[cod]

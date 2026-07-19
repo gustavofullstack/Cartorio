@@ -21,7 +21,9 @@ Cache:
     Re-runs within ``--cache-ttl`` seconds (default 300) reuse a
     sha256 hash of the staged blob (when ``--staged`` is used) or
     the filesystem snapshot (when ``--all-files``). The cache is
-    written to ``.cache/secrets_compose/<hash>.json``.
+    written to ``.cache/secrets_compose/<hash>.json``. Cache entries retain
+    result metadata only: scanner output and findings are never persisted,
+    because diagnostic output can itself contain a secret.
 
 LGPD Art. 46 — zero credenciais em codigo commitado. P0 incident
 se vazar (PII + secrets sao mesma categoria de risco).
@@ -51,6 +53,7 @@ from typing import Sequence
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND_SCRIPT = REPO_ROOT / "backend" / "scripts" / "check_no_literal_keys.py"
 CACHE_DIR = REPO_ROOT / ".cache" / "secrets_compose"
+CACHE_SCHEMA_VERSION = 2
 DEFAULT_TTL = 300  # 5 minutes
 SUPPORTED_SCANNERS = ("literal_keys", "gitleaks", "trufflehog")
 DEFAULT_SCANNERS = ("literal_keys", "gitleaks")  # trufflehog opt-in (slow)
@@ -143,9 +146,14 @@ def _cache_key(args: argparse.Namespace) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def _cache_file(key: str) -> Path:
+    """Return the versioned cache path; legacy diagnostic caches are never reused."""
+    return CACHE_DIR / f"v{CACHE_SCHEMA_VERSION}-{key}.json"
+
+
 def _read_cache(key: str, ttl: int) -> list[ScanResult] | None:
     """Return cached ScanResults if fresh, else None."""
-    cache_file = CACHE_DIR / f"{key}.json"
+    cache_file = _cache_file(key)
     if not cache_file.exists():
         return None
     age = time.time() - cache_file.stat().st_mtime
@@ -171,7 +179,7 @@ def _read_cache(key: str, ttl: int) -> list[ScanResult] | None:
 
 
 def _write_cache(key: str, results: Sequence[ScanResult]) -> None:
-    """Persist ScanResults to disk (best-effort, fail-open)."""
+    """Persist non-sensitive ScanResult metadata (best-effort, fail-open)."""
     try:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         payload = [
@@ -179,15 +187,12 @@ def _write_cache(key: str, results: Sequence[ScanResult]) -> None:
                 "name": r.name,
                 "status": r.status,
                 "returncode": r.returncode,
-                "stdout": r.stdout,
-                "stderr": r.stderr,
                 "duration_ms": r.duration_ms,
                 "skipped_reason": r.skipped_reason,
-                "findings": r.findings,
             }
             for r in results
         ]
-        (CACHE_DIR / f"{key}.json").write_text(
+        _cache_file(key).write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
@@ -279,6 +284,7 @@ NOISY_PATH_PATTERNS = (
     ".cache",
     "__pycache__",
     "trae-agent/.venv",
+    ".env",  # .env contém secrets e é gitignorado - nunca escanear
 )
 
 
@@ -431,7 +437,7 @@ def render_text(results: Sequence[ScanResult]) -> str:
         lines.append(f"❌ {len(failed)} scanner(s) flagged critical findings:")
         for r in failed:
             lines.append(f"--- {r.name} (rc={r.returncode}) ---")
-            lines.append(r.stdout.strip() or r.stderr.strip())
+            lines.append("diagnostics redacted; rerun the scanner locally to inspect findings")
     else:
         executed = sum(1 for r in results if r.status != "skipped")
         lines.append(f"✓ All {executed} scanner(s) clean.")
@@ -464,8 +470,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "returncode": r.returncode,
                 "duration_ms": r.duration_ms,
                 "skipped_reason": r.skipped_reason,
-                "stdout": r.stdout,
-                "stderr": r.stderr,
             }
             for r in results
         ]

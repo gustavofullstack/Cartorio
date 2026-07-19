@@ -83,8 +83,10 @@ jobs:
           python3 scripts/n8n_workflow_validator.py
           echo "=== OpenAPI snapshot check ==="
           python3 scripts/openapi_snapshot.py --check
-          echo "=== Secrets scan (staged) ==="
-          python3 scripts/secrets_scan.py
+          echo "=== Tracked secrets inventory (redacted, report-only) ==="
+          python3 backend/scripts/check_no_literal_keys.py \
+            --tracked-files --severity critical --report-only \
+            --report "$RUNNER_TEMP/tracked-secrets-report.md"
 
   # ============================================================================
   # Stage 2: Deploy (so roda se quality passar)

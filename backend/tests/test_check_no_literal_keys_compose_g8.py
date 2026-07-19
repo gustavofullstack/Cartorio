@@ -277,6 +277,8 @@ def test_cli_json_output_is_machine_readable(
     assert isinstance(payload, list)
     assert payload[0]["name"] == "literal_keys"
     assert payload[0]["status"] == "ok"
+    assert "stdout" not in payload[0]
+    assert "stderr" not in payload[0]
 
 
 # ============================================================================
@@ -330,7 +332,8 @@ def test_render_text_failure_summary() -> None:
     text = cnlkc.render_text(results)
     assert "FAIL" in text
     assert "scanner(s) flagged critical findings" in text
-    assert "sk-proj-FAKE" in text
+    assert "diagnostics redacted" in text
+    assert "sk-proj-FAKE" not in text
 
 
 # ============================================================================
@@ -349,17 +352,31 @@ def test_cache_read_returns_none_when_missing(
     assert cnlkc._read_cache("missing", ttl=60) is None
 
 
-def test_cache_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cache_round_trip_excludes_diagnostic_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(cnlkc, "CACHE_DIR", tmp_path / "cache")
     results = [
-        cnlkc.ScanResult(name="literal_keys", status="ok", returncode=0, stdout="cached"),
+        cnlkc.ScanResult(
+            name="literal_keys",
+            status="ok",
+            returncode=0,
+            stdout="scanner diagnostic that must not persist",
+            stderr="another diagnostic that must not persist",
+            findings=[{"match": "must not persist"}],
+        ),
     ]
     key = "abc123"
     cnlkc._write_cache(key, results)
+    cached_payload = (tmp_path / "cache" / f"v2-{key}.json").read_text(encoding="utf-8")
+    assert "diagnostic" not in cached_payload
+    assert "must not persist" not in cached_payload
     out = cnlkc._read_cache(key, ttl=60)
     assert out is not None
     assert out[0].name == "literal_keys"
-    assert out[0].stdout == "cached"
+    assert out[0].stdout == ""
+    assert out[0].stderr == ""
+    assert out[0].findings == []
 
 
 def test_cache_expires_after_ttl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -367,7 +384,7 @@ def test_cache_expires_after_ttl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(cnlkc, "CACHE_DIR", tmp_path / "cache")
     results = [cnlkc.ScanResult(name="x", status="ok", returncode=0)]
     cnlkc._write_cache("k", results)
-    cache_file = tmp_path / "cache" / "k.json"
+    cache_file = tmp_path / "cache" / "v2-k.json"
     import os
     import time
 
@@ -395,6 +412,21 @@ def test_clear_cache_wipes_directory(tmp_path: Path, monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(cnlkc.subprocess, "run", fake_run)
     cnlkc.main(["--no-cache", "--clear-cache", "--scanner", "literal_keys"])
     assert not (cache / "stale.json").exists()
+
+
+def test_cache_does_not_reuse_legacy_diagnostic_entry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Legacy files remain local but are never loaded by the hardened cache."""
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    (cache / "legacy.json").write_text(
+        json.dumps([{"stdout": "legacy diagnostic", "returncode": 0}]), encoding="utf-8"
+    )
+    monkeypatch.setattr(cnlkc, "CACHE_DIR", cache)
+
+    assert cnlkc._read_cache("legacy", ttl=60) is None
+    assert (cache / "legacy.json").exists()
 
 
 # ============================================================================

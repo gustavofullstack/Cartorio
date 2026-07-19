@@ -58,6 +58,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -100,6 +101,35 @@ SKIP_FILES = frozenset(
         ".env.sample",
         "check_no_literal_keys.py",  # self-test NUNCA
         "check_no_literal_keys.baseline",
+    }
+)
+
+# A repo-wide scan must be useful without hiding a whole test tree.  These
+# files deliberately contain synthetic values that exercise the detector.
+# Keep this list exact and review additions: an arbitrary test must never gain
+# a blanket exemption merely because it lives under ``tests/``.
+SYNTHETIC_FIXTURE_ALLOWLIST = frozenset(
+    {
+        "backend/tests/test_check_no_literal_keys_g8.py",
+        "backend/tests/test_lobechat_prompt_export_g8.py",
+    }
+)
+
+TEXT_SUFFIXES = frozenset(
+    {
+        ".cfg",
+        ".conf",
+        ".env",
+        ".ini",
+        ".json",
+        ".md",
+        ".py",
+        ".sh",
+        ".toml",
+        ".txt",
+        ".xml",
+        ".yaml",
+        ".yml",
     }
 )
 
@@ -281,11 +311,13 @@ class Violation:
         return f"{path}:{self.lineno}:{self.rule}"
 
 
-def _should_skip_path(path: Path) -> bool:
+def _should_skip_path(path: Path, *, include_tracked_env: bool = False) -> bool:
     """Heuristica: pula vendor dirs e arquivos na whitelist."""
     parts = set(path.parts)
     if parts & SKIP_DIRS:
         return True
+    if include_tracked_env and path.name == ".env":
+        return False
     if path.name in SKIP_FILES:
         return True
     return False
@@ -323,6 +355,40 @@ def scan_file(path: Path) -> list[Violation]:
     except (OSError, UnicodeDecodeError):
         return []
     return scan_text(content)
+
+
+def _is_tracked_text_path(rel_path: str) -> bool:
+    """Return whether a Git path is a text type supported by this scanner."""
+    path = Path(rel_path)
+    return path.suffix.lower() in TEXT_SUFFIXES or path.name.startswith(".env")
+
+
+def iter_tracked_text_files() -> Iterable[Path]:
+    """Yield tracked, supported text files only.
+
+    ``git ls-files -z`` is intentional: it avoids walking local `.env`, caches
+    and generated artifacts that are outside the repository contract.  A
+    tracked secret must still be reported, including a tracked ``.env``.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("git ls-files failed; cannot establish tracked scan scope") from exc
+
+    for raw_path in result.stdout.split(b"\0"):
+        if not raw_path:
+            continue
+        rel_path = raw_path.decode("utf-8", errors="surrogateescape")
+        if rel_path in SYNTHETIC_FIXTURE_ALLOWLIST or not _is_tracked_text_path(rel_path):
+            continue
+        path = REPO_ROOT / rel_path
+        if path.is_file() and not _should_skip_path(path, include_tracked_env=True):
+            yield path
 
 
 def load_baseline(baseline_path: Path) -> set[str]:
@@ -412,11 +478,25 @@ def _build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="Tambem escaneia .sh/.yml/.json/.env (default: so .py).",
     )
+    p.add_argument(
+        "--tracked-files",
+        action="store_true",
+        help="Escaneia todos os arquivos textuais rastreados pelo Git (inclui .env rastreado).",
+    )
+    p.add_argument(
+        "--report",
+        type=Path,
+        help="Grava relatorio redigido com localizacao/regra, sem valores encontrados.",
+    )
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_argparser().parse_args(argv)
+
+    if args.tracked_files and args.root:
+        print("ERRO: --tracked-files nao pode ser combinado com --root.", file=sys.stderr)
+        return 2
 
     if args.root:
         roots = list(args.root)
@@ -427,8 +507,6 @@ def main(argv: list[str] | None = None) -> int:
     if baseline:
         print(f"[baseline] {len(baseline)} fingerprints whitelisted from {args.baseline}")
 
-    file_iter = iter_text_files(roots) if args.include_text else iter_python_files(roots)
-
     def _relpath(path: Path) -> str:
         """Repo-relative se possivel, senao absoluto (pra --root arbitrarios)."""
         try:
@@ -436,10 +514,19 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError:
             return str(path.resolve())
 
-    all_violations: list[tuple[Path, Violation]] = []
-    for path in file_iter:
-        for v in scan_file(path):
-            all_violations.append((path, v))
+    try:
+        file_iter = (
+            iter_tracked_text_files()
+            if args.tracked_files
+            else (iter_text_files(roots) if args.include_text else iter_python_files(roots))
+        )
+        all_violations: list[tuple[Path, Violation]] = []
+        for path in file_iter:
+            for v in scan_file(path):
+                all_violations.append((path, v))
+    except RuntimeError as exc:
+        print(f"ERRO: {exc}", file=sys.stderr)
+        return 2
 
     # Filter baseline (FPs conhecidos).
     filtered: list[tuple[Path, Violation]] = []
@@ -456,6 +543,32 @@ def main(argv: list[str] | None = None) -> int:
     print("=" * 72)
     print(f"SECRETS SCANNER (G8.14.T3) — severity>={args.severity}")
     print("=" * 72)
+    if args.tracked_files:
+        print(
+            "Scope: Git tracked text files (synthetic fixtures allowlisted: "
+            f"{len(SYNTHETIC_FIXTURE_ALLOWLIST)})."
+        )
+
+    if args.report:
+        report_lines = [
+            "# Secrets Scan Report (redacted)",
+            "",
+            f"Scope: {'git-tracked text files' if args.tracked_files else 'configured roots'}",
+            f"Severity threshold: {args.severity}",
+            f"Findings above threshold: {len(threshold_violations)}",
+            "",
+        ]
+        for path, violation in filtered:
+            rel = _relpath(path)
+            report_lines.append(
+                f"- `{rel}:{violation.lineno}` [{violation.severity.upper()}][{violation.rule}] "
+                "[valor redigido]"
+            )
+        try:
+            args.report.write_text("\n".join(report_lines) + "\n", encoding="utf-8")
+        except OSError as exc:
+            print(f"ERRO: nao foi possivel gravar report: {exc}", file=sys.stderr)
+            return 2
 
     if not filtered:
         print("OK: zero violacoes detectadas.")

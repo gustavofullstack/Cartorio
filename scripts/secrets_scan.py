@@ -17,6 +17,10 @@ Uso:
     python3 scripts/secrets_scan.py --all-files     # scan repo todo
     python3 scripts/secrets_scan.py --report secrets_report.md
 
+Diagnostic contract: matches are never printed or written to reports.  The
+location and rule are enough for remediation; keeping source snippets would
+turn an observability artifact into a second secret store.
+
 Modified by Gustavo Almeida + cartorio-security — G6 wave 10.
 """
 from __future__ import annotations
@@ -129,7 +133,7 @@ def main() -> int:
         print("[HOLD] SECRET(S) DETECTED(S) — BLOQUEIA COMMIT:")
         for path, kind, line_no, line, pattern in all_findings[:20]:
             print(f"  - {path}:{line_no} [{kind}]")
-            print(f"    line: {line}")
+            print("    [valor redigido]")
         if len(all_findings) > 20:
             print(f"  ... +{len(all_findings) - 20} mais")
     else:
@@ -148,7 +152,7 @@ def main() -> int:
             md.append("")
             for path, kind, line_no, line, pattern in all_findings:
                 md.append(f"- `{path}:{line_no}` [{kind}]")
-                md.append(f"  ```\n  {line}\n  ```")
+                md.append("  [valor redigido]")
             md.append("")
         else:
             md.append("## [WORK] Nenhum secret detectado")

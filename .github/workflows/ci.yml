@@ -218,14 +218,14 @@ jobs:
       - name: Bare Exception gate (G7.21.T4)
         run: python3 scripts/check_no_bare_exception.py
 
-      # G7.22.T4 — secrets pattern scan (non-blocking until baseline clean)
-      - name: Secrets scan (G7.22.T4)
+      # G7.22.T4 — tracked inventory stays report-only until historical
+      # findings have an explicit remediation/baseline decision.  Its output
+      # is location/rule only; it never exposes a matched value in CI logs.
+      - name: Tracked secrets inventory (redacted, report-only)
         run: |
-          if [ -f scripts/secrets_scan.py ]; then
-            python3 scripts/secrets_scan.py --all-files || echo "WARN secrets_scan exit non-zero (review)"
-          else
-            echo "secrets_scan.py missing — skip"
-          fi
+          python3 backend/scripts/check_no_literal_keys.py \
+            --tracked-files --severity critical --report-only \
+            --report "$RUNNER_TEMP/tracked-secrets-report.md"
 
       # G7.22.T1 — composite local artifacts (prod radar HOLD expected in CI)
       - name: G7 super validator local-only (G7.22.T1)
