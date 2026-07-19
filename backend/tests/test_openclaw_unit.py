@@ -23,6 +23,13 @@ import pytest
 
 from app.integrations.openclaw import chat, chat_with_settings
 from app.integrations.opencode_go import ChatError, ChatErrorKind, ChatResponse
+from app.config import settings
+
+
+@pytest.fixture(autouse=True)
+def _configured_openclaw_test_key(monkeypatch):
+    """Injeta credencial sintética; produção permanece fail-closed."""
+    monkeypatch.setattr(settings, "openclaw_api_key", "sk-test-mock")
 
 
 def _make_httpx_response(status_code: int, json_data: dict | None = None, text: str = ""):
