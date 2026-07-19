@@ -54,3 +54,17 @@ gradual. Falta de consentimento LGPD sempre interrompe a cadeia inteira.
 Modelos gratuitos e disponibilidade podem mudar. A lista efetivamente
 autorizada deve ser validada no provedor e na matriz DPA antes de transportar
 qualquer dado de cliente.
+
+## Catálogo Zen gratuito verificado
+
+Em 2026-07-19, a documentação oficial do OpenCode Zen lista os modelos abaixo
+como gratuitos temporariamente: `big-pickle`, `deepseek-v4-flash-free`,
+`mimo-v2.5-free`, `north-mini-code-free` e `nemotron-3-ultra-free`.
+Todos usam o gateway `https://opencode.ai/zen/v1`; a disponibilidade e os
+termos podem mudar sem aviso. `hy3-free` aparece no endpoint de modelos, mas
+não consta da tabela de preços, portanto não integra o fallback automático.
+
+Os provedores gratuitos podem reter ou usar dados para melhoria. O pipeline
+do Cartório só pode encaminhar conteúdo previamente scrubbed e com
+consentimento; CPF, e-mail, telefone, anexos e dados jurídicos nunca seguem
+para esses modelos. Fonte: https://opencode.ai/docs/zen/
