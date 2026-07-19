@@ -11,7 +11,7 @@
 # Pre-requisitos (ordem):
 #   1. Cloudflare A records (G7.12.T1) — ver infra/dns/CLOUDFLARE_RUNBOOK.md
 #      dig +short chatwoot.2notasudi.com.br A  → 187.77.236.77 ou CF anycast
-#   2. Serviços Swarm UP: cartorio_chatwoot, cartorio_n8n, cartorio_supabase
+#   2. Serviços Swarm UP: cartorio_chatwoot, cartorio_n8n, cartorio_supabase-kong
 #   3. Backup do dynamic atual no VPS
 #
 # Merge no VPS (Gustavo / SRE com SSH):
@@ -26,7 +26,7 @@
 #   - docs/TRAEFIK_ROUTERS_MERGE_G7.md
 #   - docs/DNS_TRAEFIK_SUI_PACK_G7.md
 #   - infra/dns/CLOUDFLARE_DNS_RECORDS.md
-#   - infra/dns/DOMAIN_TYPO_DECISION.md  (supabase = opcional; supbase canônico)
+#   - infra/dns/DOMAIN_TYPO_DECISION.md  (supbase canônico; supabase alias)
 #   - docs/PLAYBOOK_502_VS_NXDOMAIN_G7.md
 #
 # Middlewares referenciados (@file) devem existir no dynamic base EasyPanel.

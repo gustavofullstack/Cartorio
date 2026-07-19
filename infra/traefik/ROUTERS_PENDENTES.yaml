@@ -9,7 +9,8 @@
 # com SSH ao VPS) precisa fazer merge no /etc/traefik/dynamic/main.yaml do servidor.
 #
 # Pre-requisitos (NAO skipeave):
-#   1. Cloudflare A records criados em dash.cloudflare.com para chatwoot/n8n/supabase
+#   1. Cloudflare A records criados em dash.cloudflare.com para chatwoot/n8n e
+#      pelo menos um alias Supabase (`supbase` canônico ou `supabase`)
 #      (ver infra/dns/CLOUDFLARE_RUNBOOK.md)
 #   2. dig +short <host>.2notasudi.com.br A @1.1.1.1 retorna IP Cloudflare ou 187.77.236.77
 #   3. App backend do servico esta UP no Docker Swarm (docker ps | grep cartorio_<servico>)
@@ -55,7 +56,7 @@ http:
         - rate-limit-authenticated@file
 
     # ===== Supabase public aliases =====
-    # Backend: Supabase self-hosted (servico: cartorio_supabase)
+    # Backend: Supabase self-hosted (serviço Kong: cartorio_supabase-kong)
     # Porta interna Swarm: 8000 (Supabase Kong API gateway)
     # Health: GET /auth/v1/health (200 OK)
     # `supbase` é o hostname canônico legado; `supabase` é o alias ortográfico.
