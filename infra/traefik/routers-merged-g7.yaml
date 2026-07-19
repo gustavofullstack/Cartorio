@@ -64,12 +64,13 @@ http:
         - default-security-headers@file
         - rate-limit-authenticated@file
 
-    # ===== supabase.2notasudi.com.br =====
-    # OPCIONAL — typo canônico em prod é supbase.2notasudi.com.br
-    # Ver infra/dns/DOMAIN_TYPO_DECISION.md
+    # ===== Supabase public aliases =====
+    # `supbase` é o hostname canônico legado em produção; `supabase` é o
+    # alias ortográfico planejado. O mesmo router cobre ambos para evitar que
+    # a API (SUPABASE_URL) dependa de qual alias foi provisionado no DNS.
     # Porta interna Swarm: 8000 (Kong)
     cartorio-supabase:
-      rule: "Host(`supabase.2notasudi.com.br`)"
+      rule: "Host(`supbase.2notasudi.com.br`) || Host(`supabase.2notasudi.com.br`)"
       service: cartorio-supabase
       tls:
         certResolver: letsencrypt

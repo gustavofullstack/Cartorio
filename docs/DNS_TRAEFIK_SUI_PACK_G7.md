@@ -28,7 +28,9 @@ Typo: `infra/dns/DOMAIN_TYPO_DECISION.md` (supbase ACEITO)
 ## 2. Traefik routers (5–10 min)
 
 Arquivo: `infra/traefik/ROUTERS_PENDENTES.yaml`  
-Merge no dynamic config EasyPanel/Traefik (hosts chatwoot/n8n/supabase se usarem esses FQDNs).
+Merge no dynamic config EasyPanel/Traefik. O router Supabase cobre os dois
+aliases públicos (`supbase` canônico legado e `supabase` ortográfico), além de
+`chatwoot` e `n8n`.
 
 Canônicos já em uso e OK em geral: `api`, `chat`, `flow`, `whatsapp`, `agent`, `easypanel`, `supbase`.
 

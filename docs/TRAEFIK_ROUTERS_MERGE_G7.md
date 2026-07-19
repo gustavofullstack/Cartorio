@@ -15,10 +15,11 @@ Fechar NXDOMAIN / 404 edge para:
 |------|-------------|---------------|-------|
 | `chatwoot.2notasudi.com.br` | `cartorio-chatwoot` | `cartorio_chatwoot` | 3000 |
 | `n8n.2notasudi.com.br` | `cartorio-n8n` | `cartorio_n8n` | 5678 |
-| `supabase.2notasudi.com.br` | `cartorio-supabase` | `cartorio_supabase` | 8000 (Kong) |
+| `supbase.2notasudi.com.br` **e** `supabase.2notasudi.com.br` | `cartorio-supabase` | `cartorio_supabase` | 8000 (Kong) |
 
-**Já OK (não re-mergear):** `api`, `chat`, `flow`, `whatsapp`, `agent`, `easypanel`, `supbase`  
-**Typo:** `supbase` é canônico — `supabase` router é **opcional** (`infra/dns/DOMAIN_TYPO_DECISION.md`).
+**Já OK (não re-mergear):** `api`, `chat`, `flow`, `whatsapp`, `agent`, `easypanel`
+**Aliases:** `supbase` é canônico legado; o artefato cobre também `supabase` para
+que os dois apontem ao mesmo Kong. O merge ainda é HOLD operacional.
 
 ---
 
@@ -29,6 +30,7 @@ Fechar NXDOMAIN / 404 edge para:
    ```bash
    dig +short chatwoot.2notasudi.com.br A @1.1.1.1
    dig +short n8n.2notasudi.com.br A @1.1.1.1
+   dig +short supbase.2notasudi.com.br A @1.1.1.1
    dig +short supabase.2notasudi.com.br A @1.1.1.1
    bash scripts/check_dns_health.sh
    ```
@@ -60,7 +62,7 @@ docker kill -s HUP easypanel-traefik
 # ou: docker service update --force $(docker service ls -q -f name=traefik)
 
 # 5) Validar edge
-for h in chatwoot n8n supabase; do
+for h in chatwoot n8n supbase supabase; do
   code=$(curl -sk -o /dev/null -m 15 -w '%{http_code}' "https://$h.2notasudi.com.br/")
   echo "$h → $code"
 done

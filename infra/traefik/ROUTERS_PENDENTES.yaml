@@ -54,14 +54,14 @@ http:
         - default-security-headers@file
         - rate-limit-authenticated@file
 
-    # ===== supabase.2notasudi.com.br =====
+    # ===== Supabase public aliases =====
     # Backend: Supabase self-hosted (servico: cartorio_supabase)
     # Porta interna Swarm: 8000 (Supabase Kong API gateway)
     # Health: GET /auth/v1/health (200 OK)
-    # NOTA: O subdominio canonico em uso e supbase (typo aceito). Este router e OPCIONAL.
-    # Ver infra/dns/DOMAIN_TYPO_DECISION.md.
+    # `supbase` é o hostname canônico legado; `supabase` é o alias ortográfico.
+    # Cobrir ambos evita 404 quando o alias canônico já está publicado.
     cartorio-supabase:
-      rule: "Host(`supabase.2notasudi.com.br`)"
+      rule: "Host(`supbase.2notasudi.com.br`) || Host(`supabase.2notasudi.com.br`)"
       service: cartorio-supabase
       tls:
         certResolver: letsencrypt
