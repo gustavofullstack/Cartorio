@@ -4,7 +4,7 @@
     "description": "\n# Cartorio Backend API\n\nAPI REST do **2o Servico Notarial de Uberlandia** para consulta de emolumentos,\nprotocolizacao de atos, gestao de atendimentos e auditoria imutavel.\n\n## Pilares\n\n- **Audit log imutavel**: hash chain SHA256 + HMAC. Cada acao deixa rastro verificavel.\n- **PII scrubbing**: CPF/telefone/email nunca saem crus pra LLM. Hasheados no DB (SHA256+salt).\n- **HITL obrigatorio**: protocolo sempre nasce em `DRAFT`. Escrevente valida antes de processar.\n- **LGPD compliance**: consentimento explicito, retencao 365 dias (conversas) / 1825 (audit).\n- **MCP nativo**: API expoe tools MCP via /mcp (protocolo 2025-03-26).\n\n## Tags disponiveis (10 tags, 15 endpoints)\n\n| Tag | Endpoints | Descricao |\n|-----|-----------|-----------|\n| `emolumento`  | 1   | Calculo de custas (TABELA_2026_MG) |\n| `protocolo`   | 2   | Criar e consultar protocolos |\n| `documento`   | 1   | Segunda via de documento |\n| `audit`       | 1   | Verificacao de cadeia de audit log |\n| `health`      | 2   | Liveness, readiness, radar |\n| `atendimento` | 4   | Handoff humano + pesquisa satisfacao |\n| `webhook`     | 2   | Integracao Evolution API / Chatwoot |\n| `meta`        | 3   | Health, MCP servers discovery |\n| `agendamento` | 1   | Disponibilidade de agenda |\n| `dev`         | 1   | Exports (Postman collection) |\n\n## Autenticacao\n\nAPI em si **NAO exige auth** (LGPD art. 7o, IV - finalidade publica do servico notarial).\nPara endpoints sensiveis (audit verify, webhook), usamos **HMAC ou header X-API-Key**\ncompartilhado com n8n (ver `N8N_WEBHOOK_SECRET` / `CARTORIO_API_KEY`).\n\n## MCP (Model Context Protocol)\n\nA propria API expoe tools MCP no endpoint `/mcp` (sub-app FastMCP montado, protocolo 2025-03-26).\nTools disponiveis:\n\n1. `cartorio_calcular_emolumento` - calculo MG 2026\n2. `cartorio_consultar_protocolo` - status, historico, proxima acao\n3. `cartorio_criar_protocolo` - criar DRAFT com gate LGPD\n4. `cartorio_gerar_segunda_via` - link download PDF\n5. `cartorio_audit_verify` - integridade hash chain + HMAC\n6. `cartorio_saudacao` - health check\n7. `super_server_info` - meta info (versao, tools_count, etc)\n\nLista de tools em `/mcp-servers`. Config em `~/.mavis/mcp/clients/cartorio-mcp-config.json`.\nTools description em `/tools_description.json`.\n\n## Compliance LGPD\n\n- Art. 7o, I  - Consentimento explicito (gate no POST /protocolo)\n- Art. 37    - Registro de operacoes de tratamento (audit log)\n- Art. 46    - Medidas de seguranca (HMAC + hash chain)\n- Retencao: 365 dias conversas, 1825 dias (5 anos) audit log\n- DPO: dpo@2notasudi.com.br\n\n## Stack\n\n- **API**: FastAPI 0.115 + SQLAlchemy 2 + Pydantic 2 + Pydantic Settings\n- **DB**: Supabase (PostgreSQL 15) via SQLAlchemy + Alembic\n- **Cache/Session**: Redis 7\n- **WhatsApp**: Evolution API (http://cartorio_evolution-api:8080)\n- **CRM**: Chatwoot\n- **Workflows**: n8n (https://cartorio-n8n.dfgdxq.easypanel.host)\n- **LLM primario**: Opencode-Go (deepseek-v4-flash, low cost)\n- **LLM secundario**: OpenClaw gateway (gpt-5.5 / anthropic-sonnet)\n- **MCP**: FastMCP 3.4.2 (protocolo 2025-03-26)\n\n## Contato\n\n- DPO: dpo@2notasudi.com.br\n- Repo: https://github.com/2notas/cartorio-backend\n- Issues: https://github.com/2notas/cartorio-backend/issues\n- Site: https://2notasudi.com.br\n\n\nGerado por scripts/postman_sync.py (G8.17.T1). Authorization SEMPRE via {{bearer_token}} variable. NUNCA persistir tokens reais.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "0.6.0",
-    "_postman_id": "cartorio-sync-1784481625"
+    "_postman_id": "cartorio-sync-1784484716"
   },
   "item": [
     {
@@ -427,7 +427,7 @@
           "response": []
         },
         {
-          "name": "GET /api/v1/api/v1/admin/dead-mans-switch/status",
+          "name": "GET /api/v1/admin/dead-mans-switch/status",
           "request": {
             "method": "GET",
             "header": [
@@ -443,14 +443,12 @@
               }
             ],
             "url": {
-              "raw": "https://api.2notasudi.com.br/api/v1/api/v1/admin/dead-mans-switch/status",
+              "raw": "https://api.2notasudi.com.br/api/v1/admin/dead-mans-switch/status",
               "protocol": "https",
               "host": [
                 "api.2notasudi.com.br"
               ],
               "path": [
-                "api",
-                "v1",
                 "api",
                 "v1",
                 "admin",
@@ -459,12 +457,12 @@
               ],
               "variable": []
             },
-            "description": "Status do dead man's switch (A13)\n\nRetorna status atual: ultimo heartbeat, idade, threshold, alive?\n\noperationId: get_status_api_v1_api_v1_admin_dead_mans_switch_status_get"
+            "description": "Status do dead man's switch (A13)\n\nRetorna status atual: ultimo heartbeat, idade, threshold, alive?\n\noperationId: get_status_api_v1_admin_dead_mans_switch_status_get"
           },
           "response": []
         },
         {
-          "name": "POST /api/v1/api/v1/admin/dead-mans-switch/heartbeat",
+          "name": "POST /api/v1/admin/dead-mans-switch/heartbeat",
           "request": {
             "method": "POST",
             "header": [
@@ -480,14 +478,12 @@
               }
             ],
             "url": {
-              "raw": "https://api.2notasudi.com.br/api/v1/api/v1/admin/dead-mans-switch/heartbeat",
+              "raw": "https://api.2notasudi.com.br/api/v1/admin/dead-mans-switch/heartbeat",
               "protocol": "https",
               "host": [
                 "api.2notasudi.com.br"
               ],
               "path": [
-                "api",
-                "v1",
                 "api",
                 "v1",
                 "admin",
@@ -496,12 +492,12 @@
               ],
               "variable": []
             },
-            "description": "Forca heartbeat manual (reset timer)\n\nInsere audit log de heartbeat manual. Reset timer do dead man's switch.\n\noperationId: force_heartbeat_api_v1_api_v1_admin_dead_mans_switch_heartbeat_post"
+            "description": "Forca heartbeat manual (reset timer)\n\nInsere audit log de heartbeat manual. Reset timer do dead man's switch.\n\noperationId: force_heartbeat_api_v1_admin_dead_mans_switch_heartbeat_post"
           },
           "response": []
         },
         {
-          "name": "GET /api/v1/api/v1/admin/dead-mans-switch/history",
+          "name": "GET /api/v1/admin/dead-mans-switch/history",
           "request": {
             "method": "GET",
             "header": [
@@ -517,14 +513,12 @@
               }
             ],
             "url": {
-              "raw": "https://api.2notasudi.com.br/api/v1/api/v1/admin/dead-mans-switch/history",
+              "raw": "https://api.2notasudi.com.br/api/v1/admin/dead-mans-switch/history",
               "protocol": "https",
               "host": [
                 "api.2notasudi.com.br"
               ],
               "path": [
-                "api",
-                "v1",
                 "api",
                 "v1",
                 "admin",
@@ -541,7 +535,7 @@
                 }
               ]
             },
-            "description": "Historico dos ultimos heartbeats\n\nRetorna ultimos N heartbeats (do audit log).\n\noperationId: get_history_api_v1_api_v1_admin_dead_mans_switch_history_get"
+            "description": "Historico dos ultimos heartbeats\n\nRetorna ultimos N heartbeats (do audit log).\n\noperationId: get_history_api_v1_admin_dead_mans_switch_history_get"
           },
           "response": []
         }
@@ -3067,7 +3061,7 @@
     },
     {
       "name": "health",
-      "description": "13 endpoints (tag: health)",
+      "description": "14 endpoints (tag: health)",
       "item": [
         {
           "name": "GET /api/v1/integrations/chatwoot/health",
@@ -3101,6 +3095,40 @@
               "variable": []
             },
             "description": "Health check dedicado do Chatwoot CRM\n\nVerifica a conectividade com o Chatwoot via health endpoint e retorna latência.\n\noperationId: chatwoot_health_check_api_v1_integrations_chatwoot_health_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/chatwoot/health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/chatwoot/health",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chatwoot",
+                "health"
+              ],
+              "variable": []
+            },
+            "description": "Health check dedicado do Chatwoot CRM\n\nVerifica a conectividade com o Chatwoot via health endpoint e retorna latência.\n\noperationId: chatwoot_health_check_api_v1_chatwoot_health_get"
           },
           "response": []
         },
@@ -3526,7 +3554,7 @@
     },
     {
       "name": "lgpd",
-      "description": "9 endpoints (tag: lgpd)",
+      "description": "10 endpoints (tag: lgpd)",
       "item": [
         {
           "name": "POST /api/v1/integrations/chatwoot/consent-propagation",
@@ -3560,6 +3588,49 @@
               "variable": []
             },
             "description": "Propaga consentimento LGPD do Telegram para Chatwoot\n\nQuando o cliente consente via Telegram (\"SIM\" ou /start), este endpoint aplica labels de consentimento na conversa Chatwoot correspondente e registra no audit log (LGPD Art. 7 I).\n\noperationId: chatwoot_consent_propagation_api_v1_integrations_chatwoot_consent_propagation_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/chatwoot/consent-propagation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/chatwoot/consent-propagation",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chatwoot",
+                "consent-propagation"
+              ],
+              "variable": []
+            },
+            "description": "Propaga consentimento LGPD do Telegram para Chatwoot\n\nQuando o cliente consente via Telegram (\"SIM\" ou /start), este endpoint aplica labels de consentimento na conversa Chatwoot correspondente e registra no audit log (LGPD Art. 7 I).\n\noperationId: chatwoot_consent_propagation_api_v1_chatwoot_consent_propagation_post",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -3834,7 +3905,7 @@
           "response": []
         },
         {
-          "name": "POST /api/v1/api/v1/lgpd/consent",
+          "name": "POST /api/v1/lgpd/consent/banner",
           "request": {
             "method": "POST",
             "header": [
@@ -3850,7 +3921,7 @@
               }
             ],
             "url": {
-              "raw": "https://api.2notasudi.com.br/api/v1/api/v1/lgpd/consent",
+              "raw": "https://api.2notasudi.com.br/api/v1/lgpd/consent/banner",
               "protocol": "https",
               "host": [
                 "api.2notasudi.com.br"
@@ -3858,14 +3929,13 @@
               "path": [
                 "api",
                 "v1",
-                "api",
-                "v1",
                 "lgpd",
-                "consent"
+                "consent",
+                "banner"
               ],
               "variable": []
             },
-            "description": "Registra consentimento LGPD do titular\n\nRegistra consentimento LGPD enviado pelo banner widget.\n\n- Aceita payload minimo (accepted bool + versao)\n- Persiste hash do IP (LGPD: nao armazenar IP cru)\n- Audit log entry (LGPD art. 37)\n- Resposta 204 (sendBeacon friendly)\n\noperationId: create_consent_api_v1_api_v1_lgpd_consent_post",
+            "description": "Registra consentimento LGPD do titular\n\nRegistra consentimento LGPD enviado pelo banner widget.\n\n- Aceita payload minimo (accepted bool + versao)\n- Persiste hash do IP (LGPD: nao armazenar IP cru)\n- Audit log entry (LGPD art. 37)\n- Resposta 204 (sendBeacon friendly)\n\noperationId: create_consent_api_v1_lgpd_consent_banner_post",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -3879,7 +3949,7 @@
           "response": []
         },
         {
-          "name": "GET /api/v1/api/v1/lgpd/consent/stats",
+          "name": "GET /api/v1/lgpd/consent/banner/stats",
           "request": {
             "method": "GET",
             "header": [
@@ -3895,7 +3965,7 @@
               }
             ],
             "url": {
-              "raw": "https://api.2notasudi.com.br/api/v1/api/v1/lgpd/consent/stats",
+              "raw": "https://api.2notasudi.com.br/api/v1/lgpd/consent/banner/stats",
               "protocol": "https",
               "host": [
                 "api.2notasudi.com.br"
@@ -3903,15 +3973,14 @@
               "path": [
                 "api",
                 "v1",
-                "api",
-                "v1",
                 "lgpd",
                 "consent",
+                "banner",
                 "stats"
               ],
               "variable": []
             },
-            "description": "Estatisticas agregadas de consentimento (DPO only)\n\nRetorna taxa de consentimento e oposicao agregados.\n\nApenas DPO/admin deveria acessar (em prod, adicionar auth).\n\noperationId: get_consent_stats_api_v1_api_v1_lgpd_consent_stats_get"
+            "description": "Estatisticas agregadas de consentimento (DPO only)\n\nRetorna taxa de consentimento e oposicao agregados.\n\nApenas DPO/admin deveria acessar (em prod, adicionar auth).\n\noperationId: get_consent_stats_api_v1_lgpd_consent_banner_stats_get"
           },
           "response": []
         }
@@ -5185,7 +5254,7 @@
       "description": "2 endpoints (tag: n8n)",
       "item": [
         {
-          "name": "GET /api/v1/api/v1/n8n/metrics/prometheus",
+          "name": "GET /api/v1/n8n/metrics/prometheus",
           "request": {
             "method": "GET",
             "header": [
@@ -5201,14 +5270,12 @@
               }
             ],
             "url": {
-              "raw": "https://api.2notasudi.com.br/api/v1/api/v1/n8n/metrics/prometheus",
+              "raw": "https://api.2notasudi.com.br/api/v1/n8n/metrics/prometheus",
               "protocol": "https",
               "host": [
                 "api.2notasudi.com.br"
               ],
               "path": [
-                "api",
-                "v1",
                 "api",
                 "v1",
                 "n8n",
@@ -5225,12 +5292,12 @@
                 }
               ]
             },
-            "description": "Metricas N8N em formato Prometheus\n\nEndpoint scrape-friendly para Prometheus.\n\noperationId: prometheus_metrics_api_v1_api_v1_n8n_metrics_prometheus_get"
+            "description": "Metricas N8N em formato Prometheus\n\nEndpoint scrape-friendly para Prometheus.\n\noperationId: prometheus_metrics_api_v1_n8n_metrics_prometheus_get"
           },
           "response": []
         },
         {
-          "name": "GET /api/v1/api/v1/n8n/metrics/summary",
+          "name": "GET /api/v1/n8n/metrics/summary",
           "request": {
             "method": "GET",
             "header": [
@@ -5246,14 +5313,12 @@
               }
             ],
             "url": {
-              "raw": "https://api.2notasudi.com.br/api/v1/api/v1/n8n/metrics/summary",
+              "raw": "https://api.2notasudi.com.br/api/v1/n8n/metrics/summary",
               "protocol": "https",
               "host": [
                 "api.2notasudi.com.br"
               ],
               "path": [
-                "api",
-                "v1",
                 "api",
                 "v1",
                 "n8n",
@@ -5270,7 +5335,7 @@
                 }
               ]
             },
-            "description": "Summary agregado de metricas N8N (JSON)\n\nRetorna summary JSON com top WFs e agregacoes.\n\noperationId: summary_metrics_api_v1_api_v1_n8n_metrics_summary_get"
+            "description": "Summary agregado de metricas N8N (JSON)\n\nRetorna summary JSON com top WFs e agregacoes.\n\noperationId: summary_metrics_api_v1_n8n_metrics_summary_get"
           },
           "response": []
         }

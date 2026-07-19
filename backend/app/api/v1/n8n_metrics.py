@@ -32,7 +32,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.db import get_db
 
-router = APIRouter(prefix="/api/v1/n8n/metrics", tags=["n8n", "metrics"])
+router = APIRouter(prefix="/n8n/metrics", tags=["n8n", "metrics"])
 
 
 def fetch_n8n_executions(

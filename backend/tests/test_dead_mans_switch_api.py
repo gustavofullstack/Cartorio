@@ -90,10 +90,11 @@ def test_history_com_items() -> None:
 
 
 def test_endpoint_path_registrado() -> None:
-    """Endpoints registrados."""
-    from app.api.v1.dead_mans_switch import router
+    """Contrato publico recebe o prefixo v1 apenas uma vez."""
+    from app.main import app
 
-    paths = [r.path for r in router.routes]
+    app.openapi_schema = None
+    paths = app.openapi()["paths"]
     assert "/api/v1/admin/dead-mans-switch/status" in paths
     assert "/api/v1/admin/dead-mans-switch/heartbeat" in paths
     assert "/api/v1/admin/dead-mans-switch/history" in paths

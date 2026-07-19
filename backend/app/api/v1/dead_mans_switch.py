@@ -34,7 +34,7 @@ from app.schemas.dead_mans_switch import (
     DeadMansSwitchStatus,
 )
 
-router = APIRouter(prefix="/api/v1/admin/dead-mans-switch", tags=["admin", "sre"])
+router = APIRouter(prefix="/admin/dead-mans-switch", tags=["admin", "sre"])
 
 
 @router.get(

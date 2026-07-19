@@ -113,10 +113,11 @@ def test_schema_consent_request_aceite_mesmo_sem_session() -> None:
 
 
 def test_schema_consent_endpoint_path() -> None:
-    """Validar path do endpoint."""
-    from app.api.v1.lgpd_consent import router
+    """Validar path publico sem duplicar o prefixo v1."""
+    from app.main import app
 
-    routes = [r.path for r in router.routes]
-    assert "/api/v1/lgpd/consent" in routes or "" in routes  # router tem prefix
-    # Path completo
-    assert any("consent" in r for r in routes)
+    app.openapi_schema = None
+    routes = app.openapi()["paths"]
+    assert "/api/v1/lgpd/consent/banner" in routes
+    assert "/api/v1/lgpd/consent/banner/stats" in routes
+    assert not any("/api/v1/api/v1/" in route for route in routes)

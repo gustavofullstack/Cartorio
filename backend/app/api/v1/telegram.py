@@ -22,6 +22,7 @@ Modified by Gustavo Almeida.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import json
 import logging
@@ -569,22 +570,32 @@ async def _tool_consultar_protocolo(numero: str) -> dict:
     return await _call_api("GET", f"/api/v1/protocolo/{numero}")
 
 
-async def _tool_criar_atendimento(cliente_id: int, topico: str, contato: str) -> dict:
+async def _tool_criar_atendimento(
+    cliente_id: int,
+    topico: str,
+    contato: str,
+    *,
+    chatwoot_conversation_id: int | None = None,
+) -> dict:
     """Cria ticket HITL. API retorna {ok, atendimento_id} — nao `id`.
 
     Payload alinhado a POST /api/v1/atendimento (router.criar_atendimento):
     canal + external_id obrigatorios; topico vira tipo/contexto scrubado.
     """
+    external_id = (contato or str(cliente_id)).removeprefix("telegram:")
+    payload: dict[str, Any] = {
+        "canal": "telegram",
+        "external_id": external_id,
+        "tipo": "duvida",
+        "contexto_scrubbed": scrub(topico).text,
+        "handoff_para_humano": True,
+    }
+    if chatwoot_conversation_id is not None:
+        payload["chatwoot_conversation_id"] = chatwoot_conversation_id
     return await _call_api(
         "POST",
         "/api/v1/atendimento",
-        {
-            "canal": "telegram",
-            "external_id": contato or f"telegram:{cliente_id}",
-            "tipo": "duvida",
-            "contexto_scrubbed": topico,
-            "handoff_para_humano": True,
-        },
+        payload,
     )
 
 
@@ -916,45 +927,6 @@ async def _handle_callback(
     return "", None, False
 
 
-async def _ensure_cliente_id_telegram(user_id: int | None) -> int | None:
-    """Garante cliente_id valido (FK) para agendamento Telegram.
-
-    POST /agendamento exige cliente_id > 0 existente. Telegram user_id
-    NAO eh FK de clientes. Estrategia:
-    1) Cria/recupera cliente via POST /atendimento com CPF placeholder
-       valido (mesmo padrao HITL) + nome telegram.
-    2) Se a API devolver cliente_id, usa. Senao tenta o seed id=1.
-    3) Nunca envia cliente_id=0 (Pydantic gt=0 → 422).
-    """
-    uid = int(user_id) if user_id else 0
-    # CPF valido (check-digit) reservado para canal Telegram — LGPD: hasheado
-    # no backend; nao e PII real do cidadao.
-    cpf_placeholder = "12345678909"
-    res = await _call_api(
-        "POST",
-        "/api/v1/atendimento",
-        {
-            "canal": "telegram",
-            "external_id": f"telegram:{uid or 'anon'}",
-            "tipo": "agendamento",
-            "cliente_cpf": cpf_placeholder,
-            "cliente_nome": f"Telegram user {uid}" if uid else "Telegram anon",
-            "contexto_scrubbed": "ensure_cliente_for_agendamento",
-            "handoff_para_humano": False,
-        },
-    )
-    cid = res.get("cliente_id") or res.get("clienteId")
-    if isinstance(cid, int) and cid > 0:
-        return cid
-    # Fallback seed (cliente de teste conhecido em prod) se create ok
-    # mas API antiga ainda nao devolve cliente_id.
-    if res.get("ok") or res.get("atendimento_id"):
-        logger.warning("TG ensure_cliente: API sem cliente_id (uid=%s) — fallback seed id=1", uid)
-        return 1
-    logger.warning("TG ensure_cliente failed uid=%s res=%s", uid, res)
-    return None
-
-
 async def _confirmar_agendamento(
     bus: Any, key: int | str | None, *, user_id: int | None = None
 ) -> tuple[str, list | None, bool]:
@@ -964,36 +936,19 @@ async def _confirmar_agendamento(
     state_obj = await _get_state(bus, key)
     sdata = state_obj.get("data", {})
 
-    cliente_id = await _ensure_cliente_id_telegram(user_id)
-    if not cliente_id:
-        await _clear_state(bus, key)
-        return (
-            "Nao consegui vincular seu cadastro para agendar. "
-            "Tente /humano para atendimento HITL no balcao.",
-            _menu_keyboard(),
-            True,
-        )
-
-    # Formata a data e a hora no formato ISO 8601 esperado pela API
-    data_str = sdata.get("data", "")
-    hora_str = sdata.get("hora", "")
-    data_hora_str = f"{data_str}T{hora_str}:00-03:00"
-
-    # Titulo baseado no servico
+    # HITL: uma confirmacao do cliente abre somente uma solicitacao para o
+    # escrevente. O bot nunca cria o agendamento real nem reserva horario.
     servico_nome = sdata.get("servico_nome", "Atendimento")
-    titulo = f"Agendamento de {servico_nome}"
-
-    payload = {
-        "cliente_id": cliente_id,
-        "cliente_cpf": "12345678909",  # hasheado no backend (LGPD)
-        "data_hora": data_hora_str,
-        "titulo": titulo,
-        "descricao": f"Agendamento automatizado via Telegram. Servico: {servico_nome}",
-        "local": "balcao_1",
-        "duration_minutes": 30,
-    }
-
-    result = await _call_api("POST", "/api/v1/agendamento", payload)
+    request_summary = (
+        "Solicitacao de agendamento via Telegram: "
+        f"servico={servico_nome}; data={sdata.get('data', '')}; hora={sdata.get('hora', '')}. "
+        "Requer confirmacao de escrevente antes de qualquer reserva."
+    )
+    result = await _tool_criar_atendimento(
+        int(user_id or 0),
+        request_summary,
+        f"telegram:{user_id or 'anon'}",
+    )
     await _clear_state(bus, key)
     if "erro" in result or "detail" in result or result.get("status") in (400, 404, 409, 422, 500):
         erro_msg = result.get(
@@ -1002,18 +957,18 @@ async def _confirmar_agendamento(
         if isinstance(erro_msg, dict):
             erro_msg = erro_msg.get("mensagem") or erro_msg.get("erro") or str(erro_msg)
         return (
-            f"Falha ao criar agendamento: {erro_msg}\n\nTente novamente ou /humano.",
+            f"Falha ao registrar sua solicitacao: {erro_msg}\n\nTente novamente ou /humano.",
             _menu_keyboard(),
             True,
         )
-    p = result.get("id") or result.get("agendamento_id") or "N/A"
+    ticket_id = result.get("atendimento_id") or result.get("id") or "N/A"
     return (
         (
-            f"Agendamento confirmado!\n\nID do Agendamento: {p}\n"
-            f"Data: {sdata.get('data', '')} as {sdata.get('hora', '')}\n"
+            f"Solicitacao registrada: #{ticket_id}\n\n"
+            f"Data desejada: {sdata.get('data', '')} as {sdata.get('hora', '')}\n"
             f"Servico: {sdata.get('servico_nome', '')}\n"
-            f"Valor: {sdata.get('valor', '')}\n\n"
-            "Apresente-se no cartorio 15min antes."
+            f"Valor de referencia: {sdata.get('valor', '')}\n\n"
+            "Um escrevente confirmara a disponibilidade antes de qualquer agendamento."
         ),
         _menu_keyboard(),
         True,
@@ -1317,12 +1272,21 @@ async def _publish_agent_event(bus: Any, event_type: str, payload: dict) -> None
     if not bus:
         return
     try:
+        safe_payload = dict(payload)
+        for field in ("text_preview",):
+            if field in safe_payload:
+                safe_payload[field] = scrub(str(safe_payload[field])).text
+        for field in ("chat_id", "key"):
+            if safe_payload.get(field) is not None:
+                safe_payload[field] = hashlib.sha256(
+                    str(safe_payload[field]).encode("utf-8")
+                ).hexdigest()[:16]
         await bus.publish(
             "cartorio:atendimentos",
             {
                 "type": event_type,
                 "ts": __import__("time").time(),
-                **payload,
+                **safe_payload,
             },
         )
     except Exception as exc:
@@ -1351,6 +1315,8 @@ def _persist_conversa(
     if not raw_message_scrubbed:
         return
     payload_hash = hashlib.sha256(raw_message_scrubbed.encode("utf-8")).hexdigest()
+    safe_message = scrub(raw_message_scrubbed).text
+    safe_response = scrub(bot_response or "").text or None
 
     def _write() -> None:
         try:
@@ -1359,9 +1325,9 @@ def _persist_conversa(
                     canal=canal,
                     external_id=external_id,
                     raw_message_hash=payload_hash,
-                    raw_message_scrubbed=raw_message_scrubbed[:8000],
-                    intent_detected=intent_detected,
-                    bot_response=(bot_response or "")[:8000] if bot_response else None,
+                    raw_message_scrubbed=safe_message[:8000],
+                    intent_detected=scrub(intent_detected or "").text or None,
+                    bot_response=safe_response[:8000] if safe_response else None,
                     llm_model=llm_model,
                     handoff_to_human=handoff_to_human,
                     handoff_reason=handoff_reason,
@@ -1511,8 +1477,8 @@ async def _call_cartorio_agent(
         elif reply.action == "humano":
             await _set_state(bus, key, STATE_HUMANO, {})
             # FIX 2026-07-12: dispara handoff Chatwoot em background
-            if chat_id and attachments is not None:
-                asyncio.create_task(_chatwoot_handoff(chat_id, text, attachments, history))
+            if chat_id:
+                asyncio.create_task(_chatwoot_handoff(chat_id, text, attachments or [], history))
         text_out = strip_emojis(format_bot_text(reply.text)) if reply.text else ""
         if not text_out:
             text_out = (
@@ -1570,6 +1536,16 @@ async def _chatwoot_handoff(
             history=history or [],
         )
         if ok:
+            conversation_id = info.get("conversation_id")
+            if isinstance(conversation_id, str) and conversation_id.isdigit():
+                ticket = await _tool_criar_atendimento(
+                    chat_id,
+                    "Handoff Agent AI para escrevente via Chatwoot.",
+                    str(chat_id),
+                    chatwoot_conversation_id=int(conversation_id),
+                )
+                if not ticket.get("ok"):
+                    logger.warning("TG chatwoot_handoff local mapping unavailable")
             await _send_message(
                 chat_id,
                 "Vou te conectar com um escrevente agora.\n"
@@ -1581,7 +1557,11 @@ async def _chatwoot_handoff(
             )
             bump_metric("hitl_created")
         else:
-            logger.warning("TG chatwoot_handoff fail chat=%s err=%s", chat_id, info)
+            logger.warning(
+                "TG chatwoot_handoff failed chat_hash=%s error=%s",
+                hashlib.sha256(str(chat_id).encode("utf-8")).hexdigest()[:16],
+                info.get("error", "unavailable"),
+            )
     except Exception as exc:
         logger.exception("TG chatwoot_handoff error: %s", exc)
 

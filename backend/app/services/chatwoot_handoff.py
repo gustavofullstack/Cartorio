@@ -29,6 +29,7 @@ from app.config import settings
 from app.models.atendimento import Atendimento
 from app.models.webhook_event import WebhookEvent
 from app.services.audit import AuditService
+from app.services.pii import scrub
 
 log = logging.getLogger(__name__)
 
@@ -142,15 +143,15 @@ def _handle_status_changed(db: Session, payload: dict[str, Any]) -> None:
                 at = db.execute(
                     select(Atendimento).where(Atendimento.chatwoot_conversation_id == conv_id)
                 ).scalar_one_or_none()
-                if at is not None and getattr(at, "canal", None):
-                    mute_bot(client, "telegram", str(at.canal), reason="hitl_assignee")
+                if at is not None and getattr(at, "external_id", None):
+                    mute_bot(client, "telegram", str(at.external_id), reason="hitl_assignee")
             elif status == "resolved":
                 unmute_bot(client, "chatwoot", str(conv_id))
                 at = db.execute(
                     select(Atendimento).where(Atendimento.chatwoot_conversation_id == conv_id)
                 ).scalar_one_or_none()
-                if at is not None and getattr(at, "canal", None):
-                    unmute_bot(client, "telegram", str(at.canal))
+                if at is not None and getattr(at, "external_id", None):
+                    unmute_bot(client, "telegram", str(at.external_id))
     except Exception as exc:  # noqa: BLE001
         log.warning("chatwoot_handoff mute hook fail: %s", type(exc).__name__)
 
@@ -221,7 +222,7 @@ def _handle_message_created(db: Session, payload: dict[str, Any]) -> None:
         log.warning("chatwoot sync: atendimento nao encontrado para conv %s", conv_id)
         return
 
-    telegram_chat_id = atendimento.canal  # canal armazena telegram_chat_id quando aplicavel
+    telegram_chat_id = atendimento.external_id
     if not telegram_chat_id:
         log.warning(
             "chatwoot sync: chat_id Telegram nao encontrado para atendimento %s", atendimento.id
@@ -258,7 +259,7 @@ async def _send_to_telegram(
         log.warning("chatwoot sync: TELEGRAM_BOT_TOKEN nao configurado, mensagem nao enviada")
         return
 
-    text = f"👤 *{sender_name}* (Atendente):\n{content}"
+    text = scrub(f"👤 *{sender_name}* (Atendente):\n{content}").text
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
@@ -345,7 +346,9 @@ async def handoff_to_chatwoot(
 
 async def _ensure_contact(chat_id: int | str) -> str | None:
     headers = {"api_access_token": CHATWOOT_API_KEY, "Content-Type": "application/json"}
-    source_id = f"telegram:{chat_id}"
+    # Chatwoot e uma fronteira externa: use identificador pseudonimizado.
+    # O vinculo reverso fica no Atendimento local pelo conversation_id.
+    source_id = f"telegram:{hashlib.sha256(str(chat_id).encode('utf-8')).hexdigest()[:32]}"
     async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0)) as client:
         try:
             r = await client.get(
@@ -367,9 +370,9 @@ async def _ensure_contact(chat_id: int | str) -> str | None:
                 f"{CHATWOOT_API_BASE_URL}/api/v1/accounts/{CHATWOOT_ACCOUNT_ID}/contacts",
                 headers=headers,
                 json={
-                    "name": f"Telegram {chat_id}",
+                    "name": "Atendimento Telegram",
                     "source_id": source_id,
-                    "custom_attributes": {"telegram_chat_id": str(chat_id), "canal": "telegram"},
+                    "custom_attributes": {"canal": "telegram", "pseudonymous": True},
                 },
             )
             if r.status_code in (200, 201):
@@ -404,26 +407,23 @@ def _format_body(
 ) -> str:
     lines = ["[HITL Telegram - Agent AI Cartorio]", ""]
     lines.append("Mensagem atual:")
-    lines.append(text or "(vazio)")
+    lines.append(scrub(text or "(vazio)").text)
     if attachments:
         lines.append("")
         lines.append(f"Anexos recebidos: {len(attachments)}")
         for a in attachments[:10]:
             t = a.get("type", "?")
-            n = a.get("file_name") or a.get("file_unique_id", "?")
+            n = scrub(str(a.get("file_name") or a.get("file_unique_id", "?"))).text
             sz = a.get("file_size", "?")
-            cap = a.get("caption", "")
-            local = a.get("local_path", "")
+            cap = scrub(str(a.get("caption", ""))).text
             lines.append(f"- [{t}] {n} ({sz} bytes)")
             if cap:
                 lines.append(f"    caption: {cap}")
-            if local:
-                lines.append(f"    path servidor: {local}")
     if history:
         lines.append("")
         lines.append(f"Historico recente (ultimos {min(len(history), 6)}):")
         for h in history[-6:]:
-            lines.append(f"  {h[:200]}")
+            lines.append(f"  {scrub(str(h)).text[:200]}")
     return "\n".join(lines)
 
 

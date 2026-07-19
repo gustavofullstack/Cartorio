@@ -25,6 +25,7 @@ from app.api.v1.telegram import (
     STATE_HUMANO,
     STATE_IDLE,
     STATE_PROTOCOLO,
+    _confirmar_agendamento,
     _handle_state,
 )
 
@@ -168,6 +169,27 @@ async def test_state_agendar_confirmar_sim() -> None:
         )
     assert new_state == STATE_IDLE
     assert text == "Confirmado!"
+
+
+@pytest.mark.asyncio
+async def test_confirmar_agendamento_abre_ticket_humano_sem_reservar_horario() -> None:
+    """HITL: confirmar no Telegram nunca chama a API de agendamento real."""
+    bus = _make_bus()
+    bus.client.get = AsyncMock(
+        return_value='{"state":"agendar:confirmar","data":{"servico_nome":"Autenticacao","data":"2026-07-20","hora":"10:00","valor":"R$ 6,80"}}'
+    )
+    with patch(
+        "app.api.v1.telegram._tool_criar_atendimento",
+        new=AsyncMock(return_value={"ok": True, "atendimento_id": 81}),
+    ) as create_ticket, patch(
+        "app.api.v1.telegram._call_api", new=AsyncMock()
+    ) as call_api:
+        text, _keyboard, _handled = await _confirmar_agendamento(bus, 123, user_id=456)
+
+    assert "Solicitacao registrada" in text
+    assert "confirmara" in text
+    assert create_ticket.await_count == 1
+    assert call_api.await_count == 0
 
 
 @pytest.mark.asyncio

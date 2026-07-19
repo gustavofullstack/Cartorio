@@ -1,11 +1,11 @@
 """LGPD Consent API endpoint (G6.C.T9).
 
-Endpoint POST /api/v1/lgpd/consent:
+Endpoint POST /api/v1/lgpd/consent/banner:
 - Recebe consentimento via sendBeacon ou fetch do banner
 - Persiste no banco (LGPD audit trail, art. 37)
 - Retorna 204 No Content (sendBeacon friendly)
 
-Endpoint GET /api/v1/lgpd/consent/stats:
+Endpoint GET /api/v1/lgpd/consent/banner/stats:
 - Estatisticas agregadas (LGPD art. 37)
 - Apenas para DPO/admin
 
@@ -34,7 +34,7 @@ from app.schemas.lgpd_consent import (
 
 # Import model para Base.metadata.create_all() registrar tabela
 
-router = APIRouter(prefix="/api/v1/lgpd/consent", tags=["lgpd"])
+router = APIRouter(prefix="/lgpd/consent/banner", tags=["lgpd"])
 
 
 @router.post(

@@ -17,6 +17,7 @@ Nao altera NENHUM path existente. Apenas enrich o envelope OpenAPI.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any
 
 from fastapi import FastAPI
@@ -373,11 +374,37 @@ def _register_webhook_schemas(components: dict[str, Any]) -> None:
         N8nMetricsIngest,
         OutboxDispatchRequest,
     ]
+    def rewrite_local_refs(value: Any) -> Any:
+        """Converte refs Pydantic locais em refs validos de components."""
+        if isinstance(value, dict):
+            rewritten: dict[str, Any] = {}
+            for key, item in value.items():
+                if key == "$ref" and isinstance(item, str) and item.startswith("#/$defs/"):
+                    rewritten[key] = f"#/components/schemas/{item.removeprefix('#/$defs/')}"
+                else:
+                    rewritten[key] = rewrite_local_refs(item)
+            return rewritten
+        if isinstance(value, list):
+            return [rewrite_local_refs(item) for item in value]
+        return value
+
     for schema in force_register:
         try:
-            schemas[schema.__name__] = schema.model_json_schema()  # type: ignore[attr-defined]
+            raw_schema = deepcopy(schema.model_json_schema())  # type: ignore[attr-defined]
+            definitions = raw_schema.pop("$defs", {})
+            schemas[schema.__name__] = rewrite_local_refs(raw_schema)
+            if isinstance(definitions, dict):
+                for definition_name, definition in definitions.items():
+                    schemas.setdefault(definition_name, rewrite_local_refs(definition))
         except Exception:  # noqa: BLE001
             continue
+
+    schemas["ChatwootWebhookModel"] = {
+        "oneOf": [
+            {"$ref": "#/components/schemas/ChatwootConversationStatusChanged"},
+            {"$ref": "#/components/schemas/ChatwootMessageCreated"},
+        ]
+    }
 
 
 def install_openapi_enhancer(app: FastAPI) -> None:

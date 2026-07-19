@@ -94,12 +94,14 @@ def test_prometheus_format_workflow_lines() -> None:
 
 
 def test_endpoint_path_registrado() -> None:
-    """Endpoint registrado no router (com prefix)."""
-    from app.api.v1.n8n_metrics import router
+    """Contrato publico recebe o prefixo v1 apenas uma vez."""
+    from app.main import app
 
-    paths = [r.path for r in router.routes]
+    app.openapi_schema = None
+    paths = app.openapi()["paths"]
     assert "/api/v1/n8n/metrics/prometheus" in paths
     assert "/api/v1/n8n/metrics/summary" in paths
+    assert not any("/api/v1/api/v1/" in path for path in paths)
 
 
 def test_calculo_error_rate() -> None:

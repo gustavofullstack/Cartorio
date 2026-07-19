@@ -11,6 +11,15 @@ from app.middleware.openapi_validator import (
 )
 
 
+def _collect_refs(value: object) -> set[str]:
+    if isinstance(value, dict):
+        refs = {str(item) for key, item in value.items() if key == "$ref"}
+        return refs | set().union(*(_collect_refs(item) for item in value.values()))
+    if isinstance(value, list):
+        return set().union(*(_collect_refs(item) for item in value)) if value else set()
+    return set()
+
+
 class TestOpenAPIValidator:
     """TDD strict - A19."""
 
@@ -86,6 +95,16 @@ class TestOpenAPIValidator:
         assert "paths" in schema
         # Tem que ter varios paths
         assert len(schema["paths"]) > 5
+
+    def test_main_openapi_refs_are_resolvable_and_paths_are_not_duplicated(self):
+        """Swagger/Postman nao podem receber refs quebrados nem /api/v1 duplicado."""
+        from app.main import app
+
+        app.openapi_schema = None
+        schema = _get_app_openapi_schema(app)
+        for ref in _collect_refs(schema):
+            assert _resolve_ref(schema, {"$ref": ref}) is not None, ref
+        assert not any("/api/v1/api/v1/" in path for path in schema["paths"])
 
     def test_validate_request_body_no_jsonschema(self):
         """validate_request_body retorna True quando jsonschema nao disponivel."""
