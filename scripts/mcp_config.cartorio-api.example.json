@@ -14,7 +14,7 @@
       "args": ["run", "--directory", "backend", "python", "mcp_server.py"],
       "cwd": "/Users/gustavoalmeida/Projetos/Cartorio",
       "env": {
-        "MCP_SERVER_PORT": "8765",
+        "MCP_SERVER_PORT": "8100",
         "DATABASE_URL": "${DATABASE_URL}",
         "AUDIT_HMAC_KEY": "${AUDIT_HMAC_KEY}"
       },

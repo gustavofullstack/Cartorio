@@ -114,6 +114,20 @@ class Settings(BaseSettings):
     opencode_free_3_model: str = "deepseek-v4-flash-free"
     opencode_free_3_base_url: str = "https://opencode.ai/zen/v1"
 
+    # OpenCode Zen: três credenciais independentes, fornecidas exclusivamente
+    # pelo secret manager do ambiente. Os slots não carregam identidade de
+    # titular e permitem que uma quota/conta indisponível não afete as demais.
+    # Não usar valores default, arquivos versionados, nem aliases com chaves.
+    opencode_zen_account_1_api_key: Optional[str] = None
+    opencode_zen_account_1_model: str = "deepseek-v4-flash-free"
+    opencode_zen_account_1_base_url: str = "https://opencode.ai/zen/v1"
+    opencode_zen_account_2_api_key: Optional[str] = None
+    opencode_zen_account_2_model: str = "mimo-v2.5-free"
+    opencode_zen_account_2_base_url: str = "https://opencode.ai/zen/v1"
+    opencode_zen_account_3_api_key: Optional[str] = None
+    opencode_zen_account_3_model: str = "nemotron-3-ultra-free"
+    opencode_zen_account_3_base_url: str = "https://opencode.ai/zen/v1"
+
     # Mistral (devstral-small-latest, 256K ctx) - Turno 37
     mistral_api_key: Optional[str] = None
     mistral_base_url: str = "https://api.mistral.ai/v1"
@@ -150,8 +164,9 @@ class Settings(BaseSettings):
     antigravity_default_model: str = "gemini-3.1-pro"
 
     # Chain order (try in sequence). Tweak LLM_FALLBACK_CHAIN env to override
-    llm_default_provider: str = "opencode_free_3"
+    llm_default_provider: str = "opencode_zen_account_1"
     llm_fallback_chain: str = (
+        "opencode_zen_account_1,opencode_zen_account_2,opencode_zen_account_3,"
         "opencode_free_3,opencode_free_1,opencode_free_2,"
         "opencode_go,openrouter,groq,mistral,"
         "google_ai_studio,openclaw,jules,antigravity"

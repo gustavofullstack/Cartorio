@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-19T16:36:26.017008+00:00",
+    "generated_at": "2026-07-19T17:17:25.749134+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -13,7 +13,7 @@
     "pyflakes_total": 0,
     "vulture_suspicions": 9,
     "vulture_min_confidence": 80,
-    "uncovered_files": 154,
+    "uncovered_files": 157,
     "zero_coverage_files": 133,
     "ruff_clean": true,
     "pyflakes_clean": true,
@@ -49,10 +49,10 @@
           "raw": "app/api/v1/brain.py:119: unused variable 'from_date' (100% confidence)"
         },
         {
-          "raw": "app/api/v1/router.py:1976: unreachable 'else' block (100% confidence)"
+          "raw": "app/api/v1/router.py:1989: unreachable 'else' block (100% confidence)"
         },
         {
-          "raw": "app/api/v1/telegram.py:647: unused variable 'reply_markup' (100% confidence)"
+          "raw": "app/api/v1/telegram.py:648: unused variable 'reply_markup' (100% confidence)"
         },
         {
           "raw": "app/services/bot_metrics.py:145: unused variable 'exc_tb' (100% confidence)"
@@ -70,19 +70,19 @@
           "raw": "app/services/lgpd/portability.py:9: unused variable 'db_session' (100% confidence)"
         },
         {
-          "raw": "app/services/sentry.py:122: unused variable 'hint' (100% confidence)"
+          "raw": "app/services/sentry.py:121: unused variable 'hint' (100% confidence)"
         }
       ],
       "raw_lines": [
         "app/api/v1/brain.py:119: unused variable 'from_date' (100% confidence)",
-        "app/api/v1/router.py:1976: unreachable 'else' block (100% confidence)",
-        "app/api/v1/telegram.py:647: unused variable 'reply_markup' (100% confidence)",
+        "app/api/v1/router.py:1989: unreachable 'else' block (100% confidence)",
+        "app/api/v1/telegram.py:648: unused variable 'reply_markup' (100% confidence)",
         "app/services/bot_metrics.py:145: unused variable 'exc_tb' (100% confidence)",
         "app/services/bot_metrics.py:145: unused variable 'exc_val' (100% confidence)",
         "app/services/lgpd/opposition.py:8: unused variable 'db_session' (100% confidence)",
         "app/services/lgpd/opposition.py:22: unused variable 'db_session' (100% confidence)",
         "app/services/lgpd/portability.py:9: unused variable 'db_session' (100% confidence)",
-        "app/services/sentry.py:122: unused variable 'hint' (100% confidence)"
+        "app/services/sentry.py:121: unused variable 'hint' (100% confidence)"
       ],
       "count": 9
     },
@@ -164,8 +164,8 @@
         {
           "file": "app/api/v1/health_radar_expanded.py",
           "summary_pct": 0.0,
-          "statements": 323,
-          "missing_lines": 323,
+          "statements": 317,
+          "missing_lines": 317,
           "excluded_lines": 0
         },
         {
@@ -234,8 +234,8 @@
         {
           "file": "app/api/v1/router.py",
           "summary_pct": 0.0,
-          "statements": 1259,
-          "missing_lines": 1259,
+          "statements": 1257,
+          "missing_lines": 1257,
           "excluded_lines": 0
         },
         {
@@ -254,9 +254,9 @@
         },
         {
           "file": "app/config.py",
-          "summary_pct": 100.0,
-          "statements": 106,
-          "missing_lines": 0,
+          "summary_pct": 63.48,
+          "statements": 115,
+          "missing_lines": 42,
           "excluded_lines": 0
         },
         {
@@ -304,8 +304,8 @@
         {
           "file": "app/main.py",
           "summary_pct": 0.0,
-          "statements": 227,
-          "missing_lines": 227,
+          "statements": 237,
+          "missing_lines": 237,
           "excluded_lines": 2
         },
         {
@@ -332,15 +332,15 @@
         {
           "file": "app/middleware/openapi_enhancer.py",
           "summary_pct": 0.0,
-          "statements": 60,
-          "missing_lines": 60,
+          "statements": 93,
+          "missing_lines": 93,
           "excluded_lines": 0
         },
         {
           "file": "app/middleware/openapi_validator.py",
           "summary_pct": 0.0,
-          "statements": 40,
-          "missing_lines": 40,
+          "statements": 39,
+          "missing_lines": 39,
           "excluded_lines": 0
         },
         {
@@ -380,9 +380,9 @@
         },
         {
           "file": "app/models/__init__.py",
-          "summary_pct": 100.0,
-          "statements": 11,
-          "missing_lines": 0,
+          "summary_pct": 83.33,
+          "statements": 12,
+          "missing_lines": 2,
           "excluded_lines": 0
         },
         {
@@ -527,9 +527,9 @@
         },
         {
           "file": "app/schemas/emolumento.py",
-          "summary_pct": 100.0,
+          "summary_pct": 86.67,
           "statements": 15,
-          "missing_lines": 0,
+          "missing_lines": 2,
           "excluded_lines": 0
         },
         {
@@ -541,9 +541,9 @@
         },
         {
           "file": "app/schemas/lgpd_dsar.py",
-          "summary_pct": 86.84,
+          "summary_pct": 78.95,
           "statements": 38,
-          "missing_lines": 5,
+          "missing_lines": 8,
           "excluded_lines": 0
         },
         {
@@ -625,9 +625,9 @@
         },
         {
           "file": "app/services/audit.py",
-          "summary_pct": 30.38,
+          "summary_pct": 25.32,
           "statements": 79,
-          "missing_lines": 55,
+          "missing_lines": 59,
           "excluded_lines": 0
         },
         {
@@ -660,9 +660,9 @@
         },
         {
           "file": "app/services/audit_keys.py",
-          "summary_pct": 27.46,
+          "summary_pct": 21.83,
           "statements": 142,
-          "missing_lines": 103,
+          "missing_lines": 111,
           "excluded_lines": 2
         },
         {
@@ -1345,7 +1345,7 @@
           "excluded_lines": 0
         }
       ],
-      "total_uncovered_files": 154,
+      "total_uncovered_files": 157,
       "total_zero_coverage_files": 133
     }
   },
@@ -1374,8 +1374,8 @@
     {
       "kind": "orphan_module",
       "file": "app/api/v1/health_radar_expanded.py",
-      "stmts": 323,
-      "missing_lines": 323,
+      "stmts": 317,
+      "missing_lines": 317,
       "note": "Zero test coverage. Check se esta registrado no main.py / router includes. Pode ser orfao."
     },
     {

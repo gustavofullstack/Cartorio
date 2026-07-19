@@ -5,6 +5,7 @@ from app.models.atendimento import Atendimento
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin
 from app.models.cliente import Cliente, MotivoEncerramento
+from app.models.cnj_export_request import CNJExportRequest
 from app.models.conversa import Conversa
 from app.models.documento import Documento
 from app.models.outbox_message import OutboxMessage
@@ -17,6 +18,7 @@ __all__ = [
     "AuditLog",
     "Base",
     "Cliente",
+    "CNJExportRequest",
     "Conversa",
     "Documento",
     "MotivoEncerramento",

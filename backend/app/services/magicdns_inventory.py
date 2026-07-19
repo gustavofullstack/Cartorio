@@ -14,32 +14,30 @@ from typing import Any
 
 # Hosts internos canônicos (Tailscale / MagicDNS / swarm)
 DEFAULT_PRIVATE_HOSTS: tuple[str, ...] = (
-    'cartorio-api',
-    'cartorio_api',
-    'cartorio_postgres',
-    'cartorio_redis',
-    'cartorio_chatwoot',
-    'cartorio-postgres',
-    '100.99.172.84',  # Tailscale VPS (G8.09.T1)
-    'postgres',
-    'redis',
+    "cartorio-api",
+    "cartorio_api",
+    "cartorio_postgres",
+    "cartorio_redis",
+    "cartorio_chatwoot",
+    "cartorio-postgres",
+    "100.99.172.84",  # Tailscale VPS (G8.09.T1)
+    "postgres",
+    "redis",
 )
 
-_PUBLIC_IP_RE = re.compile(
-    r'(?<!\d)(?:\d{1,3}\.){3}\d{1,3}(?!\d)'
-)
+_PUBLIC_IP_RE = re.compile(r"(?<!\d)(?:\d{1,3}\.){3}\d{1,3}(?!\d)")
 # RFC1918 + Tailscale CGNAT 100.64/10
 _PRIVATE_PREFIXES = (
-    '10.',
-    '192.168.',
-    '172.16.',
-    '172.17.',
-    '172.18.',
-    '172.19.',
-    '172.2',
-    '172.3',
-    '100.',  # Tailscale CGNAT
-    '127.',
+    "10.",
+    "192.168.",
+    "172.16.",
+    "172.17.",
+    "172.18.",
+    "172.19.",
+    "172.2",
+    "172.3",
+    "100.",  # Tailscale CGNAT
+    "127.",
 )
 
 
@@ -56,21 +54,21 @@ class MagicDnsReport:
     checks: list[MagicDnsCheck] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return {'ok': self.ok, 'checks': [asdict(c) for c in self.checks]}
+        return {"ok": self.ok, "checks": [asdict(c) for c in self.checks]}
 
 
 def is_private_host(host: str) -> bool:
-    h = (host or '').strip().lower()
+    h = (host or "").strip().lower()
     if not h:
         return False
     if h in {x.lower() for x in DEFAULT_PRIVATE_HOSTS}:
         return True
-    if h.endswith('.ts.net') or h.endswith('.local'):
+    if h.endswith(".ts.net") or h.endswith(".local"):
         return True
     if _PUBLIC_IP_RE.fullmatch(h) or _PUBLIC_IP_RE.match(h):
         return any(h.startswith(p) for p in _PRIVATE_PREFIXES)
     # bare service names (no dots) treated as private (swarm DNS)
-    if '.' not in h:
+    if "." not in h:
         return True
     return False
 
@@ -81,13 +79,13 @@ def extract_hosts_from_url(url: str) -> list[str]:
         return []
     # strip scheme
     u = url
-    if '://' in u:
-        u = u.split('://', 1)[1]
+    if "://" in u:
+        u = u.split("://", 1)[1]
     # strip path/user
-    if '@' in u:
-        u = u.rsplit('@', 1)[-1]
-    hostport = u.split('/')[0]
-    host = hostport.split(':')[0]
+    if "@" in u:
+        u = u.rsplit("@", 1)[-1]
+    hostport = u.split("/")[0]
+    host = hostport.split(":")[0]
     return [host] if host else []
 
 
@@ -97,7 +95,7 @@ def validate_connection_urls(urls: dict[str, str]) -> MagicDnsReport:
     for name, url in urls.items():
         hosts = extract_hosts_from_url(url)
         if not hosts:
-            checks.append(MagicDnsCheck(name, False, 'empty url'))
+            checks.append(MagicDnsCheck(name, False, "empty url"))
             continue
         host = hosts[0]
         priv = is_private_host(host)
@@ -105,7 +103,7 @@ def validate_connection_urls(urls: dict[str, str]) -> MagicDnsReport:
             MagicDnsCheck(
                 name,
                 priv,
-                f'host={host} private={priv}',
+                f"host={host} private={priv}",
             )
         )
     ok = all(c.ok for c in checks) if checks else False
@@ -115,19 +113,19 @@ def validate_connection_urls(urls: dict[str, str]) -> MagicDnsReport:
 def recommended_magicdns_map() -> dict[str, str]:
     """Mapa recomendado para docs / MagicDNS."""
     return {
-        'api': 'cartorio-api:8000',
-        'postgres': 'cartorio_postgres:5432',
-        'redis': 'cartorio_redis:6379',
-        'vps_tailscale_ssh': '100.99.172.84:22',
+        "api": "cartorio-api:8000",
+        "postgres": "cartorio_postgres:5432",
+        "redis": "cartorio_redis:6379",
+        "vps_tailscale_ssh": "100.99.172.84:22",
     }
 
 
 __all__ = [
-    'DEFAULT_PRIVATE_HOSTS',
-    'MagicDnsCheck',
-    'MagicDnsReport',
-    'extract_hosts_from_url',
-    'is_private_host',
-    'recommended_magicdns_map',
-    'validate_connection_urls',
+    "DEFAULT_PRIVATE_HOSTS",
+    "MagicDnsCheck",
+    "MagicDnsReport",
+    "extract_hosts_from_url",
+    "is_private_host",
+    "recommended_magicdns_map",
+    "validate_connection_urls",
 ]

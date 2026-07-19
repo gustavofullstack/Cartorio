@@ -48,8 +48,7 @@ def test_quality_gate_job_depends_on_ci(cd_yaml: dict[str, object]) -> None:
     qg = cd_yaml["jobs"]["quality-gate"]
     assert isinstance(qg, dict)
     assert "needs" not in qg or qg["needs"] == "CI", (
-        "quality-gate must be implicit (workflow_run trigger on CI), "
-        "not an explicit needs:"
+        "quality-gate must be implicit (workflow_run trigger on CI), not an explicit needs:"
     )
     assert "if" in qg, "quality-gate must have an `if:` guard"
     if_str = str(qg["if"])
@@ -91,15 +90,15 @@ def test_ci_yaml_has_secrets_scan_job(ci_yaml: dict[str, object]) -> None:
     """ci.yml must have a secrets-scan job (gitleaks or equivalent)."""
     jobs = ci_yaml["jobs"]
     assert isinstance(jobs, dict)
-    assert "secrets-scan" in jobs, (
-        f"secrets-scan job required, got jobs: {sorted(jobs.keys())}"
-    )
+    assert "secrets-scan" in jobs, f"secrets-scan job required, got jobs: {sorted(jobs.keys())}"
     scan = jobs["secrets-scan"]
     assert isinstance(scan, dict)
     steps = scan["steps"]
     step_uses = [s.get("uses", "") for s in steps if isinstance(s, dict)]
     gitleaks = any("gitleaks" in u for u in step_uses)
-    fallback = any("check_no_literal_keys" in s.get("run", "") for s in steps if isinstance(s, dict))
+    fallback = any(
+        "check_no_literal_keys" in s.get("run", "") for s in steps if isinstance(s, dict)
+    )
     assert gitleaks or fallback, (
         f"secrets-scan must use gitleaks action OR run check_no_literal_keys.py, "
         f"got uses={[u for u in step_uses if u]}"
@@ -133,9 +132,7 @@ def test_ci_all_jobs_have_timeout_minutes(ci_yaml: dict[str, object]) -> None:
     assert isinstance(jobs, dict)
     for name, body in jobs.items():
         assert isinstance(body, dict), f"job {name} not a dict"
-        assert "timeout-minutes" in body, (
-            f"job {name} missing timeout-minutes (hung-run fail-safe)"
-        )
+        assert "timeout-minutes" in body, f"job {name} missing timeout-minutes (hung-run fail-safe)"
         tmo = body["timeout-minutes"]
         assert isinstance(tmo, int) and 0 < tmo <= 60, (
             f"job {name} timeout-minutes must be int in (0, 60], got {tmo!r}"
@@ -149,6 +146,4 @@ def test_ci_all_green_aggregates_all_four_jobs(ci_yaml: dict[str, object]) -> No
     needs = ag["needs"]
     assert isinstance(needs, list)
     for required in ("secrets-scan", "lint", "test", "docs-build"):
-        assert required in needs, (
-            f"all-green needs list must include {required!r}, got {needs!r}"
-        )
+        assert required in needs, f"all-green needs list must include {required!r}, got {needs!r}"

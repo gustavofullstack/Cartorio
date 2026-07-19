@@ -280,9 +280,7 @@ def multi_clientes_pii() -> str:
     ]
     linhas = ["LISTA DE CLIENTES PARA ANALISE PROCESSUAL", ""]
     for nome, cpf, email in clientes:
-        linhas.append(
-            f"- {nome}, CPF {cpf}, email {email}, tel (34) 99000-{cpf[-4:]}-XX"
-        )
+        linhas.append(f"- {nome}, CPF {cpf}, email {email}, tel (34) 99000-{cpf[-4:]}-XX")
     return "\n".join(linhas) + "\n"
 
 
@@ -334,8 +332,7 @@ def test_peticao_inicial_no_cpf_raw(peticao_inicial_com_pii: str) -> None:
     cpf_autor = "111.222.333-44"
     # CPF raw NAO pode estar no output
     assert cpf_autor not in r.text, (
-        f"FALHA DE SCRUB: CPF raw {cpf_autor} encontrado no output. "
-        f"Output: {r.text[:200]}..."
+        f"FALHA DE SCRUB: CPF raw {cpf_autor} encontrado no output. Output: {r.text[:200]}..."
     )
     # Marcador de redacao total presente
     assert "[CPF_REDACTED]" in r.text
@@ -439,13 +436,17 @@ def test_acorda_multiple_clients(multi_clientes_pii: str) -> None:
     # TODOS os 5 CPFs ficticios devem ser redatados
     for cpf in _FAKE_CPFS:
         assert cpf not in r.text, (
-            f"FALHA MULTI-CLIENTE: CPF raw {cpf} nao foi redatado. "
-            f"Output snippet: {r.text[:300]}"
+            f"FALHA MULTI-CLIENTE: CPF raw {cpf} nao foi redatado. Output snippet: {r.text[:300]}"
         )
 
     # Todos os 5 emails redatados
-    for email in ("ana@example.com", "bruno@example.com", "carla@example.com",
-                  "diego@example.com", "elena@example.com"):
+    for email in (
+        "ana@example.com",
+        "bruno@example.com",
+        "carla@example.com",
+        "diego@example.com",
+        "elena@example.com",
+    ):
         assert email not in r.text, f"FALHA MULTI-CLIENTE: email {email} raw"
 
     # Marcadores presentes
@@ -506,8 +507,7 @@ def test_scrub_no_database_queried(peticao_inicial_com_pii: str) -> None:
     )
     for forbidden in forbidden_imports:
         assert forbidden not in src, (
-            f"scrub() NAO deve importar {forbidden} - "
-            f"deve ser pure in-memory string transformation"
+            f"scrub() NAO deve importar {forbidden} - deve ser pure in-memory string transformation"
         )
 
     # 2. Scrub funciona sem Session ativa
@@ -576,8 +576,7 @@ def test_doc_judicial_parametrizado_scrub_safe(request, fixture_name: str) -> No
     # Nenhum CPF raw no output (qualquer um dos 5 ficticios)
     for cpf in _FAKE_CPFS:
         assert cpf not in r.text, (
-            f"{fixture_name}: CPF raw {cpf} nao foi redatado. "
-            f"Output: {r.text[:200]}"
+            f"{fixture_name}: CPF raw {cpf} nao foi redatado. Output: {r.text[:200]}"
         )
 
     # Marcadores de redacao presentes (pelo menos CPF + DATA em todos os docs)

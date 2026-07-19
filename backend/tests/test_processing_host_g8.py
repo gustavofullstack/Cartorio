@@ -52,9 +52,7 @@ class TestGetProcessingHostId:
         monkeypatch.setenv(PROCESSING_HOST_ENV, "  worker-a  ")
         assert get_processing_host_id() == "worker-a"
 
-    def test_empty_env_falls_back_to_hostname(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_empty_env_falls_back_to_hostname(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv(PROCESSING_HOST_ENV, "   ")
         with patch("socket.gethostname", return_value="macbook.local"):
             assert get_processing_host_id() == "macbook.local"
@@ -64,9 +62,7 @@ class TestGetProcessingHostId:
         with patch("socket.gethostname", return_value="vps-cartorio-1"):
             assert get_processing_host_id() == "vps-cartorio-1"
 
-    def test_empty_hostname_returns_unknown(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_empty_hostname_returns_unknown(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(PROCESSING_HOST_ENV, raising=False)
         with patch("socket.gethostname", return_value=""):
             assert get_processing_host_id() == "unknown"
@@ -99,9 +95,7 @@ class TestProcessingHostMiddleware:
         assert resp.status_code == 200
         assert resp.headers.get(PROCESSING_HOST_HEADER) == "node-42"
 
-    def test_404_also_has_header(
-        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_404_also_has_header(self, client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv(PROCESSING_HOST_ENV, "ghost")
         resp = client.get("/not-found")
         assert resp.status_code == 404
@@ -111,9 +105,7 @@ class TestProcessingHostMiddleware:
         assert PROCESSING_HOST_HEADER == "X-Cartorio-Processing-Host"
         assert PROCESSING_HOST_ENV == "PROCESSING_HOST_ID"
 
-    def test_body_unaffected(
-        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_body_unaffected(self, client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv(PROCESSING_HOST_ENV, "ok-host")
         resp = client.get("/test")
         assert resp.json() == {"ok": True}

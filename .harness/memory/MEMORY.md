@@ -8,6 +8,7 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-17 ~Wave32 BRT)
 
 ### G8 honesty + waves (START HERE se CONTINUE em G8)
+- **2026-07-19** (**Lesson 253 — G8 Final Cycle**: Enriquecimento de schemas Swagger com x-sensivel, validação de consentimento ativa nas rotas de upload e segunda via de documentos, log masking de valores financeiros e de clientes; 100/100 tasks completadas): `.harness/memory/lesson-253-g8-final-cycle-2026-07-19.md`
 - **2026-07-17** (**Lesson 217 — G8 Wave 33**: audit hash sequence MCP + scrub_mcp_output + X-Idempotency-Key webhooks + WS 50/20 concurrent; **9/100** evidenced; 35 tests): `.harness/memory/lesson-217-g8-wave33-mcp-idempotency-ws-2026-07-17.md`
 - **2026-07-17** (**Lesson 216 — G8 honesty reset 100→5 + G8.08.T4**): `.harness/memory/lesson-216-g8-honesty-reset-dlq-t4-2026-07-17.md`
   - Trackers: `SUPER_PLANO_G8_100_TASKS.md` (9/100) · `SUPER_GOALS_G8.md` · `.brain/loop-state-g8.json`
@@ -572,3 +573,5 @@ Chamadas multiplas sao safe (segunda chamada = no-op).
 - **2026-07-17** (**Lesson 218 — Mypy vs MagicMock no SQLAlchemy**: Uso de `assert isinstance(result, CursorResult)` quebra em testes unitários onde a sessão do BD é mockada por um `MagicMock`. A solução padrão é fazer o cast typing.cast(CursorResult, db.execute(...)) mantendo o analisador estático feliz e os mocks compatíveis).
 
 - **2026-07-19** (**Lesson 219 — Segurança não pode ser um gate permissivo**): um scanner de segredos com `|| true` ou que imprime o valor encontrado cria falsa sensação de proteção. O gate crítico deve falhar fechado, e diagnósticos devem usar apenas fingerprint, arquivo e linha — nunca o valor detectado. Em sistemas com audit append-only, políticas de retenção devem anonimizar dados elegíveis sem agendar `UPDATE` ou `DELETE` de `audit_log`; proteger isso com migration e teste de regressão.
+
+- **2026-07-19** (**Lesson 220 — Exportação regulatória minimizada**): uma exportação para órgão regulador deve consultar apenas agregados, nunca serializar linhas de origem. Use dupla aprovação com solicitante e aprovador distintos, mantenha IDs/justificativa apenas no registro interno, e entregue manifesto SHA-256 verificável. A transmissão externa não deve ser automática: gerar localmente, registrar na cadeia de audit e exigir conferência humana antes do canal institucional.

@@ -15,6 +15,7 @@ Coverage target:
   - write_collection auto-compresses when > 1MB
   - _assert_lgpd_safe raises on literal token
 """
+
 from __future__ import annotations
 
 import json
@@ -44,7 +45,9 @@ def collection_min(openapi_min: dict) -> dict:
 class TestConversion:
     def test_convert_minimal_openapi_returns_valid_postman_v21(self, collection_min: dict) -> None:
         info = collection_min["info"]
-        assert info["schema"] == "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+        assert (
+            info["schema"] == "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+        )
         assert "Cartorio" in info["name"]
         assert "item" in collection_min
         assert "variable" in collection_min
@@ -93,7 +96,9 @@ class TestConversion:
         assert "limit" in keys
         assert "offset" in keys
 
-    def test_total_request_count_matches_paths(self, collection_min: dict, openapi_min: dict) -> None:
+    def test_total_request_count_matches_paths(
+        self, collection_min: dict, openapi_min: dict
+    ) -> None:
         expected = 0
         for path, methods in openapi_min["paths"].items():
             for m in methods:
@@ -128,12 +133,16 @@ class TestLGPDAuth:
         blob = json.dumps(collection_min, ensure_ascii=False)
         import re
 
-        literal_re = re.compile(r"Authorization\s*:\s*(?:Bearer|Token)\s+[A-Za-z0-9_\-\.=]{8,}", re.IGNORECASE)
+        literal_re = re.compile(
+            r"Authorization\s*:\s*(?:Bearer|Token)\s+[A-Za-z0-9_\-\.=]{8,}", re.IGNORECASE
+        )
         assert not literal_re.search(blob), "Collection contains literal Authorization header!"
 
     def test_bearer_token_is_variable_not_literal(self, collection_min: dict) -> None:
         """bearer_token MUST be a variable placeholder, NEVER a real token."""
-        bearer_var = next((v for v in collection_min["variable"] if v["key"] == "bearer_token"), None)
+        bearer_var = next(
+            (v for v in collection_min["variable"] if v["key"] == "bearer_token"), None
+        )
         assert bearer_var is not None
         assert bearer_var["value"] == ""
         assert bearer_var["type"] == "secret"
@@ -148,9 +157,12 @@ class TestLGPDAuth:
             "info": {"name": "bad"},
             "item": [],
             "variable": [],
-            "auth": {"type": "bearer", "bearer": [
-                {"key": "token", "value": "Bearer abc123def456ghi789", "type": "string"}
-            ]},
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {"key": "token", "value": "Bearer abc123def456ghi789", "type": "string"}
+                ],
+            },
         }
         with pytest.raises(RuntimeError, match="LGPD"):
             postman_sync._assert_lgpd_safe(bad)
@@ -158,11 +170,23 @@ class TestLGPDAuth:
     def test_assert_lgpd_safe_raises_on_token_in_header_value(self) -> None:
         bad = {
             "info": {"name": "bad"},
-            "item": [{"name": "x", "request": {
-                "method": "GET",
-                "header": [{"key": "Authorization", "value": "Bearer abc123def456ghi789", "type": "text"}],
-                "url": {"raw": "https://x"},
-            }, "response": []}],
+            "item": [
+                {
+                    "name": "x",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer abc123def456ghi789",
+                                "type": "text",
+                            }
+                        ],
+                        "url": {"raw": "https://x"},
+                    },
+                    "response": [],
+                }
+            ],
             "variable": [],
         }
         with pytest.raises(RuntimeError, match="LGPD"):
@@ -173,15 +197,22 @@ class TestLGPDAuth:
         safe = {
             "info": {"name": "ok", "description": "Emite access token e refresh token JWT"},
             "item": [
-                {"name": "login", "request": {
-                    "method": "POST",
-                    "description": "Retorna access token + refresh token JWT para user_id",
-                    "header": [],
-                    "url": {"raw": "https://x/y"},
-                }, "response": []},
+                {
+                    "name": "login",
+                    "request": {
+                        "method": "POST",
+                        "description": "Retorna access token + refresh token JWT para user_id",
+                        "header": [],
+                        "url": {"raw": "https://x/y"},
+                    },
+                    "response": [],
+                },
             ],
             "variable": [{"key": "bearer_token", "value": "", "type": "secret"}],
-            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{bearer_token}}", "type": "string"}]},
+            "auth": {
+                "type": "bearer",
+                "bearer": [{"key": "token", "value": "{{bearer_token}}", "type": "string"}],
+            },
         }
         postman_sync._assert_lgpd_safe(safe)
 
@@ -189,11 +220,19 @@ class TestLGPDAuth:
         """Placeholders Postman {{bearer_token}} nao devem triggar LGPD fail."""
         clean = {
             "info": {"name": "ok"},
-            "item": [{"name": "x", "request": {
-                "method": "GET",
-                "header": [{"key": "Authorization", "value": "{{bearer_token}}", "type": "text"}],
-                "url": {"raw": "https://x"},
-            }, "response": []}],
+            "item": [
+                {
+                    "name": "x",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Authorization", "value": "{{bearer_token}}", "type": "text"}
+                        ],
+                        "url": {"raw": "https://x"},
+                    },
+                    "response": [],
+                }
+            ],
             "variable": [{"key": "bearer_token", "value": "", "type": "secret"}],
         }
         postman_sync._assert_lgpd_safe(clean)
@@ -234,10 +273,18 @@ class TestWriteAndCompress:
         assert loaded["info"]["schema"].endswith("v2.1.0/collection.json")
 
     def test_write_collection_auto_compresses_when_large(self, tmp_path: Path) -> None:
-        big = {"info": {"name": "big", "schema": postman_sync.POSTMAN_SCHEMA_URL},
-               "item": [], "variable": [], "auth": {"type": "bearer", "bearer": []}}
+        big = {
+            "info": {"name": "big", "schema": postman_sync.POSTMAN_SCHEMA_URL},
+            "item": [],
+            "variable": [],
+            "auth": {"type": "bearer", "bearer": []},
+        }
         big["item"] = [
-            {"name": f"req_{i}", "request": {"method": "GET", "header": [], "url": {"raw": "https://x/y"}}, "response": []}
+            {
+                "name": f"req_{i}",
+                "request": {"method": "GET", "header": [], "url": {"raw": "https://x/y"}},
+                "response": [],
+            }
             for i in range(50000)
         ]
         out = tmp_path / "big.postman_collection.json"
@@ -252,7 +299,12 @@ class TestWriteAndCompress:
             "info": {"name": "bad"},
             "item": [],
             "variable": [],
-            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "Bearer abc123def456ghi789", "type": "string"}]},
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {"key": "token", "value": "Bearer abc123def456ghi789", "type": "string"}
+                ],
+            },
         }
         out = tmp_path / "bad.json"
         with pytest.raises(RuntimeError, match="LGPD"):

@@ -320,9 +320,7 @@ def export_package(
         # Normalização de newline — atualiza metadata
         metadata["prompt_sha256"] = written_hash
         metadata["prompt_char_count"] = len(written)
-        metadata["prompt_line_count"] = written.count("\n") + (
-            0 if written.endswith("\n") else 1
-        )
+        metadata["prompt_line_count"] = written.count("\n") + (0 if written.endswith("\n") else 1)
         meta_path.write_text(
             json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",

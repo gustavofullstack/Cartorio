@@ -96,9 +96,7 @@ class TestN8nWorkflowValid:
 
     def test_settings_timezone_iana_valid(self) -> None:
         for tz in ("America/Sao_Paulo", "UTC", "Europe/Lisbon", "America/New_York"):
-            wf = N8nWorkflow.model_validate(
-                _minimal_payload(settings={"timezone": tz})
-            )
+            wf = N8nWorkflow.model_validate(_minimal_payload(settings={"timezone": tz}))
             assert wf.settings.timezone == tz
 
 
@@ -313,19 +311,14 @@ def test_real_exports_batch_validation() -> None:
             N8nWorkflow.model_validate(payload)
             passed += 1
         except (ValidationError, json.JSONDecodeError) as exc:
-            err_list = (
-                exc.errors() if isinstance(exc, ValidationError) else [{"msg": str(exc)}]
-            )
+            err_list = exc.errors() if isinstance(exc, ValidationError) else [{"msg": str(exc)}]
             failures.append((path.name, err_list))
     assert passed >= 5, (
-        f"minimo 5 JSONs reais devem passar strict schema (passed={passed}, "
-        f"failed={len(failures)})"
+        f"minimo 5 JSONs reais devem passar strict schema (passed={passed}, failed={len(failures)})"
     )
     # Reporta falhas sem bloquear — gate eh >=5 passes.
     if failures:
         summary = "\n".join(
             f"  - {name}: {errs[0].get('msg', '?')[:120]}" for name, errs in failures[:5]
         )
-        pytest.fail(
-            f"{len(failures)}/{passed + len(failures)} exports falharam strict:\n{summary}"
-        )
+        pytest.fail(f"{len(failures)}/{passed + len(failures)} exports falharam strict:\n{summary}")

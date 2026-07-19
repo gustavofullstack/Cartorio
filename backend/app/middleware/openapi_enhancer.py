@@ -101,8 +101,7 @@ API_TAGS_ORDERED = [
     {
         "name": "Auth",
         "description": (
-            "Auth login/refresh (JWT para DPO/operador). "
-            "Sprint 4+: substituir por Supabase Auth."
+            "Auth login/refresh (JWT para DPO/operador). Sprint 4+: substituir por Supabase Auth."
         ),
     },
     {
@@ -112,8 +111,7 @@ API_TAGS_ORDERED = [
     {
         "name": "Protocolo",
         "description": (
-            "Ciclo de vida do protocolo (DRAFT -> EM_ANDAMENTO -> CONCLUIDO). "
-            "HITL obrigatorio."
+            "Ciclo de vida do protocolo (DRAFT -> EM_ANDAMENTO -> CONCLUIDO). HITL obrigatorio."
         ),
     },
     {
@@ -127,8 +125,7 @@ API_TAGS_ORDERED = [
     {
         "name": "Integrations",
         "description": (
-            "Integracoes externas (OpenCode-Go, OpenClaw, N8N, Chatwoot). "
-            "X-API-Key required."
+            "Integracoes externas (OpenCode-Go, OpenClaw, N8N, Chatwoot). X-API-Key required."
         ),
     },
     {
@@ -172,17 +169,14 @@ SECURITY_SCHEMES = {
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "description": (
-            "JWT para endpoints LGPD v2 / DPO dashboard. "
-            "Mint via POST /api/v1/auth/login."
+            "JWT para endpoints LGPD v2 / DPO dashboard. Mint via POST /api/v1/auth/login."
         ),
     },
     "TelegramWebhookSecret": {
         "type": "apiKey",
         "in": "header",
         "name": "X-Telegram-Bot-Api-Secret-Token",
-        "description": (
-            "Telegram webhook HMAC secret. Compare_digest (timing-safe)."
-        ),
+        "description": ("Telegram webhook HMAC secret. Compare_digest (timing-safe)."),
     },
 }
 
@@ -266,9 +260,70 @@ def custom_openapi(app: FastAPI) -> dict[str, Any]:
         security_schemes[scheme_name] = scheme_def
 
     _register_webhook_schemas(components)
+    _enrich_sensitive_fields(openapi_schema)
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
+
+
+def _is_sensitive_name(name: str) -> bool:
+    """Verifica se o nome de um campo OpenAPI indica dados sensíveis/PII."""
+    name_lower = name.lower()
+    sensitive_words = [
+        "cpf",
+        "cnpj",
+        "rg",
+        "email",
+        "phone",
+        "telefone",
+        "password",
+        "secret",
+        "token",
+        "jwt",
+        "senha",
+    ]
+    if (
+        name_lower == "ip"
+        or "client_ip" in name_lower
+        or "consent_ip" in name_lower
+        or "ip_address" in name_lower
+    ):
+        return True
+    for word in sensitive_words:
+        if word in name_lower:
+            return True
+    return False
+
+
+def _enrich_sensitive_fields(openapi_schema: dict[str, Any]) -> None:
+    """Varre todos os schemas em components/schemas e injeta 'x-sensivel': True."""
+    components = openapi_schema.get("components", {})
+    schemas = components.get("schemas", {})
+    if not isinstance(schemas, dict):
+        return
+
+    def process_properties(properties: dict[str, Any]) -> None:
+        for prop_name, prop_def in properties.items():
+            if not isinstance(prop_def, dict):
+                continue
+
+            if _is_sensitive_name(prop_name):
+                prop_def["x-sensivel"] = True
+
+            if "properties" in prop_def and isinstance(prop_def["properties"], dict):
+                process_properties(prop_def["properties"])
+
+            if "items" in prop_def and isinstance(prop_def["items"], dict):
+                items_def = prop_def["items"]
+                if "properties" in items_def and isinstance(items_def["properties"], dict):
+                    process_properties(items_def["properties"])
+
+    for schema_name, schema_def in schemas.items():
+        if not isinstance(schema_def, dict):
+            continue
+        properties = schema_def.get("properties")
+        if isinstance(properties, dict):
+            process_properties(properties)
 
 
 def _register_webhook_schemas(components: dict[str, Any]) -> None:

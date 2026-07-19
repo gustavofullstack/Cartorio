@@ -244,6 +244,7 @@ def test_audit_chain_integrity_preserved_across_rotation(db_session):
 
     # Bootstrap com kid deterministico a partir do settings
     from app.config import settings
+
     bootstrap_legacy(settings.audit_hmac_key.encode("utf-8"))
 
     # 3 entries com kid legacy
@@ -316,10 +317,7 @@ def test_concurrent_rotate_thread_safe(secret_a):
         except BaseException as exc:  # pragma: no cover
             errors.append(exc)
 
-    threads = [
-        threading.Thread(target=rotate_attempt, args=(i,))
-        for i in range(iterations)
-    ]
+    threads = [threading.Thread(target=rotate_attempt, args=(i,)) for i in range(iterations)]
     for t in threads:
         t.start()
     for t in threads:
@@ -332,9 +330,7 @@ def test_concurrent_rotate_thread_safe(secret_a):
     assert len(actives) == 1
     assert snap[actives[0]]["status"] == KeyStatus.ACTIVE
     # Pelo menos algumas foram promovidas a rotating
-    rotatings = [
-        kid for kid, st in snap.items() if st["status"] == KeyStatus.ROTATING
-    ]
+    rotatings = [kid for kid, st in snap.items() if st["status"] == KeyStatus.ROTATING]
     assert len(rotatings) >= 1
 
 

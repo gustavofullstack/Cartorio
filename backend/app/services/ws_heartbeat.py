@@ -94,9 +94,7 @@ def is_stale(
     return (ts - float(last)) > cfg.pong_timeout_sec
 
 
-def receive_timeout_sec(
-    state: WSHeartbeatState, config: WSHeartbeatConfig | None = None
-) -> float:
+def receive_timeout_sec(state: WSHeartbeatState, config: WSHeartbeatConfig | None = None) -> float:
     """Timeout para asyncio.wait_for(receive): pong_timeout se awaiting, senao ping_interval."""
     cfg = config or state.config
     if state.awaiting_pong:
@@ -106,7 +104,7 @@ def receive_timeout_sec(
 
 def build_server_ping(ts: datetime | None = None) -> dict[str, str]:
     when = ts or _utcnow()
-    return {'type': 'ping', 'ts': when.isoformat()}
+    return {"type": "ping", "ts": when.isoformat()}
 
 
 def build_ping_payload(ts: datetime | None = None) -> dict[str, str]:
@@ -114,11 +112,11 @@ def build_ping_payload(ts: datetime | None = None) -> dict[str, str]:
 
 
 def is_pong_message(data: object) -> bool:
-    return isinstance(data, dict) and data.get('type') == 'pong'
+    return isinstance(data, dict) and data.get("type") == "pong"
 
 
 def is_ping_message(data: object) -> bool:
-    return isinstance(data, dict) and data.get('type') == 'ping'
+    return isinstance(data, dict) and data.get("type") == "ping"
 
 
 def _coerce_now(now: float | datetime | None) -> float:
@@ -131,17 +129,17 @@ def _coerce_now(now: float | datetime | None) -> float:
 
 
 __all__ = [
-    'WSHeartbeatConfig',
-    'WSHeartbeatState',
-    'build_ping_payload',
-    'build_server_ping',
-    'is_ping_message',
-    'is_pong_message',
-    'is_stale',
-    'mark_missed',
-    'mark_ping',
-    'mark_pong',
-    'mark_server_ping_sent',
-    'new_heartbeat_state',
-    'receive_timeout_sec',
+    "WSHeartbeatConfig",
+    "WSHeartbeatState",
+    "build_ping_payload",
+    "build_server_ping",
+    "is_ping_message",
+    "is_pong_message",
+    "is_stale",
+    "mark_missed",
+    "mark_ping",
+    "mark_pong",
+    "mark_server_ping_sent",
+    "new_heartbeat_state",
+    "receive_timeout_sec",
 ]

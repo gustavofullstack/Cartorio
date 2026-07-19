@@ -21,16 +21,16 @@ from typing import Literal
 
 from app.services.magicdns_inventory import extract_hosts_from_url, is_private_host
 
-SinkClass = Literal['allowed', 'blocked', 'unknown']
+SinkClass = Literal["allowed", "blocked", "unknown"]
 
 # Regras documentadas (policy_summary) — fonte única para docs/ops
 _POLICY_RULES: tuple[str, ...] = (
-    'Log export e sinks com PII só podem usar hosts privados (RFC1918, Tailscale CGNAT 100.x, loopback).',
-    'Nomes MagicDNS/Tailscale (*.ts.net), .local e service names de swarm (sem ponto) são permitidos.',
-    'Hosts canônicos internos (cartorio_postgres, cartorio_redis, cartorio-api, etc.) são permitidos.',
-    'IPs públicos e DNS públicos (ex.: 8.8.8.8, logs.example.com) são bloqueados para PII/logs.',
-    'URL vazia ou sem host extraível classifica como unknown (não é considerada segura).',
-    'assert_pii_sink_safe(url) levanta ValueError se o sink não for allowed.',
+    "Log export e sinks com PII só podem usar hosts privados (RFC1918, Tailscale CGNAT 100.x, loopback).",
+    "Nomes MagicDNS/Tailscale (*.ts.net), .local e service names de swarm (sem ponto) são permitidos.",
+    "Hosts canônicos internos (cartorio_postgres, cartorio_redis, cartorio-api, etc.) são permitidos.",
+    "IPs públicos e DNS públicos (ex.: 8.8.8.8, logs.example.com) são bloqueados para PII/logs.",
+    "URL vazia ou sem host extraível classifica como unknown (não é considerada segura).",
+    "assert_pii_sink_safe(url) levanta ValueError se o sink não for allowed.",
 )
 
 
@@ -54,27 +54,27 @@ def classify_log_sink(url: str) -> SinkClass:
         'blocked'  — host público identificável
         'unknown'  — URL vazia ou host não extraível
     """
-    raw = (url or '').strip()
+    raw = (url or "").strip()
     if not raw:
-        return 'unknown'
+        return "unknown"
 
     hosts = extract_hosts_from_url(raw)
     # bare hostname (sem scheme) — extract_hosts_from_url ainda devolve o host
     if not hosts:
         # tenta como host nu
         if is_private_host(raw):
-            return 'allowed'
+            return "allowed"
         # se parece host com ponto e não é privado → blocked; senão unknown
-        if '.' in raw and ' ' not in raw:
-            return 'blocked'
-        return 'unknown'
+        if "." in raw and " " not in raw:
+            return "blocked"
+        return "unknown"
 
     host = hosts[0]
     if not host:
-        return 'unknown'
+        return "unknown"
     if is_private_host(host):
-        return 'allowed'
-    return 'blocked'
+        return "allowed"
+    return "blocked"
 
 
 def assert_pii_sink_safe(url: str) -> None:
@@ -87,12 +87,12 @@ def assert_pii_sink_safe(url: str) -> None:
         ValueError: se classificado como blocked ou unknown (PII não pode ir a sink incerto).
     """
     classification = classify_log_sink(url)
-    if classification == 'allowed':
+    if classification == "allowed":
         return
     raise ValueError(
-        f'PII/log sink not allowed on private tunnels only policy: '
-        f'url={url!r} classification={classification!r}. '
-        f'Use Tailscale/MagicDNS/RFC1918 hosts only.'
+        f"PII/log sink not allowed on private tunnels only policy: "
+        f"url={url!r} classification={classification!r}. "
+        f"Use Tailscale/MagicDNS/RFC1918 hosts only."
     )
 
 
@@ -102,9 +102,9 @@ def policy_summary() -> list[str]:
 
 
 __all__ = [
-    'SinkClass',
-    'assert_pii_sink_safe',
-    'classify_log_sink',
-    'is_log_export_allowed',
-    'policy_summary',
+    "SinkClass",
+    "assert_pii_sink_safe",
+    "classify_log_sink",
+    "is_log_export_allowed",
+    "policy_summary",
 ]

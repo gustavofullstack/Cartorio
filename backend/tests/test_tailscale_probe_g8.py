@@ -133,9 +133,7 @@ class TestProbeTailscaleDefaults:
                     results = probe_tailscale_defaults(timeout=1.0)
 
         assert len(results) == 1
-        m_probe.assert_called_once_with(
-            DEFAULT_TAILSCALE_HOST, DEFAULT_TAILSCALE_PORT, timeout=1.0
-        )
+        m_probe.assert_called_once_with(DEFAULT_TAILSCALE_HOST, DEFAULT_TAILSCALE_PORT, timeout=1.0)
         assert results[0].ok is True
 
     def test_custom_targets(self) -> None:

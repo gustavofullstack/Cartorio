@@ -4,6 +4,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 # Configure root logger so app.api.v1.* modules (e.g. telegram) emit INFO.
 # 2026-07-02 fix: force=True re-aplica basicConfig sob handlers uvicorn
@@ -22,7 +23,7 @@ logging.basicConfig(
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.openapi.docs import get_redoc_html  # noqa: E402
-from fastapi.responses import HTMLResponse, PlainTextResponse, Response  # noqa: E402
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 from app import __version__ as APP_VERSION  # noqa: E402
@@ -133,7 +134,10 @@ async def _llm_providers_health_loop() -> None:
 
     while True:
         providers_to_check = ["opencode_go"]
-        if settings.llm_default_provider and settings.llm_default_provider not in providers_to_check:
+        if (
+            settings.llm_default_provider
+            and settings.llm_default_provider not in providers_to_check
+        ):
             providers_to_check.append(settings.llm_default_provider)
 
         for provider in providers_to_check:
@@ -156,7 +160,11 @@ async def _llm_providers_health_loop() -> None:
                     )
                 logger.info("LLM MONITOR: Provider %s is HEALTHY", provider)
             except Exception as e:
-                logger.warning("LLM MONITOR: First check failed for %s: %s. Retrying in 5 seconds...", provider, e)
+                logger.warning(
+                    "LLM MONITOR: First check failed for %s: %s. Retrying in 5 seconds...",
+                    provider,
+                    e,
+                )
                 await asyncio.sleep(5)
                 try:
                     with session_scope() as db:
@@ -175,8 +183,12 @@ async def _llm_providers_health_loop() -> None:
                         )
                     logger.info("LLM MONITOR: Provider %s recovered on retry", provider)
                 except Exception as retry_err:
-                    logger.error("LLM MONITOR: Provider %s is OFFLINE (double failure): %s", provider, retry_err)
-                    
+                    logger.error(
+                        "LLM MONITOR: Provider %s is OFFLINE (double failure): %s",
+                        provider,
+                        retry_err,
+                    )
+
                     try:
                         bus = get_bus()
                         if bus and bus.client:
@@ -188,9 +200,9 @@ async def _llm_providers_health_loop() -> None:
                     chat_id = settings.audit_alert_telegram_chat_id
                     if not token or not chat_id:
                         logger.warning(
-                            'LLM MONITOR: TELEGRAM_BOT_TOKEN or '
-                            'AUDIT_ALERT_TELEGRAM_CHAT_ID not set, '
-                            'skipping Telegram alert for provider %s',
+                            "LLM MONITOR: TELEGRAM_BOT_TOKEN or "
+                            "AUDIT_ALERT_TELEGRAM_CHAT_ID not set, "
+                            "skipping Telegram alert for provider %s",
                             provider,
                         )
                     else:
@@ -202,7 +214,15 @@ async def _llm_providers_health_loop() -> None:
                         url = f"https://api.telegram.org/bot{token}/sendMessage"
                         try:
                             async with httpx.AsyncClient() as client:
-                                await client.post(url, json={"chat_id": chat_id, "text": alert_text, "parse_mode": "Markdown"}, timeout=5.0)
+                                await client.post(
+                                    url,
+                                    json={
+                                        "chat_id": chat_id,
+                                        "text": alert_text,
+                                        "parse_mode": "Markdown",
+                                    },
+                                    timeout=5.0,
+                                )
                         except Exception as telegram_exc:
                             logger.warning("Falha ao enviar alerta Telegram: %s", telegram_exc)
 
@@ -214,6 +234,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Smoke test DB + create tables if missing + audit log init + tracing init (A3)."""
     scrubber = SecretScrubLogFilter()
     from app.services.log_masker import MaskingFilter
+
     masker = MaskingFilter()
     for handler in logging.getLogger().handlers:
         handler.addFilter(scrubber)
@@ -666,6 +687,18 @@ def mcp_servers() -> dict:
     }
 
 
+@app.get("/tools_description.json", tags=["meta"], include_in_schema=False)
+def mcp_tools_description() -> FileResponse:
+    """Serve o descritor versionado das tools MCP para descoberta por clientes.
+
+    O arquivo é mantido em paridade com ``backend/mcp_server.py`` por testes;
+    manter o endpoint na origem da API evita configurações de cliente apontando
+    para uma cópia local ou para o antigo caminho duplicado ``/mcp/mcp``.
+    """
+    descriptor = Path(__file__).resolve().parents[1] / "tools_description.json"
+    return FileResponse(descriptor, media_type="application/json")
+
+
 # ============================================================================
 # MCP server mount (protocolo MCP 2025-03-26, http transport)
 # ============================================================================
@@ -851,6 +884,11 @@ app.include_router(lgpd_consent_router, prefix="/api/v1")
 from app.api.v1.lgpd_dpo_dashboard import dpo_dashboard_router  # noqa: E402
 
 app.include_router(dpo_dashboard_router, prefix="/api/v1")
+
+# Exportacao CNJ LGPD: pacote agregado, dupla aprovacao DPO e sem envio externo automatico.
+from app.api.v1.cnj_export import cnj_export_router  # noqa: E402
+
+app.include_router(cnj_export_router, prefix="/api/v1")
 
 # API v2 (alpha) - sunset 2027-12-31 (A24 SQUAD A versionamento)
 from app.api.v2 import api_v2_router  # noqa: E402

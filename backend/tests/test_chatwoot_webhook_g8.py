@@ -89,8 +89,13 @@ def test_schema_message_created_outgoing_shape() -> None:
 def test_schema_rejects_garbage() -> None:
     """Garbage / wrong-typed payloads fail validation or return None."""
     assert parse_chatwoot_payload({"foo": "bar"}) is None
-    assert parse_chatwoot_payload({"event": "conversation_status_changed", "status": {"bad": True}}) is None
-    assert parse_chatwoot_payload({"event": "message_created", "conversation": "not-a-dict"}) is None
+    assert (
+        parse_chatwoot_payload({"event": "conversation_status_changed", "status": {"bad": True}})
+        is None
+    )
+    assert (
+        parse_chatwoot_payload({"event": "message_created", "conversation": "not-a-dict"}) is None
+    )
 
 
 def test_process_valid_status_changed_open_with_assignee(

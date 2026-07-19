@@ -113,9 +113,7 @@ class AuditService:
         now = datetime.now(UTC)
         timestamp = now.replace(tzinfo=None).isoformat(timespec="microseconds")
         new_hash = cls._compute_hash(prev_hash, payload, timestamp)
-        hmac_kid, hmac_sig = cls._compute_hmac(
-            f"{new_hash}:{timestamp}:{actor_id}:{action}"
-        )
+        hmac_kid, hmac_sig = cls._compute_hmac(f"{new_hash}:{timestamp}:{actor_id}:{action}")
 
         entry = AuditLog(
             actor_id=actor_id,

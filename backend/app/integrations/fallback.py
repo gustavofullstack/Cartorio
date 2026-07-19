@@ -39,6 +39,7 @@ def _extract_chat_response_tokens(response: ChatResponse) -> tuple[int, int]:
     """
     return (response.tokens_in or 0, response.tokens_out or 0)
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,6 +49,9 @@ _OPENAI_COMPAT_PROVIDERS = frozenset(
         "opencode_free_1",
         "opencode_free_2",
         "opencode_free_3",
+        "opencode_zen_account_1",
+        "opencode_zen_account_2",
+        "opencode_zen_account_3",
         "openrouter",
         "groq",
         "mistral",
@@ -175,7 +179,9 @@ async def _call_provider(
     )
 
 
-@instrument_llm(model="multi_provider", operation="chat", extract_tokens=_extract_chat_response_tokens)
+@instrument_llm(
+    model="multi_provider", operation="chat", extract_tokens=_extract_chat_response_tokens
+)
 async def chat_with_fallback(
     messages: list[dict[str, str]],
     *,
@@ -250,7 +256,9 @@ async def chat_with_fallback(
         # Circuit Breaker check
         if await _is_circuit_open(provider):
             logger.warning("Circuit breaker is OPEN for provider: %s. Fast-failing.", provider)
-            last_exc = ChatError(f"Circuit breaker open for {provider}", kind=ChatErrorKind.HTTP_5XX)
+            last_exc = ChatError(
+                f"Circuit breaker open for {provider}", kind=ChatErrorKind.HTTP_5XX
+            )
             continue
 
         if idx > 0 and last_exc is not None:
@@ -321,8 +329,26 @@ async def chat_with_fallback(
             return resp
 
         except ChatError as exc:
-            # LGPD/CONFIG: baila sem tentar chain (não contam para o circuit breaker)
-            if exc.kind in (ChatErrorKind.LGPD_BLOCKED, ChatErrorKind.CONFIG):
+            # Consentimento nunca pode ser contornado por fallback.
+            if exc.kind == ChatErrorKind.LGPD_BLOCKED:
+                logger.error(
+                    "Provider %s abort chain (kind=%s): %s",
+                    provider,
+                    exc.kind,
+                    exc,
+                )
+                raise
+            # Slots Zen são independentes: uma credencial ausente/inválida deve
+            # permitir o próximo slot, sem abrir circuito nem vazar a causa.
+            # CONFIG dos demais providers continua fail-closed para preservar o
+            # contrato legado e revelar configuração incorreta cedo.
+            if exc.kind == ChatErrorKind.CONFIG and provider.startswith("opencode_zen_account_"):
+                logger.warning(
+                    "OpenCode Zen slot indisponivel: %s; tentando proximo slot", provider
+                )
+                last_exc = exc
+                continue
+            if exc.kind == ChatErrorKind.CONFIG:
                 logger.error(
                     "Provider %s abort chain (kind=%s): %s",
                     provider,
@@ -385,6 +411,7 @@ async def _is_circuit_open(provider: str) -> bool:
     """Verifica se o circuito está aberto (bloqueado) para o provedor no Redis."""
     try:
         from app.services.redis_bus import get_bus
+
         bus = get_bus()
         if not bus or not bus.client:
             return False
@@ -399,16 +426,22 @@ async def _record_failure(provider: str, threshold: int = 3, open_time_seconds: 
     """Incrementa falhas consecutivas do provedor no Redis. Abre o circuito se atingir o limite."""
     try:
         from app.services.redis_bus import get_bus
+
         bus = get_bus()
         if not bus or not bus.client:
             return
-            
+
         key_fail = f"cb:fail:{provider}"
         fails = await bus.client.incr(key_fail)
         await bus.client.expire(key_fail, 60)  # Expira a contagem de falhas em 60 segundos
-        
+
         if fails >= threshold:
-            logger.error("Circuit breaker OPENING for provider %s for %d seconds (fails=%d)", provider, open_time_seconds, fails)
+            logger.error(
+                "Circuit breaker OPENING for provider %s for %d seconds (fails=%d)",
+                provider,
+                open_time_seconds,
+                fails,
+            )
             await bus.client.setex(f"cb:open:{provider}", open_time_seconds, "1")
             await bus.client.delete(key_fail)
     except Exception as e:
@@ -419,6 +452,7 @@ async def _record_success(provider: str) -> None:
     """Reseta as falhas acumuladas e fecha o circuito se estiver aberto no Redis."""
     try:
         from app.services.redis_bus import get_bus
+
         bus = get_bus()
         if not bus or not bus.client:
             return

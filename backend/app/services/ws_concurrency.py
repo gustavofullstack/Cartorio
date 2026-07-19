@@ -33,7 +33,7 @@ class MockWS:
 
     async def send_json(self, payload: dict[str, Any]) -> None:
         if self.fail or self.closed:
-            raise RuntimeError(f'mock_ws_dead:{self.idx}')
+            raise RuntimeError(f"mock_ws_dead:{self.idx}")
         self.messages.append(payload)
 
 
@@ -74,4 +74,4 @@ async def stress_register_broadcast(
     )
 
 
-__all__ = ['ConcurrentWSReport', 'MockWS', 'stress_register_broadcast']
+__all__ = ["ConcurrentWSReport", "MockWS", "stress_register_broadcast"]

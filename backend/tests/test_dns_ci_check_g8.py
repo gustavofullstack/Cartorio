@@ -17,47 +17,47 @@ from app.services.dns_ci_check import (
 
 def test_expected_hosts_nonempty() -> None:
     assert len(EXPECTED_HOSTS) >= 3
-    assert any(h.startswith('api.') for h in EXPECTED_HOSTS)
+    assert any(h.startswith("api.") for h in EXPECTED_HOSTS)
 
 
 def test_resolve_success_mock() -> None:
-    with patch('socket.getaddrinfo', return_value=[(None, None, None, None, ('1.2.3.4', 0))]):
-        r = resolve_host('api.2notasudi.com.br')
+    with patch("socket.getaddrinfo", return_value=[(None, None, None, None, ("1.2.3.4", 0))]):
+        r = resolve_host("api.2notasudi.com.br")
     assert r.ok is True
-    assert '1.2.3.4' in r.detail
+    assert "1.2.3.4" in r.detail
 
 
 def test_resolve_fail_mock() -> None:
-    with patch('socket.getaddrinfo', side_effect=socket_error()):
-        r = resolve_host('nope.invalid')
+    with patch("socket.getaddrinfo", side_effect=socket_error()):
+        r = resolve_host("nope.invalid")
     assert r.ok is False
 
 
 def socket_error() -> OSError:
-    return OSError('nxdomain')
+    return OSError("nxdomain")
 
 
 def test_run_soft_ok_if_api_resolves() -> None:
     def fake(host: str, timeout: float = 3.0):
         from app.services.dns_ci_check import DnsCheckResult
 
-        ok = host.startswith('api.')
-        return DnsCheckResult(host, ok, 1, 'ok' if ok else 'fail')
+        ok = host.startswith("api.")
+        return DnsCheckResult(host, ok, 1, "ok" if ok else "fail")
 
-    with patch('app.services.dns_ci_check.resolve_host', side_effect=fake):
+    with patch("app.services.dns_ci_check.resolve_host", side_effect=fake):
         report = run_dns_ci_checks(require_all=False)
     assert report.ok is True
     d = report.to_dict()
-    assert 'checks' in d
+    assert "checks" in d
 
 
 def test_require_all_fails() -> None:
     def fake(host: str, timeout: float = 3.0):
         from app.services.dns_ci_check import DnsCheckResult
 
-        return DnsCheckResult(host, False, 1, 'fail')
+        return DnsCheckResult(host, False, 1, "fail")
 
-    with patch('app.services.dns_ci_check.resolve_host', side_effect=fake):
+    with patch("app.services.dns_ci_check.resolve_host", side_effect=fake):
         report = run_dns_ci_checks(require_all=True)
     assert report.ok is False
 

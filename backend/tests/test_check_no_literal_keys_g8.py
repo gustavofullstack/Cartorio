@@ -244,7 +244,9 @@ class TestSeverity:
         assert cnlk.SEVERITY_RANK["medium"] > cnlk.SEVERITY_RANK["low"]
 
 
-def test_cli_redacts_detected_value_from_output(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_redacts_detected_value_from_output(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """A failing scanner must identify the location without leaking the matched value."""
     secret_like_value = "sk-proj-FAKE1234567890abcdefghij"
     source = tmp_path / "unsafe.py"

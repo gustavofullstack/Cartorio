@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cartorio Backend API - MCP Tools Description",
   "description": "Lista canonica de tools MCP expostas pelo Cartorio Backend API via /mcp (protocolo MCP 2025-03-26). Esta descricao complementa o OpenAPI em /openapi.json e permite que clients MCP (Claude, Cursor, OpenCode, Zed, Antigravity) descubram tools sem precisar fazer round-trip HTTP.",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "server": {
     "name": "cartorio-mcp-cabuloso",
-    "version": "0.4.0",
+    "version": "0.6.0",
     "protocol_version": "2025-03-26",
     "transport": "http",
-    "url": "https://api.2notasudi.com.br/mcp/mcp",
+    "url": "https://api.2notasudi.com.br/mcp",
     "auth": {
       "type": "none_optional",
       "note": "API publica para emolumento e protocolo. Endpoints sensiveis (audit verify, webhook) usam X-API-Key compartilhado com n8n."
@@ -176,6 +176,13 @@
       }
     },
     {
+      "name": "cartorio_audit_hash_sequence",
+      "description": "Valida offline uma sequência de hashes SHA256 da audit chain. Use somente amostras já scrubbed; para a chain live use cartorio_audit_verify.",
+      "category": "auditoria",
+      "input_schema": {"type": "object", "properties": {"entries": {"type": "array", "maxItems": 5000}}, "required": ["entries"]},
+      "output_schema": {"type": "object", "properties": {"chain_ok": {"type": "boolean"}, "last_valid_position": {"type": "integer"}, "total": {"type": "integer"}}}
+    },
+    {
       "name": "cartorio_saudacao",
       "description": "Health check do Cartorio API. Publico, sem PII.",
       "category": "meta",
@@ -188,6 +195,48 @@
           "mcp_server": {"type": "string"}
         }
       }
+    },
+    {
+      "name": "cartorio_enviar_whatsapp_reaction",
+      "description": "Envia uma reação para uma mensagem específica no WhatsApp. Efeito externo: requer confirmação humana antes do envio.",
+      "category": "whatsapp",
+      "input_schema": {"type": "object", "properties": {"number": {"type": "string"}, "message_id": {"type": "string"}, "emoji": {"type": "string"}}, "required": ["number", "message_id", "emoji"]},
+      "output_schema": {"type": "object", "properties": {"sucesso": {"type": "boolean"}}}
+    },
+    {
+      "name": "cartorio_enviar_whatsapp_poll",
+      "description": "Envia uma enquete no WhatsApp. Efeito externo: conteúdo aprovado e confirmação humana obrigatórios.",
+      "category": "whatsapp",
+      "input_schema": {"type": "object", "properties": {"number": {"type": "string"}, "question": {"type": "string"}, "options": {"type": "array", "items": {"type": "string"}}}, "required": ["number", "question", "options"]},
+      "output_schema": {"type": "object", "properties": {"sucesso": {"type": "boolean"}}}
+    },
+    {
+      "name": "cartorio_enviar_whatsapp_media",
+      "description": "Envia imagem ou documento no WhatsApp. Pode envolver documento/PII e exige HITL.",
+      "category": "whatsapp",
+      "input_schema": {"type": "object", "properties": {"number": {"type": "string"}, "media_url": {"type": "string", "format": "uri"}, "mediatype": {"type": "string", "enum": ["image", "document"]}, "filename": {"type": "string"}, "caption": {"type": "string"}}, "required": ["number", "media_url", "mediatype", "filename"]},
+      "output_schema": {"type": "object", "properties": {"sucesso": {"type": "boolean"}}}
+    },
+    {
+      "name": "cartorio_enviar_telegram_reaction",
+      "description": "Envia uma reação para uma mensagem no Telegram. Efeito externo: requer confirmação humana antes do envio.",
+      "category": "telegram",
+      "input_schema": {"type": "object", "properties": {"chat_id": {"type": "integer"}, "message_id": {"type": "integer"}, "emoji": {"type": "string"}}, "required": ["chat_id", "message_id", "emoji"]},
+      "output_schema": {"type": "object", "properties": {"sucesso": {"type": "boolean"}}}
+    },
+    {
+      "name": "cartorio_enviar_telegram_poll",
+      "description": "Envia uma enquete no Telegram. Efeito externo: conteúdo aprovado e confirmação humana obrigatórios.",
+      "category": "telegram",
+      "input_schema": {"type": "object", "properties": {"chat_id": {"type": "integer"}, "question": {"type": "string"}, "options": {"type": "array", "items": {"type": "string"}}}, "required": ["chat_id", "question", "options"]},
+      "output_schema": {"type": "object", "properties": {"sucesso": {"type": "boolean"}}}
+    },
+    {
+      "name": "cartorio_enviar_telegram_media",
+      "description": "Envia imagem ou documento no Telegram. Pode envolver documento/PII e exige HITL.",
+      "category": "telegram",
+      "input_schema": {"type": "object", "properties": {"chat_id": {"type": "integer"}, "media_url": {"type": "string", "format": "uri"}, "mediatype": {"type": "string", "enum": ["image", "document"]}, "filename": {"type": "string"}, "caption": {"type": "string"}}, "required": ["chat_id", "media_url", "mediatype", "filename"]},
+      "output_schema": {"type": "object", "properties": {"sucesso": {"type": "boolean"}}}
     },
     {
       "name": "super_server_info",
@@ -213,7 +262,9 @@
     "emolumento": ["cartorio_calcular_emolumento"],
     "protocolo": ["cartorio_consultar_protocolo", "cartorio_criar_protocolo"],
     "documento": ["cartorio_gerar_segunda_via"],
-    "audit": ["cartorio_audit_verify"],
+    "audit": ["cartorio_audit_verify", "cartorio_audit_hash_sequence"],
+    "whatsapp": ["cartorio_enviar_whatsapp_reaction", "cartorio_enviar_whatsapp_poll", "cartorio_enviar_whatsapp_media"],
+    "telegram": ["cartorio_enviar_telegram_reaction", "cartorio_enviar_telegram_poll", "cartorio_enviar_telegram_media"],
     "meta": ["cartorio_saudacao", "super_server_info"]
   },
   "lgpd_compliance": {
@@ -225,12 +276,12 @@
     "dpo_email": "dpo@2notasudi.com.br"
   },
   "configuracao_cliente": {
-    "url": "https://api.2notasudi.com.br/mcp/mcp",
+    "url": "https://api.2notasudi.com.br/mcp",
     "auth_header": "X-API-Key: <CARTORIO_API_KEY>",
     "exemplo_mcp_config": {
       "mcpServers": {
         "cartorio-api": {
-          "url": "https://api.2notasudi.com.br/mcp/mcp",
+          "url": "https://api.2notasudi.com.br/mcp",
           "type": "http",
           "headers": {
             "X-API-Key": "<CARTORIO_API_KEY>"

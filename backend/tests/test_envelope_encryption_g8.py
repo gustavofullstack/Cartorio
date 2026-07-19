@@ -166,9 +166,7 @@ def test_envelope_storage_in_db(cipher: EnvelopeEncryption) -> None:
         cpf_envelope=captured["row"].cpf_envelope,
         cpf_kek_id=captured["row"].cpf_kek_id,
     )
-    decrypted = cipher.decrypt(
-        fetched.cpf_envelope, context={"cliente_id": 1}
-    )
+    decrypted = cipher.decrypt(fetched.cpf_envelope, context={"cliente_id": 1})
     assert decrypted == plaintext
 
 
@@ -256,10 +254,7 @@ def test_envelope_binary_layout(cipher: EnvelopeEncryption) -> None:
     # Tail must contain the AAD hash (last 32 bytes when context present).
     # Min envelope = prefix(2+N) + kek_nonce(12) + enc_dek(48) +
     #                data_nonce(12) + ciphertext(>=0) + aad_hash(32)
-    assert (
-        len(envelope)
-        >= 2 + len(kek_id) + NONCE_LEN_BYTES + 48 + NONCE_LEN_BYTES + 32
-    )
+    assert len(envelope) >= 2 + len(kek_id) + NONCE_LEN_BYTES + 48 + NONCE_LEN_BYTES + 32
 
 
 def test_envelope_decimal_byte_lengths(cipher: EnvelopeEncryption) -> None:
@@ -386,8 +381,6 @@ def test_decode_tampered_ciphertext_raises(cipher: EnvelopeEncryption) -> None:
     ],
     ids=["empty", "short", "100x", "binary", "512-random"],
 )
-def test_encrypt_decrypt_various_sizes(
-    cipher: EnvelopeEncryption, plaintext: bytes
-) -> None:
+def test_encrypt_decrypt_various_sizes(cipher: EnvelopeEncryption, plaintext: bytes) -> None:
     envelope = cipher.encrypt(plaintext)
     assert cipher.decrypt(envelope) == plaintext

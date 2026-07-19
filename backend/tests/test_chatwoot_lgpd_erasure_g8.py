@@ -80,9 +80,7 @@ def test_apply_local_anonymization_hashes_cpf_field() -> None:
 
 
 def test_apply_local_anonymization_idempotent_on_placeholders() -> None:
-    once = apply_local_anonymization(
-        {"name": "A", "email": "a@b.co", "phone": "34999999999"}
-    )
+    once = apply_local_anonymization({"name": "A", "email": "a@b.co", "phone": "34999999999"})
     twice = apply_local_anonymization(
         {
             "name": once["name"],

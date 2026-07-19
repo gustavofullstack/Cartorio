@@ -114,9 +114,7 @@ def _load_kek_from_env() -> tuple[str, bytes]:
         try:
             kek_bytes = base64.b64decode(kek_b64, validate=True)
         except (ValueError, TypeError) as exc:
-            raise KekUnavailableError(
-                f"{_ENV_KEK_B64} is not valid base64: {exc}"
-            ) from exc
+            raise KekUnavailableError(f"{_ENV_KEK_B64} is not valid base64: {exc}") from exc
     elif allow_dev:
         # DEV-ONLY deterministic fallback so tests/CI work without KMS.
         # Production MUST set KMS_KEK_B64 (see KekUnavailableError when allow_dev=False).
@@ -125,18 +123,14 @@ def _load_kek_from_env() -> tuple[str, bytes]:
         )
         kek_bytes = hashlib.sha256(b"cartorio-dev-kek-do-not-use-in-prod").digest()
     else:
-        raise KekUnavailableError(
-            f"{_ENV_KEK_B64} is required (KMS_KEK_DEV_FALLBACK=false)"
-        )
+        raise KekUnavailableError(f"{_ENV_KEK_B64} is required (KMS_KEK_DEV_FALLBACK=false)")
 
     if len(kek_bytes) != KEK_LEN_BYTES:
         raise KekUnavailableError(
             f"KEK must be exactly {KEK_LEN_BYTES} bytes, got {len(kek_bytes)}"
         )
     if len(kek_id) > MAX_KEK_ID_LEN:
-        raise KekUnavailableError(
-            f"kek_id too long: {len(kek_id)} > {MAX_KEK_ID_LEN}"
-        )
+        raise KekUnavailableError(f"kek_id too long: {len(kek_id)} > {MAX_KEK_ID_LEN}")
     return kek_id, kek_bytes
 
 
@@ -182,9 +176,7 @@ class EnvelopeEncryption:
                     f"KEK must be exactly {KEK_LEN_BYTES} bytes, got {len(kek_bytes)}"
                 )
             if len(kek_id) > MAX_KEK_ID_LEN:
-                raise KekUnavailableError(
-                    f"kek_id too long: {len(kek_id)} > {MAX_KEK_ID_LEN}"
-                )
+                raise KekUnavailableError(f"kek_id too long: {len(kek_id)} > {MAX_KEK_ID_LEN}")
             self._kek_id = kek_id
             self._kek_bytes = kek_bytes
         else:
@@ -300,7 +292,7 @@ class EnvelopeEncryption:
         # AAD hash is the last 32 bytes if present (only when context was set).
         aad_hash: bytes | None
         if context is not None and len(rest) >= 32:
-            ciphertext = rest[: -32]
+            ciphertext = rest[:-32]
             aad_hash = rest[-32:]
         else:
             ciphertext = rest
@@ -329,9 +321,7 @@ class EnvelopeEncryption:
         except InvalidTag as exc:
             raise EnvelopeAuthError("data auth tag mismatch (tampered ciphertext)") from exc
 
-        logger.debug(
-            "envelope decrypt ok kek_id=%s aad_present=%s", kek_id, aad_hash is not None
-        )
+        logger.debug("envelope decrypt ok kek_id=%s aad_present=%s", kek_id, aad_hash is not None)
         return plaintext
 
     def encrypt_str(self, plaintext: str, context: dict[str, Any] | None = None) -> bytes:
@@ -357,7 +347,16 @@ class EnvelopeEncryption:
             raise EnvelopeDecodeError(f"invalid kek_id_len: {kek_id_len}")
         kek_id = envelope[2 : 2 + kek_id_len].decode("ascii")
         aad_hash: bytes | None = None
-        if len(envelope) > 2 + kek_id_len + NONCE_LEN_BYTES + NONCE_LEN_BYTES + DEK_LEN_BYTES + GCM_TAG_LEN_BYTES + 32:
+        if (
+            len(envelope)
+            > 2
+            + kek_id_len
+            + NONCE_LEN_BYTES
+            + NONCE_LEN_BYTES
+            + DEK_LEN_BYTES
+            + GCM_TAG_LEN_BYTES
+            + 32
+        ):
             aad_hash = envelope[-32:]
         return EnvelopeMeta(version=version, kek_id=kek_id, aad_ctx_hash=aad_hash)
 

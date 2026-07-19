@@ -130,8 +130,35 @@ def test_agendamento_disponibilidade_hora_inicio(client):
 # ============================================================================
 
 
-def test_documento_segunda_via(client):
+def _make_protocolo_db(session, numero="2026-00001", consentimento_lgpd=True):
+    from app.models.protocolo import Protocolo
+    from app.models.cliente import Cliente
+
+    c = Cliente(
+        id=1 if numero == "2026-00001" else 2,
+        cpf_hash=f"hash_{numero}",
+        nome="Joao da Silva",
+        consentimento_lgpd=consentimento_lgpd,
+    )
+    session.add(c)
+    session.flush()
+
+    p = Protocolo(
+        cliente_id=c.id,
+        numero=numero,
+        tipo="escritura_compra_venda",
+        status="em_andamento",
+        canal_origem="web",
+    )
+    session.add(p)
+    session.commit()
+
+
+def test_documento_segunda_via(client, test_session_factory):
     """Gera URL placeholder para PDF."""
+    with test_session_factory() as db:
+        _make_protocolo_db(db, numero="2026-00001")
+
     resp = client.post("/api/v1/documento/segunda-via?protocolo=2026-00001&canal=whatsapp")
     assert resp.status_code == 200
     data = resp.json()
@@ -142,8 +169,11 @@ def test_documento_segunda_via(client):
     assert data["canal"] == "whatsapp"
 
 
-def test_documento_segunda_via_canal_default(client):
+def test_documento_segunda_via_canal_default(client, test_session_factory):
     """Canal default e whatsapp quando nao fornecido."""
+    with test_session_factory() as db:
+        _make_protocolo_db(db, numero="2026-00002")
+
     resp = client.post("/api/v1/documento/segunda-via?protocolo=2026-00002")
     assert resp.status_code == 200
     data = resp.json()

@@ -195,9 +195,7 @@ async def test_rate_limit_ip_ddos_redis_error_fail_open() -> None:
     """_check_ip_ddos: RedisError no pipeline → fail-open."""
     mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake", ddos_per_minute=50)
     client = _pipe_client()
-    client.pipeline.return_value.execute = AsyncMock(
-        side_effect=redis_async.RedisError("timeout")
-    )
+    client.pipeline.return_value.execute = AsyncMock(side_effect=redis_async.RedisError("timeout"))
     mw._client = client  # type: ignore[assignment]
 
     result = await mw._check_ip_ddos("203.0.113.99")
@@ -339,8 +337,8 @@ def test_check_health_category_db_and_redis_fail() -> None:
     assert "redis_error" in result
 
 
-def test_check_health_category_upstream_non_200() -> None:
-    """openclaw/evolution com status != 200 → down; chatwoot 401 → up."""
+def test_check_health_category_upstream_non_200_is_degraded() -> None:
+    """Resposta HTTP inesperada e alcancavel, mas nao confirma saude."""
     from app.api.v1.health_radar_expanded import _check_health_category
 
     def _status_for_url(url: str) -> int:
@@ -348,7 +346,7 @@ def test_check_health_category_upstream_non_200() -> None:
             return 503
         if "evolution" in url or "evo" in url or url.rstrip("/").endswith(":8080"):
             return 502
-        return 401  # chatwoot/supabase/n8n — aceitos como up
+        return 401
 
     async def _get(url: str, *args: object, **kwargs: object) -> MagicMock:
         resp = MagicMock()
@@ -383,12 +381,12 @@ def test_check_health_category_upstream_non_200() -> None:
         settings.n8n_base_url = "http://n8n.local"
         result = asyncio.run(_check_health_category())
 
-    # openclaw e evolution usam ok = status_code == 200
-    assert result["openclaw"]["status"] == "down"
+    assert result["openclaw"]["status"] == "warn"
     assert "HTTP 503" in result["openclaw"]["detail"]
-    assert result["evolution"]["status"] == "down"
-    # chatwoot aceita 401
-    assert result["chatwoot"]["status"] == "up"
+    assert result["evolution"]["status"] == "warn"
+    assert result["chatwoot"]["status"] == "warn"
+    assert result["supabase"]["status"] == "warn"
+    assert result["n8n"]["status"] == "warn"
 
 
 def test_check_health_category_n8n_missing_url() -> None:
@@ -421,11 +419,10 @@ def test_check_health_category_n8n_missing_url() -> None:
         settings.evolution_base_url = "http://evolution.local"
         settings.chatwoot_base_url = "http://chatwoot.local"
         settings.supabase_url = "http://supabase.local"
-        # url = f"{''}/healthz" => "/healthz"; split("/healthz")[0] == ""
         settings.n8n_base_url = ""
         result = asyncio.run(_check_health_category())
 
-    assert result["n8n"]["status"] == "down"
+    assert result["n8n"]["status"] == "warn"
     assert "missing URL config" in result["n8n"]["detail"]
 
 

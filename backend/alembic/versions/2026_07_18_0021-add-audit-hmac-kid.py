@@ -47,18 +47,14 @@ depends_on = None
 def _column_exists(table: str, column: str) -> bool:
     conn = op.get_bind()
     q = sa.text(
-        "SELECT 1 FROM information_schema.columns "
-        "WHERE table_name = :t AND column_name = :c"
+        "SELECT 1 FROM information_schema.columns WHERE table_name = :t AND column_name = :c"
     )
     return conn.execute(q, {"t": table, "c": column}).scalar() is not None
 
 
 def _index_exists(table: str, index: str) -> bool:
     conn = op.get_bind()
-    q = sa.text(
-        "SELECT 1 FROM pg_indexes "
-        "WHERE tablename = :t AND indexname = :i"
-    )
+    q = sa.text("SELECT 1 FROM pg_indexes WHERE tablename = :t AND indexname = :i")
     return conn.execute(q, {"t": table, "i": index}).scalar() is not None
 
 

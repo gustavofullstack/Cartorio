@@ -31,6 +31,26 @@ class TestScrubString:
         result = _scrub_string("Ola, tudo bem?")
         assert result == "Ola, tudo bem?"
 
+    def test_scrub_financeiro_cliente(self) -> None:
+        """Valores financeiros atrelados ao nome de clientes são mascarados (G8.20.T3)."""
+        # Caso 1: cliente com hífen e valor decimal
+        res1 = _scrub_string("cliente: Joao da Silva - valor: 1500.50")
+        assert "[MASKED:financeiro_cliente]" in res1
+        assert "1500.50" not in res1
+        assert "Joao da Silva" not in res1
+
+        # Caso 2: português natural com R$
+        res2 = _scrub_string("cliente João da Silva no valor de R$ 1.500,00")
+        assert "[MASKED:financeiro_cliente]" in res2
+        assert "1.500,00" not in res2
+        assert "João da Silva" not in res2
+
+        # Caso 3: chaves com vírgula e total
+        res3 = _scrub_string("nome=Maria Souza, total=125.00")
+        assert "[MASKED:financeiro_cliente]" in res3
+        assert "125.00" not in res3
+        assert "Maria Souza" not in res3
+
 
 class TestMaskingFilter:
     """Testes do MaskingFilter de logging."""

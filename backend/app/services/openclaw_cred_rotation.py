@@ -114,9 +114,7 @@ def _normalize_fingerprint(value: str) -> str:
     if not body:
         raise UnsafeCredentialError("fingerprint body empty")
     if len(body) < MIN_FP_BODY_LEN:
-        raise UnsafeCredentialError(
-            f"fingerprint too short (min {MIN_FP_BODY_LEN} hex chars)"
-        )
+        raise UnsafeCredentialError(f"fingerprint too short (min {MIN_FP_BODY_LEN} hex chars)")
     if len(body) > max_body:
         raise UnsafeCredentialError(
             f"fingerprint too long (max {max_body} hex chars for this form)"

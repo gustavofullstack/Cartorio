@@ -149,9 +149,7 @@ class N8nNode(BaseModel):
     def _no_pii_in_name(cls, v: str) -> str:
         # LGPD Art. 46 — node name NAO pode conter dado pessoal.
         if _contains_pii(v):
-            raise ValueError(
-                "PII detected in node name (LGPD Art. 46): use only safe identifiers"
-            )
+            raise ValueError("PII detected in node name (LGPD Art. 46): use only safe identifiers")
         return v
 
     @field_validator("webhookId")
@@ -247,16 +245,18 @@ class N8nWorkflow(BaseModel):
     @classmethod
     def _no_pii_in_workflow_text(cls, v: str | None) -> str | None:
         if v is not None and _contains_pii(v):
-            raise ValueError(
-                "PII detected in workflow name/description (LGPD Art. 46)"
-            )
+            raise ValueError("PII detected in workflow name/description (LGPD Art. 46)")
         return v
 
     @field_validator("tags")
     @classmethod
     def _tags_no_pii(cls, v: list[str | dict[str, Any]]) -> list[str | dict[str, Any]]:
         for tag in v:
-            text = tag if isinstance(tag, str) else (tag.get("name", "") if isinstance(tag, dict) else "")
+            text = (
+                tag
+                if isinstance(tag, str)
+                else (tag.get("name", "") if isinstance(tag, dict) else "")
+            )
             if isinstance(text, str) and _contains_pii(text):
                 raise ValueError(f"PII detected in tag (LGPD Art. 46): {text!r}")
         return v

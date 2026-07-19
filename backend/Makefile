@@ -81,7 +81,7 @@ smoke:  ## Smoke test contra API local
 	@curl -s http://localhost:8000/api/v1/health/radar | python3 -m json.tool
 
 .PHONY: mcp-server
-mcp-server:  ## Inicia MCP server (FastMCP) - porta padrao 8100 (MCP_SERVER_PORT)
+mcp-server:  ## Inicia MCP server (FastMCP) - porta padrao 8100 (MCP_SERVER_PORT; endpoint /)
 	uv run python mcp_server.py
 
 .PHONY: alembic-up

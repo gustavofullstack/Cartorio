@@ -389,9 +389,9 @@ async def cartorio_saudacao() -> dict:
 
     return {
         "api_status": 200,
-        "mcp_server": "cartorio-mcp-cabuloso v0.4.0",
+        "mcp_server": "cartorio-mcp-cabuloso v0.6.0",
         "app_name": settings.app_name if settings else "cartorio-api",
-        "app_version": "0.4.0",
+        "app_version": "0.6.0",
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "transport": "streamable_http",
         "lgpd_compliance": True,
@@ -513,7 +513,7 @@ async def super_server_info() -> dict:
     tools_list = await mcp.list_tools()
     return {
         "name": "cartorio-mcp-cabuloso",
-        "version": "0.4.0",
+        "version": "0.6.0",
         "tools_count": len(tools_list),
         "backend": "https://api.2notasudi.com.br",
         "docs": "https://api.2notasudi.com.br/docs",

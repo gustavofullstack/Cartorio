@@ -53,7 +53,9 @@ def test_session_key_format() -> None:
 def test_idempotency_key_format() -> None:
     """RedisKey.idempotency produz chave canonica."""
     assert RedisKey.idempotency("webhook", "abc-def-123") == "cartorio:idem:webhook:abc-def-123"
-    assert RedisKey.idempotency("post", "sha256hexdeadbeef") == "cartorio:idem:post:sha256hexdeadbeef"
+    assert (
+        RedisKey.idempotency("post", "sha256hexdeadbeef") == "cartorio:idem:post:sha256hexdeadbeef"
+    )
 
 
 def test_rate_limit_key_format() -> None:
@@ -79,7 +81,10 @@ def test_rate_limit_key_format() -> None:
 
 def test_cache_key_format() -> None:
     """RedisKey.cache produz chave canonica."""
-    assert RedisKey.cache("emolumento", "escritura_500000") == "cartorio:cache:emolumento:escritura_500000"
+    assert (
+        RedisKey.cache("emolumento", "escritura_500000")
+        == "cartorio:cache:emolumento:escritura_500000"
+    )
     assert RedisKey.cache("lgpd_consent", "cliente_42") == "cartorio:cache:lgpd_consent:cliente_42"
 
 
@@ -192,7 +197,10 @@ def test_legacy_key_normalization() -> None:
     # bot mute
     assert RedisKey.normalize_legacy("bot:mute:telegram:42") == "cartorio:bot_mute:telegram:42"
     # emolumento
-    assert RedisKey.normalize_legacy("emolumento:escritura:5000") == "cartorio:cache:emolumento:escritura_5000"
+    assert (
+        RedisKey.normalize_legacy("emolumento:escritura:5000")
+        == "cartorio:cache:emolumento:escritura_5000"
+    )
     # redlock
     assert RedisKey.normalize_legacy("redlock:alembic") == "cartorio:lock:redlock:alembic"
     # already canonical — idempotent
@@ -285,7 +293,10 @@ def test_three_callers_refactored_emit_canonical_prefix() -> None:
     digest = hashlib.sha256(b"payload").hexdigest()
     idem_key = _hash_idempotency_key("idem-key", "/api/v1/foo", "POST")
     assert idem_key.startswith(f"{PREFIX}:idem:")
-    assert digest == "7091956c2c81b30c48d54b6a08e9c65e6a5ad05c5f517989e6bb80e4d5a1d6be" or len(digest) == 64
+    assert (
+        digest == "7091956c2c81b30c48d54b6a08e9c65e6a5ad05c5f517989e6bb80e4d5a1d6be"
+        or len(digest) == 64
+    )
     # alias used
     _ = digest  # pragma: no cover -- apenas garante que eh hex64
 

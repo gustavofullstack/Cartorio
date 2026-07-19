@@ -47,7 +47,7 @@ class TestLGPDSafeFormatting:
     def test_cpf_in_description_is_redacted(self, alert_module) -> None:
         payload = {
             "version": "4",
-            "groupKey": "{}:{alertname=\"Test\"}",
+            "groupKey": '{}:{alertname="Test"}',
             "status": "firing",
             "receiver": "cartorio-telegram-default",
             "alerts": [
@@ -75,7 +75,7 @@ class TestLGPDSafeFormatting:
     def test_email_phone_protocol_redacted(self, alert_module) -> None:
         payload = {
             "version": "4",
-            "groupKey": "{}:{alertname=\"Test\"}",
+            "groupKey": '{}:{alertname="Test"}',
             "status": "firing",
             "receiver": "x",
             "alerts": [
@@ -122,7 +122,7 @@ class TestAlertManagerPayloadSchema:
 
         payload = AlertManagerPayload(
             version="4",
-            groupKey="{}:{alertname=\"X\"}",
+            groupKey='{}:{alertname="X"}',
             status="firing",
             receiver="cartorio-telegram-default",
             alerts=[
@@ -150,7 +150,7 @@ class TestAlertManagerPayloadSchema:
         with pytest.raises(ValidationError) as exc_info:
             AlertManagerPayload(
                 version="4",
-                groupKey="{}:{alertname=\"X\"}",
+                groupKey='{}:{alertname="X"}',
                 status="firing",
                 receiver="x",
                 evil_pii_field="123.456.789-00",  # extra, NÃO documentado
@@ -325,7 +325,7 @@ class TestAlertManagerEndpoint:
     def _build_payload(self, severity: str = "warning") -> dict:
         return {
             "version": "4",
-            "groupKey": "{}:{alertname=\"Test\"}",
+            "groupKey": '{}:{alertname="Test"}',
             "status": "firing",
             "receiver": "cartorio-telegram-default",
             "alerts": [
@@ -443,7 +443,7 @@ class TestAlertManagerConfig:
 def _build_payload(severity: str = "warning", status: str = "firing") -> dict:
     return {
         "version": "4",
-        "groupKey": "{}:{alertname=\"Test\"}",
+        "groupKey": '{}:{alertname="Test"}',
         "status": status,
         "receiver": "cartorio-telegram-default",
         "alerts": [

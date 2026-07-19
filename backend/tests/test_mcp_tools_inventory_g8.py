@@ -131,8 +131,9 @@ class TestMCPAppMount:
     def test_mcp_app_returns_starlette_app(self, mcp_module):
         app = mcp_module.mcp_app()
         # Starlette/FastAPI apps têm atributo routes ou router
-        assert hasattr(app, "routes") or hasattr(app, "router"), \
+        assert hasattr(app, "routes") or hasattr(app, "router"), (
             f"mcp_app() retornou {type(app)}, não é Starlette app"
+        )
 
 
 class TestMCPSourceCode:
@@ -186,5 +187,6 @@ class TestMCPIntegration:
     def test_tools_count_matches_wave26_snapshot(self, mcp_tools):
         # Wave 26 / lesson 198 reporta 13 tools. Aceito 13-15 (margem para adições controladas)
         count = len(mcp_tools)
-        assert 13 <= count <= 20, \
+        assert 13 <= count <= 20, (
             f"Tools count {count} fora da margem esperada [13-20]. Wave 26=13, revisar regressão."
+        )

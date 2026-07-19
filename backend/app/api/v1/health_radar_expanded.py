@@ -211,7 +211,9 @@ async def _check_traefik(domain: str) -> dict[str, Any]:
         }
 
 
-async def _check_socket(host: str, port: int, timeout: float = SSH_SOCKET_TIMEOUT) -> dict[str, Any]:
+async def _check_socket(
+    host: str, port: int, timeout: float = SSH_SOCKET_TIMEOUT
+) -> dict[str, Any]:
     """TCP socket connect check (host:port). UP = open; DOWN = connection refused/timeout.
 
     Args:
@@ -271,8 +273,8 @@ def _check_disk(path: str) -> dict[str, Any]:
     start = time.perf_counter()
     try:
         usage = shutil.disk_usage(path)
-        free_gb = usage.free / (1024 ** 3)
-        total_gb = usage.total / (1024 ** 3)
+        free_gb = usage.free / (1024**3)
+        total_gb = usage.total / (1024**3)
         percent_used = (usage.used / usage.total) * 100 if usage.total else 0
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         status = "warn" if percent_used > 85 else "up"
@@ -342,56 +344,56 @@ async def _check_health_category() -> dict[str, dict[str, Any]]:
         "detail": "Redis PING" if redis_ok else "redis.from_url/ping failed",
     }
 
-    async with httpx.AsyncClient(timeout=3.0) as client:
-        for name, url in [
-            ("openclaw", f"{settings.openclaw_base_url}/health"),
-            ("evolution", f"{settings.evolution_base_url}/"),
-        ]:
-            s = time.perf_counter()
-            try:
-                resp = await client.get(url)
-                elapsed_ms = int((time.perf_counter() - s) * 1000)
-                ok = resp.status_code == 200
-                results[name] = {
-                    "status": "up" if ok else "down",
-                    "latency_ms": elapsed_ms,
-                    "detail": f"HTTP {resp.status_code}",
-                }
-            except Exception as exc:
-                results[name] = {
-                    "status": "down",
-                    "latency_ms": int((time.perf_counter() - s) * 1000),
-                    "detail": f"{type(exc).__name__}: {str(exc)[:120]}",
-                }
+    async def probe_http(
+        client: httpx.AsyncClient,
+        name: str,
+        url: str | None,
+        accepted_statuses: tuple[int, ...],
+    ) -> tuple[str, dict[str, Any]]:
+        """Sonda HTTP: resposta inesperada e degradacao, nao disponibilidade."""
+        start = time.perf_counter()
+        if not url:
+            return name, {
+                "status": "warn",
+                "latency_ms": 0,
+                "detail": "missing URL config; health cannot be verified",
+            }
+        try:
+            response = await client.get(url)
+        except Exception as exc:
+            return name, {
+                "status": "down",
+                "latency_ms": int((time.perf_counter() - start) * 1000),
+                "detail": f"{type(exc).__name__}: {str(exc)[:120]}",
+            }
+        elapsed_ms = int((time.perf_counter() - start) * 1000)
+        if response.status_code in accepted_statuses:
+            return name, {
+                "status": "up",
+                "latency_ms": elapsed_ms,
+                "detail": f"HTTP {response.status_code}",
+            }
+        return name, {
+            "status": "warn",
+            "latency_ms": elapsed_ms,
+            "detail": f"HTTP {response.status_code}; endpoint reachable but health is not confirmed",
+        }
 
-        for name, url in [
-            ("chatwoot", f"{settings.chatwoot_base_url}/health"),
-            ("supabase", f"{settings.supabase_url}/auth/v1/health"),
-            ("n8n", f"{settings.n8n_base_url}/healthz"),
-        ]:
-            s = time.perf_counter()
-            try:
-                if not url.split("/healthz")[0] and name == "n8n":
-                    results[name] = {
-                        "status": "down",
-                        "latency_ms": int((time.perf_counter() - s) * 1000),
-                        "detail": f"missing URL config: {settings.n8n_base_url}",
-                    }
-                    continue
-                resp = await client.get(url)
-                elapsed_ms = int((time.perf_counter() - s) * 1000)
-                ok = resp.status_code in (200, 201, 401, 403, 405)
-                results[name] = {
-                    "status": "up" if ok else "down",
-                    "latency_ms": elapsed_ms,
-                    "detail": f"HTTP {resp.status_code}",
-                }
-            except Exception as exc:
-                results[name] = {
-                    "status": "down",
-                    "latency_ms": int((time.perf_counter() - s) * 1000),
-                    "detail": f"{type(exc).__name__}: {str(exc)[:120]}",
-                }
+    probes = (
+        ("openclaw", settings.openclaw_base_url, "/health", (200,)),
+        ("evolution", settings.evolution_base_url, "/", (200,)),
+        ("chatwoot", settings.chatwoot_base_url, "/health", (200, 201)),
+        ("supabase", settings.supabase_url, "/auth/v1/health", (200,)),
+        ("n8n", settings.n8n_base_url, "/healthz", (200,)),
+    )
+    async with httpx.AsyncClient(timeout=3.0) as client:
+        checked = await asyncio.gather(
+            *(
+                probe_http(client, name, f"{base_url}{path}" if base_url else None, accepted)
+                for name, base_url, path, accepted in probes
+            )
+        )
+    results.update(dict(checked))
 
     return results
 
@@ -545,9 +547,7 @@ def _scan_count(
     try:
         cursor = 0
         while True:
-            cursor, batch = redis_client.scan(
-                cursor=cursor, match=pattern, count=500
-            )
+            cursor, batch = redis_client.scan(cursor=cursor, match=pattern, count=500)
             for k in batch:
                 count += 1
                 if count > hard_cap:
@@ -556,10 +556,7 @@ def _scan_count(
                     try:
                         ttl = redis_client.ttl(k)
                         # ttl == -1 (sem TTL) e -2 (nao existe) ignorados
-                        if (
-                            expiring_soon_sec is not None
-                            and 0 < ttl <= expiring_soon_sec
-                        ):
+                        if expiring_soon_sec is not None and 0 < ttl <= expiring_soon_sec:
                             soon += 1
                         sampled += 1
                     except Exception:  # noqa: BLE001
@@ -722,9 +719,7 @@ def _check_redis_queues_sync(
     }
 
     elapsed = int((time.perf_counter() - start) * 1000)
-    exhausted_count = sum(
-        1 for q in queues.values() if isinstance(q, dict) and q.get("exhausted")
-    )
+    exhausted_count = sum(1 for q in queues.values() if isinstance(q, dict) and q.get("exhausted"))
 
     # Status logico:
     # - down: redis offline (early-return acima)
@@ -736,8 +731,7 @@ def _check_redis_queues_sync(
     elif exhausted_count > 0:
         status = "warn"
         detail = (
-            f"{exhausted_count} namespace(s) excederam cap={scan_hard_cap} "
-            f"(saturacao provavel)"
+            f"{exhausted_count} namespace(s) excederam cap={scan_hard_cap} (saturacao provavel)"
         )
     else:
         status = "up"

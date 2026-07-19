@@ -51,16 +51,16 @@ class RoutingResilienceReport:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'n': self.n,
-            'fail_rate': self.fail_rate,
-            'max_retries': self.max_retries,
-            'successes': self.successes,
-            'failures': self.failures,
-            'retries_used': self.retries_used,
-            'success_rate': self.success_rate,
-            'backoff_schedule_sec': list(self.backoff_schedule_sec),
-            'total_backoff_sec': self.total_backoff_sec,
-            'attempt_count': len(self.attempts),
+            "n": self.n,
+            "fail_rate": self.fail_rate,
+            "max_retries": self.max_retries,
+            "successes": self.successes,
+            "failures": self.failures,
+            "retries_used": self.retries_used,
+            "success_rate": self.success_rate,
+            "backoff_schedule_sec": list(self.backoff_schedule_sec),
+            "total_backoff_sec": self.total_backoff_sec,
+            "attempt_count": len(self.attempts),
         }
 
 
@@ -80,9 +80,9 @@ def exponential_backoff_schedule(
       max_retries=3 → (1.0, 2.0, 4.0)
     """
     if max_retries < 0:
-        raise ValueError('max_retries must be >= 0')
+        raise ValueError("max_retries must be >= 0")
     if base_delay_sec <= 0:
-        raise ValueError('base_delay_sec must be > 0')
+        raise ValueError("base_delay_sec must be > 0")
     return tuple(base_delay_sec * (2**k) for k in range(max_retries))
 
 
@@ -117,13 +117,13 @@ def simulate_requests(
         ValueError: On invalid n / fail_rate / max_retries / base_delay_sec.
     """
     if n < 0:
-        raise ValueError('n must be >= 0')
+        raise ValueError("n must be >= 0")
     if not 0.0 <= fail_rate <= 1.0:
-        raise ValueError('fail_rate must be in [0.0, 1.0]')
+        raise ValueError("fail_rate must be in [0.0, 1.0]")
     if max_retries < 0:
-        raise ValueError('max_retries must be >= 0')
+        raise ValueError("max_retries must be >= 0")
     if base_delay_sec <= 0:
-        raise ValueError('base_delay_sec must be > 0')
+        raise ValueError("base_delay_sec must be > 0")
 
     schedule = exponential_backoff_schedule(max_retries, base_delay_sec=base_delay_sec)
     rng = random.Random(seed)

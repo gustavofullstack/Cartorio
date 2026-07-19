@@ -240,7 +240,7 @@ class RedisKey:
         # scope=default; quando tem 2+ segmentos, usamos o primeiro como
         # scope e o resto (sanitizado) como id.
         def _expand(prefix: str, ns: str, default_scope: str) -> str:
-            rest = key[len(prefix):]
+            rest = key[len(prefix) :]
             rest_parts = rest.split(":")
             if len(rest_parts) == 1:
                 scope = default_scope
@@ -258,7 +258,7 @@ class RedisKey:
 
             Exemplo: emolumento:<tipo>:<valor> -> cartorio:cache:emolumento:<tipo>_<valor>
             """
-            rest = key[len(prefix):]
+            rest = key[len(prefix) :]
             if not rest:
                 raise ValueError(f"chave legacy vazia apos prefixo {prefix!r}")
             scope_id = rest.replace(":", "_")
@@ -283,10 +283,12 @@ class RedisKey:
         # Fallback generico: tenta extrair pelo menos 2 componentes
         parts = key.split(":", 3)
         if len(parts) < 2:
-            raise ValueError(
-                f"nao foi possivel normalizar chave legacy: {legacy_key!r}"
-            )
-        return _build(_clean_namespace(parts[0]), "default" if len(parts) == 2 else _clean_scope(parts[1]), ":".join(parts[1:]))
+            raise ValueError(f"nao foi possivel normalizar chave legacy: {legacy_key!r}")
+        return _build(
+            _clean_namespace(parts[0]),
+            "default" if len(parts) == 2 else _clean_scope(parts[1]),
+            ":".join(parts[1:]),
+        )
 
     @staticmethod
     def is_valid(key: str) -> bool:

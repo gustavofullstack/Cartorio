@@ -17,13 +17,13 @@ from typing import Any
 
 # Domínios canônicos (Lesson 179 / G7 DNS)
 EXPECTED_HOSTS: tuple[str, ...] = (
-    'api.2notasudi.com.br',
-    'agent.2notasudi.com.br',
-    'whatsapp.2notasudi.com.br',
-    'flow.2notasudi.com.br',
-    'chat.2notasudi.com.br',
-    'easypanel.2notasudi.com.br',
-    'supbase.2notasudi.com.br',
+    "api.2notasudi.com.br",
+    "agent.2notasudi.com.br",
+    "whatsapp.2notasudi.com.br",
+    "flow.2notasudi.com.br",
+    "chat.2notasudi.com.br",
+    "easypanel.2notasudi.com.br",
+    "supbase.2notasudi.com.br",
 )
 
 
@@ -39,14 +39,14 @@ class DnsCheckResult:
 class DnsCiReport:
     ok: bool
     checks: list[DnsCheckResult] = field(default_factory=list)
-    mode: str = 'socket'
+    mode: str = "socket"
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'ok': self.ok,
-            'mode': self.mode,
-            'checks': [asdict(c) for c in self.checks],
-            'cloudflare_token_present': bool(os.environ.get('CLOUDFLARE_API_TOKEN')),
+            "ok": self.ok,
+            "mode": self.mode,
+            "checks": [asdict(c) for c in self.checks],
+            "cloudflare_token_present": bool(os.environ.get("CLOUDFLARE_API_TOKEN")),
         }
 
 
@@ -62,12 +62,12 @@ def resolve_host(host: str, timeout: float = 3.0) -> DnsCheckResult:
             socket.setdefaulttimeout(old)
         ms = int((time.perf_counter() - start) * 1000)
         if not infos:
-            return DnsCheckResult(host, False, ms, 'empty result')
+            return DnsCheckResult(host, False, ms, "empty result")
         addr = infos[0][4][0]
-        return DnsCheckResult(host, True, ms, f'resolved:{addr}')
+        return DnsCheckResult(host, True, ms, f"resolved:{addr}")
     except Exception as exc:  # noqa: BLE001
         ms = int((time.perf_counter() - start) * 1000)
-        return DnsCheckResult(host, False, ms, f'{type(exc).__name__}')
+        return DnsCheckResult(host, False, ms, f"{type(exc).__name__}")
 
 
 def run_dns_ci_checks(
@@ -82,19 +82,19 @@ def run_dns_ci_checks(
         ok = all(c.ok for c in checks)
     else:
         # soft: pelo menos api.* ou qualquer um
-        ok = any(c.ok for c in checks if c.host.startswith('api.')) or any(c.ok for c in checks)
-    return DnsCiReport(ok=ok, checks=checks, mode='socket')
+        ok = any(c.ok for c in checks if c.host.startswith("api.")) or any(c.ok for c in checks)
+    return DnsCiReport(ok=ok, checks=checks, mode="socket")
 
 
 def cloudflare_configured() -> bool:
-    return bool(os.environ.get('CLOUDFLARE_API_TOKEN') and os.environ.get('CLOUDFLARE_ZONE_ID'))
+    return bool(os.environ.get("CLOUDFLARE_API_TOKEN") and os.environ.get("CLOUDFLARE_ZONE_ID"))
 
 
 __all__ = [
-    'EXPECTED_HOSTS',
-    'DnsCheckResult',
-    'DnsCiReport',
-    'cloudflare_configured',
-    'resolve_host',
-    'run_dns_ci_checks',
+    "EXPECTED_HOSTS",
+    "DnsCheckResult",
+    "DnsCiReport",
+    "cloudflare_configured",
+    "resolve_host",
+    "run_dns_ci_checks",
 ]

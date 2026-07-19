@@ -38,53 +38,53 @@ class FakeRedis:
 
 def test_mute_key_normalized() -> None:
     """G8.12.T3: chave canonica via RedisKey.bot_mute."""
-    assert mute_key('Telegram', '123') == 'cartorio:bot_mute:telegram:123'
+    assert mute_key("Telegram", "123") == "cartorio:bot_mute:telegram:123"
 
 
 def test_mute_key_requires_conversation() -> None:
     with pytest.raises(ValueError):
-        mute_key('telegram', '')
+        mute_key("telegram", "")
 
 
 def test_mute_and_check() -> None:
     r = FakeRedis()
-    key = mute_bot(r, 'telegram', '42', reason='escrevente', ttl_sec=60)
-    assert key == 'cartorio:bot_mute:telegram:42'
-    assert is_bot_muted(r, 'telegram', '42') is True
+    key = mute_bot(r, "telegram", "42", reason="escrevente", ttl_sec=60)
+    assert key == "cartorio:bot_mute:telegram:42"
+    assert is_bot_muted(r, "telegram", "42") is True
     assert r.ttls[key] == 60
 
 
 def test_unmute() -> None:
     r = FakeRedis()
-    mute_bot(r, 'whatsapp', '99')
-    assert is_bot_muted(r, 'whatsapp', '99') is True
-    assert unmute_bot(r, 'whatsapp', '99') is True
-    assert is_bot_muted(r, 'whatsapp', '99') is False
+    mute_bot(r, "whatsapp", "99")
+    assert is_bot_muted(r, "whatsapp", "99") is True
+    assert unmute_bot(r, "whatsapp", "99") is True
+    assert is_bot_muted(r, "whatsapp", "99") is False
 
 
 def test_not_muted_by_default() -> None:
     r = FakeRedis()
-    assert is_bot_muted(r, 'telegram', '1') is False
+    assert is_bot_muted(r, "telegram", "1") is False
 
 
 def test_fail_open_on_redis_error() -> None:
     class Boom:
         def get(self, name: str):
-            raise RuntimeError('down')
+            raise RuntimeError("down")
 
-    assert is_bot_muted(Boom(), 'telegram', '1') is False
+    assert is_bot_muted(Boom(), "telegram", "1") is False
 
 
 def test_parse_mute_value() -> None:
-    assert parse_mute_value(None) == (False, '')
-    assert parse_mute_value(b'1|hitl') == (True, 'hitl')
-    assert parse_mute_value('0') == (False, '')
+    assert parse_mute_value(None) == (False, "")
+    assert parse_mute_value(b"1|hitl") == (True, "hitl")
+    assert parse_mute_value("0") == (False, "")
 
 
 def test_config_prefix() -> None:
     """G8.12.T3: prefix eh ignorado — chave canonica via RedisKey.bot_mute."""
     r = FakeRedis()
-    cfg = BotMuteConfig(ttl_sec=10, key_prefix='x:mute')
-    mute_bot(r, 'tg', '7', config=cfg)
+    cfg = BotMuteConfig(ttl_sec=10, key_prefix="x:mute")
+    mute_bot(r, "tg", "7", config=cfg)
     # Formato canonico G8.12.T3 (prefix eh back-compat shim)
-    assert 'cartorio:bot_mute:tg:7' in r.store
+    assert "cartorio:bot_mute:tg:7" in r.store

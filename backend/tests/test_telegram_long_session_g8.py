@@ -35,8 +35,8 @@ class FakeRedis:
 def _build_session(turns: int) -> list[str]:
     hist: list[str] = []
     for i in range(turns):
-        hist.append(f'user: pergunta numero {i} sobre escritura e certidao')
-        hist.append(f'bot: resposta numero {i} com orientacao HITL')
+        hist.append(f"user: pergunta numero {i} sobre escritura e certidao")
+        hist.append(f"bot: resposta numero {i} com orientacao HITL")
     return hist
 
 
@@ -46,26 +46,26 @@ def test_long_session_20_turns_token_budget() -> None:
     trimmed = trim_history_to_token_budget(hist, cfg.max_tokens, min_keep=cfg.min_keep)
     assert len(trimmed) < len(hist)
     assert len(trimmed) >= cfg.min_keep
-    assert estimate_tokens('\n'.join(trimmed)) <= cfg.max_tokens + 80  # slack + min_keep
+    assert estimate_tokens("\n".join(trimmed)) <= cfg.max_tokens + 80  # slack + min_keep
 
 
 def test_long_session_keeps_newest() -> None:
     hist = _build_session(15)
     trimmed = trim_history_to_token_budget(hist, max_tokens=200, min_keep=2)
-    assert trimmed[-1].startswith('bot:')
-    assert '14' in trimmed[-1] or '13' in trimmed[-1] or '12' in trimmed[-1]
+    assert trimmed[-1].startswith("bot:")
+    assert "14" in trimmed[-1] or "13" in trimmed[-1] or "12" in trimmed[-1]
 
 
 def test_session_with_cpf_scrubbed() -> None:
-    raw = 'Meu CPF e 529.982.247-25 quero certidao'
+    raw = "Meu CPF e 529.982.247-25 quero certidao"
     cleaned = scrub(raw).text
-    assert '529' not in cleaned or '***' in cleaned or 'XXX' in cleaned or cleaned != raw
+    assert "529" not in cleaned or "***" in cleaned or "XXX" in cleaned or cleaned != raw
 
 
 def test_hitl_mute_blocks_long_session() -> None:
     r = FakeRedis()
-    mute_bot(r, 'telegram', '999')
-    assert is_bot_muted(r, 'telegram', '999') is True
+    mute_bot(r, "telegram", "999")
+    assert is_bot_muted(r, "telegram", "999") is True
 
 
 def test_empty_history() -> None:
@@ -89,12 +89,12 @@ def test_alternating_roles_intact_suffix() -> None:
     hist = _build_session(10)
     out = trim_history_to_token_budget(hist, 400, min_keep=4)
     # últimas 2 devem ser user/bot ou bot/user par
-    assert any(x.startswith('user:') for x in out[-4:])
-    assert any(x.startswith('bot:') for x in out[-4:])
+    assert any(x.startswith("user:") for x in out[-4:])
+    assert any(x.startswith("bot:") for x in out[-4:])
 
 
 def test_estimate_tokens_monotonic() -> None:
-    assert estimate_tokens('a' * 40) >= estimate_tokens('a' * 10)
+    assert estimate_tokens("a" * 40) >= estimate_tokens("a" * 10)
 
 
 def test_config_defaults() -> None:

@@ -36,9 +36,9 @@ def test_exponential_backoff_custom_base() -> None:
 
 
 def test_exponential_backoff_rejects_invalid() -> None:
-    with pytest.raises(ValueError, match='max_retries'):
+    with pytest.raises(ValueError, match="max_retries"):
         exponential_backoff_schedule(-1)
-    with pytest.raises(ValueError, match='base_delay'):
+    with pytest.raises(ValueError, match="base_delay"):
         exponential_backoff_schedule(1, base_delay_sec=0)
 
 
@@ -48,13 +48,13 @@ def test_exponential_backoff_rejects_invalid() -> None:
 
 
 def test_simulate_rejects_bad_params() -> None:
-    with pytest.raises(ValueError, match='n must'):
+    with pytest.raises(ValueError, match="n must"):
         simulate_requests(-1, 0.1, 1)
-    with pytest.raises(ValueError, match='fail_rate'):
+    with pytest.raises(ValueError, match="fail_rate"):
         simulate_requests(1, 1.5, 1)
-    with pytest.raises(ValueError, match='fail_rate'):
+    with pytest.raises(ValueError, match="fail_rate"):
         simulate_requests(1, -0.01, 1)
-    with pytest.raises(ValueError, match='max_retries'):
+    with pytest.raises(ValueError, match="max_retries"):
         simulate_requests(1, 0.1, -1)
 
 
@@ -135,13 +135,13 @@ def test_retries_improve_success_under_loss() -> None:
 def test_report_to_dict_keys() -> None:
     report = simulate_requests(5, 0.2, 2, seed=SEED)
     d = report.to_dict()
-    assert d['n'] == 5
-    assert d['fail_rate'] == 0.2
-    assert d['max_retries'] == 2
-    assert 'success_rate' in d
-    assert 'retries_used' in d
-    assert d['backoff_schedule_sec'] == [1.0, 2.0]
-    assert d['successes'] + d['failures'] == 5
+    assert d["n"] == 5
+    assert d["fail_rate"] == 0.2
+    assert d["max_retries"] == 2
+    assert "success_rate" in d
+    assert "retries_used" in d
+    assert d["backoff_schedule_sec"] == [1.0, 2.0]
+    assert d["successes"] + d["failures"] == 5
 
 
 def test_record_attempts_shape() -> None:

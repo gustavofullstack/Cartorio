@@ -204,9 +204,7 @@ class HmacKeyRouter:
                 raise KeyError(f"Unknown HMAC kid: {kid!r}")
             entry = self._keys[kid]
             if entry["status"] == KeyStatus.DEPRECATED:
-                raise KeyError(
-                    f"HMAC kid {kid!r} deprecated; past grace period"
-                )
+                raise KeyError(f"HMAC kid {kid!r} deprecated; past grace period")
             return entry["secret"]
 
     def has_kid(self, kid: str) -> bool:
@@ -219,9 +217,7 @@ class HmacKeyRouter:
                 return None
             return self._keys[kid]["status"]
 
-    def cleanup_rotated_keys(
-        self, grace_period_days: int = DEFAULT_GRACE_PERIOD_DAYS
-    ) -> list[str]:
+    def cleanup_rotated_keys(self, grace_period_days: int = DEFAULT_GRACE_PERIOD_DAYS) -> list[str]:
         """Marca keys em ``rotating`` alem do grace period como ``deprecated``.
 
         Returns:
@@ -257,9 +253,7 @@ class HmacKeyRouter:
                     "status": entry["status"],
                     "created_at": entry["created_at"].isoformat(),
                     "rotated_at": (
-                        entry["rotated_at"].isoformat()
-                        if entry.get("rotated_at")
-                        else None
+                        entry["rotated_at"].isoformat() if entry.get("rotated_at") else None
                     ),
                     "length": len(entry["secret"]),
                 }

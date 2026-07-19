@@ -7,15 +7,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RETENTION_SCRIPT = ROOT / "scripts" / "lgpd_retention_job.py"
-CRON_MIGRATION = ROOT / "infra" / "supabase" / "migrations" / "2026_06_24_0002-supabase-cron-vault-final.sql"
-GUARD_MIGRATION = ROOT / "infra" / "supabase" / "migrations" / "2026_07_19_0001-audit-log-retention-guard.sql"
+CRON_MIGRATION = (
+    ROOT / "infra" / "supabase" / "migrations" / "2026_06_24_0002-supabase-cron-vault-final.sql"
+)
+GUARD_MIGRATION = (
+    ROOT / "infra" / "supabase" / "migrations" / "2026_07_19_0001-audit-log-retention-guard.sql"
+)
 
 
 def test_retention_script_never_offers_audit_log_as_a_deletion_target() -> None:
     """A CLI retention invocation must not be able to select audit_log."""
     source = RETENTION_SCRIPT.read_text(encoding="utf-8")
 
-    rules_source = source.split("RETENTION_RULES =", maxsplit=1)[1].split("\n\n\ndef get_db_config", 1)[0]
+    rules_source = source.split("RETENTION_RULES =", maxsplit=1)[1].split(
+        "\n\n\ndef get_db_config", 1
+    )[0]
     assert '"audit_log"' not in rules_source
 
 

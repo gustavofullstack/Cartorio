@@ -28,6 +28,7 @@ LGPD Art. 46 / Art. 6 VIII (prevencao + minimizacao):
 - Re-exporta scrubbing + deteccao + hashing ja revisados pela auditoria
   cartorio-lgpd (LGPD-AUDIT-2026-06-23 / 24 / 25).
 """
+
 from __future__ import annotations
 
 import warnings

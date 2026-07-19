@@ -105,9 +105,7 @@ def _build_expected() -> list[dict[str, Any]]:
         )
         join_col = AUTH_OWN_JOIN_COL[table]
         # Placeholder 0004 (inclui OR IS NULL — gap G1 documentado no G7 audit)
-        using_own = (
-            f"({join_col}::text = auth.uid()::text OR {join_col} IS NULL)"
-        )
+        using_own = f"({join_col}::text = auth.uid()::text OR {join_col} IS NULL)"
         policies.append(
             _policy(
                 "authenticated_read_own",
@@ -138,10 +136,7 @@ def expected_policy_keys(
     tables: Iterable[str] | None = None,
 ) -> set[tuple[str, str, str, tuple[str, ...]]]:
     """Conjunto de chaves canônicas (name, table, cmd, roles)."""
-    return {
-        (p["name"], p["table"], p["cmd"], p["roles"])
-        for p in list_expected_policies(tables)
-    }
+    return {(p["name"], p["table"], p["cmd"], p["roles"]) for p in list_expected_policies(tables)}
 
 
 def _normalize_roles(raw: Any) -> tuple[str, ...]:
@@ -181,18 +176,8 @@ def normalize_policy_row(row: Mapping[str, Any]) -> tuple[str, str, str, tuple[s
       cmd|command|cmd_type
       roles|role|grantee
     """
-    name = (
-        row.get("policyname")
-        or row.get("name")
-        or row.get("policy_name")
-        or ""
-    )
-    table = (
-        row.get("tablename")
-        or row.get("table")
-        or row.get("table_name")
-        or ""
-    )
+    name = row.get("policyname") or row.get("name") or row.get("policy_name") or ""
+    table = row.get("tablename") or row.get("table") or row.get("table_name") or ""
     cmd = _normalize_cmd(row.get("cmd") or row.get("command") or row.get("cmd_type"))
     roles = _normalize_roles(
         row.get("roles") if "roles" in row else row.get("role") or row.get("grantee")
@@ -244,16 +229,12 @@ def validate_rls_inventory(
           "summary": str,
         }
     """
-    scope_tables = tuple(
-        t.lower() for t in (tables if tables is not None else PII_CLIENTE_TABLES)
-    )
+    scope_tables = tuple(t.lower() for t in (tables if tables is not None else PII_CLIENTE_TABLES))
     scope_set = set(scope_tables)
 
     expected = list_expected_policies(scope_tables)
     if strict_roles:
-        expected_keys = {
-            (p["name"], p["table"], p["cmd"], p["roles"]) for p in expected
-        }
+        expected_keys = {(p["name"], p["table"], p["cmd"], p["roles"]) for p in expected}
     else:
         expected_keys = {(p["name"], p["table"], p["cmd"]) for p in expected}  # type: ignore[misc]
 
@@ -268,9 +249,7 @@ def validate_rls_inventory(
         if not name or not table:
             continue
         if table not in scope_set:
-            out_of_scope.append(
-                {"name": name, "table": table, "cmd": cmd, "roles": list(roles)}
-            )
+            out_of_scope.append({"name": name, "table": table, "cmd": cmd, "roles": list(roles)})
             continue
         key = (name, table, cmd, roles) if strict_roles else (name, table, cmd)
         observed_keys.add(key)

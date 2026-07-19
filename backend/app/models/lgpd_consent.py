@@ -2,6 +2,7 @@
 
 Audit trail de consentimento (LGPD art. 37 - registro de operacoes).
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

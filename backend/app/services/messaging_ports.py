@@ -43,14 +43,14 @@ class LoggingEmailSender:
     """Adapter default: só loga (dev/test)."""
 
     def send(self, message: EmailMessage) -> bool:
-        logger.info('email.send to=%s subject=%s', message.to[:3] + '***', message.subject[:40])
+        logger.info("email.send to=%s subject=%s", message.to[:3] + "***", message.subject[:40])
         return True
 
 
 class LoggingMessageSender:
     def send(self, message: ChatMessage) -> bool:
         logger.info(
-            'msg.send channel=%s recipient_hash=%s len=%d',
+            "msg.send channel=%s recipient_hash=%s len=%d",
             message.channel,
             hash(message.recipient_id) % 10_000,
             len(message.text),
@@ -99,14 +99,14 @@ def build_default_notification_service() -> NotificationService:
 
 
 __all__ = [
-    'ChatMessage',
-    'EmailMessage',
-    'EmailSender',
-    'LoggingEmailSender',
-    'LoggingMessageSender',
-    'MessageSender',
-    'NotificationService',
-    'RecordingEmailSender',
-    'RecordingMessageSender',
-    'build_default_notification_service',
+    "ChatMessage",
+    "EmailMessage",
+    "EmailSender",
+    "LoggingEmailSender",
+    "LoggingMessageSender",
+    "MessageSender",
+    "NotificationService",
+    "RecordingEmailSender",
+    "RecordingMessageSender",
+    "build_default_notification_service",
 ]

@@ -52,14 +52,14 @@ def test_stale_by_timeout() -> None:
 
 def test_build_ping_payload() -> None:
     p = build_ping_payload()
-    assert p['type'] == 'ping'
-    assert 'ts' in p
+    assert p["type"] == "ping"
+    assert "ts" in p
 
 
 def test_is_pong_message() -> None:
-    assert is_pong_message({'type': 'pong'}) is True
-    assert is_pong_message({'type': 'ping'}) is False
-    assert is_pong_message('x') is False
+    assert is_pong_message({"type": "pong"}) is True
+    assert is_pong_message({"type": "ping"}) is False
+    assert is_pong_message("x") is False
 
 
 def test_config_defaults() -> None:

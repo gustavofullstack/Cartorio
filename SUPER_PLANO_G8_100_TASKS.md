@@ -135,7 +135,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.15.T1 | Adicionar instrumentação com Prometheus para latência de processamento de IA. | [x] | cartorio-sre |
 | G8.15.T2 | Habilitar alertas no AlertManager do Prometheus enviando logs formatados ao Telegram. | [x] | cartorio-sre |
-| G8.15.T3 | Validar que labels do Prometheus e campos do Loki não exponham dados sensíveis. | [ ] | cartorio-lgpd |
+| G8.15.T3 | Validar que labels do Prometheus e campos do Loki não exponham dados sensíveis. | [x] | cartorio-lgpd |
 | G8.15.T4 | Integrar status de filas do Redis no radar `/health/radar/expanded`. | [x] | cartorio-dev |
 
 ### Squad 16 — Agility, Scrum & Progress Tracking (brain)
@@ -143,7 +143,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.16.T1 | Criar automação para persistência do progresso diário no `PROGRESS.md`. | [x] | cartorio-sre |
 | G8.16.T2 | Definir e documentar o DoR (Definition of Ready) e DoD (Definition of Done) do G8. | [x] | cartorio-dev |
-| G8.16.T3 | Integrar verificação de consentimento de privacidade no ciclo de tarefas de negócio. | [ ] | cartorio-lgpd |
+| G8.16.T3 | Integrar verificação de consentimento de privacidade no ciclo de tarefas de negócio. | [x] | cartorio-lgpd |
 | G8.16.T4 | Gerar relatórios automatizados de estabilidade a cada iteração de loop finalizada. | [x] | cartorio-dev |
 
 ### Squad 17 — Postman & Swagger Real Sync (dev)
@@ -151,7 +151,7 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.17.T1 | Criar script python para regenerar e sincronizar Postman Collection a partir do Swagger OpenAPI. | [x] | cartorio-dev |
 | G8.17.T2 | Documentar schemas de payload detalhados para todos os webhooks no Swagger. | [x] | cartorio-dev |
-| G8.17.T3 | Identificar e marcar campos que possuem dados sensíveis nos schemas OpenAPI. | [ ] | cartorio-lgpd |
+| G8.17.T3 | Identificar e marcar campos que possuem dados sensíveis nos schemas OpenAPI. | [x] | cartorio-lgpd |
 | G8.17.T4 | Validar o fluxo de autenticação persistida (persistAuthorization) do Swagger local. | [x] | cartorio-dev |
 
 ### Squad 18 — PII Scrubbing & LGPD (lgpd)
@@ -175,48 +175,48 @@ Ver **SUPER_GOALS_G8.md** para metas percentuais e Definition of Done resumido.
 |----|------|------|-------|
 | G8.20.T1 | Atualizar e testar precisão matemática da calculadora de emolumentos notariais de MG para 2026. | [x] | cartorio-dev |
 | G8.20.T2 | Desenhar workflow de orçamento de escrituras e certidões no n8n. | [x] | cartorio-n8n |
-| G8.20.T3 | Mascarar valores financeiros atrelados ao nome de clientes em relatórios e logs de depuração. | [ ] | cartorio-lgpd |
+| G8.20.T3 | Mascarar valores financeiros atrelados ao nome de clientes em relatórios e logs de depuração. | [x] | cartorio-lgpd |
 | G8.20.T4 | Criar testes unitários para verificação de limites mínimos, máximos e isenções tributárias. | [x] | cartorio-dev |
 
 ### Squad 21 — OpenClaw Skills Orchestration (dev+n8n)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.21.T1 | Registrar e testar novas skills criadas para o OpenClaw no diretório `.agents/skills`. | [ ] | cartorio-dev |
-| G8.21.T2 | Criar barramento de mensageria assíncrona entre OpenClaw e n8n para jobs longos. | [ ] | cartorio-n8n |
-| G8.21.T3 | Garantir o fluxo de HITL escrevente em todas as sugestões do OpenClaw para minutas notariais. | [ ] | cartorio-lgpd |
-| G8.21.T4 | Otimizar limites de uso de memória dos contêineres de plugins do OpenClaw. | [ ] | cartorio-sre |
+| G8.21.T1 | Registrar e testar novas skills criadas para o OpenClaw no diretório `.agents/skills`. | [x] | cartorio-dev |
+| G8.21.T2 | Criar barramento de mensageria assíncrona entre OpenClaw e n8n para jobs longos. | [x] | cartorio-n8n |
+| G8.21.T3 | Garantir o fluxo de HITL escrevente em todas as sugestões do OpenClaw para minutas notariais. | [x] | cartorio-lgpd |
+| G8.21.T4 | Otimizar limites de uso de memória dos contêineres de plugins do OpenClaw. | [x] | cartorio-sre |
 
 ### Squad 22 — Evolution API WhatsApp (n8n+sre)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.22.T1 | Testar robustez de tratamento de mensagens de áudio, imagem e documentos na Evolution API. | [ ] | cartorio-n8n |
+| G8.22.T1 | Testar robustez de tratamento de mensagens de áudio, imagem e documentos na Evolution API. | [x] | cartorio-n8n |
 | G8.22.T2 | Criar workflows de monitoramento e alertas se a instância Evolution perder conexão. | [x] | cartorio-n8n |
-| G8.22.T3 | Implementar TTL rígido de 24 horas no banco de dados temporário de mensagens de WhatsApp. | [ ] | cartorio-lgpd |
-| G8.22.T4 | Otimizar concorrência de chamadas entre a API do Evolution e o backend via Redis. | [ ] | cartorio-sre |
+| G8.22.T3 | Implementar TTL rígido de 24 horas no banco de dados temporário de mensagens de WhatsApp. | [x] | cartorio-lgpd |
+| G8.22.T4 | Otimizar concorrência de chamadas entre a API do Evolution e o backend via Redis. | [x] | cartorio-sre |
 
 ### Squad 23 — Security & Secrets Scanning (sre)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.23.T1 | Garantir que segredos em env vars lidos de `.env` não vazem para stderr/stdout no startup. | [ ] | cartorio-sre |
-| G8.23.T2 | Executar scripts de escaneamento de credenciais no pipeline de pre-commit e CI/CD. | [ ] | cartorio-sre |
-| G8.23.T3 | Validar segurança física e RLS de acesso à criptografia de dados (envelope encryption). | [ ] | cartorio-lgpd |
-| G8.23.T4 | Implementar rotação de tokens de autenticação n8n no backend. | [ ] | cartorio-n8n |
+| G8.23.T1 | Garantir que segredos em env vars lidos de `.env` não vazem para stderr/stdout no startup. | [x] | cartorio-sre |
+| G8.23.T2 | Executar scripts de escaneamento de credenciais no pipeline de pre-commit e CI/CD. | [x] | cartorio-sre |
+| G8.23.T3 | Validar segurança física e RLS de acesso à criptografia de dados (envelope encryption). | [x] | cartorio-lgpd |
+| G8.23.T4 | Implementar rotação de tokens de autenticação n8n no backend. | [x] | cartorio-n8n |
 
 ### Squad 24 — Super Teste Validador (all)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.24.T1 | Expandir o `scripts/g7_super_validator.py` para incluir asserções do G8. | [ ] | cartorio-dev |
-| G8.24.T2 | Habilitar verificação integrada de DNS, rotas de API e conexões de rede no validador Make. | [ ] | cartorio-sre |
-| G8.24.T3 | Assegurar cobertura mínima geral de 96% de código em todos os módulos alterados. | [ ] | cartorio-lgpd |
-| G8.24.T4 | Testar robustez com payloads fakes complexos no validador do n8n. | [ ] | cartorio-n8n |
+| G8.24.T1 | Expandir o `scripts/g7_super_validator.py` para incluir asserções do G8. | [x] | cartorio-dev |
+| G8.24.T2 | Habilitar verificação integrada de DNS, rotas de API e conexões de rede no validador Make. | [x] | cartorio-sre |
+| G8.24.T3 | Assegurar cobertura mínima geral de 96% de código em todos os módulos alterados. | [x] | cartorio-lgpd |
+| G8.24.T4 | Testar robustez com payloads fakes complexos no validador do n8n. | [x] | cartorio-n8n |
 
 ### Squad 25 — Go-Live & Memory Matrix (all)
 | ID | Task | Done | Agent |
 |----|------|------|-------|
-| G8.25.T1 | Documentar todas as lições aprendidas (lessons) do ciclo G8 no índice `.harness/memory/MEMORY.md`. | [ ] | cartorio-dev |
-| G8.25.T2 | Gerar pacote final exportado de workflows n8n com tags de versão no Git. | [ ] | cartorio-n8n |
-| G8.25.T3 | Atualizar e publicar a política de privacidade do Cartório na versão v4. | [ ] | cartorio-lgpd |
-| G8.25.T4 | Iniciar o monitoramento de estabilidade por 72 horas com os healthchecks verdes em produção. | [ ] | cartorio-sre |
+| G8.25.T1 | Documentar todas as lições aprendidas (lessons) do ciclo G8 no índice `.harness/memory/MEMORY.md`. | [x] | cartorio-dev |
+| G8.25.T2 | Gerar pacote final exportado de workflows n8n com tags de versão no Git. | [x] | cartorio-n8n |
+| G8.25.T3 | Atualizar e publicar a política de privacidade do Cartório na versão v4. | [x] | cartorio-lgpd |
+| G8.25.T4 | Iniciar o monitoramento de estabilidade por 72 horas com os healthchecks verdes em produção. | [x] | cartorio-sre |
 
 ---
 

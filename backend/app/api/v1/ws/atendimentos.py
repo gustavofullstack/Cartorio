@@ -68,21 +68,21 @@ async def _redis_listener_loop(
     """
     try:
         async for msg in bus.subscribe(channel):
-            data = msg.get('data')
+            data = msg.get("data")
             if not isinstance(data, dict):
                 continue
             delivered = await manager.broadcast(channel, data)
             logger.debug(
-                'ws.redis.broadcast channel=%s delivered=%d total_conns=%d',
+                "ws.redis.broadcast channel=%s delivered=%d total_conns=%d",
                 channel,
                 delivered,
                 manager.total_connections(),
             )
     except asyncio.CancelledError:
-        logger.debug('ws.redis.listener.cancelled channel=%s', channel)
+        logger.debug("ws.redis.listener.cancelled channel=%s", channel)
         raise
     except Exception as e:  # noqa: BLE001
-        logger.exception('ws.redis.listener.crashed channel=%s err=%s', channel, e)
+        logger.exception("ws.redis.listener.crashed channel=%s err=%s", channel, e)
 
 
 async def _close_ws_clean(websocket: WebSocket, code: int = 1000) -> None:
@@ -94,7 +94,7 @@ async def _close_ws_clean(websocket: WebSocket, code: int = 1000) -> None:
         pass
 
 
-@ws_router.websocket('/ws/atendimentos')
+@ws_router.websocket("/ws/atendimentos")
 async def ws_atendimentos(websocket: WebSocket) -> None:
     """WebSocket endpoint para dashboard de atendimentos.
 
@@ -111,7 +111,7 @@ async def ws_atendimentos(websocket: WebSocket) -> None:
     """
     manager: ConnectionManager = get_manager()
     bus: RedisBus = get_bus()
-    channel = 'cartorio:atendimentos'
+    channel = "cartorio:atendimentos"
     hb_config = _DEFAULT_HB
     hb_state = new_heartbeat_state(hb_config)
 
@@ -130,13 +130,13 @@ async def ws_atendimentos(websocket: WebSocket) -> None:
                 if hb_state.awaiting_pong:
                     mark_missed(hb_state)
                     logger.debug(
-                        'ws.heartbeat.pong_timeout channel=%s missed=%d',
+                        "ws.heartbeat.pong_timeout channel=%s missed=%d",
                         channel,
                         hb_state.missed_count,
                     )
                     if hb_state.should_disconnect():
                         logger.info(
-                            'ws.heartbeat.disconnect channel=%s reason=max_missed missed=%d',
+                            "ws.heartbeat.disconnect channel=%s reason=max_missed missed=%d",
                             channel,
                             hb_state.missed_count,
                         )
@@ -159,17 +159,17 @@ async def ws_atendimentos(websocket: WebSocket) -> None:
             try:
                 data = json.loads(raw)
             except (TypeError, ValueError):
-                data = {'raw': raw}
+                data = {"raw": raw}
 
-            msg_type = data.get('type') if isinstance(data, dict) else None
+            msg_type = data.get("type") if isinstance(data, dict) else None
             now = time.monotonic()
 
-            if msg_type == 'ping':
+            if msg_type == "ping":
                 # Client-initiated ping (G7 contract) — responde pong + conta como vivo
                 mark_pong(hb_state, now=now)
                 manager.touch(websocket, now=now)
-                await websocket.send_json({'type': 'pong'})
-            elif msg_type == 'pong':
+                await websocket.send_json({"type": "pong"})
+            elif msg_type == "pong":
                 # Resposta ao server ping
                 mark_pong(hb_state, now=now)
                 manager.touch(websocket, now=now)
@@ -177,11 +177,11 @@ async def ws_atendimentos(websocket: WebSocket) -> None:
                 # Qualquer outra atividade prova vida; echo pra debug
                 mark_pong(hb_state, now=now)
                 manager.touch(websocket, now=now)
-                await websocket.send_json({'type': 'echo', 'data': data})
+                await websocket.send_json({"type": "echo", "data": data})
     except WebSocketDisconnect:
-        logger.debug('ws.disconnect channel=%s', channel)
+        logger.debug("ws.disconnect channel=%s", channel)
     except Exception as e:  # noqa: BLE001
-        logger.warning('ws.error channel=%s err=%s', channel, type(e).__name__)
+        logger.warning("ws.error channel=%s err=%s", channel, type(e).__name__)
     finally:
         manager.unregister(websocket, channel)
         if listener_task is not None:
@@ -192,4 +192,4 @@ async def ws_atendimentos(websocket: WebSocket) -> None:
                 pass
 
 
-__all__ = ['ws_router', 'ws_atendimentos']
+__all__ = ["ws_router", "ws_atendimentos"]

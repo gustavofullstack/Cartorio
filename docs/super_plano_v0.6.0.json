@@ -604,7 +604,7 @@
   {
     "id": "E6.S5.T1",
     "sprint": "Sprint E6.S5 — MCP Server/Client + Plugins + Skills — 15 tasks",
-    "description": "MCP server da API (✓ existe `/mcp/mcp` FastMCP 3.x, 14 tools) — manter",
+    "description": "MCP server da API (✓ existe `/mcp` FastMCP 3.x, 14 tools) — manter",
     "status": "pending",
     "owner": "cartorio-dev"
   },

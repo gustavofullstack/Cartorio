@@ -77,9 +77,7 @@ class TestSwaggerPersistAuthorization:
             "Se ausente, FastAPI default venceu precedencia de rota."
         )
         # Tema monokai so existe na nossa config.
-        assert "monokai" in body, (
-            "Esperava `monokai` no syntaxHighlight theme."
-        )
+        assert "monokai" in body, "Esperava `monokai` no syntaxHighlight theme."
         # O default do FastAPI usa `OAuth2Redirect` HTML minimo; o nosso
         # customiza tem pelo menos 1.5KB (header + script).
         assert len(body) > 1500, (
@@ -161,18 +159,14 @@ class TestSwaggerPersistAuthorization:
             body,
             re.DOTALL,
         )
-        assert match is not None, (
-            "Esperava bloco `SwaggerUIBundle({...})` no HTML."
-        )
+        assert match is not None, "Esperava bloco `SwaggerUIBundle({...})` no HTML."
         config_block = match.group(1)
         assert "persistAuthorization" in config_block, (
             "Faltando `persistAuthorization` no bloco de config do SwaggerUIBundle. "
             f"Config achada: {config_block[:300]!r}"
         )
         # Tambem esperamos `tryItOutEnabled` (UX) e `filter` (busca) — UX baseline.
-        assert "tryItOutEnabled" in config_block, (
-            "Esperava `tryItOutEnabled` na config UX."
-        )
+        assert "tryItOutEnabled" in config_block, "Esperava `tryItOutEnabled` na config UX."
 
     def test_swagger_oauth_redirect_url_is_local_origin_safe(self) -> None:
         """Se OAuth2 for introduzido no futuro, redirect URL deve ser HTTPS only.
@@ -210,9 +204,7 @@ class TestSwaggerPersistAuthorization:
         response = client.get("/docs")
         assert response.status_code == 200
         cc = response.headers.get("cache-control", "")
-        assert "no-store" in cc.lower(), (
-            f"Esperava `no-store` em Cache-Control; recebi: {cc!r}"
-        )
+        assert "no-store" in cc.lower(), f"Esperava `no-store` em Cache-Control; recebi: {cc!r}"
 
     def test_openapi_json_is_valid_json(self) -> None:
         """Sanity: /openapi.json parseia como JSON (Swagger UI nao quebra)."""

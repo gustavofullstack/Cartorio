@@ -61,7 +61,7 @@ class ConnectionManager:
         self.connections[room].add(ws)
         self.touch(ws)
         logger.debug(
-            'ws.register room=%s total_in_room=%d grand_total=%d',
+            "ws.register room=%s total_in_room=%d grand_total=%d",
             room,
             len(self.connections[room]),
             self.total_connections(),
@@ -74,7 +74,7 @@ class ConnectionManager:
             if not self.connections[room]:
                 del self.connections[room]
             logger.debug(
-                'ws.unregister room=%s total_in_room=%d grand_total=%d',
+                "ws.unregister room=%s total_in_room=%d grand_total=%d",
                 room,
                 len(self.connections.get(room, set())),
                 self.total_connections(),
@@ -118,7 +118,7 @@ class ConnectionManager:
             except Exception as e:  # noqa: BLE001
                 # Cliente provavelmente desconectou. Loga e segue.
                 logger.warning(
-                    'ws.broadcast.send_failed room=%s err=%s - unregistering',
+                    "ws.broadcast.send_failed room=%s err=%s - unregistering",
                     room,
                     type(e).__name__,
                 )
@@ -135,7 +135,7 @@ class ConnectionManager:
             await ws.send_json(payload)
             return True
         except Exception as e:  # noqa: BLE001
-            logger.warning('ws.send_personal.send_failed err=%s', type(e).__name__)
+            logger.warning("ws.send_personal.send_failed err=%s", type(e).__name__)
             return False
 
 
@@ -151,4 +151,4 @@ def get_manager() -> ConnectionManager:
     return _manager
 
 
-__all__ = ['ConnectionManager', 'get_manager']
+__all__ = ["ConnectionManager", "get_manager"]

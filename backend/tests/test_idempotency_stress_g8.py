@@ -132,9 +132,7 @@ async def test_stress_fake_store_same_key_only_one_wins() -> None:
     n = 64
     key = "stress:same-key"
 
-    results = await asyncio.gather(
-        *[store.setnx(key, {"i": i}, ttl_seconds=60) for i in range(n)]
-    )
+    results = await asyncio.gather(*[store.setnx(key, {"i": i}, ttl_seconds=60) for i in range(n)])
     assert sum(1 for r in results if r is True) == 1
     assert sum(1 for r in results if r is False) == n - 1
     cached = await store.get(key)
@@ -249,10 +247,7 @@ async def test_stress_fakeredis_many_unique_keys() -> None:
 
     n = 100
     results = await asyncio.gather(
-        *[
-            store.setnx(f"idempotency:fakeredis:u:{i}", {"i": i}, ttl_seconds=120)
-            for i in range(n)
-        ]
+        *[store.setnx(f"idempotency:fakeredis:u:{i}", {"i": i}, ttl_seconds=120) for i in range(n)]
     )
     assert all(results)
     for i in range(n):
@@ -281,9 +276,7 @@ async def test_stress_mw_x_idempotency_same_key_setnx_single_winner() -> None:
     key = "x-stress-same-key"
     body = {"event": "message", "id": "m1"}
 
-    requests = [
-        _make_post_request(idempotency_key=key, body=body, x_header=True) for _ in range(n)
-    ]
+    requests = [_make_post_request(idempotency_key=key, body=body, x_header=True) for _ in range(n)]
     responses = await asyncio.gather(*[mw.dispatch(req, _ok_response) for req in requests])
     assert all(r.status_code == 200 for r in responses)
 
@@ -302,9 +295,7 @@ async def test_stress_mw_x_idempotency_same_key_setnx_single_winner() -> None:
         call_counts.append(1)
         return await _ok_response(_req)
 
-    responses2 = await asyncio.gather(
-        *[mw.dispatch(req, counting_next) for req in requests2]
-    )
+    responses2 = await asyncio.gather(*[mw.dispatch(req, counting_next) for req in requests2])
     assert all(r.status_code == 200 for r in responses2)
     assert call_counts == []  # full cache hit
 
@@ -330,9 +321,7 @@ async def test_stress_mw_x_idempotency_many_unique_keys() -> None:
     assert all(r.status_code == 200 for r in responses)
 
     for i in range(n):
-        cache_key = _hash_idempotency_key(
-            f"x-unique-{i}", "/api/v1/telegram/webhook", "POST"
-        )
+        cache_key = _hash_idempotency_key(f"x-unique-{i}", "/api/v1/telegram/webhook", "POST")
         assert await store.get(cache_key) is not None
 
 

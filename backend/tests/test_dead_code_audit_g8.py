@@ -11,6 +11,7 @@ Cobre (3 testes minimos exigidos pela task + 3 extras):
 
 Modified by Gustavo Almeida — G8 Wave 45 / Squad 12 (cartorio-dev).
 """
+
 from __future__ import annotations
 
 import importlib.util

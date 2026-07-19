@@ -123,15 +123,10 @@ def upgrade() -> None:
         )
 
     # 3. Indices para forensic queries (LGPD Art. 37 — rastreabilidade)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_clientes_cpf_envelope ON clientes (cpf_envelope)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_clientes_cpf_kek_id ON clientes (cpf_kek_id)")
     op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_clientes_cpf_envelope ON clientes (cpf_envelope)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_clientes_cpf_kek_id ON clientes (cpf_kek_id)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_protocolos_metadata_kek_id "
-        "ON protocolos (metadata_kek_id)"
+        "CREATE INDEX IF NOT EXISTS ix_protocolos_metadata_kek_id ON protocolos (metadata_kek_id)"
     )
 
     # 4. RLS: KEK access only via service_role (mesmo padrao de 0022)
@@ -143,16 +138,13 @@ def upgrade() -> None:
             op.execute(f"DROP POLICY IF EXISTS {policy} ON public.{table}")
 
         # Service role: leitura + escrita controlada (rotação de chaves).
-        op.execute(
-            f"GRANT SELECT, INSERT, UPDATE ON TABLE public.{table} TO service_role"
-        )
+        op.execute(f"GRANT SELECT, INSERT, UPDATE ON TABLE public.{table} TO service_role")
         # dpo: somente leitura (LGPD art. 18 — direito de acesso do titular).
         op.execute(f"GRANT SELECT ON TABLE public.{table} TO dpo")
 
         # Bloqueia UPDATE/DELETE para roles sujeitas a RLS.
         op.execute(
-            f"REVOKE UPDATE, DELETE ON TABLE public.{table} "
-            f"FROM PUBLIC, anon, authenticated, dpo"
+            f"REVOKE UPDATE, DELETE ON TABLE public.{table} FROM PUBLIC, anon, authenticated, dpo"
         )
 
         # Policy principal: service_role tem acesso total (gate principal).
@@ -208,9 +200,7 @@ def downgrade() -> None:
 
         op.execute(f"ALTER TABLE public.{table} NO FORCE ROW LEVEL SECURITY")
         op.execute(f"ALTER TABLE public.{table} DISABLE ROW LEVEL SECURITY")
-        op.execute(
-            f"GRANT UPDATE, DELETE ON TABLE public.{table} TO PUBLIC, authenticated"
-        )
+        op.execute(f"GRANT UPDATE, DELETE ON TABLE public.{table} TO PUBLIC, authenticated")
 
     op.execute("DROP INDEX IF EXISTS ix_protocolos_metadata_kek_id")
     op.execute("DROP INDEX IF EXISTS ix_clientes_cpf_kek_id")

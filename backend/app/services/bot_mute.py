@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_TTL_SEC = 8 * 3600  # 8h jornada do escrevente
 
 # Mantido apenas para retro-compat (tests antigos + dataclass). Use RedisKey.bot_mute().
-MUTE_KEY_PREFIX = 'cartorio:bot_mute'
+MUTE_KEY_PREFIX = "cartorio:bot_mute"
 
 
 class RedisLike(Protocol):
@@ -56,10 +56,10 @@ def mute_key(channel: str, conversation_key: str, *, prefix: str | None = None) 
     O argumento ``prefix`` eh ignorado (back-compat shim). A chave eh
     sempre ``cartorio:bot_mute:<channel>:<conversation_key>``.
     """
-    ch = (channel or 'unknown').strip().lower()
-    ck = str(conversation_key or '').strip()
+    ch = (channel or "unknown").strip().lower()
+    ck = str(conversation_key or "").strip()
     if not ck:
-        raise ValueError('conversation_key required')
+        raise ValueError("conversation_key required")
     return RedisKey.bot_mute(ch, ck)
 
 
@@ -79,7 +79,7 @@ def mute_bot(
     channel: str,
     conversation_key: str,
     *,
-    reason: str = 'hitl',
+    reason: str = "hitl",
     ttl_sec: int = DEFAULT_TTL_SEC,
     config: BotMuteConfig | None = None,
 ) -> str:
@@ -90,12 +90,12 @@ def mute_bot(
     """
     cfg = config or BotMuteConfig(ttl_sec=ttl_sec)
     key = mute_key(channel, conversation_key, prefix=cfg.key_prefix)
-    value = f'1|{reason}'
+    value = f"1|{reason}"
     try:
         _maybe_close_coro(redis.set(key, value, ex=int(cfg.ttl_sec)))
-        logger.info('bot_mute.on key=%s reason=%s ttl=%s', key, reason, cfg.ttl_sec)
+        logger.info("bot_mute.on key=%s reason=%s ttl=%s", key, reason, cfg.ttl_sec)
     except Exception as exc:  # noqa: BLE001
-        logger.warning('bot_mute.on.fail key=%s err=%s', key, type(exc).__name__)
+        logger.warning("bot_mute.on.fail key=%s err=%s", key, type(exc).__name__)
     return key
 
 
@@ -111,10 +111,10 @@ def unmute_bot(
     key = mute_key(channel, conversation_key, prefix=cfg.key_prefix)
     try:
         _maybe_close_coro(redis.delete(key))
-        logger.info('bot_mute.off key=%s', key)
+        logger.info("bot_mute.off key=%s", key)
         return True
     except Exception as exc:  # noqa: BLE001
-        logger.warning('bot_mute.off.fail key=%s err=%s', key, type(exc).__name__)
+        logger.warning("bot_mute.off.fail key=%s err=%s", key, type(exc).__name__)
         return False
 
 
@@ -136,34 +136,34 @@ def is_bot_muted(
         if raw is None:
             return False
         if isinstance(raw, bytes):
-            raw = raw.decode('utf-8', errors='replace')
-        return bool(str(raw).startswith('1'))
+            raw = raw.decode("utf-8", errors="replace")
+        return bool(str(raw).startswith("1"))
     except Exception as exc:  # noqa: BLE001
-        logger.warning('bot_mute.check.fail err=%s', type(exc).__name__)
+        logger.warning("bot_mute.check.fail err=%s", type(exc).__name__)
         return False
 
 
 def parse_mute_value(raw: str | bytes | None) -> tuple[bool, str]:
     """Parse valor `1|reason` → (active, reason)."""
     if raw is None:
-        return False, ''
+        return False, ""
     if isinstance(raw, bytes):
-        raw = raw.decode('utf-8', errors='replace')
+        raw = raw.decode("utf-8", errors="replace")
     text = str(raw)
-    if not text.startswith('1'):
-        return False, ''
-    parts = text.split('|', 1)
-    reason = parts[1] if len(parts) > 1 else 'hitl'
+    if not text.startswith("1"):
+        return False, ""
+    parts = text.split("|", 1)
+    reason = parts[1] if len(parts) > 1 else "hitl"
     return True, reason
 
 
 __all__ = [
-    'BotMuteConfig',
-    'DEFAULT_TTL_SEC',
-    'MUTE_KEY_PREFIX',
-    'is_bot_muted',
-    'mute_bot',
-    'mute_key',
-    'parse_mute_value',
-    'unmute_bot',
+    "BotMuteConfig",
+    "DEFAULT_TTL_SEC",
+    "MUTE_KEY_PREFIX",
+    "is_bot_muted",
+    "mute_bot",
+    "mute_key",
+    "parse_mute_value",
+    "unmute_bot",
 ]

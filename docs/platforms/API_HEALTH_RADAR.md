@@ -1,7 +1,7 @@
 # API Health Radar — Guia Operacional
 
 > Guia de interpretacao, alerting e extensao do Health Radar (regular + expanded).
-> v0.6.0 — 2026-07-15 / Missao F6 [P2] / Squad cartorio-front + cartorio-sre.
+> v0.6.1 — 2026-07-19 / Missao F6 [P2] / Squad cartorio-front + cartorio-sre.
 
 ## Endpoints
 
@@ -22,22 +22,36 @@
 
 ```json
 {
-  "status": "green" | "red",
+  "status": "green" | "yellow" | "red",
   "services": {
     "database": "online" | "offline",
     "redis": "online" | "offline",
-    "openclaw": "online" | "offline",
-    "chatwoot": "online" | "offline",
-    "supabase": "online" | "offline",
-    "n8n": "online" | "offline",
-    "evolution": "online" | "offline"
+    "openclaw": "online" | "degraded" | "offline",
+    "chatwoot": "online" | "degraded" | "offline" | "unconfigured",
+    "supabase": "online" | "degraded" | "offline" | "unconfigured",
+    "n8n": "online" | "degraded" | "offline",
+    "evolution": "online" | "degraded" | "offline"
   }
 }
 ```
 
-- `green` = todos `online`.
-- `red` = pelo menos um `offline`.
+- `online` = a sonda recebeu o HTTP esperado para aquele servico.
+- `degraded` = o destino respondeu, mas com HTTP inesperado (inclui 4xx/5xx).
+- `offline` = timeout, falha DNS/conexao ou erro ao executar a sonda.
+- `unconfigured` = integracao opcional sem URL; e visivel no payload, mas nao
+  gera alerta por si so.
+- `green` = todos os servicos configurados estao `online`.
+- `yellow` = qualquer servico configurado esta `degraded` ou `offline`, exceto
+  quando a dependencia critica abaixo esta indisponivel.
+- `red` = PostgreSQL (`database`) ou Redis (`redis`) esta `offline`.
 - HTTP 200 SEMPRE (fail-open). Endpoint nunca retorna 500.
+
+O radar resumido e uma sonda de disponibilidade. Para latencia, codigo HTTP e
+diagnostico por dependencia use `/api/v1/health/integracoes`; para DNS,
+Traefik, Tailscale, disco, MCP e filas Redis use
+`/api/v1/health/radar/expanded`. Nenhuma dessas sondas deve inferir a saude de
+um servico remoto a partir de outro: por exemplo, PostgreSQL local saudavel
+nao torna Supabase/Kong `online`.
 
 ### Radar expanded (`/health/radar/expanded`)
 
@@ -60,8 +74,8 @@
 | Status | Significado | Latencia esperada | Acao |
 |--------|-------------|-------------------|------|
 | `up` | Servico/check saudavel | < 500ms (health), < 1000ms (DNS), < 3000ms (SSH) | Nenhuma |
-| `warn` | Degradado mas funcional | Acima do normal OU metodo nao permitido OU rota sem match | Investigar (alert amarelo) |
-| `down` | Indisponivel | Timeout OU connection refused NXDOMAIN | Alert vermelho + runbook |
+| `warn` | Alcancavel, mas degradado ou nao verificavel | HTTP inesperado, URL ausente, alta latencia ou rota sem match | Investigar (alert amarelo) |
+| `down` | Indisponivel | Timeout, connection refused ou NXDOMAIN | Alert vermelho + runbook |
 
 ### Logica de agregacao `radar/expanded`
 

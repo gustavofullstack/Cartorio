@@ -70,13 +70,16 @@ def llm_metrics_isolated(monkeypatch: pytest.MonkeyPatch) -> MetricsStore:
 # Helpers
 # ============================================================================
 
+
 def _counter_value(store_obj: MetricsStore, metric: str, labels: dict[str, str]) -> int:
     """Leitura tolerant do counter: retorna 0 se chave/labels nao existem."""
     key = "|".join(f"{k}={v}" for k, v in sorted(labels.items()))
     return store_obj.counters.get(metric, {}).get(key, 0)
 
 
-def _histogram_observations(store_obj: MetricsStore, metric: str, labels: dict[str, str]) -> list[float]:
+def _histogram_observations(
+    store_obj: MetricsStore, metric: str, labels: dict[str, str]
+) -> list[float]:
     """Le lista de observacoes do histogram; [] se nao existir."""
     key = "|".join(f"{k}={v}" for k, v in sorted(labels.items()))
     return store_obj.histograms.get(metric, {}).get(key, [])
@@ -142,12 +145,30 @@ class TestIncLlmCallsTotal:
         s.inc_llm_calls_total("test", "chat", "error")
         s.inc_llm_calls_total("test", "chat", "timeout")
 
-        assert _counter_value(s, "cartorio_llm_calls_total",
-                              {"model": "test", "operation": "chat", "status": "success"}) == 1
-        assert _counter_value(s, "cartorio_llm_calls_total",
-                              {"model": "test", "operation": "chat", "status": "error"}) == 1
-        assert _counter_value(s, "cartorio_llm_calls_total",
-                              {"model": "test", "operation": "chat", "status": "timeout"}) == 1
+        assert (
+            _counter_value(
+                s,
+                "cartorio_llm_calls_total",
+                {"model": "test", "operation": "chat", "status": "success"},
+            )
+            == 1
+        )
+        assert (
+            _counter_value(
+                s,
+                "cartorio_llm_calls_total",
+                {"model": "test", "operation": "chat", "status": "error"},
+            )
+            == 1
+        )
+        assert (
+            _counter_value(
+                s,
+                "cartorio_llm_calls_total",
+                {"model": "test", "operation": "chat", "status": "timeout"},
+            )
+            == 1
+        )
 
 
 class TestIncLlmTokensTotal:
@@ -185,16 +206,22 @@ class TestIncLlmErrorsTotal:
         s.inc_llm_errors_total("test", "chat", "TimeoutException")
         s.inc_llm_errors_total("test", "chat", "HTTP_5XX")
 
-        assert _counter_value(
-            s,
-            "cartorio_llm_errors_total",
-            {"model": "test", "operation": "chat", "error_type": "TimeoutException"},
-        ) == 2
-        assert _counter_value(
-            s,
-            "cartorio_llm_errors_total",
-            {"model": "test", "operation": "chat", "error_type": "HTTP_5XX"},
-        ) == 1
+        assert (
+            _counter_value(
+                s,
+                "cartorio_llm_errors_total",
+                {"model": "test", "operation": "chat", "error_type": "TimeoutException"},
+            )
+            == 2
+        )
+        assert (
+            _counter_value(
+                s,
+                "cartorio_llm_errors_total",
+                {"model": "test", "operation": "chat", "error_type": "HTTP_5XX"},
+            )
+            == 1
+        )
 
 
 class TestLabelSafety:
@@ -300,13 +327,16 @@ class TestInstrumentLlmDecorator:
             failing_call()
 
         # latency recorded even on error
-        assert len(
-            _histogram_observations(
-                llm_metrics_isolated,
-                "cartorio_llm_call_seconds",
-                {"model": "test", "operation": "chat"},
+        assert (
+            len(
+                _histogram_observations(
+                    llm_metrics_isolated,
+                    "cartorio_llm_call_seconds",
+                    {"model": "test", "operation": "chat"},
+                )
             )
-        ) == 1
+            == 1
+        )
         # error counter incremented
         assert (
             _counter_value(
@@ -442,6 +472,7 @@ class TestInstrumentLlmDecorator:
         """LGPD: model fora da whitelist eh rejeitado em tempo de decoracao."""
 
         with pytest.raises(ValueError, match="nao esta em whitelist canonica"):
+
             @instrument_llm(model="openai_gpt4_with_my_cpf", operation="chat")  # noqa: E501
             def _bad() -> None:
                 pass
@@ -450,6 +481,7 @@ class TestInstrumentLlmDecorator:
         """LGPD: operation fora da whitelist eh rejeitado em tempo de decoracao."""
 
         with pytest.raises(ValueError, match="nao esta em whitelist canonica"):
+
             @instrument_llm(model="test", operation="sql_query_on_clientes_table")  # noqa: E501
             def _bad() -> None:
                 pass
@@ -467,6 +499,7 @@ class TestClassifyError:
         from app.services.metrics import _classify_error
 
         assert _classify_error(TimeoutError()) == "UnknownError"  # TimeoutError != TimeoutException
+
         # Quando o nome bate exatamente, retorna o nome
         class _FakeException(Exception):
             pass
@@ -517,9 +550,7 @@ class TestDecoratorTransparency:
 
         assert asyncio.run(returns_tuple()) == sentinel
 
-    def test_sync_re_raises_original_exception(
-        self, llm_metrics_isolated: MetricsStore
-    ) -> None:
+    def test_sync_re_raises_original_exception(self, llm_metrics_isolated: MetricsStore) -> None:
         class _SpecificErr(Exception):
             pass
 
@@ -538,6 +569,7 @@ class TestDecoratorTransparency:
 
 def test_log_masking_filter_intercepts_pii() -> None:
     """G8.15.T3: O MaskingFilter deve interceptar e mascarar dados sensíveis nos logs."""
+    import logging
     from app.services.log_masker import MaskingFilter
 
     logger = logging.getLogger("test_masking_loki")

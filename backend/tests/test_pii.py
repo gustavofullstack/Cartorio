@@ -532,129 +532,168 @@ def test_cnh_dv2_invalid_input_raises():
 # 20 Testes PII pre-LLM Defense-in-Depth (Wave 1 - S1.T3)
 # ============================================================================
 
+
 def test_pii_pre_llm_scrub_messages_empty():
     from app.integrations.opencode_go import _scrub_messages
+
     msgs, count = _scrub_messages([])
     assert msgs == []
     assert count == 0
 
+
 def test_pii_pre_llm_scrub_messages_system_role():
     from app.integrations.opencode_go import _scrub_messages
+
     msgs = [{"role": "system", "content": "Não passe CPF 123.456.789-09."}]
     scrubbed, count = _scrub_messages(msgs)
     assert count == 1
     assert "123.456.789-09" not in scrubbed[0]["content"]
 
+
 def test_pii_pre_llm_scrub_messages_assistant_role():
     from app.integrations.opencode_go import _scrub_messages
+
     msgs = [{"role": "assistant", "content": "Você disse que seu CPF é 12345678909?"}]
     scrubbed, count = _scrub_messages(msgs)
     assert count == 1
     assert "12345678909" not in scrubbed[0]["content"]
 
+
 def test_pii_pre_llm_scrub_messages_user_role():
     from app.integrations.opencode_go import _scrub_messages
+
     msgs = [{"role": "user", "content": "Quero usar o email joao@example.com."}]
     scrubbed, count = _scrub_messages(msgs)
     assert count == 1
     assert "joao@example.com" not in scrubbed[0]["content"]
 
+
 def test_pii_pre_llm_scrub_multiple():
     from app.integrations.opencode_go import _scrub_messages
+
     msgs = [
         {"role": "system", "content": "Suporte ao cliente."},
-        {"role": "user", "content": "CPF 123.456.789-09 e email joao@example.com."}
+        {"role": "user", "content": "CPF 123.456.789-09 e email joao@example.com."},
     ]
     scrubbed, count = _scrub_messages(msgs)
     assert count == 2
     assert "123.456.789-09" not in scrubbed[1]["content"]
     assert "joao@example.com" not in scrubbed[1]["content"]
 
+
 def test_pii_pre_llm_no_pii_unchanged():
     from app.integrations.opencode_go import _scrub_messages
+
     msgs = [{"role": "user", "content": "Qual o valor da certidão?"}]
     scrubbed, count = _scrub_messages(msgs)
     assert count == 0
     assert scrubbed[0]["content"] == "Qual o valor da certidão?"
 
+
 def test_pii_pre_llm_output_scrubbing():
     from app.services.pii import scrub
+
     raw_output = "Aqui está o documento do portador do CPF 123.456.789-09."
     result = scrub(raw_output)
     assert "123.456.789-09" not in result.text
     assert result.redaction_count == 1
 
+
 def test_pii_pre_llm_output_scrubbing_no_pii():
     from app.services.pii import scrub
+
     raw_output = "O cartório funciona de segunda a sexta."
     result = scrub(raw_output)
     assert result.text == raw_output
     assert result.redaction_count == 0
 
+
 def test_pii_pre_llm_consent_gate_check(db_session):
     from app.services.lgpd_consent import verificar_consentimento
+
     # Consentimento não fornecido deve barrar
     assert verificar_consentimento(db_session, 99999) is False
 
+
 def test_pii_pre_llm_email_scrubbing():
     from app.services.pii import scrub
+
     r = scrub("Meu email alternativo é jose.silva@corp.com.br")
     assert "jose.silva@corp.com.br" not in r.text
     assert r.redaction_count == 1
 
+
 def test_pii_pre_llm_phone_scrubbing():
     from app.services.pii import scrub
+
     r = scrub("Ligue no número (11) 99999-8888 ou 11988887777")
     assert "(11) 99999-8888" not in r.text
     assert "11988887777" not in r.text
     assert r.redaction_count >= 1
 
+
 def test_pii_pre_llm_cnpj_scrubbing():
     from app.services.pii import scrub
+
     r = scrub("CNPJ da empresa é 12.345.678/0001-90")
     assert "12.345.678/0001-90" not in r.text
     assert "cnpj" in r.findings
 
+
 def test_pii_pre_llm_cpf_scrubbing():
     from app.services.pii import scrub
+
     r = scrub("CPF do titular: 123.456.789-09")
     assert "123.456.789-09" not in r.text
     assert "cpf" in r.findings
 
+
 def test_pii_pre_llm_rg_scrubbing():
     from app.services.pii import scrub
+
     r = scrub("RG 12.345.678-9")
     assert "12.345.678-9" not in r.text
 
+
 def test_pii_pre_llm_cnh_scrubbing():
     from app.services.pii import scrub
+
     r = scrub("Apresentou CNH 12345678901")
     assert "12345678901" not in r.text
     assert "cnh" in r.findings
 
+
 def test_pii_pre_llm_cns_scrubbing():
     from app.services.pii import scrub
+
     r = scrub("Apresentou CNS 123456789012345")
     assert "123456789012345" not in r.text
     assert "cns" in r.findings
 
+
 def test_pii_pre_llm_custom_patterns():
     # Testa se o PII detector respeita configurações de controle do app
     from app.config import settings
+
     assert settings.pii_scrub_enabled is not None
     assert isinstance(settings.pii_block_on_detect, bool)
 
+
 def test_pii_pre_llm_anti_fp_cns_invalido():
     from app.services.pii import validate_cns
+
     # validate_cns deve retornar False para CNS com Check Digit incorreto
     assert validate_cns("8980007647356001") is False
 
+
 def test_pii_pre_llm_hash_pii_entropy():
     from app.services.pii import hash_pii
+
     h1 = hash_pii("123.456.789-09", salt="random-salt-abc")
     h2 = hash_pii("123.456.789-09", salt="random-salt-def")
     # Pequena mudança no salt altera drasticamente o hash (efeito avalanche)
     assert h1 != h2
+
 
 def test_pii_pre_llm_scrub_performance():
     import time
@@ -767,11 +806,7 @@ def test_scrub_no_false_positive_iso_date():
 
 def test_scrub_combined_all_new_patterns():
     """Wave 49: input com TODOS os patterns novos deve ser 100% masked."""
-    text = (
-        "Resumo: pix cpf 12345678900, "
-        "passaporte AB1234567, "
-        "IP 10.0.0.1"
-    )
+    text = "Resumo: pix cpf 12345678900, passaporte AB1234567, IP 10.0.0.1"
     r = scrub(text)
     assert "12345678900" not in r.text
     assert "AB1234567" not in r.text
@@ -815,42 +850,49 @@ def test_scrub_combined_with_existing_patterns():
 def test_mask_cns_15_digitos():
     """mask_cns com 15 digitos -> formato 3-3-3-3 com 12 asteriscos."""
     from app.services.pii import mask_cns
+
     assert mask_cns("898000764735600") == "***.***.***-***"
 
 
 def test_mask_cns_16_digitos_com_dv():
     """mask_cns com 16 digitos (15+DV) -> formato 3-3-3-4 com 13 asteriscos."""
     from app.services.pii import mask_cns
+
     assert mask_cns("8980007647356000") == "***.***.***-****"
 
 
 def test_mask_cns_com_formatacao_strip():
     """mask_cns ignora formatacao (pontos/espacos) e usa apenas digitos."""
     from app.services.pii import mask_cns
+
     assert mask_cns("898 0007 6473 5600") == "***.***.***-***"
 
 
 def test_mask_cnh_11_digitos():
     """mask_cnh com 11 digitos -> 11 asteriscos."""
     from app.services.pii import mask_cnh
+
     assert mask_cnh("12345678978") == "***********"
 
 
 def test_mask_cnh_com_formatacao_strip():
     """mask_cnh ignora formatacao (hifens/espacos)."""
     from app.services.pii import mask_cnh
+
     assert mask_cnh("1234-56789-78") == "***********"
 
 
 def test_mask_pis_11_digitos():
     """mask_pis com 11 digitos -> formato 3-3-3-2 com asteriscos."""
     from app.services.pii import mask_pis
+
     assert mask_pis("12345678901") == "***.***.***-**"
 
 
 def test_mask_pis_com_formatacao_strip():
     """mask_pis ignora formatacao (pontos/hifens)."""
     from app.services.pii import mask_pis
+
     assert mask_pis("123.45678.901-00") == "***.***.***-**"
 
 
@@ -861,4 +903,3 @@ def test_mask_helpers_idempotente():
     assert mask_cns(mask_cns("8980007647356000")) == "***.***.***-****"
     assert mask_cnh(mask_cnh("12345678978")) == "***********"
     assert mask_pis(mask_pis("12345678901")) == "***.***.***-**"
-

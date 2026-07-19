@@ -447,7 +447,14 @@ def test_quantize_bancario_parametrizado_round_half_up_canonico(valor, esperado)
         (10, Decimal("2034.45")),  # 4521 * 0.05 * 9
         (100, Decimal("22378.95")),  # 4521 * 0.05 * 99 = 22378.95
     ],
-    ids=["min_exato", "uma_extra", "duas_extras", "quatro_extras", "nove_extras", "noventa_nove_extras"],
+    ids=[
+        "min_exato",
+        "uma_extra",
+        "duas_extras",
+        "quatro_extras",
+        "nove_extras",
+        "noventa_nove_extras",
+    ],
 )
 def test_adicional_folhas_puro_parametrizado_escritura(folhas, esperado):
     """T048.4a: `calcular_adicional_folhas` para escritura_compra_venda.

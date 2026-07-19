@@ -158,18 +158,14 @@ def test_scan_count_handles_redis_offline():
 # ============================================================================
 
 
-def test_check_redis_queues_with_fakeredis_populated(
-    fake_redis_populated, monkeypatch
-):
+def test_check_redis_queues_with_fakeredis_populated(fake_redis_populated, monkeypatch):
     """Snapshot completo de 6 namespaces via fakeredis populado."""
     # Força redis.from_url -> fakeredis e SessionLocal OK
     import redis as redis_sync
 
     monkeypatch.setattr(redis_sync, "from_url", lambda *a, **kw: fake_redis_populated)
 
-    result = _check_redis_queues_sync(
-        "redis://fake:6379/0", scan_hard_cap=1000, ttl_sample=64
-    )
+    result = _check_redis_queues_sync("redis://fake:6379/0", scan_hard_cap=1000, ttl_sample=64)
 
     assert result["pii_safe_labels"] is True
     assert result["status"] == "up"
@@ -231,9 +227,7 @@ def test_check_redis_queues_status_warn_on_saturation(monkeypatch):
     monkeypatch.setattr(redis_sync, "from_url", lambda *a, **kw: fake)
 
     # scan_hard_cap=100 -> 150 chaves excedem -> exhausted=True + status=warn
-    result = _check_redis_queues_sync(
-        "redis://fake:6379/0", scan_hard_cap=100, ttl_sample=10
-    )
+    result = _check_redis_queues_sync("redis://fake:6379/0", scan_hard_cap=100, ttl_sample=10)
     assert result["status"] == "warn"
     assert "cap=100" in result["detail"] or "saturacao" in result["detail"]
     assert result["pii_safe_labels"] is True

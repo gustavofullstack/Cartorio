@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 
-StatusFilter = Literal['open', 'closed', 'all']
+StatusFilter = Literal["open", "closed", "all"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,12 +28,12 @@ class AtendimentoQueryService:
     def __init__(self, rows: list[AtendimentoRow] | None = None) -> None:
         self._rows = list(rows or [])
 
-    def list_open(self, status_filter: StatusFilter = 'open') -> list[AtendimentoRow]:
-        if status_filter == 'all':
+    def list_open(self, status_filter: StatusFilter = "open") -> list[AtendimentoRow]:
+        if status_filter == "all":
             return list(self._rows)
-        if status_filter == 'open':
-            return [r for r in self._rows if r.status in {'open', 'pending', 'em_andamento'}]
-        return [r for r in self._rows if r.status in {'closed', 'concluido', 'resolved'}]
+        if status_filter == "open":
+            return [r for r in self._rows if r.status in {"open", "pending", "em_andamento"}]
+        return [r for r in self._rows if r.status in {"closed", "concluido", "resolved"}]
 
     def count_by_canal(self) -> dict[str, int]:
         out: dict[str, int] = {}
@@ -41,12 +41,12 @@ class AtendimentoQueryService:
             out[r.canal] = out.get(r.canal, 0) + 1
         return out
 
-    def as_api_payload(self, status_filter: StatusFilter = 'open') -> dict[str, Any]:
+    def as_api_payload(self, status_filter: StatusFilter = "open") -> dict[str, Any]:
         items = self.list_open(status_filter)
         return {
-            'count': len(items),
-            'items': [{'id': i.id, 'status': i.status, 'canal': i.canal} for i in items],
+            "count": len(items),
+            "items": [{"id": i.id, "status": i.status, "canal": i.canal} for i in items],
         }
 
 
-__all__ = ['AtendimentoQueryService', 'AtendimentoRow', 'StatusFilter']
+__all__ = ["AtendimentoQueryService", "AtendimentoRow", "StatusFilter"]

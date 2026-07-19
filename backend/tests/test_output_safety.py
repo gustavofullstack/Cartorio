@@ -293,20 +293,22 @@ def test_scrub_response_usa_pii_scrub_indiretamente():
 
 
 # ============================================================================
-# LGPD-by-design: NON-PII fields (consent_ip/UA/request_id) NAO devem ser alterados
+# LGPD-by-design: IP e PII; demais metadados operacionais sao preservados
 # ============================================================================
 
 
-def test_scrub_response_nao_altera_audit_metadata():
-    """consent_ip / UA / request_id NAO sao PII (LGPD-by-design D5) — preservados."""
+def test_scrub_response_redige_ip_em_resposta_publica_sem_alterar_outros_metadados():
+    """IP completo nao sai no payload publico; UA, request_id e canal permanecem uteis."""
     payload = {
-        "consent_ip": "187.45.123.45",  # IP completo (DPO-only context)
+        # O IP completo pode existir no contexto interno, mas nao pode cruzar
+        # a fronteira de resposta publica via output_safety.
+        "consent_ip": "187.45.123.45",
         "user_agent": "Mozilla/5.0",
         "request_id": "abc-123-def",
         "canal": "whatsapp",
     }
     result, count = scrub_response(payload)
-    # IP tem scrub (adicionado como PII na Wave 49)
+    # IP e dado pessoal e deve ser redigido em qualquer resposta publica.
     assert result["consent_ip"] == "[IP_REDACTED]"
     assert result["user_agent"] == "Mozilla/5.0"
     assert result["request_id"] == "abc-123-def"

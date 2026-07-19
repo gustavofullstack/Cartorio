@@ -118,9 +118,7 @@ def scrub_dict_inplace(d: dict[str, Any]) -> None:
                     scrub_dict_inplace(item)
 
 
-def scrub_pii_from_event(
-    event: dict[str, Any], hint: dict[str, Any]
-) -> dict[str, Any] | None:
+def scrub_pii_from_event(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
     """G8.18.T4 — Sentry before_send hook que cobre TODOS os campos do event protocol.
 
     Cobre:
@@ -267,6 +265,7 @@ def _before_send(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any]
     if orig_str and scrubbed_str and orig_str != scrubbed_str:
         logger.warning("LGPD Sentry Alert: raw PII leak detected and prevented in Sentry payload!")
         from app.services.metrics import store
+
         store.inc_counter("cartorio_pii_leak_prevented_total")
 
     return event

@@ -52,7 +52,7 @@ def trim_history_to_token_budget(
         return list(history[-max(min_keep, 0) :]) if min_keep > 0 else []
 
     # Se já cabe, corta só por tamanho de lista não é responsabilidade aqui
-    total = estimate_tokens('\n'.join(history))
+    total = estimate_tokens("\n".join(history))
     if total <= max_tokens and len(history) <= 10_000:
         # still return copy
         out = list(history)
@@ -60,7 +60,7 @@ def trim_history_to_token_budget(
         out = list(history)
 
     # Drop oldest until under budget
-    while len(out) > min_keep and estimate_tokens('\n'.join(out)) > max_tokens:
+    while len(out) > min_keep and estimate_tokens("\n".join(out)) > max_tokens:
         out.pop(0)
 
     # Se ainda acima do budget mas só min_keep restam, keep them
@@ -101,17 +101,17 @@ def apply_history_limits(
     return prepare_history_for_store(history, config=cfg)
 
 
-async def hist_get(bus: Any, key: int | str, *, prefix: str = 'tg:hist:') -> list[str]:
+async def hist_get(bus: Any, key: int | str, *, prefix: str = "tg:hist:") -> list[str]:
     """Lê histórico multi-turn do Redis (lista de strings role:text)."""
     if not bus:
         return []
     try:
-        client = getattr(bus, 'client', bus)
-        raw = await client.get(f'{prefix}{key}')
+        client = getattr(bus, "client", bus)
+        raw = await client.get(f"{prefix}{key}")
         if not raw:
             return []
         if isinstance(raw, bytes):
-            raw = raw.decode('utf-8', errors='replace')
+            raw = raw.decode("utf-8", errors="replace")
         data = json.loads(raw)
         return data if isinstance(data, list) else []
     except Exception:
@@ -125,7 +125,7 @@ async def hist_append(
     text: str,
     *,
     config: DialogHistoryConfig | None = None,
-    prefix: str = 'tg:hist:',
+    prefix: str = "tg:hist:",
 ) -> list[str]:
     """Append + trim + SET com TTL. Retorna histórico final."""
     cfg = config or DialogHistoryConfig()
@@ -134,11 +134,11 @@ async def hist_append(
     try:
         hist = await hist_get(bus, key, prefix=prefix)
         snippet = text[: cfg.snippet_chars]
-        hist.append(f'{role}: {snippet}')
+        hist.append(f"{role}: {snippet}")
         hist = prepare_history_for_store(hist, config=cfg)
-        client = getattr(bus, 'client', bus)
+        client = getattr(bus, "client", bus)
         await client.set(
-            f'{prefix}{key}',
+            f"{prefix}{key}",
             json.dumps(hist, ensure_ascii=False),
             ex=cfg.ttl_sec,
         )
@@ -148,12 +148,12 @@ async def hist_append(
 
 
 __all__ = [
-    'DialogHistoryConfig',
-    'apply_entry_cap',
-    'apply_history_limits',
-    'estimate_tokens',
-    'hist_append',
-    'hist_get',
-    'prepare_history_for_store',
-    'trim_history_to_token_budget',
+    "DialogHistoryConfig",
+    "apply_entry_cap",
+    "apply_history_limits",
+    "estimate_tokens",
+    "hist_append",
+    "hist_get",
+    "prepare_history_for_store",
+    "trim_history_to_token_budget",
 ]

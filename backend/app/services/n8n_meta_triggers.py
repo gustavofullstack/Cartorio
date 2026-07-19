@@ -166,15 +166,11 @@ def parse_notify_payload(
 
     channel = str(data.get("channel") or "").strip()
     if strict_channel and channel != EXPECTED_CHANNEL:
-        raise ValueError(
-            f"unexpected channel {channel!r}; expected {EXPECTED_CHANNEL!r}"
-        )
+        raise ValueError(f"unexpected channel {channel!r}; expected {EXPECTED_CHANNEL!r}")
 
     table = str(data.get("table") or "").strip()
     if table not in CRITICAL_TABLES:
-        raise ValueError(
-            f"unexpected table {table!r}; allowed: {sorted(CRITICAL_TABLES)}"
-        )
+        raise ValueError(f"unexpected table {table!r}; allowed: {sorted(CRITICAL_TABLES)}")
 
     op = str(data.get("op") or "").strip().upper()
     if op not in ALLOWED_OPS:

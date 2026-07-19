@@ -114,7 +114,7 @@ CHATWOOT_MSG_SAMPLE: dict[str, Any] = {
 
 ALERTMANAGER_SAMPLE: dict[str, Any] = {
     "version": "4",
-    "groupKey": "{}:{alertname=\"HighErrorRate\"}",
+    "groupKey": '{}:{alertname="HighErrorRate"}',
     "status": "firing",
     "receiver": "cartorio-telegram-default",
     "groupLabels": {"alertname": "HighErrorRate"},
@@ -256,9 +256,7 @@ def test_schema_has_examples() -> None:
     for schema in schemas_with_examples:
         json_schema = schema.model_json_schema()
         props = json_schema.get("properties", {})
-        any_example = any(
-            "examples" in prop or "example" in prop for prop in props.values()
-        )
+        any_example = any("examples" in prop or "example" in prop for prop in props.values())
         assert any_example, f"{schema.__name__} deve ter examples em algum campo"
 
 
@@ -287,7 +285,8 @@ def test_openapi_includes_enhanced_descriptions() -> None:
     spec = app.openapi()
     paths = spec.get("paths", {})
     webhook_paths = [
-        p for p in paths
+        p
+        for p in paths
         if "webhook" in p.lower() or "telegram" in p.lower() or "alertmanager" in p.lower()
     ]
     assert webhook_paths, f"Esperava paths de webhook, got: {list(paths.keys())[:5]}"
@@ -295,12 +294,23 @@ def test_openapi_includes_enhanced_descriptions() -> None:
     # Para cada path de webhook, pelo menos 1 schema com description eh referenciado.
     schemas = spec.get("components", {}).get("schemas", {})
     webhook_schema_names = [
-        "TelegramUpdate", "TelegramMessage", "TelegramUser", "TelegramChat",
-        "TelegramCallbackQuery", "EvolutionPayload", "EvolutionKey",
-        "EvolutionMessage", "ChatwootMessageCreated",
+        "TelegramUpdate",
+        "TelegramMessage",
+        "TelegramUser",
+        "TelegramChat",
+        "TelegramCallbackQuery",
+        "EvolutionPayload",
+        "EvolutionKey",
+        "EvolutionMessage",
+        "ChatwootMessageCreated",
         "ChatwootConversationStatusChanged",
-        "N8nErrorRequest", "N8nDeletionRequest", "N8nMetricsIngest",
-        "AlertManagerPayload", "AlertEntry", "AlertLabel", "AlertAnnotation",
+        "N8nErrorRequest",
+        "N8nDeletionRequest",
+        "N8nMetricsIngest",
+        "AlertManagerPayload",
+        "AlertEntry",
+        "AlertLabel",
+        "AlertAnnotation",
         "OutboxDispatchRequest",
     ]
     # ChatwootWebhookModel eh Union (nao BaseModel) - auto-gerado como oneOf.
@@ -316,9 +326,7 @@ def test_openapi_includes_enhanced_descriptions() -> None:
         props = schema.get("properties", {})
         assert props, f"{schema_name} sem properties"
         for field_name, prop in props.items():
-            assert "description" in prop, (
-                f"{schema_name}.{field_name} sem description no OpenAPI"
-            )
+            assert "description" in prop, f"{schema_name}.{field_name} sem description no OpenAPI"
 
 
 # ----------------------------------------------------------------------------

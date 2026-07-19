@@ -1,7 +1,12 @@
 """Output safety utilities (LGPD-016 #13 — output scrub FULL COVERAGE).
 
 Wrapper UNICO para aplicar PII scrubbing em QUALQUER payload de saida
-(responses HTTP, error messages, audit payloads, webhook returns, etc).
+(responses HTTP, error messages e retornos de webhook, etc.).
+
+Este modulo e uma fronteira de *egress*: IPs completos tambem sao
+redigidos antes de uma resposta publica. Nao o use para transformar o
+registro persistido de auditoria: ``audit_log.ip`` e restrito ao DPO, e o
+campo publico daquele dominio e ``audit_log.ip_truncated``.
 
 LGPD art. 46: dados pessoais nao podem sair do backend em texto puro.
 Defense-in-depth: mesmo que o caller ja tenha feito scrub, eh idempotente
@@ -52,9 +57,9 @@ def scrub_response(payload: Any) -> tuple[Any, int]:
         >>> n2 == 0  # segunda passada nao detecta mais PII
         True
 
-    LGPD: use em TODA resposta HTTP, error message, audit payload, webhook
-    return, etc. Nunca confie que caller ja fez scrub — wrapper eh
-    idempotente e barato.
+    LGPD: use em TODA resposta HTTP, error message e webhook return. Nunca
+    confie que caller ja fez scrub — wrapper eh idempotente e barato. IP
+    completo e dado pessoal e vira ``[IP_REDACTED]`` neste limite publico.
     """
     if payload is None:
         return None, 0

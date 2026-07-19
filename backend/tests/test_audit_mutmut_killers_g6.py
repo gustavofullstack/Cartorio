@@ -59,7 +59,10 @@ def test_canonical_block_format_exato() -> None:
     assert ", " not in canonical, f"sem espacos entre virgulas. Got: {canonical}"
     assert ": " not in canonical, f"sem espacos apos dois-pontos. Got: {canonical}"
     # 3) prev_hash quando None -> 64 zeros
-    assert '"prev_hash":"0000000000000000000000000000000000000000000000000000000000000000"' in canonical
+    assert (
+        '"prev_hash":"0000000000000000000000000000000000000000000000000000000000000000"'
+        in canonical
+    )
     # 4) timestamp eh string literal
     assert '"timestamp":"2026-07-16T10:00:00.000000"' in canonical
 
@@ -185,7 +188,6 @@ def test_verify_chain_detecta_hash_tampered(db_session) -> None:
 
     e1 = AuditService.log(db_session, actor_id="u1", action="login", resource="r", payload={"x": 1})
 
-
     # Tamper no e1.hash
     e1.hash = "f" * 64
     db_session.commit()
@@ -202,7 +204,9 @@ def test_verify_chain_detecta_payload_tampered(db_session) -> None:
     AuditService.log(db_session, actor_id="u1", action="login", resource="r", payload={"x": 1})
 
     # Tamper direto no payload
-    entry = db_session.query(__import__("app.models.audit_log", fromlist=["AuditLog"]).AuditLog).first()
+    entry = db_session.query(
+        __import__("app.models.audit_log", fromlist=["AuditLog"]).AuditLog
+    ).first()
     entry.payload = {"x": 999}  # mudou
     db_session.commit()
 
@@ -297,9 +301,7 @@ def test_log_actor_type_default_user(db_session) -> None:
     """actor_type default DEVE ser 'user' (mata mutante que troca default)."""
     from app.services.audit import AuditService
 
-    e = AuditService.log(
-        db_session, actor_id="u1", action="a", resource="r", payload={}
-    )
+    e = AuditService.log(db_session, actor_id="u1", action="a", resource="r", payload={})
     assert e.actor_type == "user"
 
 

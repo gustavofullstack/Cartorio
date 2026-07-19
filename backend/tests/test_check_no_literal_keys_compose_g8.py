@@ -52,6 +52,7 @@ def test_main_invokes_literal_keys(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
     def fake_run(cmd, *args, **kwargs):  # type: ignore[no-untyped-def]
         captured.append(cmd)
+
         # Return success for the literal_keys invocation.
         class _R:
             returncode = 0
@@ -75,7 +76,9 @@ def test_main_invokes_gitleaks_if_available(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """gitleaks entra na pipeline quando shutil.which retorna path."""
-    monkeypatch.setattr(cnlkc.shutil, "which", lambda n: f"/usr/bin/{n}" if n == "gitleaks" else None)
+    monkeypatch.setattr(
+        cnlkc.shutil, "which", lambda n: f"/usr/bin/{n}" if n == "gitleaks" else None
+    )
     captured: list[list[str]] = []
 
     def fake_run(cmd, *args, **kwargs):  # type: ignore[no-untyped-def]
@@ -339,7 +342,9 @@ def test_cache_key_changes_with_severity() -> None:
     assert cnlkc._cache_key(args_low) != cnlkc._cache_key(args_high)
 
 
-def test_cache_read_returns_none_when_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cache_read_returns_none_when_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(cnlkc, "CACHE_DIR", tmp_path / "cache")
     assert cnlkc._read_cache("missing", ttl=60) is None
 
@@ -406,7 +411,9 @@ def test_tool_exists_detects_binary(monkeypatch: pytest.MonkeyPatch) -> None:
 # ============================================================================
 def test_trufflehog_excludes_venv(monkeypatch: pytest.MonkeyPatch) -> None:
     """trufflehog command deve trazer --exclude-paths para venvs."""
-    monkeypatch.setattr(cnlkc.shutil, "which", lambda n: "/usr/bin/trufflehog" if n == "trufflehog" else None)
+    monkeypatch.setattr(
+        cnlkc.shutil, "which", lambda n: "/usr/bin/trufflehog" if n == "trufflehog" else None
+    )
     captured: list[list[str]] = []
 
     def fake_run(cmd, *args, **kwargs):  # type: ignore[no-untyped-def]

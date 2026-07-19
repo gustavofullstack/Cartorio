@@ -29,6 +29,12 @@ _PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("phone_br", re.compile(r"\(?\d{2}\)?\s?9?\d{4}-?\d{4}")),
     ("cns", re.compile(r"\b\d{15}\b")),
     ("ip", re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")),
+    (
+        "financeiro_cliente",
+        re.compile(
+            r"(?i)\b(?:cliente|nome)\b.*?(?:valor|total|emolumentos|R\$).*?(\d{1,3}(?:\.\d{3})*(?:,\d{2})|\d+(?:\.\d{2}))\b"
+        ),
+    ),
 )
 
 

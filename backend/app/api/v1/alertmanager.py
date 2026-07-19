@@ -108,9 +108,7 @@ def _alert_fingerprint(alert: AlertEntry) -> str:
     """Hash curto pra dedup (não inclui timestamps — AlertManager repete por janela)."""
     import hashlib
 
-    canonical = "|".join(
-        f"{k}={v}" for k, v in sorted(alert.labels.model_dump().items())
-    )
+    canonical = "|".join(f"{k}={v}" for k, v in sorted(alert.labels.model_dump().items()))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
 
 
@@ -139,9 +137,7 @@ def format_alert_message(alert: AlertEntry, payload_status: str) -> str:
         lines.append(f"<b>Details:</b> {desc_scrub[:400]}")
     redactions = sum_red + desc_red
     if redactions:
-        lines.append(
-            f"\n<i>LGPD: {', '.join(redactions)} redactado(s) por segurança</i>"
-        )
+        lines.append(f"\n<i>LGPD: {', '.join(redactions)} redactado(s) por segurança</i>")
     runbook = alert.annotations.runbook_url or alert.annotations.runbook
     if runbook:
         clean_runbook, _ = _scrub_pii(runbook)
@@ -189,9 +185,7 @@ async def _is_duplicate(fingerprint: str) -> bool:
         bus = get_bus()
         client = await bus._get_client()  # noqa: SLF001
         # SET NX EX
-        was_set = await client.set(
-            _dedup_key(fingerprint), "1", nx=True, ex=ALERTMANAGER_DEDUP_TTL
-        )
+        was_set = await client.set(_dedup_key(fingerprint), "1", nx=True, ex=ALERTMANAGER_DEDUP_TTL)
         return not bool(was_set)
     except Exception as exc:  # noqa: BLE001
         # Fail-open: se Redis cair, deixa passar (AlertManager ainda tem group_interval)
@@ -259,17 +253,13 @@ async def _dispatch_or_send_all(
         token = _resolve_token()
         chat_id = _resolve_chat_id(receiver_label)
         if not token or not chat_id:
-            logger.warning(
-                "[alertmanager] Telegram not configured for receiver=%s", receiver_label
-            )
+            logger.warning("[alertmanager] Telegram not configured for receiver=%s", receiver_label)
             return {"sent": 0, "deduped": 0, "failed": 0}
         sent = 0
         failed = 0
         for alert in payload.alerts:
             msg = format_alert_message(alert, payload.status)
-            ok, _ = await _send_telegram_message(
-                msg, token=token, chat_id=chat_id
-            )
+            ok, _ = await _send_telegram_message(msg, token=token, chat_id=chat_id)
             if ok:
                 sent += 1
             else:
@@ -376,9 +366,7 @@ async def alertmanager_default(
 
     Receiver: `cartorio-telegram-default`.
     """
-    return await _alertmanager_request(
-        payload, background_tasks, receiver_label="default"
-    )
+    return await _alertmanager_request(payload, background_tasks, receiver_label="default")
 
 
 @router.post("/critical", status_code=status.HTTP_202_ACCEPTED)
@@ -409,9 +397,7 @@ async def alertmanager_lgpd(
     background_tasks: BackgroundTasks,
 ) -> dict[str, Any]:
     """Webhook squad cartorio-lgpd — DPO + escrevente."""
-    return await _alertmanager_request(
-        payload, background_tasks, receiver_label="lgpd"
-    )
+    return await _alertmanager_request(payload, background_tasks, receiver_label="lgpd")
 
 
 @router.post("/n8n", status_code=status.HTTP_202_ACCEPTED)
@@ -420,6 +406,4 @@ async def alertmanager_n8n(
     background_tasks: BackgroundTasks,
 ) -> dict[str, Any]:
     """Webhook squad cartorio-n8n — operadores de workflow."""
-    return await _alertmanager_request(
-        payload, background_tasks, receiver_label="n8n"
-    )
+    return await _alertmanager_request(payload, background_tasks, receiver_label="n8n")

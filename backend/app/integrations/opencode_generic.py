@@ -167,6 +167,9 @@ PROVIDER_DISPATCH = {
     "opencode_free_1": "opencode_free_1",
     "opencode_free_2": "opencode_free_2",
     "opencode_free_3": "opencode_free_3",
+    "opencode_zen_account_1": "opencode_zen_account_1",
+    "opencode_zen_account_2": "opencode_zen_account_2",
+    "opencode_zen_account_3": "opencode_zen_account_3",
     "openrouter": "openrouter",
     "groq": "groq",
     "mistral": "mistral",
@@ -208,6 +211,27 @@ def get_config_for(provider_name: str) -> ProviderConfig | None:
             base_url=settings.opencode_free_3_base_url,
             api_key=settings.opencode_free_3_api_key,
             model=settings.opencode_free_3_model,
+        )
+    if provider_name == "opencode_zen_account_1":
+        return ProviderConfig(
+            name="opencode_zen_account_1",
+            base_url=settings.opencode_zen_account_1_base_url,
+            api_key=settings.opencode_zen_account_1_api_key,
+            model=settings.opencode_zen_account_1_model,
+        )
+    if provider_name == "opencode_zen_account_2":
+        return ProviderConfig(
+            name="opencode_zen_account_2",
+            base_url=settings.opencode_zen_account_2_base_url,
+            api_key=settings.opencode_zen_account_2_api_key,
+            model=settings.opencode_zen_account_2_model,
+        )
+    if provider_name == "opencode_zen_account_3":
+        return ProviderConfig(
+            name="opencode_zen_account_3",
+            base_url=settings.opencode_zen_account_3_base_url,
+            api_key=settings.opencode_zen_account_3_api_key,
+            model=settings.opencode_zen_account_3_model,
         )
     if provider_name == "openrouter":
         return ProviderConfig(

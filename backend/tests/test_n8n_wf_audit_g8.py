@@ -195,7 +195,9 @@ def test_git_log_cache_avoids_duplicate_subprocess(
 
     def fake_run(command: list[str], **kwargs: Any) -> SimpleNamespace:
         calls.append(command)
-        return SimpleNamespace(returncode=0, stdout="commit|Author|a@example.invalid|0|subject", stderr="")
+        return SimpleNamespace(
+            returncode=0, stdout="commit|Author|a@example.invalid|0|subject", stderr=""
+        )
 
     monkeypatch.setattr(audit_module.subprocess, "run", fake_run)
     audit_module._git_log_cached.cache_clear()

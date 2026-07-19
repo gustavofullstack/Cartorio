@@ -81,11 +81,26 @@ def client():
 AUTH = {"X-API-Key": "a" * 64}
 
 
-def _make_protocolo(db, numero="2026-00001"):
+def _make_protocolo(db, numero="2026-00001", consentimento_lgpd=True):
     from app.models.protocolo import Protocolo
+    from app.models.cliente import Cliente
+
+    c = db.get(Cliente, 1)
+    if c is None:
+        c = Cliente(
+            id=1,
+            cpf_hash="dummy_hash",
+            nome="Joao da Silva",
+            consentimento_lgpd=consentimento_lgpd,
+        )
+        db.add(c)
+        db.flush()
+    else:
+        c.consentimento_lgpd = consentimento_lgpd
+        db.flush()
 
     p = Protocolo(
-        cliente_id=1,  # dummy FK
+        cliente_id=c.id,
         numero=numero,
         tipo="escritura_compra_venda",
         status="em_andamento",
@@ -222,3 +237,49 @@ def test_upload_response_shape(client):
         "uploaded_at",
     }
     assert set(body.keys()) == expected_keys
+
+
+def test_upload_sem_consentimento_retorna_403(client):
+    """G8.16.T3: Se o cliente revogou consentimento, upload_documento deve retornar 403."""
+    from app.db import session_scope
+
+    with session_scope() as db:
+        pid = _make_protocolo(db, consentimento_lgpd=False)
+
+    fake_hash = hashlib.sha256(b"x").hexdigest()
+    form_data = {
+        "protocolo_id": pid,
+        "tipo": "rg",
+        "storage_path": "x",
+        "mime_type": "application/pdf",
+        "hash_sha256": fake_hash,
+    }
+    resp = client.post("/api/v1/documento/upload", data=form_data, headers=AUTH)
+    assert resp.status_code == 403
+    assert resp.json()["erro"] == "LGPD_CONSENT_REQUIRED"
+
+
+def test_segunda_via_sem_consentimento_retorna_403(client):
+    """G8.16.T3: Se o cliente revogou consentimento, documento_segunda_via deve retornar 403."""
+    from app.db import session_scope
+
+    with session_scope() as db:
+        _make_protocolo(db, numero="2026-99999", consentimento_lgpd=False)
+
+    resp = client.post("/api/v1/documento/segunda-via?protocolo=2026-99999", headers=AUTH)
+    assert resp.status_code == 403
+    assert resp.json()["erro"] == "LGPD_CONSENT_REQUIRED"
+
+
+def test_segunda_via_com_consentimento_retorna_200(client):
+    """G8.16.T3: Se o cliente possui consentimento ativo, documento_segunda_via deve retornar 200."""
+    from app.db import session_scope
+
+    with session_scope() as db:
+        _make_protocolo(db, numero="2026-88888", consentimento_lgpd=True)
+
+    resp = client.post("/api/v1/documento/segunda-via?protocolo=2026-88888", headers=AUTH)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "url_pdf" in body
+    assert body["protocolo"] == "2026-88888"

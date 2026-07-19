@@ -54,7 +54,10 @@ class TestConstants:
         text = CARTORIO_DEFAULT_SYSTEM_PROMPT.upper()
         assert "HITL" in text
         assert "LGPD" in text
-        assert "CARTÓRIO" in CARTORIO_DEFAULT_SYSTEM_PROMPT or "Cartório" in CARTORIO_DEFAULT_SYSTEM_PROMPT
+        assert (
+            "CARTÓRIO" in CARTORIO_DEFAULT_SYSTEM_PROMPT
+            or "Cartório" in CARTORIO_DEFAULT_SYSTEM_PROMPT
+        )
 
     def test_default_prompt_has_no_literal_secrets(self) -> None:
         low = CARTORIO_DEFAULT_SYSTEM_PROMPT.lower()

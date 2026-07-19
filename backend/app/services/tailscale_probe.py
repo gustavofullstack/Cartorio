@@ -172,9 +172,7 @@ def format_report(results: Sequence[TailscaleProbeResult]) -> str:
             ok_count += 1
         flag = "yes" if r.ok else "no"
         detail = r.detail.replace("|", "\\|")
-        lines.append(
-            f"| `{r.host}` | {r.port} | {flag} | {r.latency_ms:.3f} | {detail} |"
-        )
+        lines.append(f"| `{r.host}` | {r.port} | {flag} | {r.latency_ms:.3f} | {detail} |")
 
     fail_count = len(results) - ok_count
     status = "GREEN" if fail_count == 0 and results else ("YELLOW" if ok_count else "RED")

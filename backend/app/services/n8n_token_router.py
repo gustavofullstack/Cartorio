@@ -136,11 +136,7 @@ class N8NTokenRouter:
         with self._lock:
             if kid in self._tokens:
                 raise ValueError(f"n8n_token_router: kid={kid} already registered")
-            if (
-                status == TokenStatus.ACTIVE
-                and self._active_kid
-                and self._active_kid != kid
-            ):
+            if status == TokenStatus.ACTIVE and self._active_kid and self._active_kid != kid:
                 raise RuntimeError(
                     f"n8n_token_router: cannot register active kid={kid} while "
                     f"kid={self._active_kid} is active; use rotate()"
@@ -251,18 +247,14 @@ class N8NTokenRouter:
                     entry["status"] = TokenStatus.REVOKED
                     promoted.append(kid)
             if promoted:
-                logger.info(
-                    "n8n_token_router: revoked kids past grace: %s", promoted
-                )
+                logger.info("n8n_token_router: revoked kids past grace: %s", promoted)
             return promoted
 
     def list_active(self) -> list[str]:
         """Lista kids em estado ACTIVE (normalmente 1)."""
         with self._lock:
             return [
-                kid
-                for kid, entry in self._tokens.items()
-                if entry["status"] == TokenStatus.ACTIVE
+                kid for kid, entry in self._tokens.items() if entry["status"] == TokenStatus.ACTIVE
             ]
 
     def snapshot(self) -> dict[str, dict]:

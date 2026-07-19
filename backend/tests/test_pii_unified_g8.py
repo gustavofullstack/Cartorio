@@ -184,14 +184,10 @@ class TestUnifiedNoLeak:
         # de partial se for exatamente '***' + suffix. Conferimos:
         # - o valor EXATO deve NAO aparecer
         if "." in cpf or "-" in cpf:
-            assert cpf not in out, (
-                f"Leak: partial mask devolveu o CPF raw {cpf!r} em {out!r}"
-            )
+            assert cpf not in out, f"Leak: partial mask devolveu o CPF raw {cpf!r} em {out!r}"
         # digits sem formatacao: "12345678" nunca pode aparecer isolado
         digits_only = "".join(ch for ch in cpf if ch.isdigit())
-        assert digits_only not in out, (
-            f"Leak digits-only {digits_only!r} em partial output {out!r}"
-        )
+        assert digits_only not in out, f"Leak digits-only {digits_only!r} em partial output {out!r}"
 
     @pytest.mark.parametrize("cpf", SAMPLE_CPFS_FOR_LEAK)
     def test_unified_no_raw_leak_full(self, cpf: str) -> None:
@@ -199,9 +195,7 @@ class TestUnifiedNoLeak:
         out = mask("cpf", cpf)
         assert cpf not in out
         digits_only = "".join(ch for ch in cpf if ch.isdigit())
-        assert digits_only not in out, (
-            f"Leak digits-only {digits_only!r} em full output {out!r}"
-        )
+        assert digits_only not in out, f"Leak digits-only {digits_only!r} em full output {out!r}"
 
     def test_unified_phone_partial_no_leak(self) -> None:
         """Phone BR partial NAO pode devolver DDD+9digitos raw."""
@@ -212,8 +206,7 @@ class TestUnifiedNoLeak:
     def test_unified_no_leak_mixed_text(self) -> None:
         """Texto com MULTIPLOS CPFs nao vaza nenhum."""
         text = (
-            "Notas: cliente 529.982.247-25 e conjuge 111.444.777-35."
-            " Ambos assinaram em 2026-07-18."
+            "Notas: cliente 529.982.247-25 e conjuge 111.444.777-35. Ambos assinaram em 2026-07-18."
         )
         out = mask("auto", text)
         assert "529.982.247-25" not in out

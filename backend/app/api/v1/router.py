@@ -16,6 +16,7 @@ Tags:
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 import hashlib
 import hmac
@@ -138,6 +139,7 @@ async def calcular_emolumento(
 ) -> dict:
     """Calcula emolumento. Publico - sem PII envolvida."""
     from app.services.metrics import store
+
     store.inc_counter("cartorio_emolumento_consultado_total")
     try:
         resultado = calcular_emolumento_svc(tipo, folhas=folhas, urgencia=urgencia)
@@ -174,8 +176,13 @@ async def calcular_emolumento_api(
     tipo: Annotated[str, Query(description="Tipo do ato cartorário.")],
     folhas: Annotated[int, Query(ge=1, le=1000, description="Quantidade de folhas.")] = 1,
     urgencia: Annotated[bool, Query(description="Aplica adicional de 50% por urgência.")] = False,
-    isencao_motivo: Annotated[str | None, Query(description="Motivo legal de isenção, se aplicável.")] = None,
-    cliente_id: Annotated[int | None, Query(description="ID do cliente para validação de consentimento em consultas sensíveis.")] = None,
+    isencao_motivo: Annotated[
+        str | None, Query(description="Motivo legal de isenção, se aplicável.")
+    ] = None,
+    cliente_id: Annotated[
+        int | None,
+        Query(description="ID do cliente para validação de consentimento em consultas sensíveis."),
+    ] = None,
     db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> EmolumentoCalculoResponse:
     """Calcula emolumento com tratamento de isenções e controle de privacidade LGPD."""
@@ -200,9 +207,7 @@ async def calcular_emolumento_api(
 
     # 2. Validação LGPD: Consent Check se ato sensível e cliente fornecido
     if is_sensivel and cliente_id is not None and db is not None:
-        cliente = db.execute(
-            select(Cliente).where(Cliente.id == cliente_id)
-        ).scalar_one_or_none()
+        cliente = db.execute(select(Cliente).where(Cliente.id == cliente_id)).scalar_one_or_none()
 
         if not cliente:
             raise HTTPException(
@@ -225,7 +230,7 @@ async def calcular_emolumento_api(
     # 3. Tratamento de Isenções (se aplicável)
     isento = False
     motivo_legal = None
-    
+
     # Valores finais do cálculo
     base_val = resultado.base
     adicional_folhas_val = resultado.adicional_folhas
@@ -873,11 +878,12 @@ def post_protocolo_criar_api(
 # Webhook Evolution (WhatsApp)
 # ============================================================================
 
+
 def _parse_dual_format(payload: dict) -> tuple[str, str, str]:
     """Auxiliar para extração de dados do payload da Evolution."""
     _data = payload.get("data") or {}
     _key_raw = _data.get("key") if isinstance(_data, dict) else None
-    
+
     _msg = (
         _data.get("message")
         if (_data and isinstance(_data, dict))
@@ -915,7 +921,7 @@ async def webhook_evolution_health() -> dict:
         "instance": "cartorio-2notas",
     }
     s_leg, t_leg, i_leg = _parse_dual_format(legado)
-    
+
     # 2. Simula payload moderno (nested)
     moderno = {
         "event": "messages.upsert",
@@ -930,15 +936,19 @@ async def webhook_evolution_health() -> dict:
                 "conversation": "Teste moderno",
             },
             "pushName": "Contato Teste",
-        }
+        },
     }
     s_mod, t_mod, i_mod = _parse_dual_format(moderno)
-    
+
     parse_ok = (
-        s_leg == "553499999999" and t_leg == "Teste legado" and i_leg == "cartorio-2notas"
-        and s_mod == "553499999999@s.whatsapp.net" and t_mod == "Teste moderno" and i_mod == "cartorio-2notas"
+        s_leg == "553499999999"
+        and t_leg == "Teste legado"
+        and i_leg == "cartorio-2notas"
+        and s_mod == "553499999999@s.whatsapp.net"
+        and t_mod == "Teste moderno"
+        and i_mod == "cartorio-2notas"
     )
-    
+
     return {
         "status": "ok" if parse_ok else "degraded",
         "dual_format_parse": "healthy" if parse_ok else "fail",
@@ -1626,102 +1636,105 @@ async def health_llm() -> JSONResponse:
     response_description="Status por servico + status agregado.",
 )
 async def health_radar() -> dict:
-    """Verifica conexoes de todos os servicos da suite."""
+    """Verifica disponibilidade resumida sem ocultar falhas de integracao.
+
+    Este endpoint e intencionalmente mais compacto que ``/health/integracoes``
+    e ``/health/radar/expanded``.  Ainda assim, o contrato distingue:
+
+    * ``online``: a sonda recebeu a resposta esperada;
+    * ``degraded``: o destino respondeu, mas com HTTP inesperado;
+    * ``offline``: nao foi possivel comunicar com o destino;
+    * ``unconfigured``: a integracao opcional nao possui URL configurada.
+
+    Assim, uma aplicacao respondendo 404/5xx, ou uma configuracao ausente, nao
+    aparece como saudavel.  O HTTP do proprio radar continua 200 para que
+    coletores consigam receber o diagnostico mesmo durante um incidente.
+    """
     from app.db import engine
     from sqlalchemy import text
 
+    def aggregate_status(services: dict[str, str]) -> str:
+        """Converte estados dos servicos em semaforo operacional."""
+        if any(services[name] == "offline" for name in ("database", "redis")):
+            return "red"
+        if any(status in {"degraded", "offline"} for status in services.values()):
+            return "yellow"
+        return "green"
+
+    async def probe_http(
+        client: httpx.AsyncClient,
+        url: str | None,
+        accepted_statuses: tuple[int, ...],
+    ) -> str:
+        """Classifica alcance de um health endpoint sem promover erro a sucesso."""
+        if not url:
+            return "unconfigured"
+        try:
+            response = await client.get(url)
+        except (httpx.HTTPError, OSError):
+            return "offline"
+        except Exception:
+            # Um erro inesperado na sonda tambem nao comprova saude do destino.
+            return "offline"
+        return "online" if response.status_code in accepted_statuses else "degraded"
+
     # 1. DB (PostgreSQL via SQLAlchemy)
-    db_ok = False
+    database_status = "offline"
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            db_ok = True
+            database_status = "online"
     except Exception:
         pass
 
     # 2. Redis
-    redis_ok = False
+    redis_status = "offline"
     try:
         r = redis.from_url(settings.redis_url, socket_timeout=2.0)
         r.ping()
-        redis_ok = True
+        redis_status = "online"
     except Exception:
         pass
 
-    # 3. n8n, OpenClaw, Evolution API, Chatwoot, Supabase (via httpx)
-    n8n_ok = False
-    openclaw_ok = False
-    evolution_ok = False
-    # Se a URL base nao foi configurada, o servico e opcional e conta como online
-    chatwoot_ok = not bool(settings.chatwoot_base_url)
-    supabase_ok = not bool(settings.supabase_url)
-
+    # 3. Sondas HTTP. Uma resposta inesperada e ``degraded``; apenas uma
+    # falha de transporte e ``offline``. Nunca use a saude do Postgres local
+    # como evidencia de que Supabase/Kong esta saudavel.
     async with httpx.AsyncClient(timeout=3.0) as client:
-        try:
-            resp = await client.get(f"{settings.n8n_base_url}/healthz")
-            if resp.status_code == 200:
-                n8n_ok = True
-        except Exception:
-            pass
-
-        try:
-            resp = await client.get(f"{settings.openclaw_base_url}/health")
-            if resp.status_code == 200:
-                openclaw_ok = True
-        except Exception:
-            pass
-
-        try:
-            resp = await client.get(f"{settings.evolution_base_url}/")
-            if resp.status_code == 200:
-                evolution_ok = True
-        except Exception:
-            pass
-
-        # Chatwoot - checa /health diretamente (retorna 200 {"status": "woot"})
-        if settings.chatwoot_base_url:
-            try:
-                resp = await client.get(f"{settings.chatwoot_base_url}/health")
-                if resp.status_code in (200, 201, 401, 403):
-                    chatwoot_ok = True
-            except Exception:
-                pass
-
-        # Supabase - checa /auth/v1/health (pode retornar 200, 401 ou 405 via Kong auth gate, ou 404 se Kong nao estiver ativo mas host responder)
-        if settings.supabase_url:
-            try:
-                resp = await client.get(f"{settings.supabase_url}/auth/v1/health")
-                if resp.status_code in (200, 401, 404, 405) or db_ok:
-                    supabase_ok = True
-            except Exception:
-                if db_ok:
-                    supabase_ok = True
-
-    overall_status = (
-        "green"
-        if (
-            db_ok
-            and redis_ok
-            and n8n_ok
-            and openclaw_ok
-            and evolution_ok
-            and chatwoot_ok
-            and supabase_ok
+        (
+            n8n_status,
+            openclaw_status,
+            evolution_status,
+            chatwoot_status,
+            supabase_status,
+        ) = await asyncio.gather(
+            probe_http(client, f"{settings.n8n_base_url}/healthz", (200,)),
+            probe_http(client, f"{settings.openclaw_base_url}/health", (200,)),
+            probe_http(client, f"{settings.evolution_base_url}/", (200,)),
+            probe_http(
+                client,
+                f"{settings.chatwoot_base_url}/health" if settings.chatwoot_base_url else None,
+                (200, 201),
+            ),
+            probe_http(
+                client,
+                f"{settings.supabase_url}/auth/v1/health" if settings.supabase_url else None,
+                (200,),
+            ),
         )
-        else "red"
-    )
+
+    services = {
+        "database": database_status,
+        "redis": redis_status,
+        "n8n": n8n_status,
+        "openclaw": openclaw_status,
+        "evolution": evolution_status,
+        "chatwoot": chatwoot_status,
+        "supabase": supabase_status,
+    }
 
     return {
-        "status": overall_status,
-        "services": {
-            "database": "online" if db_ok else "offline",
-            "redis": "online" if redis_ok else "offline",
-            "n8n": "online" if n8n_ok else "offline",
-            "openclaw": "online" if openclaw_ok else "offline",
-            "evolution": "online" if evolution_ok else "offline",
-            "chatwoot": "online" if chatwoot_ok else "offline",
-            "supabase": "online" if supabase_ok else "offline",
-        },
+        "status": aggregate_status(services),
+        "services": services,
     }
 
 
@@ -2272,16 +2285,56 @@ async def documento_segunda_via(
 ) -> dict:
     """Gera link de download da segunda via."""
     import hashlib
+    from app.models.protocolo import Protocolo
+    from app.models.cliente import Cliente
+    from sqlalchemy import select
+    from fastapi import HTTPException
 
-    # MVP: hash determinístico + timestamp = URL placeholder
-    h = hashlib.sha256(f"{protocolo}:{time.time()}".encode()).hexdigest()[:16]
-    url_pdf = (
-        f"https://supbase.2notasudi.com.br/storage/v1/object/sign/documentos/{protocolo}-{h}.pdf"
-    )
+    with session_scope() as db:
+        # 1. Verifica se o protocolo existe
+        protocolo_db = db.execute(
+            select(Protocolo).where(Protocolo.numero == protocolo)
+        ).scalar_one_or_none()
 
-    # LGPD art. 37: audit log obrigatorio em toda mutacao (A01)
-    try:
-        with session_scope() as db:
+        if protocolo_db is None:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "erro": "PROTOCOLO_NOT_FOUND",
+                    "mensagem": f"Protocolo {protocolo} nao encontrado para emissao de segunda via.",
+                },
+            )
+
+        # 2. Verifica se o cliente existe
+        cliente = db.execute(
+            select(Cliente).where(Cliente.id == protocolo_db.cliente_id)
+        ).scalar_one_or_none()
+
+        if not cliente:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "erro": "CLIENTE_NAO_ENCONTRADO",
+                    "mensagem": f"Cliente associado ao protocolo {protocolo} nao encontrado.",
+                },
+            )
+
+        # 3. Verifica consentimento LGPD ativo
+        if not cliente.consentimento_lgpd:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "erro": "LGPD_CONSENT_REQUIRED",
+                    "mensagem": "Consentimento LGPD nao concedido pelo cliente. Emissao de segunda via bloqueada.",
+                },
+            )
+
+        # MVP: hash determinístico + timestamp = URL placeholder
+        h = hashlib.sha256(f"{protocolo}:{time.time()}".encode()).hexdigest()[:16]
+        url_pdf = f"https://supbase.2notasudi.com.br/storage/v1/object/sign/documentos/{protocolo}-{h}.pdf"
+
+        # LGPD art. 37: audit log obrigatorio em toda mutacao (A01)
+        try:
             AuditService.log(
                 db,
                 actor_id="api",
@@ -2294,9 +2347,9 @@ async def documento_segunda_via(
                 },
                 **audit_kwargs(request),
             )
-    except Exception:
-        # Audit eh best-effort; NAO quebra a operacao principal
-        pass
+        except Exception:
+            # Audit eh best-effort; NAO quebra a operacao principal
+            pass
 
     return {
         "url_pdf": url_pdf,
@@ -4067,6 +4120,27 @@ async def upload_documento(
             },
         )
 
+    # 2. Validação LGPD: Consent Check (G8.16.T3)
+    from app.models.cliente import Cliente
+
+    cliente = db.get(Cliente, protocolo.cliente_id)
+    if cliente is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": "CLIENTE_NAO_ENCONTRADO",
+                "mensagem": f"Cliente ID {protocolo.cliente_id} nao encontrado para validar consentimento.",
+            },
+        )
+    if not cliente.consentimento_lgpd:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "erro": "LGPD_CONSENT_REQUIRED",
+                "mensagem": "Consentimento LGPD nao concedido pelo cliente. Upload de documento bloqueado.",
+            },
+        )
+
     # Cria documento
     doc = Documento(
         protocolo_id=protocolo_id,
@@ -5017,7 +5091,7 @@ def criar_agendamento_webhook(
     except AgendamentoConflictError as e:
         # Incrementa contador de conflitos de agendamento no Prometheus (S7.T4)
         metrics_store.inc_counter("cartorio_agendamentos_conflitos_total")
-        
+
         raise HTTPException(
             status_code=409,
             detail={

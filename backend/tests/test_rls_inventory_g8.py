@@ -155,9 +155,11 @@ class TestValidateRlsInventory:
     def test_missing_policy_detected(self, rls):
         rows = _as_db_rows(rls.EXPECTED_RLS_POLICIES)
         # drop one
-        rows = [r for r in rows if not (
-            r["policyname"] == "dpo_read_access" and r["tablename"] == "clientes"
-        )]
+        rows = [
+            r
+            for r in rows
+            if not (r["policyname"] == "dpo_read_access" and r["tablename"] == "clientes")
+        ]
         report = rls.validate_rls_inventory(rows)
         assert report["ok"] is False
         assert len(report["missing"]) == 1

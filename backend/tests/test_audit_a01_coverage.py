@@ -71,6 +71,38 @@ def valid_payload():
     }
 
 
+@pytest.fixture
+def protocolo_segunda_via_valido(test_engine) -> str:
+    """Cria titular consentido e protocolo DRAFT para testes de segunda via."""
+    from app.models.cliente import Cliente
+    from app.models.protocolo import Protocolo
+
+    numero = "2026-00001"
+    SessionLocal = sessionmaker(bind=test_engine)
+    with SessionLocal() as db:
+        cliente = Cliente(
+            cpf_hash="a" * 64,
+            nome="Titular de teste",
+            consentimento_lgpd=True,
+            consentimento_canal="web",
+        )
+        db.add(cliente)
+        db.flush()
+        db.add(
+            Protocolo(
+                numero=numero,
+                cliente_id=cliente.id,
+                tipo="certidao_negativa",
+                # HITL: a geração do link não pode validar ou avançar o protocolo.
+                status="DRAFT",
+                canal_origem="web",
+            )
+        )
+        db.commit()
+
+    return numero
+
+
 # ============================================================================
 # Tests: Cada endpoint mutante grava audit
 # ============================================================================
@@ -91,11 +123,11 @@ def test_post_protocolo_grava_audit(client, test_engine, valid_payload):
         assert "protocolo:" in entry.resource
 
 
-def test_post_documento_segunda_via_grava_audit(client, test_engine):
-    """POST /api/v1/documento/segunda-via grava audit (A01 — endpoint adicionado)."""
+def test_post_documento_segunda_via_grava_audit(client, test_engine, protocolo_segunda_via_valido):
+    """POST /api/v1/documento/segunda-via grava audit para protocolo HITL válido."""
     resp = client.post(
         "/api/v1/documento/segunda-via",
-        params={"protocolo": "2026-00001", "canal": "whatsapp"},
+        params={"protocolo": protocolo_segunda_via_valido, "canal": "whatsapp"},
     )
     assert resp.status_code == 200, resp.text
 
@@ -106,7 +138,7 @@ def test_post_documento_segunda_via_grava_audit(client, test_engine):
         entry = entries[0]
         assert entry.actor_id == "api"
         assert entry.actor_type == "api"
-        assert "protocolo:2026-00001" in entry.resource
+        assert f"protocolo:{protocolo_segunda_via_valido}" in entry.resource
         assert entry.payload["canal"] == "whatsapp"
 
 
@@ -216,14 +248,16 @@ def test_cron_stale_detector_grava_audit(client, test_engine):
 # ============================================================================
 
 
-def test_audit_request_id_e_uuid_v4(client, test_engine):
+def test_audit_request_id_e_uuid_v4(client, test_engine, protocolo_segunda_via_valido):
     """Audit log tem request_id (UUID v4) extraido do middleware.
 
     NOTA: POST /api/v1/protocolo chama criar_protocolo_svc() que NAO propaga
     request_id atualmente (bug conhecido, fora escopo A01). Este test valida
     endpoints que propagam corretamente (documento_segunda_via, pesquisa_enviada).
     """
-    resp = client.post("/api/v1/documento/segunda-via", params={"protocolo": "2026-00001"})
+    resp = client.post(
+        "/api/v1/documento/segunda-via", params={"protocolo": protocolo_segunda_via_valido}
+    )
     assert resp.status_code == 200
 
     SessionLocal = sessionmaker(bind=test_engine)
@@ -237,9 +271,11 @@ def test_audit_request_id_e_uuid_v4(client, test_engine):
         )
 
 
-def test_x_request_id_header_retornado(client):
+def test_x_request_id_header_retornado(client, protocolo_segunda_via_valido):
     """Middleware ecoa X-Request-Id no response header (validacao basica)."""
-    resp = client.post("/api/v1/documento/segunda-via", params={"protocolo": "2026-00001"})
+    resp = client.post(
+        "/api/v1/documento/segunda-via", params={"protocolo": protocolo_segunda_via_valido}
+    )
     assert resp.status_code == 200
     request_id = resp.headers.get("X-Request-Id")
     assert request_id is not None
