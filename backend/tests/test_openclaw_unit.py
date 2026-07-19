@@ -95,6 +95,7 @@ async def test_openclaw_chat_consent_blocked():
         await chat(
             messages=[{"role": "user", "content": "oi"}],
             base_url="http://localhost:8080",
+            api_key="sk-test-mock",
             consent_granted=False,
         )
     assert exc.value.kind == ChatErrorKind.LGPD_BLOCKED

@@ -139,7 +139,11 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
 
     async def _get_client(self) -> redis_async.Redis | None:
         current_loop = asyncio.get_running_loop()
-        if self._client is not None and self._client_loop is not current_loop:
+        if (
+            self._client is not None
+            and self._client_loop is not None
+            and self._client_loop is not current_loop
+        ):
             old_client = self._client
             self._client = None
             self._client_loop = None
