@@ -16,6 +16,7 @@ suficiente (key tem 64 chars hex = 256 bits de entropia).
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 import time
@@ -132,10 +133,20 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         self._paths = paths_prefixes
         self._ddos_per_minute = ddos_per_minute
         self._client: redis_async.Redis | None = None
+        self._client_loop: asyncio.AbstractEventLoop | None = None
         # A7: sliding window store compartilhado
         self._sliding_store: RedisSlidingWindowStore = RedisSlidingWindowStore(self._url)
 
     async def _get_client(self) -> redis_async.Redis | None:
+        current_loop = asyncio.get_running_loop()
+        if self._client is not None and self._client_loop is not current_loop:
+            old_client = self._client
+            self._client = None
+            self._client_loop = None
+            try:
+                await old_client.aclose()
+            except (redis_async.RedisError, OSError, RuntimeError):
+                logger.debug("rate_limit: discarded Redis client bound to closed loop")
         if self._client is None:
             try:
                 self._client = redis_async.from_url(
@@ -144,10 +155,12 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
                     decode_responses=True,
                     socket_connect_timeout=2.0,
                 )
+                self._client_loop = current_loop
                 await self._client.ping()
             except (redis_async.RedisError, OSError) as e:
                 logger.warning("rate_limit: Redis offline, fail-open: %s", e)
                 self._client = None
+                self._client_loop = None
         return self._client
 
     async def _check(self, key_hash: str, tier: ApiKeyTier) -> RateLimitResult:

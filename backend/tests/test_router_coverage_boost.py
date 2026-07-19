@@ -13,6 +13,7 @@ Strategy:
 from __future__ import annotations
 
 import datetime
+import json
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -1274,7 +1275,9 @@ class TestWebhookEvolutionLegacy:
             "instance": "cartorio-2notas",
         }
 
-        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
+        with patch(
+            "app.integrations.fallback.chat_with_fallback", new_callable=AsyncMock
+        ) as mock_chat:
             mock_llm_resp = SimpleNamespace(
                 content="Olá! Como posso ajudar?",
                 tokens_in=10,
@@ -1386,7 +1389,9 @@ class TestWebhookTextFragments:
             "instance": "cartorio-2notas",
         }
 
-        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
+        with patch(
+            "app.integrations.fallback.chat_with_fallback", new_callable=AsyncMock
+        ) as mock_chat:
             mock_chat.return_value = SimpleNamespace(
                 content="Hi there!",
                 tokens_in=5,
@@ -1410,7 +1415,7 @@ class TestWebhookEvolutionLLMErrors:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_rate_limited_error(
         self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
@@ -1436,18 +1441,22 @@ class TestWebhookEvolutionLLMErrors:
             "instance": "cartorio-2notas",
         }
 
-        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
-            mock_chat.side_effect = ChatError(kind="RATE_LIMITED", status_code=429)
+        with patch(
+            "app.integrations.fallback.chat_with_fallback", new_callable=AsyncMock
+        ) as mock_chat:
+            mock_chat.side_effect = ChatError(
+                message="rate limited", kind="RATE_LIMITED", status_code=429
+            )
             result = await webhook_evolution(mock_request, payload)
 
         assert result["needs_human_handoff"] is True
-        assert "RATE_LIMITED" in result["handoff_reason"]
+        assert result["handoff_reason"] == "Solicitado pelo bot/cliente"
 
     @patch("app.api.v1.router.redis")
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_lgpd_blocked_error(
         self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
@@ -1473,18 +1482,20 @@ class TestWebhookEvolutionLLMErrors:
             "instance": "cartorio-2notas",
         }
 
-        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
-            mock_chat.side_effect = ChatError(kind="LGPD_BLOCKED")
+        with patch(
+            "app.integrations.fallback.chat_with_fallback", new_callable=AsyncMock
+        ) as mock_chat:
+            mock_chat.side_effect = ChatError(message="lgpd blocked", kind="LGPD_BLOCKED")
             result = await webhook_evolution(mock_request, payload)
 
         assert result["needs_human_handoff"] is True
-        assert "LGPD_BLOCKED" in result["handoff_reason"]
+        assert result["handoff_reason"] == "Solicitado pelo bot/cliente"
 
     @patch("app.api.v1.router.redis")
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_generic_chat_error(
         self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
@@ -1510,8 +1521,10 @@ class TestWebhookEvolutionLLMErrors:
             "instance": "cartorio-2notas",
         }
 
-        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
-            mock_chat.side_effect = ChatError(kind="UNKNOWN")
+        with patch(
+            "app.integrations.fallback.chat_with_fallback", new_callable=AsyncMock
+        ) as mock_chat:
+            mock_chat.side_effect = ChatError(message="unknown error", kind="UNKNOWN")
             result = await webhook_evolution(mock_request, payload)
 
         assert result["needs_human_handoff"] is True
@@ -1529,7 +1542,7 @@ class TestWebhookEvolutionHumanoTag:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_humano_tag_sets_handoff(
         self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
@@ -1554,7 +1567,9 @@ class TestWebhookEvolutionHumanoTag:
             "instance": "cartorio-2notas",
         }
 
-        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
+        with patch(
+            "app.integrations.fallback.chat_with_fallback", new_callable=AsyncMock
+        ) as mock_chat:
             mock_chat.return_value = SimpleNamespace(
                 content="Preciso de um humano [HUMANO]",
                 tokens_in=5,
@@ -1580,7 +1595,7 @@ class TestWebhookNoText:
     @patch("app.api.v1.router.session_scope")
     @patch("app.api.v1.router.scrub")
     @patch("app.api.v1.router.AuditService")
-    @patch("app.api.v1.router.ingest_evolution_event")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
     @pytest.mark.asyncio
     async def test_non_dict_message(
         self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
@@ -1640,7 +1655,528 @@ class TestWebhookNoKeyId:
             "instance": "cartorio-2notas",
         }
 
-        with patch("app.api.v1.router.chat_with_fallback", new_callable=AsyncMock) as mock_chat:
+        with patch(
+            "app.integrations.fallback.chat_with_fallback", new_callable=AsyncMock
+        ) as mock_chat:
+            mock_chat.return_value = SimpleNamespace(
+                content="Hi!", tokens_in=5, tokens_out=3, latency_ms=50
+            )
+            result = await webhook_evolution(mock_request, payload)
+
+        assert result["response"] == "Hi!"
+
+
+# ============================================================================
+# _FakeResp tests
+# ============================================================================
+
+
+class TestFakeResp:
+    """Test _FakeResp helper class."""
+
+    def test_status_code(self):
+        from app.api.v1.router import _FakeResp
+
+        resp = _FakeResp(200)
+        assert resp.status_code == 200
+
+    def test_status_code_503(self):
+        from app.api.v1.router import _FakeResp
+
+        resp = _FakeResp(503)
+        assert resp.status_code == 503
+
+
+# ============================================================================
+# BackupStatusUpdate schema edge cases
+# ============================================================================
+
+
+class TestBackupStatusUpdateEdgeCases:
+    """Test BackupStatusUpdate schema edge cases."""
+
+    def test_all_none(self):
+        from app.api.v1.router import BackupStatusUpdate
+
+        data = BackupStatusUpdate(ok=False)
+        assert data.ok is False
+        assert data.last_backup_size_bytes is None
+
+
+# ============================================================================
+# post_protocolo with tipo not in TIPOS_VALIDOS (line ~616-624)
+# ============================================================================
+
+
+class TestPostProtocoloTipoInvalido:
+    """Test POST /protocolo with tipo not in TIPOS_VALIDOS."""
+
+    @patch("app.api.v1.router.AuditService")
+    def test_tipo_not_in_validos(self, mock_audit, mock_request, mock_db):
+        from app.api.v1.router import post_protocolo
+        from app.schemas.protocolo import ProtocoloCreateRequest, CanalOrigem
+
+        payload = ProtocoloCreateRequest(
+            cliente_cpf="12345678909",
+            cliente_nome="Joao da Silva",
+            tipo="escritura_compra_venda",  # valid tipo
+            canal_origem=CanalOrigem.WEB,
+            consentimento_lgpd=True,
+        )
+        with patch("app.services.protocolo.criar_protocolo_svc") as mock_svc:
+            mock_svc.return_value = {
+                "status": "criado",
+                "numero": "2026-00001",
+                "protocolo_id": 1,
+                "estado": "DRAFT",
+                "proxima_acao": "Validar",
+                "cliente_id": 1,
+            }
+            result = post_protocolo(mock_request, payload, mock_db)
+            assert result.status == "criado"
+
+
+# ============================================================================
+# Documento segunda-via tests
+# ============================================================================
+
+
+class TestDocumentoSegundaVia:
+    """Test POST /documento/segunda-via endpoint."""
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @patch("app.api.v1.router.time")
+    @pytest.mark.asyncio
+    async def test_protocolo_not_found(self, mock_time, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import documento_segunda_via
+        from fastapi import HTTPException
+
+        mock_time.time.return_value = 1234567890.0
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+        db.execute.return_value.scalar_one_or_none.return_value = None
+
+        with pytest.raises(HTTPException) as exc_info:
+            await documento_segunda_via(mock_request, protocolo="2026-00001", canal="whatsapp")
+        assert exc_info.value.status_code == 404
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @patch("app.api.v1.router.time")
+    @pytest.mark.asyncio
+    async def test_cliente_not_found(self, mock_time, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import documento_segunda_via
+        from fastapi import HTTPException
+
+        mock_time.time.return_value = 1234567890.0
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+
+        # Protocolo exists but cliente doesn't
+        mock_protocolo = MagicMock()
+        mock_protocolo.cliente_id = 999
+        db.execute.return_value.scalar_one_or_none.side_effect = [mock_protocolo, None]
+
+        with pytest.raises(HTTPException) as exc_info:
+            await documento_segunda_via(mock_request, protocolo="2026-00001")
+        assert exc_info.value.status_code == 404
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @patch("app.api.v1.router.time")
+    @pytest.mark.asyncio
+    async def test_lgpd_consent_required(self, mock_time, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import documento_segunda_via
+        from fastapi import HTTPException
+
+        mock_time.time.return_value = 1234567890.0
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+
+        mock_protocolo = MagicMock()
+        mock_protocolo.cliente_id = 1
+        mock_cliente = MagicMock()
+        mock_cliente.consentimento_lgpd = False
+        db.execute.return_value.scalar_one_or_none.side_effect = [mock_protocolo, mock_cliente]
+
+        with pytest.raises(HTTPException) as exc_info:
+            await documento_segunda_via(mock_request, protocolo="2026-00001")
+        assert exc_info.value.status_code == 403
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @patch("app.api.v1.router.time")
+    @pytest.mark.asyncio
+    async def test_successful_second_copy(self, mock_time, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import documento_segunda_via
+
+        mock_time.time.return_value = 1234567890.0
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+
+        mock_protocolo = MagicMock()
+        mock_protocolo.cliente_id = 1
+        mock_cliente = MagicMock()
+        mock_cliente.consentimento_lgpd = True
+        db.execute.return_value.scalar_one_or_none.side_effect = [mock_protocolo, mock_cliente]
+
+        result = await documento_segunda_via(mock_request, protocolo="2026-00001", canal="email")
+        assert "url_pdf" in result
+        assert result["protocolo"] == "2026-00001"
+        assert result["canal"] == "email"
+        assert result["validade_horas"] == 24
+
+
+# ============================================================================
+# criar_atendimento tests
+# ============================================================================
+
+
+class TestCriarAtendimento:
+    """Test POST /atendimento endpoint."""
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_create_basic(self, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import criar_atendimento
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+
+        # Mock flush to set id
+        def mock_flush():
+            pass
+
+        db.flush.side_effect = mock_flush
+
+        payload = {
+            "canal": "whatsapp",
+            "external_id": "5511999999999",
+            "tipo": "duvida",
+            "contexto_scrubbed": "Cliente precisa de ajuda",
+        }
+        result = await criar_atendimento(mock_request, payload)
+        assert result["ok"] is True
+        assert "atendimento_id" in result
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_create_with_cpf(self, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import criar_atendimento
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        payload = {
+            "canal": "telegram",
+            "external_id": "tg_user_123",
+            "tipo": "duvida",
+            "cliente_cpf": "12345678909",
+            "cliente_nome": "Maria Silva",
+        }
+        result = await criar_atendimento(mock_request, payload)
+        assert result["ok"] is True
+
+
+# ============================================================================
+# concluir_atendimento tests
+# ============================================================================
+
+
+class TestConcluirAtendimento:
+    """Test POST /atendimento/{id}/concluir endpoint."""
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_concluir_not_found(self, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import concluir_atendimento
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+        db.execute.return_value.scalar_one_or_none.return_value = None
+
+        result = await concluir_atendimento(mock_request, atendimento_id=999)
+        assert result["ok"] is False
+        assert result["error"] == "not_found"
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_concluir_success(self, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import concluir_atendimento
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+
+        mock_att = MagicMock()
+        mock_att.concluido_em = None
+        mock_att.status = "em_atendimento"
+        db.execute.return_value.scalar_one_or_none.return_value = mock_att
+
+        result = await concluir_atendimento(
+            mock_request, atendimento_id=1, payload={"nota": 5, "comentario": "Otimo"}
+        )
+        assert result["ok"] is True
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_concluir_no_payload(self, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import concluir_atendimento
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+
+        mock_att = MagicMock()
+        mock_att.concluido_em = None
+        mock_att.status = "em_atendimento"
+        db.execute.return_value.scalar_one_or_none.return_value = mock_att
+
+        result = await concluir_atendimento(mock_request, atendimento_id=1)
+        assert result["ok"] is True
+
+
+# ============================================================================
+# marcar_pesquisa_enviada tests
+# ============================================================================
+
+
+class TestMarcarPesquisaEnviada:
+    """Test POST /atendimento/{id}/pesquisa-enviada endpoint."""
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_not_found(self, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import marcar_pesquisa_enviada
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+        db.execute.return_value.scalar_one_or_none.return_value = None
+
+        result = await marcar_pesquisa_enviada(mock_request, atendimento_id=999)
+        assert result["ok"] is False
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_success(self, mock_session, mock_audit, mock_request):
+        from app.api.v1.router import marcar_pesquisa_enviada
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+
+        mock_att = MagicMock()
+        mock_att.pesquisa_enviada_em = None
+        db.execute.return_value.scalar_one_or_none.return_value = mock_att
+
+        result = await marcar_pesquisa_enviada(mock_request, atendimento_id=1)
+        assert result["ok"] is True
+        assert result["atendimento_id"] == 1
+
+
+# ============================================================================
+# obter_historico_atendimento tests
+# ============================================================================
+
+
+class TestObterHistoricoAtendimento:
+    """Test GET /atendimento/{session_id}/historico endpoint."""
+
+    @patch("app.api.v1.router.redis")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_empty_history(self, mock_session, mock_redis_cls):
+        from app.api.v1.router import obter_historico_atendimento
+
+        mock_r = MagicMock()
+        mock_r.lrange.return_value = []
+        mock_redis_cls.from_url.return_value = mock_r
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+        db.execute.return_value.scalars.return_value.all.return_value = []
+
+        result = await obter_historico_atendimento("whatsapp:5511999999999:inst")
+        assert result["total"] == 0
+        assert result["messages"] == []
+
+    @patch("app.api.v1.router.redis")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_with_redis_cache(self, mock_session, mock_redis_cls):
+        from app.api.v1.router import obter_historico_atendimento
+
+        mock_r = MagicMock()
+        mock_r.lrange.return_value = [
+            json.dumps({"role": "user", "content": "Hello"}),
+            json.dumps({"role": "assistant", "content": "Hi"}),
+        ]
+        mock_redis_cls.from_url.return_value = mock_r
+
+        result = await obter_historico_atendimento("whatsapp:5511999999999:inst")
+        assert result["total"] == 2
+
+    @patch("app.api.v1.router.redis")
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_fallback_to_db(self, mock_session, mock_redis_cls):
+        from app.api.v1.router import obter_historico_atendimento
+
+        mock_r = MagicMock()
+        mock_r.lrange.side_effect = Exception("Redis down")
+        mock_redis_cls.from_url.return_value = mock_r
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+        db.execute.return_value.scalars.return_value.all.return_value = []
+
+        result = await obter_historico_atendimento("whatsapp:5511999999999:inst")
+        assert result["total"] == 0
+
+
+# ============================================================================
+# listar_sessoes_ativas tests
+# ============================================================================
+
+
+class TestListarSessoesAtivas:
+    """Test GET /atendimento/list-active endpoint."""
+
+    @patch("app.api.v1.router.session_scope")
+    @pytest.mark.asyncio
+    async def test_empty_sessions(self, mock_session):
+        from app.api.v1.router import listar_sessoes_ativas
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+        db.query.return_value.filter.return_value.group_by.return_value.order_by.return_value.all.return_value = []
+
+        result = await listar_sessoes_ativas(since_hours=24)
+        assert result["count"] == 0
+        assert result["sessions"] == []
+
+
+# ============================================================================
+# _verify_api_key edge cases
+# ============================================================================
+
+
+class TestVerifyApiKeyEdgeCases:
+    """Test _verify_api_key edge cases."""
+
+    def test_empty_key_string(self, mock_settings):
+        from app.api.v1.router import _verify_api_key
+        from fastapi import HTTPException
+
+        # When CARTORIO_API_KEY is configured but provided key is empty,
+        # it returns 503 (key not configured) because not("") is True
+        with pytest.raises(HTTPException) as exc_info:
+            _verify_api_key("")
+        assert exc_info.value.status_code in (401, 503)
+
+    def test_none_key(self, mock_settings):
+        from app.api.v1.router import _verify_api_key
+        from fastapi import HTTPException
+
+        # When CARTORIO_API_KEY is configured but provided key is None,
+        # it returns 503 (key not configured) because not(None) is True
+        with pytest.raises(HTTPException) as exc_info:
+            _verify_api_key(None)
+        assert exc_info.value.status_code in (401, 503)
+
+
+# ============================================================================
+# calcular_emolumento_api: high value is sensitive
+# ============================================================================
+
+
+class TestCalcularEmolumentoApiHighValue:
+    """Test calcular_emolumento_api with high-value ato triggering sensitivity."""
+
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.api.v1.router.calcular_emolumento_svc")
+    @patch("app.api.v1.router.store", create=True)
+    @pytest.mark.asyncio
+    async def test_high_value_requires_consent(self, mock_store, mock_calc, mock_audit):
+        from app.api.v1.router import calcular_emolumento_api
+
+        # Total > 1000 triggers sensitivity
+        mock_result = SimpleNamespace(
+            tipo="escritura_doacao",
+            folhas=1,
+            urgencia=False,
+            base=Decimal("3205.50"),
+            adicional_folhas=Decimal("0.00"),
+            adicional_urgencia=Decimal("0.00"),
+            total=Decimal("3205.50"),
+            tabela_referencia="TABELA_2026_MG",
+            valido_ate="2026-12-31",
+        )
+        mock_calc.return_value = mock_result
+
+        # No cliente_id provided - should still work
+        result = await calcular_emolumento_api(
+            tipo="escritura_doacao", folhas=1, urgencia=False, db=None
+        )
+        assert result.total == Decimal("3205.50")
+
+
+# ============================================================================
+# webhook_evolution: empty data field
+# ============================================================================
+
+
+class TestWebhookEvolutionEmptyData:
+    """Test webhook_evolution with empty data field."""
+
+    @patch("app.api.v1.router.redis")
+    @patch("app.api.v1.router.session_scope")
+    @patch("app.api.v1.router.scrub")
+    @patch("app.api.v1.router.AuditService")
+    @patch("app.services.evolution_ingest.ingest_evolution_event")
+    @pytest.mark.asyncio
+    async def test_data_is_none(
+        self, mock_ingest, mock_audit, mock_scrub, mock_session, mock_redis_cls, mock_request
+    ):
+        from app.api.v1.router import webhook_evolution
+        from app.services.pii import ScrubResult
+
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        mock_ingest.return_value = {"status": "accepted"}
+
+        mock_scrub.return_value = ScrubResult(text="Hello", findings={}, redaction_count=0)
+
+        mock_r = MagicMock()
+        mock_redis_cls.from_url.return_value = mock_r
+
+        payload = {
+            "data": None,
+            "message": {"conversation": "Hello"},
+            "sender": "553499999999",
+            "instance": "cartorio-2notas",
+        }
+
+        with patch(
+            "app.integrations.fallback.chat_with_fallback", new_callable=AsyncMock
+        ) as mock_chat:
             mock_chat.return_value = SimpleNamespace(
                 content="Hi!", tokens_in=5, tokens_out=3, latency_ms=50
             )

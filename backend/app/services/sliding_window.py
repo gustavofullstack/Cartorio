@@ -17,6 +17,7 @@ Fail-open: se Redis offline, permite request (log warning).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 import uuid
@@ -54,8 +55,18 @@ class RedisSlidingWindowStore:
     def __init__(self, redis_url: str | None = None) -> None:
         self._url = redis_url or settings.redis_url
         self._client: redis_async.Redis | None = None
+        self._client_loop: asyncio.AbstractEventLoop | None = None
 
     async def _get_client(self) -> redis_async.Redis:
+        current_loop = asyncio.get_running_loop()
+        if self._client is not None and self._client_loop is not current_loop:
+            old_client = self._client
+            self._client = None
+            self._client_loop = None
+            try:
+                await old_client.aclose()
+            except (redis_async.RedisError, OSError, RuntimeError):
+                logger.debug("sliding_window: discarded Redis client bound to closed loop")
         if self._client is None:
             self._client = redis_async.from_url(
                 self._url,
@@ -63,6 +74,7 @@ class RedisSlidingWindowStore:
                 socket_connect_timeout=2.0,
                 decode_responses=True,
             )
+            self._client_loop = current_loop
         return self._client
 
     async def zadd(self, key: str, score: float, member: str) -> int:
