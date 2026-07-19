@@ -673,6 +673,7 @@ async def _send_message(
         client = _get_tg_pool()
         resp = await client.post(url, json=payload)
         from app.services.metrics import store
+
         if resp.status_code == 200:
             store.inc_counter("cartorio_telegram_mensagens_total", labels={"direction": "out"})
             return True
@@ -685,7 +686,9 @@ async def _send_message(
                 payload["chat_id"] = int(migrate_to)
                 resp2 = await client.post(url, json=payload)
                 if resp2.status_code == 200:
-                    store.inc_counter("cartorio_telegram_mensagens_total", labels={"direction": "out"})
+                    store.inc_counter(
+                        "cartorio_telegram_mensagens_total", labels={"direction": "out"}
+                    )
                     return True
                 logger.warning("TG send after migrate %d: %.200s", resp2.status_code, resp2.text)
                 store.inc_counter("cartorio_telegram_erros_total")
@@ -697,6 +700,7 @@ async def _send_message(
         return False
     except Exception as e:
         from app.services.metrics import store
+
         store.inc_counter("cartorio_telegram_erros_total")
         logger.exception("TG send error: %s", e)
         return False
@@ -1856,6 +1860,7 @@ async def telegram_webhook(
 ) -> dict:
     bump_metric("requests_total")
     from app.services.metrics import store
+
     store.inc_counter("cartorio_telegram_mensagens_total", labels={"direction": "in"})
     try:
         update = await request.json()

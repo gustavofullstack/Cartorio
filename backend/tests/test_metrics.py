@@ -492,6 +492,7 @@ class TestMetricsHelpersEdge:
     def test_collect_pool_metrics(self) -> None:
         """collect_pool_metrics retorna os gauges do pool do banco."""
         from app.services.metrics import collect_pool_metrics
+
         res = collect_pool_metrics()
         assert isinstance(res, dict)
         assert "cartorio_db_pool_checked_out" in res

@@ -131,8 +131,10 @@ class TestParseTasks:
 
 class TestStatusCmd:
     def test_status_prints_progress_pct(self, orchestrator_module, sample_plan_mixed, capsys):
-        with patch.object(orchestrator_module, "PLANO") as mock_plano, \
-             patch.object(orchestrator_module, "STATE") as mock_state:
+        with (
+            patch.object(orchestrator_module, "PLANO") as mock_plano,
+            patch.object(orchestrator_module, "STATE") as mock_state,
+        ):
             mock_plano.exists.return_value = True
             mock_plano.read_text.return_value = sample_plan_mixed
             mock_state.exists.return_value = False
@@ -146,8 +148,10 @@ class TestStatusCmd:
         assert "G7.03.T1" in out  # Next open listed
 
     def test_status_with_loop_state_json(self, orchestrator_module, sample_plan_done, capsys):
-        with patch.object(orchestrator_module, "PLANO") as mock_plano, \
-             patch.object(orchestrator_module, "STATE") as mock_state:
+        with (
+            patch.object(orchestrator_module, "PLANO") as mock_plano,
+            patch.object(orchestrator_module, "STATE") as mock_state,
+        ):
             mock_plano.exists.return_value = True
             mock_plano.read_text.return_value = sample_plan_done
             mock_state.exists.return_value = True
@@ -201,9 +205,11 @@ class TestNextCmd:
 
 class TestMain:
     def test_main_no_args_defaults_to_status(self, orchestrator_module, capsys):
-        with patch.object(orchestrator_module, "PLANO") as mock_plano, \
-             patch.object(orchestrator_module, "STATE") as mock_state, \
-             patch.object(sys, "argv", ["g7_orchestrator.py"]):
+        with (
+            patch.object(orchestrator_module, "PLANO") as mock_plano,
+            patch.object(orchestrator_module, "STATE") as mock_state,
+            patch.object(sys, "argv", ["g7_orchestrator.py"]),
+        ):
             mock_plano.exists.return_value = True
             mock_plano.read_text.return_value = "| G7.01.T1 | x | [x] d |"
             mock_state.exists.return_value = False
@@ -219,8 +225,10 @@ class TestMain:
 
     def test_main_validate_invokes_super_validator(self, orchestrator_module):
         fake_proc = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
-        with patch.object(sys, "argv", ["g7_orchestrator.py", "validate"]), \
-             patch.object(subprocess, "run", return_value=fake_proc) as mock_run:
+        with (
+            patch.object(sys, "argv", ["g7_orchestrator.py", "validate"]),
+            patch.object(subprocess, "run", return_value=fake_proc) as mock_run,
+        ):
             rc = orchestrator_module.main()
         assert rc == 0
         mock_run.assert_called_once()

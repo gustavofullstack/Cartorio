@@ -17,6 +17,7 @@ LGPD:
 
 Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 20.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -55,6 +56,7 @@ def create_consent(
     """
     # Hash IP (LGPD art. 46: nao armazenar IP cru)
     import hashlib
+
     client_ip = request.client.host if request.client else "unknown"
     ip_hash = hashlib.sha256(client_ip.encode()).hexdigest()[:16]
 
@@ -93,27 +95,19 @@ def get_consent_stats(db: Session = Depends(get_db)) -> LGPDConsentStats:
 
     total = db.query(func.count(LGPDConsentLog.id)).scalar() or 0
     accepted = (
-        db.query(func.count(LGPDConsentLog.id))
-        .filter(LGPDConsentLog.accepted.is_(True))
-        .scalar()
+        db.query(func.count(LGPDConsentLog.id)).filter(LGPDConsentLog.accepted.is_(True)).scalar()
         or 0
     )
     rejected = (
-        db.query(func.count(LGPDConsentLog.id))
-        .filter(LGPDConsentLog.accepted.is_(False))
-        .scalar()
+        db.query(func.count(LGPDConsentLog.id)).filter(LGPDConsentLog.accepted.is_(False)).scalar()
         or 0
     )
     analytics_opt_in = (
-        db.query(func.count(LGPDConsentLog.id))
-        .filter(LGPDConsentLog.analytics.is_(True))
-        .scalar()
+        db.query(func.count(LGPDConsentLog.id)).filter(LGPDConsentLog.analytics.is_(True)).scalar()
         or 0
     )
     marketing_opt_in = (
-        db.query(func.count(LGPDConsentLog.id))
-        .filter(LGPDConsentLog.marketing.is_(True))
-        .scalar()
+        db.query(func.count(LGPDConsentLog.id)).filter(LGPDConsentLog.marketing.is_(True)).scalar()
         or 0
     )
 

@@ -48,7 +48,7 @@ def _make_evolution_payload(text: str, sender: str = "5534988888888") -> dict:
                 "conversation": text,
             },
             "pushName": "Test Consent User",
-        }
+        },
     }
 
 
@@ -56,13 +56,13 @@ def _make_evolution_payload(text: str, sender: str = "5534988888888") -> dict:
 async def test_whatsapp_first_message_requires_consent(mock_adapter, db_session) -> None:
     """Se o usuário mandar mensagem pela primeira vez, deve receber o banner e retornar consent_required."""
     payload = _make_evolution_payload("Olá assistente")
-    
+
     resp = client.post("/api/v1/whatsapp/webhook", json=payload)
     assert resp.status_code == 200
     res = resp.json()
     assert res["status"] == "ok"
     assert res["detail"] == "consent_required"
-    
+
     mock_adapter.send.assert_called_once()
     sent_text = mock_adapter.send.call_args[0][0].text
     assert "AVISO LGPD" in sent_text
@@ -73,7 +73,7 @@ async def test_whatsapp_first_message_requires_consent(mock_adapter, db_session)
 async def test_whatsapp_opt_in_grant_consent(mock_adapter, db_session) -> None:
     """Se o usuário mandar 'SIM', deve registrar o consentimento no Redis/DB e retornar consent_granted."""
     payload = _make_evolution_payload("SIM")
-    
+
     resp = client.post("/api/v1/whatsapp/webhook", json=payload)
     assert resp.status_code == 200
     res = resp.json()
@@ -81,6 +81,7 @@ async def test_whatsapp_opt_in_grant_consent(mock_adapter, db_session) -> None:
     assert res["detail"] == "consent_granted"
 
     from app.models.audit_log import AuditLog
+
     entry = db_session.query(AuditLog).filter(AuditLog.action == "consent.whatsapp").first()
     assert entry is not None
     assert entry.payload["status"] == "granted"
@@ -93,23 +94,23 @@ async def test_whatsapp_subsequent_message_bypasses_banner(mock_adapter, db_sess
     from app.models.cliente import Cliente
     from app.services.pii import hash_pii
     from app.config import settings
-    
+
     # Cria cliente simulado com consentimento ativo no banco
     c = Cliente(
         cpf_hash=hash_pii("123.456.789-99", salt=settings.audit_hmac_key[:32]),
         nome="Cliente Consentido",
         whatsapp_number=sender,
-        consentimento_lgpd=True
+        consentimento_lgpd=True,
     )
     db_session.add(c)
     db_session.commit()
 
     payload = _make_evolution_payload("Quero agendar", sender=sender)
-    
+
     resp = client.post("/api/v1/whatsapp/webhook", json=payload)
     assert resp.status_code == 200
     res = resp.json()
-    
+
     assert res["status"] == "ok"
     assert "detail" not in res  # Sem consent_required ou consent_granted
 
@@ -121,12 +122,12 @@ async def test_whatsapp_opt_out_revokes_consent(mock_adapter, db_session) -> Non
     from app.models.cliente import Cliente
     from app.services.pii import hash_pii
     from app.config import settings
-    
+
     c = Cliente(
         cpf_hash=hash_pii("123.456.789-88", salt=settings.audit_hmac_key[:32]),
         nome="Cliente Revogador",
         whatsapp_number=sender,
-        consentimento_lgpd=True
+        consentimento_lgpd=True,
     )
     db_session.add(c)
     db_session.commit()
@@ -139,7 +140,7 @@ async def test_whatsapp_opt_out_revokes_consent(mock_adapter, db_session) -> Non
         mock_get_bus.return_value = mock_bus
 
         payload = _make_evolution_payload("PARAR", sender=sender)
-        
+
         resp = client.post("/api/v1/whatsapp/webhook", json=payload)
         assert resp.status_code == 200
         res = resp.json()
@@ -147,10 +148,13 @@ async def test_whatsapp_opt_out_revokes_consent(mock_adapter, db_session) -> Non
         assert res["detail"] == "consent_revoked"
 
         from app.models.audit_log import AuditLog
-        entry = db_session.query(AuditLog).filter(AuditLog.action == "consent.whatsapp.revoked").first()
+
+        entry = (
+            db_session.query(AuditLog).filter(AuditLog.action == "consent.whatsapp.revoked").first()
+        )
         assert entry is not None
         assert entry.payload["status"] == "revoked"
-        
+
         db_session.refresh(c)
         assert c.consentimento_lgpd is False
         assert c.motivo_encerramento.value == "revogacao_consentimento"

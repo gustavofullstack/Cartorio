@@ -234,9 +234,7 @@ def validate_ttl_config() -> dict[str, list[str]]:
     for meta in TTL_REGISTRY.values():
         scope = meta.get("scope", "unknown")
         scopes[scope] = scopes.get(scope, 0) + 1
-    issues["INFO"].append(
-        f"Total {len(TTL_REGISTRY)} keys em {len(scopes)} scopes: {scopes}"
-    )
+    issues["INFO"].append(f"Total {len(TTL_REGISTRY)} keys em {len(scopes)} scopes: {scopes}")
     return issues
 
 
@@ -270,10 +268,13 @@ def render_inventory_report() -> str:
     for key, meta in sorted(TTL_REGISTRY.items()):
         ttl = meta.get("ttl_seconds", 0)
         ttl_str = (
-            f"{ttl // 86400}d" if ttl >= 86400 else
-            f"{ttl // 3600}h" if ttl >= 3600 else
-            f"{ttl // 60}m" if ttl >= 60 else
-            f"{ttl}s"
+            f"{ttl // 86400}d"
+            if ttl >= 86400
+            else f"{ttl // 3600}h"
+            if ttl >= 3600
+            else f"{ttl // 60}m"
+            if ttl >= 60
+            else f"{ttl}s"
         )
         scope = meta.get("scope", "?")
         lgpd = meta.get("lgpd_art", "?").split(" ")[0]  # só Art.XX
@@ -371,10 +372,12 @@ def _cli() -> None:
         import json
 
         long_keys = find_long_ttl_keys(args.long_ttl)
-        print(json.dumps(
-            [{"key": k, "ttl_seconds": ttl, "days": ttl // 86400} for k, ttl in long_keys],
-            indent=2,
-        ))
+        print(
+            json.dumps(
+                [{"key": k, "ttl_seconds": ttl, "days": ttl // 86400} for k, ttl in long_keys],
+                indent=2,
+            )
+        )
     else:
         parser.print_help(sys.stderr)
         sys.exit(1)

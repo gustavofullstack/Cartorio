@@ -28,7 +28,6 @@ Modified by Gustavo Almeida — G8 Wave 32 A1.
 from __future__ import annotations
 
 
-
 # Tabelas + indices compostos + motivo (LGPD/performance)
 INDICES: list[dict[str, str]] = [
     # atendimentos
