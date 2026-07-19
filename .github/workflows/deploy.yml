@@ -186,10 +186,17 @@ jobs:
     steps:
       - name: Health check
         run: |
+          set -euo pipefail
           echo "=== API ==="
-          curl -sk -o /dev/null -m 10 -w "HTTP %{http_code} in %{time_total}s\n" https://api.2notasudi.com.br/health
+          curl -skf -o /dev/null -m 10 -w "HTTP %{http_code} in %{time_total}s\n" https://api.2notasudi.com.br/health
           echo "=== Flow (N8N) ==="
-          curl -sk -o /dev/null -m 10 -w "HTTP %{http_code} in %{time_total}s\n" https://flow.2notasudi.com.br/healthz
+          curl -skf -o /dev/null -m 10 -w "HTTP %{http_code} in %{time_total}s\n" https://flow.2notasudi.com.br/healthz
+          echo "=== MCP discovery ==="
+          curl -skf -o /dev/null -m 10 -w "HTTP %{http_code} in %{time_total}s\n" https://api.2notasudi.com.br/mcp-servers
+          echo "=== MCP mount (must fail closed, never 404) ==="
+          mcp_status="$(curl -sk -o /dev/null -m 10 -w '%{http_code}' https://api.2notasudi.com.br/mcp/)"
+          test "$mcp_status" = "401" || test "$mcp_status" = "503"
+          printf 'HTTP %s\n' "$mcp_status"
           echo "=== Radar ==="
           curl -sk -o /dev/null -m 10 -w "HTTP %{http_code} in %{time_total}s\n" https://api.2notasudi.com.br/api/v1/health/radar/expanded || true
           echo "=== OpenClaw ==="
