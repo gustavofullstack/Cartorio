@@ -62,11 +62,13 @@ def test_uv_lock_in_dependency_path() -> None:
         assert setup_uv["with"]["cache-dependency-glob"] == "backend/uv.lock"
 
 
-def test_test_job_avoids_xdist_with_in_memory_sqlite() -> None:
+def test_test_job_uses_file_scoped_xdist_and_fast_failure() -> None:
     ci_config = _load_ci()
     steps = _steps(ci_config, "test")
     pytest_step = next(step for step in steps if "pytest" in str(step.get("run", "")).lower())
     command = str(pytest_step["run"])
 
     assert "uv run pytest" in command
-    assert "-n auto" not in command
+    assert "-n auto" in command
+    assert "--dist loadfile" in command
+    assert "--maxfail=1" in command

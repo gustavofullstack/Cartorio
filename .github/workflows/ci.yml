@@ -193,13 +193,11 @@ jobs:
         working-directory: backend
         run: uv sync --frozen --extra dev
 
-      # Tests force an in-memory SQLite database in conftest.py.  Running the
-      # suite through xdist creates one isolated database per worker and causes
-      # cross-worker schema/state races.  Keep this gate deterministic; local
-      # runs already complete within the 15-minute job timeout.
-      - name: Run pytest with coverage (deterministic)
+      # Keep each test module on one worker so module-level state and the
+      # per-test SQLite engine patch in conftest.py cannot cross workers.
+      - name: Run pytest with coverage (xdist by file)
         working-directory: backend
-        run: uv run pytest --tb=short
+        run: uv run pytest -n auto --dist loadfile --maxfail=1 --tb=short
 
       # G6.A.T2 — OpenAPI snapshot CI gate
       - name: OpenAPI snapshot check (G6.A.T2)
