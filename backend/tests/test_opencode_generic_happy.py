@@ -192,16 +192,17 @@ def test_get_config_for_google_ai_studio() -> None:
 
 
 def test_get_config_for_litellm() -> None:
-    """get_config_for('litellm') retorna config com /v1 e api_key default 'missing'."""
+    """LiteLLM sem segredo permanece não configurado, sem chave sentinela."""
     with patch("app.config.settings") as mock_settings:
         mock_settings.litellm_base_url = "https://litellm.test.com"
-        mock_settings.litellm_api_key = None  # Sem key, deve virar "missing"
+        mock_settings.litellm_api_key = None
         mock_settings.litellm_model = "m-litellm"
         cfg = get_config_for("litellm")
     assert cfg is not None
     assert cfg.name == "litellm"
     assert cfg.base_url == "https://litellm.test.com/v1"
-    assert cfg.api_key == "missing"
+    assert cfg.api_key is None
+    assert cfg.is_configured() is False
 
 
 def test_get_config_for_desconhecido_retorna_none() -> None:

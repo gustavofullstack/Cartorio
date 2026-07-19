@@ -263,10 +263,13 @@ def get_config_for(provider_name: str) -> ProviderConfig | None:
         )
     if provider_name == "litellm":
         # Turno 47 — LiteLLM Proxy multi-provider (OpenAI-compat em /v1)
+        # A ausencia de credencial deve permanecer ausente. Um valor sentinela
+        # transformaria erro de configuracao em chamada HTTP com credencial
+        # artificial, dificultando o fallback e a observabilidade.
         return ProviderConfig(
             name="litellm",
             base_url=f"{settings.litellm_base_url}/v1",
-            api_key=settings.litellm_api_key or "missing",
+            api_key=settings.litellm_api_key,
             model=settings.litellm_model,
         )
     return None

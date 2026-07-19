@@ -5,31 +5,23 @@
 
 ## 🎯 O que é
 
-Proxy LLM único que roteia entre 7 modelos free de múltiplos providers,
-usado como `LLM_DEFAULT_PROVIDER=litellm` na API Cartório.
+Proxy LLM opcional para múltiplos providers gratuitos. A API usa a cadeia
+de fallback declarada no ambiente; LiteLLM só participa quando explicitamente
+configurado e saudável.
 
-## 📊 Status (validado 2026-07-02)
+## 📊 Estado operacional
 
-```
-Container: cartorio_litellm-app (1/1 UP)
-Image:     ghcr.io/berriai/litellm:v1.85.0
-Porta:     4000 (interno swarm)
-DB:        postgresql://cartorio_supabase:5432/litellm
-Master key: 0vrszdxd19zweryz7cfl
-Salt:      0vrszdxd19zweryz7cfl
-```
+O estado do serviço, imagem e disponibilidade dos modelos deve ser apurado
+no ambiente alvo por health check autenticado. Esta documentação não contém
+hostnames internos, credenciais, tokens, sal ou strings de conexão.
 
-### 7 modelos disponíveis (chamando `/v1/models`)
+### Catálogo declarado (validar via `/v1/models`)
 
-| LiteLLM model | Provider real | Provider API | Context |
-|---|---|---|---|
-| `opencode-free-1` | nemotron-3-ultra-free | opencode.ai/zen (key 1) | 1M |
-| `opencode-free-2` | mimo-v2.5-free | opencode.ai/zen (key 2) | 1M |
-| `opencode-free-3` | deepseek-v4-flash-free | opencode.ai/zen (key 3) | 1M |
-| `opencode-go` | minimax-m3 (minimax.io) | opencode.ai/zen (key 4) | 1M |
-| `mistral-free` | mistral-free | api.mistral.ai | 1M |
-| `openrouter-free` | multi-provider | openrouter.ai | 256K |
-| `gemini-free` | gemini-3.5-flash | generativelanguage.googleapis.com | 1M |
+O arquivo `config.yaml` declara quatro modelos Zen (três slots
+independentes), um Mistral, três OpenRouter, dois Google AI Studio e o
+gateway OpenClaw. Os aliases efetivamente publicados podem variar por versão
+do LiteLLM, então clientes devem consultar `/v1/models` autenticado em vez de
+fixar nomes desta documentação.
 
 ## 🔧 Configuração
 
@@ -38,24 +30,34 @@ Salt:      0vrszdxd19zweryz7cfl
 /etc/easypanel/projects/cartorio/litellm-app/config.yaml  ← montado em /app/config.yaml
 ```
 
-### Env vars no service
-```
-DATABASE_URL=postgresql://admin:@Techno832466@cartorio_supabase:5432/litellm
-LITELLM_MASTER_KEY=0vrszdxd19zweryz7cfl
-LITELLM_SALT_KEY=0vrszdxd19zweryz7cfl
-MISTRAL_FREE_API_KEY=qT8egbtiX6uokD9W5HTxg42mZPql8dxc
-STORE_MODEL_IN_DB=True
-PORT=4000
+### Variáveis no serviço
+
+Injete todas pelo secret manager do ambiente:
+
+```text
+DATABASE_URL=<INJECT_FROM_SECRET_MANAGER>
+LITELLM_MASTER_KEY=<INJECT_FROM_SECRET_MANAGER>
+LITELLM_SALT_KEY=<INJECT_FROM_SECRET_MANAGER>
+OPENCODE_ZEN_ACCOUNT_1_API_KEY=<INJECT_FROM_SECRET_MANAGER>
+OPENCODE_ZEN_ACCOUNT_2_API_KEY=<INJECT_FROM_SECRET_MANAGER>
+OPENCODE_ZEN_ACCOUNT_3_API_KEY=<INJECT_FROM_SECRET_MANAGER>
+MISTRAL_API_KEY=<INJECT_FROM_SECRET_MANAGER>
+OPENROUTER_API_KEY=<INJECT_FROM_SECRET_MANAGER>
+GOOGLE_AI_STUDIO_API_KEY=<INJECT_FROM_SECRET_MANAGER>
+OPENCLAW_GATEWAY_PASSWORD=<INJECT_FROM_SECRET_MANAGER>
 ```
 
 ### Env vars na API Cartório (apontam pra LiteLLM)
+```text
+LITELLM_API_KEY=<INJECT_FROM_SECRET_MANAGER>
+LITELLM_BASE_URL=<INTERNAL_SERVICE_URL>
+LITELLM_MODEL=<MODEL_ALIAS_FROM_V1_MODELS>
+LLM_DEFAULT_PROVIDER=opencode_zen_account_1
+LLM_FALLBACK_CHAIN=opencode_zen_account_1,opencode_zen_account_2,opencode_zen_account_3,opencode_free_3,opencode_free_1,opencode_free_2,opencode_go,openrouter,groq,mistral,google_ai_studio,openclaw,jules,antigravity
 ```
-LITELLM_API_KEY=0vrszdxd19zweryz7cfl
-LITELLM_BASE_URL=http://cartorio_litellm-app:4000
-LITELLM_MODEL=opencode-free-1
-LLM_DEFAULT_PROVIDER=litellm
-LLM_FALLBACK_CHAIN=litellm,opencode_free_1,opencode_free_2,opencode_free_3,opencode_go,openrouter,groq,mistral,google_ai_studio,openclaw,jules
-```
+
+O backend executa a cadeia de fallback. O proxy LiteLLM é um provider
+opcional e só é incluído mediante chave e health check válidos.
 
 ## 🔍 Endpoints
 
@@ -73,20 +75,14 @@ Auth: header `Authorization: Bearer <LITELLM_MASTER_KEY>`.
 
 ### Da VPS via Docker exec
 ```bash
-ACID=$(docker ps --filter 'name=^cartorio_api' --format '{{.ID}}' | head -1)
-docker exec $ACID python3 -c "
-import urllib.request, json
-req = urllib.request.Request('http://cartorio_litellm-app:4000/v1/models',
-    headers={'Authorization':'Bearer 0vrszdxd19zweryz7cfl'})
-r = urllib.request.urlopen(req, timeout=5)
-print(json.dumps(json.loads(r.read()), indent=2))
-"
+curl --fail-with-body "$LITELLM_BASE_URL/v1/models" \
+  -H "Authorization: Bearer $LITELLM_API_KEY"
 ```
 
 ### Chat completion
 ```bash
-curl -sS http://cartorio_litellm-app:4000/v1/chat/completions \
-  -H "Authorization: Bearer 0vrszdxd19zweryz7cfl" \
+curl --fail-with-body "$LITELLM_BASE_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $LITELLM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"opencode-free-1","messages":[{"role":"user","content":"Diga oi"}]}'
 ```

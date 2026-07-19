@@ -27,9 +27,48 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 FIXTURE = Path(__file__).parent / "fixtures" / "minimal_openapi.json"
+CANONICAL_COLLECTION = REPO_ROOT / "infra" / "postman" / "cartorio-api.postman_collection.json"
 
 sys.path.insert(0, str(SCRIPTS_DIR))
 import postman_sync  # type: ignore[import-not-found]  # noqa: E402
+
+
+def _requests_by_contract(collection: dict) -> dict[tuple[str, str], dict]:
+    """Return the request fields produced from OpenAPI, indexed by operation.
+
+    The Postman collection has generated metadata (folder names and a timestamped
+    ID) that is intentionally excluded.  Request method, URL, headers, query,
+    path variables and body are the executable integration contract.
+    """
+    requests: dict[tuple[str, str], dict] = {}
+
+    def collect(items: list[dict]) -> None:
+        for item in items:
+            nested = item.get("item")
+            if isinstance(nested, list):
+                collect(nested)
+                continue
+            request = item.get("request")
+            if not isinstance(request, dict):
+                continue
+            url = request.get("url")
+            if not isinstance(url, dict):
+                continue
+            method = request.get("method")
+            raw_url = url.get("raw")
+            assert isinstance(method, str)
+            assert isinstance(raw_url, str)
+            requests[(method, raw_url)] = {
+                "method": method,
+                "header": request.get("header", []),
+                "url": url,
+                "body": request.get("body"),
+            }
+
+    items = collection.get("item", [])
+    assert isinstance(items, list)
+    collect(items)
+    return requests
 
 
 @pytest.fixture
@@ -321,6 +360,26 @@ class TestStats:
         assert "DELETE" in s["methods"]
         assert "bearer_token" in s["variables"]
         assert "base_url" in s["variables"]
+
+
+class TestCanonicalCollectionContract:
+    def test_canonical_collection_matches_current_openapi_contract(self) -> None:
+        """The committed collection cannot silently lag the API contract.
+
+        CI runs this without network access.  It regenerates the executable
+        request shape from ``app.main`` and compares it to the one canonical
+        import artifact under ``infra/postman``.  This prevents a route,
+        parameter or request-body change from reaching consumers with a stale
+        Postman collection.
+        """
+        openapi = postman_sync.load_openapi_from_app()
+        expected = postman_sync.convert_to_postman_v21(openapi, "https://api.2notasudi.com.br")
+        actual = json.loads(CANONICAL_COLLECTION.read_text(encoding="utf-8"))
+
+        postman_sync._assert_lgpd_safe(actual)
+        assert actual["info"]["schema"] == postman_sync.POSTMAN_SCHEMA_URL
+        assert actual["info"]["version"] == expected["info"]["version"]
+        assert _requests_by_contract(actual) == _requests_by_contract(expected)
 
 
 class TestPathConversion:

@@ -10,6 +10,19 @@ from app.integrations.fallback import chat_with_fallback
 from app.integrations.opencode_generic import ChatError, ChatErrorKind, ChatResponse, get_config_for
 
 
+def test_default_chain_prioritizes_three_independent_zen_slots() -> None:
+    """A ordem declarada tenta cada conta Zen antes de providers legados."""
+    from app.config import Settings
+
+    default_chain = Settings.model_fields["llm_fallback_chain"].default
+    assert isinstance(default_chain, str)
+    assert default_chain.split(",")[:3] == [
+        "opencode_zen_account_1",
+        "opencode_zen_account_2",
+        "opencode_zen_account_3",
+    ]
+
+
 @pytest.mark.parametrize(
     ("provider", "slot"),
     [

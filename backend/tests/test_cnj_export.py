@@ -60,6 +60,19 @@ def test_export_requires_independent_human_approval(db: Session) -> None:
         )
 
 
+def test_approval_reason_rejects_detectable_personal_data(db: Session) -> None:
+    """Justificativas operacionais nao podem virar um canal de PII persistida."""
+    request = create_request(db, reference_period="2026-07", requested_by="dpo-1")
+
+    with pytest.raises(CNJExportError, match="nao pode conter dados pessoais"):
+        approve_request(
+            db,
+            request_id=request.id,
+            approved_by="dpo-2",
+            reason="Revisao mensal do titular operador@example.test.",
+        )
+
+
 def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> None:
     # Valores sentinela nunca podem atravessar a fronteira do artefato CNJ.
     db.add(

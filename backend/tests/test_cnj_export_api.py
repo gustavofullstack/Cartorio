@@ -61,3 +61,17 @@ def test_cnj_request_then_independent_dpo_approval() -> None:
     )
     assert approved.status_code == 200, approved.text
     assert approved.json()["status"] == "approved"
+
+    generated = client.post(
+        f"{REQUEST_URL}/{request_id}/generate",
+        headers=_headers(subject=str(uuid.uuid4())),
+    )
+    assert generated.status_code == 200, generated.text
+    artifact = generated.json()
+    assert artifact["report"]["data_classification"] == "RESTRICTED_AGGREGATED"
+    assert artifact["report"]["controls"]["automatic_external_transmission"] is False
+    assert artifact["manifest"]["report_sha256"]
+    # Nem os IDs operacionais dos DPOs nem a justificativa aparecem no pacote externo.
+    serialized = str(artifact)
+    assert requester not in serialized
+    assert "Revisao mensal autorizada." not in serialized
