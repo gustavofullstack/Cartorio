@@ -86,6 +86,10 @@ os.environ["JWT_SECRET"] = "a" * 64
 os.environ["LLM_DEFAULT_PROVIDER"] = "opencode_go"
 os.environ["LLM_FALLBACK_CHAIN"] = "opencode_go,openclaw"
 os.environ["OPENCODE_GO_MODEL"] = "minimax-m3"
+# Synthetic test credentials keep provider contract tests deterministic;
+# production configuration remains fail-closed and never reads these values.
+os.environ["OPENCODE_GO_API_KEY"] = "sk-test-mock"
+os.environ["OPENCLAW_API_KEY"] = "sk-test-mock"
 os.environ["JWT_SECRET"] = "a" * 64
 
 from app.config import get_settings, settings  # noqa: E402
