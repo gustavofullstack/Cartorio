@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from typing import Any
 
 import yaml
@@ -72,3 +73,13 @@ def test_test_job_uses_file_scoped_xdist_and_fast_failure() -> None:
     assert "-n auto" in command
     assert "--dist loadfile" in command
     assert "--maxfail=1" in command
+
+
+def test_test_job_uses_valid_synthetic_settings_environment() -> None:
+    ci_config = _load_ci()
+    test_job = ci_config["jobs"]["test"]
+    env = test_job["env"]
+
+    assert env["APP_ENV"] == "test"
+    assert len(env["AUDIT_HMAC_KEY"]) >= 32
+    assert re.fullmatch(r"[a-f0-9]{64}", env["CARTORIO_API_KEY"])

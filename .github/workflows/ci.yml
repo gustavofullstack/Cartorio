@@ -159,7 +159,12 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://cartorio_test:test_password@localhost:5432/cartorio_test
       REDIS_URL: redis://localhost:6379/0
-      APP_ENV: testing
+      # The Settings contract accepts `test` (not the pytest marker name
+      # `testing`). These values are synthetic CI-only credentials required
+      # for importing the application during the OpenAPI snapshot gate.
+      APP_ENV: test
+      AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      CARTORIO_API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 
     steps:
       - name: Checkout

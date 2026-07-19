@@ -19,6 +19,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-n8n — G6 wave 8.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -30,6 +31,18 @@ from pathlib import Path
 
 WF_DIR = Path("infra/n8n-workflows")
 ERROR_WF = "00-error-handler"
+
+
+def is_error_handler_name(name: str) -> bool:
+    """Return whether an n8n workflow name identifies the global handler.
+
+    n8n exports have used both the canonical slug-like spelling and the
+    human-readable spelling (``00 - Error Handler Global ...``).  Keep the
+    audit strict about the numeric prefix and handler words while accepting
+    either export form.
+    """
+    normalized = " ".join(name.casefold().replace("-", " ").split())
+    return normalized.startswith("00 error handler")
 
 
 @dataclass
@@ -52,7 +65,7 @@ def audit_workflow(wf_path: Path) -> WFAudit:
     error_wf = settings.get("errorWorkflow")
     has_error = error_wf is not None
     points_correct = False
-    if has_error and data.get("name", "").startswith(ERROR_WF):
+    if has_error and is_error_handler_name(data.get("name", "")):
         # O proprio error handler nao precisa apontar para si
         points_correct = True
         # Mas idealmente o error handler deveria ter errorWorkflow=None
@@ -78,14 +91,20 @@ def audit_workflow(wf_path: Path) -> WFAudit:
 def main() -> int:
     parser = argparse.ArgumentParser(description="N8N error handler audit")
     parser.add_argument("--report", type=Path, help="gerar report markdown")
-    parser.add_argument("--fix", action="store_true", help="adicionar errorWorkflow aos WFs faltantes")
+    parser.add_argument(
+        "--fix", action="store_true", help="adicionar errorWorkflow aos WFs faltantes"
+    )
     args = parser.parse_args()
 
     wfs = sorted(WF_DIR.glob("*.json"))
     audits = [audit_workflow(wf) for wf in wfs]
 
-    missing = [a for a in audits if not a.has_error_workflow and not a.name.startswith(ERROR_WF)]
-    error_handler = next((a for a in audits if a.name.startswith(ERROR_WF)), None)
+    missing = [
+        a
+        for a in audits
+        if not a.has_error_workflow and not is_error_handler_name(a.name)
+    ]
+    error_handler = next((a for a in audits if is_error_handler_name(a.name)), None)
 
     print(f"Total workflows: {len(audits)}")
     print(f"Error handler: {error_handler.name if error_handler else 'NOT FOUND'}")
@@ -95,7 +114,9 @@ def main() -> int:
         for a in missing:
             print(f"  - {a.file} ({a.name})")
         print()
-        print("Fix: cada WF deve ter settings.errorWorkflow apontando para 00-error-handler")
+        print(
+            "Fix: cada WF deve ter settings.errorWorkflow apontando para 00-error-handler"
+        )
     else:
         print("[WORK] Todos WFs tem error handler configurado")
 
@@ -105,7 +126,9 @@ def main() -> int:
         md.append("")
         md.append(f"**Data**: {datetime.now(timezone.utc).isoformat()}")
         md.append(f"**Total workflows**: {len(audits)}")
-        md.append(f"**Error handler**: `{error_handler.name if error_handler else 'NOT FOUND'}`")
+        md.append(
+            f"**Error handler**: `{error_handler.name if error_handler else 'NOT FOUND'}`"
+        )
         md.append("")
         if missing:
             md.append(f"## [HOLD] {len(missing)} workflow(s) SEM error handler")
@@ -123,7 +146,9 @@ def main() -> int:
         md.append("")
         md.append("---")
         md.append("")
-        md.append("**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 8 (auto-gerado)**")
+        md.append(
+            "**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 8 (auto-gerado)**"
+        )
         args.report.write_text("\n".join(md))
         print(f"  Report: {args.report}", file=sys.stderr)
 
