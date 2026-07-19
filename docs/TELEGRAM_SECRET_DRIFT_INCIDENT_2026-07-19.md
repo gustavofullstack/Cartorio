@@ -1,7 +1,7 @@
 # Incidente Telegram — divergência de segredo local/produção
 
-**Data:** 2026-07-19  
-**Escopo:** `@test_cartorio_bot`, webhook `https://api.2notasudi.com.br/api/v1/telegram/webhook`  
+**Data:** 2026-07-19
+**Escopo:** `@test_cartorio_bot`, webhook `https://api.2notasudi.com.br/api/v1/telegram/webhook`
 **Impacto:** mensagens privadas e de grupo chegam sem resposta.
 
 ## Evidência sanitizada
