@@ -138,10 +138,10 @@ def _send_telegram_3lvl(message: str, chat_id: str | None) -> bool:
         True se Telegram foi enviado (chat_id set + IM real), False se so logou.
     """
     if chat_id:
-        # Placeholder: loga com chat_id. Sprint 5 faz HTTP POST de verdade.
+        # O identificador do grupo e dado operacional sensivel: nunca entra no
+        # log, mesmo quando o filtro global de mascaramento nao foi instalado.
         logger.error(
-            "DEAD_MANS_SWITCH_TELEGRAM_PLACEHOLDER: chat_id=%s | %s",
-            chat_id,
+            "DEAD_MANS_SWITCH_TELEGRAM_PLACEHOLDER: chat_id=configured | %s",
             message,
         )
         return True

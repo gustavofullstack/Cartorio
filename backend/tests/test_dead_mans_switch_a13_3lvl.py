@@ -296,13 +296,14 @@ def test_cron_3lvl_warning_alerted_with_chat_id(
 
     assert result.alerted is True
     assert result.telegram_sent is True
-    # Mensagem DEVE conter chat_id + formato canonico
+    # Logs nunca podem expor o identificador do grupo Telegram.
     matching = [
         rec for rec in caplog.records if "DEAD_MANS_SWITCH_TELEGRAM_PLACEHOLDER" in rec.message
     ]
     assert matching, "expected telegram placeholder log"
     msg = matching[0].message
-    assert chat_id in msg
+    assert chat_id not in msg
+    assert "chat_id=configured" in msg
     assert "[DEAD MAN'S SWITCH] audit_log WARNING" in msg
     assert "Ultima entry:" in msg
     assert "Stale:" in msg
@@ -432,7 +433,8 @@ def test_endpoint_admin_audit_check_now_critical_alerts(
                 if "DEAD_MANS_SWITCH_TELEGRAM_PLACEHOLDER" in rec.message
             ]
             assert matching
-            assert chat_id in matching[0].message
+            assert chat_id not in matching[0].message
+            assert "chat_id=configured" in matching[0].message
         finally:
             restore()
 
