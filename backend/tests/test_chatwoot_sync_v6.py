@@ -74,7 +74,9 @@ async def test_message_created_outgoing_uses_local_external_id_for_telegram(
     )
     sent: dict[str, object] = {}
 
-    async def fake_send(chat_id: str | int, content: str, sender_name: str, conv_id: object) -> None:
+    async def fake_send(
+        chat_id: str | int, content: str, sender_name: str, conv_id: object
+    ) -> None:
         sent["chat_id"] = chat_id
         sent["content"] = content
 

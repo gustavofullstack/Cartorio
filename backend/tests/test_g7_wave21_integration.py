@@ -54,6 +54,6 @@ def test_telegram_set_webhook_mask() -> None:
     import runpy
 
     ns = runpy.run_path(str(ROOT / "scripts" / "telegram_set_webhook.py"), run_name="x")
-    masked = ns["_mask"]("1234567890:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    masked = ns["_mask"]("<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>")
     assert "…" in masked or "***" in masked
     assert "AAH" not in masked or masked.count("x") == 0

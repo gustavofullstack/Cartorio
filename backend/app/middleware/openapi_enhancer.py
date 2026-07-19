@@ -374,6 +374,7 @@ def _register_webhook_schemas(components: dict[str, Any]) -> None:
         N8nMetricsIngest,
         OutboxDispatchRequest,
     ]
+
     def rewrite_local_refs(value: Any) -> Any:
         """Converte refs Pydantic locais em refs validos de components."""
         if isinstance(value, dict):

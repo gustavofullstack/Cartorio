@@ -33,6 +33,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from starlette.middleware import Middleware
+
 # Adiciona backend/ ao path para importar app.*
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -551,7 +553,13 @@ def mcp_app() -> Any:
     path="/" garante que clientes batem em `/mcp` direto (consistente com docs
     e clients MCP configurados em ~/.mavis/mcp/clients/). Sprint 5 — 2026-07-13.
     """
-    return mcp.http_app(path="/")
+    from app.middleware.mcp_api_key import MCPApiKeyMiddleware
+
+    api_key = getattr(settings, "mcp_api_key", None) if settings is not None else None
+    return mcp.http_app(
+        path="/",
+        middleware=[Middleware(MCPApiKeyMiddleware, api_key=api_key)],
+    )
 
 
 # ============================================================================
@@ -565,7 +573,7 @@ if __name__ == "__main__":
     if os.getenv("MCP_SERVER_TRANSPORT", "http") == "http":
         # Modo standalone: o endpoint Streamable HTTP fica na raiz `/`.
         # O mount da API principal adiciona o prefixo externo `/mcp`.
-        app = mcp.http_app(path="/")
+        app = mcp_app()
         port = int(os.getenv("MCP_SERVER_PORT", "8100"))
         host = os.getenv("MCP_SERVER_HOST", "0.0.0.0")
         uvicorn.run(app, host=host, port=port)

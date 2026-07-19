@@ -216,8 +216,8 @@ PATTERNS: tuple[Pattern, ...] = (
     _make(
         "TELEGRAM_BOT_TOKEN",
         SEVERITY_CRITICAL,
-        r"\b\d{8,10}:[A-Za-z0-9_\-]{35}\b",
-        "Telegram bot token (numeric_id:secret, 35 chars).",
+        r"\b\d{8,12}:[A-Za-z0-9_\-]{30,}\b",
+        "Telegram bot token (numeric_id plus provider secret).",
     ),
     # ---- HIGH ----
     _make(

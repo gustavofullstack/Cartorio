@@ -28,6 +28,7 @@ from app.jobs.dead_mans_switch import (
     check_audit_log_freshness_3lvl,
 )
 from app.jobs.retencao import RetencaoConfig, RetencaoResult, run_retencao
+from app.jobs.outbox_retry import OutboxRetryRunResult, run_due_outbox_retries
 
 __all__ = [
     # A13 — dead man's switch audit_log (4-level legacy)
@@ -47,4 +48,7 @@ __all__ = [
     "RetencaoConfig",
     "RetencaoResult",
     "run_retencao",
+    # Outbox retry (invocado por cron externo apos aprovacao operacional)
+    "OutboxRetryRunResult",
+    "run_due_outbox_retries",
 ]

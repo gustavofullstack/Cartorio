@@ -13,11 +13,15 @@ Sobe cobertura app/api/v1/integrations.py de 67% -> >=85%.
 from __future__ import annotations
 
 import asyncio
+import json
 from unittest.mock import patch
 
+import httpx
 import pytest
+import respx
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.main import app
 
 
@@ -31,13 +35,64 @@ def client(_client):
     return _client()
 
 
+@respx.mock
 @pytest.mark.asyncio
-async def test_dispatch_chatwoot_placeholder_nao_chama_rede() -> None:
-    """_dispatch_chatwoot eh placeholder (Sprint 2): apenas loga."""
+async def test_dispatch_chatwoot_publica_apenas_contexto_scrubbed(monkeypatch) -> None:
+    """Outbox publica contexto PII-safe sem se passar por atendente humano."""
     from app.api.v1.integrations import _dispatch_chatwoot
 
-    # NAO deve levantar exception nem chamar rede
-    await _dispatch_chatwoot({"conversation_id": 123, "content": "resposta"})
+    monkeypatch.setattr(settings, "chatwoot_base_url", "https://chat.test.com")
+    monkeypatch.setattr(settings, "chatwoot_api_key", "test-key")
+    monkeypatch.setattr(settings, "chatwoot_account_id", 1)
+    route = respx.post("https://chat.test.com/api/v1/accounts/1/conversations/123/messages").mock(
+        return_value=httpx.Response(201, json={"id": 99})
+    )
+
+    await _dispatch_chatwoot(
+        {"conversation_id": 123, "content": "CPF 123.456.789-00", "message_type": "incoming"}
+    )
+
+    assert route.called
+    request = route.calls[0].request
+    assert request.headers["api_access_token"] == "test-key"
+    assert json.loads(request.content) == {
+        "content": "CPF [CPF_REDACTED]",
+        "message_type": "incoming",
+    }
+
+
+@pytest.mark.asyncio
+async def test_dispatch_chatwoot_rejeita_outgoing_para_preservar_hitl(monkeypatch) -> None:
+    """A outbox nao pode enviar resposta automatica em nome do escrevente."""
+    from app.api.v1.integrations import _dispatch_chatwoot
+
+    monkeypatch.setattr(settings, "chatwoot_base_url", "https://chat.test.com")
+    monkeypatch.setattr(settings, "chatwoot_api_key", "test-key")
+    monkeypatch.setattr(settings, "chatwoot_account_id", 1)
+
+    with pytest.raises(ValueError, match="somente message_type='incoming'"):
+        await _dispatch_chatwoot(
+            {"conversation_id": 123, "content": "resposta", "message_type": "outgoing"}
+        )
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_dispatch_chatwoot_propagates_http_failure_for_outbox_retry(monkeypatch) -> None:
+    """5xx vira erro tipado para o lifecycle registrar a proxima tentativa."""
+    from app.api.v1.integrations import _dispatch_chatwoot
+
+    monkeypatch.setattr(settings, "chatwoot_base_url", "https://chat.test.com")
+    monkeypatch.setattr(settings, "chatwoot_api_key", "test-key")
+    monkeypatch.setattr(settings, "chatwoot_account_id", 1)
+    respx.post("https://chat.test.com/api/v1/accounts/1/conversations/123/messages").mock(
+        return_value=httpx.Response(503, text="upstream diagnostic must not escape")
+    )
+
+    with pytest.raises(RuntimeError, match="chatwoot HTTP 503") as exc_info:
+        await _dispatch_chatwoot({"conversation_id": 123, "content": "contexto"})
+
+    assert "upstream diagnostic" not in str(exc_info.value)
 
 
 @pytest.mark.asyncio

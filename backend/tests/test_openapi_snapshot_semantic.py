@@ -49,7 +49,9 @@ def test_semantic_diff_detects_removed_operation_and_required_parameter() -> Non
     }
     current = {
         "paths": {
-            "/items": {"get": _operation(parameters=[{"in": "query", "name": "page", "required": True}])}
+            "/items": {
+                "get": _operation(parameters=[{"in": "query", "name": "page", "required": True}])
+            }
         }
     }
 
@@ -62,11 +64,15 @@ def test_semantic_diff_detects_removed_operation_and_required_parameter() -> Non
 def test_semantic_diff_detects_security_regression() -> None:
     module = _load_snapshot_module()
     baseline = {
-        "components": {"securitySchemes": {"ApiKey": {"type": "apiKey", "in": "header", "name": "X-Key"}}},
+        "components": {
+            "securitySchemes": {"ApiKey": {"type": "apiKey", "in": "header", "name": "X-Key"}}
+        },
         "paths": {"/secure": {"get": _operation(security=[{"ApiKey": []}])}},
     }
     current = {
-        "components": {"securitySchemes": {"ApiKey": {"type": "apiKey", "in": "header", "name": "X-Other"}}},
+        "components": {
+            "securitySchemes": {"ApiKey": {"type": "apiKey", "in": "header", "name": "X-Other"}}
+        },
         "paths": {"/secure": {"get": _operation(security=[])}},
     }
 
@@ -77,7 +83,10 @@ def test_semantic_diff_detects_security_regression() -> None:
 
 def test_validate_internal_refs_handles_escaped_pointer_and_rejects_missing() -> None:
     module = _load_snapshot_module()
-    valid = {"components": {"schemas": {"A/B": {"type": "object"}}}, "x": {"$ref": "#/components/schemas/A~1B"}}
+    valid = {
+        "components": {"schemas": {"A/B": {"type": "object"}}},
+        "x": {"$ref": "#/components/schemas/A~1B"},
+    }
     invalid = {"x": {"$ref": "#/components/schemas/Missing"}}
 
     assert module.validate_internal_refs(valid, label="valid") == []

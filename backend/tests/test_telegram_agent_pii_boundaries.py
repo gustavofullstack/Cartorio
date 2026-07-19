@@ -53,14 +53,13 @@ async def test_agent_handoff_creates_local_conversation_mapping(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Resposta humana so pode voltar ao Telegram com vinculo local do CRM."""
+
     async def handoff_to_chatwoot(**kwargs: object) -> tuple[bool, dict[str, object]]:
         return True, {"conversation_id": "501"}
 
     create_ticket = AsyncMock(return_value={"ok": True, "atendimento_id": 7})
     send_message = AsyncMock(return_value=True)
-    monkeypatch.setattr(
-        "app.services.chatwoot_handoff.handoff_to_chatwoot", handoff_to_chatwoot
-    )
+    monkeypatch.setattr("app.services.chatwoot_handoff.handoff_to_chatwoot", handoff_to_chatwoot)
     monkeypatch.setattr("app.api.v1.telegram._tool_criar_atendimento", create_ticket)
     monkeypatch.setattr("app.api.v1.telegram._send_message", send_message)
 

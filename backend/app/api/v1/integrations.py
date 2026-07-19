@@ -40,6 +40,7 @@ from app.services.n8n_error import (
     compute_payload_digest,
     validate_n8n_signature,
 )
+from app.services.pii import scrub
 
 
 # ============================================================================
@@ -425,10 +426,53 @@ async def _dispatch_evolution(payload: dict) -> None:
         raise RuntimeError(f"evolution HTTP {r.status_code}: {r.text[:200]}")
 
 
-async def _dispatch_chatwoot(payload: dict) -> None:
-    """Placeholder - integracao Chatwoot sera implementada em Sprint 2."""
-    _log.info("chatwoot dispatch (placeholder): %s", json.dumps(payload)[:200])
-    # TODO Sprint 2: POST %s/api/v1/accounts/%s/conversations ...
+async def _dispatch_chatwoot(payload: dict[str, Any]) -> None:
+    """Publica contexto scrubbed em uma conversa Chatwoot para atendimento humano.
+
+    A outbox nao pode representar um escrevente. Por isso este adaptador aceita
+    somente ``incoming``: ele registra contexto recebido para a fila humana, sem
+    enviar uma resposta automatica ao cliente nem contornar o HITL.
+    """
+    chatwoot_base = settings.chatwoot_base_url
+    api_key = settings.chatwoot_api_key
+    account_id = settings.chatwoot_account_id
+    if not chatwoot_base or not api_key or not account_id:
+        raise RuntimeError("CHATWOOT nao configurado")
+
+    conversation_id = payload.get("conversation_id") or payload.get("chatwoot_conversation_id")
+    if not isinstance(conversation_id, (str, int)) or not str(conversation_id).isdecimal():
+        raise ValueError("payload chatwoot precisa de 'conversation_id' numerico")
+
+    content = payload.get("content") or payload.get("text") or payload.get("message")
+    if not isinstance(content, str) or not content.strip():
+        raise ValueError("payload chatwoot precisa de 'content'")
+
+    # Mensagens outgoing devem ser emitidas exclusivamente pelo escrevente no
+    # Chatwoot. Aceitar essa opcao aqui criaria um bypass de HITL.
+    if payload.get("message_type", "incoming") != "incoming":
+        raise ValueError("outbox chatwoot aceita somente message_type='incoming'")
+
+    url = (
+        f"{chatwoot_base.rstrip('/')}/api/v1/accounts/{account_id}/"
+        f"conversations/{conversation_id}/messages"
+    )
+    headers = {"api_access_token": api_key, "Content-Type": "application/json"}
+    scrubbed_content = scrub(content).text
+    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0)) as client:
+        try:
+            response = await client.post(
+                url,
+                headers=headers,
+                json={"content": scrubbed_content, "message_type": "incoming"},
+            )
+        except httpx.HTTPError as exc:
+            # Nao propaga URL ou payload para evitar vazar detalhes da fronteira.
+            raise RuntimeError(f"chatwoot network error: {type(exc).__name__}") from exc
+
+    if response.status_code not in (200, 201):
+        # O dispatcher registra a falha e agenda a tentativa seguinte no outbox.
+        # Nao incluir response.text: respostas upstream podem conter dados pessoais.
+        raise RuntimeError(f"chatwoot HTTP {response.status_code}")
 
 
 async def _dispatch_telegram(payload: dict) -> None:

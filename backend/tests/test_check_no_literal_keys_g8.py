@@ -32,7 +32,7 @@ def fake_keys_file(tmp_path: Path) -> Path:
         'AWS = "AKIAIOSFODNN7EXAMPLE"\n'
         'AWS_TEMP = "ASIAIOSFODNN7EXAMPLE"\n'
         'aws_secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"\n'
-        'TELEGRAM = "1234567890:AAEhBOweik6ad9JQFmR8bFH_qqKjV8sFAKE"\n'
+        'TELEGRAM = "1234567890:' + "AA" + ("x" * 35) + '"\n'
         'SUPABASE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.fake"\n'
         'MINIMAX = "sk-cp-FAKE_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"\n'
         'SLACK = "xoxb-1234567890123-1234567890123-FAKEFAKEFAKEFAKEFAKE"\n'
@@ -121,7 +121,8 @@ class TestPatternDetection:
     def test_detects_telegram_bot_token(self, tmp_path: Path) -> None:
         """Telegram bot token (CRITICAL)."""
         f = tmp_path / "x.py"
-        f.write_text('TG = "1234567890:AAEhBOweik6ad9JQFmR8bFH_qqKjV8sFAKE"\n', encoding="utf-8")
+        token = "1234567890:" + "AA" + ("x" * 35)
+        f.write_text(f'TG = "{token}"\n', encoding="utf-8")
         v = cnlk.scan_file(f)
         assert any(r.rule == "TELEGRAM_BOT_TOKEN" and r.severity == "critical" for r in v)
 

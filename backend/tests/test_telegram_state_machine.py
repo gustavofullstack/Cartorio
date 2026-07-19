@@ -178,12 +178,13 @@ async def test_confirmar_agendamento_abre_ticket_humano_sem_reservar_horario() -
     bus.client.get = AsyncMock(
         return_value='{"state":"agendar:confirmar","data":{"servico_nome":"Autenticacao","data":"2026-07-20","hora":"10:00","valor":"R$ 6,80"}}'
     )
-    with patch(
-        "app.api.v1.telegram._tool_criar_atendimento",
-        new=AsyncMock(return_value={"ok": True, "atendimento_id": 81}),
-    ) as create_ticket, patch(
-        "app.api.v1.telegram._call_api", new=AsyncMock()
-    ) as call_api:
+    with (
+        patch(
+            "app.api.v1.telegram._tool_criar_atendimento",
+            new=AsyncMock(return_value={"ok": True, "atendimento_id": 81}),
+        ) as create_ticket,
+        patch("app.api.v1.telegram._call_api", new=AsyncMock()) as call_api,
+    ):
         text, _keyboard, _handled = await _confirmar_agendamento(bus, 123, user_id=456)
 
     assert "Solicitacao registrada" in text
