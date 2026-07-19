@@ -42,6 +42,15 @@ def _extract_chat_response_tokens(response: ChatResponse) -> tuple[int, int]:
 
 logger = logging.getLogger(__name__)
 
+# Deterministic last-resort response.  This is deliberately not an LLM output:
+# it contains no request data, makes no legal/procedural decision, and does not
+# require Redis or an upstream provider to be available.
+CACHE_PROVIDER = "cache"
+CACHE_FALLBACK_RESPONSE = (
+    "O atendimento automatizado está temporariamente indisponível. "
+    "Tente novamente em alguns minutos ou digite /humano para atendimento."
+)
+
 
 # Provedores que usam o wrapper generico OpenAI-compat (opencode_generic)
 _OPENAI_COMPAT_PROVIDERS = frozenset(
@@ -89,6 +98,28 @@ async def _call_provider(
     # Necessario porque OPENCODE_GO_BASE_URL aponta para https://api.minimax.io/v1 na VPS
     # mas o provider name usado em algumas chamadas eh "minimax"
     provider = _PROVIDER_ALIASES.get(provider, provider)
+
+    if provider == CACHE_PROVIDER:
+        # Consent is checked by ``chat_with_fallback`` before iterating the
+        # chain, but keep this guard for defense-in-depth when the internal
+        # dispatcher is called directly.  The static response never inspects,
+        # stores, logs, or forwards ``messages`` (LGPD-safe fail-safe).
+        if not consent_granted:
+            raise ChatError(
+                "LGPD art. 7 I — Consentimento nao concedido.",
+                kind=ChatErrorKind.LGPD_BLOCKED,
+            )
+        return ChatResponse(
+            content=CACHE_FALLBACK_RESPONSE,
+            model="cache-failsafe-v1",
+            tokens_in=0,
+            tokens_out=0,
+            latency_ms=0,
+            finish_reason="stop",
+            pii_redacted_count=0,
+            output_pii_redacted_count=0,
+            raw=None,
+        )
 
     if provider == "opencode_go":
         from app.integrations.opencode_go import chat_with_settings as chat_opencode_go
@@ -254,7 +285,9 @@ async def chat_with_fallback(
     last_exc: ChatError | None = None
     for idx, provider in enumerate(chain):
         # Circuit Breaker check
-        if await _is_circuit_open(provider):
+        # The static cache provider has no upstream dependency and must remain
+        # available even when Redis/circuit-breaker state is unavailable.
+        if provider != CACHE_PROVIDER and await _is_circuit_open(provider):
             logger.warning("Circuit breaker is OPEN for provider: %s. Fast-failing.", provider)
             last_exc = ChatError(
                 f"Circuit breaker open for {provider}", kind=ChatErrorKind.HTTP_5XX

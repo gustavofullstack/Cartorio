@@ -11,9 +11,13 @@ O código atual usa uma cadeia configurável de **14 slots**, nesta ordem padrã
 `opencode_zen_account_1 → opencode_zen_account_2 → opencode_zen_account_3 → opencode_free_3 → opencode_free_1 → opencode_free_2 → opencode_go → openrouter → groq → mistral → google_ai_studio → openclaw → jules → antigravity`.
 
 O circuit breaker é persistido no Redis e o cooldown padrão é de **300 segundos**.
-Não existe provider `cache` implementado em `_call_provider`; a documentação não
-deve prometer resposta local automática. Providers Zen sem credencial podem ser
-ignorados, mas providers não configurados continuam fail-closed por contrato.
+A cadeia padrão mantém 14 providers upstream; a cadeia também aceita
+explicitamente o provider local `cache` como último recurso. `cache` devolve uma
+mensagem determinística de indisponibilidade, não consulta nem persiste as
+mensagens recebidas, não depende de Redis e não toma decisões jurídicas. Ele
+exige consentimento LGPD, assim como os demais caminhos. Providers Zen sem
+credencial podem ser ignorados, mas providers não configurados continuam
+fail-closed por contrato.
 
 ## 🎯 Visão Geral
 
@@ -69,10 +73,9 @@ O Cartório usa **fallback chain de 7 providers** para garantir 99.9% de disponi
                            │ (Redis offline)
                            ▼
               ┌─────────────────────────────────────┐
-              │ 7. Cache local                      │
-              │    Resposta padrão                  │
-              │    "Sistema em manutenção.          │
-              │     Tente novamente em 5 min."      │
+              │ 7. Cache local (se configurado)     │
+              │    Resposta determinística         │
+              │    sem PII, sem decisão jurídica  │
               └─────────────────────────────────────┘
 ```
 
@@ -308,7 +311,9 @@ pytest tests/integration/test_fallback_chain.py -v
 docker service scale cartorio_litellm-app=0
 docker service scale cartorio_openclaw=0
 
-# Expect: cache local retorna "Sistema em manutenção"
+# Para habilitar o último recurso local, inclua `cache` no final de
+# LLM_FALLBACK_CHAIN. A resposta é determinística e não usa o conteúdo da
+# requisição: "O atendimento automatizado está temporariamente indisponível..."
 ```
 
 ### T36 — Circuit Breaker
@@ -378,7 +383,8 @@ pytest tests/e2e/test_fallback_complete.py -v
 1. Verificar conectividade internet: `docker exec cartorio_api curl https://integrate.api.nvidia.com`
 2. Verificar Redis: `docker exec cartorio_redis redis-cli PING`
 3. Ver logs: `docker logs cartorio_api --since 5m 2>&1 | grep -E 'fallback|circuit'`
-4. Fallback final: cache local retorna resposta padrão
+4. Fallback final opcional: adicione `cache` ao chain para retornar uma
+   mensagem estática LGPD-safe sem depender de upstream ou Redis.
 
 ### Circuit OPEN travado
 
