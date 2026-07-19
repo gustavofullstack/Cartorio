@@ -94,7 +94,7 @@ import httpx
 
 async def handoff_para_humano(conversa_id: int, motivo: str) -> None:
     headers = {
-        "api_access_token": "TgSMyCg134D2GWZ38PaV3N5S"
+        "api_access_token": "<REDACTED_USE_ENV>"
     }
     # 1. Enviar mensagem para atendente
     await httpx.AsyncClient().post(
@@ -121,7 +121,7 @@ O workflow N8N `03 - Handoff Humano (Chatwoot v2)` usa os nodes:
 
 ```env
 CHATWOOT_BASE_URL=https://chat.2notasudi.com.br
-CHATWOOT_API_KEY=TgSMyCg134D2GWZ38PaV3N5S
+CHATWOOT_API_KEY=<REDACTED_USE_ENV>
 CHATWOOT_ACCOUNT_ID=1
 CHATWOOT_INBOX_ID=1
 ```
@@ -138,11 +138,11 @@ CHATWOOT_INBOX_ID=1
 
 ```bash
 # Verificar API funcionando
-curl -H "api_access_token: TgSMyCg134D2GWZ38PaV3N5S" \
+curl -H "api_access_token: <REDACTED_USE_ENV>" \
   https://chat.2notasudi.com.br/api/v1/accounts/1/conversations
 
 # Listar inboxes
-curl -H "api_access_token: TgSMyCg134D2GWZ38PaV3N5S" \
+curl -H "api_access_token: <REDACTED_USE_ENV>" \
   https://chat.2notasudi.com.br/api/v1/accounts/1/inboxes
 ```
 

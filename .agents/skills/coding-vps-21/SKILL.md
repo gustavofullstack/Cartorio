@@ -99,7 +99,7 @@ services:
   <agent>:
     build: .
     environment:
-      MINIMAX_API_KEY: sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s
+      MINIMAX_API_KEY: <REDACTED_USE_ENV>
       MINIMAX_BASE_URL: https://api.minimaxi.com/v1
       MINIMAX_MODEL: MiniMax-M3
       LLM_PROVIDER: minimax
@@ -123,7 +123,7 @@ CMD ["python", "main.py"]
 
 ```bash
 # .env
-MINIMAX_API_KEY=sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s
+MINIMAX_API_KEY=<REDACTED_USE_ENV>
 MINIMAX_BASE_URL=https://api.minimaxi.com/v1
 MINIMAX_MODEL=MiniMax-M3
 LLM_THINKING=true
@@ -175,7 +175,7 @@ async def create_coding_agent(name: str, image: str, port: int = 8000) -> dict:
     cmd = f"""docker service create \
         --name coding-vps_apenas_para_auxilio_{name} \
         --network coding-vps_apenas_para_auxilio_default \
-        --env MINIMAX_API_KEY=sk-cp-kRIbiqKy9F... \
+        --env MINIMAX_API_KEY=<REDACTED_USE_ENV> \
         --env MINIMAX_BASE_URL=https://api.minimaxi.com/v1 \
         --env MINIMAX_MODEL=MiniMax-M3 \
         --publish mode=host,published={port},target={port} \

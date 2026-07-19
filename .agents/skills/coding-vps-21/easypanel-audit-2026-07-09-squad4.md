@@ -21,7 +21,7 @@ type: project
 | **Total coding agents auditados** | 16/21 UP (1/1) · 1 quebrado (`cline`) · 4 dependency-only (DBs) |
 | **`MINIMAX_API_KEY` em coding-agent shells** | 9/9 (100%) — todos herdando do template único |
 | **`LITELLM_BASE_URL`** | Todos apontam `http://coding-vps_apenas_para_auxilio_litellm-app:4000` ✓ |
-| **`LITELLM_API_KEY`** | `e39dss0k1baohuqkprjv` (20 chars) em todos os 9 ✓ |
+| **`LITELLM_API_KEY`** | `<REDACTED_USE_ENV>` (20 chars) em todos os 9 ✓ |
 | **`LLM_DEFAULT_PROVIDER`** | `minimax` em todos os 9 ✓ |
 | **`MINIMAX_MODEL`** | `MiniMax-M3` em todos os 9 ✓ |
 
@@ -68,12 +68,12 @@ type: project
 
 1. **MiniMax-M3 integrado em 9/9 coding-agent shells** da stack canônica `coding-vps-agents_*`:
    ```
-   MINIMAX_API_KEY=sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_... (125 chars)
+   MINIMAX_API_KEY=<REDACTED_USE_ENV> (125 chars)
    MINIMAX_BASE_URL=https://api.minimaxi.com/v1
    MINIMAX_MODEL=MiniMax-M3
    LLM_DEFAULT_PROVIDER=minimax
    LITELLM_BASE_URL=http://coding-vps_apenas_para_auxilio_litellm-app:4000
-   LITELLM_API_KEY=e39dss0k1baohuqkprjv
+   LITELLM_API_KEY=<REDACTED_USE_ENV>
    ```
 2. **`litellm-app` é o proxy canônico** — todos os agents passam por ele (`LITELLM_BASE_URL` aponta para service interno, network auto-resolve do Swarm). Failover centralizado: se a MiniMax API cair, basta ajustar config no LiteLLM.
 3. **`PII_SCRUB_ENABLED=true`** presente em `coding-vps-agents_hermes`. LGPD-by-design respeitado na stack canônica.
@@ -86,7 +86,7 @@ type: project
 2. **`mcp-orchestrator` 0/1** — service registrado mas sem replica rodando. Não é coding-agent, mas deveria estar UP para suportar os demais.
 3. **Duplicação de stacks**: existem DUAS stacks paralelas (`coding-vps_apenas_para_auxilio_<agent>` usando imagem custom `coding-vps/agent:patched` e `coding-vps-agents_<agent>` usando imagens específicas). Consomem recursos dobrados. **Ação**: consolidar (mantendo canônica) e remover a legada.
 4. **AnythingLLM com env mínimo** (4 vars, sem MINIMAX_API_KEY) — pode estar usando outro provider LLM (Ollama local ou outro). Verificar.
-5. **Chaves reutilizadas** (`LITELLM_API_KEY=e39dss0k1baohuqkprjv` idêntico em todos) — risco: se 1 agente vazar via logs, vazou para todos. Aceitável porque é master key de proxy interno, mas vale revisar.
+5. **Chaves reutilizadas** (`LITELLM_API_KEY=<REDACTED_USE_ENV>` idêntico em todos) — risco: se 1 agente vazar via logs, vazou para todos. Aceitável porque é master key de proxy interno, mas vale revisar.
 
 ## Lições Aprendidas
 

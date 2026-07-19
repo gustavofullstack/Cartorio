@@ -10,7 +10,7 @@ Todas as rotas exigem header `apikey: <EVOLUTION_API_KEY>`.
 
 ```bash
 EVOLUTION_URL="https://whatsapp.2notasudi.com.br"
-EVOLUTION_KEY="429683C4C977415CAAFCCE10F7D57E11"
+EVOLUTION_KEY="<REDACTED_USE_ENV>"
 ```
 
 ## 2. Endpoints Principais

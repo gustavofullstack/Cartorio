@@ -1356,6 +1356,60 @@
         "title": "CancelarResponse",
         "type": "object"
       },
+      "ChatwootAssignee": {
+        "description": "Optional human assignee (HITL - escrevente do cartorio).",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "**LGPD PII** Email do atendente (LGPD PII).",
+            "title": "Email",
+            "x-pii": true,
+            "x-sensivel": true
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ID do atendente no Chatwoot.",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "**LGPD PII** Nome do atendente (LGPD PII).",
+            "title": "Name",
+            "x-pii": true
+          }
+        },
+        "title": "ChatwootAssignee",
+        "type": "object"
+      },
       "ChatwootConversationRef": {
         "description": "Minimal conversation object embedded in Chatwoot webhooks.",
         "properties": {
@@ -1425,135 +1479,12 @@
         "type": "object"
       },
       "ChatwootConversationStatusChanged": {
-        "$defs": {
-          "ChatwootAssignee": {
-            "description": "Optional human assignee (HITL - escrevente do cartorio).",
-            "properties": {
-              "email": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Email do atendente (LGPD PII).",
-                "title": "Email",
-                "x-pii": true
-              },
-              "id": {
-                "anyOf": [
-                  {
-                    "type": "integer"
-                  },
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "ID do atendente no Chatwoot.",
-                "title": "Id"
-              },
-              "name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Nome do atendente (LGPD PII).",
-                "title": "Name",
-                "x-pii": true
-              }
-            },
-            "title": "ChatwootAssignee",
-            "type": "object"
-          },
-          "ChatwootConversationRef": {
-            "description": "Minimal conversation object embedded in Chatwoot webhooks.",
-            "properties": {
-              "assignee": {
-                "anyOf": [
-                  {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Atendente atribuido (HITL - escrevente).",
-                "title": "Assignee"
-              },
-              "id": {
-                "anyOf": [
-                  {
-                    "type": "integer"
-                  },
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "ID da conversa no Chatwoot (int ou UUID legacy).",
-                "title": "Id"
-              },
-              "meta": {
-                "anyOf": [
-                  {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Metadata adicional da conversa (sender, channel, custom).",
-                "title": "Meta"
-              },
-              "status": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Status da conversa: 'open', 'resolved', 'pending', 'snoozed'.",
-                "examples": [
-                  "open",
-                  "resolved"
-                ],
-                "title": "Status"
-              }
-            },
-            "title": "ChatwootConversationRef",
-            "type": "object"
-          }
-        },
         "description": "Chatwoot `conversation_status_changed` webhook body.\n\nFields mirror what process_chatwoot_event/_handle_status_changed read.\nExtra Chatwoot keys are ignored (forward-compatible).",
         "properties": {
           "assignee": {
             "anyOf": [
               {
-                "$ref": "#/$defs/ChatwootAssignee"
+                "$ref": "#/components/schemas/ChatwootAssignee"
               },
               {
                 "additionalProperties": true,
@@ -1571,7 +1502,7 @@
           "conversation": {
             "anyOf": [
               {
-                "$ref": "#/$defs/ChatwootConversationRef"
+                "$ref": "#/components/schemas/ChatwootConversationRef"
               },
               {
                 "type": "null"
@@ -1630,76 +1561,6 @@
         "type": "object"
       },
       "ChatwootMessageCreated": {
-        "$defs": {
-          "ChatwootConversationRef": {
-            "description": "Minimal conversation object embedded in Chatwoot webhooks.",
-            "properties": {
-              "assignee": {
-                "anyOf": [
-                  {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Atendente atribuido (HITL - escrevente).",
-                "title": "Assignee"
-              },
-              "id": {
-                "anyOf": [
-                  {
-                    "type": "integer"
-                  },
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "ID da conversa no Chatwoot (int ou UUID legacy).",
-                "title": "Id"
-              },
-              "meta": {
-                "anyOf": [
-                  {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Metadata adicional da conversa (sender, channel, custom).",
-                "title": "Meta"
-              },
-              "status": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Status da conversa: 'open', 'resolved', 'pending', 'snoozed'.",
-                "examples": [
-                  "open",
-                  "resolved"
-                ],
-                "title": "Status"
-              }
-            },
-            "title": "ChatwootConversationRef",
-            "type": "object"
-          }
-        },
         "description": "Chatwoot `message_created` webhook body (minimal fields).\n\nmessage_type may be string ('outgoing'/'incoming') or Chatwoot enum int.",
         "properties": {
           "content": {
@@ -1720,7 +1581,7 @@
           "conversation": {
             "anyOf": [
               {
-                "$ref": "#/$defs/ChatwootConversationRef"
+                "$ref": "#/components/schemas/ChatwootConversationRef"
               },
               {
                 "type": "null"
@@ -1811,6 +1672,16 @@
         ],
         "title": "ChatwootMessageCreated",
         "type": "object"
+      },
+      "ChatwootWebhookModel": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ChatwootConversationStatusChanged"
+          },
+          {
+            "$ref": "#/components/schemas/ChatwootMessageCreated"
+          }
+        ]
       },
       "ClienteCorrecaoRequest": {
         "additionalProperties": false,
@@ -2666,97 +2537,6 @@
         "type": "object"
       },
       "EvolutionPayload": {
-        "$defs": {
-          "EvolutionKey": {
-            "description": "Chave de identificacao da mensagem WhatsApp (Evolution API).\n\nLGPD: `remoteJid` identifica o usuario (formato `5511999999999@s.whatsapp.net`).",
-            "properties": {
-              "fromMe": {
-                "anyOf": [
-                  {
-                    "type": "boolean"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "True se a mensagem foi enviada pelo bot.",
-                "examples": [
-                  false
-                ],
-                "title": "Fromme"
-              },
-              "id": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "ID da mensagem (idempotency key).",
-                "examples": [
-                  "3EB0C8E5C2B6F1A0"
-                ],
-                "title": "Id"
-              },
-              "remoteJid": {
-                "description": "**LGPD PII** JID do remetente WhatsApp (LGPD PII: phone number).",
-                "examples": [
-                  "5511999999999@s.whatsapp.net",
-                  "120363@g.us"
-                ],
-                "title": "Remotejid",
-                "type": "string",
-                "x-pii": true
-              }
-            },
-            "required": [
-              "remoteJid"
-            ],
-            "title": "EvolutionKey",
-            "type": "object"
-          },
-          "EvolutionMessage": {
-            "description": "Conteudo da mensagem Evolution (WhatsApp).\n\nLGPD: `conversation` ou `extendedTextMessage.text` carregam fala do usuario.",
-            "properties": {
-              "conversation": {
-                "anyOf": [
-                  {
-                    "maxLength": 10000,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Texto da mensagem plain (LGPD PII).",
-                "title": "Conversation",
-                "x-pii": true
-              },
-              "extendedTextMessage": {
-                "anyOf": [
-                  {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Mensagem de texto estendida (links, mentions, format).",
-                "title": "Extendedtextmessage",
-                "x-pii": true
-              }
-            },
-            "title": "EvolutionMessage",
-            "type": "object"
-          }
-        },
         "description": "Payload completo do webhook Evolution API (WhatsApp).\n\nLGPD: dual-format (nested data.* OU root-level legado). Backend aceita\nambos - ver `parse_evolution_payload` em whatsapp.py.\n\nRef: https://doc.evolution-api.com/v2/api-reference",
         "properties": {
           "data": {
@@ -2810,7 +2590,7 @@
           "key": {
             "anyOf": [
               {
-                "$ref": "#/$defs/EvolutionKey"
+                "$ref": "#/components/schemas/EvolutionKey"
               },
               {
                 "type": "null"
@@ -2823,7 +2603,7 @@
           "message": {
             "anyOf": [
               {
-                "$ref": "#/$defs/EvolutionMessage"
+                "$ref": "#/components/schemas/EvolutionMessage"
               },
               {
                 "type": "null"
@@ -5225,308 +5005,6 @@
         "type": "object"
       },
       "TelegramCallbackQuery": {
-        "$defs": {
-          "TelegramChat": {
-            "description": "Chat onde a mensagem foi enviada (private, group, supergroup, channel).\n\nLGPD: `id` eh o identificador do chat. Em grupos, exposto a todos os membros.",
-            "properties": {
-              "first_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Primeiro nome (apenas chat privado).",
-                "title": "First Name",
-                "x-pii": true
-              },
-              "id": {
-                "description": "**LGPD PII** ID do chat no Telegram. Negativo para grupos/canais.",
-                "examples": [
-                  -1004331849032,
-                  123456789
-                ],
-                "title": "Id",
-                "type": "integer",
-                "x-pii": true
-              },
-              "last_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Ultimo nome (apenas chat privado).",
-                "title": "Last Name",
-                "x-pii": true
-              },
-              "title": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Titulo do chat (apenas para grupos/canais).",
-                "title": "Title"
-              },
-              "type": {
-                "description": "Tipo do chat: 'private', 'group', 'supergroup', 'channel'.",
-                "examples": [
-                  "private",
-                  "supergroup"
-                ],
-                "pattern": "^(private|group|supergroup|channel)$",
-                "title": "Type",
-                "type": "string"
-              },
-              "username": {
-                "anyOf": [
-                  {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Username publico do chat (supergroup/canal).",
-                "title": "Username"
-              }
-            },
-            "required": [
-              "id",
-              "type"
-            ],
-            "title": "TelegramChat",
-            "type": "object"
-          },
-          "TelegramMessage": {
-            "description": "Mensagem recebida pelo bot Telegram.\n\nLGPD: `text`/`caption` sao PII por conter fala do usuario.\n`from_` identifica o remetente. Forward de mensagem preserva origem.",
-            "properties": {
-              "caption": {
-                "anyOf": [
-                  {
-                    "maxLength": 1024,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Legenda de midia (foto/doc/video).",
-                "title": "Caption",
-                "x-pii": true
-              },
-              "chat": {
-                "$ref": "#/$defs/TelegramChat",
-                "description": "**LGPD PII** Chat onde a mensagem foi postada (LGPD PII).",
-                "x-pii": true
-              },
-              "date": {
-                "description": "Unix timestamp de quando a mensagem foi enviada.",
-                "examples": [
-                  1721308800
-                ],
-                "title": "Date",
-                "type": "integer"
-              },
-              "edit_date": {
-                "anyOf": [
-                  {
-                    "type": "integer"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Unix timestamp da ultima edicao. Presente apenas em edits.",
-                "title": "Edit Date"
-              },
-              "from": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/TelegramUser"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Remetente (LGPD PII). Null para mensagens de canal.",
-                "x-pii": true
-              },
-              "message_id": {
-                "description": "ID unico da mensagem dentro do chat.",
-                "examples": [
-                  42
-                ],
-                "minimum": 1,
-                "title": "Message Id",
-                "type": "integer"
-              },
-              "message_thread_id": {
-                "anyOf": [
-                  {
-                    "minimum": 1,
-                    "type": "integer"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "ID do topico (forum supergroup).",
-                "title": "Message Thread Id"
-              },
-              "sender_chat": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/TelegramChat"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Chat que enviou a mensagem (se diferente de from).",
-                "x-pii": true
-              },
-              "text": {
-                "anyOf": [
-                  {
-                    "maxLength": 4096,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Texto plain-text da mensagem (LGPD PII: pode conter CPF/RG/nome).",
-                "title": "Text",
-                "x-pii": true
-              }
-            },
-            "required": [
-              "message_id",
-              "date",
-              "chat"
-            ],
-            "title": "TelegramMessage",
-            "type": "object"
-          },
-          "TelegramUser": {
-            "description": "Remetente de uma mensagem Telegram.\n\nLGPD: `id`, `username`, `first_name`, `last_name` sao identificadores\npessoais. NAO ecoar em logs/responses sem scrubber.",
-            "properties": {
-              "first_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Primeiro nome (LGPD PII).",
-                "title": "First Name",
-                "x-pii": true
-              },
-              "id": {
-                "description": "**LGPD PII** Identificador unico do usuario no Telegram (LGPD: pseudonimo).",
-                "examples": [
-                  123456789
-                ],
-                "title": "Id",
-                "type": "integer",
-                "x-pii": true
-              },
-              "is_bot": {
-                "anyOf": [
-                  {
-                    "type": "boolean"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "True se o usuario eh outro bot.",
-                "examples": [
-                  false
-                ],
-                "title": "Is Bot"
-              },
-              "language_code": {
-                "anyOf": [
-                  {
-                    "maxLength": 10,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Codigo IETF do idioma preferido (ex: 'pt-BR').",
-                "title": "Language Code"
-              },
-              "last_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Ultimo nome (LGPD PII).",
-                "title": "Last Name",
-                "x-pii": true
-              },
-              "username": {
-                "anyOf": [
-                  {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Handle publico do Telegram sem @ (LGPD: pode ser PII se unico).",
-                "title": "Username",
-                "x-pii": true
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "title": "TelegramUser",
-            "type": "object"
-          }
-        },
         "description": "Callback query de botao inline (callback_data).\n\nLGPD: `from_` identifica o usuario que clicou no botao.",
         "properties": {
           "chat_instance": {
@@ -5555,7 +5033,7 @@
             "x-pii": true
           },
           "from": {
-            "$ref": "#/$defs/TelegramUser",
+            "$ref": "#/components/schemas/TelegramUser",
             "description": "**LGPD PII** Usuario que clicou (LGPD PII).",
             "x-pii": true
           },
@@ -5570,7 +5048,7 @@
           "message": {
             "anyOf": [
               {
-                "$ref": "#/$defs/TelegramMessage"
+                "$ref": "#/components/schemas/TelegramMessage"
               },
               {
                 "type": "null"
@@ -5679,191 +5157,6 @@
         "type": "object"
       },
       "TelegramMessage": {
-        "$defs": {
-          "TelegramChat": {
-            "description": "Chat onde a mensagem foi enviada (private, group, supergroup, channel).\n\nLGPD: `id` eh o identificador do chat. Em grupos, exposto a todos os membros.",
-            "properties": {
-              "first_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Primeiro nome (apenas chat privado).",
-                "title": "First Name",
-                "x-pii": true
-              },
-              "id": {
-                "description": "**LGPD PII** ID do chat no Telegram. Negativo para grupos/canais.",
-                "examples": [
-                  -1004331849032,
-                  123456789
-                ],
-                "title": "Id",
-                "type": "integer",
-                "x-pii": true
-              },
-              "last_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Ultimo nome (apenas chat privado).",
-                "title": "Last Name",
-                "x-pii": true
-              },
-              "title": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Titulo do chat (apenas para grupos/canais).",
-                "title": "Title"
-              },
-              "type": {
-                "description": "Tipo do chat: 'private', 'group', 'supergroup', 'channel'.",
-                "examples": [
-                  "private",
-                  "supergroup"
-                ],
-                "pattern": "^(private|group|supergroup|channel)$",
-                "title": "Type",
-                "type": "string"
-              },
-              "username": {
-                "anyOf": [
-                  {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Username publico do chat (supergroup/canal).",
-                "title": "Username"
-              }
-            },
-            "required": [
-              "id",
-              "type"
-            ],
-            "title": "TelegramChat",
-            "type": "object"
-          },
-          "TelegramUser": {
-            "description": "Remetente de uma mensagem Telegram.\n\nLGPD: `id`, `username`, `first_name`, `last_name` sao identificadores\npessoais. NAO ecoar em logs/responses sem scrubber.",
-            "properties": {
-              "first_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Primeiro nome (LGPD PII).",
-                "title": "First Name",
-                "x-pii": true
-              },
-              "id": {
-                "description": "**LGPD PII** Identificador unico do usuario no Telegram (LGPD: pseudonimo).",
-                "examples": [
-                  123456789
-                ],
-                "title": "Id",
-                "type": "integer",
-                "x-pii": true
-              },
-              "is_bot": {
-                "anyOf": [
-                  {
-                    "type": "boolean"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "True se o usuario eh outro bot.",
-                "examples": [
-                  false
-                ],
-                "title": "Is Bot"
-              },
-              "language_code": {
-                "anyOf": [
-                  {
-                    "maxLength": 10,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Codigo IETF do idioma preferido (ex: 'pt-BR').",
-                "title": "Language Code"
-              },
-              "last_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Ultimo nome (LGPD PII).",
-                "title": "Last Name",
-                "x-pii": true
-              },
-              "username": {
-                "anyOf": [
-                  {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Handle publico do Telegram sem @ (LGPD: pode ser PII se unico).",
-                "title": "Username",
-                "x-pii": true
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "title": "TelegramUser",
-            "type": "object"
-          }
-        },
         "description": "Mensagem recebida pelo bot Telegram.\n\nLGPD: `text`/`caption` sao PII por conter fala do usuario.\n`from_` identifica o remetente. Forward de mensagem preserva origem.",
         "properties": {
           "caption": {
@@ -5882,7 +5175,7 @@
             "x-pii": true
           },
           "chat": {
-            "$ref": "#/$defs/TelegramChat",
+            "$ref": "#/components/schemas/TelegramChat",
             "description": "**LGPD PII** Chat onde a mensagem foi postada (LGPD PII).",
             "x-pii": true
           },
@@ -5910,7 +5203,7 @@
           "from": {
             "anyOf": [
               {
-                "$ref": "#/$defs/TelegramUser"
+                "$ref": "#/components/schemas/TelegramUser"
               },
               {
                 "type": "null"
@@ -5946,7 +5239,7 @@
           "sender_chat": {
             "anyOf": [
               {
-                "$ref": "#/$defs/TelegramChat"
+                "$ref": "#/components/schemas/TelegramChat"
               },
               {
                 "type": "null"
@@ -5981,377 +5274,12 @@
         "type": "object"
       },
       "TelegramUpdate": {
-        "$defs": {
-          "TelegramCallbackQuery": {
-            "description": "Callback query de botao inline (callback_data).\n\nLGPD: `from_` identifica o usuario que clicou no botao.",
-            "properties": {
-              "chat_instance": {
-                "description": "Identificador global da instancia do chat no client.",
-                "maxLength": 64,
-                "title": "Chat Instance",
-                "type": "string"
-              },
-              "data": {
-                "anyOf": [
-                  {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** callback_data do botao (ate 64 bytes).",
-                "examples": [
-                  "cmd:agendar",
-                  "servico:procuracao"
-                ],
-                "title": "Data",
-                "x-pii": true
-              },
-              "from": {
-                "$ref": "#/$defs/TelegramUser",
-                "description": "**LGPD PII** Usuario que clicou (LGPD PII).",
-                "x-pii": true
-              },
-              "id": {
-                "description": "ID do callback query (necessario para answerCallbackQuery).",
-                "examples": [
-                  "12345678901234567"
-                ],
-                "title": "Id",
-                "type": "string"
-              },
-              "message": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/TelegramMessage"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Mensagem que continha o botao.",
-                "x-pii": true
-              }
-            },
-            "required": [
-              "id",
-              "from",
-              "chat_instance"
-            ],
-            "title": "TelegramCallbackQuery",
-            "type": "object"
-          },
-          "TelegramChat": {
-            "description": "Chat onde a mensagem foi enviada (private, group, supergroup, channel).\n\nLGPD: `id` eh o identificador do chat. Em grupos, exposto a todos os membros.",
-            "properties": {
-              "first_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Primeiro nome (apenas chat privado).",
-                "title": "First Name",
-                "x-pii": true
-              },
-              "id": {
-                "description": "**LGPD PII** ID do chat no Telegram. Negativo para grupos/canais.",
-                "examples": [
-                  -1004331849032,
-                  123456789
-                ],
-                "title": "Id",
-                "type": "integer",
-                "x-pii": true
-              },
-              "last_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Ultimo nome (apenas chat privado).",
-                "title": "Last Name",
-                "x-pii": true
-              },
-              "title": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Titulo do chat (apenas para grupos/canais).",
-                "title": "Title"
-              },
-              "type": {
-                "description": "Tipo do chat: 'private', 'group', 'supergroup', 'channel'.",
-                "examples": [
-                  "private",
-                  "supergroup"
-                ],
-                "pattern": "^(private|group|supergroup|channel)$",
-                "title": "Type",
-                "type": "string"
-              },
-              "username": {
-                "anyOf": [
-                  {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Username publico do chat (supergroup/canal).",
-                "title": "Username"
-              }
-            },
-            "required": [
-              "id",
-              "type"
-            ],
-            "title": "TelegramChat",
-            "type": "object"
-          },
-          "TelegramMessage": {
-            "description": "Mensagem recebida pelo bot Telegram.\n\nLGPD: `text`/`caption` sao PII por conter fala do usuario.\n`from_` identifica o remetente. Forward de mensagem preserva origem.",
-            "properties": {
-              "caption": {
-                "anyOf": [
-                  {
-                    "maxLength": 1024,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Legenda de midia (foto/doc/video).",
-                "title": "Caption",
-                "x-pii": true
-              },
-              "chat": {
-                "$ref": "#/$defs/TelegramChat",
-                "description": "**LGPD PII** Chat onde a mensagem foi postada (LGPD PII).",
-                "x-pii": true
-              },
-              "date": {
-                "description": "Unix timestamp de quando a mensagem foi enviada.",
-                "examples": [
-                  1721308800
-                ],
-                "title": "Date",
-                "type": "integer"
-              },
-              "edit_date": {
-                "anyOf": [
-                  {
-                    "type": "integer"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Unix timestamp da ultima edicao. Presente apenas em edits.",
-                "title": "Edit Date"
-              },
-              "from": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/TelegramUser"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Remetente (LGPD PII). Null para mensagens de canal.",
-                "x-pii": true
-              },
-              "message_id": {
-                "description": "ID unico da mensagem dentro do chat.",
-                "examples": [
-                  42
-                ],
-                "minimum": 1,
-                "title": "Message Id",
-                "type": "integer"
-              },
-              "message_thread_id": {
-                "anyOf": [
-                  {
-                    "minimum": 1,
-                    "type": "integer"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "ID do topico (forum supergroup).",
-                "title": "Message Thread Id"
-              },
-              "sender_chat": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/TelegramChat"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Chat que enviou a mensagem (se diferente de from).",
-                "x-pii": true
-              },
-              "text": {
-                "anyOf": [
-                  {
-                    "maxLength": 4096,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Texto plain-text da mensagem (LGPD PII: pode conter CPF/RG/nome).",
-                "title": "Text",
-                "x-pii": true
-              }
-            },
-            "required": [
-              "message_id",
-              "date",
-              "chat"
-            ],
-            "title": "TelegramMessage",
-            "type": "object"
-          },
-          "TelegramUser": {
-            "description": "Remetente de uma mensagem Telegram.\n\nLGPD: `id`, `username`, `first_name`, `last_name` sao identificadores\npessoais. NAO ecoar em logs/responses sem scrubber.",
-            "properties": {
-              "first_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Primeiro nome (LGPD PII).",
-                "title": "First Name",
-                "x-pii": true
-              },
-              "id": {
-                "description": "**LGPD PII** Identificador unico do usuario no Telegram (LGPD: pseudonimo).",
-                "examples": [
-                  123456789
-                ],
-                "title": "Id",
-                "type": "integer",
-                "x-pii": true
-              },
-              "is_bot": {
-                "anyOf": [
-                  {
-                    "type": "boolean"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "True se o usuario eh outro bot.",
-                "examples": [
-                  false
-                ],
-                "title": "Is Bot"
-              },
-              "language_code": {
-                "anyOf": [
-                  {
-                    "maxLength": 10,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "Codigo IETF do idioma preferido (ex: 'pt-BR').",
-                "title": "Language Code"
-              },
-              "last_name": {
-                "anyOf": [
-                  {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Ultimo nome (LGPD PII).",
-                "title": "Last Name",
-                "x-pii": true
-              },
-              "username": {
-                "anyOf": [
-                  {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "default": null,
-                "description": "**LGPD PII** Handle publico do Telegram sem @ (LGPD: pode ser PII se unico).",
-                "title": "Username",
-                "x-pii": true
-              }
-            },
-            "required": [
-              "id"
-            ],
-            "title": "TelegramUser",
-            "type": "object"
-          }
-        },
         "description": "Payload completo de update do Telegram Bot API.\n\nLGPD: `message.from`, `callback_query.from` sao PII.\nRaw `message.text` NAO deve ir para LLM sem PII scrub (3 camadas).\n\nRef: https://core.telegram.org/bots/api#update",
         "properties": {
           "callback_query": {
             "anyOf": [
               {
-                "$ref": "#/$defs/TelegramCallbackQuery"
+                "$ref": "#/components/schemas/TelegramCallbackQuery"
               },
               {
                 "type": "null"
@@ -6364,7 +5292,7 @@
           "edited_message": {
             "anyOf": [
               {
-                "$ref": "#/$defs/TelegramMessage"
+                "$ref": "#/components/schemas/TelegramMessage"
               },
               {
                 "type": "null"
@@ -6377,7 +5305,7 @@
           "message": {
             "anyOf": [
               {
-                "$ref": "#/$defs/TelegramMessage"
+                "$ref": "#/components/schemas/TelegramMessage"
               },
               {
                 "type": "null"
@@ -6896,6 +5824,90 @@
         "tags": [
           "admin",
           "audit"
+        ]
+      }
+    },
+    "/api/v1/admin/dead-mans-switch/heartbeat": {
+      "post": {
+        "description": "Insere audit log de heartbeat manual. Reset timer do dead man's switch.",
+        "operationId": "force_heartbeat_api_v1_admin_dead_mans_switch_heartbeat_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Forca heartbeat manual (reset timer)",
+        "tags": [
+          "admin",
+          "sre"
+        ]
+      }
+    },
+    "/api/v1/admin/dead-mans-switch/history": {
+      "get": {
+        "description": "Retorna ultimos N heartbeats (do audit log).",
+        "operationId": "get_history_api_v1_admin_dead_mans_switch_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeadMansSwitchHistory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Historico dos ultimos heartbeats",
+        "tags": [
+          "admin",
+          "sre"
+        ]
+      }
+    },
+    "/api/v1/admin/dead-mans-switch/status": {
+      "get": {
+        "description": "Retorna status atual: ultimo heartbeat, idade, threshold, alive?",
+        "operationId": "get_status_api_v1_admin_dead_mans_switch_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeadMansSwitchStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Status do dead man's switch (A13)",
+        "tags": [
+          "admin",
+          "sre"
         ]
       }
     },
@@ -7815,245 +6827,6 @@
         "summary": "Criar agendamento via Webhook (N8N)",
         "tags": [
           "agendamento"
-        ]
-      }
-    },
-    "/api/v1/api/v1/admin/dead-mans-switch/heartbeat": {
-      "post": {
-        "description": "Insere audit log de heartbeat manual. Reset timer do dead man's switch.",
-        "operationId": "force_heartbeat_api_v1_api_v1_admin_dead_mans_switch_heartbeat_post",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Forca heartbeat manual (reset timer)",
-        "tags": [
-          "admin",
-          "sre"
-        ]
-      }
-    },
-    "/api/v1/api/v1/admin/dead-mans-switch/history": {
-      "get": {
-        "description": "Retorna ultimos N heartbeats (do audit log).",
-        "operationId": "get_history_api_v1_api_v1_admin_dead_mans_switch_history_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "default": 50,
-              "title": "Limit",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeadMansSwitchHistory"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Historico dos ultimos heartbeats",
-        "tags": [
-          "admin",
-          "sre"
-        ]
-      }
-    },
-    "/api/v1/api/v1/admin/dead-mans-switch/status": {
-      "get": {
-        "description": "Retorna status atual: ultimo heartbeat, idade, threshold, alive?",
-        "operationId": "get_status_api_v1_api_v1_admin_dead_mans_switch_status_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeadMansSwitchStatus"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Status do dead man's switch (A13)",
-        "tags": [
-          "admin",
-          "sre"
-        ]
-      }
-    },
-    "/api/v1/api/v1/lgpd/consent": {
-      "post": {
-        "description": "Registra consentimento LGPD enviado pelo banner widget.\n\n- Aceita payload minimo (accepted bool + versao)\n- Persiste hash do IP (LGPD: nao armazenar IP cru)\n- Audit log entry (LGPD art. 37)\n- Resposta 204 (sendBeacon friendly)",
-        "operationId": "create_consent_api_v1_api_v1_lgpd_consent_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LGPDConsentRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Registra consentimento LGPD do titular",
-        "tags": [
-          "lgpd"
-        ]
-      }
-    },
-    "/api/v1/api/v1/lgpd/consent/stats": {
-      "get": {
-        "description": "Retorna taxa de consentimento e oposicao agregados.\n\nApenas DPO/admin deveria acessar (em prod, adicionar auth).",
-        "operationId": "get_consent_stats_api_v1_api_v1_lgpd_consent_stats_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LGPDConsentStats"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Estatisticas agregadas de consentimento (DPO only)",
-        "tags": [
-          "lgpd"
-        ]
-      }
-    },
-    "/api/v1/api/v1/n8n/metrics/prometheus": {
-      "get": {
-        "description": "Endpoint scrape-friendly para Prometheus.",
-        "operationId": "prometheus_metrics_api_v1_api_v1_n8n_metrics_prometheus_get",
-        "parameters": [
-          {
-            "description": "Janela em horas",
-            "in": "query",
-            "name": "hours",
-            "required": false,
-            "schema": {
-              "default": 24,
-              "description": "Janela em horas",
-              "maximum": 168,
-              "minimum": 1,
-              "title": "Hours",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Metricas N8N em formato Prometheus",
-        "tags": [
-          "n8n",
-          "metrics"
-        ]
-      }
-    },
-    "/api/v1/api/v1/n8n/metrics/summary": {
-      "get": {
-        "description": "Retorna summary JSON com top WFs e agregacoes.",
-        "operationId": "summary_metrics_api_v1_api_v1_n8n_metrics_summary_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "hours",
-            "required": false,
-            "schema": {
-              "default": 24,
-              "maximum": 168,
-              "minimum": 1,
-              "title": "Hours",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Summary Metrics Api V1 Api V1 N8N Metrics Summary Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Summary agregado de metricas N8N (JSON)",
-        "tags": [
-          "n8n",
-          "metrics"
         ]
       }
     },
@@ -11802,6 +10575,63 @@
         ]
       }
     },
+    "/api/v1/lgpd/consent/banner": {
+      "post": {
+        "description": "Registra consentimento LGPD enviado pelo banner widget.\n\n- Aceita payload minimo (accepted bool + versao)\n- Persiste hash do IP (LGPD: nao armazenar IP cru)\n- Audit log entry (LGPD art. 37)\n- Resposta 204 (sendBeacon friendly)",
+        "operationId": "create_consent_api_v1_lgpd_consent_banner_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LGPDConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Registra consentimento LGPD do titular",
+        "tags": [
+          "lgpd"
+        ]
+      }
+    },
+    "/api/v1/lgpd/consent/banner/stats": {
+      "get": {
+        "description": "Retorna taxa de consentimento e oposicao agregados.\n\nApenas DPO/admin deveria acessar (em prod, adicionar auth).",
+        "operationId": "get_consent_stats_api_v1_lgpd_consent_banner_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LGPDConsentStats"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Estatisticas agregadas de consentimento (DPO only)",
+        "tags": [
+          "lgpd"
+        ]
+      }
+    },
     "/api/v1/lgpd/correct/{cliente_id}": {
       "post": {
         "description": "Permite ao titular corrigir dados pessoais incorretos.\n\nCampos corrigiveis: nome, email, telefone, endereco, observacoes.\nApenas campos fornecidos serao atualizados.\n\nAuth: JWT Bearer (titular ou DPO).",
@@ -12548,6 +11378,104 @@
         "summary": "Metrics em formato Prometheus (open source)",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/api/v1/n8n/metrics/prometheus": {
+      "get": {
+        "description": "Endpoint scrape-friendly para Prometheus.",
+        "operationId": "prometheus_metrics_api_v1_n8n_metrics_prometheus_get",
+        "parameters": [
+          {
+            "description": "Janela em horas",
+            "in": "query",
+            "name": "hours",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Janela em horas",
+              "maximum": 168,
+              "minimum": 1,
+              "title": "Hours",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Metricas N8N em formato Prometheus",
+        "tags": [
+          "n8n",
+          "metrics"
+        ]
+      }
+    },
+    "/api/v1/n8n/metrics/summary": {
+      "get": {
+        "description": "Retorna summary JSON com top WFs e agregacoes.",
+        "operationId": "summary_metrics_api_v1_n8n_metrics_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "hours",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "maximum": 168,
+              "minimum": 1,
+              "title": "Hours",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Summary Metrics Api V1 N8N Metrics Summary Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summary agregado de metricas N8N (JSON)",
+        "tags": [
+          "n8n",
+          "metrics"
         ]
       }
     },

@@ -110,7 +110,7 @@ DATABASE_URL=postgresql+psycopg://supabase_admin:...@db:5432/cartorio
 REDIS_URL=redis://default:@Techno832466@db:6379/0
 OPENCLAW_BASE_URL=https://agent.2notasudi.com.br
 OPENCLAW_API_KEY=@Techno832466
-OPENCODE_GO_API_KEY=sk-xcRwExjQjqmlc5swP8umqK2YqWUfVt23H3Xl6dpd9TqEyi16ssJXzHeUFGNNIfsJ
+OPENCODE_GO_API_KEY=<REDACTED - use .env>
 TELEGRAM_WEBHOOK_SECRET=mysecret
 ```
 
