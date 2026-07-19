@@ -294,6 +294,9 @@ def _reset_jwt_secret(monkeypatch):
 
     get_settings.cache_clear()
     settings.jwt_secret = "a" * 64
+    settings.cartorio_api_key = TEST_CARTORIO_API_KEY
+    settings.opencode_go_api_key = "sk-test-mock"
+    settings.openclaw_api_key = "sk-test-mock"
     yield
 
 
