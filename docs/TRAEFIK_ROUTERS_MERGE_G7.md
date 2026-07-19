@@ -21,6 +21,11 @@ Fechar NXDOMAIN / 404 edge para:
 **Aliases:** `supbase` é canônico legado; o artefato cobre também `supabase` para
 que os dois apontem ao mesmo Kong. O merge ainda é HOLD operacional.
 
+O upstream dos dois aliases é `http://cartorio_supabase-kong:8000`, nome do
+serviço Kong observado no runtime (`cartorio_supabase-kong-1`). Não usar
+`cartorio_supabase` como upstream HTTP: esse nome identifica a stack e já
+causou rotas sem backend em sondagens anteriores.
+
 ---
 
 ## Pré-requisitos (não pular)

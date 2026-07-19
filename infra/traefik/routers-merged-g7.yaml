@@ -102,7 +102,9 @@ http:
     cartorio-supabase:
       loadBalancer:
         servers:
-          - url: "http://cartorio_supabase:8000"
+          # Kong é o serviço `cartorio_supabase-kong`; `cartorio_supabase`
+          # identifica a stack e não é um upstream HTTP confiável.
+          - url: "http://cartorio_supabase-kong:8000"
         healthCheck:
           path: /auth/v1/health
           interval: 30s
