@@ -263,7 +263,6 @@ class TestDryRunMode:
         payload_path.write_text(json.dumps(_build_payload(severity="critical")))
 
         # Invoca main() sem --apply
-        rc = alert_module.main.__wrapped__ if hasattr(alert_module.main, "__wrapped__") else alert_module.main
         # Chama argparse explicitamente via sys.argv mock
         import sys as _sys
 

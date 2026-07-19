@@ -106,6 +106,27 @@ def test_ci_yaml_has_secrets_scan_job(ci_yaml: dict[str, object]) -> None:
     )
 
 
+def test_ci_literal_key_scan_is_a_hard_gate(ci_yaml: dict[str, object]) -> None:
+    """Critical literal-key findings cannot be converted into a successful CI job."""
+    jobs = ci_yaml["jobs"]
+    assert isinstance(jobs, dict)
+    scan = jobs["secrets-scan"]
+    assert isinstance(scan, dict)
+    steps = scan["steps"]
+    assert isinstance(steps, list)
+    literal_steps = [
+        step
+        for step in steps
+        if isinstance(step, dict) and "check_no_literal_keys.py" in str(step.get("run", ""))
+    ]
+    assert len(literal_steps) == 1, "secrets-scan must contain exactly one literal-key gate"
+    literal_step = literal_steps[0]
+    assert literal_step.get("continue-on-error") is not True
+    command = str(literal_step["run"])
+    assert "--report-only" not in command
+    assert "|| true" not in command
+
+
 def test_ci_all_jobs_have_timeout_minutes(ci_yaml: dict[str, object]) -> None:
     """Each CI job must declare timeout-minutes (no hung runs)."""
     jobs = ci_yaml["jobs"]

@@ -386,7 +386,7 @@ def test_post_protocolo_sem_campo_consentimento_retorna_422(client):
 
 def test_post_protocolo_cpf_e_hasheado_antes_de_persistir(client, test_engine):
     """Cenario 4: CPF puro NUNCA e persistido - apenas hash."""
-    cpf_puro = "987.654.321-00"
+    cpf_puro = "529.982.247-25"
     resp = client.post(
         "/api/v1/protocolo",
         json=_payload_valido(cliente_cpf=cpf_puro, cliente_nome="Cliente Teste"),
@@ -408,9 +408,8 @@ def test_post_protocolo_cpf_e_hasheado_antes_de_persistir(client, test_engine):
 def test_post_protocolo_gera_numero_ano_sequencial(client):
     """Cenario 5: numero_protocolo segue formato YYYY-NNNNN (ANO-SEQUENCIAL)."""
     resp1 = client.post("/api/v1/protocolo", json=_payload_valido(cliente_cpf="111.444.777-35"))
-    resp2 = client.post("/api/v1/protocolo", json=_payload_valido(cliente_cpf="222.555.888-36"))
-    resp3 = client.post("/api/v1/protocolo", json=_payload_valido(cliente_cpf="333.666.999-37"))
-
+    resp2 = client.post("/api/v1/protocolo", json=_payload_valido(cliente_cpf="529.982.247-25"))
+    resp3 = client.post("/api/v1/protocolo", json=_payload_valido(cliente_cpf="444.555.666-19"))
     assert resp1.status_code == 201
     assert resp2.status_code == 201
     assert resp3.status_code == 201
@@ -464,10 +463,9 @@ def test_post_protocolo_tipo_invalido_retorna_422(client):
 
 def test_post_protocolo_idempotente_por_cpf(client, test_engine):
     """Cenario 8: mesmo CPF em 2 chamadas reusa o cliente (1 linha apenas)."""
-    cpf = "111.222.333-44"
+    cpf = "529.982.247-25"
     r1 = client.post("/api/v1/protocolo", json=_payload_valido(cliente_cpf=cpf, cliente_nome="Ana"))
     r2 = client.post("/api/v1/protocolo", json=_payload_valido(cliente_cpf=cpf, cliente_nome="Ana"))
-
     assert r1.status_code == 201
     assert r2.status_code == 201
 
@@ -501,7 +499,7 @@ def test_post_protocolo_cpf_invalido_retorna_422(client):
 def test_post_protocolo_status_sempre_draft_hitl(client, test_engine):
     """Cenario 11: TODOS os protocolos criados pelo endpoint nascem DRAFT.
     Garantia HITL - bot nunca pula validacao humana."""
-    for cpf in ["111.111.111-11", "222.222.222-22", "333.333.333-33"]:
+    for cpf in ["123.456.789-09", "529.982.247-25", "444.555.666-19"]:
         resp = client.post("/api/v1/protocolo", json=_payload_valido(cliente_cpf=cpf))
         assert resp.status_code == 201
         assert resp.json()["estado"] == "DRAFT"
@@ -520,17 +518,21 @@ def test_post_protocolo_tipos_validos_da_tabela(client):
     from app.services.emolumento import TIPOS_VALIDOS
 
     cpfs = [
-        "111.111.111-11",
-        "222.222.222-22",
-        "333.333.333-33",
-        "444.444.444-44",
-        "555.555.555-55",
-        "666.666.666-66",
-        "777.777.777-77",
-        "888.888.888-88",
-        "999.999.999-99",
         "123.456.789-09",
+        "529.982.247-25",
+        "444.555.666-19",
+        "111.444.777-35",
         "987.654.321-00",
+        "111.222.333-96",
+        "123.456.789-09",
+        "529.982.247-25",
+        "444.555.666-19",
+        "111.444.777-35",
+        "987.654.321-00",
+        "111.222.333-96",
+        "123.456.789-09",
+        "529.982.247-25",
+        "444.555.666-19",
     ]
     tipos = sorted(TIPOS_VALIDOS)
     assert len(tipos) <= len(cpfs), "ajuste lista de cpfs para cobrir todos os tipos"

@@ -51,8 +51,7 @@ jobs:
         run: |
           python3 backend/scripts/check_no_literal_keys.py \
             --severity critical \
-            --baseline backend/scripts/check_no_literal_keys.baseline \
-            --report-only=false || true
+            --baseline backend/scripts/check_no_literal_keys.baseline
 
   # ============================================================================
   # Lint + Typecheck (gate rapido - 2-3min)

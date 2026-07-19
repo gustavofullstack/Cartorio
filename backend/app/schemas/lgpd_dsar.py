@@ -11,6 +11,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.config import settings
+from app.schemas.types import CPFStr
 
 
 class LGPDRight(str, Enum):
@@ -36,8 +37,8 @@ class DSARCreate(BaseModel):
         validate_assignment=True,
     )
 
-    cpf: str = Field(
-        ..., min_length=11, max_length=14, description="CPF do titular (com ou sem formatacao)"
+    cpf: CPFStr = Field(
+        ..., description="CPF do titular (com ou sem formatacao)"
     )
     email: EmailStr | None = Field(None, description="Email de contato")
     phone: str | None = Field(

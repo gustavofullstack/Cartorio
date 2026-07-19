@@ -873,14 +873,8 @@ def test_get_tg_pool_lifecycle_and_no_loop() -> None:
     assert pool2 is not pool1
 
 
-def test_debug_last_updates_records_and_returns_recent(client: TestClient) -> None:
-    """FIX 2026-07-08: Gustavo precisa inspecionar o que o backend REALMENTE
-    recebeu no webhook para diagnosticar 'botoes nao funcionam' via Painel ZCode.
-
-    - POST /api/v1/telegram/webhook com payload sintetico DEVE popular a lista
-    - GET /api/v1/telegram/debug/last-updates DEVE retornar o ultimo update.
-    - Lista trunca em _LAST_UPDATES_MAX (20) entradas.
-    """
+def test_debug_last_updates_requires_auth_and_never_returns_pii(client: TestClient) -> None:
+    """Buffer de debug exige chave e devolve apenas metadados LGPD-safe."""
     from app.api.v1.telegram import _LAST_UPDATES
 
     _LAST_UPDATES.clear()
@@ -898,7 +892,13 @@ def test_debug_last_updates_records_and_returns_recent(client: TestClient) -> No
     resp = client.post("/api/v1/telegram/webhook", json=payload)
     assert resp.status_code == 200
 
-    debug = client.get("/api/v1/telegram/debug/last-updates")
+    unauthenticated = client.get("/api/v1/telegram/debug/last-updates")
+    assert unauthenticated.status_code == 401
+
+    debug = client.get(
+        "/api/v1/telegram/debug/last-updates",
+        headers={"X-API-Key": "a" * 64},
+    )
     assert debug.status_code == 200
     body = debug.json()
     assert body["service"] == "telegram-bot"
@@ -907,9 +907,10 @@ def test_debug_last_updates_records_and_returns_recent(client: TestClient) -> No
     latest = body["last_updates"][-1]
     assert latest["update_id"] == 900001
     assert latest["kind"] == "message"
-    assert latest["chat_id"] == -1004331849032
-    assert latest["data"] == "/menu"
-    assert "response" in latest
+    assert latest["outcome"] in {"duplicate", "ignored", "ignored_command", "ok", "other"}
+    assert "chat_id" not in latest
+    assert "data" not in latest
+    assert "response" not in latest
 
 
 def test_metrics_classifies_callback_and_duplicate() -> None:

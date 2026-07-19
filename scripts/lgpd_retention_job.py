@@ -5,10 +5,9 @@ Job que anonimiza registros conforme regras de retencao LGPD art. 16:
 | Entity | Retencao | Acao |
 |---|---|---|
 | conversa_ia_log | 90 dias | DELETE |
-| audit_log | 6 meses | DELETE (LGPD art. 37 - hash chain preservado) |
 | session_temp | 24h | DELETE |
 | LGPDConsentLog | 5 anos | MANTEM (LGPD art. 37) |
-| audit_log_hash | permanente | MANTEM (apenas hash SHA256 chain) |
+| audit_log | permanente | MANTEM (cadeia SHA256 + HMAC append-only) |
 
 Uso:
     python3 scripts/lgpd_retention_job.py --dry-run
@@ -34,7 +33,6 @@ import httpx
 # Database URL (Postgres only - SQLite nao suporta DELETE com regra de tempo)
 RETENTION_RULES = {
     "conversa_ia_log": {"days": 90, "action": "delete", "lgpd_article": "art. 16"},
-    "audit_log": {"days": 180, "action": "delete", "lgpd_article": "art. 37 (somente logs nao-hash)"},
     "session_temp": {"days": 1, "action": "delete", "lgpd_article": "art. 16"},
 }
 

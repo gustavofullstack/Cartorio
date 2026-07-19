@@ -66,12 +66,14 @@ SELECT cron.schedule(
     'SELECT COUNT(*) FROM public.audit_log WHERE hmac_signature IS NULL')$J$
 );
 
--- Job 3: retention-daily-03h -- remove audit_log > 365 dias
+-- Job 3: audit-chain-verify-daily-03h -- audit_log e append-only e nunca
+-- pode ser alvo de retenção. A política de retenção deve atuar apenas nas
+-- entidades elegíveis, nunca nesta cadeia SHA256 + HMAC.
 SELECT cron.schedule(
-  'retention-daily-03h',
+  'audit-chain-verify-daily-03h',
   '0 3 * * *',
   $J$SELECT dblink_exec('dbname=cartorio user=supabase_admin',
-    'DELETE FROM public.audit_log WHERE timestamp < NOW() - INTERVAL ''365 days''')$J$
+    'SELECT COUNT(*) FROM public.audit_log WHERE hmac_signature IS NULL')$J$
 );
 
 -- Job 4: stale-detector-5min -- incrementa attempts em DLQ items

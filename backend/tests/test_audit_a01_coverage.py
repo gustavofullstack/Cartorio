@@ -306,7 +306,7 @@ def test_hash_chain_valido_apos_multiplas_mutacoes(client, test_engine, valid_pa
     SessionLocal = sessionmaker(bind=test_engine)
 
     # 3 mutacoes
-    for cpf in ["111.111.111-11", "222.222.222-22", "333.333.333-33"]:
+    for cpf in ["123.456.789-09", "529.982.247-25", "444.555.666-19"]:
         resp = client.post(
             "/api/v1/protocolo",
             json={**valid_payload, "cliente_cpf": cpf, "cliente_nome": f"Cliente {cpf[:3]}"},

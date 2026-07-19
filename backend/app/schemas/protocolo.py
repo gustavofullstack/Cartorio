@@ -22,6 +22,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.config import settings
+from app.schemas.types import CPFStr
 
 
 # ============================================================================
@@ -250,15 +251,11 @@ class ProtocoloCreateRequest(BaseModel):
         },
     )
 
-    cliente_cpf: Annotated[
-        str,
-        Field(
-            min_length=11,
-            max_length=14,
-            description="CPF do cliente (com ou sem pontuacao). Scrubbed e hasheado antes de persistir.",
-            examples=["123.456.789-09"],
-        ),
-    ]
+    cliente_cpf: CPFStr = Field(
+        ...,
+        description="CPF do cliente (com ou sem pontuacao). Scrubbed e hasheado antes de persistir.",
+        examples=["123.456.789-09"],
+    )
     cliente_nome: Annotated[
         str,
         Field(

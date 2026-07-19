@@ -35,6 +35,7 @@ import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_cartorio_api_key
 from app.config import settings
 from app.db import get_db
 from app.services.pii import scrub
@@ -1791,9 +1792,18 @@ _LAST_UPDATES_MAX = 20
 
 
 def _record_update(update: dict, response: dict) -> None:
-    """FIX 2026-07-08: Gustavo precisa ver o que o backend REALMENTE
-    recebeu para diagnosticar 'botoes nao funcionam'. Guarda ultimos 20
-    updates com a resposta que demos."""
+    """Registra metadados mínimos para diagnóstico autenticado.
+
+    O buffer é deliberadamente livre de texto, chat ID e resposta do usuário:
+    updates do Telegram podem conter dados pessoais e não devem permanecer em
+    memória nem ser expostos por uma rota operacional.
+    """
+    response_status = response.get("status")
+    outcome = (
+        response_status
+        if response_status in {"duplicate", "ignored", "ignored_command", "ok"}
+        else "other"
+    )
     _LAST_UPDATES.append(
         {
             "ts": int(__import__("time").time()),
@@ -1807,14 +1817,7 @@ def _record_update(update: dict, response: dict) -> None:
                 if update.get("my_chat_member")
                 else "other"
             ),
-            "data": update.get("callback_query", {}).get("data")
-            or update.get("message", {}).get("text", ""),
-            "chat_id": (
-                update.get("message", {}).get("chat", {}).get("id")
-                or update.get("callback_query", {}).get("message", {}).get("chat", {}).get("id")
-                or update.get("my_chat_member", {}).get("chat", {}).get("id")
-            ),
-            "response": response,
+            "outcome": outcome,
         }
     )
     if len(_LAST_UPDATES) > _LAST_UPDATES_MAX:
@@ -1822,12 +1825,12 @@ def _record_update(update: dict, response: dict) -> None:
 
 
 @router.get("/debug/last-updates")
-async def telegram_debug_last_updates() -> dict:
-    """FIX 2026-07-08: endpoint de debug que mostra os ultimos 20 updates
-    recebidos pelo webhook + a resposta dada. Gustavo pode usar pra
-    confirmar se o callback chegou ate o backend.
+async def telegram_debug_last_updates(
+    _api_key: str = Depends(require_cartorio_api_key),
+) -> dict:
+    """Exibe somente metadados de processamento para operador autorizado.
 
-    Uso: GET /api/v1/telegram/debug/last-updates
+    Uso: ``GET /api/v1/telegram/debug/last-updates`` com ``X-API-Key``.
     """
     return {
         "service": "telegram-bot",

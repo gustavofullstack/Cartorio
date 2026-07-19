@@ -2,6 +2,8 @@
 
 Task tree em formato Epic / Sprint / Task. Fonte da verdade para priorizacao e sequenciamento. Atualizar quando uma task mudar de status ou descobrir dependencia nova.
 
+> **Programa de integração 2026-07-19**: o backlog operacional de 100 tarefas, seus gates P0, critérios de aceite e ordem de execução está em [`docs/INTEGRATION_100_TASK_PROGRAM.md`](../docs/INTEGRATION_100_TASK_PROGRAM.md). Este registro histórico continua sendo a fonte dos itens legados; o programa novo só avança em lotes de quatro após os gates de segurança.
+
 > **PIVOT 2026-06-23 19:08 BRT (Gustavo)**: "FOCA NO N8N, OPENCLAW, SUPBASE E ETC AGORA NÃO MAIS APENAS NA API!! MUITO TRABALHO PELA FRENTE!!"
 > Sai do modo HOLD-only e ataca front multi-stack em paralelo (N8N + OpenClaw + Supabase + Chatwoot + EVO).
 >

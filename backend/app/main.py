@@ -29,6 +29,7 @@ from app import __version__ as APP_VERSION  # noqa: E402
 from app.api.v1.router import api_router  # noqa: E402
 from app.api.v1.ws.atendimentos import ws_router  # noqa: E402
 from app.config import settings  # noqa: E402
+from app.core.secrets_log_filter import SecretScrubLogFilter  # noqa: E402
 from app.db import engine, session_scope  # noqa: E402
 from app.models.base import Base  # noqa: E402
 from app.services.audit import AuditService  # noqa: E402
@@ -211,6 +212,10 @@ async def _llm_providers_health_loop() -> None:
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Smoke test DB + create tables if missing + audit log init + tracing init (A3)."""
+    scrubber = SecretScrubLogFilter()
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(scrubber)
+
     # 0a. Sentry SDK init (DSN-gated; no-op se SENTRY_DSN ausente).
     # Hoisted para o lifespan para garantir init ANTES de qualquer captura
     # de excecao em middleware/handlers. Sprint 5 — 2026-07-13.
@@ -463,15 +468,14 @@ app = FastAPI(
 # Ver tests/test_problem_details.py.
 install_problem_handlers(app)
 
-# OpenAPI validation helper (A19 — squad A): expoe schema + validators.
-# Integracao completa (request/response middleware) sera feita em Sprint 5+
-# com spectree. Por enquanto: log de paths/components detectados.
-install_openapi_validation_middleware(app)
-
 # OpenAPI enhancer (F6 [P2] 2026-07-15 — squad front): customiza
 # info.contact/license, servers, tags ordenados e security schemes.
 # NAO mexe em paths. Hook em app.openapi para cache idempotente.
 install_openapi_enhancer(app)
+
+# OpenAPI validation helper (A19 — squad A): expoe schema + validators.
+# Deve ser instalado depois do enhancer para aquecer o schema canonico.
+install_openapi_validation_middleware(app)
 
 # API versioning (A20 — squad A): headers X-API-Version + Link (RFC 8594)
 # + endpoint /version com metadata completa.

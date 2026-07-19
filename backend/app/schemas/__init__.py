@@ -5,6 +5,7 @@ SQLAlchemy direto no endpoint - sempre mapear pra schema.
 """
 
 # Re-exporta schemas para imports limpos (ex: from app.schemas import AgendamentoCreateRequest)
+from app.schemas.types import CNPJStr, CPFStr
 from app.schemas.agendamento import (
     AgendamentoBase,
     AgendamentoCreateRequest,
@@ -64,4 +65,7 @@ __all__ = [
     "StatusProtocolo",
     # emolumento
     "EmolumentoCalculoResponse",
+    # types
+    "CPFStr",
+    "CNPJStr",
 ]

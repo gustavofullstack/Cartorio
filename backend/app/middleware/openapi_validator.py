@@ -19,7 +19,6 @@ import logging
 from typing import Any
 
 from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
 
 logger = logging.getLogger("cartorio.openapi_validator")
 
@@ -31,13 +30,10 @@ def _get_app_openapi_schema(app: FastAPI) -> dict[str, Any]:
         dict com spec OpenAPI 3.0+. Cacheia internamente via app.openapi_schema.
     """
     if app.openapi_schema is None:
-        app.openapi_schema = get_openapi(
-            title=app.title,
-            version=app.version,
-            openapi_version=app.openapi_version,
-            description=app.description,
-            routes=app.routes,
-        )
+        # Respeita o hook ``app.openapi`` instalado pela camada de enhancer.
+        # Chamar ``get_openapi`` diretamente aqui bypassava security schemes,
+        # tags e metadados customizados ao inicializar o cache no startup.
+        app.openapi_schema = app.openapi()
     return app.openapi_schema  # type: ignore[return-value]
 
 

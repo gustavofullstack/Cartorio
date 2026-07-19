@@ -26,7 +26,7 @@ class TestProtocoloSchemas:
     def test_protocolo_create_valid(self) -> None:
         """ProtocoloCreateRequest accepts valid data."""
         p = ProtocoloCreateRequest(
-            cliente_cpf="12345678901",
+            cliente_cpf="12345678909",
             cliente_nome="João da Silva",
             tipo="certidao_negativa",
             canal_origem=CanalOrigem.WHATSAPP,
@@ -38,7 +38,7 @@ class TestProtocoloSchemas:
     def test_protocolo_create_requires_lgpd_true(self) -> None:
         """ProtocoloCreateRequest accepts consentimento_lgpd=True."""
         p = ProtocoloCreateRequest(
-            cliente_cpf="12345678901",
+            cliente_cpf="12345678909",
             cliente_nome="João",
             tipo="certidao_negativa",
             canal_origem=CanalOrigem.WHATSAPP,

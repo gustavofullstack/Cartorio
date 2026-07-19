@@ -1,0 +1,22 @@
+[
+  {
+    "name": "literal_keys",
+    "status": "ok",
+    "returncode": 0,
+    "stdout": "[baseline] 6 fingerprints whitelisted from /Users/gustavoalmeida/Projetos/Cartorio/backend/scripts/check_no_literal_keys.baseline\n========================================================================\nSECRETS SCANNER (G8.14.T3) — severity>=low\n========================================================================\nOK: zero violacoes detectadas.\n",
+    "stderr": "",
+    "duration_ms": 290,
+    "skipped_reason": "",
+    "findings": []
+  },
+  {
+    "name": "gitleaks",
+    "status": "ok",
+    "returncode": 0,
+    "stdout": "",
+    "stderr": "1:34PM INF 0 commits scanned.\n1:34PM INF scanned ~0 bytes (0) in 27.4ms\n1:34PM INF no leaks found\n",
+    "duration_ms": 36,
+    "skipped_reason": "",
+    "findings": []
+  }
+]

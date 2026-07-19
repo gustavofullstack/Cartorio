@@ -33,7 +33,7 @@ def test_protocolo_create_forbids_extra_fields() -> None:
 
 def test_protocolo_create_strips_whitespace() -> None:
     p = ProtocoloCreateRequest(
-        cliente_cpf="12345678901",
+        cliente_cpf="12345678909",
         cliente_nome="  Joao da Silva  ",
         tipo="  certidao_negativa  ",
         canal_origem=CanalOrigem.WEB,

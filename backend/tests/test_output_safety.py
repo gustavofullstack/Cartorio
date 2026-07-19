@@ -306,9 +306,8 @@ def test_scrub_response_nao_altera_audit_metadata():
         "canal": "whatsapp",
     }
     result, count = scrub_response(payload)
-    # IP nao tem scrub (no regex pattern matching)
-    # Scrubber NAO detecta IPs como PII por design (sao contexto tecnico)
-    assert result["consent_ip"] == "187.45.123.45"
+    # IP tem scrub (adicionado como PII na Wave 49)
+    assert result["consent_ip"] == "[IP_REDACTED]"
     assert result["user_agent"] == "Mozilla/5.0"
     assert result["request_id"] == "abc-123-def"
     assert result["canal"] == "whatsapp"

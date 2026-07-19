@@ -79,6 +79,21 @@ permanece como cinturão final: SQLSTATE `42501` (insufficient privilege).
 | `fn_audit_chain_verify()` | SELECT | OK |
 | `UPDATE`/`DELETE` por role operacional | UPDATE/DELETE | **BLOQUEADO** (SQLSTATE 42501) |
 
+## Retenção: exclusão permanentemente vedada
+
+`audit_log` não integra regras de retenção ou purge. A cadeia SHA256 + HMAC
+deve ser preservada integralmente; uma eliminação intermediária torna a
+verificação histórica incompleta. A migration Supabase
+`2026_07_19_0001-audit-log-retention-guard.sql` cancela o cron legado
+`retention-daily-03h` e instala um trigger que rejeita `UPDATE` e `DELETE`.
+O script `scripts/lgpd_retention_job.py` também não aceita `audit_log` como
+entidade. A rotina diária às 03:00 passa a somente verificar HMACs ausentes.
+
+Essa defesa é complementar às policies RLS da migration 0022: o trigger
+protege o caminho de retenção mesmo se ele usar uma conexão com privilégios
+mais amplos. Não desabilite o trigger, nem use uma operação de rollback para
+removê-lo; ambos exigem procedimento break-glass aprovado por LGPD.
+
 ## Operação de rollback
 
 O `downgrade()` recria as policies permissivas legadas

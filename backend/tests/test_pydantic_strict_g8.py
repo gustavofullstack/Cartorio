@@ -127,7 +127,7 @@ def test_extra_field_rejected() -> None:
     # ProtocoloCreateRequest tem extra="forbid"
     with pytest.raises(ValidationError) as exc:
         ProtocoloCreateRequest(
-            cliente_cpf="12345678901",
+            cliente_cpf="12345678909",
             cliente_nome="Joao da Silva",
             tipo="certidao_negativa",
             canal_origem=CanalOrigem.WEB,
@@ -188,7 +188,7 @@ def test_enum_field_accepts_string_wire_format() -> None:
     """
     # Valido: string coerzida para enum via strict=False override
     req = ProtocoloCreateRequest(
-        cliente_cpf="12345678901",
+        cliente_cpf="12345678909",
         cliente_nome="Joao da Silva",
         tipo="certidao_negativa",
         canal_origem="web",  # type: ignore[arg-type]
@@ -262,12 +262,12 @@ def test_audit_log_create_strict_coercion() -> None:
 def test_dsar_create_strict_coercion() -> None:
     """DSARCreate recusa coerção em CPF (int NAO eh aceito)."""
     # Valido: str CPF
-    dsar = DSARCreate(cpf="12345678901", rights=[LGPDRight.ACESSO])
-    assert dsar.cpf == "12345678901"
+    dsar = DSARCreate(cpf="12345678909", rights=[LGPDRight.ACESSO])
+    assert dsar.cpf == "12345678909"
 
     # Invalido: int CPF NAO eh aceito (LGPD: caller deve mandar string)
     with pytest.raises(ValidationError):
-        DSARCreate(cpf=12345678901, rights=[LGPDRight.ACESSO])  # type: ignore[arg-type]
+        DSARCreate(cpf=12345678909, rights=[LGPDRight.ACESSO])  # type: ignore[arg-type]
 
 
 # ============================================================================
@@ -541,3 +541,71 @@ def test_lesson_create_strict() -> None:
             solucao="Solucao da lesson com mais de 10 chars",
             injected=1,  # type: ignore[call-arg]
         )
+
+
+# ============================================================================
+# Bonus 17: CPFStr e CNPJStr mathematical validation (G8.13.T3)
+# ============================================================================
+
+
+def test_cpf_cnpj_custom_types_validation() -> None:
+    """G8.13.T3: CPFStr e CNPJStr realizam validações de formato e dígitos verificadores."""
+    from app.schemas.types import CPFStr, CNPJStr
+
+    class _MockSchema(BaseModel):
+        cpf: CPFStr
+        cnpj: CNPJStr
+
+    # CPFs e CNPJs válidos de teste
+    valid_cpf_formatted = "123.456.789-09"
+    valid_cpf_raw = "12345678909"
+    valid_cnpj_formatted = "12.345.678/0001-95"
+    valid_cnpj_raw = "12345678000195"
+
+    # Deve passar
+    schema = _MockSchema(cpf=valid_cpf_formatted, cnpj=valid_cnpj_formatted)
+    assert schema.cpf == valid_cpf_formatted
+    assert schema.cnpj == valid_cnpj_formatted
+
+    schema_raw = _MockSchema(cpf=valid_cpf_raw, cnpj=valid_cnpj_raw)
+    assert schema_raw.cpf == valid_cpf_raw
+    assert schema_raw.cnpj == valid_cnpj_raw
+
+    # Erro: int não deve ser aceito se strict=True for usado
+    class _MockStrictSchema(BaseModel):
+        model_config = ConfigDict(strict=True)
+        cpf: CPFStr
+        cnpj: CNPJStr
+
+    with pytest.raises(ValidationError):
+        _MockStrictSchema(cpf=12345678909, cnpj=valid_cnpj_formatted)  # type: ignore[arg-type]
+
+    # CPFs/CNPJs matematicamente inválidos
+    invalid_cpf_digits = "123.456.789-00"  # dígitos verificadores errados
+    invalid_cpf_repeated = "111.111.111-11"  # dígitos repetidos
+    invalid_cnpj_digits = "12.345.678/0001-00"  # dígitos errados
+    invalid_cnpj_repeated = "00.000.000/0000-00"
+
+    with pytest.raises(ValidationError) as exc:
+        _MockSchema(cpf=invalid_cpf_digits, cnpj=valid_cnpj_formatted)
+    assert "Dígito verificador do CPF inválido." in str(exc.value)
+
+    with pytest.raises(ValidationError) as exc:
+        _MockSchema(cpf=invalid_cpf_repeated, cnpj=valid_cnpj_formatted)
+    assert "CPF inválido (todos os dígitos são iguais)." in str(exc.value)
+
+    with pytest.raises(ValidationError) as exc:
+        _MockSchema(cpf=valid_cpf_formatted, cnpj=invalid_cnpj_digits)
+    assert "Primeiro dígito verificador do CNPJ inválido." in str(exc.value)
+
+    with pytest.raises(ValidationError) as exc:
+        _MockSchema(cpf=valid_cpf_formatted, cnpj=invalid_cnpj_repeated)
+    assert "CNPJ inválido (todos os dígitos são iguais)." in str(exc.value)
+
+    # CPF/CNPJ com tamanho inválido
+    with pytest.raises(ValidationError):
+        _MockSchema(cpf="123456789", cnpj=valid_cnpj_formatted)
+
+    with pytest.raises(ValidationError):
+        _MockSchema(cpf=valid_cpf_formatted, cnpj="12345")
+
