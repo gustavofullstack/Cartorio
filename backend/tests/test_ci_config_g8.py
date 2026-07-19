@@ -43,7 +43,7 @@ def test_cache_step_present() -> None:
         steps = _steps(ci_config, job_name)
         setup_python = next(step for step in steps if step.get("uses") == "actions/setup-python@v5")
         setup_uv = next(step for step in steps if step.get("uses") == "astral-sh/setup-uv@v4")
-        assert setup_python["with"]["cache"] == "pip"
+        assert "cache" not in setup_python["with"]
         assert setup_uv["with"]["enable-cache"] is True
 
         for step in steps:
@@ -58,7 +58,5 @@ def test_uv_lock_in_dependency_path() -> None:
 
     for job_name in ("lint", "test"):
         steps = _steps(ci_config, job_name)
-        setup_python = next(step for step in steps if step.get("uses") == "actions/setup-python@v5")
         setup_uv = next(step for step in steps if step.get("uses") == "astral-sh/setup-uv@v4")
-        assert setup_python["with"]["cache-dependency-path"] == "backend/uv.lock"
         assert setup_uv["with"]["cache-dependency-glob"] == "backend/uv.lock"
