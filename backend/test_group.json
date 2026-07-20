@@ -1,0 +1,26 @@
+{
+  "update_id": 99999902,
+  "message": {
+    "message_id": 1002,
+    "from": {
+      "id": 6682284055,
+      "is_bot": false,
+      "first_name": "Gustavo",
+      "username": "gustavofullstack"
+    },
+    "chat": {
+      "id": -5006771024,
+      "title": "PIETRA SQUAD",
+      "type": "group"
+    },
+    "date": 1690000001,
+    "text": "@test_cartorio_bot Qual o horario de funcionamento?",
+    "entities": [
+      {
+        "offset": 0,
+        "length": 18,
+        "type": "mention"
+      }
+    ]
+  }
+}

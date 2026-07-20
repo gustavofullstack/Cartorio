@@ -1,0 +1,20 @@
+{
+  "update_id": 99999901,
+  "message": {
+    "message_id": 1001,
+    "from": {
+      "id": 6682284055,
+      "is_bot": false,
+      "first_name": "Gustavo",
+      "username": "gustavofullstack"
+    },
+    "chat": {
+      "id": 6682284055,
+      "first_name": "Gustavo",
+      "username": "gustavofullstack",
+      "type": "private"
+    },
+    "date": 1690000000,
+    "text": "Ola, gostaria de saber os servicos do cartorio!"
+  }
+}

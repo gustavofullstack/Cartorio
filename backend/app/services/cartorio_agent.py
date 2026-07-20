@@ -13,6 +13,7 @@ LGPD: PII scrub no texto antes de ir pro LLM.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -63,23 +64,48 @@ LITELLM_MODEL = os.environ.get("CARTORIO_AGENT_MODEL", "MiniMax-M3")
 
 # OpenCode Zen free accounts are an independent, credential-isolated fallback
 # chain.  Values are injected by the secret manager; no key belongs in source.
-OPENCODE_FREE_CONFIGS = [
-    (
-        os.environ.get("OPENCODE_FREE_1_API_KEY", "") or os.environ.get("OPENCODE_ZEN_ACCOUNT_1_API_KEY", ""),
-        os.environ.get("OPENCODE_FREE_1_BASE_URL", "https://opencode.ai/zen/v1"),
-        os.environ.get("OPENCODE_FREE_1_MODEL", "nemotron-3-ultra-free"),
-    ),
-    (
-        os.environ.get("OPENCODE_FREE_2_API_KEY", "") or os.environ.get("OPENCODE_ZEN_ACCOUNT_2_API_KEY", ""),
-        os.environ.get("OPENCODE_FREE_2_BASE_URL", "https://opencode.ai/zen/v1"),
-        os.environ.get("OPENCODE_FREE_2_MODEL", "mimo-v2.5-free"),
-    ),
-    (
-        os.environ.get("OPENCODE_FREE_3_API_KEY", "") or os.environ.get("OPENCODE_ZEN_ACCOUNT_3_API_KEY", ""),
-        os.environ.get("OPENCODE_FREE_3_BASE_URL", "https://opencode.ai/zen/v1"),
-        os.environ.get("OPENCODE_FREE_3_MODEL", "deepseek-v4-flash-free"),
-    ),
-]
+_OPENCODE_ZEN_DEFAULT_BASE_URL = "https://opencode.ai/zen/v1"
+# Defaults historicos por slot quando NENHUMA env (nem FREE_* nem ZEN_ACCOUNT_*)
+# esta setada — preserva o comportamento anterior a este refactor.
+_OPENCODE_SLOT_DEFAULT_MODELS = (
+    "nemotron-3-ultra-free",
+    "mimo-v2.5-free",
+    "deepseek-v4-flash-free",
+)
+
+
+def _opencode_free_configs() -> list[tuple[str, str, str]]:
+    """Configs dos slots free 1/2/3, avaliadas a cada chamada (env e dinamica).
+
+    FIX E2 (2026-07-20): quando OPENCODE_FREE_X_* esta ausente, herda BASE_URL
+    e MODEL de OPENCODE_ZEN_ACCOUNT_X_* ALEM da API_KEY — fallback coerente:
+    chave + url + modelo sempre da MESMA conta, nunca misturados entre slots.
+    """
+    configs: list[tuple[str, str, str]] = []
+    for slot, default_model in enumerate(_OPENCODE_SLOT_DEFAULT_MODELS, start=1):
+        free_prefix = f"OPENCODE_FREE_{slot}_"
+        zen_prefix = f"OPENCODE_ZEN_ACCOUNT_{slot}_"
+        api_key = os.environ.get(f"{free_prefix}API_KEY", "") or os.environ.get(
+            f"{zen_prefix}API_KEY", ""
+        )
+        base_url = (
+            os.environ.get(f"{free_prefix}BASE_URL", "")
+            or os.environ.get(f"{zen_prefix}BASE_URL", "")
+            or _OPENCODE_ZEN_DEFAULT_BASE_URL
+        )
+        model = (
+            os.environ.get(f"{free_prefix}MODEL", "")
+            or os.environ.get(f"{zen_prefix}MODEL", "")
+            or default_model
+        )
+        configs.append((api_key, base_url, model))
+    return configs
+
+
+# Timeout global do loop agentico com tools. Antes: timeout unico de 50s
+# compartilhado por ate 6 tentativas sequenciais (pior caso 15-20min de
+# silencio percebido). Agora: tentativa com 20s read/8s connect + teto global.
+LLM_GLOBAL_TIMEOUT_S = float(os.environ.get("CARTORIO_AGENT_LLM_TIMEOUT_S", "45"))
 
 AGENT_SYSTEM = """Voce e o Agent AI do Cartorio 2o Oficio de Notas de Uberlandia/MG.
 
@@ -603,17 +629,22 @@ async def _chat_completion(
 ) -> tuple[dict[str, Any] | None, str, str]:
     """Retorna (message, provider, err)."""
     last_err = ""
-    payload_base: dict[str, Any] = {
+    # Payload minimo (zen free / litellm): 'thinking'/'tools' so vao para
+    # providers que suportam (minimax_direct). Enviar esses campos para zen
+    # free/litellm causa HTTP 400 em cascata (diagnostico E2).
+    payload_min: dict[str, Any] = {
         "messages": messages,
         "max_tokens": max_tokens,
         "temperature": temperature,
-        "thinking": {"type": "adaptive"},
     }
+    payload_rich: dict[str, Any] = {**payload_min, "thinking": {"type": "adaptive"}}
     if tools:
-        payload_base["tools"] = tools
-        payload_base["tool_choice"] = "auto"
+        payload_rich["tools"] = tools
+        payload_rich["tool_choice"] = "auto"
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(50.0, connect=8.0)) as client:
+    # Timeout POR TENTATIVA (~20s read / 8s connect). O teto global do loop
+    # agentico fica no asyncio.wait_for de run_cartorio_agent.
+    async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=8.0)) as client:
         if MINIMAX_API_KEY:
             base = MINIMAX_BASE_URL
             if base.endswith("/chat/completions"):
@@ -629,7 +660,7 @@ async def _chat_completion(
                         "Authorization": f"Bearer {MINIMAX_API_KEY}",
                         "Content-Type": "application/json",
                     },
-                    json={**payload_base, "model": MINIMAX_MODEL},
+                    json={**payload_rich, "model": MINIMAX_MODEL},
                 )
                 if r.status_code == 200:
                     data = r.json()
@@ -653,7 +684,7 @@ async def _chat_completion(
                     r = await client.post(
                         url,
                         headers=headers,
-                        json={**payload_base, "model": LITELLM_MODEL or MINIMAX_MODEL},
+                        json={**payload_min, "model": LITELLM_MODEL or MINIMAX_MODEL},
                     )
                     if r.status_code != 200:
                         last_err = f"{base} HTTP {r.status_code} {r.text[:120]}"
@@ -668,7 +699,7 @@ async def _chat_completion(
         # Public free providers are tried only after the private/direct paths.
         # Keep each account isolated so one exhausted quota does not stop the
         # remaining free-model fallbacks.
-        for slot, (api_key, base, model) in enumerate(OPENCODE_FREE_CONFIGS, start=1):
+        for slot, (api_key, base, model) in enumerate(_opencode_free_configs(), start=1):
             if not api_key or not base or not model:
                 continue
             url = (
@@ -685,7 +716,7 @@ async def _chat_completion(
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json",
                     },
-                    json={**payload_base, "model": model},
+                    json={**payload_min, "model": model},
                 )
                 if r.status_code != 200:
                     last_err = f"opencode_free_{slot} HTTP {r.status_code}"
@@ -1361,8 +1392,20 @@ async def run_cartorio_agent(
             + "\n\n(Trate como pre-qualificacao cartorio; confirme recebimento; LGPD)."
         )
 
-    # Agent AI com TOOLS (MiniMax-M3) — precos via tool, nao inventados
-    content, provider, tool_action, tool_used = await _llm_agent_with_tools(system, user_block)
+    # Agent AI com TOOLS (MiniMax-M3) — precos via tool, nao inventados.
+    # Teto global via wait_for: provider travado cai no offline reply em
+    # ~LLM_GLOBAL_TIMEOUT_S — usuario NUNCA fica 15min sem resposta (E2).
+    try:
+        content, provider, tool_action, tool_used = await asyncio.wait_for(
+            _llm_agent_with_tools(system, user_block),
+            timeout=LLM_GLOBAL_TIMEOUT_S,
+        )
+    except TimeoutError:
+        logger.warning(
+            "cartorio_agent: LLM timeout global (%.0fs) — offline reply",
+            LLM_GLOBAL_TIMEOUT_S,
+        )
+        return _offline_reply(scrubbed, intent, tools_used, history=history)
     tools_used = list(tools_used) + list(tool_used)
 
     if not content:

@@ -118,6 +118,24 @@ def mock_redis_client():
 
 
 @pytest.mark.asyncio
+async def test_telegram_webhook_bypassa_rate_limit_por_ter_secret_proprio() -> None:
+    """Webhook Telegram nao deve compartilhar o bucket de IP/API key."""
+    mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake")
+
+    request = MagicMock()
+    request.headers = {}
+    request.url.path = "/api/v1/telegram/webhook"
+    response = MagicMock(headers={})
+    call_next = AsyncMock(return_value=response)
+
+    with patch.object(mw, "_get_client", new=AsyncMock(side_effect=AssertionError)):
+        result = await mw.dispatch(request, call_next)
+
+    assert result is response
+    call_next.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_middleware_allow_quando_primeira_request(mock_redis_client) -> None:
     """Primeira request: allowed."""
     mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake")

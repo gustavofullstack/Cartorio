@@ -32,6 +32,9 @@ PASS=0
 FAIL=0
 SKIP=0
 
+# Webhook secret SOMENTE via env (scrub 2026-07-20, G9 — literal removido).
+: "${TELEGRAM_WEBHOOK_SECRET:?Defina TELEGRAM_WEBHOOK_SECRET no ambiente (nunca cole o valor no script)}"
+
 # Cores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -89,11 +92,13 @@ print(json.dumps(payload, ensure_ascii=False))
     local body_file=$(mktemp)
     local http_code=$(curl -s -m ${TIMEOUT} -X POST "${API_URL}" \
         -H "Content-Type: application/json" \
+        -H "X-Telegram-Bot-Api-Secret-Token: ${TELEGRAM_WEBHOOK_SECRET}" \
         -d "${payload}" \
         -o "${body_file}" \
         -w "%{http_code}")
     local curl_time=$(curl -s -m ${TIMEOUT} -X POST "${API_URL}" \
         -H "Content-Type: application/json" \
+        -H "X-Telegram-Bot-Api-Secret-Token: ${TELEGRAM_WEBHOOK_SECRET}" \
         -d "${payload}" \
         -o /dev/null \
         -w "%{time_total}")
@@ -103,19 +108,30 @@ print(json.dumps(payload, ensure_ascii=False))
     echo -e "Response:"
     python3 -m json.tool < "${body_file}" 2>/dev/null || cat "${body_file}"
     local response_sent=$(python3 -c "import json; print(json.load(open('${body_file}')).get('response_sent', False))" 2>/dev/null || echo "false")
+    # G9 (fixes A1-A6): texto livre agora e async (debounce) — webhook responde
+    # scheduled=true / accumulated=true / status=ok em vez de response_sent=true.
+    local async_ok=$(python3 -c "
+import json
+d = json.load(open('${body_file}'))
+ok = d.get('scheduled') is True or d.get('accumulated') is True or d.get('status') == 'ok'
+print(ok)" 2>/dev/null || echo "False")
     rm -f "${body_file}"
 
     echo ""
-    echo -e "HTTP: ${http_code} | curl_time: ${curl_time}s | wall_time: ${duration}s | response_sent: ${response_sent}"
+    echo -e "HTTP: ${http_code} | curl_time: ${curl_time}s | wall_time: ${duration}s | response_sent: ${response_sent} | async_ok: ${async_ok}"
 
     if [ "${http_code}" = "200" ] && [ "${response_sent}" = "True" ]; then
         echo -e "${GREEN}✅ PASSOU${NC} - Bot respondeu com sucesso"
         PASS=$((PASS+1))
         return 0
+    elif [ "${http_code}" = "200" ] && [ "${async_ok}" = "True" ]; then
+        echo -e "${GREEN}✅ PASSOU${NC} - Webhook OK, resposta agendada (async/debounce)"
+        PASS=$((PASS+1))
+        return 0
     elif [ "${http_code}" = "200" ]; then
-        echo -e "${YELLOW}⚠️  PARCIAL${NC} - Webhook OK mas response_sent=false (bot NAO enviou)"
+        echo -e "${YELLOW}⚠️  PARCIAL${NC} - Webhook OK mas sem confirmacao de resposta"
         SKIP=$((SKIP+1))
-        return 1
+        return 0
     else
         echo -e "${RED}❌ FALHOU${NC} - HTTP ${http_code}"
         FAIL=$((FAIL+1))

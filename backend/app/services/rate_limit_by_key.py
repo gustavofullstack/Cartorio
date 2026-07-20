@@ -61,6 +61,13 @@ TIER_POLICIES: dict[ApiKeyTier, RateLimitPolicy] = {
     "padrao": RateLimitPolicy(per_minute=30, description="Sem X-API-Key (fail-secure)"),
 }
 
+# Telegram autentica cada entrega no próprio endpoint com
+# ``X-Telegram-Bot-Api-Secret-Token``. O webhook chega através de proxy e as
+# réplicas podem receber o mesmo IP encaminhado; aplicar o DDoS por IP e o
+# tier sem API key aqui transforma retries legítimos do Telegram em 429. A
+# proteção deste caminho é a validação do secret no router Telegram.
+SIGNED_WEBHOOK_PATHS = frozenset({"/api/v1/telegram/webhook"})
+
 
 # ============================================================================
 # Identificacao de tier
@@ -256,6 +263,11 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
+        # Webhook assinado: não possui X-API-Key e pode compartilhar o IP do
+        # proxy entre retries/updates. A autenticação acontece no endpoint.
+        if request.url.path in SIGNED_WEBHOOK_PATHS:
+            return await call_next(request)
+
         # Filtra por path
         if self._paths and not any(request.url.path.startswith(p) for p in self._paths):
             return await call_next(request)

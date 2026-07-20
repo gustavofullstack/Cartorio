@@ -126,6 +126,35 @@ class TestPatternDetection:
         v = cnlk.scan_file(f)
         assert any(r.rule == "TELEGRAM_BOT_TOKEN" and r.severity == "critical" for r in v)
 
+    def test_detects_telegram_bot_token_strict(self, tmp_path: Path) -> None:
+        """Telegram bot token formato estrito: 8-10 digitos + EXATOS 35 chars (G9)."""
+        f = tmp_path / "x.py"
+        token = "1234567890:" + ("x" * 35)
+        f.write_text(f'TG = "{token}"\n', encoding="utf-8")
+        v = cnlk.scan_file(f)
+        assert any(r.rule == "TELEGRAM_BOT_TOKEN_STRICT" and r.severity == "critical" for r in v)
+
+    def test_detects_webhook_secret_hex64(self, tmp_path: Path) -> None:
+        """Hex de 64 chars (webhook secret / HMAC key) — G9 2026-07-20."""
+        f = tmp_path / "x.py"
+        # SHA256 da string vazia — constante publica bem conhecida.
+        f.write_text(
+            'SECRET = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"\n',
+            encoding="utf-8",
+        )
+        v = cnlk.scan_file(f)
+        assert any(r.rule == "WEBHOOK_SECRET_HEX64" and r.severity == "critical" for r in v)
+
+    def test_optout_marker_suppresses_hex64(self, tmp_path: Path) -> None:
+        """Hash legitimo com opt-out inline NAO e flag (G9)."""
+        f = tmp_path / "x.py"
+        f.write_text(
+            'HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"'
+            "  # noqa: ALLOW_KEY_FALLBACK (motivo: SHA256 doc exemplo)\n",
+            encoding="utf-8",
+        )
+        assert cnlk.scan_file(f) == []
+
     def test_detects_pkcs8_private_key(self, tmp_path: Path) -> None:
         """PKCS8 private key block (CRITICAL)."""
         f = tmp_path / "x.py"
@@ -172,10 +201,19 @@ class TestPatternDetection:
 class TestNoFalsePositives:
     """Garantias contra FPs comuns."""
 
-    def test_no_false_positive_on_sha256_hash(self, clean_file: Path) -> None:
-        """SHA256 hex (64 chars) NAO trigga pattern algum."""
+    def test_sha256_hex64_flagged_apenas_por_webhook_secret_hex64(
+        self, clean_file: Path
+    ) -> None:
+        """G9 2026-07-20: hex de 64 chars PASSA a ser flag (WEBHOOK_SECRET_HEX64).
+
+        Hashes legitimos (ex.: SHA256 de exemplo em docs) devem usar o
+        opt-out `# noqa: ALLOW_KEY_FALLBACK` ou o baseline. O fixture
+        clean_file NAO pode disparar nenhuma OUTRA regra.
+        """
         v = cnlk.scan_file(clean_file)
-        assert v == [], f"FP em hash hex: {v}"
+        rules = {r.rule for r in v}
+        assert "WEBHOOK_SECRET_HEX64" in rules
+        assert rules == {"WEBHOOK_SECRET_HEX64"}, f"regras inesperadas: {rules}"
 
     def test_no_false_positive_on_uuid(self, clean_file: Path) -> None:
         """UUID v4 NAO trigga."""
