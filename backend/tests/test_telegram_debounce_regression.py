@@ -46,10 +46,14 @@ def test_process_telegram_debounce_signature_has_no_db() -> None:
 
 
 def test_process_telegram_debounce_signature_only_chat_id() -> None:
-    """Garante que o único parâmetro posicional é `chat_id`."""
+    """Garante assinatura (chat_id, conv_key) — sem `db`, com conv do G9/A5.
+
+    G9/A5 (2026-07-20): conv_key explicita para chavear metadata/fila/lock
+    por conversa (chat:user em grupo). Default None mantem callers legados.
+    """
     sig = inspect.signature(_process_telegram_debounce)
     params = list(sig.parameters.keys())
-    assert params == ["chat_id"], f"Esperado ['chat_id'], obtido {params}"
+    assert params == ["chat_id", "conv_key"], f"Esperado ['chat_id', 'conv_key'], obtido {params}"
 
 
 # === Comportamento: sem bus, sem crash (warning + return limpo) ===

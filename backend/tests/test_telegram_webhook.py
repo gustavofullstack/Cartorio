@@ -706,6 +706,8 @@ def test_webhook_group_reply_to_bot_is_processed_as_conversation() -> None:
         "chat_id": -1004331849032,
         "kind": "agent",
         "response_sent": True,
+        # G9/A4 (2026-07-20): fallback sincrono (bus=None) sinaliza degraded.
+        "degraded": True,
     }
 
 

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -234,6 +235,38 @@ async def _llm_providers_health_loop() -> None:
         await asyncio.sleep(3600)
 
 
+async def _sync_telegram_webhook_leader() -> None:
+    """Roda sync_telegram_webhook() apenas na replica lider (redlock).
+
+    G9/A1 (2026-07-20): antes, TODOS os workers chamavam setWebhook no boot.
+    Se algum subisse sem TELEGRAM_WEBHOOK_SECRET, o registro ia sem
+    secret_token e derrubava a verificacao das demais replicas (tempestade
+    401). Mesmo padrao single-leader do dead-man's-switch.
+
+    Se o Redis estiver fora no boot, roda mesmo assim: o sync e idempotente
+    e o secret passou a ser obrigatorio (sync_telegram_webhook aborta sem ele).
+    """
+    from app.api.v1.telegram import sync_telegram_webhook
+    from app.services.redlock import acquire_lock, release_lock
+
+    try:
+        lock_token = acquire_lock("tg-webhook-sync", ttl_seconds=120)
+    except Exception as exc:
+        logger.warning(
+            "TG webhook sync: redlock indisponivel (%s) — rodando sem lock",
+            type(exc).__name__,
+        )
+        lock_token = ""
+    if lock_token is None:
+        logger.info("TG webhook sync: outra replica ja sincronizou, skip")
+        return
+    try:
+        await sync_telegram_webhook()
+    finally:
+        if lock_token:
+            release_lock("tg-webhook-sync", lock_token)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Smoke test DB + create tables if missing + audit log init + tracing init (A3)."""
@@ -303,8 +336,21 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     logger.info("LLM_PROVIDERS_HEALTH_MONITOR_STARTED: interval=3600s")
 
     # 7. Telegram auto webhook sync on startup (FIX 2026-07-20)
-    from app.api.v1.telegram import sync_telegram_webhook
-    asyncio.create_task(sync_telegram_webhook(), name="sync_telegram_webhook_startup")
+    # G9/A1: single-leader via redlock (_sync_telegram_webhook_leader) — antes
+    # rodava em TODAS as replicas no boot. Flag TELEGRAM_SYNC_WEBHOOK_ON_BOOT
+    # (default true) permite desligar em dev local.
+    if os.environ.get("TELEGRAM_SYNC_WEBHOOK_ON_BOOT", "true").strip().lower() not in (
+        "false",
+        "0",
+        "no",
+        "off",
+    ):
+        asyncio.create_task(
+            _sync_telegram_webhook_leader(),
+            name="sync_telegram_webhook_startup",
+        )
+    else:
+        logger.info("TG webhook sync on boot DISABLED via TELEGRAM_SYNC_WEBHOOK_ON_BOOT")
 
     try:
         yield
