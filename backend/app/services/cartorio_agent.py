@@ -599,7 +599,7 @@ async def _chat_completion(
     *,
     tools: list[dict[str, Any]] | None = None,
     temperature: float = 0.7,
-    max_tokens: int = 700,
+    max_tokens: int = 4096,
 ) -> tuple[dict[str, Any] | None, str, str]:
     """Retorna (message, provider, err)."""
     last_err = ""
@@ -724,7 +724,7 @@ async def _llm_agent_with_tools(system: str, user: str) -> tuple[str, str, str |
 
     for _ in range(3):
         msg, provider, err = await _chat_completion(
-            messages, tools=AGENT_TOOLS, temperature=0.7, max_tokens=700
+            messages, tools=AGENT_TOOLS, temperature=0.7, max_tokens=4096
         )
         if not msg:
             logger.warning("cartorio_agent tools fail: %s", err)
