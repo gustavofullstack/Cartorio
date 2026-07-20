@@ -1,0 +1,4 @@
+## 2026-07-20 - [Avoid string formatting for cross-dialect SQL boundaries]
+**Vulnerability:** Constructing raw SQL date boundaries (e.g. `NOW() - INTERVAL '30 days'`) via string interpolation (Python f-strings) into SQLAlchemy `text()` queries exposes the app to SQL injection risk and requires manual dialect detection for compatibility across environments.
+**Learning:** This repo tests on SQLite and deploys on PostgreSQL. Building dynamic SQL string expressions based on environment conditions bypasses SQLAlchemy's secure parameter bindings.
+**Prevention:** Instead of generating dialect-specific raw SQL interval strings, calculate dynamic bounds as Python `datetime` objects using `timedelta` and safely pass them into cross-dialect queries using bound parameters (e.g. `db.execute(text("... WHERE timestamp >= :ts_30d"), {"ts_30d": ts_30d})`).
