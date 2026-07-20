@@ -7,6 +7,11 @@ import re
 
 SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"(?i)(api[_-]?key|secret|token|password|passwd|pwd)\s*[=:]\s*\S+"),
+    # Telegram Bot API tokens appear in request URLs, not as key=value pairs.
+    re.compile(
+        r"(?:\bbot(?:\d{8,12}|\[MASKED:[^\]]+\])|\[MASKED:[^\]]+\]):"
+        r"[A-Za-z0-9_-]{30,}\b"
+    ),
     re.compile(r"eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+"),
     re.compile(r"sk-[a-zA-Z0-9_-]{20,}"),
     re.compile(r"sk-ant-[a-zA-Z0-9_-]{20,}"),

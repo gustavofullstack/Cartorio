@@ -19,6 +19,11 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     force=True,
 )
+# httpx logs complete request URLs; Telegram credentials live in those URLs.
+# Keep application-level outcome logs while suppressing credential-bearing
+# transport URLs from httpx/httpcore handlers.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402

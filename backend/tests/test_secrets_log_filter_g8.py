@@ -54,6 +54,24 @@ def test_filter_redacts_openai_key() -> None:
     assert secret not in message
 
 
+def test_filter_redacts_telegram_bot_token_in_url() -> None:
+    """Token Telegram nunca aparece na URL logada pelo httpx."""
+    token = "123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+    message = _filtered_message(f"GET https://api.telegram.org/bot{token}/getWebhookInfo")
+    assert REDACTION in message
+    assert token not in message
+
+
+def test_filter_redacts_telegram_token_after_pii_masking() -> None:
+    """A ordem dos filtros não pode deixar o sufixo do token exposto."""
+    token_suffix = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+    message = _filtered_message(
+        f"GET https://api.telegram.org/bot[MASKED:phone_br]:{token_suffix}/sendMessage"
+    )
+    assert REDACTION in message
+    assert token_suffix not in message
+
+
 def test_filter_redacts_anthropic_key() -> None:
     secret = "sk-ant-" + ("AnthropicSecretPart" * 2)
     message = _filtered_message(f"provider credential {secret}")
