@@ -4041,3 +4041,41 @@ Modified by Gustavo Almeida — 2026-07-18T20:30
 → 78 → 82.
 
 Modified by Gustavo Almeida — 2026-07-18T21:00
+
+
+---
+
+## 2026-07-20 — Telegram P0 resolvido + SUPER PLANO G9 (14/100 evidenciadas)
+
+### Causa-raiz e fix (P0 Telegram silencioso)
+
+| Etapa | Resultado | Evidência |
+|-------|-----------|-----------|
+| Diagnóstico E1–E4 (4 agents read-only) | A1–A6 (telegram) + slots/timeout/payload (LLM) mapeados com linhas | relatórios E1/E2 no contexto; G9.01.T1, G9.02.T1, G9.04.T1, G9.18.T1 |
+| Re-sync webhook | prod re-registrou webhook com o próprio `secret_token` | `POST /api/v1/telegram/set-webhook` (mecanismo `96fedc9`); getWebhookInfo OK, `pending_update_count=0` |
+| Probes funcionais prod | `/start` → `response_sent=true`; texto livre/grupo → `scheduled=true` | probes 2026-07-20 (G9.03.T1) |
+| Fallback LLM | 3 contas OpenCode Zen integradas; agente live restaurado | commits `96fedc9`, `9522cce` (G9.04.T2) |
+| CNJ export | massive-dump streaming + JWT DPO + scrub + audit gate | commits `ff599aa`, `0d15da6`, `6c029fc` (G9.07.T1) |
+
+### Docs entregues (squad C4)
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `SUPER_PLANO_G9_100_TASKS.md` | 100 tasks / 25 squads × 4; honesty gate; 14/100 [x] hoje; herança SUI G7 (G7.04.T4, G7.05.T1/T3, G7.06.T3, G7.11.T1/T2, G7.12.T1) nos Squads 16–17 |
+| `cartorio-ai/` núcleo (15 arquivos) | AGENTS, README, ARCHITECTURE, MANIFEST, INDEX, BOOTSTRAP, ROADMAP + BRAIN, SOUL, IDENTITY, GOALS, TASKS, MEMORY, SECURITY, CNJ — conteúdo real do projeto |
+| `STATUS.md` | rewrite 2026-07-20 (substitui snapshot 2026-07-15) |
+| `PROGRESS.md` | esta entrada (G9.25.T2) |
+
+### Pendências abertas (próximas waves)
+
+- W54/W55: código das regressões A1–A6 (boot sync líder-only, sempre-200, debounce `chat_id:user_id`, feedback garantido) + E2E grupo + stress prod assinado + confirmação de entrega async.
+- W56: coerência slots zen (tupla API_KEY/BASE_URL/MODEL por conta), timeout por tentativa, payload por provider.
+- G9.09/G9.10: sanitizar segredos literais em scripts/testes locais (sem rotação sem ordem do dono); checker hex-64; sync `CARTORIO_API_KEY`.
+- SUI dono: `/setjoingroups Enable` @BotFather; 3 A records DNS; Tailscale restore; QR WhatsApp; OpenClaw E8; WA live emolumento.
+
+### Nota honesty
+
+- `scheduled=true` (debounce) ≠ resposta entregue — confirmação async é G9.03.T4.
+- Nenhum teste da suíte foi rodado pela C4 (escopo docs-only); gates rodaram nos agents de código.
+
+Modified by Gustavo Almeida — 2026-07-20

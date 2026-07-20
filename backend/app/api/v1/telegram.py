@@ -214,10 +214,10 @@ def format_bot_text(text: str) -> str:
     except Exception:
         t = re.sub(r"<think>[\s\S]*?(?:</think>|$)", "", t, flags=re.I)
         t = re.sub(r"<reasoning>[\s\S]*?(?:</reasoning>|$)", "", t, flags=re.I)
-        
+
     if not t.strip():
         return "..."
-        
+
     # Camada de defesa: remove URLs nao oficiais (anti-spam / anti-porn)
     try:
         from app.services.cartorio_agent import sanitize_bot_output
@@ -1623,13 +1623,14 @@ async def _call_fast_llm(text: str, context: str = "") -> str:
         return ""
 
 
-_DEBOUNCE_METADATA: dict[int, dict] = {}
+# FIX 2026-07-20 (G9/A5): metadata chaveada pela MESMA conv_key usada na fila
+# e no lock (chat_id:user_id em grupo). Antes era por chat_id — dois usuarios
+# no mesmo grupo dentro da janela de debounce sobrescreviam a metadata e um
+# deles nunca recebia resposta.
+_DEBOUNCE_METADATA: dict[str, dict] = {}
 
 
-async def _process_telegram_debounce(chat_id: int) -> None:
-    metadata = _DEBOUNCE_METADATA.pop(chat_id, {})
-    conv_key: str | None = metadata.get("conv_key")
-    user_id: int | None = metadata.get("user_id")
+async def _process_telegram_debounce(chat_id: int, conv_key: str | None = None) -> None:
     """Task em background para esperar o debounce, consolidar msgs e responder.
 
     NOTA: NAO recebe `db` (Session) — `background_tasks.add_task` do FastAPI
@@ -1641,8 +1642,13 @@ async def _process_telegram_debounce(chat_id: int) -> None:
     garantir que cliente sempre ve "Bot esta digitando..." enquanto processa.
 
     FIX 2026-07-09: conv_key = chat:user no grupo (estado/fila por usuario).
+
+    FIX 2026-07-20 (G9/A5): recebe conv_key explicita (metadata/fila/lock
+    chaveados por conv). conv_key=None so ocorre em callers legados.
     """
-    key: int | str = conv_key if conv_key is not None else chat_id
+    key: str = conv_key or str(chat_id)
+    metadata = _DEBOUNCE_METADATA.pop(key, {})
+    user_id: int | None = metadata.get("user_id")
     await asyncio.sleep(DEBOUNCE_WINDOW)
     bus = get_bus()
     if not bus:
@@ -1661,9 +1667,36 @@ async def _process_telegram_debounce(chat_id: int) -> None:
             results = await pipe.execute()
         raw_queue = results[0]
         if not raw_queue:
+            # FIX 2026-07-20 (G9/A6): fila vazia aqui e inesperado — o debounce
+            # so e agendado quando ha lock novo, ou seja, deveria haver msg.
+            # Antes retornava em silencio e o usuario ficava sem feedback.
+            logger.warning("TG debounce fila vazia inesperada chat=%s key=%s", chat_id, key)
+            bump_metric("responses_failed")
+            try:
+                await _send_message(
+                    chat_id,
+                    "Tive uma instabilidade tecnica ao processar sua mensagem.\n"
+                    "\n"
+                    "Por favor, reenvie em alguns instantes. "
+                    "Se preferir, digite /humano para falar com a equipe."
+                )
+            except Exception:
+                logger.warning("TG debounce: falha ao enviar msg de erro fila vazia chat=%s", chat_id)
             return
         queue = json.loads(raw_queue)
         if not queue:
+            logger.warning("TG debounce fila JSON vazia inesperada chat=%s key=%s", chat_id, key)
+            bump_metric("responses_failed")
+            try:
+                await _send_message(
+                    chat_id,
+                    "Tive uma instabilidade tecnica ao processar sua mensagem.\n"
+                    "\n"
+                    "Por favor, reenvie em alguns instantes. "
+                    "Se preferir, digite /humano para falar com a equipe."
+                )
+            except Exception:
+                logger.warning("TG debounce: falha ao enviar msg de erro fila JSON vazia chat=%s", chat_id)
             return
         textos = [m["text"] for m in queue]
         msg_ids = [m["msg_id"] for m in queue if m.get("msg_id")]
@@ -1731,6 +1764,18 @@ async def _process_telegram_debounce(chat_id: int) -> None:
         logger.info("TG background response chat=%s key=%s sent=%s", chat_id, key, sent)
     except Exception as e:
         logger.exception("Erro na background task de debounce do Telegram: %s", e)
+        # FIX 2026-07-20 (G9/A6): usuario NUNCA fica sem feedback — best-effort
+        # de mensagem de erro amigavel. Falha aqui apenas loga, nao propaga.
+        try:
+            await _send_message(
+                chat_id,
+                "Tive uma instabilidade tecnica ao processar sua mensagem.\n"
+                "\n"
+                "Por favor, reenvie em alguns instantes. "
+                "Se preferir, digite /humano para falar com a equipe.",
+            )
+        except Exception:
+            logger.warning("TG debounce: falha ao enviar msg de erro chat=%s", chat_id)
     finally:
         # Para typing loop - typing expira em 5s automaticamente
         stop_typing.set()
@@ -1961,9 +2006,12 @@ async def telegram_webhook(
     store.inc_counter("cartorio_telegram_mensagens_total", labels={"direction": "in"})
     try:
         update = await request.json()
-    except Exception:
+    except Exception as exc:
+        # FIX 2026-07-20 (G9/A3): JSON invalido NUNCA vira 5xx — o Telegram faz
+        # retry infinito em 5xx. Loga e responde 200 degraded.
         store.inc_counter("cartorio_telegram_erros_total")
-        raise
+        logger.warning("TG webhook invalid json: %s", type(exc).__name__)
+        return {"status": "degraded", "reason": "invalid_json"}
     _verify_telegram_secret(x_telegram_bot_api_secret_token)
     message = update.get("message", {}) or update.get("edited_message", {})
     callback = update.get("callback_query", {})
@@ -2102,7 +2150,18 @@ async def telegram_webhook(
         text = re.sub(rf"@{re.escape(TELEGRAM_BOT_USERNAME)}\b", "", text, flags=re.I).strip()
         text = re.sub(r"@test_cartorio(_bot)?\b", "", text, flags=re.I).strip()
     conv = _conv_key(int(chat_id), int(user_id) if user_id else None, chat_type)
-    bus = get_bus()
+    # FIX 2026-07-20 (G9/A3+A4): get_bus() pode levantar (ex. ConnectionError
+    # com Redis fora). Regra do webhook: SEMPRE 200 — degrada para o fallback
+    # sincrono (bus=None) em vez de estourar 500.
+    bus: Any = None
+    try:
+        bus = get_bus()
+    except Exception as exc:
+        logger.warning(
+            "TG webhook: Redis indisponivel (%s) — fallback sincrono degraded",
+            type(exc).__name__,
+        )
+        bus = None
 
     # Avoid spam: ignore unrelated group free-text, but allow a direct reply to
     # this bot as a natural conversational turn (not only @-mentions/commands).
@@ -2117,7 +2176,10 @@ async def telegram_webhook(
             "cancelar",
             "lgpd",
         )
-        mentions_bot = f"@{TELEGRAM_BOT_USERNAME}" in orig_text.lower() or "@test_cartorio" in orig_text.lower()
+        mentions_bot = (
+            f"@{TELEGRAM_BOT_USERNAME}" in orig_text.lower()
+            or "@test_cartorio" in orig_text.lower()
+        )
         reply_from = message.get("reply_to_message", {}).get("from", {})
         is_reply_to_bot = str(reply_from.get("username", "")).lower() == TELEGRAM_BOT_USERNAME
         if not is_command and not mentions_bot and not is_reply_to_bot and not callback:
@@ -2313,9 +2375,19 @@ async def telegram_webhook(
                 )
 
     if not bus:
+        # Fallback SINCRONO degraded (G9/A4 2026-07-20): alcancado quando o
+        # Redis falhou de forma comprovada (get_bus levantou acima). Antes era
+        # codigo morto, porque get_bus() nunca retornava None.
         if not await _check_rate_limit(bus, conv):
             logger.info("TG rate limit key=%s", conv)
-            return _finish({"status": "ok", "chat_id": chat_id, "rate_limited": True})
+            return _finish(
+                {
+                    "status": "ok",
+                    "chat_id": chat_id,
+                    "rate_limited": True,
+                    "degraded": True,
+                }
+            )
         state_obj = await _get_state(bus, conv)
         state = state_obj.get("state", STATE_IDLE)
         state_data = state_obj.get("data", {})
@@ -2348,42 +2420,52 @@ async def telegram_webhook(
                 "chat_id": chat_id,
                 "kind": "agent",
                 "response_sent": sent,
+                "degraded": True,
             }
         )
 
+    # FIX 2026-07-20 (G9/A3): secao critica de enqueue/lock NUNCA pode derrubar
+    # o webhook com 5xx (Telegram faz retry infinito). Qualquer falha aqui
+    # (ex. Redis caindo no meio do request) vira 200 {"status": "degraded"}.
     lock_key = f"tg:lock:{conv}"
-    await _enqueue_message(bus, conv, text_scrubbed, msg_id, attachments=attachments)
-    await _react(chat_id, msg_id, "eyes")
-    has_lock = await bus.client.get(lock_key)
-    if not has_lock:
-        await bus.client.set(lock_key, "1", ex=5)
-        bump_metric("scheduled_debounce")
-        from_user = message.get("from", {}) or {}
-        _DEBOUNCE_METADATA[chat_id] = {
-            "conv_key": conv,
-            "user_id": uid,
-            "username": from_user.get("username"),
-            "first_name": from_user.get("first_name"),
-            "last_name": from_user.get("last_name"),
-        }
-        # Perfil imediato (mesmo sem debounce longo)
-        await _client_profile_upsert(
-            bus,
-            conv,
-            user_id=uid,
-            chat_id=chat_id,
-            username=from_user.get("username"),
-            first_name=from_user.get("first_name"),
-            last_name=from_user.get("last_name"),
-        )
-        background_tasks.add_task(
-            _process_telegram_debounce,
-            chat_id,
-        )
-        logger.info("TG scheduled background debounce chat=%s conv=%s", chat_id, conv)
-        classify_metric_for_status("ok", "debounce")
-        return _finish({"status": "ok", "chat_id": chat_id, "scheduled": True})
-    return _finish({"status": "ok", "chat_id": chat_id, "accumulated": True})
+    try:
+        await _enqueue_message(bus, conv, text_scrubbed, msg_id, attachments=attachments)
+        await _react(chat_id, msg_id, "eyes")
+        has_lock = await bus.client.get(lock_key)
+        if not has_lock:
+            await bus.client.set(lock_key, "1", ex=5)
+            bump_metric("scheduled_debounce")
+            from_user = message.get("from", {}) or {}
+            # G9/A5: metadata chaveada por conv (mesma chave da fila/lock).
+            _DEBOUNCE_METADATA[conv] = {
+                "user_id": uid,
+                "username": from_user.get("username"),
+                "first_name": from_user.get("first_name"),
+                "last_name": from_user.get("last_name"),
+            }
+            # Perfil imediato (mesmo sem debounce longo)
+            await _client_profile_upsert(
+                bus,
+                conv,
+                user_id=uid,
+                chat_id=chat_id,
+                username=from_user.get("username"),
+                first_name=from_user.get("first_name"),
+                last_name=from_user.get("last_name"),
+            )
+            background_tasks.add_task(
+                _process_telegram_debounce,
+                chat_id,
+                conv,
+            )
+            logger.info("TG scheduled background debounce chat=%s conv=%s", chat_id, conv)
+            classify_metric_for_status("ok", "debounce")
+            return _finish({"status": "ok", "chat_id": chat_id, "scheduled": True})
+        return _finish({"status": "ok", "chat_id": chat_id, "accumulated": True})
+    except Exception as exc:
+        logger.exception("TG enqueue/lock failed chat=%s conv=%s: %s", chat_id, conv, exc)
+        bump_metric("enqueue_degraded")
+        return _finish({"status": "degraded", "chat_id": chat_id, "reason": "enqueue_failed"})
 
 
 @router.get("/webhook/info")
@@ -2421,24 +2503,46 @@ async def telegram_set_commands(
         return {"ok": False, "error": str(exc)}
 
 
+# URL publica do webhook (G9/A2 2026-07-20): configuravel via settings/env
+# TELEGRAM_WEBHOOK_URL. O fallback preserva o dominio de prod atual.
+TELEGRAM_WEBHOOK_URL_DEFAULT = "https://api.2notasudi.com.br/api/v1/telegram/webhook"
+
+
 async def sync_telegram_webhook() -> dict:
-    """Sincroniza setWebhook na Telegram API com secret_token e allowed_updates (FIX 2026-07-20)."""
+    """Sincroniza setWebhook na Telegram API com secret_token e allowed_updates (FIX 2026-07-20).
+
+    G9/A1 (2026-07-20): NUNCA registra o webhook sem secret_token. Um worker
+    que subisse sem TELEGRAM_WEBHOOK_SECRET derrubava a verificacao de secret
+    das demais replicas (tempestade 401). Nesse caso aborta com warning.
+    G9/A2: URL via settings/env TELEGRAM_WEBHOOK_URL (sem hardcode).
+    """
     if not TELEGRAM_BOT_TOKEN:
         return {"ok": False, "reason": "TELEGRAM_BOT_TOKEN not configured"}
+    if not TELEGRAM_WEBHOOK_SECRET:
+        logger.warning(
+            "TG sync_telegram_webhook ABORT: TELEGRAM_WEBHOOK_SECRET vazio — "
+            "webhook NAO sera registrado sem secret_token (protege demais replicas)"
+        )
+        return {"ok": False, "reason": "TELEGRAM_WEBHOOK_SECRET not configured"}
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/setWebhook"
-    webhook_url = "https://api.2notasudi.com.br/api/v1/telegram/webhook"
+    webhook_url = (
+        getattr(settings, "telegram_webhook_url", None)
+        or os.environ.get("TELEGRAM_WEBHOOK_URL")
+        or TELEGRAM_WEBHOOK_URL_DEFAULT
+    )
     payload: dict[str, Any] = {
         "url": webhook_url,
         "allowed_updates": ["message", "edited_message", "callback_query", "my_chat_member"],
         "drop_pending_updates": False,
+        "secret_token": TELEGRAM_WEBHOOK_SECRET,
     }
-    if TELEGRAM_WEBHOOK_SECRET:
-        payload["secret_token"] = TELEGRAM_WEBHOOK_SECRET
     try:
         client = _get_tg_pool()
         resp = await client.post(url, json=payload, timeout=10.0)
         body = resp.json()
-        logger.info("TG sync_telegram_webhook ok=%s desc=%s", body.get("ok"), body.get("description"))
+        logger.info(
+            "TG sync_telegram_webhook ok=%s desc=%s", body.get("ok"), body.get("description")
+        )
         return body
     except Exception as exc:
         logger.warning("TG sync_telegram_webhook failed: %s", exc)
@@ -2451,7 +2555,6 @@ async def telegram_set_webhook(
 ) -> dict:
     """Configura/sincroniza o webhook do Telegram com secret_token e allowed_updates."""
     return await sync_telegram_webhook()
-
 
 
 def _verify_telegram_secret(secret_token_header: str | None) -> None:
