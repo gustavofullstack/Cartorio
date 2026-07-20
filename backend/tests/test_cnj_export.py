@@ -14,6 +14,7 @@ import app.models  # noqa: F401 -- registra todos os modelos e relacionamentos n
 from app.models.base import Base
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
+from app.services.audit import AuditService
 from app.services.cnj_export import (
     CNJExportError,
     _canonical_sha256,
@@ -37,6 +38,14 @@ def db() -> Generator[Session, None, None]:
 
 
 def _approved_request(db: Session):
+    AuditService.log(
+        db,
+        actor_id="system-test",
+        actor_type="system",
+        action="test.cnj.audit_seed",
+        resource="test:cnj",
+        payload={"fixture": True},
+    )
     request = create_request(db, reference_period="2026-07", requested_by="dpo-requester")
     return approve_request(
         db,
@@ -123,10 +132,26 @@ def test_manifest_hashes_are_verifiable_and_chain_state_is_declared(db: Session)
     assert artifact.report["controls"]["automatic_external_transmission"] is False
 
 
+def test_generated_export_is_recoverable_without_regenerating(db: Session) -> None:
+    request = _approved_request(db)
+    first = build_approved_export(db, request_id=request.id)
+    db.commit()
+    recovered = build_approved_export(db, request_id=request.id)
+    assert recovered.as_dict() == first.as_dict()
+
+
 def test_export_fails_closed_when_audit_chain_is_invalid(
     db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("app.services.cnj_export.AuditService.verify_chain", lambda _db: (False, 0))
+    monkeypatch.setattr(
+        "app.services.cnj_export.verify_full_chain",
+        lambda _db: {
+            "total_entries": 1,
+            "broken_indices": [0],
+            "integrity_score": 0.0,
+            "chain_intact": False,
+        },
+    )
 
     with pytest.raises(CNJExportError, match="cadeia de auditoria invalida"):
         build_approved_export(db, request_id=_approved_request(db).id)

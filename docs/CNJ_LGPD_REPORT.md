@@ -131,7 +131,7 @@ X-API-Key: <cartorio_api_key>
 | `new_data_subjects` | Novos titulares de dados no período | `Cliente.created_at` |
 | `notarial_protocols_created` | Protocolos notariais criados | `Protocolo.created_at` |
 | `audit_events` | Total de eventos de auditoria | `AuditLog.timestamp` |
-| `rights_exercised` | Direitos LGPD exercidos (ação `lgpd.*`) | `AuditLog.action` |
+| `rights_exercised` | Direitos LGPD exercidos pelo catálogo explícito de ações de titular (exclui dashboard/consentimento) | `AuditLog.action` |
 | `security_incidents` | Incidentes de segurança (ação `security.*`) | `AuditLog.action` |
 | `exports_generated` | Exportações CNJ geradas (ação `cnj.export.generated`) | `AuditLog.action` |
 
@@ -186,7 +186,7 @@ O relatório gerado pode ser enviado ao CNJ como evidência de conformidade LGPD
 
 ## Testes
 
-O sistema possui **8 testes dedicados** (6 de serviço e 2 de API), todos passando:
+O sistema possui **13 casos coletados** de serviço/API, todos passando na validação local:
 
 - `test_create_request_success` — Criação de pedido
 - `test_approve_request_dual_control` — Dupla aprovação (DPO diferente)

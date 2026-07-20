@@ -1246,6 +1246,27 @@
         "title": "CNJExportApprovalCreate",
         "type": "object"
       },
+      "CNJExportArtifactResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "additionalProperties": true,
+            "title": "Manifest",
+            "type": "object"
+          },
+          "report": {
+            "additionalProperties": true,
+            "title": "Report",
+            "type": "object"
+          }
+        },
+        "required": [
+          "report",
+          "manifest"
+        ],
+        "title": "CNJExportArtifactResponse",
+        "type": "object"
+      },
       "CNJExportRequestCreate": {
         "additionalProperties": false,
         "properties": {
@@ -1259,6 +1280,79 @@
           "reference_period"
         ],
         "title": "CNJExportRequestCreate",
+        "type": "object"
+      },
+      "CNJExportStatusResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "manifest_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manifest Sha256"
+          },
+          "reference_period": {
+            "title": "Reference Period",
+            "type": "string"
+          },
+          "report_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Sha256"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "requested_at": {
+            "title": "Requested At",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "status",
+          "reference_period",
+          "requested_at"
+        ],
+        "title": "CNJExportStatusResponse",
         "type": "object"
       },
       "CanalOrigem": {
@@ -10370,11 +10464,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Request Cnj Export Api V1 Lgpd Cnj Exports Requests Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/CNJExportStatusResponse"
                 }
               }
             },
@@ -10391,7 +10481,78 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
         "summary": "Request Cnj Export",
+        "tags": [
+          "lgpd-cnj-export"
+        ]
+      }
+    },
+    "/api/v1/lgpd/cnj-exports/requests/{request_id}": {
+      "get": {
+        "description": "Consulta estado e hashes sem devolver o artefato nem PII operacional.",
+        "operationId": "get_cnj_export_status_api_v1_lgpd_cnj_exports_requests__request_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CNJExportStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Cnj Export Status",
         "tags": [
           "lgpd-cnj-export"
         ]
@@ -10443,11 +10604,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Approve Cnj Export Api V1 Lgpd Cnj Exports Requests  Request Id  Approval Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/CNJExportStatusResponse"
                 }
               }
             },
@@ -10464,7 +10621,78 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
         "summary": "Approve Cnj Export",
+        "tags": [
+          "lgpd-cnj-export"
+        ]
+      }
+    },
+    "/api/v1/lgpd/cnj-exports/requests/{request_id}/download": {
+      "get": {
+        "description": "Baixa novamente artefato já gerado, sem regenerar indicadores.",
+        "operationId": "download_cnj_export_api_v1_lgpd_cnj_exports_requests__request_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CNJExportArtifactResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Download Cnj Export",
         "tags": [
           "lgpd-cnj-export"
         ]
@@ -10506,9 +10734,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Generate Cnj Export Api V1 Lgpd Cnj Exports Requests  Request Id  Generate Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/CNJExportArtifactResponse"
                 }
               }
             },
@@ -10525,6 +10751,12 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
         "summary": "Generate Cnj Export",
         "tags": [
           "lgpd-cnj-export"
@@ -11891,6 +12123,24 @@
       "post": {
         "description": "Registra menu de comandos do bot (start/menu/humano/cancelar).\n\nFIX 2026-07-09: usava AsyncClient sem Host header no IP 149.154.166.110\n→ SSL/roteamento falhava e endpoint retornava 500.",
         "operationId": "telegram_set_commands_api_v1_telegram_set_commands_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -11903,6 +12153,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Telegram Set Commands",
@@ -12039,7 +12299,7 @@
     },
     "/api/v1/telegram/webhook/info": {
       "get": {
-        "description": "Usa pool com Host: api.telegram.org + verify=False (IP direto).",
+        "description": "Consulta o webhook usando a API canônica do Telegram com TLS verificado.",
         "operationId": "telegram_webhook_info_api_v1_telegram_webhook_info_get",
         "responses": {
           "200": {

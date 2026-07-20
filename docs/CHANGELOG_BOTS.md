@@ -176,7 +176,7 @@ backend/app/integrations/fallback.py           - litellm na chain
 - Bot Telegram básico (sem pipeline)
 - LiteLLM direct (sem proxy)
 - 1 provider (opencode_generic)
-- Webhook `/api/v1/webhook/telegram`
+- Webhook `/api/v1/telegram/webhook`
 
 #### 🔧 Mudanças
 

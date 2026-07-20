@@ -508,6 +508,12 @@ def test_webhook_info_endpoint(client: TestClient) -> None:
     assert data["ok"] is True
 
 
+def test_set_commands_requires_api_key(client: TestClient) -> None:
+    """Mutação do menu Telegram não pode ser pública."""
+    response = client.post("/api/v1/telegram/set-commands")
+    assert response.status_code == 401
+
+
 # =============================================================================
 # Debounce task tests
 # =============================================================================

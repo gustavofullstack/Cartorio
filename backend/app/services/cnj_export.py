@@ -22,12 +22,35 @@ from app.models.audit_log import AuditLog
 from app.models.cnj_export_request import CNJExportRequest
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
-from app.services.audit import AuditService
+from app.services.audit_integrity import verify_full_chain
 from app.services.pii import scrub
 
 
 class CNJExportError(ValueError):
     """Erro de dominio para fluxo CNJ sem vazar dados internos."""
+
+
+# Catálogo explícito: acessos de dashboard/consentimento não são direitos
+# exercidos e não devem inflar o indicador CNJ.
+RIGHTS_EXERCISED_ACTIONS = frozenset(
+    {
+        "cliente.lgpd.anonimizar",
+        "cliente.lgpd.corrigir",
+        "cliente.lgpd.oposicao",
+        "cliente.lgpd.optout",
+        "cliente.lgpd.portabilidade",
+        "cliente.lgpd.portabilidade.download",
+        "lgpd.access.confirm",
+        "lgpd.correct.v2",
+        "lgpd.direito_acesso.consulta",
+        "lgpd.direito_esquecimento.restore",
+        "lgpd.direito_esquecimento.restaurado",
+        "lgpd.direito_esquecimento.solicitado",
+        "lgpd.direito_portabilidade.export",
+        "lgpd.esquecimento.v2",
+        "lgpd.portabilidade.download",
+    }
+)
 
 
 def _canonical_sha256(data: dict[str, Any]) -> str:
@@ -146,12 +169,20 @@ def build_approved_export(db: Session, *, request_id: str) -> CNJExportArtifact:
     ).scalar_one_or_none()
     if request is None:
         raise CNJExportError("pedido CNJ inexistente")
+    if request.status == "generated" and request.artifact_json:
+        try:
+            stored = json.loads(request.artifact_json)
+            return CNJExportArtifact(report=stored["report"], manifest=stored["manifest"])
+        except (KeyError, TypeError, json.JSONDecodeError) as exc:
+            raise CNJExportError("artefato CNJ persistido invalido") from exc
     if request.status != "approved" or request.approved_at is None:
         raise CNJExportError("pedido CNJ exige aprovacao humana independente")
 
     year, month = _validate_period(request.reference_period)
     generated_at = datetime.now(UTC).isoformat()
-    chain_ok, chain_length = AuditService.verify_chain(db)
+    integrity = verify_full_chain(db)
+    chain_length = int(integrity["total_entries"])
+    chain_ok = bool(integrity["chain_intact"]) and chain_length > 0
     if not chain_ok:
         raise CNJExportError("cadeia de auditoria invalida; exportacao CNJ bloqueada")
     chain_head = db.execute(
@@ -187,7 +218,7 @@ def build_approved_export(db: Session, *, request_id: str) -> CNJExportArtifact:
             "rights_exercised": int(
                 db.execute(
                     select(func.count()).where(
-                        AuditLog.action.like("lgpd.%"),
+                        AuditLog.action.in_(RIGHTS_EXERCISED_ACTIONS),
                         func.extract("year", AuditLog.timestamp) == year,
                         func.extract("month", AuditLog.timestamp) == month,
                     )
@@ -228,12 +259,31 @@ def build_approved_export(db: Session, *, request_id: str) -> CNJExportArtifact:
     }
     manifest["manifest_sha256"] = _canonical_sha256(manifest)
 
+    artifact = CNJExportArtifact(report=report, manifest=manifest)
+
     request.status = "generated"
     request.generated_at = datetime.now(UTC).replace(tzinfo=None)
     request.report_sha256 = report_sha256
     request.manifest_sha256 = manifest["manifest_sha256"]
+    request.artifact_json = json.dumps(artifact.as_dict(), sort_keys=True, ensure_ascii=False)
     db.flush()
-    return CNJExportArtifact(report=report, manifest=manifest)
+    return artifact
+
+
+def get_generated_export(db: Session, *, request_id: str) -> CNJExportArtifact:
+    """Recupera somente artefato já gerado; nunca gera fora do fluxo aprovado."""
+    request = db.execute(
+        select(CNJExportRequest).where(CNJExportRequest.id == request_id)
+    ).scalar_one_or_none()
+    if request is None:
+        raise CNJExportError("pedido CNJ inexistente")
+    if request.status != "generated" or not request.artifact_json:
+        raise CNJExportError("pedido CNJ ainda nao possui artefato gerado")
+    try:
+        stored = json.loads(request.artifact_json)
+        return CNJExportArtifact(report=stored["report"], manifest=stored["manifest"])
+    except (KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise CNJExportError("artefato CNJ persistido invalido") from exc
 
 
 __all__ = [
@@ -242,4 +292,5 @@ __all__ = [
     "approve_request",
     "build_approved_export",
     "create_request",
+    "get_generated_export",
 ]

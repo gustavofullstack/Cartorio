@@ -31,6 +31,9 @@ class CNJExportRequest(Base):
     generated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     report_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     manifest_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Artefato agregado minimizado, recuperável após a geração. Nunca contém
+    # linhas de titulares; é armazenado para evitar perda após um timeout HTTP.
+    artifact_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 __all__ = ["CNJExportRequest"]

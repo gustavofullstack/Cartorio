@@ -27,7 +27,7 @@ Aconteceu em 2026-06-23 (Gustavo). Bot @CartorioBot criado. Token recebido e arm
 
 Telegram faz POST em:
 ```
-https://api.2notasudi.com.br/api/v1/webhook/telegram
+https://api.2notasudi.com.br/api/v1/telegram/webhook
 ```
 
 (NÃO é evolution - é endpoint dedicado Telegram)
@@ -38,7 +38,7 @@ https://api.2notasudi.com.br/api/v1/webhook/telegram
 curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/setWebhook" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://api.2notasudi.com.br/api/v1/webhook/telegram",
+    "url": "https://api.2notasudi.com.br/api/v1/telegram/webhook",
     "allowed_updates": ["message", "edited_message", "callback_query"],
     "secret_token": "<HMAC-SHA256-shared-secret>"
   }'
@@ -46,7 +46,7 @@ curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>
 
 ### 4. Implementacao no backend (a fazer)
 
-**Endpoint**: `POST /api/v1/webhook/telegram`
+**Endpoint**: `POST /api/v1/telegram/webhook`
 
 **Estrutura**:
 1. Recebe update do Telegram
@@ -121,7 +121,7 @@ curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getUpda
 [Telegram user]
    | mensagem
    v
-[Telegram API] -> POST /api/v1/webhook/telegram (API backend)
+[Telegram API] -> POST /api/v1/telegram/webhook (API backend)
    |
    | 1. Validar HMAC
    | 2. PII scrub (camada 1)
@@ -179,7 +179,7 @@ curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getUpda
 - Telegram Bot API: https://core.telegram.org/bots/api
 - SetWebhook: https://core.telegram.org/bots/api#setwebhook
 - Webhook spec: https://core.telegram.org/bots/webhooks
-- Codigo fonte: `backend/app/api/v1/webhook/telegram.py` (a criar)
+- Codigo fonte: `backend/app/api/v1/telegram.py`
 - LGPD: `docs/ripd.md` (mesmos principios)
 
 Modified by ZCode/Mavis - 2026-06-24

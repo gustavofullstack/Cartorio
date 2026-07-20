@@ -12,7 +12,7 @@ O Cartório 2º Notas opera **dois canais de chatbot** com paridade 100% de func
 |---|---|---|
 | **Bot username** | `@CartorioAssistantBot` | `cartorio-2notas` (instância Evolution) |
 | **API** | Bot API oficial (api.telegram.org) | Evolution API 2.3.7 (whatsapp.2notasudi.com.br) |
-| **Webhook** | `POST /api/v1/webhook/telegram` | `POST /api/v1/webhook/evolution` |
+| **Webhook** | `POST /api/v1/telegram/webhook` | `POST /api/v1/webhook/evolution` |
 | **Adapter** | `TelegramAdapter` (em `telegram.py`) | `WhatsAppAdapter` (em `whatsapp.py`) |
 | **Typing** | `sendChatAction(typing)` | `presence subscribe(composing)` |
 | **Reaction** | `setMessageReaction(emoji)` | `POST /message/sendReaction` |

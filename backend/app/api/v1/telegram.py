@@ -2326,7 +2326,9 @@ async def telegram_webhook_info() -> dict:
 
 
 @router.post("/set-commands")
-async def telegram_set_commands() -> dict:
+async def telegram_set_commands(
+    _api_key: str = Depends(require_cartorio_api_key),
+) -> dict:
     """Registra menu de comandos do bot (start/menu/humano/cancelar).
 
     FIX 2026-07-09: usava AsyncClient sem Host header no IP 149.154.166.110

@@ -1,6 +1,6 @@
 # Exportação agregada CNJ — LGPD-safe
 
-O endpoint interno `/api/v1/lgpd/cnj-exports` produz um artefato JSON para revisão e transmissão manual pelo canal institucional autorizado. Ele não envia dados para nenhum serviço externo e não armazena o arquivo gerado.
+O endpoint interno `/api/v1/lgpd/cnj-exports` produz um artefato JSON minimizado para revisão e transmissão manual pelo canal institucional autorizado. Ele não envia dados para nenhum serviço externo. Após a geração, o artefato agregado é armazenado no registro do pedido para permitir recuperação segura após timeout; não contém linhas de titulares.
 
 Fluxo obrigatório:
 
@@ -18,6 +18,8 @@ Exemplo de sequência de teste:
 POST /api/v1/lgpd/cnj-exports/requests {"reference_period":"2026-07"}
 POST /api/v1/lgpd/cnj-exports/requests/{request_id}/approval {"reason":"Revisão mensal para envio institucional CNJ."}
 POST /api/v1/lgpd/cnj-exports/requests/{request_id}/generate
+GET /api/v1/lgpd/cnj-exports/requests/{request_id}
+GET /api/v1/lgpd/cnj-exports/requests/{request_id}/download
 ```
 
 Todos os endpoints exigem `X-API-Key` e JWT DPO; em produção também devem permanecer atrás de Tailscale/VPN e das políticas de proxy já vigentes.
@@ -26,10 +28,10 @@ Todos os endpoints exigem `X-API-Key` e JWT DPO; em produção também devem per
 
 O endpoint gera um artefato, não uma autorização regulatória nem transmissão automática. O DPO responsável deve registrar, fora do arquivo exportado, a evidência de que:
 
-1. a migration Alembic está no head que contém as restrições `0024`–`0026`;
+1. a migration Alembic está no head que contém as restrições `0024`–`0027`;
 2. solicitante e aprovador são titulares distintos do papel DPO;
 3. `audit_integrity.chain_valid` é `true` e os hashes do relatório e manifesto foram recalculados de forma independente;
 4. o período, finalidade e destinatário institucional foram revisados; e
 5. o arquivo foi transmitido manualmente por canal institucional autorizado, sem anexar logs, payloads ou identificadores de titulares.
 
-Se alguma evidência faltar, o pacote deve permanecer retido para investigação. A geração não deve ser repetida: um pedido já gerado é imutável e o sistema retorna conflito para nova geração.
+Se alguma evidência faltar, o pacote deve permanecer retido para investigação. A geração não deve ser repetida: um pedido já gerado é imutável; o sistema recupera o artefato persistido pelos endpoints de status/download.

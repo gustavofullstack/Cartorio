@@ -31,11 +31,11 @@
 ```bash
 # Configurar webhook (apontar para nosso endpoint)
 curl -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
-  -d "url=https://api.2notasudi.com.br/api/v1/webhook/telegram"
+  -d "url=https://api.2notasudi.com.br/api/v1/telegram/webhook"
 
 # Verificar
 curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo"
-# Resposta esperada: {"url": "https://api.2notasudi.com.br/api/v1/webhook/telegram", "pending_update_count": 0}
+# Resposta esperada: {"url": "https://api.2notasudi.com.br/api/v1/telegram/webhook", "pending_update_count": 0}
 ```
 
 ### Validation Gustavo (celular)
