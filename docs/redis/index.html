@@ -42,7 +42,7 @@
 
   <meta itemprop="name" content="Docs">
   <meta itemprop="datePublished" content="2026-06-09T00:00:00+00:00">
-  <meta itemprop="dateModified" content="2026-06-24T14:16:43-05:00">
+  <meta itemprop="dateModified" content="2026-07-17T17:01:49-05:00">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Docs">
 
@@ -56,7 +56,7 @@
 
   
 
-<link href="/docs/latest/css/index.min.5ef0d7f3d81f20b63c8428235847a401b94654658a61da3861aa257f0bd9bdbf.css" rel="stylesheet" />
+<link href="/docs/latest/css/index.min.283deaefbed8158993358d3dea1a956a32fc9fa446568512978293c895413c92.css" rel="stylesheet" />
     
 
     
@@ -1293,12 +1293,22 @@ f="XMLHttpRequest",g._w={},g._w[f]=m[f],g._w[s]=m[s],m[s]&&(m[s]=function(){retu
   
       function sortData(data) {
         
+        const deriveCategory = (record) => {
+          const url = (record && record.url) || ''
+          if (/^https?:\/\/(www\.)?redis\.io\/blog(\/|$|\?|#)/i.test(url)) return 'Blog'
+          if (/^https?:\/\/(www\.)?redis\.io\/tutorials(\/|$|\?|#)/i.test(url)) return 'Tutorials'
+          if (/^https?:\/\/support\.redislabs\.com(\/|$|\?|#)/i.test(url)) return 'Support'
+          return record.hierarchy && record.hierarchy[0]
+        }
+
+        
         const getCategories = (data) =>
           data.reduce((a, c) => {
-            if (!a.includes(c.hierarchy[0])) {
-              a.push(c.hierarchy[0])
+            const cat = deriveCategory(c)
+            if (!a.includes(cat)) {
+              a.push(cat)
             }
-  
+
             return a
           }, [])
 
@@ -1318,7 +1328,7 @@ f="XMLHttpRequest",g._w={},g._w[f]=m[f],g._w[s]=m[s],m[s]&&(m[s]=function(){retu
             obj.category = category
   
             data.forEach((record) => {
-              if (record.hierarchy[0] === category) {
+              if (deriveCategory(record) === category) {
                 obj[record.title] = {
                   path: constructSectionTitle(record),
                   product: record.hierarchy[2],
