@@ -1678,10 +1678,12 @@ async def _process_telegram_debounce(chat_id: int, conv_key: str | None = None) 
                     "Tive uma instabilidade tecnica ao processar sua mensagem.\n"
                     "\n"
                     "Por favor, reenvie em alguns instantes. "
-                    "Se preferir, digite /humano para falar com a equipe."
+                    "Se preferir, digite /humano para falar com a equipe.",
                 )
             except Exception:
-                logger.warning("TG debounce: falha ao enviar msg de erro fila vazia chat=%s", chat_id)
+                logger.warning(
+                    "TG debounce: falha ao enviar msg de erro fila vazia chat=%s", chat_id
+                )
             return
         queue = json.loads(raw_queue)
         if not queue:
@@ -1693,10 +1695,12 @@ async def _process_telegram_debounce(chat_id: int, conv_key: str | None = None) 
                     "Tive uma instabilidade tecnica ao processar sua mensagem.\n"
                     "\n"
                     "Por favor, reenvie em alguns instantes. "
-                    "Se preferir, digite /humano para falar com a equipe."
+                    "Se preferir, digite /humano para falar com a equipe.",
                 )
             except Exception:
-                logger.warning("TG debounce: falha ao enviar msg de erro fila JSON vazia chat=%s", chat_id)
+                logger.warning(
+                    "TG debounce: falha ao enviar msg de erro fila JSON vazia chat=%s", chat_id
+                )
             return
         textos = [m["text"] for m in queue]
         msg_ids = [m["msg_id"] for m in queue if m.get("msg_id")]
@@ -2145,10 +2149,12 @@ async def telegram_webhook(
         or "private"
     )
     orig_text = text or ""
-    # Strip bot username mentions in group/private chats (e.g. @test_cartorio_bot /agendar -> /agendar)
+    _fields_early = _extract_client_fields(orig_text)
     if text:
-        text = re.sub(rf"@{re.escape(TELEGRAM_BOT_USERNAME)}\b", "", text, flags=re.I).strip()
-        text = re.sub(r"@test_cartorio(_bot)?\b", "", text, flags=re.I).strip()
+        text = re.sub(rf"@{re.escape(TELEGRAM_BOT_USERNAME)}", "", text, flags=re.I).strip()
+        text = re.sub(r"@test_cartorio(_bot)?", "", text, flags=re.I).strip()
+    scrub_res = scrub(text) if text else None
+    text_scrubbed = scrub_res.text if scrub_res else ""
     conv = _conv_key(int(chat_id), int(user_id) if user_id else None, chat_type)
     # FIX 2026-07-20 (G9/A3+A4): get_bus() pode levantar (ex. ConnectionError
     # com Redis fora). Regra do webhook: SEMPRE 200 — degrada para o fallback
@@ -2189,7 +2195,7 @@ async def telegram_webhook(
                 mid_flow = st.get("state", STATE_IDLE) != STATE_IDLE
             if not mid_flow:
                 # FIX 2026-07-09: NAO spammar orientacao a cada msg do grupo.
-                logger.info("TG group ignore chat=%s text=%.60s", chat_id, text)
+                logger.info("TG group ignore chat=%s text=%.60s", chat_id, text_scrubbed)
                 early_msg_id = message.get("message_id", 0)
                 await _react(chat_id, early_msg_id, "eyes")
                 should_orient = True
@@ -2209,10 +2215,12 @@ async def telegram_webhook(
                 return _finish(
                     {"status": "ignored", "reason": "group message without command or mention"}
                 )
-            logger.info("TG group mid-flow allow chat=%s conv=%s text=%.40s", chat_id, conv, text)
+            logger.info(
+                "TG group mid-flow allow chat=%s conv=%s text=%.40s", chat_id, conv, text_scrubbed
+            )
 
     msg_id = message.get("message_id", 0) or callback.get("message", {}).get("message_id", 0)
-    logger.info("TG msg chat=%s conv=%s text=%.60s", chat_id, conv, text)
+    logger.info("TG msg chat=%s conv=%s text=%.60s", chat_id, conv, text_scrubbed)
 
     # ====== ANTI-SPAM: idempotency check por update_id ======
     if bus and update_id:
@@ -2224,12 +2232,13 @@ async def telegram_webhook(
     # ====== TYPING VISIVEL ======
     asyncio.create_task(_send_typing_fast(chat_id))
 
-    # Extrai PII do texto ORIGINAL antes do scrub (perfil Redis + intent dados)
-    _fields_early = _extract_client_fields(text) if text else {}
-    scrub_result = scrub(text)
-    text_scrubbed = scrub_result.text
+    # (PII extraction and scrub moved to the top of webhook)
     # Se mascarou CPF/RG/email, marca para o agent reconhecer pre-qualificacao
-    if scrub_result.findings or _fields_early.get("cpf_raw") or _fields_early.get("email"):
+    if (
+        (scrub_res and scrub_res.findings)
+        or _fields_early.get("cpf_raw")
+        or _fields_early.get("email")
+    ):
         if "DADOS_PESSOAIS_RECEBIDOS" not in text_scrubbed:
             text_scrubbed = f"{text_scrubbed} [DADOS_PESSOAIS_RECEBIDOS]".strip()
     uid = int(user_id) if user_id else None
