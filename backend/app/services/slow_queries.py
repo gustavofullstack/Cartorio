@@ -90,9 +90,15 @@ class SlowQueriesStore:
             if "timestamp" not in query_data:
                 query_data["timestamp"] = time.time()
 
-            # Serializa para JSON
+            # O middleware pode fornecer timestamp ISO; sorted sets exigem
+            # score numérico. Preserve o payload, mas normalize o score.
             member = json.dumps(query_data, default=str, ensure_ascii=False)
-            score = query_data["timestamp"]
+            try:
+                score = float(query_data["timestamp"])
+            except (TypeError, ValueError):
+                score = time.time()
+                query_data["timestamp"] = score
+                member = json.dumps(query_data, default=str, ensure_ascii=False)
 
             # ZADD no sorted set
             await client.zadd(SLOW_QUERIES_KEY, {member: score})
