@@ -92,8 +92,7 @@ def get_dpo_metrics(
     rights_30d = int(
         db.execute(
             text(
-                "SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' "
-                "AND timestamp >= :ts_30d"
+                "SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' AND timestamp >= :ts_30d"
             ),
             {"ts_30d": ts_30d},
         ).scalar()
