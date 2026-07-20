@@ -1044,7 +1044,10 @@ async def _handle_state(
     if state == STATE_AGENDAR_DATA:
         d = _parse_date(text)
         if not d:
-            return "Data invalida. Use DD/MM/AAAA:", state, None
+            if len(tl) > 10 or any(w in tl for w in ("cancelar", "sair", "menu", "voltar", "parar", "qual", "como", "onde", "valor", "procuracao", "certidao", "uai", "kkk", "funciona", "beleza", "obrigado")):
+                await _clear_state(bus, key)
+                return "", STATE_IDLE, None
+            return "Data invalida. Use DD/MM/AAAA (ex: 27/07/2026) ou digite /cancelar:", state, _menu_keyboard_with_cancel()
         state_data["data"] = d
         await _set_state(bus, key, STATE_AGENDAR_HORA, state_data)
         return (
@@ -1055,7 +1058,10 @@ async def _handle_state(
     if state == STATE_AGENDAR_HORA:
         h = _parse_time(text)
         if not h:
-            return "Horario invalido. Use HH:MM:", state, None
+            if len(tl) > 7 or any(w in tl for w in ("cancelar", "sair", "menu", "voltar", "parar", "qual", "como", "onde", "valor", "procuracao", "certidao", "uai", "kkk", "funciona", "beleza", "obrigado")):
+                await _clear_state(bus, key)
+                return "", STATE_IDLE, None
+            return "Horario invalido. Use HH:MM (ex: 14:30) ou digite /cancelar:", state, _menu_keyboard_with_cancel()
         state_data["hora"] = h
         await _set_state(bus, key, STATE_AGENDAR_CONFIRMAR, state_data)
         return (
@@ -1120,12 +1126,15 @@ def _parse_date(text: str) -> str | None:
     hoje = datetime.now()
     if t in ("hoje", "hj"):
         return hoje.strftime("%Y-%m-%d")
-    if t in ("amanha", "amanha", "am"):
+    if t in ("amanha", "amanhã", "am"):
         return (hoje + timedelta(days=1)).strftime("%Y-%m-%d")
-    m = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{4})$", t)
+    t_clean = re.sub(r"[.\-\s]+", "/", t)
+    m = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{2,4})$", t_clean)
     if m:
         try:
-            return datetime(int(m.group(3)), int(m.group(2)), int(m.group(1))).strftime("%Y-%m-%d")
+            day, month, year_str = int(m.group(1)), int(m.group(2)), m.group(3)
+            year = 2000 + int(year_str) if len(year_str) == 2 else int(year_str)
+            return datetime(year, month, day).strftime("%Y-%m-%d")
         except ValueError:
             return None
     return None
