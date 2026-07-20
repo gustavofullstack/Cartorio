@@ -1717,8 +1717,8 @@ async def health_radar() -> dict:
             ),
             probe_http(
                 client,
-                f"{settings.supabase_url}/auth/v1/health" if settings.supabase_url else None,
-                (200,),
+                f"{settings.supabase_url}/rest/v1/" if settings.supabase_url else None,
+                (200, 401),
             ),
         )
 
@@ -1818,7 +1818,7 @@ async def health_integracoes() -> dict:
             )
         if settings.supabase_url:
             checks_to_run["supabase"] = check(
-                "supabase", client.get(f"{settings.supabase_url}/auth/v1/health")
+                "supabase", client.get(f"{settings.supabase_url}/rest/v1/")
             )
         # OpenCode-Go LLM: usa endpoint /models se disponivel, senao root
         if settings.opencode_go_base_url:

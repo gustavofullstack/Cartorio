@@ -383,7 +383,7 @@ async def _check_health_category() -> dict[str, dict[str, Any]]:
         ("openclaw", settings.openclaw_base_url, "/health", (200,)),
         ("evolution", settings.evolution_base_url, "/", (200,)),
         ("chatwoot", settings.chatwoot_base_url, "/health", (200, 201)),
-        ("supabase", settings.supabase_url, "/auth/v1/health", (200,)),
+        ("supabase", settings.supabase_url, "/rest/v1/", (200, 401)),
         ("n8n", settings.n8n_base_url, "/healthz", (200,)),
     )
     async with httpx.AsyncClient(timeout=3.0) as client:

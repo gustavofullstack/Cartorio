@@ -1,0 +1,21 @@
+# Merge this fragment into Easypanel's file-provider custom.yaml.
+# The service name resolves on easypanel-cartorio via the container alias.
+http:
+  middlewares:
+    supabase-rest-strip:
+      stripPrefix:
+        prefixes:
+          - /rest/v1
+  services:
+    cartorio_supabase-postgrest:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://supabase-postgrest:3000/
+  routers:
+    supbase-https:
+      rule: Host(`supbase.2notasudi.com.br`) && PathPrefix(`/`)
+      service: cartorio_supabase-postgrest
+      entryPoints: [https]
+      middlewares: [supabase-rest-strip, bad-gateway-error-page]
+      priority: 20

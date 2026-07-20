@@ -89,7 +89,10 @@ async def supabase_health() -> bool:
     Returns:
         True se saudável, False caso contrário.
     """
-    url = f"{settings.supabase_url}/auth/v1/health"
+    # This deployment exposes the PostgREST-compatible REST surface. Auth
+    # (GoTrue) is a separate optional service, so health must prove the REST
+    # integration that the client actually consumes.
+    url = f"{settings.supabase_url}/rest/v1/"
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.get(url, headers=_headers())
