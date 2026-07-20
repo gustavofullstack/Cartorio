@@ -671,6 +671,44 @@ def test_webhook_group_msg_without_command_reacts_and_orients() -> None:
     assert call_kwargs.get("keyboard") is not None or call_kwargs.get("reply_markup") is not None
 
 
+def test_webhook_group_reply_to_bot_is_processed_as_conversation() -> None:
+    """A reply to this bot is a direct group conversation, not unrelated chatter."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    payload = {
+        "update_id": 99011,
+        "message": {
+            "message_id": 1000,
+            "chat": {"id": -1004331849032, "type": "supergroup"},
+            "from": {"id": 6682284055, "first_name": "Gustavo"},
+            "reply_to_message": {
+                "message_id": 999,
+                "from": {"id": 8859206262, "is_bot": True, "username": "test_cartorio_bot"},
+            },
+            "text": "Pode explicar melhor?",
+            "date": 1719227400,
+        },
+    }
+    with patch("app.api.v1.telegram.get_bus", return_value=None):
+        with patch(
+            "app.api.v1.telegram._call_cartorio_agent",
+            new=AsyncMock(return_value=("Resposta de teste", None)),
+        ):
+            with patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
+                with patch("app.api.v1.telegram._react", new=AsyncMock(return_value=True)):
+                    response = TestClient(app).post("/api/v1/telegram/webhook", json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "chat_id": -1004331849032,
+        "kind": "agent",
+        "response_sent": True,
+    }
+
+
 def test_telegram_webhook_handles_supergroup_chat() -> None:
     """Webhook responde 200 a update vindo de supergroup (chat_id negativo, type=supergroup).
     Licao 2026-07-08: Gustavo migrou grupo -5319980720 p/ supergroup -1004331849032.

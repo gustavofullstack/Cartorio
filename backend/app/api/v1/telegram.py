@@ -60,6 +60,15 @@ TELEGRAM_WEBHOOK_SECRET: str | None = (
     or os.environ.get("TELEGRAM_WEBHOOK_SECRET")
     or None
 )
+TELEGRAM_BOT_USERNAME = (
+    (
+        getattr(settings, "telegram_bot_username", None)
+        or os.environ.get("TELEGRAM_BOT_USERNAME", "")
+        or "test_cartorio_bot"
+    )
+    .lstrip("@")
+    .lower()
+)
 
 assert TELEGRAM_WEBHOOK_SECRET is None or isinstance(TELEGRAM_WEBHOOK_SECRET, str)
 
@@ -235,12 +244,12 @@ def telegram_html(text: str) -> str:
     common ``**destaque**`` and ``*ênfase*`` output readable in clients.
     """
     escaped = html.escape(text, quote=False)
+
     def _link_repl(match: re.Match[str]) -> str:
         label, url = match.group(1), match.group(2)
         host = (urlparse(url).hostname or "").lower().rstrip(".")
-        official = (
-            host in {"core.telegram.org", "telegram.org"}
-            or host.endswith(".2notasudi.com.br")
+        official = host in {"core.telegram.org", "telegram.org"} or host.endswith(
+            ".2notasudi.com.br"
         )
         if not official:
             return match.group(0)
@@ -2087,12 +2096,23 @@ async def telegram_webhook(
     conv = _conv_key(int(chat_id), int(user_id) if user_id else None, chat_type)
     bus = get_bus()
 
-    # Avoid spam: ignore group free-text UNLESS mid-flow (data/hora/protocolo/HITL).
+    # Avoid spam: ignore unrelated group free-text, but allow a direct reply to
+    # this bot as a natural conversational turn (not only @-mentions/commands).
     if chat_type in ("group", "supergroup"):
         clean_first_word = text.strip().split()[0].lower().lstrip("/") if text.strip() else ""
-        is_command = text.startswith("/") or clean_first_word in ("start", "menu", "agendar", "protocolo", "humano", "cancelar", "lgpd")
-        mentions_bot = "@test_cartorio_bot" in text or "test_cartorio" in text.lower()
-        if not is_command and not mentions_bot and not callback:
+        is_command = text.startswith("/") or clean_first_word in (
+            "start",
+            "menu",
+            "agendar",
+            "protocolo",
+            "humano",
+            "cancelar",
+            "lgpd",
+        )
+        mentions_bot = f"@{TELEGRAM_BOT_USERNAME}" in text.lower()
+        reply_from = message.get("reply_to_message", {}).get("from", {})
+        is_reply_to_bot = str(reply_from.get("username", "")).lower() == TELEGRAM_BOT_USERNAME
+        if not is_command and not mentions_bot and not is_reply_to_bot and not callback:
             mid_flow = False
             if bus:
                 st = await _get_state(bus, conv)
@@ -2164,7 +2184,15 @@ async def telegram_webhook(
             )
         return _finish({"status": "ignored", "kind": "callback", "chat_id": chat_id})
     raw_first_word = text.strip().split()[0].lower().split("@")[0] if text.strip() else ""
-    if text.startswith("/") or raw_first_word in ("start", "menu", "agendar", "protocolo", "humano", "cancelar", "lgpd"):
+    if text.startswith("/") or raw_first_word in (
+        "start",
+        "menu",
+        "agendar",
+        "protocolo",
+        "humano",
+        "cancelar",
+        "lgpd",
+    ):
         cmd = raw_first_word if raw_first_word.startswith("/") else f"/{raw_first_word}"
         if cmd not in ALLOWED_COMMANDS:
             await _react(chat_id, msg_id, "cross")

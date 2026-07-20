@@ -4,7 +4,7 @@
     "description": "\n# Cartorio Backend API\n\nAPI REST do **2o Servico Notarial de Uberlandia** para consulta de emolumentos,\nprotocolizacao de atos, gestao de atendimentos e auditoria imutavel.\n\n## Pilares\n\n- **Audit log imutavel**: hash chain SHA256 + HMAC. Cada acao deixa rastro verificavel.\n- **PII scrubbing**: CPF/telefone/email nunca saem crus pra LLM. Hasheados no DB (SHA256+salt).\n- **HITL obrigatorio**: protocolo sempre nasce em `DRAFT`. Escrevente valida antes de processar.\n- **LGPD compliance**: consentimento explicito, retencao 365 dias (conversas) / 1825 (audit).\n- **MCP nativo**: API expoe tools MCP via /mcp (protocolo 2025-03-26).\n\n## Tags disponiveis (10 tags, 15 endpoints)\n\n| Tag | Endpoints | Descricao |\n|-----|-----------|-----------|\n| `emolumento`  | 1   | Calculo de custas (TABELA_2026_MG) |\n| `protocolo`   | 2   | Criar e consultar protocolos |\n| `documento`   | 1   | Segunda via de documento |\n| `audit`       | 1   | Verificacao de cadeia de audit log |\n| `health`      | 2   | Liveness, readiness, radar |\n| `atendimento` | 4   | Handoff humano + pesquisa satisfacao |\n| `webhook`     | 2   | Integracao Evolution API / Chatwoot |\n| `meta`        | 3   | Health, MCP servers discovery |\n| `agendamento` | 1   | Disponibilidade de agenda |\n| `dev`         | 1   | Exports (Postman collection) |\n\n## Autenticacao\n\nAPI em si **NAO exige auth** (LGPD art. 7o, IV - finalidade publica do servico notarial).\nPara endpoints sensiveis (audit verify, webhook), usamos **HMAC ou header X-API-Key**\ncompartilhado com n8n (ver `N8N_WEBHOOK_SECRET` / `CARTORIO_API_KEY`).\n\n## MCP (Model Context Protocol)\n\nA propria API expoe tools MCP no endpoint `/mcp` (sub-app FastMCP montado, protocolo 2025-03-26).\nTools disponiveis:\n\n1. `cartorio_calcular_emolumento` - calculo MG 2026\n2. `cartorio_consultar_protocolo` - status, historico, proxima acao\n3. `cartorio_criar_protocolo` - criar DRAFT com gate LGPD\n4. `cartorio_gerar_segunda_via` - link download PDF\n5. `cartorio_audit_verify` - integridade hash chain + HMAC\n6. `cartorio_saudacao` - health check\n7. `super_server_info` - meta info (versao, tools_count, etc)\n\nLista de tools em `/mcp-servers`. Config em `~/.mavis/mcp/clients/cartorio-mcp-config.json`.\nTools description em `/tools_description.json`.\n\n## Compliance LGPD\n\n- Art. 7o, I  - Consentimento explicito (gate no POST /protocolo)\n- Art. 37    - Registro de operacoes de tratamento (audit log)\n- Art. 46    - Medidas de seguranca (HMAC + hash chain)\n- Retencao: 365 dias conversas, 1825 dias (5 anos) audit log\n- DPO: dpo@2notasudi.com.br\n\n## Stack\n\n- **API**: FastAPI 0.115 + SQLAlchemy 2 + Pydantic 2 + Pydantic Settings\n- **DB**: Supabase (PostgreSQL 15) via SQLAlchemy + Alembic\n- **Cache/Session**: Redis 7\n- **WhatsApp**: Evolution API (http://cartorio_evolution-api:8080)\n- **CRM**: Chatwoot\n- **Workflows**: n8n (https://cartorio-n8n.dfgdxq.easypanel.host)\n- **LLM primario**: Opencode-Go (deepseek-v4-flash, low cost)\n- **LLM secundario**: OpenClaw gateway (gpt-5.5 / anthropic-sonnet)\n- **MCP**: FastMCP 3.4.2 (protocolo 2025-03-26)\n\n## Contato\n\n- DPO: dpo@2notasudi.com.br\n- Repo: https://github.com/2notas/cartorio-backend\n- Issues: https://github.com/2notas/cartorio-backend/issues\n- Site: https://2notasudi.com.br\n\n\nGerado por scripts/postman_sync.py (G8.17.T1). Authorization SEMPRE via {{bearer_token}} variable. NUNCA persistir tokens reais.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "0.6.0",
-    "_postman_id": "cartorio-sync-1784549968"
+    "_postman_id": "cartorio-sync-1784552195"
   },
   "item": [
     {
@@ -3988,7 +3988,7 @@
     },
     {
       "name": "lgpd-cnj-export",
-      "description": "5 endpoints (tag: lgpd-cnj-export)",
+      "description": "6 endpoints (tag: lgpd-cnj-export)",
       "item": [
         {
           "name": "POST /api/v1/lgpd/cnj-exports/requests",
@@ -4211,6 +4211,46 @@
               ]
             },
             "description": "Download Cnj Export\n\nBaixa novamente artefato já gerado, sem regenerar indicadores.\n\noperationId: download_cnj_export_api_v1_lgpd_cnj_exports_requests__request_id__download_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/lgpd/cnj-exports/massive-dump",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{dpo_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/lgpd/cnj-exports/massive-dump",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "lgpd",
+                "cnj-exports",
+                "massive-dump"
+              ],
+              "variable": []
+            },
+            "description": "Massive Dump Cnj\n\nExportação em massa do Audit Log preservando a cadeia SHA256 (Padrão CNJ).\n\nRequer X-API-Key e JWT de DPO. O payload e o IP integral permanecem mascarados; hashes e metadados da cadeia são preservados.\n\noperationId: massive_dump_cnj_api_v1_lgpd_cnj_exports_massive_dump_get"
           },
           "response": []
         }

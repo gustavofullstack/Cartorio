@@ -5,10 +5,13 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_cartorio_api_key, require_dpo_role
 from app.db import get_db
+from app.models.audit_log import AuditLog
+from app.services.pii import scrub
 from app.schemas.cnj_export import (
     CNJExportApprovalCreate,
     CNJExportArtifactResponse,
@@ -221,6 +224,62 @@ def download_cnj_export(
             )
         },
     )
+
+
+@cnj_export_router.get(
+    "/massive-dump",
+    openapi_extra={"security": _CNJ_OPENAPI_SECURITY},
+)
+def massive_dump_cnj(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+    _dpo: dict[str, Any] = Depends(require_dpo_role),
+) -> StreamingResponse:
+    """Exportação em massa do Audit Log preservando a cadeia SHA256 (Padrão CNJ).
+
+    Exige API key e JWT de DPO. O payload e o IP integral permanecem
+    mascarados no pacote destinado ao CNJ; a cadeia/hash de auditoria é
+    preservada para verificação independente.
+    """
+    import json
+
+    def _stream_audit_logs():
+        yield "[\n"
+        first = True
+        # yield_per iterando para nao estourar RAM com dump massivo
+        for log in db.query(AuditLog).order_by(AuditLog.id.asc()).yield_per(1000):
+            if not first:
+                yield ",\n"
+            first = False
+
+            payload_str = json.dumps(log.payload, ensure_ascii=False)
+            payload_str = scrub(payload_str).text
+
+            scrubbed_payload = json.loads(payload_str)
+
+            item = {
+                "id": log.id,
+                "actor_id": log.actor_id,
+                "actor_type": log.actor_type,
+                "action": log.action,
+                "resource": log.resource,
+                "payload": scrubbed_payload,
+                "ip_truncated": log.ip_truncated,
+                "user_agent": log.user_agent,
+                "request_id": log.request_id,
+                "canal": log.canal,
+                "prev_hash": log.prev_hash,
+                "hash": log.hash,
+                "hmac_signature": log.hmac_signature,
+                "hmac_kid": log.hmac_kid,
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+            }
+
+            yield json.dumps(item, ensure_ascii=False)
+        yield "\n]"
+
+    return StreamingResponse(_stream_audit_logs(), media_type="application/json")
 
 
 __all__ = ["cnj_export_router"]

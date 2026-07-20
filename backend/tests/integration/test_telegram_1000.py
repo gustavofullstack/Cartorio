@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import AsyncMock
-from app.api.v1.telegram import _send_message
 from app.services.cartorio_agent import sanitize_bot_output
 from app.api.v1.telegram import format_bot_text
 
@@ -37,7 +36,7 @@ async def test_1000_human_like_interactions(mocker):
     mock_post.return_value.json.return_value = {"ok": True}
 
     from app.api.v1.telegram import _send_message
-    
+
     # Executa as iteracoes para validar que nenhuma delas quebra a formatacao HTML
     success_count = 0
     for i in range(1000):
