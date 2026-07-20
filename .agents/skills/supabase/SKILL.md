@@ -17,7 +17,7 @@ description: |
 | **Studio** | `https://supbase.2notasudi.com.br:3000` |
 | **ANON Key** | Ver `backend/.env` SUPABASE_ANON_KEY |
 | **Service Role Key** | Ver `backend/.env` SUPABASE_SERVICE_ROLE_KEY |
-| **DB Direto** | `postgresql+psycopg://supabase_admin:e999b7...@db:5432/cartorio` |
+| **DB Direto** | `postgresql+psycopg://supabase_admin:<COLE_DB_PASSWORD>@db:5432/cartorio` |
 | **Alembic Head** | `0015` |
 | **Tabelas Total** | 134 (public schema) |
 | **Tabelas Core** | 13 tabelas aplicativas do Cartório |
@@ -180,8 +180,7 @@ SUPABASE_DB_URL=postgresql+psycopg://supabase_admin:...@db:5432/cartorio
       "-y",
       "@modelcontextprotocol/server-postgres",
       "--connection-string",
-      "postgresql://supabase_admin:e999b7...@100.99.172.84:5432/cartorio"
+      "postgresql://supabase_admin:<COLE_DB_PASSWORD>@100.99.172.84:5432/cartorio"
     ]
   }
   ```
-

@@ -86,7 +86,7 @@ def main() -> int:
     if args.dry_run or not args.apply:
         print("[DRY-RUN] setWebhook NÃO enviado. Use --apply para executar.")
         print(
-            "params: allowed_updates=message,callback_query,my_chat_member "
+            "params: allowed_updates=message,edited_message,callback_query,my_chat_member "
             "drop_pending_updates=true"
         )
         return 0
@@ -94,7 +94,7 @@ def main() -> int:
     payload = {
         "url": args.url,
         "allowed_updates": json.dumps(
-            ["message", "callback_query", "my_chat_member"]
+            ["message", "edited_message", "callback_query", "my_chat_member"]
         ),
         "drop_pending_updates": "true",
     }

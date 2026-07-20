@@ -23,10 +23,10 @@ para hospedar coding agents AI (alternativas ao Claude Code) que usam o provider
 | **SSH Key** | `~/.ssh/id_ed25519_cartorio` |
 | **Easypanel URL** | `http://100.99.172.84:3000` |
 | **Easypanel User** | `gustavomar.fullstack@gmail.com` |
-| **Easypanel Password** | `@Techno832466` |
+| **Easypanel Password** | `<REDACTED_USE_ENV>` |
 | **Easypanel API Base** | `/api/rpc/` (v2) |
 | **MiniMax API** | `https://api.minimaxi.com/v1` |
-| **MiniMax Key** | `sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s` |
+| **MiniMax Key** | `<REDACTED_USE_ENV>` |
 | **LiteLLM Proxy VPS** | `http://coding-vps_apenas_para_auxilio_litellm-app:4000` |
 | **LiteLLM Master Key** | `e39dss0k1baohuqkprjv` |
 | **Infra Path VPS** | `/opt/coding-vps-infra/` |
@@ -43,7 +43,7 @@ BASE = "http://100.99.172.84:3000"
 def login():
     req = urllib.request.Request(
         f"{BASE}/api/rpc/auth/login",
-        data=json.dumps({"json": {"email": "gustavomar.fullstack@gmail.com", "password": "@Techno832466", "rememberMe": True}}).encode(),
+        data=json.dumps({"json": {"email": "<EASEPANEL_EMAIL>", "password": os.environ["EASYPANEL_PASSWORD"], "rememberMe": True}}).encode(),
         headers={"Content-Type": "application/json"},
     )
     with urllib.request.urlopen(req) as r:

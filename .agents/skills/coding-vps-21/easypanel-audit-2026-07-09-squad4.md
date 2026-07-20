@@ -126,7 +126,7 @@ docker service update --force coding-vps-agents_hermes
 # Login API v2 (programatic)
 TOKEN=$(curl -s -X POST http://100.99.172.84:3000/api/rpc/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"json":{"email":"gustavomar.fullstack@gmail.com","password":"@Techno832466","rememberMe":true}}' \
+  -d '{"json":{"email":"<EASEPANEL_EMAIL>","password":"$EASYPANEL_PASSWORD","rememberMe":true}}' \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['json']['token'])")
 ```
 

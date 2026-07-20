@@ -14,7 +14,7 @@ description: |
 | Item | Valor |
 |------|-------|
 | **URL Base** | `https://chat.2notasudi.com.br` |
-| **API Token** | `TgSMyCg134D2GWZ38PaV3N5S` |
+| **API Token** | `<REDACTED_USE_ENV>` |
 | **Account ID** | `1` |
 | **Telegram Inbox ID** | `1` (test_cartorio_bot) |
 | **Header de Auth** | `api_access_token: <token>` |
@@ -153,4 +153,3 @@ curl -H "api_access_token: <REDACTED_USE_ENV>" \
   - `chatwoot_list_conversations(status: str)`: Lista conversas abertas.
   - `chatwoot_send_message(conv_id: int, text: str)`: Envia resposta ao cliente.
   - `chatwoot_toggle_agent(conv_id: int, paused: bool)`: Ativa/desativa Pietra (HITL).
-

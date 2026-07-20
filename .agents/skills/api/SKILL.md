@@ -107,9 +107,9 @@ backend/
 
 ```env
 DATABASE_URL=postgresql+psycopg://supabase_admin:...@db:5432/cartorio
-REDIS_URL=redis://default:@Techno832466@db:6379/0
+REDIS_URL=redis://default:<COLE_REDIS_PASSWORD>@db:6379/0
 OPENCLAW_BASE_URL=https://agent.2notasudi.com.br
-OPENCLAW_API_KEY=@Techno832466
+OPENCLAW_API_KEY=<COLE_OPENCLAW_API_KEY>
 OPENCODE_GO_API_KEY=<REDACTED - use .env>
 TELEGRAM_WEBHOOK_SECRET=mysecret
 ```

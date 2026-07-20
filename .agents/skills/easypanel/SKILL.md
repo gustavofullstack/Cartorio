@@ -13,7 +13,7 @@ description: |
 | Item | Valor |
 |------|-------|
 | **URL** | `https://easypanel.2notasudi.com.br` |
-| **API Key** | `1a8ce30b87e79ea57626ade3b4b6215320ff9938472de00ed8eb033213bfac04` |
+| **API Key** | `<REDACTED_USE_ENV>` |
 | **Projeto** | `cartorio` |
 | **Admin** | `admin@2notasudi.com.br` |
 | **Auth Header** | `Authorization: Bearer <api_key>` |
@@ -22,7 +22,7 @@ description: |
 
 ```bash
 BASE=https://easypanel.2notasudi.com.br
-KEY=1a8ce30b87e79ea57626ade3b4b6215320ff9938472de00ed8eb033213bfac04
+KEY=<COLE_EASYPANEL_API_KEY>
 
 # Listar projetos
 curl -H "Authorization: Bearer $KEY" $BASE/api/trpc/projects.list
@@ -112,7 +112,7 @@ docker stack ps cartorio
 
 ```env
 EASYPANEL_URL=https://easypanel.2notasudi.com.br
-EASYPANEL_API_KEY=1a8ce30b87e79ea57626ade3b4b6215320ff9938472de00ed8eb033213bfac04
+EASYPANEL_API_KEY=<COLE_EASYPANEL_API_KEY>
 EASYPANEL_PROJECT=cartorio
 ```
 
@@ -131,4 +131,3 @@ EASYPANEL_PROJECT=cartorio
 - **Tools MCP**:
   - `easypanel_deploy_service(projectName: str, serviceName: str)`: Dispara deploy via API trpc.
   - `easypanel_get_service_logs(projectName: str, serviceName: str)`: Recupera logs.
-

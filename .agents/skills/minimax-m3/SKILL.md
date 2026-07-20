@@ -18,7 +18,7 @@ description: |
 | **Provider** | MiniMax.io Coding Plan |
 | **Model** | `MiniMax-M3` |
 | **Thinking** | XMax Thinking (automatico) |
-| **API Key direta** | `sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s` |
+| **API Key direta** | `<COLE_MINIMAX_API_KEY>` |
 | **Base URL direta** | `https://api.minimaxi.com/v1` |
 | **LiteLLM proxy (VPS)** | `http://coding-vps_apenas_para_auxilio_litellm-app:4000` |
 | **LiteLLM master key** | `e39dss0k1baohuqkprjv` |
@@ -48,7 +48,7 @@ curl -sk -H "Authorization: Bearer e39dss0k1baohuqkprjv" \
 ```bash
 # ATENCAO: sk-cp-* key direto retorna 401 via curl externo (lesson 2026-07-08).
 # SEMPRE usar via LiteLLM proxy. Se precisar da key direta:
-curl -sk -H "Authorization: Bearer sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s" \
+curl -sk -H "Authorization: Bearer $MINIMAX_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"MiniMax-M3","messages":[{"role":"user","content":"OK"}]}' \
   https://api.minimaxi.com/v1/chat/completions
@@ -135,7 +135,7 @@ async def ask_minimax(prompt: str, max_tokens: int = 500) -> str:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimaxi.com/v1
-    api_key: sk-cp-kRIbiqKy9F-...
+    api_key: os.environ["MINIMAX_API_KEY"]
 ```
 
 ## Validacao (testado 2026-07-08)

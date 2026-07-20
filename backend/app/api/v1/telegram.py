@@ -104,6 +104,8 @@ SERVICOS: dict[str, tuple[str, str]] = {
 BOT_COMMANDS = [
     {"command": "start", "description": "Iniciar (aviso LGPD + Agent AI)"},
     {"command": "menu", "description": "Atalhos (so se precisar)"},
+    {"command": "agendar", "description": "Agendar atendimento"},
+    {"command": "protocolo", "description": "Consultar protocolo"},
     {"command": "humano", "description": "Atendimento humano / HITL"},
     {"command": "cancelar", "description": "Cancelar e limpar conversa"},
     {"command": "lgpd", "description": "Privacidade e direitos LGPD"},
@@ -1921,7 +1923,7 @@ async def telegram_webhook(
         store.inc_counter("cartorio_telegram_erros_total")
         raise
     _verify_telegram_secret(x_telegram_bot_api_secret_token)
-    message = update.get("message", {})
+    message = update.get("message", {}) or update.get("edited_message", {})
     callback = update.get("callback_query", {})
     my_chat_member = update.get("my_chat_member", {})
     chat_id = (
@@ -1971,6 +1973,9 @@ async def telegram_webhook(
     # Aceita foto+caption, doc+caption, etc.
     attachments: list[dict] = []
     caption = message.get("caption", "")
+    # Telegram mantém a legenda separada de ``text``; promovê-la preserva
+    # perguntas anexadas a fotos e documentos para o Agent AI.
+    text = text or caption
     if message.get("photo"):
         # photo vem como lista ordenada por tamanho; pegar maior
         photo = message["photo"][-1]
