@@ -1,6 +1,6 @@
 # 🧠 SUPER PROMPT — PROJETO CARTÓRIO 2º NOTAS UBERLÂNDIA
 # ═══════════════════════════════════════════════════════════════════════════════
-# VERSÃO: 4.5.0 | DATA: 2026-07-01 | AUTOR: Gustavo Almeida
+# VERSÃO: 4.6.0 | DATA: 2026-07-20 | AUTOR: Gustavo Almeida
 # PROJETO: Cartório 2º Notas Uberlândia — Agent AI Chatbot (Pietra Cartório)
 # REPOSITÓRIO: gustavofullstack/Cartorio
 # DOMÍNIO: 2notasudi.com.br
@@ -9,7 +9,39 @@
 
 > **LEIA ESTE DOCUMENTO ANTES DE QUALQUER AÇÃO.**
 > **NADA PODE SER ESQUECIDO OU IGNORADO.**
-> **ESTE É O DOCUMENTO VIVO DO PROJETO — ATUALIZADO EM 2026-07-01.**
+> **ESTE É O DOCUMENTO VIVO DO PROJETO — ATUALIZADO EM 2026-07-20.**
+
+---
+
+## 🟢 ESTADO ATUAL — 2026-07-20 (v4.6.0)
+
+**HEAD `origin/master` = `6967b71`.** Resumo executivo do que mudou desde 2026-07-01:
+
+| Área | Estado | Evidência |
+|---|---|---|
+| Telegram bot `@test_cartorio_bot` | ✅ **funcional e validado em prod** | `/start` em chat real → `response_sent=true`; webhook com secret OK; `pending_update_count=0` (2026-07-20) |
+| Fix Telegram (A1–A6) | ✅ commitado | `d642e0e` — webhook nunca-5xx (ack 200 + DLQ, único 401 = secret), sync só pelo worker líder com `secret_token` obrigatório, debounce por `chat_id:user_id`, feedback garantido (nunca silêncio) |
+| LLM OpenCode Zen | ✅ **3 contas integradas** | `bc9823c` — slots coerentes (tupla `API_KEY`+`BASE_URL`+`MODEL` por conta), timeout global 45s/tentativa, payload por provider (zen free = mínimo), fallback chain determinística com circuit breaker |
+| CNJ massive-dump | ✅ endpoint implementado | `ff599aa`/`0d15da6`/`6c029fc` — streaming + scrub PII + API key + JWT DPO + gate de audit |
+| Bateria de testes | ✅ **1000 PASS** | `test_telegram_1000.py` + suíte completa; E2E Telegram 18/20; coverage ≥ 90% |
+| Núcleo `cartorio-ai/` | ✅ preenchido | 15 arquivos-núcleo (C4) + 28 registries/docs (A4); plano G9 reformatado **10 squads × 10 tasks** (25/100 concluídas) |
+
+### Topologia de execução (obrigatória)
+
+| Nó | Alias SSH | Papel |
+|---|---|---|
+| VAIO `192.168.1.2` | `pc-linux-local` | **runner dev** — testes pesados, builds (Tailscale do VAIO instável → usar IP local) |
+| VPS `187.77.236.77` | `vps-public` | **produção** — Docker Swarm 19 serviços 1/1 (EasyPanel + Traefik, 6 domínios SSL) |
+| VPS Tailscale `100.99.172.84` | `vps` | ⚠️ instável — preferir `vps-public` |
+| MacBook | — | **somente cliente SSH** — nunca executar carga pesada |
+
+SSH sempre `ssh -o ConnectTimeout=8 -o BatchMode=yes`, comandos únicos bounded (`timeout 20` / `--tail N`). Proibido sessão interativa, loops infinitos e `tail -f` sem limite.
+
+### Correções de referências obsoletas
+
+- **Cofre `~/.mavis/secrets` NÃO existe** — segredos vivem em `.env` / `.secrets` (locais, gitignored) e nas envs do EasyPanel. `~/.mavis/mcp/clients/cartorio-mcp-config.json` é apenas config de clientes MCP.
+- Tabela de emolumentos vigente: **MG 2026** (`backend/app/services/emolumento.py`).
+- Versões companheiras: `PROMPT.json` v4.6.0 · `PROMPT-2.MD`/`PROMPT-2.json` v2.1 · `docs/PROMPTS-INDEX.md` sincronizado.
 
 ---
 
@@ -3523,14 +3555,16 @@ MANTER COMPANHEIRO JSON:
 | 2.0.0 | 2026-06-23 | Adição de chaves, Jules, Linear, Render |
 | 3.0.0 | 2026-06-25 | Reorganização completa em 1000+ linhas, seções numeradas, tabelas, diagramas, JSON companion |
 | 4.0.0 | 2026-06-25 | Versão massiva: 2000+ linhas, 26 blocos, plano 7 dias, histórico completo, todos os squads DONE |
+| 4.5.0 | 2026-07-01 | Turn 50 estabilizado: Telegram bot v2.x, fixes de latência, fallback providers, skills/scripts de validação |
+| 4.6.0 | 2026-07-20 | Telegram fix validado em prod (HEAD `6967b71`, commits `d642e0e`/`bc9823c`), 3 contas OpenCode Zen (slots coerentes, timeout 45s, payload por provider), topologia VAIO runner/VPS prod/MacBook cliente, remoção de refs obsoletas (cofre `~/.mavis/secrets`), CNJ massive-dump, 1000 testes PASS |
 
 ---
 
-> **FIM DO SUPER PROMPT — VERSÃO 4.0.0**
+> **FIM DO SUPER PROMPT — VERSÃO 4.6.0**
 > **Projeto Cartório 2º Notas Uberlândia**
 > **CEO: Gustavo Almeida**
 > **Agent: Braço Direito — Pietra (Mavis/Antigravity)**
-> **Data: 2026-06-25**
+> **Data: 2026-07-20**
 
 ```
 NÃO ESQUEÇA NADA DESTE SUPER PROMPT!

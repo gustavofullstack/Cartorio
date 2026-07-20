@@ -1,6 +1,6 @@
 # 🧠 SUPER PROMPT 2 — EASYPANEL + DOCKER SWARM + UDIA PODS
 # ═══════════════════════════════════════════════════════════════════════════════
-# VERSÃO: 2.0 (RECONSTRUÍDO 2026-07-02 17:57 BRT)
+# VERSÃO: 2.1 (ATUALIZADO 2026-07-20)
 # AUTOR: Gustavo Almeida
 # PROJETO: Cartório 2º Notas Uberlândia — Infraestrutura Multi-Tenant
 # AMBIENTE: Easypanel v2.32.0 + Docker Swarm + Tailscale
@@ -8,9 +8,26 @@
 # CLASSIFICAÇÃO: DOCUMENTO MESTRE — INFRASTRUCTURE LAYER
 # ═══════════════════════════════════════════════════════════════════════════════
 
-> **Fonte absoluta:** `prompt-2.json` (635 linhas estruturadas)
+> **Fonte absoluta:** `prompt-2.json` (635+ linhas estruturadas)
 > **Gerado automaticamente em:** 2026-07-02 17:57 BRT por /goal master intent
+> **Atualizado em:** 2026-07-20 (v2.1 — estado de infra e topologia)
 > **Convenção:** append-only. Sincronizar com JSON a cada mudança.
+
+---
+
+## 🟢 ESTADO ATUAL — 2026-07-20 (v2.1)
+
+| Item | Valor validado |
+|---|---|
+| HEAD `origin/master` | `6967b71` (telegram fix `d642e0e` + zen 3 contas `bc9823c`) |
+| Swarm produção | **19 serviços 1/1** na VPS (cartorio_api, chatwoot, evolution-api, lobechat, n8n, openclaw-gateway, redis, supabase pgvector pg17, traefik, etc.) |
+| VPS acesso estável | `vps-public` = 187.77.236.77 (root) — preferir; `vps` = 100.99.172.84 (Tailscale) **instável** |
+| Runner dev | VAIO `pc-linux-local` = 192.168.1.2 (ubuntu-server) — Tailscale do VAIO instável → usar IP local |
+| MacBook | somente cliente SSH — nunca carga pesada |
+| Telegram | `@test_cartorio_bot` validado em prod 2026-07-20 (`response_sent=true`, secret OK, pending=0) |
+| LLM | 3 contas OpenCode Zen integradas (slots coerentes, timeout 45s, payload por provider, fallback determinístico + circuit breaker) |
+| Segredos | cofre `~/.mavis/secrets` **inexistente** — usar `.env`/`.secrets` gitignored + envs EasyPanel |
+| SSH | sempre `-o ConnectTimeout=8 -o BatchMode=yes`, comandos únicos bounded — proibido interativo/loop/`tail -f` sem limite |
 
 ---
 

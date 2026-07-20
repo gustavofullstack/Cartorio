@@ -3,6 +3,10 @@
 > **Gerado por**: skill `/prompt-cartorio` em 2026-07-02T19:00Z
 > **Propósito**: documentar e cruzar os 4 arquivos de prompt que coexistem no repo root.
 > **Status**: cross-ref ativo · sem alteração de conteúdo dos arquivos originais.
+> **Sync 2026-07-20**: versões atualizadas — `PROMPT.MD`/`PROMPT.json` → **4.6.0**, `PROMPT-2.MD`/`PROMPT-2.json` → **2.1**.
+> Fatos novos: HEAD `6967b71` (telegram validado em prod), 3 contas OpenCode Zen (slots coerentes, timeout 45s),
+> topologia VAIO runner dev / VPS prod / MacBook cliente SSH, cofre `~/.mavis/secrets` inexistente,
+> SUPER PLANO G9 reformatado para 10 squads × 10 tasks, núcleo `cartorio-ai/` expandido (15+28 arquivos).
 
 ---
 
@@ -10,10 +14,10 @@
 
 | Arquivo | Versão | Escopo | Origem | Status git | Função |
 |---|---|---|---|---|---|
-| `PROMPT.MD` | 4.5.0 | **Projeto local** | Gustavo Almeida (2026-07-01) | tracked | Master prompt canônico do Cartório |
-| `PROMPT.json` | 4.5.0 | **Projeto local** | Gustavo Almeida (2026-07-01) | tracked | Metadata JSON companion |
-| `PROMPT-2.MD` | (sem versão) | **Painel remoto Easypanel** | Gustavo Almeida (2026-07-02T16:01) | **untracked** | Briefing pasted (12 linhas) |
-| `PROMPT-2.json` | 2.0 | **Painel remoto Easypanel** | Gustavo Almeida (2026-07-02T12:39Z) | **untracked** | JSON estruturado (635 linhas) |
+| `PROMPT.MD` | 4.6.0 | **Projeto local** | Gustavo Almeida (2026-07-20) | tracked | Master prompt canônico do Cartório |
+| `PROMPT.json` | 4.6.0 | **Projeto local** | Gustavo Almeida (2026-07-20) | tracked | Metadata JSON companion |
+| `PROMPT-2.MD` | 2.1 | **Painel remoto Easypanel** | Gustavo Almeida (2026-07-20) | **untracked** | Briefing infra + estado 2026-07-20 |
+| `PROMPT-2.json` | 2.1 | **Painel remoto Easypanel** | Gustavo Almeida (2026-07-20) | **untracked** | JSON estruturado + changelog v2.1 |
 
 ---
 

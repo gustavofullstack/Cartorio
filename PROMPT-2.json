@@ -1,11 +1,13 @@
 {
   "meta": {
-    "version": "2.0",
+    "version": "2.1",
     "created_at": "2026-07-02T12:39:00Z",
     "project": "cartorio-easypanel-mcp",
     "author": "Gustavo Almeida",
     "environment": "Easypanel v2.32.0 + Docker Swarm",
-    "ip": "100.99.172.84:3000"
+    "ip": "100.99.172.84:3000",
+    "updated_at": "2026-07-20",
+    "changelog": "v2.1 (2026-07-20): HEAD 6967b71 telegram validado em prod; 19 servicos Swarm 1/1; topologia VAIO pc-linux-local=runner dev (IP local, Tailscale instavel), VPS vps-public=prod, MacBook=cliente SSH; 3 contas OpenCode Zen (slots coerentes, timeout 45s, payload por provider); cofre ~/.mavis/secrets inexistente (.env/.secrets + envs EasyPanel); SSH sempre BatchMode bounded"
   },
   "system": {
     "role": "SUPER_AGENT_ORQUESTRADOR",
