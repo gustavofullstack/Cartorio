@@ -18,7 +18,7 @@ LGPD-by-design:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
@@ -29,35 +29,6 @@ from app.api.deps import require_cartorio_api_key, require_dpo_role
 from app.db import get_db
 
 dpo_dashboard_router = APIRouter(tags=["lgpd-dpo-dashboard"], prefix="/lgpd/dpo")
-
-
-# ============================================================================
-# Helper: detectar dialecto (PostgreSQL prod vs SQLite test)
-# ============================================================================
-
-
-def _interval_days_sqlite(days: int) -> str:
-    """Expressao SQL compativel com SQLite test para now - N days."""
-    return f"datetime('now', '-{days} days')"
-
-
-def _interval_days_postgres(days: int) -> str:
-    """Expressao SQL compativel com PostgreSQL prod para now - N days."""
-    return f"NOW() - INTERVAL '{days} days'"
-
-
-def _detect_dialect(db: Session) -> str:
-    """Detecta SQLAlchemy dialect do session (sqlite|postgresql)."""
-    if db.bind is None:
-        return "postgresql"
-    return db.bind.dialect.name
-
-
-def _now_minus_days_expr(db: Session, days: int) -> str:
-    """Retorna SQL literal para 'now() - N days' compativel com o dialecto ativo."""
-    if _detect_dialect(db) == "sqlite":
-        return _interval_days_sqlite(days)
-    return _interval_days_postgres(days)
 
 
 # ============================================================================
@@ -89,9 +60,10 @@ def get_dpo_metrics(
     """Dashboard metrics (D25)."""
     from app.models.audit_log import AuditLog
 
-    # Cross-dialect: usa expressoes raw compativeis
-    ts_30d = _now_minus_days_expr(db, 30)
-    ts_1d = _now_minus_days_expr(db, 1)
+    # Cross-dialect: calcula bounds em Python
+    now = datetime.now(timezone.utc)
+    ts_30d = now - timedelta(days=30)
+    ts_1d = now - timedelta(days=1)
 
     # Clientes ativos vs anonimizados
     total_clientes = int(db.execute(text("SELECT COUNT(*) FROM clientes")).scalar() or 0)
@@ -109,30 +81,36 @@ def get_dpo_metrics(
     # Audit entries: total + ultimas 24h
     total_audit = int(db.execute(text("SELECT COUNT(*) FROM audit_log")).scalar() or 0)
     audit_24h = int(
-        db.execute(text(f"SELECT COUNT(*) FROM audit_log WHERE timestamp >= {ts_1d}")).scalar() or 0
+        db.execute(
+            text("SELECT COUNT(*) FROM audit_log WHERE timestamp >= :ts_1d"),
+            {"ts_1d": ts_1d},
+        ).scalar()
+        or 0
     )
 
     # Rights exercised (ultimos 30 dias) — ações LGPD no audit
     rights_30d = int(
         db.execute(
             text(
-                f"SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' "
-                f"AND timestamp >= {ts_30d}"
-            )
+                "SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' "
+                "AND timestamp >= :ts_30d"
+            ),
+            {"ts_30d": ts_30d},
         ).scalar()
         or 0
     )
 
     # Retention queue size — clientes com ultimo protocolo >5y atras
-    ts_5y = _now_minus_days_expr(db, 1825)
+    ts_5y = now - timedelta(days=1825)
     retention_queue_size = int(
         db.execute(
             text(
                 "SELECT COUNT(DISTINCT c.id) FROM clientes c "
                 "LEFT JOIN protocolos p ON p.cliente_id = c.id "
                 "WHERE c.deleted_at IS NULL "
-                f"AND (p.created_at IS NULL OR p.created_at < {ts_5y})"
-            )
+                "AND (p.created_at IS NULL OR p.created_at < :ts_5y)"
+            ),
+            {"ts_5y": ts_5y},
         ).scalar()
         or 0
     )
@@ -347,36 +325,22 @@ def get_dpo_retention_queue(
     from app.services.audit import AuditService
     from app.services.audit_context import audit_kwargs
 
-    ts_5y = _now_minus_days_expr(db, 1825)
+    ts_5y = datetime.now(timezone.utc) - timedelta(days=1825)
 
     # Cross-dialect query — clientes que NAO foram tocados por 5+ anos
-    if _detect_dialect(db) == "sqlite":
-        # SQLite eh so pra testes — simplificado
-        stmt = text(
-            "SELECT c.id, c.nome, c.cpf_hash, c.created_at, "
-            "MAX(p.created_at) AS ultimo_protocolo "
-            "FROM clientes c "
-            "LEFT JOIN protocolos p ON p.cliente_id = c.id "
-            f"WHERE c.deleted_at IS NULL "
-            f"AND (c.created_at < {ts_5y} OR p.created_at < {ts_5y} "
-            f"OR (p.created_at IS NULL AND c.created_at < {ts_5y})) "
-            "GROUP BY c.id "
-            "ORDER BY c.created_at ASC LIMIT :limit"
-        )
-    else:
-        # PostgreSQL prod
-        stmt = text(
-            "SELECT c.id, c.nome, c.cpf_hash, c.created_at, "
-            "MAX(p.created_at) AS ultimo_protocolo "
-            "FROM clientes c "
-            "LEFT JOIN protocolos p ON p.cliente_id = c.id "
-            "WHERE c.deleted_at IS NULL "
-            f"AND (c.created_at < {ts_5y} OR p.created_at < {ts_5y}) "
-            "GROUP BY c.id "
-            "ORDER BY c.created_at ASC LIMIT :limit"
-        )
+    stmt = text(
+        "SELECT c.id, c.nome, c.cpf_hash, c.created_at, "
+        "MAX(p.created_at) AS ultimo_protocolo "
+        "FROM clientes c "
+        "LEFT JOIN protocolos p ON p.cliente_id = c.id "
+        "WHERE c.deleted_at IS NULL "
+        "AND (c.created_at < :ts_5y OR p.created_at < :ts_5y "
+        "OR (p.created_at IS NULL AND c.created_at < :ts_5y)) "
+        "GROUP BY c.id "
+        "ORDER BY c.created_at ASC LIMIT :limit"
+    )
 
-    rows = db.execute(stmt, {"limit": int(limit)}).mappings().all()
+    rows = db.execute(stmt, {"limit": int(limit), "ts_5y": ts_5y}).mappings().all()
 
     # Mascaramento PII (LGPD-by-design)
     def _coerce_dt(value: Any) -> datetime | None:
