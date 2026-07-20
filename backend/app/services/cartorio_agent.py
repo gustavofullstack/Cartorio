@@ -61,6 +61,26 @@ LITELLM_URLS = [
 LITELLM_KEY = os.environ.get("LITELLM_API_KEY", "")
 LITELLM_MODEL = os.environ.get("CARTORIO_AGENT_MODEL", "MiniMax-M3")
 
+# OpenCode Zen free accounts are an independent, credential-isolated fallback
+# chain.  Values are injected by the secret manager; no key belongs in source.
+OPENCODE_FREE_CONFIGS = [
+    (
+        os.environ.get("OPENCODE_FREE_1_API_KEY", ""),
+        os.environ.get("OPENCODE_FREE_1_BASE_URL", "https://opencode.ai/zen/v1"),
+        os.environ.get("OPENCODE_FREE_1_MODEL", "nemotron-3-ultra-free"),
+    ),
+    (
+        os.environ.get("OPENCODE_FREE_2_API_KEY", ""),
+        os.environ.get("OPENCODE_FREE_2_BASE_URL", "https://opencode.ai/zen/v1"),
+        os.environ.get("OPENCODE_FREE_2_MODEL", "mimo-v2.5-free"),
+    ),
+    (
+        os.environ.get("OPENCODE_FREE_3_API_KEY", ""),
+        os.environ.get("OPENCODE_FREE_3_BASE_URL", "https://opencode.ai/zen/v1"),
+        os.environ.get("OPENCODE_FREE_3_MODEL", "deepseek-v4-flash-free"),
+    ),
+]
+
 AGENT_SYSTEM = """Voce e o Agent AI do Cartorio 2o Oficio de Notas de Uberlandia/MG.
 
 IDENTIDADE
@@ -644,6 +664,38 @@ async def _chat_completion(
                 except Exception as exc:
                     last_err = f"{base} {type(exc).__name__}: {exc}"
                     logger.warning("cartorio_agent litellm fail: %s", last_err)
+
+        # Public free providers are tried only after the private/direct paths.
+        # Keep each account isolated so one exhausted quota does not stop the
+        # remaining free-model fallbacks.
+        for slot, (api_key, base, model) in enumerate(OPENCODE_FREE_CONFIGS, start=1):
+            if not api_key or not base or not model:
+                continue
+            url = (
+                base
+                if base.endswith("/chat/completions")
+                else f"{base.rstrip('/')}/chat/completions"
+                if base.rstrip("/").endswith("/v1")
+                else f"{base.rstrip('/')}/v1/chat/completions"
+            )
+            try:
+                r = await client.post(
+                    url,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={**payload_base, "model": model},
+                )
+                if r.status_code != 200:
+                    last_err = f"opencode_free_{slot} HTTP {r.status_code}"
+                    continue
+                data = r.json()
+                msg = data.get("choices", [{}])[0].get("message") or {}
+                return msg, f"opencode_free_{slot}:{model}", ""
+            except Exception as exc:
+                last_err = f"opencode_free_{slot} {type(exc).__name__}"
+                logger.warning("cartorio_agent opencode_free_%d fail: %s", slot, last_err)
 
     return None, "none", last_err
 

@@ -53,7 +53,8 @@ ENDPOINT_MARKERS: dict[str, str] = {
     "GET /health": r'@router\.(get|api_route)\("/health"',
     "GET /metrics": r'@router\.(get|api_route)\("/metrics"',
     "GET /webhook/info": r'@router\.(get|api_route)\("/webhook/info"',
-    "POST /webhook": r'@router\.(post|api_route)\("/webhook"',
+    # FastAPI decorators are commonly formatted over multiple lines.
+    "POST /webhook": r'@router\.(?:post|api_route)\(\s*["\']/?webhook["\']',
     "POST /set-commands": r'@router\.(post|api_route)\("/set-commands"',
     "GET /debug/last-updates": r'@router\.(get|api_route)\("/debug/last-updates"',
 }

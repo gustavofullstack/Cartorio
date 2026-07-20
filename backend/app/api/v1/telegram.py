@@ -1314,6 +1314,7 @@ def _persist_conversa(
     payload_hash = hashlib.sha256(raw_message_scrubbed.encode("utf-8")).hexdigest()
     safe_message = scrub(raw_message_scrubbed).text
     safe_response = scrub(bot_response or "").text or None
+    safe_intent = scrub(intent_detected or "").text[:64] or None
 
     def _write() -> None:
         try:
@@ -1323,7 +1324,9 @@ def _persist_conversa(
                     external_id=external_id,
                     raw_message_hash=payload_hash,
                     raw_message_scrubbed=safe_message[:8000],
-                    intent_detected=scrub(intent_detected or "").text or None,
+                    # Keep the indexed intent field within the legacy VARCHAR(64)
+                    # schema; the full scrubbed turn remains in the text fields.
+                    intent_detected=safe_intent,
                     bot_response=safe_response[:8000] if safe_response else None,
                     llm_model=llm_model,
                     handoff_to_human=handoff_to_human,

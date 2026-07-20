@@ -26,7 +26,7 @@ from app.services.cnj_export import (
 )
 
 cnj_export_router = APIRouter(prefix="/lgpd/cnj-exports", tags=["lgpd-cnj-export"])
-_CNJ_OPENAPI_SECURITY = [{"ApiKeyAuth": [], "BearerAuth": []}]
+_CNJ_OPENAPI_SECURITY: list[dict[str, list[str]]] = [{"ApiKeyAuth": [], "BearerAuth": []}]
 
 
 def _http_error(exc: CNJExportError) -> HTTPException:
