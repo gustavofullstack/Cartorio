@@ -22,6 +22,7 @@ Modified by Gustavo Almeida.
 from __future__ import annotations
 
 import asyncio
+import html
 import hashlib
 import hmac
 import json
@@ -222,6 +223,23 @@ def format_bot_text(text: str) -> str:
     # Remove espacos no fim de cada linha
     t = "\n".join(line.rstrip() for line in t.split("\n"))
     return t.strip()
+
+
+def telegram_html(text: str) -> str:
+    """Render a deliberately small, safe Markdown subset for Telegram HTML.
+
+    Agent output is untrusted: escape it first, then create only Telegram's
+    documented formatting tags.  This prevents model-produced HTML (including
+    ``<think>`` remnants) from breaking ``sendMessage`` while making the
+    common ``**destaque**`` and ``*ênfase*`` output readable in clients.
+    """
+    escaped = html.escape(text, quote=False)
+    escaped = re.sub(r"\*\*([^*\n]+)\*\*", r"<b>\1</b>", escaped)
+    escaped = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"<i>\1</i>", escaped)
+    escaped = re.sub(r"__([^_\n]+)__", r"<u>\1</u>", escaped)
+    escaped = re.sub(r"(?<!\w)_([^_\n]+)_(?!\w)", r"<i>\1</i>", escaped)
+    escaped = re.sub(r"`([^`\n]+)`", r"<code>\1</code>", escaped)
+    return escaped
 
 
 # Metrics in-process (sem prom client, leve, suficiente para dashboard 1000 pts).
@@ -669,15 +687,14 @@ async def _send_message(
     """
     cleaned_text = strip_emojis(format_bot_text(text))
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    # G7.03.T3: NUNCA enviar parse_mode=HTML (tags think/reasoning → 502 silencioso).
-    # Plain text only — MarkdownV2 exige escape agressivo; plain eh KISS/HITL-safe.
+    # HTML is safe here because telegram_html escapes all agent content before
+    # adding only documented Telegram tags.  Do not pass raw LLM HTML through.
     payload: dict[str, Any] = {
         "chat_id": chat_id,
-        "text": cleaned_text[:MAX_RESPONSE_LEN],
+        "text": telegram_html(cleaned_text)[:MAX_RESPONSE_LEN],
+        "parse_mode": "HTML",
         "disable_web_page_preview": True,
     }
-    # defense-in-depth: nunca HTML/MarkdownV2 no sendMessage (G7.03.T3)
-    payload.pop("parse_mode", None)
     # reply_markup/keyboard intencionalmente NAO adicionados ao payload
     try:
         # FIX v2: usa pool singleton (evita DNS+TLS+TCP a cada call)

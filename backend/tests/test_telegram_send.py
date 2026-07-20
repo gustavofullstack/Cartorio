@@ -33,6 +33,7 @@ from app.api.v1.telegram import (
     _send_photo,
     _send_poll,
     _servicos_keyboard,
+    telegram_html,
 )
 
 
@@ -198,6 +199,16 @@ async def test_send_message_strip_emojis() -> None:
 
     # Texto nao contem thumbs-up emoji
     assert "\U0001f44d" not in captured["json"]["text"]
+
+
+def test_telegram_html_escapes_untrusted_tags_and_formats_markdown() -> None:
+    """Only the formatter's own documented Telegram HTML may reach the API."""
+    rendered = telegram_html("<think>hidden</think> **valor** e *prazo* `R$ 8,50`")
+
+    assert "&lt;think&gt;hidden&lt;/think&gt;" in rendered
+    assert "<b>valor</b>" in rendered
+    assert "<i>prazo</i>" in rendered
+    assert "<code>R$ 8,50</code>" in rendered
 
 
 # =============================================================================
