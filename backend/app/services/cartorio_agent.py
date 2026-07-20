@@ -1329,11 +1329,9 @@ async def run_cartorio_agent(
     tools_ctx, tools_used = _build_tools_context(scrubbed)
     system = AGENT_SYSTEM.format(tools_context=tools_ctx)
 
-    # Hard offline: dados LGPD + serie multi-msg (deterministico)
-    hard_offline = ("catalogo_serie", "memoria", "dados")
+    # Hard offline: apenas catalogo extenso em serie quando pedido explicitamente
+    hard_offline = ("catalogo_serie",)
     if intent in hard_offline:
-        return _offline_reply(scrubbed or raw, intent, tools_used, history=history)
-    if _is_tone_complaint(raw) or _is_smalltalk(raw):
         return _offline_reply(scrubbed or raw, intent, tools_used, history=history)
 
     user_block = scrubbed

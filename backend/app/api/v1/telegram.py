@@ -1683,9 +1683,8 @@ async def _process_telegram_debounce(chat_id: int) -> None:
             phone=fields.get("phone"),
             cpf_raw=fields.get("cpf_raw"),
         )
-        if not await _check_rate_limit(bus, key):
-            logger.info("TG rate limit key=%s", key)
-            return
+        # Debounce ja consolidou mensagens. Rate limit e atualizado ao responder.
+        await _check_rate_limit(bus, key)
         state_obj = await _get_state(bus, key)
         state = state_obj.get("state", STATE_IDLE)
         state_data = state_obj.get("data", {})
@@ -2093,6 +2092,11 @@ async def telegram_webhook(
         or callback.get("message", {}).get("chat", {}).get("type", "")
         or "private"
     )
+    orig_text = text or ""
+    # Strip bot username mentions in group/private chats (e.g. @test_cartorio_bot /agendar -> /agendar)
+    if text:
+        text = re.sub(rf"@{re.escape(TELEGRAM_BOT_USERNAME)}\b", "", text, flags=re.I).strip()
+        text = re.sub(r"@test_cartorio(_bot)?\b", "", text, flags=re.I).strip()
     conv = _conv_key(int(chat_id), int(user_id) if user_id else None, chat_type)
     bus = get_bus()
 
@@ -2109,7 +2113,7 @@ async def telegram_webhook(
             "cancelar",
             "lgpd",
         )
-        mentions_bot = f"@{TELEGRAM_BOT_USERNAME}" in text.lower()
+        mentions_bot = f"@{TELEGRAM_BOT_USERNAME}" in orig_text.lower() or "@test_cartorio" in orig_text.lower()
         reply_from = message.get("reply_to_message", {}).get("from", {})
         is_reply_to_bot = str(reply_from.get("username", "")).lower() == TELEGRAM_BOT_USERNAME
         if not is_command and not mentions_bot and not is_reply_to_bot and not callback:
