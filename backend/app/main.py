@@ -302,6 +302,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     )
     logger.info("LLM_PROVIDERS_HEALTH_MONITOR_STARTED: interval=3600s")
 
+    # 7. Telegram auto webhook sync on startup (FIX 2026-07-20)
+    from app.api.v1.telegram import sync_telegram_webhook
+    asyncio.create_task(sync_telegram_webhook(), name="sync_telegram_webhook_startup")
+
     try:
         yield
     finally:

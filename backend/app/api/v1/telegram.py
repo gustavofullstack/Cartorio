@@ -2417,6 +2417,39 @@ async def telegram_set_commands(
         return {"ok": False, "error": str(exc)}
 
 
+async def sync_telegram_webhook() -> dict:
+    """Sincroniza setWebhook na Telegram API com secret_token e allowed_updates (FIX 2026-07-20)."""
+    if not TELEGRAM_BOT_TOKEN:
+        return {"ok": False, "reason": "TELEGRAM_BOT_TOKEN not configured"}
+    url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/setWebhook"
+    webhook_url = "https://api.2notasudi.com.br/api/v1/telegram/webhook"
+    payload: dict[str, Any] = {
+        "url": webhook_url,
+        "allowed_updates": ["message", "edited_message", "callback_query", "my_chat_member"],
+        "drop_pending_updates": False,
+    }
+    if TELEGRAM_WEBHOOK_SECRET:
+        payload["secret_token"] = TELEGRAM_WEBHOOK_SECRET
+    try:
+        client = _get_tg_pool()
+        resp = await client.post(url, json=payload, timeout=10.0)
+        body = resp.json()
+        logger.info("TG sync_telegram_webhook ok=%s desc=%s", body.get("ok"), body.get("description"))
+        return body
+    except Exception as exc:
+        logger.warning("TG sync_telegram_webhook failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+@router.post("/set-webhook")
+async def telegram_set_webhook(
+    _api_key: str = Depends(require_cartorio_api_key),
+) -> dict:
+    """Configura/sincroniza o webhook do Telegram com secret_token e allowed_updates."""
+    return await sync_telegram_webhook()
+
+
+
 def _verify_telegram_secret(secret_token_header: str | None) -> None:
     if not TELEGRAM_WEBHOOK_SECRET:
         return
@@ -2428,7 +2461,7 @@ def _verify_telegram_secret(secret_token_header: str | None) -> None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid secret token")
 
 
-__all__ = ["router", "TELEGRAM_BOT_TOKEN"]
+__all__ = ["router", "TELEGRAM_BOT_TOKEN", "sync_telegram_webhook"]
 
 # Compatibility aliases
 _send_telegram_action = _send_message

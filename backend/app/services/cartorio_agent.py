@@ -65,17 +65,17 @@ LITELLM_MODEL = os.environ.get("CARTORIO_AGENT_MODEL", "MiniMax-M3")
 # chain.  Values are injected by the secret manager; no key belongs in source.
 OPENCODE_FREE_CONFIGS = [
     (
-        os.environ.get("OPENCODE_FREE_1_API_KEY", ""),
+        os.environ.get("OPENCODE_FREE_1_API_KEY", "") or os.environ.get("OPENCODE_ZEN_ACCOUNT_1_API_KEY", ""),
         os.environ.get("OPENCODE_FREE_1_BASE_URL", "https://opencode.ai/zen/v1"),
         os.environ.get("OPENCODE_FREE_1_MODEL", "nemotron-3-ultra-free"),
     ),
     (
-        os.environ.get("OPENCODE_FREE_2_API_KEY", ""),
+        os.environ.get("OPENCODE_FREE_2_API_KEY", "") or os.environ.get("OPENCODE_ZEN_ACCOUNT_2_API_KEY", ""),
         os.environ.get("OPENCODE_FREE_2_BASE_URL", "https://opencode.ai/zen/v1"),
         os.environ.get("OPENCODE_FREE_2_MODEL", "mimo-v2.5-free"),
     ),
     (
-        os.environ.get("OPENCODE_FREE_3_API_KEY", ""),
+        os.environ.get("OPENCODE_FREE_3_API_KEY", "") or os.environ.get("OPENCODE_ZEN_ACCOUNT_3_API_KEY", ""),
         os.environ.get("OPENCODE_FREE_3_BASE_URL", "https://opencode.ai/zen/v1"),
         os.environ.get("OPENCODE_FREE_3_MODEL", "deepseek-v4-flash-free"),
     ),
