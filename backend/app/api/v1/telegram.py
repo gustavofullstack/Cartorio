@@ -32,6 +32,7 @@ import re
 import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status, BackgroundTasks
@@ -234,6 +235,18 @@ def telegram_html(text: str) -> str:
     common ``**destaque**`` and ``*ênfase*`` output readable in clients.
     """
     escaped = html.escape(text, quote=False)
+    def _link_repl(match: re.Match[str]) -> str:
+        label, url = match.group(1), match.group(2)
+        host = (urlparse(url).hostname or "").lower().rstrip(".")
+        official = (
+            host in {"core.telegram.org", "telegram.org"}
+            or host.endswith(".2notasudi.com.br")
+        )
+        if not official:
+            return match.group(0)
+        return f'<a href="{html.escape(url, quote=True)}">{label}</a>'
+
+    escaped = re.sub(r"\[([^\]]+)\]\((https?://[^\s)]+)\)", _link_repl, escaped)
     escaped = re.sub(r"\*\*([^*\n]+)\*\*", r"<b>\1</b>", escaped)
     escaped = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"<i>\1</i>", escaped)
     escaped = re.sub(r"__([^_\n]+)__", r"<u>\1</u>", escaped)
