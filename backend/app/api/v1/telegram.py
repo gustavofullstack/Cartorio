@@ -2052,7 +2052,15 @@ async def telegram_webhook(
     # Avoid spam: ignore group free-text UNLESS mid-flow (data/hora/protocolo/HITL).
     if chat_type in ("group", "supergroup"):
         clean_first_word = text.strip().split()[0].lower().lstrip("/") if text.strip() else ""
-        is_command = text.startswith("/") or clean_first_word in ("start", "menu", "agendar", "protocolo", "humano", "cancelar", "lgpd")
+        is_command = text.startswith("/") or clean_first_word in (
+            "start",
+            "menu",
+            "agendar",
+            "protocolo",
+            "humano",
+            "cancelar",
+            "lgpd",
+        )
         mentions_bot = "@test_cartorio_bot" in text or "test_cartorio" in text.lower()
         if not is_command and not mentions_bot and not callback:
             mid_flow = False
@@ -2126,7 +2134,15 @@ async def telegram_webhook(
             )
         return _finish({"status": "ignored", "kind": "callback", "chat_id": chat_id})
     raw_first_word = text.strip().split()[0].lower().split("@")[0] if text.strip() else ""
-    if text.startswith("/") or raw_first_word in ("start", "menu", "agendar", "protocolo", "humano", "cancelar", "lgpd"):
+    if text.startswith("/") or raw_first_word in (
+        "start",
+        "menu",
+        "agendar",
+        "protocolo",
+        "humano",
+        "cancelar",
+        "lgpd",
+    ):
         cmd = raw_first_word if raw_first_word.startswith("/") else f"/{raw_first_word}"
         if cmd not in ALLOWED_COMMANDS:
             await _react(chat_id, msg_id, "cross")
