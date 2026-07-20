@@ -24,6 +24,8 @@ REQUIRED_RECORDS=(
   "langfuse.2notasudi.com.br"
   "chatwoot.2notasudi.com.br"
   "argilla.2notasudi.com.br"
+  "n8n.2notasudi.com.br"
+  "supabase.2notasudi.com.br"
 )
 # Records que queremos REMOVER (zombie/legacy)
 ZOMBIE_RECORDS=(
