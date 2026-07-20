@@ -148,10 +148,18 @@ async def _check_dns(domain: str) -> dict[str, Any]:
         }
     except FileNotFoundError:
         elapsed_ms = int((time.perf_counter() - start) * 1000)
+        try:
+            addresses = await asyncio.to_thread(socket.getaddrinfo, domain, 443)
+        except socket.gaierror as exc:
+            return {
+                "status": "down",
+                "latency_ms": elapsed_ms,
+                "detail": f"DNS lookup failed: {exc}",
+            }
         return {
-            "status": "warn",
+            "status": "up",
             "latency_ms": elapsed_ms,
-            "detail": "dig binary not installed; cannot resolve",
+            "detail": f"resolved via libc: {addresses[0][4][0]}",
         }
     except (TimeoutError, asyncio.TimeoutError):
         return {
@@ -183,7 +191,7 @@ async def _check_traefik(domain: str) -> dict[str, Any]:
             resp = await client.head(url, follow_redirects=False)
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         content_length = int(resp.headers.get("content-length", 0) or 0)
-        if resp.status_code in (200, 301, 302):
+        if resp.status_code in (200, 301, 302, 401, 403, 405):
             return {
                 "status": "up",
                 "latency_ms": elapsed_ms,

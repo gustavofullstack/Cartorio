@@ -318,13 +318,13 @@ def test_dns_check_returns_up_when_resolved() -> None:
     assert "195.35.60.67" in result["detail"]
 
 
-def test_dns_check_returns_warn_when_dig_missing() -> None:
-    """dig nao instalado (FileNotFoundError) -> warn, nao down."""
+def test_dns_check_falls_back_to_libc_when_dig_missing() -> None:
+    """Sem dig, o resolvedor libc ainda fornece uma prova de DNS."""
     with patch("asyncio.create_subprocess_exec", side_effect=FileNotFoundError("dig not found")):
         result = asyncio.run(_check_dns("2notasudi.com.br"))
 
-    assert result["status"] == "warn"
-    assert "dig" in result["detail"]
+    assert result["status"] == "up"
+    assert "resolved via libc" in result["detail"]
 
 
 def test_radar_endpoint_metadata_includes_version() -> None:
