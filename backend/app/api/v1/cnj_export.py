@@ -244,6 +244,21 @@ def massive_dump_cnj(
     """
     import json
 
+    requester = str(_dpo.get("sub", ""))
+    try:
+        AuditService.log(
+            db,
+            actor_id=requester,
+            actor_type="dpo",
+            action="cnj.export.massive_dump",
+            resource="cnj_export:massive_dump",
+            payload={"action": "streaming_started"},
+            **audit_kwargs(request),
+        )
+    except Exception:
+        # falha no audit -> impede o dump
+        raise HTTPException(status_code=500, detail={"erro": "AUDIT_FAILURE"})
+
     def _stream_audit_logs():
         yield "[\n"
         first = True

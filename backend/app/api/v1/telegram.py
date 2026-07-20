@@ -210,10 +210,14 @@ def format_bot_text(text: str) -> str:
     try:
         from app.services.cartorio_agent import _strip_think_tags
 
-        t = _strip_think_tags(t) or t
+        t = _strip_think_tags(t)
     except Exception:
-        t = re.sub(r"<think>[\s\S]*?</think>", "", t, flags=re.I)
-        t = re.sub(r"<reasoning>[\s\S]*?</reasoning>", "", t, flags=re.I)
+        t = re.sub(r"<think>[\s\S]*?(?:</think>|$)", "", t, flags=re.I)
+        t = re.sub(r"<reasoning>[\s\S]*?(?:</reasoning>|$)", "", t, flags=re.I)
+        
+    if not t.strip():
+        return "..."
+        
     # Camada de defesa: remove URLs nao oficiais (anti-spam / anti-porn)
     try:
         from app.services.cartorio_agent import sanitize_bot_output

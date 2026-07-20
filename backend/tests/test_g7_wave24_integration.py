@@ -346,7 +346,7 @@ def test_check_health_category_upstream_non_200_is_degraded() -> None:
             return 503
         if "evolution" in url or "evo" in url or url.rstrip("/").endswith(":8080"):
             return 502
-        return 401
+        return 500
 
     async def _get(url: str, *args: object, **kwargs: object) -> MagicMock:
         resp = MagicMock()

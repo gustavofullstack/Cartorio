@@ -358,13 +358,13 @@ def _strip_think_tags(text: str) -> str:
     if not text:
         return text
     cleaned = re.sub(
-        r"<think>[\s\S]*?</think>",
+        r"<think>[\s\S]*?(?:</think>|$)",
         "",
         text,
         flags=re.I,
     )
     cleaned = re.sub(
-        r"<reasoning>[\s\S]*?</reasoning>",
+        r"<reasoning>[\s\S]*?(?:</reasoning>|$)",
         "",
         cleaned,
         flags=re.I,
