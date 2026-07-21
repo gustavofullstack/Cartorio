@@ -219,9 +219,7 @@ def download_cnj_export(
         content=json.dumps(artifact.as_dict(), ensure_ascii=False),
         media_type="application/json",
         headers={
-            "Content-Disposition": (
-                f'attachment; filename="cnj-lgpd-aggregated-{request_id}.json"'
-            )
+            "Content-Disposition": (f'attachment; filename="cnj-lgpd-aggregated-{request_id}.json"')
         },
     )
 
