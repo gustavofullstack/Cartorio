@@ -4,7 +4,9 @@ conn = psycopg.connect("host=127.0.0.1 port=5432 user=gustavoalmeida dbname=post
 conn.autocommit = True
 with conn.cursor() as cur:
     try:
-        cur.execute("CREATE ROLE supabase_admin WITH LOGIN SUPERUSER PASSWORD 'KqJ2kWjkYwZxKpLnBMVbtA';")
+        cur.execute(
+            "CREATE ROLE supabase_admin WITH LOGIN SUPERUSER PASSWORD 'KqJ2kWjkYwZxKpLnBMVbtA';"
+        )
     except psycopg.errors.DuplicateObject:
         pass
     try:
