@@ -1,6 +1,5 @@
 import sys
 import os
-import asyncio
 import fakeredis
 import fakeredis.aioredis
 from unittest.mock import patch
