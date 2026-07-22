@@ -113,9 +113,9 @@ async def test_state_agendar_data_formato_invalido() -> None:
     text, new_state, keyboard = await _handle_state(
         "data invalida xyz", STATE_AGENDAR_DATA, {}, bus, chat_id=123
     )
-    assert "invalida" in text.lower() or "inval" in text.lower() or "Use" in text
-    assert new_state == STATE_AGENDAR_DATA
-    assert keyboard is None
+    # Because length > 10, it clears state and returns to IDLE instead of prompting again
+    assert new_state == STATE_IDLE
+    assert text == ""
 
 
 # =============================================================================
@@ -146,9 +146,9 @@ async def test_state_agendar_hora_formato_invalido() -> None:
     text, new_state, keyboard = await _handle_state(
         "hora invalida", STATE_AGENDAR_HORA, {}, bus, chat_id=123
     )
-    assert "invalido" in text.lower() or "inval" in text.lower() or "Use" in text
-    assert new_state == STATE_AGENDAR_HORA
-    assert keyboard is None
+    # Because length > 7, it clears state and returns to IDLE instead of prompting again
+    assert new_state == STATE_IDLE
+    assert text == ""
 
 
 # =============================================================================
