@@ -146,7 +146,6 @@ def list_with_pagination(
     count_stmt: Select[Any] = select(func.count()).select_from(model)
     if where_clauses:
         count_stmt = count_stmt.where(and_(*where_clauses))
-    # Optimization: Use func.count() directly instead of len(.all()) to avoid O(N) memory overhead
     total = db.scalar(count_stmt) or 0
 
     stmt: Select[Any] = select(model)
