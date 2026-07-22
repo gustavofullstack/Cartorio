@@ -1,0 +1,3 @@
+## 2024-05-18 - Improve keyboard accessibility with explicit focus indicators
+**Learning:** Using `outline: none` removes the visual indicator of keyboard focus, making navigation difficult for users relying on keyboards or assistive technologies. When a component disables standard focus outlines (such as `.menu button`), it must explicitly provide an alternative visual cue for `:focus-visible`.
+**Action:** Always ensure that interactive elements have a clear `:focus-visible` state. If `outline: none` is required for visual design (e.g., removing default browser borders on click), provide a high-contrast replacement like `outline: 2px solid var(--brand);` exclusively for `:focus-visible` states to preserve keyboard navigation.
