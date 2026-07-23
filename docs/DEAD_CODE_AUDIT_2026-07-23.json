@@ -1,0 +1,60 @@
+{
+  "_meta": {
+    "schema": "dead-code-audit/1.0",
+    "generated_at": "2026-07-23T04:19:33.421644+00:00",
+    "repo_root": "/app",
+    "app_dir": "/app/backend/app",
+    "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
+    "task_id": "G8.12.T4"
+  },
+  "summary": {
+    "unused_imports": 0,
+    "ruff_total": 0,
+    "pyflakes_total": 0,
+    "vulture_suspicions": 0,
+    "vulture_min_confidence": 80,
+    "uncovered_files": 0,
+    "zero_coverage_files": 0,
+    "ruff_clean": true,
+    "pyflakes_clean": true,
+    "vulture_clean": true
+  },
+  "results": {
+    "ruff_unused": {
+      "tool": "ruff",
+      "rules": "F401,F841",
+      "returncode": 0,
+      "stderr": "",
+      "findings": [],
+      "count": 0
+    },
+    "pyflakes": {
+      "tool": "pyflakes",
+      "returncode": 1,
+      "stderr": "/app/backend/.venv/bin/python3: No module named pyflakes",
+      "findings": [],
+      "raw_lines": [],
+      "count": 0
+    },
+    "vulture": {
+      "tool": "vulture",
+      "min_confidence": 80,
+      "returncode": 2,
+      "stderr": "error: Failed to spawn: `vulture`\n  Caused by: No such file or directory (os error 2)",
+      "findings": [],
+      "raw_lines": [],
+      "count": 0
+    },
+    "coverage_gaps": {
+      "tool": "coverage",
+      "coverage_data_present": false,
+      "pytest_invoked": false,
+      "reason": "coverage data unavailable during active pytest session",
+      "files": [],
+      "total_uncovered_files": 0,
+      "total_zero_coverage_files": 0
+    }
+  },
+  "top_candidates_hitl": [],
+  "_cache_hit": false
+}
