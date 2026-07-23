@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.config import settings
 from app.services.audit import AuditService  # type: ignore
+import hmac
 from app.services.audit_context import audit_kwargs
 from sqlalchemy import select
 
@@ -40,7 +41,7 @@ lgpd_router = APIRouter()
 def _require_api_key(request: Request) -> str:
     """Valida X-API-Key. Retorna a key para uso no audit log."""
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.cartorio_api_key):
         raise HTTPException(
             status_code=401,
             detail={
