@@ -36,7 +36,7 @@ WHATSAPP-SPECIFIC:
 SUI Gustavo:
   - QR scan em https://whatsapp.2notasudi.com.br/manager
   - Instance: cartorio-2notas
-  - API Key: 24s6pdZqUwblg0v4UJTV3YilLm1WZQIu
+   - API Key: configurada via ambiente (nunca documentar valor literal)
 
 Lesson 141: chat_pipeline extraído
 Lesson 143: WhatsApp espelhado 100%
@@ -51,7 +51,8 @@ import time
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -423,7 +424,9 @@ async def whatsapp_metrics() -> dict:
     summary="Webhook Evolution API (WhatsApp - HMAC + dual-format + LGPD consent)",
     description=(
         "Recebe mensagens do WhatsApp via Evolution API (https://doc.evolution-api.com/v2/api-reference).\n\n"
-        "**Auth**: header `X-Hub-Signature-256` validado contra `EVOLUTION_API_KEY` (HMAC-SHA256).\n\n"
+        "**Auth**: header `X-Hub-Signature-256` (ou `X-Evolution-Signature`) validado "
+        "contra `EVOLUTION_WEBHOOK_SECRET` (HMAC-SHA256). Fail-closed: 401 se inválida; "
+        "503 se REQUIRE=true sem secret.\n\n"
         "**Dual-format**: aceita **nested moderno** (`data.key.remoteJid`/`data.message.conversation`) "
         "e **root-level legado** (`sender`/`message` na raiz). Schema canonico em "
         "`app.schemas.webhook_payloads.EvolutionPayload`.\n\n"
@@ -483,40 +486,52 @@ async def whatsapp_webhook(
       2. Idempotency via evolution_ingest (DB) + chat_pipeline.check_idempotency (Redis)
       3. Parse payload → InboundMessage
       4. process_message (pipeline compartilhado)
-      5. SEMPRE retorna 200 (evita retry infinito Evolution)
+      5. HMAC inválido → 401 (fail-closed). Demais erros de parse → 200
+         para evitar retry storm da Evolution quando autenticado.
     """
     bump_metric("requests_total")
     from app.services.metrics import store
 
     store.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "in"})
-    try:
-        raw_body = json.dumps(payload).encode("utf-8")
-    except Exception:
-        store.inc_counter("cartorio_whatsapp_erros_total")
-        raise
+    raw_body = await request.body()
 
     # 1. HMAC validation
     signature = request.headers.get("X-Hub-Signature-256") or request.headers.get(
         "X-Evolution-Signature"
     )
+    signature_required = os.getenv("EVOLUTION_REQUIRE_SIGNATURE", "true").lower() == "true"
+    secret_configured = bool(
+        os.getenv("EVOLUTION_WEBHOOK_SECRET") or os.getenv("EVOLUTION_WEBHOOK_SECRET_PREV")
+    )
+    if signature_required and not secret_configured:
+        logger.error("WhatsApp webhook: HMAC obrigatório sem secret configurado")
+        raise HTTPException(status_code=503, detail="webhook authentication misconfigured")
+
     adapter = get_adapter()
-    if not await adapter.verify_signature(raw_body, signature):
-        # Em produção: rejeitar 401. Em dev: loggar warning.
-        if os.getenv("EVOLUTION_REQUIRE_SIGNATURE", "true").lower() == "true":
-            logger.warning("WhatsApp webhook: HMAC inválido (rejeitando)")
-            # NÃO retornar 401 — Evolution pode parar de enviar. Loggar e seguir.
-            # return {"status": "unauthorized"}, 401
+    signature_valid = await adapter.verify_signature(raw_body, signature)
+    if signature_required and not signature_valid:
+        logger.warning("WhatsApp webhook: HMAC inválido (rejeitando)")
+        raise HTTPException(status_code=401, detail="invalid webhook signature")
+    if not signature_required and not signature_valid:
+        logger.warning("WhatsApp webhook: HMAC inválido aceito somente em modo não obrigatório")
 
     # 2. Idempotency DB-level (evolution_ingest)
     try:
-        # Reconstruir raw body se necessário
-        ingest_result = ingest_evolution_event(
-            db, payload
-        )  # db injetado via Depends (null-deref guarded)
+        ingest_result = ingest_evolution_event(db, payload)
         if ingest_result.get("status") == "idempotent":
             return {"status": "idempotent", "detail": "already processed"}
-    except Exception as e:
-        logger.debug("evolution_ingest não aplicável (db error): %s", e)
+        # Persistir a reserva de idempotência antes de enfileirar o pipeline.
+        # `get_db` somente fecha a sessão; sem commit o replay seria aceito.
+        db.commit()
+    except IntegrityError:
+        # Corrida entre duas entregas do mesmo update: a unique constraint é a
+        # fonte de verdade. O segundo request não pode chegar ao pipeline.
+        db.rollback()
+        return {"status": "idempotent", "detail": "already processed"}
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.error("evolution_ingest indisponível: %s", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="webhook idempotency unavailable") from exc
 
     # 3. Parse → InboundMessage
     inbound = parse_evolution_payload(payload)

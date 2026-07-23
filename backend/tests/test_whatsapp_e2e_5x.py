@@ -12,6 +12,9 @@ Mocka Evolution API via httpx mock para nao depender de servico externo.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -435,3 +438,122 @@ class TestE2EWhatsAppRobustness:
         assert resp.status_code == 200
         inbound = mock_pipeline.call_args.args[0]
         assert inbound.is_group is True
+
+
+# =============================================================================
+# P0: HMAC fail-closed regression matrix
+# =============================================================================
+
+
+class TestWebhookHmacFailClosed:
+    """Assinaturas inválidas nunca podem alcançar idempotência ou pipeline."""
+
+    @staticmethod
+    def _raw_payload(message_id: str = "wa-hmac-1") -> bytes:
+        return json.dumps(
+            _evolution_payload(message_id=message_id, text="mensagem sintetica"),
+            separators=(",", ":"),
+        ).encode("utf-8")
+
+    @staticmethod
+    def _signature(secret: str, raw_body: bytes) -> str:
+        return hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+
+    def test_invalid_signature_is_rejected_before_pipeline(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "test-webhook-secret")
+        raw_body = self._raw_payload()
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            response = client.post(
+                "/api/v1/whatsapp/webhook",
+                content=raw_body,
+                headers={"Content-Type": "application/json", "X-Hub-Signature-256": "bad"},
+            )
+        assert response.status_code == 401
+        assert pipeline.await_count == 0
+
+    def test_missing_signature_is_rejected_before_pipeline(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "test-webhook-secret")
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            response = client.post(
+                "/api/v1/whatsapp/webhook",
+                content=self._raw_payload(),
+                headers={"Content-Type": "application/json"},
+            )
+        assert response.status_code == 401
+        assert pipeline.await_count == 0
+
+    def test_malformed_signature_is_rejected_before_pipeline(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "test-webhook-secret")
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            response = client.post(
+                "/api/v1/whatsapp/webhook",
+                content=self._raw_payload(),
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Hub-Signature-256": "sha256=not-a-hex-signature",
+                },
+            )
+        assert response.status_code == 401
+        assert pipeline.await_count == 0
+
+    def test_required_auth_without_secret_fails_closed(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.delenv("EVOLUTION_WEBHOOK_SECRET", raising=False)
+        monkeypatch.delenv("EVOLUTION_WEBHOOK_SECRET_PREV", raising=False)
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            response = client.post(
+                "/api/v1/whatsapp/webhook",
+                content=self._raw_payload(),
+                headers={"Content-Type": "application/json"},
+            )
+        assert response.status_code == 503
+        assert pipeline.await_count == 0
+
+    def test_valid_signature_reaches_pipeline(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        secret = "test-webhook-secret"
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", secret)
+        raw_body = self._raw_payload()
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            response = client.post(
+                "/api/v1/whatsapp/webhook",
+                content=raw_body,
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Hub-Signature-256": self._signature(secret, raw_body),
+                },
+            )
+        assert response.status_code == 200
+        pipeline.assert_awaited_once()
+
+    def test_valid_signed_replay_is_idempotent(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        secret = "test-webhook-secret"
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", secret)
+        raw_body = self._raw_payload(message_id="wa-hmac-replay")
+        headers = {
+            "Content-Type": "application/json",
+            "X-Hub-Signature-256": self._signature(secret, raw_body),
+        }
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            first = client.post("/api/v1/whatsapp/webhook", content=raw_body, headers=headers)
+            second = client.post("/api/v1/whatsapp/webhook", content=raw_body, headers=headers)
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert second.json()["status"] == "idempotent"
+        pipeline.assert_awaited_once()
