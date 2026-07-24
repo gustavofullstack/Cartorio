@@ -201,9 +201,7 @@ class TestPatternDetection:
 class TestNoFalsePositives:
     """Garantias contra FPs comuns."""
 
-    def test_sha256_hex64_flagged_apenas_por_webhook_secret_hex64(
-        self, clean_file: Path
-    ) -> None:
+    def test_sha256_hex64_flagged_apenas_por_webhook_secret_hex64(self, clean_file: Path) -> None:
         """G9 2026-07-20: hex de 64 chars PASSA a ser flag (WEBHOOK_SECRET_HEX64).
 
         Hashes legitimos (ex.: SHA256 de exemplo em docs) devem usar o

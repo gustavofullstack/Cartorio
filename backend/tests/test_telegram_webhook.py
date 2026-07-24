@@ -83,9 +83,11 @@ def telegram_callback_agendar() -> dict:
 
 
 def test_webhook_start_command(client: TestClient, telegram_update_start: dict) -> None:
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             resp = client.post("/api/v1/telegram/webhook", json=telegram_update_start)
     assert resp.status_code == 200
@@ -109,9 +111,11 @@ def test_webhook_menu_command(client: TestClient) -> None:
             "date": 1719227400,
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
@@ -129,9 +133,11 @@ def test_webhook_cancelar_command(client: TestClient) -> None:
             "date": 1719227400,
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
@@ -149,9 +155,11 @@ def test_unknown_command_shows_menu(client: TestClient) -> None:
             "date": 1719227400,
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
@@ -171,9 +179,11 @@ def test_agendar_text_command_accepted(client: TestClient) -> None:
             "date": 1719227400,
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
@@ -193,9 +203,11 @@ def test_protocolo_text_command_accepted(client: TestClient) -> None:
             "date": 1719227400,
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             resp = client.post("/api/v1/telegram/webhook", json=update)
     assert resp.status_code == 200
@@ -209,17 +221,17 @@ def test_protocolo_text_command_accepted(client: TestClient) -> None:
 def test_callback_agendar_shows_services(
     client: TestClient, telegram_callback_agendar: dict
 ) -> None:
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             with patch(
                 "app.api.v1.telegram._answer_callback_query",
                 new=AsyncMock(return_value=True),
             ):
-                resp = client.post(
-                    "/api/v1/telegram/webhook", json=telegram_callback_agendar
-                )
+                resp = client.post("/api/v1/telegram/webhook", json=telegram_callback_agendar)
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "ok"
@@ -238,9 +250,11 @@ def test_callback_cancelar_returns_menu(client: TestClient) -> None:
             "data": "cancelar",
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             with patch(
                 "app.api.v1.telegram._answer_callback_query",
@@ -293,9 +307,11 @@ def test_webhook_agendar_flow(client: TestClient) -> None:
             "data": "serv:1",
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=mock_bus), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=mock_bus),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             with patch(
                 "app.api.v1.telegram._answer_callback_query",
@@ -311,9 +327,11 @@ def test_webhook_agendar_flow(client: TestClient) -> None:
 
 
 def test_text_free_shows_menu(client: TestClient, telegram_update_text: dict) -> None:
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._set_reaction", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
             resp = client.post("/api/v1/telegram/webhook", json=telegram_update_text)
     assert resp.status_code == 200
@@ -622,11 +640,12 @@ def test_webhook_group_msg_without_command_reacts_and_orients() -> None:
             "date": 1719227400,
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send, patch(
-        "app.api.v1.telegram._react", new=AsyncMock(return_value=True)
-    ) as mock_react, patch("app.api.v1.telegram._send_typing", new=AsyncMock()):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+        patch("app.api.v1.telegram._react", new=AsyncMock(return_value=True)) as mock_react,
+        patch("app.api.v1.telegram._send_typing", new=AsyncMock()),
+    ):
         resp = client.post("/api/v1/telegram/webhook", json=payload)
     assert resp.status_code == 200
     body = resp.json()
@@ -669,10 +688,14 @@ def test_webhook_group_reply_to_bot_is_processed_as_conversation() -> None:
             "date": 1719227400,
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._call_cartorio_agent",
-        new=AsyncMock(return_value=("Resposta de teste", None)),
-    ), patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)):
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch(
+            "app.api.v1.telegram._call_cartorio_agent",
+            new=AsyncMock(return_value=("Resposta de teste", None)),
+        ),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
+    ):
         with patch("app.api.v1.telegram._react", new=AsyncMock(return_value=True)):
             response = TestClient(app).post("/api/v1/telegram/webhook", json=payload)
 
@@ -796,9 +819,10 @@ def test_webhook_handles_my_chat_member_join() -> None:
             },
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send:
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+    ):
         resp = client.post("/api/v1/telegram/webhook", json=payload)
     assert resp.status_code == 200
     body = resp.json()
@@ -837,9 +861,10 @@ def test_webhook_handles_my_chat_member_leave() -> None:
             },
         },
     }
-    with patch("app.api.v1.telegram.get_bus", return_value=None), patch(
-        "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
-    ) as mock_send:
+    with (
+        patch("app.api.v1.telegram.get_bus", return_value=None),
+        patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)) as mock_send,
+    ):
         resp = client.post("/api/v1/telegram/webhook", json=payload)
     assert resp.status_code == 200
     body = resp.json()
