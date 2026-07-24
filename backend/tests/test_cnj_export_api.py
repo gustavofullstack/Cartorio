@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 
 from fastapi.testclient import TestClient
@@ -135,3 +136,114 @@ def test_massive_dump_openapi_security() -> None:
     assert MASSIVE_URL in paths
     op = paths[MASSIVE_URL]["get"]
     assert op.get("security") == [{"ApiKeyAuth": [], "BearerAuth": []}] or op.get("security")
+
+
+def test_massive_dump_numeric_cpf_payload_valid_json_no_raw_pii() -> None:
+    """Regressao: CPF numerico (nao-quotado) no payload e PII em campos
+    top-level (actor_id, resource, user_agent, request_id, canal) devem
+    sair mascarados sem quebrar a integridade do JSON streamado.
+
+    Antes do fix: dumps -> scrub -> loads produzia `{"cpf": [CPF_REDACTED]}`
+    (placeholder sem aspas), o json.loads explodia no meio do stream e o
+    CNJ recebia JSON truncado. Agora o scrub por folha mascara o numero
+    como string "[CPF_REDACTED]" e o stream permanece JSON valido completo.
+
+    A row fabricada e removida ao final APENAS pelo seu proprio id, sem
+    tocar em nenhuma outra linha da cadeia de auditoria.
+    """
+    from app.db import SessionLocal
+    from app.models.audit_log import AuditLog
+
+    cpf_digits = "12345678901"
+    top_level_pii = {
+        "actor_id": f"dpo-cpf-{cpf_digits}",
+        "resource": f"protocolo:cpf-{cpf_digits}",
+        "user_agent": f"Mozilla cpf={cpf_digits}",
+        "request_id": f"req-{cpf_digits}",
+        "canal": f"telegram-{cpf_digits}",
+    }
+    session = SessionLocal()
+    seeded_id: int | None = None
+    try:
+        seeded = AuditLog(
+            actor_type="dpo",
+            action="test.numeric_cpf",
+            payload={"cpf": int(cpf_digits), "valor": 87.5, "nota": "ok"},
+            prev_hash="0" * 64,
+            hash="1" * 64,
+            hmac_signature="2" * 64,
+            hmac_kid="test-kid",
+            **top_level_pii,
+        )
+        session.add(seeded)
+        session.commit()
+        seeded_id = seeded.id
+
+        resp = client.get(MASSIVE_URL, headers=_headers())
+        assert resp.status_code == 200, resp.text
+        # Integridade: body inteiro eh um array JSON valido e completo.
+        items = json.loads(resp.text)
+        assert isinstance(items, list) and items
+        # Sem PII raw em nenhuma parte do stream (payload nem top-level).
+        assert cpf_digits not in resp.text
+
+        target = [item for item in items if item["action"] == "test.numeric_cpf"]
+        assert target, "row semeada nao apareceu no dump"
+        row = target[0]
+        assert row["payload"]["cpf"] == "[CPF_REDACTED]"
+        # Numeros sem PII permanecem numericos; strings sem PII intactas.
+        assert row["payload"]["valor"] == 87.5
+        assert row["payload"]["nota"] == "ok"
+        # Top-level identifier-bearing fields saem mascarados.
+        for field in top_level_pii:
+            assert cpf_digits not in str(row[field]), f"{field} vazou PII raw"
+            assert "[CPF_REDACTED]" in str(row[field]), f"{field} nao foi mascarado"
+        # Cadeia de integridade preservada (nao tocar em hash/prev_hash/hmac).
+        assert row["prev_hash"] == "0" * 64
+        assert row["hash"] == "1" * 64
+        assert row["hmac_signature"] == "2" * 64
+        assert row["hmac_kid"] == "test-kid"
+    finally:
+        # Cleanup cirurgico: remove somente a row fabricada pelo id.
+        if seeded_id is not None:
+            session.query(AuditLog).filter(AuditLog.id == seeded_id).delete(
+                synchronize_session=False
+            )
+            session.commit()
+        session.close()
+
+
+def test_massive_dump_rejects_empty_dpo_sub() -> None:
+    """JWT DPO sem sub nao pode acionar dump (consistente com demais endpoints CNJ)."""
+    token = issue_access_token("", dpo=True)
+    resp = client.get(
+        MASSIVE_URL,
+        headers={"X-API-Key": API_KEY, "Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["detail"]["erro"] == "DPO_SUB_REQUIRED"
+
+
+def test_massive_dump_audit_failure_rolls_back_session(monkeypatch) -> None:
+    """Falha no audit (fail-closed) faz rollback da sessao antes do 500."""
+    from sqlalchemy.orm import Session as _Session
+
+    from app.services import audit as audit_mod
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("audit unavailable")
+
+    monkeypatch.setattr(audit_mod.AuditService, "log", staticmethod(_boom))
+
+    rolled_back: list[bool] = []
+    orig_rollback = _Session.rollback
+
+    def _spy(self):
+        rolled_back.append(True)
+        return orig_rollback(self)
+
+    monkeypatch.setattr(_Session, "rollback", _spy)
+
+    resp = client.get(MASSIVE_URL, headers=_headers())
+    assert resp.status_code == 500
+    assert rolled_back, "sessao nao sofreu rollback apos falha de audit"

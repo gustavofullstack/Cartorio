@@ -41,6 +41,30 @@ def _http_error(exc: CNJExportError) -> HTTPException:
     )
 
 
+def _scrub_payload_value(value: Any) -> Any:
+    """Scrub PII recursivo que preserva JSON valido no massive dump.
+
+    Scrub sobre o JSON serializado (dumps -> scrub -> loads) mascara CPF
+    numerico nao-quotado, mas o placeholder `[CPF_REDACTED]` fica sem
+    aspas e o `json.loads` subsequente explode no meio do stream,
+    entregando JSON truncado/invalido ao CNJ. Scrub por folha mantem a
+    estrutura: numeros que parecem PII viram string mascarada; numeros
+    sem PII permanecem numericos; bool/None passam intactos.
+    """
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, (int, float)):
+        result = scrub(str(value))
+        return result.text if result.redaction_count else value
+    if isinstance(value, str):
+        return scrub(value).text
+    if isinstance(value, list):
+        return [_scrub_payload_value(item) for item in value]
+    if isinstance(value, dict):
+        return {scrub(str(key)).text: _scrub_payload_value(item) for key, item in value.items()}
+    return scrub(str(value)).text
+
+
 def _status_payload(export_request: Any) -> dict[str, Any]:
     """Serializa somente estado operacional e hashes do pedido CNJ."""
     return {
@@ -243,6 +267,8 @@ def massive_dump_cnj(
     import json
 
     requester = str(_dpo.get("sub", ""))
+    if not requester:
+        raise HTTPException(status_code=403, detail={"erro": "DPO_SUB_REQUIRED"})
     try:
         AuditService.log(
             db,
@@ -255,6 +281,7 @@ def massive_dump_cnj(
         )
     except Exception:
         # falha no audit -> impede o dump
+        db.rollback()
         raise HTTPException(status_code=500, detail={"erro": "AUDIT_FAILURE"})
 
     def _stream_audit_logs():
@@ -266,22 +293,27 @@ def massive_dump_cnj(
                 yield ",\n"
             first = False
 
-            payload_str = json.dumps(log.payload, ensure_ascii=False)
-            payload_str = scrub(payload_str).text
+            # Scrub por folha (nao dumps->scrub->loads): CPF numerico
+            # nao-quotado viraria `[CPF_REDACTED]` sem aspas e quebraria
+            # o json.loads no meio do stream (JSON truncado ao CNJ).
+            scrubbed_payload = _scrub_payload_value(log.payload)
 
-            scrubbed_payload = json.loads(payload_str)
-
+            # Campos top-level potencialmente identificadores (actor_id,
+            # resource, user_agent, request_id, canal) tambem passam pelo
+            # scrub antes de sair no stream. Campos de integridade
+            # (prev_hash/hash/hmac_signature/hmac_kid) permanecem verbatim
+            # para nao invalidar a cadeia SHA256/HMAC verificavel pelo CNJ.
             item = {
                 "id": log.id,
-                "actor_id": log.actor_id,
+                "actor_id": _scrub_payload_value(log.actor_id),
                 "actor_type": log.actor_type,
                 "action": log.action,
-                "resource": log.resource,
+                "resource": _scrub_payload_value(log.resource),
                 "payload": scrubbed_payload,
                 "ip_truncated": log.ip_truncated,
-                "user_agent": log.user_agent,
-                "request_id": log.request_id,
-                "canal": log.canal,
+                "user_agent": _scrub_payload_value(log.user_agent),
+                "request_id": _scrub_payload_value(log.request_id),
+                "canal": _scrub_payload_value(log.canal),
                 "prev_hash": log.prev_hash,
                 "hash": log.hash,
                 "hmac_signature": log.hmac_signature,
