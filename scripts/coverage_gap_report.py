@@ -75,7 +75,7 @@ def main() -> int:
 
     if args.md:
         lines = [
-            f"# Coverage Gap Report (G7.01.T2)",
+            "# Coverage Gap Report (G7.01.T2)",
             "",
             f"**Generated**: {datetime.now(timezone.utc).isoformat()}",
             f"**Threshold**: < {args.threshold}%",

@@ -23,7 +23,6 @@ Modified by Gustavo Almeida + cartorio-sre — G6 wave 8.
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path

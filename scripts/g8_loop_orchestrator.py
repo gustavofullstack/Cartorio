@@ -169,8 +169,8 @@ class G8Orchestrator:
         for task in squad_info["tasks"]:
             entry += f"  - [x] **{task['id']}** ({task['agent']}) — {task['description']}\n"
             
-        entry += f"- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅\n"
-        entry += f"Modified by Gustavo Almeida (via G8 loop orchestrator)\n"
+        entry += "- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅\n"
+        entry += "Modified by Gustavo Almeida (via G8 loop orchestrator)\n"
         
         with open(PROGRESS_FILE, "a") as f:
             f.write(entry)

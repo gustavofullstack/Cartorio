@@ -45,13 +45,12 @@ from __future__ import annotations
 import json
 import os
 import shlex
-import socket
 import subprocess
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Callable
+from typing import Any
 
 # ============================================
 # Config
@@ -856,7 +855,7 @@ def firecrawl_crawl(url: str, limit: int = 5) -> dict:
 
 def crwal4ai_scrape(url: str) -> dict:
     """Scrape via crwal4ai (LLM-friendly markdown)."""
-    return http_post(f"http://coding-vps_apenas_para_auxilio_crwal4ai:11235/crawl", {"url": url}, timeout=60)
+    return http_post("http://coding-vps_apenas_para_auxilio_crwal4ai:11235/crawl", {"url": url}, timeout=60)
 
 
 def flaresolverr_solve(url: str) -> dict:
@@ -922,7 +921,7 @@ def status_page_get() -> dict:
 def prometheus_metrics(job: str = "coding-vps") -> dict:
     """List Prometheus metric names for a given job (target discovery)."""
     return http_get(
-        f"http://coding-vps_apenas_para_auxilio_prometheus:9090/api/v1/label/__name__/values"
+        "http://coding-vps_apenas_para_auxilio_prometheus:9090/api/v1/label/__name__/values"
     )
 
 
@@ -1310,7 +1309,6 @@ def _run_mcp_server() -> int:
     registered = 0
     failures = []
     for name, info in TOOLS.items():
-        args_def = info["args"]
         desc = info.get("desc", f"Tool {name}")
         func = info["func"]
         try:
@@ -1358,7 +1356,7 @@ def _run_mcp_server() -> int:
 def _run_http_server() -> int:
     """Start FastAPI HTTP server exposing /tools and /call endpoints."""
     try:
-        from fastapi import FastAPI, HTTPException
+        from fastapi import FastAPI
         from fastapi.middleware.cors import CORSMiddleware
         import uvicorn
     except ImportError:

@@ -1,5 +1,4 @@
 """list_all_convs.py — Lista TODAS conversas de TODOS inboxes, todos status."""
-import json
 import os
 
 import httpx

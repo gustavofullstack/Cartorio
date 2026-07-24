@@ -61,7 +61,7 @@ def easypanel_list_services(token: str) -> list[dict]:
 
 def docker_service_update(service: str, env_add: dict[str, str] | None = None, image: str | None = None) -> dict:
     """Update docker service via SSH."""
-    cmd = f"docker service update"
+    cmd = "docker service update"
     if image:
         cmd += f" --image {image}"
     if env_add:
@@ -77,9 +77,10 @@ def tool_coding_vps_status() -> dict[str, Any]:
     """Get status of all coding-vps coding agents."""
     token = easypanel_login()
     services = easypanel_list_services(token)
-    coding_vps = [s for s in services if s.get("projectName") == PROJECT or "coding-vps" in s.get("name", "")]
+    _ = services
+    _ = services
     result = ssh("docker service ls --filter name=coding-vps_apenas_para_auxilio --format '{{.Name}}|{{.Replicas}}|{{.Image}}'")
-    lines = [l.split("|") for l in result["stdout"].split("\n") if l]
+    lines = [line.split("|") for line in result["stdout"].split("\n") if line]
     status = {}
     up_count = 0
     for name, replicas, image in lines:

@@ -26,7 +26,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import httpx
 
@@ -133,7 +133,7 @@ def main() -> int:
                 print(f"  deleted: {deleted}")
             else:
                 failed += 1
-                print(f"  [HOLD] delete falhou", file=sys.stderr)
+                print("  [HOLD] delete falhou", file=sys.stderr)
         print()
 
     print(f"Total elegiveis: {total_eligible}")
