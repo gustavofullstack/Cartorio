@@ -213,7 +213,7 @@ class TestVerifySignature:
         import hmac as hmac_mod
 
         sig = hmac_mod.new(b"test-secret-123", body, hashlib.sha256).hexdigest()
-        with patch("app.api.v1.whatsapp.validate_evolution_signature", return_value=True):
+        with patch("app.api.v1.whatsapp.validate_evolution_webhook_auth", return_value=True):
             result = await adapter.verify_signature(body, sig)
         assert result is True
 
@@ -221,7 +221,7 @@ class TestVerifySignature:
     async def test_verify_signature_invalid_hmac(self) -> None:
         adapter = WhatsAppAdapter(base_url="http://fake:8080", api_key="k", instance="i")
         os.environ["EVOLUTION_WEBHOOK_SECRET"] = "test-secret"
-        with patch("app.api.v1.whatsapp.validate_evolution_signature", return_value=False):
+        with patch("app.api.v1.whatsapp.validate_evolution_webhook_auth", return_value=False):
             result = await adapter.verify_signature(b"body", "bad-sig")
         assert result is False
 
