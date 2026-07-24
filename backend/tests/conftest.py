@@ -78,6 +78,11 @@ os.environ["APP_ENV"] = "development"
 os.environ["PII_SCRUB_ENABLED"] = "true"
 os.environ["PII_BLOCK_ON_DETECT"] = "true"
 os.environ["N8N_API_KEY"] = "header.payload.signature"
+# Webhooks Evolution: suíte local roda aberta; testes de segurança setam
+# EVOLUTION_REQUIRE_SIGNATURE=true + secret explicitamente (fail-closed).
+# Produção DEVE ter REQUIRE=true e EVOLUTION_WEBHOOK_SECRET configurado.
+os.environ.setdefault("EVOLUTION_REQUIRE_SIGNATURE", "false")
+os.environ.setdefault("EVOLUTION_WEBHOOK_SECRET", "")
 
 TEST_CARTORIO_API_KEY = "a" * 64
 os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY

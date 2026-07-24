@@ -23,7 +23,6 @@ from typing import Any
 
 import httpx
 
-from app.services.metrics import instrument_llm
 from app.services.pii import scrub
 
 logger = logging.getLogger(__name__)
@@ -619,7 +618,6 @@ def _run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, str | None, l
     return json.dumps({"erro": "tool_desconhecida"}), None, used
 
 
-@instrument_llm(model="MiniMax_direct", operation="chat")
 async def _chat_completion(
     messages: list[dict[str, Any]],
     *,
@@ -627,11 +625,10 @@ async def _chat_completion(
     temperature: float = 0.7,
     max_tokens: int = 4096,
 ) -> tuple[dict[str, Any] | None, str, str]:
-    """Retorna (message, provider, err)."""
+    import time
+    from app.services.metrics import store
+
     last_err = ""
-    # Payload minimo (zen free / litellm): 'thinking'/'tools' so vao para
-    # providers que suportam (minimax_direct). Enviar esses campos para zen
-    # free/litellm causa HTTP 400 em cascata (diagnostico E2).
     payload_min: dict[str, Any] = {
         "messages": messages,
         "max_tokens": max_tokens,
@@ -642,17 +639,17 @@ async def _chat_completion(
         payload_rich["tools"] = tools
         payload_rich["tool_choice"] = "auto"
 
-    # Timeout POR TENTATIVA (~20s read / 8s connect). O teto global do loop
-    # agentico fica no asyncio.wait_for de run_cartorio_agent.
     async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=8.0)) as client:
         if MINIMAX_API_KEY:
             base = MINIMAX_BASE_URL
-            if base.endswith("/chat/completions"):
-                url = base
-            elif base.endswith("/v1"):
-                url = f"{base}/chat/completions"
-            else:
-                url = f"{base.rstrip('/')}/v1/chat/completions"
+            url = (
+                base
+                if base.endswith("/chat/completions")
+                else f"{base}/chat/completions"
+                if base.endswith("/v1")
+                else f"{base.rstrip('/')}/v1/chat/completions"
+            )
+            start_t = time.perf_counter()
             try:
                 r = await client.post(
                     url,
@@ -662,43 +659,60 @@ async def _chat_completion(
                     },
                     json={**payload_rich, "model": MINIMAX_MODEL},
                 )
+                elapsed = time.perf_counter() - start_t
+                store.observe_llm_call_seconds("MiniMax_direct", "chat", elapsed)
                 if r.status_code == 200:
+                    store.inc_llm_calls_total("MiniMax_direct", "chat", "success")
                     data = r.json()
                     msg = data.get("choices", [{}])[0].get("message") or {}
                     return msg, f"minimax_direct:{MINIMAX_MODEL}", ""
+                store.inc_llm_calls_total("MiniMax_direct", "chat", "error")
+                store.inc_llm_errors_total(
+                    "MiniMax_direct", "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
+                )
                 last_err = f"minimax HTTP {r.status_code} {r.text[:160]}"
             except Exception as exc:
+                elapsed = time.perf_counter() - start_t
+                store.observe_llm_call_seconds("MiniMax_direct", "chat", elapsed)
+                store.inc_llm_calls_total("MiniMax_direct", "chat", "error")
+                store.inc_llm_errors_total("MiniMax_direct", "chat", type(exc).__name__)
                 last_err = f"minimax {type(exc).__name__}: {exc}"
                 logger.warning("cartorio_agent minimax_direct fail: %s", last_err)
 
         if LITELLM_KEY:
-            headers = {
-                "Authorization": f"Bearer {LITELLM_KEY}",
-                "Content-Type": "application/json",
-            }
+            headers = {"Authorization": f"Bearer {LITELLM_KEY}", "Content-Type": "application/json"}
             for base in LITELLM_URLS:
                 if not base:
                     continue
                 url = f"{base.rstrip('/')}/v1/chat/completions"
+                start_t = time.perf_counter()
                 try:
                     r = await client.post(
                         url,
                         headers=headers,
                         json={**payload_min, "model": LITELLM_MODEL or MINIMAX_MODEL},
                     )
+                    elapsed = time.perf_counter() - start_t
+                    store.observe_llm_call_seconds("litellm", "chat", elapsed)
                     if r.status_code != 200:
+                        store.inc_llm_calls_total("litellm", "chat", "error")
+                        store.inc_llm_errors_total(
+                            "litellm", "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
+                        )
                         last_err = f"{base} HTTP {r.status_code} {r.text[:120]}"
                         continue
+                    store.inc_llm_calls_total("litellm", "chat", "success")
                     data = r.json()
                     msg = data.get("choices", [{}])[0].get("message") or {}
                     return msg, f"litellm:{LITELLM_MODEL}", ""
                 except Exception as exc:
+                    elapsed = time.perf_counter() - start_t
+                    store.observe_llm_call_seconds("litellm", "chat", elapsed)
+                    store.inc_llm_calls_total("litellm", "chat", "error")
+                    store.inc_llm_errors_total("litellm", "chat", type(exc).__name__)
                     last_err = f"{base} {type(exc).__name__}: {exc}"
                     logger.warning("cartorio_agent litellm fail: %s", last_err)
 
-        # Public free providers are tried only after the private/direct paths.
-        # Keep each account isolated so one exhausted quota does not stop the
-        # remaining free-model fallbacks.
         for slot, (api_key, base, model) in enumerate(_opencode_free_configs(), start=1):
             if not api_key or not base or not model:
                 continue
@@ -709,6 +723,8 @@ async def _chat_completion(
                 if base.rstrip("/").endswith("/v1")
                 else f"{base.rstrip('/')}/v1/chat/completions"
             )
+            provider_label = f"opencode_free_{slot}"
+            start_t = time.perf_counter()
             try:
                 r = await client.post(
                     url,
@@ -718,15 +734,26 @@ async def _chat_completion(
                     },
                     json={**payload_min, "model": model},
                 )
+                elapsed = time.perf_counter() - start_t
+                store.observe_llm_call_seconds(provider_label, "chat", elapsed)
                 if r.status_code != 200:
-                    last_err = f"opencode_free_{slot} HTTP {r.status_code}"
+                    store.inc_llm_calls_total(provider_label, "chat", "error")
+                    store.inc_llm_errors_total(
+                        provider_label, "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
+                    )
+                    last_err = f"{provider_label} HTTP {r.status_code}"
                     continue
+                store.inc_llm_calls_total(provider_label, "chat", "success")
                 data = r.json()
                 msg = data.get("choices", [{}])[0].get("message") or {}
-                return msg, f"opencode_free_{slot}:{model}", ""
+                return msg, f"{provider_label}:{model}", ""
             except Exception as exc:
-                last_err = f"opencode_free_{slot} {type(exc).__name__}"
-                logger.warning("cartorio_agent opencode_free_%d fail: %s", slot, last_err)
+                elapsed = time.perf_counter() - start_t
+                store.observe_llm_call_seconds(provider_label, "chat", elapsed)
+                store.inc_llm_calls_total(provider_label, "chat", "error")
+                store.inc_llm_errors_total(provider_label, "chat", type(exc).__name__)
+                last_err = f"{provider_label} {type(exc).__name__}"
+                logger.warning("cartorio_agent %s fail: %s", provider_label, last_err)
 
     return None, "none", last_err
 
@@ -954,6 +981,23 @@ def _last_bot_from_history(history: list[str] | None) -> str:
 
 
 def _offline_reply(
+    text: str,
+    intent: str,
+    tools_used: list[str],
+    *,
+    history: list[str] | None = None,
+    degraded: bool = False,
+) -> AgentReply:
+    reply = _offline_reply_inner(text, intent, tools_used, history=history)
+    if degraded:
+        reply.text = (
+            "Nosso sistema de inteligência artificial está com lentidão neste momento. Vou tentar te ajudar com o básico:\n\n"
+            + reply.text
+        )
+    return reply
+
+
+def _offline_reply_inner(
     text: str,
     intent: str,
     tools_used: list[str],
@@ -1405,14 +1449,14 @@ async def run_cartorio_agent(
             "cartorio_agent: LLM timeout global (%.0fs) — offline reply",
             LLM_GLOBAL_TIMEOUT_S,
         )
-        return _offline_reply(scrubbed, intent, tools_used, history=history)
+        return _offline_reply(scrubbed, intent, tools_used, history=history, degraded=True)
     tools_used = list(tools_used) + list(tool_used)
 
     if not content:
         # fallback simples sem tools
         content, provider = await _llm_minimax(system, user_block)
     if not content:
-        return _offline_reply(scrubbed, intent, tools_used, history=history)
+        return _offline_reply(scrubbed, intent, tools_used, history=history, degraded=True)
 
     clean, action = _parse_action(content)
     if tool_action and not action:

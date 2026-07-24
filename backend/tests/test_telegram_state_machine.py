@@ -108,14 +108,27 @@ async def test_state_agendar_data_palavra_hoje() -> None:
 
 @pytest.mark.asyncio
 async def test_state_agendar_data_formato_invalido() -> None:
-    """_handle_state AGENDAR_DATA com data invalida retorna erro + mesmo state."""
+    """Data curta invalida orienta o usuario e mantem o wizard."""
+    bus = _make_bus()
+    text, new_state, keyboard = await _handle_state(
+        "32/13", STATE_AGENDAR_DATA, {}, bus, chat_id=123
+    )
+    assert "invalida" in text.lower() or "inval" in text.lower() or "Use" in text
+    assert new_state == STATE_AGENDAR_DATA
+    assert keyboard is not None
+
+
+@pytest.mark.asyncio
+async def test_state_agendar_data_conversacional_sai_do_wizard() -> None:
+    """Texto livre longo limpa o wizard para o Agent AI responder naturalmente."""
     bus = _make_bus()
     text, new_state, keyboard = await _handle_state(
         "data invalida xyz", STATE_AGENDAR_DATA, {}, bus, chat_id=123
     )
-    assert "invalida" in text.lower() or "inval" in text.lower() or "Use" in text
-    assert new_state == STATE_AGENDAR_DATA
+    assert text == ""
+    assert new_state == STATE_IDLE
     assert keyboard is None
+    assert bus.client.delete.called
 
 
 # =============================================================================
@@ -141,14 +154,27 @@ async def test_state_agendar_hora_formato_valido() -> None:
 
 @pytest.mark.asyncio
 async def test_state_agendar_hora_formato_invalido() -> None:
-    """_handle_state AGENDAR_HORA com hora invalida retorna erro + mesmo state."""
+    """Hora curta invalida orienta o usuario e mantem o wizard."""
+    bus = _make_bus()
+    text, new_state, keyboard = await _handle_state(
+        "99", STATE_AGENDAR_HORA, {}, bus, chat_id=123
+    )
+    assert "invalido" in text.lower() or "inval" in text.lower() or "Use" in text
+    assert new_state == STATE_AGENDAR_HORA
+    assert keyboard is not None
+
+
+@pytest.mark.asyncio
+async def test_state_agendar_hora_conversacional_sai_do_wizard() -> None:
+    """Texto livre longo limpa o wizard para o Agent AI responder naturalmente."""
     bus = _make_bus()
     text, new_state, keyboard = await _handle_state(
         "hora invalida", STATE_AGENDAR_HORA, {}, bus, chat_id=123
     )
-    assert "invalido" in text.lower() or "inval" in text.lower() or "Use" in text
-    assert new_state == STATE_AGENDAR_HORA
+    assert text == ""
+    assert new_state == STATE_IDLE
     assert keyboard is None
+    assert bus.client.delete.called
 
 
 # =============================================================================

@@ -591,6 +591,9 @@ _ALLOWED_LLM_MODELS: set[str] = {
     "cache",
     "multi_provider",  # chat_with_fallback: chain tenta varios ate um dar certo
     "test",  # usado apenas em testes
+    "opencode_free_1",
+    "opencode_free_2",
+    "opencode_free_3",
 }
 
 _ALLOWED_LLM_OPERATIONS: set[str] = {

@@ -27,8 +27,11 @@ import pytest
 
 
 @pytest.fixture
-def mock_request():
+def mock_request(monkeypatch: pytest.MonkeyPatch):
     """Mock FastAPI Request with state attributes."""
+    # Estes testes chamam handlers diretamente para cobrir regras downstream;
+    # o contrato HMAC é exercitado separadamente via TestClient HTTP.
+    monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "false")
     req = MagicMock()
     req.state = SimpleNamespace(
         request_id="req-123",
@@ -44,6 +47,7 @@ def mock_request():
     }
     req.url = SimpleNamespace(path="/api/v1/test")
     req.method = "GET"
+    req.body = AsyncMock(return_value=b"{}")
     return req
 
 
