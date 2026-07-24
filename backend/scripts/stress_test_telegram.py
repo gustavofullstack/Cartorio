@@ -2,13 +2,14 @@ import asyncio
 import httpx
 import sys
 
+
 async def simulate_human(total_messages=1000):
     url = "http://127.0.0.1:8000/api/v1/telegram/webhook"
-    
+
     # We simulate a conversation
     success_count = 0
     error_count = 0
-    
+
     async with httpx.AsyncClient() as client:
         for i in range(total_messages):
             payload = {
@@ -19,17 +20,17 @@ async def simulate_human(total_messages=1000):
                         "id": 123456789,
                         "is_bot": False,
                         "first_name": "Gustavo",
-                        "username": "gustavoalmeida"
+                        "username": "gustavoalmeida",
                     },
                     "chat": {
                         "id": 123456789,
                         "first_name": "Gustavo",
                         "username": "gustavoalmeida",
-                        "type": "private"
+                        "type": "private",
                     },
                     "date": 1718000000 + i,
-                    "text": f"Olá, bot! Mensagem humana de teste {i}"
-                }
+                    "text": f"Olá, bot! Mensagem humana de teste {i}",
+                },
             }
             try:
                 # Assuming the local server is running on 8000
@@ -42,13 +43,16 @@ async def simulate_human(total_messages=1000):
             except Exception as e:
                 error_count += 1
                 print(f"Request {i} failed: {e}")
-                
-            if (i+1) % 100 == 0:
-                print(f"Processed {i+1}/{total_messages} (Success: {success_count}, Error: {error_count})")
-                
+
+            if (i + 1) % 100 == 0:
+                print(
+                    f"Processed {i + 1}/{total_messages} (Success: {success_count}, Error: {error_count})"
+                )
+
     print(f"Completed! Success: {success_count} / {total_messages}. Errors: {error_count}")
     if error_count > 0:
         sys.exit(1)
+
 
 if __name__ == "__main__":
     asyncio.run(simulate_human(1000))

@@ -1,0 +1,3 @@
+## 2024-05-15 - Optimize pagination count query
+**Learning:** Found a codebase-specific performance bottleneck in `backend/app/api/v1/_helpers.py` `list_with_pagination` where `len(db.execute(count_stmt).scalars().all())` was being used to calculate the total item count for pagination. This evaluates the query in Python by loading all rows into memory, causing O(N) memory and data transfer overhead instead of delegating the count to the database.
+**Action:** Always use SQLAlchemy native functions `func.count()` like `db.scalar(select(func.count()).select_from(model))` to perform counts directly on the database engine, improving query execution time and avoiding unnecessary memory overhead.
