@@ -1407,7 +1407,7 @@ async def run_cartorio_agent(
     # Hard offline: apenas catalogo extenso em serie quando pedido explicitamente
     hard_offline = ("catalogo_serie",)
     if intent in hard_offline:
-        return _offline_reply(scrubbed or raw, intent, tools_used, history=history)
+        return _offline_reply(scrubbed, intent, tools_used, history=history)
 
     user_block = scrubbed
     if history:
@@ -1436,15 +1436,27 @@ async def run_cartorio_agent(
             + "\n\n(Trate como pre-qualificacao cartorio; confirme recebimento; LGPD)."
         )
 
+    async def _run_llm_with_fallback() -> tuple[str, str, str | None, list[str]]:
+        """Run tools and simple fallbacks under one caller-enforced time budget."""
+        content, provider, tool_action, tool_used = await _llm_agent_with_tools(system, user_block)
+        if content:
+            return content, provider, tool_action, tool_used
+
+        fallback_content, fallback_provider = await _llm_minimax(system, user_block)
+        return fallback_content, fallback_provider, tool_action, tool_used
+
     # Agent AI com TOOLS (MiniMax-M3) — precos via tool, nao inventados.
-    # Teto global via wait_for: provider travado cai no offline reply em
-    # ~LLM_GLOBAL_TIMEOUT_S — usuario NUNCA fica 15min sem resposta (E2).
+    # Teto global cobre ferramentas E fallback simples: provider travado cai no
+    # offline reply em ~LLM_GLOBAL_TIMEOUT_S, sem uma segunda espera completa.
     try:
         content, provider, tool_action, tool_used = await asyncio.wait_for(
-            _llm_agent_with_tools(system, user_block),
+            _run_llm_with_fallback(),
             timeout=LLM_GLOBAL_TIMEOUT_S,
         )
     except TimeoutError:
+        from app.services.metrics import store
+
+        store.inc_llm_calls_total("multi_provider", "chat", "timeout")
         logger.warning(
             "cartorio_agent: LLM timeout global (%.0fs) — offline reply",
             LLM_GLOBAL_TIMEOUT_S,
@@ -1452,9 +1464,6 @@ async def run_cartorio_agent(
         return _offline_reply(scrubbed, intent, tools_used, history=history, degraded=True)
     tools_used = list(tools_used) + list(tool_used)
 
-    if not content:
-        # fallback simples sem tools
-        content, provider = await _llm_minimax(system, user_block)
     if not content:
         return _offline_reply(scrubbed, intent, tools_used, history=history, degraded=True)
 

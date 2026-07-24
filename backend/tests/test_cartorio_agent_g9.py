@@ -21,6 +21,7 @@ import pytest
 import respx
 
 from app.services import cartorio_agent
+from app.services.metrics import MetricsStore
 
 _ZEN_ENV_VARS = [
     f"{prefix}{slot}_{suffix}"
@@ -183,4 +184,35 @@ async def test_wait_for_global_cai_no_offline_reply_com_provider_travado(
 
     assert elapsed < 5, f"demorou {elapsed:.1f}s — wait_for global nao disparou"
     assert reply.provider.startswith("offline")
-    assert reply.text
+    assert reply.text.startswith("Nosso sistema de inteligência artificial está com lentidão")
+
+
+async def test_global_timeout_cobre_fallback_simples_e_registra_metrica(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Fallback sem tools nao pode iniciar outro ciclo completo de timeout."""
+
+    async def _empty_tools(
+        system: str, user: str
+    ) -> tuple[str, str, str | None, list[str]]:
+        return "", "none", None, []
+
+    async def _stuck_fallback(system: str, user: str) -> tuple[str, str]:
+        await asyncio.sleep(30)
+        return "nunca", "none"
+
+    metrics = MetricsStore()
+    monkeypatch.setattr("app.services.metrics.store", metrics)
+    monkeypatch.setattr(cartorio_agent, "_llm_agent_with_tools", _empty_tools)
+    monkeypatch.setattr(cartorio_agent, "_llm_minimax", _stuck_fallback)
+    monkeypatch.setattr(cartorio_agent, "LLM_GLOBAL_TIMEOUT_S", 0.2)
+
+    start = time.monotonic()
+    reply = await cartorio_agent.run_cartorio_agent("oi")
+    elapsed = time.monotonic() - start
+
+    assert elapsed < 5, f"fallback excedeu o teto global: {elapsed:.1f}s"
+    assert reply.text.startswith("Nosso sistema de inteligência artificial está com lentidão")
+    assert metrics.counters["cartorio_llm_calls_total"][
+        "model=multi_provider|operation=chat|status=timeout"
+    ] == 1
