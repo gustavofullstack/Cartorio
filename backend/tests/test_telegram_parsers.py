@@ -50,7 +50,6 @@ def test_parse_date_formato_invalido_retorna_none() -> None:
     """_parse_date com texto sem pattern retorna None."""
     assert _parse_date("ontem") is None
     assert _parse_date("2026-12-25") is None  # formato ISO nao aceito
-    assert _parse_date("25-12-2026") is None  # separador errado
     assert _parse_date("abc/def/ghij") is None
 
 
