@@ -401,20 +401,39 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
 
 @router.get("/health")
 async def whatsapp_health() -> dict:
-    """Health check: Evolution API + pipeline."""
+    """Health check: Evolution API + sessao WhatsApp REAL + pipeline.
+
+    E2.08 / Lesson 260: ``evolution_api=online`` NUNCA implica sessao
+    conectada. Parseamos o ``connectionState`` real da instancia
+    (open|close|connecting) e so reportamos ``status=ok`` quando a sessao
+    esta efetivamente ``open``.
+    """
     evolution_ok = False
+    session_state = "unknown"
     try:
         adapter = get_adapter()
         client = await adapter._get_client()
         resp = await client.get(f"{adapter.base_url}/instance/connectionState/{adapter.instance}")
         evolution_ok = resp.status_code == 200
+        if evolution_ok:
+            try:
+                data = resp.json()
+            except Exception:
+                data = {}
+            raw_state = (data.get("instance") or {}).get("state") or data.get("state")
+            if raw_state:
+                session_state = str(raw_state).lower()
     except Exception as e:
         logger.warning("evolution health error: %s", e)
 
     pipeline = await pipeline_health()
+    session_connected = session_state == "open"
     return {
-        "status": "ok" if evolution_ok else "degraded",
+        "status": "ok" if (evolution_ok and session_connected) else "degraded",
         "evolution_api": "online" if evolution_ok else "offline",
+        # Separado por design: NUNCA tratar evolution_api como WhatsApp conectado.
+        "whatsapp_session": session_state,
+        "session_connected": session_connected,
         "instance": EVOLUTION_INSTANCE,
         "pipeline": pipeline,
         "ts": time.time(),
