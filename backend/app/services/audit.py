@@ -62,6 +62,84 @@ class AuditService:
         }
         return json.dumps(block, sort_keys=True, separators=(",", ":"), default=str)
 
+    # ------------------------------------------------------------------
+    # Canonicalizador "SQL trigger" (fn_auto_audit, migracao 0020)
+    # ------------------------------------------------------------------
+    #
+    # O trigger PL/pgSQL `fn_auto_audit()` (6 tabelas PII) escreve em
+    # audit_log DIRETO no banco, canonicalizando assim (migracao 0020):
+    #
+    #   v_canonical := '{"payload":' || v_payload::text
+    #       || ',"prev_hash":"' || v_prev_hash
+    #       || '","timestamp":"' || v_ts || '"}';
+    #
+    # `v_payload::text` (jsonb::text) difere do json.dumps Python:
+    #   - chaves ordenadas por (length, bytewise) — ordem interna do JSONB,
+    #     NAO alfabetica;
+    #   - separadores com espaco (", " entre pares, ": " apos chave);
+    #   - UTF-8 raw (sem escape \uXXXX);
+    #   - numericos normalizados pelo JSONB.
+    #
+    # Sem este mirror, verify_chain quebra na 1a entrada escrita pelo
+    # trigger (prod: posicao 668, id 670, 2026-07-09 — 158 entradas
+    # sistematicas, prova de divergencia de formato, NAO de tampering:
+    # prev_hash linkage e 100% continuo nas 1130 entradas).
+    #
+    # REVIEW cartorio-lgpd obrigatorio (superficie audit).
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _jsonb_text(cls, value: Any) -> str:
+        """Mimetiza Postgres `jsonb::text` (ordem (len,bytewise), separadores com espaco)."""
+        if isinstance(value, dict):
+            keys = sorted(value.keys(), key=lambda k: (len(str(k)), str(k).encode()))
+            parts = [
+                f"{json.dumps(str(k), ensure_ascii=False)}: {cls._jsonb_text(value[k])}"
+                for k in keys
+            ]
+            return "{" + ", ".join(parts) + "}"
+        if isinstance(value, (list, tuple)):
+            return "[" + ", ".join(cls._jsonb_text(v) for v in value) + "]"
+        if value is True:
+            return "true"
+        if value is False:
+            return "false"
+        if value is None:
+            return "null"
+        return json.dumps(value, ensure_ascii=False, default=str)
+
+    @classmethod
+    def _canonical_block_sql_trigger(
+        cls, prev_hash: str | None, payload: dict, timestamp: str
+    ) -> str:
+        """Canonical block no formato do trigger fn_auto_audit (migracao 0020)."""
+        return (
+            '{"payload":'
+            + cls._jsonb_text(payload)
+            + ',"prev_hash":"'
+            + (prev_hash or ("0" * 64))
+            + '","timestamp":"'
+            + timestamp
+            + '"}'
+        )
+
+    @classmethod
+    def _compute_hash_sql_trigger(cls, prev_hash: str | None, payload: dict, timestamp: str) -> str:
+        canonical = cls._canonical_block_sql_trigger(prev_hash, payload, timestamp)
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _is_trigger_written(entry: "AuditLog") -> bool:
+        """Entradas escritas pelo trigger fn_auto_audit (nao pelo AuditService.log).
+
+        Marcadores estaveis (migracao 0020): user_agent default
+        'auto_audit_trigger' e actor_id 'auto_audit' (quando o request
+        nao seta GUCs app.current_actor_id / app.user_agent).
+        """
+        return (entry.user_agent or "") == "auto_audit_trigger" or (
+            entry.actor_id or ""
+        ) == "auto_audit"
+
     @classmethod
     def _compute_hash(cls, prev_hash: str | None, payload: dict, timestamp: str) -> str:
         canonical = cls._canonical_block(prev_hash, payload, timestamp)
@@ -183,7 +261,23 @@ class AuditService:
             expected = cls._compute_hash(prev_for_hash, entry.payload, timestamp_iso)
             # Compara prev_hash considerando chain head: ambos sao None
             entry_prev = entry.prev_hash if entry.prev_hash else "0" * 64
-            if entry_prev != prev_for_hash or entry.hash != expected:
+            if entry_prev != prev_for_hash:
+                # Link quebrado: NENHUM fallback e valido (possivel tampering).
+                return False, last_valid
+            if entry.hash != expected:
+                # Fallback controlado: entrada escrita pelo trigger fn_auto_audit
+                # (migracao 0020) canonicaliza via jsonb::text — formato distinto
+                # do Python. So aceita se recomputar EXATAMENTE no formato SQL;
+                # qualquer divergencia continua quebrando a cadeia (fail-closed).
+                # REVIEW cartorio-lgpd.
+                if cls._is_trigger_written(entry):
+                    expected_sql = cls._compute_hash_sql_trigger(
+                        prev_for_hash, entry.payload, timestamp_iso
+                    )
+                    if entry.hash == expected_sql:
+                        prev_hash = entry.hash
+                        last_valid = i + 1
+                        continue
                 # Chain quebrada — retorna posicao do ultimo valido
                 return False, last_valid
             prev_hash = entry.hash
