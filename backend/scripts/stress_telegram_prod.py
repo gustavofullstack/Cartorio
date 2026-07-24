@@ -85,7 +85,9 @@ async def simulate_human(total_messages: int = 1000) -> None:
 
     duration = time.time() - start_time
     total = total_messages
-    print(f"Completed in {duration:.2f}s! Success: {success_count} / {total}. Errors: {error_count}")
+    print(
+        f"Completed in {duration:.2f}s! Success: {success_count} / {total}. Errors: {error_count}"
+    )
 
 
 if __name__ == "__main__":
