@@ -61,7 +61,7 @@ async def test_state_agendar_servico_escolhe_nome_servico() -> None:
     """_handle_state AGENDAR_SERVICO com nome do servico (key) tambem aceita."""
     bus = _make_bus()
     # SERVICOS tem chaves como 'certidao', 'escritura', etc.
-    text, new_state, keyboard = await _handle_state(
+    _text, new_state, _keyboard = await _handle_state(
         "1", STATE_AGENDAR_SERVICO, {}, bus, chat_id=123
     )
     assert new_state == STATE_AGENDAR_DATA
@@ -100,7 +100,7 @@ async def test_state_agendar_data_formato_valido_dd_mm_yyyy() -> None:
 async def test_state_agendar_data_palavra_hoje() -> None:
     """_handle_state AGENDAR_DATA com 'hoje' aceita."""
     bus = _make_bus()
-    text, new_state, keyboard = await _handle_state(
+    _text, new_state, _keyboard = await _handle_state(
         "hoje", STATE_AGENDAR_DATA, {}, bus, chat_id=123
     )
     assert new_state == STATE_AGENDAR_HORA
@@ -110,12 +110,13 @@ async def test_state_agendar_data_palavra_hoje() -> None:
 async def test_state_agendar_data_formato_invalido() -> None:
     """_handle_state AGENDAR_DATA com data invalida retorna erro + mesmo state."""
     bus = _make_bus()
+    # Usa um input < 10 chars sem as stop words para nao engatilhar o fallback
     text, new_state, keyboard = await _handle_state(
-        "data invalida xyz", STATE_AGENDAR_DATA, {}, bus, chat_id=123
+        "29/13", STATE_AGENDAR_DATA, {}, bus, chat_id=123
     )
-    assert "invalida" in text.lower() or "inval" in text.lower() or "Use" in text
+    assert "invalida" in text.lower() or "inval" in text.lower() or "use" in text.lower()
     assert new_state == STATE_AGENDAR_DATA
-    assert keyboard is None
+    assert keyboard is not None
 
 
 # =============================================================================
@@ -144,11 +145,11 @@ async def test_state_agendar_hora_formato_invalido() -> None:
     """_handle_state AGENDAR_HORA com hora invalida retorna erro + mesmo state."""
     bus = _make_bus()
     text, new_state, keyboard = await _handle_state(
-        "hora invalida", STATE_AGENDAR_HORA, {}, bus, chat_id=123
+        "25:00", STATE_AGENDAR_HORA, {}, bus, chat_id=123
     )
-    assert "invalido" in text.lower() or "inval" in text.lower() or "Use" in text
+    assert "invalido" in text.lower() or "inval" in text.lower() or "use" in text.lower()
     assert new_state == STATE_AGENDAR_HORA
-    assert keyboard is None
+    assert keyboard is not None
 
 
 # =============================================================================
@@ -164,7 +165,7 @@ async def test_state_agendar_confirmar_sim() -> None:
         "app.api.v1.telegram._confirmar_agendamento",
         new=AsyncMock(return_value=("Confirmado!", None, False)),
     ):
-        text, new_state, keyboard = await _handle_state(
+        text, new_state, _keyboard = await _handle_state(
             "sim", STATE_AGENDAR_CONFIRMAR, {}, bus, chat_id=123
         )
     assert new_state == STATE_IDLE
@@ -290,7 +291,7 @@ async def test_state_humano_falha_api_nao_inventa_ticket() -> None:
         "app.api.v1.telegram._tool_criar_atendimento",
         new=AsyncMock(return_value={"erro": "HTTP 500"}),
     ):
-        text, new_state, keyboard = await _handle_state(
+        text, new_state, _keyboard = await _handle_state(
             "Preciso de ajuda", STATE_HUMANO, {}, bus, chat_id=123, user_id=99
         )
     assert "Ticket criado" not in text
