@@ -204,18 +204,18 @@ def main() -> int:
     if not deploy_step_copy(host, user, key, args.src, deploy_dir, args.timeout):
         return 1
 
-    print(f"[2/4] Write openclaw.json...")
+    print("[2/4] Write openclaw.json...")
     config_json = render_openclaw_config("cartorio-bot", api_key_password, api_base)
     # Substituir newlines por \\n para SSH inline
     config_escaped = config_json.replace("'", "'\\''")
     if not deploy_step_write_config(host, user, key, config_escaped, args.timeout):
         return 1
 
-    print(f"[3/4] Restart OpenClaw container...")
+    print("[3/4] Restart OpenClaw container...")
     if not deploy_step_restart(host, user, key, args.timeout):
         return 1
 
-    print(f"[4/4] Health check /health...")
+    print("[4/4] Health check /health...")
     if not deploy_step_health_check(host, user, key, args.timeout):
         return 1
 

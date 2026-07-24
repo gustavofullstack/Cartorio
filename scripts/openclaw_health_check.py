@@ -86,7 +86,7 @@ async def check_websocket(base_url: str) -> dict:
         async with websockets.connect(ws_url, timeout=TIMEOUT) as ws:
             await ws.send(json.dumps({"type": "ping", "ts": datetime.now(timezone.utc).isoformat()}))
             # Esperar pong ou primeira mensagem
-            response = await asyncio_wait_for(ws.recv(), timeout=TIMEOUT)  # type: ignore[name-defined]
+            response = await asyncio.wait_for(ws.recv(), timeout=TIMEOUT)  # type: ignore[name-defined]
             return {
                 "name": "websocket",
                 "status": "ok",

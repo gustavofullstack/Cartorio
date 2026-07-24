@@ -11,7 +11,7 @@
                 "path": "lgpd-esqueci",
                 "responseMode": "responseNode",
                 "responseData": "allEntries",
-                "options": {"rawBody": false},
+                "options": {"rawBody": False},
             },
         },
         {
@@ -47,7 +47,7 @@
             "parameters": {
                 "method": "GET",
                 "url": "=https://api.2notasudi.com.br/api/v1/cliente/{{ $json.cliente_id }}/historico",
-                "sendHeaders": true,
+                "sendHeaders": True,
                 "headerParameters": {
                     "parameters": [
                         {"name": "X-API-Key", "value": "={{ $env.CARTORIO_API_KEY }}"},
@@ -69,7 +69,7 @@
             "parameters": {
                 "conditions": {
                     "options": {
-                        "caseSensitive": true,
+                        "caseSensitive": True,
                         "leftValue": "",
                         "typeValidation": "strict",
                     },
@@ -77,7 +77,7 @@
                         {
                             "id": "c1",
                             "leftValue": "={{ $json.consent_granted }}",
-                            "rightValue": "true",
+                            "rightValue": "True",
                             "operator": {"type": "string", "operation": "equals"},
                         }
                     ],
@@ -92,7 +92,7 @@
             "parameters": {
                 "method": "POST",
                 "url": "=https://api.2notasudi.com.br/api/v1/cliente/{{ $('Extract Cliente ID').item.json.cliente_id }}/soft-delete",
-                "sendHeaders": true,
+                "sendHeaders": True,
                 "headerParameters": {
                     "parameters": [
                         {"name": "X-API-Key", "value": "={{ $env.CARTORIO_API_KEY }}"},
@@ -103,7 +103,7 @@
                         {"name": "Content-Type", "value": "application/json"},
                     ]
                 },
-                "sendBody": true,
+                "sendBody": True,
                 "bodyParameters": {
                     "parameters": [
                         {
@@ -124,7 +124,7 @@
             "parameters": {
                 "method": "POST",
                 "url": "https://api.2notasudi.com.br/api/v1/audit/log",
-                "sendHeaders": true,
+                "sendHeaders": True,
                 "headerParameters": {
                     "parameters": [
                         {"name": "X-API-Key", "value": "={{ $env.CARTORIO_API_KEY }}"},
@@ -135,7 +135,7 @@
                         {"name": "Content-Type", "value": "application/json"},
                     ]
                 },
-                "sendBody": true,
+                "sendBody": True,
                 "bodyParameters": {
                     "parameters": [
                         {"name": "action", "value": "lgpd.esquecimento"},
@@ -202,7 +202,7 @@
     },
     "settings": {
         "executionOrder": "v1",
-        "saveExecutionProgress": true,
+        "saveExecutionProgress": True,
         "saveDataSuccessExecution": "all",
         "saveDataErrorExecution": "all",
         "errorWorkflow": "PM8JiksU",

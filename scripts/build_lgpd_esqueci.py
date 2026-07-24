@@ -1,3 +1,4 @@
+import requests
 #!/usr/bin/env python3
 """Cria o workflow 23 - LGPD Esqueci com respondToWebhook (fix P0)."""
 
@@ -210,7 +211,6 @@ out = Path(
 out.write_text(json.dumps(WF, indent=2, ensure_ascii=False))
 print(f"Wrote {out} ({out.stat().st_size} bytes)")
 
-import requests
 
 email = os.environ.get("N8N_LOGIN_EMAIL", "")
 password = os.environ.get("N8N_LOGIN_PASS", "")

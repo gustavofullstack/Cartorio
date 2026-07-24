@@ -165,9 +165,9 @@ def render_markdown(badges: list[dict]) -> str:
     lines.append("")
     for b in badges:
         badge_md = make_badge_markdown(b["label"], b["value"], b["color"], b.get("link", ""))
-        lines.append(f"```")
+        lines.append("```")
         lines.append(badge_md)
-        lines.append(f"```")
+        lines.append("```")
     lines.append("")
     lines.append("## Visualizacao (como aparecem no GitHub)")
     lines.append("")

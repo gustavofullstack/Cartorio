@@ -1820,7 +1820,7 @@ pre {
 }
 .close svg { width: 18px; height: 18px; stroke-width: 2.1; }
 .close:hover { background: var(--soft); }
-.close:focus-visible { background: var(--soft); outline: 2px solid var(--brand); }
+    .close:focus-visible { background: var(--soft); outline: 2px solid var(--brand); }
 .copy-button {
   position: absolute;
   right: 8px;

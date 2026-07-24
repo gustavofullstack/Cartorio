@@ -20,11 +20,9 @@ Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 7.
 from __future__ import annotations
 
 import argparse
-import json
-import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 DPA_DIR = Path("docs/lgpd")
