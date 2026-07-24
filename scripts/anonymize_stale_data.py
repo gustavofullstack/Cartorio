@@ -20,6 +20,10 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
+from app.db import session_scope
+from app.models.cliente import Cliente
+from app.jobs.retencao import run_retencao
+from app.services.audit import AuditService
 
 BACKUP_DIR = "/tmp"
 TIMESTAMP = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")

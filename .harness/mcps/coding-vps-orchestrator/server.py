@@ -78,6 +78,7 @@ def tool_coding_vps_status() -> dict[str, Any]:
     token = easypanel_login()
     services = easypanel_list_services(token)
     _ = services
+    _ = services
     result = ssh("docker service ls --filter name=coding-vps_apenas_para_auxilio --format '{{.Name}}|{{.Replicas}}|{{.Image}}'")
     lines = [line.split("|") for line in result["stdout"].split("\n") if line]
     status = {}
