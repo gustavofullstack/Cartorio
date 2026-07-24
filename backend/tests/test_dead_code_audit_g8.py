@@ -122,15 +122,22 @@ def test_top_candidates_lists_orphans(mod):
     """Wave 46 fix: Zero-coverage modules sao identificados em top_candidates_hitl.
 
     Após G8.13.T4 + G8.15.T1/T2, varios routers agora aparecem como zero-coverage.
-    Aceitamos qualquer orphan_module (>=1) — Top 10 do audit pega os piores.
+    Wave Final P0 (2026-07-24): coverage dos zero-coverage files foi fechada
+    (slo_metrics/materialized_views/lgpd_dsar/dead_mans_switch/stream_buffer),
+    entao a lista de orphan_module pode legitimamente estar VAZIA — isso e
+    progresso, nao regressao. O contrato estrutural permanece: se existir
+    arquivo zero-coverage no report, ele DEVE aparecer como orphan_module.
     """
     payload = json.loads(_read_report(mod))
     if not payload["results"]["coverage_gaps"].get("coverage_data_present", True):
         pytest.skip("coverage is generated after the active pytest session")
     candidates = payload["top_candidates_hitl"]
     orphan_kinds = [c for c in candidates if c.get("kind") == "orphan_module"]
-    # Pelo menos 1 orphan_module sempre esperado — listagem é top-10
-    assert len(orphan_kinds) >= 1, f"esperado >= 1 orphan_module, got {candidates}"
+    zero_cov = payload["summary"].get("zero_coverage_files", 0)
+    if zero_cov > 0:
+        # Ha arquivos zero-coverage -> precisam aparecer como orphan_module
+        assert len(orphan_kinds) >= 1, f"esperado >= 1 orphan_module, got {candidates}"
+    # Lista vazia e valida quando nao ha zero-coverage files (meta atingida)
     files = {c["file"] for c in orphan_kinds}
     # Verifica que SÃO módulos do app/ (sanity)
     for f in files:
