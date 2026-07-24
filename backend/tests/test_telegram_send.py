@@ -212,6 +212,96 @@ def test_telegram_html_escapes_untrusted_tags_and_formats_markdown() -> None:
 
 
 # =============================================================================
+# E2.04 — truncamento HTML-safe (Telegram 400 "can't parse entities")
+# =============================================================================
+
+
+def test_truncate_html_safe_no_truncation_when_short() -> None:
+    """Texto curto passa intacto."""
+    from app.api.v1.telegram import _truncate_html_safe
+
+    assert _truncate_html_safe("<b>oi</b>", 100) == "<b>oi</b>"
+
+
+def test_truncate_html_safe_never_cuts_inside_tag() -> None:
+    """Corte nunca pode cair no meio de '<...>' (tag malformada = 400)."""
+    from app.api.v1.telegram import MAX_RESPONSE_LEN, _truncate_html_safe
+
+    rendered = telegram_html("**" + "x" * 6000 + "**")
+    truncated = _truncate_html_safe(rendered, MAX_RESPONSE_LEN)
+
+    # Nenhum '<' sem '>' correspondente no final (tag cortada)
+    assert truncated.rfind("<") <= truncated.rfind(">")
+    # Toda tag aberta foi fechada
+    for tag in ("b", "i", "u", "code", "a"):
+        opens = truncated.count(f"<{tag}>")
+        closes = truncated.count(f"</{tag}>")
+        assert opens == closes, f"tag <{tag}> desbalanceada apos truncamento"
+
+
+def test_truncate_html_safe_closes_open_tags() -> None:
+    """Tag aberta pelo corte recebe fechamento explicito."""
+    from app.api.v1.telegram import _truncate_html_safe
+
+    rendered = telegram_html("**valor** " + "y" * 100)
+    # corta no meio do conteudo do <b>
+    truncated = _truncate_html_safe(rendered, 6)
+    assert truncated.startswith("<b>")
+    assert truncated.endswith("</b>")
+    assert truncated.count("<b>") == truncated.count("</b>")
+
+
+def test_truncate_html_safe_balances_link_tag() -> None:
+    """<a href=...> aberta pelo corte tambem e fechada."""
+    from app.api.v1.telegram import _truncate_html_safe
+
+    rendered = telegram_html("[site](https://2notasudi.com.br) " + "z" * 500)
+    truncated = _truncate_html_safe(rendered, 40)
+    opens = truncated.count("<a ")
+    closes = truncated.count("</a>")
+    assert opens == closes
+
+
+@pytest.mark.asyncio
+async def test_send_message_truncacao_html_valida_end_to_end() -> None:
+    """E2.04 regression: payload enviado ao Telegram nunca tem HTML malformado.
+
+    Falha se a implementacao voltar a truncar com fatia crua [:MAX].
+    """
+    import re as _re
+
+    from app.api.v1.telegram import MAX_RESPONSE_LEN
+
+    mock_pool = MagicMock()
+    captured: dict = {}
+
+    async def _post_capture(url: str, json: dict) -> MagicMock:
+        captured["json"] = json
+        return _make_resp(200)
+
+    mock_pool.post = _post_capture
+
+    long_bold = "**Resposta longa do agente " + "palavra " * 600 + "**"
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        result = await _send_message(123, long_bold)
+
+    assert result is True
+    sent = captured["json"]["text"]
+    # respeita o teto do Telegram (4096) mesmo apos fechar tags
+    assert len(sent) <= 4096
+    # nenhum tag fragmentado: todo '<' tem '>' depois
+    for m in _re.finditer(r"<", sent):
+        assert ">" in sent[m.start() :], f"tag fragmentada em ...{sent[m.start() : m.start() + 20]}"
+    # tags balanceadas
+    for tag in ("b", "i", "u", "code", "a"):
+        opens = len(_re.findall(rf"<{tag}(?:\s[^>]*)?>", sent))
+        closes = sent.count(f"</{tag}>")
+        assert opens == closes, f"<{tag}> desbalanceada no payload"
+    # tamanho efetivo respeita o budget (pode passar MAX por fecha-tags)
+    assert len(sent) <= MAX_RESPONSE_LEN + 20
+
+
+# =============================================================================
 # _send_poll
 # =============================================================================
 

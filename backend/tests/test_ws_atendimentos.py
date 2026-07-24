@@ -18,6 +18,7 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 from app.services.websocket_manager import ConnectionManager
 
@@ -418,3 +419,90 @@ class TestWSAtendimentosLifecycle:
             assert mgr.total_connections() == 1
         # Apos contexto: tudo limpo, sem task leak
         assert mgr.total_connections() == 0
+
+
+# ============================================================
+# GRUPO 8: Server-side heartbeat (E2.05 — timeout/missed pong cleanup)
+# ============================================================
+
+
+class TestWSAtendimentosHeartbeatCleanup:
+    """Heartbeat server-side: idle -> server ping; missed pongs -> close + cleanup.
+
+    Cobre o loop do endpoint (atendimentos.py): apos ping_interval sem
+    atividade o server envia {"type":"ping","ts":...}; se o cliente nao
+    responde pong dentro de pong_timeout por max_missed ciclos, o server
+    fecha a conexao (code 1001) e remove o client do ConnectionManager.
+
+    Usa _DEFAULT_HB monkeypatched com timers curtos (0.1s — piso de
+    receive_timeout_sec) para nao esperar os 20s/10s de producao.
+    Redis esta mockado no conftest (sem network).
+    """
+
+    _FAST_HB_KWARGS: dict[str, Any] = {
+        "ping_interval_sec": 0.1,
+        "pong_timeout_sec": 0.1,
+        "max_missed": 2,
+    }
+
+    def _make_client(self, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+        from app.api.v1.ws import atendimentos as ws_module
+        from app.services.ws_heartbeat import WSHeartbeatConfig
+
+        monkeypatch.setattr(ws_module, "_DEFAULT_HB", WSHeartbeatConfig(**self._FAST_HB_KWARGS))
+        isolated_app = FastAPI()
+        isolated_app.include_router(ws_module.ws_router, prefix="/api/v1")
+        return TestClient(isolated_app)
+
+    def test_idle_client_receives_server_ping(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Cliente idle -> server envia ping com timestamp apos ping_interval."""
+        client = self._make_client(monkeypatch)
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+            msg = ws.receive_json()
+            assert msg["type"] == "ping"
+            assert "ts" in msg
+
+    def test_missed_pongs_close_connection_and_cleanup(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Cliente que nunca responde pong: server fecha (1001) e unregister.
+
+        Fluxo com max_missed=2: ping -> timeout (missed=1) -> re-ping ->
+        timeout (missed=2) -> close + manager.unregister.
+        """
+        from app.services.websocket_manager import get_manager
+
+        mgr = get_manager()
+        mgr.connections.clear()
+
+        client = self._make_client(monkeypatch)
+        with pytest.raises(WebSocketDisconnect) as exc_info:
+            with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+                # 1o server ping (idle timeout)
+                assert ws.receive_json()["type"] == "ping"
+                # missed=1 -> server reenvia ping
+                assert ws.receive_json()["type"] == "ping"
+                # missed=2 -> server fecha: proximo receive levanta
+                ws.receive_json()
+        assert exc_info.value.code == 1001
+        # Cleanup: conexao removida do manager apos close por heartbeat
+        assert mgr.total_connections() == 0
+
+    def test_client_pong_resets_missed_and_stays_connected(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Cliente que responde pong ao server ping: conexao NAO fecha.
+
+        Regressao: mark_pong zera missed_count; sem isso o 2o timeout
+        encerraria a conexao indevidamente.
+        """
+        client = self._make_client(monkeypatch)
+        with client.websocket_connect("/api/v1/ws/atendimentos") as ws:
+            # Ciclo 1: server ping -> client pong
+            assert ws.receive_json()["type"] == "ping"
+            ws.send_json({"type": "pong"})
+            # Ciclo 2: idle novamente -> server ping (conexao segue viva)
+            assert ws.receive_json()["type"] == "ping"
+            ws.send_json({"type": "pong"})
+            # Ciclo 3: ainda viva — recebe novo ping em vez de close
+            assert ws.receive_json()["type"] == "ping"

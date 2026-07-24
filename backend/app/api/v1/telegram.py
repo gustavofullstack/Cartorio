@@ -268,6 +268,31 @@ def telegram_html(text: str) -> str:
     return escaped
 
 
+def _truncate_html_safe(rendered: str, max_len: int) -> str:
+    """Trunca HTML ja renderizado sem deixar tag malformada ou aberta.
+
+    FIX E2.04 (2026-07-24): ``telegram_html(texto)[:MAX]`` podia cortar no meio
+    de uma tag (``<b``, ``</cod``) ou deixar tag aberta — ambos causam 400
+    "can't parse entities" na API Telegram. Como ``telegram_html`` escapa todo
+    conteudo nao confiavel, as unicas tags literais aqui sao as do proprio
+    formatter (b/i/u/code/a), entao basta um scanner simples.
+    """
+    if len(rendered) <= max_len:
+        return rendered
+    cut = max_len
+    lt = rendered.rfind("<", 0, cut)
+    gt = rendered.rfind(">", 0, cut)
+    if lt > gt:  # corte cairia dentro de '<...>': recua ao inicio da tag
+        cut = lt
+    truncated = rendered[:cut]
+    # Fecha tags conhecidas que ficaram abertas (LIFO nao importa p/ 1 nivel)
+    for tag in ("b", "i", "u", "code", "a"):
+        opens = len(re.findall(rf"<{tag}(?:\s[^>]*)?>", truncated))
+        closes = truncated.count(f"</{tag}>")
+        truncated += f"</{tag}>" * max(0, opens - closes)
+    return truncated
+
+
 # Metrics in-process (sem prom client, leve, suficiente para dashboard 1000 pts).
 # Reset a cada restart do worker — Gustavo pode ver contadores ao vivo via GET /metrics.
 _METRICS: dict[str, int] = {
@@ -717,7 +742,7 @@ async def _send_message(
     # adding only documented Telegram tags.  Do not pass raw LLM HTML through.
     payload: dict[str, Any] = {
         "chat_id": chat_id,
-        "text": telegram_html(cleaned_text)[:MAX_RESPONSE_LEN],
+        "text": _truncate_html_safe(telegram_html(cleaned_text), MAX_RESPONSE_LEN),
         "parse_mode": "HTML",
         "disable_web_page_preview": True,
     }
