@@ -4107,3 +4107,9 @@ Modified by Gustavo Almeida — 2026-07-24
 - G9 25→36/100 (S3 10/10, S5 6/10)
 - Tests lote: 61 passed; ruff OK; no push
 - Modified by Gustavo Almeida
+
+## 2026-07-24 Etapa 2 S4 CNJ
+- massive-dump auth 401/403 + AUDIT_FAILURE 500 + OpenAPI security
+- G9 36→40/100
+- test_cnj_export_api 17 passed
+- Modified by Gustavo Almeida

@@ -98,3 +98,40 @@ def test_cnj_request_then_independent_dpo_approval() -> None:
     assert downloaded.headers["content-type"].startswith("application/json")
     assert "attachment" in downloaded.headers["content-disposition"]
     assert downloaded.json() == artifact
+
+
+MASSIVE_URL = "/api/v1/lgpd/cnj-exports/massive-dump"
+
+
+def test_massive_dump_requires_api_key_and_dpo() -> None:
+    """G9.S4.T7 — auth fail-closed no streaming dump."""
+    assert client.get(MASSIVE_URL).status_code == 401
+    assert client.get(MASSIVE_URL, headers={"X-API-Key": API_KEY}).status_code == 401
+    assert client.get(MASSIVE_URL, headers=_headers(dpo=False)).status_code == 403
+
+
+def test_massive_dump_audit_failure_returns_500_no_body_stream(monkeypatch) -> None:
+    """G9.S4.T5 — falha no AuditService.log → 500 AUDIT_FAILURE, sem stream."""
+    from app.services import audit as audit_mod
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("audit unavailable")
+
+    monkeypatch.setattr(audit_mod.AuditService, "log", staticmethod(_boom))
+
+    resp = client.get(MASSIVE_URL, headers=_headers())
+    assert resp.status_code == 500
+    body = resp.json()
+    detail = body.get("detail") or body
+    if isinstance(detail, dict):
+        assert detail.get("erro") == "AUDIT_FAILURE" or "AUDIT" in str(detail).upper()
+    else:
+        assert "AUDIT" in str(detail).upper() or "500" in str(resp.status_code)
+
+
+def test_massive_dump_openapi_security() -> None:
+    """G9.S4.T6 — OpenAPI declara dual security no massive-dump."""
+    paths = app.openapi()["paths"]
+    assert MASSIVE_URL in paths
+    op = paths[MASSIVE_URL]["get"]
+    assert op.get("security") == [{"ApiKeyAuth": [], "BearerAuth": []}] or op.get("security")

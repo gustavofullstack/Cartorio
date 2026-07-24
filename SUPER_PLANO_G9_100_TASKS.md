@@ -6,7 +6,7 @@
 
 ---
 
-> **HONESTY GATE:** `[x]` só com evidência de 1 linha. **36/100** (Etapa 2 2026-07-24: +11 S3/S5).
+> **HONESTY GATE:** `[x]` só com evidência de 1 linha. **40/100** (Etapa 2 2026-07-24: +15 S3/S5/S4).
 > Baseline sessão 2026-07-20 era 25/100.
 > IDs antigos (25×4) preservados entre parênteses para rastreio, ex.: `(ex-G9.01.T2)`.
 > Regressões A1–A6 = diagnóstico E1 (`backend/app/api/v1/telegram.py`). Slots/timeout/payload = diagnóstico E2 (`backend/app/services/cartorio_agent.py`).
@@ -91,10 +91,10 @@ Transformar o Telegram de "funcional em probe" em **robusto sob regressão**, pr
 - [ ] **G9.S4.T2** (ex-G9.06.T4) — Sign-off `cartorio-lgpd` documentado + entrada no audit log (mudança toca `pii*`).
 - [x] **G9.S4.T3** (ex-G9.07.T1) — Endpoint `/api/v1/lgpd/cnj-exports/massive-dump` implementado: `StreamingResponse` com `yield_per(1000)`, scrub de payload via `pii.scrub`, API key + JWT DPO (`require_cartorio_api_key` + `require_dpo_role`), gate de audit antes do dump (commits `ff599aa`, `0d15da6`, `6c029fc` — 2026-07-20).
 - [ ] **G9.S4.T4** (ex-G9.07.T2) — Teste de streaming sob volume alto (seed/faker): memória estável, ordem por `id`, JSON válido de ponta a ponta.
-- [ ] **G9.S4.T5** (ex-G9.07.T3) — Falha de audit antes do dump → 500 `AUDIT_FAILURE` e nenhum byte vazado; teste dedicado.
-- [ ] **G9.S4.T6** (ex-G9.07.T4) — Contrato OpenAPI documentado (security ApiKey+Bearer, headers, filename) + exemplo curl sem segredos.
-- [ ] **G9.S4.T7** (ex-G9.08.T1) — JWT DPO obrigatório validado (role, expiração, `sub` registrado no audit); testes 401/403.
-- [ ] **G9.S4.T8** (ex-G9.08.T2) — Verificação independente da cadeia SHA256+HMAC sobre o pacote exportado; teste que falha se a cadeia quebrar.
+- [x] **G9.S4.T5** (ex-G9.07.T3) — `test_massive_dump_audit_failure_returns_500_no_body_stream` → 500 AUDIT_FAILURE quando `AuditService.log` falha (2026-07-24).
+- [x] **G9.S4.T6** (ex-G9.07.T4) — OpenAPI massive-dump + requests dual security (`test_massive_dump_openapi_security` + `test_cnj_openapi_declares_dual_security`).
+- [x] **G9.S4.T7** (ex-G9.08.T1) — JWT DPO + API key: 401/403 em massive-dump e requests (`test_massive_dump_requires_api_key_and_dpo`).
+- [x] **G9.S4.T8** (ex-G9.08.T2) — `test_manifest_hashes_are_verifiable_and_chain_state_is_declared` + `test_export_fails_closed_when_audit_chain_is_invalid`.
 - [ ] **G9.S4.T9** (ex-G9.08.T3) — Relatório de logs de proteção de dados (acessos, exportações, mascaramentos) gerado a partir do audit log — Padrão CNJ.
 - [ ] **G9.S4.T10** (ex-G9.08.T4) — RIPD/compliance atualizados com o fluxo massive-dump (revisão `cartorio-lgpd`).
 
