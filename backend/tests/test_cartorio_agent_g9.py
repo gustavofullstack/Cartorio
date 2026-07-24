@@ -192,9 +192,7 @@ async def test_global_timeout_cobre_fallback_simples_e_registra_metrica(
 ) -> None:
     """Fallback sem tools nao pode iniciar outro ciclo completo de timeout."""
 
-    async def _empty_tools(
-        system: str, user: str
-    ) -> tuple[str, str, str | None, list[str]]:
+    async def _empty_tools(system: str, user: str) -> tuple[str, str, str | None, list[str]]:
         return "", "none", None, []
 
     async def _stuck_fallback(system: str, user: str) -> tuple[str, str]:
@@ -213,9 +211,12 @@ async def test_global_timeout_cobre_fallback_simples_e_registra_metrica(
 
     assert elapsed < 5, f"fallback excedeu o teto global: {elapsed:.1f}s"
     assert reply.text.startswith("Nosso sistema de inteligência artificial está com lentidão")
-    assert metrics.counters["cartorio_llm_calls_total"][
-        "model=multi_provider|operation=chat|status=timeout"
-    ] == 1
+    assert (
+        metrics.counters["cartorio_llm_calls_total"][
+            "model=multi_provider|operation=chat|status=timeout"
+        ]
+        == 1
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -343,9 +344,7 @@ def test_offline_degraded_sempre_tem_mensagem_e_scrub_pii() -> None:
 
 
 def test_sanitize_bot_output_scrubs_cpf() -> None:
-    out = cartorio_agent.sanitize_bot_output(
-        "Seu CPF e 529.982.247-25 e esta ok."
-    )
+    out = cartorio_agent.sanitize_bot_output("Seu CPF e 529.982.247-25 e esta ok.")
     assert "529.982.247-25" not in out
     assert out  # nao vazio
 
@@ -353,9 +352,7 @@ def test_sanitize_bot_output_scrubs_cpf() -> None:
 async def test_todos_providers_down_devolve_degraded_nunca_vazio(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def _empty_tools(
-        system: str, user: str
-    ) -> tuple[str, str, str | None, list[str]]:
+    async def _empty_tools(system: str, user: str) -> tuple[str, str, str | None, list[str]]:
         return "", "none", None, []
 
     async def _empty_fb(system: str, user: str) -> tuple[str, str]:
@@ -368,3 +365,155 @@ async def test_todos_providers_down_devolve_degraded_nunca_vazio(
     assert reply.text
     assert "lentidão" in reply.text.lower() or len(reply.text) > 10
     assert reply.provider.startswith("offline")
+
+
+# ---------------------------------------------------------------------------
+# 6) E2.02 S3 — fail-open Redis, CB recovery, degraded counter, labels canonicos
+# ---------------------------------------------------------------------------
+async def test_circuit_skip_fail_open_quando_redis_lanca(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Redis fora do ar: _circuit_skip NUNCA bloqueia provider (fail-open)."""
+    import app.integrations.fallback as fb
+
+    async def _redis_down(provider: str) -> bool:
+        raise ConnectionError("redis unreachable")
+
+    monkeypatch.setattr(fb, "_is_circuit_open", _redis_down)
+
+    assert await cartorio_agent._circuit_skip("MiniMax_direct") is False
+
+
+async def test_circuit_abre_apos_3_falhas_e_sucesso_recupera(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Threshold 3 abre o circuito (cb:open no Redis); _record_success fecha."""
+    from fakeredis import aioredis as fakeredis_async
+
+    fake = fakeredis_async.FakeRedis()
+
+    class _FakeBus:
+        client = fake
+
+    monkeypatch.setattr("app.services.redis_bus.get_bus", lambda: _FakeBus())
+
+    provider = "MiniMax_direct"
+    # 2 falhas: ainda fechado
+    await cartorio_agent._circuit_failure(provider)
+    await cartorio_agent._circuit_failure(provider)
+    assert await cartorio_agent._circuit_skip(provider) is False
+    # 3a falha: abre
+    await cartorio_agent._circuit_failure(provider)
+    assert await cartorio_agent._circuit_skip(provider) is True
+    # sucesso: recovery — fecha circuito e zera contador
+    await cartorio_agent._circuit_success(provider)
+    assert await cartorio_agent._circuit_skip(provider) is False
+    assert await fake.get("cb:fail:MiniMax_direct") is None
+    await fake.aclose()
+
+
+async def test_circuit_record_fail_open_quando_redis_lanca(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """_circuit_failure/_circuit_success nunca propagam erro de Redis."""
+
+    class _BrokenBus:
+        @property
+        def client(self) -> object:
+            raise ConnectionError("redis unreachable")
+
+    monkeypatch.setattr("app.services.redis_bus.get_bus", lambda: _BrokenBus())
+
+    # Nao levanta — fail-open nos dois sentidos.
+    await cartorio_agent._circuit_failure("MiniMax_direct")
+    await cartorio_agent._circuit_success("MiniMax_direct")
+    assert await cartorio_agent._circuit_skip("MiniMax_direct") is False
+
+
+async def test_timeout_global_incrementa_timeout_e_degraded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """E2.02 S3: teto global estourado -> status=timeout E reason=timeout."""
+
+    async def _stuck(system: str, user: str) -> tuple[str, str, str | None, list[str]]:
+        await asyncio.sleep(30)
+        return "nunca", "none", None, []
+
+    metrics = MetricsStore()
+    monkeypatch.setattr("app.services.metrics.store", metrics)
+    monkeypatch.setattr(cartorio_agent, "_llm_agent_with_tools", _stuck)
+    monkeypatch.setattr(cartorio_agent, "LLM_GLOBAL_TIMEOUT_S", 0.2)
+
+    reply = await cartorio_agent.run_cartorio_agent("oi")
+
+    assert reply.text.startswith("Nosso sistema de inteligência artificial está com lentidão")
+    assert (
+        metrics.counters["cartorio_llm_calls_total"][
+            "model=multi_provider|operation=chat|status=timeout"
+        ]
+        == 1
+    )
+    assert metrics.counters["cartorio_llm_degraded_total"]["reason=timeout"] == 1
+
+
+async def test_all_providers_down_degraded_counter_e_saida_sem_cpf(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """E2.02 S3: degraded reply NUNCA silencia, NUNCA vaza CPF, e e contada."""
+
+    async def _empty_tools(system: str, user: str) -> tuple[str, str, str | None, list[str]]:
+        return "", "none", None, []
+
+    async def _empty_fb(system: str, user: str) -> tuple[str, str]:
+        return "", "none"
+
+    metrics = MetricsStore()
+    monkeypatch.setattr("app.services.metrics.store", metrics)
+    monkeypatch.setattr(cartorio_agent, "_llm_agent_with_tools", _empty_tools)
+    monkeypatch.setattr(cartorio_agent, "_llm_minimax", _empty_fb)
+
+    reply = await cartorio_agent.run_cartorio_agent(
+        "meu cpf e 529.982.247-25, preciso de procuracao"
+    )
+
+    assert reply.text  # silencio nunca e resposta
+    assert "529.982.247-25" not in reply.text  # final scrub defense
+    assert metrics.counters["cartorio_llm_degraded_total"]["reason=all_providers_down"] == 1
+
+
+async def test_erro_httpx_grava_error_type_canonico(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """type(exc).__name__ cru NUNCA vira label: _classify_error -> whitelist."""
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_API_KEY", "mm-key")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_BASE_URL", "https://minimax.example/v1")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_MODEL", "MiniMax-M3")
+
+    metrics = MetricsStore()
+    monkeypatch.setattr("app.services.metrics.store", metrics)
+
+    async def _no_skip(provider: str) -> bool:
+        return False
+
+    async def _noop(provider: str) -> None:
+        return None
+
+    monkeypatch.setattr(cartorio_agent, "_circuit_skip", _no_skip)
+    monkeypatch.setattr(cartorio_agent, "_circuit_failure", _noop)
+    monkeypatch.setattr(cartorio_agent, "_circuit_success", _noop)
+
+    with respx.mock:
+        respx.post("https://minimax.example/v1/chat/completions").mock(
+            side_effect=httpx.ConnectError("boom")
+        )
+        msg, provider, err = await cartorio_agent._chat_completion(
+            [{"role": "user", "content": "oi"}],
+        )
+
+    assert msg is None
+    assert provider == "none"
+    assert "ConnectError" in err  # log/erro local pode ter detalhe
+    errors = metrics.counters["cartorio_llm_errors_total"]
+    # label e canonico: ConnectError nao esta na whitelist -> UnknownError
+    assert errors["error_type=UnknownError|model=MiniMax_direct|operation=chat"] == 1
+    assert all("ConnectError" not in key for key in errors)

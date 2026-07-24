@@ -595,3 +595,121 @@ def test_log_masking_filter_intercepts_pii() -> None:
 
     assert "[MASKED:ip]" in records[1].msg
     assert "192.168.1.100" not in records[1].msg
+
+
+# ============================================================================
+# Tests — E2.02 S3: coercion fail-safe de labels (whitelist canonica)
+# ============================================================================
+
+
+class TestCanonicalLabelCoercion:
+    """Store methods NUNCA gravam label fora da whitelist (defesa em profundidade).
+
+    Call site pode passar valor dinamico por engano (nome cru de excecao,
+    input de usuario). O store coage para fallback canonico sem levantar —
+    metrica nunca derruba request path e nunca vaza PII em label.
+    """
+
+    def test_model_fora_da_whitelist_vira_unknown(self, llm_metrics_isolated: MetricsStore) -> None:
+        s = llm_metrics_isolated
+        s.inc_llm_calls_total("gpt4_cpf_529.982.247-25", "chat", "success")
+
+        counters = s.counters["cartorio_llm_calls_total"]
+        assert counters["model=unknown|operation=chat|status=success"] == 1
+        for key in counters:
+            _assert_no_pii_in_labels(s._parse_labels_key(key))
+
+    def test_operation_fora_da_whitelist_vira_unknown(
+        self, llm_metrics_isolated: MetricsStore
+    ) -> None:
+        s = llm_metrics_isolated
+        s.observe_llm_call_seconds("test", "delete_from_clientes", 0.1)
+
+        obs = _histogram_observations(
+            s, "cartorio_llm_call_seconds", {"model": "test", "operation": "unknown"}
+        )
+        assert len(obs) == 1
+
+    def test_status_fora_da_whitelist_vira_unknown(
+        self, llm_metrics_isolated: MetricsStore
+    ) -> None:
+        s = llm_metrics_isolated
+        s.inc_llm_calls_total("test", "chat", "hacked_status")
+
+        counters = s.counters["cartorio_llm_calls_total"]
+        assert counters["model=test|operation=chat|status=unknown"] == 1
+
+    def test_status_circuit_open_preservado(self, llm_metrics_isolated: MetricsStore) -> None:
+        """Status canonico do circuit breaker (G9.S3.T4) NAO pode ser coagido."""
+        s = llm_metrics_isolated
+        s.inc_llm_calls_total("MiniMax_direct", "chat", "circuit_open")
+
+        counters = s.counters["cartorio_llm_calls_total"]
+        assert counters["model=MiniMax_direct|operation=chat|status=circuit_open"] == 1
+
+    def test_error_type_cru_vira_unknown_error(self, llm_metrics_isolated: MetricsStore) -> None:
+        s = llm_metrics_isolated
+        s.inc_llm_errors_total("test", "chat", "WeirdException52998224725")
+
+        counters = s.counters["cartorio_llm_errors_total"]
+        assert counters["error_type=UnknownError|model=test|operation=chat"] == 1
+        for key in counters:
+            _assert_no_pii_in_labels(s._parse_labels_key(key))
+
+    def test_direction_fora_da_whitelist_vira_unknown(
+        self, llm_metrics_isolated: MetricsStore
+    ) -> None:
+        s = llm_metrics_isolated
+        s.inc_llm_tokens_total("test", "sideways", 10)
+
+        counters = s.counters["cartorio_llm_tokens_total"]
+        assert counters["direction=unknown|model=test"] == 10
+
+    def test_coercion_nao_levanta_e_render_sai_sem_pii(
+        self, llm_metrics_isolated: MetricsStore
+    ) -> None:
+        """Coercion e fail-safe: render Prometheus final nao contem o valor cru."""
+        s = llm_metrics_isolated
+        s.inc_llm_calls_total("model_com_email_user@example.com", "chat", "success")
+        s.inc_llm_errors_total("test", "chat", "ErroComCpf529.982.247-25")
+
+        out = s.render_prometheus()
+        assert "user@example.com" not in out
+        assert "529.982.247-25" not in out
+        assert 'model="unknown"' in out
+        assert 'error_type="UnknownError"' in out
+
+
+class TestIncLlmDegradedTotal:
+    """E2.02 S3: counter cartorio_llm_degraded_total{reason} (degraded reply)."""
+
+    def test_reasons_canonicos_registrados(self, llm_metrics_isolated: MetricsStore) -> None:
+        s = llm_metrics_isolated
+        s.inc_llm_degraded_total("timeout")
+        s.inc_llm_degraded_total("timeout")
+        s.inc_llm_degraded_total("all_providers_down")
+
+        counters = s.counters["cartorio_llm_degraded_total"]
+        assert counters["reason=timeout"] == 2
+        assert counters["reason=all_providers_down"] == 1
+        _assert_no_pii_in_labels({"reason": "timeout"})
+        _assert_no_pii_in_labels({"reason": "all_providers_down"})
+
+    def test_reason_fora_da_whitelist_vira_unknown(
+        self, llm_metrics_isolated: MetricsStore
+    ) -> None:
+        s = llm_metrics_isolated
+        s.inc_llm_degraded_total("cpf_529.982.247-25")
+
+        counters = s.counters["cartorio_llm_degraded_total"]
+        assert counters["reason=unknown"] == 1
+        for key in counters:
+            _assert_no_pii_in_labels(s._parse_labels_key(key))
+
+    def test_render_exposes_degraded_counter(self, llm_metrics_isolated: MetricsStore) -> None:
+        s = llm_metrics_isolated
+        s.inc_llm_degraded_total("timeout")
+
+        out = s.render_prometheus()
+        assert "# TYPE cartorio_llm_degraded_total counter" in out
+        assert 'cartorio_llm_degraded_total{reason="timeout"} 1' in out

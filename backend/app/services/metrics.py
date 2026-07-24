@@ -32,9 +32,13 @@ G8.15.T1 — Prometheus AI/LLM instrumentation (LGPD-safe labels):
 - cartorio_llm_calls_total{model,operation,status} - counter (success|error|timeout)
 - cartorio_llm_tokens_total{model,direction} - counter (input|output cumulativo)
 - cartorio_llm_errors_total{model,operation,error_type} - counter (tipo do erro)
+- cartorio_llm_degraded_total{reason} - counter (E2.02 S3: degraded reply servida)
 
 LGPD: APENAS labels categoricos (model, operation, status, direction, error_type).
 ZERO PII em labels. Ver app/services/metrics.py::instrument_llm.
+E2.02 S3: os metodos inc_llm_*/observe_llm_call_seconds COERCIONAM qualquer
+valor fora da whitelist canonica para um fallback ("unknown"/"UnknownError") —
+fail-safe, nunca levanta, nunca grava label dinamico (cardinalidade + PII).
 """
 
 from __future__ import annotations
@@ -299,7 +303,7 @@ class MetricsStore:
     # Cardinalidade controlada por enums canonicos:
     #   model:      opencode_go | MiniMax_direct | litellm | openclaw | cache
     #   operation:  chat | tool_use | embedding | tts | fast_path
-    #   status:     success | error | timeout | rate_limited
+    #   status:     success | error | timeout | rate_limited | circuit_open
     #   direction:  input | output
     #   error_type: TimeoutException | HTTPError | ChatError | ValueError | ...
     #
@@ -312,12 +316,17 @@ class MetricsStore:
             model: nome canonico do modelo (enum restrito, ex: 'opencode_go').
             operation: tipo de chamada (enum restrito, ex: 'chat').
             duration_seconds: duracao da chamada em segundos.
+
+        E2.02 S3: model/operation fora da whitelist viram 'unknown' (fail-safe).
         """
         self._make_metric_or_skip_test("cartorio_llm_call_seconds", "histogram")
         self.observe_histogram(
             "cartorio_llm_call_seconds",
             float(duration_seconds),
-            labels={"model": model, "operation": operation},
+            labels={
+                "model": _canonical_label(model, _ALLOWED_LLM_MODELS, "unknown"),
+                "operation": _canonical_label(operation, _ALLOWED_LLM_OPERATIONS, "unknown"),
+            },
         )
 
     def inc_llm_calls_total(self, model: str, operation: str, status: str) -> None:
@@ -326,12 +335,18 @@ class MetricsStore:
         Args:
             model: enum (opencode_go | MiniMax_direct | litellm | openclaw | cache).
             operation: enum (chat | tool_use | embedding | tts | fast_path).
-            status: enum (success | error | timeout | rate_limited).
+            status: enum (success | error | timeout | rate_limited | circuit_open).
+
+        E2.02 S3: labels fora da whitelist viram 'unknown' (fail-safe).
         """
         self._make_metric_or_skip_test("cartorio_llm_calls_total", "counter")
         self.inc_counter(
             "cartorio_llm_calls_total",
-            labels={"model": model, "operation": operation, "status": status},
+            labels={
+                "model": _canonical_label(model, _ALLOWED_LLM_MODELS, "unknown"),
+                "operation": _canonical_label(operation, _ALLOWED_LLM_OPERATIONS, "unknown"),
+                "status": _canonical_label(status, _ALLOWED_LLM_STATUS, "unknown"),
+            },
         )
 
     def inc_llm_tokens_total(self, model: str, direction: str, count: int) -> None:
@@ -352,7 +367,10 @@ class MetricsStore:
         self._make_metric_or_skip_test("cartorio_llm_tokens_total", "counter")
         self.inc_counter(
             "cartorio_llm_tokens_total",
-            labels={"model": model, "direction": direction},
+            labels={
+                "model": _canonical_label(model, _ALLOWED_LLM_MODELS, "unknown"),
+                "direction": _canonical_label(direction, _ALLOWED_LLM_DIRECTIONS, "unknown"),
+            },
             value=int(count),
         )
 
@@ -365,11 +383,38 @@ class MetricsStore:
             error_type: nome canonico do tipo de erro (ex: 'TimeoutException',
                 'HTTP_5XX', 'HTTP_4XX', 'ChatError', 'JSONDecodeError').
                 Cardinalidade controlada via classe de excecao, NAO mensagem.
+
+        E2.02 S3: error_type fora da whitelist vira 'UnknownError' (fail-safe).
         """
         self._make_metric_or_skip_test("cartorio_llm_errors_total", "counter")
         self.inc_counter(
             "cartorio_llm_errors_total",
-            labels={"model": model, "operation": operation, "error_type": error_type},
+            labels={
+                "model": _canonical_label(model, _ALLOWED_LLM_MODELS, "unknown"),
+                "operation": _canonical_label(operation, _ALLOWED_LLM_OPERATIONS, "unknown"),
+                "error_type": _canonical_label(
+                    error_type, _ALLOWED_LLM_ERROR_TYPES, "UnknownError"
+                ),
+            },
+        )
+
+    def inc_llm_degraded_total(self, reason: str) -> None:
+        """E2.02 S3: counter `cartorio_llm_degraded_total{reason}`.
+
+        Incrementado TODA vez que o usuario recebe a degraded reply (LLM
+        indisponivel) — silencio nunca e resposta, e cada ocorrencia vira
+        sinal observavel para alerta (rate() no PromQL).
+
+        Args:
+            reason: enum (timeout | all_providers_down). Valor fora da
+                whitelist vira 'unknown' (fail-safe, cardinalidade controlada).
+        """
+        self._make_metric_or_skip_test("cartorio_llm_degraded_total", "counter")
+        self.inc_counter(
+            "cartorio_llm_degraded_total",
+            labels={
+                "reason": _canonical_label(reason, _ALLOWED_LLM_DEGRADED_REASONS, "unknown"),
+            },
         )
 
     def _labels_key(self, labels: dict[str, str] | None) -> str:
@@ -604,6 +649,38 @@ _ALLOWED_LLM_OPERATIONS: set[str] = {
     "fast_path",
     "test",  # usado apenas em testes
 }
+
+# Whitelists canonicas E2.02 S3 (coercion fail-safe nos store methods).
+_ALLOWED_LLM_STATUS: set[str] = {
+    "success",
+    "error",
+    "timeout",
+    "rate_limited",
+    "circuit_open",  # G9.S3.T4 — provider skipped by circuit breaker
+}
+
+_ALLOWED_LLM_DIRECTIONS: set[str] = {
+    "input",
+    "output",
+}
+
+_ALLOWED_LLM_DEGRADED_REASONS: set[str] = {
+    "timeout",  # teto global LLM_GLOBAL_TIMEOUT_S estourou
+    "all_providers_down",  # tools + fallback simples retornaram vazio
+}
+
+
+def _canonical_label(value: str, allowed: set[str], fallback: str) -> str:
+    """Coerce fail-safe de label para a whitelist canonica (E2.02 S3).
+
+    Diferente de `_validate_label` (que levanta ValueError no decorator em
+    tempo de import), este helper NUNCA levanta: metrica nao pode derrubar
+    o request path. Valor fora da whitelist vira `fallback` — garantindo
+    cardinalidade controlada e zero PII em labels mesmo se um call site
+    passar valor dinamico (ex: nome cru de excecao, input de usuario).
+    """
+    return value if value in allowed else fallback
+
 
 # Whitelist canonica de tipos de erro (LGPD: cardinalidade controlada).
 # Adicionar novo valor aqui APENAS via PR com justificativa.

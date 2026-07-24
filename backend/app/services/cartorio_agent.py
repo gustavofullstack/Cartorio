@@ -671,7 +671,7 @@ async def _chat_completion(
     """
     import time
 
-    from app.services.metrics import store
+    from app.services.metrics import _classify_error, store
 
     last_err = ""
     payload_min: dict[str, Any] = {
@@ -722,7 +722,7 @@ async def _chat_completion(
                 elapsed = time.perf_counter() - start_t
                 store.observe_llm_call_seconds("MiniMax_direct", "chat", elapsed)
                 store.inc_llm_calls_total("MiniMax_direct", "chat", "error")
-                store.inc_llm_errors_total("MiniMax_direct", "chat", type(exc).__name__)
+                store.inc_llm_errors_total("MiniMax_direct", "chat", _classify_error(exc))
                 await _circuit_failure("MiniMax_direct")
                 last_err = f"minimax {type(exc).__name__}: {exc}"
                 logger.warning("cartorio_agent minimax_direct fail: %s", last_err)
@@ -759,7 +759,7 @@ async def _chat_completion(
                     elapsed = time.perf_counter() - start_t
                     store.observe_llm_call_seconds("litellm", "chat", elapsed)
                     store.inc_llm_calls_total("litellm", "chat", "error")
-                    store.inc_llm_errors_total("litellm", "chat", type(exc).__name__)
+                    store.inc_llm_errors_total("litellm", "chat", _classify_error(exc))
                     await _circuit_failure("litellm")
                     last_err = f"{base} {type(exc).__name__}: {exc}"
                     logger.warning("cartorio_agent litellm fail: %s", last_err)
@@ -806,7 +806,7 @@ async def _chat_completion(
                 elapsed = time.perf_counter() - start_t
                 store.observe_llm_call_seconds(provider_label, "chat", elapsed)
                 store.inc_llm_calls_total(provider_label, "chat", "error")
-                store.inc_llm_errors_total(provider_label, "chat", type(exc).__name__)
+                store.inc_llm_errors_total(provider_label, "chat", _classify_error(exc))
                 await _circuit_failure(provider_label)
                 last_err = f"{provider_label} {type(exc).__name__}"
                 logger.warning("cartorio_agent %s fail: %s", provider_label, last_err)
@@ -1519,7 +1519,9 @@ async def run_cartorio_agent(
     except TimeoutError:
         from app.services.metrics import store
 
+        # E2.02 S3: timeout canonico + degraded counter (alerta via rate()).
         store.inc_llm_calls_total("multi_provider", "chat", "timeout")
+        store.inc_llm_degraded_total("timeout")
         logger.warning(
             "cartorio_agent: LLM timeout global (%.0fs) — offline reply",
             LLM_GLOBAL_TIMEOUT_S,
@@ -1528,6 +1530,10 @@ async def run_cartorio_agent(
     tools_used = list(tools_used) + list(tool_used)
 
     if not content:
+        from app.services.metrics import store
+
+        # E2.02 S3: todos os providers falharam — degraded reply observavel.
+        store.inc_llm_degraded_total("all_providers_down")
         return _offline_reply(scrubbed, intent, tools_used, history=history, degraded=True)
 
     clean, action = _parse_action(content)
