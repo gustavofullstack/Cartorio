@@ -2477,7 +2477,7 @@ async def telegram_webhook(
                     "ou digitar /menu se quiser atalhos."
                 )
                 keyboard = None
-                response_text = format_bot_outbound(response_text)
+        response_text = format_bot_outbound(response_text)
         markup = {"inline_keyboard": keyboard} if keyboard else None
         sent = await _send_message(chat_id, response_text, reply_markup=markup)
         if sent:
