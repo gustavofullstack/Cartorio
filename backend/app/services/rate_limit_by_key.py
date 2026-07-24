@@ -10,6 +10,12 @@ Algoritmo: Redis INCR com TTL sliding window de 60s.
 - Valor: contador
 - TTL: 60s
 
+Anti-spoofing (E2.03 H4): tier elevado SOMENTE via match exato
+(constant-time) com a key registrada em ``settings.cartorio_api_key``.
+Prefixos ('n8n-', 'dpo-', ...) ou tamanho NUNCA elevam tier — sao
+trivialmente forjaveis. Key desconhecida/malformada cai em 'padrao'
+(fail-secure).
+
 LGPD: o hash da API key NAO pode ser reversivel. SHA-256 da key ja eh
 suficiente (key tem 64 chars hex = 256 bits de entropia).
 """
@@ -18,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import hmac
 import logging
 import time
 from collections.abc import Awaitable, Callable
@@ -80,21 +87,28 @@ def _hash_api_key(api_key: str) -> str:
 
 
 def identify_tier(api_key: str | None) -> ApiKeyTier:
-    """Identifica o tier da API key baseado no prefixo/heuristica.
+    """Identifica o tier da API key.
 
-    Heuristica simples (sem banco de keys dedicado):
-    - Se key comeca com 'n8n-' ou tamanho > 64: tier='n8n'
-    - Se key comeca com 'dpo-' ou 'escrevente-': tier='dpo'
-    - Caso contrario: 'padrao'
+    E2.03 H4 (anti-spoofing): tier elevado exige match EXATO com a key
+    registrada em ``settings.cartorio_api_key`` (mesma validacao strict
+    64-hex de ``app.api.deps.require_cartorio_api_key``), comparada em
+    constant-time via ``hmac.compare_digest``.
+
+    - Key registrada (inter-service N8N/Admin): tier='n8n' (600 req/min)
+    - Qualquer outra key (desconhecida, malformada, com prefixo 'n8n-'/
+      'dpo-'/'admin-' forjado, ou string longa): tier='padrao' (fail-secure)
+
+    Prefixo/tamanho NUNCA elevam tier: sao controlados pelo caller e
+    trivialmente spoofable. Tier 'dpo' fica reservado ate existir
+    registro de keys por tier.
 
     Em Sprint 4+: substituir por tabela `api_keys` no DB com campo `tier`.
     """
     if not api_key:
         return "padrao"
-    if api_key.startswith(("n8n-", "sk-n8n-")) or len(api_key) > 64:
+    expected = settings.cartorio_api_key
+    if expected and hmac.compare_digest(api_key.encode("utf-8"), expected.encode("utf-8")):
         return "n8n"
-    if api_key.startswith(("dpo-", "escrevente-", "admin-")):
-        return "dpo"
     return "padrao"
 
 

@@ -17,6 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from app.config import settings
 from app.services.rate_limit_by_key import TIER_POLICIES, identify_tier
 
 
@@ -34,8 +35,10 @@ def test_s5_t8_rate_limit_tiers_exact() -> None:
     assert TIER_POLICIES["n8n"].per_minute == 600
     assert TIER_POLICIES["dpo"].per_minute == 60
     assert TIER_POLICIES["padrao"].per_minute == 30
-    assert identify_tier("n8n-workflow-key") == "n8n"
-    assert identify_tier("dpo-operator") == "dpo"
+    # E2.03 H4: tier elevado so via key registrada; prefixo NAO eleva (anti-spoof)
+    assert identify_tier(settings.cartorio_api_key) == "n8n"
+    assert identify_tier("n8n-workflow-key") == "padrao"
+    assert identify_tier("dpo-operator") == "padrao"
     assert identify_tier("random") == "padrao"
 
 

@@ -17,6 +17,7 @@ get_settings.cache_clear()
 
 import pytest  # noqa: E402
 
+from app.config import settings  # noqa: E402
 from app.services.rate_limit_by_key import (  # noqa: E402
     RateLimitByKeyMiddleware,
     TIER_POLICIES,
@@ -24,25 +25,49 @@ from app.services.rate_limit_by_key import (  # noqa: E402
     identify_tier,
 )
 
+VALID_KEY = settings.cartorio_api_key
+
 
 # ============================================================================
-# identify_tier
+# identify_tier (E2.03 H4 - anti-spoofing)
 # ============================================================================
 
 
-def test_identify_tier_n8n_prefix() -> None:
-    assert identify_tier("n8n-abc123") == "n8n"
+def test_identify_tier_key_registrada_e_n8n() -> None:
+    """Key valida registrada (settings.cartorio_api_key) -> tier n8n."""
+    assert identify_tier(VALID_KEY) == "n8n"
 
 
-def test_identify_tier_n8n_long_key() -> None:
-    long_key = "x" * 65
-    assert identify_tier(long_key) == "n8n"
+def test_identify_tier_prefixo_n8n_forjado_e_padrao() -> None:
+    """Prefixo 'n8n-'/'sk-n8n-' NAO eleva tier (spoofing)."""
+    assert identify_tier("n8n-abc123") == "padrao"
+    assert identify_tier("sk-n8n-abc123") == "padrao"
 
 
-def test_identify_tier_dpo_prefix() -> None:
-    assert identify_tier("dpo-123") == "dpo"
-    assert identify_tier("escrevente-456") == "dpo"
-    assert identify_tier("admin-789") == "dpo"
+def test_identify_tier_prefixo_dpo_forjado_e_padrao() -> None:
+    """Prefixo 'dpo-'/'escrevente-'/'admin-' NAO eleva tier (spoofing)."""
+    assert identify_tier("dpo-123") == "padrao"
+    assert identify_tier("escrevente-456") == "padrao"
+    assert identify_tier("admin-789") == "padrao"
+
+
+def test_identify_tier_string_longa_desconhecida_e_padrao() -> None:
+    """String longa (>64) desconhecida NAO eleva tier (spoofing)."""
+    assert identify_tier("x" * 65) == "padrao"
+    assert identify_tier("f" * 128) == "padrao"
+
+
+def test_identify_tier_quase_valida_e_padrao() -> None:
+    """Near-miss da key registrada (1 char diferente/case) -> padrao."""
+    assert identify_tier(VALID_KEY[:-1] + "b") == "padrao"
+    assert identify_tier(VALID_KEY.upper()) == "padrao"
+    assert identify_tier(VALID_KEY + "a") == "padrao"
+    assert identify_tier(VALID_KEY[:-1]) == "padrao"
+
+
+def test_identify_tier_malformada_unicode_e_padrao() -> None:
+    """Key malformada (nao-ASCII) nao quebra compare_digest."""
+    assert identify_tier("n8n-çãö🙂") == "padrao"
 
 
 def test_identify_tier_padrao_sem_prefixo() -> None:
@@ -137,11 +162,11 @@ async def test_telegram_webhook_bypassa_rate_limit_por_ter_secret_proprio() -> N
 
 @pytest.mark.asyncio
 async def test_middleware_allow_quando_primeira_request(mock_redis_client) -> None:
-    """Primeira request: allowed."""
+    """Primeira request com key registrada: allowed (tier n8n)."""
     mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake")
 
     request = MagicMock()
-    request.headers = {"x-api-key": "n8n-test"}
+    request.headers = {"x-api-key": VALID_KEY}
     request.url.path = "/api/v1/test"
 
     with patch(
@@ -156,6 +181,25 @@ async def test_middleware_allow_quando_primeira_request(mock_redis_client) -> No
 
 
 @pytest.mark.asyncio
+async def test_middleware_key_com_prefixo_n8n_forjado_cai_em_padrao(mock_redis_client) -> None:
+    """E2.03 H4: key desconhecida com prefixo 'n8n-' NAO ganha 600/min."""
+    mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake")
+
+    request = MagicMock()
+    request.headers = {"x-api-key": "n8n-test"}
+    request.url.path = "/api/v1/test"
+
+    with patch(
+        "app.services.rate_limit_by_key.redis_async.from_url", return_value=mock_redis_client
+    ):
+        call_next = AsyncMock(return_value=MagicMock(headers={}))
+        response = await mw.dispatch(request, call_next)
+
+    assert response.headers.get("X-RateLimit-Limit") == "30"  # padrao, nao n8n
+    call_next.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_middleware_429_quando_excede_limite(mock_redis_client) -> None:
     """Request que excede limite: 429."""
     mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake")
@@ -166,7 +210,7 @@ async def test_middleware_429_quando_excede_limite(mock_redis_client) -> None:
 
     # Mock incr retornando valor acima do limite
     pipe_instance = mock_redis_client.pipeline.return_value
-    pipe_instance.execute = AsyncMock(return_value=[61, True])  # 61 > 60 (dpo tier)
+    pipe_instance.execute = AsyncMock(return_value=[61, True])  # 61 > 30 (tier padrao)
 
     with patch(
         "app.services.rate_limit_by_key.redis_async.from_url", return_value=mock_redis_client
