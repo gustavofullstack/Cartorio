@@ -4088,3 +4088,14 @@ Modified by Gustavo Almeida — 2026-07-20
 - LGPD pack: docs/LGPD_REVIEW_AUDIT_0028_2026-07-24.md (BLOCKED_REVIEW)
 - P0 open: lgpd sign-off, DPO legacy annotate-default, WA QR SUI
 - Modified by Gustavo Almeida
+
+## 2026-07-24 — LLM timeout budget e QA integral
+- `run_cartorio_agent` agora submete tools e fallback simples ao mesmo teto global;
+  uma resposta vazia não pode iniciar uma segunda espera completa.
+- Timeout global incrementa `cartorio_llm_calls_total` com labels canônicos
+  `multi_provider/chat/timeout`; o reply degradado permanece estático e sem PII.
+- Regressão: `tests/test_cartorio_agent_g9.py` cobre fallback lento e métrica.
+- Gates: `make test` → `5819 passed, 21 skipped`, coverage `92.07%`; `make lint` → Ruff/mypy 0.
+- P0s permanecem bloqueados: revisão LGPD/DPO da audit chain e QR WhatsApp SUI.
+
+Modified by Gustavo Almeida — 2026-07-24

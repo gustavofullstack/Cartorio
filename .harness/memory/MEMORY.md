@@ -8,6 +8,11 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-24 ~Grok Super-Agent W0/W1 BRT)
 
 ### Super-Agent W0/W1 — inventário + Alembic 0028 + LGPD pack (2026-07-24 noite)
+- **Lesson 265 — Budget de timeout precisa englobar toda a cadeia de fallback**: aplicar
+  `asyncio.wait_for` somente na primeira chamada LLM permite que o fallback reinicie uma
+  espera completa. Encapsular tools + fallback no mesmo await com teto global e emitir a
+  métrica canônica `multi_provider/chat/timeout`. Regressão deve simular primeira resposta
+  vazia + fallback bloqueado e exigir resposta degradada dentro do teto.
 - **Lesson 261 — Nunca reutilizar revision Alembic já ocupada**: `a84303bc` criou `2026_07_24_0022-fix-fn-auto-audit-*` com `revision="0022"` colidindo com `0022_audit_log_rls_no_edit_no_delete.py` (mesmo id, ambos `down=0021`) → heads múltiplas / upgrade ambíguo. Fix: re-id para **`0028` / down `0027`**, arquivo `2026_07_24_0028-fix-fn-auto-audit-ts-consistency.py`. Cadeia linear 0021→…→0028; testes `TestMigration0028`. Conteúdo SQL do trigger inalterado.
 - **Lesson 262 — Pacote LGPD review audit**: sign-off em `docs/LGPD_REVIEW_AUDIT_0028_2026-07-24.md`. Default DPO legacy = **anotar, não reescrever**. Deploy 0028 + `verify_chain` prod só após sign-off.
 - **Lesson 263 — dead_code snapshot**: regenerar `python3 scripts/dead_code_audit.py --no-cache` no dia do teste; report 2026-07-24 `ruff_clean=True` / pyflakes/vulture clean; falha residual anterior era snapshot stale, não app suja.

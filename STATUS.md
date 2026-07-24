@@ -6,7 +6,8 @@
 > live/ready/radar **200 green**; Telegram webhook_configured; audit/verify exige
 > API key (401). **P0 abertos**: sign-off `cartorio-lgpd`, decisão DPO legacy 158
 > entradas, WhatsApp `cartorio-2notas` session **close** (SUI QR). G9 ~25/100.
-> `master` **4 commits ahead** de origin + working tree multi-domínio (não misturar).
+> `master` **11 commits ahead** de origin. QA local completo passou; permanecem
+> bloqueios P0 de revisão/DPO e reconexão WhatsApp via SUI.
 
 ---
 
@@ -24,6 +25,9 @@
 | Telegram health | HTTP 200, webhook_configured=true, v0.6.1-p0fix |
 | Audit verify (no key) | HTTP 401 UNAUTHORIZED (gate correto) |
 | LGPD pack | `docs/LGPD_REVIEW_AUDIT_0028_2026-07-24.md` |
+| QA local integral | `5819 passed, 21 skipped`, coverage `92.07%` |
+| Ruff + mypy | 0 erros em `app/` |
+| LLM fallback timeout | teto único de 45s para tools + fallback; métrica timeout |
 
 ## 🔴 P0 / blockers
 
@@ -61,7 +65,7 @@
 3. Fechar G9 S1.T9/T10 + S3 scrub/circuit + S5 secrets
 4. SUI QR WhatsApp + prova bidirecional
 5. Deploy 0028 + verify_chain prod
-6. `make qa` integral antes de push dos 4 commits locais + novos
+6. `make qa` integral antes de push (já verde local; repetir após qualquer novo diff)
 
 ## Honesty gate
 
