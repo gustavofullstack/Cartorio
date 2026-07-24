@@ -1,0 +1,4 @@
+## 2026-07-22 - Prevent Timing Attacks in X-API-Key Validation
+**Vulnerability:** X-API-Key endpoints (`lgpd_direitos.py` and `router.py`) used a simple string equality operator (`!=`) to validate API keys against the expected key in settings.
+**Learning:** Using standard string comparisons for secret validation makes the application vulnerable to timing attacks. Attackers can potentially infer the expected API key character by character by measuring the response time of the endpoint, since the `!=` operator fails fast on the first mismatched character.
+**Prevention:** Always use constant-time comparison methods, such as `hmac.compare_digest(provided, expected)`, when validating sensitive information like API keys, tokens, or passwords to ensure execution time is uniform regardless of whether a match is found or at which character it fails.
