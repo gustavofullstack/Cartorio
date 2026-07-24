@@ -5,7 +5,13 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-24 ~Grok Super-Agent W0/W1 BRT)
+## INDICE RAPIDO (atualizado 2026-07-24 ~Etapa 2 G9 S3/S5 BRT)
+
+### Etapa 2 — G9.S3 LLM CB + S5 security (2026-07-24)
+- **Lesson 265 — Circuit breaker no cartorio_agent**: reusar Redis CB de `app.integrations.fallback` (`_is_circuit_open` / `_record_failure` threshold=3 TTL=300 / `_record_success`). Ordem determinística MiniMax→litellm→zen1/2/3. Fail-open se Redis cair. Métricas `status=circuit_open` + `error_type=CIRCUIT_OPEN`. Nunca silêncio: timeout/all-down → `_offline_reply(degraded=True)` + scrub PII na saída.
+- **Lesson 266 — Output scrub em 3 pontos do agent**: `run_cartorio_agent` final, `_offline_reply`, `sanitize_bot_output` — além de `scrub_bot_outbound` no telegram. Inventário egress: `docs/LGPD_015_LLM_EGRESS_INVENTORY_G9.md`.
+- **Lesson 267 — S5 gates**: checker hex64 + tiers 600/60/30 + fail-open Redis + stress scripts sem token literal. Scan `--report-only` = OK. G9 honesty **36/100** (+11 S3/S5). Evidência testes: `test_cartorio_agent_g9` + `test_g9_s5_security_gates` 61 passed lote.
+- **Ainda BLOCKED**: audit 0028 review lgpd; WA QR SUI; S5.T2/T4/T6/T7 (hist/CI sync keys).
 
 ### Super-Agent W0/W1 — inventário + Alembic 0028 + LGPD pack (2026-07-24 noite)
 - **Lesson 265 — Budget de timeout precisa englobar toda a cadeia de fallback**: aplicar

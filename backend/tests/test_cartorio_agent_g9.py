@@ -216,3 +216,155 @@ async def test_global_timeout_cobre_fallback_simples_e_registra_metrica(
     assert metrics.counters["cartorio_llm_calls_total"][
         "model=multi_provider|operation=chat|status=timeout"
     ] == 1
+
+
+# ---------------------------------------------------------------------------
+# 4) Circuit breaker multi-provider (G9.S3.T4)
+# ---------------------------------------------------------------------------
+async def test_circuit_open_pula_minimax_e_usa_zen(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """MiniMax com circuito OPEN e pulado; zen free atende."""
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_API_KEY", "mm-key")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_BASE_URL", "https://minimax.example/v1")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_MODEL", "MiniMax-M3")
+    monkeypatch.setenv("OPENCODE_ZEN_ACCOUNT_1_API_KEY", "zen-key-1")
+    monkeypatch.setenv("OPENCODE_ZEN_ACCOUNT_1_BASE_URL", "https://zen1.example/v1")
+    monkeypatch.setenv("OPENCODE_ZEN_ACCOUNT_1_MODEL", "model-zen-1")
+
+    async def _open_only_minimax(provider: str) -> bool:
+        return provider == "MiniMax_direct"
+
+    monkeypatch.setattr(cartorio_agent, "_circuit_skip", _open_only_minimax)
+
+    with respx.mock:
+        mm = respx.post("https://minimax.example/v1/chat/completions").mock(
+            return_value=httpx.Response(200, json=_OK_JSON)
+        )
+        zen = respx.post("https://zen1.example/v1/chat/completions").mock(
+            return_value=httpx.Response(200, json=_OK_JSON)
+        )
+        msg, provider, err = await cartorio_agent._chat_completion(
+            [{"role": "user", "content": "oi"}],
+        )
+
+    assert err == ""
+    assert provider == "opencode_free_1:model-zen-1"
+    assert msg == {"content": "ok"}
+    assert mm.call_count == 0, "MiniMax nao deveria ser chamado com circuit open"
+    assert zen.call_count == 1
+
+
+async def test_http_500_registra_circuit_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """HTTP 5xx dispara _circuit_failure no provider."""
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_API_KEY", "mm-key")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_BASE_URL", "https://minimax.example/v1")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_MODEL", "MiniMax-M3")
+
+    failures: list[str] = []
+
+    async def _no_skip(provider: str) -> bool:
+        return False
+
+    async def _track_fail(provider: str) -> None:
+        failures.append(provider)
+
+    async def _track_ok(provider: str) -> None:
+        pass
+
+    monkeypatch.setattr(cartorio_agent, "_circuit_skip", _no_skip)
+    monkeypatch.setattr(cartorio_agent, "_circuit_failure", _track_fail)
+    monkeypatch.setattr(cartorio_agent, "_circuit_success", _track_ok)
+
+    with respx.mock:
+        respx.post("https://minimax.example/v1/chat/completions").mock(
+            return_value=httpx.Response(500, text="boom")
+        )
+        msg, provider, err = await cartorio_agent._chat_completion(
+            [{"role": "user", "content": "oi"}],
+        )
+
+    assert msg is None
+    assert provider == "none"
+    assert "500" in err
+    assert failures == ["MiniMax_direct"]
+
+
+async def test_success_registra_circuit_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_API_KEY", "mm-key")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_BASE_URL", "https://minimax.example/v1")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_MODEL", "MiniMax-M3")
+
+    ok: list[str] = []
+
+    async def _no_skip(provider: str) -> bool:
+        return False
+
+    async def _track_ok(provider: str) -> None:
+        ok.append(provider)
+
+    async def _noop_fail(provider: str) -> None:
+        return None
+
+    monkeypatch.setattr(cartorio_agent, "_circuit_skip", _no_skip)
+    monkeypatch.setattr(cartorio_agent, "_circuit_success", _track_ok)
+    monkeypatch.setattr(cartorio_agent, "_circuit_failure", _noop_fail)
+
+    with respx.mock:
+        respx.post("https://minimax.example/v1/chat/completions").mock(
+            return_value=httpx.Response(200, json=_OK_JSON)
+        )
+        msg, provider, err = await cartorio_agent._chat_completion(
+            [{"role": "user", "content": "oi"}],
+        )
+
+    assert err == ""
+    assert msg is not None
+    assert ok == ["MiniMax_direct"]
+
+
+# ---------------------------------------------------------------------------
+# 5) Output scrub + degraded never silent (G9.S3.T8/T10)
+# ---------------------------------------------------------------------------
+def test_offline_degraded_sempre_tem_mensagem_e_scrub_pii() -> None:
+    reply = cartorio_agent._offline_reply(
+        "meu cpf e 529.982.247-25",
+        "dados",
+        [],
+        degraded=True,
+    )
+    assert reply.text.startswith("Nosso sistema de inteligência artificial")
+    assert "529.982.247-25" not in reply.text
+    assert reply.provider.startswith("offline") or "offline" in reply.provider
+
+
+def test_sanitize_bot_output_scrubs_cpf() -> None:
+    out = cartorio_agent.sanitize_bot_output(
+        "Seu CPF e 529.982.247-25 e esta ok."
+    )
+    assert "529.982.247-25" not in out
+    assert out  # nao vazio
+
+
+async def test_todos_providers_down_devolve_degraded_nunca_vazio(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _empty_tools(
+        system: str, user: str
+    ) -> tuple[str, str, str | None, list[str]]:
+        return "", "none", None, []
+
+    async def _empty_fb(system: str, user: str) -> tuple[str, str]:
+        return "", "none"
+
+    monkeypatch.setattr(cartorio_agent, "_llm_agent_with_tools", _empty_tools)
+    monkeypatch.setattr(cartorio_agent, "_llm_minimax", _empty_fb)
+
+    reply = await cartorio_agent.run_cartorio_agent("oi")
+    assert reply.text
+    assert "lentidão" in reply.text.lower() or len(reply.text) > 10
+    assert reply.provider.startswith("offline")

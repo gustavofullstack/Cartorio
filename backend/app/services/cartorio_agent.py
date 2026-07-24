@@ -618,6 +618,45 @@ def _run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, str | None, l
     return json.dumps({"erro": "tool_desconhecida"}), None, used
 
 
+async def _circuit_skip(provider: str) -> bool:
+    """True se o circuito do provider esta OPEN (pular slot).
+
+    Reusa o CB Redis de ``app.integrations.fallback`` (threshold 3 / TTL 300s).
+    Fail-open se Redis offline — nao bloquear atendimento por dependencia.
+    """
+    from app.integrations.fallback import _is_circuit_open
+    from app.services.metrics import store
+
+    try:
+        open_ = await _is_circuit_open(provider)
+    except Exception as exc:  # noqa: BLE001 — CB nunca derruba o agent
+        logger.warning("cartorio_agent CB check fail-open %s: %s", provider, exc)
+        return False
+    if open_:
+        store.inc_llm_calls_total(provider, "chat", "circuit_open")
+        store.inc_llm_errors_total(provider, "chat", "CIRCUIT_OPEN")
+        logger.info("cartorio_agent skip provider=%s circuit=open", provider)
+    return open_
+
+
+async def _circuit_success(provider: str) -> None:
+    from app.integrations.fallback import _record_success
+
+    try:
+        await _record_success(provider)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("cartorio_agent CB success record fail %s: %s", provider, exc)
+
+
+async def _circuit_failure(provider: str) -> None:
+    from app.integrations.fallback import _record_failure
+
+    try:
+        await _record_failure(provider, threshold=3, open_time_seconds=300)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("cartorio_agent CB failure record fail %s: %s", provider, exc)
+
+
 async def _chat_completion(
     messages: list[dict[str, Any]],
     *,
@@ -625,7 +664,13 @@ async def _chat_completion(
     temperature: float = 0.7,
     max_tokens: int = 4096,
 ) -> tuple[dict[str, Any] | None, str, str]:
+    """Chamada multi-provider com ordem deterministica + circuit breaker.
+
+    Ordem: MiniMax_direct → litellm → opencode_free_1/2/3.
+    Slot com circuito OPEN e pulado; falha registra CB; sucesso reseta CB.
+    """
     import time
+
     from app.services.metrics import store
 
     last_err = ""
@@ -640,7 +685,7 @@ async def _chat_completion(
         payload_rich["tool_choice"] = "auto"
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=8.0)) as client:
-        if MINIMAX_API_KEY:
+        if MINIMAX_API_KEY and not await _circuit_skip("MiniMax_direct"):
             base = MINIMAX_BASE_URL
             url = (
                 base
@@ -663,6 +708,7 @@ async def _chat_completion(
                 store.observe_llm_call_seconds("MiniMax_direct", "chat", elapsed)
                 if r.status_code == 200:
                     store.inc_llm_calls_total("MiniMax_direct", "chat", "success")
+                    await _circuit_success("MiniMax_direct")
                     data = r.json()
                     msg = data.get("choices", [{}])[0].get("message") or {}
                     return msg, f"minimax_direct:{MINIMAX_MODEL}", ""
@@ -670,16 +716,18 @@ async def _chat_completion(
                 store.inc_llm_errors_total(
                     "MiniMax_direct", "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
                 )
+                await _circuit_failure("MiniMax_direct")
                 last_err = f"minimax HTTP {r.status_code} {r.text[:160]}"
             except Exception as exc:
                 elapsed = time.perf_counter() - start_t
                 store.observe_llm_call_seconds("MiniMax_direct", "chat", elapsed)
                 store.inc_llm_calls_total("MiniMax_direct", "chat", "error")
                 store.inc_llm_errors_total("MiniMax_direct", "chat", type(exc).__name__)
+                await _circuit_failure("MiniMax_direct")
                 last_err = f"minimax {type(exc).__name__}: {exc}"
                 logger.warning("cartorio_agent minimax_direct fail: %s", last_err)
 
-        if LITELLM_KEY:
+        if LITELLM_KEY and not await _circuit_skip("litellm"):
             headers = {"Authorization": f"Bearer {LITELLM_KEY}", "Content-Type": "application/json"}
             for base in LITELLM_URLS:
                 if not base:
@@ -699,9 +747,11 @@ async def _chat_completion(
                         store.inc_llm_errors_total(
                             "litellm", "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
                         )
+                        await _circuit_failure("litellm")
                         last_err = f"{base} HTTP {r.status_code} {r.text[:120]}"
                         continue
                     store.inc_llm_calls_total("litellm", "chat", "success")
+                    await _circuit_success("litellm")
                     data = r.json()
                     msg = data.get("choices", [{}])[0].get("message") or {}
                     return msg, f"litellm:{LITELLM_MODEL}", ""
@@ -710,11 +760,15 @@ async def _chat_completion(
                     store.observe_llm_call_seconds("litellm", "chat", elapsed)
                     store.inc_llm_calls_total("litellm", "chat", "error")
                     store.inc_llm_errors_total("litellm", "chat", type(exc).__name__)
+                    await _circuit_failure("litellm")
                     last_err = f"{base} {type(exc).__name__}: {exc}"
                     logger.warning("cartorio_agent litellm fail: %s", last_err)
 
         for slot, (api_key, base, model) in enumerate(_opencode_free_configs(), start=1):
             if not api_key or not base or not model:
+                continue
+            provider_label = f"opencode_free_{slot}"
+            if await _circuit_skip(provider_label):
                 continue
             url = (
                 base
@@ -723,7 +777,6 @@ async def _chat_completion(
                 if base.rstrip("/").endswith("/v1")
                 else f"{base.rstrip('/')}/v1/chat/completions"
             )
-            provider_label = f"opencode_free_{slot}"
             start_t = time.perf_counter()
             try:
                 r = await client.post(
@@ -741,9 +794,11 @@ async def _chat_completion(
                     store.inc_llm_errors_total(
                         provider_label, "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
                     )
+                    await _circuit_failure(provider_label)
                     last_err = f"{provider_label} HTTP {r.status_code}"
                     continue
                 store.inc_llm_calls_total(provider_label, "chat", "success")
+                await _circuit_success(provider_label)
                 data = r.json()
                 msg = data.get("choices", [{}])[0].get("message") or {}
                 return msg, f"{provider_label}:{model}", ""
@@ -752,6 +807,7 @@ async def _chat_completion(
                 store.observe_llm_call_seconds(provider_label, "chat", elapsed)
                 store.inc_llm_calls_total(provider_label, "chat", "error")
                 store.inc_llm_errors_total(provider_label, "chat", type(exc).__name__)
+                await _circuit_failure(provider_label)
                 last_err = f"{provider_label} {type(exc).__name__}"
                 logger.warning("cartorio_agent %s fail: %s", provider_label, last_err)
 
@@ -988,12 +1044,15 @@ def _offline_reply(
     history: list[str] | None = None,
     degraded: bool = False,
 ) -> AgentReply:
+    """Resposta deterministica; SEMPRE scrub PII na saida (G9.S3.T8/T10)."""
     reply = _offline_reply_inner(text, intent, tools_used, history=history)
     if degraded:
         reply.text = (
-            "Nosso sistema de inteligência artificial está com lentidão neste momento. Vou tentar te ajudar com o básico:\n\n"
-            + reply.text
+            "Nosso sistema de inteligência artificial está com lentidão neste momento. "
+            "Vou tentar te ajudar com o básico:\n\n" + reply.text
         )
+    # 3a camada: output scrub — degraded/fallback nunca vazam PII
+    reply.text = scrub(reply.text).text
     return reply
 
 
@@ -1298,9 +1357,10 @@ def _url_allowed(url: str) -> bool:
 
 
 def sanitize_bot_output(text: str) -> str:
-    """Sanitiza saida do agent: zero URL toxica, zero spam, formatação limpa.
+    """Sanitiza saida do agent: zero URL toxica, zero spam, PII scrub, formatacao limpa.
 
     Se detectar conteudo adulto/spam, descarta o texto inteiro (caller usa offline).
+    G9.S3.T10: PII nunca sai raw — scrub obrigatorio no fim.
     """
     if not text:
         return text
@@ -1320,7 +1380,7 @@ def sanitize_bot_output(text: str) -> str:
     # Limpa espacos deixados por remocao de URL
     cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-    return cleaned.strip()
+    return scrub(cleaned.strip()).text
 
 
 def _scrub_bad_llm_phrases(text: str) -> str:

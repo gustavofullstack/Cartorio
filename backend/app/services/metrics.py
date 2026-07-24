@@ -618,6 +618,7 @@ _ALLOWED_LLM_ERROR_TYPES: set[str] = {
     "KeyError",
     "RuntimeError",
     "ConnectionError",
+    "CIRCUIT_OPEN",  # G9.S3.T4 — provider skipped by circuit breaker
     "UnknownError",
 }
 

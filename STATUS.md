@@ -1,80 +1,44 @@
-# STATUS — Sessão 2026-07-24 (Super-Agent W0/W1)
+# STATUS — Etapa 2 G9 Hardening (2026-07-24)
 
-> **TL;DR**: Inventário W0 completo. Corrigida **colisão Alembic 0022** (audit ts-fix
-> re-id → **0028**). Pacote de review LGPD publicado. Dead-code snapshot regenerado
-> (ruff/pyflakes/vulture CLEAN). Suítes focadas **105 + 190 passed**. Prod smoke
-> live/ready/radar **200 green**; Telegram webhook_configured; audit/verify exige
-> API key (401). **P0 abertos**: sign-off `cartorio-lgpd`, decisão DPO legacy 158
-> entradas, WhatsApp `cartorio-2notas` session **close** (SUI QR). G9 ~25/100.
-> `master` **11 commits ahead** de origin. QA local completo passou; permanecem
-> bloqueios P0 de revisão/DPO e reconexão WhatsApp via SUI.
+> **TL;DR**: Etapa 2 avançou **S3 LLM (10/10)** e **S5 security (6/10)**.
+> Circuit breaker multi-provider no `cartorio_agent`, degraded+scrub obrigatórios,
+> inventário LGPD-015, gates secrets/rate-limit revalidados. G9 **36/100**.
+> Full QA prévio: 5819 passed / 92.07%. **GO_LIVE_READY=false**.
+> P0 humanos intactos: sign-off LGPD audit 0028 · DPO legacy · WA QR SUI.
+> `master` ahead origin (sem push). PDFs LLM e `trae-agent` intocados.
 
----
+## Etapa 2 — DONE com evidência
 
-## ✅ Evidência desta sessão
-
-| Item | Evidência |
+| Task | Evidência |
 |---|---|
-| Alembic head 00xx | `0028` única; chain 0021→0022(RLS)→…→0027→0028 |
-| Re-id migration | `2026_07_24_0028-fix-fn-auto-audit-ts-consistency.py` |
-| Testes foco | 105 passed (dead_code, audit_trigger, telegram FSM/parsers/g9, agent, pii-out, keys) |
-| Testes audit+hmac | 190 passed |
-| Dead-code audit | `docs/DEAD_CODE_AUDIT_2026-07-24.json` ruff_clean=True |
-| Ruff changed files | All checks passed |
-| Prod live/ready/radar | HTTP 200; radar green (db/redis/n8n/openclaw/evolution/chatwoot/supabase) |
-| Telegram health | HTTP 200, webhook_configured=true, v0.6.1-p0fix |
-| Audit verify (no key) | HTTP 401 UNAUTHORIZED (gate correto) |
-| LGPD pack | `docs/LGPD_REVIEW_AUDIT_0028_2026-07-24.md` |
-| QA local integral | `5819 passed, 21 skipped`, coverage `92.07%` |
-| Ruff + mypy | 0 erros em `app/` |
-| LLM fallback timeout | teto único de 45s para tools + fallback; métrica timeout |
+| G9.S3.T4 circuit breaker | `cartorio_agent._circuit_*` + testes skip/fail/success |
+| G9.S3.T7 métricas | `observe_llm_call_seconds` / `inc_llm_calls_total` por slot |
+| G9.S3.T8 degraded | timeout + all-down → mensagem lentidão |
+| G9.S3.T9 inventário | `docs/LGPD_015_LLM_EGRESS_INVENTORY_G9.md` |
+| G9.S3.T10 output scrub | offline + sanitize + telegram outbound |
+| G9.S5.T1/T3/T5/T8/T9/T10 | `test_g9_s5_security_gates` + checker OK + idempotency suite |
+| Secrets scan | `check_no_literal_keys.py --report-only` → zero violações |
+| Lote testes E2 | **61 passed** (agent g9 + s5 gates + circuit v5 + pii + keys) |
 
-## 🔴 P0 / blockers
+## P0 blockers (inalterados)
 
-| ID | Status | Owner | Ação |
-|---|---|---|---|
-| Sign-off audit a84303bc+0028 | **BLOCKED_REVIEW** | cartorio-lgpd | Revisar pack LGPD |
-| Legacy 158 audit entries | **BLOCKED_REVIEW** | DPO | Default: anotar, não rewrite |
-| WA session close | **BLOCKED_SUI** | Gustavo | QR em whatsapp.2notasudi.com.br/manager instância `cartorio-2notas` |
-| verify_chain pós-deploy | **UNVERIFIED** | sre pós-sign-off | `POST /api/v1/audit/verify` com API key |
+| ID | Status |
+|---|---|
+| Audit 0028 + verify prod | BLOCKED_REVIEW cartorio-lgpd |
+| Legacy 158 entries | BLOCKED_REVIEW DPO (default no-rewrite ADR-030) |
+| WhatsApp session close | BLOCKED_SUI QR |
 
-### SUI — WhatsApp reconnect (instrução exata)
+## G9 progress
 
-1. Abrir `https://whatsapp.2notasudi.com.br/manager`
-2. Instância **`cartorio-2notas`**
-3. Logout residual se necessário → **QR Connect**
-4. Confirmar `connectionState=open` (não basta radar evolution=online)
-5. Enviar mensagem real inbound + outbound (prova bidirecional)
-6. Registrar evidência: HTTP status + state (sem PII do chat)
+- Antes Etapa 2: ~25/100
+- Depois: **36/100** (S3 10/10, S5 6/10)
+- Alvo técnico 70–85: falta S2 métricas TG, S4 CNJ load, S1 stress prod, S6–S10 SUI/docs
 
-## 📦 Working tree — classificação (não commitar tudo junto)
+## Próximo
 
-| Domínio | Arquivos | Risco |
-|---|---|---|
-| **A audit/LGPD** | migração 0028, test_audit_trigger, LGPD_REVIEW doc | Review lgpd obrigatório |
-| **B LLM agent** | cartorio_agent.py, metrics.py | Médio |
-| **C Telegram** | state_machine/parsers/regressions/1000/pii_out/conftest | Médio |
-| **D scripts/env** | stress_telegram_*, .env.example, create_db | Secrets — revisar |
-| **E docs/brain** | DEAD_CODE_*, bridge Terra, PDFs LLM, .brain memory | Baixo |
-| **F noise** | cnj_export formatação trivial | Baixo |
+1. S4 CNJ load/audit-fail tests (local)
+2. WS/MCP smoke gaps
+3. Observability alerts docs
+4. **Não push** até autorização + gates humanos
 
-## ⏭️ Próximo ciclo (ordem)
-
-1. Sign-off cartorio-lgpd no pack 0028
-2. Branch por domínio + commits Conventional (não push audit sem sign-off)
-3. Fechar G9 S1.T9/T10 + S3 scrub/circuit + S5 secrets
-4. SUI QR WhatsApp + prova bidirecional
-5. Deploy 0028 + verify_chain prod
-6. `make qa` integral antes de push (já verde local; repetir após qualquer novo diff)
-
-## Honesty gate
-
-- **GO_LIVE_READY:** NÃO
-- **P0_open:** 3 (review, DPO, WA SUI)
-- **Não alegar** WA operacional só com evolution=online
-- **Não deploy** audit fix sem sign-off lgpd
-
----
-
-**Modified by**: Super-Agent W0/W1 (grok-4.5) + Gustavo Almeida (CEO)  
-**Sessão**: 2026-07-24 · **Próxima**: após sign-off LGPD ou SUI WA
+Modified by Gustavo Almeida — Etapa 2 2026-07-24

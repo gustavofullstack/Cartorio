@@ -4099,3 +4099,11 @@ Modified by Gustavo Almeida — 2026-07-20
 - P0s permanecem bloqueados: revisão LGPD/DPO da audit chain e QR WhatsApp SUI.
 
 Modified by Gustavo Almeida — 2026-07-24
+
+## 2026-07-24 Etapa 2 G9 S3/S5
+- cartorio_agent: circuit breaker multi-provider + degraded scrub
+- LGPD-015 inventory docs/LGPD_015_LLM_EGRESS_INVENTORY_G9.md
+- S5 gates test_g9_s5_security_gates + secrets scan OK
+- G9 25→36/100 (S3 10/10, S5 6/10)
+- Tests lote: 61 passed; ruff OK; no push
+- Modified by Gustavo Almeida
