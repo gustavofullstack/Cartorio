@@ -932,7 +932,10 @@ def _parse_action(text: str) -> tuple[str, str | None]:
     m = re.search(r"\[\[ACTION:(agendar|protocolo|humano|menu)\]\]", text, re.I)
     if m:
         action = m.group(1).lower()
-        text = re.sub(r"\s*\[\[ACTION:[^\]]+\]\]\s*", "\n", text).strip()
+    # Strip SEMPRE qualquer tag ACTION (dentro ou fora da whitelist): markup
+    # interno nunca vaza pro usuario — injection com action invalida vira
+    # texto limpo + action=None (G9.S3 security).
+    text = re.sub(r"\s*\[\[ACTION:[^\]]+\]\]\s*", "\n", text).strip()
     return text, action
 
 
