@@ -1,14 +1,16 @@
-import sys
 import os
-import asyncio
+import sys
+from unittest.mock import patch
+
 import fakeredis
 import fakeredis.aioredis
-from unittest.mock import patch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi.testclient import TestClient
+
 from app.main import app
+
 
 def simulate():
     # Setup global fakeredis
