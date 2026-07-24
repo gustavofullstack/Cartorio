@@ -27,6 +27,7 @@ evitar timeout em recursao localhost:8000 -> /mcp -> localhost:8000.
 from __future__ import annotations
 
 import os
+import re
 import sys
 import hashlib
 import time
@@ -63,6 +64,39 @@ mcp = FastMCP(
         "HITL obrigatorio em qualquer decisao juridica."
     ),
 )
+
+
+# ============================================================================
+# E2.06 — Erro estruturado + scrubbed para tools MCP
+# ============================================================================
+
+# Telegram bot token aparece na URL de chamadas httpx
+# (.../bot<TOKEN>/setMessageReaction). Se uma chamada falha, o str(exc) do
+# httpx embute a URL completa -> vazamento de credencial no payload MCP.
+_BOT_TOKEN_RE = re.compile(r"bot\d+:[A-Za-z0-9_-]{10,}")
+
+
+def _strip_secrets(text: str) -> str:
+    """Remove segredos conhecidos (bot token Telegram) de mensagens de erro."""
+    return _BOT_TOKEN_RE.sub("bot[REDACTED]", text)
+
+
+def _tool_error(code: str, exc: Exception, mensagem: str | None = None) -> dict:
+    """Payload de erro estruturado, truncado e PII-scrubbed (E2.06).
+
+    Nunca retorna str(exc) cru: aplica _strip_secrets (credenciais) e
+    scrub_mcp_output (CPF/telefone/email) antes de sair no protocolo MCP.
+    """
+    from app.services.mcp_pii import scrub_mcp_output
+
+    detail = _strip_secrets(str(exc))[:200]
+    return scrub_mcp_output(
+        {
+            "erro": code,
+            "mensagem": mensagem or detail,
+            "tipo_erro": type(exc).__name__,
+        }
+    )
 
 
 # ============================================================================
@@ -256,7 +290,9 @@ async def cartorio_criar_protocolo(
     except TipoInvalidoError as e:
         return {"erro": "TIPO_INVALIDO", "mensagem": str(e)}
     except Exception as e:
-        return {"erro": "INTERNAL_ERROR", "mensagem": str(e)[:200]}
+        # E2.06: excecao de banco/ORM pode embutir CPF/nome do payload ou DSN.
+        # Nunca devolver str(exc) cru — strip secrets + scrub PII.
+        return _tool_error("INTERNAL_ERROR", e)
 
 
 # ============================================================================
@@ -418,7 +454,11 @@ async def cartorio_enviar_whatsapp_reaction(number: str, message_id: str, emoji:
     """Envia uma reação no WhatsApp do cliente."""
     from app.services.notificacao import NotificationService
 
-    success = await NotificationService.enviar_whatsapp_reaction(number, message_id, emoji)
+    try:
+        success = await NotificationService.enviar_whatsapp_reaction(number, message_id, emoji)
+    except Exception as e:
+        # E2.06: nunca propagar excecao crua (pode embutir numero/PII).
+        return _tool_error("SEND_FAILED", e) | {"sucesso": False}
     return {"sucesso": success}
 
 
@@ -430,7 +470,10 @@ async def cartorio_enviar_whatsapp_poll(number: str, question: str, options: lis
     """Envia uma enquete no WhatsApp do cliente."""
     from app.services.notificacao import NotificationService
 
-    success = await NotificationService.enviar_whatsapp_poll(number, question, options)
+    try:
+        success = await NotificationService.enviar_whatsapp_poll(number, question, options)
+    except Exception as e:
+        return _tool_error("SEND_FAILED", e) | {"sucesso": False}
     return {"sucesso": success}
 
 
@@ -444,9 +487,12 @@ async def cartorio_enviar_whatsapp_media(
     """Envia mídia no WhatsApp do cliente. mediatype deve ser 'image' ou 'document'."""
     from app.services.notificacao import NotificationService
 
-    success = await NotificationService.enviar_whatsapp_media(
-        number, media_url, mediatype, filename, caption
-    )
+    try:
+        success = await NotificationService.enviar_whatsapp_media(
+            number, media_url, mediatype, filename, caption
+        )
+    except Exception as e:
+        return _tool_error("SEND_FAILED", e) | {"sucesso": False}
     return {"sucesso": success}
 
 
@@ -474,7 +520,9 @@ async def cartorio_enviar_telegram_reaction(chat_id: int, message_id: int, emoji
         await _react(chat_id, message_id, emoji_key)
         return {"sucesso": True}
     except Exception as e:
-        return {"sucesso": False, "erro": str(e)}
+        # E2.06: str(exc) de httpx embute a URL com o bot token e pode trazer
+        # contexto do chat. Strip secrets + scrub PII antes de responder.
+        return _tool_error("SEND_FAILED", e) | {"sucesso": False}
 
 
 @mcp.tool(
@@ -485,7 +533,10 @@ async def cartorio_enviar_telegram_poll(chat_id: int, question: str, options: li
     """Envia uma enquete no Telegram do cliente."""
     from app.api.v1.telegram import _send_poll
 
-    success = await _send_poll(chat_id, question, options)
+    try:
+        success = await _send_poll(chat_id, question, options)
+    except Exception as e:
+        return _tool_error("SEND_FAILED", e) | {"sucesso": False}
     return {"sucesso": success}
 
 
@@ -499,10 +550,13 @@ async def cartorio_enviar_telegram_media(
     """Envia mídia no Telegram do cliente. mediatype deve ser 'image' ou 'document'."""
     from app.api.v1.telegram import _send_photo, _send_document
 
-    if mediatype == "image":
-        success = await _send_photo(chat_id, media_url, caption)
-    else:
-        success = await _send_document(chat_id, media_url, filename, caption)
+    try:
+        if mediatype == "image":
+            success = await _send_photo(chat_id, media_url, caption)
+        else:
+            success = await _send_document(chat_id, media_url, filename, caption)
+    except Exception as e:
+        return _tool_error("SEND_FAILED", e) | {"sucesso": False}
     return {"sucesso": success}
 
 
