@@ -4079,3 +4079,12 @@ Modified by Gustavo Almeida — 2026-07-18T21:00
 - Nenhum teste da suíte foi rodado pela C4 (escopo docs-only); gates rodaram nos agents de código.
 
 Modified by Gustavo Almeida — 2026-07-20
+
+## 2026-07-24 Super-Agent W0/W1
+- Alembic collision 0022 fixed → revision 0028 down 0027
+- dead_code audit regenerated CLEAN (ruff/pyflakes/vulture)
+- Tests: 105 focus + 190 audit/hmac PASSED
+- Prod smoke live/ready/radar 200 green; telegram health OK; audit/verify 401 without key
+- LGPD pack: docs/LGPD_REVIEW_AUDIT_0028_2026-07-24.md (BLOCKED_REVIEW)
+- P0 open: lgpd sign-off, DPO legacy annotate-default, WA QR SUI
+- Modified by Gustavo Almeida

@@ -188,16 +188,17 @@ class TestVerifyChainTriggerFallback:
 
 
 # ---------------------------------------------------------------------------
-# 6. Migracao 0022: ts hasheado == ts armazenado
+# 6. Migracao 0028: ts hasheado == ts armazenado
+#    (ex-0022; re-id 2026-07-24 para nao colidir com 0022 RLS)
 # ---------------------------------------------------------------------------
 
 
-class TestMigration0022:
+class TestMigration0028:
     SQL = (
         Path(__file__).resolve().parents[1]
         / "alembic"
         / "versions"
-        / "2026_07_24_0022-fix-fn-auto-audit-ts-consistency.py"
+        / "2026_07_24_0028-fix-fn-auto-audit-ts-consistency.py"
     ).read_text()
 
     def test_ts_derived_from_now_not_clock_timestamp(self) -> None:
@@ -214,5 +215,6 @@ class TestMigration0022:
         assert "v_hash, v_hmac, v_now" in upgrade
 
     def test_revision_chain(self) -> None:
-        assert 'revision = "0022"' in self.SQL
-        assert 'down_revision = "0021"' in self.SQL
+        # Head linear: ...0027 (CNJ artifact) -> 0028 (fn_auto_audit ts fix)
+        assert 'revision = "0028"' in self.SQL
+        assert 'down_revision = "0027"' in self.SQL

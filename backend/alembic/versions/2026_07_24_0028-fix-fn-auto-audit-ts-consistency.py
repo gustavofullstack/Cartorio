@@ -1,8 +1,13 @@
 """Fix fn_auto_audit: ts hasheado == ts armazenado (verificabilidade).
 
-Revision ID: 0022
-Revises: 0021
+Revision ID: 0028
+Revises: 0027
 Create Date: 2026-07-24
+
+Nota (W0 inventário 2026-07-24): originalmente numerada 0022/down 0021, o que
+colidia com ``0022_audit_log_rls_no_edit_no_delete.py`` (mesmo revision id) e
+quebrava o grafo Alembic (heads múltiplas). Re-id para 0028 após a head linear
+0021→0022(RLS)→0023→0024→0025→0026→0027. Conteúdo SQL inalterado.
 
 Wave Final P0 (2026-07-24) — ROOT CAUSE da cadeia quebrada em prod
 (`POST /api/v1/audit/verify` -> chain_ok=false, last_valid_position=667):
@@ -49,8 +54,8 @@ Modified by Gustavo Almeida
 
 from alembic import op
 
-revision = "0022"
-down_revision = "0021"
+revision = "0028"
+down_revision = "0027"
 branch_labels = None
 depends_on = None
 

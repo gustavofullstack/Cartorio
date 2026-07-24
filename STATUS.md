@@ -1,74 +1,76 @@
-# STATUS — Sessão 2026-07-20 (Telegram P0 resolvido + SUPER PLANO G9 criado)
+# STATUS — Sessão 2026-07-24 (Super-Agent W0/W1)
 
-> **TL;DR**: P0 "Telegram não responde" **RESOLVIDO** — causa-raiz: webhook sem `secret_token`
-> (backend 401 em 100% dos updates). Re-sync via `/api/v1/telegram/set-webhook` (commit `96fedc9`)
-> e probes prod validam: `/start` → `response_sent=true`; texto livre/grupo → `scheduled=true`.
-> Diagnósticos E1–E4 mapearam regressões A1–A6 (telegram) e falhas de slots/timeout/payload (LLM).
-> **SUPER_PLANO_G9_100_TASKS.md** criado (14/100 já evidenciadas hoje). Núcleo `cartorio-ai/`
-> (15 arquivos) preenchido. Pendências: código das regressões A1–A6, coerência slots zen,
-> segredos em scripts locais e SUI do dono (DNS/Tailscale/QR/OpenClaw).
->
-> Substitui o snapshot de 2026-07-15 (SUPER PLANO 100/100 F0-F6) — histórico em PROGRESS.md.
+> **TL;DR**: Inventário W0 completo. Corrigida **colisão Alembic 0022** (audit ts-fix
+> re-id → **0028**). Pacote de review LGPD publicado. Dead-code snapshot regenerado
+> (ruff/pyflakes/vulture CLEAN). Suítes focadas **105 + 190 passed**. Prod smoke
+> live/ready/radar **200 green**; Telegram webhook_configured; audit/verify exige
+> API key (401). **P0 abertos**: sign-off `cartorio-lgpd`, decisão DPO legacy 158
+> entradas, WhatsApp `cartorio-2notas` session **close** (SUI QR). G9 ~25/100.
+> `master` **4 commits ahead** de origin + working tree multi-domínio (não misturar).
 
 ---
 
-## ✅ Validado HOJE em produção (com evidência)
+## ✅ Evidência desta sessão
 
 | Item | Evidência |
 |---|---|
-| Webhook prod com secret | getWebhookInfo OK, `pending_update_count=0`; 401 sem header / com secret errado (correto) |
-| Re-sync webhook | `POST /api/v1/telegram/set-webhook` com `X-API-Key` → prod re-registrou com o próprio secret |
-| Probe síncrono | `/start` em chat real → `response_sent=true` |
-| Probe async | texto livre e mensagem em grupo → `scheduled=true` (debounce 1.2s) |
-| Fallback LLM zen | 3 contas OpenCode Zen integradas + agente live restaurado (`96fedc9`, `9522cce`) |
-| CNJ export | `/api/v1/lgpd/cnj-exports/massive-dump` em prod: streaming `yield_per(1000)` + API key + JWT DPO + scrub + audit gate (`ff599aa`, `0d15da6`, `6c029fc`) |
-| Bateria telegram | `backend/tests/test_telegram_1000.py` — 1000 interações mockadas (`4f43ff8`) |
+| Alembic head 00xx | `0028` única; chain 0021→0022(RLS)→…→0027→0028 |
+| Re-id migration | `2026_07_24_0028-fix-fn-auto-audit-ts-consistency.py` |
+| Testes foco | 105 passed (dead_code, audit_trigger, telegram FSM/parsers/g9, agent, pii-out, keys) |
+| Testes audit+hmac | 190 passed |
+| Dead-code audit | `docs/DEAD_CODE_AUDIT_2026-07-24.json` ruff_clean=True |
+| Ruff changed files | All checks passed |
+| Prod live/ready/radar | HTTP 200; radar green (db/redis/n8n/openclaw/evolution/chatwoot/supabase) |
+| Telegram health | HTTP 200, webhook_configured=true, v0.6.1-p0fix |
+| Audit verify (no key) | HTTP 401 UNAUTHORIZED (gate correto) |
+| LGPD pack | `docs/LGPD_REVIEW_AUDIT_0028_2026-07-24.md` |
 
-## 🔬 Diagnósticos (E1–E4, read-only) — base do G9
+## 🔴 P0 / blockers
 
-- **E1 telegram.py (A1–A6)**: A1 boot sync em TODOS os workers (`main.py:305-307`) — worker sem
-  `TELEGRAM_WEBHOOK_SECRET` chama setWebhook sem `secret_token` (`telegram.py:2435-2436`) e derruba
-  a verificação das réplicas (tempestade 401 = causa-raiz do P0). A2 URL hardcoded (`:2429`).
-  A3 webhook pode 5xx (`:1964-1966`, `:2357`) — regra: sempre-200 exceto 401. A4 fallback síncrono
-  morto (`:2315-2352`). A5 `_DEBOUNCE_METADATA` por `chat_id` vs fila `chat_id:user_id` → 2 usuários
-  no mesmo grupo na janela de 1.2s → um sem resposta. A6 debounce falha silenciosa → usuário sem feedback.
-- **E2 cartorio_agent.py**: slots free 1/2/3 (`:66-82`) herdam só `API_KEY` (mistura chave×modelo);
-  timeout único 50s × até 6 tentativas (`:616`) → pior caso 15–20min de silêncio; payload
-  `thinking`/`tools` para todos os providers (`:610-614`) → risco de HTTP 400 em zen free.
-- **E3 infra**: mecanismo de re-sync sem SSH confirmado (`set-webhook` + API key); env de prod via EasyPanel.
-- **E4 testes/planos**: inventário consolidado → base das 100 tasks do G9.
+| ID | Status | Owner | Ação |
+|---|---|---|---|
+| Sign-off audit a84303bc+0028 | **BLOCKED_REVIEW** | cartorio-lgpd | Revisar pack LGPD |
+| Legacy 158 audit entries | **BLOCKED_REVIEW** | DPO | Default: anotar, não rewrite |
+| WA session close | **BLOCKED_SUI** | Gustavo | QR em whatsapp.2notasudi.com.br/manager instância `cartorio-2notas` |
+| verify_chain pós-deploy | **UNVERIFIED** | sre pós-sign-off | `POST /api/v1/audit/verify` com API key |
 
-## 📦 Entregue hoje (docs)
+### SUI — WhatsApp reconnect (instrução exata)
 
-1. `SUPER_PLANO_G9_100_TASKS.md` — 100 tasks / 25 squads; **14/100 [x] com evidência**.
-2. Núcleo `cartorio-ai/` — 15 arquivos reais (AGENTS, README, ARCHITECTURE, MANIFEST, INDEX,
-   BOOTSTRAP, ROADMAP + brain/BRAIN, identity/SOUL, identity/IDENTITY, planning/GOALS,
-   planning/TASKS, memory/MEMORY, security/SECURITY, compliance/CNJ). Resto do layout (~400
-   arquivos) = fase posterior (`cartorio-ai/ROADMAP.md`).
-3. `STATUS.md` (este) + `PROGRESS.md` atualizados (G9.25.T2).
+1. Abrir `https://whatsapp.2notasudi.com.br/manager`
+2. Instância **`cartorio-2notas`**
+3. Logout residual se necessário → **QR Connect**
+4. Confirmar `connectionState=open` (não basta radar evolution=online)
+5. Enviar mensagem real inbound + outbound (prova bidirecional)
+6. Registrar evidência: HTTP status + state (sem PII do chat)
 
-## ⏭️ Próximos passos (ordem das waves G9)
+## 📦 Working tree — classificação (não commitar tudo junto)
 
-1. **W54** — código das regressões A1–A5: boot sync líder-only + fail-fast sem secret (G9.01.T3);
-   webhook sempre-200 (G9.01.T4); fallback morto (G9.02.T2); metadata debounce por `chat_id:user_id` (G9.02.T3).
-2. **W55** — A6 feedback garantido; E2E grupo 2-usuários; stress prod assinado; confirmar entrega
-   async pós-debounce (hoje só `scheduled=true` observado).
-3. **W56** — slots zen herdam tupla completa; timeout por tentativa + deadline; payload por provider.
-4. **Dono (SUI, packs prontos em `docs/`)**: `/setjoingroups Enable` no @BotFather (`can_join_groups=false`
-   bloqueia grupos novos); 3 A records DNS (G9.16.T2); Tailscale restore (G9.17.T1/T2); QR WhatsApp
-   (G9.15); OpenClaw E8 (G9.17.T3); WA live emolumento (G9.17.T4).
-5. **Segurança**: sanitizar segredos literais em `backend/test_*.py`, `scripts/test_telegram_e2e.sh`,
-   `stress_telegram_prod*.py` (G9.09) — sem rotação sem ordem do dono; checker hex-64 (G9.10.T1).
+| Domínio | Arquivos | Risco |
+|---|---|---|
+| **A audit/LGPD** | migração 0028, test_audit_trigger, LGPD_REVIEW doc | Review lgpd obrigatório |
+| **B LLM agent** | cartorio_agent.py, metrics.py | Médio |
+| **C Telegram** | state_machine/parsers/regressions/1000/pii_out/conftest | Médio |
+| **D scripts/env** | stress_telegram_*, .env.example, create_db | Secrets — revisar |
+| **E docs/brain** | DEAD_CODE_*, bridge Terra, PDFs LLM, .brain memory | Baixo |
+| **F noise** | cnj_export formatação trivial | Baixo |
 
-## ⚠️ Riscos abertos
+## ⏭️ Próximo ciclo (ordem)
 
-- **A1 recaída**: qualquer worker/restart sem `TELEGRAM_WEBHOOK_SECRET` pode derrubar o secret do
-  webhook de novo até G9.01.T3 ser implementado.
-- **A5/A6**: em grupo com 2+ usuários simultâneos, um pode ficar sem resposta hoje.
-- **LLM pior caso**: até 15–20min percebidos como silêncio quando slots falham em sequência.
-- **Segredos em arquivos locais** (maioria untracked) — contidos no disco do dono; tratar no G9.09.
+1. Sign-off cartorio-lgpd no pack 0028
+2. Branch por domínio + commits Conventional (não push audit sem sign-off)
+3. Fechar G9 S1.T9/T10 + S3 scrub/circuit + S5 secrets
+4. SUI QR WhatsApp + prova bidirecional
+5. Deploy 0028 + verify_chain prod
+6. `make qa` integral antes de push dos 4 commits locais + novos
+
+## Honesty gate
+
+- **GO_LIVE_READY:** NÃO
+- **P0_open:** 3 (review, DPO, WA SUI)
+- **Não alegar** WA operacional só com evolution=online
+- **Não deploy** audit fix sem sign-off lgpd
 
 ---
 
-**Modified by**: squad G9 (orquestrador + E1–E4 + C4_Docs_SuperPlan) + Gustavo Almeida (CEO)
-**Sessão**: 2026-07-20 · **Próxima atualização**: após W54 (código das regressões A1–A5)
+**Modified by**: Super-Agent W0/W1 (grok-4.5) + Gustavo Almeida (CEO)  
+**Sessão**: 2026-07-24 · **Próxima**: após sign-off LGPD ou SUI WA
