@@ -30,6 +30,28 @@ from app.models.webhook_event import WebhookEvent
 log = logging.getLogger(__name__)
 
 
+def _webhook_secrets() -> tuple[str, str]:
+    """Retorna (current, prev) secrets de webhook Evolution (env dinâmico)."""
+    return (
+        os.getenv("EVOLUTION_WEBHOOK_SECRET") or "",
+        os.getenv("EVOLUTION_WEBHOOK_SECRET_PREV") or "",
+    )
+
+
+def _secret_header_match(provided: str | None, secrets: tuple[str, str]) -> bool:
+    """Compara header compartilhado (timing-safe) com secrets ativos."""
+    if not provided:
+        return False
+    candidate = provided.strip()
+    # Aceita "Bearer <secret>" além do valor puro.
+    if candidate.lower().startswith("bearer "):
+        candidate = candidate[7:].strip()
+    for key in secrets:
+        if key and hmac.compare_digest(candidate, key):
+            return True
+    return False
+
+
 def validate_evolution_signature(raw_body: bytes, signature: Optional[str]) -> bool:
     """Valida HMAC-SHA256 do body do webhook Evolution.
 
@@ -47,8 +69,7 @@ def validate_evolution_signature(raw_body: bytes, signature: Optional[str]) -> b
     Comparacao sempre timing-safe via hmac.compare_digest.
     """
     # Le env var dinamicamente (NAO usa settings cache) - permite teste monkeypatch
-    secret = os.getenv("EVOLUTION_WEBHOOK_SECRET") or ""
-    secret_prev = os.getenv("EVOLUTION_WEBHOOK_SECRET_PREV") or ""
+    secret, secret_prev = _webhook_secrets()
     if not secret and not secret_prev:
         log.warning("evolution webhook: EVOLUTION_WEBHOOK_SECRET nao configurado, dev mode")
         return True
@@ -67,6 +88,34 @@ def validate_evolution_signature(raw_body: bytes, signature: Optional[str]) -> b
 
     # Aceita current OU previous (rotacao zero-downtime).
     if _match(secret) or _match(secret_prev):
+        return True
+    return False
+
+
+def validate_evolution_webhook_auth(
+    raw_body: bytes,
+    signature: Optional[str] = None,
+    shared_secret_header: Optional[str] = None,
+) -> bool:
+    """Auth do webhook Evolution: HMAC **ou** header secreto compartilhado.
+
+    Evolution API (Baileys) frequentemente **não** assina o body com
+    X-Hub-Signature-256. Em produção aceitamos, de forma fail-closed:
+
+    1. HMAC válido (X-Hub-Signature-256 / X-Evolution-Signature), **ou**
+    2. Header estático igual ao secret:
+       ``X-Evolution-Webhook-Secret`` / ``X-Webhook-Secret`` / ``Authorization: Bearer …``
+
+    Sem secret configurado → dev mode (True + warning), igual ao HMAC-only.
+    Comparações sempre timing-safe. Nunca loga o valor do secret.
+    """
+    secret, secret_prev = _webhook_secrets()
+    if not secret and not secret_prev:
+        log.warning("evolution webhook: EVOLUTION_WEBHOOK_SECRET nao configurado, dev mode")
+        return True
+    if validate_evolution_signature(raw_body, signature):
+        return True
+    if _secret_header_match(shared_secret_header, (secret, secret_prev)):
         return True
     return False
 

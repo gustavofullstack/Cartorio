@@ -66,7 +66,10 @@ from app.services.chat_pipeline import (
     health_check as pipeline_health,
 )
 from app.services.redis_bus import get_bus
-from app.services.evolution_ingest import ingest_evolution_event, validate_evolution_signature
+from app.services.evolution_ingest import (
+    ingest_evolution_event,
+    validate_evolution_webhook_auth,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -278,9 +281,18 @@ class WhatsAppAdapter(ChannelAdapter):
             logger.warning("WhatsApp react error (non-blocking): %s", e)
             return False
 
-    async def verify_signature(self, raw_body: bytes, signature: str | None) -> bool:
-        """Valida HMAC SHA256 do webhook Evolution (X-Hub-Signature-256)."""
-        return validate_evolution_signature(raw_body, signature)
+    async def verify_signature(
+        self,
+        raw_body: bytes,
+        signature: str | None,
+        shared_secret_header: str | None = None,
+    ) -> bool:
+        """Valida HMAC ou header secreto compartilhado do webhook Evolution."""
+        return validate_evolution_webhook_auth(
+            raw_body,
+            signature=signature,
+            shared_secret_header=shared_secret_header,
+        )
 
 
 # ============================================================
@@ -495,9 +507,14 @@ async def whatsapp_webhook(
     store.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "in"})
     raw_body = await request.body()
 
-    # 1. HMAC validation
+    # 1. Auth: HMAC X-Hub-Signature-256 **ou** header secreto (Evolution não assina body)
     signature = request.headers.get("X-Hub-Signature-256") or request.headers.get(
         "X-Evolution-Signature"
+    )
+    shared_secret_header = (
+        request.headers.get("X-Evolution-Webhook-Secret")
+        or request.headers.get("X-Webhook-Secret")
+        or request.headers.get("Authorization")
     )
     signature_required = os.getenv("EVOLUTION_REQUIRE_SIGNATURE", "true").lower() == "true"
     secret_configured = bool(
@@ -508,12 +525,14 @@ async def whatsapp_webhook(
         raise HTTPException(status_code=503, detail="webhook authentication misconfigured")
 
     adapter = get_adapter()
-    signature_valid = await adapter.verify_signature(raw_body, signature)
+    signature_valid = await adapter.verify_signature(
+        raw_body, signature, shared_secret_header=shared_secret_header
+    )
     if signature_required and not signature_valid:
-        logger.warning("WhatsApp webhook: HMAC inválido (rejeitando)")
+        logger.warning("WhatsApp webhook: auth inválida (rejeitando)")
         raise HTTPException(status_code=401, detail="invalid webhook signature")
     if not signature_required and not signature_valid:
-        logger.warning("WhatsApp webhook: HMAC inválido aceito somente em modo não obrigatório")
+        logger.warning("WhatsApp webhook: auth inválida aceita somente em modo não obrigatório")
 
     # 2. Idempotency DB-level (evolution_ingest)
     try:

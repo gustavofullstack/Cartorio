@@ -1012,9 +1012,45 @@ async def webhook_evolution(
     retorna resposta. Audit log de TUDO.
 
     Sprint 2: idempotencia via evolution_ingest (message_id) - replay nao duplica.
+    Wave Final P0: HMAC fail-closed (mesmo contrato de /whatsapp/webhook).
     Mantem a logica inline de PII+LLM para nao quebrar o workflow #12 ativo
     e formato legado (pre-Sprint 1.2) que ainda usa payload {message, sender, instance}.
     """
+    # ------------------------------------------------------------------
+    # P0 SECURITY: HMAC X-Hub-Signature-256 / X-Evolution-Signature
+    # URL canônica de produção (EVOLUTION_WEBHOOK_URL) aponta para ESTE path.
+    # Fail-closed quando EVOLUTION_REQUIRE_SIGNATURE=true (default prod).
+    # ------------------------------------------------------------------
+    from app.services.evolution_ingest import (
+        ingest_evolution_event,
+        validate_evolution_webhook_auth,
+    )
+
+    raw_body = await request.body()
+    signature = request.headers.get("X-Hub-Signature-256") or request.headers.get(
+        "X-Evolution-Signature"
+    )
+    shared_secret_header = (
+        request.headers.get("X-Evolution-Webhook-Secret")
+        or request.headers.get("X-Webhook-Secret")
+        or request.headers.get("Authorization")
+    )
+    signature_required = os.getenv("EVOLUTION_REQUIRE_SIGNATURE", "true").lower() == "true"
+    secret_configured = bool(
+        os.getenv("EVOLUTION_WEBHOOK_SECRET") or os.getenv("EVOLUTION_WEBHOOK_SECRET_PREV")
+    )
+    if signature_required and not secret_configured:
+        raise HTTPException(
+            status_code=503,
+            detail="webhook authentication misconfigured",
+        )
+    if signature_required and not validate_evolution_webhook_auth(
+        raw_body,
+        signature=signature,
+        shared_secret_header=shared_secret_header,
+    ):
+        raise HTTPException(status_code=401, detail="invalid webhook signature")
+
     # Idempotency check (Sprint 2) - so se payload tem formato novo
     # (data.key.id). Formato legado e ignorado silenciosamente.
     #
@@ -1024,7 +1060,6 @@ async def webhook_evolution(
     # e caimos no fluxo legado abaixo, em vez de crashar com
     # AttributeError: 'str' object has no attribute 'get'.
     # Ref: backend/logs/errors.log (2026-06-30 08:12 BRT) - Baileys novo.
-    from app.services.evolution_ingest import ingest_evolution_event
 
     _data = payload.get("data") or {}
     _key_raw = _data.get("key") if isinstance(_data, dict) else None

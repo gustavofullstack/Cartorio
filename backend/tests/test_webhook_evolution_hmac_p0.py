@@ -186,3 +186,69 @@ class TestWebhookEvolutionHmacP0:
             resp = client.post(ENDPOINT, json=_payload("evo-hmac-p0-dev"))
         assert resp.status_code != 401
         assert resp.status_code != 503
+
+    def test_shared_secret_header_accepted_without_hmac(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Evolution não assina body — header estático X-Webhook-Secret é válido."""
+        secret = "p0-evolution-shared-header"
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", secret)
+        with patch("app.api.v1.router.scrub") as scrub_mock:
+            from app.services.pii import ScrubResult
+
+            scrub_mock.return_value = ScrubResult(
+                text="mensagem sintetica teste",
+                findings=[],
+                redaction_count=0,
+            )
+            resp = client.post(
+                ENDPOINT,
+                content=_raw("evo-hmac-p0-shared"),
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Webhook-Secret": secret,
+                },
+            )
+        assert resp.status_code != 401
+        assert resp.status_code != 503
+
+    def test_wrong_shared_secret_header_rejected(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "p0-evolution-shared-header")
+        resp = client.post(
+            ENDPOINT,
+            content=_raw("evo-hmac-p0-bad-shared"),
+            headers={
+                "Content-Type": "application/json",
+                "X-Webhook-Secret": "wrong-secret-value",
+            },
+        )
+        assert resp.status_code == 401
+
+    def test_bearer_authorization_shared_secret_accepted(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        secret = "p0-evolution-bearer-secret"
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "true")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", secret)
+        with patch("app.api.v1.router.scrub") as scrub_mock:
+            from app.services.pii import ScrubResult
+
+            scrub_mock.return_value = ScrubResult(
+                text="mensagem sintetica teste",
+                findings=[],
+                redaction_count=0,
+            )
+            resp = client.post(
+                ENDPOINT,
+                content=_raw("evo-hmac-p0-bearer"),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {secret}",
+                },
+            )
+        assert resp.status_code != 401
+        assert resp.status_code != 503
