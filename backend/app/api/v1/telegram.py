@@ -169,6 +169,26 @@ _OFFICIAL_OUTBOUND_RESTORE: tuple[tuple[str, str], ...] = (
 )
 
 
+def _protect_official_outbound(text: str) -> str:
+    """Replace public contacts before a generic PII scrubber runs."""
+    protected = text
+    for real, token in _OFFICIAL_OUTBOUND_PROTECT:
+        protected = re.sub(
+            rf"(?<![\w.+-]){re.escape(real)}(?=$|[\s,;:!?\)\]\}}]|\.(?=\s|$))",
+            token,
+            protected,
+        )
+    return protected
+
+
+def _restore_official_outbound(text: str) -> str:
+    """Restore only allowlisted public contacts after output sanitization."""
+    restored = text
+    for token, real in _OFFICIAL_OUTBOUND_RESTORE:
+        restored = restored.replace(token, real)
+    return restored
+
+
 def scrub_bot_outbound(text: str) -> str:
     """Scrub PII de SAIDA sem apagar contatos oficiais do cartorio.
 
@@ -177,12 +197,8 @@ def scrub_bot_outbound(text: str) -> str:
     """
     if not text:
         return text
-    protected = text
-    for real, tok in _OFFICIAL_OUTBOUND_PROTECT:
-        protected = protected.replace(real, tok)
-    scrubbed = scrub(protected).text
-    for tok, real in _OFFICIAL_OUTBOUND_RESTORE:
-        scrubbed = scrubbed.replace(tok, real)
+    scrubbed = scrub(_protect_official_outbound(text)).text
+    scrubbed = _restore_official_outbound(scrubbed)
     # Se ainda sobrou placeholder generico de email do DPO (edge case)
     scrubbed = scrubbed.replace(
         "Direitos LGPD: [EMAIL_REDACTED]",
@@ -193,6 +209,13 @@ def scrub_bot_outbound(text: str) -> str:
         "DPO: dpo@2notasudi.com.br",
     )
     return scrubbed
+
+
+def format_bot_outbound(text: str) -> str:
+    """Format, scrub and restore official contacts at the final outbound boundary."""
+    protected = _protect_official_outbound(text)
+    formatted = strip_emojis(format_bot_text(protected))
+    return _restore_official_outbound(scrub(formatted).text)
 
 
 def format_bot_text(text: str) -> str:
@@ -736,7 +759,9 @@ async def _send_message(
     FIX 2026-07-09: se o grupo foi migrado a supergroup, a API retorna 400 com
     ``migrate_to_chat_id``. Reenvia automaticamente no ID novo.
     """
-    cleaned_text = strip_emojis(format_bot_text(text))
+    # ``format_bot_text`` applies the generic scrubber. Restore official public
+    # contacts only at the final outbound boundary, after that generic pass.
+    cleaned_text = format_bot_outbound(text)
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     # HTML is safe here because telegram_html escapes all agent content before
     # adding only documented Telegram tags.  Do not pass raw LLM HTML through.
@@ -1331,7 +1356,7 @@ async def _send_extra_messages(chat_id: int, messages: list[str]) -> int:
     sent_n = 0
     for msg in messages[:8]:
         await asyncio.sleep(0.35)
-        body = strip_emojis(format_bot_text(scrub_bot_outbound(msg)))[:MAX_RESPONSE_LEN]
+        body = format_bot_outbound(msg)[:MAX_RESPONSE_LEN]
         if not body:
             continue
         ok = await _send_message(chat_id, body)
@@ -1789,7 +1814,7 @@ async def _process_telegram_debounce(chat_id: int, conv_key: str | None = None) 
                 keyboard = None
         # Mantem espacamento didatico; scrub PII de SAIDA sem apagar DPO oficial
         response_text = format_bot_text(strip_emojis(response_text))
-        response_text = format_bot_text(scrub_bot_outbound(response_text))
+        response_text = format_bot_outbound(response_text)
         sent = await _send_message(
             chat_id, response_text, reply_markup={"inline_keyboard": keyboard} if keyboard else None
         )
@@ -2369,7 +2394,7 @@ async def telegram_webhook(
             )
         response_text, keyboard = await _handle_command(text, bus, conv, "")
         if response_text:
-            response_text = strip_emojis(response_text)
+            response_text = format_bot_outbound(response_text)
             markup = {"inline_keyboard": keyboard} if keyboard else None
             sent = await _send_message(chat_id, response_text, reply_markup=markup)
             status = "ok" if sent else "partial"
@@ -2402,7 +2427,7 @@ async def telegram_webhook(
             if response_text:
                 if new_state == STATE_IDLE:
                     await _clear_state(bus, conv)
-                response_text = strip_emojis(format_bot_text(scrub_bot_outbound(response_text)))
+                response_text = format_bot_outbound(response_text)
                 markup = {"inline_keyboard": keyboard} if keyboard else None
                 sent = await _send_message(chat_id, response_text, reply_markup=markup)
                 if sent:
@@ -2452,7 +2477,7 @@ async def telegram_webhook(
                     "ou digitar /menu se quiser atalhos."
                 )
                 keyboard = None
-        response_text = strip_emojis(format_bot_text(scrub_bot_outbound(response_text)))
+                response_text = format_bot_outbound(response_text)
         markup = {"inline_keyboard": keyboard} if keyboard else None
         sent = await _send_message(chat_id, response_text, reply_markup=markup)
         if sent:

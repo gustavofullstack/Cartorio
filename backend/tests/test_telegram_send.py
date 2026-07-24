@@ -26,6 +26,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.api.v1.telegram import (
+    LGPD_NOTICE,
     _confirmar_keyboard,
     _menu_keyboard,
     _send_document,
@@ -62,6 +63,59 @@ async def test_send_message_sucesso_200() -> None:
         result = await _send_message(123, "Ola")
 
     assert result is True
+
+
+@pytest.mark.asyncio
+async def test_send_message_preserva_contato_dpo_oficial_no_payload() -> None:
+    """O scrub final nao pode ocultar o canal publico de direitos LGPD."""
+    captured: dict[str, object] = {}
+    mock_pool = MagicMock()
+
+    async def _post_capture(url: str, json: dict[str, object]) -> MagicMock:
+        captured.update(json)
+        return _make_resp(200)
+
+    mock_pool.post = _post_capture
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        result = await _send_message(
+            123,
+            f"{LGPD_NOTICE}\n\nDPO: dpo@2notasudi.com.br\n"
+            "CPF 123.456.789-09 email pessoa@example.com",
+        )
+
+    assert result is True
+    payload_text = str(captured["text"])
+    assert "dpo@2notasudi.com.br" in payload_text
+    assert "123.456.789-09" not in payload_text
+    assert "pessoa@example.com" not in payload_text
+    assert "[CPF_REDACTED]" in payload_text
+    assert "[EMAIL_REDACTED]" in payload_text
+
+
+@pytest.mark.asyncio
+async def test_send_message_nao_allowlista_email_que_so_contem_dpo_oficial() -> None:
+    """Somente o endereco exato do DPO pode atravessar o scrub de saida."""
+    captured: dict[str, object] = {}
+    mock_pool = MagicMock()
+
+    async def _post_capture(url: str, json: dict[str, object]) -> MagicMock:
+        captured.update(json)
+        return _make_resp(200)
+
+    mock_pool.post = _post_capture
+    with patch("app.api.v1.telegram._get_tg_pool", return_value=mock_pool):
+        result = await _send_message(
+            123,
+            "Oficial dpo@2notasudi.com.br; "
+            "falso fakedpo@2notasudi.com.br; "
+            "hostil dpo@2notasudi.com.br.evil.com",
+        )
+
+    assert result is True
+    payload_text = str(captured["text"])
+    assert "dpo@2notasudi.com.br" in payload_text
+    assert "fakedpo@2notasudi.com.br" not in payload_text
+    assert "dpo@2notasudi.com.br.evil.com" not in payload_text
 
 
 @pytest.mark.asyncio
