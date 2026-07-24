@@ -1044,10 +1044,34 @@ async def _handle_state(
     if state == STATE_AGENDAR_DATA:
         d = _parse_date(text)
         if not d:
-            if len(tl) > 10 or any(w in tl for w in ("cancelar", "sair", "menu", "voltar", "parar", "qual", "como", "onde", "valor", "procuracao", "certidao", "uai", "kkk", "funciona", "beleza", "obrigado")):
+            if len(tl) > 10 or any(
+                w in tl
+                for w in (
+                    "cancelar",
+                    "sair",
+                    "menu",
+                    "voltar",
+                    "parar",
+                    "qual",
+                    "como",
+                    "onde",
+                    "valor",
+                    "procuracao",
+                    "certidao",
+                    "uai",
+                    "kkk",
+                    "funciona",
+                    "beleza",
+                    "obrigado",
+                )
+            ):
                 await _clear_state(bus, key)
                 return "", STATE_IDLE, None
-            return "Data invalida. Use DD/MM/AAAA (ex: 27/07/2026) ou digite /cancelar:", state, _menu_keyboard_with_cancel()
+            return (
+                "Data invalida. Use DD/MM/AAAA (ex: 27/07/2026) ou digite /cancelar:",
+                state,
+                _menu_keyboard_with_cancel(),
+            )
         state_data["data"] = d
         await _set_state(bus, key, STATE_AGENDAR_HORA, state_data)
         return (
@@ -1058,10 +1082,34 @@ async def _handle_state(
     if state == STATE_AGENDAR_HORA:
         h = _parse_time(text)
         if not h:
-            if len(tl) > 7 or any(w in tl for w in ("cancelar", "sair", "menu", "voltar", "parar", "qual", "como", "onde", "valor", "procuracao", "certidao", "uai", "kkk", "funciona", "beleza", "obrigado")):
+            if len(tl) > 7 or any(
+                w in tl
+                for w in (
+                    "cancelar",
+                    "sair",
+                    "menu",
+                    "voltar",
+                    "parar",
+                    "qual",
+                    "como",
+                    "onde",
+                    "valor",
+                    "procuracao",
+                    "certidao",
+                    "uai",
+                    "kkk",
+                    "funciona",
+                    "beleza",
+                    "obrigado",
+                )
+            ):
                 await _clear_state(bus, key)
                 return "", STATE_IDLE, None
-            return "Horario invalido. Use HH:MM (ex: 14:30) ou digite /cancelar:", state, _menu_keyboard_with_cancel()
+            return (
+                "Horario invalido. Use HH:MM (ex: 14:30) ou digite /cancelar:",
+                state,
+                _menu_keyboard_with_cancel(),
+            )
         state_data["hora"] = h
         await _set_state(bus, key, STATE_AGENDAR_CONFIRMAR, state_data)
         return (

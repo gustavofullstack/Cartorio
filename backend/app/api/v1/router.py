@@ -4035,7 +4035,8 @@ async def get_protocolos_recentes_concluidos(
     assert_dpo_for_include_deleted(request, include_deleted)
 
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    expected = settings.cartorio_api_key or ""
+    if not api_key or not hmac.compare_digest(api_key, expected):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
@@ -4346,7 +4347,8 @@ async def admin_validate_n8n_wfs(request: Request) -> dict:
     from app.services.n8n_workflow_validator import validate_all
 
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    expected = settings.cartorio_api_key or ""
+    if not api_key or not hmac.compare_digest(api_key, expected):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
@@ -4450,7 +4452,8 @@ async def admin_lgpd_relatorio_anual(
     from app.services.lgpd_relatorio import gerar_relatorio_anual, render_markdown
 
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    expected = settings.cartorio_api_key or ""
+    if not api_key or not hmac.compare_digest(api_key, expected):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
