@@ -1,6 +1,5 @@
 """validate_poc.py — Valida estado da simulação após POC persona 1."""
 import os
-import sys
 
 import httpx
 

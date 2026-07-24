@@ -108,9 +108,7 @@ def validate_workflow(wf_path: Path) -> list[Violation]:
         )
         return violations
 
-    wf_name = data.get("name", wf_path.stem)
     nodes = data.get("nodes", [])
-    connections = data.get("connections", {})
 
     # Regra 1: hard-coded credentials em node.parameters
     for node in nodes:
@@ -177,7 +175,7 @@ def validate_workflow(wf_path: Path) -> list[Violation]:
     if not data.get("active", False):
         violations.append(
             Violation(wf_path.name, "INACTIVE_WORKFLOW", "WARNING",
-                      f"WF exportado como inactive")
+                      "WF exportado como inactive")
         )
 
     # Regra 7: webhook path duplicado (entre todos os WFs — check externo)
@@ -188,7 +186,7 @@ def validate_workflow(wf_path: Path) -> list[Violation]:
     if not has_correlation and len(nodes) > 2:
         violations.append(
             Violation(wf_path.name, "MISSING_CORRELATION", "WARNING",
-                      f"WF sem node 'Init Correlation' (degradacao observabilidade)")
+                      "WF sem node 'Init Correlation' (degradacao observabilidade)")
         )
 
     return violations
@@ -277,7 +275,7 @@ def render_markdown_report(result: ValidationResult) -> str:
             msg = v.message.replace("|", "\\|")
             md.append(f"| `{v.workflow}` | {v.rule} | {node_str} | {msg} |")
         if len(result.warnings) > 20:
-            md.append(f"")
+            md.append("")
             md.append(f"_... +{len(result.warnings) - 20} warnings omitidos_")
     md.append("")
     md.append("## Regras verificadas")

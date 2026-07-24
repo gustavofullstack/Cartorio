@@ -196,7 +196,7 @@ def main() -> int:
     if problematic:
         print(f"\n[HOLD] {len(problematic)} WF(s) com problema")
     else:
-        print(f"\n[WORK] Todos WFs saudaveis")
+        print("\n[WORK] Todos WFs saudaveis")
 
     if args.report:
         args.report.write_text(render_markdown(results))

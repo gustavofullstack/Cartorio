@@ -170,7 +170,6 @@ def main() -> int:
     print(f"Total workflows: {len(workflows)}")
 
     # Fetch executions para cada WF (limit 100)
-    since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
     executions: dict[str, list[dict]] = {}
     for wf in workflows:
         wf_id = wf.get("id")

@@ -252,7 +252,7 @@ def main() -> int:
     if args.check:
         if not BASELINE.exists():
             print(f"[ERROR] Baseline nao existe: {BASELINE}", file=sys.stderr)
-            print(f"  Rode: python3 scripts/openapi_snapshot.py --update", file=sys.stderr)
+            print("  Rode: python3 scripts/openapi_snapshot.py --update", file=sys.stderr)
             return 2
         baseline = json.loads(BASELINE.read_text())
         invalid_refs = validate_internal_refs(baseline, label="baseline") + validate_internal_refs(
@@ -277,8 +277,8 @@ def main() -> int:
         return 0
 
     print(f"Gerado: {CURRENT}")
-    print(f"Para comparar: --check")
-    print(f"Para atualizar baseline: --update")
+    print("Para comparar: --check")
+    print("Para atualizar baseline: --update")
     return 0
 
 

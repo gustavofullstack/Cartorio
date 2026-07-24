@@ -164,7 +164,6 @@ def main() -> int:
     failed = 0
     for wf in workflows:
         wf_id = wf.get("id", "?")
-        wf_name = wf.get("name", wf_id)
         if apply_retry_policy(base_url, api_key, wf_id, settings_block, dry_run, args.timeout):
             success += 1
         else:

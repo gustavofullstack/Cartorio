@@ -117,7 +117,7 @@ def main() -> None:
     for squad, wfs in sorted(squads.items()):
         md.append(f"| **{squad}** | {len(wfs)} | {', '.join(wfs)} |")
     md.append("")
-    md.append(f"## Stats finais")
+    md.append("## Stats finais")
     md.append(f"- Total: {len(entries)} workflows")
     md.append(f"- Ativos: {total_active} ({100 * total_active // len(entries)}%)")
     md.append(f"- Total nodes: {total_nodes}")

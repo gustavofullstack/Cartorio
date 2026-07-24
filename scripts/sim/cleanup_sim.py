@@ -1,5 +1,4 @@
 """cleanup_sim.py — Limpa contatos + conversas duplicados da POC anterior."""
-import json
 import os
 
 import httpx

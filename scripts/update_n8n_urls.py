@@ -1,7 +1,6 @@
 import os
 import sys
 import requests
-import time
 
 BASE = "https://flow.2notasudi.com.br"
 
