@@ -85,7 +85,7 @@ def test_propagates_incoming_x_request_id() -> None:
     assert resp.json()["request_id"] == incoming
 
 
-def test_client_ip_from_xff_primeiro_hop() -> None:
+def test_client_ip_ignora_xff_sem_trusted_proxy() -> None:
     app = _build_app()
     client = TestClient(app)
     resp = client.get(
@@ -93,8 +93,9 @@ def test_client_ip_from_xff_primeiro_hop() -> None:
         headers={"X-Forwarded-For": "203.0.113.7, 10.0.0.1, 10.0.0.2"},
     )
     assert resp.status_code == 200
-    # XFF: pegar PRIMEIRO hop (cliente real atras do proxy)
-    assert resp.json()["client_ip"] == "203.0.113.7"
+    # O middleware de contexto nunca interpreta XFF por conta própria. No app
+    # completo, TrustedProxyMiddleware resolve o header antes deste ponto.
+    assert resp.json()["client_ip"] != "203.0.113.7"
 
 
 def test_client_ip_fallback_request_client_host() -> None:

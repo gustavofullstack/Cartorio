@@ -223,6 +223,7 @@ class Settings(BaseSettings):
         max_length=64,
         pattern=r"^[a-f0-9]{64}$",
     )
+    cartorio_dpo_api_key: Optional[str] = None
 
     # ========================================================================
     # Supabase (acesso direto alem do DB)

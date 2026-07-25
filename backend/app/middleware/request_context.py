@@ -5,9 +5,8 @@ O que ele faz:
   * Se o cliente mandou X-Request-Id, respeita (tracing distribuido).
   * Caso contrario, gera UUIDv4 novo.
   * Ecoa o request_id no response header X-Request-Id (proxys/load balancers).
-- Extrai client_ip respeitando X-Forwarded-For:
-  * Primeiro hop do XFF = cliente real atras do proxy reverso.
-  * Fallback: request.client.host (util em testes/dev).
+- Usa o IP resolvido por ``TrustedProxyMiddleware``. Headers de proxy nunca
+  sao interpretados aqui, para que clientes diretos não possam forjar IP.
 - Captura User-Agent e X-Canal (whatsapp/telegram/web/balcao/email).
 - Anexa timestamp_iso UTC no momento da entrada (ISO 8601).
 
@@ -40,17 +39,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 
 def _extract_client_ip(request: Request) -> str | None:
-    """Extrai IP do cliente respeitando X-Forwarded-For.
-
-    XFF pode ter varios hops separados por virgula. O PRIMEIRO eh o
-    cliente real; os demais sao proxies intermedios. Em producao o
-    Traefik ja confia no XFF, entao pegamos o primeiro.
-    """
-    xff = request.headers.get("x-forwarded-for")
-    if xff:
-        first = xff.split(",")[0].strip()
-        if first:
-            return first
+    """Retorna o IP já resolvido no limite de confiança ASGI."""
     if request.client and request.client.host:
         return request.client.host
     return None

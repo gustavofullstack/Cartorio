@@ -52,11 +52,8 @@ def _audit_auth_failure(
     try:
         from app.db import session_scope
 
-        # client_ip do Request (X-Forwarded-For honored se vier do proxy Easypanel)
+        # IP já resolvido no limite de confiança por TrustedProxyMiddleware.
         client_ip = request.client.host if request.client else None
-        xff = request.headers.get("x-forwarded-for")
-        if xff:
-            client_ip = xff.split(",")[0].strip()
 
         with session_scope() as db:
             AuditService.log(

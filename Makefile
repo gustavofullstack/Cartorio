@@ -48,11 +48,13 @@ test-one:  ## Roda 1 teste especifico (uso: make test-one TEST=test_pii)
 	@cd backend && uv run pytest -v --tb=short --no-cov $(TEST)
 
 .PHONY: lint
-lint:  ## Roda ruff (lint) + mypy (typecheck) no backend
+lint:  ## Roda ruff (lint) + mypy (typecheck) no backend + secret scanner
 	@echo "$(GREEN)[backend] ruff check$(RESET)"
 	@cd backend && uv run ruff check .
 	@echo "$(GREEN)[backend] mypy app/$(RESET)"
 	@cd backend && uv run mypy app/
+	@echo "$(GREEN)[security] secret scanner check$(RESET)"
+	@python3 backend/scripts/check_no_literal_keys.py
 
 .PHONY: format
 format:  ## Auto-format com ruff

@@ -50,8 +50,10 @@ test-one:  ## Roda 1 teste (uso: make test-one TEST=tests/test_pii.py::test_foo)
 	uv run pytest -v --tb=short --no-cov $(TEST)
 
 .PHONY: lint
-lint:  ## Ruff check
+lint:  ## Ruff check + mypy + secret scanner
 	uv run ruff check .
+	uv run mypy app/
+	python3 scripts/check_no_literal_keys.py
 
 .PHONY: lint-fix
 lint-fix:  ## Ruff --fix + format

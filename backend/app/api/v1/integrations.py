@@ -717,11 +717,8 @@ async def n8n_error_webhook(
         if err_clean:
             audit_payload["error"] = err_clean
 
-    # Extrai contexto do request
+    # IP já resolvido no limite de confiança por TrustedProxyMiddleware.
     client_ip = request.client.host if request.client else None
-    xff = request.headers.get("x-forwarded-for")
-    if xff:
-        client_ip = xff.split(",")[0].strip()
 
     # Grava audit_log (LGPD art. 37) com idempotencia via execution_id
     audit_id: int | None = None

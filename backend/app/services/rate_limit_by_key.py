@@ -109,6 +109,9 @@ def identify_tier(api_key: str | None) -> ApiKeyTier:
     expected = settings.cartorio_api_key
     if expected and hmac.compare_digest(api_key.encode("utf-8"), expected.encode("utf-8")):
         return "n8n"
+    dpo_expected = settings.cartorio_dpo_api_key
+    if dpo_expected and hmac.compare_digest(api_key.encode("utf-8"), dpo_expected.encode("utf-8")):
+        return "dpo"
     return "padrao"
 
 
@@ -286,10 +289,10 @@ class RateLimitByKeyMiddleware(BaseHTTPMiddleware):
         if self._paths and not any(request.url.path.startswith(p) for p in self._paths):
             return await call_next(request)
 
-        # Extrai IP do cliente (defesa DDoS - roda ANTES do rate limit por key)
-        client_ip = request.headers.get("x-forwarded-for", "unknown").split(",")[0].strip()
-        if not client_ip or client_ip == "unknown":
-            client_ip = request.client.host if request.client else "unknown"
+        # O TrustedProxyMiddleware resolve XFF somente para peers confiáveis.
+        # Nunca leia o header diretamente aqui: um cliente direto conseguiria
+        # escolher buckets de rate limit e contornar o limite por IP.
+        client_ip = request.client.host if request.client else "unknown"
 
         # Camada 1: DDoS protection (limite absoluto por IP, fixed window)
         ip_result = await self._check_ip_ddos(client_ip)

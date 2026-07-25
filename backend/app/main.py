@@ -44,6 +44,7 @@ from app.services.rate_limit import RateLimitMiddleware  # noqa: E402
 from app.services.rate_limit_by_key import RateLimitByKeyMiddleware  # noqa: E402
 from app.services.tracing import init_tracing  # noqa: E402
 from app.middleware.request_context import RequestContextMiddleware  # noqa: E402
+from app.middleware.trusted_proxy import TrustedProxyMiddleware  # noqa: E402
 from app.middleware.idempotency import IdempotencyMiddleware  # noqa: E402
 from app.middleware.slow_log import SlowLogMiddleware  # noqa: E402
 from app.middleware.openapi_validator import install_openapi_validation_middleware  # noqa: E402
@@ -613,6 +614,11 @@ app.add_middleware(
 # Skip automatico de /health/* e /metrics (ruido). Threshold via env
 # SLOW_LOG_THRESHOLD_MS (default 500ms). Ver tests/test_slow_log.py.
 app.add_middleware(SlowLogMiddleware, threshold_ms=500)
+
+# Deve ser o middleware mais externo: resolve X-Forwarded-For uma única vez,
+# exclusivamente quando o peer ASGI pertence à rede de proxy confiável. Todos
+# os demais middlewares e handlers usam apenas request.client.host.
+app.add_middleware(TrustedProxyMiddleware)
 
 
 @app.get("/health", tags=["meta"])
