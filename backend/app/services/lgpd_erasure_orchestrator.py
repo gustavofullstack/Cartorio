@@ -354,6 +354,7 @@ def soft_delete_by_cliente(
         numero de rows soft-deleted (0 se tabela nao tem coluna deleted_at)
     """
     import re
+
     if not re.match(r"^[a-zA-Z0-9_]+$", table_name):
         raise ValueError(f"Invalid table name: {table_name}")
 

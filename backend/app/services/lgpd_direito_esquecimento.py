@@ -100,6 +100,7 @@ def direito_esquecimento(
     }
 
     import re
+
     # 3. Soft delete cascade (marca deleted_at + anonimiza PII)
     rows_affected = 0
     anonymized_tables = []
@@ -232,6 +233,7 @@ def restore_direito_esquecimento(
         )
 
     import re
+
     # Restaura deleted_at=NULL em todas as tabelas cascade
     restored_tables = []
     for table in CASCADE_TABLES:
