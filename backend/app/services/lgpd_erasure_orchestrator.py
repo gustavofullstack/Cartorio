@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import text
@@ -89,7 +89,7 @@ def _anonimizar_cliente_row(
     cliente.telefone_hash = None  # type: ignore[assignment]
     # cpf_hash preservado (ja eh hash irreversivel LGPD-by-design)
     cliente.consentimento_lgpd = False
-    cliente.deleted_at = datetime.now(tz=timezone.utc).replace(tzinfo=None)
+    cliente.deleted_at = datetime.now(tz=UTC).replace(tzinfo=None)
     if reversivel_ate is not None:
         cliente.lgpd_reversivel_ate = reversivel_ate.replace(tzinfo=None)
 
@@ -110,10 +110,11 @@ def _soft_delete_conversas(db: Session, cliente_id: int) -> dict[str, Any]:
     Returns:
         dict com {cliente_id, conversas_deleted, tabelas_afetadas}
     """
-    from app.models.conversa import Conversa
     from sqlalchemy import update
 
-    now = datetime.now(tz=timezone.utc).replace(tzinfo=None)
+    from app.models.conversa import Conversa
+
+    now = datetime.now(tz=UTC).replace(tzinfo=None)
 
     # Update em batch (nao pega todos pra memoria). Filtra deleted_at IS NULL
     # para preservar idempotencia.
@@ -235,7 +236,7 @@ def erase_cliente(
         ValueError: se cliente nao existe
     """
     if reversivel_ate is None:
-        reversivel_ate = datetime.now(tz=timezone.utc) + timedelta(days=30)
+        reversivel_ate = datetime.now(tz=UTC) + timedelta(days=30)
 
     # Etapa 1: anonimizar cliente (PK preservada)
     cliente_result = _anonimizar_cliente_row(db, cliente_id, reversivel_ate=reversivel_ate)
@@ -248,7 +249,7 @@ def erase_cliente(
             conversas_deleted=0,
             audit_log_id=0,
             reversivel_ate=None,
-            executado_em=datetime.now(tz=timezone.utc).isoformat(),
+            executado_em=datetime.now(tz=UTC).isoformat(),
             erro=cliente_result["erro"],
         )
 
@@ -292,7 +293,7 @@ def erase_cliente(
         conversas_deleted=int(conversas_result["conversas_deleted"]),
         audit_log_id=audit_id,
         reversivel_ate=reversivel_ate,
-        executado_em=datetime.now(tz=timezone.utc).isoformat(),
+        executado_em=datetime.now(tz=UTC).isoformat(),
         extra=summary,
     )
 
@@ -352,7 +353,11 @@ def soft_delete_by_cliente(
     Returns:
         numero de rows soft-deleted (0 se tabela nao tem coluna deleted_at)
     """
-    now = datetime.now(tz=timezone.utc).replace(tzinfo=None)
+    import re
+    if not re.match(r"^[a-zA-Z0-9_]+$", table_name):
+        raise ValueError(f"Invalid table name: {table_name}")
+
+    now = datetime.now(tz=UTC).replace(tzinfo=None)
 
     try:
         stmt = text(
@@ -367,9 +372,9 @@ def soft_delete_by_cliente(
 
 
 __all__ = [
-    "erase_cliente",
     "ErasureResult",
-    "verify_audit_chain_intact",
     "count_audit_entries_for_cliente",
+    "erase_cliente",
     "soft_delete_by_cliente",
+    "verify_audit_chain_intact",
 ]
