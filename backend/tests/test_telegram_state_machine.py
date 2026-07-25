@@ -111,7 +111,7 @@ async def test_state_agendar_data_formato_invalido() -> None:
     """_handle_state AGENDAR_DATA com data invalida retorna erro + mesmo state."""
     bus = _make_bus()
     text, new_state, keyboard = await _handle_state(
-        "data invalida xyz", STATE_AGENDAR_DATA, {}, bus, chat_id=123
+        "123", STATE_AGENDAR_DATA, {}, bus, chat_id=123
     )
     assert "invalida" in text.lower() or "inval" in text.lower() or "Use" in text
     assert new_state == STATE_AGENDAR_DATA
