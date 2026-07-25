@@ -143,9 +143,7 @@ async def test_state_agendar_hora_formato_valido() -> None:
 async def test_state_agendar_hora_formato_invalido() -> None:
     """_handle_state AGENDAR_HORA com hora invalida retorna erro + mesmo state."""
     bus = _make_bus()
-    text, new_state, keyboard = await _handle_state(
-        "abc", STATE_AGENDAR_HORA, {}, bus, chat_id=123
-    )
+    text, new_state, keyboard = await _handle_state("abc", STATE_AGENDAR_HORA, {}, bus, chat_id=123)
     assert "invalido" in text.lower() or "inval" in text.lower() or "Use" in text
     assert new_state == STATE_AGENDAR_HORA
     assert keyboard is not None
