@@ -1,0 +1,602 @@
+[
+  {
+    "id": "G9.S1.T1",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "done",
+    "description": "Diagnóstico E1 (A1–A3) mapeado com linhas: A1 `sync_telegram_webhook()` dispara em TODOS os workers no boot (`main.py:305-307`) e worker sem `TELEGRAM_WEBHOOK_SECRET` chama setWebhook sem `secret_token` (`telegram.py:2435-2436`); A2 URL hardcoded (`telegram.py:2429`); A3 webhook pode 5xx (`1964-1966` JSON inválido re-raise; `2357` `bus.client.get` sem try)."
+  },
+  {
+    "id": "G9.S1.T2",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "done",
+    "description": "Re-sync webhook prod executado via `POST /api/v1/telegram/set-webhook` com `X-API-Key` (mecanismo do commit `96fedc9`): getWebhookInfo OK com secret, `pending_update_count=0`, 401 sem header."
+  },
+  {
+    "id": "G9.S1.T3",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "done",
+    "description": "Boot sync seguro: somente worker líder (redlock) executa `sync_telegram_webhook()` e aplica fail-fast se `TELEGRAM_WEBHOOK_SECRET` estiver ausente — nunca registrar setWebhook sem `secret_token`. Teste multi-worker simulado."
+  },
+  {
+    "id": "G9.S1.T4",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "done",
+    "description": "Webhook sempre-200 exceto 401 de secret: envelopar `bus.client.get` (2357) e JSON inválido (1964-1966) em exceções tipadas → ack 200 + DLQ. Teste de regressão A3."
+  },
+  {
+    "id": "G9.S1.T5",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "done",
+    "description": "Diagnóstico E1 (A4–A6) mapeado com linhas: A4 fallback síncrono morto (`2315-2352`; `get_bus()` nunca None — `redis_bus.py:216-221`); A5 `_DEBOUNCE_METADATA` keyed por `chat_id` (`1626`, `2362`) mas filas/locks por `chat_id:user_id`; A6 debounce falha silenciosa (`1663-1667`, `1732-1733`)."
+  },
+  {
+    "id": "G9.S1.T6",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "done",
+    "description": "A4: remover o fallback síncrono morto ou torná-lo alcançável atrás de flag explícita; teste provando o caminho escolhido."
+  },
+  {
+    "id": "G9.S1.T7",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "done",
+    "description": "A5: alinhar `_DEBOUNCE_METADATA` à chave `chat_id:user_id`; teste com 2 usuários no mesmo grupo dentro da janela de 1.2s → ambos respondidos."
+  },
+  {
+    "id": "G9.S1.T8",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "done",
+    "description": "A6: debounce com feedback garantido — fila vazia ou exceção → mensagem amigável + métrica + alerta; teste de regressão que falha se o silêncio voltar."
+  },
+  {
+    "id": "G9.S1.T9",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "pending",
+    "description": "Stress prod assinado: `backend/scripts/stress_telegram_prod*.py` passando `X-Telegram-Bot-Api-Secret-Token` via env (nunca literal); relatório com taxas 200/401/5xx."
+  },
+  {
+    "id": "G9.S1.T10",
+    "squad": "Squad S1 — Telegram Webhook, Boot & Stress (dev)",
+    "status": "pending",
+    "description": "Confirmar resposta assíncrona pós-debounce entregue em grupo real (hoje só `scheduled=true` observado) + documentar `/setjoingroups Enable` no @BotFather (ação do dono; `can_join_groups=false` bloqueia novos grupos)."
+  },
+  {
+    "id": "G9.S2.T1",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "done",
+    "description": "Probes funcionais prod (2026-07-20): `/start` em chat real → `response_sent=true`; texto livre e mensagem em grupo → `scheduled=true` (debounce async agendado)."
+  },
+  {
+    "id": "G9.S2.T2",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "done",
+    "description": "E2E grupo real: 2 usuários distintos na mesma janela de debounce recebem respostas independentes (regressão A5 em produção)."
+  },
+  {
+    "id": "G9.S2.T3",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "pending",
+    "description": "`/metrics`: contadores `telegram_webhook_total{result=200|401|5xx}`, `telegram_debounce_scheduled_total`, `telegram_response_sent_total`."
+  },
+  {
+    "id": "G9.S2.T4",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "pending",
+    "description": "Histograma de latência webhook → resposta (incluindo a janela de debounce de 1.2s)."
+  },
+  {
+    "id": "G9.S2.T5",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "pending",
+    "description": "Revisão LGPD das labels: `chat_id`/username nunca como label (revisão `cartorio-lgpd`)."
+  },
+  {
+    "id": "G9.S2.T6",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "pending",
+    "description": "Painel Telegram no radar/Grafana + documentação das novas séries."
+  },
+  {
+    "id": "G9.S2.T7",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "pending",
+    "description": "`GIT_SHA` (+ build time) exposto em `/version` e `/health`, injetado no build Docker."
+  },
+  {
+    "id": "G9.S2.T8",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "pending",
+    "description": "Alertas AlertManager: taxa de 401 do webhook acima do limiar; `response_sent=0` com tráfego; fallback LLM esgotado."
+  },
+  {
+    "id": "G9.S2.T9",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "pending",
+    "description": "Entrega dos alertas no Telegram do escrevente sem PII (reuso do caminho G8.15.T2)."
+  },
+  {
+    "id": "G9.S2.T10",
+    "squad": "Squad S2 — Telegram E2E, Métricas & Alertas (dev+sre)",
+    "status": "pending",
+    "description": "Runbook de resposta para os 3 alertas novos."
+  },
+  {
+    "id": "G9.S3.T1",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "done",
+    "description": "Diagnóstico E2 mapeado com linhas: slots free 1/2/3 (`cartorio_agent.py:66-82`) herdam só `API_KEY` de `OPENCODE_ZEN_ACCOUNT_X_*`, sem `BASE_URL`/`MODEL`; timeout único de 50s compartilhado por até 6 tentativas (`:616`); payload envia `thinking`/`tools` para TODOS os providers (`:610-614`) incl. zen free."
+  },
+  {
+    "id": "G9.S3.T2",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "done",
+    "description": "Cadeia de fallback OpenCode Zen integrada e fallback de agente live restaurado (commits `96fedc9` e `9522cce` — 2026-07-20)."
+  },
+  {
+    "id": "G9.S3.T3",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "done",
+    "description": "Coerência de slot: cada slot herda a tupla completa (`API_KEY`, `BASE_URL`, `MODEL`) da mesma conta — proibido misturar; teste de coerência por slot no CI."
+  },
+  {
+    "id": "G9.S3.T4",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "pending",
+    "description": "Healthcheck por slot/conta com circuit breaker e ordem de fallback determinística; métricas por provider/slot."
+  },
+  {
+    "id": "G9.S3.T5",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "done",
+    "description": "Timeout por tentativa (45s/attempt) + deadline total propagado do webhook; teste de pior caso < 2min percebido pelo usuário."
+  },
+  {
+    "id": "G9.S3.T6",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "done",
+    "description": "Payload por provider: `thinking`/`tools` apenas quando o provider suporta (allowlist); zen free recebe payload mínimo; teste provando ausência de HTTP 400."
+  },
+  {
+    "id": "G9.S3.T7",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "pending",
+    "description": "Tentativas × latência por provider/slot exportadas ao Prometheus (histograma)."
+  },
+  {
+    "id": "G9.S3.T8",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "pending",
+    "description": "Mensagem de espera/degradação ao usuário quando o LLM está lento ou todos os slots falham — silêncio nunca é resposta."
+  },
+  {
+    "id": "G9.S3.T9",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "pending",
+    "description": "Auditoria LGPD-015: inventário de todos os pontos de saída do LLM (Telegram, WhatsApp, logs, Sentry) com scrub aplicado ou gap identificado."
+  },
+  {
+    "id": "G9.S3.T10",
+    "squad": "Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)",
+    "status": "pending",
+    "description": "Output scrub: resposta do LLM passa por `app/services/pii.py` antes de canal/log; teste provando CPF/RG/protocolo nunca raw na saída."
+  },
+  {
+    "id": "G9.S4.T1",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "Regressão com canary tokens: teste falha se o LLM ecoar PII que entrou mascarada."
+  },
+  {
+    "id": "G9.S4.T2",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "Sign-off `cartorio-lgpd` documentado + entrada no audit log (mudança toca `pii*`)."
+  },
+  {
+    "id": "G9.S4.T3",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "done",
+    "description": "Endpoint `/api/v1/lgpd/cnj-exports/massive-dump` implementado: `StreamingResponse` com `yield_per(1000)`, scrub de payload via `pii.scrub`, API key + JWT DPO (`require_cartorio_api_key` + `require_dpo_role`), gate de audit antes do dump (commits `ff599aa`, `0d15da6`, `6c029fc` — 2026-07-20)."
+  },
+  {
+    "id": "G9.S4.T4",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "Teste de streaming sob volume alto (seed/faker): memória estável, ordem por `id`, JSON válido de ponta a ponta."
+  },
+  {
+    "id": "G9.S4.T5",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "Falha de audit antes do dump → 500 `AUDIT_FAILURE` e nenhum byte vazado; teste dedicado."
+  },
+  {
+    "id": "G9.S4.T6",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "Contrato OpenAPI documentado (security ApiKey+Bearer, headers, filename) + exemplo curl sem segredos."
+  },
+  {
+    "id": "G9.S4.T7",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "JWT DPO obrigatório validado (role, expiração, `sub` registrado no audit); testes 401/403."
+  },
+  {
+    "id": "G9.S4.T8",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "Verificação independente da cadeia SHA256+HMAC sobre o pacote exportado; teste que falha se a cadeia quebrar."
+  },
+  {
+    "id": "G9.S4.T9",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "Relatório de logs de proteção de dados (acessos, exportações, mascaramentos) gerado a partir do audit log — Padrão CNJ."
+  },
+  {
+    "id": "G9.S4.T10",
+    "squad": "Squad S4 — CNJ Export & Segurança LGPD (dev+lgpd)",
+    "status": "pending",
+    "description": "RIPD/compliance atualizados com o fluxo massive-dump (revisão `cartorio-lgpd`)."
+  },
+  {
+    "id": "G9.S5.T1",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "Auditar `backend/scripts/stress_telegram_prod*.py`, `scripts/test_telegram_e2e.sh` e os `backend/test_*.py` ad-hoc por segredos literais (token bot, webhook secret, chave zen) — listar ocorrências SEM imprimir valores."
+  },
+  {
+    "id": "G9.S5.T2",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "Sanitizar: segredos passam a vir de env/`.secrets` com mascaramento; decidir destino de `test_send_tg.py`, `test_webhook*.py`, `test_llm*.py` (sanitizar + gitignore ou deletar — hoje untracked)."
+  },
+  {
+    "id": "G9.S5.T3",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "Confirmar `.gitignore` cobrindo arquivos de teste ad-hoc com credenciais; gate `git grep` no pre-commit."
+  },
+  {
+    "id": "G9.S5.T4",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "Varredura histórica (git log/trufflehog) nos paths afetados; relatório com recomendação de rotação — decisão exclusiva do dono (proibido rotacionar sem ordem expressa)."
+  },
+  {
+    "id": "G9.S5.T5",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "`scripts/check_no_literal_keys.py`: adicionar padrão hex-64 genérico (cobre webhook secrets); teste positivo/negativo do checker."
+  },
+  {
+    "id": "G9.S5.T6",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "Sincronizar `CARTORIO_API_KEY` entre backend, n8n e scripts com fonte única em `.secrets`; runbook de atualização (sem rotação)."
+  },
+  {
+    "id": "G9.S5.T7",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "CI `secrets_scan` estendido com o padrão hex-64 (bloqueia PR com novo literal)."
+  },
+  {
+    "id": "G9.S5.T8",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "Rate limit 3-tier por API key (N8N 600 / DPO 60 / default 30) revalidado com as chaves atuais; teste."
+  },
+  {
+    "id": "G9.S5.T9",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "Drill fail-open com Redis down: rate limit degrada sem derrubar o webhook; teste."
+  },
+  {
+    "id": "G9.S5.T10",
+    "squad": "Squad S5 — Segredos, Checker & Rate Limit (sre)",
+    "status": "pending",
+    "description": "Idempotency 24h: replay de `update_id` do Telegram → dedupe confirmado; teste."
+  },
+  {
+    "id": "G9.S6.T1",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "done",
+    "description": "`cartorio-ai/AGENTS.md`, `README.md` e `ARCHITECTURE.md` escritos com conteúdo real do projeto (missão, stack, regras P0, relação com `backend/` e `.harness/`) — sessão C4 2026-07-20."
+  },
+  {
+    "id": "G9.S6.T2",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "done",
+    "description": "`cartorio-ai/MANIFEST.md`, `INDEX.md` e `BOOTSTRAP.md` escritos (inventário do núcleo, índice navegável, boot de agente novo em <10min) — sessão C4 2026-07-20."
+  },
+  {
+    "id": "G9.S6.T3",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "pending",
+    "description": "Completar os demais diretórios/arquivos do layout (~400 arquivos) conforme `cartorio-ai/ROADMAP.md` — fase posterior, não bloqueia G9. (Registries A4 preenchidos 2026-07-20.)"
+  },
+  {
+    "id": "G9.S6.T4",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "pending",
+    "description": "Gate no CI: nenhum arquivo-núcleo do `cartorio-ai/` pode regredir a placeholder de 1 linha."
+  },
+  {
+    "id": "G9.S6.T5",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "done",
+    "description": "`brain/BRAIN.md`, `identity/SOUL.md` e `identity/IDENTITY.md` com propósito, valores e workflow obrigatório reais — sessão C4 2026-07-20."
+  },
+  {
+    "id": "G9.S6.T6",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "done",
+    "description": "`planning/GOALS.md` e `planning/TASKS.md` apontando para o SUPER PLANO G9 com estado atual — sessão C4 2026-07-20 (reformatado 10×10 na sessão A4)."
+  },
+  {
+    "id": "G9.S6.T7",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "done",
+    "description": "`memory/MEMORY.md`, `security/SECURITY.md` e `compliance/CNJ.md` com fatos de 2026-07-20 (webhook fix, fallback zen, CNJ export) — sessão C4 2026-07-20."
+  },
+  {
+    "id": "G9.S6.T8",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "pending",
+    "description": "Sync quinzenal AGENTS.md raiz → cartorio-ai (script + diff no CI)."
+  },
+  {
+    "id": "G9.S6.T9",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "pending",
+    "description": "Runbook webhook Telegram (re-sync, troubleshooting 401/5xx, rotação de secret SÓ com ordem do dono)."
+  },
+  {
+    "id": "G9.S6.T10",
+    "squad": "Squad S6 — cartorio-ai & Runbooks (brain/docs)",
+    "status": "pending",
+    "description": "Runbook LLM zen 3 contas (fallback, timeouts, payload por provider)."
+  },
+  {
+    "id": "G9.S7.T1",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "Checklist pré-QR: instância `state=close` confirmada, envs, webhook dual-format (legado root-level + aninhado `data.message`) já coberto por fuzz (G7.04.T3)."
+  },
+  {
+    "id": "G9.S7.T2",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "Workflow n8n de monitoramento de state → alerta Telegram pronto para ativar pós-QR (template do G8.22.T2)."
+  },
+  {
+    "id": "G9.S7.T3",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "TTL rígido de 24h das mensagens WhatsApp validado em staging (G8.22.T3) + teste de retenção."
+  },
+  {
+    "id": "G9.S7.T4",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "Runbook \"dia do QR\": do scan à 1ª mensagem real (prepara a execução live do G9.S8.T2)."
+  },
+  {
+    "id": "G9.S7.T5",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "DNS chatwoot A record + Traefik router — pack `docs/CHATWOOT_GO_LIVE_SUI_G7.md`; execução Gustavo."
+  },
+  {
+    "id": "G9.S7.T6",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "3 A records chatwoot/n8n/supabase (último snapshot: 3× NXDOMAIN); após criar, `make dns-check-strict` exit 0."
+  },
+  {
+    "id": "G9.S7.T7",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "Handoff WF3 + labels LGPD em prod (pack pronto; prod HOLD)."
+  },
+  {
+    "id": "G9.S7.T8",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "Pós-DNS: smoke chatwoot/n8n/supabase → 200 e radar verde."
+  },
+  {
+    "id": "G9.S7.T9",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "Tailscale online restore na VPS (pack `TAILSCALE_RESTORE_G7`)."
+  },
+  {
+    "id": "G9.S7.T10",
+    "squad": "Squad S7 — WhatsApp Readiness & SUI DNS/Chatwoot (n8n/sre — execução do dono)",
+    "status": "pending",
+    "description": "SSH 22 + MagicDNS health no radar (`docs/TAILSCALE_SSH_RADAR_LIVE_G7.md`)."
+  },
+  {
+    "id": "G9.S8.T1",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "pending",
+    "description": "OpenClaw cartorio-bot create E8 (`docs/OPENCLAW_CARTORIO_BOT_DEPLOY_G7.md`; JSON pronto, deploy HOLD)."
+  },
+  {
+    "id": "G9.S8.T2",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "pending",
+    "description": "1 mensagem real WA → resposta de emolumento (`docs/WA_EMOLUMENTO_LIVE_SUI_G7.md`; depende do QR — S7)."
+  },
+  {
+    "id": "G9.S8.T3",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "done",
+    "description": "Diagnóstico E4: inventário de testes/stress/smoke consolidado; `backend/tests/test_telegram_1000.py` com 1000 interações mockadas (commit `4f43ff8`); SUPER_PLANOs G7/G8 revisados → base deste G9."
+  },
+  {
+    "id": "G9.S8.T4",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "done",
+    "description": "Bateria 1000 ampliada: cenários grupo/menção/comandos/mídia + header de secret; sem flakiness (fakeredis/respx)."
+  },
+  {
+    "id": "G9.S8.T5",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "done",
+    "description": "Bateria 1000 como gate de CI (marker próprio, < 5min, relatório junit)."
+  },
+  {
+    "id": "G9.S8.T6",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "pending",
+    "description": "Cobertura de `telegram.py` ≥95% mantendo gate global de 90%; mutation spot-check nos handlers novos."
+  },
+  {
+    "id": "G9.S8.T7",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "pending",
+    "description": "`make qa` verde local e no CI após as mudanças G9 (lint 0 errors + test com coverage ≥90%)."
+  },
+  {
+    "id": "G9.S8.T8",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "pending",
+    "description": "Gate \"webhook sempre-200\" (regressão A3) obrigatório no CI."
+  },
+  {
+    "id": "G9.S8.T9",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "pending",
+    "description": "Gate de coerência de slots LLM (G9.S3.T3) no CI."
+  },
+  {
+    "id": "G9.S8.T10",
+    "squad": "Squad S8 — OpenClaw, WA Live, Testes 1000 & CI (dev/sre)",
+    "status": "pending",
+    "description": "Pipeline publica artifacts de cobertura + junit."
+  },
+  {
+    "id": "G9.S9.T1",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "Verificação read-only da cadeia SHA256 em prod (amostra + full em janela off-hours); relatório."
+  },
+  {
+    "id": "G9.S9.T2",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "Dead-man's switch (audit check a cada 15min) com alerta ao DPO; teste de falha injetada em staging."
+  },
+  {
+    "id": "G9.S9.T3",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "Regressões `t024` (retro-edit mid-chain) e `t025` (rotação HMAC) verdes no CI."
+  },
+  {
+    "id": "G9.S9.T4",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "Procedimento de evidência forense documentado (export + verificação independente), alinhado ao fluxo CNJ."
+  },
+  {
+    "id": "G9.S9.T5",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "Drill Art. 18 completo (acesso, correção, anonimização, portabilidade, eliminação, oposição, não-automação) com evidências."
+  },
+  {
+    "id": "G9.S9.T6",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "Scheduler de retenção 03:00 BRT validado (`t036`/`t037`) + métrica de execuções."
+  },
+  {
+    "id": "G9.S9.T7",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "RIPD v1.6 incluindo fallback zen 3 contas e CNJ massive-dump."
+  },
+  {
+    "id": "G9.S9.T8",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "Data inventory refresh pós-G9 (novos campos PII)."
+  },
+  {
+    "id": "G9.S9.T9",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "E2E: protocolo nasce `DRAFT`, escrevente valida; bot nunca decide isenção/urgência/emissão sozinho."
+  },
+  {
+    "id": "G9.S9.T10",
+    "squad": "Squad S9 — Audit Chain, LGPD Rights & HITL (lgpd+dev)",
+    "status": "pending",
+    "description": "Takeover Chatwoot → mute imediato do bot (G8.03.T2) revalidado após as mudanças de Telegram."
+  },
+  {
+    "id": "G9.S10.T1",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "Sugestões de minuta/escritura do LLM sempre com aprovação humana registrada no audit."
+  },
+  {
+    "id": "G9.S10.T2",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "Métrica HITL no DPO dashboard."
+  },
+  {
+    "id": "G9.S10.T3",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "Rate limit adicional por `chat_id` (anti-spam de usuário) além de IP/key; teste."
+  },
+  {
+    "id": "G9.S10.T4",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "Limites e comportamento de degradação documentados no runbook operacional."
+  },
+  {
+    "id": "G9.S10.T5",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "Runbook CNJ export (solicitar, aprovar como DPO, baixar, verificar hash)."
+  },
+  {
+    "id": "G9.S10.T6",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "Política de segredos em scripts/testes (onde vivem, como mascarar, checker hex-64)."
+  },
+  {
+    "id": "G9.S10.T7",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "Lesson G9 consolidada em `.harness/memory/MEMORY.md` (webhook secret sync, debounce A5/A6, fallback zen)."
+  },
+  {
+    "id": "G9.S10.T8",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "done",
+    "description": "`STATUS.md` reescrito e `PROGRESS.md` atualizado com o estado 2026-07-20 (telegram funcional validado, pendências, próximos passos) — sessão C4."
+  },
+  {
+    "id": "G9.S10.T9",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "SUI_CHECKLIST atualizado com as pendências G9 (DNS, Tailscale, QR, OpenClaw)."
+  },
+  {
+    "id": "G9.S10.T10",
+    "squad": "Squad S10 — HITL Cont., Degradação, Runbooks Finais & Governança (lgpd/dev/docs/brain)",
+    "status": "pending",
+    "description": "Tag `v0.9.0-g9` + release notes quando Squads S1–S5 fecharem."
+  }
+]
