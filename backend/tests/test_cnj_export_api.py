@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
 
@@ -207,6 +208,68 @@ def test_massive_dump_numeric_cpf_payload_valid_json_no_raw_pii() -> None:
         # Cleanup cirurgico: remove somente a row fabricada pelo id.
         if seeded_id is not None:
             session.query(AuditLog).filter(AuditLog.id == seeded_id).delete(
+                synchronize_session=False
+            )
+            session.commit()
+        session.close()
+
+
+def test_massive_dump_streams_large_ordered_batch_with_bounded_query_chunks(monkeypatch) -> None:
+    """G9.S4.T4 — dump volumoso permanece JSON válido, ordenado e paginado.
+
+    O TestClient agrega a resposta para a asserção, portanto não é uma medida
+    de RSS do processo. O contrato verificável localmente é que a consulta
+    usa ``yield_per(1000)`` e entrega um lote maior que esse limite em ordem,
+    sem materializar uma lista Python no endpoint.
+    """
+    from sqlalchemy.orm import Query
+
+    from app import db as app_db
+    from app.models.audit_log import AuditLog
+
+    chunk_sizes: list[int] = []
+    original_yield_per = Query.yield_per
+
+    def _record_yield_per(query, count):
+        chunk_sizes.append(count)
+        return original_yield_per(query, count)
+
+    monkeypatch.setattr(Query, "yield_per", _record_yield_per)
+
+    session = app_db.SessionLocal()
+    seeded_ids: list[int] = []
+    batch_size = 1001
+    try:
+        rows = [
+            AuditLog(
+                actor_id="cnj-load-test",
+                actor_type="system",
+                action="test.cnj_load",
+                resource=f"cnj-load:{index}",
+                payload={"sequence": index},
+                prev_hash=f"{index:064x}",
+                hash=f"{index + batch_size:064x}",
+                hmac_signature="hmac-load-test",
+                hmac_kid="test-kid",
+                timestamp=datetime.now(UTC),
+            )
+            for index in range(batch_size)
+        ]
+        session.add_all(rows)
+        session.commit()
+        seeded_ids = [row.id for row in rows]
+
+        response = client.get(MASSIVE_URL, headers=_headers())
+        assert response.status_code == 200, response.text
+        streamed_rows = json.loads(response.text)
+        target = [row for row in streamed_rows if row["id"] in seeded_ids]
+
+        assert chunk_sizes == [1000]
+        assert [row["id"] for row in target] == seeded_ids
+        assert [row["payload"]["sequence"] for row in target] == list(range(batch_size))
+    finally:
+        if seeded_ids:
+            session.query(AuditLog).filter(AuditLog.id.in_(seeded_ids)).delete(
                 synchronize_session=False
             )
             session.commit()

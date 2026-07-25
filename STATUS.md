@@ -1,6 +1,6 @@
 # STATUS — Etapa 2 G9 Hardening (2026-07-24)
 
-> **TL;DR**: Etapa 2 avançou **S3 LLM (10/10)** e **S5 security (6/10)**.
+> **TL;DR**: Etapa 2 avançou **S3 LLM (10/10)**, **S4 CNJ (1 teste de volume)** e **S5 security (6/10)**.
 > Circuit breaker multi-provider no `cartorio_agent`, degraded+scrub obrigatórios,
 > inventário LGPD-015, gates secrets/rate-limit revalidados. G9 **36/100**.
 > Full QA prévio: 5819 passed / 92.07%. **GO_LIVE_READY=false**.
@@ -19,6 +19,7 @@
 | G9.S5.T1/T3/T5/T8/T9/T10 | `test_g9_s5_security_gates` + checker OK + idempotency suite |
 | Secrets scan | `check_no_literal_keys.py --report-only` → zero violações |
 | Lote testes E2 | **61 passed** (agent g9 + s5 gates + circuit v5 + pii + keys) |
+| G9.S4.T4 CNJ massive dump | **21 passed** em `test_cnj_export*.py`; 1.001 entradas, JSON/ordem e `yield_per(1000)` validados localmente |
 
 ## P0 blockers (inalterados)
 
@@ -31,12 +32,12 @@
 ## G9 progress
 
 - Antes Etapa 2: ~25/100
-- Depois: **36/100** (S3 10/10, S5 6/10)
-- Alvo técnico 70–85: falta S2 métricas TG, S4 CNJ load, S1 stress prod, S6–S10 SUI/docs
+- Depois: **37/100** (S3 10/10, S4 +1, S5 6/10)
+- Alvo técnico 70–85: falta S2 métricas TG, S4 canary/relatório/RIPD, S1 stress prod, S6–S10 SUI/docs
 
 ## Próximo
 
-1. S4 CNJ load/audit-fail tests (local)
+1. S4 canary PII, relatório de proteção e RIPD (sign-off LGPD necessário onde aplicável)
 2. WS/MCP smoke gaps
 3. Observability alerts docs
 4. **Não push** até autorização + gates humanos

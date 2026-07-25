@@ -90,7 +90,7 @@ Transformar o Telegram de "funcional em probe" em **robusto sob regressão**, pr
 - [ ] **G9.S4.T1** (ex-G9.06.T3) — Regressão com canary tokens: teste falha se o LLM ecoar PII que entrou mascarada.
 - [ ] **G9.S4.T2** (ex-G9.06.T4) — Sign-off `cartorio-lgpd` documentado + entrada no audit log (mudança toca `pii*`).
 - [x] **G9.S4.T3** (ex-G9.07.T1) — Endpoint `/api/v1/lgpd/cnj-exports/massive-dump` implementado: `StreamingResponse` com `yield_per(1000)`, scrub de payload via `pii.scrub`, API key + JWT DPO (`require_cartorio_api_key` + `require_dpo_role`), gate de audit antes do dump (commits `ff599aa`, `0d15da6`, `6c029fc` — 2026-07-20).
-- [ ] **G9.S4.T4** (ex-G9.07.T2) — Teste de streaming sob volume alto (seed/faker): memória estável, ordem por `id`, JSON válido de ponta a ponta.
+- [x] **G9.S4.T4** (ex-G9.07.T2) — Teste de streaming sob volume alto: `test_massive_dump_streams_large_ordered_batch_with_bounded_query_chunks` semeia 1.001 entradas, valida JSON íntegro/ordem por `id` e verifica `yield_per(1000)` (2026-07-25).
 - [x] **G9.S4.T5** (ex-G9.07.T3) — `test_massive_dump_audit_failure_returns_500_no_body_stream` → 500 AUDIT_FAILURE quando `AuditService.log` falha (2026-07-24).
 - [x] **G9.S4.T6** (ex-G9.07.T4) — OpenAPI massive-dump + requests dual security (`test_massive_dump_openapi_security` + `test_cnj_openapi_declares_dual_security`).
 - [x] **G9.S4.T7** (ex-G9.08.T1) — JWT DPO + API key: 401/403 em massive-dump e requests (`test_massive_dump_requires_api_key_and_dpo`).
