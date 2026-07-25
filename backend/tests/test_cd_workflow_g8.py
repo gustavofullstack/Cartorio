@@ -148,12 +148,14 @@ def test_ci_literal_key_scan_is_a_hard_gate(ci_yaml: dict[str, object]) -> None:
         for step in steps
         if isinstance(step, dict) and "check_no_literal_keys.py" in str(step.get("run", ""))
     ]
-    assert len(literal_steps) == 1, "secrets-scan must contain exactly one literal-key gate"
-    literal_step = literal_steps[0]
-    assert literal_step.get("continue-on-error") is not True
-    command = str(literal_step["run"])
-    assert "--report-only" not in command
-    assert "|| true" not in command
+    # E3.03: o job pode ter full scan + gate incremental (--changed-since).
+    # A intencao de seguranca se mantem: TODA invocacao do scanner e hard gate.
+    assert len(literal_steps) >= 1, "secrets-scan must contain at least one literal-key gate"
+    for literal_step in literal_steps:
+        assert literal_step.get("continue-on-error") is not True
+        command = str(literal_step["run"])
+        assert "--report-only" not in command
+        assert "|| true" not in command
 
 
 def test_ci_all_jobs_have_timeout_minutes(ci_yaml: dict[str, object]) -> None:
