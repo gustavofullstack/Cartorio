@@ -53,6 +53,33 @@ jobs:
             --severity critical \
             --baseline backend/scripts/check_no_literal_keys.baseline
 
+      # E3.03 (G9): gate INCREMENTAL — falha em secret NOVO em qualquer
+      # arquivo tracked (nao so backend/app+scripts). Escaneia SOMENTE linhas
+      # adicionadas do PR/push (`git diff -U0`), portanto e imune aos achados
+      # legados do inventario (G7.22.T4, report-only). Output sempre redigido:
+      # localizacao + regra, nunca o valor do match.
+      - name: Fetch base ref for incremental scan
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin \
+            "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
+      - name: New secrets gate (E3.03 — added lines only)
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            REF="origin/${{ github.base_ref }}"
+          else
+            REF="${{ github.event.before }}"
+            # Push de branch nova (before = zeros): melhor esforco = commit anterior.
+            if [ -z "$REF" ] || [ "$REF" = "0000000000000000000000000000000000000000" ]; then
+              REF="HEAD~1"
+            fi
+          fi
+          echo "Incremental secrets gate vs REF=$REF"
+          python3 backend/scripts/check_no_literal_keys.py \
+            --changed-since "$REF" \
+            --severity critical
+
   # ============================================================================
   # Lint + Typecheck (gate rapido - 2-3min)
   # ============================================================================
@@ -166,8 +193,10 @@ jobs:
       # `testing`). These values are synthetic CI-only credentials required
       # for importing the application during the OpenAPI snapshot gate.
       APP_ENV: test
-      AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-      CARTORIO_API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      # Credenciais SINTETICAS CI-only (nao sao secrets reais) — optout documentado
+      # pro secrets scanner (E3.03): hex-64 literal usado apenas pra import do app.
+      AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  # noqa: ALLOW_KEY_FALLBACK (motivo: valor sintetico CI-only, nao rotacionavel)
+      CARTORIO_API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb  # noqa: ALLOW_KEY_FALLBACK (motivo: valor sintetico CI-only, nao rotacionavel)
 
     steps:
       - name: Checkout
@@ -304,7 +333,7 @@ jobs:
       - name: All checks passed
         run: |
           echo "ALL CI GATES PASSED"
-          echo "- secrets-scan (gitleaks): OK"
+          echo "- secrets-scan (gitleaks + literal keys + E3.03 new-secrets gate): OK"
           echo "- lint (ruff + mypy): OK"
           echo "- test (pytest + coverage 90%): OK"
           echo "- docs (CHANGELOG + README + ADR status): OK"

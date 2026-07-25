@@ -42,6 +42,29 @@ def test_s5_t8_rate_limit_tiers_exact() -> None:
     assert identify_tier("random") == "padrao"
 
 
+def test_s5_t8_dpo_key_registrada_via_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """E3.05: tier dpo so via match exato com settings.cartorio_dpo_api_key."""
+    dpo_key = "e" * 64  # sintetica, runtime
+    monkeypatch.setattr(settings, "cartorio_dpo_api_key", dpo_key)
+    assert identify_tier(dpo_key) == "dpo"
+    assert TIER_POLICIES[identify_tier(dpo_key)].per_minute == 60
+    # prefixo forjado / near-miss nunca elevam
+    assert identify_tier("dpo-" + dpo_key) == "padrao"
+    assert identify_tier(dpo_key[:-1] + "f") == "padrao"
+
+
+def test_s5_identify_tier_timing_safe_compare_digest_source() -> None:
+    """E3.05: identify_tier compara secrets em constant-time (inspect source)."""
+    import inspect
+
+    import app.services.rate_limit_by_key as rlbk
+
+    src = inspect.getsource(rlbk.identify_tier)
+    assert src.count("hmac.compare_digest") >= 2  # n8n + dpo
+    assert "api_key ==" not in src
+    assert "== expected" not in src
+
+
 @pytest.mark.asyncio
 async def test_s5_t9_rate_limit_fail_open_redis_down() -> None:
     """Redis down nao derruba request (fail-open)."""

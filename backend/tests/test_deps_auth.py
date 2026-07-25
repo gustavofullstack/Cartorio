@@ -274,9 +274,10 @@ def test_audit_service_log_chamado_em_503_config_missing() -> None:
 
     mock_log = MagicMock()
     mock_req = MagicMock(spec=Request)
+    mock_req.scope = {"type": "http", "client": ("192.168.1.42", 50000)}
+    mock_req.client.host = "192.168.1.42"
     mock_req.url.path = "/api/v1/integrations/opencode/test"
     mock_req.method = "POST"
-    mock_req.client.host = "192.168.1.42"
     mock_req.headers = {
         "x-forwarded-for": "203.0.113.42",
         "user-agent": "test-agent/1.0",
@@ -296,7 +297,9 @@ def test_audit_service_log_chamado_em_503_config_missing() -> None:
     payload = call_kwargs["payload"]
     assert payload["reason"] == "config_missing"
     assert payload["key_fingerprint"] != "anything"  # NAO loga valor da chave
-    assert call_kwargs["ip"] == "203.0.113.42"  # XFF honored
+    # _audit_auth_failure recebe um Request já normalizado pelo
+    # TrustedProxyMiddleware; o helper nunca aceita XFF direto de um caller.
+    assert call_kwargs["ip"] == "192.168.1.42"
     assert call_kwargs["user_agent"] == "test-agent/1.0"
     assert call_kwargs["request_id"] == "req-503-test"
 

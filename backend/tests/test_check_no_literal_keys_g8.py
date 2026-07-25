@@ -447,3 +447,198 @@ def test_pattern_catalog_has_15_plus_patterns() -> None:
     assert len(cnlk.PATTERNS) >= 15, (
         f"Esperado >=15 patterns, achou {len(cnlk.PATTERNS)}: {[p.name for p in cnlk.PATTERNS]}"
     )
+
+
+# ============================================================================
+# E3.03 (G9) — Added-lines mode (--staged / --changed-since).
+# ============================================================================
+# Valores SINTETICOS: construidos em runtime pra nao aparecerem como literal
+# no proprio diff (o gate incremental escaneia linhas adicionadas deste file).
+SYNTHETIC_HEX64 = "cafebabe" * 8  # 64 hex chars, obviamente fake
+SYNTHETIC_SK = "sk-ant-" + ("x" * 24)
+
+
+class TestIterAddedLines:
+    """Parser de unified diff (-U0): so linhas `+`, com lineno de destino."""
+
+    NEW_FILE_DIFF = (
+        "diff --git a/backend/app/new.py b/backend/app/new.py\n"
+        "new file mode 100644\n"
+        "index 0000000..1111111\n"
+        "--- /dev/null\n"
+        "+++ b/backend/app/new.py\n"
+        "@@ -0,0 +1,2 @@\n"
+        "+FIRST = 1\n"
+        "+SECOND = 2\n"
+    )
+
+    def test_new_file_all_lines_added(self) -> None:
+        added = list(cnlk.iter_added_lines(self.NEW_FILE_DIFF))
+        assert [(a.path, a.lineno) for a in added] == [
+            ("backend/app/new.py", 1),
+            ("backend/app/new.py", 2),
+        ]
+        assert added[0].text == "FIRST = 1"
+
+    def test_hunk_offset_respected_in_modified_file(self) -> None:
+        diff = (
+            "diff --git a/backend/app/mod.py b/backend/app/mod.py\n"
+            "index 1111111..2222222 100644\n"
+            "--- a/backend/app/mod.py\n"
+            "+++ b/backend/app/mod.py\n"
+            "@@ -40,0 +41 @@\n"
+            "+INJECTED = True\n"
+        )
+        added = list(cnlk.iter_added_lines(diff))
+        assert [(added[0].path, added[0].lineno)] == [("backend/app/mod.py", 41)]
+
+    def test_deleted_file_yields_nothing(self) -> None:
+        diff = (
+            "diff --git a/backend/app/gone.py b/backend/app/gone.py\n"
+            "deleted file mode 100644\n"
+            "--- a/backend/app/gone.py\n"
+            "+++ /dev/null\n"
+            "@@ -1 +0,0 @@\n"
+            "-GONE = 1\n"
+        )
+        assert list(cnlk.iter_added_lines(diff)) == []
+
+    def test_removed_lines_never_reported(self) -> None:
+        diff = (
+            "diff --git a/backend/app/mod.py b/backend/app/mod.py\n"
+            "--- a/backend/app/mod.py\n"
+            "+++ b/backend/app/mod.py\n"
+            "@@ -1 +1 @@\n"
+            "-OLD = 1\n"
+            "+NEW = 2\n"
+        )
+        added = list(cnlk.iter_added_lines(diff))
+        assert [a.text for a in added] == ["NEW = 2"]
+
+
+class TestScanAddedLinesScope:
+    """Escopo do modo added-lines (E3.03)."""
+
+    def _scan(self, path: str, text: str) -> list:
+        line = cnlk.AddedLine(path=path, lineno=1, text=text)
+        return cnlk.scan_added_lines(iter([line]))
+
+    def test_hex64_in_py_file_is_flagged(self) -> None:
+        findings = self._scan("backend/app/x.py", f'SECRET = "{SYNTHETIC_HEX64}"')
+        assert any(v.rule == "WEBHOOK_SECRET_HEX64" for _, v in findings)
+
+    def test_hex64_in_workflow_yaml_is_flagged(self) -> None:
+        findings = self._scan(".github/workflows/w.yml", f"KEY: {SYNTHETIC_HEX64}")
+        assert any(v.rule == "WEBHOOK_SECRET_HEX64" for _, v in findings)
+
+    def test_staged_env_file_is_scanned(self) -> None:
+        findings = self._scan(".env", f"WEBHOOK_SECRET={SYNTHETIC_HEX64}")
+        assert findings, "force-add de .env DEVE ser escaneado"
+
+    def test_env_example_is_skipped(self) -> None:
+        assert self._scan(".env.example", f"WEBHOOK_SECRET={SYNTHETIC_HEX64}") == []
+
+    def test_synthetic_fixture_allowlist_is_skipped(self) -> None:
+        path = "backend/tests/test_check_no_literal_keys_g8.py"
+        assert self._scan(path, f'X = "{SYNTHETIC_SK}"') == []
+
+    def test_non_text_file_is_skipped(self) -> None:
+        assert self._scan("assets/logo.png", SYNTHETIC_HEX64) == []
+
+    def test_inline_optout_is_respected(self) -> None:
+        text = f'SECRET = "{SYNTHETIC_HEX64}"  # noqa: ALLOW_KEY_FALLBACK (motivo: fixture)'
+        assert self._scan("backend/app/x.py", text) == []
+
+
+class TestAddedLinesMainExitCodes:
+    """main() com --staged/--changed-since (E3.03): exit codes + redaction."""
+
+    def _fake_added(self, text: str, path: str = "backend/app/leak.py"):
+        return iter([cnlk.AddedLine(path=path, lineno=7, text=text)])
+
+    def test_staged_secret_exits_1(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.setattr(
+            cnlk, "iter_staged_added_lines", lambda: self._fake_added(f'K="{SYNTHETIC_HEX64}"')
+        )
+        rc = cnlk.main(["--staged", "--severity", "critical"])
+        output = capsys.readouterr().out
+        assert rc == 1
+        assert "backend/app/leak.py:7" in output
+        assert "WEBHOOK_SECRET_HEX64" in output
+
+    def test_staged_clean_exits_0(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(cnlk, "iter_staged_added_lines", lambda: iter([]))
+        assert cnlk.main(["--staged", "--severity", "critical"]) == 0
+
+    def test_staged_report_only_exits_0(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            cnlk, "iter_staged_added_lines", lambda: self._fake_added(f'K="{SYNTHETIC_HEX64}"')
+        )
+        assert cnlk.main(["--staged", "--severity", "critical", "--report-only"]) == 0
+
+    def test_changed_since_secret_exits_1(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            cnlk,
+            "iter_changed_since_added_lines",
+            lambda ref: self._fake_added(f'K="{SYNTHETIC_SK}"'),
+        )
+        assert cnlk.main(["--changed-since", "origin/master", "--severity", "critical"]) == 1
+
+    def test_output_never_contains_secret_value(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.setattr(
+            cnlk, "iter_staged_added_lines", lambda: self._fake_added(f'K="{SYNTHETIC_HEX64}"')
+        )
+        cnlk.main(["--staged", "--severity", "critical"])
+        output = capsys.readouterr().out
+        assert SYNTHETIC_HEX64 not in output
+        assert "[valor redigido]" in output
+
+    def test_staged_and_changed_since_are_mutually_exclusive(self) -> None:
+        assert cnlk.main(["--staged", "--changed-since", "HEAD"]) == 2
+
+    def test_staged_conflicts_with_root(self) -> None:
+        assert cnlk.main(["--staged", "--root", "backend"]) == 2
+
+    def test_staged_conflicts_with_tracked_files(self) -> None:
+        assert cnlk.main(["--staged", "--tracked-files"]) == 2
+
+    def test_changed_since_conflicts_with_include_text(self) -> None:
+        assert cnlk.main(["--changed-since", "HEAD", "--include-text"]) == 2
+
+    def test_git_failure_exits_2(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def _boom():
+            raise RuntimeError("git diff falhou")
+
+        monkeypatch.setattr(cnlk, "iter_staged_added_lines", _boom)
+        assert cnlk.main(["--staged"]) == 2
+
+
+class TestStagedModeRealGit:
+    """Integracao com git real (repo do projeto). Usa arquivo unico + cleanup."""
+
+    def test_staged_synthetic_hex64_blocks_and_redacts(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        repo = cnlk.REPO_ROOT
+        probe = repo / "backend" / "tests" / ".tmp_e303_probe_staged.py"
+        probe.write_text(f'WEBHOOK_SECRET = "{SYNTHETIC_HEX64}"\n', encoding="utf-8")
+        try:
+            cnlk.subprocess.run(
+                ["git", "add", "--", str(probe.relative_to(repo))], cwd=repo, check=True
+            )
+            rc = cnlk.main(["--staged", "--severity", "critical"])
+            output = capsys.readouterr().out
+            assert rc == 1
+            assert "WEBHOOK_SECRET_HEX64" in output
+            assert SYNTHETIC_HEX64 not in output
+        finally:
+            cnlk.subprocess.run(
+                ["git", "reset", "-q", "HEAD", "--", str(probe.relative_to(repo))],
+                cwd=repo,
+                check=False,
+            )
+            probe.unlink(missing_ok=True)

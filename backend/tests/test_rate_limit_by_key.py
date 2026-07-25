@@ -83,6 +83,56 @@ def test_identify_tier_empty_string_e_padrao() -> None:
 
 
 # ============================================================================
+# identify_tier — tier DPO via registry (E3.05 / G9.S5.T8)
+# ============================================================================
+
+DPO_KEY = "d" * 64  # sintetica, construida em runtime (nunca literal no repo)
+
+
+def test_identify_tier_dpo_registrada_e_dpo(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Key registrada em settings.cartorio_dpo_api_key -> tier dpo (60/min)."""
+    monkeypatch.setattr(settings, "cartorio_dpo_api_key", DPO_KEY)
+    assert identify_tier(DPO_KEY) == "dpo"
+
+
+def test_identify_tier_dpo_quase_valida_e_padrao(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Near-miss da DPO key (1 char/prefixo forjado) NAO eleva tier."""
+    monkeypatch.setattr(settings, "cartorio_dpo_api_key", DPO_KEY)
+    assert identify_tier(DPO_KEY[:-1] + "e") == "padrao"
+    assert identify_tier("dpo-" + DPO_KEY) == "padrao"
+    assert identify_tier(DPO_KEY.upper()) == "padrao"
+
+
+def test_identify_tier_dpo_nao_configurada_e_padrao(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Sem cartorio_dpo_api_key configurada, qualquer key 'dpo-like' -> padrao."""
+    monkeypatch.setattr(settings, "cartorio_dpo_api_key", None)
+    assert identify_tier(DPO_KEY) == "padrao"
+    assert identify_tier("dpo-qualquer") == "padrao"
+
+
+def test_identify_tier_n8n_tem_precedencia_sobre_dpo(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Key n8n registrada continua n8n mesmo com DPO configurada."""
+    monkeypatch.setattr(settings, "cartorio_dpo_api_key", DPO_KEY)
+    assert identify_tier(VALID_KEY) == "n8n"
+
+
+def test_identify_tier_e_timing_safe_compare_digest() -> None:
+    """E3.05: comparacao de secrets e constant-time (hmac.compare_digest).
+
+    Assert via inspect do source: identify_tier NUNCA compara a key com ==
+    (vazaria timing) — usa hmac.compare_digest para n8n E dpo.
+    """
+    import inspect
+
+    import app.services.rate_limit_by_key as rlbk
+
+    src = inspect.getsource(rlbk.identify_tier)
+    assert src.count("hmac.compare_digest") >= 2, "n8n e dpo devem usar compare_digest"
+    assert "api_key ==" not in src, "comparacao direta de secret vaza timing"
+    assert "== expected" not in src, "comparacao direta de secret vaza timing"
+
+
+# ============================================================================
 # _hash_api_key
 # ============================================================================
 
@@ -177,6 +227,28 @@ async def test_middleware_allow_quando_primeira_request(mock_redis_client) -> No
         response = await mw.dispatch(request, call_next)
 
     assert response.headers.get("X-RateLimit-Limit") == "600"  # n8n tier
+    call_next.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_middleware_dpo_key_registrada_tem_limite_60(
+    monkeypatch: pytest.MonkeyPatch, mock_redis_client
+) -> None:
+    """E3.05: key DPO registrada (cartorio_dpo_api_key) aplica tier dpo (60/min)."""
+    monkeypatch.setattr(settings, "cartorio_dpo_api_key", DPO_KEY)
+    mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake")
+
+    request = MagicMock()
+    request.headers = {"x-api-key": DPO_KEY}
+    request.url.path = "/api/v1/test"
+
+    with patch(
+        "app.services.rate_limit_by_key.redis_async.from_url", return_value=mock_redis_client
+    ):
+        call_next = AsyncMock(return_value=MagicMock(headers={}))
+        response = await mw.dispatch(request, call_next)
+
+    assert response.headers.get("X-RateLimit-Limit") == "60"  # dpo tier
     call_next.assert_called_once()
 
 

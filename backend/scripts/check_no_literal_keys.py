@@ -39,21 +39,38 @@ Uso:
     python3 backend/scripts/check_no_literal_keys.py
 
     # CI mode com baseline + severity threshold.
-    python3 backend/scripts/check_no_literal_keys.py \\
-        --severity critical \\
+    python3 backend/scripts/check_no_literal_keys.py \
+        --severity critical \
         --baseline backend/scripts/check_no_literal_keys.baseline
 
     # Report only (exit 0 mesmo com achados, util pra dry-run).
     python3 backend/scripts/check_no_literal_keys.py --report-only
 
     # Escopo customizado.
-    python3 backend/scripts/check_no_literal_keys.py \\
+    python3 backend/scripts/check_no_literal_keys.py \
         --root backend/app --root backend/scripts
+
+    # E3.03 (G9): gate incremental — escaneia SOMENTE linhas ADICIONADAS.
+    # Local (pre-commit / pre-push): linhas staged no index.
+    python3 backend/scripts/check_no_literal_keys.py --staged --severity critical
+
+    # CI (PR/push): linhas adicionadas vs uma ref (merge-base 3-dot).
+    python3 backend/scripts/check_no_literal_keys.py \
+        --changed-since origin/master --severity critical
+
+Modos --staged/--changed-since (E3.03):
+- Escaneiam apenas linhas `+` do diff (`git diff -U0`), ou seja, FALHAM em
+  secret NOVO sem serem bloqueados por achados legados pre-existentes em
+  arquivos tracked (inventario legado roda separado, --report-only).
+- `.env` staged/adicionado E escaneado; `.env.example/.template/.sample` nao.
+- Patterns multi-linha (ENV_FALLBACK) nao se aplicam a linhas isoladas;
+  os gates full (default roots / --tracked-files) continuam cobrindo isso.
+- Opt-out `# noqa: ALLOW_KEY_FALLBACK` funciona por linha adicionada.
 
 Exit codes:
     0  Clean (ou --report-only com achados).
     1  Violacoes criticas ou acima do threshold (gate fail).
-    2  Erro de I/O / argumento invalido.
+    2  Erro de I/O / argumento invalido / falha no git.
 """
 
 from __future__ import annotations
@@ -405,6 +422,131 @@ def iter_tracked_text_files() -> Iterable[Path]:
             yield path
 
 
+# ============================================================================
+# E3.03 (G9) — Added-lines scanning (--staged / --changed-since).
+# ============================================================================
+# Arquivos pulados no modo added-lines. Diferente de SKIP_FILES: um `.env`
+# staged DEVE ser escaneado (force-add de .env e um vetor real de leak).
+ADDED_LINES_SKIP_FILES = frozenset(
+    {
+        ".env.example",
+        ".env.template",
+        ".env.sample",
+        "check_no_literal_keys.py",  # self-test NUNCA
+        "check_no_literal_keys.baseline",
+    }
+)
+
+
+@dataclass(frozen=True)
+class AddedLine:
+    """Uma linha `+` de um unified diff, com path e lineno no arquivo novo."""
+
+    path: str
+    lineno: int
+    text: str
+
+
+def _unquote_diff_path(raw: str) -> str:
+    """Remove quoting C-style que git aplica em paths com chars especiais."""
+    if len(raw) >= 2 and raw.startswith('"') and raw.endswith('"'):
+        return raw[1:-1]
+    return raw
+
+
+def iter_added_lines(diff_text: str) -> Iterable[AddedLine]:
+    """Parse de `git diff -U0`: emite apenas linhas ADICIONADAS (+).
+
+    Com -U0 nao ha linhas de contexto; hunks `@@ -a,b +c,d @@` carregam o
+    lineno de destino. Linhas `+++ b/<path>` marcam o arquivo alvo do hunk
+    (`+++ /dev/null` = arquivo deletado, sem linhas `+` relevantes).
+    """
+    path: str | None = None
+    new_lineno = 0
+    for line in diff_text.splitlines():
+        if line.startswith("+++ "):
+            target = line[4:]
+            path = None
+            if target.startswith("b/"):
+                path = _unquote_diff_path(target[2:])
+        elif line.startswith("@@ "):
+            match = re.search(r"\+(\d+)(?:,\d+)? @@", line)
+            new_lineno = int(match.group(1)) if match else 0
+        elif line.startswith("+"):
+            if path is not None:
+                yield AddedLine(path=path, lineno=new_lineno, text=line[1:])
+            new_lineno += 1
+
+
+def _added_line_path_in_scope(rel_path: str) -> bool:
+    """Escopo do modo added-lines: text suffix (ou `.env`), fora das skips."""
+    if rel_path in SYNTHETIC_FIXTURE_ALLOWLIST:
+        return False
+    path = Path(rel_path)
+    if path.name in ADDED_LINES_SKIP_FILES:
+        return False
+    if set(path.parts) & SKIP_DIRS:
+        return False
+    return _is_tracked_text_path(rel_path)
+
+
+def _run_git_diff(diff_args: list[str]) -> str:
+    """Roda git diff e retorna o patch como texto. Falha -> RuntimeError."""
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--no-color", "-U0", *diff_args, "--", "."],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(f"git diff falhou ({' '.join(diff_args)}): {exc}") from exc
+    return result.stdout.decode("utf-8", errors="surrogateescape")
+
+
+def iter_staged_added_lines() -> Iterable[AddedLine]:
+    """Linhas adicionadas no INDEX (staged) vs HEAD — gate local (E3.03)."""
+    yield from iter_added_lines(_run_git_diff(["--cached"]))
+
+
+def iter_changed_since_added_lines(ref: str) -> Iterable[AddedLine]:
+    """Linhas adicionadas vs `ref` (3-dot merge-base, fallback 2-dot) — gate CI."""
+    try:
+        diff_text = _run_git_diff([f"{ref}...HEAD"])
+    except RuntimeError:
+        # Sem merge-base (ex.: historia rasa em CI): tenta diff direto.
+        diff_text = _run_git_diff([ref, "HEAD"])
+    yield from iter_added_lines(diff_text)
+
+
+def scan_added_lines(added_lines: Iterable[AddedLine]) -> list[tuple[Path, Violation]]:
+    """Escaneia linhas adicionadas e retorna achados no formato (path, Violation).
+
+    Cada linha e escaneada isoladamente (patterns multi-linha nao se aplicam
+    neste modo). Opt-out inline e respeitado por linha. Valores NUNCA sao
+    propagados pra saida — o reporter imprime apenas path:lineno + regra.
+    """
+    findings: list[tuple[Path, Violation]] = []
+    for added in added_lines:
+        if not _added_line_path_in_scope(added.path):
+            continue
+        if OPTOUT_MARKER in added.text:
+            continue
+        for v in scan_text(added.text):
+            findings.append(
+                (
+                    REPO_ROOT / added.path,
+                    Violation(
+                        lineno=added.lineno,
+                        rule=v.rule,
+                        severity=v.severity,
+                        snippet=v.snippet,
+                    ),
+                )
+            )
+    return findings
+
+
 def load_baseline(baseline_path: Path) -> set[str]:
     """Carrega whitelist de fingerprints. Linhas `#` ou vazias ignoradas."""
     if not baseline_path.exists():
@@ -498,6 +640,16 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Escaneia todos os arquivos textuais rastreados pelo Git (inclui .env rastreado).",
     )
     p.add_argument(
+        "--staged",
+        action="store_true",
+        help="E3.03: escaneia SOMENTE linhas adicionadas no index (git diff --cached).",
+    )
+    p.add_argument(
+        "--changed-since",
+        metavar="REF",
+        help="E3.03: escaneia SOMENTE linhas adicionadas vs REF (merge-base 3-dot, fallback 2-dot).",
+    )
+    p.add_argument(
         "--report",
         type=Path,
         help="Grava relatorio redigido com localizacao/regra, sem valores encontrados.",
@@ -508,8 +660,18 @@ def _build_argparser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = _build_argparser().parse_args(argv)
 
+    added_lines_mode = bool(args.staged) or bool(args.changed_since)
     if args.tracked_files and args.root:
         print("ERRO: --tracked-files nao pode ser combinado com --root.", file=sys.stderr)
+        return 2
+    if args.staged and args.changed_since:
+        print("ERRO: --staged e --changed-since sao mutuamente exclusivos.", file=sys.stderr)
+        return 2
+    if added_lines_mode and (args.root or args.tracked_files or args.include_text):
+        print(
+            "ERRO: --staged/--changed-since nao combinam com --root/--tracked-files/--include-text.",
+            file=sys.stderr,
+        )
         return 2
 
     if args.root:
@@ -529,15 +691,20 @@ def main(argv: list[str] | None = None) -> int:
             return str(path.resolve())
 
     try:
-        file_iter = (
-            iter_tracked_text_files()
-            if args.tracked_files
-            else (iter_text_files(roots) if args.include_text else iter_python_files(roots))
-        )
-        all_violations: list[tuple[Path, Violation]] = []
-        for path in file_iter:
-            for v in scan_file(path):
-                all_violations.append((path, v))
+        if args.staged:
+            all_violations = scan_added_lines(iter_staged_added_lines())
+        elif args.changed_since:
+            all_violations = scan_added_lines(iter_changed_since_added_lines(args.changed_since))
+        else:
+            file_iter = (
+                iter_tracked_text_files()
+                if args.tracked_files
+                else (iter_text_files(roots) if args.include_text else iter_python_files(roots))
+            )
+            all_violations = []
+            for path in file_iter:
+                for v in scan_file(path):
+                    all_violations.append((path, v))
     except RuntimeError as exc:
         print(f"ERRO: {exc}", file=sys.stderr)
         return 2
@@ -562,6 +729,10 @@ def main(argv: list[str] | None = None) -> int:
             "Scope: Git tracked text files (synthetic fixtures allowlisted: "
             f"{len(SYNTHETIC_FIXTURE_ALLOWLIST)})."
         )
+    if args.staged:
+        print("Scope: linhas ADICIONADAS no index (git diff --cached) — E3.03.")
+    if args.changed_since:
+        print(f"Scope: linhas ADICIONADAS vs {args.changed_since} (merge-base) — E3.03.")
 
     if args.report:
         report_lines = [
