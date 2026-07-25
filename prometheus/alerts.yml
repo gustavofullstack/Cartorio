@@ -1,0 +1,124 @@
+# Modified by Gustavo Almeida
+# E3.06 (2026-07-25): exprs corrigidas para as metricas REAIS implementadas em
+# backend/app/services/metrics.py (antes 4 series referenciadas nao existiam).
+# E3.07 / G9.S2.T8: +3 alertas Telegram (401 spike, response_sent=0 com
+# trafego, fallback LLM esgotado). Runbook: docs/RUNBOOK_ALERTAS.md.
+# LGPD: nenhuma serie aqui carrega PII (labels sao enums canonicos).
+groups:
+  - name: cartorio_production_alerts
+    rules:
+      - alert: LLMCircuitOpen
+        # E3.06: gauge 0/1 publicado onde o CB abre/fecha (fallback.py)
+        expr: cartorio_llm_circuit_open == 1
+        for: 2m
+        labels:
+          severity: critical
+          rein: cartorio-sre
+        annotations:
+          summary: "Circuito LLM aberto para o provedor {{ $labels.provider }}"
+          description: "O provedor LLM {{ $labels.provider }} apresentou falhas consecutivas e o circuito está aberto há mais de 2 minutos."
+          runbook: "docs/RUNBOOK_ALERTAS.md#llmcircuitopen"
+
+      - alert: LLMAllProvidersDegraded
+        expr: rate(cartorio_llm_degraded_total[5m]) * 300 > 10
+        for: 1m
+        labels:
+          severity: warning
+          rein: cartorio-dev
+        annotations:
+          summary: "Alta taxa de respostas degradadas no LLM"
+          description: "Respostas degradadas (fallback/timeout) ultrapassaram o limiar de 10 em 5 minutos."
+          runbook: "docs/RUNBOOK_ALERTAS.md#llmallprovidersdegraded"
+
+      - alert: DLQGrowing
+        expr: dlq_depth > 5
+        for: 5m
+        labels:
+          severity: warning
+          rein: cartorio-sre
+        annotations:
+          summary: "Crescimento anormal da Dead Letter Queue (DLQ)"
+          description: "A profundidade da DLQ superou 5 mensagens acumuladas sem processamento."
+          runbook: "docs/RUNBOOK_ALERTAS.md#dlqgrowing"
+
+      - alert: WebhookAuthFailures
+        # E3.06: counter real, incrementado nos 401 (telegram secret + evolution HMAC)
+        expr: rate(cartorio_webhook_auth_failures_total[1m]) * 60 > 10
+        for: 1m
+        labels:
+          severity: warning
+          rein: cartorio-security
+        annotations:
+          summary: "Pico de falhas de autenticação em Webhooks"
+          description: "Mais de 10 tentativas de autenticação inválidas por minuto nos webhooks (canal {{ $labels.channel }})."
+          runbook: "docs/RUNBOOK_ALERTAS.md#webhookauthfailures"
+
+      - alert: WhatsAppSessionDisconnected
+        # E3.06: gauges reais alimentados no health check E2.08
+        expr: cartorio_whatsapp_evolution_service_up == 1 and cartorio_whatsapp_session_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+          rein: cartorio-sre
+        annotations:
+          summary: "Sessão do WhatsApp desconectada"
+          description: "O serviço Evolution API está ativo, mas a sessão do WhatsApp não está aberta."
+          runbook: "docs/RUNBOOK_ALERTAS.md#whatsappsessiondisconnected"
+
+      - alert: DeadMansSwitch
+        # E3.06: heartbeat (Unix epoch) da ultima execucao do check de audit.
+        # Dispara se o scheduler ficar > 15min sem rodar (inclui cold-start:
+        # gauge=0 "nunca rodou" eh fail-safe). Intervalo do loop: 15min.
+        expr: time() - cartorio_audit_dead_mans_switch_heartbeat > 900
+        for: 2m
+        labels:
+          severity: page
+          rein: cartorio-lgpd
+        annotations:
+          summary: "Dead-Man's Switch de Auditoria Inativo"
+          description: "Ausência de heartbeat no scheduler de verificação do audit log por mais de 15 minutos."
+          runbook: "docs/RUNBOOK_ALERTAS.md#deadmansswitch"
+
+  - name: cartorio_telegram_alerts
+    rules:
+      # G9.S2.T8 (2026-07-25) — alertas do pipeline Telegram (E3.07).
+      - alert: TelegramWebhookAuthSpike
+        # Taxa de 401 do webhook Telegram acima do limiar (scan/brute-force
+        # do secret token). Distinto de WebhookAuthFailures (cross-channel).
+        expr: rate(telegram_webhook_total{result="401"}[5m]) * 60 > 5
+        for: 2m
+        labels:
+          severity: warning
+          rein: cartorio-security
+        annotations:
+          summary: "Pico de 401 no webhook do Telegram"
+          description: "Mais de 5 rejeições de secret token por minuto no webhook Telegram nos últimos 5 minutos."
+          runbook: "docs/RUNBOOK_ALERTAS.md#telegramwebhookauthspike"
+
+      - alert: TelegramResponseSentZero
+        # Ha trafego (webhooks 200 chegando) mas NENHUMA resposta enviada:
+        # envio para a API do Telegram quebrado (token, rede, pool HTTP).
+        expr: increase(telegram_webhook_total{result="200"}[10m]) > 10 and increase(telegram_response_sent_total[10m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+          rein: cartorio-sre
+        annotations:
+          summary: "Telegram recebendo tráfego mas sem enviar respostas"
+          description: "Webhooks processados (200) sem nenhuma resposta confirmada na API do Telegram nos últimos 10 minutos."
+          runbook: "docs/RUNBOOK_ALERTAS.md#telegramresponsesentzero"
+
+      - alert: TelegramLLMFallbackExhausted
+        # Fallback LLM esgotado: ha tentativas de chamada (error/timeout/
+        # circuit_open) e ZERO sucesso na janela. Distinto de
+        # LLMAllProvidersDegraded (que mede degraded reply servida): aqui o
+        # sinal eh a cadeia de providers inteira falhando.
+        expr: increase(cartorio_llm_calls_total{status="success"}[10m]) == 0 and increase(cartorio_llm_calls_total{status=~"error|timeout|circuit_open"}[10m]) > 5
+        for: 2m
+        labels:
+          severity: critical
+          rein: cartorio-dev
+        annotations:
+          summary: "Cadeia de fallback LLM esgotada"
+          description: "Nenhuma chamada LLM com sucesso em 10 minutos com falhas acumuladas — usuários recebendo apenas degraded reply."
+          runbook: "docs/RUNBOOK_ALERTAS.md#telegramllmfallbackexhausted"

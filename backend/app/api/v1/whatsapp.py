@@ -428,6 +428,14 @@ async def whatsapp_health() -> dict:
 
     pipeline = await pipeline_health()
     session_connected = session_state == "open"
+    # E3.06: alimenta gauges Prometheus no health check E2.08 (0/1).
+    # Metrica nunca derruba o health check.
+    try:
+        from app.services.metrics import store
+
+        store.set_whatsapp_health(evolution_ok, session_connected)
+    except Exception:
+        pass
     return {
         "status": "ok" if (evolution_ok and session_connected) else "degraded",
         "evolution_api": "online" if evolution_ok else "offline",
@@ -549,6 +557,8 @@ async def whatsapp_webhook(
     )
     if signature_required and not signature_valid:
         logger.warning("WhatsApp webhook: auth inválida (rejeitando)")
+        # E3.06: 401 do webhook vira serie observavel (anti brute-force/scan)
+        store.inc_webhook_auth_failures("whatsapp")
         raise HTTPException(status_code=401, detail="invalid webhook signature")
     if not signature_required and not signature_valid:
         logger.warning("WhatsApp webhook: auth inválida aceita somente em modo não obrigatório")

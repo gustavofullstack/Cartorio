@@ -92,6 +92,25 @@ class MetricsStore:
         self.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "out"}, value=0)
         self.inc_counter("cartorio_whatsapp_erros_total", value=0)
         self.inc_counter("cartorio_agendamentos_conflitos_total", value=0)
+        # E3.06 — cold-start das series novas (evita Grafana no-data)
+        self.inc_counter(
+            "cartorio_webhook_auth_failures_total", labels={"channel": "telegram"}, value=0
+        )
+        self.inc_counter(
+            "cartorio_webhook_auth_failures_total", labels={"channel": "whatsapp"}, value=0
+        )
+        # Heartbeat 0.0 = "nunca rodou" (fail-safe: alerta dispara se o
+        # scheduler do dead-man's switch nunca executar — mesmo padrao de
+        # `backup_last_success_timestamp_seconds`).
+        self.set_gauge("cartorio_audit_dead_mans_switch_heartbeat", 0.0)
+        # Saude WhatsApp desconhecida no boot -> 0 (down, fail-safe).
+        self.set_gauge("cartorio_whatsapp_evolution_service_up", 0.0)
+        self.set_gauge("cartorio_whatsapp_session_connected", 0.0)
+        # E3.07 / G9.S2 — series Telegram (nomes canonicos do SUPER_PLANO).
+        for result in ("200", "401", "5xx"):
+            self.inc_counter("telegram_webhook_total", labels={"result": result}, value=0)
+        self.inc_counter("telegram_debounce_scheduled_total", value=0)
+        self.inc_counter("telegram_response_sent_total", value=0)
 
     def inc_counter(self, name: str, labels: dict[str, str] | None = None, value: int = 1) -> None:
         key = self._labels_key(labels)
@@ -417,6 +436,137 @@ class MetricsStore:
             },
         )
 
+    # -------------------------------------------------------------------
+    # E3.06 — Observability gaps (CB gauge, webhook auth, WA health, DMS)
+    # -------------------------------------------------------------------
+
+    def set_llm_circuit_open(self, provider: str, is_open: bool) -> None:
+        """E3.06: gauge `cartorio_llm_circuit_open{provider}` (0/1).
+
+        Atualizado onde o circuit breaker abre/fecha
+        (`app/integrations/fallback.py::_record_failure` abre -> 1,
+        `_record_success` fecha -> 0; `_is_circuit_open` re-publica 1 quando
+        confirma circuito aberto no Redis — cobre restart do processo, ja que
+        o gauge eh in-memory e o estado do CB vive no Redis com TTL 300s).
+
+        Args:
+            provider: enum canonico (mesma whitelist de `model` LLM).
+                Valor fora da whitelist vira 'unknown' (fail-safe).
+            is_open: True = circuito aberto (provider bloqueado).
+        """
+        self._make_metric_or_skip_test("cartorio_llm_circuit_open", "gauge")
+        self.set_gauge(
+            "cartorio_llm_circuit_open",
+            1.0 if is_open else 0.0,
+            labels={"provider": _canonical_label(provider, _ALLOWED_LLM_MODELS, "unknown")},
+        )
+
+    def inc_webhook_auth_failures(self, channel: str) -> None:
+        """E3.06: counter `cartorio_webhook_auth_failures_total{channel}`.
+
+        Incrementado nos pontos de 401 dos webhooks:
+        - Telegram: `_verify_telegram_secret` (secret token ausente/invalido)
+        - WhatsApp: `whatsapp_webhook` (HMAC Evolution invalido)
+
+        Args:
+            channel: enum (telegram | whatsapp). Fora da whitelist vira
+                'unknown' (fail-safe, cardinalidade controlada).
+        """
+        self._make_metric_or_skip_test("cartorio_webhook_auth_failures_total", "counter")
+        self.inc_counter(
+            "cartorio_webhook_auth_failures_total",
+            labels={"channel": _canonical_label(channel, _ALLOWED_WEBHOOK_CHANNELS, "unknown")},
+        )
+
+    def set_whatsapp_health(self, evolution_up: bool, session_connected: bool) -> None:
+        """E3.06: gauges de saude WhatsApp/Evolution (0/1), alimentados no
+        health check E2.08 (`app/api/v1/whatsapp.py::whatsapp_health`).
+
+        - `cartorio_whatsapp_evolution_service_up`: Evolution API respondeu 200.
+        - `cartorio_whatsapp_session_connected`: connectionState == "open".
+          Separado por design (Lesson 260): API online NAO implica sessao aberta.
+        """
+        self._make_metric_or_skip_test("cartorio_whatsapp_evolution_service_up", "gauge")
+        self._make_metric_or_skip_test("cartorio_whatsapp_session_connected", "gauge")
+        self.set_gauge("cartorio_whatsapp_evolution_service_up", 1.0 if evolution_up else 0.0)
+        self.set_gauge("cartorio_whatsapp_session_connected", 1.0 if session_connected else 0.0)
+
+    def set_audit_dead_mans_heartbeat(self, unix_ts: float | None = None) -> None:
+        """E3.06: gauge `cartorio_audit_dead_mans_switch_heartbeat` (Unix epoch).
+
+        Marca o timestamp da ultima execucao do check do dead-man's switch
+        (`app/jobs/dead_mans_switch.py::check_audit_log_freshness_3lvl`).
+        Alerta canonico: `time() - metric > 900` (scheduler inativo > 15min).
+        Cold-start = 0.0 ("nunca rodou" — fail-safe, alerta dispara).
+
+        Args:
+            unix_ts: timestamp Unix da execucao. None = agora (time.time()).
+        """
+        value = float(unix_ts) if unix_ts is not None else time.time()
+        self._make_metric_or_skip_test("cartorio_audit_dead_mans_switch_heartbeat", "gauge")
+        self.set_gauge("cartorio_audit_dead_mans_switch_heartbeat", value)
+
+    # -------------------------------------------------------------------
+    # E3.07 / G9.S2 — Telegram webhook pipeline (T3/T4/T5)
+    # -------------------------------------------------------------------
+    # LGPD (S2.T5): labels sao APENAS enums canonicos (result). NUNCA
+    # chat_id / username / user_id / nome — ver test_telegram_metrics_g9.py
+    # (gate que falha se label proibida aparecer).
+
+    def inc_telegram_webhook_total(self, result: str) -> None:
+        """G9.S2.T3: counter `telegram_webhook_total{result}` (200|401|5xx).
+
+        Incrementado no wrapper do webhook (`telegram_webhook`) pelo desfecho
+        HTTP: 200 = resposta normal (inclui degraded/scheduled — regra do bot
+        eh SEMPRE 200), 401 = secret invalido, 5xx = excecao nao tratada.
+
+        Args:
+            result: enum ("200" | "401" | "5xx"). Fora da whitelist vira
+                'unknown' (fail-safe, cardinalidade controlada).
+        """
+        self._make_metric_or_skip_test("telegram_webhook_total", "counter")
+        self.inc_counter(
+            "telegram_webhook_total",
+            labels={
+                "result": _canonical_label(result, _ALLOWED_TELEGRAM_WEBHOOK_RESULTS, "unknown")
+            },
+        )
+
+    def inc_telegram_debounce_scheduled(self) -> None:
+        """G9.S2.T3: counter `telegram_debounce_scheduled_total`.
+
+        Incrementado quando o webhook agenda a background task de debounce
+        (janela DEBOUNCE_WINDOW=1.2s) — 1x por janela, nao por mensagem.
+        """
+        self._make_metric_or_skip_test("telegram_debounce_scheduled_total", "counter")
+        self.inc_counter("telegram_debounce_scheduled_total")
+
+    def inc_telegram_response_sent(self) -> None:
+        """G9.S2.T3: counter `telegram_response_sent_total`.
+
+        Incrementado em `_send_message` quando a API do Telegram confirma o
+        envio (HTTP 200). Cobre respostas sincronas e as da task de debounce.
+        """
+        self._make_metric_or_skip_test("telegram_response_sent_total", "counter")
+        self.inc_counter("telegram_response_sent_total")
+
+    def observe_telegram_webhook_response_seconds(self, duration_seconds: float) -> None:
+        """G9.S2.T4: histogram `telegram_webhook_response_seconds`.
+
+        Latencia webhook -> resposta ao usuario, INCLUINDO a janela de
+        debounce de 1.2s: o inicio eh marcado na PRIMEIRA mensagem da janela
+        (percepcao do usuario) e a observacao ocorre no envio confirmado
+        (`_send_message` 200). Sem labels (cardinalidade zero).
+
+        Args:
+            duration_seconds: latencia observada (>= 0). Valores negativos
+                (clock skew) sao clampados para 0.0.
+        """
+        self._make_metric_or_skip_test("telegram_webhook_response_seconds", "histogram")
+        self.observe_histogram(
+            "telegram_webhook_response_seconds", max(0.0, float(duration_seconds))
+        )
+
     def _labels_key(self, labels: dict[str, str] | None) -> str:
         if not labels:
             return ""
@@ -667,6 +817,21 @@ _ALLOWED_LLM_DIRECTIONS: set[str] = {
 _ALLOWED_LLM_DEGRADED_REASONS: set[str] = {
     "timeout",  # teto global LLM_GLOBAL_TIMEOUT_S estourou
     "all_providers_down",  # tools + fallback simples retornaram vazio
+}
+
+# E3.06 — canais de webhook com auth propria (401 fail-closed).
+_ALLOWED_WEBHOOK_CHANNELS: set[str] = {
+    "telegram",  # X-Telegram-Bot-Api-Secret-Token (_verify_telegram_secret)
+    "whatsapp",  # HMAC X-Hub-Signature-256 Evolution (whatsapp_webhook)
+}
+
+# E3.07 / G9.S2.T3 — desfechos HTTP possiveis do webhook Telegram.
+# O bot responde SEMPRE 200 por design (retry infinito do Telegram em 5xx);
+# "5xx" so ocorre em excecao nao tratada (bug) — por isso vira metrica.
+_ALLOWED_TELEGRAM_WEBHOOK_RESULTS: set[str] = {
+    "200",
+    "401",
+    "5xx",
 }
 
 

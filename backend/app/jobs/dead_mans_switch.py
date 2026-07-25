@@ -289,6 +289,9 @@ def check_audit_log_freshness_3lvl(
 
     # Atualiza metrica Prometheus
     metrics_store.set_audit_dead_mans_status(_3L_TO_PROM[status3])
+    # E3.06: heartbeat do scheduler (Unix epoch). Prova que o loop do
+    # dead-man's switch EXECUTOU este ciclo — alerta `time() - metric > 900`.
+    metrics_store.set_audit_dead_mans_heartbeat()
 
     return AuditHealth3Lvl(
         status=status3,

@@ -449,7 +449,19 @@ async def _is_circuit_open(provider: str) -> bool:
         if not bus or not bus.client:
             return False
         is_open = await bus.client.get(f"cb:open:{provider}")
-        return is_open in (b"1", "1")
+        open_ = is_open in (b"1", "1")
+        if open_:
+            # E3.06: re-publica o gauge quando o Redis confirma circuito aberto.
+            # Cobre restart do processo (gauge in-memory se perde; CB vive no
+            # Redis com TTL 300s). NAO publica 0 no caminho False: Redis down
+            # eh fail-open e nao deve mascarar um circuito realmente aberto.
+            try:
+                from app.services.metrics import store as _metrics_store
+
+                _metrics_store.set_llm_circuit_open(provider, True)
+            except Exception:
+                pass  # metrica nunca derruba o request path
+        return open_
     except Exception as e:
         logger.warning("Circuit breaker Redis check failed for %s (fail-open): %s", provider, e)
         return False
@@ -477,6 +489,13 @@ async def _record_failure(provider: str, threshold: int = 3, open_time_seconds: 
             )
             await bus.client.setex(f"cb:open:{provider}", open_time_seconds, "1")
             await bus.client.delete(key_fail)
+            # E3.06: gauge do CB -> 1 (abriu). Metrica nunca derruba o path.
+            try:
+                from app.services.metrics import store as _metrics_store
+
+                _metrics_store.set_llm_circuit_open(provider, True)
+            except Exception:
+                pass
     except Exception as e:
         logger.warning("Circuit breaker failure record failed for %s: %s", provider, e)
 
@@ -491,5 +510,12 @@ async def _record_success(provider: str) -> None:
             return
         await bus.client.delete(f"cb:fail:{provider}")
         await bus.client.delete(f"cb:open:{provider}")
+        # E3.06: gauge do CB -> 0 (fechou). Metrica nunca derruba o path.
+        try:
+            from app.services.metrics import store as _metrics_store
+
+            _metrics_store.set_llm_circuit_open(provider, False)
+        except Exception:
+            pass
     except Exception as e:
         logger.warning("Circuit breaker success record failed for %s: %s", provider, e)

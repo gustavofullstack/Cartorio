@@ -338,6 +338,42 @@ def bump_metric(key: str, value: int = 1) -> None:
     _METRICS[key] = _METRICS.get(key, 0) + value
 
 
+# G9.S2.T4: inicio da janela webhook->resposta por chat (time.monotonic).
+# A PRIMEIRA mensagem da janela de debounce marca o inicio (percepcao do
+# usuario); o primeiro `_send_message` confirmado (200) consome a marca e
+# observa o histograma `telegram_webhook_response_seconds` (que assim inclui
+# a janela de debounce de 1.2s). LGPD: chat_id fica IN-PROCESS apenas —
+# NUNCA vira label do Prometheus (gate: test_telegram_metrics_g9.py).
+_RESPONSE_LATENCY_START: dict[int, float] = {}
+_RESPONSE_LATENCY_START_MAX = 2048
+
+
+def _mark_response_start(chat_id: int) -> None:
+    """Marca o inicio da janela webhook->resposta (setdefault: 1a msg vence)."""
+    if len(_RESPONSE_LATENCY_START) >= _RESPONSE_LATENCY_START_MAX:
+        # Bound anti-leak: updates ignorados (sem resposta) nunca consomem a
+        # marca. Estouro da tabela => reseta (perde observacoes da janela,
+        # nunca o request). Metrica nao pode vazar memoria.
+        _RESPONSE_LATENCY_START.clear()
+    _RESPONSE_LATENCY_START.setdefault(chat_id, time.monotonic())
+
+
+def _observe_response_sent(chat_id: int) -> None:
+    """Observa `telegram_webhook_response_seconds` no 1o envio confirmado.
+
+    Chamado por `_send_message` SOMENTE quando a API do Telegram retorna 200.
+    A marca NAO eh consumida em falha de envio: se uma mensagem de erro de
+    fallback for enviada depois, ela ainda eh a resposta (tardia) da janela.
+    Marca sem sucesso algum expira pelo bound de `_mark_response_start`.
+    """
+    start = _RESPONSE_LATENCY_START.pop(chat_id, None)
+    if start is None:
+        return
+    from app.services.metrics import store
+
+    store.observe_telegram_webhook_response_seconds(time.monotonic() - start)
+
+
 def classify_metric_for_status(status: str, kind: str) -> None:
     """FIX 2026-07-08: Gustavo reportou que /metrics nunca mexia em responses_ok.
     Status vindos do webhook: "ok", "partial", "ignored", "ignored_command",
@@ -780,6 +816,9 @@ async def _send_message(
 
         if resp.status_code == 200:
             store.inc_counter("cartorio_telegram_mensagens_total", labels={"direction": "out"})
+            # G9.S2.T3/T4: resposta confirmada -> counter + latencia da janela
+            store.inc_telegram_response_sent()
+            _observe_response_sent(chat_id)
             return True
         # Auto-migrate supergroup
         try:
@@ -793,6 +832,9 @@ async def _send_message(
                     store.inc_counter(
                         "cartorio_telegram_mensagens_total", labels={"direction": "out"}
                     )
+                    # G9.S2.T3/T4: resposta confirmada (apos migrate) -> idem
+                    store.inc_telegram_response_sent()
+                    _observe_response_sent(int(migrate_to))
                     return True
                 logger.warning("TG send after migrate %d: %.200s", resp2.status_code, resp2.text)
                 store.inc_counter("cartorio_telegram_erros_total")
@@ -2063,6 +2105,46 @@ async def telegram_webhook(
     x_telegram_bot_api_secret_token: str | None = Header(None),
     db: Session = Depends(get_db),
 ) -> dict:
+    """Wrapper G9.S2.T3: contabiliza `telegram_webhook_total{result}` e delega.
+
+    Observa o desfecho HTTP do webhook (200 | 401 | 5xx) e chama o handler
+    real (`_telegram_webhook_impl`). Comportamento PRESERVADO: qualquer
+    excecao (401 do secret token, excecao nao tratada) continua propagando —
+    o wrapper apenas registra o resultado antes do re-raise.
+
+    LGPD (S2.T5): o label `result` eh enum estrito; chat_id/username NUNCA
+    viram label (gate: test_telegram_metrics_g9.py).
+    """
+    from app.services.metrics import store as _metrics_store
+
+    try:
+        resp = await _telegram_webhook_impl(
+            request, background_tasks, x_telegram_bot_api_secret_token, db
+        )
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            result = "401"
+        elif exc.status_code >= 500:
+            result = "5xx"
+        else:
+            result = "unknown"  # fora do enum -> coercion fail-safe no store
+        _metrics_store.inc_telegram_webhook_total(result)
+        raise
+    except Exception:
+        # Excecao nao tratada -> FastAPI devolve 500. NUNCA deveria acontecer
+        # (regra do bot: SEMPRE 200); se aparecer, vira sinal de alerta.
+        _metrics_store.inc_telegram_webhook_total("5xx")
+        raise
+    _metrics_store.inc_telegram_webhook_total("200")
+    return resp
+
+
+async def _telegram_webhook_impl(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    x_telegram_bot_api_secret_token: str | None,
+    db: Session,
+) -> dict:
     bump_metric("requests_total")
     from app.services.metrics import store
 
@@ -2086,6 +2168,15 @@ async def telegram_webhook(
     )
     text = message.get("text", "") or callback.get("data", "")
     update_id = update.get("update_id", 0)
+
+    # G9.S2.T4: marca o inicio da janela webhook->resposta (1a msg da janela
+    # de debounce vence via setdefault). Metrica NUNCA derruba o webhook:
+    # payload malformado (chat.id nao-int) eh ignorado silenciosamente.
+    try:
+        if chat_id:
+            _mark_response_start(int(chat_id))
+    except (TypeError, ValueError):
+        pass
 
     def _finish(resp: dict) -> dict:
         """Grava resposta final no buffer de debug (antes so gravava 'received')."""
@@ -2503,6 +2594,8 @@ async def telegram_webhook(
         if not has_lock:
             await bus.client.set(lock_key, "1", ex=5)
             bump_metric("scheduled_debounce")
+            # G9.S2.T3: 1 debounce agendado por janela (nao por mensagem)
+            store.inc_telegram_debounce_scheduled()
             from_user = message.get("from", {}) or {}
             # G9/A5: metadata chaveada por conv (mesma chave da fila/lock).
             _DEBOUNCE_METADATA[conv] = {
@@ -2628,11 +2721,16 @@ async def telegram_set_webhook(
 def _verify_telegram_secret(secret_token_header: str | None) -> None:
     if not TELEGRAM_WEBHOOK_SECRET:
         return
+    # E3.06: 401 do webhook vira serie observavel (anti brute-force/scan).
+    from app.services.metrics import store
+
     if not secret_token_header:
+        store.inc_webhook_auth_failures("telegram")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing secret token")
     # O Telegram envia o secret_token de forma estática em texto claro.
     # Comparamos usando hmac.compare_digest para segurança contra timing attacks.
     if not hmac.compare_digest(secret_token_header.encode(), TELEGRAM_WEBHOOK_SECRET.encode()):
+        store.inc_webhook_auth_failures("telegram")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid secret token")
 
 
