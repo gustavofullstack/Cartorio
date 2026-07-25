@@ -5,7 +5,7 @@
 
 ## 1. Commit range
 
-- Base: `origin/master` → HEAD local (`⟨PÓS-QA⟩` commits à frente)
+- Base: `origin/master` → HEAD local (**39 commits à frente**) — sem push
 - Range: `origin/master..HEAD`
 - Verdade de progresso: `docs/G9_EVIDENCE_LEDGER_E302.md` (**41 DONE / 43 TODO / 16 BLOCKED_HUMAN**)
 
@@ -38,14 +38,20 @@
 | Tier DPO por key registrada (nunca prefixo) + timing-safe | `73989420` | testes registry |
 | Rate limit usa IP resolvido no trust boundary | `73989420` | teste não-bypass |
 | Secret scanner no `make lint` | `73989420` | make lint local |
-| Gate CI secrets_scan | `⟨LANE-A⟩` | relatório Lane A |
+| Gate CI secrets_scan (full + incremental, hard gate) | `7a2fd377` | bateria scanner + `test_cd_workflow_g8` |
 | Chaos matrix offline (redis down, LLM all-down, replay, DLQ backoff, webhook never-5xx, ato não-final) | `ae60ea69`, `8ba27979` | 6 testes |
-| Métricas observability + alertas | `⟨LANE-B⟩` | relatório Lane B |
+| Métricas observability + 9 alertas + runbook | `3ddc3371` | `test_observability_e306` 21 testes |
 
 ## 6. Test evidence
 
-- FULL QA E3.11: `⟨PÓS-QA⟩` (tests passed/failed/skipped, coverage %, ruff, mypy, scanner, alembic heads)
-- Baseline antigo (5819 passed / 92.07%) **invalidado** — substituído pela execução E3.11.
+- **FULL QA E3.11 (2026-07-25, pós-todas as mudanças — SUBSTITUI o baseline 92.07%):**
+  - Suite: **6049 passed, 22 skipped** (712s) + 1 falha em pin G8 do CI → fixada e re-rodada verde (`test_cd_workflow_g8.py` 9 passed)
+  - Coverage: **92.44%** (gate 90%) — 13516 statements, 1022 missed
+  - ruff: **0** · mypy: **0** (210 source files)
+  - Secret scanner gate: **exit 0** (baseline documentada, 6 fingerprints)
+  - pip-audit: **No known vulnerabilities found**
+  - Alembic heads: **1** (`0028`) · telegram1000 marker: **1 passed** (15.6s)
+  - PII leaks: **0** (canary CNJ + gates LGPD) · new secrets: **0**
 
 ## 7. Known risks
 
