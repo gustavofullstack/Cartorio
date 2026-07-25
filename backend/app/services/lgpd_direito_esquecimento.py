@@ -99,11 +99,16 @@ def direito_esquecimento(
         "telefone_hash": cliente_row.get("telefone_hash") or "",  # ja eh hash
     }
 
+    import re
+
     # 3. Soft delete cascade (marca deleted_at + anonimiza PII)
     rows_affected = 0
     anonymized_tables = []
 
     for table in CASCADE_TABLES:
+        if not re.match(r"^[a-zA-Z0-9_]+$", table):
+            log.warning("Table name %s is invalid, skipping.", table)
+            continue
         try:
             if table == "clientes":
                 # Tabela clientes tem colunas especificas do model
@@ -227,9 +232,14 @@ def restore_direito_esquecimento(
             f"({reversivel_ate} < {now}). Exclusao definitiva."
         )
 
+    import re
+
     # Restaura deleted_at=NULL em todas as tabelas cascade
     restored_tables = []
     for table in CASCADE_TABLES:
+        if not re.match(r"^[a-zA-Z0-9_]+$", table):
+            log.warning("Table name %s is invalid, skipping.", table)
+            continue
         try:
             result = db.execute(
                 text(
