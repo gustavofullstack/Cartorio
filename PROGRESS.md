@@ -4113,3 +4113,17 @@ Modified by Gustavo Almeida — 2026-07-24
 - G9 36→40/100
 - test_cnj_export_api 17 passed
 - Modified by Gustavo Almeida
+
+## 2026-07-25 Etapa 3 Convergência e RC (orquestrador)
+- E3.01 swarm reconcile: 6 commits atômicos, drift zero (S4.T4 + trusted proxy wave + chaos)
+- E3.02 ledger real: 41/100 na abertura (docs/G9_EVIDENCE_LEDGER_E302.md) — claim "75/100" externo REVERTIDO (sem evidência)
+- E3.03/E3.04/E3.05 (Lane A): secrets CI gate (full+incremental hard gate), 9/9 cenários XFF, registry tiers timing-safe — 133 testes
+- E3.06/E3.07 (Lane B): 4 métricas reais (circuit gauge, webhook auth, whatsapp session, DMS heartbeat) + 9 alertas + telegram S2 series + gate LGPD + RUNBOOK_ALERTAS
+- E3.08/E3.10 (Lane C): canary PII CNJ (12t), relatório proteção (11t), gates MCP 14/14 + WS
+- E3.09: chaos offline 6 cenários (redis/LLM/replay/DLQ/webhook/HITL)
+- E3.11 FULL QA pós-todas as mudanças: **6049 passed, 22 skipped, coverage 92.44%** (gate 90), ruff 0, mypy 0 (210 files), scanner exit 0, pip-audit clean, alembic heads=1, telegram1000 OK — SUBSTITUI baseline 92.07%
+- G9 41→**49/100** honesto (+S2.T3/T4/T5/T8/T10, +S4.T1/T9, +S5.T7)
+- E3.12: docs/RELEASE_MANIFEST_RC_E312.md (39+ commits, rollback, smoke, deploy order)
+- P0 humanos intactos: B1 LGPD 0028, B2 QR WhatsApp, B3 rotação credenciais
+- **SEM PUSH. SEM DEPLOY 0028.**
+- Modified by Gustavo Almeida
