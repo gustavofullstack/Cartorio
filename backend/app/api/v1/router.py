@@ -1015,6 +1015,25 @@ async def webhook_evolution(
     Mantem a logica inline de PII+LLM para nao quebrar o workflow #12 ativo
     e formato legado (pre-Sprint 1.2) que ainda usa payload {message, sender, instance}.
     """
+    import os
+    import hmac
+    import hashlib
+    from fastapi import HTTPException
+
+    signature = request.headers.get("X-Hub-Signature-256") or request.headers.get(
+        "X-Evolution-Signature"
+    )
+    require_sig = os.getenv("EVOLUTION_REQUIRE_SIGNATURE", "false").lower() == "true"
+    secret = os.getenv("EVOLUTION_WEBHOOK_SECRET")
+    if require_sig:
+        if not secret:
+            raise HTTPException(status_code=503, detail="HMAC secret not configured")
+        if not signature:
+            raise HTTPException(status_code=401, detail="Missing signature")
+        raw_body = await request.body()
+        expected_sig = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected_sig):
+            raise HTTPException(status_code=401, detail="Invalid signature")
     # Idempotency check (Sprint 2) - so se payload tem formato novo
     # (data.key.id). Formato legado e ignorado silenciosamente.
     #
@@ -2284,7 +2303,6 @@ async def documento_segunda_via(
     ] = "whatsapp",
 ) -> dict:
     """Gera link de download da segunda via."""
-    import hashlib
     from app.models.protocolo import Protocolo
     from app.models.cliente import Cliente
     from sqlalchemy import select
@@ -3683,7 +3701,6 @@ async def create_audit_log_endpoint(
     from app.services.audit_create import create_audit_log_entry
     from app.services.pii import detect_only
 
-    import hashlib
     import json
     import logging
 
