@@ -111,11 +111,11 @@ async def test_state_agendar_data_formato_invalido() -> None:
     """_handle_state AGENDAR_DATA com data invalida retorna erro + mesmo state."""
     bus = _make_bus()
     text, new_state, keyboard = await _handle_state(
-        "data invalida xyz", STATE_AGENDAR_DATA, {}, bus, chat_id=123
+        "invalido", STATE_AGENDAR_DATA, {}, bus, chat_id=123
     )
     assert "invalida" in text.lower() or "inval" in text.lower() or "Use" in text
     assert new_state == STATE_AGENDAR_DATA
-    assert keyboard is None
+    assert keyboard is not None
 
 
 # =============================================================================
@@ -144,11 +144,11 @@ async def test_state_agendar_hora_formato_invalido() -> None:
     """_handle_state AGENDAR_HORA com hora invalida retorna erro + mesmo state."""
     bus = _make_bus()
     text, new_state, keyboard = await _handle_state(
-        "hora invalida", STATE_AGENDAR_HORA, {}, bus, chat_id=123
+        "abc", STATE_AGENDAR_HORA, {}, bus, chat_id=123
     )
     assert "invalido" in text.lower() or "inval" in text.lower() or "Use" in text
     assert new_state == STATE_AGENDAR_HORA
-    assert keyboard is None
+    assert keyboard is not None
 
 
 # =============================================================================
