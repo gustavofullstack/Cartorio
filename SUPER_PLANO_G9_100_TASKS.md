@@ -6,8 +6,8 @@
 
 ---
 
-> **HONESTY GATE:** `[x]` só com evidência de 1 linha. **40/100** (Etapa 2 2026-07-24: +15 S3/S5/S4).
-> Baseline sessão 2026-07-20 era 25/100.
+> **HONESTY GATE:** `[x]` só com evidência de 1 linha. **49/100** (Etapa 3 2026-07-25: E3.01 reconcile + E3.04 XFF + E3.05 registry + S2 métricas/alertas + S4 canary/relatório + S5.T7 CI gate). Fonte canônica: `docs/G9_EVIDENCE_LEDGER_E302.md`.
+> Baseline sessão 2026-07-20 era 25/100; Etapa 2 fechou em 41/100 verificado (não 40, não 75 — claim "75/100" em working tree foi REVERTIDO por falta de evidência, lesson nova em MEMORY).
 > IDs antigos (25×4) preservados entre parênteses para rastreio, ex.: `(ex-G9.01.T2)`.
 > Regressões A1–A6 = diagnóstico E1 (`backend/app/api/v1/telegram.py`). Slots/timeout/payload = diagnóstico E2 (`backend/app/services/cartorio_agent.py`).
 
@@ -51,14 +51,14 @@ Transformar o Telegram de "funcional em probe" em **robusto sob regressão**, pr
 
 - [x] **G9.S2.T1** (ex-G9.03.T1) — Probes funcionais prod (2026-07-20): `/start` em chat real → `response_sent=true`; texto livre e mensagem em grupo → `scheduled=true` (debounce async agendado).
 - [x] **G9.S2.T2** (ex-G9.03.T2) — E2E grupo real: 2 usuários distintos na mesma janela de debounce recebem respostas independentes (regressão A5 em produção).
-- [ ] **G9.S2.T3** (ex-G9.13.T1) — `/metrics`: contadores `telegram_webhook_total{result=200|401|5xx}`, `telegram_debounce_scheduled_total`, `telegram_response_sent_total`.
-- [ ] **G9.S2.T4** (ex-G9.13.T2) — Histograma de latência webhook → resposta (incluindo a janela de debounce de 1.2s).
-- [ ] **G9.S2.T5** (ex-G9.13.T3) — Revisão LGPD das labels: `chat_id`/username nunca como label (revisão `cartorio-lgpd`).
+- [x] **G9.S2.T3** (ex-G9.13.T1) — `/metrics`: contadores `telegram_webhook_total{result=200|401|5xx}`, `telegram_debounce_scheduled_total`, `telegram_response_sent_total` implementados em `metrics.py` + instrumentados em `telegram.py` (E3.07, 16 testes `test_telegram_metrics_g9.py`).
+- [x] **G9.S2.T4** (ex-G9.13.T2) — Histograma `telegram_webhook_response_seconds` incluindo janela de debounce (E3.07, `test_fluxo_webhook_debounce_e2e_emite_todas_series`).
+- [x] **G9.S2.T5** (ex-G9.13.T3) — Revisão LGPD das labels: gate estático + render provam `chat_id`/username nunca como label (`test_gate_lgpd_*` em `test_telegram_metrics_g9.py`).
 - [ ] **G9.S2.T6** (ex-G9.13.T4) — Painel Telegram no radar/Grafana + documentação das novas séries.
 - [ ] **G9.S2.T7** (ex-G9.14.T1) — `GIT_SHA` (+ build time) exposto em `/version` e `/health`, injetado no build Docker.
-- [ ] **G9.S2.T8** (ex-G9.14.T2) — Alertas AlertManager: taxa de 401 do webhook acima do limiar; `response_sent=0` com tráfego; fallback LLM esgotado.
+- [x] **G9.S2.T8** (ex-G9.14.T2) — Alertas AlertManager: `TelegramWebhookAuthSpike`, `TelegramResponseSentZero`, `TelegramLLMFallbackExhausted` em `prometheus/alerts.yml` (9 regras, exprs validadas contra métricas reais em `test_observability_e306.py`).
 - [ ] **G9.S2.T9** (ex-G9.14.T3) — Entrega dos alertas no Telegram do escrevente sem PII (reuso do caminho G8.15.T2).
-- [ ] **G9.S2.T10** (ex-G9.14.T4) — Runbook de resposta para os 3 alertas novos.
+- [x] **G9.S2.T10** (ex-G9.14.T4) — `docs/RUNBOOK_ALERTAS.md` cobre os 9 alertas (3 novos + 6 E3.06).
 
 ### Squad S3 — LLM Zen 3 Contas, Timeouts & Scrub Output (dev+lgpd)
 **Objetivo:** fallback chain coerente (3 contas zen + free + go), timeout 45s, payload por provider, output scrubbed.
@@ -87,7 +87,7 @@ Transformar o Telegram de "funcional em probe" em **robusto sob regressão**, pr
 **Evidência:** commits `ff599aa`, `0d15da6`, `6c029fc` (endpoint streaming + gate audit).
 **Aceite:** streaming sob volume com memória estável; 500 `AUDIT_FAILURE` sem vazar byte; relatório CNJ gerado.
 
-- [ ] **G9.S4.T1** (ex-G9.06.T3) — Regressão com canary tokens: teste falha se o LLM ecoar PII que entrou mascarada.
+- [x] **G9.S4.T1** (ex-G9.06.T3) — Regressão com canary tokens: teste falha se o LLM ecoar PII que entrou mascarada. Evidência: `test_cnj_canary_g9.py` 12 testes (CPF canário 529.982.247-25 + tripwire nunca saem raw em scrub/degraded/stream).
 - [ ] **G9.S4.T2** (ex-G9.06.T4) — Sign-off `cartorio-lgpd` documentado + entrada no audit log (mudança toca `pii*`).
 - [x] **G9.S4.T3** (ex-G9.07.T1) — Endpoint `/api/v1/lgpd/cnj-exports/massive-dump` implementado: `StreamingResponse` com `yield_per(1000)`, scrub de payload via `pii.scrub`, API key + JWT DPO (`require_cartorio_api_key` + `require_dpo_role`), gate de audit antes do dump (commits `ff599aa`, `0d15da6`, `6c029fc` — 2026-07-20).
 - [x] **G9.S4.T4** (ex-G9.07.T2) — Teste de streaming sob volume alto: `test_massive_dump_streams_large_ordered_batch_with_bounded_query_chunks` semeia 1.001 entradas, valida JSON íntegro/ordem por `id` e verifica `yield_per(1000)` (2026-07-25).
@@ -95,7 +95,7 @@ Transformar o Telegram de "funcional em probe" em **robusto sob regressão**, pr
 - [x] **G9.S4.T6** (ex-G9.07.T4) — OpenAPI massive-dump + requests dual security (`test_massive_dump_openapi_security` + `test_cnj_openapi_declares_dual_security`).
 - [x] **G9.S4.T7** (ex-G9.08.T1) — JWT DPO + API key: 401/403 em massive-dump e requests (`test_massive_dump_requires_api_key_and_dpo`).
 - [x] **G9.S4.T8** (ex-G9.08.T2) — `test_manifest_hashes_are_verifiable_and_chain_state_is_declared` + `test_export_fails_closed_when_audit_chain_is_invalid`.
-- [ ] **G9.S4.T9** (ex-G9.08.T3) — Relatório de logs de proteção de dados (acessos, exportações, mascaramentos) gerado a partir do audit log — Padrão CNJ.
+- [x] **G9.S4.T9** (ex-G9.08.T3) — Relatório de logs de proteção de dados (acessos, exportações, mascaramentos) gerado a partir do audit log — Padrão CNJ. Evidência: `app/services/cnj_protecao.py` + `test_cnj_protecao_g9.py` 11 testes + `docs/CNJ_PROTECAO_DADOS.md`.
 - [ ] **G9.S4.T10** (ex-G9.08.T4) — RIPD/compliance atualizados com o fluxo massive-dump (revisão `cartorio-lgpd`).
 
 ### Squad S5 — Segredos, Checker & Rate Limit (sre)
@@ -112,7 +112,7 @@ Transformar o Telegram de "funcional em probe" em **robusto sob regressão**, pr
 - [ ] **G9.S5.T4** (ex-G9.09.T4) — Varredura histórica (git log/trufflehog) nos paths afetados; relatório com recomendação de rotação — decisão exclusiva do dono (proibido rotacionar sem ordem expressa).
 - [x] **G9.S5.T5** (ex-G9.10.T1) — Checker `WEBHOOK_SECRET_HEX64` + testes em `test_check_no_literal_keys_g8` + `test_s5_t5_checker_script_defines_hex64_rule`.
 - [ ] **G9.S5.T6** (ex-G9.10.T2) — Sincronizar `CARTORIO_API_KEY` entre backend, n8n e scripts com fonte única em `.secrets`; runbook de atualização (sem rotação).
-- [ ] **G9.S5.T7** (ex-G9.10.T3) — CI `secrets_scan` estendido com o padrão hex-64 (bloqueia PR com novo literal).
+- [x] **G9.S5.T7** (ex-G9.10.T3) — CI `secrets_scan` estendido com o padrão hex-64 (bloqueia PR com novo literal). Evidência: job `secrets-scan` em `.github/workflows/ci.yml` + scanner com `--staged`/`--changed-since` (added-lines, redigido, exit 0/1/2) — bateria validada Lane A.
 - [x] **G9.S5.T8** (ex-G9.10.T4) — Tiers exatos N8N=600 / DPO=60 / padrao=30 (`test_s5_t8_rate_limit_tiers_exact`).
 - [x] **G9.S5.T9** (ex-G9.23.T1) — Fail-open Redis down revalidado (`test_s5_t9_rate_limit_fail_open_redis_down` + suite `test_rate_limit*`).
 - [x] **G9.S5.T10** (ex-G9.23.T2) — Idempotency replay coberto em `test_idempotency.py` (`test_post_replay_com_mesma_key_retorna_resposta_cacheada`) + store TTL.
