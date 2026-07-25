@@ -148,10 +148,10 @@ class Settings(BaseSettings):
     google_ai_studio_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
     google_ai_studio_model: str = "gemini-3.5-flash"
 
-    # OpenClaw (gpt-5.5 fallback legacy)
+    # OpenClaw (deepseek-v4-flash)
     openclaw_base_url: str = "http://cartorio_openclaw-gateway:18790"
     openclaw_api_key: Optional[str] = None
-    openclaw_model_primary: str = "gpt-5.5"
+    openclaw_model_primary: str = "deepseek-v4-flash"
     openclaw_model_fallback: str = "anthropic/claude-sonnet-4.6"
 
     # Jules (Google Gemini 3.1 Pro via async API) - Turno 35/37

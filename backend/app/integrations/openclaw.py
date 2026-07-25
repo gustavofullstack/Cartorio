@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 
 import httpx
 
+from typing import Literal
 from app.services.pii import scrub
 
 if TYPE_CHECKING:
@@ -55,6 +56,7 @@ async def chat(
     redis_url: str | None = None,
     request_id: str | None = None,
     client_ip: str | None = None,
+    thinking_mode: Literal["disabled", "enabled", "adaptive"] = "disabled",
 ) -> ChatResponse:
     """Chama OpenClaw Gateway Chat Completions com LGPD compliance."""
     from app.config import settings
@@ -99,11 +101,15 @@ async def chat(
         "Authorization": f"Bearer {target_api_key}",
         "Content-Type": "application/json",
     }
-    payload = {
+    payload: dict[str, any] = {
         "model": model,
         "messages": scrubbed_messages,
         "temperature": temperature,
     }
+
+    # ---- Thinking mode (T57 E08) ----
+    if thinking_mode != "disabled":
+        payload["thinking"] = {"type": thinking_mode}
 
     # ---- Executa com medicao de latencia ----
     start_time = time.time()
@@ -269,4 +275,5 @@ async def chat_with_settings(
         redis_url=settings.redis_url,
         request_id=request_id,
         client_ip=client_ip,
+        thinking_mode=settings.llm_thinking_mode,
     )
