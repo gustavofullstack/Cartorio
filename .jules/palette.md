@@ -1,0 +1,3 @@
+## 2026-07-25 - Explicit Focus Outlines for Keyboard Accessibility
+**Learning:** Found an accessibility issue where interactive elements like `.menu button`, `.close`, and `.copy-button` had `outline: none;` on their `:focus-visible` states, violating keyboard accessibility guidelines.
+**Action:** Always provide an explicit visual focus indicator (e.g., `outline: 2px solid var(--brand)`) for `:focus-visible` states to maintain keyboard accessibility, especially in Python-generated dashboard templates.
