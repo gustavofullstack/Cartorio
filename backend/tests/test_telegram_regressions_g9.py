@@ -70,7 +70,9 @@ class _FakeBus:
         self.client = self
         self._broken_get = broken_get
 
-    async def set(self, key: str, value: str, *, ex: int | None = None, nx: bool = False) -> str | None:
+    async def set(
+        self, key: str, value: str, *, ex: int | None = None, nx: bool = False
+    ) -> str | None:
         if nx and key in self.store:
             return None
         self.store[key] = value
@@ -148,7 +150,9 @@ async def test_webhook_returns_200_when_redis_down() -> None:
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
         patch.object(tg, "_send_message", new=AsyncMock(return_value=True)) as send,
     ):
-        resp = await tg.telegram_webhook(_make_request(update), BackgroundTasks(), None, MagicMock())
+        resp = await tg.telegram_webhook(
+            _make_request(update), BackgroundTasks(), None, MagicMock()
+        )
     assert resp["status"] == "ok"
     assert resp["degraded"] is True
     send.assert_awaited_once()
@@ -164,7 +168,9 @@ async def test_webhook_returns_200_degraded_when_enqueue_fails() -> None:
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
     ):
-        resp = await tg.telegram_webhook(_make_request(update), BackgroundTasks(), None, MagicMock())
+        resp = await tg.telegram_webhook(
+            _make_request(update), BackgroundTasks(), None, MagicMock()
+        )
     assert resp["status"] == "degraded"
     assert resp["reason"] == "enqueue_failed"
 
