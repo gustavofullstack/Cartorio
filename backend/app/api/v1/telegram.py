@@ -1044,7 +1044,7 @@ async def _handle_state(
     if state == STATE_AGENDAR_DATA:
         d = _parse_date(text)
         if not d:
-            if len(tl) > 10 or any(
+            if len(tl) > 17 or any(
                 w in tl
                 for w in (
                     "cancelar",
@@ -1082,7 +1082,7 @@ async def _handle_state(
     if state == STATE_AGENDAR_HORA:
         h = _parse_time(text)
         if not h:
-            if len(tl) > 7 or any(
+            if len(tl) > 13 or any(
                 w in tl
                 for w in (
                     "cancelar",
