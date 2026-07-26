@@ -10,7 +10,7 @@ reimplementar um spectrum-gateway TS standalone (echo-app pattern do vendor).
 | Componente | Implementação v1 | Papel |
 |---|---|---|
 | **Transport iMessage** | Spectrum/Photon shared line — projeto `CARTORIO BOT TEST` (`438527e1-2399-49dc-967c-22e33986035a`) | channel transport |
-| **Agent runtime** | Hermes profile `cartorio` (`~/.hermes/profiles/cartorio`) — LaunchAgent `ai.hermes.gateway.cartorio`, sidecar **127.0.0.1:8793** | guardrail engine + session |
+| **Agent runtime** | Hermes profile `cartorio` (`~/.hermes/profiles/cartorio`) — LaunchAgent `ai.hermes.gateway-cartorio`, sidecar **127.0.0.1:8793** | guardrail engine + session |
 | **Persona/governance** | `SOUL.md` do profile (HITL #1, LGPD #2, Emolumentos MG 2026 #3, anti-injeção) | policy engine declarativa |
 | **LLM** | `Kimi-k3-256k` via bridge local `http://127.0.0.1:8767/v1` (model.custom, api_key=bridge-local) | cérebro (fallbacks do bridge: Grok/Codex) |
 | **Tools (14)** | MCP `cartorio` → `https://api.2notasudi.com.br/mcp` (Bearer `MCP_API_KEY`, timing-safe) — 14/14 enabled | authority layer (FastAPI/Postgres/audit chain) |

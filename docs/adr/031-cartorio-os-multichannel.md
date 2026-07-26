@@ -23,21 +23,31 @@ Os principais desafios incluem:
 
 Adotar a arquitetura unificada **Cartório OS**, composta pelos seguintes módulos desacoplados:
 
-1. **Spectrum TS Gateway Layer (`services/spectrum-gateway`):**
-   - Runtime em TypeScript/Node/Bun utilizando a SDK `spectrum-ts`.
-   - Suporte a múltiplos provedores (`imessage`, `whatsapp`, `telegram`).
-   - Contratos canônicos, dedupe de 24h e guardrails de PII. Antes de ativá-lo, deve haver migração controlada do consumidor Photon ativo; dois consumidores para o mesmo projeto são proibidos.
+1. **Transport iMessage (runtime canônico LIVE):** Hermes profile `cartorio`
+   (`~/.hermes/profiles/cartorio`) + Photon sidecar — LaunchAgent
+   `ai.hermes.gateway-cartorio`, sidecar `127.0.0.1:8793`, projeto Spectrum
+   `CARTORIO BOT TEST` (`438527e1-…`). Dois consumidores no mesmo projeto são proibidos.
 
-2. **Policy Engine:**
+2. **Scaffold / contratos TS (`services/spectrum-gateway`):** SDK `spectrum-ts`,
+   contratos canônicos, `ChannelCapabilities.inbound_scope`
+   (`allowlist|public|unknown`), dedupe 24h, PII scrub, ConsentRegistry.
+   Referência typechecked — **não** é o processo LIVE do Cartório OS.
+   `apps/spectrum-gateway` não existe (fantasma de relatório).
+
+3. **Policy Engine:**
    - Governa consentimento, política de outbound e supressão na authority layer.
-   - `ALLOW_ALL_INBOUND` não faz bypass de limitação do provider. Outbound proativo continua bloqueado sem base legal ou humana.
+   - Shared/test line = LIMITED_INBOUND (`inbound_scope=allowlist`).
+   - `ALLOW_ALL_INBOUND` / `PHOTON_ALLOW_ALL_USERS` **não** fazem bypass da
+     allowlist do provider. PUBLIC_INBOUND só com linha dedicada Business.
+   - Outbound proativo bloqueado sem base legal ou humana.
 
-3. **Hermes Agent Execution Engine:**
-   - Motor autônomo baseado em MiniMax-M3 (45s hard timeout) com fallback para OpenCode Zen.
-   - Integração nativa com PII Scrubber em 3 camadas e FastMCP.
+4. **Hermes Agent Execution Engine (profile cartorio):**
+   - Model `kimi-k3` (Kimi Coding Plan), MCP client, session isolation, redaction.
+   - Integração com PII scrubbing 3-camadas (API) e HITL DRAFT.
 
-4. **FastMCP Authority Layer:**
-   - Consumo de 14 ferramentas autônomas expostas pela API FastAPI do Cartório em `/mcp`.
+5. **FastMCP Authority Layer:**
+   - 14 tools na API FastAPI do Cartório em `/mcp`. Hermes/OpenClaw nunca
+     bypassam a API para mutações notariais.
 
 ---
 

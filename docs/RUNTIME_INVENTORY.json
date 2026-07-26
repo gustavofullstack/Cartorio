@@ -1,53 +1,108 @@
 {
-  "timestamp": "2026-07-26T18:02:00+00:00",
+  "schema": "cartorio-os/stage-4-runtime-inventory-v1",
+  "timestamp": "2026-07-26T18:05:00+00:00",
   "git_head": "95dd0179a212e0b8f7900377ffd0516c9e906d6e",
-  "auditor": "Antigravity (Cartorio OS Stage 4 Runtime Truth)",
+  "auditor": "grok-4.5 (Etapa 4 — Runtime Truth refresh)",
+  "truth_rule": "CONNECTED != OPERATIONAL. OPERATIONAL requires REAL_E2E_PASS (iPhone round-trip).",
   "truth_states": {
-    "imessage_transport": "CONNECTED (photon sidecar 127.0.0.1:8793, state=connected desde 2026-07-25T21:01Z, sem erro)",
-    "hermes_cartorio_gateway": "SERVICE_UP (LaunchAgent ai.hermes.gateway.cartorio, PID 51690, gateway_state=running)",
-    "llm_brain": "CONNECTED (Kimi-k3-256k via bridge 127.0.0.1:8767 -> PIPELINE_OK)",
-    "mcp_authority": "CONNECTED + SYNTHETIC_E2E_PASS (handshake initialize/202/tools-list 14/tools-call 200 em api.2notasudi.com.br/mcp/)",
-    "openclaw_router": "SERVICE_UP (127.0.0.1:18789)",
-    "megahub_control_plane": "SERVICE_UP (127.0.0.1:43210)",
-    "imessage_real_e2e": "UNVERIFIED (aguardando round-trip iPhone do Gustavo)",
-    "telegram_profile_cartorio": "NOT_CONFIGURED no profile (state=disconnected); bot Telegram roteia via VPS webhook (sync ok no boot)",
+    "imessage_transport_cartorio": "CONNECTED",
+    "imessage_real_e2e": "UNVERIFIED",
+    "imessage_operational": false,
+    "hermes_cartorio_gateway": "SERVICE_UP",
+    "hermes_default_gateway": "SERVICE_UP (Grok Agent project — NOT Cartorio OS)",
+    "llm_cartorio": "CONFIGURED (kimi-k3 via Kimi Coding Plan API key in profile)",
+    "llm_bridge_8767": "NOT_RUNNING (not required by cartorio profile model path)",
+    "mcp_authority": "CONNECTED (server cartorio enabled; tools via API)",
+    "openclaw_local": "NOT_RUNNING (LaunchAgent present, not loaded)",
+    "megahub_43210": "NOT_RUNNING",
+    "telegram_hermes_profile": "disconnected",
     "whatsapp": "BLOCKED_SUI (not paired)",
-    "public_inbound": "LIMITED_INBOUND (shared/test line CARTORIO BOT TEST; nao publica)"
+    "public_inbound": "LIMITED_INBOUND"
+  },
+  "runtime_processes": {
+    "hermes_default": {
+      "label": "ai.hermes.gateway",
+      "pid": 51690,
+      "photon_sidecar_pid": 51708,
+      "photon_sidecar_port": 8789,
+      "photon_project": "Grok Agent",
+      "photon_project_id": "bcdcc0f7-e758-4678-bb23-936343f969cd",
+      "role": "personal default — not Cartorio OS authority path"
+    },
+    "hermes_cartorio": {
+      "label": "ai.hermes.gateway-cartorio",
+      "pid": 68214,
+      "photon_sidecar_pid": 68223,
+      "photon_sidecar_port": 8793,
+      "photon_project": "CARTORIO BOT TEST",
+      "photon_project_id": "438527e1-2399-49dc-967c-22e33986035a",
+      "photon_state": "connected",
+      "role": "CANONICAL Cartorio OS iMessage runtime",
+      "started_this_session": true,
+      "note": "Was DEAD (stale gateway_state PID 71515) before Stage 4 refresh; installed LaunchAgent and started."
+    },
+    "services_spectrum_gateway": {
+      "path": "services/spectrum-gateway",
+      "running": false,
+      "role": "scaffold + typed contracts only — DO NOT start against cartorio project"
+    },
+    "apps_spectrum_gateway": {
+      "path": "apps/spectrum-gateway",
+      "status": "ABSENT"
+    }
   },
   "reconciliation": {
-    "R1_gateway_location": "RESOLVIDO — apps/spectrum-gateway NAO EXISTE no disco (fantasma de contexto anexado); services/spectrum-gateway e a unica fonte TypeScript tipada com ChannelCapabilities e InboundScope.",
-    "R2_imessage_truth": "Runtime CONNECTED provado; REAL_E2E_PASS pendente do disparo manual do iPhone",
-    "R3_public_inbound": "Confirmado LIMITED_INBOUND (allowlist) — linha compartilhada; PUBLIC_INBOUND exigiria numero dedicado Business",
-    "R4_test_truth": "Baseline fresca no HEAD 95dd0179: pytest tests/test_cartorio_os_multichannel.py = 6/6 PASS (0.94s); make lint = 0 errors (mypy 210/210)"
+    "R1_gateway_location": "RESOLVIDO — unique code tree services/spectrum-gateway; unique LIVE runtime Hermes profile cartorio + Photon :8793. apps/ empty. Docs that cited apps/ were context ghosts.",
+    "R2_imessage_truth": "Cartorio photon CONNECTED proven 2026-07-26T15:03-03. REAL_E2E_PASS still pending user iPhone message to CARTORIO BOT TEST line. messages30d was 0 at inventory time.",
+    "R3_public_inbound": "LIMITED_INBOUND. PHOTON_ALLOW_ALL_USERS=true does not make shared line public. ChannelCapabilities.inbound_scope implemented (TS + Python).",
+    "R4_test_truth": "Baseline to be re-run on this HEAD after code landing; do not mix historical FULL QA numbers with this inventory."
   },
-  "incidents_found": [
-    "vps-cartorio REBOOTOU durante a auditoria (up 0 min as 12:46Z; tailnet mostrava offline 15d) — 502s intermitentes em /mcp eram boot-storm do swarm; API saudavel as 12:48Z",
-    "tailscaled da VPS esta LOGGED OUT (requer re-auth manual; nao bloqueia nada — trafego via IP publico 187.77.236.77)",
-    "MCP_API_KEY do repo .env estava STALE (hvYd...oB4) vs server (eyJh...Ctg JWT len 272) — sincronizada nesta auditoria; profile ~/.hermes/profiles/cartorio/.env ja estava correto (MCP_CARTORIO_API_KEY)"
-  ],
-  "mcp_tools_14": [
-    "cartorio_calcular_emolumento",
-    "cartorio_consultar_protocolo",
-    "cartorio_criar_protocolo",
-    "cartorio_gerar_segunda_via",
-    "cartorio_audit_verify",
-    "cartorio_audit_hash_sequence",
-    "cartorio_saudacao",
-    "cartorio_enviar_whatsapp_reaction",
-    "cartorio_enviar_whatsapp_poll",
-    "cartorio_enviar_whatsapp_media",
-    "cartorio_enviar_telegram_reaction",
-    "cartorio_enviar_telegram_poll",
-    "cartorio_enviar_telegram_media",
-    "super_server_info"
-  ],
-  "negative_tests": {
-    "wrong_bearer": "401 MCP authentication required (timing-safe)"
+  "channel_status_contract": {
+    "imessage": {
+      "service": "SERVICE_UP",
+      "connection": "CONNECTED",
+      "real_e2e": "UNVERIFIED",
+      "public_inbound": false,
+      "inbound_scope": "allowlist",
+      "reason": "shared/test line CARTORIO BOT TEST; allowlist user registered"
+    },
+    "telegram": {
+      "real_e2e": "REVALIDATE",
+      "hermes_profile": "disconnected"
+    },
+    "whatsapp": {
+      "real_e2e": "BLOCKED_SUI",
+      "reason": "not paired"
+    },
+    "web": {
+      "real_e2e": "VALIDATE",
+      "api": "https://api.2notasudi.com.br health/ready OK"
+    }
+  },
+  "mcp": {
+    "expected": 14,
+    "hermes_server_cartorio": "enabled",
+    "endpoint": "https://api.2notasudi.com.br/mcp"
   },
   "human_blockers": [
-    "iMessage REAL_E2E: Gustavo enviar texto do iPhone para CARTORIO BOT TEST",
-    "tailscale up na VPS (re-auth manual via login URL)",
-    "WhatsApp QR pairing",
-    "B1 LGPD-0028 sign-off / B3 rotacao secrets (repo .env ja alinhado)"
+    "iMessage REAL_E2E: send text from authorized iPhone to CARTORIO BOT TEST line",
+    "WhatsApp QR/pairing",
+    "Spectrum dedicated Business line for PUBLIC_INBOUND",
+    "Audit migration 0028 DPO approval (preserved)",
+    "Historical tracked secrets decision/rotation (preserved)"
+  ],
+  "next_manual_action": {
+    "from": "+5534992800250 (registered)",
+    "to": "CARTORIO BOT TEST Spectrum line",
+    "message": "Olá, qual o horário de atendimento do cartório?",
+    "watch": "tail -f ~/.hermes/profiles/cartorio/logs/gateway.log ~/.hermes/profiles/cartorio/logs/agent.log",
+    "gate": "Only then mark imessage=OPERATIONAL / REAL_E2E_PASS"
+  },
+  "divergent_prior_claims_corrected": [
+    "Prior reports mixed default Hermes (Grok project :8789) with cartorio (:8793).",
+    "Prior claims of cartorio SERVICE_UP while PID was stale/dead.",
+    "Prior claims of OpenClaw :18789 and MegaHub :43210 up — both NOT_RUNNING now.",
+    "ALLOW_ALL_INBOUND never equals public inbound on shared line.",
+    "services/spectrum-gateway is not the live message consumer."
   ]
 }
