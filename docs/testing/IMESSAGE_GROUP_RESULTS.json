@@ -1,0 +1,9 @@
+{
+  "schema": "cartorio-os/imessage-group-results-v1",
+  "status": "UNVERIFIED",
+  "provider_plan_support": "UNVERIFIED",
+  "bootstrap": "REQUIRES_AUTHORIZED_HUMAN_MESSAGE",
+  "turns": 0,
+  "failures": 0,
+  "rule": "Do not cold-send to an unknown group or bypass a provider plan restriction."
+}

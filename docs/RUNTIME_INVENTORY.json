@@ -1,57 +1,55 @@
 {
-  "timestamp": "2026-07-26T18:10:22+00:00",
-  "git_head": "95dd0179a212e0b8f7900377ffd0516c9e906d6e",
-  "auditor": "kimi-code (Etapa 4 Phase A re-run)",
-  "primary_rule": "CONNECTED != OPERATIONAL. OPERATIONAL exige mensagem real atravessando todo o pipeline e retornando ao usuario.",
+  "timestamp": "2026-07-26T19:13:30+00:00",
+  "git_head": "383e45978735e99cba05f5fe8ed04533e1557ed9",
+  "git_head_short": "383e4597",
+  "auditor": "grok (Stage 4.2 skeptic-corrected honesty)",
+  "primary_rule": "IMESSAGE_FELIPE_ACCEPTED requires T0-T5 PASS including T2 MCP authority tool, PLUS Felipe visual confirm on HIS iPhone. Allowlisted Gustavo imsg path is evidence for transport/agent but does not satisfy Felipe handset gate.",
   "truth_states": {
-    "imessage_transport": "CONNECTED — photon sidecar 127.0.0.1:8793 (PID 68223), state=connected desde 2026-07-26T18:03:47Z (gateway_state.json). ATENCAO: sidecar do profile default (PID 51708) tambem existe em 127.0.0.1:8789; o canonico do profile cartorio e :8793.",
-    "hermes_cartorio_gateway": "SERVICE_UP — LaunchAgent ai.hermes.gateway-cartorio, PID 68214, gateway_state=running, boot-persistent (launchctl).",
-    "hermes_default_gateway": "SERVICE_UP — LaunchAgent ai.hermes.gateway, PID 51690 (profile default, fora do escopo cartorio).",
-    "llm_brain": "UNVERIFIED — claim anterior 'Kimi-k3-256k via bridge 127.0.0.1:8767' SEM evidencia: nada escutando em :8767 nesta maquina. Profile cartorio tem KIMI_API_KEY no env (chamada direta provavel). Prova definitiva = E2E real.",
-    "mcp_authority": "SYNTHETIC_E2E_PASS (12:55Z) — handshake initialize 202 / tools-list 14 / tools-call 200 em api.2notasudi.com.br/mcp; config do profile cartorio aponta para https://api.2notasudi.com.br/mcp. Revalidacao ao vivo na Phase F desta sessao.",
-    "openclaw_router": "NOT_UP local — nada escutando em 127.0.0.1:18789; config tem openclaw_residue_cleanup=true. Claim anterior de SERVICE_UP nao reproduzido. Pipeline atual: photon -> Hermes gateway -> MCP direto (sem router local observavel).",
-    "megahub_control_plane": "NOT_UP local — nada escutando em 127.0.0.1:43210. Manter como candidate observado, sem acoplamento.",
-    "imessage_real_e2e": "UNVERIFIED — aguardando round-trip iPhone do Gustavo (passo final desta sessao).",
-    "telegram_profile_cartorio": "NOT_CONFIGURED no profile (state=disconnected desde 2026-07-25T21:01Z); bot Telegram roteia via VPS webhook — validar na Phase G.",
-    "whatsapp": "BLOCKED_SUI — state=fatal, error=whatsapp_not_paired (gateway_state.json 18:03:48Z).",
-    "homeassistant": "FAILED retrying — host homeassistant.local nao resolve; fora do escopo Cartorio OS, registrado para nao poluir alertas.",
-    "public_inbound": "LIMITED_INBOUND — linha shared/test CARTORIO BOT TEST; PHOTON_ALLOW_ALL_USERS existe no env mas NAO altera restricao do provider (R3). PUBLIC exigiria numero dedicado Business."
+    "imessage_transport": "CONNECTED — Photon :8793; real inbound/outbound observed on allowlisted path",
+    "hermes_cartorio_gateway": "SERVICE_UP — LaunchAgent ai.hermes.gateway-cartorio",
+    "llm_brain": "kimi-k3 / kimi-coding (live turns)",
+    "mcp_authority": "LIVE 14 tools; T2 battery turn did NOT invoke cartorio_calcular_emolumento",
+    "imessage_felipe_battery": "IMESSAGE_REQUIRES_FIX — T2 FAIL_FUNCTIONAL (fee without MCP tool); Felipe handset confirm false",
+    "openclaw_local": "NOT required for iMessage",
+    "whatsapp": "BLOCKED_SUI whatsapp_not_paired",
+    "public_inbound": "LIMITED_INBOUND allowlist"
   },
-  "reconciliation": {
-    "R1_gateway_location": "RESOLVIDO — apps/spectrum-gateway NAO EXISTE no disco; services/spectrum-gateway e o unico tree TS (scaffold de referencia). Runtime canonico iMessage = photon sidecar :8793 + Hermes profile cartorio (PID 68214).",
-    "R2_imessage_truth": "CONNECTED provado via gateway_state.json (18:03:47Z); REAL_E2E_PASS pendente do disparo manual do iPhone.",
-    "R3_public_inbound": "Confirmado LIMITED_INBOUND — linha shared; ALLOW_ALL_INBOUND nao e bypass do provider.",
-    "R4_test_truth": "Baseline fresca pendente — sera executada na Phase N desta sessao (HEAD, timestamp, pytest/ruff/mypy/typecheck/secrets)."
+  "e2e_certification": {
+    "status": "IMESSAGE_REQUIRES_FIX",
+    "T0": "PASS",
+    "T1": "PASS",
+    "T2": "FAIL_FUNCTIONAL",
+    "T3": "PASS",
+    "T4": "PASS",
+    "T5": "PASS",
+    "T6": "OPTIONAL_UNVERIFIED",
+    "T7": "OPTIONAL_UNVERIFIED",
+    "latencies_ms": {
+      "T0": 28283,
+      "T1": 17240,
+      "T2": 38326,
+      "T3": 24307,
+      "T4": 25271,
+      "T5": 25313
+    },
+    "iphone_delivery_confirmed": false,
+    "driver": "allowlisted_imsg Gustavo path (NOT Felipe handset)",
+    "t2_finding": "fee_without_mcp_tool_evidence"
   },
-  "drift_corrigido_nesta_auditoria": [
-    "Inventario anterior (12:55Z) alegava 8793/8767/18789/43210 escutando; verdade 18:10Z: apenas 8793 (photon cartorio) e 8789 (photon default). 8767/18789/43210 NAO escutam.",
-    "Claim 'bridge Kimi :8767' rebaixado para UNVERIFIED.",
-    "Claim 'OpenClaw :18789 SERVICE_UP' rebaixado para NOT_UP local."
-  ],
-  "mcp_tools_14": [
-    "cartorio_calcular_emolumento",
-    "cartorio_consultar_protocolo",
-    "cartorio_criar_protocolo",
-    "cartorio_gerar_segunda_via",
-    "cartorio_audit_verify",
-    "cartorio_audit_hash_sequence",
-    "cartorio_saudacao",
-    "cartorio_enviar_whatsapp_reaction",
-    "cartorio_enviar_whatsapp_poll",
-    "cartorio_enviar_whatsapp_media",
-    "cartorio_enviar_telegram_reaction",
-    "cartorio_enviar_telegram_poll",
-    "cartorio_enviar_telegram_media",
-    "super_server_info"
-  ],
-  "negative_tests": {
-    "wrong_bearer": "401 MCP authentication required (timing-safe) — verificado 12:55Z; revalidar na Phase F"
+  "launchagents_exact": {
+    "cartorio": "ai.hermes.gateway-cartorio",
+    "default": "ai.hermes.gateway"
+  },
+  "artifacts": {
+    "checklist": "docs/IMESSAGE_FELIPE_CHECKLIST.md",
+    "classifier": "scripts/imessage_felipe_classify.py",
+    "tests": "backend/tests/test_imessage_felipe_classify.py (13 passed)"
   },
   "human_blockers": [
-    "iMessage REAL_E2E: Gustavo enviar texto do iPhone para CARTORIO BOT TEST (passo final desta sessao)",
-    "tailscale up na VPS (re-auth manual via login URL)",
-    "WhatsApp QR pairing",
-    "B1 LGPD-0028 sign-off / B3 rotacao secrets",
-    "Spectrum dedicated number/business upgrade para iMessage public inbound"
+    "T2: ensure MCP emolumento tool is used for numeric fees",
+    "Felipe visual confirm on HIS iPhone after T0-T5 green",
+    "Telegram REAL E2E",
+    "WhatsApp QR",
+    "Ops: Mac SPOF for 24/7"
   ]
 }

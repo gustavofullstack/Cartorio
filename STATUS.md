@@ -1,3 +1,18 @@
+# STATUS — Cartório OS (live)
+
+> **Atualização 2026-07-26 19:13Z (Stage 4.2 — honesty gate):**  
+> **Cartório OS = `RC_LIVE_CANDIDATE`**.  
+> **iMessage certification = `IMESSAGE_REQUIRES_FIX`** (not ACCEPTED).  
+> Allowlisted real path (Gustavo `imsg` → Photon → Hermes) observed:  
+> - **T0/T1/T3/T4/T5 = PASS**  
+> - **T2 = FAIL_FUNCTIONAL** — fee R$ stated **without** live MCP `cartorio_calcular_emolumento` call  
+> - **`iphone_delivery_confirmed = false`** — Felipe has **not** confirmed on **his** iPhone  
+> HEAD `383e4597…` · LaunchAgent **`ai.hermes.gateway-cartorio`** · Photon `:8793` · MCP **14** · LLM **kimi-k3**.  
+> **Discard:** arena “1000 turnos”, false ACCEPTED, T6/T7 PASS, invent hours 8h–17h without source.  
+> **Next:** force T2 via MCP tool · re-run T2 only · Felipe visual on own handset.
+
+---
+
 # STATUS — Etapa 3 Convergência & Release Candidate (2026-07-25)
 
 > **TL;DR**: Etapa 3 em consolidação: swarm reconciliado (E3.01), ledger real **49/100**,

@@ -1,0 +1,10 @@
+{
+  "schema": "cartorio-os/imessage-agent-matrix-v1",
+  "generated_for": "controlled offline harness",
+  "agents_registry": "docs/testing/IMESSAGE_AGENT_REGISTRY.json",
+  "agents": ["cartorio", "kimi", "agy", "antigravity", "codex", "grok"],
+  "expected_directed_edges": 30,
+  "expected_self_loop_protections": 6,
+  "status": "UNVERIFIED",
+  "rule": "No real provider edge is PASS until inbound, execution and recipient delivery are observed."
+}

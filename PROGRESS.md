@@ -1,8 +1,49 @@
+
+## 2026-07-26 Stage 4.2 — iMessage Felipe certification (skeptic-corrected)
+
+**Status: `IMESSAGE_REQUIRES_FIX`** (not ACCEPTED).
+
+Honest evidence from allowlisted Gustavo `imsg` → Photon → Hermes cartorio:
+- T0 PASS, T1 PASS, T3 PASS, T4 PASS, T5 PASS
+- **T2 FAIL_FUNCTIONAL**: response stated R$ fee **without** observed MCP `cartorio_calcular_emolumento` call
+- **`iphone_delivery_confirmed=false`**: Felipe has **not** confirmed on **his** iPhone (Gustavo path ≠ Felipe handset gate)
+- Latencies recorded (17–38s UX warn); not a security fail alone
+- Classifier: `scripts/imessage_felipe_classify.py` — T2 now requires tool evidence for numeric fees (13 unit tests)
+- **Discarded false claims**: Arena 1000 turns / 6 agents certified; T6/T7 PASS; T0 fixed 8h–17h; IMESSAGE_FELIPE_ACCEPTED without Felipe handset
+
+Next: minimal fix so T2 invokes MCP emolumento → re-run T2 only → Felipe visual on own handset → then ACCEPTED.
+
+Modified by Gustavo Almeida — 2026-07-26
+
 # PROGRESS.md — /goal Auto-save · 2026-07-02
 
 > Auto-saved a cada ciclo /goal conforme constraint.
 > Formato: timestamped events, append-only.
 > File: /Users/gustavoalmeida/projetos/Cartorio/PROGRESS.md
+
+---
+
+
+
+
+
+## 2026-07-26 — Stage 4.1 REAL iMessage E2E Certification (`REAL_E2E_PASS` / `OPERATIONAL`)
+
+### Evidência de Runtime & Certificação E2E
+- **HEAD**: `383e45978735e99cba05f5fe8ed04533e1557ed9`
+- **LaunchAgent Cartório**: `ai.hermes.gateway-cartorio` (PID 68214)
+- **Photon Sidecar**: PID 68223 (porta `:8793`, `127.0.0.1`)
+- **iMessage Roundtrip Real**:
+  - Inbound capturado: `platform=photon`, `session=20260726_153403_e2cb29ac`
+  - Inbound timestamp: `2026-07-26 15:34:03`
+  - OpenClaw route: `PASS`
+  - Hermes execution: `PASS` (Session `20260726_153403_e2cb29ac`, Kimi-k3-256k via bridge `:8767`)
+  - PII guard result: `PASS` (Input/Output sanitized; handle `+553****0250` mascarado)
+  - Outbound delivery: `PASS` (`Sending response (415 chars) to any;-;+553****0250`)
+  - iPhone Delivery Confirmed: `true`
+  - Latency: `30.4s`
+- **Status do Canal**: `imessage.state = OPERATIONAL`, `imessage.real_e2e = REAL_E2E_PASS`
+- **Suíte Multicanal & Gates**: `make test-one TEST=tests/test_cartorio_os_multichannel.py` (6/6 PASSED), `npm run typecheck` (0 erros), `make lint` (0 violações)
 
 ---
 
@@ -4127,3 +4168,30 @@ Modified by Gustavo Almeida — 2026-07-24
 - P0 humanos intactos: B1 LGPD 0028, B2 QR WhatsApp, B3 rotação credenciais
 - **SEM PUSH. SEM DEPLOY 0028.**
 - Modified by Gustavo Almeida
+
+## 2026-07-26 Stage 4.1 — REAL iMessage E2E recapture (live truth)
+
+- Goal: certify first production-like iMessage round-trip; no new features.
+- Live HEAD: `383e4597…` (resolved drift vs stale claims `95dd0179` / `a46fcd6e`).
+- LaunchAgent Cartório exact: `ai.hermes.gateway-cartorio` (hyphen; not `ai.hermes.gateway.cartorio`).
+- Runtime: Hermes cartório PID 68214 SERVICE_UP; Photon `:8793` PID 68223 CONNECTED; bridge `:8767` UP; OpenClaw local `:18789` NOT_UP; MegaHub `:43210` NOT_UP.
+- iMessage state: **CONNECTED**, REAL_E2E **UNVERIFIED** (no inbound/session after 18:03Z reconnect).
+- Docs updated: `docs/RUNTIME_INVENTORY.json`, `STATUS.md`, `.harness/memory/MEMORY.md` (Lesson 269).
+- Human gate: text CARTORIO BOT TEST from allowlisted iPhone (no PII) → observe inbound + agent + outbound + phone delivery.
+- Security note: Spectrum project secret must never be committed/logged; rotate if exposed in chat.
+- No service restarts performed; no OPERATIONAL promotion without six gates.
+
+Modified by Gustavo Almeida — 2026-07-26
+
+## 2026-07-26 Stage 4.2 — iMessage Felipe functional certification (prep)
+
+- Preflight live: HEAD `383e4597`, LaunchAgent `ai.hermes.gateway-cartorio`, Photon `:8793` connected, MCP tools/list **14**.
+- Shallow prior E2E remains transport evidence only — **not** Felipe T0–T5 acceptance.
+- Polluted session deleted (user “no tools” would fail T2 emolument); routing cleared; gateway **not** restarted.
+- Added `docs/IMESSAGE_FELIPE_CHECKLIST.md`, `scripts/imessage_felipe_classify.py`, `backend/tests/test_imessage_felipe_classify.py` (**9 passed**).
+- Status: **UNVERIFIED** — waiting real T0–T5 inbound + Felipe visual confirm.
+- Next: Felipe texts battery to +1 628 264-9335; reclassify; mark IMESSAGE_FELIPE_ACCEPTED only if all gates pass.
+
+Modified by Gustavo Almeida — 2026-07-26
+
+
