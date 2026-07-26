@@ -1,16 +1,53 @@
 {
-  "timestamp": "2026-07-26T12:41:14Z",
+  "timestamp": "2026-07-26T12:55:05+00:00",
   "git_head": "85293a2d1eabca7d7b7000e7bedd62571f6d6a2c",
-  "git_status": "M .brain/memory/2026-07-25.md\n M .harness/memory/MEMORY.md\n ? trae-agent\n?? backend/tests/test_cartorio_os_multichannel.py\n?? docs/OPENCLAW_HERMES_SYSTEM_PROMPT_v0.6.0.md\n?? docs/adr/031-cartorio-os-multichannel.md\n?? docs/plano-llm-cartorio-2026-v2-chatbot.pdf\n?? docs/plano-llm-cartorio-2026-v3-chatbot.pdf\n?? docs/plano-llm-cartorio-2026.pdf\n?? services/",
-  "services": {
-    "photon_sidecar_8793": "LISTENING",
-    "kimi_bridge_8767": "LISTENING",
-    "openclaw_router_18789": "LISTENING",
-    "megahub_control_43210": "LISTENING",
-    "hermes_cartorio_launchagent": "RUNNING",
-    "spectrum_gateway_ts": "NOT_RUNNING_STANDALONE"
+  "auditor": "hermes-default (Etapa 4 Phase A)",
+  "truth_states": {
+    "imessage_transport": "CONNECTED (photon sidecar 127.0.0.1:8793, state=connected desde 2026-07-25T21:01Z, sem erro)",
+    "hermes_cartorio_gateway": "SERVICE_UP (LaunchAgent ai.hermes.gateway.cartorio, PID 71515, gateway_state=running)",
+    "llm_brain": "CONNECTED (Kimi-k3-256k via bridge 127.0.0.1:8767 -> PIPELINE_OK)",
+    "mcp_authority": "CONNECTED + SYNTHETIC_E2E_PASS (handshake initialize/202/tools-list 14/tools-call 200 em api.2notasudi.com.br/mcp/)",
+    "openclaw_router": "SERVICE_UP (127.0.0.1:18789)",
+    "megahub_control_plane": "SERVICE_UP (127.0.0.1:43210)",
+    "imessage_real_e2e": "UNVERIFIED (aguardando round-trip iPhone do Gustavo)",
+    "telegram_profile_cartorio": "NOT_CONFIGURED no profile (state=disconnected); bot Telegram roteia via VPS webhook (sync ok no boot)",
+    "whatsapp": "BLOCKED_SUI (not paired)",
+    "public_inbound": "LIMITED_INBOUND (shared/test line CARTORIO BOT TEST; nao publica)"
   },
-  "ports_listening": "COMMAND   PID           USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nnode     1032 gustavoalmeida   15u  IPv4 0xd1b540dae6cd5eb9      0t0  TCP 127.0.0.1:18789 (LISTEN)\nnode     1032 gustavoalmeida   16u  IPv6 0x80d8b41593ee97d3      0t0  TCP [::1]:18789 (LISTEN)\nPython   1057 gustavoalmeida    3u  IPv4 0x7ca51bb538d04dfc      0t0  TCP 127.0.0.1:43210 (LISTEN)\nPython  22774 gustavoalmeida    3u  IPv4 0xa898d3d54f9258d3      0t0  TCP *:8767 (LISTEN)\nnode    72407 gustavoalmeida   19u  IPv4  0xb769011182424f9      0t0  TCP 127.0.0.1:8793 (LISTEN)",
-  "launchctl_services": "3549\t0\tapplication.com.nousresearch.hermes.177025156.177025834\n1043\t0\tai.hermes.gateway.codex\n71515\t0\tai.hermes.gateway.cartorio\n1054\t0\tai.hermes.gateway\n1034\t0\tai.hermes.gateway.agy\n1058\t0\tai.hermes.gateway.kimi",
-  "process_tree": "gustavoalmeida    3549 166.6  3.0 1891000960 503024   ??  U     3:02PM 339:10.60 /Users/gustavoalmeida/.hermes/hermes-agent/apps/desktop/release/mac-arm64/Hermes.app/Contents/MacOS/Hermes\ngustavoalmeida    3561  53.8  2.0 1890949872 334400   ??  S     3:02PM 503:25.25 /Users/gustavoalmeida/.hermes/hermes-agent/apps/desktop/release/mac-arm64/Hermes.app/Contents/Frameworks/Hermes Helper (Renderer).app/Contents/MacOS/Hermes Helper (Renderer) --type=renderer --user-data-dir=/Users/gustavoalmeida/Library/Application Support/Hermes --standard-schemes=hermes-media --secure-schemes=hermes-media --fetch-schemes=hermes-media --streaming-schemes=hermes-media --app-path=/Users/gustavoalmeida/.hermes/hermes-agent/apps/desktop/release/mac-arm64/Hermes.app/Contents/Resources/app.asar --enable-sandbox --disable-background-timer-throttling --lang=en-US --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=4 --time-ticks-at-unix-epoch=-1784989059309218 --launch-time-ticks=13468394374 --shared-files --field-trial-handle=1718379636,r,5709748581612407004,15821404184665663976,262144 --enable-features=PdfUseShowSaveFilePicker,ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts,TraceSiteInstanceGetProcessCreation --variations-seed-version --trace-process-track-uuid=3190708990060038890 --seatbelt-client=59\ngustavoalmeida    3552  25.2  0.3 486347184  54272   ??  S     3:02PM  59:38.28 /Users/gustavoalmeida/.hermes/hermes-agent/apps/desktop/release/mac-arm64/Hermes.app/Contents/Frameworks/Hermes Helper.app/Contents/MacOS/Hermes Helper --type=gpu-process --user-data-dir=/Users/gustavoalmeida/Library/Application Support/Hermes --gpu-preferences=SAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAAAwAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --field-trial-handle=1718379636,r,5709748581612407004,15821404184665663976,262144 --enable-features=PdfUseShowSaveFilePicker,ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts,TraceSiteInstanceGetProcessCreation --variations-seed-version --trace-process-track-uuid=3190708988185955192 --seatbelt-client=31\ngustavoalmeida    1032   3.8  0.4 457088656  66464   ??  S    11:33AM  12:22.54 openclaw-gateway    \ngustavoalmeida    3563   1.1  0.5 436102880  78656   ??  S     3:02PM  36:17.97 /Users/gustavoalmeida/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main serve --host 127.0.0.1 --port 0\ngustavoalmeida   72407   0.7  0.1 446284448  23728   ??  Ss    6:01PM   0:15.53 /Users/gustavoalmeida/.hermes/node/bin/node /Users/gustavoalmeida/.hermes/hermes-agent/plugins/platforms/photon/sidecar/index.mjs\ngustavoalmeida    9785   0.0  0.1 446262080  24992   ??  Ss    9:34AM   0:00.35 /Users/gustavoalmeida/.hermes/node/bin/node /Users/gustavoalmeida/.npm/_npx/15c61037b1978c83/node_modules/chrome-devtools-mcp/build/src/telemetry/watchdog/main.js --parent-pid=9781 --app-version=1.6.0 --os-type=2\ngustavoalmeida   22774   0.0  0.1 435301264  14080   ??  S    12:50AM   0:12.47 /opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python /Users/gustavoalmeida/bin/trae-bridge-proxy.py\ngustavoalmeida   71515   0.0  0.3 435640960  48016   ??  S     6:00PM   3:22.95 /Users/gustavoalmeida/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main gateway run --replace\ngustavoalmeida   76798   0.0  0.1 446285136  15728   ??  Ss    4:14PM   0:16.56 /Users/gustavoalmeida/.hermes/node/bin/node /Users/gustavoalmeida/.hermes/hermes-agent/plugins/platforms/photon/sidecar/index.mjs\ngustavoalmeida   76488   0.0  0.1 446285168  19872   ??  Ss    4:13PM   0:16.43 /Users/gustavoalmeida/.hermes/node/bin/node /Users/gustavoalmeida/.hermes/hermes-agent/plugins/platforms/photon/sidecar/index.mjs\ngustavoalmeida   76474   0.0  0.1 446286352  19328   ??  Ss    4:13PM   0:16.20 /Users/gustavoalmeida/.hermes/node/bin/node /Users/gustavoalmeida/.hermes/hermes-agent/plugins/platforms/photon/sidecar/index.mjs\ngustavoalmeida   76471   0.0  0.1 446285936  18368   ??  Ss    4:13PM   0:16.29 /Users/gustavoalmeida/.hermes/node/bin/node /Users/gustavoalmeida/.hermes/hermes-agent/plugins/platforms/photon/sidecar/index.mjs\ngustavoalmeida    3582   0.0  0.1 486013824  21280   ??  S     3:02PM   0:27.00 /Users/gustavoalmeida/.hermes/hermes-agent/apps/desktop/release/mac-arm64/Hermes.app/Contents/Frameworks/Hermes Helper.app/Contents/MacOS/Hermes Helper --type=utility --utility-sub-type=audio.mojom.AudioService --lang=en-US --service-sandbox-type=audio --message-loop-type-ui --user-data-dir=/Users/gustavoalmeida/Library/Application Support/Hermes --standard-schemes=hermes-media --secure-schemes=hermes-media --fetch-schemes=hermes-media --streaming-schemes=hermes-media --shared-files --field-trial-handle=1718379636,r,5709748581612407004,15821404184665663976,262144 --enable-features=PdfUseShowSaveFilePicker,ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts,TraceSiteInstanceGetProcessCreation --variations-seed-version --trace-process-track-uuid=3190708990997080739 --seatbelt-client=70\ngustavoalmeida    3553   0.0  0.1 486056192  23696   ??  S     3:02PM   0:27.32 /Users/gustavoalmeida/.hermes/hermes-agent/apps/desktop/release/mac-arm64/Hermes.app/Contents/Frameworks/Hermes Helper.app/Contents/MacOS/Hermes Helper --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=network --user-data-dir=/Users/gustavoalmeida/Library/Application Support/Hermes --standard-schemes=hermes-media --secure-schemes=hermes-media --fetch-schemes=hermes-media --streaming-schemes=hermes-media --shared-files --field-trial-handle=1718379636,r,5709748581612407004,15821404184665663976,262144 --enable-features=PdfUseShowSaveFilePicker,ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts,TraceSiteInstanceGetProcessCreation --variations-seed-version --trace-process-track-uuid=3190708989122997041 --seatbelt-client=31\ngustavoalmeida    1057   0.0  0.5 435407248  87568   ??  S    11:33AM   5:29.27 /opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/gustavoalmeida/bin/mega-hub.py\ngustavoalmeida    1054   0.0  0.2 435602064  28672   ??  S    11:33AM   4:46.28 /Users/gustavoalmeida/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main gateway run --replace\ngustavoalmeida    1058   0.0  0.1 435602224  24704   ??  S    11:33AM   4:17.39 /Users/gustavoalmeida/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main gateway run --replace\ngustavoalmeida    1034   0.0  0.2 435606080  28240   ??  S    11:33AM   4:19.08 /Users/gustavoalmeida/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main gateway run --replace\ngustavoalmeida    1043   0.0  0.2 435606272  28496   ??  S    11:33AM   4:18.79 /Users/gustavoalmeida/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main gateway run --replace"
+  "reconciliation": {
+    "R1_gateway_location": "RESOLVIDO — apps/spectrum-gateway NAO EXISTE no disco (fantasma de contexto anexado); services/spectrum-gateway e o unico tree TS, porem NAO e o runtime: runtime canonico iMessage = photon sidecar :8793 + Hermes profile cartorio. services/ fica como scaffold de referencia (agora tracked no git).",
+    "R2_imessage_truth": "Runtime CONNECTED provado; REAL_E2E_PASS pendente do disparo manual do iPhone",
+    "R3_public_inbound": "Confirmado LIMITED_INBOUND — linha shared; PUBLIC exigiria numero dedicado Business",
+    "R4_test_truth": "Baseline fresca no HEAD 85293a2d: pytest tests/test_cartorio_os_multichannel.py = 4/4 PASS (2.27s)"
+  },
+  "incidents_found": [
+    "vps-cartorio REBOOTOU durante a auditoria (up 0 min as 12:46Z; tailnet mostrava offline 15d) — 502s intermitentes em /mcp eram boot-storm do swarm; API saudavel as 12:48Z",
+    "tailscaled da VPS esta LOGGED OUT (requer re-auth manual; nao bloqueia nada — trafego via IP publico 187.77.236.77)",
+    "MCP_API_KEY do repo .env estava STALE (hvYd...oB4) vs server (eyJh...Ctg JWT len 272) — sincronizada nesta auditoria; profile ~/.hermes/profiles/cartorio/.env ja estava correto (MCP_CARTORIO_API_KEY)"
+  ],
+  "mcp_tools_14": [
+    "cartorio_calcular_emolumento",
+    "cartorio_consultar_protocolo",
+    "cartorio_criar_protocolo",
+    "cartorio_gerar_segunda_via",
+    "cartorio_audit_verify",
+    "cartorio_audit_hash_sequence",
+    "cartorio_saudacao",
+    "cartorio_enviar_whatsapp_reaction",
+    "cartorio_enviar_whatsapp_poll",
+    "cartorio_enviar_whatsapp_media",
+    "cartorio_enviar_telegram_reaction",
+    "cartorio_enviar_telegram_poll",
+    "cartorio_enviar_telegram_media",
+    "super_server_info"
+  ],
+  "negative_tests": {
+    "wrong_bearer": "401 MCP authentication required (timing-safe)"
+  },
+  "human_blockers": [
+    "iMessage REAL_E2E: Gustavo enviar texto do iPhone para CARTORIO BOT TEST",
+    "tailscale up na VPS (re-auth manual via login URL)",
+    "WhatsApp QR pairing",
+    "B1 LGPD-0028 sign-off / B3 rotacao secrets (repo .env ja alinhado)"
+  ]
 }
