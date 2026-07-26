@@ -1,11 +1,4 @@
 {
-  "schema": "cartorio-os/stage-4-runtime-e2e-v1",
-  "timestamp": "2026-07-26T18:01:30Z",
-  "HEAD": "95dd0179a212e0b8f7900377ffd0516c9e906d6e",
-  "agent": "Codex",
-  "task": "Etapa 4 — Runtime Truth / R1 reconciliation",
-  "status": "RC_LIVE_CANDIDATE",
-  "truth_rule": "CONNECTED nao significa OPERATIONAL; OPERATIONAL exige REAL_E2E_PASS.",
   "timestamp": "2026-07-26T18:02:00+00:00",
   "git_head": "95dd0179a212e0b8f7900377ffd0516c9e906d6e",
   "auditor": "Antigravity (Cartorio OS Stage 4 Runtime Truth)",

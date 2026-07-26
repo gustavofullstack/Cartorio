@@ -1,0 +1,47 @@
+{
+  "schema": "cartorio-os/stage-4-runtime-e2e-v1",
+  "timestamp": "2026-07-26T18:01:30Z",
+  "HEAD": "95dd0179a212e0b8f7900377ffd0516c9e906d6e",
+  "agent": "Codex",
+  "task": "Etapa 4 — Runtime Truth / R1 reconciliation",
+  "status": "RC_LIVE_CANDIDATE",
+  "truth_rule": "CONNECTED nao significa OPERATIONAL; OPERATIONAL exige REAL_E2E_PASS.",
+  "runtime": {
+    "spectrum_gateway_tree": "services/spectrum-gateway (unico tree no repositorio; typecheck PASS; nao esta executando)",
+    "apps_spectrum_gateway": "ABSENT",
+    "actual_imessage_process": "Hermes Photon sidecar em ~/.hermes (PID e identificadores omitidos)",
+    "hermes": "SERVICE_UP via LaunchAgent ai.hermes.gateway",
+    "photon": "CONNECTED segundo gateway_state.json",
+    "openclaw": "UNKNOWN nesta coleta; porta 18789 nao estava em LISTEN",
+    "megahub": "UNKNOWN nesta coleta; porta 43210 nao estava em LISTEN",
+    "llm_bridge": "UNKNOWN nesta coleta; porta 8767 nao estava em LISTEN"
+  },
+  "channels": {
+    "imessage": {
+      "state": "CONNECTED",
+      "inbound_scope": "LIMITED_INBOUND",
+      "real_e2e": "UNVERIFIED",
+      "operational": false,
+      "reason": "linha shared/test e round-trip iPhone ainda nao observado"
+    },
+    "telegram": { "state": "REVALIDATE", "real_e2e": "UNVERIFIED" },
+    "whatsapp": { "state": "BLOCKED_SUI", "reason": "whatsapp_not_paired" },
+    "web": { "state": "VALIDATE", "real_e2e": "UNVERIFIED" }
+  },
+  "reconciliation": {
+    "R1_gateway_location": "Um unico tree TypeScript existe no repositorio, mas ele nao e o processo ativo. O sidecar Hermes e o unico consumidor Photon em execucao; nao iniciar services/spectrum-gateway em paralelo.",
+    "R2_imessage_truth": "Nao ha evidencia de inbound, execucao Hermes, outbound e entrega no mesmo iPhone nesta coleta.",
+    "R3_public_inbound": "Shared/test line permanece LIMITED_INBOUND; ALLOW_ALL_INBOUND nao substitui a restricao do provider. PUBLIC_INBOUND requer linha dedicada suportada.",
+    "R4_test_truth": "HEAD atual: teste de contrato multicanal = 6 passed; nao representa E2E real."
+  },
+  "tests": [ "npm run typecheck: PASS", "make test-one TEST=tests/test_cartorio_os_multichannel.py: 6 passed", "make lint: PASS" ],
+  "security": [ "sem segredos, telefones, IDs de projeto ou payloads de mensagens neste artefato" ],
+  "blockers": [
+    "Disparo manual autorizado no iPhone para a linha de teste e confirmacao da resposta na mesma conversa",
+    "Wiring explicito ou migracao controlada para que o runtime ativo corresponda ao gateway canonicamente mantido",
+    "WhatsApp QR/pairing",
+    "Revalidacao Telegram real"
+  ],
+  "rollback": "Nenhum processo foi iniciado, parado ou reiniciado nesta coleta.",
+  "next": "Aguardar a mensagem real do iPhone; capturar apenas timestamps, correlation_id hash, status Hermes e entrega, todos sanitizados."
+}
