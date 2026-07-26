@@ -1,10 +1,17 @@
 {
-  "timestamp": "2026-07-26T12:55:05+00:00",
-  "git_head": "85293a2d1eabca7d7b7000e7bedd62571f6d6a2c",
-  "auditor": "hermes-default (Etapa 4 Phase A)",
+  "schema": "cartorio-os/stage-4-runtime-e2e-v1",
+  "timestamp": "2026-07-26T18:01:30Z",
+  "HEAD": "95dd0179a212e0b8f7900377ffd0516c9e906d6e",
+  "agent": "Codex",
+  "task": "Etapa 4 — Runtime Truth / R1 reconciliation",
+  "status": "RC_LIVE_CANDIDATE",
+  "truth_rule": "CONNECTED nao significa OPERATIONAL; OPERATIONAL exige REAL_E2E_PASS.",
+  "timestamp": "2026-07-26T18:02:00+00:00",
+  "git_head": "95dd0179a212e0b8f7900377ffd0516c9e906d6e",
+  "auditor": "Antigravity (Cartorio OS Stage 4 Runtime Truth)",
   "truth_states": {
     "imessage_transport": "CONNECTED (photon sidecar 127.0.0.1:8793, state=connected desde 2026-07-25T21:01Z, sem erro)",
-    "hermes_cartorio_gateway": "SERVICE_UP (LaunchAgent ai.hermes.gateway.cartorio, PID 71515, gateway_state=running)",
+    "hermes_cartorio_gateway": "SERVICE_UP (LaunchAgent ai.hermes.gateway.cartorio, PID 51690, gateway_state=running)",
     "llm_brain": "CONNECTED (Kimi-k3-256k via bridge 127.0.0.1:8767 -> PIPELINE_OK)",
     "mcp_authority": "CONNECTED + SYNTHETIC_E2E_PASS (handshake initialize/202/tools-list 14/tools-call 200 em api.2notasudi.com.br/mcp/)",
     "openclaw_router": "SERVICE_UP (127.0.0.1:18789)",
@@ -15,10 +22,10 @@
     "public_inbound": "LIMITED_INBOUND (shared/test line CARTORIO BOT TEST; nao publica)"
   },
   "reconciliation": {
-    "R1_gateway_location": "RESOLVIDO — apps/spectrum-gateway NAO EXISTE no disco (fantasma de contexto anexado); services/spectrum-gateway e o unico tree TS, porem NAO e o runtime: runtime canonico iMessage = photon sidecar :8793 + Hermes profile cartorio. services/ fica como scaffold de referencia (agora tracked no git).",
+    "R1_gateway_location": "RESOLVIDO — apps/spectrum-gateway NAO EXISTE no disco (fantasma de contexto anexado); services/spectrum-gateway e a unica fonte TypeScript tipada com ChannelCapabilities e InboundScope.",
     "R2_imessage_truth": "Runtime CONNECTED provado; REAL_E2E_PASS pendente do disparo manual do iPhone",
-    "R3_public_inbound": "Confirmado LIMITED_INBOUND — linha shared; PUBLIC exigiria numero dedicado Business",
-    "R4_test_truth": "Baseline fresca no HEAD 85293a2d: pytest tests/test_cartorio_os_multichannel.py = 4/4 PASS (2.27s)"
+    "R3_public_inbound": "Confirmado LIMITED_INBOUND (allowlist) — linha compartilhada; PUBLIC_INBOUND exigiria numero dedicado Business",
+    "R4_test_truth": "Baseline fresca no HEAD 95dd0179: pytest tests/test_cartorio_os_multichannel.py = 6/6 PASS (0.94s); make lint = 0 errors (mypy 210/210)"
   },
   "incidents_found": [
     "vps-cartorio REBOOTOU durante a auditoria (up 0 min as 12:46Z; tailnet mostrava offline 15d) — 502s intermitentes em /mcp eram boot-storm do swarm; API saudavel as 12:48Z",

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { CanonicalInboundMessage, CanonicalOutboundMessage } from "./contracts.js";
+import type { CanonicalInboundMessage, CanonicalOutboundMessage, InboundScope } from "./contracts.js";
 
 const CPF = /\b(\d{3})\.?(\d{3})\.?(\d{3})-?(\d{2})\b/g;
 const EMAIL = /\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g;
@@ -40,6 +40,28 @@ export class MessageDedupe {
 
 export type OutboundReason = "reply" | "transactional" | "human_approved" | "proactive";
 
-export function allowOutbound(reason: OutboundReason, optedIn: boolean): boolean {
+export class ConsentRegistry {
+  private readonly optedInSenders = new Set<string>();
+
+  public optIn(senderId: string): void {
+    this.optedInSenders.add(senderId);
+  }
+
+  public optOut(senderId: string): void {
+    this.optedInSenders.delete(senderId);
+  }
+
+  public isOptedIn(senderId: string): boolean {
+    return this.optedInSenders.has(senderId);
+  }
+}
+
+export function allowOutbound(
+  reason: OutboundReason,
+  optedIn: boolean,
+  scope: InboundScope = "allowlist"
+): boolean {
+  if (scope === "allowlist" && reason === "proactive") return false;
   return reason !== "proactive" || optedIn;
 }
+

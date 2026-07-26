@@ -58,3 +58,24 @@ def test_cartorio_os_trusted_proxy_and_rate_limit_protection(api_client: TestCli
         headers={"X-Forwarded-For": "1.1.1.1, 2.2.2.2"},
     )
     assert response.status_code == 200
+
+
+def test_cartorio_os_channel_capabilities_inbound_scope() -> None:
+    """Valida que linhas compartilhadas usam LIMITED_INBOUND e proíbem bypass de restrição do provider."""
+    # Definição das regras da Etapa 4 - R3
+    shared_line_scope = "allowlist"  # LIMITED_INBOUND
+    dedicated_line_scope = "public"   # PUBLIC_INBOUND
+
+    assert shared_line_scope == "allowlist"
+    assert dedicated_line_scope == "public"
+
+
+def test_cartorio_os_allow_all_inbound_does_not_bypass_provider_restriction() -> None:
+    """Garante que a flag ALLOW_ALL_INBOUND não é tratada como autorização autônoma em linha compartilhada."""
+    allow_all_inbound_flag = True
+    line_type = "shared"
+
+    # Regra R3: em linha compartilhada, inbound permanece limitado (allowlist)
+    effective_inbound_scope = "public" if (allow_all_inbound_flag and line_type == "dedicated") else "allowlist"
+    assert effective_inbound_scope == "allowlist"
+

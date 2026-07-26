@@ -1,5 +1,31 @@
 export type Platform = "imessage" | "telegram" | "whatsapp" | "web";
 
+export type InboundScope = "allowlist" | "public" | "unknown";
+
+export interface ChannelCapabilities {
+  platform: Platform;
+  canSendText: boolean;
+  canSendMedia: boolean;
+  canSendPoll: boolean;
+  inboundScope: InboundScope;
+  requiresPairing: boolean;
+}
+
+export interface OutboundPolicy {
+  allowProactive: boolean;
+  requireOptIn: boolean;
+  maxMessagesPerMinute: number;
+}
+
+export interface GatewayHealthContract {
+  processUp: boolean;
+  providerConnected: boolean;
+  channelCapabilityKnown: boolean;
+  lastInboundAt: string | null;
+  lastOutboundAt: string | null;
+  lastError: string | null;
+}
+
 export interface CanonicalInboundMessage {
   messageId: string;
   platform: Platform;
@@ -54,3 +80,4 @@ export interface TaskResult {
   errors: readonly string[];
   riskFlags: readonly string[];
 }
+
