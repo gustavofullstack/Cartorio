@@ -130,29 +130,27 @@ def list_with_pagination(
     Returns:
         Tuple (items, total_count). Caller encapsula no schema de resposta.
     """
-    if page < 1:
-        page = 1
-    if page_size < 1:
-        page_size = 1
+    page = max(page, 1)
+    page_size = max(page_size, 1)
 
     where_clauses: list[Any] = []
     if not include_deleted and hasattr(model, "deleted_at"):
-        where_clauses.append(getattr(model, "deleted_at").is_(None))
+        where_clauses.append(getattr(model, "deleted_at").is_(None))  # noqa: B009
     if extra_filters:
         where_clauses.extend(extra_filters)
 
-    from sqlalchemy import Select, and_
+    from sqlalchemy import Select, and_, func
 
-    count_stmt: Select[Any] = select(model)
+    count_stmt: Select[Any] = select(func.count()).select_from(model)
     if where_clauses:
         count_stmt = count_stmt.where(and_(*where_clauses))
-    total = len(db.execute(count_stmt).scalars().all())  # type: ignore[arg-type]
+    total = int(db.scalar(count_stmt) or 0)
 
     stmt: Select[Any] = select(model)
     if where_clauses:
         stmt = stmt.where(and_(*where_clauses))
     stmt = (
-        stmt.order_by(getattr(model, "id").desc()).limit(page_size).offset((page - 1) * page_size)
+        stmt.order_by(getattr(model, "id").desc()).limit(page_size).offset((page - 1) * page_size)  # noqa: B009
     )
 
     items = db.execute(stmt).scalars().all()  # type: ignore[arg-type]
@@ -161,6 +159,6 @@ def list_with_pagination(
 
 __all__ = [
     "build_pagination_params",
-    "serialize_orm_with_pii_mask",
     "list_with_pagination",
+    "serialize_orm_with_pii_mask",
 ]
