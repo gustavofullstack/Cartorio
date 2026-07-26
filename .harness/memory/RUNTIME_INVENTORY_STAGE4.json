@@ -1,0 +1,117 @@
+{
+  "schema": "cartorio-os/stage-4-runtime-inventory-v1",
+  "timestamp_utc": "2026-07-26T12:44:52.667061+00:00",
+  "agent": "grok-4.5",
+  "task": "Etapa 4 — Runtime Truth + R1 reconciliation",
+  "HEAD_local_repo": "85293a2d1eabca7d7b7000e7bedd62571f6d6a2c",
+  "truth_rule": "CONNECTED != OPERATIONAL. OPERATIONAL requires REAL_E2E_PASS.",
+  "split_topology": {
+    "vps_cartorio": {
+      "host": "srv1769726",
+      "ssh_working": "cartorio-public / root@187.77.236.77 with id_ed25519_cartorio",
+      "ssh_broken": "cartorio/tailscale 100.99.172.84 offline ~15d",
+      "role": "authority + production API + Evolution + OpenClaw gateway + Chatwoot + n8n + Supabase",
+      "spectrum_photon_hermes_processes": "NONE",
+      "spectrum_gateway_paths": "NONE"
+    },
+    "macbook_local": {
+      "role": "iMessage runtime (Hermes profile cartorio + Photon sidecar)",
+      "hermes_pid": 71515,
+      "photon_sidecar_pid": 72407,
+      "photon_port": 8793,
+      "openclaw_local_pid": 1032,
+      "openclaw_port": 18789,
+      "megahub_port": 43210,
+      "llm_bridge_port": 8767
+    }
+  },
+  "R1_gateway_location": {
+    "apps/spectrum-gateway": "ABSENT (dir empty) — removed/missing at inventory time",
+    "services/spectrum-gateway": "PRESENT untracked scaffold; typecheck OK; NOT RUNNING (no :3080)",
+    "actual_live_runtime": "Hermes profile ~/.hermes/profiles/cartorio + photon sidecar plugin (NOT the TS scaffold process)",
+    "canonical_decision": {
+      "runtime_source_of_truth": "Hermes profile cartorio + Photon/Spectrum cloud line CARTORIO BOT TEST (438527e1-…)",
+      "code_scaffold_path": "services/spectrum-gateway",
+      "do_not_run_alongside": "Do not start services/spectrum-gateway against same Photon project — steals inbound stream from Hermes sidecar",
+      "docs_canonical": "docs/architecture/ADR-CARTORIO-OS-MULTICHANNEL.md"
+    },
+    "status": "RECONCILED"
+  },
+  "R2_imessage_truth": {
+    "service": "SERVICE_UP",
+    "connection": "CONNECTED",
+    "photon_state": "connected",
+    "project": "CARTORIO BOT TEST",
+    "project_id": "438527e1-2399-49dc-967c-22e33986035a",
+    "allowlist_user": "+5534992800250",
+    "inbound_scope": "LIMITED_INBOUND (shared/test line; PHOTON_ALLOW_ALL_USERS=true only among registered users)",
+    "public_inbound": false,
+    "sessions_dir": "empty",
+    "channel_directory_photon": [],
+    "inbound_log_evidence": "none after connect events",
+    "real_e2e": "UNVERIFIED",
+    "state": "CONNECTED — not OPERATIONAL until REAL_E2E_PASS"
+  },
+  "channels": {
+    "imessage": {
+      "state": "CONNECTED",
+      "real_e2e": "UNVERIFIED",
+      "inbound_scope": "LIMITED_INBOUND"
+    },
+    "telegram": {
+      "state": "disconnected (hermes profile)",
+      "real_e2e": "REVALIDATE",
+      "vps_api": "ready"
+    },
+    "whatsapp": {
+      "state": "BLOCKED_SUI",
+      "hermes": "whatsapp_not_paired",
+      "evolution_api": "online (radar + container up)",
+      "note": "evolution=online != session open"
+    },
+    "web": {
+      "state": "API_UP",
+      "real_e2e": "VALIDATE"
+    }
+  },
+  "mcp": {
+    "source_count": 14,
+    "hermes_discover_count": 14,
+    "endpoint": "https://api.2notasudi.com.br/mcp",
+    "status": "14/14 PASS (hermes mcp test cartorio)"
+  },
+  "vps_services": {
+    "radar": "green",
+    "api_health": "ok 0.6.0",
+    "api_ready": "ready audit_chain_initialized=true",
+    "docker_services_1_1": [
+      "cartorio_api",
+      "cartorio_openclaw-gateway",
+      "cartorio_evolution-api",
+      "cartorio_n8n",
+      "cartorio_chatwoot",
+      "cartorio_redis",
+      "cartorio_supabase"
+    ]
+  },
+  "openclaw": {
+    "local_agents_include_cartorio": true,
+    "vps_openclaw_gateway": "healthy Up 6 days",
+    "local_agent_cartorio": "🏛️ Cartório OS Hermes (kimi/Kimi-k3)"
+  },
+  "phantom_panel": "ABSENT/STUBBED",
+  "blockers": [
+    "iMessage REAL_E2E requires Gustavo text from iPhone +5534992800250 to CARTORIO BOT TEST line",
+    "Tailscale vps-cartorio offline 15d — use cartorio-public",
+    "WhatsApp QR/pairing SUI",
+    "Audit migration 0028 human/DPO (preserved)",
+    "Shared Spectrum line cannot be PUBLIC_INBOUND"
+  ],
+  "next": [
+    "User sends iMessage: 'Olá, qual o horário de atendimento do cartório?'",
+    "Trace correlation in gateway.log/agent.log",
+    "Mark REAL_E2E_PASS only with delivery evidence",
+    "Telegram revalidate",
+    "WhatsApp prepare to QR gate"
+  ]
+}
