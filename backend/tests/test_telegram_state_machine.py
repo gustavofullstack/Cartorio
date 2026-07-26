@@ -115,7 +115,7 @@ async def test_state_agendar_data_formato_invalido() -> None:
     )
     assert "invalida" in text.lower() or "inval" in text.lower() or "Use" in text
     assert new_state == STATE_AGENDAR_DATA
-    assert keyboard is None
+    assert keyboard is not None
 
 
 # =============================================================================
@@ -148,7 +148,7 @@ async def test_state_agendar_hora_formato_invalido() -> None:
     )
     assert "invalido" in text.lower() or "inval" in text.lower() or "Use" in text
     assert new_state == STATE_AGENDAR_HORA
-    assert keyboard is None
+    assert keyboard is not None
 
 
 # =============================================================================

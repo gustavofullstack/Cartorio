@@ -170,9 +170,7 @@ async def test_payload_litellm_minimo_sem_thinking_nem_tools(
 async def test_wait_for_global_cai_no_offline_reply_com_provider_travado(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def _stuck(
-        system: str, user: str
-    ) -> tuple[str, str, str | None, list[str]]:
+    async def _stuck(system: str, user: str) -> tuple[str, str, str | None, list[str]]:
         await asyncio.sleep(30)
         return "nunca", "none", None, []
 

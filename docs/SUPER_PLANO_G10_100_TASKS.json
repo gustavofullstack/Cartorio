@@ -1,0 +1,464 @@
+{
+    "squads": [
+        {
+            "id": "S1",
+            "name": "Squad S1 - Documentação Oficial Local",
+            "tasks": [
+                {
+                    "id": "S1.T1",
+                    "desc": "Baixar documentação oficial do Evolution API (`curl -sL https://doc.evolution-api.com/`)."
+                },
+                {
+                    "id": "S1.T2",
+                    "desc": "Baixar documentação oficial do N8N (`curl -sL https://docs.n8n.io/`)."
+                },
+                {
+                    "id": "S1.T3",
+                    "desc": "Baixar documentação oficial do Chatwoot (`curl -sL https://www.chatwoot.com/docs/`)."
+                },
+                {
+                    "id": "S1.T4",
+                    "desc": "Baixar documentação oficial do Supabase (`curl -sL https://supabase.com/docs/`)."
+                },
+                {
+                    "id": "S1.T5",
+                    "desc": "Baixar documentação oficial do Redis (`curl -sL https://redis.io/docs/`)."
+                },
+                {
+                    "id": "S1.T6",
+                    "desc": "Consolidar documentação baixada em Markdown acessível pelo agent."
+                },
+                {
+                    "id": "S1.T7",
+                    "desc": "Criar/atualizar docs/super-memory.html para visualização rápida."
+                },
+                {
+                    "id": "S1.T8",
+                    "desc": "Criar/atualizar docs/super-plan.html para visualização rápida."
+                },
+                {
+                    "id": "S1.T9",
+                    "desc": "Criar/atualizar docs/super-tasks.html (dashboard interativo)."
+                },
+                {
+                    "id": "S1.T10",
+                    "desc": "Revisar e atualizar docs/project-history.html."
+                }
+            ]
+        },
+        {
+            "id": "S2",
+            "name": "Squad S2 - Webhook & Resiliência Telegram",
+            "tasks": [
+                {
+                    "id": "S2.T1",
+                    "desc": "Investigar status do Webhook no endpoint de prod."
+                },
+                {
+                    "id": "S2.T2",
+                    "desc": "Corrigir inicialização multi-worker e webhook secret handling (G9.A1)."
+                },
+                {
+                    "id": "S2.T3",
+                    "desc": "Validar sync_telegram_webhook com mock do secret de produção."
+                },
+                {
+                    "id": "S2.T4",
+                    "desc": "Testar debounce de mensagens repetidas do Telegram."
+                },
+                {
+                    "id": "S2.T5",
+                    "desc": "Garantir idempotência e HTTP 200 nas requisições."
+                },
+                {
+                    "id": "S2.T6",
+                    "desc": "Refinar parser de HTML para mensagens Telegram (se houver)."
+                },
+                {
+                    "id": "S2.T7",
+                    "desc": "Ajustar tratamento de grupos e menções de forma silenciosa e assertiva."
+                },
+                {
+                    "id": "S2.T8",
+                    "desc": "Garantir uso correto de typing refresh e cancelamento (anti-spam)."
+                },
+                {
+                    "id": "S2.T9",
+                    "desc": "Passar bateria 1000+ no test_telegram_1000.py."
+                },
+                {
+                    "id": "S2.T10",
+                    "desc": "Stress-test scripts e documentação do fix."
+                }
+            ]
+        },
+        {
+            "id": "S3",
+            "name": "Squad S3 - Integração N8N Polish",
+            "tasks": [
+                {
+                    "id": "S3.T1",
+                    "desc": "Revisar e rodar testes automatizados para os 34 workflows N8N."
+                },
+                {
+                    "id": "S3.T2",
+                    "desc": "Adicionar alertas Telegram para falhas críticas via N8N (B15)."
+                },
+                {
+                    "id": "S3.T3",
+                    "desc": "Criar dashboard de monitoramento para workflows N8N (B14)."
+                },
+                {
+                    "id": "S3.T4",
+                    "desc": "Documentar credentials faltantes, inclusive Evolution API para WF #07."
+                },
+                {
+                    "id": "S3.T5",
+                    "desc": "Confirmar uso de plugins nativos (Chatwoot, MCP, PDFKit, etc)."
+                },
+                {
+                    "id": "S3.T6",
+                    "desc": "Refinar timeout e retry policies em chamadas HTTP não mapeadas."
+                },
+                {
+                    "id": "S3.T7",
+                    "desc": "Mapear novas requisições da OpenClaw via MCP N8N."
+                },
+                {
+                    "id": "S3.T8",
+                    "desc": "Documentar padrões obrigatórios em workflows novos."
+                },
+                {
+                    "id": "S3.T9",
+                    "desc": "Criar scripts/templates padrão B13 para facilitar expansão."
+                },
+                {
+                    "id": "S3.T10",
+                    "desc": "Atualizar logs/métricas para os workflows melhorados."
+                }
+            ]
+        },
+        {
+            "id": "S4",
+            "name": "Squad S4 - OpenClaw & Agent",
+            "tasks": [
+                {
+                    "id": "S4.T1",
+                    "desc": "Validar correção do contexto do agente Pietra (131.1k -> 1M)."
+                },
+                {
+                    "id": "S4.T2",
+                    "desc": "Garantir que thinking adaptativo está ON para queries complexas."
+                },
+                {
+                    "id": "S4.T3",
+                    "desc": "Documentar nova chave OpenCode-Go no .env.example e fallback system."
+                },
+                {
+                    "id": "S4.T4",
+                    "desc": "Configurar fallback chain coerente (Minimax, Kimi, etc)."
+                },
+                {
+                    "id": "S4.T5",
+                    "desc": "Expandir skills (protocolo, emolumento, lgpd, agendamento, segunda-via, handoff)."
+                },
+                {
+                    "id": "S4.T6",
+                    "desc": "Resolver gateway.http schema rejeitado ou focar inteiramente em WS."
+                },
+                {
+                    "id": "S4.T7",
+                    "desc": "Adicionar logs de tracking LLM token costs via codex-bar."
+                },
+                {
+                    "id": "S4.T8",
+                    "desc": "Integrar testes unitários E2E (Telegram -> N8N -> API -> OpenClaw -> Resp)."
+                },
+                {
+                    "id": "S4.T9",
+                    "desc": "Adicionar suporte para lidar de forma mais polida com erros/rate limit do provider."
+                },
+                {
+                    "id": "S4.T10",
+                    "desc": "Revisão de persona Pietra (seriedade, zero emojis)."
+                }
+            ]
+        },
+        {
+            "id": "S5",
+            "name": "Squad S5 - Supabase Foundation + Hardening",
+            "tasks": [
+                {
+                    "id": "S5.T1",
+                    "desc": "Configurar uso de RPCs/REST via PostgREST na API."
+                },
+                {
+                    "id": "S5.T2",
+                    "desc": "Documentar uso de pg_graphql para queries futuras."
+                },
+                {
+                    "id": "S5.T3",
+                    "desc": "Revisão da tabela lgpd_audit_anpd (compliance)."
+                },
+                {
+                    "id": "S5.T4",
+                    "desc": "Documentar pgmq para filas assíncronas do webhook N8N."
+                },
+                {
+                    "id": "S5.T5",
+                    "desc": "Explorar e documentar uso de Edge Functions Deno."
+                },
+                {
+                    "id": "S5.T6",
+                    "desc": "Verificar triggers de updated_at (A18)."
+                },
+                {
+                    "id": "S5.T7",
+                    "desc": "Refinar Soft Delete / Right to be Forgotten logic (A19)."
+                },
+                {
+                    "id": "S5.T8",
+                    "desc": "Corrigir eventuais desalinhamentos Alembic vs DB (0014 base)."
+                },
+                {
+                    "id": "S5.T9",
+                    "desc": "Setup materialized views para dashboard DPO (A17)."
+                },
+                {
+                    "id": "S5.T10",
+                    "desc": "Expandir roles e RLS verification."
+                }
+            ]
+        },
+        {
+            "id": "S6",
+            "name": "Squad S6 - API Performance & Security",
+            "tasks": [
+                {
+                    "id": "S6.T1",
+                    "desc": "Verificar API rate limiting e circuit breakers (A24/A25)."
+                },
+                {
+                    "id": "S6.T2",
+                    "desc": "Aplicar Redlock distribuído no Redis (A20)."
+                },
+                {
+                    "id": "S6.T3",
+                    "desc": "RFC 7807 problem details uniformization (A23)."
+                },
+                {
+                    "id": "S6.T4",
+                    "desc": "Configuração API versioning routes (/v2/)."
+                },
+                {
+                    "id": "S6.T5",
+                    "desc": "Garantir Pydantic v2 ConfigDict em modelos novos."
+                },
+                {
+                    "id": "S6.T6",
+                    "desc": "Dead man's switch config review (A13)."
+                },
+                {
+                    "id": "S6.T7",
+                    "desc": "Setup Slow query detector e alertas (A16)."
+                },
+                {
+                    "id": "S6.T8",
+                    "desc": "Otimizar pools de conexão banco de dados."
+                },
+                {
+                    "id": "S6.T9",
+                    "desc": "Adicionar metricas Prometheus (J06)."
+                },
+                {
+                    "id": "S6.T10",
+                    "desc": "Passar bateria mypy/ruff global em toda a API."
+                }
+            ]
+        },
+        {
+            "id": "S7",
+            "name": "Squad S7 - Monitoramento e Infra",
+            "tasks": [
+                {
+                    "id": "S7.T1",
+                    "desc": "Revisar DNS resolution e pendências A records SUI (n8n, supabase, chatwoot)."
+                },
+                {
+                    "id": "S7.T2",
+                    "desc": "Health checks Docker Swarm services (verificar se ainda 27/27)."
+                },
+                {
+                    "id": "S7.T3",
+                    "desc": "Validar backup de DB (pg_dump automático + S3 incremental)."
+                },
+                {
+                    "id": "S7.T4",
+                    "desc": "Otimizar caching strategy (Redis) para evitar out-of-memory."
+                },
+                {
+                    "id": "S7.T5",
+                    "desc": "Monitorar/corrigir Tailscale nodes and routes."
+                },
+                {
+                    "id": "S7.T6",
+                    "desc": "Teste de carga endpoints core."
+                },
+                {
+                    "id": "S7.T7",
+                    "desc": "Documentar Dashboard Grafana / Log aggregation (J07/J08)."
+                },
+                {
+                    "id": "S7.T8",
+                    "desc": "Tracing/Tempo setup plan (J09/J10)."
+                },
+                {
+                    "id": "S7.T9",
+                    "desc": "Preparar runbook DNS hostinger/Cloudflare fallback."
+                },
+                {
+                    "id": "S7.T10",
+                    "desc": "Validar deploy zero-downtime da API."
+                }
+            ]
+        },
+        {
+            "id": "S8",
+            "name": "Squad S8 - LGPD Compliance Endpoints",
+            "tasks": [
+                {
+                    "id": "S8.T1",
+                    "desc": "Validar /lgpd/dashboard dashboard DPO."
+                },
+                {
+                    "id": "S8.T2",
+                    "desc": "Validar endpoints de consentimento POST /lgpd/consent (D27)."
+                },
+                {
+                    "id": "S8.T3",
+                    "desc": "Validar revogação de consentimento POST /lgpd/revogar-consent (D31)."
+                },
+                {
+                    "id": "S8.T4",
+                    "desc": "Endpoints de anonimização e exclusão DELETE /lgpd/cliente/{id} (D28/D09)."
+                },
+                {
+                    "id": "S8.T5",
+                    "desc": "Exportação de portabilidade de dados GET /lgpd/export/{cliente_id} (D29)."
+                },
+                {
+                    "id": "S8.T6",
+                    "desc": "Atualização/correção de dados POST /lgpd/correct/{cliente_id} (D30)."
+                },
+                {
+                    "id": "S8.T7",
+                    "desc": "Transparência GET /lgpd/audit/{cliente_id} (D32)."
+                },
+                {
+                    "id": "S8.T8",
+                    "desc": "Job retenção 5 anos / DPO log rotation verify."
+                },
+                {
+                    "id": "S8.T9",
+                    "desc": "Relatório de export massivo CNJ (/lgpd/cnj-exports/massive-dump)."
+                },
+                {
+                    "id": "S8.T10",
+                    "desc": "Atualizar e publicar docs/ripd.md (v1.3+)."
+                }
+            ]
+        },
+        {
+            "id": "S9",
+            "name": "Squad S9 - Chatwoot CRM & Operações",
+            "tasks": [
+                {
+                    "id": "S9.T1",
+                    "desc": "Validação do handoff-humano skill do agent."
+                },
+                {
+                    "id": "S9.T2",
+                    "desc": "Verificação do webhook Chatwoot -> API."
+                },
+                {
+                    "id": "S9.T3",
+                    "desc": "Garantir inbox conectada Evolution API (pós QR-scan do dono)."
+                },
+                {
+                    "id": "S9.T4",
+                    "desc": "Validação dos macros e labels via Chatwoot API."
+                },
+                {
+                    "id": "S9.T5",
+                    "desc": "Validação do agent 'Pietra' integrado no Chatwoot (bot user)."
+                },
+                {
+                    "id": "S9.T6",
+                    "desc": "Testar script helper criar API key."
+                },
+                {
+                    "id": "S9.T7",
+                    "desc": "Configuração de canned responses."
+                },
+                {
+                    "id": "S9.T8",
+                    "desc": "Validação das integrações Redis para Chatwoot Sidekiq."
+                },
+                {
+                    "id": "S9.T9",
+                    "desc": "Teste HITL (Human-in-the-loop) pause agent."
+                },
+                {
+                    "id": "S9.T10",
+                    "desc": "Runbook operações atendentes."
+                }
+            ]
+        },
+        {
+            "id": "S10",
+            "name": "Squad S10 - Evolution API & Go-Live Final",
+            "tasks": [
+                {
+                    "id": "S10.T1",
+                    "desc": "Revisar Evolution API webhooks (evo-in via N8N)."
+                },
+                {
+                    "id": "S10.T2",
+                    "desc": "Verificar instancia cartorio-2notas properties."
+                },
+                {
+                    "id": "S10.T3",
+                    "desc": "Suporte a arquivos/audio no parser de webhook (opcional/future-proof)."
+                },
+                {
+                    "id": "S10.T4",
+                    "desc": "Implementar bloqueio ou tratativa correta para spam no WA."
+                },
+                {
+                    "id": "S10.T5",
+                    "desc": "Validar PII scrubbing na entrada e saída via WhatsApp."
+                },
+                {
+                    "id": "S10.T6",
+                    "desc": "Garantir que QR-scan foi realizado pelo admin e inst. on."
+                },
+                {
+                    "id": "S10.T7",
+                    "desc": "Setup Prospecção de cartórios (manual via CEO)."
+                },
+                {
+                    "id": "S10.T8",
+                    "desc": "Teste E2E massivo Final via mock numbers ou TriQ Hub."
+                },
+                {
+                    "id": "S10.T9",
+                    "desc": "Atualização README.md e HANDOVER.md final."
+                },
+                {
+                    "id": "S10.T10",
+                    "desc": "Commit Master Final com Tag Version (v0.8.0 ou v1.0)."
+                }
+            ]
+        }
+    ]
+}
