@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createServer } from "node:http";
 
 import { imessage } from "@spectrum-ts/imessage";
 import { Spectrum } from "spectrum-ts";
@@ -7,23 +8,16 @@ import type {
   CanonicalInboundMessage,
   ChannelCapabilities,
   GatewayHealthContract,
-  InboundScope,
   Platform,
   TaskEnvelope,
 } from "./contracts.js";
 import { PhantomPanelAdapter } from "./control-plane.js";
-import { conversationId, MessageDedupe, sanitizeOutbound } from "./guardrails.js";
+import { conversationId, getInboundScope, MessageDedupe, sanitizeOutbound, scrubPii } from "./guardrails.js";
 import { HermesExecutor } from "./hermes-executor.js";
 
 const projectId = process.env.SPECTRUM_PROJECT_ID;
 const projectSecret = process.env.SPECTRUM_PROJECT_SECRET;
 const lineMode = process.env.SPECTRUM_LINE_MODE ?? "shared";
-
-export function getInboundScope(mode: string): InboundScope {
-  if (mode === "public") return "public";
-  if (mode === "shared" || mode === "test" || mode === "limited") return "allowlist";
-  return "unknown";
-}
 
 export function getChannelCapabilities(platform: Platform = "imessage"): ChannelCapabilities {
   const scope = getInboundScope(lineMode);
@@ -48,7 +42,7 @@ export function getGatewayHealth(): GatewayHealthContract {
     channelCapabilityKnown: true,
     lastInboundAt,
     lastOutboundAt,
-    lastError,
+    lastError: lastError ? scrubPii(lastError) : null,
   };
 }
 
@@ -124,4 +118,20 @@ if (!projectId || !projectSecret) {
     console.error("[cartorio-spectrum] initialization error:", lastError);
   }
 }
+
+// Health/readiness mínimo: sempre exposto (inclusive em scaffold mode), apenas loopback.
+const healthPort = Number(process.env.SPECTRUM_HEALTH_PORT ?? 8790);
+const healthServer = createServer((req, res) => {
+  if (req.url !== "/health" && req.url !== "/ready") {
+    res.writeHead(404).end();
+    return;
+  }
+  const health = getGatewayHealth();
+  const ready = health.providerConnected && health.channelCapabilityKnown;
+  res.writeHead(req.url === "/ready" && !ready ? 503 : 200, { "content-type": "application/json" });
+  res.end(JSON.stringify(health));
+});
+healthServer.listen(healthPort, "127.0.0.1", () => {
+  console.error(`[cartorio-spectrum] health endpoint on 127.0.0.1:${healthPort}`);
+});
 

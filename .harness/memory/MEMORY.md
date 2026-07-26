@@ -673,3 +673,12 @@ Chamadas multiplas sao safe (segunda chamada = no-op).
 
 - **2026-07-25** (**Lesson 235 — Cartório OS Multicanal com Spectrum TS e FastMCP (ADR-031)**): (a) Arquitetura unificada de mensageria Cartório OS integra Spectrum TS SDK (`imessage`, `whatsapp`, `telegram`), OpenClaw Session Router, Hermes Agent Engine (MiniMax-M3 com timeout 45s e fallback OpenCode Zen) e FastMCP Authority Layer em `apps/spectrum-gateway`; (b) Política de Mensageria: Inbound aberto público (`ALLOW_ALL_INBOUND`) para atendimento imediato sem barreiras; Outbound proativo requer `ConsentRegistry` / `OutboundPolicy` ou autorização humana expressa (preservando compliance LGPD e anti-spam); (c) Regra P0 HITL: Todo pré-protocolo gerado por IA nasce estritamente no status `DRAFT` para validação humana notarial; (d) PII Scrubbing em 3 camadas sanitiza CPF, RG, telefones e e-mails no Inbound e Outbound em tempo real; (e) TypeScript API `spectrum-ts` 0.1.2 exporta `text(...)` do pacote principal e exige primitivo `safeText` com `Parameters<typeof text>[0]` para `NonEmptyString`.
 
+## Lesson 269 — Runtime truth vs report claims (Stage 4) (2026-07-26)
+
+- `apps/spectrum-gateway` does not exist; only `services/spectrum-gateway` (scaffold/contracts). Live iMessage consumer is Hermes profile `cartorio` + Photon sidecar :8793, not the TS process.
+- Never equate default Hermes (`ai.hermes.gateway`, often Grok project :8789) with Cartorio OS. Cartorio LaunchAgent label is `ai.hermes.gateway-cartorio`.
+- `gateway_state.json` can say running with a dead PID — always verify with `hermes gateway list` + `lsof :8793`.
+- `PHOTON_ALLOW_ALL_USERS` / ALLOW_ALL_INBOUND ≠ public inbound on shared Spectrum lines.
+- CONNECTED ≠ OPERATIONAL; only iPhone round-trip is REAL_E2E_PASS.
+- Do not start a second Spectrum consumer on the same PHOTON_PROJECT_ID.
+

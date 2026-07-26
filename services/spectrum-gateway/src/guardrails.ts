@@ -4,7 +4,7 @@ import type { CanonicalInboundMessage, CanonicalOutboundMessage, InboundScope } 
 
 const CPF = /\b(\d{3})\.?(\d{3})\.?(\d{3})-?(\d{2})\b/g;
 const EMAIL = /\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g;
-const PHONE = /\b(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?9?\d{4}-?\d{4}\b/g;
+const PHONE = /(?:\+?55[\s.-]*)?\(?\d{2}\)?[\s.-]*9\d{4}[\s.-]?\d{4}|\b9?\d{4}[\s-]?\d{4}\b/g;
 
 /** Sanitiza apenas a cópia enviada a executores externos e canais. */
 export function scrubPii(text: string): string {
@@ -24,17 +24,19 @@ export function sanitizeOutbound(message: CanonicalOutboundMessage): CanonicalOu
   return { ...message, text: scrubPii(message.text) };
 }
 
-/** Deduplicação local defensiva; o backend permanece a fonte de idempotência. */
+/** Deduplicação local defensiva (janela 24h); o backend permanece a fonte de idempotência. */
 export class MessageDedupe {
+  private static readonly TTL_MS = 24 * 60 * 60 * 1000;
+
   private readonly seen = new Map<string, number>();
 
   public accept(messageId: string, now = Date.now()): boolean {
-    const previous = this.seen.get(messageId);
-    this.seen.set(messageId, now);
     for (const [id, timestamp] of this.seen) {
-      if (now - timestamp > 24 * 60 * 60 * 1000) this.seen.delete(id);
+      if (now - timestamp > MessageDedupe.TTL_MS) this.seen.delete(id);
     }
-    return previous === undefined;
+    if (this.seen.has(messageId)) return false;
+    this.seen.set(messageId, now);
+    return true;
   }
 }
 
@@ -54,6 +56,13 @@ export class ConsentRegistry {
   public isOptedIn(senderId: string): boolean {
     return this.optedInSenders.has(senderId);
   }
+}
+
+/** Escopo de inbound da linha: shared/test nunca vira public por flag local (R3). */
+export function getInboundScope(mode: string): InboundScope {
+  if (mode === "public") return "public";
+  if (mode === "shared" || mode === "test" || mode === "limited") return "allowlist";
+  return "unknown";
 }
 
 export function allowOutbound(
