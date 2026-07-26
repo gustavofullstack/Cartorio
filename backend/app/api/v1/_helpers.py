@@ -135,7 +135,7 @@ def list_with_pagination(
 
     where_clauses: list[Any] = []
     if not include_deleted and hasattr(model, "deleted_at"):
-        where_clauses.append(getattr(model, "deleted_at").is_(None))
+        where_clauses.append(getattr(model, "deleted_at").is_(None))  # noqa: B009
     if extra_filters:
         where_clauses.extend(extra_filters)
 
@@ -150,7 +150,7 @@ def list_with_pagination(
     if where_clauses:
         stmt = stmt.where(and_(*where_clauses))
     stmt = (
-        stmt.order_by(getattr(model, "id").desc()).limit(page_size).offset((page - 1) * page_size)
+        stmt.order_by(getattr(model, "id").desc()).limit(page_size).offset((page - 1) * page_size)  # noqa: B009
     )
 
     items = db.execute(stmt).scalars().all()  # type: ignore[arg-type]

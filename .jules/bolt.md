@@ -1,3 +1,0 @@
-## 2026-07-28 - Optimizing pagination count queries using `func.count()`
-**Learning:** Found a massive memory/performance bottleneck in `app/api/v1/_helpers.py`'s `list_with_pagination`. The code fetched all elements in the database matching a filter (`.scalars().all()`) just to calculate the length of the list, introducing an O(N) memory consumption and high data transfer latency. Since SQLAlchemy allows retrieving the count using `func.count()`, making this aggregation at the DB level avoids all of that overhead.
-**Action:** When implementing or fixing pagination, always check if `.all()` is only being used for `len()` aggregations and replace it with `select(func.count()).select_from(model)`.
