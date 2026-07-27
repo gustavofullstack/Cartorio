@@ -73,9 +73,7 @@ async def execute_hermes_task(
     """Executa mensagem ou tarefa através do Agent Hermes Cartório na VPS."""
     raw_msg = (payload.user_message or "").strip()
     if not raw_msg and not payload.attachments:
-        raise HTTPException(
-            status_code=400, detail="user_message ou attachments são obrigatórios"
-        )
+        raise HTTPException(status_code=400, detail="user_message ou attachments são obrigatórios")
 
     # Invocação do pipeline principal do agent
     reply = await run_cartorio_agent(
