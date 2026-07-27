@@ -20,6 +20,8 @@ Headers:
 | procuracao_previdenciaria | Procuração previdenciária | R$ 36,61 |
 | autenticacao_pagina | Autenticação de cópia por folha | R$ 11,21 |
 | reconhecimento_firma_semelhanca | Reconhecimento de firma por assinatura | R$ 11,21 |
+| escritura_compra_venda | Escritura de Compra e Venda | R$ 1.500,00 — HITL |
+| certidao_casamento | Certidao de Casamento | R$ 50,00 |
 | testamento_publico | Testamento | R$ 437,24 — HITL |
 | ata_notarial_primeira_folha | Ata até duas folhas | R$ 218,42 — HITL |
 

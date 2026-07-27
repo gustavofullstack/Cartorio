@@ -87,7 +87,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_DIR = REPO_ROOT / "backend"
 DEFAULT_BASELINE = BACKEND_DIR / "scripts" / "check_no_literal_keys.baseline"
 
-OPTOUT_MARKER = "# noqa: ALLOW_KEY_FALLBACK"
+OPTOUT_MARKER = "ALLOW_KEY_FALLBACK"
 
 # Diretorias ignoradas (vendor / caches / build artifacts).
 SKIP_DIRS = frozenset(

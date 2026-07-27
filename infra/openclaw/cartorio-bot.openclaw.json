@@ -9,9 +9,9 @@
   "endpoint": "wss://agent.2notasudi.com.br/v1/chat",
   "http_compat": "https://agent.2notasudi.com.br/v1",
   "api_base": "https://api.2notasudi.com.br",
-  "system_prompt": "Voce eh o cartorio-bot do 2o Tabelionato de Notas e Protesto de Uberlandia (MG). Regras P0: (1) NUNCA invente valor de emolumento — chame a API; (2) NUNCA decida sozinho isencao/urgencia/certidao — protocolo sempre DRAFT e HITL escrevente; (3) NUNCA ecoe CPF/RG/protocolo raw — use mascara; (4) LGPD: se usuario pedir esquecimento/opt-out, encaminhe fluxo LGPD; (5) Em duvida juridica, handoff Chatwoot. Responda em PT-BR claro, sem juridiques desnecessario.",
+  "system_prompt": "Você é o cartorio-bot do 2º Tabelionato de Notas e Protesto de Uberlândia (MG). Regras P0: (1) NUNCA invente valor de emolumento — chame a API; (2) NUNCA decida sozinho isenção/urgência/certidão — protocolo sempre DRAFT e HITL escrevente; (3) NUNCA ecoe CPF/RG/protocolo raw — use máscara; (4) LGPD: se usuário pedir esquecimento/opt-out, encaminhe fluxo LGPD; (5) Em dúvida jurídica, handoff Chatwoot. Responda em PT-BR claro, direto, curto, serio, SEM EMOJIS e sem juridiquês desnecessário.",
   "providers": {
-    "primary": "MiniMax-M3",
+    "primary": "deepseek-v4-flash",
     "fallback": [
       "opencode-go",
       "mimo",
@@ -97,19 +97,47 @@
     "cartorio_mcp_chatwoot"
   ],
   "hooks": {
-    "on_message_in": ["pii_scrub", "audit_log"],
-    "on_tool_call": ["lgpd_consent", "rate_limit"],
-    "on_response_out": ["output_scrub", "handoff_decision"],
-    "on_error": ["dead_mans_switch", "telegram_grupo_pietra"]
+    "on_message_in": [
+      "pii_scrub",
+      "audit_log"
+    ],
+    "on_tool_call": [
+      "lgpd_consent",
+      "rate_limit"
+    ],
+    "on_response_out": [
+      "output_scrub",
+      "handoff_decision"
+    ],
+    "on_error": [
+      "dead_mans_switch",
+      "telegram_grupo_pietra"
+    ]
   },
   "channels": {
-    "telegram": {"enabled": true, "status": "HOLD_TOKEN"},
-    "whatsapp": {"enabled": true, "via": "evolution", "status": "HOLD_QR"},
-    "lobechat": {"enabled": true, "url": "https://agent.2notasudi.com.br", "status": "HOLD_API_KEY"},
-    "web": {"enabled": true}
+    "telegram": {
+      "enabled": true,
+      "status": "HOLD_TOKEN"
+    },
+    "whatsapp": {
+      "enabled": true,
+      "via": "evolution",
+      "status": "HOLD_QR"
+    },
+    "lobechat": {
+      "enabled": true,
+      "url": "https://agent.2notasudi.com.br",
+      "status": "HOLD_API_KEY"
+    },
+    "web": {
+      "enabled": true
+    }
   },
   "auth": {
-    "required_scopes": ["operator.read", "operator.write"],
+    "required_scopes": [
+      "operator.read",
+      "operator.write"
+    ],
     "notes": "Token health-only (scopes=[]) bloqueia agents.create — Lesson 177"
   },
   "deploy": {
@@ -126,5 +154,8 @@
     "lesson-170",
     "lesson-177",
     "lesson-178"
-  ]
+  ],
+  "thinking": {
+    "enabled": true
+  }
 }

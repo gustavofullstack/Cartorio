@@ -121,9 +121,7 @@ class TestWSGateReconnection:
 
 
 class TestWSGateOrdering:
-    async def test_broadcasts_preserve_publish_order(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_broadcasts_preserve_publish_order(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Mensagens publicadas em sequência chegam na ordem (FIFO do pub/sub)."""
         from fakeredis import aioredis as fakeredis_async
 
@@ -215,9 +213,7 @@ class TestWSGateBackpressure:
         from app.services.ws_concurrency import stress_register_broadcast
 
         mgr = ConnectionManager()
-        report = await stress_register_broadcast(
-            mgr, ROOM, 50, {"evento": "carga"}, fail_every=5
-        )
+        report = await stress_register_broadcast(mgr, ROOM, 50, {"evento": "carga"}, fail_every=5)
         assert report.registered == 50
         assert report.broadcast_delivered == 40
         assert report.errors == 10
