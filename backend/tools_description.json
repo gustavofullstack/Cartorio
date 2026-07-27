@@ -256,6 +256,34 @@
           "tools": {"type": "array", "items": {"type": "string"}}
         }
       }
+    },
+    {
+      "name": "cartorio_extrair_e_calcular_real",
+      "description": "Extrai dados de solicitação em linguagem natural com PII scrubbing e calcula o valor exato dos emolumentos notariais com discriminativo fiscal completo (Emolumento, TFJ, Recompe-MG e ISSQN Uberlândia 5%) para o 2º Serviço Notarial de Uberlândia (Djalma).",
+      "category": "calculo",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "texto_usuario": {
+            "type": "string",
+            "description": "Texto em linguagem natural da solicitação do cliente."
+          },
+          "forcar_urgencia": {
+            "type": "boolean",
+            "default": false,
+            "description": "Se true, força a taxa de urgência notarial."
+          }
+        },
+        "required": ["texto_usuario"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "texto_sanitizado": {"type": "string"},
+          "tipo_ato_identificado": {"type": "string"},
+          "hitl_obrigatorio": {"type": "boolean"}
+        }
+      }
     }
   ],
   "tags_resumo": {

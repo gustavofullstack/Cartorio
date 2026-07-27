@@ -59,7 +59,7 @@ def test_skill_emolumento_calc_documenta_endpoint_e_tipos() -> None:
     assert skill.exists()
     content = skill.read_text()
     # Endpoint
-    assert "/api/v1/emolumento/calcular" in content
+    assert "/api/v1/emolumentos/real/calcular" in content or "/api/v1/emolumento/calcular" in content
     # Tipos validos (TABELA_2026_MG)
     assert "escritura_compra_venda" in content
     assert "certidao_casamento" in content

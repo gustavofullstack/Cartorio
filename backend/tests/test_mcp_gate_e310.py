@@ -40,7 +40,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 MCP_SERVER = ROOT / "mcp_server.py"
 
-EXPECTED_TOOL_COUNT = 14  # snapshot E3.10 — introspecção, não lista de nomes
+EXPECTED_TOOL_COUNT = 15  # snapshot E3.10 + Stage 7 — introspecção, não lista de nomes
 
 # Formato realista de bot token Telegram: casa _BOT_TOKEN_RE do mcp_server
 # (bot\d+:[A-Za-z0-9_-]{10,}) para exercitar _strip_secrets de verdade.
@@ -110,9 +110,7 @@ class TestGateDiscovery:
 
     def test_descriptions_carry_lgpd_or_pii_guidance_where_relevant(self, mcp_tools) -> None:
         """Tools que tocam PII/mutação devem declarar governança na description."""
-        joined = {
-            name: (tool.description or "").lower() for name, tool in mcp_tools.items()
-        }
+        joined = {name: (tool.description or "").lower() for name, tool in mcp_tools.items()}
         # criar_protocolo: mutação sensível — description deve mencionar HITL/LGPD/DRAFT.
         criar = next(n for n in joined if "criar_protocolo" in n)
         assert any(k in joined[criar] for k in ("hitl", "lgpd", "draft", "valida")), (

@@ -4,7 +4,7 @@
     "description": "\n# Cartorio Backend API\n\nAPI REST do **2o Servico Notarial de Uberlandia** para consulta de emolumentos,\nprotocolizacao de atos, gestao de atendimentos e auditoria imutavel.\n\n## Pilares\n\n- **Audit log imutavel**: hash chain SHA256 + HMAC. Cada acao deixa rastro verificavel.\n- **PII scrubbing**: CPF/telefone/email nunca saem crus pra LLM. Hasheados no DB (SHA256+salt).\n- **HITL obrigatorio**: protocolo sempre nasce em `DRAFT`. Escrevente valida antes de processar.\n- **LGPD compliance**: consentimento explicito, retencao 365 dias (conversas) / 1825 (audit).\n- **MCP nativo**: API expoe tools MCP via /mcp (protocolo 2025-03-26).\n\n## Tags disponiveis (10 tags, 15 endpoints)\n\n| Tag | Endpoints | Descricao |\n|-----|-----------|-----------|\n| `emolumento`  | 1   | Calculo de custas (TABELA_2026_MG) |\n| `protocolo`   | 2   | Criar e consultar protocolos |\n| `documento`   | 1   | Segunda via de documento |\n| `audit`       | 1   | Verificacao de cadeia de audit log |\n| `health`      | 2   | Liveness, readiness, radar |\n| `atendimento` | 4   | Handoff humano + pesquisa satisfacao |\n| `webhook`     | 2   | Integracao Evolution API / Chatwoot |\n| `meta`        | 3   | Health, MCP servers discovery |\n| `agendamento` | 1   | Disponibilidade de agenda |\n| `dev`         | 1   | Exports (Postman collection) |\n\n## Autenticacao\n\nAPI em si **NAO exige auth** (LGPD art. 7o, IV - finalidade publica do servico notarial).\nPara endpoints sensiveis (audit verify, webhook), usamos **HMAC ou header X-API-Key**\ncompartilhado com n8n (ver `N8N_WEBHOOK_SECRET` / `CARTORIO_API_KEY`).\n\n## MCP (Model Context Protocol)\n\nA propria API expoe tools MCP no endpoint `/mcp` (sub-app FastMCP montado, protocolo 2025-03-26).\nTools disponiveis:\n\n1. `cartorio_calcular_emolumento` - calculo MG 2026\n2. `cartorio_consultar_protocolo` - status, historico, proxima acao\n3. `cartorio_criar_protocolo` - criar DRAFT com gate LGPD\n4. `cartorio_gerar_segunda_via` - link download PDF\n5. `cartorio_audit_verify` - integridade hash chain + HMAC\n6. `cartorio_saudacao` - health check\n7. `super_server_info` - meta info (versao, tools_count, etc)\n\nLista de tools em `/mcp-servers`. Config em `~/.mavis/mcp/clients/cartorio-mcp-config.json`.\nTools description em `/tools_description.json`.\n\n## Compliance LGPD\n\n- Art. 7o, I  - Consentimento explicito (gate no POST /protocolo)\n- Art. 37    - Registro de operacoes de tratamento (audit log)\n- Art. 46    - Medidas de seguranca (HMAC + hash chain)\n- Retencao: 365 dias conversas, 1825 dias (5 anos) audit log\n- DPO: dpo@2notasudi.com.br\n\n## Stack\n\n- **API**: FastAPI 0.115 + SQLAlchemy 2 + Pydantic 2 + Pydantic Settings\n- **DB**: Supabase (PostgreSQL 15) via SQLAlchemy + Alembic\n- **Cache/Session**: Redis 7\n- **WhatsApp**: Evolution API (http://cartorio_evolution-api:8080)\n- **CRM**: Chatwoot\n- **Workflows**: n8n (https://cartorio-n8n.dfgdxq.easypanel.host)\n- **LLM primario**: Opencode-Go (deepseek-v4-flash, low cost)\n- **LLM secundario**: OpenClaw gateway (gpt-5.5 / anthropic-sonnet)\n- **MCP**: FastMCP 3.4.2 (protocolo 2025-03-26)\n\n## Contato\n\n- DPO: dpo@2notasudi.com.br\n- Repo: https://github.com/2notas/cartorio-backend\n- Issues: https://github.com/2notas/cartorio-backend/issues\n- Site: https://2notasudi.com.br\n\n\nGerado por scripts/postman_sync.py (G8.17.T1). Authorization SEMPRE via {{bearer_token}} variable. NUNCA persistir tokens reais.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "0.6.0",
-    "_postman_id": "cartorio-sync-1784558944"
+    "_postman_id": "cartorio-sync-1785152233"
   },
   "item": [
     {
@@ -941,6 +941,123 @@
               "variable": []
             },
             "description": "Lista agendamentos próximos para lembrete (N8N)\n\nEndpoint para workflows N8N buscar agendamentos próximos (próximas 24 horas) que precisam de lembrete.\n\n**Auth**: header `X-API-Key`.\n**N8N**: Usado pelo workflow '02 - Lembrete de Agendamento'.\n\noperationId: get_agendamentos_proximos_api_v1_agendamento_proximos_get"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "agent-hermes",
+      "description": "3 endpoints (tag: agent-hermes)",
+      "item": [
+        {
+          "name": "GET /api/v1/agent-hermes/status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/agent-hermes/status",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "agent-hermes",
+                "status"
+              ],
+              "variable": []
+            },
+            "description": "Get Hermes Status\n\nRetorna o status operacional do Agent Hermes na VPS.\n\noperationId: get_hermes_status_api_v1_agent_hermes_status_get"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/agent-hermes/execute",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/agent-hermes/execute",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "agent-hermes",
+                "execute"
+              ],
+              "variable": []
+            },
+            "description": "Execute Hermes Task\n\nExecuta mensagem ou tarefa através do Agent Hermes Cartório na VPS.\n\noperationId: execute_hermes_task_api_v1_agent_hermes_execute_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/agent-hermes/webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/agent-hermes/webhook",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "agent-hermes",
+                "webhook"
+              ],
+              "variable": []
+            },
+            "description": "Hermes Webhook Ingest\n\nIngestão genérica de webhooks para o Agent Hermes.\n\noperationId: hermes_webhook_ingest_api_v1_agent_hermes_webhook_post"
           },
           "response": []
         }
@@ -2935,7 +3052,7 @@
     },
     {
       "name": "emolumento",
-      "description": "2 endpoints (tag: emolumento)",
+      "description": "5 endpoints (tag: emolumento)",
       "item": [
         {
           "name": "GET /api/v1/emolumento/calcular",
@@ -3054,6 +3171,154 @@
               ]
             },
             "description": "Calcular emolumento estendido (N8N / API)\n\nEndpoint estendido para cálculo de emolumentos notariais de Minas Gerais 2026.\n\n**Isenções**: Suporta a aplicação de gratuidade baseada em motivo legal (justiça gratuita, programas sociais, etc.).\n\n**Conformidade LGPD**: Se o ato for de alto valor (compra e venda, doação ou acima de R$ 1.000,00) e houver um cliente associado (cliente_id), exige consentimento ativo (consentimento_lgpd = True).\n\n**Audit**: Registra o cálculo no log de auditoria.\n\noperationId: calcular_emolumento_api_api_v1_emolumentos_calcular_api_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/emolumentos/real/djalma",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/emolumentos/real/djalma",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "emolumentos",
+                "real",
+                "djalma"
+              ],
+              "variable": []
+            },
+            "description": "Obter tabela oficial de preços do 2º Ofício de Uberlândia (Djalma)\n\nRetorna itens publicados da tabela oficial, com fonte, hash e vigência.\n\noperationId: obter_tabela_real_djalma_api_v1_emolumentos_real_djalma_get"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/emolumentos/real/calcular",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/emolumentos/real/calcular",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "emolumentos",
+                "real",
+                "calcular"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "tipo_ato",
+                  "value": "",
+                  "type": "string",
+                  "description": "Tipo do ato notarial."
+                },
+                {
+                  "key": "valor_declarado",
+                  "value": "",
+                  "type": "string",
+                  "description": "Valor do imóvel/negócio."
+                },
+                {
+                  "key": "folhas",
+                  "value": "1",
+                  "type": "string",
+                  "description": "Quantidade de folhas."
+                },
+                {
+                  "key": "urgencia",
+                  "value": "False",
+                  "type": "string",
+                  "description": "Se true, aplica taxa de urgência."
+                }
+              ]
+            },
+            "description": "Consultar item publicado ou encaminhar orçamento ao escrevente\n\nNunca infere tributos ou composição de ato. Parâmetros adicionais retornam HITL_REQUIRED.\n\noperationId: calcular_emolumento_real_endpoint_api_v1_emolumentos_real_calcular_post"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/emolumentos/real/extrair-ai",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/emolumentos/real/extrair-ai",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "emolumentos",
+                "real",
+                "extrair-ai"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "forcar_urgencia",
+                  "value": "False",
+                  "type": "string",
+                  "description": "Forçar urgência."
+                }
+              ]
+            },
+            "description": "Extrair intenção com PII Scrubbing e triagem de emolumento\n\nSanitiza PII, extrai sinais e só retorna total para item publicado sem parâmetros adicionais.\n\noperationId: extrair_e_calcular_ai_endpoint_api_v1_emolumentos_real_extrair_ai_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
@@ -3547,6 +3812,80 @@
               "variable": []
             },
             "description": "Status do backup pg_basebackup 4x/dia (A14)\n\nVerifica freshness do backup pg_basebackup 4x/dia (cron `0 */6 * * *` executa `pg_basebackup_4x.sh` em 00:00, 06:00, 12:00, 18:00 UTC). Classifica em **4 niveis** baseados na idade do ultimo backup com marker `.complete` no diretorio `/var/backups/cartorio/pgbase`:\n\n- `healthy` (200): ultimo backup <= 360 min (6h, = freq. cron)\n- `stale` (503): 360 < idade <= 720 min (6h-12h, alerta amarelo)\n- `critical` (503): idade > 720 min (12h+, RPO estourado)\n- `empty` (503): nenhum backup com marker (cron nunca rodou OK)\n\nEndpoint PUBLICO (sem auth) — usado por cron externo / monitor para alertar se o backup 4x/dia parar. Diferenca de `/health/backup` (v1): este endpoint checa **subdiretorios timestamped** com marker (pg_basebackup), enquanto v1 checa `.tar.gz` soltos (backup diario v0.4.0).\n\noperationId: health_backup_v2_api_v1_health_backup_v2_get"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "inteligencia-dados",
+      "description": "2 endpoints (tag: inteligencia-dados)",
+      "item": [
+        {
+          "name": "GET /api/v1/inteligencia-dados/agent-ai",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/inteligencia-dados/agent-ai",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "inteligencia-dados",
+                "agent-ai"
+              ],
+              "variable": []
+            },
+            "description": "Dados agregados de preços e uso do Agent AI\n\nCatálogo com proveniência e contadores em memória, sem PII ou texto de cliente.\n\noperationId: dados_agent_ai_api_v1_inteligencia_dados_agent_ai_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/painel/agent-ai",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/painel/agent-ai",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "painel",
+                "agent-ai"
+              ],
+              "variable": []
+            },
+            "description": "Painel de dados do Agent AI\n\nPainel sem PII para proveniência de preços, extração e encaminhamento humano.\n\noperationId: painel_agent_ai_api_v1_painel_agent_ai_get"
           },
           "response": []
         }
@@ -5462,6 +5801,190 @@
       ]
     },
     {
+      "name": "painel",
+      "description": "5 endpoints (tag: painel)",
+      "item": [
+        {
+          "name": "GET /api/v1/painel/fonte",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/painel/fonte",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "painel",
+                "fonte"
+              ],
+              "variable": []
+            },
+            "description": "Qualidade da fonte oficial de preços\n\nProveniencia, integridade (SHA-256), vigencia, idade da captura e aprovacao humana. Usa a captura PUBLISHED mais recente do banco; sem banco, cai nas constantes versionadas da Portaria CGJ/TJMG 8.664/2025.\n\noperationId: painel_fonte_api_v1_painel_fonte_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/painel/catalogo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/painel/catalogo",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "painel",
+                "catalogo"
+              ],
+              "variable": []
+            },
+            "description": "Catálogo publicado vigente\n\nItens PUBLISHED cuja vigencia contem a data da consulta. Sem banco, cai no catalogo publico versionado (constantes).\n\noperationId: painel_catalogo_api_v1_painel_catalogo_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/painel/extracao",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/painel/extracao",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "painel",
+                "extracao"
+              ],
+              "variable": []
+            },
+            "description": "Extração por IA agregada (sem PII)\n\nContadores em memoria por rotulo categorico: extracoes por outcome, handoffs por reason e fallbacks de LLM por reason. Nunca texto, CPF, telefone ou identificador de conversa.\n\noperationId: painel_extracao_api_v1_painel_extracao_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/painel/operacao",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/painel/operacao",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "painel",
+                "operacao"
+              ],
+              "variable": []
+            },
+            "description": "Operação de consulta de preços\n\nConsultas ao endpoint /emolumentos/real/calcular por outcome, handoffs ao escrevente e taxa de handoff (divisao por zero tratada).\n\noperationId: painel_operacao_api_v1_painel_operacao_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/painel/ia-usage",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/painel/ia-usage",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "painel",
+                "ia-usage"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "30",
+                  "type": "string",
+                  "description": "Janela de agregação em dias."
+                }
+              ]
+            },
+            "description": "Uso agregado da IA (LiteLLM spend)\n\nProxy de ia_usage.uso_agregado: custo, chamadas e tokens por modelo e por dia. Retorna {'disponivel': False, 'motivo': ...} quando a telemetria nao esta configurada — nunca vaza exception.\n\noperationId: painel_ia_usage_api_v1_painel_ia_usage_get"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "protocolo",
       "description": "4 endpoints (tag: protocolo)",
       "item": [
@@ -6279,7 +6802,7 @@
               ],
               "variable": []
             },
-            "description": "Whatsapp Health\n\nHealth check: Evolution API + pipeline.\n\noperationId: whatsapp_health_api_v1_whatsapp_health_get"
+            "description": "Whatsapp Health\n\nHealth check: Evolution API + sessao WhatsApp REAL + pipeline.\n\nE2.08 / Lesson 260: ``evolution_api=online`` NUNCA implica sessao\nconectada. Parseamos o ``connectionState`` real da instancia\n(open|close|connecting) e so reportamos ``status=ok`` quando a sessao\nesta efetivamente ``open``.\n\noperationId: whatsapp_health_api_v1_whatsapp_health_get"
           },
           "response": []
         },
@@ -6347,7 +6870,7 @@
               ],
               "variable": []
             },
-            "description": "Webhook Evolution API (WhatsApp - HMAC + dual-format + LGPD consent)\n\nRecebe mensagens do WhatsApp via Evolution API (https://doc.evolution-api.com/v2/api-reference).\n\n**Auth**: header `X-Hub-Signature-256` validado contra `EVOLUTION_API_KEY` (HMAC-SHA256).\n\n**Dual-format**: aceita **nested moderno** (`data.key.remoteJid`/`data.message.conversation`) e **root-level legado** (`sender`/`message` na raiz). Schema canonico em `app.schemas.webhook_payloads.EvolutionPayload`.\n\n**Idempotency**: `data.key.id` dedup via `evolution_ingest` (DB) + Redis SETNX (`chat_pipeline.check_idempotency`).\n\n**LGPD consent gate**: cliente deve aceitar LGPD via `SIM` antes do primeiro atendimento. Opt-out via `PARAR`/`SAIR` revoga consentimento.\n\n**Flow**: HMAC -> idempotency -> parse -> consent gate -> pipeline (debounce 1.2s -> rate limit 3s -> LLM com fallback chain -> scrub output).\n\noperationId: whatsapp_webhook_api_v1_whatsapp_webhook_post",
+            "description": "Webhook Evolution API (WhatsApp - HMAC + dual-format + LGPD consent)\n\nRecebe mensagens do WhatsApp via Evolution API (https://doc.evolution-api.com/v2/api-reference).\n\n**Auth**: header `X-Hub-Signature-256` (ou `X-Evolution-Signature`) validado contra `EVOLUTION_WEBHOOK_SECRET` (HMAC-SHA256). Fail-closed: 401 se inválida; 503 se REQUIRE=true sem secret.\n\n**Dual-format**: aceita **nested moderno** (`data.key.remoteJid`/`data.message.conversation`) e **root-level legado** (`sender`/`message` na raiz). Schema canonico em `app.schemas.webhook_payloads.EvolutionPayload`.\n\n**Idempotency**: `data.key.id` dedup via `evolution_ingest` (DB) + Redis SETNX (`chat_pipeline.check_idempotency`).\n\n**LGPD consent gate**: cliente deve aceitar LGPD via `SIM` antes do primeiro atendimento. Opt-out via `PARAR`/`SAIR` revoga consentimento.\n\n**Flow**: HMAC -> idempotency -> parse -> consent gate -> pipeline (debounce 1.2s -> rate limit 3s -> LLM com fallback chain -> scrub output).\n\noperationId: whatsapp_webhook_api_v1_whatsapp_webhook_post",
             "body": {
               "mode": "raw",
               "raw": "{}",

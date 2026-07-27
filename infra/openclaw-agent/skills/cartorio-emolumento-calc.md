@@ -22,6 +22,10 @@ Headers:
 | reconhecimento_firma_semelhanca | Reconhecimento de firma por assinatura | R$ 11,21 |
 | testamento_publico | Testamento | R$ 437,24 — HITL |
 | ata_notarial_primeira_folha | Ata até duas folhas | R$ 218,42 — HITL |
+| escritura_compra_venda | Escritura de compra e venda com conteúdo financeiro | Tabela 1, item 4.b — HITL |
+| certidao_casamento | Certidão de casamento | Tabela 1 — R$ 68,94 |
+| procuracao | Procuração pública | Tabela 1 — R$ 68,94 |
+| autenticacao | Autenticação de cópia | Tabela 1 — R$ 11,21 |
 
 ## Exemplo de chamada
 
