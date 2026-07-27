@@ -137,9 +137,7 @@ class TestGenesisELinkageMista:
             assert '"prev_hash":"' + "0" * 64 + '"' in canonical
 
     def test_chain_mista_unicode_verifica_ponta_a_ponta(self) -> None:
-        e1 = _entry(
-            idx=1, prev_hash=None, payload={"nome": "José"}, ts=self.TS1, sql_style=False
-        )
+        e1 = _entry(idx=1, prev_hash=None, payload={"nome": "José"}, ts=self.TS1, sql_style=False)
         e2 = _entry(
             idx=2,
             prev_hash=e1.hash,
@@ -147,17 +145,13 @@ class TestGenesisELinkageMista:
             ts=self.TS2,
             sql_style=True,
         )
-        e3 = _entry(
-            idx=3, prev_hash=e2.hash, payload={"fim": True}, ts=self.TS3, sql_style=False
-        )
+        e3 = _entry(idx=3, prev_hash=e2.hash, payload={"fim": True}, ts=self.TS3, sql_style=False)
         ok, last_valid = AuditService.verify_chain(_db_with([e1, e2, e3]))
         assert ok is True
         assert last_valid == 3
 
     def test_chain_mista_unicode_tamper_fail_closed(self) -> None:
-        e1 = _entry(
-            idx=1, prev_hash=None, payload={"nome": "José"}, ts=self.TS1, sql_style=False
-        )
+        e1 = _entry(idx=1, prev_hash=None, payload={"nome": "José"}, ts=self.TS1, sql_style=False)
         e2 = _entry(
             idx=2,
             prev_hash=e1.hash,

@@ -36,3 +36,6 @@ backend/scripts/integracoes_devops.py:38:ENV_FALLBACK
 # Sprint 3 Goal #3 (2026-06-24): ENV_FALLBACK multi-line para os.environ.get acima (Jules).
 backend/scripts/integracoes_devops.py:45:ENV_FALLBACK
 backend/app/services/emolumento_real_djalma.py:25:WEBHOOK_SECRET_HEX64
+backend/tests/test_agent_security_g9.py:137:MINIMAX_KEY
+backend/tests/test_mcp_gate_e310.py:47:TELEGRAM_BOT_TOKEN
+backend/tests/test_mcp_tool_errors_e206.py:31:TELEGRAM_BOT_TOKEN
