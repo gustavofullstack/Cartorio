@@ -3,8 +3,8 @@
 Fonte primária: Portaria CGJ/TJMG nº 8.664/2025 (vigência a partir de 2026-01-01),
 Tabela 1 — Atos do Tabelião de Notas.
 PDF oficial: https://www8.tjmg.jus.br/institucional/at/pdf/cpo86642025.pdf
-SHA-256 do PDF capturado em 2026-07-26:
-84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417
+SHA-256 do PDF capturado em 2026-07-26 (hash público de documento oficial, não é secret):
+84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417  # noqa: ALLOW_KEY_FALLBACK
 
 Regras de segurança do dado (docs/DADOS_PRECOS_E_PAINEL_AGENT_AI.md):
 - O agente só publica itens de consulta direta da Tabela 1, sem composição.
@@ -24,6 +24,7 @@ CARTORIO: Final[str] = "2º Serviço Notarial de Uberlândia"
 TABELIAO: Final[str] = "Djalma de Oliveira"
 FONTE_URL: Final[str] = "https://www8.tjmg.jus.br/institucional/at/pdf/cpo86642025.pdf"
 FONTE_SHA256: Final[str] = "84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417"
+
 FONTE_CAPTURADA_EM: Final[str] = "2026-07-26"
 VIGENCIA_INICIO: Final[str] = "2026-01-01"
 TABELA_REFERENCIA: Final[str] = "PORTARIA_CGJ_TJMG_8664_2025_TABELA_1"

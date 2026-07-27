@@ -63,7 +63,9 @@ class FontePainelResponse(BaseModel):
     vigencia_fim: str | None
     estado: str
     aprovacao_humana: AprovacaoHumana
-    origem: str = Field(description="'banco' quando ha captura PUBLISHED; 'constantes' no fallback.")
+    origem: str = Field(
+        description="'banco' quando ha captura PUBLISHED; 'constantes' no fallback."
+    )
 
 
 class CatalogoItemResponse(BaseModel):
@@ -185,7 +187,7 @@ def _itens_published_vigentes(db: Session | None) -> list[EmolumentoItem]:
     ),
     response_model=FontePainelResponse,
 )
-async def painel_fonte(db: Session = Depends(get_db)) -> FontePainelResponse:  # noqa: B008
+async def painel_fonte(db: Session = Depends(get_db)) -> FontePainelResponse:
     """Bloco 1 do painel: qualidade da fonte (fail-open para as constantes)."""
     fonte_const = cast(dict[str, Any], emolumento_real_djalma.catalogo_publico()["fonte"])
     captura = _captura_published_recente(db)
@@ -249,7 +251,7 @@ async def painel_fonte(db: Session = Depends(get_db)) -> FontePainelResponse:  #
     ),
     response_model=CatalogoPainelResponse,
 )
-async def painel_catalogo(db: Session = Depends(get_db)) -> CatalogoPainelResponse:  # noqa: B008
+async def painel_catalogo(db: Session = Depends(get_db)) -> CatalogoPainelResponse:
     """Bloco 2 do painel: itens publicados vigentes (fail-open)."""
     itens_db = _itens_published_vigentes(db)
     if itens_db:
