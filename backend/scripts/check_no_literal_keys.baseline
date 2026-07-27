@@ -35,3 +35,6 @@ backend/scripts/integracoes_devops.py:38:ENV_FALLBACK
 
 # Sprint 3 Goal #3 (2026-06-24): ENV_FALLBACK multi-line para os.environ.get acima (Jules).
 backend/scripts/integracoes_devops.py:45:ENV_FALLBACK
+# Falso positivo para hash de PDF publico
+backend/app/services/emolumento_real_djalma.py:26:WEBHOOK_SECRET_HEX64
+backend/app/services/emolumento_real_djalma.py:25:WEBHOOK_SECRET_HEX64
