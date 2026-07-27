@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-27T15:39:09.424023+00:00",
+    "generated_at": "2026-07-27T18:14:58.758290+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",

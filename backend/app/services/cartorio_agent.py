@@ -40,16 +40,30 @@ SERVICOS_CATALOGO: dict[str, tuple[str, str]] = {
     "ata_notarial": ("Ata Notarial (até duas folhas)", "R$ 218,42"),
 }
 
+# Perfil publico do cartorio. Os campos canonicos ``endereco`` e ``horario``
+# sao protegidos por ``tests/test_cartorio_agent_public_profile.py`` (contrato
+# publico da persona). Campos complementares (titular, telefone, instalacao,
+# cnpj, unidade_secundaria, expedicao) sao enriquecidos a partir de
+# ``docs/DJALMA_CARTORIO_DOSSIER.md`` mas NAO substituem a forma canonica.
 CARTORIO_INFO = {
-    "nome": "2o Oficio de Notas de Uberlandia / MG",
+    "nome": "2o Oficio de Notas de Uberlandia / MG (CNS 05.799-2)",
     "endereco": "Rua Cel. Antonio Alves Pereira, 850 - Centro, Uberlandia/MG",
     "horario": "Segunda a sexta, 09h as 17h",
-    "telefone_humano": "use /humano para falar com escrevente",
+    "telefone_humano": "(34) 3216-0252 / (34) 3215-7048 / WhatsApp (34) 99195-2444 — ou /humano",
+    "titular": "Djalma Pizarro (Substitutos: Victor Hugo Bianchini Pizarro, Felipe Pizarro, Alexandra Jose Beicker)",
+    "instalacao": "26/01/1892 (134 anos de atuacao notarial)",
+    "cnpj": "07.563.254/0001-67",
+    "unidade_secundaria": "Rua Machado de Assis, 685 - Centro, Uberlandia/MG (CEP 38400-112)",
+    "expedicao": "Ate 18h (suporte administrativo extensivo)",
 }
 
 # MiniMax direto (preferido) — validado 200 OK do container cartorio_api.
-# LiteLLM coding-vps fica como 2a opcao (rede resolve, mas master key costuma 401).
-MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
+# Aceita envs em producao: MINIMAX_API_KEY, MINIMAX_CODING_PLAN_KEY_API, hermes_llm_api_key
+MINIMAX_API_KEY = (
+    os.environ.get("MINIMAX_API_KEY", "")
+    or os.environ.get("MINIMAX_CODING_PLAN_KEY_API", "")
+    or os.environ.get("hermes_llm_api_key", "")
+)
 MINIMAX_BASE_URL = os.environ.get("MINIMAX_BASE_URL", "https://api.minimax.io/v1").rstrip("/")
 MINIMAX_MODEL = os.environ.get(
     "CARTORIO_AGENT_MODEL",
@@ -115,6 +129,18 @@ _PROVIDER_RATE_LIMIT_REPLY = (
     "Voce pode tentar novamente em alguns minutos ou digitar /humano para falar com o "
     "escrevente."
 )
+
+
+def _is_provider_rate_limited(status_code: int) -> bool:
+    """Classifica HTTP status como rate-limit transitorio (aciona circuit + fallback).
+
+    403: provedores free costumam devolver 403 (quota/billing) com mensagem que
+    NAO e erro transitorio de infra — mas, do ponto de vista do agente, o efeito
+    pratico e identico a 429 (chave exaurida / janela de uso estourada). Ambos
+    sao tratados com a mesma resposta amigavel e contam para o circuit breaker.
+    429 e a forma canonica do HTTP para rate-limit; mantemos 403 como alias.
+    """
+    return status_code in (403, 429)
 
 AGENT_SYSTEM = """Voce e o Agent AI do Cartorio 2o Oficio de Notas de Uberlandia/MG.
 
@@ -723,7 +749,7 @@ async def _chat_completion(
                     data = r.json()
                     msg = data.get("choices", [{}])[0].get("message") or {}
                     return msg, f"minimax_direct:{MINIMAX_MODEL}", ""
-                status = "rate_limited" if r.status_code == 429 else "error"
+                status = "rate_limited" if _is_provider_rate_limited(r.status_code) else "error"
                 provider_rate_limited = provider_rate_limited or status == "rate_limited"
                 store.inc_llm_calls_total("MiniMax_direct", "chat", status)
                 store.inc_llm_errors_total(
@@ -756,7 +782,7 @@ async def _chat_completion(
                     elapsed = time.perf_counter() - start_t
                     store.observe_llm_call_seconds("litellm", "chat", elapsed)
                     if r.status_code != 200:
-                        status = "rate_limited" if r.status_code == 429 else "error"
+                        status = "rate_limited" if _is_provider_rate_limited(r.status_code) else "error"
                         provider_rate_limited = provider_rate_limited or status == "rate_limited"
                         store.inc_llm_calls_total("litellm", "chat", status)
                         store.inc_llm_errors_total(
@@ -805,7 +831,7 @@ async def _chat_completion(
                 elapsed = time.perf_counter() - start_t
                 store.observe_llm_call_seconds(provider_label, "chat", elapsed)
                 if r.status_code != 200:
-                    status = "rate_limited" if r.status_code == 429 else "error"
+                    status = "rate_limited" if _is_provider_rate_limited(r.status_code) else "error"
                     provider_rate_limited = provider_rate_limited or status == "rate_limited"
                     store.inc_llm_calls_total(provider_label, "chat", status)
                     store.inc_llm_errors_total(
@@ -1407,7 +1433,7 @@ def sanitize_bot_output(text: str) -> str:
 
 
 def _scrub_bad_llm_phrases(text: str) -> str:
-    """Remove alucinacoes tipicas de modelo free (stateless / prompt cortado / spam)."""
+    """Remove alucinacoes tipicas de modelo free e erros de provedor (stateless / rate limit / 403 / quota)."""
     if not text:
         return text
     text = sanitize_bot_output(text)
@@ -1425,6 +1451,16 @@ def _scrub_bad_llm_phrases(text: str) -> str:
         "sou um modelo de linguagem",
         "como ia generativa",
         "como uma ia",
+        "rate-limiting requests",
+        "rate limit",
+        "usage limit",
+        "billing cycle",
+        "quota will be refreshed",
+        "purchase extra usage",
+        "http 403",
+        "http 429",
+        "kimi.com",
+        "the model provider is rate-limiting",
     )
     low = text.lower()
     if any(b in low for b in bad):

@@ -554,3 +554,48 @@ async def test_erro_httpx_grava_error_type_canonico(
     # label e canonico: ConnectError nao esta na whitelist -> UnknownError
     assert errors["error_type=UnknownError|model=MiniMax_direct|operation=chat"] == 1
     assert all("ConnectError" not in key for key in errors)
+
+
+def test_scrub_bad_llm_phrases_suppresses_provider_403_and_rate_limit_errors() -> None:
+    """Verifica que mensagens brutas de erro de 403/rate limit de provedor sao suprimidas."""
+    raw_403 = (
+        "HTTP 403: You've reached your usage limit for this billing cycle. "
+        "Your quota will be refreshed in the next cycle. "
+        "To continue now, purchase extra usage or upgrade your plan: kimi.com"
+    )
+    raw_rate_limit = "The model provider is rate-limiting requests. Please wait a moment and try again."
+
+    assert cartorio_agent._scrub_bad_llm_phrases(raw_403) == ""
+    assert cartorio_agent._scrub_bad_llm_phrases(raw_rate_limit) == ""
+
+
+async def test_chat_completion_treats_403_as_rate_limited(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Status HTTP 403 e 429 marcam provider_rate_limited e retornam resposta amigavel."""
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_API_KEY", "mm-key")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_BASE_URL", "https://minimax.example/v1")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_MODEL", "MiniMax-M3")
+
+    async def _no_skip(provider: str) -> bool:
+        return False
+
+    async def _noop(provider: str) -> None:
+        return None
+
+    monkeypatch.setattr(cartorio_agent, "_circuit_skip", _no_skip)
+    monkeypatch.setattr(cartorio_agent, "_circuit_failure", _noop)
+
+    with respx.mock:
+        respx.post("https://minimax.example/v1/chat/completions").mock(
+            return_value=httpx.Response(403, text="Quota Exceeded")
+        )
+        msg, provider, err = await cartorio_agent._chat_completion(
+            [{"role": "user", "content": "oi"}],
+        )
+
+    assert msg is not None
+    assert "content" in msg
+    assert "atendimento inteligente atingiu o limite momentaneo" in msg["content"]
+    assert provider == "offline:provider_rate_limited"
+
