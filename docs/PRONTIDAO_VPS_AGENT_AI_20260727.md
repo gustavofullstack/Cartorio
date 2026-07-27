@@ -25,13 +25,13 @@ conversa atendida de ponta a ponta.
 | WhatsApp/Evolution | indisponível para atendimento | API Evolution online, porém sessão `cartorio-2notas` fechada/desconectada. |
 | Chatwoot | processo saudável, contrato não confirmado | interface e health disponíveis, mas a chave de API local consultada recebeu 401; hand-off e caixa humana não foram certificados. |
 | Hermes/iMessage | não implantado | nenhum serviço Hermes ou segredo Hermes foi encontrado na VPS; não há round-trip iPhone. |
-| Backup/recuperação | parcialmente recuperado | backup físico novo (37 MB, gzip válido), backup lógico novo e catálogo de restauração válido; monitor local voltou a sucesso. Ainda falta teste de restore isolado, mount para o endpoint v2 e exportação n8n. |
+| Backup/recuperação | recuperado com pendências de observabilidade | backup físico novo (37 MB, gzip válido), backup lógico novo, catálogo válido e restore integral em Postgres temporário isolado; monitor local e `/health/backup` voltaram a sucesso. Ainda faltam mount para o endpoint v2 e exportação n8n. |
+| Contrato Hermes | pronto para implantação | `docker stack config` renderizou o stack isolado com imagem fixada, rede interna, quatro Docker Secrets externos e allowlist Photon fail-closed. |
 
 ## Bloqueios P0 — resolver antes de produção autônoma
 
 | Dono | Ação requerida | Critério de aceite |
 | --- | --- | --- |
-| Operação/VPS | Executar teste de restore em ambiente isolado e adicionar o mount read-only de `/var/backups/cartorio` ao serviço API para o endpoint v2. | Restore concluído, retenção comprovada, monitor verde por 26 h e `/health/backup-v2` saudável. |
 | Operação WhatsApp | Parear novamente a instância `cartorio-2notas` por QR com o telefone autorizado. | `session_connected=true` e mensagem real autorizada: cliente/telefone → Evolution → API/IA → resposta na mesma conversa. |
 | Operação Hermes | Provisionar os quatro Docker Secrets apenas no gerenciador da VPS, aplicar o stack versionado e configurar provider aprovado/Photon allowlist. | `cartorio_hermes` 1/1, health interno autenticado, MCP `tools/list` e uma tool sem PII; nenhuma conexão direta a Postgres/Redis. |
 | Operação iMessage | Configurar Photon com projeto/segredo e E.164 autorizados. | iPhone autorizado → Photon → Hermes → resposta no mesmo iPhone, com auditoria sanitizada. |
@@ -41,6 +41,8 @@ conversa atendida de ponta a ponta.
 
 | Área | Ação | Critério de aceite |
 | --- | --- | --- |
+| Backup v2 | Adicionar o mount read-only de `/var/backups/cartorio` ao serviço API em uma janela de rollout controlada. | `/health/backup-v2` saudável, sem expor o conteúdo dos backups. |
+| API | Fazer rollout controlado do backend com o novo health Hermes. A versão pública ainda retorna um falso `healthy` embora não exista serviço Hermes na VPS. | Sem `HERMES_API_URL`, `/agent-hermes/status` retorna `not_deployed`; com URL configurada, o endpoint prova `/health` antes de retornar `healthy`. |
 | n8n | Rotacionar a chave em `/etc/cartorio-backup/n8n-api-key.env`, que hoje recebe 401, e conceder à credencial de observabilidade apenas leitura de workflows/execuções. | Exportação de workflows no backup e auditoria de execuções funcionam sem poder alterar/rodar workflow; amostra das rotas críticas recente e bem-sucedida. |
 | Telegram | Executar os cenários de conversa privada e grupo descritos no guia E2E. | Webhook → modelo → resposta Telegram comprovado em cada cenário, incluindo erro controlado e HITL. |
 | IA/provider | Testar inferência com mensagem sintética e sem PII após aprovação de custo. | Resposta do modelo, timeout/falha controlada, logs sanitizados e nenhuma decisão jurídica automática. |
