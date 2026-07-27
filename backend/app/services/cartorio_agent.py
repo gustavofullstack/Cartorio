@@ -27,13 +27,17 @@ from app.services.pii import scrub
 
 logger = logging.getLogger(__name__)
 
-# Catalogo espelhado do telegram FSM (fonte unica operacional bot)
+# Catálogo público, revisado contra a Portaria CGJ/TJMG nº 8.664/2025,
+# Tabela 1, vigente em 01/01/2026. Os valores são o ``Valor Final ao Usuário``
+# da tabela estadual; não incluem atos acessórios nem substituem a conferência
+# do escrevente. A fonte e o hash de captura vivem em
+# ``docs/DADOS_PRECOS_E_PAINEL_AGENT_AI.md``.
 SERVICOS_CATALOGO: dict[str, tuple[str, str]] = {
-    "reconhecimento_firma": ("Reconhecimento de Firma", "R$ 8,50"),
-    "autenticacao": ("Autenticacao de Documento", "R$ 6,80"),
-    "procuracao": ("Procuracao", "R$ 95,20"),
-    "testamento": ("Testamento", "R$ 320,00"),
-    "ata_notarial": ("Ata Notarial", "R$ 480,00"),
+    "reconhecimento_firma": ("Reconhecimento de Firma (por assinatura)", "R$ 11,21"),
+    "autenticacao": ("Autenticação de Cópia (por folha)", "R$ 11,21"),
+    "procuracao": ("Procuração Geral (por outorgante)", "R$ 68,94"),
+    "testamento": ("Testamento", "R$ 437,24"),
+    "ata_notarial": ("Ata Notarial (até duas folhas)", "R$ 218,42"),
 }
 
 CARTORIO_INFO = {

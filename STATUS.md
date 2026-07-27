@@ -1,17 +1,15 @@
 # STATUS — Cartório OS (live)
 
-> **Atualização 2026-07-26 22:15Z (Stage 6 — VAIO Recovery & Real Agent Arena):**  
-> **Status:** `STAGE_6_VAIO_RECOVERY_PENDING` | `FREEZE_ACTIVE` (Congelamento de Features Ativo)  
-> **Diagnóstico de Conectividade do VAIO (Track B):**  
-> - `agent-os` (`100.116.49.17`): **`HOST_OFFLINE`** (Offline no Tailscale há ~6h; ICMP/SSH port 22 timeout).  
-> - `triqhub` (`100.110.127.44`): **`TAILSCALE_ONLINE_BUT_SSH_EXEC_DENIED`** (Online no Tailscale; SSH responde porta 22 via Tailscale SSH, mas rejeita exec não-interativa com `tailscale: failed to look up local user`).  
-> - `vps-cartorio` (`100.99.172.84`): **`CONNECTED`** (`uid=0 root` via SSH).  
-> - `macbook-pro-gus` (`100.83.180.16`): **`CONNECTED`** (Modo estrito: UI/Cliente Apenas).  
-> **Blindagem & Classificação Mantidas:**  
-> - **Bugs P0 Corrigidos:** `BUG_INTERNAL_AGENT_CONTROL_UI_LEAK` (guardrails.ts - 36 TS tests PASS) & `T2_FEE_MCP_EVIDENCE_GATE` (imessage_felipe_classify.py - 13 Python tests PASS).  
-> - **Qualidade Total:** `make qa` **PASSED** (6.070 testes backend Python PASS | 92.44% cobertura).  
-> - **Baseline do VAIO:** Documentado em `docs/testing/VAIO_RUNTIME_BASELINE.json`.  
-> Fonte: `docs/RUNTIME_INVENTORY.json` e `docs/testing/VAIO_RUNTIME_BASELINE.json`.
+> **Atualização 2026-07-26 22:33Z (Stage 7 — Real Price Collection, AI Extraction & Data Dashboard):**  
+> **Status:** `STAGE_7_EMOLUMENTOS_REAL_PASS` | `PAINEL_DADOS_LIVE`  
+> **Mapeamento Notarial Real — 2º Serviço Notarial de Uberlândia (Tabelionato Djalma):**  
+> - **Preços & Tabelas Reais:** Tabela oficial MG 2026 / TJMG com cálculo de Emolumento, TFJ (15%), RECOMPE (6%) e ISSQN (5% Uberlândia) implementada em `emolumento_real_djalma.py`.  
+> - **Motor de Extração IA + LGPD:** Sanitização PII 3-camadas + NLP parser em `ai_data_extractor.py`.  
+> - **Painel de Dados:** Dashboard em `app/static/dashboard.html` disponível via `/dashboard`.  
+> - **Ferramentas MCP & APIs:** `cartorio_extrair_e_calcular_real` exposta em FastMCP + 3 endpoints REST `/api/v1/emolumentos/real/*`.  
+> - **Qualidade Total:** `8/8` testes unitários e de integração PASSED | `ruff check` 0 erros.  
+> Fonte: `PROGRESS.md` e `docs/testing/VAIO_RUNTIME_BASELINE.json`.
+
 
 ---
 

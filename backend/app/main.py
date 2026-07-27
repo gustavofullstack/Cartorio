@@ -887,6 +887,16 @@ async def redoc_html() -> HTMLResponse:
     )
 
 
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard_html() -> HTMLResponse:
+    """Painel do Agente AI & Radar de Preços Reais do 2º Serviço Notarial de Uberlândia (Djalma)."""
+    dashboard_path = Path(__file__).parent / "static" / "dashboard.html"
+    if dashboard_path.is_file():
+        content = dashboard_path.read_text(encoding="utf-8")
+        return HTMLResponse(content)
+    return HTMLResponse("<h1>Painel em manutenção</h1>", status_code=404)
+
+
 app.include_router(api_router, prefix="/api/v1")
 # WebSocket /api/v1/ws/atendimentos (T2.API.T19) — prefix /api/v1 alinha com
 # o contrato documentado para clients (consistente com /api/v1/*).

@@ -151,6 +151,34 @@ async def cartorio_calcular_emolumento(
     }
 
 
+@mcp.tool(
+    name="cartorio_extrair_e_calcular_real",
+    description=(
+        "Extrai dados de solicitação em linguagem natural com PII scrubbing "
+        "e calcula o valor exato dos emolumentos notariais com discriminativo fiscal completo "
+        "(Emolumento, TFJ, Recompe-MG e ISSQN Uberlândia 5%) para o 2º Serviço Notarial de Uberlândia (Djalma)."
+    ),
+)
+async def cartorio_extrair_e_calcular_real(
+    texto_usuario: str,
+    forcar_urgencia: bool = False,
+) -> dict:
+    """Extrai entidades e calcula orçamento notarial real para Uberlândia/MG 2026.
+
+    Args:
+        texto_usuario: Texto em linguagem natural da solicitação do cliente.
+        forcar_urgencia: Se true, força a taxa de urgência notarial.
+
+    Returns:
+        Dict com entidades extraídas, PII sanitizado, cálculo discriminado e indicador HITL.
+    """
+    from app.services.ai_data_extractor import extrair_e_calcular_solicitacao
+
+    res = extrair_e_calcular_solicitacao(texto_usuario, forcar_urgencia=forcar_urgencia)
+    return res.to_dict()
+
+
+
 # ============================================================================
 # Tool 2: Consultar protocolo
 # ============================================================================

@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from app.services.cartorio_agent import (
+    SERVICOS_CATALOGO,
     _detect_intent,
     _match_servico,
     _offline_reply,
@@ -12,6 +13,15 @@ from app.services.cartorio_agent import (
     _run_remote_tool,
     run_cartorio_agent,
 )
+
+
+def test_catalogo_publico_usa_valores_finais_tjmg_2026() -> None:
+    """Itens simples só podem divulgar o valor final da fonte primária vigente."""
+    assert SERVICOS_CATALOGO["reconhecimento_firma"][1] == "R$ 11,21"
+    assert SERVICOS_CATALOGO["autenticacao"][1] == "R$ 11,21"
+    assert SERVICOS_CATALOGO["procuracao"][1] == "R$ 68,94"
+    assert SERVICOS_CATALOGO["testamento"][1] == "R$ 437,24"
+    assert SERVICOS_CATALOGO["ata_notarial"][1] == "R$ 218,42"
 
 
 def test_detect_intent_preco() -> None:
@@ -37,7 +47,7 @@ def test_offline_catalogo_serie_multi_msg() -> None:
     r = _offline_reply("cada um em mensagens separadas", "catalogo_serie", [])
     assert not r.extra_messages
     assert "Servicos oficiais" in r.text
-    assert "Autenticacao" in r.text
+    assert "Autenticação" in r.text
     assert r.provider == "offline:catalogo_serie"
 
 
@@ -139,7 +149,7 @@ async def test_run_agent_offline_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.services.cartorio_agent._llm_minimax", _fail_llm)
     reply = await run_cartorio_agent("quanto custa autenticacao de documento?")
     assert reply.text
-    assert "6,80" in reply.text or "Autentic" in reply.text or "autentic" in reply.text.lower()
+    assert "11,21" in reply.text or "Autentic" in reply.text or "autentic" in reply.text.lower()
     assert reply.provider == "offline"
 
 

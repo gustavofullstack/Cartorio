@@ -1,5 +1,27 @@
 
+## 2026-07-26 Stage 7 — Real Price Collection, AI Extraction & Data Dashboard (`2_OFICIO_UBERLANDIA_DJALMA_LIVE`)
+
+**Status: `STAGE_7_EMOLUMENTOS_REAL_PASS`** | **`PAINEL_DADOS_LIVE`**
+
+- **Coleta de Preços & Tabela Notarial Real (MG 2026 / TJMG / Uberlândia)**:
+  - Criado `backend/app/services/emolumento_real_djalma.py` com faixas de escrituras (R$ 0 a R$ 5M+) e atos fixos do 2º Serviço Notarial de Uberlândia (Tabelionato Djalma de Oliveira).
+  - Discriminativo fiscal completo: Emolumento Base + Folhas Extras + TFJ (15% TJMG) + RECOMPE-MG (6%) + ISSQN (5% Uberlândia).
+- **Motor de Extração Inteligente via IA com PII Scrubbing**:
+  - Criado `backend/app/services/ai_data_extractor.py` integrando PII Scrubbing 3-camadas (`pii.py`), parsing NLP de intenção notarial, cálculo fiscal real e indicação de HITL obrigatório.
+- **Ferramentas MCP & Endpoints REST**:
+  - Registrada a tool MCP `cartorio_extrair_e_calcular_real` em `backend/mcp_server.py`.
+  - Adicionados 3 novos endpoints REST em `backend/app/api/v1/router.py`: GET `/emolumentos/real/djalma`, POST `/emolumentos/real/calcular`, POST `/emolumentos/real/extrair-ai`.
+- **Painel Interativo de Dados do Agente AI**:
+  - Criado `backend/app/static/dashboard.html` e montado em `backend/app/main.py` na rota `/dashboard`.
+  - Interface Dark Mode Premium com radar do 2º Ofício, calculadora notarial ao vivo e visualizador do audit log.
+- **Suíte de Testes & Qualidade**:
+  - `tests/test_emolumento_real_djalma.py` & `tests/test_api_emolumento_real.py`: **8/8 PASSED** em 0.74s.
+  - `ruff check`: **0 erros / 0 avisos**.
+
+Modified by Gustavo Almeida — 2026-07-26
+
 ## 2026-07-26 Stage 6 — VAIO Recovery & Real Agent Arena Contract (`STAGE_6_VAIO_RECOVERY_PENDING`)
+
 
 **Status: `STAGE_6_VAIO_RECOVERY_PENDING`** | **`FREEZE_ACTIVE`**
 

@@ -23,12 +23,13 @@ import hmac
 import json
 import os
 import time
+from pathlib import Path as FilePath
 from typing import Annotated, Any, cast
 
 import httpx
 import redis
 from fastapi import APIRouter, Body, Depends, Form, Header, HTTPException, Path, Query, Request
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, ConfigDict, Field  # noqa: F401  (usado nos schemas abaixo)
@@ -289,6 +290,87 @@ async def calcular_emolumento_api(
         tabela_referencia=resultado.tabela_referencia,
         valido_ate=resultado.valido_ate,
     )
+
+
+@api_router.get(
+    "/emolumentos/real/djalma",
+    tags=["emolumento"],
+    summary="Obter tabela oficial de preços do 2º Ofício de Uberlândia (Djalma)",
+    description="Retorna itens publicados da tabela oficial, com fonte, hash e vigência.",
+)
+async def obter_tabela_real_djalma() -> dict:
+    from app.services.emolumento_real_djalma import catalogo_publico
+
+    return catalogo_publico()
+
+
+@api_router.get(
+    "/painel/agent-ai",
+    tags=["inteligencia-dados"],
+    summary="Painel de dados do Agent AI",
+    description="Painel sem PII para proveniência de preços, extração e encaminhamento humano.",
+)
+async def painel_agent_ai() -> FileResponse:
+    """Entrega a interface que consome apenas o catálogo público versionado."""
+    painel = FilePath(__file__).resolve().parents[2] / "static" / "agent_ai_data_panel.html"
+    return FileResponse(painel, media_type="text/html")
+
+
+@api_router.post(
+    "/emolumentos/real/calcular",
+    tags=["emolumento"],
+    summary="Consultar item publicado ou encaminhar orçamento ao escrevente",
+    description="Nunca infere tributos ou composição de ato. Parâmetros adicionais retornam HITL_REQUIRED.",
+)
+async def calcular_emolumento_real_endpoint(
+    tipo_ato: Annotated[str, Query(description="Tipo do ato notarial.")],
+    valor_declarado: Annotated[float | None, Query(description="Valor do imóvel/negócio.")] = None,
+    folhas: Annotated[int, Query(ge=1, le=1000, description="Quantidade de folhas.")] = 1,
+    urgencia: Annotated[bool, Query(description="Se true, aplica taxa de urgência.")] = False,
+) -> dict:
+    from app.services.emolumento_real_djalma import calcular_emolumento_real_djalma
+
+    resultado = calcular_emolumento_real_djalma(
+        tipo_ato=tipo_ato,
+        valor_declarado=valor_declarado,
+        folhas=folhas,
+        urgencia=urgencia,
+    )
+    return resultado.to_dict()
+
+
+@api_router.post(
+    "/emolumentos/real/extrair-ai",
+    tags=["emolumento"],
+    summary="Extrair intenção com PII Scrubbing e triagem de emolumento",
+    description="Sanitiza PII, extrai sinais e só retorna total para item publicado sem parâmetros adicionais.",
+)
+async def extrair_e_calcular_ai_endpoint(
+    texto_usuario: Annotated[str, Body(embed=True, description="Mensagem em linguagem natural do cliente.")],
+    forcar_urgencia: Annotated[bool, Query(description="Forçar urgência.")] = False,
+    db: Session = Depends(get_db),
+) -> dict:
+    from app.services.ai_data_extractor import extrair_e_calcular_solicitacao
+
+    res = extrair_e_calcular_solicitacao(texto_usuario, forcar_urgencia=forcar_urgencia)
+
+    if db is not None:
+        AuditService.log(
+            db,
+            actor_id="ai_extractor",
+            actor_type="system",
+            action="emolumento.extrair_ai",
+            resource=f"ato:{res.tipo_ato_identificado}",
+            payload={
+                "tipo_ato": res.tipo_ato_identificado,
+                "urgencia": res.urgencia_identificada,
+                "hitl_obrigatorio": res.hitl_obrigatorio,
+                "total": res.calculo.to_dict()["total"],
+            },
+        )
+        res.status_auditoria = "PERSISTED"
+    return res.to_dict()
+
 
 
 # ============================================================================
