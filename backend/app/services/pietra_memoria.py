@@ -89,7 +89,7 @@ def salvar_mensagem(
                 INSERT INTO memoria_conversa
                     (telefone_hash, session_id, canal, role, content, metadata_json, created_at, updated_at)
                 VALUES
-                    (:telefone_hash, :session_id, :canal, :role, :content, :metadata::jsonb, :now, :now)
+                    (:telefone_hash, :session_id, :canal, :role, :content, CAST(:metadata AS jsonb), :now, :now)
             """),
             {
                 "telefone_hash": telefone_hash,
@@ -231,9 +231,9 @@ def salvar_session_state(
                 INSERT INTO session_state
                     (telefone_hash, session_id, state_json, last_intent, active_topic, last_updated, expires_at)
                 VALUES
-                    (:tel, :sid, :state::jsonb, :li, :at, :now, :exp)
+                    (:tel, :sid, CAST(:state AS jsonb), :li, :at, :now, :exp)
                 ON CONFLICT (telefone_hash, session_id) DO UPDATE
-                SET state_json = :state::jsonb,
+                SET state_json = CAST(:state AS jsonb),
                     last_intent = :li,
                     active_topic = :at,
                     last_updated = :now,

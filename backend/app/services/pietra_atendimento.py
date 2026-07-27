@@ -155,7 +155,7 @@ def iniciar_atendimento(
                      criado_em, atualizado_em)
                 VALUES
                     (:cliente_id, :telefone_hash, :canal, :tipo, :status,
-                     :dados_coletados::jsonb, :dados_pendentes::jsonb, :protocolo_id, :agendamento_id, :observacoes,
+                     CAST(:dados_coletados AS jsonb), CAST(:dados_pendentes AS jsonb), :protocolo_id, :agendamento_id, :observacoes,
                      NOW(), NOW())
                 RETURNING id
             """),
@@ -187,7 +187,7 @@ def iniciar_atendimento(
                          dados_coletados, dados_pendentes, observacoes, criado_em, atualizado_em)
                     VALUES
                         (:cliente_id, :telefone_hash, :canal, :tipo, :status,
-                         '{}'::jsonb, '[]'::jsonb, :observacoes, NOW(), NOW())
+                         CAST('{}' AS jsonb), CAST('[]' AS jsonb), :observacoes, NOW(), NOW())
                     RETURNING id
                 """),
                 {
@@ -213,7 +213,7 @@ def iniciar_atendimento(
                 INSERT INTO memoria_conversa
                     (telefone_hash, session_id, canal, role, content, metadata_json, created_at, updated_at)
                 VALUES
-                    (:telefone_hash, :session_id, :canal, 'system', :content, :metadata::jsonb, NOW(), NOW())
+                    (:telefone_hash, :session_id, :canal, 'system', :content, CAST(:metadata AS jsonb), NOW(), NOW())
             """),
             {
                 "telefone_hash": coleta.telefone_hash,
@@ -320,6 +320,6 @@ def iniciar_atendimento(
 
 
 def _to_jsonb(d: Any) -> str:
-    """Serializa dict/list para JSON string (Postgres ::jsonb)."""
+    """Serializa dict/list para JSON string (Postgres ::text::text::jsonb)."""
     import json
     return json.dumps(d, ensure_ascii=False, default=str)
