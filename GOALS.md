@@ -1,4 +1,4 @@
-# GOALS — Cartório 2º Notas · 2026-07-03
+# GOALS — Cartório 2º Notas · 2026-07-27 (AGENT PIETRA LIVE)
 
 > Single source of truth de metas do projeto. Formato: **letra → objetivo → status → % → evidência**.
 > Sincronizado com `.harness/paperclip-board/board.json` (G1-G5) e `.harness/loop-engineer/crons/LOOP_OBJECTIVE.md`.
@@ -6,13 +6,22 @@
 
 ---
 
-## META ÚNICA
+## META ÚNICA (2026-07-27)
 
-**Cartório 2º Notas 100% production-ready com WhatsApp produção conectado** via Evolution API + LGPD 100% + fallback chain validado 3x.
+**AGENT PIETRA · MINIMAX M3 1M XMAX 100% operacional no iMessage Spectrum** com anti-vazamento de dev, sem emoji, saudação contextual BRT, MCP tool `cartorio_calcular_emolumento` retornando valores exatos da Tabela TJMG 2026, e knowledge base das Tabelas Fixação 1+8 versionada em OCR.
 
 ---
 
-## GOALS A-G (consolidado 2026-07-03)
+## GOALS H-K (atualizado 2026-07-27 — AGENT PIETRA LIVE)
+
+| Letra | Objetivo | Status | % | Evidência |
+|-------|----------|--------|---|-----------|
+| **H** | **AGENT PIETRA** renomeado + endurecido (sem emoji, saudação BRT, anti-vazamento) | ✅ done | 100% | SOUL.md reescrito; gateway PID 65548; 3 testes reais iMessage OK (saudação, anti-leak, emolumento MCP) |
+| **I** | **MCP server funcional** (`/mcp-servers` retorna 14 tools) | ✅ done | 100% | 502 reportado era 404 no path errado; `/mcp-servers` 200 com tools_count=14 (cartorio-api) + 50 (n8n) + 30 (supabase) + 57 (easypanel) + 20 (openclaw) |
+| **J** | **Knowledge base TJMG 2026** (PDFs Fixação 1+8 OCR'd e versionados) | ✅ done | 100% | 14+4 páginas OCR'd via tesseract 5.5.2 + pdftoppm 300dpi; `docs/tjmg-ocr/INDEX.md`; loader `app/services/tjmg_ocr_loader.py`; 9 testes PASS |
+| **K** | Tabela MG 2026 emolumento tool exato via MCP | ✅ done | 100% | `hermes -z "Quanto custa uma procuracao generica?"` → R$ 68,94 (R$ 52,43 + TFJ R$ 16,51) — tool `cartorio_calcular_emolumento` chamada real |
+
+## GOALS A-G (consolidado 2026-07-03, ainda válido)
 
 | Letra | Objetivo | Status | % | Evidência |
 |-------|----------|--------|---|-----------|
@@ -90,3 +99,20 @@
 ---
 
 Modified by Gustavo Almeida (via plan Mavis)
+
+---
+
+## UPDATE 2026-07-27 — AGENT PIETRA LIVE
+
+- **Renomeado Hermes → Pietra** em `~/.hermes/profiles/cartorio/SOUL.md`
+- **Endurecido**: zero emoji, saudação contextual BRT, anti-vazamento de dev, mensagens separadas, anti-injeção reforçada
+- **Gateway reiniciado** (PID 65548) — validado com 3 testes reais
+- **MCP 14 tools** funcionais (cartorio-api) + 50 (n8n) + 30 (supabase) + 57 (easypanel) + 20 (openclaw)
+- **PDFs TJMG 2026** (Fixação 1 14p + Fixação 8 4p) OCR'd e versionados em `docs/tjmg-ocr/`
+- **Loader** `app/services/tjmg_ocr_loader.py` com 9 testes PASS
+
+### Pendente (SUI Gustavo)
+- **D** — WhatsApp QR scan (instance `cartorio-2notas` state=close)
+- **OpenClaw Tailscale auth** (SUI marcado no `/mcp-servers`)
+
+Modified by Gustavo Almeida · 2026-07-27
