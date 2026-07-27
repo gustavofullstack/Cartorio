@@ -119,3 +119,21 @@ async def test_record_success_silent_on_redis_down() -> None:
     """Se Redis estiver offline, _record_success não levanta exceção."""
     with patch(PATCH_TARGET, side_effect=Exception("offline")):
         await _record_success("test_provider")  # Não deve levantar
+
+
+@pytest.mark.asyncio
+async def test_record_failure_default_5_attempts_opens_5_hours() -> None:
+    """P0 Gustavo: Padrão do _record_failure exige 5 falhas e 18000s (5h) de circuito aberto."""
+    mock_client = AsyncMock()
+    mock_client.incr = AsyncMock(return_value=5)
+    mock_client.expire = AsyncMock()
+    mock_client.setex = AsyncMock()
+    mock_client.delete = AsyncMock()
+    mock_bus = MagicMock()
+    mock_bus.client = mock_client
+
+    with patch(PATCH_TARGET, return_value=mock_bus):
+        await _record_failure("MiniMax_direct")
+        mock_client.setex.assert_called_once_with("cb:open:MiniMax_direct", 18000, "1")
+        mock_client.delete.assert_called_once_with("cb:fail:MiniMax_direct")
+

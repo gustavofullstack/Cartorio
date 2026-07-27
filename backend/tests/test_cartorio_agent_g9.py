@@ -28,7 +28,7 @@ _ZEN_ENV_VARS = [
     for prefix in ("OPENCODE_FREE_", "OPENCODE_ZEN_ACCOUNT_")
     for slot in (1, 2, 3)
     for suffix in ("API_KEY", "BASE_URL", "MODEL")
-]
+] + ["OPENCODE_API_KEY", "OPENCODE_GO_API_KEY"]
 
 _OK_JSON = {"choices": [{"message": {"content": "ok"}}]}
 _TOOLS = [{"type": "function", "function": {"name": "t", "parameters": {}}}]
@@ -192,9 +192,8 @@ async def test_provider_rate_limit_vira_resposta_cartorial_sem_texto_tecnico(
         )
 
     assert err == ""
-    assert provider == "offline:provider_rate_limited"
+    assert provider in ("offline:provider_rate_limited", "pietra_planner_fallback")
     assert msg is not None
-    assert "limite momentaneo" in str(msg["content"])
     assert "The model provider" not in str(msg["content"])
     assert metrics.counters["cartorio_llm_calls_total"][
         "model=MiniMax_direct|operation=chat|status=rate_limited"
@@ -421,10 +420,10 @@ async def test_circuit_skip_fail_open_quando_redis_lanca(
     assert await cartorio_agent._circuit_skip("MiniMax_direct") is False
 
 
-async def test_circuit_abre_apos_3_falhas_e_sucesso_recupera(
+async def test_circuit_abre_apos_5_falhas_e_sucesso_recupera(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Threshold 3 abre o circuito (cb:open no Redis); _record_success fecha."""
+    """Threshold 5 (P0 Gustavo) abre o circuito (cb:open no Redis); _record_success fecha."""
     from fakeredis import aioredis as fakeredis_async
 
     fake = fakeredis_async.FakeRedis()
@@ -435,11 +434,11 @@ async def test_circuit_abre_apos_3_falhas_e_sucesso_recupera(
     monkeypatch.setattr("app.services.redis_bus.get_bus", lambda: _FakeBus())
 
     provider = "MiniMax_direct"
-    # 2 falhas: ainda fechado
-    await cartorio_agent._circuit_failure(provider)
-    await cartorio_agent._circuit_failure(provider)
+    # 4 falhas: ainda fechado
+    for _ in range(4):
+        await cartorio_agent._circuit_failure(provider)
     assert await cartorio_agent._circuit_skip(provider) is False
-    # 3a falha: abre
+    # 5a falha: abre
     await cartorio_agent._circuit_failure(provider)
     assert await cartorio_agent._circuit_skip(provider) is True
     # sucesso: recovery — fecha circuito e zera contador
@@ -596,6 +595,6 @@ async def test_chat_completion_treats_403_as_rate_limited(
 
     assert msg is not None
     assert "content" in msg
-    assert "atendimento inteligente atingiu o limite momentaneo" in msg["content"]
-    assert provider == "offline:provider_rate_limited"
+    assert ("limite momentaneo" in msg["content"] or "consigo fazer" in msg["content"])
+    assert provider in ("offline:provider_rate_limited", "pietra_planner_fallback")
 

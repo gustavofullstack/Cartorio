@@ -99,7 +99,7 @@ def _opencode_free_configs() -> list[tuple[str, str, str]]:
     que a chain de fallback de 3 slots OpenCode Zen sempre funcione quando MiniMax exaurir quota.
     """
     configs: list[tuple[str, str, str]] = []
-    default_key = os.environ.get("OPENCODE_API_KEY", "") or os.environ.get("OPENCODE_GO_API_KEY", "opencode_free_default")
+    default_key = os.environ.get("OPENCODE_API_KEY", "") or os.environ.get("OPENCODE_GO_API_KEY", "")
     for slot, default_model in enumerate(_OPENCODE_SLOT_DEFAULT_MODELS, start=1):
         free_prefix = f"OPENCODE_FREE_{slot}_"
         zen_prefix = f"OPENCODE_ZEN_ACCOUNT_{slot}_"
@@ -858,7 +858,7 @@ async def _chat_completion(
                 last_err = f"{provider_label} {type(exc).__name__}"
                 logger.warning("cartorio_agent %s fail: %s", provider_label, last_err)
 
-    if provider_rate_limited or last_err:
+    if provider_rate_limited:
         store.inc_llm_degraded_total("provider_rate_limited")
         user_text = ""
         for m in reversed(messages):
@@ -868,6 +868,7 @@ async def _chat_completion(
         if user_text:
             try:
                 from app.services.pietra_response_planner import ResponsePlanner
+
                 planner = ResponsePlanner()
                 resp_text, _ = planner.plan(user_text)
                 if resp_text:
