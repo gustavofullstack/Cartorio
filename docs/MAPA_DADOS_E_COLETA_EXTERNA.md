@@ -8,7 +8,7 @@
 
 Na VPS `Cartorio`, a verificação em 2026-07-26 encontrou saudáveis e em execução: API do Cartório, Supabase/Postgres, Redis, n8n, Evolution API, Chatwoot e `cartorio_openclaw-gateway`.
 
-**Não foi encontrado serviço, container ou processo `Hermes` na VPS.** Portanto, não é correto afirmar que o Agent Hermes Cartório esteja rodando nela. A VPS tem o **OpenClaw** como gateway de IA visível. A confirmação de Hermes exige uma nova evidência do runtime específico (processo/serviço e uma resposta real pelo canal), pois disponibilidade de infraestrutura não prova operação fim a fim.
+**Não foi encontrado serviço, container ou processo `Hermes` na VPS.** Portanto, Hermes ainda não roda nela; a VPS tem o **OpenClaw** como gateway de IA visível. O serviço-alvo Hermes foi definido em `infra/hermes/`, mas só pode ser ativado após os segredos serem criados no gerenciador da VPS. A confirmação exige processo/serviço e uma resposta real pelo canal, pois disponibilidade de infraestrutura não prova operação fim a fim.
 
 ## 2. Mapa da base de dados
 
@@ -83,7 +83,7 @@ A visão deve aplicar mínimo de grupo para evitar reidentificação e obedecer 
 | 3 | Conector Justiça Aberta por exportação | somente dados públicos, fonte/termos registrados e carga idempotente |
 | 4 | Monitor DJe/TJMG de temas controlados | baixa frequência, hash/deduplicação, fila de revisão e sem scraping amplo |
 | 5 | Criar visão agregada do painel | RLS testada, nenhum campo PII e testes contra vazamento |
-| 6 | Validar o runtime Hermes, se ele for necessário | evidência de processo/serviço, rota de canal e resposta real fim a fim |
+| 6 | Implantar e validar o runtime Hermes na VPS | segredos nativos, serviço 1/1, MCP e resposta real fim a fim por canal |
 
 ## 7. Referências operacionais internas
 
@@ -91,4 +91,3 @@ A visão deve aplicar mínimo de grupo para evitar reidentificação e obedecer 
 - `backend/alembic/` e `infra/supabase/schema.sql` — evolução e inventário físico do Postgres.
 - `backend/app/services/emolumento_fonte_tjmg.py` e `scripts/coletar_tabela_tjmg.py` — padrão atual de coleta oficial de preços.
 - `docs/DADOS_PRECOS_E_PAINEL_AGENT_AI.md` — catálogo de preços e regras do painel.
-

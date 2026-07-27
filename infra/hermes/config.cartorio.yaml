@@ -1,0 +1,41 @@
+# Hermes Cartorio profile. Values are resolved only inside the container from
+# Docker Secrets injected by docker-stack.yml; never replace them with literals.
+model:
+  default: "${HERMES_LLM_MODEL}"
+  provider: openai
+  base_url: "${HERMES_LLM_BASE_URL}"
+
+agent:
+  max_turns: 8
+  verbose: false
+
+approvals:
+  mode: always
+
+security:
+  allow_private_urls: false
+
+gateway:
+  platforms:
+    api_server:
+      enabled: true
+      extra:
+        host: 0.0.0.0
+        port: 8642
+    photon:
+      enabled: true
+      extra:
+        sidecar_port: 8793
+
+mcp_servers:
+  cartorio:
+    url: "${MCP_CARTORIO_URL}"
+    connect_timeout: 10
+    headers:
+      Authorization: "Bearer ${MCP_CARTORIO_API_KEY}"
+    enabled: true
+
+platform_toolsets:
+  photon:
+    - mcp-cartorio
+

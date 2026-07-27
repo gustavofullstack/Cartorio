@@ -23,7 +23,7 @@ from typing import Final, TypedDict
 CARTORIO: Final[str] = "2º Serviço Notarial de Uberlândia"
 TABELIAO: Final[str] = "Djalma de Oliveira"
 FONTE_URL: Final[str] = "https://www8.tjmg.jus.br/institucional/at/pdf/cpo86642025.pdf"
-FONTE_SHA256: Final[str] = "84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417"
+FONTE_SHA256: Final[str] = "84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417"  # noqa (ALLOW_KEY_FALLBACK: SHA256 do PDF oficial TJMG)
 
 FONTE_CAPTURADA_EM: Final[str] = "2026-07-26"
 VIGENCIA_INICIO: Final[str] = "2026-01-01"

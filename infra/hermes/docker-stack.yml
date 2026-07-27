@@ -1,0 +1,87 @@
+version: "3.8"
+
+# Hermes Cartorio on the production Swarm.
+#
+# Deploy only after the external secrets listed in .env.example have been
+# created in the Cartorio secret manager. This file never contains a token,
+# password, Photon credential, or API key.
+services:
+  hermes:
+    image: nousresearch/hermes-agent@sha256:6df245c22c49b5ad9f94dd9e3cf614263f4313f117d117a7d2abd4092fa804d2
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export API_SERVER_KEY="$$(cat /run/secrets/hermes_api_server_key)"
+        export OPENAI_API_KEY="$$(cat /run/secrets/hermes_llm_api_key)"
+        export MCP_CARTORIO_API_KEY="$$(cat /run/secrets/hermes_mcp_cartorio_api_key)"
+        export PHOTON_PROJECT_SECRET="$$(cat /run/secrets/hermes_photon_project_secret)"
+        if [ ! -f /opt/data/config.yaml ]; then
+          cp /run/configs/config.cartorio.yaml /opt/data/config.yaml
+        fi
+        exec hermes gateway run
+    environment:
+      HERMES_HOME: /opt/data
+      API_SERVER_ENABLED: "true"
+      API_SERVER_HOST: 0.0.0.0
+      API_SERVER_PORT: "8642"
+      HERMES_LLM_BASE_URL: ${HERMES_LLM_BASE_URL:?set in the deployment environment}
+      HERMES_LLM_MODEL: ${HERMES_LLM_MODEL:?set in the deployment environment}
+      PHOTON_PROJECT_ID: ${PHOTON_PROJECT_ID:?set in the deployment environment}
+      PHOTON_ALLOWED_USERS: ${PHOTON_ALLOWED_USERS:?set in the deployment environment}
+      PHOTON_ALLOW_ALL_USERS: "false"
+      MCP_CARTORIO_URL: http://cartorio_api:8000/mcp
+    configs:
+      - source: hermes_cartorio_config_v1
+        target: /run/configs/config.cartorio.yaml
+        mode: 0440
+    secrets:
+      - hermes_api_server_key
+      - hermes_llm_api_key
+      - hermes_mcp_cartorio_api_key
+      - hermes_photon_project_secret
+    volumes:
+      - hermes_cartorio_data:/opt/data
+    networks:
+      - easypanel-cartorio
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1536M
+        reservations:
+          cpus: "0.25"
+          memory: 512M
+
+configs:
+  hermes_cartorio_config_v1:
+    file: ./config.cartorio.yaml
+
+secrets:
+  hermes_api_server_key:
+    external: true
+  hermes_llm_api_key:
+    external: true
+  hermes_mcp_cartorio_api_key:
+    external: true
+  hermes_photon_project_secret:
+    external: true
+
+volumes:
+  hermes_cartorio_data:
+
+networks:
+  easypanel-cartorio:
+    external: true

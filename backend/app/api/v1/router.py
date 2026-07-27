@@ -80,6 +80,7 @@ from app.api.v1.alertmanager import router as alertmanager_router  # noqa: E402
 
 # Painel de dados do Agent AI (Fase 4) — 4 blocos agregados, sem PII
 from app.api.v1.painel import painel_router  # noqa: E402
+from app.api.v1.agent_hermes import router as agent_hermes_router  # noqa: E402
 
 # Shared deps (B0.3 2026-06-25)
 from app.api.deps import (  # noqa: E402
@@ -100,6 +101,7 @@ api_router = APIRouter()
 api_router.include_router(integrations_router)
 api_router.include_router(alertmanager_router)
 api_router.include_router(painel_router)
+api_router.include_router(agent_hermes_router)
 
 
 # Regex do formato ANO-SEQUENCIAL (YYYY-NNNNN)
