@@ -9,15 +9,19 @@
     {
       "alias": "agent-os",
       "tailscale_online": false,
+      "tailscale_ping": "NO_REPLY",
+      "tcp_22": "CLOSED_OR_FILTERED",
       "ssh_exec": "UNAVAILABLE",
-      "classification": "HOST_OFFLINE"
+      "classification": "TAILSCALE_OFFLINE"
     },
     {
       "alias": "triqhub",
       "tailscale_online": true,
       "tailscale_ping": "PASS",
-      "ssh_exec": "DENIED",
-      "classification": "SSH_ACL_OR_SERVER_EXEC_BLOCKED"
+      "tcp_22": "OPEN",
+      "ssh_auth": "TAILSCALE_SSH_AUTHENTICATED",
+      "ssh_exec": "DENIED_OPERATION_NOT_PERMITTED",
+      "classification": "REMOTE_COMMAND_DENIED"
     }
   ],
   "agents": {

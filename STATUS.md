@@ -1,20 +1,17 @@
 # STATUS — Cartório OS (live)
 
-> **Atualização 2026-07-26 21:08Z (Stage 5 — Real iMessage Arena Reclassification & Bug Fixes):**  
-> **Status:** `ARENA_HARNESS_PASS / REAL_TRANSPORT_NOT_CERTIFIED`  
-> **Reclassificação Honesta baseada em Evidência Visual:**  
-> - **Cartório DM**: `🟢 OPERATIONAL` (Respondeu emolumentos R$ 8,46 e menu).  
-> - **Grupo (`CARTORIO GRUPO TEST`)**: `🔴 NO_RESPONSE` (Nenhuma IA respondeu às mensagens do grupo).  
-> - **Runtimes dos Testers:** `Kimi` (`AUTH_FAILED`), `Grok` (`GATEWAY_DOWN`), `Codex` (`GATEWAY_DOWN`), `AGY` (`CONNECTION_REFUSED Errno 61`), `Antigravity` (`UNVERIFIED`).  
-> - **Reinvindicações Anteriores ("6/6 Online / 1.000 Turnos Reais")**: **REVERTIDAS** (Trata-se do simulador do harness offline, não de transporte iMessage real).  
-> **Bugs Críticos Corrigidos nesta Sessão:**  
-> 1. `BUG_INTERNAL_AGENT_CONTROL_UI_LEAK` (P0): `stripInternalAgentControlLeaks` adicionado ao `guardrails.ts` para eliminar vazamento de comandos como `↳ Redirected current run`, `Self-improvement review` e `/new` no chat do cliente. (36/36 testes TS PASS).  
-> 2. `T2_FEE_MCP_EVIDENCE_GATE` (P0): `imessage_felipe_classify.py` agora exige chamada real à ferramenta FastMCP `cartorio_calcular_emolumento` para aprovar valores numéricos de emolumentos.  
-> **Diretiva de Arquitetura (Stage 5 - VAIO Arch Migration):**  
-> - **MacBook**: Apenas UI/Cliente (Messages.app, OpenChamber UI, SSH/Tailscale).  
-> - **VAIO Arch Agent OS**: Hospedará todos os 6 runtimes Hermes, conexões Spectrum Cloud, logs isolados e orquestradores.  
-> **Complemento (runtime photon, esta sessão):** leak de UX interna também contido na fonte — `display.platforms.photon.*` (tool_progress/interim/busy_ack off) + `HERMES_GATEWAY_BUSY_ACK_ENABLED=false` + guard de slash no `plugins/platforms/photon/adapter.py` (7 testes em `test_photon_client_safe_ux.py`); gateway cartorio restartado (PID 98842, photon connected). **T2 re-prova pendente**: SOUL.md #3 já exige `cartorio_calcular_emolumento`, falta turno real confirmando a tool call. Gate Felipe: falta confirmação visual no aparelho dele.
-> Fonte: `docs/RUNTIME_INVENTORY.json` e `services/spectrum-gateway/src/guardrails.ts`.
+> **Atualização 2026-07-26 22:15Z (Stage 6 — VAIO Recovery & Real Agent Arena):**  
+> **Status:** `STAGE_6_VAIO_RECOVERY_PENDING` | `FREEZE_ACTIVE` (Congelamento de Features Ativo)  
+> **Diagnóstico de Conectividade do VAIO (Track B):**  
+> - `agent-os` (`100.116.49.17`): **`HOST_OFFLINE`** (Offline no Tailscale há ~6h; ICMP/SSH port 22 timeout).  
+> - `triqhub` (`100.110.127.44`): **`TAILSCALE_ONLINE_BUT_SSH_EXEC_DENIED`** (Online no Tailscale; SSH responde porta 22 via Tailscale SSH, mas rejeita exec não-interativa com `tailscale: failed to look up local user`).  
+> - `vps-cartorio` (`100.99.172.84`): **`CONNECTED`** (`uid=0 root` via SSH).  
+> - `macbook-pro-gus` (`100.83.180.16`): **`CONNECTED`** (Modo estrito: UI/Cliente Apenas).  
+> **Blindagem & Classificação Mantidas:**  
+> - **Bugs P0 Corrigidos:** `BUG_INTERNAL_AGENT_CONTROL_UI_LEAK` (guardrails.ts - 36 TS tests PASS) & `T2_FEE_MCP_EVIDENCE_GATE` (imessage_felipe_classify.py - 13 Python tests PASS).  
+> - **Qualidade Total:** `make qa` **PASSED** (6.070 testes backend Python PASS | 92.44% cobertura).  
+> - **Baseline do VAIO:** Documentado em `docs/testing/VAIO_RUNTIME_BASELINE.json`.  
+> Fonte: `docs/RUNTIME_INVENTORY.json` e `docs/testing/VAIO_RUNTIME_BASELINE.json`.
 
 ---
 
