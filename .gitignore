@@ -73,3 +73,5 @@ _tmp_alembic_test*.db
 
 trae-agent
 backups/
+docs/CLAUDE_CODE_MINIMAX_TAILSCALE_GATEWAY.md
+.gitignore

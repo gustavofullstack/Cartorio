@@ -42,7 +42,7 @@ SERVICOS_CATALOGO: dict[str, tuple[str, str]] = {
 
 CARTORIO_INFO = {
     "nome": "2o Oficio de Notas de Uberlandia / MG",
-    "endereco": "Av. Paulo Gracindo, 150 - Centro, Uberlandia/MG",
+    "endereco": "Rua Cel. Antonio Alves Pereira, 850 - Centro, Uberlandia/MG",
     "horario": "Segunda a sexta, 09h as 17h",
     "telefone_humano": "use /humano para falar com escrevente",
 }

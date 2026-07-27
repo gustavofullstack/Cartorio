@@ -1,28 +1,31 @@
 ---
 name: MiniMax-M3
 description: |
-  Skill para usar o provider MiniMax-M3 XMax Thinking (MiniMax Coding Plan) via LiteLLM proxy.
-  Modelo de IA com reasoning avancado (XMax Thinking automatico). Acessivel via:
+  Skill para usar o provider MiniMax-M3 XMax Thinking (MiniMax Coding Plan) via LiteLLM proxy ou API Global.
+  Modelo de IA com reasoning avançado (XMax Thinking automático) e 1M Context Window (MiniMax-M3[1m]).
+  Configurado em ~/.claude.json como fallback secundário imediatamente atrás do Opus 5.
+  Acessível via:
   - LiteLLM VPS interno: http://coding-vps_apenas_para_auxilio_litellm-app:4000 (master key)
-  - Direct MiniMax API: https://api.minimaxi.com/v1 (sk-cp-* key)
-  Use quando precisar: gerar codigo, analisar codebase, planejar tasks complexas, raciocinio passo-a-passo.
-  Provider: MiniMax.io Coding Plan | Model: MiniMax-M3 XMax Thinking | Versao: 2026-07-08
+  - Direct MiniMax Global API: https://api.minimaxi.com/v1 & https://api.minimax.io/v1
+  Provider: MiniMax.io Coding Plan | Model: MiniMax-M3 / MiniMax-M3[1m] | Versão: 2026-07-27
 ---
 
-# MiniMax-M3 XMax Thinking — Skill de IA Provider
+# MiniMax-M3 XMax Thinking [1M Context Window] — Skill de IA Provider
 
-## Acesso (DUAL)
+## Acesso (DUAL & CLAUDE CODE INTEGRATION)
 
 | Item | Valor |
 |------|-------|
 | **Provider** | MiniMax.io Coding Plan |
-| **Model** | `MiniMax-M3` |
-| **Thinking** | XMax Thinking (automatico) |
-| **API Key direta** | `<COLE_MINIMAX_API_KEY>` |
-| **Base URL direta** | `https://api.minimaxi.com/v1` |
+| **Model ID** | `MiniMax-M3` / `MiniMax-M3[1m]` |
+| **Context Window** | **1.000.000 tokens (1M)** |
+| **Thinking** | XMax Thinking (automático) |
+| **Ordem de Preferência** | **2º Posição (Imediatamente atrás de Claude Opus 5)** |
+| **Base URL Global 1** | `https://api.minimaxi.com/v1` |
+| **Base URL Global 2** | `https://api.minimax.io/v1` |
 | **LiteLLM proxy (VPS)** | `http://coding-vps_apenas_para_auxilio_litellm-app:4000` |
 | **LiteLLM master key** | `e39dss0k1baohuqkprjv` |
-| **Custo** | MiniMax Coding Plan (plano Gustavo) |
+| **Configuração CLI/Claude** | Registrado em `~/.claude.json` (`modelProviders`, `customModels`, `modelFallbackOrder`) |
 
 ## Uso via LiteLLM Proxy (RECOMENDADO - bypass CORS/firewall)
 
