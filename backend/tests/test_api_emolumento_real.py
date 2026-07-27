@@ -24,6 +24,28 @@ def test_painel_agent_ai_entrega_interface_sem_dados_de_cliente():
     assert "111.222.333-44" not in response.text
 
 
+def test_painel_consume_os_campos_do_catalogo_atual():
+    catalogo = client.get("/api/v1/inteligencia-dados/agent-ai").json()
+    painel = client.get("/api/v1/painel/agent-ai").text
+    assert "f.nome" in painel
+    assert "f.capturado_em" in painel
+    assert "i.ato" in painel
+    assert "i.item_portaria" in painel
+    assert "i.status" in painel
+    assert all({"ato", "item_portaria", "status"}.issubset(item) for item in catalogo["itens"])
+
+
+def test_dados_agent_ai_expoe_apenas_uso_agregado():
+    response = client.get("/api/v1/inteligencia-dados/agent-ai")
+    assert response.status_code == 200
+    data = response.json()
+    assert "uso_ia" in data
+    assert isinstance(data["uso_ia"]["extracoes_total"], int)
+    assert data["uso_ia"]["rotulos"] == (
+        "somente outcome categórico; sem texto, identificador ou dado pessoal"
+    )
+
+
 def test_post_calcular_emolumento_real():
     response = client.post(
         "/api/v1/emolumentos/real/calcular?tipo_ato=escritura_compra_venda&valor_declarado=450000.00&folhas=3"

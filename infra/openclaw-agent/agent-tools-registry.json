@@ -17,12 +17,12 @@
     {
       "name": "cartorio_api_emolumento_calcular",
       "provider": "api",
-      "endpoint": "GET /api/v1/emolumento/calcular?tipo=X&folhas=Y&urgencia=Z",
+      "endpoint": "POST /api/v1/emolumentos/real/calcular?tipo_ato=X&folhas=Y&urgencia=Z",
       "auth": "X-API-Key",
       "pii_safe": true,
       "rate_limit_per_min": 30,
-      "version": "1.0.0",
-      "description": "Calcula emolumento MG 2026 (tabela TJMG) com base em tipo de ato, quantidade de folhas e urgencia"
+      "version": "2.0.0",
+      "description": "Consulta item publicado TJMG 2026. Retorna PUBLISHED com valor final ou HITL_REQUIRED sem total para ato composto, urgência, isenção ou parâmetro adicional"
     },
     {
       "name": "cartorio_api_protocolo_criar",

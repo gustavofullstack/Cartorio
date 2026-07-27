@@ -50,12 +50,12 @@
   </main>
   <script>
     const money = value => value === null ? "—" : `R$ ${Number(value).toLocaleString("pt-BR", {minimumFractionDigits:2})}`;
-    fetch("/api/v1/emolumentos/real/djalma").then(r => r.ok ? r.json() : Promise.reject(r.status)).then(data => {
+    fetch("/api/v1/inteligencia-dados/agent-ai").then(r => r.ok ? r.json() : Promise.reject(r.status)).then(data => {
       const f = data.fonte;
       document.querySelector("#stamp").textContent = `Fonte verificada\nVigência ${f.vigencia_inicio}`;
-      document.querySelector("#source").innerHTML = `<dt>Referência</dt><dd>${f.referencia}</dd><dt>Vigência</dt><dd>${f.vigencia_inicio}</dd><dt>Integridade</dt><dd>${f.sha256}</dd><dt>Origem</dt><dd><a href="${f.url}" target="_blank" rel="noreferrer">PDF oficial TJMG</a></dd>`;
-      document.querySelector("#items").innerHTML = data.itens.map(i => `<tr><td>${i.descricao}</td><td>${i.referencia}</td><td class="amount">${money(i.emolumentos)}</td><td class="amount">${money(i.tfj)}</td><td class="amount">${money(i.valor_final)}</td><td><span class="pill ${i.hitl_obrigatorio ? "hitl" : "published"}">${i.hitl_obrigatorio ? "HITL_REQUIRED" : "PUBLISHED"}</span></td></tr>`).join("");
-      document.querySelector("#rule").textContent = data.regra;
+      document.querySelector("#source").innerHTML = `<dt>Referência</dt><dd>${f.nome}</dd><dt>Vigência</dt><dd>${f.vigencia_inicio}</dd><dt>Captura</dt><dd>${f.capturado_em}</dd><dt>Integridade</dt><dd>${f.sha256}</dd><dt>Origem</dt><dd><a href="${f.url}" target="_blank" rel="noreferrer">PDF oficial TJMG</a></dd>`;
+      document.querySelector("#items").innerHTML = data.itens.map(i => `<tr><td>${i.ato}</td><td>${i.item_portaria}</td><td class="amount">${money(i.emolumentos)}</td><td class="amount">${money(i.tfj)}</td><td class="amount">${money(i.valor_final)}</td><td><span class="pill ${i.status === "PUBLISHED" ? "published" : "hitl"}">${i.status}</span></td></tr>`).join("");
+      document.querySelector("#rule").textContent = `Itens publicados somente para consulta direta. Extrações no processo: ${data.uso_ia.extracoes_total}; encaminhamentos HITL: ${data.uso_ia.encaminhamentos_hitl_total}.`;
     }).catch(() => { document.querySelector("#stamp").textContent = "Fonte indisponível\nNão publicar preço"; });
   </script>
 </body>

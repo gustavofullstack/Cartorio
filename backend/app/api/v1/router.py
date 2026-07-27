@@ -305,6 +305,29 @@ async def obter_tabela_real_djalma() -> dict:
 
 
 @api_router.get(
+    "/inteligencia-dados/agent-ai",
+    tags=["inteligencia-dados"],
+    summary="Dados agregados de preços e uso do Agent AI",
+    description="Catálogo com proveniência e contadores em memória, sem PII ou texto de cliente.",
+)
+async def dados_agent_ai() -> dict:
+    """Entrega o contrato de dados consumido pelo painel do Agent AI."""
+    from app.services.emolumento_real_djalma import catalogo_publico
+    from app.services.metrics import store
+
+    catalogo = catalogo_publico()
+    extracoes = store.counters.get("cartorio_agent_ai_extracoes_total", {})
+    handoffs = store.counters.get("cartorio_agent_ai_handoffs_total", {})
+    catalogo["uso_ia"] = {
+        "retencao": "em memória do processo; usar Prometheus para série histórica",
+        "extracoes_total": sum(extracoes.values()),
+        "encaminhamentos_hitl_total": sum(handoffs.values()),
+        "rotulos": "somente outcome categórico; sem texto, identificador ou dado pessoal",
+    }
+    return catalogo
+
+
+@api_router.get(
     "/painel/agent-ai",
     tags=["inteligencia-dados"],
     summary="Painel de dados do Agent AI",
@@ -353,6 +376,11 @@ async def extrair_e_calcular_ai_endpoint(
     from app.services.ai_data_extractor import extrair_e_calcular_solicitacao
 
     res = extrair_e_calcular_solicitacao(texto_usuario, forcar_urgencia=forcar_urgencia)
+    from app.services.metrics import store
+
+    store.inc_counter("cartorio_agent_ai_extracoes_total", labels={"outcome": res.calculo.status})
+    if res.hitl_obrigatorio:
+        store.inc_counter("cartorio_agent_ai_handoffs_total", labels={"reason": "price_review"})
 
     if db is not None:
         AuditService.log(

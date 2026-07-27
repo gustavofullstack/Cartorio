@@ -105,7 +105,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doaç|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"
+        "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo_ato = 'certidao_breve_relato'; if (/compra.{0,3}venda|escritura/.test(text)) tipo_ato = 'escritura_compra_venda'; else if (/procur.{0,20}(inss|previd)/.test(text)) tipo_ato = 'procuracao_previdenciaria'; else if (/procur/.test(text)) tipo_ato = 'procuracao_geral'; else if (/reconhec|firm/.test(text)) tipo_ato = 'reconhecimento_firma_semelhanca'; else if (/autentica/.test(text)) tipo_ato = 'autenticacao_pagina'; else if (/ata notarial/.test(text)) tipo_ato = 'ata_notarial_primeira_folha'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo_ato, urgencia } };"
       },
       "id": "parse-01",
       "name": "Parse Tipo",
@@ -118,8 +118,8 @@
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "=https://api.2notasudi.com.br/api/v1/emolumento/calcular?tipo={{$json.tipo}}&urgencia={{$json.urgencia}}",
+        "method": "POST",
+        "url": "=https://api.2notasudi.com.br/api/v1/emolumentos/real/calcular?tipo_ato={{$json.tipo_ato}}&urgencia={{$json.urgencia}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -183,7 +183,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={action: 'consulta_emolumento', workflow: '{{$workflow.name}}', execution_id: '{{$execution.id}}', tipo: '{{$json.tipo}}', valor_total: {{$json.total || 0}}}",
+        "jsonBody": "={action: 'consulta_emolumento', workflow: '{{$workflow.name}}', execution_id: '{{$execution.id}}', tipo_ato: '{{$node[\"Parse Tipo\"].json.tipo_ato}}', status: '{{$json.status}}', valor_total: {{$json.total || null}}}",
         "options": {
           "timeout": 5000
         }
@@ -210,7 +210,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={ok: {{$json.ok !== false && !$json.error}}, text: '{{$json.response || $json.text || (\"Valor: R$ \" + ($json.total || \"?\"))}}', valor_total: {{$json.total || 0}}, tipo: '{{$json.tipo}}', tabela: '{{$json.tabela_referencia || \"\"}}'}"
+        "responseBody": "={ok: {{$json.ok !== false && !$json.error}}, status: '{{$json.status || \"HITL_REQUIRED\"}}', text: '{{$json.status === \"PUBLISHED\" ? (\"Valor de referência: R$ \" + $json.total) : \"Esse ato exige conferência do escrevente para informar o valor correto.\"}}', valor_total: {{$json.status === \"PUBLISHED\" ? $json.total : null}}, tipo_ato: '{{$node[\"Parse Tipo\"].json.tipo_ato}}', tabela: '{{$json.tabela_referencia || \"\"}}'}"
       },
       "id": "respond-01",
       "name": "Respond Emolumento",
@@ -471,7 +471,7 @@
       {
         "parameters": {
           "mode": "runOnceForEachItem",
-          "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo = 'certidao_casamento'; if (/casament/.test(text)) tipo = 'certidao_casamento'; else if (/negativa/.test(text)) tipo = 'certidao_negativa'; else if (/positiva/.test(text)) tipo = 'certidao_positiva'; else if (/compra.{0,3}venda|escritura.{0,3}compra/.test(text)) tipo = 'escritura_compra_venda'; else if (/doaç|doacao/.test(text)) tipo = 'escritura_doacao'; else if (/escritur/.test(text)) tipo = 'escritura_compra_venda'; else if (/procur/.test(text)) tipo = 'procuracao'; else if (/reconhec|firm/.test(text)) tipo = 'reconhecimento_firma'; else if (/autentica/.test(text)) tipo = 'autenticacao'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo, urgencia } };"
+          "jsCode": "const text = ($json.scrubbed_text || '').toLowerCase(); let tipo_ato = 'certidao_breve_relato'; if (/compra.{0,3}venda|escritura/.test(text)) tipo_ato = 'escritura_compra_venda'; else if (/procur.{0,20}(inss|previd)/.test(text)) tipo_ato = 'procuracao_previdenciaria'; else if (/procur/.test(text)) tipo_ato = 'procuracao_geral'; else if (/reconhec|firm/.test(text)) tipo_ato = 'reconhecimento_firma_semelhanca'; else if (/autentica/.test(text)) tipo_ato = 'autenticacao_pagina'; else if (/ata notarial/.test(text)) tipo_ato = 'ata_notarial_primeira_folha'; const urgencia = /urgente|urgencia|rapido|agora|amanh/.test(text); return { json: { ...$json, tipo_ato, urgencia } };"
         },
         "id": "parse-01",
         "name": "Parse Tipo",
@@ -484,8 +484,8 @@
       },
       {
         "parameters": {
-          "method": "GET",
-          "url": "=https://api.2notasudi.com.br/api/v1/emolumento/calcular?tipo={{$json.tipo}}&urgencia={{$json.urgencia}}",
+          "method": "POST",
+          "url": "=https://api.2notasudi.com.br/api/v1/emolumentos/real/calcular?tipo_ato={{$json.tipo_ato}}&urgencia={{$json.urgencia}}",
           "sendHeaders": true,
           "headerParameters": {
             "parameters": [

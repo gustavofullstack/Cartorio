@@ -27,7 +27,7 @@
             },
             {
               "name": "tipo",
-              "value": "={{$json.body.text.match(/procura/i) ? 'procuracao' : ($json.body.text.match(/firma/i) ? 'reconhecimento_firma' : ($json.body.text.match(/escritura/i) ? 'escritura_compra_venda' : 'certidao_negativa'))}}"
+              "value": "={{$json.body.text.match(/procura/i) ? 'procuracao_geral' : ($json.body.text.match(/firma/i) ? 'reconhecimento_firma_semelhanca' : ($json.body.text.match(/autentica/i) ? 'autenticacao_pagina' : ($json.body.text.match(/escritura/i) ? 'escritura_compra_venda' : 'certidao_breve_relato')))}}"
             },
             {
               "name": "folhas",
@@ -56,13 +56,13 @@
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "=https://api.2notasudi.com.br/api/v1/emolumentos/calcular-api",
+        "method": "POST",
+        "url": "=https://api.2notasudi.com.br/api/v1/emolumentos/real/calcular",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
             {
-              "name": "tipo",
+              "name": "tipo_ato",
               "value": "={{$json.tipo}}"
             },
             {
@@ -113,7 +113,7 @@
         "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"chat_id\": \"{{$node[\"Parse User Text\"].json.chat_id}}\",\n  \"text\": \"💰 *Orçamento Estimado de Emolumentos:*\\n\\n• *Ato:* {{$json.tipo}}\\n• *Quantidade de folhas:* {{$json.folhas}}\\n• *Urgência:* {{$json.urgencia ? 'Sim (+50%)' : 'Não'}}\\n\\n*Breakdown:*\\n• Emolumento base: R$ {{$json.base}}\\n• Adicional folhas: R$ {{$json.adicional_folhas}}\\n• Adicional urgência: R$ {{$json.adicional_urgencia}}\\n\\n🔴 *Valor total a pagar: R$ {{$json.total}}*\\n\\n_Nota: Os valores são calculados com base na tabela oficial de Minas Gerais 2026._\",\n  \"parse_mode\": \"Markdown\"\n}",
+        "jsonBody": "={\n  \"chat_id\": \"{{$node[\"Parse User Text\"].json.chat_id}}\",\n  \"text\": \"={{ $json.status === 'PUBLISHED' ? 'Valor de referência: R$ ' + $json.total + '. Fonte: ' + $json.tabela_referencia : 'Esse ato exige conferência do escrevente para informar o valor correto.' }}\"\n}",
         "options": {}
       },
       "id": "emol-calc-05-send-telegram",
@@ -134,13 +134,13 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "24s6pdZqUwblg0v4UJTV3YilLm1WZQIu"
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{$node[\"Parse User Text\"].json.chat_id}}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": \"💰 *Orçamento Estimado de Emolumentos:*\\n\\n• *Ato:* {{$json.tipo}}\\n• *Quantidade de folhas:* {{$json.folhas}}\\n• *Urgência:* {{$json.urgencia ? 'Sim (+50%)' : 'Não'}}\\n\\n*Breakdown:*\\n• Emolumento base: R$ {{$json.base}}\\n• Adicional folhas: R$ {{$json.adicional_folhas}}\\n• Adicional urgência: R$ {{$json.adicional_urgencia}}\\n\\n🔴 *Valor total a pagar: R$ {{$json.total}}*\\n\\n_Nota: Os valores são calculados com base na tabela oficial de Minas Gerais 2026._\"\n  }\n}",
+        "jsonBody": "={\n  \"number\": \"{{$node[\"Parse User Text\"].json.chat_id}}\",\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  },\n  \"textMessage\": {\n    \"text\": \"={{ $json.status === 'PUBLISHED' ? 'Valor de referência: R$ ' + $json.total + '. Fonte: ' + $json.tabela_referencia : 'Esse ato exige conferência do escrevente para informar o valor correto.' }}\"\n  }\n}",
         "options": {}
       },
       "id": "emol-calc-06-send-whatsapp",

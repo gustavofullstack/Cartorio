@@ -36,4 +36,11 @@ Estados permitidos: `CAPTURED`, `EXTRACTED`, `HUMAN_REVIEWED`, `PUBLISHED`, `SUP
 
 ## Próxima coleta
 
-Na publicação de nova tabela pelo TJMG: baixar da fonte primária, calcular SHA-256, extrair os campos em ambiente isolado, comparar com a versão anterior, enviar diferenças para revisão humana e somente então promover os itens aprovados. A versão anterior permanece auditável e não é sobrescrita.
+Na publicação de nova tabela pelo TJMG, execute:
+
+```bash
+python3 scripts/collect_tjmg_emolumentos.py \
+  --output /tmp/tjmg-emolumentos-manifest.json
+```
+
+O coletor baixa o PDF em diretório temporário, calcula SHA-256, confirma a identificação da portaria e grava apenas um manifesto `CAPTURED`. Depois, comparar com a versão anterior, revisar os itens e somente então promover os itens aprovados para `PUBLISHED`. A versão anterior permanece auditável e não é sobrescrita.
