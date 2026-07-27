@@ -501,6 +501,44 @@
 
   </div>
 
+  <!-- Fase 4 — Painel de dados do Agent AI (agregado, sem PII) -->
+  <div class="dashboard-grid" style="margin-top: 1.5rem;">
+    <div class="col-12">
+      <div class="glass-card">
+        <h2 style="font-family: var(--font-heading); margin-bottom: 1rem; font-size: 1.1rem; color: var(--accent);">
+          📊 Painel de dados do Agent AI — operação agregada (sem PII)
+        </h2>
+        <div class="stats-row" style="margin-bottom: 1rem;">
+          <div class="stat-card">
+            <div class="stat-label">Consultas de preço</div>
+            <div class="stat-value" id="pnlConsultas">—</div>
+            <div class="stat-sub" id="pnlConsultasDetalhe">aguardando dados…</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Extrações por IA</div>
+            <div class="stat-value" id="pnlExtracoes">—</div>
+            <div class="stat-sub" id="pnlExtracoesDetalhe">aguardando dados…</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Handoffs ao escrevente</div>
+            <div class="stat-value" id="pnlHandoffs">—</div>
+            <div class="stat-sub" id="pnlHandoffsDetalhe">aguardando dados…</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Uso de IA (LiteLLM)</div>
+            <div class="stat-value" id="pnlIaUsage">—</div>
+            <div class="stat-sub" id="pnlIaUsageDetalhe">aguardando dados…</div>
+          </div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.8rem;">
+          Fonte: <code>/api/v1/painel/operacao</code>, <code>/api/v1/painel/extracao</code> e
+          <code>/api/v1/painel/ia-usage</code>. Apenas rótulos categóricos — nunca texto, CPF,
+          telefone ou identificador de cliente. Atualização automática a cada 60s.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <script>
     function formatMoney(val) {
       return 'R$ ' + parseFloat(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -595,6 +633,60 @@
 
       document.getElementById('jsonOutput').innerText = JSON.stringify(payloadLog, null, 2);
     }
+
+    // Fase 4 — blocos agregados do painel (fail-safe: bloco mostra indisponível sem quebrar a página)
+    function pnlRotulos(mapa) {
+      const entries = Object.entries(mapa || {});
+      return entries.length ? entries.map(([k, v]) => `${k}: ${v}`).join(' · ') : 'sem eventos';
+    }
+
+    function carregarPainelOperacao() {
+      fetch('/api/v1/painel/operacao').then(r => r.ok ? r.json() : Promise.reject(r.status)).then(o => {
+        document.getElementById('pnlConsultas').innerText = o.consultas_total;
+        document.getElementById('pnlConsultasDetalhe').innerText = pnlRotulos(o.consultas_por_outcome);
+        document.getElementById('pnlHandoffs').innerText = o.handoffs_total;
+        document.getElementById('pnlHandoffsDetalhe').innerText =
+          'taxa de handoff: ' + (o.taxa_handoff * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+      }).catch(() => {
+        document.getElementById('pnlConsultas').innerText = 'indisponível';
+        document.getElementById('pnlConsultasDetalhe').innerText = 'endpoint /painel/operacao falhou';
+        document.getElementById('pnlHandoffs').innerText = 'indisponível';
+        document.getElementById('pnlHandoffsDetalhe').innerText = 'endpoint /painel/operacao falhou';
+      });
+    }
+
+    function carregarPainelExtracao() {
+      fetch('/api/v1/painel/extracao').then(r => r.ok ? r.json() : Promise.reject(r.status)).then(e => {
+        document.getElementById('pnlExtracoes').innerText = e.extracoes_total;
+        document.getElementById('pnlExtracoesDetalhe').innerText = pnlRotulos(e.extracoes_por_outcome);
+      }).catch(() => {
+        document.getElementById('pnlExtracoes').innerText = 'indisponível';
+        document.getElementById('pnlExtracoesDetalhe').innerText = 'endpoint /painel/extracao falhou';
+      });
+    }
+
+    function carregarPainelIaUsage() {
+      fetch('/api/v1/painel/ia-usage?dias=30').then(r => r.ok ? r.json() : Promise.reject(r.status)).then(u => {
+        if (u.disponivel) {
+          document.getElementById('pnlIaUsage').innerText = 'US$ ' + Number(u.resumo.gasto_total_usd).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+          document.getElementById('pnlIaUsageDetalhe').innerText = u.resumo.chamadas_total + ' chamadas em ' + u.dias + ' dias';
+        } else {
+          document.getElementById('pnlIaUsage').innerText = 'não configurada';
+          document.getElementById('pnlIaUsageDetalhe').innerText = u.motivo || 'telemetria indisponível';
+        }
+      }).catch(() => {
+        document.getElementById('pnlIaUsage').innerText = 'indisponível';
+        document.getElementById('pnlIaUsageDetalhe').innerText = 'endpoint /painel/ia-usage falhou';
+      });
+    }
+
+    function carregarPainelAgentAI() {
+      carregarPainelOperacao();
+      carregarPainelExtracao();
+      carregarPainelIaUsage();
+    }
+    carregarPainelAgentAI();
+    setInterval(carregarPainelAgentAI, 60000);
   </script>
 </body>
 </html>

@@ -8,6 +8,7 @@ from app.models.cliente import Cliente, MotivoEncerramento
 from app.models.cnj_export_request import CNJExportRequest
 from app.models.conversa import Conversa
 from app.models.documento import Documento
+from app.models.emolumento_catalogo import EmolumentoItem, EstadoEmolumento, FonteCaptura
 from app.models.outbox_message import OutboxMessage
 from app.models.protocolo import Protocolo
 from app.models.webhook_event import WebhookEvent
@@ -21,6 +22,9 @@ __all__ = [
     "CNJExportRequest",
     "Conversa",
     "Documento",
+    "EmolumentoItem",
+    "EstadoEmolumento",
+    "FonteCaptura",
     "MotivoEncerramento",
     "OutboxMessage",
     "Protocolo",

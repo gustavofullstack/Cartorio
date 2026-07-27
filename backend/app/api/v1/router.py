@@ -78,6 +78,9 @@ from app.api.v1.integrations import integrations_router  # noqa: E402
 # AlertManager webhook router (G8.15.T2) — Prometheus → Telegram LGPD-safe
 from app.api.v1.alertmanager import router as alertmanager_router  # noqa: E402
 
+# Painel de dados do Agent AI (Fase 4) — 4 blocos agregados, sem PII
+from app.api.v1.painel import painel_router  # noqa: E402
+
 # Shared deps (B0.3 2026-06-25)
 from app.api.deps import (  # noqa: E402
     assert_dpo_for_include_deleted,
@@ -96,6 +99,7 @@ from app.api.v1._helpers import (  # noqa: E402
 api_router = APIRouter()
 api_router.include_router(integrations_router)
 api_router.include_router(alertmanager_router)
+api_router.include_router(painel_router)
 
 
 # Regex do formato ANO-SEQUENCIAL (YYYY-NNNNN)
@@ -359,6 +363,10 @@ async def calcular_emolumento_real_endpoint(
         folhas=folhas,
         urgencia=urgencia,
     )
+    # Fase 4 (bloco Operacao): contador por outcome categorico — sem PII.
+    from app.services.metrics import store
+
+    store.inc_counter("cartorio_agent_ai_consultas_total", labels={"outcome": resultado.status})
     return resultado.to_dict()
 
 
@@ -369,13 +377,15 @@ async def calcular_emolumento_real_endpoint(
     description="Sanitiza PII, extrai sinais e só retorna total para item publicado sem parâmetros adicionais.",
 )
 async def extrair_e_calcular_ai_endpoint(
-    texto_usuario: Annotated[str, Body(embed=True, description="Mensagem em linguagem natural do cliente.")],
+    texto_usuario: Annotated[
+        str, Body(embed=True, description="Mensagem em linguagem natural do cliente.")
+    ],
     forcar_urgencia: Annotated[bool, Query(description="Forçar urgência.")] = False,
     db: Session = Depends(get_db),
 ) -> dict:
     from app.services.ai_data_extractor import extrair_e_calcular_solicitacao
 
-    res = extrair_e_calcular_solicitacao(texto_usuario, forcar_urgencia=forcar_urgencia)
+    res = extrair_e_calcular_solicitacao(texto_usuario, forcar_urgencia=forcar_urgencia, db=db)
     from app.services.metrics import store
 
     store.inc_counter("cartorio_agent_ai_extracoes_total", labels={"outcome": res.calculo.status})
@@ -398,7 +408,6 @@ async def extrair_e_calcular_ai_endpoint(
         )
         res.status_auditoria = "PERSISTED"
     return res.to_dict()
-
 
 
 # ============================================================================

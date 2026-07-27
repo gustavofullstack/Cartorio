@@ -12,19 +12,22 @@
     header { display:grid; grid-template-columns:1fr auto; gap:24px; border-bottom:4px solid var(--forest); padding-bottom:22px; }
     .eyebrow { color:var(--clay); font:700 12px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:.13em; text-transform:uppercase; }
     h1 { font-size:clamp(2.3rem,5vw,4.8rem); line-height:.9; margin:10px 0 12px; letter-spacing:-.06em; }
-    .stamp { align-self:start; border:1px solid var(--forest); color:var(--forest); padding:12px; max-width:210px; font:700 11px ui-monospace,monospace; text-transform:uppercase; letter-spacing:.06em; }
+    .stamp { align-self:start; border:1px solid var(--forest); color:var(--forest); padding:12px; max-width:210px; font:700 11px ui-monospace,monospace; text-transform:uppercase; letter-spacing:.06em; white-space:pre-line; }
     .lede { max-width:760px; color:var(--muted); font-size:1.1rem; }
     .grid { display:grid; grid-template-columns:repeat(12,1fr); gap:18px; margin-top:28px; }
     .card { border:1px solid var(--line); background:#faf8f2; padding:20px; }
     .source { grid-column:span 7; } .boundary { grid-column:span 5; } .catalog { grid-column:1/-1; }
+    .extracao, .operacao { grid-column:span 6; }
     h2 { margin:0 0 14px; font-size:1.15rem; letter-spacing:-.02em; }
     dl { margin:0; display:grid; grid-template-columns:150px 1fr; gap:8px 16px; } dt { color:var(--muted); } dd { margin:0; overflow-wrap:anywhere; }
     .pill { display:inline-block; padding:3px 7px; border:1px solid currentColor; font:700 10px ui-monospace,monospace; letter-spacing:.04em; }
     .published { color:var(--forest); } .hitl { color:var(--clay); }
     table { width:100%; border-collapse:collapse; } th,td { text-align:left; padding:12px 8px; border-top:1px solid var(--line); vertical-align:top; } th { color:var(--muted); font:700 11px ui-monospace,monospace; text-transform:uppercase; letter-spacing:.05em; }
     .amount { font-weight:700; white-space:nowrap; } .note { color:var(--muted); font-size:.93rem; }
+    .stat { font-size:2rem; font-weight:700; letter-spacing:-.04em; }
+    .unavailable { color:var(--clay); font-style:italic; }
     footer { margin-top:20px; border-top:1px solid var(--line); padding-top:14px; color:var(--muted); font-size:.9rem; }
-    @media (max-width:760px) { header { grid-template-columns:1fr; } .source,.boundary { grid-column:1/-1; } dl { grid-template-columns:1fr; gap:3px; } dd { margin-bottom:10px; } table { font-size:.9rem; } }
+    @media (max-width:760px) { header { grid-template-columns:1fr; } .source,.boundary,.extracao,.operacao { grid-column:1/-1; } dl { grid-template-columns:1fr; gap:3px; } dd { margin-bottom:10px; } table { font-size:.9rem; } }
   </style>
 </head>
 <body>
@@ -45,18 +48,55 @@
         <p class="note">Extração usa texto sanitizado. O painel não recebe texto, CPF, telefone, documento, conversa ou identificador de cliente.</p>
       </article>
       <article class="card catalog"><h2>Catálogo publicado</h2><table><thead><tr><th>Ato</th><th>Referência</th><th>Emolumentos</th><th>TFJ</th><th>Valor final</th><th>Decisão</th></tr></thead><tbody id="items"></tbody></table></article>
+      <article class="card extracao"><h2>Extração por IA</h2><dl id="extraction"></dl></article>
+      <article class="card operacao"><h2>Operação</h2><dl id="operation"></dl></article>
     </section>
     <footer id="rule">Carregando regra operacional…</footer>
   </main>
   <script>
-    const money = value => value === null ? "—" : `R$ ${Number(value).toLocaleString("pt-BR", {minimumFractionDigits:2})}`;
-    fetch("/api/v1/inteligencia-dados/agent-ai").then(r => r.ok ? r.json() : Promise.reject(r.status)).then(data => {
-      const f = data.fonte;
-      document.querySelector("#stamp").textContent = `Fonte verificada\nVigência ${f.vigencia_inicio}`;
-      document.querySelector("#source").innerHTML = `<dt>Referência</dt><dd>${f.nome}</dd><dt>Vigência</dt><dd>${f.vigencia_inicio}</dd><dt>Captura</dt><dd>${f.capturado_em}</dd><dt>Integridade</dt><dd>${f.sha256}</dd><dt>Origem</dt><dd><a href="${f.url}" target="_blank" rel="noreferrer">PDF oficial TJMG</a></dd>`;
-      document.querySelector("#items").innerHTML = data.itens.map(i => `<tr><td>${i.ato}</td><td>${i.item_portaria}</td><td class="amount">${money(i.emolumentos)}</td><td class="amount">${money(i.tfj)}</td><td class="amount">${money(i.valor_final)}</td><td><span class="pill ${i.status === "PUBLISHED" ? "published" : "hitl"}">${i.status}</span></td></tr>`).join("");
-      document.querySelector("#rule").textContent = `Itens publicados somente para consulta direta. Extrações no processo: ${data.uso_ia.extracoes_total}; encaminhamentos HITL: ${data.uso_ia.encaminhamentos_hitl_total}.`;
-    }).catch(() => { document.querySelector("#stamp").textContent = "Fonte indisponível\nNão publicar preço"; });
+    const money = value => value === null || value === undefined ? "—" : `R$ ${Number(value).toLocaleString("pt-BR", {minimumFractionDigits:2})}`;
+    const getJson = url => fetch(url).then(r => r.ok ? r.json() : Promise.reject(r.status));
+    const rotulos = mapa => Object.entries(mapa).map(([k, v]) => `${k}: ${v}`).join(" · ") || "sem eventos";
+
+    function carregarFonte() {
+      getJson("/api/v1/painel/fonte").then(f => {
+        document.querySelector("#stamp").textContent = `Fonte verificada\nVigência ${f.vigencia_inicio}\nCaptura há ${f.idade_dias} dias`;
+        document.querySelector("#source").innerHTML = `<dt>Referência</dt><dd>${f.nome}</dd><dt>Vigência</dt><dd>${f.vigencia_inicio}${f.vigencia_fim ? " → " + f.vigencia_fim : " (aberta)"}</dd><dt>Captura</dt><dd>${f.capturado_em} (${f.idade_dias} dias)</dd><dt>Estado</dt><dd>${f.estado} · origem: ${f.origem}</dd><dt>Revisão humana</dt><dd>${f.aprovacao_humana.revisado_por ? `${f.aprovacao_humana.revisado_por} em ${f.aprovacao_humana.revisado_em}` : f.aprovacao_humana.mensagem}</dd><dt>Integridade</dt><dd>${f.sha256}</dd><dt>Origem</dt><dd><a href="${f.url}" target="_blank" rel="noreferrer">PDF oficial TJMG</a></dd>`;
+      }).catch(() => {
+        document.querySelector("#stamp").textContent = "Fonte indisponível\nNão publicar preço";
+        document.querySelector("#source").innerHTML = `<dd class="unavailable">Bloco indisponível no momento.</dd>`;
+      });
+    }
+
+    function carregarCatalogo() {
+      getJson("/api/v1/painel/catalogo").then(data => {
+        document.querySelector("#items").innerHTML = data.itens.map(i => `<tr><td>${i.ato}</td><td>${i.item_portaria}</td><td class="amount">${money(i.emolumentos)}</td><td class="amount">${money(i.tfj)}</td><td class="amount">${money(i.valor_final)}</td><td><span class="pill ${i.status === "PUBLISHED" ? "published" : "hitl"}">${i.status}</span></td></tr>`).join("");
+      }).catch(() => {
+        document.querySelector("#items").innerHTML = `<tr><td colspan="6" class="unavailable">Catálogo indisponível no momento.</td></tr>`;
+      });
+    }
+
+    function carregarExtracao() {
+      getJson("/api/v1/painel/extracao").then(e => {
+        document.querySelector("#extraction").innerHTML = `<dt>Extrações</dt><dd><span class="stat">${e.extracoes_total}</span></dd><dt>Por desfecho</dt><dd>${rotulos(e.extracoes_por_outcome)}</dd><dt>Handoffs</dt><dd>${rotulos(e.handoffs_por_reason)}</dd><dt>Fallback LLM</dt><dd>${rotulos(e.llm_fallback_por_reason)}</dd><dt>Rótulos</dt><dd class="note">${e.rotulos}</dd>`;
+      }).catch(() => {
+        document.querySelector("#extraction").innerHTML = `<dd class="unavailable">Bloco indisponível no momento.</dd>`;
+      });
+    }
+
+    function carregarOperacao() {
+      getJson("/api/v1/painel/operacao").then(o => {
+        document.querySelector("#operation").innerHTML = `<dt>Consultas</dt><dd><span class="stat">${o.consultas_total}</span></dd><dt>Por desfecho</dt><dd>${rotulos(o.consultas_por_outcome)}</dd><dt>Handoffs</dt><dd>${o.handoffs_total}</dd><dt>Taxa de handoff</dt><dd>${(o.taxa_handoff * 100).toLocaleString("pt-BR", {maximumFractionDigits:1})}%</dd>`;
+        document.querySelector("#rule").textContent = `Itens publicados somente para consulta direta. Consultas no processo: ${o.consultas_total}; encaminhamentos HITL: ${o.handoffs_total}.`;
+      }).catch(() => {
+        document.querySelector("#operation").innerHTML = `<dd class="unavailable">Bloco indisponível no momento.</dd>`;
+        document.querySelector("#rule").textContent = "Regra operacional indisponível no momento.";
+      });
+    }
+
+    function carregarTudo() { carregarFonte(); carregarCatalogo(); carregarExtracao(); carregarOperacao(); }
+    carregarTudo();
+    setInterval(carregarTudo, 60000);
   </script>
 </body>
 </html>

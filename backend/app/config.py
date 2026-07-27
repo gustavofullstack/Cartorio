@@ -103,6 +103,11 @@ class Settings(BaseSettings):
     litellm_api_key: Optional[str] = None
     litellm_base_url: str = "http://cartorio_litellm-app:4000"
     litellm_model: str = "nemotron-3-ultra-free"
+    # Fase 3 — Telemetria de uso da IA: URL do Postgres do proxy LiteLLM
+    # (tabelas de spend, ex. "LiteLLM_SpendLogs"). Somente leitura, consultas
+    # agregadas (LGPD: nunca SELECT de api_key/user/metadata/prompts).
+    # None = telemetria de custo desabilitada (service retorna indisponivel).
+    litellm_spend_database_url: Optional[str] = None
 
     # Opencode-Free-2 (mimo-v2.5-free, 1M ctx) - Turno 37
     opencode_free_2_api_key: Optional[str] = None
@@ -174,6 +179,17 @@ class Settings(BaseSettings):
     # Thinking mode global (T57 E08) — default se provider-specific nao setar.
     # "adaptive" deixa provider decidir quando usar thinking (recomendado p/ 1M ctx).
     llm_thinking_mode: Literal["disabled", "enabled", "adaptive"] = "adaptive"
+
+    # ========================================================================
+    # AI Data Extractor (Fase 2 — extracao via LLM opcional sobre o regex)
+    # Reusa o LiteLLM proxy ja configurado (litellm_base_url/litellm_api_key).
+    # Desligado por default: comportamento 100% regex. Ligado: envia SOMENTE o
+    # texto pos-scrub (nunca o original) e faz merge por confianca.
+    # ========================================================================
+    ai_extractor_llm_enabled: bool = False
+    ai_extractor_llm_model: str = "MiniMax-M3"
+    ai_extractor_llm_timeout_s: float = 10.0
+    ai_extractor_llm_min_confidence: float = 0.8
 
     # ========================================================================
     # Evolution API (WhatsApp)

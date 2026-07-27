@@ -23,14 +23,16 @@ O painel e a IA não podem apresentar como preço final os seguintes casos: escr
 
 Dados pessoais nunca entram no painel. A coleta registra apenas: origem, URL, hash, vigência, instante de captura, estado da revisão, identificador do ato, componentes monetários e decisão de publicação. O texto do cliente é sanitizado antes de qualquer extração por IA e não é incluído nos eventos analíticos.
 
-## Painel operacional proposto
+## Painel operacional (implementado — Fase 4)
 
-O painel deve consumir uma visão agregada, sem PII, com quatro blocos:
+O painel consome uma visão agregada, sem PII, com quatro blocos servidos por endpoints reais sob `/api/v1/painel`:
 
-1. **Qualidade da fonte**: fonte primária, hash, vigência, idade da captura e aprovação humana.
-2. **Catálogo publicado**: ato, item da portaria, emolumentos, TFJ, valor final e escopo.
-3. **Extração por IA**: volume por tipo de ato, confiança, taxa de encaminhamento ao escrevente e falhas de extração — sem texto, CPF, telefone, documento ou identificador de conversa.
-4. **Operação**: consultas de preço, respostas com catálogo, handoffs e SLA do escrevente.
+1. **Qualidade da fonte** — `GET /api/v1/painel/fonte`: fonte primária, hash SHA-256, vigência, idade da captura (`idade_dias`, calculada no servidor) e aprovação humana (`revisado_por`/`revisado_em` da captura `PUBLISHED` mais recente; sem banco, fallback para as constantes versionadas da Portaria 8.664/2025).
+2. **Catálogo publicado** — `GET /api/v1/painel/catalogo`: ato, item da portaria, emolumentos, TFJ, valor final e escopo, dos itens `PUBLISHED` vigentes no banco (fallback para o catálogo público versionado quando o banco está vazio/indisponível).
+3. **Extração por IA** — `GET /api/v1/painel/extracao`: extrações por `outcome`, handoffs por `reason` e fallbacks de LLM por `reason` (contadores em memória do processo) — sem texto, CPF, telefone, documento ou identificador de conversa.
+4. **Operação** — `GET /api/v1/painel/operacao`: consultas ao `POST /api/v1/emolumentos/real/calcular` por `outcome` (contador `cartorio_agent_ai_consultas_total`), handoffs e taxa de handoff (divisão por zero tratada).
+
+Complementar: `GET /api/v1/painel/ia-usage?dias=30` (≤ 365) expõe a telemetria agregada do LiteLLM (Fase 3). Interfaces: `/painel/agent-ai` (mesa de evidências) e `/dashboard`, ambas com refresh periódico leve (60s) e estado "indisponível" por bloco quando um endpoint falha.
 
 Estados permitidos: `CAPTURED`, `EXTRACTED`, `HUMAN_REVIEWED`, `PUBLISHED`, `SUPERSEDED`, `REJECTED`. O agente só lê registros `PUBLISHED` cuja vigência contenha a data da consulta; ausência ou expiração resulta em encaminhamento humano, nunca em preço inventado.
 
@@ -39,8 +41,7 @@ Estados permitidos: `CAPTURED`, `EXTRACTED`, `HUMAN_REVIEWED`, `PUBLISHED`, `SUP
 Na publicação de nova tabela pelo TJMG, execute:
 
 ```bash
-python3 scripts/collect_tjmg_emolumentos.py \
-  --output /tmp/tjmg-emolumentos-manifest.json
+python3 scripts/coletar_tabela_tjmg.py --salvar-evidencia
 ```
 
-O coletor baixa o PDF em diretório temporário, calcula SHA-256, confirma a identificação da portaria e grava apenas um manifesto `CAPTURED`. Depois, comparar com a versão anterior, revisar os itens e somente então promover os itens aprovados para `PUBLISHED`. A versão anterior permanece auditável e não é sobrescrita.
+O coletor baixa o PDF em diretório temporário, calcula SHA-256, confirma a identificação da portaria e, com `--salvar-evidencia`, grava um manifesto `CAPTURED`. Depois, comparar com a versão anterior, revisar os itens e somente então promover os itens aprovados para `PUBLISHED`. A versão anterior permanece auditável e não é sobrescrita. Para o inventário completo e as regras de coleta externa, consulte `docs/MAPA_DADOS_E_COLETA_EXTERNA.md`.

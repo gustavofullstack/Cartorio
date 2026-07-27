@@ -26,13 +26,15 @@ evitar timeout em recursao localhost:8000 -> /mcp -> localhost:8000.
 
 from __future__ import annotations
 
+import functools
+import inspect
 import os
 import re
 import sys
 import hashlib
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, TypeVar, cast
 
 from starlette.middleware import Middleware
 
@@ -47,6 +49,50 @@ try:
 except ImportError:
     # Fallback se rodar fora do venv
     settings = None  # type: ignore[assignment]
+
+# Reusa o MetricsStore do backend (Fase 3 — telemetria de MCP tools).
+try:
+    from app.services.metrics import store as _metrics_store
+except ImportError:
+    _metrics_store = None  # type: ignore[assignment]
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+# ============================================================================
+# Fase 3 — Counter cartorio_mcp_tool_calls_total{tool}
+# ============================================================================
+
+
+def contabilizar_tool(nome: str) -> Callable[[F], F]:
+    """Incrementa `cartorio_mcp_tool_calls_total{tool}` a cada chamada da tool.
+
+    Aplicado logo abaixo de `@mcp.tool(...)` (functools.wraps preserva a
+    assinatura inspecionada pelo FastMCP). O label `tool` eh um literal fixo
+    por tool (whitelist natural — cardinalidade controlada, zero PII).
+    Fail-safe: se o MetricsStore nao estiver importavel, a tool roda normal.
+    """
+
+    def decorator(func: F) -> F:
+        def _contar() -> None:
+            if _metrics_store is not None:
+                _metrics_store.inc_counter("cartorio_mcp_tool_calls_total", labels={"tool": nome})
+
+        @functools.wraps(func)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            _contar()
+            return await func(*args, **kwargs)
+
+        @functools.wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            _contar()
+            return func(*args, **kwargs)
+
+        if inspect.iscoroutinefunction(func):
+            return cast(F, async_wrapper)
+        return cast(F, sync_wrapper)
+
+    return decorator
 
 
 # ============================================================================
@@ -112,6 +158,7 @@ def _tool_error(code: str, exc: Exception, mensagem: str | None = None) -> dict:
         "pode ser consumido publicamente."
     ),
 )
+@contabilizar_tool("cartorio_calcular_emolumento")
 async def cartorio_calcular_emolumento(
     tipo: str,
     folhas: int = 1,
@@ -159,6 +206,7 @@ async def cartorio_calcular_emolumento(
         "(Emolumento, TFJ, Recompe-MG e ISSQN Uberlândia 5%) para o 2º Serviço Notarial de Uberlândia (Djalma)."
     ),
 )
+@contabilizar_tool("cartorio_extrair_e_calcular_real")
 async def cartorio_extrair_e_calcular_real(
     texto_usuario: str,
     forcar_urgencia: bool = False,
@@ -178,7 +226,6 @@ async def cartorio_extrair_e_calcular_real(
     return res.to_dict()
 
 
-
 # ============================================================================
 # Tool 2: Consultar protocolo
 # ============================================================================
@@ -192,6 +239,7 @@ async def cartorio_extrair_e_calcular_real(
         "prazo estimado. Toda consulta e registrada no audit log (LGPD art. 37)."
     ),
 )
+@contabilizar_tool("cartorio_consultar_protocolo")
 async def cartorio_consultar_protocolo(numero: str) -> dict:
     """Consulta status de um protocolo.
 
@@ -259,6 +307,7 @@ async def cartorio_consultar_protocolo(numero: str) -> dict:
         "Cliente SEMPRE recebera handoff humano para validacao."
     ),
 )
+@contabilizar_tool("cartorio_criar_protocolo")
 async def cartorio_criar_protocolo(
     tipo: str,
     cliente_cpf: str,
@@ -336,6 +385,7 @@ async def cartorio_criar_protocolo(
         "Sprint 2: integracao com storage Supabase para PDF real."
     ),
 )
+@contabilizar_tool("cartorio_gerar_segunda_via")
 async def cartorio_gerar_segunda_via(
     protocolo: str,
     canal: str = "whatsapp",
@@ -372,6 +422,7 @@ async def cartorio_gerar_segunda_via(
         "Recomendado rodar diariamente via cron (AUDIT_VERIFY_CRON)."
     ),
 )
+@contabilizar_tool("cartorio_audit_verify")
 async def cartorio_audit_verify() -> dict:
     """Verifica integridade do audit log (hash chain + HMAC)."""
     from app.db import session_scope
@@ -404,6 +455,7 @@ async def cartorio_audit_verify() -> dict:
         "Para chain live no DB use cartorio_audit_verify."
     ),
 )
+@contabilizar_tool("cartorio_audit_hash_sequence")
 async def cartorio_audit_hash_sequence(entries: list[dict]) -> dict:
     """Valida sequência de hashes da audit chain (offline).
 
@@ -444,6 +496,7 @@ async def cartorio_audit_hash_sequence(entries: list[dict]) -> dict:
     name="cartorio_saudacao",
     description="Health check do Cartorio API. Publico, sem PII.",
 )
+@contabilizar_tool("cartorio_saudacao")
 async def cartorio_saudacao() -> dict:
     """Health check do Cartorio API.
 
@@ -478,6 +531,7 @@ async def cartorio_saudacao() -> dict:
     name="cartorio_enviar_whatsapp_reaction",
     description="Envia uma reação com emoji (ex: 👍, ❤️) para uma mensagem específica no WhatsApp do cliente.",
 )
+@contabilizar_tool("cartorio_enviar_whatsapp_reaction")
 async def cartorio_enviar_whatsapp_reaction(number: str, message_id: str, emoji: str) -> dict:
     """Envia uma reação no WhatsApp do cliente."""
     from app.services.notificacao import NotificationService
@@ -494,6 +548,7 @@ async def cartorio_enviar_whatsapp_reaction(number: str, message_id: str, emoji:
     name="cartorio_enviar_whatsapp_poll",
     description="Envia uma enquete com opções para o WhatsApp do cliente.",
 )
+@contabilizar_tool("cartorio_enviar_whatsapp_poll")
 async def cartorio_enviar_whatsapp_poll(number: str, question: str, options: list[str]) -> dict:
     """Envia uma enquete no WhatsApp do cliente."""
     from app.services.notificacao import NotificationService
@@ -509,6 +564,7 @@ async def cartorio_enviar_whatsapp_poll(number: str, question: str, options: lis
     name="cartorio_enviar_whatsapp_media",
     description="Envia imagem ou documento (PDF/doc) para o WhatsApp do cliente.",
 )
+@contabilizar_tool("cartorio_enviar_whatsapp_media")
 async def cartorio_enviar_whatsapp_media(
     number: str, media_url: str, mediatype: str, filename: str, caption: str | None = None
 ) -> dict:
@@ -528,6 +584,7 @@ async def cartorio_enviar_whatsapp_media(
     name="cartorio_enviar_telegram_reaction",
     description="Envia uma reação com emoji (ex: 👍, 👀) para uma mensagem do cliente no Telegram.",
 )
+@contabilizar_tool("cartorio_enviar_telegram_reaction")
 async def cartorio_enviar_telegram_reaction(chat_id: int, message_id: int, emoji: str) -> dict:
     """Envia uma reação no Telegram do cliente."""
     from app.api.v1.telegram import _react
@@ -557,6 +614,7 @@ async def cartorio_enviar_telegram_reaction(chat_id: int, message_id: int, emoji
     name="cartorio_enviar_telegram_poll",
     description="Envia uma enquete de múltipla escolha para o chat do cliente no Telegram.",
 )
+@contabilizar_tool("cartorio_enviar_telegram_poll")
 async def cartorio_enviar_telegram_poll(chat_id: int, question: str, options: list[str]) -> dict:
     """Envia uma enquete no Telegram do cliente."""
     from app.api.v1.telegram import _send_poll
@@ -572,6 +630,7 @@ async def cartorio_enviar_telegram_poll(chat_id: int, question: str, options: li
     name="cartorio_enviar_telegram_media",
     description="Envia imagem ou documento (PDF) para o chat do cliente no Telegram.",
 )
+@contabilizar_tool("cartorio_enviar_telegram_media")
 async def cartorio_enviar_telegram_media(
     chat_id: int, media_url: str, mediatype: str, filename: str, caption: str | None = None
 ) -> dict:
@@ -592,6 +651,7 @@ async def cartorio_enviar_telegram_media(
     name="super_server_info",
     description="Meta info do MCP server (versao, contagem de tools, etc).",
 )
+@contabilizar_tool("super_server_info")
 async def super_server_info() -> dict:
     """Meta info do MCP server."""
     tools_list = await mcp.list_tools()
