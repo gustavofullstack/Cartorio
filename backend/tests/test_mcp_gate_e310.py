@@ -110,9 +110,7 @@ class TestGateDiscovery:
 
     def test_descriptions_carry_lgpd_or_pii_guidance_where_relevant(self, mcp_tools) -> None:
         """Tools que tocam PII/mutação devem declarar governança na description."""
-        joined = {
-            name: (tool.description or "").lower() for name, tool in mcp_tools.items()
-        }
+        joined = {name: (tool.description or "").lower() for name, tool in mcp_tools.items()}
         # criar_protocolo: mutação sensível — description deve mencionar HITL/LGPD/DRAFT.
         criar = next(n for n in joined if "criar_protocolo" in n)
         assert any(k in joined[criar] for k in ("hitl", "lgpd", "draft", "valida")), (

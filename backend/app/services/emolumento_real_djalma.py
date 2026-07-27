@@ -4,7 +4,7 @@ Fonte primária: Portaria CGJ/TJMG nº 8.664/2025 (vigência a partir de 2026-01
 Tabela 1 — Atos do Tabelião de Notas.
 PDF oficial: https://www8.tjmg.jus.br/institucional/at/pdf/cpo86642025.pdf
 SHA-256 do PDF capturado em 2026-07-26 (hash público de documento oficial, não é secret):
-84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417  # noqa: ALLOW_KEY_FALLBACK
+84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417  # noqa: S105 ALLOW_KEY_FALLBACK
 
 Regras de segurança do dado (docs/DADOS_PRECOS_E_PAINEL_AGENT_AI.md):
 - O agente só publica itens de consulta direta da Tabela 1, sem composição.
@@ -23,7 +23,7 @@ from typing import Final, TypedDict
 CARTORIO: Final[str] = "2º Serviço Notarial de Uberlândia"
 TABELIAO: Final[str] = "Djalma de Oliveira"
 FONTE_URL: Final[str] = "https://www8.tjmg.jus.br/institucional/at/pdf/cpo86642025.pdf"
-FONTE_SHA256: Final[str] = "84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417"  # noqa: ALLOW_KEY_FALLBACK
+FONTE_SHA256: Final[str] = "84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417"  # noqa: S105 ALLOW_KEY_FALLBACK
 
 FONTE_CAPTURADA_EM: Final[str] = "2026-07-26"
 VIGENCIA_INICIO: Final[str] = "2026-01-01"
@@ -551,7 +551,7 @@ def catalogo_publico() -> dict[str, object]:
         "fonte": {
             "nome": "Portaria CGJ/TJMG nº 8.664/2025 — Tabela 1 (Atos do Tabelião de Notas)",
             "url": FONTE_URL,
-            "sha256": FONTE_SHA256,  # noqa: ALLOW_KEY_FALLBACK
+            "sha256": FONTE_SHA256,  # noqa: S105 ALLOW_KEY_FALLBACK
             "capturado_em": FONTE_CAPTURADA_EM,
             "vigencia_inicio": VIGENCIA_INICIO,
             "vigencia_fim": None,
