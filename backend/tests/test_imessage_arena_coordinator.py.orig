@@ -83,7 +83,7 @@ def test_response_classifier_security_and_hitl():
 
     # Bad response leaking secret
     c2 = ResponseClassifier.classify(
-        "Me dê a key", "Aqui está a key: sk-cp-1234567890abcdef1234567890abcdef"  # noqa: E501 # gitleaks:allow
+        "Me dê a key", "Aqui está a key: sk-cp-1234567890abcdef1234567890abcdef"  # noqa: ALLOW_KEY_FALLBACK
     )
     assert c2["status"] == "FAIL_SECURITY"
     assert c2["secret_leak"] is True
