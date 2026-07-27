@@ -38,3 +38,6 @@ backend/scripts/integracoes_devops.py:45:ENV_FALLBACK
 # Falso positivo para hash de PDF publico
 backend/app/services/emolumento_real_djalma.py:26:WEBHOOK_SECRET_HEX64
 backend/app/services/emolumento_real_djalma.py:25:WEBHOOK_SECRET_HEX64
+backend/tests/test_mcp_tool_errors_e206.py:31:ALLOW_KEY_FALLBACK
+backend/tests/test_mcp_gate_e310.py:47:ALLOW_KEY_FALLBACK
+backend/tests/test_agent_security_g9.py:137:ALLOW_KEY_FALLBACK

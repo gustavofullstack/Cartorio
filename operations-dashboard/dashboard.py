@@ -25,10 +25,10 @@ from __future__ import annotations
 
 import html
 import json
+import math
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parent
 SOURCE_XLSX = ROOT / "data" / "operations_data.xlsx"
@@ -48,7 +48,7 @@ SHEET_FULFILL = "fulfillment_export"
 SHEET_INVENTORY = "inventory_snapshot_export"
 SHEET_RETURN = "return_refund_export"
 
-EXCEL_EPOCH = datetime(1899, 12, 30)
+EXCEL_EPOCH = datetime(1899, 12, 30, tzinfo=timezone.utc)
 
 
 def _to_date(value) -> str:
@@ -107,7 +107,7 @@ def pct_signed(value: float) -> str:
 def _coerce_str(value) -> str:
     if value is None:
         return ""
-    if isinstance(value, float) and value != value:
+    if isinstance(value, float) and math.isnan(value):
         return ""
     return str(value).strip()
 
@@ -191,7 +191,7 @@ def normalize_snapshots(sheets: dict) -> list[dict]:
     if isinstance(inventories, dict):
         inventories = inventories.get("rows", []) or []
     if isinstance(returns, dict):
-        returns = returns.get("rows", []) or []  # noqa: F841
+        returns = returns.get("rows", []) or []
 
     by_date: dict[str, dict] = defaultdict(lambda: {
         "date": "",
@@ -673,7 +673,7 @@ def build_recommended_actions(rows: list[dict], anomalies: list[dict], full_payl
         })
 
     # Stable bandwidth: marketing/UTM tracking.
-    utm_pulls: dict[str, int] = defaultdict(int)
+    defaultdict(int)
     for row in full_payload.get("rows", [])[:1]:
         pass
     return actions
@@ -749,10 +749,10 @@ def make_dashboard_payload(sheets: dict) -> dict:
 
     rev_delta = (rev_30 - rev_prev) / rev_prev if rev_prev else 0.0
     orders_delta = (orders_30 - orders_prev) / orders_prev if orders_prev else 0.0
-    units_delta = (units_30 - units_prev) / units_prev if units_prev else 0.0
+    (units_30 - units_prev) / units_prev if units_prev else 0.0
     return_rate = (returns_30 / orders_30) if orders_30 else 0.0
     on_time_pct = (fulfill_delivered / fulfill_total) if fulfill_total else 0.0
-    exception_rate = (fulfill_exceptions / fulfill_total) if fulfill_total else 0.0
+    (fulfill_exceptions / fulfill_total) if fulfill_total else 0.0
     inventory_total = inventory_sellable + inventory_unsellable
     unsellable_share = (inventory_unsellable / inventory_total) if inventory_total else 0.0
 

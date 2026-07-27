@@ -42,7 +42,7 @@ DEFAULT_RANGE = "30D"
 
 # ---------- date helpers ----------
 
-def excel_serial_to_date(serial: float | int | None) -> str | None:
+def excel_serial_to_date(serial: float | None) -> str | None:
     """Convert Excel serial date (days since 1899-12-30) to ISO YYYY-MM-DD.
 
     Daily precision only; fractional time-of-day is dropped on purpose so we
@@ -512,12 +512,12 @@ def make_dashboard_payload(rows: list[dict]) -> dict:
     def delta(curr: float, prior: float) -> float:
         return ((curr - prior) / prior) if prior else 0.0
 
-    tickets_share = (
+    (
         (cur["answered"] / cur["qa"]) if cur["qa"] else 0.0
     )  # safe re-use: this is qa answer-rate; overwritten below
     # proper qa answer rate
     qa_answer_rate = (cur["answered"] / cur["qa"]) if cur["qa"] else 0
-    prev_qa_answer_rate = (prev["answered"] / prev["qa"]) if prev["qa"] else 0
+    (prev["answered"] / prev["qa"]) if prev["qa"] else 0
 
     latest_captured = max(
         (row.get("captured_at", "") for row in rows), default=""

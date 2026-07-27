@@ -40,11 +40,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 MCP_SERVER = ROOT / "mcp_server.py"
 
-EXPECTED_TOOL_COUNT = 14  # snapshot E3.10 — introspecção, não lista de nomes
+EXPECTED_TOOL_COUNT = 15  # snapshot E3.10 — introspecção, não lista de nomes
 
 # Formato realista de bot token Telegram: casa _BOT_TOKEN_RE do mcp_server
 # (bot\d+:[A-Za-z0-9_-]{10,}) para exercitar _strip_secrets de verdade.
-FAKE_TOKEN = "123456789:AAfakeTokenGateE310-abcdefghij"  # noqa: ALLOW_KEY_FALLBACK (motivo: token Telegram SINTETICO formato 123456789:AAfake... — exercita _strip_secrets do gate MCP)
+FAKE_TOKEN = "123456789:AAfakeTokenGateE310-abcdefghij"
 FAKE_CPF = "123.456.789-09"
 FAKE_PHONE = "5534999998888"
 
@@ -76,12 +76,12 @@ def _assert_no_leak(result: Any) -> None:
 
 
 # ============================================================
-# 1+2. Descoberta 14/14 + schema válido
+# 1+2. Descoberta completa + schema válido
 # ============================================================
 
 
 class TestGateDiscovery:
-    def test_exactly_14_tools_discoverable(self, mcp_tools) -> None:
+    def test_exactly_expected_tools_discoverable(self, mcp_tools) -> None:
         assert len(mcp_tools) == EXPECTED_TOOL_COUNT, (
             f"Esperado {EXPECTED_TOOL_COUNT} tools via introspecção, "
             f"achou {len(mcp_tools)}: {sorted(mcp_tools)}"
@@ -110,9 +110,7 @@ class TestGateDiscovery:
 
     def test_descriptions_carry_lgpd_or_pii_guidance_where_relevant(self, mcp_tools) -> None:
         """Tools que tocam PII/mutação devem declarar governança na description."""
-        joined = {
-            name: (tool.description or "").lower() for name, tool in mcp_tools.items()
-        }
+        joined = {name: (tool.description or "").lower() for name, tool in mcp_tools.items()}
         # criar_protocolo: mutação sensível — description deve mencionar HITL/LGPD/DRAFT.
         criar = next(n for n in joined if "criar_protocolo" in n)
         assert any(k in joined[criar] for k in ("hitl", "lgpd", "draft", "valida")), (
@@ -142,7 +140,7 @@ class TestGateStructuredErrors:
         """Timeout interno (asyncio.TimeoutError) -> erro estruturado, sem leak."""
 
         async def _slow(chat_id, question, options):
-            raise asyncio.TimeoutError(f"poll timeout para {FAKE_PHONE} cpf {FAKE_CPF}")
+            raise TimeoutError(f"poll timeout para {FAKE_PHONE} cpf {FAKE_CPF}")
 
         monkeypatch.setattr("app.api.v1.telegram._send_poll", _slow)
         result = await mcp_module.cartorio_enviar_telegram_poll(123, "P?", ["a", "b"])

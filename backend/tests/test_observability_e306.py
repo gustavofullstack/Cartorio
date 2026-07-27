@@ -309,9 +309,7 @@ async def _fake_pipeline_ok() -> dict:
 
 
 class TestWhatsappHealthGauges:
-    def _mount(
-        self, monkeypatch: pytest.MonkeyPatch, client: _FakeEvoClient
-    ) -> None:
+    def _mount(self, monkeypatch: pytest.MonkeyPatch, client: _FakeEvoClient) -> None:
         from app.api.v1 import whatsapp
 
         monkeypatch.setattr(whatsapp, "get_adapter", lambda: _FakeEvoAdapter(client))
