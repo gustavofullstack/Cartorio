@@ -299,13 +299,11 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    Cron1[Cron 03:00 BRT<br/>cartorio-backup.sh] --> DumpDB[pg_dump cartorio<br/>pg_dump n8n<br/>pg_dump chatwoot<br/>pg_dump evolution]
+    Cron1[Cron 03:00 BRT<br/>cartorio-backup.sh] --> DumpDB[pg_dump supabase<br/>pg_dump chatwoot<br/>pg_dump evolution]
     Cron1 --> DumpWF[Backup N8N WFs<br/>via API]
-    Cron1 --> DumpEnv[Backup .env files]
     
     DumpDB --> Compress[Compressão<br/>tar.gz]
     DumpWF --> Compress
-    DumpEnv --> Compress
     
     Compress --> Storage[Salvar em<br/>/var/backups/cartorio/]
     Storage --> Rotate{>7 tarballs?}

@@ -18,7 +18,7 @@
 | Asset | Path | Papel |
 |-------|------|--------|
 | Dry-run validator | `scripts/backup_dryrun.py` | Valida `.sql.gz` + restore simulado SQLite; `--tar-list` para bundle |
-| Backup diário VPS | `infra/backup/cartorio-backup.sh` | `pg_dump -Fc` multi-DB + tar.gz + envs |
+| Backup diário VPS | `infra/backup/cartorio-backup.sh` | `pg_dump -Fc` multi-DB + tar.gz; sem `.env` ou credenciais |
 | Backup basebackup 4×/dia | `scripts/backup_postgres_a14.sh` | `pg_basebackup -Ft -z` → dirs em `/var/backups/postgres` |
 | Report G6 (referência) | `docs/BACKUP_DRYRUN_REPORT_2026-07-16.md` | Sample minúsculo (<1KB) → HOLD size gate |
 
@@ -78,8 +78,8 @@ ssh cartorio 'ls -lah /var/backups/cartorio/*.sql.gz /var/backups/cartorio/*.tar
 | Arquivo | `/tmp/cartorio_backup_g7_wave24/cartorio_backup_sample.tar.gz` |
 | Tamanho | **10582 bytes** |
 | `tar -tzf` / `tarfile` list | **OK** (8 membros) |
-| Dumps presentes | `supabase_{cartorio,n8n,chatwoot,evolution}_*.dump` |
-| Envs / n8n JSON | presentes (sample) |
+| Dumps presentes | layout histórico de fixture; produção atual usa `supabase_{supabase,chatwoot,evolution}_*.dump` |
+| Snapshot n8n | opcional, somente workflows; nunca credenciais ou `.env` |
 | Exit code `--tar-list` | **0 [WORK]** |
 
 > **Nota**: dumps `-Fc` (custom format) **não** são re-importados no SQLite. O dry-run de bundle valida **integridade do envelope** (tar legível + artefatos esperados). Restore real de `-Fc` exige `pg_restore` no Postgres (critérios §3).
@@ -90,7 +90,7 @@ ssh cartorio 'ls -lah /var/backups/cartorio/*.sql.gz /var/backups/cartorio/*.tar
 |------|--------|
 | SSH VPS / leitura `/var/backups/cartorio` | Auto-mode / wave rule: não SSH se falhar; host local `Permission denied` |
 | `pg_restore` em prod ou staging | Mutação / risco de dados |
-| Download de backup prod | PII + secrets em `.env` do bundle |
+| Download de backup prod | PII; bundles atuais não incluem `.env` ou credenciais |
 | S3 restore drill | Fora do escopo G7.08.T2 sample |
 
 ---

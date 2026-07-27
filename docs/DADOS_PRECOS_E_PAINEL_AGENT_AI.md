@@ -6,6 +6,7 @@ O catálogo público do Agent AI usa somente itens de consulta direta da **Tabel
 
 - Fonte primária: [PDF oficial do TJMG](https://www8.tjmg.jus.br/institucional/at/pdf/cpo86642025.pdf)
 - Captura técnica: 2026-07-26
+- Integridade revalidada: 2026-07-27, por download direto do PDF oficial.
 - SHA-256 do PDF capturado: `84781a023d6d51d9cf68a4d2ecd0c78b7fa3b0c04ba800be4d7e085aa7173417`
 - Revisão operacional: pendente de validação do escrevente responsável antes de publicar qualquer novo item ou cálculo composto.
 
@@ -33,6 +34,11 @@ O painel consome uma visão agregada, sem PII, com quatro blocos servidos por en
 4. **Operação** — `GET /api/v1/painel/operacao`: consultas ao `POST /api/v1/emolumentos/real/calcular` por `outcome` (contador `cartorio_agent_ai_consultas_total`), handoffs e taxa de handoff (divisão por zero tratada).
 
 Complementar: `GET /api/v1/painel/ia-usage?dias=30` (≤ 365) expõe a telemetria agregada do LiteLLM (Fase 3). Interfaces: `/painel/agent-ai` (mesa de evidências) e `/dashboard`, ambas com refresh periódico leve (60s) e estado "indisponível" por bloco quando um endpoint falha.
+
+Em 2026-07-27, as quatro rotas públicas dos blocos (`fonte`, `catalogo`,
+`extracao` e `operacao`) responderam HTTP 200 via HTTPS. Isso confirma a
+disponibilidade das rotas; a prova anti-PII continua sendo o contrato
+automatizado, não a mera resposta HTTP.
 
 Estados permitidos: `CAPTURED`, `EXTRACTED`, `HUMAN_REVIEWED`, `PUBLISHED`, `SUPERSEDED`, `REJECTED`. O agente só lê registros `PUBLISHED` cuja vigência contenha a data da consulta; ausência ou expiração resulta em encaminhamento humano, nunca em preço inventado.
 

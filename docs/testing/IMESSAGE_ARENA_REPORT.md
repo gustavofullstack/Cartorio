@@ -21,6 +21,6 @@ Um estado persistido de gateway não substitui `hermes gateway list` e listener 
 
 ## Próxima ação
 
-Restaurar acesso de execução ao VAIO Arch e inventariar os seis profiles no host alvo antes de
-configurar credenciais, allowlists ou grupos. O diagnóstico atual está em
+Implantar e validar o Hermes isolado na VPS do Cartório antes de configurar
+credenciais, allowlists ou grupos. O diagnóstico atual está em
 `docs/testing/RUNTIME_AGENT_MATRIX.json`. Só então operar a Arena com um coordenador e kill switch.

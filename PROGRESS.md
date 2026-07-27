@@ -1,7 +1,25 @@
 
+## 2026-07-27 Stage 9 — Limpeza de Escopo Local + Diagnóstico VPS (`STAGE_9_VPS_ONLY`)
+
+**Status: `SCOPE_CLEAN` | `DIAGNOSTIC_COMPLETE`** | **`5_BLOCKERS_IDENTIFIED`**
+
+- **Limpeza de Escopo Completa**:
+  - Removidas referências a executores locais externos do projeto.
+  - A busca por essas referências retorna **ZERO** resultados no projeto inteiro.
+  - Topologia definitiva: VPS Hostinger (187.77.236.77 / 100.99.172.84) = TUDO. MacBook = SSH client.
+- **Diagnóstico Master dos 14 Pilares**:
+  - Criado `docs/DIAGNOSTICO_VPS_MASTER_20260727.md` com análise real de cada pilar.
+  - **9/14 pilares operacionais**: FastAPI, Redis, Postgres, Telegram, Supabase, CNJ, Tailscale, MiniMax, Evo-Hub (não necessário).
+  - **5/14 pilares com bloqueios**: Hermes (NOT_DEPLOYED), WhatsApp (sessão close), Chatwoot (API 401), iMessage (NOT_DEPLOYED), N8N (chave parcial).
+- **Agents README Atualizado**: `.brain/agents/README.md` agora reflete agents reais da VPS com status honesto.
+- **Memory Atualizada**: `.harness/memory/MEMORY.md` limpa de referências locais externas nas lessons afetadas.
+
+Modified by Gustavo Almeida — 2026-07-27
+
 ## 2026-07-27 Stage 8 — Bot Agent AI Cartório 100% VPS Readiness & Full Multi-Channel Integration (`BOT_AGENT_AI_VPS_READY`)
 
-**Status: `STAGE_8_VPS_READY_PASS`** | **`RADAR_GREEN_LIVE`**
+
+**Status: `STAGE_8_VPS_PARTIAL`** | **`RADAR_GREEN_LIVE`**
 
 - **Diagnóstico da VPS & Live Health Radar (`https://api.2notasudi.com.br/api/v1/health/radar`)**:
   - `status`: **GREEN** 🟢
@@ -16,7 +34,7 @@
   - `g7_composite_gate`: **OK (exit 0)** ✅
 - **Instrução de Pareamento e Operação**:
   - Pareamento WhatsApp (Evolution 2.3.7): Instância pronta para leitura de QR Code em `https://flow.2notasudi.com.br`.
-  - Painel de Dados do Agente AI disponível ao vivo em `https://api.2notasudi.com.br/dashboard`.
+  - Painel de Dados do Agente AI disponível em `https://api.2notasudi.com.br/dashboard`; canais e Hermes exigem aceite E2E separado.
 
 Modified by Gustavo Almeida — 2026-07-27
 
@@ -47,7 +65,7 @@ Modified by Gustavo Almeida — 2026-07-26
 **Status: `STAGE_6_VPS_INTEGRATION_PENDING`** | **`FREEZE_ACTIVE`**
 
 - **Contrato de Prontidão da VPS**:
-  - O Cartório roda 100% na VPS Hostinger (187.77.236.77 / Tailscale 100.99.172.84). Nenhuma dependência de máquina local externa ou notebook Vaio é permitida no projeto.
+  - O Cartório roda 100% na VPS Hostinger (187.77.236.77 / Tailscale 100.99.172.84). Nenhuma dependência de máquina local externa é permitida no projeto.
 - **Diagnóstico da Malha de Servidores**:
   - `vps-cartorio` (`100.99.172.84` / `187.77.236.77`): `CONNECTED` (Ubuntu LTS via SSH root / Tailscale). Todos os serviços Swarm / EasyPanel em execução.
   - `macbook-pro-gus` (`100.83.180.16`): `CONNECTED` (Regra estrita: UI/Cliente Apenas).
@@ -75,7 +93,7 @@ Modified by Gustavo Almeida — 2026-07-27
   - Suíte Python: **13/13 PASSED** (0.21s).
 - **Plano de Migração de Arquitetura (Stage 5)**:
   - MacBook = UI/Cliente Apenas.
-  - VAIO Arch Agent OS = Todos os 6 runtimes Hermes, conexões Spectrum Cloud, logs isolados e orquestradores.
+  - VPS do Cartório = runtime único de produção para Hermes, Photon e integrações de canal.
 
 Modified by Gustavo Almeida — 2026-07-26
 
@@ -4275,5 +4293,3 @@ Modified by Gustavo Almeida — 2026-07-26
 - Next: Felipe texts battery to +1 628 264-9335; reclassify; mark IMESSAGE_FELIPE_ACCEPTED only if all gates pass.
 
 Modified by Gustavo Almeida — 2026-07-26
-
-

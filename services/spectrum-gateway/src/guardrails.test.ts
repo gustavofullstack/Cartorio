@@ -51,6 +51,11 @@ test("stripInternalAgentControlLeaks remove vazamentos de controle interno e bot
   assert.equal(scrubPii(textWithReview), "Atendimento prestado com sucesso.");
 });
 
+test("stripInternalAgentControlLeaks intercepta vazamentos de rate limit do provedor de LLM", () => {
+  const rateLimitLeak = "⏱️ The model provider is rate-limiting requests. Please wait a moment and try again.";
+  assert.match(scrubPii(rateLimitLeak), /O atendimento automatizado está temporariamente indisponível/);
+});
+
 test("sanitizeOutbound aplica scrub no texto de saida", () => {
   const out = sanitizeOutbound({
     conversationId: "c-1",

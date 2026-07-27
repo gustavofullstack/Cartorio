@@ -4,7 +4,7 @@
 
 ### Adicionado
 
-- `execution/EXECUTION_ENGINE.md` — topologia de execução (VAIO runner dev, VPS prod, MacBook cliente SSH).
+- `execution/EXECUTION_ENGINE.md` — topologia de execução na VPS do Cartório.
 - `docs/DECISIONS.md` — 5 ADRs do dia (webhook nunca-5xx, secret obrigatório, debounce por conv, slots zen, CNJ dump).
 - `docs/TEST-REPORT.md` — consolidado das baterias (1000 PASS, E2E 18/20, probes prod).
 - Conteúdo real (15-40 linhas, PT-BR) em 25 registries que eram placeholders de 1 linha:

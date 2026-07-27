@@ -1,7 +1,7 @@
 # 🧪 Relatório de Testes e Validação P0 — Bot Telegram Cartório AI (@test_cartorio_bot)
 
 **Data de Validação**: 2026-07-20  
-**Ambiente**: Local / VAIO Ubuntu & Hostinger VPS (EasyPanel / Traefik)  
+**Ambiente**: VPS Hostinger do Cartório (EasyPanel / Traefik)
 **Versão do Bot**: `v0.6.1-p0fix`  
 **Bot Target**: `@test_cartorio_bot` (ID: 8859206262)  
 **Webhook URL**: `https://api.2notasudi.com.br/api/v1/telegram/webhook`  

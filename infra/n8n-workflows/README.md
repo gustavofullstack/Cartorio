@@ -129,7 +129,11 @@ grep -rE "sk-[a-zA-Z0-9]{20,}|@[A-Za-z0-9_]{8,}|password.*=.*['\"]" infra/n8n-wo
 
 ## Backup automático
 
-O cron `/etc/cron.d/cartorio-backup` na VPS roda diariamente às 03:00 BRT e inclui `n8n workflows/credentials + .env` em `/var/backups/cartorio/`. Retenção 7 dias. Validação manual ver `docs/SMOKE_TEST_REPORT.md`.
+O cron `/etc/cron.d/cartorio-backup` na VPS roda diariamente às 03:00 BRT e inclui
+os dumps dos bancos e, quando a credencial de leitura for válida, o snapshot de
+workflows n8n. Credenciais e arquivos `.env` não entram no bundle: são
+recuperados exclusivamente pelo gerenciador de segredos. Retenção local: 7 dias.
+O estado operacional atual está em `docs/PRONTIDAO_VPS_AGENT_AI_20260727.md`.
 
 ---
 

@@ -22,7 +22,7 @@
 | HEAD `origin/master` | `6967b71` (telegram fix `d642e0e` + zen 3 contas `bc9823c`) |
 | Swarm produção | **19 serviços 1/1** na VPS (cartorio_api, chatwoot, evolution-api, lobechat, n8n, openclaw-gateway, redis, supabase pgvector pg17, traefik, etc.) |
 | VPS acesso estável | `vps-public` = 187.77.236.77 (root) — preferir; `vps` = 100.99.172.84 (Tailscale) **instável** |
-| Runner dev | VAIO `pc-linux-local` = 192.168.1.2 (ubuntu-server) — Tailscale do VAIO instável → usar IP local |
+| Execução | VPS do Cartório (`vps`/`vps-public`) — não usar runner local externo |
 | MacBook | somente cliente SSH — nunca carga pesada |
 | Telegram | `@test_cartorio_bot` validado em prod 2026-07-20 (`response_sent=true`, secret OK, pending=0) |
 | LLM | 3 contas OpenCode Zen integradas (slots coerentes, timeout 45s, payload por provider, fallback determinístico + circuit breaker) |

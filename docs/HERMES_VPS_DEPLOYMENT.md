@@ -19,6 +19,8 @@ o FastAPI, OpenClaw, Evolution, Chatwoot ou n8n: integra-se a eles pela API e MC
 - `infra/hermes/config.cartorio.yaml` — perfil Hermes sem credenciais literais.
 - `infra/hermes/.env.example` — nomes das variáveis não secretas e dos segredos
   exigidos.
+- `infra/hermes/preflight-vps.sh` — gate somente leitura de Swarm, rede e nomes
+  dos secrets; não lê nem imprime conteúdo de credenciais.
 
 O serviço usa a imagem oficial `nousresearch/hermes-agent` fixada no digest
 AMD64 `sha256:6df245c22c49b5ad9f94dd9e3cf614263f4313f117d117a7d2abd4092fa804d2`,
@@ -47,17 +49,19 @@ de autenticação diferentes.
 
 1. Criar os quatro Docker Secrets no ambiente de produção, sem imprimi-los.
 2. Carregar a configuração não secreta exclusivamente no Easypanel/Swarm.
-3. Validar o manifesto sem implantar: `docker stack config -c infra/hermes/docker-stack.yml`.
-4. Implantar como serviço novo: `docker stack deploy -c infra/hermes/docker-stack.yml cartorio`.
-5. Conferir `docker service ps cartorio_hermes` e logs sanitizados; nenhum serviço
+3. Executar `bash infra/hermes/preflight-vps.sh` na VPS e exigir
+   `HERMES_PREFLIGHT=PASS`.
+4. Validar o manifesto sem implantar: `docker stack config -c infra/hermes/docker-stack.yml`.
+5. Implantar como serviço novo: `docker stack deploy -c infra/hermes/docker-stack.yml cartorio`.
+6. Conferir `docker service ps cartorio_hermes` e logs sanitizados; nenhum serviço
    existente deve ser reiniciado.
-6. Validar a API Hermes por dentro da rede com bearer token, depois `hermes mcp
+7. Validar a API Hermes por dentro da rede com bearer token, depois `hermes mcp
    test cartorio` no container.
-7. Validar uma chamada MCP sem PII e confirmar que a resposta contém apenas
+8. Validar uma chamada MCP sem PII e confirmar que a resposta contém apenas
    dados permitidos.
-8. Iniciar o sidecar Photon e provar o round-trip real: iPhone autorizado →
+9. Iniciar o sidecar Photon e provar o round-trip real: iPhone autorizado →
    Photon → Hermes → MCP/API quando aplicável → resposta no mesmo iPhone.
-9. Validar separadamente WhatsApp (Evolution), Chatwoot e Telegram/webhook;
+10. Validar separadamente WhatsApp (Evolution), Chatwoot e Telegram/webhook;
    disponibilidade de container não certifica nenhum canal.
 
 ## Critérios de aceite

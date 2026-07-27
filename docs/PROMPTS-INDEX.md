@@ -5,7 +5,7 @@
 > **Status**: cross-ref ativo · sem alteração de conteúdo dos arquivos originais.
 > **Sync 2026-07-20**: versões atualizadas — `PROMPT.MD`/`PROMPT.json` → **4.6.0**, `PROMPT-2.MD`/`PROMPT-2.json` → **2.1**.
 > Fatos novos: HEAD `6967b71` (telegram validado em prod), 3 contas OpenCode Zen (slots coerentes, timeout 45s),
-> topologia VAIO runner dev / VPS prod / MacBook cliente SSH, cofre `~/.mavis/secrets` inexistente,
+> topologia VPS do Cartório / MacBook cliente SSH, cofre `~/.mavis/secrets` inexistente,
 > SUPER PLANO G9 reformatado para 10 squads × 10 tasks, núcleo `cartorio-ai/` expandido (15+28 arquivos).
 
 ---

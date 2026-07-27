@@ -165,6 +165,43 @@ async def test_payload_litellm_minimo_sem_thinking_nem_tools(
     assert body["model"] == "litellm-model"
 
 
+async def test_provider_rate_limit_vira_resposta_cartorial_sem_texto_tecnico(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """429 de todos os providers nunca chega cru ao canal do cliente."""
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_API_KEY", "mm-key")
+    monkeypatch.setattr(cartorio_agent, "MINIMAX_BASE_URL", "https://minimax.example/v1")
+    metrics = MetricsStore()
+    monkeypatch.setattr("app.services.metrics.store", metrics)
+
+    async def _no_skip(provider: str) -> bool:
+        return False
+
+    async def _noop(provider: str) -> None:
+        return None
+
+    monkeypatch.setattr(cartorio_agent, "_circuit_skip", _no_skip)
+    monkeypatch.setattr(cartorio_agent, "_circuit_failure", _noop)
+
+    with respx.mock:
+        respx.post("https://minimax.example/v1/chat/completions").mock(
+            return_value=httpx.Response(429, text="The model provider is rate-limiting requests")
+        )
+        msg, provider, err = await cartorio_agent._chat_completion(
+            [{"role": "user", "content": "oi"}],
+        )
+
+    assert err == ""
+    assert provider == "offline:provider_rate_limited"
+    assert msg is not None
+    assert "limite momentaneo" in str(msg["content"])
+    assert "The model provider" not in str(msg["content"])
+    assert metrics.counters["cartorio_llm_calls_total"][
+        "model=MiniMax_direct|operation=chat|status=rate_limited"
+    ] == 1
+    assert metrics.counters["cartorio_llm_degraded_total"]["reason=provider_rate_limited"] == 1
+
+
 # ---------------------------------------------------------------------------
 # 3) Timeout global: provider travado -> offline reply rapido.
 # ---------------------------------------------------------------------------

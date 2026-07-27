@@ -23,7 +23,7 @@ ver `ROADMAP.md`.
 ## Registries de domínio (A4, 2026-07-20)
 - [governance/GOVERNANCE.md](governance/GOVERNANCE.md) — autoridade L0–L3, gates formais.
 - [knowledge/KNOWLEDGE_BASE.md](knowledge/KNOWLEDGE_BASE.md) — fontes canônicas e prioridade.
-- [execution/EXECUTION_ENGINE.md](execution/EXECUTION_ENGINE.md) — topologia VAIO/VPS/MacBook, ciclo de mudança.
+- [execution/EXECUTION_ENGINE.md](execution/EXECUTION_ENGINE.md) — topologia VPS do Cartório e ciclo de mudança.
 - [agents/AGENT_REGISTRY.md](agents/AGENT_REGISTRY.md) — agentes prod + reins de engenharia.
 - [skills/SKILL_REGISTRY.md](skills/SKILL_REGISTRY.md) — skills de projeto e de domínio.
 - [tools/TOOL_REGISTRY.md](tools/TOOL_REGISTRY.md) — ferramentas SSH/banco/qualidade/obs.

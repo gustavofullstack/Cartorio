@@ -18,7 +18,26 @@ const AGENT_CONTROL_PATTERNS = [
   /^\/cancel\b.*$/gim,
 ];
 
+const LLM_PROVIDER_ERROR_PATTERNS = [
+  /.*the model provider is rate-limiting.*$/gim,
+  /.*rate-limiting requests.*$/gim,
+  /.*rate limit exceeded.*$/gim,
+  /.*too many requests.*$/gim,
+  /.*model provider is overloaded.*$/gim,
+  /.*provider error.*$/gim,
+  /.*502 Bad Gateway.*$/gim,
+  /.*503 Service Unavailable.*$/gim,
+];
+
+export const USER_FRIENDLY_FALLBACK_TEXT =
+  "O atendimento automatizado está temporariamente indisponível. Tente novamente em alguns minutos ou entre em contato pelo telefone (34) 3216-0252.";
+
 export function stripInternalAgentControlLeaks(text: string): string {
+  for (const pat of LLM_PROVIDER_ERROR_PATTERNS) {
+    if (pat.test(text)) {
+      return USER_FRIENDLY_FALLBACK_TEXT;
+    }
+  }
   let cleaned = text;
   for (const pat of AGENT_CONTROL_PATTERNS) {
     cleaned = cleaned.replace(pat, "");

@@ -110,6 +110,12 @@ def _opencode_free_configs() -> list[tuple[str, str, str]]:
 # silencio percebido). Agora: tentativa com 20s read/8s connect + teto global.
 LLM_GLOBAL_TIMEOUT_S = float(os.environ.get("CARTORIO_AGENT_LLM_TIMEOUT_S", "45"))
 
+_PROVIDER_RATE_LIMIT_REPLY = (
+    "Nosso atendimento inteligente atingiu o limite momentaneo de uso.\n\n"
+    "Voce pode tentar novamente em alguns minutos ou digitar /humano para falar com o "
+    "escrevente."
+)
+
 AGENT_SYSTEM = """Voce e o Agent AI do Cartorio 2o Oficio de Notas de Uberlandia/MG.
 
 IDENTIDADE
@@ -678,6 +684,7 @@ async def _chat_completion(
     from app.services.metrics import _classify_error, store
 
     last_err = ""
+    provider_rate_limited = False
     payload_min: dict[str, Any] = {
         "messages": messages,
         "max_tokens": max_tokens,
@@ -716,7 +723,9 @@ async def _chat_completion(
                     data = r.json()
                     msg = data.get("choices", [{}])[0].get("message") or {}
                     return msg, f"minimax_direct:{MINIMAX_MODEL}", ""
-                store.inc_llm_calls_total("MiniMax_direct", "chat", "error")
+                status = "rate_limited" if r.status_code == 429 else "error"
+                provider_rate_limited = provider_rate_limited or status == "rate_limited"
+                store.inc_llm_calls_total("MiniMax_direct", "chat", status)
                 store.inc_llm_errors_total(
                     "MiniMax_direct", "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
                 )
@@ -747,7 +756,9 @@ async def _chat_completion(
                     elapsed = time.perf_counter() - start_t
                     store.observe_llm_call_seconds("litellm", "chat", elapsed)
                     if r.status_code != 200:
-                        store.inc_llm_calls_total("litellm", "chat", "error")
+                        status = "rate_limited" if r.status_code == 429 else "error"
+                        provider_rate_limited = provider_rate_limited or status == "rate_limited"
+                        store.inc_llm_calls_total("litellm", "chat", status)
                         store.inc_llm_errors_total(
                             "litellm", "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
                         )
@@ -794,7 +805,9 @@ async def _chat_completion(
                 elapsed = time.perf_counter() - start_t
                 store.observe_llm_call_seconds(provider_label, "chat", elapsed)
                 if r.status_code != 200:
-                    store.inc_llm_calls_total(provider_label, "chat", "error")
+                    status = "rate_limited" if r.status_code == 429 else "error"
+                    provider_rate_limited = provider_rate_limited or status == "rate_limited"
+                    store.inc_llm_calls_total(provider_label, "chat", status)
                     store.inc_llm_errors_total(
                         provider_label, "chat", "HTTP_4XX" if r.status_code < 500 else "HTTP_5XX"
                     )
@@ -815,6 +828,9 @@ async def _chat_completion(
                 last_err = f"{provider_label} {type(exc).__name__}"
                 logger.warning("cartorio_agent %s fail: %s", provider_label, last_err)
 
+    if provider_rate_limited:
+        store.inc_llm_degraded_total("provider_rate_limited")
+        return {"content": _PROVIDER_RATE_LIMIT_REPLY}, "offline:provider_rate_limited", ""
     return None, "none", last_err
 
 

@@ -1,6 +1,6 @@
 # TEST-REPORT — 2026-07-20
 
-Consolidado das baterias executadas na sessão (execução pesada no VAIO `pc-linux-local`; probes na VPS `vps-public`).
+Consolidado histórico das baterias executadas; a execução operacional atual é exclusivamente na VPS do Cartório.
 
 ## Resumo
 
@@ -31,5 +31,5 @@ Consolidado das baterias executadas na sessão (execução pesada no VAIO `pc-li
 
 ## Ambiente de execução
 
-- Runner: VAIO `192.168.1.2` (Tailscale instável → IP local); MacBook apenas cliente SSH.
+- Runner operacional: VPS do Cartório; MacBook apenas cliente SSH.
 - Isolamento LLM: `LLM_DEFAULT_PROVIDER=opencode_go` em testes (`tests/conftest.py`) — zero chamada real.

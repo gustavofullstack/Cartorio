@@ -1172,12 +1172,29 @@ async def chatwoot_health_check(
     start = time.perf_counter()
     async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
         try:
-            resp = await client.get(f"{chatwoot_base}/auth/sign_in")
+            ui_response = await client.get(f"{chatwoot_base}/auth/sign_in")
             latency_ms = int((time.perf_counter() - start) * 1000)
-            is_up = resp.status_code < 500
+            ui_online = ui_response.status_code < 500
+            api_key = settings.chatwoot_api_key
+            account_id = settings.chatwoot_account_id
+
+            if not api_key or not account_id:
+                return {
+                    "status": "degraded" if ui_online else "offline",
+                    "http_status": ui_response.status_code,
+                    "api_status": "not_configured",
+                    "latency_ms": latency_ms,
+                    "base_url": chatwoot_base,
+                }
+
+            api_response = await client.get(
+                f"{chatwoot_base.rstrip('/')}/api/v1/accounts/{account_id}",
+                headers={"api_access_token": api_key},
+            )
             return {
-                "status": "online" if is_up else "degraded",
-                "http_status": resp.status_code,
+                "status": "online" if ui_online and api_response.status_code == 200 else "degraded",
+                "http_status": ui_response.status_code,
+                "api_http_status": api_response.status_code,
                 "latency_ms": latency_ms,
                 "base_url": chatwoot_base,
             }

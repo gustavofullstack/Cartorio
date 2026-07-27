@@ -51,11 +51,13 @@ for db in supabase chatwoot evolution; do
 done
 
 # --- 2. n8n workflows via API ------------------------------------------
-# N8N API key pode vir de 4 fontes (ordem de prioridade):
+# N8N API key pode vir de 5 fontes (ordem de prioridade):
 #   1. env N8N_API_KEY exportada
 #   2. /etc/cartorio-backup/n8n-api-key.env (modo recomendado, chmod 600)
 #   3. /etc/easypanel/projects/cartorio/n8n/.env (caso Easypanel salve)
 #   4. extraida direto do service Swarm cartorio_n8n (var Spec.TaskTemplate)
+#   5. fallback interno da API do Cartório, caso a chave exclusiva de backup
+#      tenha sido revogada. O valor nunca é impresso nem arquivado.
 N8N_KEY="${N8N_API_KEY:-}"
 if [[ -z "${N8N_KEY}" && -f /etc/cartorio-backup/n8n-api-key.env ]]; then
   # shellcheck disable=SC1091
@@ -78,11 +80,21 @@ if [[ -n "${N8N_KEY}" ]]; then
   mkdir -p "${BACKUP_DIR}/n8n_${TIMESTAMP}"
   if ! curl -fsSk "https://flow.2notasudi.com.br/api/v1/workflows?limit=200" \
     -H "X-N8N-API-KEY: ${N8N_KEY}" \
-    -o "${BACKUP_DIR}/n8n_${TIMESTAMP}/workflows.json"; then
-    # O dump PostgreSQL não pode ser descartado porque uma exportação auxiliar
-    # de workflow falhou. O alerta deixa a lacuna explícita para operação.
-    log "AVISO: exportação n8n falhou; bancos foram preservados no backup"
-    rm -rf "${BACKUP_DIR}/n8n_${TIMESTAMP}"
+    -o "${BACKUP_DIR}/n8n_${TIMESTAMP}/workflows.json" 2>/dev/null; then
+    fallback_key=$(docker service inspect cartorio_api \
+      --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' 2>/dev/null \
+      | sed -n 's/^N8N_API_KEY=//p' | head -n 1 || true)
+    if [[ -n "${fallback_key}" && "${fallback_key}" != "${N8N_KEY}" ]] \
+      && curl -fsSk "https://flow.2notasudi.com.br/api/v1/workflows?limit=200" \
+        -H "X-N8N-API-KEY: ${fallback_key}" \
+        -o "${BACKUP_DIR}/n8n_${TIMESTAMP}/workflows.json" 2>/dev/null; then
+      log "  - n8n workflows exportados pelo fallback interno"
+    else
+      # O dump PostgreSQL não pode ser descartado porque uma exportação auxiliar
+      # de workflow falhou. O alerta deixa a lacuna explícita para operação.
+      log "AVISO: exportação n8n falhou; bancos foram preservados no backup"
+      rm -rf "${BACKUP_DIR}/n8n_${TIMESTAMP}"
+    fi
   fi
 else
   log "  - n8n: N8N_API_KEY nao encontrada em nenhum path, pulando workflows"

@@ -20,7 +20,7 @@ Gestão de prompts do agente (2026-07-20).
 | Arquivo | Versão | Escopo |
 |---|---|---|
 | `PROMPT.MD` / `PROMPT.json` | 4.6.0 (2026-07-20) | Aplicação/negócio — estado telegram + zen 3 contas |
-| `PROMPT-2.MD` / `PROMPT-2.json` | 2.1 (2026-07-20) | Infra Easypanel/Swarm — topologia VAIO/VPS/MacBook |
+| `PROMPT-2.MD` / `PROMPT-2.json` | 2.1 (2026-07-20) | Infra Easypanel/Swarm — topologia VPS do Cartório |
 | `docs/PROMPTS-INDEX.md` | sincronizado | Índice cruzado e divergências |
 
 ## Versionamento

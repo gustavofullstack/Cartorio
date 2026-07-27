@@ -30,7 +30,7 @@
 
 | Nó | Alias SSH | Papel |
 |---|---|---|
-| VAIO `192.168.1.2` | `pc-linux-local` | **runner dev** — testes pesados, builds (Tailscale do VAIO instável → usar IP local) |
+| VPS `187.77.236.77` | `vps-public` | **produção e validação** — Docker Swarm do Cartório |
 | VPS `187.77.236.77` | `vps-public` | **produção** — Docker Swarm 19 serviços 1/1 (EasyPanel + Traefik, 6 domínios SSL) |
 | VPS Tailscale `100.99.172.84` | `vps` | ⚠️ instável — preferir `vps-public` |
 | MacBook | — | **somente cliente SSH** — nunca executar carga pesada |
@@ -3556,7 +3556,7 @@ MANTER COMPANHEIRO JSON:
 | 3.0.0 | 2026-06-25 | Reorganização completa em 1000+ linhas, seções numeradas, tabelas, diagramas, JSON companion |
 | 4.0.0 | 2026-06-25 | Versão massiva: 2000+ linhas, 26 blocos, plano 7 dias, histórico completo, todos os squads DONE |
 | 4.5.0 | 2026-07-01 | Turn 50 estabilizado: Telegram bot v2.x, fixes de latência, fallback providers, skills/scripts de validação |
-| 4.6.0 | 2026-07-20 | Telegram fix validado em prod (HEAD `6967b71`, commits `d642e0e`/`bc9823c`), 3 contas OpenCode Zen (slots coerentes, timeout 45s, payload por provider), topologia VAIO runner/VPS prod/MacBook cliente, remoção de refs obsoletas (cofre `~/.mavis/secrets`), CNJ massive-dump, 1000 testes PASS |
+| 4.6.0 | 2026-07-20 | Telegram fix validado em prod (HEAD `6967b71`, commits `d642e0e`/`bc9823c`), 3 contas OpenCode Zen (slots coerentes, timeout 45s, payload por provider), topologia VPS do Cartório/MacBook cliente, remoção de refs obsoletas (cofre `~/.mavis/secrets`), CNJ massive-dump, 1000 testes PASS |
 
 ---
 

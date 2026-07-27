@@ -817,6 +817,7 @@ _ALLOWED_LLM_DIRECTIONS: set[str] = {
 _ALLOWED_LLM_DEGRADED_REASONS: set[str] = {
     "timeout",  # teto global LLM_GLOBAL_TIMEOUT_S estourou
     "all_providers_down",  # tools + fallback simples retornaram vazio
+    "provider_rate_limited",  # todos os providers disponiveis recusaram por limite
 }
 
 # E3.06 — canais de webhook com auth propria (401 fail-closed).

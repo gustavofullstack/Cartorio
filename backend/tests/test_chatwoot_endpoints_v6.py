@@ -24,17 +24,21 @@ TEST_HEADERS = {"X-API-Key": "a" * 64}
 def test_chatwoot_health_check_online() -> None:
     """GET /api/v1/integrations/chatwoot/health deve retornar online se o Chatwoot responder com sucesso."""
     settings.chatwoot_base_url = "https://chat.test.com"
+    settings.chatwoot_api_key = "test_key"
+    settings.chatwoot_account_id = 1
 
     # Mock do endpoint de login do Chatwoot
     respx.get("https://chat.test.com/auth/sign_in").mock(
         return_value=httpx.Response(200, text="Sign In Page")
     )
+    respx.get("https://chat.test.com/api/v1/accounts/1").mock(return_value=httpx.Response(200))
 
     resp = client.get("/api/v1/integrations/chatwoot/health", headers=TEST_HEADERS)
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "online"
     assert body["http_status"] == 200
+    assert body["api_http_status"] == 200
     assert body["base_url"] == "https://chat.test.com"
 
 
@@ -42,7 +46,10 @@ def test_chatwoot_health_check_online() -> None:
 def test_chatwoot_health_legacy_alias_remains_available() -> None:
     """Clientes v1 antigos mantem health enquanto migram ao prefixo integrations."""
     settings.chatwoot_base_url = "https://chat.test.com"
+    settings.chatwoot_api_key = "test_key"
+    settings.chatwoot_account_id = 1
     respx.get("https://chat.test.com/auth/sign_in").mock(return_value=httpx.Response(200))
+    respx.get("https://chat.test.com/api/v1/accounts/1").mock(return_value=httpx.Response(200))
 
     resp = client.get("/api/v1/chatwoot/health", headers=TEST_HEADERS)
 
@@ -51,9 +58,27 @@ def test_chatwoot_health_legacy_alias_remains_available() -> None:
 
 
 @respx.mock
+def test_chatwoot_health_check_degraded_when_api_token_is_rejected() -> None:
+    """UI disponível não pode mascarar token inválido do hand-off."""
+    settings.chatwoot_base_url = "https://chat.test.com"
+    settings.chatwoot_api_key = "expired_key"
+    settings.chatwoot_account_id = 1
+    respx.get("https://chat.test.com/auth/sign_in").mock(return_value=httpx.Response(200))
+    respx.get("https://chat.test.com/api/v1/accounts/1").mock(return_value=httpx.Response(401))
+
+    resp = client.get("/api/v1/integrations/chatwoot/health", headers=TEST_HEADERS)
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "degraded"
+    assert resp.json()["api_http_status"] == 401
+
+
+@respx.mock
 def test_chatwoot_health_check_offline() -> None:
     """GET /api/v1/integrations/chatwoot/health deve retornar offline se a chamada falhar ou der timeout."""
     settings.chatwoot_base_url = "https://chat.test.com"
+    settings.chatwoot_api_key = "test_key"
+    settings.chatwoot_account_id = 1
 
     respx.get("https://chat.test.com/auth/sign_in").mock(
         side_effect=httpx.ConnectError("Connection refused")
