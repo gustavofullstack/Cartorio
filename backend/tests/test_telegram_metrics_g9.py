@@ -168,7 +168,9 @@ async def test_webhook_200_contabiliza_result(store_isolado: MetricsStore) -> No
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
         patch.object(tg, "_send_message", new=AsyncMock(return_value=True)),
     ):
-        resp = await tg.telegram_webhook(_make_request(update), BackgroundTasks(), None, MagicMock())
+        resp = await tg.telegram_webhook(
+            _make_request(update), BackgroundTasks(), None, MagicMock()
+        )
     assert resp["status"] == "ok"  # comportamento preservado
     assert _counter(store_isolado, "telegram_webhook_total", {"result": "200"}) == 1
     assert _counter(store_isolado, "telegram_webhook_total", {"result": "401"}) == 0
@@ -184,16 +186,12 @@ async def test_webhook_401_contabiliza_result_e_auth_failure(
     update = _private_text_update(7002, "oi")
     for header in (None, "token-errado"):
         with pytest.raises(HTTPException) as exc:
-            await tg.telegram_webhook(
-                _make_request(update), BackgroundTasks(), header, MagicMock()
-            )
+            await tg.telegram_webhook(_make_request(update), BackgroundTasks(), header, MagicMock())
         assert exc.value.status_code == 401
     assert _counter(store_isolado, "telegram_webhook_total", {"result": "401"}) == 2
     assert _counter(store_isolado, "telegram_webhook_total", {"result": "200"}) == 0
     assert (
-        _counter(
-            store_isolado, "cartorio_webhook_auth_failures_total", {"channel": "telegram"}
-        )
+        _counter(store_isolado, "cartorio_webhook_auth_failures_total", {"channel": "telegram"})
         == 2
     )
     # Com o token certo: passa e contabiliza 200 (Redis fora -> degraded ok)
@@ -219,9 +217,7 @@ async def test_webhook_5xx_contabiliza_result_e_preserva_excecao(
     (comportamento preservado: FastAPI devolve 500)."""
     update = _private_text_update(7003, "oi")
     with (
-        patch.object(
-            tg, "_telegram_webhook_impl", new=AsyncMock(side_effect=RuntimeError("boom"))
-        ),
+        patch.object(tg, "_telegram_webhook_impl", new=AsyncMock(side_effect=RuntimeError("boom"))),
         pytest.raises(RuntimeError, match="boom"),
     ):
         await tg.telegram_webhook(_make_request(update), BackgroundTasks(), None, MagicMock())

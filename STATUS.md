@@ -8,7 +8,7 @@
 > - **Painel de Dados:** Dashboard em `app/static/dashboard.html` disponível via `/dashboard`.  
 > - **Ferramentas MCP & APIs:** `cartorio_extrair_e_calcular_real` exposta em FastMCP + 3 endpoints REST `/api/v1/emolumentos/real/*`.  
 > - **Qualidade Total:** `8/8` testes unitários e de integração PASSED | `ruff check` 0 erros.  
-> Fonte: `PROGRESS.md` e `docs/testing/VAIO_RUNTIME_BASELINE.json`.
+> Fonte: `PROGRESS.md` e `docs/PRONTIDAO_VPS_AGENT_AI_20260727.md`.
 
 
 ---

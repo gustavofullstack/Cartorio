@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-27T02:34:01.048793+00:00",
+    "generated_at": "2026-07-27T11:27:20.764517+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -200,8 +200,8 @@
         {
           "file": "app/api/v1/router.py",
           "summary_pct": 0.0,
-          "statements": 1305,
-          "missing_lines": 1305,
+          "statements": 1307,
+          "missing_lines": 1307,
           "excluded_lines": 0
         },
         {

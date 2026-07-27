@@ -6,12 +6,10 @@ Motor de execução — onde e como o trabalho pesado roda (topologia validada 2
 
 | Nó | Alias SSH | Papel | Uso |
 |---|---|---|---|
-| VAIO (192.168.1.2) | `pc-linux-local` | Runner dev | Baterias de teste, builds, lint, stress |
-| VPS Hostinger (187.77.236.77) | `vps-public` | Produção | Docker Swarm 19 serviços 1/1 |
-| VPS via Tailscale (100.99.172.84) | `vps` | Produção (alternativo) | **instável** — preferir `vps-public` |
-| MacBook | — | Cliente SSH | Nunca executar carga pesada |
+| VPS Hostinger (187.77.236.77) | `vps-public` | Produção | Docker Swarm (EasyPanel + Traefik) |
+| VPS via Tailscale (100.99.172.84) | `vps` | Produção (Tailscale) | Acesso seguro administrativo SSH |
+| MacBook Dev | — | Cliente SSH / Dev | Desenvolvimento local e chamadas de teste |
 
-- VAIO Tailscale instável → sempre usar IP local `192.168.1.2`.
 - SSH sempre `ssh -o ConnectTimeout=8 -o BatchMode=yes`, comando único bounded (`timeout 20`, `--tail N`). Proibido sessão interativa, loop infinito, `tail -f` sem limite.
 
 ## Ciclo obrigatório de mudança

@@ -33,8 +33,9 @@ set -euo pipefail
 
 # --- Configuracao ---------------------------------------------------------
 BACKUP_ROOT="/var/backups/cartorio/pgbase"
-PG_CONTAINER="cartorio_supabase-db-1"
-PG_USER="supabase_admin"
+# O nome do task Swarm muda em redeploys. O label do serviço é estável e evita
+# que um backup pare silenciosamente por depender de nome legado de container.
+PG_SERVICE_NAME="${PG_SERVICE_NAME:-cartorio_supabase}"
 RETENTION_DAYS=7
 DATE_UTC=$(date -u +%Y%m%d)
 HOUR_UTC=$(date -u +%H)
@@ -50,13 +51,19 @@ mkdir -p "${BACKUP_ROOT}"
 
 log() { echo "${LOG_PREFIX} $*"; }
 
+resolve_pg_container() {
+  docker ps -q --filter "label=com.docker.swarm.service.name=${PG_SERVICE_NAME}" \
+    | head -n 1
+}
+
 # --- Pre-checks -----------------------------------------------------------
 if ! command -v docker >/dev/null 2>&1; then
   log "ERRO: docker nao encontrado"; exit 1
 fi
 
-if ! docker ps --format '{{.Names}}' | grep -q "^${PG_CONTAINER}$"; then
-  log "ERRO: container ${PG_CONTAINER} nao esta UP"; exit 1
+PG_CONTAINER=$(resolve_pg_container)
+if [[ -z "${PG_CONTAINER}" ]]; then
+  log "ERRO: nenhum task UP para o serviço ${PG_SERVICE_NAME}"; exit 1
 fi
 
 # --- Idempotencia: se ja rodou nesta janela, skip -----------------------
@@ -74,14 +81,15 @@ mkdir -p "${BACKUP_DIR}"
 # -Ft = tar format (cada tablespace em arquivo separado)
 # -z  = gzip compress
 # -D  = output directory (no container; depois copiamos para fora)
-# -U  = superuser (supabase_admin) requerido para replication
+# -U  = usuário configurado no próprio container, requerido para replication
 # -X  = stream WAL durante o backup (inclui no .tar.gz)
 log "  - pg_basebackup -Ft -z -X stream (slot ${SLOT_UTC}h UTC)"
 
 docker exec \
-  -e PGUSER="${PG_USER}" \
+  -e PGBASE_TS="${TS_UTC}" \
   "${PG_CONTAINER}" \
-  bash -c "pg_basebackup -Ft -z -X stream -D /tmp/pgbase_${TS_UTC} -U ${PG_USER} -h 127.0.0.1 -w" \
+  sh -lc 'PGPASSWORD="$POSTGRES_PASSWORD" pg_basebackup -Ft -z -X stream \
+    -D "/tmp/pgbase_${PGBASE_TS}" -U "$POSTGRES_USER" -h 127.0.0.1 -w' \
   || { log "ERRO: pg_basebackup falhou"; exit 1; }
 
 # --- 2. Copia artefatos para fora do container --------------------------

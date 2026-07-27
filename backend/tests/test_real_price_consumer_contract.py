@@ -42,7 +42,9 @@ def test_openclaw_tool_points_to_safe_contract() -> None:
     registry = json.loads(
         (ROOT / "infra/openclaw-agent/agent-tools-registry.json").read_text(encoding="utf-8")
     )
-    tool = next(item for item in registry["tools"] if item["name"] == "cartorio_api_emolumento_calcular")
+    tool = next(
+        item for item in registry["tools"] if item["name"] == "cartorio_api_emolumento_calcular"
+    )
     assert tool["endpoint"].startswith("POST " + SAFE_ENDPOINT)
     assert tool["version"] == "2.0.0"
     assert "HITL_REQUIRED" in tool["description"]

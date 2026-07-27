@@ -17,31 +17,40 @@ set -euo pipefail
 BACKUP_DIR="/var/backups/cartorio"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RETAIN_DAYS=7
+PG_SERVICE_NAME="${PG_SERVICE_NAME:-cartorio_supabase}"
 LOG_PREFIX="[cartorio-backup ${TIMESTAMP}]"
 
 mkdir -p "${BACKUP_DIR}"
 
 log() { echo "${LOG_PREFIX} $*"; }
 
+resolve_pg_container() {
+  docker ps -q --filter "label=com.docker.swarm.service.name=${PG_SERVICE_NAME}" \
+    | head -n 1
+}
+
 # --- Pre-checks ---------------------------------------------------------
 if ! command -v docker >/dev/null 2>&1; then
   log "ERRO: docker nao encontrado"; exit 1
 fi
 
-if ! docker ps --format '{{.Names}}' | grep -q '^cartorio_supabase-db-1$'; then
-  log "ERRO: container cartorio_supabase-db-1 nao esta UP"; exit 1
+PG_CONTAINER=$(resolve_pg_container)
+if [[ -z "${PG_CONTAINER}" ]]; then
+  log "ERRO: nenhum task UP para o serviço ${PG_SERVICE_NAME}"; exit 1
 fi
 
 log "Iniciando backup"
 
-# --- 1. Dump Postgres (cartorio + n8n + chatwoot + evolution) ----------
-for db in cartorio n8n chatwoot evolution; do
+# --- 1. Dump Postgres (bancos presentes no serviço Supabase) ------------
+for db in supabase chatwoot evolution; do
   log "  - pg_dump ${db}"
-  docker exec cartorio_supabase-db-1 pg_dump -U supabase_admin -h 127.0.0.1 \
-    -Fc --no-owner --no-acl "${db}" > "${BACKUP_DIR}/supabase_${db}_${TIMESTAMP}.dump"
+  docker exec "${PG_CONTAINER}" sh -lc \
+    'PGPASSWORD="$POSTGRES_PASSWORD" pg_dump -U "$POSTGRES_USER" -h 127.0.0.1 \
+      -Fc --no-owner --no-acl "$1"' -- "${db}" \
+    > "${BACKUP_DIR}/supabase_${db}_${TIMESTAMP}.dump"
 done
 
-# --- 2. n8n workflows + credentials via API ---------------------------
+# --- 2. n8n workflows via API ------------------------------------------
 # N8N API key pode vir de 4 fontes (ordem de prioridade):
 #   1. env N8N_API_KEY exportada
 #   2. /etc/cartorio-backup/n8n-api-key.env (modo recomendado, chmod 600)
@@ -65,36 +74,32 @@ if [[ -z "${N8N_KEY}" ]]; then
     | tr ',' '\n' | grep -oE 'N8N_API_KEY=[^"]+' | cut -d= -f2- || true)
 fi
 if [[ -n "${N8N_KEY}" ]]; then
-  log "  - n8n workflows + credentials (key len=${#N8N_KEY})"
+  log "  - n8n workflows"
   mkdir -p "${BACKUP_DIR}/n8n_${TIMESTAMP}"
-  curl -sk "https://flow.2notasudi.com.br/api/v1/workflows?limit=200" \
+  if ! curl -fsSk "https://flow.2notasudi.com.br/api/v1/workflows?limit=200" \
     -H "X-N8N-API-KEY: ${N8N_KEY}" \
-    -o "${BACKUP_DIR}/n8n_${TIMESTAMP}/workflows.json"
-  curl -sk "https://flow.2notasudi.com.br/api/v1/credentials" \
-    -H "X-N8N-API-KEY: ${N8N_KEY}" \
-    -o "${BACKUP_DIR}/n8n_${TIMESTAMP}/credentials.json"
+    -o "${BACKUP_DIR}/n8n_${TIMESTAMP}/workflows.json"; then
+    # O dump PostgreSQL não pode ser descartado porque uma exportação auxiliar
+    # de workflow falhou. O alerta deixa a lacuna explícita para operação.
+    log "AVISO: exportação n8n falhou; bancos foram preservados no backup"
+    rm -rf "${BACKUP_DIR}/n8n_${TIMESTAMP}"
+  fi
 else
   log "  - n8n: N8N_API_KEY nao encontrada em nenhum path, pulando workflows"
 fi
 
-# --- 3. cartorio-api .env ----------------------------------------------
-log "  - cartorio-api .env"
-cp /etc/easypanel/projects/cartorio/api/code/.env \
-   "${BACKUP_DIR}/cartorio_api_${TIMESTAMP}.env" 2>/dev/null || \
-  log "    (aviso: nao foi possivel copiar .env do cartorio_api)"
+# Segredos são recuperados exclusivamente pelo gerenciador de segredos; nunca
+# são copiados para um tar local sem criptografia e política de chaves.
 
-# --- 4. Chatwoot .env --------------------------------------------------
-log "  - chatwoot .env"
-docker exec cartorio_chatwoot cat /app/.env 2>/dev/null \
-  > "${BACKUP_DIR}/chatwoot_${TIMESTAMP}.env" || true
-
-# --- 5. Compacta tudo --------------------------------------------------
+# --- 3. Compacta tudo --------------------------------------------------
 log "  - compactando"
 cd "${BACKUP_DIR}"
-tar -czf "cartorio_backup_${TIMESTAMP}.tar.gz" \
-  supabase_*.dump n8n_${TIMESTAMP}/ cartorio_api_${TIMESTAMP}.env \
-  chatwoot_${TIMESTAMP}.env 2>/dev/null || true
-rm -rf "n8n_${TIMESTAMP}/" "chatwoot_${TIMESTAMP}.env"
+archive_items=("supabase_"*"_${TIMESTAMP}.dump")
+if [[ -d "n8n_${TIMESTAMP}" ]]; then
+  archive_items+=("n8n_${TIMESTAMP}")
+fi
+tar -czf "cartorio_backup_${TIMESTAMP}.tar.gz" "${archive_items[@]}"
+rm -rf "n8n_${TIMESTAMP}/"
 
 # --- 6. Limpeza de backups antigos ------------------------------------
 log "  - removendo backups > ${RETAIN_DAYS} dias"
@@ -105,3 +110,18 @@ find "${BACKUP_DIR}" -name "*.dump"   -mtime "+${RETAIN_DAYS}" -delete
 SIZE=$(du -sh "${BACKUP_DIR}" 2>/dev/null | cut -f1 || echo "?")
 COUNT=$(ls -1 "${BACKUP_DIR}"/cartorio_backup_*.tar.gz 2>/dev/null | wc -l)
 log "OK - diretorio ${BACKUP_DIR} (${SIZE}), ${COUNT} arquivo(s) .tar.gz retidos"
+
+# Publica somente metadados no Redis da API. O arquivo de backup permanece na
+# VPS; nenhum conteúdo, segredo ou credencial segue para este endpoint.
+LAST_FILE=$(ls -1t "${BACKUP_DIR}"/cartorio_backup_*.tar.gz 2>/dev/null | head -1 || true)
+if [[ -n "${LAST_FILE}" ]]; then
+  LAST_ISO=$(date -u -d "@$(stat -c %Y "${LAST_FILE}")" +%FT%TZ)
+  LAST_SIZE=$(stat -c %s "${LAST_FILE}")
+  PAYLOAD=$(printf '{"ok":true,"last_backup_iso":"%s","last_backup_filename":"%s","last_backup_size_bytes":%s,"last_backup_age_hours":0,"backup_count_7d":%s,"updated_at":"%s"}' \
+    "${LAST_ISO}" "$(basename "${LAST_FILE}")" "${LAST_SIZE}" "${COUNT}" "$(date -u +%FT%TZ)")
+  if ! curl -fsSk --max-time 10 -X POST \
+    "https://api.2notasudi.com.br/api/v1/health/backup/status" \
+    -H "Content-Type: application/json" -d "${PAYLOAD}" >/dev/null; then
+    log "AVISO: não foi possível publicar metadados do backup na API"
+  fi
+fi

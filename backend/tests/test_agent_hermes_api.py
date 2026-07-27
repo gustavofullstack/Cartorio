@@ -1,8 +1,11 @@
 """Testes unitários e de integração para o router do Agent Hermes (/api/v1/agent-hermes)."""
 
 import pytest
+import httpx
+import respx
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.main import app
 
 client = TestClient(app)
@@ -14,9 +17,25 @@ def test_agent_hermes_status_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["service"] == "agent-hermes-cartorio"
-    assert data["status"] == "healthy"
-    assert data["vps_hosted"] is True
-    assert data["mcp_tools_available"] == 18
+    assert data["status"] == "not_deployed"
+    assert data["vps_hosted"] is False
+    assert data["mcp_tools_available"] == 0
+
+
+def test_agent_hermes_status_probes_configured_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Só declara Hermes saudável após o health do serviço isolado responder."""
+    monkeypatch.setattr(settings, "hermes_api_url", "http://hermes.test:8642")
+    monkeypatch.setattr(settings, "hermes_api_server_key", "test-key")
+    with respx.mock:
+        route = respx.get("http://hermes.test:8642/health").mock(
+            return_value=httpx.Response(200)
+        )
+        response = client.get("/api/v1/agent-hermes/status")
+
+    assert response.status_code == 200
+    assert route.called
+    assert response.json()["status"] == "healthy"
+    assert response.json()["vps_hosted"] is True
 
 
 @pytest.mark.asyncio

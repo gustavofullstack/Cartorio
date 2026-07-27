@@ -280,6 +280,11 @@ class Settings(BaseSettings):
     mcp_server_port: int = 8100
     mcp_api_key: Optional[str] = None  # Bearer token pra clients MCP
 
+    # Hermes é um serviço isolado e opcional. Sem URL não há runtime Hermes
+    # certificado; a API nunca deve reportar um agente inexistente como healthy.
+    hermes_api_url: Optional[str] = None
+    hermes_api_server_key: Optional[str] = None
+
     # ========================================================================
     # JWT (A24 API v2) — usado por /api/v2/* alem de X-API-Key v1
     # HS256 com secret em env. Validade 60min access + 7d refresh.

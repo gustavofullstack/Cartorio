@@ -6,21 +6,21 @@ Runtimes de execução suportados (2026-07-20).
 
 | Runtime | Onde | Função |
 |---|---|---|
-| Python 3.11+ (uv) | VAIO + VPS | Backend FastAPI, testes, scripts |
+| Python 3.11+ (uv) | VPS + Dev local | Backend FastAPI, testes, scripts |
 | Uvicorn | VPS (4 workers prod) | ASGI server da API |
-| Docker Swarm | VPS | Orquestração dos 19 serviços |
+| Docker Swarm | VPS | Orquestração dos serviços |
 | Node (n8n) | VPS container | Workflows e automações de canal |
 | OpenClaw gateway | VPS container | Runtime de agente conversacional |
 
 ## Matriz de capacidade por nó
 
-| Capacidade | MacBook | VAIO (`pc-linux-local`) | VPS (`vps-public`) |
-|---|---|---|---|
-| Cliente SSH | ✅ | ✅ | ✅ |
-| Bateria pytest 1000+ | ❌ | ✅ | ✅ (off-hours) |
-| Build Docker | ❌ | ✅ | ✅ |
-| Servir produção | ❌ | ❌ | ✅ |
-| Stress prod assinado | ❌ | ✅ (origem) | alvo |
+| Capacidade | Dev local (MacBook/CI) | VPS Hostinger (`vps-public` / `187.77.236.77`) |
+|---|---|---|
+| Cliente SSH / Dev | ✅ | ✅ |
+| Bateria pytest 1000+ | ✅ (local/CI) | ✅ (off-hours ou container CI) |
+| Build Docker | ✅ (local) | ✅ (Swarm / EasyPanel) |
+| Servir produção | ❌ | ✅ |
+| Stress prod assinado | ❌ | ✅ (alvo) |
 
 ## Gestão de ambiente Python
 
@@ -30,5 +30,5 @@ Runtimes de execução suportados (2026-07-20).
 
 ## Portabilidade
 
-- Tudo que roda no VAIO roda na VPS (mesma stack uv/Debian-like).
+- Stack 100% conteinerizada (Docker Swarm na VPS) baseada em Debian/Ubuntu e gerida via uv.
 - Migração de runtime e abstração em `runtimes/MIGRATION.md` e `runtimes/RUNTIME_ABSTRACTION.md`.

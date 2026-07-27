@@ -100,4 +100,3 @@ def test_cartorio_os_allow_all_inbound_does_not_bypass_provider_restriction() ->
         )
         == "allowlist"
     )
-

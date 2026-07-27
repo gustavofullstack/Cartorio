@@ -1,7 +1,10 @@
 # Hermes Cartorio na VPS — contrato de implantação
 
-**Estado atual em 2026-07-26:** `NOT_DEPLOYED`. A VPS executa OpenClaw, API,
+**Estado atual em 2026-07-27:** `NOT_DEPLOYED`. A VPS executa OpenClaw, API,
 Postgres/Supabase, Redis, n8n, Evolution e Chatwoot; não há serviço Hermes.
+O MCP público foi autenticado, inicializado e respondeu `tools/list` com 15
+ferramentas. Isso certifica o limite de integração, não certifica o Hermes nem
+uma conversa real em qualquer canal.
 
 O alvo é um único serviço `cartorio_hermes` no Docker Swarm, na rede
 `easypanel-cartorio`, com estado persistente em volume próprio. Ele não substitui
@@ -32,12 +35,13 @@ segredos da VPS**; é proibido copiá-los de um Mac, `.env`, log ou repositório
 | --- | --- |
 | `hermes_api_server_key` | autentica a API interna do Hermes |
 | `hermes_llm_api_key` | autentica o provider LLM aprovado |
-| `hermes_mcp_cartorio_api_key` | autentica MCP contra a API do Cartório |
+| `hermes_mcp_cartorio_api_key` | contém o valor do segredo de produção `MCP_API_KEY` e autentica MCP contra a API do Cartório |
 | `hermes_photon_project_secret` | autentica o sidecar Photon/iMessage |
 
 Também são necessários, como configuração não secreta: URL/modelo do provider
 aprovado, `PHOTON_PROJECT_ID` e allowlist E.164. `PHOTON_ALLOW_ALL_USERS` fica
-fixado em `false`.
+fixado em `false`. `CARTORIO_API_KEY` não substitui `MCP_API_KEY`: são contratos
+de autenticação diferentes.
 
 ## Sequência obrigatória de implantação
 

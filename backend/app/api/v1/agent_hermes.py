@@ -12,10 +12,12 @@ import logging
 import time
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db import get_db
 from app.services.audit import AuditService
 from app.services.cartorio_agent import run_cartorio_agent
@@ -51,18 +53,45 @@ class HermesExecuteResponse(BaseModel):
 
 class HermesStatusResponse(BaseModel):
     service: str = "agent-hermes-cartorio"
-    status: str = "healthy"
-    vps_hosted: bool = True
-    mcp_tools_available: int = 18
+    status: str = "not_deployed"
+    vps_hosted: bool = False
+    mcp_tools_available: int = 0
     hitl_enabled: bool = True
     lgpd_scrubbing: bool = True
+    detail: str = "Hermes não configurado na VPS"
     timestamp: float = Field(default_factory=time.time)
 
 
 @router.get("/status", response_model=HermesStatusResponse)
 async def get_hermes_status() -> HermesStatusResponse:
-    """Retorna o status operacional do Agent Hermes na VPS."""
-    return HermesStatusResponse()
+    """Retorna o estado real do runtime Hermes, sem inferir de serviços vizinhos."""
+    if not settings.hermes_api_url:
+        return HermesStatusResponse()
+
+    headers: dict[str, str] = {}
+    if settings.hermes_api_server_key:
+        headers["Authorization"] = f"Bearer {settings.hermes_api_server_key}"
+
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, connect=2.0)) as client:
+            response = await client.get(
+                f"{settings.hermes_api_url.rstrip('/')}/health", headers=headers
+            )
+    except httpx.HTTPError as exc:
+        logger.warning("Hermes health probe failed: %s", type(exc).__name__)
+        return HermesStatusResponse(status="degraded", detail="Hermes configurado, mas inacessível")
+
+    if response.status_code != 200:
+        return HermesStatusResponse(
+            status="degraded",
+            detail=f"Hermes health retornou HTTP {response.status_code}",
+        )
+
+    return HermesStatusResponse(
+        status="healthy",
+        vps_hosted=True,
+        detail="Health Hermes autenticado confirmado",
+    )
 
 
 @router.post("/execute", response_model=HermesExecuteResponse)
@@ -73,9 +102,7 @@ async def execute_hermes_task(
     """Executa mensagem ou tarefa através do Agent Hermes Cartório na VPS."""
     raw_msg = (payload.user_message or "").strip()
     if not raw_msg and not payload.attachments:
-        raise HTTPException(
-            status_code=400, detail="user_message ou attachments são obrigatórios"
-        )
+        raise HTTPException(status_code=400, detail="user_message ou attachments são obrigatórios")
 
     # Invocação do pipeline principal do agent
     reply = await run_cartorio_agent(
@@ -99,20 +126,20 @@ async def execute_hermes_task(
             payload={
                 "channel": payload.channel,
                 "conversation_id": payload.conversation_id,
-                "tools_used": reply.keyboard is not None,
+                "tools_used": reply.tools_used,
             },
         )
     except Exception as exc:
-        logger.warning(f"Falha não-bloqueante no audit log do Hermes: {exc}")
+        logger.warning("Falha não-bloqueante no audit log do Hermes: %s", type(exc).__name__)
 
-    hitl = "escrevente" in clean_answer.lower() or "human" in clean_answer.lower()
+    hitl = reply.action == "humano" or "escrevente" in clean_answer.lower()
     status_str = "hitl_required" if hitl else "success"
 
     return HermesExecuteResponse(
         status=status_str,
         answer=clean_answer,
-        provider_used="MiniMax-M3 / CartorioAgent",
-        tools_used=[],
+        provider_used=reply.provider,
+        tools_used=reply.tools_used,
         hitl_required=hitl,
         audit_logged=True,
     )

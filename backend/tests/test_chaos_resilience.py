@@ -44,9 +44,7 @@ async def test_chaos_all_llm_providers_down_returns_degraded_response(
 ) -> None:
     """Todos os providers LLM falham: resposta degradada, nunca vazia, sem PII."""
 
-    async def _empty_tools(
-        system: str, user: str
-    ) -> tuple[str, str, str | None, list[str]]:
+    async def _empty_tools(system: str, user: str) -> tuple[str, str, str | None, list[str]]:
         return "", "none", None, []
 
     async def _empty_fb(system: str, user: str) -> tuple[str, str]:
@@ -55,9 +53,7 @@ async def test_chaos_all_llm_providers_down_returns_degraded_response(
     monkeypatch.setattr(cartorio_agent, "_llm_agent_with_tools", _empty_tools)
     monkeypatch.setattr(cartorio_agent, "_llm_minimax", _empty_fb)
 
-    reply = await cartorio_agent.run_cartorio_agent(
-        "Meu CPF é 529.982.247-25, preciso de certidão"
-    )
+    reply = await cartorio_agent.run_cartorio_agent("Meu CPF é 529.982.247-25, preciso de certidão")
     assert reply is not None
     assert reply.text  # silent failure proibido
     assert "529.982.247-25" not in reply.text  # PII scrubbed

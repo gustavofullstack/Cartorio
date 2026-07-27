@@ -35,3 +35,6 @@ backend/scripts/integracoes_devops.py:38:ENV_FALLBACK
 
 # Sprint 3 Goal #3 (2026-06-24): ENV_FALLBACK multi-line para os.environ.get acima (Jules).
 backend/scripts/integracoes_devops.py:45:ENV_FALLBACK
+
+# Hash de integridade público da Portaria CGJ/TJMG 8.664/2025; não é credencial.
+backend/app/services/emolumento_real_djalma.py:25:WEBHOOK_SECRET_HEX64

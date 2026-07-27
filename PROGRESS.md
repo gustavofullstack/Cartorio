@@ -42,25 +42,20 @@ Modified by Gustavo Almeida — 2026-07-27
 
 Modified by Gustavo Almeida — 2026-07-26
 
-## 2026-07-26 Stage 6 — VAIO Recovery & Real Agent Arena Contract (`STAGE_6_VAIO_RECOVERY_PENDING`)
+## 2026-07-26/27 Stage 6 — VPS Real Agent Arena Readiness & Integration (`STAGE_6_VPS_INTEGRATION_PENDING`)
 
+**Status: `STAGE_6_VPS_INTEGRATION_PENDING`** | **`FREEZE_ACTIVE`**
 
-**Status: `STAGE_6_VAIO_RECOVERY_PENDING`** | **`FREEZE_ACTIVE`**
-
-- **Contrato de Congelamento de Features**:
-  - Congelado desenvolvimento de novas features, alterações em APIs jurídicas e audit log.
-  - O gargalo é 100% infraestrutura real e disponibilidade SSH no servidor VAIO.
-- **Diagnóstico da Malha de Servidores (Track B)**:
-  - `agent-os` (`100.116.49.17`): `HOST_OFFLINE` (Offline no Tailscale há 6h; ICMP/SSH port 22 timeout).
-  - `triqhub` (`100.110.127.44`): `TAILSCALE_ONLINE_BUT_SSH_EXEC_DENIED` (Online no Tailscale; SSH responde porta 22 via Tailscale SSH, mas rejeita execução não-interativa por mapeamento de usuário).
-  - `vps-cartorio` (`100.99.172.84`): `CONNECTED` (Ubuntu 22.04 LTS via SSH root).
+- **Contrato de Prontidão da VPS**:
+  - O Cartório roda 100% na VPS Hostinger (187.77.236.77 / Tailscale 100.99.172.84). Nenhuma dependência de máquina local externa ou notebook Vaio é permitida no projeto.
+- **Diagnóstico da Malha de Servidores**:
+  - `vps-cartorio` (`100.99.172.84` / `187.77.236.77`): `CONNECTED` (Ubuntu LTS via SSH root / Tailscale). Todos os serviços Swarm / EasyPanel em execução.
   - `macbook-pro-gus` (`100.83.180.16`): `CONNECTED` (Regra estrita: UI/Cliente Apenas).
-- **Artefato Criado**:
-  - `docs/testing/VAIO_RUNTIME_BASELINE.json` criado com o mapeamento completo dos nós e restrições de SSH.
-- **Próxima Ação Bloqueada por Hardware/Humano**:
-  - Ligar/reiniciar fisicamente a máquina VAIO (`agent-os`) ou ajustar política de login do usuário `gustavoalmeida` no `triqhub`.
+- **Artefatos e Integrações Reais na VPS**:
+  - `docs/PRONTIDAO_VPS_AGENT_AI_20260727.md` mapeia o estado real de cada conector e serviço.
+  - Foco integral em 14 pilares: Hermes, API, Redis, Postgres/Supabase, Chatwoot CRM Omnichannel, Photon iMessage, Evolution-API / Evo-Hub / WA-CLI, N8N, Export CNJ, Tailscale/SSH e MiniMax Coding Plan API.
 
-Modified by Gustavo Almeida — 2026-07-26
+Modified by Gustavo Almeida — 2026-07-27
 
 ## 2026-07-26 Stage 5 — Real iMessage Arena Reclassification & Bug Fixes
 
