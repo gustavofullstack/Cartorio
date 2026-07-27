@@ -1,15 +1,20 @@
 # STATUS — Cartório OS (live)
 
-> **Atualização 2026-07-26 19:13Z (Stage 4.2 — honesty gate):**  
-> **Cartório OS = `RC_LIVE_CANDIDATE`**.  
-> **iMessage certification = `IMESSAGE_REQUIRES_FIX`** (not ACCEPTED).  
-> Allowlisted real path (Gustavo `imsg` → Photon → Hermes) observed:  
-> - **T0/T1/T3/T4/T5 = PASS**  
-> - **T2 = FAIL_FUNCTIONAL** — fee R$ stated **without** live MCP `cartorio_calcular_emolumento` call  
-> - **`iphone_delivery_confirmed = false`** — Felipe has **not** confirmed on **his** iPhone  
-> HEAD `383e4597…` · LaunchAgent **`ai.hermes.gateway-cartorio`** · Photon `:8793` · MCP **14** · LLM **kimi-k3**.  
-> **Discard:** arena “1000 turnos”, false ACCEPTED, T6/T7 PASS, invent hours 8h–17h without source.  
-> **Next:** force T2 via MCP tool · re-run T2 only · Felipe visual on own handset.
+> **Atualização 2026-07-26 21:08Z (Stage 5 — Real iMessage Arena Reclassification & Bug Fixes):**  
+> **Status:** `ARENA_HARNESS_PASS / REAL_TRANSPORT_NOT_CERTIFIED`  
+> **Reclassificação Honesta baseada em Evidência Visual:**  
+> - **Cartório DM**: `🟢 OPERATIONAL` (Respondeu emolumentos R$ 8,46 e menu).  
+> - **Grupo (`CARTORIO GRUPO TEST`)**: `🔴 NO_RESPONSE` (Nenhuma IA respondeu às mensagens do grupo).  
+> - **Runtimes dos Testers:** `Kimi` (`AUTH_FAILED`), `Grok` (`GATEWAY_DOWN`), `Codex` (`GATEWAY_DOWN`), `AGY` (`CONNECTION_REFUSED Errno 61`), `Antigravity` (`UNVERIFIED`).  
+> - **Reinvindicações Anteriores ("6/6 Online / 1.000 Turnos Reais")**: **REVERTIDAS** (Trata-se do simulador do harness offline, não de transporte iMessage real).  
+> **Bugs Críticos Corrigidos nesta Sessão:**  
+> 1. `BUG_INTERNAL_AGENT_CONTROL_UI_LEAK` (P0): `stripInternalAgentControlLeaks` adicionado ao `guardrails.ts` para eliminar vazamento de comandos como `↳ Redirected current run`, `Self-improvement review` e `/new` no chat do cliente. (36/36 testes TS PASS).  
+> 2. `T2_FEE_MCP_EVIDENCE_GATE` (P0): `imessage_felipe_classify.py` agora exige chamada real à ferramenta FastMCP `cartorio_calcular_emolumento` para aprovar valores numéricos de emolumentos.  
+> **Diretiva de Arquitetura (Stage 5 - VAIO Arch Migration):**  
+> - **MacBook**: Apenas UI/Cliente (Messages.app, OpenChamber UI, SSH/Tailscale).  
+> - **VAIO Arch Agent OS**: Hospedará todos os 6 runtimes Hermes, conexões Spectrum Cloud, logs isolados e orquestradores.  
+> **Complemento (runtime photon, esta sessão):** leak de UX interna também contido na fonte — `display.platforms.photon.*` (tool_progress/interim/busy_ack off) + `HERMES_GATEWAY_BUSY_ACK_ENABLED=false` + guard de slash no `plugins/platforms/photon/adapter.py` (7 testes em `test_photon_client_safe_ux.py`); gateway cartorio restartado (PID 98842, photon connected). **T2 re-prova pendente**: SOUL.md #3 já exige `cartorio_calcular_emolumento`, falta turno real confirmando a tool call. Gate Felipe: falta confirmação visual no aparelho dele.
+> Fonte: `docs/RUNTIME_INVENTORY.json` e `services/spectrum-gateway/src/guardrails.ts`.
 
 ---
 

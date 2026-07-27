@@ -1,47 +1,50 @@
 {
   "schema": "cartorio-os/imessage-agent-registry-v1",
-  "observed_at": "2026-07-26T18:53:00Z",
+  "observed_at": "2026-07-26T19:42:52.058Z",
   "source": "Photon projects list --json; no secrets or phone numbers retained",
   "agents": [
     {
       "agent_id": "cartorio",
       "display_name": "CARTORIO BOT TEST",
       "project_id": "438527e1-2399-49dc-967c-22e33986035a",
-      "phone_masked": "UNQUERIED",
-      "runtime_state": "running",
+      "phone_masked": "UNAVAILABLE",
+      "runtime_state": "auth_ok",
       "configured_profile": true,
       "role": "SYSTEM_UNDER_TEST",
       "provider_plan": "free",
-      "registered_user_count": 2
+      "registered_user_count": 2,
+      "line_type": "shared"
     },
     {
       "agent_id": "kimi",
       "display_name": "Kimi Code",
       "project_id": "ed7059a1-8836-4872-a0f9-519aeb1f278c",
-      "phone_masked": "UNQUERIED",
-      "runtime_state": "offline",
+      "phone_masked": "UNAVAILABLE",
+      "runtime_state": "auth_ok",
       "configured_profile": true,
       "role": "NORMAL_SYSTEMATIC_CITIZEN",
       "provider_plan": "free",
-      "registered_user_count": 1
+      "registered_user_count": 1,
+      "line_type": "shared"
     },
     {
       "agent_id": "agy",
       "display_name": "AGY",
       "project_id": "841f6ae8-68b2-46b5-9fb3-9f73b575c921",
-      "phone_masked": "UNQUERIED",
-      "runtime_state": "offline",
+      "phone_masked": "UNAVAILABLE",
+      "runtime_state": "auth_ok",
       "configured_profile": true,
       "role": "CONFUSED_REAL_WORLD_USER",
       "provider_plan": "free",
-      "registered_user_count": 1
+      "registered_user_count": 1,
+      "line_type": "shared"
     },
     {
       "agent_id": "antigravity",
       "display_name": "Antigravity",
       "project_id": "19ccf9c6-b1b9-4d05-b5a1-638b8b058215",
-      "phone_masked": "UNQUERIED",
-      "runtime_state": "unknown",
+      "phone_masked": "UNAVAILABLE",
+      "runtime_state": "missing_credentials",
       "configured_profile": false,
       "role": "SECURITY_RED_TEAM_USER",
       "provider_plan": "free",
@@ -51,24 +54,25 @@
       "agent_id": "codex",
       "display_name": "Codex Agent",
       "project_id": "39060baa-201a-4e87-b88b-b84442d23e9c",
-      "phone_masked": "UNQUERIED",
-      "runtime_state": "offline",
+      "phone_masked": "UNAVAILABLE",
+      "runtime_state": "auth_ok",
       "configured_profile": true,
       "role": "PROCEDURAL_POWER_USER",
       "provider_plan": "free",
-      "registered_user_count": 1
+      "registered_user_count": 1,
+      "line_type": "shared"
     },
     {
       "agent_id": "grok",
       "display_name": "Grok Agent",
       "project_id": "bcdcc0f7-e758-4678-bb23-936343f969cd",
-      "phone_masked": "UNQUERIED",
-      "runtime_state": "unknown",
+      "phone_masked": "UNAVAILABLE",
+      "runtime_state": "missing_credentials",
       "configured_profile": false,
       "role": "CHAOTIC_HUMAN_USER",
       "provider_plan": "free",
       "registered_user_count": 1
     }
   ],
-  "conclusion": "Cartorio, Kimi, AGY and Codex have matching configured local profiles, but only cartorio is proven running. Antigravity and Grok have no matching configured local runtime. The 6x6 allowlist matrix and all 30 directed routes are UNVERIFIED. No real message was sent by this inventory."
+  "conclusion": "Fase 0 probe executed at 2026-07-26T19:42:52.058Z via spectrum-ts cloud API (read-only; no outbound message was sent). runtime_state reflects the per-agent probe outcome (auth_ok/auth_failed/missing_credentials). The 6x6 allowlist matrix and all 30 directed routes remain UNVERIFIED pending live edge runs."
 }

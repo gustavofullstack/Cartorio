@@ -6,12 +6,33 @@ const CPF = /\b(\d{3})\.?(\d{3})\.?(\d{3})-?(\d{2})\b/g;
 const EMAIL = /\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g;
 const PHONE = /(?:\+?55[\s.-]*)?\(?\d{2}\)?[\s.-]*9\d{4}[\s.-]?\d{4}|\b9?\d{4}[\s-]?\d{4}\b/g;
 
+const AGENT_CONTROL_PATTERNS = [
+  /↳?\s*Redirected current run.*$/gim,
+  /Self-improvement review:.*$/gim,
+  /Approve Once\s*\/\s*Always Approve\s*\/\s*Cancel/gim,
+  /\[This response was interrupted.*\]/gim,
+  /I'll adjust using your correction\./gim,
+  /^\/new\b.*$/gim,
+  /^\/approve\b.*$/gim,
+  /^\/always\b.*$/gim,
+  /^\/cancel\b.*$/gim,
+];
+
+export function stripInternalAgentControlLeaks(text: string): string {
+  let cleaned = text;
+  for (const pat of AGENT_CONTROL_PATTERNS) {
+    cleaned = cleaned.replace(pat, "");
+  }
+  return cleaned.trim();
+}
+
 /** Sanitiza apenas a cópia enviada a executores externos e canais. */
 export function scrubPii(text: string): string {
-  return text
+  const scrubbed = text
     .replace(CPF, "$1.***.***-$4")
     .replace(EMAIL, "$1***@$2")
     .replace(PHONE, "[telefone mascarado]");
+  return stripInternalAgentControlLeaks(scrubbed);
 }
 
 /** A identidade do canal não é uma identidade civil unificada. */

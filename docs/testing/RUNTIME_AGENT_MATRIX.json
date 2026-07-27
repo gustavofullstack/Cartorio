@@ -1,0 +1,33 @@
+{
+  "schema": "cartorio-os/vaio-runtime-agent-matrix-v1",
+  "observed_at": "2026-07-26T21:10:40Z",
+  "target_architecture": {
+    "macbook": "UI/client only",
+    "vaio_arch_agent_os": "Hermes runtimes, Spectrum connections, coordinator and logs"
+  },
+  "hosts": [
+    {
+      "alias": "agent-os",
+      "tailscale_online": false,
+      "ssh_exec": "UNAVAILABLE",
+      "classification": "HOST_OFFLINE"
+    },
+    {
+      "alias": "triqhub",
+      "tailscale_online": true,
+      "tailscale_ping": "PASS",
+      "ssh_exec": "DENIED",
+      "classification": "SSH_ACL_OR_SERVER_EXEC_BLOCKED"
+    }
+  ],
+  "agents": {
+    "cartorio": "UNINVENTORIED_ON_VAIO",
+    "kimi": "UNINVENTORIED_ON_VAIO",
+    "agy": "UNINVENTORIED_ON_VAIO",
+    "codex": "UNINVENTORIED_ON_VAIO",
+    "grok": "UNINVENTORIED_ON_VAIO",
+    "antigravity": "UNINVENTORIED_ON_VAIO"
+  },
+  "result": "BLOCKED_VAIO_ACCESS",
+  "rule": "No Mac runtime is treated as migrated and no real iMessage transport result is inferred from this matrix."
+}

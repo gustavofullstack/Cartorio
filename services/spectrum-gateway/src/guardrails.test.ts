@@ -43,6 +43,14 @@ test("scrubPii preserva texto sem PII", () => {
   assert.equal(scrubPii(plain), plain);
 });
 
+test("stripInternalAgentControlLeaks remove vazamentos de controle interno e botões", () => {
+  const textWithControl = "Olá! Como posso ajudar?\n↳ Redirected current run (iteration 1/150). I'll adjust using your correction.";
+  assert.equal(scrubPii(textWithControl), "Olá! Como posso ajudar?");
+
+  const textWithReview = "Atendimento prestado com sucesso.\nSelf-improvement review: User profile updated";
+  assert.equal(scrubPii(textWithReview), "Atendimento prestado com sucesso.");
+});
+
 test("sanitizeOutbound aplica scrub no texto de saida", () => {
   const out = sanitizeOutbound({
     conversationId: "c-1",

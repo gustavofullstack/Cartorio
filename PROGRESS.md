@@ -1,4 +1,26 @@
 
+## 2026-07-26 Stage 5 — Real iMessage Arena Reclassification & Bug Fixes
+
+**Status: `ARENA_HARNESS_PASS / REAL_TRANSPORT_NOT_CERTIFIED`**
+
+- **Audit Visual dos Screenshots**:
+  - Cartório DM: `🟢 OPERATIONAL` (Respondeu emolumentos R$ 8,46 e menu).
+  - Grupo (`CARTORIO GRUPO TEST`): `🔴 NO_RESPONSE` (Nenhuma resposta dos agentes testers).
+  - Runtimes dos Testers: Kimi (`AUTH_FAILED`), Grok (`GATEWAY_DOWN`), Codex (`GATEWAY_DOWN`), AGY (`CONNECTION_REFUSED Errno 61`), Antigravity (`UNVERIFIED`).
+  - Reivindicação anterior de "6/6 online / 1.000 turnos iMessage reais" foi **INVALIDADA** (refere-se apenas à simulação do harness).
+- **Fix 1: `BUG_INTERNAL_AGENT_CONTROL_UI_LEAK` (P0)**:
+  - Adicionada função `stripInternalAgentControlLeaks` em `services/spectrum-gateway/src/guardrails.ts`.
+  - Filtra vazamentos como `↳ Redirected current run`, `Self-improvement review`, `Approve Once / Always Approve / Cancel` e comandos `/new` antes de enviar texto ao iMessage.
+  - Suíte TypeScript em `services/spectrum-gateway`: **36/36 PASSED** (0.65s).
+- **Fix 2: `T2_FEE_MCP_EVIDENCE_GATE` (P0)**:
+  - `scripts/imessage_felipe_classify.py` atualizado para exigir evidência de chamada real da ferramenta FastMCP `cartorio_calcular_emolumento` para aprovar respostas com valores em R$.
+  - Suíte Python: **13/13 PASSED** (0.21s).
+- **Plano de Migração de Arquitetura (Stage 5)**:
+  - MacBook = UI/Cliente Apenas.
+  - VAIO Arch Agent OS = Todos os 6 runtimes Hermes, conexões Spectrum Cloud, logs isolados e orquestradores.
+
+Modified by Gustavo Almeida — 2026-07-26
+
 ## 2026-07-26 Stage 4.2 — iMessage Felipe certification (skeptic-corrected)
 
 **Status: `IMESSAGE_REQUIRES_FIX`** (not ACCEPTED).
@@ -28,6 +50,8 @@ Modified by Gustavo Almeida — 2026-07-26
 
 
 ## 2026-07-26 — Stage 4.1 REAL iMessage E2E Certification (`REAL_E2E_PASS` / `OPERATIONAL`)
+
+> ⚠️ **CORREÇÃO (Stage 5, 2026-07-26)**: o round-trip das 15:34 era real, mas três claims abaixo eram sem evidência: "OpenClaw route: PASS" (nada escuta em :18789 — pipeline é photon→Hermes→MCP direto), "Kimi-k3-256k via bridge :8767" (real: `kimi-k3` direto via provider `kimi-coding`) e "iPhone Delivery Confirmed: true" (sem confirmação humana na época). Verdade atual em `docs/RUNTIME_INVENTORY.json` e nas entradas Stage 4.2/5 acima.
 
 ### Evidência de Runtime & Certificação E2E
 - **HEAD**: `383e45978735e99cba05f5fe8ed04533e1557ed9`
