@@ -1,21 +1,33 @@
 {
-  "timestamp": "2026-07-27T08:36:00+00:00",
-  "git_head": "01ddd8d6",
-  "auditor": "Gustavo Almeida & Agent AI (Stage 8 VPS Cartório Certification)",
-  "primary_rule": "CONNECTED != OPERATIONAL. Harness PASS != transport PASS. Claims so com evidencia de runtime na VPS Cartorio.",
+  "timestamp": "2026-07-27T12:05:00+00:00",
+  "git_head": "0c0dc79f",
+  "auditor": "Gustavo Almeida & Agent AI (Cartorio VPS truth reconciliation)",
+  "primary_rule": "CONNECTED != OPERATIONAL. Harness PASS != transport PASS. Claims somente com evidencia de runtime na VPS Cartorio. VAIO/Agent OS nao pertence ao projeto Cartorio.",
   "truth_states": {
-    "vps_cartorio": "OPERATIONAL_VPS — Servidor Hostinger 187.77.236.77 (Tailscale 100.99.172.84 / api.2notasudi.com.br). 7/7 servicos online (database, redis, n8n, openclaw, evolution, chatwoot, supabase).",
-    "hermes_cartorio_gateway": "OPERATIONAL_VPS — Servido nativamente na VPS do Cartório via https://api.2notasudi.com.br/api/v1/agent-hermes/execute e /status. Integrado com FastAPI, FastMCP (15 tools), Postgres 16 (Supabase), Redis 8, Chatwoot, Evolution API e OpenClaw.",
-    "photon_sidecar": "CONNECTED — Sidecar iMessage profile cartorio na VPS/Mac bridge.",
-    "llm_brain": "VERIFIED — MiniMax Coding Plan via provider oficial (sk-cp-* key em producao, sem rotacao).",
-    "mcp_authority": "UP — api.2notasudi.com.br/mcp/ 401 sem bearer (fail-closed). 15 tools registradas.",
-    "telegram": "CONNECTED — Webhook ativo em api.2notasudi.com.br.",
-    "whatsapp": "DEGRADED — Evolution 2.3.7 online, mas sessao cartorio-2notas em status 'close' (aguarda QR Code do Gustavo em flow.2notasudi.com.br)."
+    "vps_cartorio": "OPERATIONAL_BASE — VPS Hostinger 187.77.236.77 (Tailscale 100.99.172.84 / api.2notasudi.com.br). API, database, redis, n8n, openclaw, evolution, chatwoot e supabase foram observados online, mas isso nao prova E2E por canal.",
+    "hermes_cartorio_gateway": "NOT_DEPLOYED_CONFIRMED — artefatos de deploy existem em infra/hermes, mas a auditoria VPS registrou ausencia do servico/segredos Hermes. Nao declarar /agent-hermes como operacional ate health autenticado real do container cartorio_hermes 1/1.",
+    "photon_imessage": "DEGRADED_UNCERTIFIED — screenshots de 27/07/2026 comprovam resposta iMessage do Cartorio Bot, porem com vazamento repetido de erro bruto do provider ('rate-limiting requests'). O caminho de transporte atual nao esta certificado como VPS-only nem como Hermes+MiniMax. Bloquear claim de producao ate round-trip Photon->Hermes->MCP->iMessage com logs sanitizados.",
+    "llm_brain": "CONFIGURED_NOT_E2E_CERTIFIED — MiniMax Coding Plan e o provider aprovado devem existir somente no secret manager/runtime. Falta inferencia sintetica sem PII pelo caminho final Hermes para provar modelo, timeout, retry/backoff e fallback sem leak de erro do provider.",
+    "mcp_authority": "INTEGRATED — api.2notasudi.com.br/mcp/ rejeita acesso sem bearer; initialize/tools-list autenticados provaram 15 tools. Falta prova E2E de tool call partindo de canal real.",
+    "telegram": "HANDSHAKE_ONLY — webhook/health/fila confirmados, mas falta conversa privada e grupo reais com resposta, fallback e HITL.",
+    "whatsapp": "DEGRADED — Evolution 2.3.7 online, mas sessao cartorio-2notas fechada/desconectada; requer QR no telefone oficial e E2E na mesma conversa.",
+    "chatwoot": "PROCESS_UP_CONTRACT_UNCERTIFIED — UI/health online, mas credencial consultada retornou 401; handoff humano ainda nao certificado.",
+    "n8n": "PARTIAL — workflows listados/ativos, mas credencial de observabilidade nao prova execucoes recentes; export/backup e leitura de execucoes precisam de credencial read-only valida.",
+    "backup_recovery": "RESTORE_PROVEN_WITH_P1_GAPS — backup fisico/logico e restore isolado foram validados; falta mount read-only para /health/backup-v2 e offsite aprovado.",
+    "cnj_lgpd": "PENDING_SIGNOFF — motor/auditoria implementados, mas migration/sign-off LGPD 0028 e gates humanos permanecem obrigatorios antes de autonomia."
   },
-  "human_blockers": [
-    "WhatsApp QR Code pairing no celular do cartório",
-    "Confirmação visual do Felipe no iPhone dele (gate IMESSAGE_FELIPE_ACCEPTED)",
-    "Re-prova T2: reenviar 'Quanto custa reconhecer firma?' e observar tool call FastMCP",
-    "B1 LGPD-0028 sign-off e migration no Supabase"
+  "p0_blockers": [
+    "Parear WhatsApp cartorio-2notas por QR e provar E2E real autorizado",
+    "Provisionar quatro Docker Secrets Hermes e implantar cartorio_hermes 1/1 na VPS",
+    "Configurar Photon fail-closed com projeto/segredo/allowlist e provar round-trip iMessage sem erro bruto de provider",
+    "Reconciliar credencial Chatwoot e provar handoff humano real",
+    "Corrigir politica de erro/retry/backoff do provider para nunca enviar mensagens internas/rate-limit literais ao cliente",
+    "Executar Telegram DM+grupo E2E",
+    "Concluir sign-off/migration LGPD 0028"
+  ],
+  "forbidden_topology": [
+    "VAIO",
+    "Agent OS local",
+    "qualquer dependencia de runtime do Cartorio em notebook local"
   ]
 }
