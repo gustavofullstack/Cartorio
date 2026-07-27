@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import enum
-from datetime import datetime
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum as SAEnum, ForeignKey, String
+from sqlalchemy import Boolean, Date, Enum as SAEnum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -38,7 +38,13 @@ class Cliente(Base, TimestampMixin, SoftDeleteMixin):
     cpf_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     nome: Mapped[str] = mapped_column(String(255))
     email: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    # telefone_hash: chave de busca primaria logica do canal (PRIMARY KEY operacional
+    # por telefone, conforme Gustavo 2026-07-27). UNIQUE constraint parcial
+    # (exclui soft-deleted) criada na migration 0029.
     telefone_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    # Data de nascimento (LGPD: dado pessoal, hasheado se necessario em cache).
+    # Migration 0029.
+    data_nascimento: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Notificações e contatos
     telegram_chat_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
