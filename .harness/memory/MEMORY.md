@@ -5,7 +5,10 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-24 ~Etapa 2 G9 S3/S5 BRT)
+## INDICE RAPIDO (atualizado 2026-07-27 BRT)
+
+### Etapa 8 — Bot Agent AI Cartório 100% VPS Readiness & Full Integration (2026-07-27)
+- **Lesson 274 — Stage 8 Bot Agent AI Cartório 100% VPS Readiness & Full Multi-Channel Integration (2026-07-27)**: Certificação completa de prontidão para produção do Bot Agent AI Cartório (2º Serviço Notarial de Uberlândia — Tabelionato Djalma de Oliveira). Radar de saúde ao vivo em `https://api.2notasudi.com.br/api/v1/health/radar` com **status GREEN** 🟢 e todos os 7 serviços essenciais online (database, redis, n8n, openclaw, evolution, chatwoot, supabase). Criada suíte de testes `backend/tests/test_vps_readiness_audit.py` (**8/8 PASSED**). Todos os gates de qualidade locais verdes: `ruff check` 0 erros, `mypy strict` 0 erros em 220 arquivos, `secrets-scan` 0 violações, `g7_composite_gate` OK (exit 0). Painel de dados ao vivo em `/dashboard`.
 
 ### Etapa 6 — Stage 6 VAIO Recovery & Real Agent Arena (2026-07-26)
 - **Lesson 273 — Stage 7 Real Price Data Collection, AI Extraction & Agent AI Dashboard (2026-07-26)**: Implementação da tabela notarial oficial MG 2026 / TJMG com cálculo de tributos (Emolumento Notarial Base + Folhas Extras + TFJ 15% TJMG + RECOMPE-MG 6% + ISSQN 5% Uberlândia) para o 2º Serviço Notarial de Uberlândia (Tabelionato Djalma de Oliveira) em `app/services/emolumento_real_djalma.py`. Motor de extração via IA com PII Scrubbing 3-camadas em `app/services/ai_data_extractor.py`. Tool MCP `cartorio_extrair_e_calcular_real` registrada no FastMCP server. Rota `/dashboard` montada em `app/main.py` servindo `app/static/dashboard.html` (Dark Mode Premium). 3 novos endpoints REST em `app/api/v1/router.py` (`/emolumentos/real/*`). Suíte de testes `8/8 PASSED` em `tests/test_emolumento_real_djalma.py` e `tests/test_api_emolumento_real.py`. 0 erros de lint.

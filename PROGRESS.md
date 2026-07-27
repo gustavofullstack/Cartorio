@@ -1,5 +1,27 @@
 
+## 2026-07-27 Stage 8 — Bot Agent AI Cartório 100% VPS Readiness & Full Multi-Channel Integration (`BOT_AGENT_AI_VPS_READY`)
+
+**Status: `STAGE_8_VPS_READY_PASS`** | **`RADAR_GREEN_LIVE`**
+
+- **Diagnóstico da VPS & Live Health Radar (`https://api.2notasudi.com.br/api/v1/health/radar`)**:
+  - `status`: **GREEN** 🟢
+  - Todos os 7 serviços essenciais ONLINE: `database`, `redis`, `n8n`, `openclaw`, `evolution`, `chatwoot`, `supabase`.
+- **Suíte de Testes de Prontidão VPS (`backend/tests/test_vps_readiness_audit.py`)**:
+  - Criada suíte cobrindo Emolumentos MG 2026 (Tabela 1 Tabelionato Djalma de Oliveira), Extração IA + PII Scrubbing 3-camadas, HITL obrigatório (`HITL_REQUIRED` / `DRAFT`), Cadeia de Log de Auditoria SHA256 + HMAC, FastMCP 3.x radar e dashboard HTML `/dashboard`.
+  - **8/8 PASSED** (1.02s).
+- **Gates de Qualidade Local**:
+  - `ruff check`: **0 erros / 0 avisos** ✅
+  - `mypy strict`: **0 erros em 220 arquivos fonte** ✅
+  - `secrets-scan`: **0 violações** ✅
+  - `g7_composite_gate`: **OK (exit 0)** ✅
+- **Instrução de Pareamento e Operação**:
+  - Pareamento WhatsApp (Evolution 2.3.7): Instância pronta para leitura de QR Code em `https://flow.2notasudi.com.br`.
+  - Painel de Dados do Agente AI disponível ao vivo em `https://api.2notasudi.com.br/dashboard`.
+
+Modified by Gustavo Almeida — 2026-07-27
+
 ## 2026-07-26 Stage 7 — Real Price Collection, AI Extraction & Data Dashboard (`2_OFICIO_UBERLANDIA_DJALMA_LIVE`)
+
 
 **Status: `STAGE_7_EMOLUMENTOS_REAL_PASS`** | **`PAINEL_DADOS_LIVE`**
 
