@@ -29,7 +29,6 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.services.agendamento import AgendamentoService, TipoAtendimento
-from app.services.pii import hash_pii
 from app.services.pietra_coleta import (
     upsert_cliente_por_telefone,
 )
@@ -124,13 +123,12 @@ def iniciar_atendimento(
             raise ValueError(
                 "agendamento_online/presencial requer data_hora e titulo"
             )
-        # CPF dummy para criar agendamento (LGPD: hash real)
-        cpf_temp_hash = hash_pii(req.cpf or req.telefone, "pietra_atendimento") if req.cpf else hash_pii(req.telefone + ":no_cpf", "pietra_atendimento")
+        cpf_raw = req.cpf or "00000000000"
         try:
             agendamento = AgendamentoService.criar_agendamento(
                 db,
                 cliente_id=coleta.cliente_id,
-                cliente_cpf=cpf_temp_hash,
+                cliente_cpf=cpf_raw,
                 data_hora=req.data_hora,
                 titulo=req.titulo,
                 descricao=req.descricao or f"Atendimento {req.tipo}",

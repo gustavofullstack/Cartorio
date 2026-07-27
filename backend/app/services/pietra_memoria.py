@@ -41,19 +41,27 @@ _redis_client: Optional[redis.Redis] = None
 def get_redis() -> Optional[redis.Redis]:
     """Singleton do cliente Redis (lazy init + auto-reconnect)."""
     global _redis_client
-    if _redis_client is None:
+    redis_url = os.environ.get("REDIS_URL", "redis://cartorio_memory-cache:6379/0")
+    if _redis_client is not None:
         try:
-            _redis_client = redis.Redis.from_url(
-                REDIS_URL,
-                socket_connect_timeout=2,
-                socket_timeout=2,
-                decode_responses=True,
-            )
             _redis_client.ping()
-            logger.info("redis connected: %s", REDIS_URL)
-        except Exception as e:
-            logger.warning("redis connect failed: %s", e)
+            return _redis_client
+        except Exception:
             _redis_client = None
+
+    try:
+        _redis_client = redis.Redis.from_url(
+            redis_url,
+            socket_connect_timeout=2,
+            socket_timeout=2,
+            decode_responses=True,
+        )
+        _redis_client.ping()
+        logger.info("redis connected: %s", redis_url)
+    except Exception as e:
+        logger.warning("redis connect failed: %s", e)
+        _redis_client = None
+
     return _redis_client
 
 

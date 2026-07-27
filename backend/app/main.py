@@ -909,6 +909,9 @@ from app.api.v1.telegram import router as telegram_router  # noqa: E402
 
 app.include_router(telegram_router, prefix="/api/v1")
 
+# Agent Pietra (Assistente Virtual do 2º Cartório de Notas de Uberlândia)
+# pietra_router is already included in api_router (router.py) under prefix /pietra
+
 # Health Radar Expanded (F6 [P2] 2026-07-15) - 5 categorias: DNS, Traefik,
 # SSH VPS, Tailscale, Disk. Falha em qualquer check nao quebra endpoint.
 from app.api.v1.health_radar_expanded import expanded_router  # noqa: E402

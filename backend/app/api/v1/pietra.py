@@ -426,3 +426,59 @@ def pietra_health() -> dict:
         "module": "pietra",
         "version": "1.0.0",
     }
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatCompletionRequest(BaseModel):
+    messages: list[ChatMessage]
+    model: Optional[str] = "MiniMax-M3"
+    temperature: Optional[float] = 0.7
+    max_tokens: Optional[int] = 4096
+
+
+@router.post("/v1/chat/completions")
+@router.post("/chat/completions")
+async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
+    """OpenAI-compatible Chat Completions endpoint para AGENT PIETRA.
+
+    Aplica a chain multi-provedor (MiniMax -> OpenCode Zen 1/2/3 -> ResponsePlanner)
+    com circuit breaker de 5 tentativas e recuperacao automatica apos 5h.
+    """
+    from app.services.cartorio_agent import _chat_completion
+
+    msgs = [{"role": m.role, "content": m.content} for m in req.messages]
+    msg, provider_used, err = await _chat_completion(
+        messages=msgs,
+        temperature=req.temperature or 0.7,
+        max_tokens=req.max_tokens or 4096,
+    )
+
+    content = (msg.get("content") or "").strip() if msg else ""
+    if not content:
+        content = "Sou a Pietra, a agente do 2º Cartório de Notas de Uberlândia. Como posso ajudar?"
+
+    return {
+        "id": f"chatcmpl-pietra-{int(dt.datetime.now(dt.timezone.utc).timestamp())}",
+        "object": "chat.completion",
+        "created": int(dt.datetime.now(dt.timezone.utc).timestamp()),
+        "model": provider_used or "pietra-fallback",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": content,
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+        },
+    }

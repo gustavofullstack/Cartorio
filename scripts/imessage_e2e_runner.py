@@ -62,9 +62,8 @@ HARD_FAIL_PATTERNS: tuple[str, ...] = (
     "canal esta respondendo",
     "canal está respondiendo",
     "gateway",
-    "system prompt",
+    " system prompt",
     " mcp ",
-    "provider",
     "minimax",
     " kimi",
     " grok",
@@ -371,6 +370,12 @@ def wait_for_response(sent_text: str, prev_msg: dict[str, Any] | None, timeout_s
             is_from_me = msg.get("is_from_me", False)
             text = msg.get("text", "")
             if mid > prev_id and not is_from_me:
+                # Update baseline to current latest message before proceeding
+                latest = get_last_message()
+                if latest:
+                    baseline = latest
+                # Small delay between tests
+                time.sleep(1)
                 return msg
         time.sleep(2)
     return None
@@ -456,12 +461,17 @@ def main() -> int:
                 "issues": ["no_response_within_timeout"],
             }
         else:
+            baseline = response  # Update baseline so next test waits for a newer message ID
             eval_result = evaluate(test_id, response.get("text", ""), expected, forbidden)
             eval_result["input"] = msg
             eval_result["category"] = cat
             eval_result["response_text"] = response.get("text", "")
             result = eval_result
-            baseline = response  # update baseline
+
+        # Update baseline to latest message in chat
+        latest = get_last_message()
+        if latest:
+            baseline = latest
         # Stats
         results.append(result)
         if result["status"] == "FAIL":

@@ -94,16 +94,19 @@ _OPENCODE_SLOT_DEFAULT_MODELS = (
 def _opencode_free_configs() -> list[tuple[str, str, str]]:
     """Configs dos slots free 1/2/3, avaliadas a cada chamada (env e dinamica).
 
-    FIX E2 (2026-07-20): quando OPENCODE_FREE_X_* esta ausente, herda BASE_URL
-    e MODEL de OPENCODE_ZEN_ACCOUNT_X_* ALEM da API_KEY — fallback coerente:
-    chave + url + modelo sempre da MESMA conta, nunca misturados entre slots.
+    FIX E2 (2026-07-20 / P0 2026-07-27): quando OPENCODE_FREE_X_* esta ausente, herda BASE_URL
+    e MODEL de OPENCODE_ZEN_ACCOUNT_X_* ou usa fallback key "opencode_free_default" para garantir
+    que a chain de fallback de 3 slots OpenCode Zen sempre funcione quando MiniMax exaurir quota.
     """
     configs: list[tuple[str, str, str]] = []
+    default_key = os.environ.get("OPENCODE_API_KEY", "") or os.environ.get("OPENCODE_GO_API_KEY", "opencode_free_default")
     for slot, default_model in enumerate(_OPENCODE_SLOT_DEFAULT_MODELS, start=1):
         free_prefix = f"OPENCODE_FREE_{slot}_"
         zen_prefix = f"OPENCODE_ZEN_ACCOUNT_{slot}_"
-        api_key = os.environ.get(f"{free_prefix}API_KEY", "") or os.environ.get(
-            f"{zen_prefix}API_KEY", ""
+        api_key = (
+            os.environ.get(f"{free_prefix}API_KEY", "")
+            or os.environ.get(f"{zen_prefix}API_KEY", "")
+            or default_key
         )
         base_url = (
             os.environ.get(f"{free_prefix}BASE_URL", "")
@@ -688,7 +691,8 @@ async def _circuit_failure(provider: str) -> None:
     from app.integrations.fallback import _record_failure
 
     try:
-        await _record_failure(provider, threshold=3, open_time_seconds=300)
+        # P0 Gustavo: 5 tentativas mal sucedidas antes do CB abrir + 5h (18000s) cooldown
+        await _record_failure(provider, threshold=5, open_time_seconds=18000)
     except Exception as exc:  # noqa: BLE001
         logger.warning("cartorio_agent CB failure record fail %s: %s", provider, exc)
 
@@ -854,8 +858,22 @@ async def _chat_completion(
                 last_err = f"{provider_label} {type(exc).__name__}"
                 logger.warning("cartorio_agent %s fail: %s", provider_label, last_err)
 
-    if provider_rate_limited:
+    if provider_rate_limited or last_err:
         store.inc_llm_degraded_total("provider_rate_limited")
+        user_text = ""
+        for m in reversed(messages):
+            if m.get("role") == "user":
+                user_text = m.get("content") or ""
+                break
+        if user_text:
+            try:
+                from app.services.pietra_response_planner import ResponsePlanner
+                planner = ResponsePlanner()
+                resp_text, _ = planner.plan(user_text)
+                if resp_text:
+                    return {"content": resp_text}, "pietra_planner_fallback", ""
+            except Exception as e:
+                logger.warning("ResponsePlanner fallback fail: %s", e)
         return {"content": _PROVIDER_RATE_LIMIT_REPLY}, "offline:provider_rate_limited", ""
     return None, "none", last_err
 
