@@ -21,6 +21,9 @@ emit() {
   local status="$2"   # "ok" | "blocked_sui" | "blocked_review" | "not_applicable"
   local detail="$3"
   local action="$4"
+  # JSON-escape: substitui " por \" e remove quebras de linha
+  detail=$(printf '%s' "$detail" | sed 's/"/\\"/g' | tr -d '\n')
+  action=$(printf '%s' "$action" | sed 's/"/\\"/g' | tr -d '\n')
   printf '{"blocker":"%s","status":"%s","detail":"%s","action":"%s"}\n' \
     "$blocker_id" "$status" "$detail" "$action"
 }
