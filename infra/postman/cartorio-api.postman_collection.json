@@ -4,7 +4,7 @@
     "description": "\n# Cartorio Backend API\n\nAPI REST do **2o Servico Notarial de Uberlandia** para consulta de emolumentos,\nprotocolizacao de atos, gestao de atendimentos e auditoria imutavel.\n\n## Pilares\n\n- **Audit log imutavel**: hash chain SHA256 + HMAC. Cada acao deixa rastro verificavel.\n- **PII scrubbing**: CPF/telefone/email nunca saem crus pra LLM. Hasheados no DB (SHA256+salt).\n- **HITL obrigatorio**: protocolo sempre nasce em `DRAFT`. Escrevente valida antes de processar.\n- **LGPD compliance**: consentimento explicito, retencao 365 dias (conversas) / 1825 (audit).\n- **MCP nativo**: API expoe tools MCP via /mcp (protocolo 2025-03-26).\n\n## Tags disponiveis (10 tags, 15 endpoints)\n\n| Tag | Endpoints | Descricao |\n|-----|-----------|-----------|\n| `emolumento`  | 1   | Calculo de custas (TABELA_2026_MG) |\n| `protocolo`   | 2   | Criar e consultar protocolos |\n| `documento`   | 1   | Segunda via de documento |\n| `audit`       | 1   | Verificacao de cadeia de audit log |\n| `health`      | 2   | Liveness, readiness, radar |\n| `atendimento` | 4   | Handoff humano + pesquisa satisfacao |\n| `webhook`     | 2   | Integracao Evolution API / Chatwoot |\n| `meta`        | 3   | Health, MCP servers discovery |\n| `agendamento` | 1   | Disponibilidade de agenda |\n| `dev`         | 1   | Exports (Postman collection) |\n\n## Autenticacao\n\nAPI em si **NAO exige auth** (LGPD art. 7o, IV - finalidade publica do servico notarial).\nPara endpoints sensiveis (audit verify, webhook), usamos **HMAC ou header X-API-Key**\ncompartilhado com n8n (ver `N8N_WEBHOOK_SECRET` / `CARTORIO_API_KEY`).\n\n## MCP (Model Context Protocol)\n\nA propria API expoe tools MCP no endpoint `/mcp` (sub-app FastMCP montado, protocolo 2025-03-26).\nTools disponiveis:\n\n1. `cartorio_calcular_emolumento` - calculo MG 2026\n2. `cartorio_consultar_protocolo` - status, historico, proxima acao\n3. `cartorio_criar_protocolo` - criar DRAFT com gate LGPD\n4. `cartorio_gerar_segunda_via` - link download PDF\n5. `cartorio_audit_verify` - integridade hash chain + HMAC\n6. `cartorio_saudacao` - health check\n7. `super_server_info` - meta info (versao, tools_count, etc)\n\nLista de tools em `/mcp-servers`. Config em `~/.mavis/mcp/clients/cartorio-mcp-config.json`.\nTools description em `/tools_description.json`.\n\n## Compliance LGPD\n\n- Art. 7o, I  - Consentimento explicito (gate no POST /protocolo)\n- Art. 37    - Registro de operacoes de tratamento (audit log)\n- Art. 46    - Medidas de seguranca (HMAC + hash chain)\n- Retencao: 365 dias conversas, 1825 dias (5 anos) audit log\n- DPO: dpo@2notasudi.com.br\n\n## Stack\n\n- **API**: FastAPI 0.115 + SQLAlchemy 2 + Pydantic 2 + Pydantic Settings\n- **DB**: Supabase (PostgreSQL 15) via SQLAlchemy + Alembic\n- **Cache/Session**: Redis 7\n- **WhatsApp**: Evolution API (http://cartorio_evolution-api:8080)\n- **CRM**: Chatwoot\n- **Workflows**: n8n (https://cartorio-n8n.dfgdxq.easypanel.host)\n- **LLM primario**: Opencode-Go (deepseek-v4-flash, low cost)\n- **LLM secundario**: OpenClaw gateway (gpt-5.5 / anthropic-sonnet)\n- **MCP**: FastMCP 3.4.2 (protocolo 2025-03-26)\n\n## Contato\n\n- DPO: dpo@2notasudi.com.br\n- Repo: https://github.com/2notas/cartorio-backend\n- Issues: https://github.com/2notas/cartorio-backend/issues\n- Site: https://2notasudi.com.br\n\n\nGerado por scripts/postman_sync.py (G8.17.T1). Authorization SEMPRE via {{bearer_token}} variable. NUNCA persistir tokens reais.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "0.6.0",
-    "_postman_id": "cartorio-sync-1785152233"
+    "_postman_id": "cartorio-sync-1785196764"
   },
   "item": [
     {
@@ -980,7 +980,7 @@
               ],
               "variable": []
             },
-            "description": "Get Hermes Status\n\nRetorna o status operacional do Agent Hermes na VPS.\n\noperationId: get_hermes_status_api_v1_agent_hermes_status_get"
+            "description": "Get Hermes Status\n\nRetorna o estado real do runtime Hermes, sem inferir de serviços vizinhos.\n\noperationId: get_hermes_status_api_v1_agent_hermes_status_get"
           },
           "response": []
         },
@@ -5979,6 +5979,497 @@
               ]
             },
             "description": "Uso agregado da IA (LiteLLM spend)\n\nProxy de ia_usage.uso_agregado: custo, chamadas e tokens por modelo e por dia. Retorna {'disponivel': False, 'motivo': ...} quando a telemetria nao esta configurada — nunca vaza exception.\n\noperationId: painel_ia_usage_api_v1_painel_ia_usage_get"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "pietra",
+      "description": "11 endpoints (tag: pietra)",
+      "item": [
+        {
+          "name": "GET /api/v1/pietra/cliente/{telefone}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/cliente/:telefone",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "cliente",
+                ":telefone"
+              ],
+              "variable": [
+                {
+                  "key": "telefone",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Get Cliente\n\nRetorna dados do cliente (LGPD-masked). PRIMARY KEY: telefone.\n\noperationId: get_cliente_api_v1_pietra_cliente__telefone__get"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/pietra/cliente/collect",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/cliente/collect",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "cliente",
+                "collect"
+              ],
+              "variable": []
+            },
+            "description": "Collect Cliente\n\nColeta progressiva: cria ou atualiza cliente por telefone.\n\nLGPD: consentimento_lgpd deve ser True. Telefone e PRIMARY KEY.\n\noperationId: collect_cliente_api_v1_pietra_cliente_collect_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/pietra/atendimento/iniciar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/atendimento/iniciar",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "atendimento",
+                "iniciar"
+              ],
+              "variable": []
+            },
+            "description": "Atendimento Iniciar\n\nInicia atendimento: coleta + cria atendimento + agendamento opcional + memoria.\n\noperationId: atendimento_iniciar_api_v1_pietra_atendimento_iniciar_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/pietra/agendamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/agendamento",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "agendamento"
+              ],
+              "variable": []
+            },
+            "description": "Criar Agendamento\n\nCria agendamento (online ou presencial) + coleta de dados + memoria.\n\noperationId: criar_agendamento_api_v1_pietra_agendamento_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/pietra/atendimento/{telefone}/historico",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/atendimento/:telefone/historico",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "atendimento",
+                ":telefone",
+                "historico"
+              ],
+              "variable": [
+                {
+                  "key": "telefone",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Get Historico Atendimentos\n\nLista atendimentos do cliente por telefone.\n\noperationId: get_historico_atendimentos_api_v1_pietra_atendimento__telefone__historico_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/pietra/memoria/{telefone}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/memoria/:telefone",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "memoria",
+                ":telefone"
+              ],
+              "variable": [
+                {
+                  "key": "telefone",
+                  "value": "",
+                  "type": "string"
+                }
+              ],
+              "query": [
+                {
+                  "key": "session_id",
+                  "value": "",
+                  "type": "string",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "type": "string",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get Memoria\n\nRecupera historico de conversa (Redis cache + Postgres).\n\noperationId: get_memoria_api_v1_pietra_memoria__telefone__get"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/pietra/memoria/{telefone}/append",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/memoria/:telefone/append",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "memoria",
+                ":telefone",
+                "append"
+              ],
+              "variable": [
+                {
+                  "key": "telefone",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Append Memoria\n\nAppend uma mensagem na memoria persistente.\n\noperationId: append_memoria_api_v1_pietra_memoria__telefone__append_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/pietra/memoria/{telefone}/stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/memoria/:telefone/stats",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "memoria",
+                ":telefone",
+                "stats"
+              ],
+              "variable": [
+                {
+                  "key": "telefone",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Get Stats Memoria\n\nEstatisticas de uso de memoria do cliente.\n\noperationId: get_stats_memoria_api_v1_pietra_memoria__telefone__stats_get"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/pietra/health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/health",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "health"
+              ],
+              "variable": []
+            },
+            "description": "Pietra Health\n\nHealth check do modulo PIETRA.\n\noperationId: pietra_health_api_v1_pietra_health_get"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/pietra/chat/completions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/chat/completions",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "chat",
+                "completions"
+              ],
+              "variable": []
+            },
+            "description": "Pietra Chat Completions\n\nOpenAI-compatible Chat Completions endpoint para AGENT PIETRA.\n\nAplica a chain multi-provedor (MiniMax -> OpenCode Zen 1/2/3 -> ResponsePlanner)\ncom circuit breaker de 5 tentativas e recuperacao automatica apos 5h.\n\noperationId: pietra_chat_completions_api_v1_pietra_chat_completions_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/pietra/v1/chat/completions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{cartorio_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://api.2notasudi.com.br/api/v1/pietra/v1/chat/completions",
+              "protocol": "https",
+              "host": [
+                "api.2notasudi.com.br"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pietra",
+                "v1",
+                "chat",
+                "completions"
+              ],
+              "variable": []
+            },
+            "description": "Pietra Chat Completions\n\nOpenAI-compatible Chat Completions endpoint para AGENT PIETRA.\n\nAplica a chain multi-provedor (MiniMax -> OpenCode Zen 1/2/3 -> ResponsePlanner)\ncom circuit breaker de 5 tentativas e recuperacao automatica apos 5h.\n\noperationId: pietra_chat_completions_api_v1_pietra_v1_chat_completions_post",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }

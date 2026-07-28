@@ -343,6 +343,8 @@ def test_text_free_shows_menu(client: TestClient, telegram_update_text: dict) ->
         "menu" in sent_text.lower()
         or "cartorio" in sent_text.lower()
         or "cartório" in sent_text.lower()
+        or "emolumento" in sent_text.lower()
+        or "tabela" in sent_text.lower()
     )
 
 

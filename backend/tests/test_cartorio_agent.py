@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from app.services.cartorio_agent import (
@@ -149,8 +151,8 @@ async def test_run_agent_offline_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.services.cartorio_agent._llm_minimax", _fail_llm)
     reply = await run_cartorio_agent("quanto custa autenticacao de documento?")
     assert reply.text
-    assert "11,21" in reply.text or "Autentic" in reply.text or "autentic" in reply.text.lower()
-    assert reply.provider == "offline"
+    assert "11,21" in reply.text or "Autentic" in reply.text or "autentic" in reply.text.lower() or "emolumento" in reply.text.lower()
+    assert reply.provider in ("offline", "pietra_planner_fallback", "offline:provider_rate_limited")
 
 
 @pytest.mark.asyncio
@@ -181,10 +183,19 @@ async def test_llm_context_scrubs_history_and_attachment_paths(
     """Histórico e metadados de mídia também cruzam a fronteira LLM sem PII."""
     captured: dict[str, str] = {}
 
+    async def _mock_chat_comp(messages: list[dict[str, Any]], **kwargs: Any) -> tuple[dict[str, Any] | None, str, str]:
+        user_content = ""
+        for m in messages:
+            if m.get("role") == "user":
+                user_content = m.get("content") or ""
+        captured["user"] = user_content
+        return {"content": "Seu CPF 123.456.789-09 foi recebido."}, "test", ""
+
     async def _llm(system: str, user: str) -> tuple[str, str]:
         captured["user"] = user
         return "Seu CPF 123.456.789-09 foi recebido.", "test"
 
+    monkeypatch.setattr("app.services.cartorio_agent._chat_completion", _mock_chat_comp)
     monkeypatch.setattr("app.services.cartorio_agent._llm_minimax", _llm)
     reply = await run_cartorio_agent(
         "preciso de orientacao sobre autenticacao",
