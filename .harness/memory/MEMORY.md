@@ -766,3 +766,18 @@ Chamadas multiplas sao safe (segunda chamada = no-op).
 - **Fix**: restaurar a constante (manter reply PT-BR), `python3 -c "import ast; ast.parse(...)"` como sanity, `launchctl kickstart -k gui/$(id -u)/ai.hermes.gateway-cartorio`. Bateria T0-T5 live pós-fix: 5/6 PASS.
 - **Regra permanente**: (1) editar runtime fora do repo exige sanity `ast.parse` + restart + **1 mensagem canário** antes de declarar OK; (2) "Sorry, I encountered an unexpected error" no iMessage = olhar `gateway.error.log` ANTES de culpar Photon/LLM; (3) diffs locais não commitados em `~/.hermes/hermes-agent` são dívida — commitar ou reverter.
 - **Pendente**: `/humano` (slash command) não é roteado no canal iMessage (T5 FAIL); linguagem natural ("quero falar com humano") funciona (T5b PASS).
+
+## Lesson 284 — Endpoint OpenAI-compatible: schema de mensagens DEVE preservar tool_calls (2026-07-28)
+
+Ao expor um endpoint `/chat/completions` para agentes (Hermes/OpenClaw), o schema
+Pydantic da mensagem precisa de `tool_calls`, `tool_call_id`, `name` e
+`content: Optional`. Dropar esses campos cria tool loop infinito: o LLM recebe
+o tool result sem a call correspondente e re-chama a tool para sempre sem
+sintetizar. Sintoma: `api_calls=1` + respostas "Vou consultar..." repetidas.
+Também: (1) endpoint público de LLM PRECISA de system prompt canônico server-side
+(persona não pode ser responsabilidade do cliente); (2) stream=true exige SSE
+mesmo que single-chunk (role/content/tool_calls + [DONE]); (3) circuit breaker
+com cooldown longo (5h) precisa de reset operacional documentado — blip de rede
+derrubou o cérebro da Pietra por horas; (4) secrets de projeto Spectrum podem ser
+rotacionados via `photon_auth.regenerate_project_secret(token, dashboard_id)` —
+recupera acesso quando profile é wipado.
