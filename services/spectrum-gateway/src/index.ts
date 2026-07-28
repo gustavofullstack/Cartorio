@@ -12,7 +12,14 @@ import type {
   TaskEnvelope,
 } from "./contracts.js";
 import { PhantomPanelAdapter } from "./control-plane.js";
-import { conversationId, getInboundScope, MessageDedupe, sanitizeOutbound, scrubPii } from "./guardrails.js";
+import {
+  conversationId,
+  getInboundScope,
+  MessageDedupe,
+  prepareCustomerFacingReply,
+  sanitizeOutbound,
+  scrubPii,
+} from "./guardrails.js";
 import { HermesExecutor } from "./hermes-executor.js";
 
 const projectId = process.env.SPECTRUM_PROJECT_ID;
@@ -109,7 +116,12 @@ if (!projectId || !projectSecret) {
           riskFlags: ["degraded"],
         };
       });
-      const outbound = sanitizeOutbound({ conversationId: cid, platform: "imessage", text: result.answer, correlationId: task.correlationId });
+      const outbound = sanitizeOutbound({
+        conversationId: cid,
+        platform: "imessage",
+        text: prepareCustomerFacingReply(result.answer, task.requiresHitl),
+        correlationId: task.correlationId,
+      });
       await (space as { send: (text: string) => Promise<void> }).send(outbound.text);
       lastOutboundAt = new Date().toISOString();
     }
@@ -134,4 +146,3 @@ const healthServer = createServer((req, res) => {
 healthServer.listen(healthPort, "127.0.0.1", () => {
   console.error(`[cartorio-spectrum] health endpoint on 127.0.0.1:${healthPort}`);
 });
-

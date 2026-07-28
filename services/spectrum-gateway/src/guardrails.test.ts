@@ -8,6 +8,7 @@ import {
   conversationId,
   getInboundScope,
   MessageDedupe,
+  prepareCustomerFacingReply,
   sanitizeOutbound,
   scrubPii,
 } from "./guardrails.js";
@@ -65,6 +66,22 @@ test("sanitizeOutbound aplica scrub no texto de saida", () => {
   });
   assert.equal(out.text, "Protocolo do CPF 123.***.***-09");
   assert.equal(out.correlationId, "corr-1");
+});
+
+test("prepareCustomerFacingReply acrescenta salvaguarda humana sem controles internos", () => {
+  const reply = prepareCustomerFacingReply("Olá! Posso orientar sobre os documentos iniciais.", true);
+  assert.match(reply, /^Olá! Posso orientar/);
+  assert.match(reply, /um escrevente fará a validação necessária/);
+  assert.equal(reply.includes("requiresHitl"), false);
+});
+
+test("prepareCustomerFacingReply preserva menção existente a atendimento humano e usa fallback seguro", () => {
+  const existingReview = "Um escrevente entrará em contato para a validação humana necessária.";
+  assert.equal(prepareCustomerFacingReply(existingReview, true), existingReview);
+  assert.equal(
+    prepareCustomerFacingReply("↳ Redirected current run (iteration 1/150)", true),
+    "O atendimento automatizado está temporariamente indisponível. Tente novamente em alguns minutos ou entre em contato pelo telefone (34) 3216-0252."
+  );
 });
 
 test("conversationId e estavel e distinto por plataforma", () => {

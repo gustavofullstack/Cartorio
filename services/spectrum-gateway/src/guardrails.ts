@@ -32,6 +32,11 @@ const LLM_PROVIDER_ERROR_PATTERNS = [
 export const USER_FRIENDLY_FALLBACK_TEXT =
   "O atendimento automatizado está temporariamente indisponível. Tente novamente em alguns minutos ou entre em contato pelo telefone (34) 3216-0252.";
 
+const HUMAN_REVIEW_NOTICE =
+  "Para atos que exijam análise ou providência, um escrevente fará a validação necessária antes de qualquer andamento.";
+
+const HUMAN_REVIEW_PATTERN = /\b(escrevente|atendimento humano|valida(?:ç|c)(?:ã|a)o humana)\b/i;
+
 export function stripInternalAgentControlLeaks(text: string): string {
   for (const pat of LLM_PROVIDER_ERROR_PATTERNS) {
     if (pat.test(text)) {
@@ -62,6 +67,17 @@ export function conversationId(message: CanonicalInboundMessage): string {
 
 export function sanitizeOutbound(message: CanonicalOutboundMessage): CanonicalOutboundMessage {
   return { ...message, text: scrubPii(message.text) };
+}
+
+/**
+ * Prepara uma resposta clara e acolhedora sem expor controles internos.
+ * A confirmação jurídica continua exclusivamente no backend e com revisão humana.
+ */
+export function prepareCustomerFacingReply(text: string, requiresHitl: boolean): string {
+  const sanitized = scrubPii(text);
+  if (!sanitized) return USER_FRIENDLY_FALLBACK_TEXT;
+  if (!requiresHitl || HUMAN_REVIEW_PATTERN.test(sanitized)) return sanitized;
+  return `${sanitized}\n\n${HUMAN_REVIEW_NOTICE}`;
 }
 
 /** Deduplicação local defensiva (janela 24h); o backend permanece a fonte de idempotência. */
@@ -113,4 +129,3 @@ export function allowOutbound(
   if (scope === "allowlist" && reason === "proactive") return false;
   return reason !== "proactive" || optedIn;
 }
-

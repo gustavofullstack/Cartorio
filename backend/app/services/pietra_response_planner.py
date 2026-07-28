@@ -295,14 +295,24 @@ class ResponsePlanner:
                 "Já a autenticação de cópia atesta que a cópia é cópia fiel do documento original. "
                 "Fique tranquilo(a): para realizar esses serviços no 2º Tabelionato de Uberlândia, basta comparecer com seu documento original de identificação."
             )
-        # Escrituras, Procurações, Testamentos e Inventários
+        # Testamento Público (específico)
+        if "testamento" in t:
+            return (
+                f"{header}Compreendo perfeitamente o seu desejo de organizar a sucessão de seus bens familiares com toda tranquilidade e segurança jurídica! "
+                "O **Testamento Público** é lavrado no Livro de Notas do cartório pelo tabelião ou escrevente. "
+                "Exige a apresentação de documento oficial de identidade (RG/CPF) do testador e a presença obrigatória de **2 (duas) testemunhas** no ato da lavratura, "
+                "as quais não podem ser herdeiras nem beneficiárias do testamento.\n\n"
+                "Para sua segurança, podemos registrar seu pré-pedido (DRAFT) pelo canal. "
+                "A validação jurídica presencial e a assinatura no livro de notas serão finalizadas pelo tabelião ou escrevente responsável. "
+                "Estou à disposição para orientar cada passo com o carinho e o respeito que o senhor merece."
+            )
+        # Escrituras, Procurações e Inventários
         if any(
             w in t
             for w in (
                 "escritura",
                 "procuracao",
                 "procuração",
-                "testamento",
                 "inventario",
                 "inventário",
                 "doacao",

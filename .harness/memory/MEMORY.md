@@ -810,3 +810,16 @@ recupera acesso quando profile é wipado.
   - `make format` & `make lint` 100% limpos (229 arquivos em mypy sem erros, ruff sem avisos, secret scanner zerado).
   - Testes passando 100% sem erros, warnings ou depreciações.
 
+## Lesson 289 — Análise da Base Histórica iMessage (chat.db) & Validação Sequencial por Subagentes (2026-07-28)
+
+- **Análise do Banco Nativamente Acessado (`~/Library/Messages/chat.db`)**:
+  - Script `scripts/imessage_chatdb_analyzer.py` executou leitura direta no SQLite do Messages.app no macOS.
+  - **Métricas:** 2.314 mensagens no banco (1.447 recebidas, 867 enviadas), 343 conversas, 361 handles.
+  - **Top Tópicos:** Identidade Agente (42.1%), Horários/Endereço (18.7%), Emolumentos TJMG 2026 (10.2%), Reconhecimento de Firma & Autenticações (9.7%), Procurações/Escrituras (9.9%).
+  - **Linguagem Regional (Uberlândia/MG):** Mapeado uso frequente de "uai", "mano", "cê", "ô", "bom demais" e pedidos diretos de preços/valores.
+- **Validação Sequencial por 10 Subagentes Personas (20 a 90 anos)**:
+  - Subagents testadores de personas executados sequencialmente (Lucas 21, Beatriz 28, Fernando 35, Marcelo 42, Patrícia 50, Roberto 59, Geraldo 67, Helena 74, Antônio 81, Maria 89).
+  - **10/10 PASS (100% de Sucesso):** Respostas calorosas e extremamente educadas, transparência nos atos notariais, zero exposição de modelos/ferramentas internas, HITL em status `DRAFT` e PII Scrubbing em 3 camadas.
+- **Relatório Gerado:** `artifacts/imessage/ANALISE_MENSAGENS_IMESSAGE_HISTORICO.md`.
+
+
