@@ -157,3 +157,7 @@ def test_vps_runtime_is_narrowed_to_feishu() -> None:
     assert "PHOTON_ALLOWED_USERS" not in service["environment"]
     assert set(config["gateway"]["platforms"]) == {"feishu"}
     assert set(config["platform_toolsets"]) == {"feishu"}
+    feishu = config["gateway"]["platforms"]["feishu"]
+    assert feishu["allow_all_users"] is True
+    assert feishu["require_mention"] is False
+    assert feishu["group_policy"] == "open"
