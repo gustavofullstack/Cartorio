@@ -89,12 +89,12 @@ def _topic_summary_text(topic: str) -> str:
             return (
                 f"**{cap.display_name}:** essa funcionalidade ainda nao esta "
                 f"disponivel diretamente pelo canal. Posso te passar todas as "
-                f"informacoes e, se desejar, ja anotar seu pedido para um escrevente te atender."
+                f"informacoes e orientar como solicitar atendimento a um escrevente."
             )
         # BLOQUEADO
         return (
             f"**{cap.display_name}:** nao consigo executar por aqui. Posso "
-            f"explicar o procedimento e, se preferir, encaminho para um escrevente."
+            f"explicar o procedimento e informar como falar com um escrevente."
         )
 
     # CAN_EXECUTE == True
@@ -249,9 +249,9 @@ class ResponsePlanner:
             )
         ):
             return (
-                f"{header}De nada! Fique completamente tranquila: todas as informações e o seu pré-pedido (DRAFT) foram registrados com total segurança, sigilo e prioridade no 2º Tabelionato de Uberlândia. "
-                "Nossa equipe de escreventes terá acesso imediato a todo o histórico assim que você entrar em contato. "
-                "Desejamos muita força e uma pronta recuperação ao seu neto! Se precisar de qualquer outra orientação, estou sempre à disposição com todo carinho."
+                f"{header}De nada! Para sua segurança, não consigo confirmar por esta mensagem que informações ou um pré-pedido tenham sido registrados. "
+                "Um escrevente poderá confirmar o recebimento e orientar os próximos passos pelo telefone (34) 3216-0252. "
+                "Desejo muita força e uma pronta recuperação ao seu neto. Se precisar de orientação sobre o procedimento, estou à disposição com todo carinho."
             )
 
         # Emolumentos
@@ -340,8 +340,9 @@ class ResponsePlanner:
             return (
                 f"{header}Minha senhora, sinto muito pelo momento delicado com seu neto e compreendo perfeitamente a sua urgência e preocupação. Fique tranquila, estamos aqui para acolher sua família com todo o carinho, compaixão e máxima agilidade profissional!\n\n"
                 "Sim, o 2º Tabelionato de Uberlândia realiza **atendimento em regime de urgência hospitalar** e **diligência notarial hospitalar** (quando um tabelião ou escrevente autorizado se desloca até o hospital ou UTI para colher a assinatura ou verificar os documentos necessários), mediante autorização formal do tabelião/escrevente.\n\n"
-                "Para ajudar com total prioridade, **já acionei o fluxo do seu pré-pedido (DRAFT) com PRIORIDADE MÁXIMA HOSPITALAR**. "
-                "Para atendimento imediato (Human-in-the-Loop - HITL), estou direcionando seu caso com urgência ao **escrevente de plantão no telefone de emergência (34) 3216-0252**. Por favor, entre em contato agora mesmo informando que se trata de urgência médica hospitalar para darmos andamento imediato."
+                "Para sua segurança, não consigo confirmar por esta mensagem que um pré-pedido ou atendimento de urgência tenha sido acionado. "
+                "Para que um escrevente avalie a situação com prioridade, por gentileza entre em contato agora pelo telefone (34) 3216-0252 e informe que se trata de urgência médica hospitalar. "
+                "A equipe humana confirmará a viabilidade, os documentos necessários e os próximos passos."
             )
         # Testamento Público (específico)
         if "testamento" in t:
@@ -386,14 +387,17 @@ class ResponsePlanner:
                     "neste momento pelo canal digital. Fique tranquilo(a): você pode falar diretamente com nossa "
                     "equipe pelo telefone da serventia: (34) 3216-0252."
                 )
-            return f"{header}Compreendo perfeitamente! Vou te passar para um escrevente do 2º Tabelionato de Uberlândia. Aguarde um instante por gentileza."
+            return (
+                f"{header}Compreendo perfeitamente! Para sua segurança, preciso de uma confirmação do canal antes de afirmar um encaminhamento. "
+                "Se preferir atendimento humano imediato, fale com nossa equipe pelo telefone (34) 3216-0252."
+            )
         # Agendar
         if any(w in t for w in ("agendar", "marcar", "horario disponivel")):
             cap = get_capability("appointment")
             if cap and can_say_i_can_do_it("appointment"):
                 return (
-                    f"{header}Compreendo! Me diga o dia e o motivo do atendimento que eu abro um "
-                    "pré-agendamento no 2º Tabelionato. A confirmação final vem de um de nossos escreventes."
+                    f"{header}Compreendo! Informe o dia desejado e o motivo do atendimento para que eu possa orientar os dados necessários para o pré-agendamento. "
+                    "O registro e a confirmação final dependem de validação por um escrevente."
                 )
             return f"{header}Compreendo! O pré-agendamento pelo canal está indisponível agora. Fique tranquilo(a), quer ligar diretamente para nós? (34) 3216-0252."
         # Default: orientacao curta
@@ -452,7 +456,26 @@ class ResponsePlanner:
 
         NAO bloqueia "posso explicar", "posso te ajudar" (verbos seguros).
         """
-        # Phrases PROMESSA de execucao (nao explicacao)
+        # Afirmações de conclusão exigem recibo da operação. Este planejador não
+        # executa ferramentas nem recebe recibos, portanto nunca pode emiti-las.
+        # A proteção é intencionalmente independente do status da capability.
+        unverified_completion_phrases = (
+            "ja acionei",
+            "já acionei",
+            "estou direcionando",
+            "ja direcionei",
+            "já direcionei",
+            "foram registrados",
+            "foi registrado",
+            "ja registrei",
+            "já registrei",
+            "pedido registrado",
+            "encaminhamento confirmado",
+        )
+        if any(phrase in response.lower() for phrase in unverified_completion_phrases):
+            return self._safe_fallback(None, blocked_phrase="afirmacao operacional sem recibo")  # type: ignore[arg-type]
+
+        # Promessas de execucao (nao explicacao) dependem da capability.
         promise_phrases = (
             "gero o link",
             "gero link",
