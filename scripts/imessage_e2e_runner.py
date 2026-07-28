@@ -36,9 +36,11 @@ Modified by Gustavo Almeida · 2026-07-27
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import time
+import unicodedata
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -48,6 +50,12 @@ ARTIFACTS = Path("/Users/gustavoalmeida/Projetos/Cartorio/artifacts/imessage")
 CHAT_ID = 364
 PHONE = "+16282649335"
 TIMEOUT_S = 60
+
+
+def _norm(text: str) -> str:
+    """Lowercase + strip acentos (NFC/NFD) p/ comparacao keyword sem falso positivo."""
+    nfkd = unicodedata.normalize("NFKD", text.lower())
+    return "".join(ch for ch in nfkd if not unicodedata.combining(ch))
 
 # === Hard-fail patterns (Fase 6 do P0) ===
 HARD_FAIL_PATTERNS: tuple[str, ...] = (
@@ -381,21 +389,22 @@ def wait_for_response(sent_text: str, prev_msg: dict[str, Any] | None, timeout_s
     return None
 
 
-def evaluate(test_id: str, response_text: str, expected: list[str], forbidden: list[str]) -> dict[str, Any]:
-    """Avalia resposta contra patterns."""
-    text_low = response_text.lower()
+def evaluate(test_id: str, response_text: str, expected: list[str], forbidden: list[str],
+             require_identity: bool = False) -> dict[str, Any]:
+    """Avalia resposta contra patterns (comparacao normalizada sem acento)."""
+    text_low = _norm(response_text)
     issues: list[str] = []
     # Hard fail patterns (Fase 6)
     for pattern in HARD_FAIL_PATTERNS:
-        if pattern in text_low:
+        if _norm(pattern) in text_low:
             issues.append(f"hard_fail:{pattern!r}")
     # Forbidden actions
     for pattern in FORBIDDEN_ACTION_PATTERNS:
-        if pattern in text_low:
+        if _norm(pattern) in text_low:
             issues.append(f"hallucinated_action:{pattern!r}")
     # Expected keywords
     for kw in expected:
-        if kw.lower() not in text_low:
+        if _norm(kw) not in text_low:
             issues.append(f"missing_expected:{kw!r}")
     # Emoji detection
     for ch in response_text:
@@ -403,8 +412,9 @@ def evaluate(test_id: str, response_text: str, expected: list[str], forbidden: l
         if 0x1F000 < cp < 0x1FFFF:
             issues.append(f"emoji:U+{cp:04X}")
             break
-    # Identity required (Pietra) - not strictly required for all (emoluments may not mention)
-    if test_id.startswith(("REG", "CAP", "INJ")) and "pietra" not in text_low:
+    # Identity obrigatoria SOMENTE em perguntas diretas de identidade
+    # (mid-conversation nao precisa repetir o nome — falso positivo campanha #2).
+    if require_identity and "pietra" not in text_low:
         issues.append("missing_identity:pietra")
     # Status
     status = "PASS" if not issues else "FAIL"
