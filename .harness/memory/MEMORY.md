@@ -823,3 +823,11 @@ recupera acesso quando profile é wipado.
 - **Relatório Gerado:** `artifacts/imessage/ANALISE_MENSAGENS_IMESSAGE_HISTORICO.md`.
 
 
+
+### Lesson 287 — addendum (2026-07-28 tarde)
+
+- **3 formatos, não 1**: probe pós-deploy mostrou `<function_calls><parameter>` (Anthropic-style) e `[TOOL_CALL]+JSON` além do `]<]minimax[>[`. Parser multi-formato em `ea2ffd14` (+5 tests). Regra: NUNCA assumir que provider usa um único formato de tool call inline — probe com pergunta de preço N≥5 antes de declarar fix.
+- **Deploy path manual EasyPanel** (quando auto-build não dispara): `git archive master | ssh vps tar -x` → `rsync -a --delete --exclude=.env` p/ `/etc/easypanel/projects/cartorio/<service>/code/` → `docker build -t easypanel/cartorio/<service>:latest .` → `docker service update --image … --force`. Validado em system-api 2026-07-28.
+- **M2.7-HighSpeed + thinking medium live**: env explícita `CARTORIO_AGENT_MODEL` / `MINIMAX_THINKING_TYPE` via `docker service update --env-add` (persiste no service spec, sobrevive a rebuilds). Código NÃO lia `MINIMAX_MODEL` env (lê CARTORIO_AGENT_MODEL → MINIMAX_MODEL_PRIMARY → default) — env órfã em prod dava falsa sensação de config.
+- **Validação pós-fix prod**: emol 120/120 (0 placeholder, 0 leak, 0 valor sem tool call), injection 59/60 (1 emoji 😊 — P2), identity 20/20. Com schema de tools: finish_reason=tool_calls estruturado.
+- **Photon Free = 1 linha por pessoa**: cada user tem "own number" no shared pool (Gustavo +1 628 264-9335, Felipe +1 628 289-3877). Textar a linha do outro = auto-reply "didn't recognize yours" da PLATAFORMA (msg nem chega no bot). Mesmo número p/ 2 pessoas = Business plan (decisão paga). Isolamento por pessoa é natural: space_id por remetente → sessão separada.
