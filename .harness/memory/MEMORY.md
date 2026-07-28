@@ -893,3 +893,13 @@ recupera acesso quando profile é wipado.
 - **Chatwoot/OpenClaw removidos do Swarm em 2026-07-27 ~23:53** (dirs Easypanel só com .env): DB `chatwoot`, schemas `openclaw`/`openclaw_state`, volumes `cartorio_chatwoot_*`/`cartorio_openclaw-gateway_*` preservados. Restore é barato. **HOLD-GUSTAVO**: decisão restore vs decomissionar (afeta radar + P0.3/P0.4).
 - **P0 segurança**: output de diagnóstico expôs SUPABASE_ANON_KEY + SERVICE_ROLE_KEY em sessão 2026-07-28 (grep de env sem sed em 2 linhas). Regra reforçada: NUNCA grep env de serviço sem `sed` de redaction em TODAS as linhas. Rotação = decisão Gustavo.
 - **Radar pós-recovery**: `database/redis/n8n/supabase: online`, `openclaw/chatwoot/evolution: offline` (evolution = check aponta p/ serviço legado 0/0; whatsapp-api real está 1/1).
+
+## Lesson 296 — Bot Lark aberto para toda a organizacao (Felipe + demais) sem derrubar sessao (2026-07-28)
+
+- **Sintoma**: agent respondia so o Gustavo; Felipe recebia pairing code `9BT4736L` e, no grupo `CARTORIO AMBIENTE DE DESENVOLVIMENTO`, o bot so respondia quando mencionado.
+- **Diagnostico**: Felipe JA estava aprovado no pairing (`2bbfa27a`) — o bloqueio nao era pairing, era `FEISHU_ALLOW_ALL_USERS=false` + `FEISHU_GROUP_POLICY=allowlist` + `FEISHU_REQUIRE_MENTION=true` no service env.
+- **Fix (sem derrubar a sessao do Gustavo)**: `docker service update --env-add FEISHU_ALLOW_ALL_USERS=true --env-add FEISHU_REQUIRE_MENTION=false cartorio_hermes` (rolling update — Swarm sobe task nova e so entao derruba a antiga; conexao nao cai por forcacao). Config persistido no volume `/opt/data/config.yaml` via python yaml (backup `config.yaml.bak-pre-org-20260728`): `gateway.platforms.feishu = {enabled, allow_all_users: true, require_mention: false, group_policy: open}`.
+- **Convergencia**: agente paralelo (Cartorio CI/Kimi, commit `9317e42a`) fez a mesma mudanca no repo 1 min antes; meu commit `8c88d26f` reforcou + teste de contrato validando os 3 flags. Repo + VPS consistentes.
+- **Regra**: pairing approval NAO e o gate de acesso ao bot Lark — quem manda e `ALLOW_ALL_USERS`/`GROUP_POLICY`/`REQUIRE_MENTION`. Para abrir para a organizacao inteira, basta esses 3 flags; pairing so importa quando `allow_all_users=false`.
+- **Validacao**: `hermes pairing list` (2 aprovados), `hermes gateway status` running, env no processo `ALLOW_ALL_USERS=true`/`REQUIRE_MENTION=false`. Evento auxiliar `message_read processor not found` = benigno (runbook).
+- **Pendente (SUI Gustavo)**: pedir ao Felipe para mandar mensagem (DM ou grupo, com ou sem @) e confirmar resposta da Pietra — round-trip real fecha o aceite.
