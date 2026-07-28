@@ -471,6 +471,32 @@ class TestSseStreaming:
         # think tags nao vazam nem no stream
         assert "<think>" not in body
 
+    def test_system_prompt_has_no_victor_hugo(self, client, captured):
+        """Dados institucionais falsos nunca devem constar do system prompt."""
+        r = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={"messages": [{"role": "user", "content": "Quem sao os substitutos?"}]},
+        )
+        assert r.status_code == 200
+        prompt = captured[0]["messages"][0]["content"].lower()
+
+        for forbidden in ("victor hugo", "bianchini", "victor_hugo"):
+            assert forbidden not in prompt, f"system prompt citou substituto invalido: {forbidden}"
+        assert "felipe pizarro" in prompt
+        assert "alexandra" in prompt
+
+    def test_system_prompt_reaffirms_single_headquarter(self, client, captured):
+        """System prompt reforca sede unica e nega unidade complementar."""
+        r = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={"messages": [{"role": "user", "content": "Tem outra unidade?"}]},
+        )
+        assert r.status_code == 200
+        prompt = captured[0]["messages"][0]["content"].lower()
+
+        assert "rua cel. antonio alves pereira, 850" in prompt
+        assert "nao existe unidade complementar" in prompt
+
     def test_stream_tool_calls_emitted(self, client, monkeypatch):
         tool_calls = [
             {

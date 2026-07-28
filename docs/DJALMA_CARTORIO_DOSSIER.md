@@ -14,7 +14,7 @@
 | **Data de Instalação Histórica** | **26/01/1892** (134 anos de atuação notarial com fé pública) | TJMG / Livro de Serventias MG |
 | **Entrância Judicial** | Especial Entrância | Comarca de Uberlândia / MG |
 | **Tabelião Titular (Outorgado)** | **Djalma Pizarro** | Delegação de Fé Pública TJMG |
-| **Tabeliães Substitutos Designados** | **Victor Hugo Bianchini Pizarro**, **Felipe Pizarro**, **Alexandra José Beicker** | Portarias Internas da Serventia / TJMG |
+| **Tabeliães Substitutos Designados** | **Felipe Pizarro**, **Alexandra José Beicker** | Portarias Internas da Serventia / TJMG |
 | **Quadro de Colaboradores** | ~43 colaboradores contratados sob regime CLT | Relatório Gestão Notarial |
 
 ---
@@ -25,7 +25,7 @@
 - **Sede Principal (Atendimento ao Público):**  
   Rua Cel. Antônio Alves Pereira, 850, Bairro Centro, Uberlândia - MG, CEP 38400-104.
 - **Unidade / Instalação Complementar:**  
-  Rua Machado de Assis, 685, Bairro Centro, Uberlândia - MG, CEP 38400-112.
+  Nao existe unidade complementar. Atendimento exclusivo na sede da Rua Cel. Antonio Alves Pereira, 850.
 
 #### Horário de Funcionamento
 - **Atendimento de Balcão e Atos Solenes:** Segunda a sexta-feira, das **09:00 às 17:00**.
@@ -47,9 +47,9 @@
 - **Delegação Notarial:** Djalma Pizarro exerce a titularidade delegada pelo Estado de Minas Gerais perante o 2º Ofício de Notas de Uberlândia.
 - **Atuação Jurídico-Notarial:** Sob a gestão notarial de Djalma Pizarro, a serventia consolidou reputação de excelência técnica na lavratura de escrituras públicas de elevada complexidade patrimonial, inventários e partilhas, divórcios e separações notariais, atos societários e escrituras imobiliárias na região do Triângulo Mineiro.
 - **Equipe de Substitutos:**
-  - **Victor Hugo Bianchini Pizarro:** Tabelião Substituto e Advogado (OAB/MG 239.243), especialista em Direito Civil, Processual Civil, Notarial e Registral.
   - **Felipe Pizarro:** Tabelião Substituto com atuação focada em atos notariais e gestão operacional de atos da serventia.
   - **Alexandra José Beicker:** Tabeliã Substituta legalmente constituída para lavratura de atos notariais e expedição de certidões.
+  - *Nota: Victor Hugo Bianchini Pizarro nao integra mais o quadro de substitutos desta serventia.*
 
 ---
 

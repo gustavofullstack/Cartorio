@@ -9,8 +9,11 @@ documentado e deve ser prevenido pelos modulos:
 
 from __future__ import annotations
 
+import unicodedata
+
 import pytest
 
+from app.services import pietra_capabilities
 from app.services.pietra_capabilities import (
     all_capabilities,
     can_say_i_can_do_it,
@@ -346,17 +349,49 @@ def test_planner_does_not_say_hermes_under_any_input() -> None:
 
 
 def test_planner_handles_operational_honesty() -> None:
-    """Pietra NAO promete executar capability bloqueada."""
+    """Pietra não promete execução nem deflete quando o handoff está bloqueado."""
     # Human handoff: chatwoot OFFLINE
     response, _ = plan_response("quero falar com um humano", thread_id="thread-handoff")
     # Pode usar 'encaminho' se quiser, mas NAO 'transfiro agora'
     assert "transfiro agora" not in response.lower(), (
         f"Pietra prometeu transfirir quando handoff OFFLINE: {response[:200]}"
     )
-    # Deve oferecer alternativa
-    assert (
-        "telefone" in response.lower() or "(34)" in response or "escrevente" in response.lower()
-    ), f"Pietra nao ofereceu alternativa para handoff: {response[:200]}"
+    # Deve iniciar uma triagem útil no próprio canal, sem jogar o cliente para fora.
+    assert "qual ato" in response.lower() or "documentos" in response.lower(), response
+    for forbidden in ("telefone", "e-mail", "email", "ligar", "vá ao cartório", "va ao cartorio"):
+        assert forbidden not in response.lower(), f"deflexão indevida: {response[:200]}"
+
+
+def test_planner_institutional_address_is_canonical_and_denies_extra_unit() -> None:
+    """Endereço público não regride e não inventa unidade complementar."""
+    response, _ = plan_response(
+        "Há unidade complementar ou só a sede? Qual o endereço?", thread_id="addr"
+    )
+    normalized = response.lower()
+
+    assert "rua cel. antônio alves pereira, 850" in normalized
+    assert "não existe unidade complementar" in normalized
+    assert "joão naves" not in normalized
+
+
+def test_planner_unavailable_appointment_keeps_triage_in_channel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Pré-agendamento indisponível ainda coleta os dados iniciais no canal."""
+    monkeypatch.setitem(
+        pietra_capabilities._TOOL_AVAILABILITY,
+        "cartorio_agendar_atendimento",
+        False,
+    )
+
+    response, _ = plan_response("Quero agendar atendimento", thread_id="appointment")
+    normalized = response.lower()
+
+    assert "ato" in normalized
+    assert "data" in normalized
+    assert "horário" in normalized
+    for forbidden in ("telefone", "e-mail", "email", "ligar", "vá ao cartório", "va ao cartorio"):
+        assert forbidden not in normalized, f"deflexão indevida: {response[:200]}"
 
 
 @pytest.mark.parametrize(
@@ -365,12 +400,12 @@ def test_planner_handles_operational_honesty() -> None:
         (
             "obrigada, voces anotaram tudo?",
             ("foram registrados", "foi registrado", "acesso imediato"),
-            ("não consigo confirmar", "escrevente", "(34)"),
+            ("não consigo confirmar", "documentos"),
         ),
         (
             "meu neto esta internado e preciso de uma diligencia hospitalar",
             ("já acionei", "estou direcionando", "prioridade máxima hospitalar"),
-            ("não consigo confirmar", "escrevente", "(34)"),
+            ("análise notarial", "draft"),
         ),
     ],
 )
@@ -387,3 +422,37 @@ def test_planner_never_claims_unverified_operational_completion(
         assert claim not in normalized, f"afirmação operacional sem recibo: {response}"
     for term in required_terms:
         assert term in normalized, f"alternativa humana segura ausente: {response}"
+
+
+def test_planner_never_affirms_victor_hugo_as_current_substitute() -> None:
+    """Dados institucionais: nunca afirmar Victor Hugo como substituto atual."""
+    response, _ = plan_response(
+        "Quem sao o tabeliao e os substitutos?",
+        thread_id="substitutos",
+    )
+    normalized = response.lower()
+
+    for false_claim in (
+        "victor hugo é o substituto",
+        "victor hugo e o substituto",
+        "victor hugo é um dos substitutos",
+        "victor hugo e um dos substitutos",
+        "o substituto é victor hugo",
+        "o substituto e victor hugo",
+    ):
+        assert false_claim not in normalized, (
+            f"resposta afirmou dado institucional falso: {response}"
+        )
+
+
+def test_planner_reaffirms_single_headquarter() -> None:
+    """Sede e unica: reforca endereco canonico e nega unidade complementar."""
+    response, _ = plan_response(
+        "O cartorio tem outra unidade? Qual o endereco da sede?",
+        thread_id="single-hq",
+    )
+    normalized = unicodedata.normalize("NFKD", response).encode("ascii", "ignore").decode().lower()
+
+    assert "rua cel. antonio alves pereira, 850" in normalized
+    assert "nao existe unidade complementar" in normalized
+    assert "joao naves" not in normalized

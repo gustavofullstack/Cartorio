@@ -21,10 +21,10 @@ O **2º Tabelionato de Notas de Uberlândia** (também denominado comercial e ju
 | **Data de Instalação Histórica** | 26/01/1892 (134 anos de atuação) | Alta | Arquivo Histórico TJMG / CNJ |
 | **Entrância / Comarca** | Especial Entrância / Uberlândia - MG | Alta | Lei de Organização Judiciária MG |
 | **Tabelião Titular** | Djalma Pizarro | Alta | Provimento TJMG / CNJ (Situação: Provido) |
-| **Tabeliães Substitutos** | Victor Hugo Bianchini Pizarro, Felipe Pizarro, Alexandra José Beicker | Alta | Portarias de Designação / Registro Interno |
+| **Tabeliães Substitutos** | Felipe Pizarro, Alexandra José Beicker | Alta | Portarias de Designação / Registro Interno |
 | **Quadro de Colaboradores** | 43 funcionários contratados sob regime CLT | Média-Alta | Cadastro MTP / Relatórios Internos |
 | **Endereço Principal (Atendimento)** | Rua Cel. Antônio Alves Pereira, 850, Bairro Centro, Uberlândia - MG, CEP 38400-104 | Alta | Atendimento Presencial / Google Maps / Portais |
-| **Endereço Complementar / CNJ** | Rua Machado de Assis, 685, Bairro Centro, Uberlândia - MG, CEP 38400-112 | Média-Alta | Cadastro Histórico CNJ / e-Cartórios |
+| **Endereço Complementar / CNJ** | Não existe unidade complementar. Atendimento exclusivo na sede da Rua Cel. Antônio Alves Pereira, 850. | Alta | Serventia / Diretório atualizado |
 | **Horário de Atendimento ao Público** | Segunda a Sexta: 09:00 às 17:00 (Suporte estendido até 18:00). Sábados/Domingos: Fechado | Alta | Atendimento Balcão / Cartórios no Brasil |
 | **Contatos Telefônicos** | (34) 3216-0252 / (34) 3215-7048 / (34) 99195-2444 | Alta | Sinalização Oficial / Registros Comercial |
 | **E-mail Oficial** | `segundonotasudi@hotmail.com` | Alta | CNJ / Diretórios |
@@ -49,7 +49,7 @@ Através do crawling e raspagem de dados nas fontes web especificadas, compilou-
 
 ### Análise de Convergência de Dados
 
-1. **Titularidade & Equipe**: Todas as fontes confirmam **Djalma Pizarro** como Tabelião Titular. Fontes mais detalhadas (Cartório no Brasil e registros cadastrais) apontam **Victor Hugo Bianchini Pizarro** e **Felipe Pizarro** na gestão e substituição legal.
+1. **Titularidade & Equipe**: Todas as fontes confirmam **Djalma Pizarro** como Tabelião Titular. Substitutos atuais: **Felipe Pizarro** e **Alexandra José Beicker**. *Nota: Victor Hugo Bianchini Pizarro não integra mais o quadro de substitutos desta serventia.*
 2. **Duplicidade de Endereços Explicada**:
    - A **Rua Cel. Antônio Alves Pereira, 850** é a sede de **atendimento público moderno** e balcão principal.
    - A **Rua Machado de Assis, 685** consta em cadastros históricos do CNJ como endereço da serventia original ou anexo administrativo. O Bot Hermes deve direcionar o cliente primariamente para a Rua Cel. Antônio Alves Pereira, 850, com a ressalva de localização central.

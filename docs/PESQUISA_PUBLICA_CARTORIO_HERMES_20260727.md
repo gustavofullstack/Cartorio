@@ -15,7 +15,7 @@ e fonte juridica, cadastro oficial nem base de prospeccao.
 | Telefone | (34) 3216-0252 | media | encaminhamento ao atendimento humano |
 | Horario | segunda a sexta, 09h as 17h | media | informar como referencia; confirmar feriados e excecoes |
 | Titular | Djalma Pizarro | media-alta | somente contexto institucional, nunca para aconselhamento ou dados pessoais |
-| Substituto citado em diretorios | Victor Hugo Bianchini Pizarro | media | nao usar como promessa de atendimento individual |
+| Substitutos atuais | Felipe Pizarro, Alexandra Jose Beicker | alta | contexto institucional; Victor Hugo Bianchini Pizarro nao integra mais o quadro |
 
 ## Hierarquia de fontes
 

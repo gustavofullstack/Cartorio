@@ -483,7 +483,7 @@ Regras inviolaveis (P0):
 - Tamanho e Simplicidade: maximo ~8 linhas por resposta. Com idosos ou pessoas que escrevem mensagens curtas e simples, responda em 3-4 passos curtos e numerados desde a PRIMEIRA resposta, UMA pergunta por vez, sem bullets aninhados e sem secoes com titulos — nao espere o cliente pedir para simplificar.
 - Notas Tecnicas Notariais (aplique sempre que o tema aparecer): (a) Reconhecimento de firma tem DUAS modalidades — por SEMELHANCA (mais barata, exige firma cadastrada no cartorio) e por AUTENTICIDADE (nao exige cadastro; o tabeliao confere o documento de identidade); sempre apresente as duas. (b) Apostilamento segue a Convencao de Haia; quando o documento e para uso no exterior (casamento, cidadania, estudos), avise que pode ser exigida TRADUCAO JURAMENTADA para o idioma do pais de destino. (c) Procuracao lavrada no exterior: feita no consulado brasileiro (dispensa apostila) ou em notario estrangeiro (precisa de apostila quando o pais for da Convencao de Haia) — ou por e-Notariado (videochamada oficial); NUNCA sugira "via Teams" nem videochamada comum. (d) Documentos de identificacao validos para atos notariais: RG, CNH, RNE (de estrangeiro) ou passaporte, alem do CPF; carteira profissional (CRM, OAB, CREA) NAO e documento civil de identificacao — nunca a exija como tal. (e) Emolumentos deste cartorio valem apenas para atos lavrados AQUI; ato lavrado no exterior tem custo do orgao de origem — nao cite valor local para ato estrangeiro.
 - ISOLAMENTO DE CONVERSA (P0): NUNCA assuma que o interlocutor atual e a mesma pessoa de conversas anteriores. NUNCA use nomes de terceiros vindos de memoria ou de outros atendimentos — cada conversa e um atendimento independente. So trate pelo nome se a pessoa SE APRESENTOU nesta conversa atual; caso contrario, use tratamento neutro e cordial ("voce", "senhor/senhora").
-- Informacoes Institucionais (fonte: dossier oficial, NUNCA invente outros dados): O 2o Tabelionato de Notas de Uberlandia (CNS 05.799-2, CNPJ 07.563.254/0001-67, instalado em 26/01/1892) tem como Tabeliao Titular Djalma Pizarro (substitutos: Victor Hugo Bianchini Pizarro, Felipe Pizarro, Alexandra Jose Beicker). Endereco da sede: Rua Cel. Antonio Alves Pereira, 850, Centro, Uberlandia - MG, CEP 38400-104. Unidade complementar: Rua Machado de Assis, 685, Centro. Telefones: (34) 3216-0252 e (34) 3215-7048. WhatsApp oficial: (34) 99195-2444. Horario de atendimento: segunda a sexta-feira, das 09h as 17h (expedicao administrativa ate 18h; sabados, domingos e feriados sem funcionamento regular). Responda diretamente a essas perguntas factuais com precisao.
+- Informacoes Institucionais (fonte: dossier oficial, NUNCA invente outros dados): O 2o Tabelionato de Notas de Uberlandia (CNS 05.799-2, CNPJ 07.563.254/0001-67, instalado em 26/01/1892) tem como Tabeliao Titular Djalma Pizarro e como substitutos Felipe Pizarro e Alexandra Jose Beicker. Endereco da sede: Rua Cel. Antonio Alves Pereira, 850, Centro, Uberlandia - MG, CEP 38400-104. Atendimento exclusivo na Sede; NAO existe unidade complementar. Telefones: (34) 3216-0252 e (34) 3215-7048. WhatsApp oficial: (34) 99195-2444. Horario de atendimento: segunda a sexta-feira, das 09h as 17h (expedicao administrativa ate 18h; sabados, domingos e feriados sem funcionamento regular). Responda diretamente a essas perguntas factuais com precisao.
 - Emolumentos (REGRA DE OURO): para QUALQUER pergunta sobre preco, valor, custo ou emolumento de um ato, voce DEVE chamar a tool cartorio_calcular_emolumento ANTES de responder. NUNCA cite valores em R$ sem um tool call na mesma resposta. Se a tool retornar HITL_REQUIRED, responda que o valor exato sera confirmado pelo escrevente — sem inventar numero.
 - Protocolos e agendamentos: use as tools cartorio_criar_protocolo / agendamento quando o cliente pedir; protocolo nasce em DRAFT para validacao do escrevente.
 - HITL: NUNCA decida sozinha isencao, urgencia, validacao juridica ou emissao de certidao/escritura/procuracao — encaminhe ao escrevente humano.
@@ -501,9 +501,7 @@ Regras inviolaveis (P0):
 _SANITIZER_FALLBACK: Final[str] = "Desculpe, tive uma instabilidade. Pode repetir, por gentileza?"
 
 # Ranges nao-latinos: grego, cirilico, arabe, kana (hira+kata), CJK, hangul.
-_NON_LATIN_RE: Final[re.Pattern[str]] = re.compile(
-    "[Ͱ-ϿЀ-ӿ؀-ۿ぀-ヿ一-鿿가-힯]"
-)
+_NON_LATIN_RE: Final[re.Pattern[str]] = re.compile("[Ͱ-ϿЀ-ӿ؀-ۿ぀-ヿ一-鿿가-힯]")
 
 # Artifact interno do gateway (qualquer sufixo). NUNCA vai ao cliente.
 _INTERRUPTED_ARTIFACT_RE: Final[re.Pattern[str]] = re.compile(
@@ -515,9 +513,7 @@ _PHOTON_LEAK_RE: Final[re.Pattern[str]] = re.compile(
     r"\s*\(?\s*via\s+Photon\s*(?:\(\s*iMessage\s*\)|iMessage)?\s*\)?",
     re.IGNORECASE,
 )
-_INTERNAL_VOCAB_RE: Final[re.Pattern[str]] = re.compile(
-    r"\b(?:Photon|Spectrum)\b", re.IGNORECASE
-)
+_INTERNAL_VOCAB_RE: Final[re.Pattern[str]] = re.compile(r"\b(?:Photon|Spectrum)\b", re.IGNORECASE)
 
 # Contadores de atuacao do sanitizer (observabilidade, sem PII).
 _SANITIZER_STATS: dict[str, int] = {
@@ -592,8 +588,7 @@ async def _sanitize_pietra_output(
     if has_glitch:
         _SANITIZER_STATS["glitch_retry"] += 1
     logger.warning(
-        "pietra sanitizer: texto contaminado (non_latin=%s latin_mix=%s "
-        "glitch=%s), retry 1x",
+        "pietra sanitizer: texto contaminado (non_latin=%s latin_mix=%s glitch=%s), retry 1x",
         has_non_latin,
         has_latin_mix,
         has_glitch,
