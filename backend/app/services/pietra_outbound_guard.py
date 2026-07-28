@@ -79,6 +79,57 @@ _FULLWIDTH_MAP: Final[dict[str, str]] = {
     "”": '"',
 }
 
+# === LANGUAGE GUARD LATINO (round 2, 2026-07-28) ===
+# O guard round 1 so cobre ranges NAO-latinos; ingles e PT-PT sao latim
+# puro e passavam. Evidencia real (personas P7-P10): "sensibility",
+# "sounds like", "indeed", "explains that situation", "es velho".
+# Lexico curado, case-insensitive, word boundary — auditavel.
+
+_LATIN_MIX_EN_PATTERNS: Final[tuple[str, ...]] = (
+    r"\bsounds\s+like\b",
+    r"\bsensibility\b",
+    r"\bindeed\b",
+    r"\broughly\b",
+    r"\bdepending\s+on\b",
+    r"\bexplains\s+that\b",
+    r"\bactually\b",
+    r"\bbasically\b",
+    r"\bhowever\b",
+)
+
+_LATIN_MIX_PTPT_PATTERNS: Final[tuple[str, ...]] = (
+    r"\b[ée]s\s+velho\b",
+    r"\best[aá]s\b",
+    r"\bt[aá]s\b",
+    r"\bcasa\s+de\s+banho\b",
+    r"\bautocarro\b",
+    r"\btelem[oó]vel\b",
+    r"\bfixe\b",
+)
+
+# Whitelist: termos estrangeiros ja incorporados ao PT-BR do negocio.
+# Mascarados ANTES do scan para nunca disparar deteccao.
+LATIN_MIX_WHITELIST: Final[tuple[str, ...]] = (
+    "WhatsApp",
+    "iMessage",
+    "e-mail",
+    "email",
+    "link",
+    "online",
+    "app",
+    "e-Notariado",
+    "selfie",
+)
+
+_WHITELIST_RE: Final[re.Pattern[str]] = re.compile(
+    "|".join(re.escape(w) for w in LATIN_MIX_WHITELIST), re.IGNORECASE
+)
+
+_COMPILED_LATIN_MIX: Final[tuple[re.Pattern[str], ...]] = tuple(
+    re.compile(p, re.IGNORECASE | re.UNICODE)
+    for p in (*_LATIN_MIX_EN_PATTERNS, *_LATIN_MIX_PTPT_PATTERNS)
+)
+
 
 class OutboundAction(Enum):
     """Acao tomada pelo guard outbound."""
@@ -104,6 +155,7 @@ _OUTBOUND_INTERCEPTED_TOTAL: int = 0
 _OUTBOUND_BY_REASON: dict[str, int] = {
     "infra_leak": 0,
     "language_mixing": 0,
+    "language_mixing_latin": 0,
     "fallback": 0,
 }
 
@@ -147,6 +199,36 @@ def detect_infra_leak(text: str) -> str | None:
 def contains_non_latin_script(text: str) -> bool:
     """True se o texto contem caracteres CJK, cirilico, kana ou hangul."""
     return bool(text) and bool(_NON_LATIN_RE.search(text))
+
+
+def detect_latin_language_mix(text: str) -> str | None:
+    """Detecta anglicismo/PT-PT em texto PT-BR (round 2).
+
+    Mascara a whitelist (WhatsApp, iMessage, e-mail, ...) antes do scan e
+    retorna o pattern que casou, ou None se limpo.
+    """
+    if not text:
+        return None
+    masked = _WHITELIST_RE.sub(" ", text)
+    for source, compiled in zip(
+        (*_LATIN_MIX_EN_PATTERNS, *_LATIN_MIX_PTPT_PATTERNS), _COMPILED_LATIN_MIX
+    ):
+        if compiled.search(masked):
+            return source
+    return None
+
+
+def strip_latin_mix_sentences(text: str) -> tuple[str, bool]:
+    """Remove sentencas contaminadas por anglicismo/PT-PT.
+
+    Retorna (texto_limpo, agiu). Sentencas limpas sao preservadas.
+    """
+    sentences = _split_sentences(text)
+    contaminated = [s for s in sentences if detect_latin_language_mix(s)]
+    if not contaminated:
+        return text, False
+    kept = [s for s in sentences if not detect_latin_language_mix(s)]
+    return _cleanup_spacing(" ".join(kept)), True
 
 
 # === Helpers internos ===
@@ -228,6 +310,13 @@ def sanitize_outbound(text: str, *, channel: str = "api") -> OutboundResult:
             work = work.replace(fw, latin)
     if "language_mixing" in reasons:
         work = _cleanup_spacing(work)
+
+    # 2b. LANGUAGE GUARD LATINO (round 2): sentencas com anglicismo/PT-PT
+    # sao removidas; conteudo util adjacente e preservado.
+    work_latin, latin_stripped = strip_latin_mix_sentences(work)
+    if latin_stripped:
+        reasons.append("language_mixing_latin")
+        work = work_latin
 
     # 3. FALLBACK: interceptou mas nao restou conteudo util.
     if reasons and _alnum_count(work) < 10:

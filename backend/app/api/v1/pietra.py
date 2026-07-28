@@ -519,6 +519,8 @@ _SANITIZER_STATS: dict[str, int] = {
     "artifact_strip": 0,
     "vocab_strip": 0,
     "non_latin_retry": 0,
+    "latin_mix_retry": 0,
+    "latin_mix_strip": 0,
     "fallback": 0,
 }
 
@@ -543,9 +545,12 @@ async def _sanitize_pietra_output(
     Fluxo:
     1. Strip do artifact interno "[This response was interrupted...".
     2. Strip de vazamento de vocab interno ("via Photon (iMessage)", Photon, Spectrum).
-    3. Se restou caractere nao-latino (ou o texto era so artifact) -> retry 1x
-       via _chat_completion com system extra exigindo PT-BR puro.
-    4. Se o retry ainda vier contaminado -> fallback seguro deterministico.
+    3. Se restou caractere nao-latino, anglicismo/PT-PT (round 2) ou o texto
+       era so artifact -> retry 1x via _chat_completion com system extra
+       exigindo PT-BR puro.
+    4. Se o retry ainda vier com nao-latino -> fallback seguro deterministico.
+       Se vier com anglicismo/PT-PT persistente -> strip da sentenca
+       contaminada (preservando util); se nada util restar -> fallback.
 
     Texto vazio de entrada (providers down) NAO dispara retry — o fallback
     estrutural do endpoint cuida desse caso.
@@ -554,26 +559,40 @@ async def _sanitize_pietra_output(
         return content
 
     from app.services.cartorio_agent import _chat_completion, _strip_think_tags
+    from app.services.pietra_outbound_guard import (
+        detect_latin_language_mix,
+        strip_latin_mix_sentences,
+    )
 
     text, intercepted = _strip_artifacts_and_vocab(content)
+    has_non_latin = bool(_NON_LATIN_RE.search(text)) if text else False
+    has_latin_mix = bool(detect_latin_language_mix(text)) if text else False
 
-    if text and not _NON_LATIN_RE.search(text):
+    if text and not has_non_latin and not has_latin_mix:
         return text
 
     if not text and not intercepted:
         return text
 
-    _SANITIZER_STATS["non_latin_retry"] += 1
+    if has_latin_mix and not has_non_latin:
+        _SANITIZER_STATS["latin_mix_retry"] += 1
+    else:
+        _SANITIZER_STATS["non_latin_retry"] += 1
     logger.warning(
-        "pietra sanitizer: texto nao-latino/artifact-only, retry 1x (total=%d)",
+        "pietra sanitizer: texto contaminado (non_latin=%s latin_mix=%s), "
+        "retry 1x (total non_latin=%d latin=%d)",
+        has_non_latin,
+        has_latin_mix,
         _SANITIZER_STATS["non_latin_retry"],
+        _SANITIZER_STATS["latin_mix_retry"],
     )
     retry_msgs = list(messages) + [
         {
             "role": "system",
             "content": (
                 "Responda APENAS em portugues brasileiro corrigido, "
-                "sem nenhum caractere de outro idioma."
+                "sem nenhum caractere de outro idioma, sem nenhuma palavra "
+                "em ingles e sem portugues europeu."
             ),
         }
     ]
@@ -587,7 +606,19 @@ async def _sanitize_pietra_output(
         _strip_think_tags(((msg2 or {}).get("content") or "")).strip()
     )
     if text2 and not _NON_LATIN_RE.search(text2):
-        return text2
+        if not detect_latin_language_mix(text2):
+            return text2
+        # Retry persistente com anglicismo/PT-PT: strip da sentenca
+        # contaminada (NUNCA strip cego sem retry) preservando o util.
+        stripped, stripped_any = strip_latin_mix_sentences(text2)
+        if stripped_any and len(re.sub(r"[^0-9A-Za-zÀ-ÿ]", "", stripped)) >= 10:
+            _SANITIZER_STATS["latin_mix_strip"] += 1
+            logger.warning(
+                "pietra sanitizer: latin mix persistente, sentenca removida "
+                "(total=%d)",
+                _SANITIZER_STATS["latin_mix_strip"],
+            )
+            return stripped
 
     _SANITIZER_STATS["fallback"] += 1
     logger.warning(
