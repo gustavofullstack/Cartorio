@@ -142,8 +142,8 @@ def test_hermes_reconciles_persisted_public_profile_and_plugin() -> None:
     assert config["approvals"]["mode"] == "manual"
     assert "python /run/configs/reconcile_public_profile.py" in entrypoint
     assert "plugins/pietra-public-output" in entrypoint
-    assert mounted["hermes_public_output_guard_v1"].endswith(".guard.py")
-    assert mounted["hermes_public_output_plugin_v1"].endswith(".__init__.py")
+    assert mounted["hermes_public_output_guard_v2"].endswith(".guard.py")
+    assert mounted["hermes_public_output_plugin_v2"].endswith(".__init__.py")
     assert mounted["hermes_public_output_manifest_v1"].endswith(".plugin.yaml")
     assert mounted["hermes_public_profile_reconciler_v2"].endswith("reconcile_public_profile.py")
 
