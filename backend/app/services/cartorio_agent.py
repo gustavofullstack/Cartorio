@@ -68,7 +68,7 @@ MINIMAX_API_KEY = (
 MINIMAX_BASE_URL = os.environ.get("MINIMAX_BASE_URL", "https://api.minimax.io/v1").rstrip("/")
 MINIMAX_MODEL = os.environ.get(
     "CARTORIO_AGENT_MODEL",
-    os.environ.get("MINIMAX_MODEL_PRIMARY", "MiniMax-M3"),
+    os.environ.get("MINIMAX_MODEL_PRIMARY", "MiniMax-M2.7-HighSpeed"),
 )
 LITELLM_URLS = [
     os.environ.get(
@@ -929,7 +929,10 @@ async def _chat_completion(
         "max_tokens": max_tokens,
         "temperature": temperature,
     }
-    payload_rich: dict[str, Any] = {**payload_min, "thinking": {"type": "adaptive"}}
+    payload_rich: dict[str, Any] = {
+        **payload_min,
+        "thinking": {"type": os.environ.get("MINIMAX_THINKING_TYPE", "medium")},
+    }
     if tools:
         payload_rich["tools"] = tools
         payload_rich["tool_choice"] = "auto"
