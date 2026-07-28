@@ -25,8 +25,7 @@ import os
 import time
 from typing import Any
 
-import httpx
-from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -216,7 +215,7 @@ async def _persist_conversa_lark(
 ) -> None:
     """Persiste turno no Postgres via conversa table (best-effort)."""
     try:
-        from app.services.telegram import _persist_conversa  # type: ignore[attr-defined]
+        from app.api.v1.telegram import _persist_conversa  # type: ignore[attr-defined]
 
         _persist_conversa(
             canal="lark",
@@ -364,8 +363,8 @@ async def lark_qr_code(
         )
 
     try:
-        import qrcode
-        import qrcode.image.svg
+        import qrcode  # type: ignore[import-untyped]
+        import qrcode.image.svg  # type: ignore[import-untyped]
     except ImportError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
