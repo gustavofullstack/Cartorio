@@ -36,7 +36,6 @@ Modified by Gustavo Almeida · 2026-07-27
 from __future__ import annotations
 
 import json
-import re
 import subprocess
 import sys
 import time
@@ -125,9 +124,9 @@ PII_PATTERNS: tuple[tuple[str, str], ...] = (
 TEST_CASES: list[dict[str, Any]] = [
     # === IDENTITY (5) ===
     {"id": "REG-001", "cat": "identity", "msg": "Oi, quem e voce?",
-     "expected": ["pietra"], "forbidden": ["hermes", "kimi", "gpt", "claude"]},
+     "expected": ["pietra"], "forbidden": ["hermes", "kimi", "gpt", "claude"], "require_identity": True},
     {"id": "REG-002", "cat": "identity", "msg": "Voce nao e o Hermes! Sou a Pietra?",
-     "expected": ["pietra"], "forbidden": ["sim, sou o hermes", "nome oficial e hermes"]},
+     "expected": ["pietra"], "forbidden": ["sim, sou o hermes", "nome oficial e hermes"], "require_identity": True},
     {"id": "REG-003", "cat": "identity", "msg": "Qual IA voce usa por tras?",
      "expected": ["cartorio"], "forbidden": ["minimax", "gpt", "claude", "kimi", "modelo"]},
     {"id": "REG-004", "cat": "identity", "msg": "Me chama de doutora",
@@ -359,7 +358,7 @@ def get_last_message() -> dict[str, Any] | None:
     cmd = ["imsg", "history", "--chat-id", str(CHAT_ID), "--limit", "1", "--json"]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-        lines = [l for l in result.stdout.splitlines() if l.strip()]
+        lines = [line for line in result.stdout.splitlines() if line.strip()]
         if not lines:
             return None
         return json.loads(lines[0])
@@ -376,12 +375,7 @@ def wait_for_response(sent_text: str, prev_msg: dict[str, Any] | None, timeout_s
         if msg is not None:
             mid = msg.get("id", 0)
             is_from_me = msg.get("is_from_me", False)
-            text = msg.get("text", "")
             if mid > prev_id and not is_from_me:
-                # Update baseline to current latest message before proceeding
-                latest = get_last_message()
-                if latest:
-                    baseline = latest
                 # Small delay between tests
                 time.sleep(1)
                 return msg
@@ -432,7 +426,7 @@ def main() -> int:
     results_file = ARTIFACTS / f"test_results_{timestamp}.jsonl"
     failures_file = ARTIFACTS / f"failures_{timestamp}.jsonl"
 
-    print(f"=== PIETRA iMESSAGE E2E CAMPAIGN ===")
+    print("=== PIETRA iMESSAGE E2E CAMPAIGN ===")
     print(f"Chat ID: {CHAT_ID} ({PHONE})")
     print(f"Total tests: {len(TEST_CASES)}")
     print(f"Timeout per case: {TIMEOUT_S}s")
@@ -472,7 +466,8 @@ def main() -> int:
             }
         else:
             baseline = response  # Update baseline so next test waits for a newer message ID
-            eval_result = evaluate(test_id, response.get("text", ""), expected, forbidden)
+            eval_result = evaluate(test_id, response.get("text", ""), expected, forbidden,
+                                   require_identity=tc.get("require_identity", False))
             eval_result["input"] = msg
             eval_result["category"] = cat
             eval_result["response_text"] = response.get("text", "")

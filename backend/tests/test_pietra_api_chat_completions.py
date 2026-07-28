@@ -78,8 +78,9 @@ class TestSystemPromptInjection:
         assert "Pietra" in msgs[0]["content"]
         assert "Tabelionato de Notas" in msgs[0]["content"]
         assert "NUNCA presuma genero ou titulo" in msgs[0]["content"]
-        assert "Rua Antonio Alves Pereira, 251" in msgs[0]["content"]
-        assert "(34) 3216-9000" in msgs[0]["content"]
+        assert "Rua Cel. Antonio Alves Pereira, 850" in msgs[0]["content"]
+        assert "(34) 3216-0252" in msgs[0]["content"]
+        assert "Djalma Pizarro" in msgs[0]["content"]
 
     def test_caller_system_does_not_replace_canonical(self, client, captured):
         r = client.post(
