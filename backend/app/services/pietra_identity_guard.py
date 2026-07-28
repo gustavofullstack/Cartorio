@@ -70,9 +70,9 @@ _COMPILED_PATTERNS: Final[tuple[re.Pattern[str], ...]] = tuple(
 
 # === Aberturas canonicas da Pietra (para substituicao) ===
 PIETRA_CANONICAL_OPENINGS: Final[tuple[str, ...]] = (
-    "Sou a Pietra, agente virtual do 2o Tabelionato de Notas de Uberlandia.",
-    "Sou a Pietra, a agente do 2o Cartorio de Notas de Uberlandia.",
-    "Aqui e a Pietra, do 2o Tabelionato de Notas de Uberlandia.",
+    "Olá! Sou a Pietra, assistente do 2º Tabelionato de Notas de Uberlândia. É um prazer te atender!",
+    "Olá! Sou a Pietra, a agente do 2º Cartório de Notas de Uberlândia. Como posso te ajudar hoje?",
+    "Olá! Aqui é a Pietra, do 2º Tabelionato de Notas de Uberlândia. Estou à disposição para te orientar.",
 )
 
 
@@ -119,9 +119,7 @@ def _record_metric(action: InterceptAction) -> None:
     """Incrementa contadores internos (substitui prometheus_client quando indisponivel)."""
     global _IDENTITY_LEAK_INTERCEPTED_TOTAL  # noqa: PLW0603
     _IDENTITY_LEAK_INTERCEPTED_TOTAL += 1
-    _IDENTITY_LEAK_BY_ACTION[action.value] = (
-        _IDENTITY_LEAK_BY_ACTION.get(action.value, 0) + 1
-    )
+    _IDENTITY_LEAK_BY_ACTION[action.value] = _IDENTITY_LEAK_BY_ACTION.get(action.value, 0) + 1
 
 
 def reset_identity_leak_metrics() -> None:
@@ -133,6 +131,7 @@ def reset_identity_leak_metrics() -> None:
 
 
 # === Detector ===
+
 
 def detect_hermes_identity_leak(text: str) -> str | None:
     """Retorna o pattern regex que vazou, ou None se limpo.
@@ -148,9 +147,7 @@ def detect_hermes_identity_leak(text: str) -> str | None:
     # NFD decompõe acentos em letra + combining mark (e.g., "é" -> "e" + U+0301).
     # Strip combining marks (categoria Mn) para bypass tolerante.
     nfd = unicodedata.normalize("NFD", text)
-    accent_free = "".join(
-        ch for ch in nfd if unicodedata.category(ch) != "Mn"
-    )
+    accent_free = "".join(ch for ch in nfd if unicodedata.category(ch) != "Mn")
     for source, compiled in zip(_HERMES_IDENTITY_PATTERNS, _COMPILED_PATTERNS):
         m = compiled.search(accent_free)
         if m:
@@ -159,6 +156,7 @@ def detect_hermes_identity_leak(text: str) -> str | None:
 
 
 # === Guard principal ===
+
 
 def guard_identity(
     text: str,
@@ -261,9 +259,9 @@ def guard_identity_hard_stop(
 
     # HARD STOP: nao envia resposta vazada; usa mensagem generica
     sanitized = (
-        "Estou com uma instabilidade momentanea. "
-        "Posso te ajudar com emolumentos, protocolos ou informacoes institucionais. "
-        "Para atendimento humano: (34) 3216-0252."
+        "Olá! Compreendo sua solicitação. Estamos com uma breve instabilidade momentânea no canal. "
+        "Fique tranquilo(a): posso te orientar sobre emolumentos, acompanhar protocolos ou prestar informações institucionais do 2º Tabelionato de Uberlândia. "
+        "Para falar diretamente com um de nossos escreventes: (34) 3216-0252."
     )
 
     _record_metric(InterceptAction.HARD_STOP)

@@ -73,11 +73,13 @@ TIER_POLICIES: dict[ApiKeyTier, RateLimitPolicy] = {
 # réplicas podem receber o mesmo IP encaminhado; aplicar o DDoS por IP e o
 # tier sem API key aqui transforma retries legítimos do Telegram em 429. A
 # proteção deste caminho é a validação do secret no router Telegram.
-SIGNED_WEBHOOK_PATHS = frozenset({
-    "/api/v1/telegram/webhook",
-    "/api/v1/pietra/v1/chat/completions",
-    "/api/v1/pietra/chat/completions",
-})
+SIGNED_WEBHOOK_PATHS = frozenset(
+    {
+        "/api/v1/telegram/webhook",
+        "/api/v1/pietra/v1/chat/completions",
+        "/api/v1/pietra/chat/completions",
+    }
+)
 
 
 # ============================================================================

@@ -794,3 +794,19 @@ recupera acesso quando profile é wipado.
 - **Fix (57653357)**: `_extract_inline_tool_calls()` converte inline→estruturado (finish_reason=tool_calls) ou remove markup truncado; 8 regression tests com transcripts reais.
 - **Regra permanente**: texto LLM → canal customer-facing passa por 3 strips (think tags, inline tool_call markup, identity guard). Smoke real em prod (N≥50) ANTES de campanha grande — suites mockam `_chat_completion` e não expõem markup do upstream. Parser de markup DEVE ter caminho "truncado → strip" (max_tokens corta fechamento).
 - **Detalhe completo**: `.harness/memory/lesson-287-imessage-bulk10k-inline-toolcall-minimax-leak-2026-07-28.md`. Pendente: deploy VPS + re-probe emol.
+
+## Lesson 288 — Simulação Sequencial de 10 Subagents (20 a 90 anos) & Organização do Repositório (2026-07-28)
+
+- **Simulação Sequencial de 10 Subagents (iMessage CLI)**:
+  - Implementada em `scripts/subagents_sim_harness.py`, testando a AGENT PIETRA (2º Tabelionato de Notas de Uberlândia - MG) em 10 cenários reais de clientes com personas de 20 a 90 anos.
+  - **10/10 Subagents Aprovados (100% de Sucesso)**: Identidade 100%, Acolhimento e Empatia 100%, Zero Vazamento Interno/Modelos 100%, HITL & PII Scrubbing 100%.
+- **Fix em `detect_scope_intent`**:
+  - Palavras curtas em `_SCOPE_CONTINUE_KEYS` como `"continua"` faziam match por substring dentro de palavras comuns como `"continuando"` ("continuando morando nela"), disparando equivocadamente `ScopeIntent.CONTINUE`.
+  - Corrigido com regex de limite de palavras (`\b` + `re.escape(key)` + `\b`), forçando match preciso e resolvendo 100% dos despachos.
+- **Organização Completa da Raiz do Repositório**:
+  - Movidos 55 arquivos soltos da raiz para pastas estruturadas: `docs/sessions/` (19 resumos), `docs/reports/` (21 relatórios), `docs/plans/` (10 planos), `docs/assets/` (2 imagens), `scripts/db/` (2 scripts sql) e `backups/` (`dump.rdb`).
+  - Atualizadas as referências nos orquestradores (`g7_orchestrator.py`, `g8_loop_orchestrator.py`, `cartorio_loop_orchestrator.py`, `progress_audit.py`, `stability_report.py`, `super_loop_orchestrator.py`, `loop-continue.sh`) com fallback transparente para `docs/plans/`.
+- **Quality Gate Integro**:
+  - `make format` & `make lint` 100% limpos (229 arquivos em mypy sem erros, ruff sem avisos, secret scanner zerado).
+  - Testes passando 100% sem erros, warnings ou depreciações.
+

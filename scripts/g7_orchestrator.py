@@ -19,8 +19,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PLANO = ROOT / "SUPER_PLANO_G7_100_TASKS.md"
-GOALS = ROOT / "SUPER_GOALS_G7.md"
+PLANO = (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md").exists() else (ROOT / "SUPER_PLANO_G7_100_TASKS.md")
+GOALS = (ROOT / "docs" / "plans" / "SUPER_GOALS_G7.md") if (ROOT / "docs" / "plans" / "SUPER_GOALS_G7.md").exists() else (ROOT / "SUPER_GOALS_G7.md")
 STATE = ROOT / ".brain" / "loop-state.json"
 
 

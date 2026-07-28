@@ -23,8 +23,10 @@ from typing import Dict, Any, List, Tuple
 PROJECT_ROOT = "/Users/gustavoalmeida/Projetos/Cartorio"
 BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
 PROGRESS_FILE = os.path.join(PROJECT_ROOT, "PROGRESS.md")
-GOALS_FILE = os.path.join(PROJECT_ROOT, "SUPER_GOALS_G8.md")
-SUPER_PLANO_FILE = os.path.join(PROJECT_ROOT, "SUPER_PLANO_G8_100_TASKS.md")
+_g8_goals_docs = os.path.join(PROJECT_ROOT, "docs", "plans", "SUPER_GOALS_G8.md")
+GOALS_FILE = _g8_goals_docs if os.path.exists(_g8_goals_docs) else os.path.join(PROJECT_ROOT, "SUPER_GOALS_G8.md")
+_g8_plano_docs = os.path.join(PROJECT_ROOT, "docs", "plans", "SUPER_PLANO_G8_100_TASKS.md")
+SUPER_PLANO_FILE = _g8_plano_docs if os.path.exists(_g8_plano_docs) else os.path.join(PROJECT_ROOT, "SUPER_PLANO_G8_100_TASKS.md")
 STATE_FILE = os.path.join(PROJECT_ROOT, ".brain", "loop-state-g8.json")
 
 class G8Orchestrator:

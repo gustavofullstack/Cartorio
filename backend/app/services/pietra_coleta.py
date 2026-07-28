@@ -93,6 +93,7 @@ def hash_phone(telefone: str) -> str:
 @dataclass
 class ColetaResult:
     """Resultado da coleta (upsert)."""
+
     cliente_id: int
     cliente_criado: bool  # True se novo, False se atualizado
     telefone_hash: str
@@ -307,7 +308,10 @@ def upsert_cliente_por_telefone(
             db.flush()
 
     # Se cpf chegou e ainda nao foi setado, atualizar
-    if cpf is not None and (cliente.cpf_hash.startswith(hash_pii(tel_hash, "pietra_coleta")[:10]) or len(cliente.cpf_hash) < 50):
+    if cpf is not None and (
+        cliente.cpf_hash.startswith(hash_pii(tel_hash, "pietra_coleta")[:10])
+        or len(cliente.cpf_hash) < 50
+    ):
         # cpf_hash é dummy or anterior; atualizar com hash real
         salt = _get_salt(cliente.id)
         novo_cpf_hash = hash_pii(cpf_n + ":" + salt, "pietra_coleta")
@@ -322,7 +326,8 @@ def upsert_cliente_por_telefone(
             # CPF já registrado para outro cliente
             logger.warning(
                 "cpf duplicado para cliente_id=%s, atual=%s",
-                cliente.id, existing.id,
+                cliente.id,
+                existing.id,
             )
 
     # Calcular dados pendentes

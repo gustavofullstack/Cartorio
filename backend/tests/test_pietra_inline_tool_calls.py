@@ -60,12 +60,21 @@ INLINE_TOOL_CALL_JSON_MARKER = (
 )
 
 INLINE_TOOL_CALL_JSON_TRUNCATED = (
-    "Deixa eu verificar.[TOOL_CALL]\n"
-    '{"name": "cartorio_calcular_emolumen'
+    'Deixa eu verificar.[TOOL_CALL]\n{"name": "cartorio_calcular_emolumen'
 )
 
-LEAK_TOKENS = ("minimax", "<invoke", "<tool_call", "]<]", "<act>", "</act>",
-               "<function_calls", "</function_calls", "[tool_call]", "<parameter")
+LEAK_TOKENS = (
+    "minimax",
+    "<invoke",
+    "<tool_call",
+    "]<]",
+    "<act>",
+    "</act>",
+    "<function_calls",
+    "</function_calls",
+    "[tool_call]",
+    "<parameter",
+)
 
 
 @pytest.fixture(scope="module")

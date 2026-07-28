@@ -35,7 +35,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PROGRESS = ROOT / "PROGRESS.md"
-DEFAULT_PLANO = ROOT / "SUPER_PLANO_G8_100_TASKS.md"
+DEFAULT_PLANO = (ROOT / "docs" / "plans" / "SUPER_PLANO_G8_100_TASKS.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_G8_100_TASKS.md").exists() else (ROOT / "SUPER_PLANO_G8_100_TASKS.md")
 DEFAULT_LANE_STATE = ROOT / ".brain" / "loop-state.json"
 
 HEADER_RE = re.compile(

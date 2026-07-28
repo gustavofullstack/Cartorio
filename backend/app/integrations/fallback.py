@@ -467,7 +467,9 @@ async def _is_circuit_open(provider: str) -> bool:
         return False
 
 
-async def _record_failure(provider: str, threshold: int = 5, open_time_seconds: int = 18000) -> None:
+async def _record_failure(
+    provider: str, threshold: int = 5, open_time_seconds: int = 18000
+) -> None:
     """Incrementa falhas consecutivas do provedor no Redis. Abre o circuito se atingir o limite (P0: 5 falhas, 5h cooldown)."""
     try:
         from app.services.redis_bus import get_bus
@@ -487,7 +489,7 @@ async def _record_failure(provider: str, threshold: int = 5, open_time_seconds: 
                 open_time_seconds,
                 fails,
             )
-            await bus.client.setex(f"cb:open:{provider}", open_time_seconds, "1")
+            await bus.client.set(f"cb:open:{provider}", "1", ex=open_time_seconds)
             await bus.client.delete(key_fail)
             # E3.06: gauge do CB -> 1 (abriu). Metrica nunca derruba o path.
             try:

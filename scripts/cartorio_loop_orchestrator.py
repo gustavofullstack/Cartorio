@@ -18,7 +18,8 @@ from typing import Dict, Any, List
 PROJECT_ROOT = "/Users/gustavoalmeida/Projetos/Cartorio"
 BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
 PROGRESS_FILE = os.path.join(PROJECT_ROOT, "PROGRESS.md")
-GOALS_FILE = os.path.join(PROJECT_ROOT, "GOALS.md")
+_goals_docs = os.path.join(PROJECT_ROOT, "docs", "plans", "GOALS.md")
+GOALS_FILE = _goals_docs if os.path.exists(_goals_docs) else os.path.join(PROJECT_ROOT, "GOALS.md")
 LOOP_STATE_FILE = os.path.join(PROJECT_ROOT, ".brain", "loop-state.json")
 
 # Estruturação das 4 squads com 4 subagentes

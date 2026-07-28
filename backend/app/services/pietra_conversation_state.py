@@ -42,7 +42,9 @@ Modified by Gustavo Almeida · 2026-07-27
 from __future__ import annotations
 
 import hashlib
+import re
 import time
+
 from collections import OrderedDict
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
@@ -51,10 +53,11 @@ from typing import Any
 
 class ScopeIntent(StrEnum):
     """Intencao de escopo inferida do texto do usuario (Fase 4 do P0)."""
-    ALL = "ALL"                    # "me fala tudo", "tudo mesmo", "manda tudo de uma vez"
-    CONTINUE = "CONTINUE"          # "continua", "e o resto?", "uai mas estavamos falando disso"
+
+    ALL = "ALL"  # "me fala tudo", "tudo mesmo", "manda tudo de uma vez"
+    CONTINUE = "CONTINUE"  # "continua", "e o resto?", "uai mas estavamos falando disso"
     SUMMARY_EACH = "SUMMARY_EACH"  # "um pouco de cada", "resume cada um"
-    ANSWER = "ANSWER"              # resposta direta a uma pergunta
+    ANSWER = "ANSWER"  # resposta direta a uma pergunta
     UNKNOWN = "UNKNOWN"
 
 
@@ -259,13 +262,13 @@ def detect_scope_intent(text: str) -> ScopeIntent:
     t = text.lower().strip()
     # Ordem importa: ALL > CONTINUE > SUMMARY_EACH > ANSWER
     for key in _SCOPE_ALL_KEYS:
-        if key in t:
+        if re.search(r"\b" + re.escape(key) + r"\b", t):
             return ScopeIntent.ALL
     for key in _SCOPE_CONTINUE_KEYS:
-        if key in t:
+        if re.search(r"\b" + re.escape(key) + r"\b", t):
             return ScopeIntent.CONTINUE
     for key in _SCOPE_SUMMARY_EACH_KEYS:
-        if key in t:
+        if re.search(r"\b" + re.escape(key) + r"\b", t):
             return ScopeIntent.SUMMARY_EACH
     return ScopeIntent.ANSWER
 
@@ -337,11 +340,31 @@ FORBIDDEN_PHRASES: tuple[str, ...] = (
     "ja criei",
     "já criei",
     # Emoji (caracteres unicode comuns; policy é zero emoji)
-    "\U0001f600", "\U0001f601", "\U0001f602", "\U0001f603", "\U0001f604",
-    "\U0001f605", "\U0001f606", "\U0001f607", "\U0001f608", "\U0001f609",
-    "\U0001f60a", "\U0001f60b", "\U0001f60c", "\U0001f60d", "\U0001f60e",
-    "\U0001f60f", "\U0001f61a", "\U0001f61b", "\U0001f61c", "\U0001f61d",
-    "\u2705", "\u274c", "\u2b50", "\U0001f44d", "\U0001f64f",
+    "\U0001f600",
+    "\U0001f601",
+    "\U0001f602",
+    "\U0001f603",
+    "\U0001f604",
+    "\U0001f605",
+    "\U0001f606",
+    "\U0001f607",
+    "\U0001f608",
+    "\U0001f609",
+    "\U0001f60a",
+    "\U0001f60b",
+    "\U0001f60c",
+    "\U0001f60d",
+    "\U0001f60e",
+    "\U0001f60f",
+    "\U0001f61a",
+    "\U0001f61b",
+    "\U0001f61c",
+    "\U0001f61d",
+    "\u2705",
+    "\u274c",
+    "\u2b50",
+    "\U0001f44d",
+    "\U0001f64f",
 )
 
 

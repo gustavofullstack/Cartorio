@@ -46,11 +46,13 @@ def captured(monkeypatch):
 
     async def fake_chat_completion(messages, tools=None, **kwargs):
         calls.append({"messages": messages, "tools": tools, **kwargs})
-        return {"content": "Sou a Pietra, a agente do 2º Cartório de Notas de Uberlândia."}, "minimax_direct:MiniMax-M3", ""
+        return (
+            {"content": "Sou a Pietra, a agente do 2º Cartório de Notas de Uberlândia."},
+            "minimax_direct:MiniMax-M3",
+            "",
+        )
 
-    monkeypatch.setattr(
-        "app.services.cartorio_agent._chat_completion", fake_chat_completion
-    )
+    monkeypatch.setattr("app.services.cartorio_agent._chat_completion", fake_chat_completion)
     return calls
 
 
@@ -154,7 +156,16 @@ class TestIdentityLeakHardStop:
         )
         content = r.json()["choices"][0]["message"]["content"]
         lowered = content.lower()
-        for forbidden in ("claude", "chatgpt", "openai", "kimi", "deepseek", "hermes", "anthropic", "moonshot"):
+        for forbidden in (
+            "claude",
+            "chatgpt",
+            "openai",
+            "kimi",
+            "deepseek",
+            "hermes",
+            "anthropic",
+            "moonshot",
+        ):
             assert forbidden not in lowered, f"leak residual: {forbidden} em {content!r}"
 
 
@@ -211,7 +222,9 @@ class TestToolsPassthrough:
         assert r.status_code == 200
         choice = r.json()["choices"][0]
         assert choice["finish_reason"] == "tool_calls"
-        assert choice["message"]["tool_calls"][0]["function"]["name"] == "cartorio_calcular_emolumento"
+        assert (
+            choice["message"]["tool_calls"][0]["function"]["name"] == "cartorio_calcular_emolumento"
+        )
 
 
 class TestGracefulDegradation:
@@ -247,7 +260,10 @@ class TestToolResultPassthrough:
                             {
                                 "id": "call_1",
                                 "type": "function",
-                                "function": {"name": "cartorio_calcular_emolumento", "arguments": "{}"},
+                                "function": {
+                                    "name": "cartorio_calcular_emolumento",
+                                    "arguments": "{}",
+                                },
                             }
                         ],
                     },
@@ -321,7 +337,12 @@ class TestSseStreaming:
             "/api/v1/pietra/chat/completions",
             json={
                 "messages": [{"role": "user", "content": "custa quanto?"}],
-                "tools": [{"type": "function", "function": {"name": "cartorio_calcular_emolumento", "parameters": {}}}],
+                "tools": [
+                    {
+                        "type": "function",
+                        "function": {"name": "cartorio_calcular_emolumento", "parameters": {}},
+                    }
+                ],
                 "stream": True,
             },
         )

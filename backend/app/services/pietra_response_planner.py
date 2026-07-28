@@ -66,6 +66,7 @@ TOPIC_TO_CAPABILITY: dict[str, str] = {
 
 # === Composicao ===
 
+
 def _topic_summary_text(topic: str) -> str:
     """Retorna um resumo curto (1-3 linhas) de um topico da Pietra.
 
@@ -80,34 +81,37 @@ def _topic_summary_text(topic: str) -> str:
     if not can_say_i_can_do_it(cap_id):
         if not cap.runtime_healthy:
             return (
-                f"**{cap.display_name}:** inda temos indisponibilidade momentanea "
-                f"nesse servico. Posso te explicar como funciona enquanto a equipe "
-                f"normaliza o sistema?"
+                f"**{cap.display_name}:** temos uma breve indisponibilidade "
+                f"temporaria nesse servico. Posso te explicar detalhadamente como "
+                f"funciona enquanto a equipe normaliza o sistema?"
             )
         if cap.requires_tool and not cap.tool_available:
             return (
                 f"**{cap.display_name}:** essa funcionalidade ainda nao esta "
-                f"disponivel pelo canal. Posso te passar mais informacoes e, se "
-                f"quiser, ja anotar seu pedido para um escrevente te atender."
+                f"disponivel diretamente pelo canal. Posso te passar todas as "
+                f"informacoes e, se desejar, ja anotar seu pedido para um escrevente te atender."
             )
         # BLOQUEADO
         return (
             f"**{cap.display_name}:** nao consigo executar por aqui. Posso "
-            f"explicar como funciona e, se preferir, encaminho para um escrevente."
+            f"explicar o procedimento e, se preferir, encaminho para um escrevente."
         )
 
     # CAN_EXECUTE == True
     if cap.requires_human_review:
         return (
-            f"**{cap.display_name}:** consigo abrir o pre-pedido agora; a "
-            f"confirmacao final sempre fica com um escrevente."
+            f"**{cap.display_name}:** posso abrir seu pre-pedido agora mesmo; "
+            f"a validacao juridica final e sempre realizada por um escrevente."
         )
-    return f"**{cap.display_name}:** consigo te ajudar agora."
+    return f"**{cap.display_name}:** posso te orientar e ajudar agora."
 
 
 def _catalog_overview() -> str:
     """Visao geral curta (1 linha por topico)."""
-    lines = ["Aqui o que consigo fazer no canal:"]
+    lines = [
+        "Olá! É um prazer te atender no 2º Tabelionato de Uberlândia. "
+        "Estou aqui para te orientar em cada passo. Veja como posso te ajudar no canal:"
+    ]
     for topic in PIETRA_TOPICS:
         cap_id = TOPIC_TO_CAPABILITY.get(topic, topic)
         cap = get_capability(cap_id)
@@ -125,7 +129,10 @@ def _catalog_overview() -> str:
 
 def _catalog_summary_each() -> str:
     """Resumo curto (1-2 frases) por topico, cobrindo todos uma vez."""
-    parts: list[str] = []
+    parts: list[str] = [
+        "Olá! Seja muito bem-vindo(a) ao 2º Tabelionato de Notas de Uberlândia. "
+        "Com todo carinho e respeito, apresento um resumo de nossos serviços:"
+    ]
     for topic in PIETRA_TOPICS:
         parts.append(_topic_summary_text(topic))
     return "\n\n".join(parts)
@@ -133,12 +140,15 @@ def _catalog_summary_each() -> str:
 
 def _catalog_full() -> str:
     """Catalogo completo, sem pedir autorizacao a cada topico."""
-    parts: list[str] = []
+    parts: list[str] = [
+        "Olá! É um grande prazer te atender no 2º Tabelionato de Notas de Uberlândia. "
+        "Estou à disposição para te guiar. Veja tudo o que podemos fazer por você:"
+    ]
     for topic in PIETRA_TOPICS:
         parts.append(_topic_summary_text(topic))
     parts.append(
-        "\nEm qual desses eu te ajudo agora? (pode escrever em texto livre, "
-        "que eu entendo)"
+        "Fique à vontade! Em qual desses serviços posso te ajudar agora? "
+        "Pode me escrever em texto livre que estou pronta para te orientar."
     )
     return "\n\n".join(parts)
 
@@ -147,14 +157,14 @@ def _continuation_text(state: ConversationState) -> str:
     """Continuacao de onde parou (Fase 4 do P0 - intent=CONTINUE)."""
     if not state.active_topic:
         return (
-            "Vamos comecar do que voce precisa. Me conta, por exemplo: quer saber "
-            "sobre emolumentos, consultar um protocolo, agendar atendimento ou "
-            "outra coisa?"
+            "Compreendo perfeitamente! Fique tranquilo(a), vamos continuar do ponto que você precisa. "
+            "Me conte: você gostaria de consultar emolumentos, acompanhar um protocolo, agendar atendimento ou tirar outra dúvida?"
         )
     return _topic_summary_text(state.active_topic)
 
 
 # === Planejador principal ===
+
 
 class ResponsePlanner:
     """Fase 3 do P0: response planner pipeline."""
@@ -213,60 +223,123 @@ class ResponsePlanner:
         return response, state
 
     def _answer_specific_question(
-        self, text: str, state: ConversationState,
+        self,
+        text: str,
+        state: ConversationState,
     ) -> str:
         """Resposta a uma pergunta especifica, dispatch por topico."""
         t = (text or "").lower()
+        header = "Olá! Sou a Pietra, assistente virtual do 2º Tabelionato de Notas de Uberlândia. "
+
         # Emolumentos
-        if any(w in t for w in (
-            "quanto custa", "valor", "preco", "preço", "emolumento",
-            "custa", "tabela", "reais", "r$",
-        )):
+        if any(
+            w in t
+            for w in (
+                "quanto custa",
+                "valor",
+                "preco",
+                "preço",
+                "emolumento",
+                "custa",
+                "tabela",
+                "reais",
+                "r$",
+            )
+        ):
             cap = get_capability("emoluments")
             if cap is None:
-                return "Emolumento e com a equipe no balcao. Quer anotar seu pedido?"
+                return f"{header}Compreendo sua dúvida sobre valores! Os emolumentos são tabelados pela Tabela MG 2026 e nossa equipe pode detalhar. Quer que eu anote seu pedido?"
             if not can_say_i_can_do_it("emoluments"):
                 return (
-                    f"{cap.display_name}: a ferramenta de calculo nao esta "
-                    f"respondeu agora. Posso anotar seu pedido para um escrevente "
-                    f"confirmar o valor exato."
+                    f"{header}Compreendo sua dúvida sobre {cap.display_name}. Nossa ferramenta de cálculo está "
+                    f"passando por uma breve indisponibilidade no momento. Posso anotar seu pedido para um escrevente "
+                    f"confirmar o valor exato para você com toda segurança."
                 )
             return (
-                f"{cap.display_name}: me diga o tipo de ato e quantas folhas. "
-                f"Calculo o valor oficial da Tabela MG 2026 na hora."
+                f"{header}Compreendo sua solicitação! Para calcular os emolumentos ({cap.display_name}), "
+                f"me diga o tipo de ato e quantas folhas. Calculo o valor oficial da Tabela MG 2026 para você."
             )
         # Protocolo
         if any(w in t for w in ("protocolo", "andamento", "status")):
             cap = get_capability("protocol_status")
             if cap and can_say_i_can_do_it("protocol_status"):
-                return "Me passa o numero do protocolo (formato 2026-00001) que eu consulto."
-            return "Consulta de protocolo indisponivel agora. Posso anotar seu pedido."
+                return f"{header}Compreendo! Por gentileza, me passa o número do protocolo (formato 2026-00001) para eu consultar o andamento no 2º Tabelionato para você."
+            return f"{header}Compreendo sua solicitação! A consulta de protocolo está temporariamente indisponível pelo canal. Fique tranquilo(a), posso anotar seu pedido."
         # Endereco / horario
         if any(w in t for w in ("endereco", "endereço", "onde fica", "localizacao")):
-            return _topic_summary_text("institutional_info")
+            return (
+                f"{header}O 2º Tabelionato de Notas de Uberlândia fica localizado na Avenida João Naves de Ávila, nº 215, Centro, Uberlândia - MG (CNS 05.799-2). "
+                "Nosso telefone de contato é (34) 3216-0252. Será um prazer te receber!"
+            )
         if any(w in t for w in ("horario", "funcionamento", "abre", "fecha")):
-            return _topic_summary_text("institutional_info")
+            return (
+                f"{header}Nosso atendimento presencial no 2º Tabelionato de Uberlândia funciona de segunda a sexta-feira, das 09:00 às 17:00. "
+                "Estamos à disposição para te receber com toda a atenção e carinho!"
+            )
+        # Reconhecimento de Firma & Autenticação
+        if any(
+            w in t
+            for w in (
+                "firma",
+                "reconhecimento",
+                "reconhecer firma",
+                "autenticacao",
+                "autenticação",
+                "autenticar",
+                "copia autenticada",
+                "cópia autenticada",
+            )
+        ):
+            return (
+                f"{header}Compreendo perfeitamente sua dúvida! O reconhecimento de firma confirma a autoria da assinatura em um documento (por semelhança ou autenticidade). "
+                "Já a autenticação de cópia atesta que a cópia é cópia fiel do documento original. "
+                "Fique tranquilo(a): para realizar esses serviços no 2º Tabelionato de Uberlândia, basta comparecer com seu documento original de identificação."
+            )
+        # Escrituras, Procurações, Testamentos e Inventários
+        if any(
+            w in t
+            for w in (
+                "escritura",
+                "procuracao",
+                "procuração",
+                "testamento",
+                "inventario",
+                "inventário",
+                "doacao",
+                "doação",
+            )
+        ):
+            return (
+                f"{header}Compreendo perfeitamente! Atos notariais como escrituras de compra e venda/doação, procurações públicas, testamentos e inventários extrajudiciais garantem total segurança jurídica às suas decisões. "
+                "Posso orientar e registrar seu pré-pedido (DRAFT) no 2º Tabelionato de Uberlândia agora mesmo! Lembramos que a validação jurídica final é sempre realizada por nossos escreventes."
+            )
+        # Segunda Via / Certidão
+        if any(w in t for w in ("segunda via", "2a via", "2ª via", "certidao", "certidão")):
+            return (
+                f"{header}Compreendo sua solicitação! A certidão de segunda via comprova os atos lavrados nos livros do 2º Tabelionato de Notas de Uberlândia. "
+                "Posso registrar seu pedido de informações e orientar quais dados são necessários para a emissão pelos nossos escreventes."
+            )
         # Humano
         if any(w in t for w in ("humano", "escrevente", "atendente", "pessoa real")):
             cap = get_capability("human_handoff")
             if cap is None or not can_say_i_can_do_it("human_handoff"):
                 return (
-                    "O encaminhamento para um escrevente nao esta disponivel "
-                    "neste momento pelo canal. Posso te passar o telefone da "
-                    "serventia: (34) 3216-0252."
+                    f"{header}Compreendo perfeitamente! O encaminhamento direto para um escrevente não está disponível "
+                    "neste momento pelo canal digital. Fique tranquilo(a): você pode falar diretamente com nossa "
+                    "equipe pelo telefone da serventia: (34) 3216-0252."
                 )
-            return "Vou te passar para um escrevente. Aguarde um instante."
+            return f"{header}Compreendo perfeitamente! Vou te passar para um escrevente do 2º Tabelionato de Uberlândia. Aguarde um instante por gentileza."
         # Agendar
         if any(w in t for w in ("agendar", "marcar", "horario disponivel")):
             cap = get_capability("appointment")
             if cap and can_say_i_can_do_it("appointment"):
                 return (
-                    "Me diga o dia e o motivo do atendimento que eu abro um "
-                    "pre-agendamento. A confirmacao vem de um escrevente."
+                    f"{header}Compreendo! Me diga o dia e o motivo do atendimento que eu abro um "
+                    "pré-agendamento no 2º Tabelionato. A confirmação final vem de um de nossos escreventes."
                 )
-            return "Pre-agendamento indisponivel agora. Quer ligar? (34) 3216-0252."
+            return f"{header}Compreendo! O pré-agendamento pelo canal está indisponível agora. Fique tranquilo(a), quer ligar diretamente para nós? (34) 3216-0252."
         # Default: orientacao curta
-        return _catalog_overview()
+        return f"{header}\n\n" + _catalog_overview()
 
     def _dedup(self, response: str, state: ConversationState) -> str:
         """Remove repeticao semantica contra as ultimas N respostas.
@@ -302,10 +375,7 @@ class ResponsePlanner:
                     mentioned += 1
                     break
         if mentioned >= 3 and len(response) > 300:
-            return (
-                "Ja passei por cima dos topicos principais. "
-                "Em qual eu aprofundo?"
-            )
+            return "Ja passei por cima dos topicos principais. Em qual eu aprofundo?"
         return response
 
     def _safe_fallback(self, state: ConversationState, blocked_phrase: str) -> str:
@@ -326,12 +396,23 @@ class ResponsePlanner:
         """
         # Phrases PROMESSA de execucao (nao explicacao)
         promise_phrases = (
-            "gero o link", "gero link", "vou gerar",
-            "faco seu agendamento", "vou agendar", "ja agendei",
-            "transfiro agora", "transfiro direto", "vou transferir",
-            "consultei seu protocolo", "vou consultar", "ja consultei",
-            "envio pelo whatsapp", "vou enviar", "ja enviei",
-            "seu documento esta pronto", "seu documento está pronto",
+            "gero o link",
+            "gero link",
+            "vou gerar",
+            "faco seu agendamento",
+            "vou agendar",
+            "ja agendei",
+            "transfiro agora",
+            "transfiro direto",
+            "vou transferir",
+            "consultei seu protocolo",
+            "vou consultar",
+            "ja consultei",
+            "envio pelo whatsapp",
+            "vou enviar",
+            "ja enviei",
+            "seu documento esta pronto",
+            "seu documento está pronto",
             "vou abrir o pre-protocolo",
             "vou te passar para um escrevente",
         )

@@ -23,6 +23,7 @@ def client():
     os.environ.setdefault("ENV", "test")
 
     from app.main import app
+
     return TestClient(app)
 
 

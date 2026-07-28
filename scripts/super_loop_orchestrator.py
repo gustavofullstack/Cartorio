@@ -33,9 +33,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 G7_ORCH = ROOT / "scripts" / "g7_orchestrator.py"
-G7_PLANO = ROOT / "SUPER_PLANO_G7_100_TASKS.md"
+G7_PLANO = (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md").exists() else (ROOT / "SUPER_PLANO_G7_100_TASKS.md")
 G7_STATE = ROOT / ".brain" / "loop-state.json"
-V25_PLANO = ROOT / "SUPER_PLANO_100_TASKS_25_SQUADS_v25.md"
+V25_PLANO = (ROOT / "docs" / "plans" / "SUPER_PLANO_100_TASKS_25_SQUADS_v25.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_100_TASKS_25_SQUADS_v25.md").exists() else (ROOT / "SUPER_PLANO_100_TASKS_25_SQUADS_v25.md")
 V25_STATE = ROOT / ".brain" / "loop-state-v25.json"
 
 

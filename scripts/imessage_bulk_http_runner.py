@@ -49,6 +49,28 @@ MAX_RETRIES = 2
 # Placeholders de emolumento errados (G1 — regressão proibida)
 EMO_PLACEHOLDER_FORBIDDEN = ("28,90", "28.90", "32,10", "32.10", "156,40", "156.40")
 
+# Schema mínimo das tools cartorio — casos emol rodam COM tools (espelha o
+# fluxo Hermes gateway). finish_reason=tool_calls estruturado = REGRA DE OURO
+# honrada (o caller executaria via MCP); conta como PASS.
+TOOLS_SCHEMA: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "cartorio_calcular_emolumento",
+            "description": "Calcula emolumento MG 2026 (Portaria CGJ/TJMG 8.664/2025)",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ato": {"type": "string"},
+                    "folhas": {"type": "integer"},
+                    "urgencia": {"type": "boolean"},
+                },
+                "required": ["ato"],
+            },
+        },
+    }
+]
+
 
 async def rate_limiter(interval: float) -> None:
     """Token bucket simples: 1 token por `interval` segundos (global)."""
@@ -60,12 +82,16 @@ async def run_case(client: Any, case: dict[str, Any], sem: asyncio.Semaphore,
     """Executa 1 caso multi-turn; retorna resultado avaliado."""
     messages: list[dict[str, str]] = []
     last_text = ""
+    last_tool_calls: list[dict[str, Any]] = []
     error: str | None = None
+    use_tools = case["cat"] == "emol"
     async with sem:
         for turn in case["turns"]:
             messages.append({"role": "user", "content": turn})
             await rate_limiter(rps_interval)
-            payload = {"messages": messages, "max_tokens": 600}
+            payload: dict[str, Any] = {"messages": messages, "max_tokens": 600}
+            if use_tools:
+                payload["tools"] = TOOLS_SCHEMA
             ok = False
             for attempt in range(MAX_RETRIES + 1):
                 try:
@@ -76,7 +102,9 @@ async def run_case(client: Any, case: dict[str, Any], sem: asyncio.Semaphore,
                         continue
                     r.raise_for_status()
                     data = r.json()
-                    last_text = data["choices"][0]["message"]["content"] or ""
+                    msg = data["choices"][0]["message"]
+                    last_text = msg.get("content") or ""
+                    last_tool_calls = msg.get("tool_calls") or []
                     messages.append({"role": "assistant", "content": last_text})
                     ok = True
                     break
@@ -97,6 +125,10 @@ async def run_case(client: Any, case: dict[str, Any], sem: asyncio.Semaphore,
         for ph in EMO_PLACEHOLDER_FORBIDDEN:
             if ph in last_text:
                 ev["issues"].append(f"emol_placeholder:{ph}")
+        # tool_call estruturado = REGRA DE OURO honrada (caller executa via MCP)
+        if last_tool_calls and not ev["issues"]:
+            ev["issues"] = []
+            ev["tool_call"] = last_tool_calls[0]["function"]["name"]
     ev["status"] = "PASS" if not ev["issues"] else "FAIL"
     return {
         "id": case["id"], "cat": case["cat"], "status": ev["status"],

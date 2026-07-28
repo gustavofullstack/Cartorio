@@ -56,8 +56,8 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-SUPER_PLANO_G8 = ROOT / "SUPER_PLANO_G8_100_TASKS.md"
-SUPER_PLANO_G7 = ROOT / "SUPER_PLANO_G7_100_TASKS.md"
+SUPER_PLANO_G8 = (ROOT / "docs" / "plans" / "SUPER_PLANO_G8_100_TASKS.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_G8_100_TASKS.md").exists() else (ROOT / "SUPER_PLANO_G8_100_TASKS.md")
+SUPER_PLANO_G7 = (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md").exists() else (ROOT / "SUPER_PLANO_G7_100_TASKS.md")
 PROGRESS_MD = ROOT / "PROGRESS.md"
 HARNESS_LOOP_STATE = ROOT / ".harness" / "loop-engineer" / "state" / "last.json"
 MEMORY_DIR = ROOT / ".harness" / "memory"

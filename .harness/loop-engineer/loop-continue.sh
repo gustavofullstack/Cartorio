@@ -20,8 +20,8 @@
 set -uo pipefail
 PROJECT="${PROJECT:-/Users/gustavoalmeida/projetos/Cartorio}"
 STATE_DIR="$PROJECT/.harness/loop-engineer/state"
-LAST="$STATE_DIR/last.json"
-GOALS="$PROJECT/GOALS.md"
+GOALS="$PROJECT/docs/plans/GOALS.md"
+[ ! -f "$GOALS" ] && GOALS="$PROJECT/GOALS.md"
 
 echo "═══════════════════════════════════════════════════════════════════"
 echo "  CARTÓRIO LOOP CONTINUE — $(date '+%Y-%m-%d %H:%M:%S %Z')"

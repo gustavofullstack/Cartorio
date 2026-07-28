@@ -1,0 +1,14 @@
+{
+  "ts": "2026-07-28T13:52:24.280523+00:00",
+  "endpoint": "https://api.2notasudi.com.br/api/v1/pietra/chat/completions",
+  "results_file": "../artifacts/imessage/bulk10k_postfix_20260728.jsonl",
+  "total": 120,
+  "counts": {
+    "PASS": 120
+  },
+  "per_cat": {
+    "emol": {
+      "PASS": 120
+    }
+  }
+}

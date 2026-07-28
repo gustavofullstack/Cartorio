@@ -26,7 +26,9 @@ def test_tabelas_registradas_com_paths_validos() -> None:
     assert set(TABELAS.keys()) == {"fixacao1", "fixacao8"}
     for slug, path in TABELAS.items():
         assert Path(path).is_file(), f"OCR ausente para {slug}: {path}"
-        assert Path(path).stat().st_size > 100, f"OCR {slug} suspeito: {Path(path).stat().st_size} bytes"
+        assert Path(path).stat().st_size > 100, (
+            f"OCR {slug} suspeito: {Path(path).stat().st_size} bytes"
+        )
 
 
 def test_sha256_originais_cadastrados_com_64_hex() -> None:
