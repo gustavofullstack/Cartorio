@@ -1,0 +1,16 @@
+{
+  "ts": "2026-07-28T12:36:57.767764+00:00",
+  "endpoint": "https://api.2notasudi.com.br/api/v1/pietra/chat/completions",
+  "results_file": "/Users/gustavoalmeida/Projetos/Cartorio/artifacts/imessage/bulk10k_results_20260728_093503.jsonl",
+  "total": 60,
+  "counts": {
+    "PASS": 39,
+    "FAIL": 21
+  },
+  "per_cat": {
+    "emol": {
+      "PASS": 39,
+      "FAIL": 21
+    }
+  }
+}

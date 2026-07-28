@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import re
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -584,6 +585,64 @@ def _strip_think_tags(text: str) -> str:
     # blocos) tambem sao removidos — nunca podem vazar ao cliente (2026-07-28).
     cleaned = re.sub(r"</?(?:think|reasoning)>", "", cleaned, flags=re.I)
     return cleaned.strip()
+
+
+# Delimitador de tool call INLINE do MiniMax (P0 2026-07-28 — vazou em prod):
+# o upstream as vezes emite o tool call como markup no content em vez do campo
+# estruturado tool_calls. Formato observado (transcripts bulk10k emol):
+#   "texto…]<]minimax[>[<tool_call>\n]<]minimax[>[<invoke name="TOOL">]<]minimax[>[<act>valor]<]minimax[>[</act>]…"
+#   variante: <invoke name="param">valor</invoke> para argumentos nomeados.
+_MINIMAX_DELIM_RE = re.compile(r"\]<\]\w*\[>\[")
+_TOOL_NAME_RE = re.compile(r'<invoke\s+name="([^"]+)"\s*>')
+_PARAM_INVOKE_RE = re.compile(r'<invoke\s+name="([^"]+)"\s*>([^<]*)')
+_PARAM_TAG_RE = re.compile(r"<(act|ato|tipo|folhas|urgencia|valor)>([^<]*)", re.I)
+
+
+def _extract_inline_tool_calls(text: str) -> tuple[str, list[dict[str, Any]]]:
+    """Extrai tool call inline do MiniMax do content.
+
+    Retorna (texto_limpo, tool_calls_estruturados). Markup incompleto/truncado
+    (sem nome de tool parseavel ou sem fechamento) → ([], texto com markup
+    removido): NUNCA vaza `]<]minimax[>`, `<invoke`, `<tool_call` ao cliente.
+    """
+    if not text:
+        return text, []
+    m = _MINIMAX_DELIM_RE.search(text)
+    if m is None and "<tool_call" not in text:
+        return text, []
+    cut = m.start() if m else text.index("<tool_call")
+    clean = text[:cut].strip()
+    markup = text[cut:]
+
+    names = _TOOL_NAME_RE.findall(markup)
+    tool_name = names[0] if names else ""
+    # Fechamento minimo do call: sem </invoke> ou </tool_call> o call esta
+    # truncado (max_tokens) — nao sintetizar tool_call quebrado.
+    complete = ("</invoke>" in markup or "</tool_call>" in markup) and bool(tool_name)
+    if not complete:
+        return clean, []
+
+    params: dict[str, Any] = {}
+    # <invoke name="param">valor (o 1o invoke = tool name, demais = params)
+    for pname, pval in _PARAM_INVOKE_RE.findall(markup)[1:]:
+        pval = pval.strip()
+        if pval:
+            params[pname] = pval
+    # <act>valor</act> / <ato>…</ato> (tags soltas do MiniMax)
+    for ptag, pval in _PARAM_TAG_RE.findall(markup):
+        key = "ato" if ptag.lower() in ("act", "ato") else ptag.lower()
+        if pval.strip() and key not in params:
+            params[key] = pval.strip()
+
+    call = {
+        "id": f"call_inline_{int(time.time() * 1000)}",
+        "type": "function",
+        "function": {
+            "name": tool_name,
+            "arguments": json.dumps(params, ensure_ascii=False),
+        },
+    }
+    return clean, [call]
 
 
 # Tools OpenAI-compatible (MiniMax-M3 tool use / agentic)

@@ -480,7 +480,11 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
        nunca chega ao canal — resposta vira mensagem de instabilidade.
     6. Tools passthrough: function calling (MCP) retorna tool_calls intactos.
     """
-    from app.services.cartorio_agent import _chat_completion, _strip_think_tags
+    from app.services.cartorio_agent import (
+        _chat_completion,
+        _extract_inline_tool_calls,
+        _strip_think_tags,
+    )
     from app.services.pii import scrub as pii_scrub
 
     msgs: list[dict[str, Any]] = [{"role": "system", "content": PIETRA_SYSTEM_PROMPT}]
@@ -514,9 +518,21 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
         "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
     }
 
+    # Tool call INLINE do MiniMax (P0 2026-07-28): quando o upstream emite o
+    # call como markup `]<]minimax[>[<tool_call>…` no content em vez do campo
+    # estruturado, converter p/ tool_calls estruturados (caller executa via MCP)
+    # ou, se truncado, remover o markup — NUNCA vazar markup ao cliente.
+    tool_calls = (msg or {}).get("tool_calls")
+    if msg and not tool_calls:
+        clean_text, inline_calls = _extract_inline_tool_calls(msg.get("content") or "")
+        if inline_calls or clean_text != (msg.get("content") or ""):
+            msg = {**msg, "content": clean_text}
+            if inline_calls:
+                msg["tool_calls"] = inline_calls
+                tool_calls = inline_calls
+
     # Tool calls (MCP/function calling): repassar intactos, sem identity guard
     # — nao ha texto de cliente envolvido.
-    tool_calls = (msg or {}).get("tool_calls")
     if msg and tool_calls:
         response["choices"] = [
             {
