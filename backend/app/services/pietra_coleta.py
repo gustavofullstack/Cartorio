@@ -37,6 +37,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.cliente import Cliente
+from app.models.base import utc_now_naive
 from app.services.pii import hash_pii  # validate_cpf é validado por regex local (não há no pii.py)
 
 logger = logging.getLogger(__name__)
@@ -256,7 +257,7 @@ def upsert_cliente_por_telefone(
             email=email,
             data_nascimento=campos_recebidos.get("data_nascimento"),
             consentimento_lgpd=consentimento_lgpd,
-            consentimento_em=dt.datetime.utcnow() if consentimento_lgpd else None,
+            consentimento_em=utc_now_naive() if consentimento_lgpd else None,
             consentimento_ip=consentimento_ip,
             consentimento_canal=consentimento_canal,
         )
@@ -276,7 +277,7 @@ def upsert_cliente_por_telefone(
                 email=email,
                 data_nascimento=campos_recebidos.get("data_nascimento"),
                 consentimento_lgpd=consentimento_lgpd,
-                consentimento_em=dt.datetime.utcnow() if consentimento_lgpd else None,
+                consentimento_em=utc_now_naive() if consentimento_lgpd else None,
                 consentimento_ip=consentimento_ip,
                 consentimento_canal=consentimento_canal,
             )
@@ -300,7 +301,7 @@ def upsert_cliente_por_telefone(
             updated = True
         if consentimento_lgpd and not cliente.consentimento_lgpd:
             cliente.consentimento_lgpd = True
-            cliente.consentimento_em = dt.datetime.utcnow()
+            cliente.consentimento_em = utc_now_naive()
             cliente.consentimento_canal = consentimento_canal or cliente.consentimento_canal
             cliente.consentimento_ip = consentimento_ip or cliente.consentimento_ip
             updated = True

@@ -1,0 +1,71 @@
+{
+  "ts": "2026-07-28T17:47:13.812133+00:00",
+  "endpoint": "https://api.2notasudi.com.br/api/v1/pietra/chat/completions",
+  "results_file": "../artifacts/imessage/bulk10k_full_20260728.jsonl",
+  "total": 9328,
+  "counts": {
+    "FAIL": 1847,
+    "PASS": 7481
+  },
+  "per_cat": {
+    "capability": {
+      "PASS": 398
+    },
+    "continue_summary": {
+      "PASS": 634
+    },
+    "coref": {
+      "PASS": 761,
+      "FAIL": 25
+    },
+    "dedup": {
+      "PASS": 447,
+      "FAIL": 53
+    },
+    "docs": {
+      "FAIL": 29,
+      "PASS": 471
+    },
+    "emol": {
+      "PASS": 1134
+    },
+    "handoff": {
+      "FAIL": 37,
+      "PASS": 363
+    },
+    "identity": {
+      "FAIL": 28,
+      "PASS": 372
+    },
+    "injection": {
+      "FAIL": 114,
+      "PASS": 586
+    },
+    "institutional": {
+      "FAIL": 340,
+      "PASS": 160
+    },
+    "long_turn": {
+      "FAIL": 250,
+      "PASS": 250
+    },
+    "memory": {
+      "FAIL": 856,
+      "PASS": 59
+    },
+    "pre_protocol": {
+      "PASS": 335
+    },
+    "protocol": {
+      "PASS": 523,
+      "FAIL": 77
+    },
+    "scope": {
+      "PASS": 553,
+      "FAIL": 38
+    },
+    "typos_slang": {
+      "PASS": 435
+    }
+  }
+}

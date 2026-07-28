@@ -91,7 +91,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// FAQ knowledge base (local, sem LLM). PII scrubber.\nconst item = $input.item.json;\nconst raw = ((item.body && item.body.message && item.body.message.text) || '').toLowerCase().trim();\n\n// PII patterns\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// FAQ knowledge base (intencao -> resposta)\nconst kb = {\n  'horario': 'Atendemos de segunda a sexta, 09h-17h. Em urgente, procure o plantao no 1o andar.',\n  'endereco|local|onde': 'Cartorio 2 Notas Uberlandia - Av. Paulo Gracindo, 150 - Centro. Estacionamento no local.',\n  'documento|rg|cpf': 'Para tirar 2a via de RG, procurar SEJUSP. Para CPF, procurar Receita Federal. No cartorio fazemos autenticacao e reconhecimento de firma.',\n  'cust|emolumento|valor|tabela': 'Valores conforme tabela MG 2026. Posso consultar agora - me diga o tipo de servico (certidao, escritura, procuracao, etc).',\n  'agendar|agendamento|horario': 'Quer agendar atendimento? Me diga dia da semana e horario de preferencia.',\n  'pix|pagament|cartao': 'Aceitamos PIX, cartao (credito/debito) e dinheiro. Pagamento apos conclusao do servico.',\n  'certidao': 'Emitamos certidoes: casamento, negativa, positiva, nascimento, obito. Me diga qual precisa.',\n  'escritura': 'Fazemos escrituras de compra/venda, doacao, permuta, procurações. Agende com um escrevente.',\n  'procuracao': 'Procuracao precisa de comparecimento pessoal do outorgante + 2 testemunhas com RG/CPF.',\n  'protesto': 'Protesto de titulos: 2a a 6a, das 09h-16h. Pagamento ou cancelamento tira o protesto em 5 dias uteis.'\n};\n\nlet resposta = null;\nlet intencao = null;\nfor (const [pattern, resp] of Object.entries(kb)) {\n  if (new RegExp(pattern, 'i').test(scrubbed)) {\n    resposta = resp;\n    intencao = pattern.split('|')[0];\n    break;\n  }\n}\n\nif (!resposta) {\n  resposta = 'Nao encontrei resposta automatica. Vou transferir para um atendente humano. Aguarde.';\n  intencao = 'unknown';\n}\n\nreturn { json: { sender: (item.body && item.body.sender) || 'unknown', scrubbed, redactionCount, intencao, resposta } };"
+        "jsCode": "// FAQ knowledge base (local, sem LLM). PII scrubber.\nconst item = $input.item.json;\nconst raw = ((item.body && item.body.message && item.body.message.text) || '').toLowerCase().trim();\n\n// PII patterns\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// FAQ knowledge base (intencao -> resposta)\nconst kb = {\n  'horario': 'Atendemos de segunda a sexta, das 09h as 17h (expedicao administrativa ate as 18h). Nao ha atendimento regular aos sabados, domingos e feriados.',\n  'endereco|local|onde': 'Nossa sede fica na Rua Cel. Antonio Alves Pereira, 850, Centro, Uberlandia - MG, CEP 38400-104. Nao existe unidade complementar.',\n  'documento|rg|cpf': 'No cartorio fazemos autenticacao de copia e reconhecimento de firma. Para 2a via de RG procure a SEJUSP; para CPF, a Receita Federal. Quer agendar algum desses servicos?',\n  'cust|emolumento|valor|tabela': 'Posso consultar o valor oficial da tabela MG 2026 para voce. Me diga o tipo de servico (autenticacao, reconhecimento de firma, procuracao, ata notarial, testamento, escritura etc).',\n  'agendar|agendamento|horario': 'Posso agendar para voce. Me informe o servico desejado e a data/hora de preferencia (ex.: \"autenticacao, segunda, 10h\").',\n  'pix|pagament|cartao': 'Aceitamos PIX, cartao de credito/debito e dinheiro. O pagamento e feito apos a conclusao do servico no cartorio.',\n  'certidao': 'Emitimos certidoes negativas e positivas. Me diga qual tipo precisa e para qual finalidade, que ja verifico como proceder.',\n  'escritura': 'Fazemos escrituras de compra/venda, doacao, permuta, procuracao, inventario, divorcio extrajudicial etc. Posso explicar os documentos iniciais e agendar uma pre-analise.',\n  'procuracao': 'Procuracao publica exige comparecimento pessoal do outorgante com documento oficial com foto e CPF, alem de duas testemunhas com RG/CPF. Quer saber o valor ou agendar?',\n  'protesto': 'Protesto de titulos: atendimento de segunda a sexta. Para pagamento ou cancelamento, o titulo e baixado em ate 5 dias uteis apos a quitacao.'\n};\n\nlet resposta = null;\nlet intencao = null;\nfor (const [pattern, resp] of Object.entries(kb)) {\n  if (new RegExp(pattern, 'i').test(scrubbed)) {\n    resposta = resp;\n    intencao = pattern.split('|')[0];\n    break;\n  }\n}\n\nif (!resposta) {\n  resposta = 'Nao encontrei resposta automatica. Vou transferir para um atendente humano. Aguarde.';\n  intencao = 'unknown';\n}\n\nreturn { json: { sender: (item.body && item.body.sender) || 'unknown', scrubbed, redactionCount, intencao, resposta } };"
       },
       "id": "faq-kb",
       "name": "FAQ Knowledge Base",
@@ -99,6 +99,20 @@
       "typeVersion": 2,
       "position": [
         460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\n\nif (item.intencao !== 'unknown') {\n  return { json: item };\n}\n\nreturn {\n  json: {\n    ...item,\n    intencao: 'triagem_inicial',\n    resposta: 'Posso iniciar sua triagem por aqui e preparar a proposta de pre-protocolo em DRAFT. Por gentileza, diga: 1) qual ato ou assunto precisa resolver; 2) nome da pessoa interessada; 3) se ha urgencia e qual o prazo; e 4) quais documentos ou informacoes ja possui. Nao envie CPF, foto de documento ou dado bancario neste momento; eu indicarei o meio seguro se esses dados forem necessarios.'\n  }\n};"
+      },
+      "id": "unknown-faq-triage",
+      "name": "Unknown FAQ Triage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
         300
       ]
     },
@@ -196,6 +210,17 @@
       ]
     },
     "FAQ Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Unknown FAQ Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unknown FAQ Triage": {
       "main": [
         [
           {
@@ -303,6 +328,20 @@
       },
       {
         "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const item = $input.item.json;\n\nif (item.intencao !== 'unknown') {\n  return { json: item };\n}\n\nreturn {\n  json: {\n    ...item,\n    intencao: 'triagem_inicial',\n    resposta: 'Posso iniciar sua triagem por aqui e preparar a proposta de pre-protocolo em DRAFT. Por gentileza, diga: 1) qual ato ou assunto precisa resolver; 2) nome da pessoa interessada; 3) se ha urgencia e qual o prazo; e 4) quais documentos ou informacoes ja possui. Nao envie CPF, foto de documento ou dado bancario neste momento; eu indicarei o meio seguro se esses dados forem necessarios.'\n  }\n};"
+        },
+        "id": "unknown-faq-triage",
+        "name": "Unknown FAQ Triage",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          680,
+          300
+        ]
+      },
+      {
+        "parameters": {
           "respondWith": "json",
           "responseBody": "={\n  \"status\": \"ok\",\n  \"response\": \"{{ $json.resposta }}\",\n  \"intent\": \"{{ $json.intencao }}\",\n  \"needs_handoff\": {{ $json.intencao === 'unknown' }}\n}"
         },
@@ -328,19 +367,30 @@
           ]
         ]
       },
-      "FAQ Knowledge Base": {
-        "main": [
-          [
-            {
-              "node": "Respond FAQ",
-              "type": "main",
-              "index": 0
+    "FAQ Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Unknown FAQ Triage",
+            "type": "main",
+            "index": 0
             }
           ]
         ]
-      }
     },
-    "nodeGroups": [],
+    "Unknown FAQ Triage": {
+      "main": [
+        [
+          {
+            "node": "Respond FAQ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": [],
     "authors": "Gustavo  Rodrigues",
     "name": null,
     "description": null,

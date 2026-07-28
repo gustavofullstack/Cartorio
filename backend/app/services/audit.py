@@ -188,10 +188,13 @@ class AuditService:
         last = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
         prev_hash = last.hash if last else None
 
-        now = datetime.now(UTC)
-        timestamp = now.replace(tzinfo=None).isoformat(timespec="microseconds")
-        new_hash = cls._compute_hash(prev_hash, payload, timestamp)
-        hmac_kid, hmac_sig = cls._compute_hmac(f"{new_hash}:{timestamp}:{actor_id}:{action}")
+        # ``audit_log.timestamp`` e uma coluna legada ``TIMESTAMP`` sem timezone.
+        # Materializamos uma unica vez em UTC-naive para que o mesmo instante seja
+        # canonicalizado, assinado e persistido, independente do timezone da sessao.
+        timestamp = datetime.now(UTC).replace(tzinfo=None)
+        timestamp_iso = timestamp.isoformat(timespec="microseconds")
+        new_hash = cls._compute_hash(prev_hash, payload, timestamp_iso)
+        hmac_kid, hmac_sig = cls._compute_hmac(f"{new_hash}:{timestamp_iso}:{actor_id}:{action}")
 
         entry = AuditLog(
             actor_id=actor_id,
@@ -208,7 +211,7 @@ class AuditService:
             hash=new_hash,
             hmac_signature=hmac_sig,
             hmac_kid=hmac_kid,
-            timestamp=now,
+            timestamp=timestamp,
         )
         db.add(entry)
         db.commit()

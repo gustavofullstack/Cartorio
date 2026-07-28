@@ -227,6 +227,7 @@ def _strip_think_tags(text: str) -> str:
     """Remove blocos <think>/<reasoning> de modelos com thinking (ex.: MiniMax-M3)."""
     cleaned = re.sub(r"<think>[\s\S]*?(?:</think>|$)", "", text, flags=re.I)
     cleaned = re.sub(r"<reasoning>[\s\S]*?(?:</reasoning>|$)", "", cleaned, flags=re.I)
+    cleaned = re.sub(r"[\u4e00-\u9fff\u3040-\u30ff\u3400-\u4dbf]", "", cleaned)
     return cleaned.strip()
 
 

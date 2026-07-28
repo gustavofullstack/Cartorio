@@ -60,9 +60,7 @@ _COMPILED_INFRA: Final[tuple[re.Pattern[str], ...]] = tuple(
 )
 
 # === Ranges nao-latinos: CJK (+ext A, compat), cirilico, kana, hangul ===
-_NON_LATIN_RE: Final[re.Pattern[str]] = re.compile(
-    "[一-鿿㐀-䶿豈-﫿Ѐ-ӿ぀-ヿ가-힯]"
-)
+_NON_LATIN_RE: Final[re.Pattern[str]] = re.compile("[一-鿿㐀-䶿豈-﫿Ѐ-ӿ぀-ヿ가-힯]")
 
 # Pontuacao full-width → equivalente latino.
 _FULLWIDTH_MAP: Final[dict[str, str]] = {
@@ -148,6 +146,28 @@ _COMPILED_GLITCH: Final[tuple[re.Pattern[str], ...]] = tuple(
     re.compile(p, re.IGNORECASE | re.UNICODE) for p in _GLITCH_PATTERNS
 )
 
+# === VERIFICACAO INSTITUCIONAL DETERMINISTICA ===
+# O modelo pode desobedecer o prompt e afirmar dados publicos falsos. Estas
+# expressoes cobrem as falsidades identificadas no atendimento sem bloquear a
+# negacao correta (ex.: "Victor Hugo nao e substituto").
+_FALSE_CURRENT_MEMBER_RE: Final[re.Pattern[str]] = re.compile(
+    r"\b(?:victor\s+hugo(?:\s+bianchini(?:\s+pizarro)?)?|bianchini)\b\s+"
+    r"(?:e|é|atua\s+como|integra)\b"
+    r"|\b(?:substituto|tabeli[aã]o|integrante)\b[^.!?]{0,80}\b(?:e|é|sao|são)\s+"
+    r"(?:victor\s+hugo|bianchini)\b",
+    re.IGNORECASE | re.UNICODE,
+)
+_FALSE_ADDRESS_RE: Final[re.Pattern[str]] = re.compile(
+    r"\b(?:joao|joão)\s+naves\b"
+    r"|\b(?:tem|possui|ha|há|existe)\s+(?:uma\s+)?(?:unidade\s+complementar|outra\s+unidade)\b",
+    re.IGNORECASE | re.UNICODE,
+)
+_CANONICAL_HEADQUARTER: Final[str] = (
+    "O 2º Tabelionato de Notas de Uberlândia atende exclusivamente na sede: "
+    "Rua Cel. Antônio Alves Pereira, 850, Centro, Uberlândia - MG, CEP 38400-104. "
+    "Não existe unidade complementar."
+)
+
 # Heuristica 1: token alfabetico com 16+ chars sem hifen — fora do PT-BR
 # plausivel (maior palavra notarial comum: "reconhecimento", 14 chars).
 _GLITCH_LONG_TOKEN_RE: Final[re.Pattern[str]] = re.compile(
@@ -155,9 +175,7 @@ _GLITCH_LONG_TOKEN_RE: Final[re.Pattern[str]] = re.compile(
 )
 
 # Heuristica 2: token ALLCAPS 3+ fora da whitelist de siglas do dominio.
-_GLITCH_CAPS_TOKEN_RE: Final[re.Pattern[str]] = re.compile(
-    r"\b[A-ZÁÉÍÓÚÂÊÔÃÕÇ]{3,}\b"
-)
+_GLITCH_CAPS_TOKEN_RE: Final[re.Pattern[str]] = re.compile(r"\b[A-ZÁÉÍÓÚÂÊÔÃÕÇ]{3,}\b")
 
 _GLITCH_CAPS_WHITELIST: Final[frozenset[str]] = frozenset(
     {
@@ -205,6 +223,7 @@ _OUTBOUND_BY_REASON: dict[str, int] = {
     "language_mixing": 0,
     "language_mixing_latin": 0,
     "token_glitch": 0,
+    "institutional_falsehood": 0,
     "fallback": 0,
 }
 
@@ -313,6 +332,28 @@ def strip_glitch_sentences(text: str) -> tuple[str, bool]:
     return _cleanup_spacing(" ".join(kept)), True
 
 
+def strip_institutional_falsehoods(text: str) -> tuple[str, bool]:
+    """Remove afirmacoes institucionais falsas e restaura a sede canonica.
+
+    A verificacao e feita apenas em frases afirmativas conhecidas; uma frase
+    correta que negue a condicao de ex-colaborador nao e alterada.
+    """
+    sentences = _split_sentences(text)
+    removed_member = any(_FALSE_CURRENT_MEMBER_RE.search(sentence) for sentence in sentences)
+    removed_address = any(_FALSE_ADDRESS_RE.search(sentence) for sentence in sentences)
+    if not removed_member and not removed_address:
+        return text, False
+
+    kept = [
+        sentence
+        for sentence in sentences
+        if not _FALSE_CURRENT_MEMBER_RE.search(sentence) and not _FALSE_ADDRESS_RE.search(sentence)
+    ]
+    if removed_address:
+        kept.append(_CANONICAL_HEADQUARTER)
+    return _cleanup_spacing(" ".join(kept)), True
+
+
 # === Helpers internos ===
 
 
@@ -406,6 +447,14 @@ def sanitize_outbound(text: str, *, channel: str = "api") -> OutboundResult:
     if glitch_stripped:
         reasons.append("token_glitch")
         work = work_glitch
+
+    # 2d. DADOS INSTITUCIONAIS: pessoas e sede exigem fatos canonicos, nao
+    # apenas instrucao no prompt. A correcao e local e nao consulta dados do
+    # cliente.
+    work_institutional, institutional_stripped = strip_institutional_falsehoods(work)
+    if institutional_stripped:
+        reasons.append("institutional_falsehood")
+        work = work_institutional
 
     # 3. FALLBACK: interceptou mas nao restou conteudo util.
     if reasons and _alnum_count(work) < 10:

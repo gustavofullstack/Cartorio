@@ -11,7 +11,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin
+from app.models.base import Base, TimestampMixin, utc_now_naive
 from app.models.mixins import SoftDeleteMixin
 
 
@@ -56,6 +56,6 @@ class Atendimento(Base, TimestampMixin, SoftDeleteMixin):
     pesquisa_comentario: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Timestamps de ciclo
-    iniciado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    iniciado_em: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive)
     concluido_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     handoff_para_humano: Mapped[bool] = mapped_column(Boolean, default=False)

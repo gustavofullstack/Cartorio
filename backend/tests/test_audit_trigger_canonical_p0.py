@@ -14,8 +14,10 @@ Contratos testados aqui (falham se regredir):
 3. verify_chain ACEITA entrada trigger-written com hash no formato SQL.
 4. verify_chain REJEITA entrada trigger-written adulterada (fail-closed).
 5. verify_chain REJEITA link quebrado mesmo em entrada trigger-written.
-6. Migracao 0022: v_ts deriva de NOW() e o MESMO valor vai para a coluna
-   timestamp (ts hasheado == ts armazenado).
+6. Migrations 0028/0029: o timestamp hasheado e o valor persistido usam o
+   mesmo instante UTC, inclusive quando a sessao PostgreSQL nao esta em UTC.
+7. Migration 0029 lineariza o grafo Alembic, falha fechado sem HMAC e grava
+   o ``hmac_kid`` exigido pelo contrato de rotacao.
 
 REVIEW cartorio-lgpd obrigatorio (superficie audit*).
 """
@@ -218,3 +220,40 @@ class TestMigration0028:
         # Head linear: ...0027 (CNJ artifact) -> 0028 (fn_auto_audit ts fix)
         assert 'revision = "0028"' in self.SQL
         assert 'down_revision = "0027"' in self.SQL
+
+
+class TestMigration0029:
+    SQL = (
+        Path(__file__).resolve().parents[1]
+        / "alembic"
+        / "versions"
+        / "2026_07_28_0029-fix-fn-auto-audit-utc-naive-session-timezone.py"
+    ).read_text()
+
+    def test_uses_one_utc_naive_value_for_hash_and_persistence(self) -> None:
+        upgrade = self.SQL.split('UPGRADE_SQL = r"""')[1].split('"""')[0]
+        assert "v_timestamp_utc TIMESTAMP WITHOUT TIME ZONE" in upgrade
+        assert "v_timestamp_utc := NOW() AT TIME ZONE 'UTC';" in upgrade
+        assert "to_char(v_timestamp_utc" in upgrade
+        assert "v_hash, v_hmac, v_hmac_kid, v_timestamp_utc" in upgrade
+        assert "v_now TIMESTAMPTZ" not in upgrade
+
+    def test_revision_follows_emolumento_sibling_and_linearizes_head(self) -> None:
+        assert 'revision = "0029"' in self.SQL
+        assert 'down_revision = "df086899697e"' in self.SQL
+
+    def test_hmac_configuration_is_required_without_known_fallback(self) -> None:
+        upgrade = self.SQL.split('UPGRADE_SQL = r"""')[1].split('"""')[0]
+        assert "v_key := NULLIF(current_setting('app.audit_hmac_key', true), '');" in upgrade
+        assert (
+            "v_hmac_kid := NULLIF(current_setting('app.audit_hmac_kid', true), '');" in upgrade
+        )
+        assert "IF v_key IS NULL OR length(v_key) < 32 THEN" in upgrade
+        assert "IF v_hmac_kid IS NULL OR length(v_hmac_kid) > 64 THEN" in upgrade
+        assert "RAISE EXCEPTION USING" in upgrade
+        assert "auto_audit_local_key" not in upgrade
+
+    def test_persists_hmac_kid_with_signature(self) -> None:
+        upgrade = self.SQL.split('UPGRADE_SQL = r"""')[1].split('"""')[0]
+        assert "prev_hash, hash, hmac_signature, hmac_kid, timestamp" in upgrade
+        assert "v_hash, v_hmac, v_hmac_kid, v_timestamp_utc" in upgrade

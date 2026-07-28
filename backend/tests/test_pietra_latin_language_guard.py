@@ -59,8 +59,7 @@ P10_ES_VELHO_REAL = (
 )
 
 P10_EXPLAINS_THAT_REAL = (
-    "Se estiver muito apertado financeiramente, explains that situation "
-    "que eles orientam."
+    "Se estiver muito apertado financeiramente, explains that situation que eles orientam."
 )
 
 
@@ -179,8 +178,7 @@ class TestOutboundGuardLatinStrip:
     def test_ptpt_removido(self):
         """PT-PT ('és velho') removido preservando o resto da dica."""
         text = (
-            "Liga e explica sua situação: herdeiro, casa simples. "
-            "Você és velho demais para isso."
+            "Liga e explica sua situação: herdeiro, casa simples. Você és velho demais para isso."
         )
         out = sanitize_outbound(text, channel="imessage")
         assert "és velho" not in out.sanitized_text
@@ -235,9 +233,7 @@ class TestSanitizerLatinRetryFlow:
 
     def test_retry_persistente_sem_util_cai_fallback(self, client, monkeypatch):
         """Contaminacao total persistente -> fallback seguro deterministico."""
-        calls = _patch_llm_sequence(
-            monkeypatch, ["Actually indeed basically.", "Indeed roughly."]
-        )
+        calls = _patch_llm_sequence(monkeypatch, ["Actually indeed basically.", "Indeed roughly."])
         body = _post(client)
         content = body["choices"][0]["message"]["content"]
         assert content == "Desculpe, tive uma instabilidade. Pode repetir, por gentileza?"

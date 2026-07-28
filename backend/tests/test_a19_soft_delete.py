@@ -17,12 +17,11 @@ Coverage alvo: >= 90% em mixins.py + base.py (repositories).
 
 from __future__ import annotations
 
-from datetime import datetime
-
 import pytest
 
 from app.models.audit_log import AuditLog
 from app.models.atendimento import Atendimento
+from app.models.base import utc_now_naive
 from app.models.cliente import Cliente
 from app.models.conversa import Conversa
 from app.models.documento import Documento
@@ -76,7 +75,7 @@ class TestSoftDeleteMixinBehavior:
 
     def test_soft_delete_seta_timestamp(self, db_session, cliente_ativo):
         """soft_delete() seta deleted_at para um datetime UTC."""
-        antes = datetime.utcnow()
+        antes = utc_now_naive()
         cliente_ativo.soft_delete()
         db_session.commit()
         db_session.refresh(cliente_ativo)

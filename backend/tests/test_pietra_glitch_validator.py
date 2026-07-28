@@ -51,9 +51,7 @@ P9_CARTA_MINECRAFT_REAL = (
     "O tabelião aqui vai adaptar a minuta padrão com base no seu caso."
 )
 
-P7_QUANDOOLHAR_REAL = (
-    "Mas o valor exato só o escribente calcula quandoolhar a documentação."
-)
+P7_QUANDOOLHAR_REAL = "Mas o valor exato só o escribente calcula quandoolhar a documentação."
 
 P6_ISSA_REAL = "O valor da escritura ISSA calculado pela tabela do TJMG."
 

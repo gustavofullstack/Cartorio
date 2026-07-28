@@ -40,9 +40,7 @@ from app.services.pietra_outbound_guard import (
 
 INFRA_INTERRUPT_REAL = "⚡ Interrupting current task"
 
-INFRA_RATE_LIMIT_REAL = (
-    "The model provider is rate-limiting requests. Please try again shortly."
-)
+INFRA_RATE_LIMIT_REAL = "The model provider is rate-limiting requests. Please try again shortly."
 
 INFRA_EMPTY_STREAM_REAL = "empty response stream"
 

@@ -67,9 +67,7 @@ class TestNonLatinRetryAndFallback:
         assert content == "Desculpe, tive uma instabilidade. Pode repetir, por gentileza?"
         assert len(calls) == 2
         # Retry carrega system extra exigindo PT-BR puro.
-        retry_systems = [
-            m for m in calls[1]["messages"] if m["role"] == "system"
-        ]
+        retry_systems = [m for m in calls[1]["messages"] if m["role"] == "system"]
         assert any("APENAS em portugues brasileiro" in m["content"] for m in retry_systems)
 
     def test_cjk_no_primeiro_retry_recupera_ptbr(self, client, monkeypatch):
@@ -136,9 +134,7 @@ class TestInterruptedArtifactStrip:
         assert "Desculpe a demora." in content
         assert len(calls) == 2
 
-    def test_artifact_sozinho_retry_tambem_artifact_cai_fallback(
-        self, client, monkeypatch
-    ):
+    def test_artifact_sozinho_retry_tambem_artifact_cai_fallback(self, client, monkeypatch):
         """Artifact nas 2 tentativas -> fallback seguro (artifact nunca vaza)."""
         calls = _patch_llm_sequence(
             monkeypatch,
@@ -159,7 +155,9 @@ class TestInternalVocabStrip:
         """Vazamento REAL observado (Maria T4): 'via Photon (iMessage)' some."""
         calls = _patch_llm_sequence(
             monkeypatch,
-            ["Que bom que conseguiu! Como e via Photon (iMessage), posso te ajudar por aqui mesmo."],
+            [
+                "Que bom que conseguiu! Como e via Photon (iMessage), posso te ajudar por aqui mesmo."
+            ],
         )
         body = _post(client)
         content = body["choices"][0]["message"]["content"]

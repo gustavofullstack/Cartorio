@@ -29,6 +29,8 @@ import redis
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.models.base import utc_now_naive
+
 logger = logging.getLogger(__name__)
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://cartorio_memory-cache:6379/0")
@@ -86,7 +88,7 @@ def salvar_mensagem(
     if role not in ("user", "assistant", "system", "tool"):
         raise ValueError(f"role invalida: {role!r}")
 
-    now = dt.datetime.utcnow()
+    now = utc_now_naive()
     metadata_json = json.dumps(metadata or {}, ensure_ascii=False, default=str)
 
     # 1. Postgres (persistente)
@@ -217,7 +219,7 @@ def salvar_session_state(
     active_topic: str | None = None,
 ) -> bool:
     """Salva session state em Redis (rapido) + Postgres (backup)."""
-    now = dt.datetime.utcnow()
+    now = utc_now_naive()
     expires_at = now + dt.timedelta(seconds=REDIS_TTL_SECONDS)
     state_json = json.dumps(state, ensure_ascii=False, default=str)
 

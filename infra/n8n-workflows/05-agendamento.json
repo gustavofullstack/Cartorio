@@ -91,7 +91,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\n// PII scrubber\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Detectar dia/horario pedido (regex simples)\nconst diaMatch = scrubbed.match(/\\b(segunda|terca|ter[\\u00e7c]a|quarta|quinta|sexta|s[\\u00e1a]bado|sabado)\\b/i);\nconst horaMatch = scrubbed.match(/\\b(\\d{1,2})[h:](\\d{2})?\\b/i);\n\nreturn { json: {\n  sender, raw, scrubbed, redactionCount,\n  dia: diaMatch ? diaMatch[1].toLowerCase() : null,\n  hora: horaMatch ? parseInt(horaMatch[1]) : null,\n  needsHandoff: redactionCount > 0 || (!diaMatch && !horaMatch)\n}};"
+        "jsCode": "const item = $input.item.json;\nconst raw = (item.body && item.body.message && item.body.message.text) || '';\nconst sender = (item.body && item.body.sender) || 'unknown';\n\n// PII scrubber\nconst patterns = {\n  cpf: /\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b/g,\n  rg: /\\b\\d{1,2}\\.?\\d{3}\\.?\\d{3}-?\\d{1}\\b/g,\n  phone: /\\b\\(\\d{2}\\)\\s?9?\\d{4}-?\\d{4}\\b/g,\n  email: /\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g\n};\nlet scrubbed = raw;\nlet redactionCount = 0;\nfor (const [type, pattern] of Object.entries(patterns)) {\n  const matches = scrubbed.match(pattern);\n  if (matches) {\n    redactionCount += matches.length;\n    scrubbed = scrubbed.replace(pattern, `[${type.toUpperCase()}_REDACTED]`);\n  }\n}\n\n// Detectar dia/horario pedido (regex simples)\nconst diaMatch = scrubbed.match(/\\b(segunda|terca|ter[\\u00e7c]a|quarta|quinta|sexta|s[\\u00e1a]bado|sabado)\\b/i);\nconst horaMatch = scrubbed.match(/\\b(\\d{1,2})[h:](\\d{2})?\\b/i);\n\n// PII nao bloqueia agendamento (dados ja mascarados).\n// Se faltar dia/hora, perguntamos antes de escalar a humano.\nconst missingInfo = !diaMatch && !horaMatch;\n\nreturn { json: {\n  sender, raw, scrubbed, redactionCount,\n  dia: diaMatch ? diaMatch[1].toLowerCase() : null,\n  hora: horaMatch ? parseInt(horaMatch[1]) : null,\n  missingInfo,\n  needsHandoff: false\n}};"
       },
       "id": "parse-when",
       "name": "Parse dia/hora + PII",
@@ -182,7 +182,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"handoff\",\n  \"response\": \"Para agendar com seguranca vou transferir voce a um atendente humano. Aguarde um instante.\"\n}"
+        "responseBody": "={{\n  const missing = $('Parse dia/hora + PII').item.json.missingInfo;\n  const resp = missing\n    ? 'Posso agendar para voce. Qual servico deseja e qual dia/horario de preferencia? (ex.: autenticacao, segunda, 10h)'\n    : 'Para agendar com seguranca vou transferir voce a um atendente humano. Aguarde um instante.';\n  const status = missing ? 'ask_info' : 'handoff';\n  JSON.stringify({ status, response: resp });\n}}"
       },
       "id": "respond-handoff",
       "name": "Handoff Humano",

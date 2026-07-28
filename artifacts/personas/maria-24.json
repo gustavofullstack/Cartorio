@@ -32,7 +32,7 @@
   {
    "turn": 2,
    "user": "preciso reconhecer firma num doc pra faculdade, vcs fazem isso?",
-   "reply": "Sim, fazemos reconhecimento de firma! Pode trazer o documento na sede (Rua Cel. Antônio Alves Pereira, 850, Centro) ou na unidade complementar (Rua Machado de Assis, 685).\n\nAtt, preciso saber: é firma aberta (já registrada aqui) ou firma fechada (vai assinar na hora)?",
+   "reply": "Sim, fazemos reconhecimento de firma! Pode trazer o documento na sede (Rua Cel. Antônio Alves Pereira, 850, Centro).\n\nAtt, preciso saber: é firma aberta (já registrada aqui) ou firma fechada (vai assinar na hora)?",
    "latency_s": 18.1,
    "n_assistant": 1,
    "eval": {
@@ -86,7 +86,7 @@
   {
    "turn": 5,
    "user": "ah e onde vcs ficam mesmo?",
-   "reply": "Estamos na Rua Coronel Antônio Alves Pereira, 850 — Centro, Uberlândia/MG (CEP 38400-104). Também temos uma unidade na Rua Machado de Assis, 685, no Centro.",
+   "reply": "Estamos na Rua Coronel Antônio Alves Pereira, 850 — Centro, Uberlândia/MG (CEP 38400-104).",
    "latency_s": 18.1,
    "n_assistant": 1,
    "eval": {

@@ -19,10 +19,11 @@ Regra: memória gravada por teste NUNCA pode vazar para produção — snapshot/
 `docs/DJALMA_CARTORIO_DOSSIER.md` é a fonte oficial. Estavam ERRADOS em 2 lugares:
 - `backend/app/api/v1/pietra.py` PIETRA_SYSTEM_PROMPT: "251 / Djalma de Oliveira / 3216-9000"
 - `~/.hermes/profiles/cartorio/SOUL.md`: idem
-Correto: **Rua Cel. Antônio Alves Pereira, 850** (sede) + Machado de Assis 685 (unidade) ·
-**Djalma Pizarro** (substitutos: Victor Hugo Bianchini Pizarro, Felipe Pizarro, Alexandra José Beicker) ·
+Correto: **Rua Cel. Antônio Alves Pereira, 850** (sede única; não existe unidade complementar) ·
+**Djalma Pizarro** (substitutos: Felipe Pizarro, Alexandra José Beicker) ·
 **(34) 3216-0252 / 3215-7048** · WhatsApp (34) 99195-2444 · seg-sex 09-17h (expedição 18h) ·
 CNPJ 07.563.254/0001-67 · instalado 26/01/1892.
+*Nota atualizada em 2026-07-28: Victor Hugo Bianchini Pizarro não integra mais o quadro de substitutos.*
 Teste `test_pietra_api_chat_completions.py` agora trava os 3 fatos canônicos (850/3216-0252/Pizarro).
 
 ## 3. Deploy VPS system-api (não é git!)

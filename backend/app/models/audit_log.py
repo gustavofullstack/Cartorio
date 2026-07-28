@@ -9,7 +9,7 @@ from datetime import datetime
 from sqlalchemy import JSON, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import Base, utc_now_naive
 
 
 class AuditLog(Base):
@@ -53,7 +53,7 @@ class AuditLog(Base):
     hmac_kid: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     # LGPD Art. 37: rastreabilidade da chave; permite rotacao sem invalidar historico.
 
-    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False, index=True)
+    timestamp: Mapped[datetime] = mapped_column(default=utc_now_naive, nullable=False, index=True)
 
     __table_args__ = (
         Index("ix_audit_resource_action", "resource", "action"),

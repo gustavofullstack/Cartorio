@@ -15,7 +15,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin
+from app.models.base import Base, TimestampMixin, utc_now_naive
 from app.models.mixins import SoftDeleteMixin
 
 
@@ -30,7 +30,7 @@ class WebhookEvent(Base, TimestampMixin, SoftDeleteMixin):
     # "evolution" | "chatwoot"
     event_id: Mapped[str] = mapped_column(String(256), index=True)
     # message_id (evolution) ou event id (chatwoot)
-    received_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    received_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now_naive)
     payload_hash: Mapped[str] = mapped_column(String(64))
     # SHA256 hex do payload original (auditoria, LGPD-safe)
 

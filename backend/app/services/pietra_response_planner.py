@@ -250,8 +250,8 @@ class ResponsePlanner:
         ):
             return (
                 f"{header}De nada! Para sua segurança, não consigo confirmar por esta mensagem que informações ou um pré-pedido tenham sido registrados. "
-                "Um escrevente poderá confirmar o recebimento e orientar os próximos passos pelo telefone (34) 3216-0252. "
-                "Desejo muita força e uma pronta recuperação ao seu neto. Se precisar de orientação sobre o procedimento, estou à disposição com todo carinho."
+                "Posso continuar por aqui orientando os documentos e os próximos dados necessários para a triagem. "
+                "Desejo muita força e uma pronta recuperação ao seu neto."
             )
 
         # Emolumentos
@@ -280,9 +280,15 @@ class ResponsePlanner:
                 )
             return (
                 f"{header}Compreendo sua solicitação! Para calcular os emolumentos ({cap.display_name}), "
-                f"me diga o tipo de ato e quantas folhas. Calculo o valor oficial da Tabela MG 2026 para você."
+                "me diga o tipo de ato e quantas folhas. Com esses dados, solicito o cálculo "
+                "oficial pela Tabela MG 2026 para você."
             )
         # Protocolo
+        if any(w in t for w in ("abrir protocolo", "criar protocolo", "gerar protocolo")):
+            return (
+                f"{header}Posso preparar seu pré-protocolo por aqui. Ele nasce como DRAFT e só "
+                "segue após validação de um escrevente; informe o ato e os documentos que já possui."
+            )
         if any(w in t for w in ("protocolo", "andamento", "status")):
             cap = get_capability("protocol_status")
             if cap and can_say_i_can_do_it("protocol_status"):
@@ -291,8 +297,9 @@ class ResponsePlanner:
         # Endereco / horario
         if any(w in t for w in ("endereco", "endereço", "onde fica", "localizacao")):
             return (
-                f"{header}O 2º Tabelionato de Notas de Uberlândia fica localizado na Avenida João Naves de Ávila, nº 215, Centro, Uberlândia - MG (CNS 05.799-2). "
-                "Nosso telefone de contato é (34) 3216-0252. Será um prazer te receber!"
+                f"{header}O 2º Tabelionato de Notas de Uberlândia atende exclusivamente na sede: "
+                "Rua Cel. Antônio Alves Pereira, 850, Centro, Uberlândia - MG, CEP 38400-104. "
+                "Não existe unidade complementar."
             )
         if any(w in t for w in ("horario", "funcionamento", "abre", "fecha")):
             return (
@@ -339,10 +346,9 @@ class ResponsePlanner:
         ):
             return (
                 f"{header}Minha senhora, sinto muito pelo momento delicado com seu neto e compreendo perfeitamente a sua urgência e preocupação. Fique tranquila, estamos aqui para acolher sua família com todo o carinho, compaixão e máxima agilidade profissional!\n\n"
-                "Sim, o 2º Tabelionato de Uberlândia realiza **atendimento em regime de urgência hospitalar** e **diligência notarial hospitalar** (quando um tabelião ou escrevente autorizado se desloca até o hospital ou UTI para colher a assinatura ou verificar os documentos necessários), mediante autorização formal do tabelião/escrevente.\n\n"
-                "Para sua segurança, não consigo confirmar por esta mensagem que um pré-pedido ou atendimento de urgência tenha sido acionado. "
-                "Para que um escrevente avalie a situação com prioridade, por gentileza entre em contato agora pelo telefone (34) 3216-0252 e informe que se trata de urgência médica hospitalar. "
-                "A equipe humana confirmará a viabilidade, os documentos necessários e os próximos passos."
+                "Vou iniciar a triagem de urgência por aqui e organizar a proposta de pré-protocolo em DRAFT, para que nenhuma informação precise ser repetida.\n\n"
+                "Por gentileza, responda apenas ao que já souber: 1) qual ato precisa ser realizado (por exemplo, procuração, escritura ou testamento); 2) nome da pessoa que precisa do atendimento; 3) se ela está consciente e consegue manifestar sua vontade; 4) hospital e setor/quarto; 5) prazo ou motivo da urgência; e 6) quais documentos já estão disponíveis.\n\n"
+                "Com essa triagem, organizo os dados e os documentos iniciais no rascunho DRAFT para a análise notarial obrigatória. Não envie CPF, foto de documento ou dado bancário neste momento; eu indicarei o meio seguro se esses dados forem necessários."
             )
         # Testamento Público (específico)
         if "testamento" in t:
@@ -383,13 +389,12 @@ class ResponsePlanner:
             cap = get_capability("human_handoff")
             if cap is None or not can_say_i_can_do_it("human_handoff"):
                 return (
-                    f"{header}Compreendo perfeitamente! O encaminhamento direto para um escrevente não está disponível "
-                    "neste momento pelo canal digital. Fique tranquilo(a): você pode falar diretamente com nossa "
-                    "equipe pelo telefone da serventia: (34) 3216-0252."
+                    f"{header}Compreendo perfeitamente! Posso preparar sua triagem para o atendimento humano sem "
+                    "você precisar repetir informações. Me diga qual ato precisa realizar e o que já possui de documentos."
                 )
             return (
-                f"{header}Compreendo perfeitamente! Para sua segurança, preciso de uma confirmação do canal antes de afirmar um encaminhamento. "
-                "Se preferir atendimento humano imediato, fale com nossa equipe pelo telefone (34) 3216-0252."
+                f"{header}Compreendo perfeitamente! Posso iniciar sua triagem por aqui e organizar as informações "
+                "necessárias para o atendimento humano. Qual ato você precisa realizar?"
             )
         # Agendar
         if any(w in t for w in ("agendar", "marcar", "horario disponivel")):
@@ -399,7 +404,10 @@ class ResponsePlanner:
                     f"{header}Compreendo! Informe o dia desejado e o motivo do atendimento para que eu possa orientar os dados necessários para o pré-agendamento. "
                     "O registro e a confirmação final dependem de validação por um escrevente."
                 )
-            return f"{header}Compreendo! O pré-agendamento pelo canal está indisponível agora. Fique tranquilo(a), quer ligar diretamente para nós? (34) 3216-0252."
+            return (
+                f"{header}Compreendo! Posso adiantar sua triagem de pré-agendamento por aqui. "
+                "Informe o ato, a data e o horário de preferência para eu orientar os documentos iniciais."
+            )
         # Default: orientacao curta
         return f"{header}\n\n" + _catalog_overview()
 
@@ -443,8 +451,8 @@ class ResponsePlanner:
     def _safe_fallback(self, state: ConversationState, blocked_phrase: str) -> str:
         """Quando a resposta viola forbidden phrases, gera substituta limpa."""
         return (
-            "Estou com uma instabilidade momentanea. Posso te passar informacoes "
-            "institucionais e te ajudar com emolumentos pelo telefone (34) 3216-0252."
+            "Estou com uma instabilidade momentanea. Posso continuar por aqui com informações "
+            "institucionais, documentos necessários e a triagem do seu atendimento."
         )
 
     def _operational_truth_filter(self, response: str) -> str:

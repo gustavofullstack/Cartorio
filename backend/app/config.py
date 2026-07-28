@@ -215,6 +215,14 @@ class Settings(BaseSettings):
     telegram_api_base: str = "https://api.telegram.org"
 
     # ========================================================================
+    # Lark (Feishu/Larksuite) Bot
+    # ========================================================================
+    lark_app_id: Optional[str] = None
+    lark_app_secret: Optional[str] = None
+    lark_encrypt_key: Optional[str] = None
+    lark_add_bot_url: Optional[str] = None
+
+    # ========================================================================
     # Stale detector (atendimento sem update > N min vira flag 'stale')
     # ========================================================================
     stale_threshold_minutes: int = 30
