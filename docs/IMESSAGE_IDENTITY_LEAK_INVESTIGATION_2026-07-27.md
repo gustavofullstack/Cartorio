@@ -171,3 +171,57 @@ Independente da causa raiz, **`pietra_identity_guard.py` (Lesson 282)** intercep
 - B4 falha → manter `IMESSAGE_REQUIRES_FIX` até Felipe confirmar visualmente
 
 Modified by Gustavo Almeida
+---
+
+## 🔬 ADDENDUM 2026-07-27 23:00 BRT — Descoberta da raiz real do T2 FAIL_FUNCTIONAL
+
+Investigação live da URL do MCP revelou que **nenhuma URL externa chega ao cartorio_api `/mcp`**:
+
+| URL testada | HTTP | Body | Diagnóstico |
+|---|---|---|---|
+| `http://localhost:8000/mcp` (Mac) | ECONNREFUSED | — | Mac não roda cartorio_api (roda na VPS) |
+| `http://100.99.172.84:8000/mcp` (VPS Tailscale direto) | ECONNREFUSED | — | Port 8000 fechado externamente (só Traefik 443 exposto) |
+| `https://api.2notasudi.com.br/mcp` (público) | **404** | RFC 7807 problem detail JSON | Traefik não roteia `/mcp` |
+| `https://api.2notasudi.com.br/mcp/tools/list` | **404** | mesmo | idem |
+| `https://100.99.172.84/mcp` (VPS Tailscale via Traefik) | **200** | **Easypanel admin UI HTML** | Traefik roteia `/mcp` para Easypanel, NÃO para cartorio_api |
+| `https://100.99.172.84/mcp/tools/list` (idem) | **200** | mesmo Easypanel HTML | confirmado |
+| `http://cartorio_api:8000/mcp` (intra-cluster Docker) | funciona | MCP JSON | o único path funcional — `MCP_CARTORIO_URL` em `infra/hermes/docker-stack.yml:19` |
+
+### Root cause raiz do T2 FAIL_FUNCTIONAL
+
+**`backend/app/main.py:787` faz `app.mount("/mcp", _mcp_subapp)` corretamente, MAS o `docker-stack.yml` do `cartorio_api` NÃO tem Traefik labels expondo `/mcp` externamente.** Resultado:
+
+1. Mac Hermes (cliente MCP) → tenta `https://api.2notasudi.com.br/mcp` → **404** → tool call falha silenciosa → LLM alucina valor de memória → "R$ correto" sem tool call = FAIL_FUNCTIONAL (L270)
+2. Hipótese original (paste #2 §4) "trocar URL para localhost:8000/mcp" estava **errada**: cartorio_api não roda no Mac
+3. Hipótese alternativa "tentar Tailscale IP" também **falha**: Traefik roteia `/mcp` para Easypanel, não para cartorio_api
+
+### Fix NECESSÁRIO (SUI Gustavo + deploy)
+
+**Adicionar Traefik labels em `infra/hermes/docker-stack.yml` no serviço `cartorio_api`** para expor `/mcp` em `api.2notasudi.com.br/mcp`. Modelo:
+
+```yaml
+# Exemplo (a validar contra config Traefik atual):
+labels:
+  - "traefik.http.routers.cartorio-api-mcp.rule=Host(`api.2notasudi.com.br`) && PathPrefix(`/mcp`)"
+  - "traefik.http.routers.cartorio-api-mcp.tls=true"
+  - "traefik.http.routers.cartorio-api-mcp.tls.certresolver=letsencrypt"
+  - "traefik.http.services.cartorio-api-mcp.loadbalancer.server.port=8000"
+  - "traefik.enable=true"
+```
+
+**Depois de aplicar labels + redeploy:**
+1. Validar: `curl -m 8 https://api.2notasudi.com.br/mcp/tools/list` deve retornar JSON MCP, não 404 nem Easypanel HTML
+2. Aí sim, manter `url: https://api.2notasudi.com.br/mcp` em `config.yaml:335` (URL original) — passa a funcionar
+3. Restart gateway Mac: `hermes gateway restart` (já testado nesta sessão — `hermes gateway start` funcionou com PID 72747)
+4. Re-rodar Felipe Checklist T2 + Harness 100 + Felipe visual → `IMESSAGE_FELIPE_ACCEPTED`
+
+### Estado atual em 23:00 BRT
+
+- `~/.hermes/profiles/cartorio/config.yaml:335` foi editado e revertido — URL atual é `https://api.2notasudi.com.br/mcp` (404 confirmado) com comentário detalhado sobre o que precisa mudar
+- Backup `config.yaml.bak-cartorio-agent-20260727_225746` salvo antes de qualquer edit
+- Mac Hermes gateway iniciado em background (PID 72747, sem auto-restart) — photon platform continua `disconnected` (esperado sem LaunchAgent funcionando)
+- Defesa-em-profundidade `pietra_identity_guard.py` ativa independente da URL
+
+### Conclusão
+
+**B4 NÃO foi resolvido** porque a "correção simples de URL" não existe — o problema é de **deployment config** (Traefik labels ausentes), não de config Hermes. Documento este achado para que o SUI Gustavo (com acesso SSH à VPS) possa aplicar o fix correto via deploy.

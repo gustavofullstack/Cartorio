@@ -140,6 +140,8 @@ Comandos raw `uv` (`uv run pytest ...`, `uv run uvicorn ...`) também funcionam 
 - **Docker Swarm port reuse** (quando escalando serviço `host`-mode): scale 0 → 1, não 1→1 direto.
 - **N8N `/mcp-server/http`**: retorna 401 silencioso se auth header estiver errado.
 - **MCP server no backend**: roda em `make -C backend mcp-server` ou montado em `/mcp` se `MCP_SERVER_ENABLED=true`. Inventário real está em `backend/mcp_server.py` (grep `@mcp.tool(`).
+- **MCP endpoint `/mcp` NÃO é exposto externamente** (Lesson 282): `app.mount("/mcp", ...)` existe em `backend/app/main.py:787`, mas Traefik em prod **não** roteia `/mcp` para `cartorio_api` nem em `https://api.2notasudi.com.br/mcp` (404) nem em `https://100.99.172.84/mcp` (200 mas Easypanel admin UI). VPS port 8000 está `Connection refused` externamente. Consequência: clientes externos (Mac Hermes, etc.) NÃO conseguem chamar `cartorio_calcular_emolumento`. **Fix:** adicionar Traefik labels em `infra/hermes/docker-stack.yml` para `cartorio_api` expondo `/mcp` em `api.2notasudi.com.br/mcp`. Diagnóstico completo: `docs/IMESSAGE_IDENTITY_LEAK_INVESTIGATION_2026-07-27.md` §D1 addendum.
+- **Topologia coexistência backend/iMessage** (Lesson 282): backend (cartorio_api, MCP, audit, PII, retry envelope) = VPS Hostinger 100%. iMessage/Photon sidecar + Hermes Agent runtime = **Mac local** do Gustavo (LaunchAgent `ai.hermes.gateway-cartorio`, port 8793, Spectrum project `438527e1-...`). Coexistência legítima — Messages.app é dependência de macOS, requer execução local. A regra "MacBook = só UI" aplica ao backend, **NÃO** ao canal iMessage (DIAGNOSTICO_VPS_MASTER_20260727.md classifica iMessage como `NOT_DEPLOYED` da VPS, esperado).
 
 ## Time (delegação multi-agent)
 
