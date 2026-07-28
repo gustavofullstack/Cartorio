@@ -222,6 +222,63 @@ class TestGracefulDegradation:
         assert "Pietra" in content
 
 
+class TestToolResultPassthrough:
+    """Regression: ChatMessage DROPAVA tool_calls/tool_call_id (2026-07-28).
+
+    Sintoma em prod: loop infinito — MiniMax re-chamava a tool apos o tool
+    result porque a mensagem assistant chegava sem tool_calls e a role=tool
+    sem tool_call_id (contexto quebrado).
+    """
+
+    def test_tool_fields_forwarded(self, client, captured):
+        r = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={
+                "messages": [
+                    {"role": "user", "content": "quanto custa?"},
+                    {
+                        "role": "assistant",
+                        "content": "",
+                        "tool_calls": [
+                            {
+                                "id": "call_1",
+                                "type": "function",
+                                "function": {"name": "cartorio_calcular_emolumento", "arguments": "{}"},
+                            }
+                        ],
+                    },
+                    {
+                        "role": "tool",
+                        "tool_call_id": "call_1",
+                        "name": "cartorio_calcular_emolumento",
+                        "content": '{"total":"68.94"}',
+                    },
+                ]
+            },
+        )
+        assert r.status_code == 200
+        sent = captured[0]["messages"]
+        assistant = [m for m in sent if m["role"] == "assistant"][0]
+        tool_msg = [m for m in sent if m["role"] == "tool"][0]
+        assert assistant["tool_calls"][0]["id"] == "call_1"
+        assert tool_msg["tool_call_id"] == "call_1"
+        assert tool_msg["name"] == "cartorio_calcular_emolumento"
+
+    def test_null_content_accepted(self, client, captured):
+        """Assistant com content=null (tool_calls only) nao pode dar 422."""
+        r = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={
+                "messages": [
+                    {"role": "user", "content": "oi"},
+                    {"role": "assistant", "content": None, "tool_calls": []},
+                    {"role": "user", "content": "tudo bem?"},
+                ]
+            },
+        )
+        assert r.status_code == 200
+
+
 class TestSseStreaming:
     """Endpoint deve honrar stream=true com SSE (Hermes Agent consome assim)."""
 

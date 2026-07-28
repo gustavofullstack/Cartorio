@@ -430,7 +430,13 @@ def pietra_health() -> dict:
 
 class ChatMessage(BaseModel):
     role: str
-    content: str
+    content: Optional[str] = None
+    # Campos de tool calling — OBRIGATORIOS preservar (2026-07-28):
+    # dropar tool_calls/tool_call_id fazia o MiniMax re-chamar a tool em loop
+    # (a mensagem role=tool chegava sem a tool_call correspondente).
+    tool_calls: Optional[list[dict[str, Any]]] = None
+    tool_call_id: Optional[str] = None
+    name: Optional[str] = None
 
 
 class ChatCompletionRequest(BaseModel):
@@ -476,10 +482,18 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
 
     msgs: list[dict[str, Any]] = [{"role": "system", "content": PIETRA_SYSTEM_PROMPT}]
     for m in req.messages:
+        item: dict[str, Any] = {"role": m.role}
         content = m.content
-        if m.role == "user":
+        if m.role == "user" and content:
             content = pii_scrub(content).text
-        msgs.append({"role": m.role, "content": content})
+        item["content"] = content
+        if m.tool_calls:
+            item["tool_calls"] = m.tool_calls
+        if m.tool_call_id:
+            item["tool_call_id"] = m.tool_call_id
+        if m.name:
+            item["name"] = m.name
+        msgs.append(item)
 
     msg, provider_used, err = await _chat_completion(
         messages=msgs,
