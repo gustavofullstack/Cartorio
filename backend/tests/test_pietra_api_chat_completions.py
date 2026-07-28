@@ -152,6 +152,106 @@ class TestPromptPosturaResolutiva:
         assert "Pietra" in msgs[0]["content"]
 
 
+class TestPromptRound2:
+    """Diretrizes FIX ROUND 2 (2026-07-28, issues P0/P1 das personas P7-P10).
+
+    O prompt DEVE conter as diretrizes que o guard nao consegue enforcar:
+    custo de atos complexos sem numero inventado, voz fixa feminina,
+    genero de terceiros, limite de tamanho p/ idosos e notas tecnicas
+    notariais (firma, apostilamento, exterior, documentos de identidade).
+    Teste FALHA se as diretrizes regredirem no prompt.
+    """
+
+    def _prompt(self, client, captured) -> str:
+        r = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={"messages": [{"role": "user", "content": "Olá"}]},
+        )
+        assert r.status_code == 200
+        return captured[0]["messages"][0]["content"]
+
+    def test_prompt_custo_atos_complexos_sem_numero_inventado(self, client, captured):
+        """P7/P10: custo de inventario/escritura 100% defletido ou inventado.
+
+        Diretriz: orientar ("depende do valor dos bens; o escrevente
+        confirma o calculo exato") SEM inventar percentuais/numeros.
+        """
+        prompt = self._prompt(client, captured)
+        assert "depende do valor dos bens" in prompt
+        assert "confirma o calculo exato" in prompt
+
+    def test_prompt_proibe_percentual_urgencia(self, client, captured):
+        """P6 (bot antigo) inventou '50% de urgencia' — proibicao dura."""
+        prompt = self._prompt(client, captured)
+        assert "urgencia" in prompt
+        # Proibicao explicita de percentual/numero inventado de urgencia.
+        assert "percentual" in prompt or "%" in prompt
+
+    def test_prompt_voz_fixa_feminina(self, client, captured):
+        """P7 id 4254: 'vou ser honesta' — voz oscilou. Pietra e SEMPRE feminina."""
+        prompt = self._prompt(client, captured)
+        assert "honesta" in prompt
+        assert "honesto" in prompt  # citado como forma proibida
+
+    def test_prompt_genero_de_terceiros(self, client, captured):
+        """P10: 'voce e herdeira (irma)' com irmao explicito.
+
+        Diretriz: usar o genero que o CLIENTE usou; na duvida, forma neutra.
+        """
+        prompt = self._prompt(client, captured)
+        assert "terceiros" in prompt
+        assert "neutra" in prompt or "neutro" in prompt
+
+    def test_prompt_limite_tamanho_e_idosos(self, client, captured):
+        """P10: paredes de texto p/ idoso de 90 anos; so simplificou a pedido.
+
+        Diretriz: max ~8 linhas; idosos/pessoas simples -> 3-4 passos
+        curtos desde a PRIMEIRA resposta, sem bullets aninhados.
+        """
+        prompt = self._prompt(client, captured)
+        assert "8 linhas" in prompt
+        assert "PRIMEIRA resposta" in prompt
+
+    def test_prompt_nota_tecnica_firma_semelhanca_vs_autenticidade(self, client, captured):
+        """P8: nao distinguiu firma por semelhança vs autenticidade."""
+        prompt = self._prompt(client, captured)
+        assert "SEMELHAN" in prompt.upper()
+        assert "AUTENTICIDADE" in prompt.upper()
+
+    def test_prompt_nota_tecnica_apostilamento_traducao(self, client, captured):
+        """P5/P9: apostilamento (Haia) + traducao juramentada p/ uso no exterior."""
+        prompt = self._prompt(client, captured)
+        assert "Haia" in prompt
+        assert "JURAMENTADA" in prompt.upper()
+
+    def test_prompt_nota_tecnica_procuracao_exterior(self, client, captured):
+        """P3 (antigo): 'via Teams'; P9: consulado vs notario estrangeiro.
+
+        Diretriz: procuracao lavrada no exterior = consulado brasileiro
+        ou e-Notariado — NUNCA 'via Teams'.
+        """
+        prompt = self._prompt(client, captured)
+        assert "consulado brasileiro" in prompt
+        assert "e-Notariado" in prompt
+        assert "via Teams" in prompt  # citado como forma proibida
+
+    def test_prompt_nota_tecnica_documento_identificacao(self, client, captured):
+        """P9 id 4274: CRM exigido como documento civil — erro factual.
+
+        Diretriz: RG/CNH/RNE/passaporte sao documentos validos; carteira
+        profissional (CRM/OAB/CREA) NAO e documento civil de identificacao.
+        """
+        prompt = self._prompt(client, captured)
+        assert "RNE" in prompt
+        assert "CRM" in prompt
+        assert "documento civil" in prompt
+
+    def test_prompt_proibe_mistura_de_idiomas_latina(self, client, captured):
+        """Reforco round 2: proibicao explicita de ingles/PT-PT solto."""
+        prompt = self._prompt(client, captured)
+        assert "portugues europeu" in prompt or "ingles" in prompt
+
+
 class TestThinkTagStrip:
     def test_think_blocks_removed_from_content(self, client, monkeypatch):
         _patch_llm(monkeypatch, "<think>raciocinio interno</think>Resposta limpa.")
