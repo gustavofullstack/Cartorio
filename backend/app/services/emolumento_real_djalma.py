@@ -195,6 +195,13 @@ ALIASES_SLUG: Final[dict[str, str]] = {
     "testamento_publico": "testamento",
     "ata_notarial_primeira_folha": "ata_notarial_ate_2_folhas",
     "escritura_sem_valor": "escritura_sem_conteudo_financeiro",
+    # Variantes observadas do LLM via MCP tool (2026-07-28).
+    "procuracao_generica": "procuracao_geral",
+    "procuracao": "procuracao_geral",
+    "autenticacao": "autenticacao_copia_folha",
+    "autenticacao_copia": "autenticacao_copia_folha",
+    "reconhecimento_firma": "reconhecimento_firma_assinatura",
+    "reconhecimento": "reconhecimento_firma_assinatura",
 }
 
 

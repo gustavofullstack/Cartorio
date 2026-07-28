@@ -580,6 +580,9 @@ def _strip_think_tags(text: str) -> str:
         cleaned,
         flags=re.I,
     )
+    # Fechamentos orfaos (ex.: content "</think>" quando o provider separa os
+    # blocos) tambem sao removidos — nunca podem vazar ao cliente (2026-07-28).
+    cleaned = re.sub(r"</?(?:think|reasoning)>", "", cleaned, flags=re.I)
     return cleaned.strip()
 
 
