@@ -1,21 +1,21 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-28T19:19:03.237718+00:00",
+    "generated_at": "2026-07-28T21:46:32.324383+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
     "task_id": "G8.12.T4"
   },
   "summary": {
-    "unused_imports": 1,
-    "ruff_total": 1,
+    "unused_imports": 0,
+    "ruff_total": 0,
     "pyflakes_total": 0,
     "vulture_suspicions": 0,
     "vulture_min_confidence": 80,
-    "uncovered_files": 188,
-    "zero_coverage_files": 177,
-    "ruff_clean": false,
+    "uncovered_files": 190,
+    "zero_coverage_files": 184,
+    "ruff_clean": true,
     "pyflakes_clean": true,
     "vulture_clean": true
   },
@@ -23,46 +23,10 @@
     "ruff_unused": {
       "tool": "ruff",
       "rules": "F401,F841",
-      "returncode": 1,
+      "returncode": 0,
       "stderr": "",
-      "findings": [
-        {
-          "cell": null,
-          "code": "F401",
-          "end_location": {
-            "column": 13,
-            "row": 28
-          },
-          "filename": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app/api/v1/lark.py",
-          "fix": {
-            "applicability": "safe",
-            "edits": [
-              {
-                "content": "",
-                "end_location": {
-                  "column": 1,
-                  "row": 29
-                },
-                "location": {
-                  "column": 1,
-                  "row": 28
-                }
-              }
-            ],
-            "message": "Remove unused import: `httpx`"
-          },
-          "location": {
-            "column": 8,
-            "row": 28
-          },
-          "message": "`httpx` imported but unused",
-          "name": "unused-import",
-          "noqa_row": 28,
-          "severity": "error",
-          "url": "https://docs.astral.sh/ruff/rules/unused-import"
-        }
-      ],
-      "count": 1
+      "findings": [],
+      "count": 0
     },
     "pyflakes": {
       "tool": "pyflakes",
@@ -185,6 +149,13 @@
           "excluded_lines": 0
         },
         {
+          "file": "app/api/v1/lark.py",
+          "summary_pct": 0.0,
+          "statements": 183,
+          "missing_lines": 183,
+          "excluded_lines": 0
+        },
+        {
           "file": "app/api/v1/lgpd_consent.py",
           "summary_pct": 0.0,
           "statements": 27,
@@ -277,9 +248,9 @@
         },
         {
           "file": "app/config.py",
-          "summary_pct": 82.81,
+          "summary_pct": 100.0,
           "statements": 128,
-          "missing_lines": 22,
+          "missing_lines": 0,
           "excluded_lines": 0
         },
         {
@@ -452,9 +423,9 @@
         },
         {
           "file": "app/models/base.py",
-          "summary_pct": 100.0,
+          "summary_pct": 88.89,
           "statements": 9,
-          "missing_lines": 0,
+          "missing_lines": 1,
           "excluded_lines": 0
         },
         {
@@ -704,9 +675,9 @@
         },
         {
           "file": "app/services/audit.py",
-          "summary_pct": 80.36,
+          "summary_pct": 0.0,
           "statements": 112,
-          "missing_lines": 22,
+          "missing_lines": 112,
           "excluded_lines": 0
         },
         {
@@ -739,9 +710,9 @@
         },
         {
           "file": "app/services/audit_keys.py",
-          "summary_pct": 91.55,
+          "summary_pct": 0.0,
           "statements": 142,
-          "missing_lines": 12,
+          "missing_lines": 142,
           "excluded_lines": 2
         },
         {
@@ -1025,6 +996,13 @@
           "excluded_lines": 0
         },
         {
+          "file": "app/services/lark.py",
+          "summary_pct": 0.0,
+          "statements": 108,
+          "missing_lines": 108,
+          "excluded_lines": 0
+        },
+        {
           "file": "app/services/lgpd/__init__.py",
           "summary_pct": 100.0,
           "statements": 0,
@@ -1250,9 +1228,9 @@
         },
         {
           "file": "app/services/pietra_coleta.py",
-          "summary_pct": 54.6,
+          "summary_pct": 0.0,
           "statements": 174,
-          "missing_lines": 79,
+          "missing_lines": 174,
           "excluded_lines": 0
         },
         {
@@ -1271,9 +1249,9 @@
         },
         {
           "file": "app/services/pietra_memoria.py",
-          "summary_pct": 34.38,
+          "summary_pct": 0.0,
           "statements": 128,
-          "missing_lines": 84,
+          "missing_lines": 128,
           "excluded_lines": 0
         },
         {
@@ -1292,9 +1270,9 @@
         },
         {
           "file": "app/services/pii.py",
-          "summary_pct": 22.52,
+          "summary_pct": 21.62,
           "statements": 111,
-          "missing_lines": 86,
+          "missing_lines": 87,
           "excluded_lines": 0
         },
         {
@@ -1523,9 +1501,9 @@
         },
         {
           "file": "app/utils/ip.py",
-          "summary_pct": 8.7,
+          "summary_pct": 0.0,
           "statements": 46,
-          "missing_lines": 42,
+          "missing_lines": 46,
           "excluded_lines": 0
         },
         {
@@ -1543,8 +1521,8 @@
           "excluded_lines": 0
         }
       ],
-      "total_uncovered_files": 188,
-      "total_zero_coverage_files": 177
+      "total_uncovered_files": 190,
+      "total_zero_coverage_files": 184
     }
   },
   "top_candidates_hitl": [
