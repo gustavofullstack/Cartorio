@@ -1,0 +1,466 @@
+{
+  "project": "Cartorio Agent AI",
+  "version": "1.0",
+  "squads": [
+    {
+      "id": "S1",
+      "name": "Backend e Testes E2E",
+      "tasks": [
+        {
+          "id": "T1",
+          "title": "Melhorar a resili\u00eancia do webhook do Telegram"
+        },
+        {
+          "id": "T2",
+          "title": "Aumentar cobertura dos testes de auditoria para > 95%"
+        },
+        {
+          "id": "T3",
+          "title": "Otimizar queries SQLAlchemy usando func.count()"
+        },
+        {
+          "id": "T4",
+          "title": "Implementar fallback chain secund\u00e1rio nas chamadas N8N"
+        },
+        {
+          "id": "T5",
+          "title": "Adicionar testes no servi\u00e7o de LGPD Consentimento"
+        },
+        {
+          "id": "T6",
+          "title": "Melhorar o rate limiting por Tenant"
+        },
+        {
+          "id": "T7",
+          "title": "Corrigir warnings nos testes do pydantic-settings"
+        },
+        {
+          "id": "T8",
+          "title": "Automatizar valida\u00e7\u00e3o de mock JWT para testes locais"
+        },
+        {
+          "id": "T9",
+          "title": "Garantir cobertura das materialized views do DB"
+        },
+        {
+          "id": "T10",
+          "title": "Configurar pre-commit hooks adicionais"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "Supabase Integra\u00e7\u00e3o Profunda",
+      "tasks": [
+        {
+          "id": "T11",
+          "title": "Configurar Database Webhooks do Supabase"
+        },
+        {
+          "id": "T12",
+          "title": "Utilizar Supabase Vault para armazenar segredos auxiliares"
+        },
+        {
+          "id": "T13",
+          "title": "Migrar jobs do APScheduler para Supabase Cron"
+        },
+        {
+          "id": "T14",
+          "title": "Utilizar Edge Functions para processamento isolado"
+        },
+        {
+          "id": "T15",
+          "title": "Implementar Supabase Queues para eventos ass\u00edncronos"
+        },
+        {
+          "id": "T16",
+          "title": "Otimizar RLS policies nas tabelas de Protocolo"
+        },
+        {
+          "id": "T17",
+          "title": "Integrar MCP do Supabase com o OpenClaw Agent"
+        },
+        {
+          "id": "T18",
+          "title": "Melhorar cache layer do Redis antes do Supabase"
+        },
+        {
+          "id": "T19",
+          "title": "Documentar arquitetura do Supabase no reposit\u00f3rio"
+        },
+        {
+          "id": "T20",
+          "title": "Configurar backups autom\u00e1ticos do DB"
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "Orquestra\u00e7\u00e3o N8N e Chatwoot",
+      "tasks": [
+        {
+          "id": "T21",
+          "title": "Testar workflows existentes do N8N"
+        },
+        {
+          "id": "T22",
+          "title": "Corrigir falhas silenciosas nos nodes do N8N"
+        },
+        {
+          "id": "T23",
+          "title": "Integrar Chatwoot inbox com o Agent HITL pause"
+        },
+        {
+          "id": "T24",
+          "title": "Melhorar os templates de WhatsApp no Chatwoot"
+        },
+        {
+          "id": "T25",
+          "title": "Centralizar logs do N8N no Grafana/Loki"
+        },
+        {
+          "id": "T26",
+          "title": "Otimizar a integra\u00e7\u00e3o N8N -> API Interna"
+        },
+        {
+          "id": "T27",
+          "title": "Otimizar a integra\u00e7\u00e3o N8N -> Evolution API"
+        },
+        {
+          "id": "T28",
+          "title": "Adicionar documenta\u00e7\u00e3o das rotas N8N usadas pelo sistema"
+        },
+        {
+          "id": "T29",
+          "title": "Otimizar webhooks do Chatwoot no Backend"
+        },
+        {
+          "id": "T30",
+          "title": "Documentar as labels do Chatwoot"
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "name": "Agent OpenClaw e Evolution API",
+      "tasks": [
+        {
+          "id": "T31",
+          "title": "Habilitar Thinkings no modelo deepseek-v4-flash"
+        },
+        {
+          "id": "T32",
+          "title": "Manter system prompt direto e sem emojis"
+        },
+        {
+          "id": "T33",
+          "title": "Implementar testes de resposta do LLM sem fallback"
+        },
+        {
+          "id": "T34",
+          "title": "Aumentar Context Window do Bot no OpenClaw"
+        },
+        {
+          "id": "T35",
+          "title": "Otimizar token count nas intera\u00e7\u00f5es Evolution"
+        },
+        {
+          "id": "T36",
+          "title": "Garantir m\u00e1scara correta de PII nas respostas"
+        },
+        {
+          "id": "T37",
+          "title": "Adicionar testes E2E para handoff humano"
+        },
+        {
+          "id": "T38",
+          "title": "Validar health check do Evolution API"
+        },
+        {
+          "id": "T39",
+          "title": "Gerenciar falhas de conex\u00e3o Evolution -> N8N"
+        },
+        {
+          "id": "T40",
+          "title": "Documentar fluxo Evolution -> API -> N8N"
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "name": "Infraestrutura e VPS Easypanel",
+      "tasks": [
+        {
+          "id": "T41",
+          "title": "Melhorar monitoramento de CPU/RAM via Prometheus"
+        },
+        {
+          "id": "T42",
+          "title": "Configurar alertas no Alertmanager"
+        },
+        {
+          "id": "T43",
+          "title": "Documentar deployment via Easypanel"
+        },
+        {
+          "id": "T44",
+          "title": "Configurar acesso via SSH-Tailscale"
+        },
+        {
+          "id": "T45",
+          "title": "Otimizar o Traefik reverse proxy"
+        },
+        {
+          "id": "T46",
+          "title": "Habilitar compress\u00e3o Gzip/Brotli no NGINX"
+        },
+        {
+          "id": "T47",
+          "title": "Melhorar seguran\u00e7a das portas expostas"
+        },
+        {
+          "id": "T48",
+          "title": "Testar auto-restart dos containers ap\u00f3s reboot"
+        },
+        {
+          "id": "T49",
+          "title": "Criar script de backup total do Easypanel"
+        },
+        {
+          "id": "T50",
+          "title": "Gerenciar SSL certificados no Traefik"
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "name": "Dashboard Operacional",
+      "tasks": [
+        {
+          "id": "T51",
+          "title": "Corrigir problemas de outline vis\u00edvel no focus-visible"
+        },
+        {
+          "id": "T52",
+          "title": "Implementar keyboard navigation"
+        },
+        {
+          "id": "T53",
+          "title": "Atualizar interface via dashboard.py (usando openpyxl)"
+        },
+        {
+          "id": "T54",
+          "title": "Otimizar loading de JS e CSS"
+        },
+        {
+          "id": "T55",
+          "title": "Melhorar charts e visualiza\u00e7\u00e3o de dados"
+        },
+        {
+          "id": "T56",
+          "title": "Adicionar bot\u00e3o de \"Pause Agent\""
+        },
+        {
+          "id": "T57",
+          "title": "Habilitar websockets em tempo real no UI"
+        },
+        {
+          "id": "T58",
+          "title": "Melhorar tratamento de erros na UI"
+        },
+        {
+          "id": "T59",
+          "title": "Documentar gera\u00e7\u00e3o de frontend via Python"
+        },
+        {
+          "id": "T60",
+          "title": "Implementar verifica\u00e7\u00f5es no Playwright"
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "name": "Redis Cache e Performance",
+      "tasks": [
+        {
+          "id": "T61",
+          "title": "Implementar TTL adaptativo no Redis"
+        },
+        {
+          "id": "T62",
+          "title": "Reduzir chamadas desnecess\u00e1rias ao banco via Redis"
+        },
+        {
+          "id": "T63",
+          "title": "Monitorar uso de mem\u00f3ria do Redis"
+        },
+        {
+          "id": "T64",
+          "title": "Implementar debounce em requisi\u00e7\u00f5es cr\u00edticas"
+        },
+        {
+          "id": "T65",
+          "title": "Corrigir memory leaks nos workers"
+        },
+        {
+          "id": "T66",
+          "title": "Melhorar indexa\u00e7\u00e3o de caches"
+        },
+        {
+          "id": "T67",
+          "title": "Testar cen\u00e1rio de falha no Redis"
+        },
+        {
+          "id": "T68",
+          "title": "Criar dump de cache local para testes r\u00e1pidos"
+        },
+        {
+          "id": "T69",
+          "title": "Otimizar queries Pydantic"
+        },
+        {
+          "id": "T70",
+          "title": "Implementar pagin\u00e7\u00e3o eficiente na API"
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "name": "Documenta\u00e7\u00e3o e Logs",
+      "tasks": [
+        {
+          "id": "T71",
+          "title": "Adicionar docstrings em todas as fun\u00e7\u00f5es complexas"
+        },
+        {
+          "id": "T72",
+          "title": "Atualizar README com a arquitetura final"
+        },
+        {
+          "id": "T73",
+          "title": "Gerar diagramas UML da integra\u00e7\u00e3o"
+        },
+        {
+          "id": "T74",
+          "title": "Otimizar formato do log centralizado"
+        },
+        {
+          "id": "T75",
+          "title": "Documentar setup local para novos devs"
+        },
+        {
+          "id": "T76",
+          "title": "Melhorar tracking no PROGRESS.md"
+        },
+        {
+          "id": "T77",
+          "title": "Limpar logs excessivos em produ\u00e7\u00e3o"
+        },
+        {
+          "id": "T78",
+          "title": "Separar logs de debug, info, erro"
+        },
+        {
+          "id": "T79",
+          "title": "Atualizar Swagger/OpenAPI docs"
+        },
+        {
+          "id": "T80",
+          "title": "Criar v\u00eddeo de treinamento do agente"
+        }
+      ]
+    },
+    {
+      "id": "S9",
+      "name": "Governan\u00e7a, LGPD e Seguran\u00e7a",
+      "tasks": [
+        {
+          "id": "T81",
+          "title": "Automatizar opt-out do usu\u00e1rio"
+        },
+        {
+          "id": "T82",
+          "title": "Criptografar dados em repouso adicionais"
+        },
+        {
+          "id": "T83",
+          "title": "Implementar limite de taxa anti-DDoS"
+        },
+        {
+          "id": "T84",
+          "title": "Testar inje\u00e7\u00f5es de SQL nas queries (sentinel)"
+        },
+        {
+          "id": "T85",
+          "title": "Esconder tokens no backend via secrets manager"
+        },
+        {
+          "id": "T86",
+          "title": "Remover arquivos de testes n\u00e3o usados antes de commit"
+        },
+        {
+          "id": "T87",
+          "title": "Garantir zero exposure de vulnerabilidades em PRs"
+        },
+        {
+          "id": "T88",
+          "title": "Testar criptografia HMAC de webhooks"
+        },
+        {
+          "id": "T89",
+          "title": "Habilitar CORS restrito no backend"
+        },
+        {
+          "id": "T90",
+          "title": "Auditar pacotes desatualizados no pnpm e uv"
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "name": "Finaliza\u00e7\u00e3o E2E",
+      "tasks": [
+        {
+          "id": "T91",
+          "title": "Testar loop completo Telegram -> Evolution -> API"
+        },
+        {
+          "id": "T92",
+          "title": "Testar escalabilidade do N8N com 100 requests simult\u00e2neas"
+        },
+        {
+          "id": "T93",
+          "title": "Verificar custo de tokens por call do Agent"
+        },
+        {
+          "id": "T94",
+          "title": "Consolidar m\u00e9tricas do codex-bar.app"
+        },
+        {
+          "id": "T95",
+          "title": "Melhorar respostas de erro globais da API"
+        },
+        {
+          "id": "T96",
+          "title": "Otimizar imagem Docker (multi-stage build)"
+        },
+        {
+          "id": "T97",
+          "title": "Garantir CI/CD pipeline com testes de coverage"
+        },
+        {
+          "id": "T98",
+          "title": "Testar rollback de deploy no Easypanel"
+        },
+        {
+          "id": "T99",
+          "title": "Realizar simula\u00e7\u00e3o de desastre (Disaster Recovery)"
+        },
+        {
+          "id": "T100",
+          "title": "Revis\u00e3o final do sistema com Agent de valida\u00e7\u00e3o"
+        }
+      ]
+    }
+  ]
+}
