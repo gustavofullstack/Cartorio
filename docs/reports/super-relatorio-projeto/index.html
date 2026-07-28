@@ -173,7 +173,7 @@ flowchart LR
   API[FastAPI system-api<br/>api.2notasudi 200] --> PG[(Postgres 17<br/>banco_de_dados)]
   API --> RD[(Redis 8.8<br/>memory-cache)]
   MCP --> API
-  API --> N8N[n8n 1/1 + HTTP 200<br/>DB atual sem workflows]
+  API --> N8N[n8n 1/1 + HTTP 200<br/>39 workflows inativos]
   API --> SB[Supabase<br/>auth+storage+realtime+postgrest]
   API --> AUD[[Audit chain<br/>SHA256+HMAC append-only]]
   HERMES -->|MiniMax-M3<br/>fallback M2.7| MM[MiniMax API]
@@ -228,7 +228,7 @@ flowchart LR
     <thead><tr><th>Domínio</th><th>HTTP</th><th>Serviço Swarm</th><th>Nota</th></tr></thead>
     <tbody>
       <tr><td>api.2notasudi.com.br</td><td>200</td><td>cartorio_system-api 1/1</td><td>/mcp alcançável e autenticado; Hermes seleciona somente 1 tool</td></tr>
-      <tr><td>flow.2notasudi.com.br</td><td>200</td><td>cartorio_n8n 1/1 + runner 1/1</td><td>Processo recuperado; DB atual tem 0 workflows/execuções/credenciais — restore funcional pendente</td></tr>
+      <tr><td>flow.2notasudi.com.br</td><td>200</td><td>cartorio_n8n 1/1 + runner 1/1</td><td>39 workflows restaurados inativos; 0 execuções/credenciais/API keys — ativação funcional pendente</td></tr>
       <tr><td>whatsapp.2notasudi.com.br</td><td>200</td><td>cartorio_whatsapp-api 1/1</td><td>Sessão WA = QR pendente</td></tr>
       <tr><td>supbase.2notasudi.com.br</td><td>200</td><td>auth + storage + realtime + postgrest</td><td>Recuperado 28/07 (DB_HOST legado + postgrest órfão)</td></tr>
       <tr><td>easypanel.2notasudi.com.br</td><td>200</td><td>easypanel + traefik 1/1</td><td>—</td></tr>
@@ -236,7 +236,7 @@ flowchart LR
       <tr><td>agent.2notasudi.com.br</td><td>404</td><td>—</td><td>OpenClaw removido 27/07 — decisão pendente</td></tr>
     </tbody>
   </table>
-  <p>Radar interno (<code>/api/v1/health/radar</code>): database, redis, n8n e supabase respondem, mas o health do n8n é apenas disponibilidade de processo — o banco atual está vazio e a chave de auditoria não corresponde a nenhuma API key ativa. OpenClaw/Chatwoot estão aposentados; Evolution segue offline no check interno porque a sessão WhatsApp não está conectada.</p>
+  <p>Radar interno (<code>/api/v1/health/radar</code>): database, redis, n8n e supabase respondem. No n8n, 39 workflows foram restaurados com <code>active=false</code> e incluídos no backup; a chave de auditoria ainda não corresponde a nenhuma API key ativa. OpenClaw/Chatwoot estão aposentados; Evolution segue offline no check interno porque a sessão WhatsApp não está conectada.</p>
 </section>
 
 <section id="pendencias">
@@ -246,7 +246,7 @@ flowchart LR
       <li><strong>Rotação das chaves Supabase (P0 segurança)</strong> — ANON_KEY + SERVICE_ROLE_KEY apareceram em output de diagnóstico em 28/07. Regra do projeto: nunca rotacionar sob pressão — decisão é sua, com calma.</li>
       <li><strong>Chatwoot + OpenClaw</strong> — restaurar (dados 100% preservados, restore barato) ou decomissionar (ajustar radar + docs).</li>
       <li><strong>Janela controlada do Hermes</strong> — ativar o filtro de PII dos logs já versionado e repetir um round-trip sintético; não fazer replacement durante atendimento ativo.</li>
-      <li><strong>n8n</strong> — selecionar a fonte correta dos workflows versionados/backup antes de importar; o banco live atual está vazio. Depois criar uma API key de observabilidade pela UI, sem inserir credencial diretamente no banco.</li>
+      <li><strong>n8n</strong> — revisar e ativar individualmente os 39 workflows restaurados inativos; recriar credenciais e API key de observabilidade pela UI, sem inserir segredo diretamente no banco.</li>
       <li><strong>Round-trip real no iPhone (iMessage)</strong> — único aceite válido do canal (Lesson 290).</li>
       <li><strong>QR do WhatsApp</strong> — parear a sessão em whatsapp.2notasudi.com.br/manager.</li>
       <li><strong>ADR-030 (audit chain legacy)</strong> — decisão DPO sobre as 158 entradas legacy (sign-off cartorio-lgpd).</li>

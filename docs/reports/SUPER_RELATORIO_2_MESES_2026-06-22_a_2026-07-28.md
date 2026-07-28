@@ -22,7 +22,7 @@ audit log imutável e agente pessoal "Pietra" com identidade blindada.
 | Coverage | ≥90% (gate CI, chegou a 95,04%) |
 | Lessons aprendidas | **296 numeradas** (~246 registradas, 93 de junho arquivadas) |
 | Docs produzidos | 267 docs raiz + 35 sessões + 23 relatórios + 13 planos |
-| Workflows n8n | 61 JSONs válidos versionados; banco live atual = 0 |
+| Workflows n8n | 61 JSONs versionados; 39 restaurados inativos no banco live |
 | MCP tools | servidor autenticado; profile Hermes = 1 selecionada |
 | Endpoints API | 50+ (25 routers v1) |
 | Models DB | 14 |
@@ -201,7 +201,7 @@ Traefik :80/:443, 6 domínios SSL.
 | cartorio_whatsapp-api | ✅ 1/1 | Evolution 2.3.7 (novo nome) |
 | cartorio_banco_de_dados | ✅ 1/1 | pgvector/pg17 |
 | cartorio_memory-cache | ✅ 1/1 | Redis 8.8 |
-| cartorio_n8n (+runner) | ⚠️ 1/1, HTTP 200 | Banco atual vazio: 0 workflows, execuções, credenciais e API keys; restore funcional pendente |
+| cartorio_n8n (+runner) | ⚠️ 1/1, HTTP 200 | 39 workflows restaurados inativos; 0 execuções, credenciais e API keys; ativação funcional pendente |
 | supabase (auth/storage/realtime/postgrest) | ✅ recuperados 28/07 | DB_HOST legado + postgrest órfão corrigidos |
 | Chatwoot / OpenClaw | ⏸️ REMOVIDOS 27/jul | Volumes preservados; **decisão Gustavo: restore vs decomissionar** |
 | Zumbis (api, evolution-api, redis, supabase) | 0/0 | Legados intencionais |
@@ -287,8 +287,8 @@ snapshot diff · dead-code audit · audit chain verify.
 6. **iMessage**: certificação de grupo + multiusuário + PHOTON_ALLOW_ALL_USERS (decisão).
 7. **Lark LGPD**: ativar o filtro de PII dos logs em replacement controlado e repetir
    um round-trip sintético; o transporte do Felipe já passou.
-8. **n8n**: selecionar os workflows canônicos versionados, importar inativos, recriar
-   credenciais/API key pela UI e ativar um por vez com teste.
+8. **n8n**: revisar os 39 workflows restaurados inativos, recriar credenciais/API key
+   pela UI e ativar um por vez com teste.
 9. loop-state.json stale desde 17/jul; radar evolution aponta p/ serviço legado.
 10. Fase 4 ROADMAP (ICP-Brasil, assinatura digital, pagamento) — não iniciada.
 11. Gap de qualidade: memória do modelo (856 fails no bulk 10K) — maior dívida de QA.

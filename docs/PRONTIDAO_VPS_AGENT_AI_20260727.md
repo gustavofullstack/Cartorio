@@ -12,8 +12,10 @@
 > replacement controlado; nenhum restart foi feito nesta correção. O backup
 > local foi reparado para o nome canônico do Postgres, gerou pg_basebackup de
 > 37 MB e um arquivo diário cujos três catálogos passaram `pg_restore -l`.
-> O n8n responde HTTP 200, porém o banco atual tem zero workflows, execuções,
-> credenciais e API keys; isso é processo saudável, não recuperação funcional.
+> O n8n responde HTTP 200. Após snapshot reversível, 39 workflows canônicos
+> foram importados com `active=false`; permanecem zero execuções, credenciais e
+> API keys. O backup pós-restore contém e relê os 39 workflows. Nenhum trigger
+> foi publicado; ativação funcional e chave de auditoria continuam pendentes.
 >
 > Para o contrato atual do Hermes, use `docs/HERMES_VPS_DEPLOYMENT.md` e
 > `docs/HERMES_LARK_MINIMAX_RUNBOOK.md`. Não use os nomes/segredos históricos
