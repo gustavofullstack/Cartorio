@@ -440,6 +440,7 @@ class ChatCompletionRequest(BaseModel):
     max_tokens: Optional[int] = 4096
     tools: Optional[list[dict[str, Any]]] = None
     tool_choice: Optional[Any] = None
+    stream: Optional[bool] = False
 
 
 # System prompt canonico da Pietra (autoridade VPS — P0 identidade).
@@ -510,6 +511,8 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
                 "finish_reason": "tool_calls",
             }
         ]
+        if req.stream:
+            return _sse_response(response)
         return response
 
     content = (msg.get("content") or "").strip() if msg else ""
@@ -535,4 +538,47 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
             "finish_reason": "stop",
         }
     ]
+    if req.stream:
+        return _sse_response(response)
     return response
+
+
+def _sse_response(payload: dict[str, Any]) -> Any:
+    """Empacota a resposta final como SSE (OpenAI-compatible streaming).
+
+    Clients como o Hermes Agent chamam o endpoint com ``stream: true`` e
+    esperam eventos ``data: {...}`` terminados por ``data: [DONE]``. Como a
+    chain de providers nao e streaming, emitimos o conteudo completo em um
+    unico delta chunk — semanticamente equivalente para o consumer.
+    """
+    import json as _json
+
+    from fastapi.responses import StreamingResponse
+
+    choice = payload["choices"][0]
+    chunk_id = payload["id"]
+    created = payload["created"]
+    model = payload["model"]
+
+    def _chunk(delta: dict[str, Any], finish: str | None = None) -> str:
+        data = {
+            "id": chunk_id,
+            "object": "chat.completion.chunk",
+            "created": created,
+            "model": model,
+            "choices": [{"index": 0, "delta": delta, "finish_reason": finish}],
+        }
+        return f"data: {_json.dumps(data, ensure_ascii=False)}\n\n"
+
+    async def _gen():
+        yield _chunk({"role": "assistant"})
+        content = choice["message"].get("content") or ""
+        tool_calls = choice["message"].get("tool_calls")
+        if content:
+            yield _chunk({"content": content})
+        if tool_calls:
+            yield _chunk({"tool_calls": tool_calls})
+        yield _chunk({}, choice.get("finish_reason") or "stop")
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(_gen(), media_type="text/event-stream")

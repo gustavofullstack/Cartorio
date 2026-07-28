@@ -220,3 +220,50 @@ class TestGracefulDegradation:
         assert r.status_code == 200
         content = r.json()["choices"][0]["message"]["content"]
         assert "Pietra" in content
+
+
+class TestSseStreaming:
+    """Endpoint deve honrar stream=true com SSE (Hermes Agent consome assim)."""
+
+    def test_stream_returns_sse_chunks(self, client, monkeypatch):
+        _patch_llm(monkeypatch, "Sou a Pietra, a agente do 2º Cartório de Notas de Uberlândia.")
+        r = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={
+                "messages": [{"role": "user", "content": "oi"}],
+                "stream": True,
+            },
+        )
+        assert r.status_code == 200
+        assert "text/event-stream" in r.headers["content-type"]
+        body = r.text
+        assert "chat.completion.chunk" in body
+        assert "data: [DONE]" in body
+        assert "Pietra" in body
+        # think tags nao vazam nem no stream
+        assert "<think>" not in body
+
+    def test_stream_tool_calls_emitted(self, client, monkeypatch):
+        tool_calls = [
+            {
+                "id": "call_9",
+                "type": "function",
+                "function": {"name": "cartorio_calcular_emolumento", "arguments": "{}"},
+            }
+        ]
+
+        async def fake(messages, tools=None, **kwargs):
+            return {"content": "", "tool_calls": tool_calls}, "minimax_direct:MiniMax-M3", ""
+
+        monkeypatch.setattr("app.services.cartorio_agent._chat_completion", fake)
+        r = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={
+                "messages": [{"role": "user", "content": "custa quanto?"}],
+                "tools": [{"type": "function", "function": {"name": "cartorio_calcular_emolumento", "parameters": {}}}],
+                "stream": True,
+            },
+        )
+        assert r.status_code == 200
+        assert "cartorio_calcular_emolumento" in r.text
+        assert '"finish_reason":"tool_calls"' in r.text or "tool_calls" in r.text
