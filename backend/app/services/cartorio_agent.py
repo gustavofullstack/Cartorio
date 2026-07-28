@@ -133,6 +133,20 @@ _PROVIDER_RATE_LIMIT_REPLY = (
     "escrevente."
 )
 
+# P0 Gustavo 2026-07-27: "TENTA UNAS 3X EM 20S NO BACKEND TROCAR SOZINHO E MANDAR
+# DNV A MENSAGEM DO CLIENTE P/ O NOVO ENDPOINT AI E MANDAR A RESPOSTAS DOS MODELOS
+# P/ O CLIENTE PORRA TA MALUCO!! FAZ DIREITO!!" — cliente NUNCA pode ver falha
+# transitoria de quota/429 enquanto houver tempo e providers na chain.
+RETRY_ENVELOPE_MAX_ATTEMPTS = int(os.environ.get("CARTORIO_AGENT_RETRY_ATTEMPTS", "3"))
+RETRY_ENVELOPE_BUDGET_S = float(os.environ.get("CARTORIO_AGENT_RETRY_BUDGET_S", "20.0"))
+# Cooldown entre tentativas dentro do envelope — 0 para deixar o circuit breaker
+# decidir dinamicamente (provider FAILADO no attempt N ainda e elegivel nos
+# proximos attempts dentro do budget curto de 20s, ja que outro provider da
+# chain sera tentado na mesma round).
+RETRY_ENVELOPE_INTER_SLEEP_S = float(
+    os.environ.get("CARTORIO_AGENT_RETRY_INTER_SLEEP_S", "0.0")
+)
+
 
 def _is_provider_rate_limited(status_code: int) -> bool:
     """Classifica HTTP status como rate-limit transitorio (aciona circuit + fallback).
@@ -144,6 +158,139 @@ def _is_provider_rate_limited(status_code: int) -> bool:
     429 e a forma canonica do HTTP para rate-limit; mantemos 403 como alias.
     """
     return status_code in (403, 429)
+
+
+async def _retry_envelope_3x20s(
+    inner: Any,
+    *,
+    max_attempts: int = RETRY_ENVELOPE_MAX_ATTEMPTS,
+    budget_s: float = RETRY_ENVELOPE_BUDGET_S,
+    inter_sleep_s: float = RETRY_ENVELOPE_INTER_SLEEP_S,
+) -> tuple[Any | None, dict[str, Any]]:
+    """Envelope de retry 3x em 20s com auto reenvio para o proximo endpoint.
+
+    P0 Gustavo 2026-07-27: cliente NAO pode ver falha transitoria de quota/429
+    enquanto houver tempo e providers na chain. Este envelope:
+    1. Tenta ``inner()`` ate 3 vezes dentro de 20s budget.
+    2. Cada tentativa roda a chain completa (MiniMax_direct -> litellm ->
+       opencode_free_1/2/3) com circuit breaker; provider em CB OPEN e pulado.
+    3. Em sucesso, retorna imediatamente — cliente recebe resposta do modelo
+       sem nunca ver mensagem de quota/limite.
+    4. Em falha transitoria (chain exhausted sem CB aberto), aguarda
+       ``inter_sleep_s`` (default 0) e reenvia a mesma mensagem para a chain
+       novamente, que vai cair em provider diferente (CB ja conta a falha).
+    5. Quando budget esgotado OU max_attempts atingido sem sucesso, retorna
+       None — caller dispara offline reply.
+
+    Retorna (result, meta) onde meta = {outcome, attempts, elapsed_s, last_err}.
+    """
+    import time as _time
+
+    from app.services.metrics import store as _store
+
+    started = _time.perf_counter()
+    last_err = ""
+    last_provider = ""
+    attempts_done = 0
+    for attempt in range(1, max_attempts + 1):
+        elapsed_so_far = _time.perf_counter() - started
+        remaining = budget_s - elapsed_so_far
+        if remaining <= 0:
+            logger.warning(
+                "cartorio_agent 3x20s envelope budget exhausted before attempt=%d (%.2fs elapsed)",
+                attempt,
+                elapsed_so_far,
+            )
+            break
+        attempts_done = attempt
+        try:
+            result = await inner()
+        except asyncio.TimeoutError:
+            # Timeout canonico do teto global NAO e consumido pelo envelope —
+            # deve propagar para o caller para que a metrica ``status=timeout``
+            # e o contador ``degraded_total{timeout}`` continuem sendo
+            # incrementados pelo path canonico (alerta Grafana).
+            logger.warning(
+                "cartorio_agent 3x20s attempt=%d raised TimeoutError (propagating)",
+                attempt,
+            )
+            raise
+        except asyncio.CancelledError:
+            # CancelledError propaga intacto (asyncio contract).
+            raise
+        except Exception as exc:  # noqa: BLE001 — envelope nao derruba o request path
+            last_err = f"{type(exc).__name__}: {exc}"
+            logger.warning(
+                "cartorio_agent 3x20s attempt=%d raised: %s", attempt, last_err
+            )
+            # Incrementa contador de retry exhaustion para o alerta.
+            try:
+                _store.inc_llm_calls_total("multi_provider", "chat", "retry_attempt_failed")
+            except Exception:
+                pass
+            if attempt < max_attempts and inter_sleep_s > 0:
+                await asyncio.sleep(inter_sleep_s)
+            continue
+
+        # Sucesso: chain retornou uma resposta nao-vazia.
+        # inner() retorna tuple (content, provider, tool_action, tool_used).
+        # Tambem aceitamos qualquer truthy fora do contrato para retro-compat.
+        if isinstance(result, tuple) and len(result) >= 2:
+            content, provider = result[0], result[1]
+        else:
+            content, provider = result, "unknown"
+        if content:
+            elapsed = _time.perf_counter() - started
+            try:
+                _store.inc_llm_calls_total(
+                    "multi_provider",
+                    "chat",
+                    f"retry_envelope_success_attempt{attempt}",
+                )
+            except Exception:
+                pass
+            return result, {
+                "outcome": "success",
+                "attempts": attempt,
+                "elapsed_s": elapsed,
+                "provider": provider,
+                "last_err": "",
+            }
+        # Conteudo vazio = chain exhausted mas sem exception. Tratar como
+        # falha transitoria e re-tentar ate budget.
+        last_err = "chain_exhausted_no_content"
+        last_provider = ""
+        try:
+            _store.inc_llm_calls_total("multi_provider", "chat", "retry_attempt_empty")
+        except Exception:
+            pass
+        if attempt < max_attempts and inter_sleep_s > 0:
+            # So dorme se ainda houver budget.
+            elapsed_so_far = _time.perf_counter() - started
+            if elapsed_so_far + inter_sleep_s >= budget_s:
+                break
+            await asyncio.sleep(inter_sleep_s)
+
+    elapsed = _time.perf_counter() - started
+    try:
+        _store.inc_llm_calls_total("multi_provider", "chat", "retry_envelope_exhausted")
+    except Exception:
+        pass
+    meta = {
+        "outcome": "exhausted",
+        "attempts": attempts_done,
+        "elapsed_s": elapsed,
+        "provider": last_provider,
+        "last_err": last_err,
+    }
+    logger.warning(
+        "cartorio_agent 3x20s envelope exhausted after %d attempts in %.2fs: %s",
+        attempts_done,
+        elapsed,
+        last_err or "no_content",
+    )
+    return None, meta
+
 
 AGENT_SYSTEM = """Voce e o Agent AI do Cartorio 2o Oficio de Notas de Uberlandia/MG.
 
@@ -1586,11 +1733,20 @@ async def run_cartorio_agent(
     # Agent AI com TOOLS (MiniMax-M3) — precos via tool, nao inventados.
     # Teto global cobre ferramentas E fallback simples: provider travado cai no
     # offline reply em ~LLM_GLOBAL_TIMEOUT_S, sem uma segunda espera completa.
-    try:
-        content, provider, tool_action, tool_used = await asyncio.wait_for(
+    #
+    # P0 Gustavo 2026-07-27: cliente NAO pode ver falha transitoria. Envelope
+    # ``_retry_envelope_3x20s`` faz ate 3 reenvios automaticos dentro de 20s
+    # para o proximo provider (a chain reexecuta com CB atualizado; o provider
+    # que falhou no attempt N agora pula; o proximo da chain assume). Se mesmo
+    # assim falhar, o caminho de TimeoutError/offline abaixo assume.
+    async def _single_attempt() -> tuple[str, str, str | None, list[str]]:
+        return await asyncio.wait_for(
             _run_llm_with_fallback(),
             timeout=LLM_GLOBAL_TIMEOUT_S,
         )
+
+    try:
+        result, env_meta = await _retry_envelope_3x20s(_single_attempt)
     except TimeoutError:
         from app.services.metrics import store
 
@@ -1602,6 +1758,22 @@ async def run_cartorio_agent(
             LLM_GLOBAL_TIMEOUT_S,
         )
         return _offline_reply(scrubbed, intent, tools_used, history=history, degraded=True)
+    if result is None:
+        # Envelope 3x20s exhausted: cliente so ve o degraded reply AGORA.
+        from app.services.metrics import store
+
+        # Mantem contadores canonicos para Grafana alerting. ``all_providers_down``
+        # e o label historico (G9.S3); ``retry_envelope_exhausted`` adiciona
+        # visibilidade nova sem quebrar dashboards antigos.
+        store.inc_llm_degraded_total("all_providers_down")
+        store.inc_llm_degraded_total("retry_envelope_exhausted")
+        logger.warning(
+            "cartorio_agent: 3x20s envelope exhausted after %d attempts in %.2fs — offline reply",
+            env_meta.get("attempts", 0),
+            env_meta.get("elapsed_s", 0.0),
+        )
+        return _offline_reply(scrubbed, intent, tools_used, history=history, degraded=True)
+    content, provider, tool_action, tool_used = result
     tools_used = list(tools_used) + list(tool_used)
 
     if not content:
