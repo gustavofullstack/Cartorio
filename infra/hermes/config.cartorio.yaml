@@ -13,24 +13,61 @@ fallback_model:
 agent:
   max_turns: 8
   verbose: false
+  disabled_toolsets:
+    - feishu_doc
+    - feishu_drive
+    - kanban
+
+display:
+  tool_progress: "off"
+  tool_progress_command: false
+  interim_assistant_messages: false
+  show_commentary: false
+  show_reasoning: false
+  busy_input_mode: "queue"
+  busy_text_mode: "queue"
+  busy_ack_enabled: false
+  busy_steer_ack_enabled: false
+  long_running_notifications: false
+  background_process_notifications: "off"
+  runtime_footer:
+    enabled: false
+  platforms:
+    feishu:
+      tool_progress: "off"
+      streaming: false
+      interim_assistant_messages: false
+      long_running_notifications: false
+      busy_ack_detail: false
+      busy_steer_ack_enabled: false
+      background_process_notifications: "off"
+
+streaming:
+  enabled: false
+  transport: "off"
+
+session_reset:
+  mode: "both"
+  at_hour: 4
+  idle_minutes: 240
+  notify: false
+  notify_exclude_platforms:
+    - feishu
+    - api_server
+    - webhook
+
+plugins:
+  enabled:
+    - pietra-public-output
 
 approvals:
-  mode: always
+  mode: manual
 
 security:
   allow_private_urls: false
 
 gateway:
   platforms:
-    api_server:
-      enabled: true
-      extra:
-        host: 0.0.0.0
-        port: 8642
-    photon:
-      enabled: true
-      extra:
-        sidecar_port: 8793
     feishu:
       enabled: true
 
@@ -40,10 +77,11 @@ mcp_servers:
     connect_timeout: 10
     headers:
       Authorization: "Bearer ${MCP_CARTORIO_API_KEY}"
+    tools:
+      include:
+        - cartorio_calcular_emolumento
     enabled: true
 
 platform_toolsets:
-  photon:
-    - mcp-cartorio
   feishu:
     - mcp-cartorio

@@ -7,50 +7,65 @@ version: "3.8"
 # password, Photon credential, or API key.
 services:
   hermes:
-    image: nousresearch/hermes-agent@sha256:6df245c22c49b5ad9f94dd9e3cf614263f4313f117d117a7d2abd4092fa804d2
+    image: easypanel/cartorio/hermes@sha256:5545c1338d9f533a70356baa96be263786c12c4d4758f6c5275a9db1b553e357 # noqa: ALLOW_KEY_FALLBACK (digest imutavel da imagem, nao e segredo)
     command:
       - /bin/sh
       - -ec
       - |
-        export API_SERVER_KEY="$$(cat /run/secrets/hermes_api_server_key)"
-        export MCP_CARTORIO_API_KEY="$$(cat /run/secrets/hermes_mcp_cartorio_api_key)"
-        export PHOTON_PROJECT_SECRET="$$(cat /run/secrets/hermes_photon_project_secret)"
         if [ ! -f /opt/data/config.yaml ]; then
           cp /run/configs/config.cartorio.yaml /opt/data/config.yaml
         fi
         exec /run/configs/lark-entrypoint.sh
     environment:
       HERMES_HOME: /opt/data
-      API_SERVER_ENABLED: "true"
-      API_SERVER_HOST: 0.0.0.0
-      API_SERVER_PORT: "8642"
       HERMES_LLM_BASE_URL: ${HERMES_LLM_BASE_URL:?set in the deployment environment}
       HERMES_LLM_MODEL: ${HERMES_LLM_MODEL:?set in the deployment environment}
-      PHOTON_PROJECT_ID: ${PHOTON_PROJECT_ID:?set in the deployment environment}
-      PHOTON_ALLOWED_USERS: ${PHOTON_ALLOWED_USERS:?set in the deployment environment}
-      PHOTON_ALLOW_ALL_USERS: "false"
       FEISHU_DOMAIN: lark
       FEISHU_CONNECTION_MODE: websocket
       FEISHU_ALLOW_ALL_USERS: "false"
       FEISHU_GROUP_POLICY: allowlist
       FEISHU_REQUIRE_MENTION: "true"
       FEISHU_ALLOW_BOTS: none
-      MCP_CARTORIO_URL: http://cartorio_api:8000/mcp
+      MCP_CARTORIO_URL: http://cartorio_system-api:8000/mcp/
     configs:
       - source: hermes_cartorio_config_v1
         target: /run/configs/config.cartorio.yaml
+        uid: "10000"
+        gid: "10000"
         mode: 0440
-      - source: hermes_lark_entrypoint_v3
+      - source: hermes_lark_entrypoint_v4
         target: /run/configs/lark-entrypoint.sh
+        uid: "10000"
+        gid: "10000"
         mode: 0555
       - source: hermes_cartorio_soul_v2
         target: /run/configs/SOUL.md
+        uid: "10000"
+        gid: "10000"
         mode: 0440
+      - source: hermes_public_output_guard_v1
+        target: /run/configs/pietra-public-output.guard.py
+        uid: "10000"
+        gid: "10000"
+        mode: 0444
+      - source: hermes_public_output_plugin_v1
+        target: /run/configs/pietra-public-output.__init__.py
+        uid: "10000"
+        gid: "10000"
+        mode: 0444
+      - source: hermes_public_output_manifest_v1
+        target: /run/configs/pietra-public-output.plugin.yaml
+        uid: "10000"
+        gid: "10000"
+        mode: 0444
+      - source: hermes_public_profile_reconciler_v2
+        target: /run/configs/reconcile_public_profile.py
+        uid: "10000"
+        gid: "10000"
+        mode: 0444
     secrets:
-      - hermes_api_server_key
       - hermes_minimax_api_key
       - hermes_mcp_cartorio_api_key
-      - hermes_photon_project_secret
     volumes:
       - hermes_cartorio_data:/opt/data
     networks:
@@ -62,7 +77,7 @@ services:
         delay: 10s
       update_config:
         parallelism: 1
-        order: start-first
+        order: stop-first
         failure_action: rollback
       rollback_config:
         parallelism: 1
@@ -78,19 +93,23 @@ services:
 configs:
   hermes_cartorio_config_v1:
     file: ./config.cartorio.yaml
-  hermes_lark_entrypoint_v3:
+  hermes_lark_entrypoint_v4:
     file: ./lark-entrypoint.sh
   hermes_cartorio_soul_v2:
     file: ../openclaw-agent/workspace/SOUL.md
+  hermes_public_output_guard_v1:
+    file: ./plugins/pietra-public-output/public_output_guard.py
+  hermes_public_output_plugin_v1:
+    file: ./plugins/pietra-public-output/__init__.py
+  hermes_public_output_manifest_v1:
+    file: ./plugins/pietra-public-output/plugin.yaml
+  hermes_public_profile_reconciler_v2:
+    file: ./reconcile_public_profile.py
 
 secrets:
-  hermes_api_server_key:
-    external: true
   hermes_minimax_api_key:
     external: true
   hermes_mcp_cartorio_api_key:
-    external: true
-  hermes_photon_project_secret:
     external: true
 volumes:
   hermes_cartorio_data:

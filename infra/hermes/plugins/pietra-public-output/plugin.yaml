@@ -1,0 +1,6 @@
+name: pietra-public-output
+version: 1.0.0
+description: Fail-closed public-output policy for the Pietra Feishu channel.
+hooks:
+  - transform_llm_output
+
