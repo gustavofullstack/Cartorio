@@ -521,6 +521,8 @@ _SANITIZER_STATS: dict[str, int] = {
     "non_latin_retry": 0,
     "latin_mix_retry": 0,
     "latin_mix_strip": 0,
+    "glitch_retry": 0,
+    "glitch_strip": 0,
     "fallback": 0,
 }
 
@@ -545,12 +547,13 @@ async def _sanitize_pietra_output(
     Fluxo:
     1. Strip do artifact interno "[This response was interrupted...".
     2. Strip de vazamento de vocab interno ("via Photon (iMessage)", Photon, Spectrum).
-    3. Se restou caractere nao-latino, anglicismo/PT-PT (round 2) ou o texto
-       era so artifact -> retry 1x via _chat_completion com system extra
-       exigindo PT-BR puro.
+    3. Se restou caractere nao-latino, anglicismo/PT-PT (round 2), glitch
+       de token (round 2: palavra inventada/fora do vocabulario PT-BR) ou
+       o texto era so artifact -> retry 1x via _chat_completion com system
+       extra exigindo PT-BR puro.
     4. Se o retry ainda vier com nao-latino -> fallback seguro deterministico.
-       Se vier com anglicismo/PT-PT persistente -> strip da sentenca
-       contaminada (preservando util); se nada util restar -> fallback.
+       Se vier com anglicismo/PT-PT/glitch persistente -> strip das sentencas
+       contaminadas (preservando util); se nada util restar -> fallback.
 
     Texto vazio de entrada (providers down) NAO dispara retry — o fallback
     estrutural do endpoint cuida desse caso.
@@ -560,31 +563,35 @@ async def _sanitize_pietra_output(
 
     from app.services.cartorio_agent import _chat_completion, _strip_think_tags
     from app.services.pietra_outbound_guard import (
+        detect_glitch_tokens,
         detect_latin_language_mix,
+        strip_glitch_sentences,
         strip_latin_mix_sentences,
     )
 
     text, intercepted = _strip_artifacts_and_vocab(content)
     has_non_latin = bool(_NON_LATIN_RE.search(text)) if text else False
     has_latin_mix = bool(detect_latin_language_mix(text)) if text else False
+    has_glitch = bool(detect_glitch_tokens(text)) if text else False
 
-    if text and not has_non_latin and not has_latin_mix:
+    if text and not has_non_latin and not has_latin_mix and not has_glitch:
         return text
 
     if not text and not intercepted:
         return text
 
-    if has_latin_mix and not has_non_latin:
-        _SANITIZER_STATS["latin_mix_retry"] += 1
-    else:
+    if has_non_latin:
         _SANITIZER_STATS["non_latin_retry"] += 1
+    if has_latin_mix:
+        _SANITIZER_STATS["latin_mix_retry"] += 1
+    if has_glitch:
+        _SANITIZER_STATS["glitch_retry"] += 1
     logger.warning(
-        "pietra sanitizer: texto contaminado (non_latin=%s latin_mix=%s), "
-        "retry 1x (total non_latin=%d latin=%d)",
+        "pietra sanitizer: texto contaminado (non_latin=%s latin_mix=%s "
+        "glitch=%s), retry 1x",
         has_non_latin,
         has_latin_mix,
-        _SANITIZER_STATS["non_latin_retry"],
-        _SANITIZER_STATS["latin_mix_retry"],
+        has_glitch,
     )
     retry_msgs = list(messages) + [
         {
@@ -592,7 +599,7 @@ async def _sanitize_pietra_output(
             "content": (
                 "Responda APENAS em portugues brasileiro corrigido, "
                 "sem nenhum caractere de outro idioma, sem nenhuma palavra "
-                "em ingles e sem portugues europeu."
+                "em ingles, sem portugues europeu e sem inventar palavras."
             ),
         }
     ]
@@ -606,17 +613,24 @@ async def _sanitize_pietra_output(
         _strip_think_tags(((msg2 or {}).get("content") or "")).strip()
     )
     if text2 and not _NON_LATIN_RE.search(text2):
-        if not detect_latin_language_mix(text2):
+        if not detect_latin_language_mix(text2) and not detect_glitch_tokens(text2):
             return text2
-        # Retry persistente com anglicismo/PT-PT: strip da sentenca
-        # contaminada (NUNCA strip cego sem retry) preservando o util.
-        stripped, stripped_any = strip_latin_mix_sentences(text2)
-        if stripped_any and len(re.sub(r"[^0-9A-Za-zÀ-ÿ]", "", stripped)) >= 10:
+        # Retry persistente com anglicismo/PT-PT/glitch: strip das sentencas
+        # contaminadas (NUNCA strip cego sem retry) preservando o util.
+        stripped, stripped_latin = strip_latin_mix_sentences(text2)
+        stripped, stripped_glitch = strip_glitch_sentences(stripped)
+        if stripped_latin:
             _SANITIZER_STATS["latin_mix_strip"] += 1
+        if stripped_glitch:
+            _SANITIZER_STATS["glitch_strip"] += 1
+        if (stripped_latin or stripped_glitch) and len(
+            re.sub(r"[^0-9A-Za-zÀ-ÿ]", "", stripped)
+        ) >= 10:
             logger.warning(
-                "pietra sanitizer: latin mix persistente, sentenca removida "
-                "(total=%d)",
-                _SANITIZER_STATS["latin_mix_strip"],
+                "pietra sanitizer: contaminacao persistente, sentencas "
+                "removidas (latin=%s glitch=%s)",
+                stripped_latin,
+                stripped_glitch,
             )
             return stripped
 

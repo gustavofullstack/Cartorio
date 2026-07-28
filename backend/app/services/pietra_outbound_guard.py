@@ -130,6 +130,54 @@ _COMPILED_LATIN_MIX: Final[tuple[re.Pattern[str], ...]] = tuple(
     for p in (*_LATIN_MIX_EN_PATTERNS, *_LATIN_MIX_PTPT_PATTERNS)
 )
 
+# === VALIDADOR ANTI-GLITCH (round 2, 2026-07-28) ===
+# Tokens fora do vocabulario PT-BR plausivel gerados pelo modelo rapido.
+# Evidencia real: "prosetão" (P8), "Carta minecraft:" (P9 id 4272),
+# "quandoolhar" (P7 id 4254), "ISSA" (P6). Abordagem leve e auditavel:
+# constante de padroes suspeitos + heuristicas de tamanho/capitalizacao.
+# SEM dependencia pesada (wordfreq/hunspell).
+
+_GLITCH_PATTERNS: Final[tuple[str, ...]] = (
+    r"\bcarta\s+minecraft\b",  # bigrama impossivel (P9)
+    r"\bminecraft\b",
+    r"\bproset[aã]o\b",
+    r"\bquandoolhar\b",
+)
+
+_COMPILED_GLITCH: Final[tuple[re.Pattern[str], ...]] = tuple(
+    re.compile(p, re.IGNORECASE | re.UNICODE) for p in _GLITCH_PATTERNS
+)
+
+# Heuristica 1: token alfabetico com 16+ chars sem hifen — fora do PT-BR
+# plausivel (maior palavra notarial comum: "reconhecimento", 14 chars).
+_GLITCH_LONG_TOKEN_RE: Final[re.Pattern[str]] = re.compile(
+    r"(?<![\wÀ-ÿ-])[A-Za-zÀ-ÿ]{16,}(?![\wÀ-ÿ-])", re.UNICODE
+)
+
+# Heuristica 2: token ALLCAPS 3+ fora da whitelist de siglas do dominio.
+_GLITCH_CAPS_TOKEN_RE: Final[re.Pattern[str]] = re.compile(
+    r"\b[A-ZÁÉÍÓÚÂÊÔÃÕÇ]{3,}\b"
+)
+
+_GLITCH_CAPS_WHITELIST: Final[frozenset[str]] = frozenset(
+    {
+        "CPF",
+        "CNPJ",
+        "CNH",
+        "CRM",
+        "OAB",
+        "CREA",
+        "RNE",
+        "IPTU",
+        "ITBI",
+        "LGPD",
+        "TFJ",
+        "TJMG",
+        "CNS",
+        "CNJ",
+    }
+)
+
 
 class OutboundAction(Enum):
     """Acao tomada pelo guard outbound."""
@@ -156,6 +204,7 @@ _OUTBOUND_BY_REASON: dict[str, int] = {
     "infra_leak": 0,
     "language_mixing": 0,
     "language_mixing_latin": 0,
+    "token_glitch": 0,
     "fallback": 0,
 }
 
@@ -228,6 +277,39 @@ def strip_latin_mix_sentences(text: str) -> tuple[str, bool]:
     if not contaminated:
         return text, False
     kept = [s for s in sentences if not detect_latin_language_mix(s)]
+    return _cleanup_spacing(" ".join(kept)), True
+
+
+def detect_glitch_tokens(text: str) -> str | None:
+    """Detecta token fora do vocabulario PT-BR plausivel (anti-glitch).
+
+    Retorna o token/pattern que casou, ou None se limpo. Camadas:
+    1. Constante de padroes suspeitos (bigramas impossiveis, palavras
+       inventadas observadas em prod).
+    2. Token alfabetico 16+ chars sem hifen.
+    3. Token ALLCAPS 3+ fora da whitelist de siglas do dominio.
+    """
+    if not text:
+        return None
+    for source, compiled in zip(_GLITCH_PATTERNS, _COMPILED_GLITCH):
+        if compiled.search(text):
+            return source
+    long_token = _GLITCH_LONG_TOKEN_RE.search(text)
+    if long_token:
+        return long_token.group(0)
+    for caps in _GLITCH_CAPS_TOKEN_RE.finditer(text):
+        if caps.group(0) not in _GLITCH_CAPS_WHITELIST:
+            return caps.group(0)
+    return None
+
+
+def strip_glitch_sentences(text: str) -> tuple[str, bool]:
+    """Remove sentencas contendo glitch de token. Retorna (texto, agiu)."""
+    sentences = _split_sentences(text)
+    contaminated = [s for s in sentences if detect_glitch_tokens(s)]
+    if not contaminated:
+        return text, False
+    kept = [s for s in sentences if not detect_glitch_tokens(s)]
     return _cleanup_spacing(" ".join(kept)), True
 
 
@@ -317,6 +399,13 @@ def sanitize_outbound(text: str, *, channel: str = "api") -> OutboundResult:
     if latin_stripped:
         reasons.append("language_mixing_latin")
         work = work_latin
+
+    # 2c. ANTI-GLITCH (round 2): sentencas com token fora do vocabulario
+    # PT-BR plausivel ("prosetão", "Carta minecraft", "ISSA") removidas.
+    work_glitch, glitch_stripped = strip_glitch_sentences(work)
+    if glitch_stripped:
+        reasons.append("token_glitch")
+        work = work_glitch
 
     # 3. FALLBACK: interceptou mas nao restou conteudo util.
     if reasons and _alnum_count(work) < 10:
