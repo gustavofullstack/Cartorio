@@ -312,9 +312,7 @@ async def test_envelope_custom_max_attempts_2() -> None:
         calls["n"] += 1
         return _empty_result()
 
-    result, meta = await _retry_envelope_3x20s(
-        inner, max_attempts=2, inter_sleep_s=0.0
-    )
+    result, meta = await _retry_envelope_3x20s(inner, max_attempts=2, inter_sleep_s=0.0)
     assert result is None
     assert meta["attempts"] == 2
     assert calls["n"] == 2
@@ -330,9 +328,7 @@ async def test_envelope_max_attempts_1_is_single_try() -> None:
         calls["n"] += 1
         return _ok_result("ok")
 
-    result, meta = await _retry_envelope_3x20s(
-        inner, max_attempts=1, inter_sleep_s=0.0
-    )
+    result, meta = await _retry_envelope_3x20s(inner, max_attempts=1, inter_sleep_s=0.0)
     assert result is not None
     assert meta["attempts"] == 1
     assert calls["n"] == 1

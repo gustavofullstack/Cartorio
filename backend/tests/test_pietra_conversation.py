@@ -34,6 +34,7 @@ from app.services.pietra_response_planner import (
 # REG-001 a REG-007: casos dos screenshots
 # ============================================================
 
+
 def test_reg_001_me_fale_tudo_nao_pede_autorizacao() -> None:
     """Screenshot: 'me fale tudo que pode fazer? tudo mesmo separado em varias mensagens'.
 
@@ -45,7 +46,12 @@ def test_reg_001_me_fale_tudo_nao_pede_autorizacao() -> None:
     )
     assert response, "planner retornou resposta vazia"
     # Nao pode pedir autorizacao
-    for forbidden in ("quer que eu continue", "quer que eu siga", "sigo com o proximo", "quer continuar"):
+    for forbidden in (
+        "quer que eu continue",
+        "quer que eu siga",
+        "sigo com o proximo",
+        "quer continuar",
+    ):
         assert forbidden not in response.lower(), f"planner pediu autorizacao: '{forbidden}'"
     # Deve cobrir os topicos principais (verificar pelas display_names)
     caps = all_capabilities()
@@ -146,6 +152,7 @@ def test_reg_007_qual_ia_nao_revelar_arquitetura() -> None:
 # Capability Registry runtime-aware
 # ============================================================
 
+
 def test_capability_emoluments_runtime_check() -> None:
     """Emoluments: tool MCP disponivel + DB healthy => can_execute."""
     cap = get_capability("emoluments")
@@ -192,6 +199,7 @@ def test_forbidden_action_verbs_para_capability_bloqueada() -> None:
 # Scope intent detection
 # ============================================================
 
+
 def test_detect_scope_intent_all() -> None:
     assert detect_scope_intent("me fala tudo") == ScopeIntent.ALL
     assert detect_scope_intent("tudo mesmo") == ScopeIntent.ALL
@@ -220,6 +228,7 @@ def test_detect_scope_intent_answer_default() -> None:
 # Forbidden phrases (regra anti-vazamento)
 # ============================================================
 
+
 def test_forbidden_phrases_block_emoji() -> None:
     """Zero emoji (P0)."""
     text_with_emoji = "Oi! Tudo bem? \U0001f60a Como posso ajudar?"
@@ -233,7 +242,17 @@ def test_forbidden_phrases_block_memory_excuse() -> None:
 
 def test_forbidden_phrases_block_internal_leak() -> None:
     """'deploy', 'mcp', 'gateway', 'provider' sao bloqueados."""
-    for word in ("deploy", "mcp", "gateway", "provider", "openclaw", "kimi", "gpt", "claude", "minimax"):
+    for word in (
+        "deploy",
+        "mcp",
+        "gateway",
+        "provider",
+        "openclaw",
+        "kimi",
+        "gpt",
+        "claude",
+        "minimax",
+    ):
         text = f"Estamos ajustando o {word} agora."
         assert has_forbidden_phrase(text) is not None, f"'{word}' nao foi bloqueado"
 
@@ -268,6 +287,7 @@ def test_sanitize_response_passes() -> None:
 # ConversationState
 # ============================================================
 
+
 def test_state_store_basic() -> None:
     store = ConversationStateStore()
     state = store.get_or_create("thread-x", "imessage", "user-123")
@@ -296,6 +316,7 @@ def test_state_user_id_hash_consistent() -> None:
 # ============================================================
 # Integration: planner com state
 # ============================================================
+
 
 def test_planner_does_not_say_hermes_under_any_input() -> None:
     """PIETRA nunca pode dizer 'sou o hermes' em QUALQUER input."""
@@ -333,6 +354,6 @@ def test_planner_handles_operational_honesty() -> None:
         f"Pietra prometeu transfirir quando handoff OFFLINE: {response[:200]}"
     )
     # Deve oferecer alternativa
-    assert "telefone" in response.lower() or "(34)" in response or "escrevente" in response.lower(), (
-        f"Pietra nao ofereceu alternativa para handoff: {response[:200]}"
-    )
+    assert (
+        "telefone" in response.lower() or "(34)" in response or "escrevente" in response.lower()
+    ), f"Pietra nao ofereceu alternativa para handoff: {response[:200]}"

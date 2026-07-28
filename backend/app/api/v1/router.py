@@ -105,6 +105,7 @@ api_router.include_router(agent_hermes_router)
 # PIETRA (AGENT) endpoints: coleta + atendimento + agendamento + memoria
 # PRIMARY KEY operacional: telefone_hash. Modified 2026-07-27.
 from app.api.v1.pietra import router as pietra_router  # noqa: E402
+
 api_router.include_router(pietra_router)
 
 
