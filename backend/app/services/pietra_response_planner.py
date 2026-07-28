@@ -231,6 +231,29 @@ class ResponsePlanner:
         t = (text or "").lower()
         header = "Olá! Sou a Pietra, assistente virtual do 2º Tabelionato de Notas de Uberlândia. "
 
+        # Agradecimento / Confirmação de Pré-pedido DRAFT
+        if any(
+            w in t
+            for w in (
+                "obrigado",
+                "obrigada",
+                "agradeço",
+                "agradeco",
+                "valeu",
+                "salvam",
+                "salvar",
+                "salvo",
+                "anotou",
+                "registrou",
+                "tudo certo",
+            )
+        ):
+            return (
+                f"{header}De nada! Fique completamente tranquila: todas as informações e o seu pré-pedido (DRAFT) foram registrados com total segurança, sigilo e prioridade no 2º Tabelionato de Uberlândia. "
+                "Nossa equipe de escreventes terá acesso imediato a todo o histórico assim que você entrar em contato. "
+                "Desejamos muita força e uma pronta recuperação ao seu neto! Se precisar de qualquer outra orientação, estou sempre à disposição com todo carinho."
+            )
+
         # Emolumentos
         if any(
             w in t
@@ -294,6 +317,31 @@ class ResponsePlanner:
                 f"{header}Compreendo perfeitamente sua dúvida! O reconhecimento de firma confirma a autoria da assinatura em um documento (por semelhança ou autenticidade). "
                 "Já a autenticação de cópia atesta que a cópia é cópia fiel do documento original. "
                 "Fique tranquilo(a): para realizar esses serviços no 2º Tabelionato de Uberlândia, basta comparecer com seu documento original de identificação."
+            )
+        # Urgência Hospitalar / Diligência Notarial Hospitalar
+        if any(
+            w in t
+            for w in (
+                "hospital",
+                "hospitalar",
+                "internado",
+                "internada",
+                "medico",
+                "médico",
+                "uti",
+                "emergencia",
+                "emergência",
+                "urgencia",
+                "urgência",
+                "diligencia",
+                "diligência",
+            )
+        ):
+            return (
+                f"{header}Minha senhora, sinto muito pelo momento delicado com seu neto e compreendo perfeitamente a sua urgência e preocupação. Fique tranquila, estamos aqui para acolher sua família com todo o carinho, compaixão e máxima agilidade profissional!\n\n"
+                "Sim, o 2º Tabelionato de Uberlândia realiza **atendimento em regime de urgência hospitalar** e **diligência notarial hospitalar** (quando um tabelião ou escrevente autorizado se desloca até o hospital ou UTI para colher a assinatura ou verificar os documentos necessários), mediante autorização formal do tabelião/escrevente.\n\n"
+                "Para ajudar com total prioridade, **já acionei o fluxo do seu pré-pedido (DRAFT) com PRIORIDADE MÁXIMA HOSPITALAR**. "
+                "Para atendimento imediato (Human-in-the-Loop - HITL), estou direcionando seu caso com urgência ao **escrevente de plantão no telefone de emergência (34) 3216-0252**. Por favor, entre em contato agora mesmo informando que se trata de urgência médica hospitalar para darmos andamento imediato."
             )
         # Testamento Público (específico)
         if "testamento" in t:
