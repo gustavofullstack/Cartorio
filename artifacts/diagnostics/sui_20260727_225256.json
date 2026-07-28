@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-07-28T01:52:56Z",
+  "hostname": "MacBook-Pro-de-Gustavo-2.local",
+  "blockers": [
+    {"blocker":"B1","status":"blocked_review","detail":"Migration 0028 existe no repo: 2026_07_24_0028-fix-fn-auto-audit-ts-consistency.py","action":"Run: cd backend && uv run alembic current | grep 0028 ; psql $DATABASE_URL -c "SELECT 1 FROM audit_log LIMIT 1""},
+    {"blocker":"B2","status":"not_applicable","detail":"Evolution radar: unknown (≠ sessão WA conectada — L260)","action":"Acessar whatsapp.2notasudi.com.br/manager ou Evolution API dashboard"},
+    {"blocker":"B3","status":"blocked_sui","detail":".env age: 1 days (politica: rotacionar se > 90d)","action":"NUNCA rotacionar sob pressao (Lesson 2026-06-24)"},
+    {"blocker":"B4","status":"blocked_sui","detail":"MCP URL https://api.2notasudi.com.br/mcp -> HTTP 404 (esperado: localhost:8000/mcp)","action":"Edit ~/.hermes/profiles/cartorio/config.yaml linha 335"},
+    {"blocker":"B5","status":"not_applicable","detail":"Requer iPhone fisico do Felipe — agent nao pode confirmar","action":"Felipe: rodar 7 mensagens de prompts/IMENSAGER_P0_IDENTITY_LEAK_INVESTIGATION.md §9"}
+  ]
+}
