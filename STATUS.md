@@ -1,5 +1,21 @@
 # STATUS — Cartório OS (live)
 
+> **Atualização 2026-07-28 (IMENSAGER QA consolidado — Sessão B local):**
+> **Status:** `IMESSAGE_QA_AMARELO` — 3 P0-candidates NOVOS + tz root cause | `PAINEL_DADOS_LIVE`
+>
+> **Sessão 2026-07-28 (B) — deliverables:**
+> - **QA harness local reproduzível**: DB `cartorio_qa` (PG16 UTC) + backend :8001 isolado; genesis→42 audit chain **intact (score 1.000)** pós-tráfego+burst.
+> - **ROOT CAUSE definitivo do "audit chain 152/152 broken" local**: **TimeZone artifact** (coluna naive + ORM tz-aware + GUC local BRT → shift −3h no storage → recompute diverge). Prova: recompute +3h = match. **NÃO era rotação HMAC** (refina FA2). Prod intacto (33/33). Lesson 285.
+> - **25 casos live HTTP** contra backend QA: inbound 8/8 correto (200/400 RFC7807), PII zero eco em resposta+log, rate limit 30/min tier exato (30×200+40×429), latência offline P50≈50ms, RSS 18.6MB.
+> - **3 P0-candidates novos**: **FB1/FB2** HITL offline não escala "isenção"/"urgência"/"escritura" (classificador offline só escala com palavras explícitas — escalation de ato jurídico é LLM-only); **FB5** scrubber NÃO mascara RG formato MG (`MG-12.345.678`, `SSP MG`, bare c/ contexto); **FB10** Art. 18 LGPD indisponível no canal iMessage (`bot_lgpd.py` Literal só telegram/whatsapp → 422).
+> - **2 gaps LGPD menores**: FB9 `lgpd_dsar.py` não montado + mock; FB8 webhook ingest não audita. FB3 falso positivo HITL por substring "escrevente".
+> - **Gates verdes**: ruff 0 + mypy 0 (229 arquivos) + secrets 0 violações + 206 testes focados + suite completa `make test-fast`.
+> - **P0 IDENTITY_HERMES_LEAK permanece ABERTO** (N≥30 não rodado). Relatório completo: `.harness/memory/TEST_IMENSAGER_2026-07-28.md`.
+>
+> **P0 blockers humanos (inalterados):** B1 LGPD sign-off 0028 · B2 WhatsApp QR · B3 secrets rotation · B5 Felipe confirmação iPhone. **Novos p/ backlog dev:** FB1/FB2 (keyword gate HITL offline), FB5 (regex RG), FB9/FB10 (LGPD imessage).
+
+---
+
 > **Atualização 2026-07-27 22:40 BRT (Stage 7 — Defesa-em-profundidade Identity Leak + Hipótese MCP):**
 > **Status:** `STAGE_7_EMOLUMENTOS_REAL_PASS` + **P0_IDENTITY_LEAK_DEFENSE_IN_PLACE** + **MCP_ENDPOINT_HYPOTHESIS_CONFIRMED** | `PAINEL_DADOS_LIVE`
 >

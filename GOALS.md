@@ -12,6 +12,8 @@
 
 **Status atual (2026-07-27 23:14 BRT):** `IMESSAGE_REQUIRES_FIX` — gate oficial do canal ainda em P0. **B4 RESOLVED**: `MCP_SERVER_ENABLED=true` deployado no `cartorio_system-api` (Traefik roteia `api.2notasudi.com.br` para system-api, não api); round-trip MCP validado (tools/list 16 tools, `cartorio_calcular_emolumento` = R$156,40 para procuração); config Mac Hermes revertida para `https://api.2notasudi.com.br/mcp`. Defense-in-depth implementado (`pietra_identity_guard.py` + 39 regression tests), mas causa raiz do IDENTITY_HERMES_LEAK (Camada 3, código fechado) continua em investigação. **Gate permanece `IMESSAGE_REQUIRES_FIX`**: confirmação visual do Felipe no próprio iPhone (B5) ainda pendente — só após ela o gate move para `IMESSAGE_FELIPE_ACCEPTED`.
 
+**QA 2026-07-28 (sessão B, local):** relatório consolidado `.harness/memory/TEST_IMENSAGER_2026-07-28.md` — status 🟡. Root cause tz no audit local (Lesson 285), 3 P0-candidates novos p/ backlog: HITL offline não escala isenção/urgência (FB1/FB2), scrubber não mascara RG formato MG (FB5), Art. 18 indisponível no canal iMessage (FB10). **Gate não se move** — pendente B5 + correções FB* + N≥30 identity.
+
 ---
 
 ## GOALS H-K (atualizado 2026-07-27 — AGENT PIETRA LIVE)

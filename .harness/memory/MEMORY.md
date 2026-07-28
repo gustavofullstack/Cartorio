@@ -748,3 +748,21 @@ Chamadas multiplas sao safe (segunda chamada = no-op).
 - **Saudação contextual quebrada**: Pietra disse "Boa tarde" às 00:35 BRT (regra SOUL.md: 18:00–04:59 → "Boa noite"). LLM não tem relógio — injetar horário BRT no contexto do turno ou dropar saudação automática.
 - **Sidecar photon churn**: `inbound stream ended — re-subscribing` a cada ~2min + restart do gateway 00:32–00:33 (`stdin EOF (parent exited)`) em `~/.hermes/profiles/cartorio/logs/`. Investigar estabilidade antes de declarar canal operacional.
 - **MCP público confirma-se UP** (pós-Lesson 283): `POST /mcp` sem auth → 307→401; com auth → initialize 200 (`cartorio-mcp-cabuloso v0.6.0`), tools/list 14 `cartorio_*`, tools/call 200. Transport OK; dado errado.
+
+## Lesson 285 — Audit chain "quebrada" em clone local = TimeZone, não tampering (2026-07-28)
+
+- **Sintoma**: `verify_full_chain` / `AuditService.verify_chain` reportam **100% das entradas broken** (152/152) no Postgres local — inclusive entry escrita segundos antes pelo código atual com a chave atual.
+- **Root cause provado**: coluna `audit_log.timestamp` é `timestamp without time zone`; ORM escreve `datetime.now(UTC)` tz-aware; Postgres coage para o `TimeZone` da sessão ao armazenar. Brew Postgres local default `TimeZone=America/Sao_Paulo` → valor lido de volta vem shiftado −3h → recompute do SHA256 diverge do armazenado. **Prova**: recomputar hash da entry com `+3h` → match exato; structlog (UTC 03:36) vs DB (00:36) confirma a coerção.
+- **Regra permanente**: antes de suspeitar de tampering, bug de canonicalização ou rotação HMAC numa chain 100% quebrada, checar `SHOW TimeZone` + tipo da coluna. Chain 100% quebrada desde o genesis quase nunca é tampering (tampering quebra a partir de um ponto, não retroativamente).
+- **Fix local**: `ALTER DATABASE <db> SET "TimeZone"='UTC'` (vale para novas sessões/writes). Para QA com chain válida genesis→N: criar DB novo com UTC (`cartorio_qa`), clonar schema via `pg_dump --schema-only` (filtrar extensões supabase-only: `pg_net`, `pgsodium`, `pg_graphql`, `supabase_vault` — indisponíveis no brew PG16), subir uvicorn com `DATABASE_URL` override em porta alternativa.
+- **Prod não afetado**: VPS Postgres usa UTC → chain intacta (33/33 verificado em 2026-07-28 sessão A + dead-man's-switch 15min sem alerta).
+- **Higiene de QA**: usar DB de QA separado (`cartorio_qa`) em vez do dev `cartorio` — writes de teste (burst de rate limit etc.) não poluem dados dev nem a chain legada.
+
+## Lesson 286 — Gateway iMessage 100% "Sorry, unexpected error": edição local deletou constante regex (2026-07-28)
+
+- **Sintoma**: todo inbound iMessage (Photon sidecar → gateway Mac) recebia `Sorry, I encountered an unexpected error. Try again or use /reset` — inclusive identidade, que antes funcionava.
+- **Root cause**: diff local **não commitado** em `~/.hermes/hermes-agent/gateway/run.py` simplificou `_gateway_provider_error_reply` para PT-BR mas **deletou a constante `_GATEWAY_PROVIDER_ERROR_SHAPE_RE`** ainda referenciada por `_looks_like_gateway_provider_error` → `NameError` em `_sanitize_gateway_final_response` a cada mensagem → fallback genérico de erro. Traceback mostrava linhas 499/523.
+- **Diagnóstico**: `gateway.error.log` (path vem do plist `~/Library/LaunchAgents/ai.hermes.gateway-cartorio.plist`, StandardErrorPath) + `git diff` no repo hermes-agent revelou a deleção. Sintoma "intermitente" histórico atribuído a "cache do Photon" (B4 antigo) era provavelmente este NameError em mensagens cujo sanitize era alcançado.
+- **Fix**: restaurar a constante (manter reply PT-BR), `python3 -c "import ast; ast.parse(...)"` como sanity, `launchctl kickstart -k gui/$(id -u)/ai.hermes.gateway-cartorio`. Bateria T0-T5 live pós-fix: 5/6 PASS.
+- **Regra permanente**: (1) editar runtime fora do repo exige sanity `ast.parse` + restart + **1 mensagem canário** antes de declarar OK; (2) "Sorry, I encountered an unexpected error" no iMessage = olhar `gateway.error.log` ANTES de culpar Photon/LLM; (3) diffs locais não commitados em `~/.hermes/hermes-agent` são dívida — commitar ou reverter.
+- **Pendente**: `/humano` (slash command) não é roteado no canal iMessage (T5 FAIL); linguagem natural ("quero falar com humano") funciona (T5b PASS).
