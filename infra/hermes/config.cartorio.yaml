@@ -2,7 +2,12 @@
 # Docker Secrets injected by docker-stack.yml; never replace them with literals.
 model:
   default: "${HERMES_LLM_MODEL}"
-  provider: openai
+  provider: minimax
+  base_url: "${HERMES_LLM_BASE_URL}"
+
+fallback_model:
+  provider: minimax
+  model: MiniMax-M2.7-highspeed
   base_url: "${HERMES_LLM_BASE_URL}"
 
 agent:
