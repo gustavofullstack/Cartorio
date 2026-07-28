@@ -260,8 +260,26 @@ def detect_scope_intent(text: str) -> ScopeIntent:
     if not text:
         return ScopeIntent.UNKNOWN
     t = text.lower().strip()
+
+    # Ignorar falsos positivos de 'tudo' em conversas normais ("salvam tudo", "obrigado por tudo", "tudo certo", etc.)
+    non_all_tudo_patterns = (
+        r"\b(salvam|salvar|salvo|registrou|anotou|obrigad[oa]|por|esta|está)\s+tudo\b",
+        r"\btudo\s+(certo|bem|ok|anotado|registrado|entendido|certo)\b",
+    )
+    is_conversational_tudo = any(re.search(pat, t) for pat in non_all_tudo_patterns)
+
     # Ordem importa: ALL > CONTINUE > SUMMARY_EACH > ANSWER
     for key in _SCOPE_ALL_KEYS:
+        if key == "tudo":
+            if t == "tudo" or (
+                not is_conversational_tudo
+                and re.search(
+                    r"\b(fala|fale|manda|mandar|ver|mostrar|listar|passar|diz|dizer|explicar|explica|quero|saber)\s+tudo\b",
+                    t,
+                )
+            ):
+                return ScopeIntent.ALL
+            continue
         if re.search(r"\b" + re.escape(key) + r"\b", t):
             return ScopeIntent.ALL
     for key in _SCOPE_CONTINUE_KEYS:

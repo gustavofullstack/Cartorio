@@ -1,0 +1,48 @@
+{
+  "persona": {
+    "nome": "Dona Helena Ramos",
+    "idade": 74,
+    "perfil": "Pensionista",
+    "cidade": "Uberlândia / MG",
+    "canal": "iMessage"
+  },
+  "agent": "PIETRA (2º Tabelionato de Notas de Uberlândia / MG)",
+  "timestamp": "2026-07-28T13:59:04.754897+00:00",
+  "turns": [
+    {
+      "turn": 1,
+      "user": "Minha filha, boa tarde. Preciso tirar uma 2ª via da escritura da minha casa que foi feita no cartório há muitos anos. Vocês conseguem localizar pra mim pelo meu nome e CPF?",
+      "pietra": "Boa tarde. Claro que consigo te ajudar com isso.\n\nO cartorio tem condicoes de localizar a escritura pelo seu nome e CPF. Para solicitar a 2a via, o processo costuma ser:\n\n- Voce vem ate o cartorio com documento de identidade e CPF\n- A equipe faz a pesquisa no sistema\n- Se encontrar, eh feita a reimpressao com base no livro original\n\nEm relacao aos documentos da sua filha, dependendo do caso pode ser necessario apresentar a certidao de nascimento dela. Entao traga os documentos de ambas para evitar idas e vindas.\n\nEndereco: Rua Cel. Antonio Alves Pereira, 850 - Centro, Uberlandia/MG\nHorario: Segunda a sexta, 09h as 17h\n\nQuer vir aqui pessoalmente ou prefere ligar antes para verificar se temos o ato cadastrado?",
+      "provider_used": "minimax_direct:MiniMax-M2.7-HighSpeed",
+      "tools_used": [
+        "intent:saudacao"
+      ]
+    },
+    {
+      "turn": 2,
+      "user": "Meu nome é Helena Ramos, meu CPF é 123.456.789-00. A casa fica na Rua das Flores, 123, Bairro Brasil, Uberlândia. Como funciona o prazo e para entregar?",
+      "pietra": "Helena, boa tarde. Fico feliz em ajudar.\n\nSobre o prazo e entrega da 2ª via:\n\nGeralmente a equipe faz a pesquisa no livro original no momento do seu atendimento. Se o ato estiver localizado no sistema, a reimpressão pode ser emitida ali mesmo, na hora. Em casos mais antigos pode haver uma pequena espera enquanto localizam o livro físico.\n\nValor: a 2ª via de escritura segue a tabela de emolumentos. Posso consultar o valor exato para você, se quiser.\n\nPara facilitar, traga:\n- Seu documento de identidade com foto\n- Seu CPF\n- Se possível, qualquer registro que tenha do ato (número de livro, ano, ou o próprio endereço do imóvel)\n\nEndereço: Rua Cel. Antonio Alves Pereira, 850 - Centro, Uberlândia/MG\nHorário: Segunda a sexta, 09h às 17h\n\nQuer que eu agende um horário para você ser atendida sem demora? Me diga uma data e horário que funcione.",
+      "provider_used": "minimax_direct:MiniMax-M2.7-HighSpeed",
+      "tools_used": [
+        "intent:dados"
+      ]
+    },
+    {
+      "turn": 3,
+      "user": "Entendi, minha filha. A escritura está só no meu nome e do meu falecido marido. A minha filha só me ajudou a mandar essa mensagem. Vocês podem mandar a certidão em PDF pelo celular/WhatsApp ou tenho que ir aí no Centro buscar presencialmente?",
+      "pietra": "Helena, boa tarde. Entendo sua pergunta.\n\nA certidão de escritura é um documento oficial, e por padrão a entrega é feita aqui no cartório, de forma presencial. Geralmente não enviamos por WhatsApp por uma questão de segurança e autenticidade.\n\nPorém, vale o seguinte: como a escritura é do seu nome e do seu falecido marido, você mesma pode vir buscar. Não precisa ser sua filha, pode ser qualquer pessoa com uma procuração sua autenticada, se você não puder se deslocar.\n\nUma sugestão prática: a senhora pode ligar para cá antes de vir, passando seu nome e CPF. A equipe faz a pesquisa com antecedência e, quando chegar, já prepara o documento. Assim a senhora não fica esperando.\n\nTelefone do cartório: você encontra no site 2notasudi.com.br.\n\nQuer que eu confirme o endereço novamente? Estamos na Rua Cel. Antonio Alves Pereira, 850, Centro, de segunda a sexta, 09h às 17h.",
+      "provider_used": "minimax_direct:MiniMax-M2.7-HighSpeed",
+      "tools_used": [
+        "intent:livre"
+      ]
+    }
+  ],
+  "evaluation": {
+    "tom_carinhoso_atencioso_acolhedor": true,
+    "busca_imovel_partes_esclarecida": true,
+    "cpf_mascarado_pii_scrubbing": true,
+    "prazo_e_forma_expedicao_explicados": true,
+    "pass": true
+  },
+  "status": "PASS"
+}

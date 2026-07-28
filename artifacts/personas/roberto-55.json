@@ -1,0 +1,105 @@
+{
+ "persona": "roberto-55",
+ "name": "Roberto",
+ "age": 55,
+ "style": "empresário, pragmático, tom de negócios",
+ "goal": "procuração com conteúdo financeiro p/ venda de imóvel",
+ "started": "2026-07-28T11:19:51",
+ "turns": 5,
+ "ok": 5,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.0,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "Boa tarde. Preciso outorgar procuração com poderes para venda de um imóvel em Uberlândia.",
+   "reply": "Boa tarde! Entendi — é uma **procuração especial para venda de imóvel**, certo? Esse é um tipo mais específico de procuração.\n\nAlgumas perguntas pra eu te orientar melhor:\n\n1. **Você vai vir pessoalmente ao cartório?** (precisa estar presente)\n2. **Já sabe em nome de quem vai ser a procuração?** (nome e CPF de quem vai receber os poderes)\n3. **É um imóvel específico** ou quer dar poderes gerais de venda?\n\nDocumentos necessários:\n- Seu documento de identidade com foto (RG ou CNH)\n- CPF da pessoa que vai receber a procuração (o outorgado)\n- Informações do imóvel (endereço completo)\n\nEsse tipo de procuração exige uma minuta específica — por isso é importante passar as informações certinhas. **O valor também é diferente** (mais alto que uma procuração simples).\n\nRecomendo ligar antes pra confirmar todos os detalhes:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nNo que mais posso ajudar?",
+   "latency_s": 27.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 145,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "O imóvel vale aproximadamente 800 mil. Isso muda o emolumento?",
+   "reply": "[This response was interrupted by a user correction.]",
+   "latency_s": 12.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 8,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "Quais documentos do imóvel são necessários?",
+   "reply": "Sim, o valor do imóvel pode influir no cálculo do emolumento — como a procuração envolve venda de imóvel de alto valor, o escrevente precisa fazer uma composição específica.\n\nPor isso, o valor exato só o escrevente consegue passar amanhã na hora. Mas posso adiantar que **não é um valor fixo** — varia conforme o preço do imóvel.\n\nPara já ir se.programando, recomendo ligar antes:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nAssim eles já passam o valor estimado e você vai preparado.",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 81,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "É possível agendar para esta semana?",
+   "reply": "Para uma procuração de venda de imóvel, geralmente é preciso:\n\n**Seus documentos pessoais:**\n- RG ou CNH com foto\n- CPF\n\n**Documentos do imóvel:**\n- **Matrícula atualizada** do imóvel (do cartório de registro)\n- Ou documentos que comprovem a propriedade (contrato de compra e venda, escritura anterior, etc.)\n\n**Dados do outorgado** (quem vai receber os poderes):\n- Nome completo\n- CPF\n\nMas atenção: como é um caso mais específico, **confirma a lista completa ligando antes** — o escribente pode pedir outros documentos dependendo da situação.\n\n**(34) 3216-0252** ou **(34) 3215-7048**",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 90,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "Perfeito, obrigado pelo retorno.",
+   "reply": "Não consigo agendar diretamente por aqui, mas você pode:\n\n- **Ligar**: (34) 3216-0252 ou (34) 3215-7048\n- **WhatsApp**: (34) 99195-2444\n\nLigue o quanto antes que eles verificam a disponibilidade e já reservam um horário pra você esta semana.",
+   "latency_s": 12.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 38,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

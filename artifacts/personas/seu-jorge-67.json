@@ -1,0 +1,141 @@
+{
+ "persona": "seu-jorge-67",
+ "name": "Seu Jorge",
+ "age": 67,
+ "style": "aposentado, reflexivo, metódico, muitas perguntas de detalhe",
+ "goal": "testamento + dúvidas sobre custódia",
+ "started": "2026-07-28T11:32:26",
+ "turns": 7,
+ "ok": 7,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.29,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "Bom dia. Quero entender como funciona um testamento público.",
+   "reply": "Bom dia! Claro, explico com prazer.\n\n**Testamento público** é um documento feito aqui no cartório, registrado em livro próprio, com fé pública. É o tipo mais seguro de testamento porque fica guardado eternamente.\n\n**Como funciona:**\n\n1. Você vem ao cartório\n2. Conversa com o tabelião — explica seus desejos, seus bens, seus herdeiros\n3. O tabelião redige o documento\n4. Você lê, aprova e assina\n5. O testamento fica registrado em livro público\n\n**Vantagens:**\n- É **seguro** — não se perde, não estraga, ninguém altera\n- É **sigiloso** — só você e o tabelião sabem o conteúdo\n- Pode ser **alterado** a qualquer momento enquanto viver\n- Após seu falecimento, qualquer pessoa pode solicitar uma certidão\n\n**Quem pode fazer:**\n- Qualquer pessoa maior de 16 anos\n- Que esteja lúcida e capaz de expressar sua vontade\n\n**Valor:** depende da complexidade — quantos bens, quantas folhas. Só o escribente confirma.\n\nQuer fazer um? Ligue pra agendar:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nNo que mais posso ajudar?",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 1,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 165,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "Depois de lavrado, onde ele fica guardado? Posso ter uma cópia?",
+   "reply": "Boa tarde, Antonio! Claro, estamos aqui pra isso.\n\nVocê queria entender mais sobre o testamento ou já está decidido a fazer?\n\nSe quiser fazer, é só ligar e marcar:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nO que precisa saber?",
+   "latency_s": 18.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 1,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 38,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "Se eu mudar de ideia daqui uns anos, como faço para alterar?",
+   "reply": "Boas perguntas, Antonio!\n\n**Onde fica guardado:**\n- No **cartório**, registrado em livro próprio (livro de testamento)\n- Também é enviado ao **Censec** (Central de Informações de Testamentos do Colégio Notarial do Brasil) — um registro nacional\n\nO testamento fica guardado **permanentemente** aqui. O original nunca sai do cartório.\n\n**Cópia:**\n- Sim, você pode solicitar uma **certidão de inteiro teor** a qualquer tempo\n- Geralmente é cobrada uma taxa por isso\n\n**Resumo:**\n- Original → fica no cartório pra sempre\n- Censec → registro nacional de segurança\n- Você → pode pedir certidão quando quiser\n\nNa prática, você não precisa guardar nada em casa — o importante é que o testamento está seguro aqui e no registro nacional.\n\nMais alguma dúvida?",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 120,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "O conteúdo fica sigiloso mesmo depois que eu morrer? Quem pode abrir?",
+   "reply": "[This response was interrupted by a user correction.]",
+   "latency_s": 3.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 8,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "Qual o valor do ato hoje?",
+   "reply": "Boa pergunta. Sim, fica sigiloso sim.\n\n**Em vida:**\n- Só você e o tabelião sabem o conteúdo\n\n**Depois que você morrer:**\n- Podem acessar: **herdeiros** e **legatários** (pessoas que você deixou algo)\n- Também pode acessar: **juiz**, **promotor** ou qualquer pessoa com **interesse legítimo** (tipo um credor seu)\n\nNa prática, quando você morre, o cartório é notificado e os herdeiros são chamados pra ler o testamento. Mas não é uma coisa pública — só quem tem interesse direto.\n\n**Resumindo:**\n- Não é publicado em jornal\n- Não fica exposto em lugar nenhum\n- Só as pessoas envolvidas tomam conhecimento\n\nÉ bem seguro, pode ficar tranquilo.\n\nMais alguma dúvida?",
+   "latency_s": 21.1,
+   "n_assistant": 2,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 108,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 6,
+   "user": "Preciso levar testemunhas?",
+   "reply": "O valor exato do testamento depende da complexidade — quantos bens você tem e quantas folhas o documento vai ter. Por isso, só o escrevente consegue passar o valor certo.\n\nO que eu recomendo: **liga pro cartório e pede uma estimativa** — assim você já vai preparado:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nEles perguntam os detalhes e já passam o valor.",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 6,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 61,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 7,
+   "user": "Agradeço as informações, foram muito esclarecedoras.",
+   "reply": "Não precisa, Antonio! O testamento público é lavrado diretamente pelo tabelião, sem necessidade de testemunhas.\n\nDiferente de outros tipos de testamento — o público é registrado em livro próprio aqui no cartório, com a fé pública do tabelião. Não precisa de testemunhas.\n\nO que você precisa levar:\n- **RG ou CNH** com foto\n- **CPF**\n- Se tiver, documents dos seus bens (mas isso o tabelião orienta depois)\n\nSó isso. Ligação e vai com calma.\n\n**(34) 3216-0252** ou **(34) 3215-7048**",
+   "latency_s": 6.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 7,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 80,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

@@ -1,0 +1,31 @@
+{
+  "persona": {
+    "id": 1,
+    "name": "Lucas Silveira",
+    "age": 21,
+    "occupation": "Estudante da UFU",
+    "city": "Uberlândia / MG"
+  },
+  "timestamp": "2026-07-28T10:58:32-03:00",
+  "channel": "imessage",
+  "turns": [
+    {
+      "turn": 1,
+      "user_message": "E aí uai, preciso reconhecer firma no meu contrato de estágio pra UFU. Quanto custa e o que preciso levar aí no cartório da Cel. Antônio Alves Pereira?",
+      "pietra_response": "Boa tarde, tudo certo?\n\nReconhecimento de firma sai por R$ 11,21 por assinatura. Como é um contrato, geralmente envolve duas assinaturas (estagiário + representante da UFU), então seriam R$ 22,42.\n\nO que levar:\n\n- O contrato de estágio (documento original)\n- Documento de identidade com foto (RG, CNH ou similar)\n- CPF\n\nUma observação importante: o reconhecimento de firma pode ser feito de duas formas. A mais comum é você assinar o documento na hora, aqui no cartório, diante do tabelião. Ou, se alguém da UFU já assinou, podemos reconhecer a firma dela posteriormente — mas isso depende de como o contrato foi feito.\n\nO endereço é Rua Cel. Antonio Alves Pereira, 850, Centro. Funcionamos de segunda a sexta, 09h às 17h.\n\nQuer agendar um horário ou tem mais alguma dúvida?"
+    },
+    {
+      "turn": 2,
+      "user_message": "Entendi! E se eu ainda não tiver firma aberta aí no 2º Cartório, como faço pra abrir o cartão de autógrafo e quanto tempo demora?",
+      "pietra_response": "Boa pergunta. Se você nunca reconheceu firma aqui no 2º Cartório, precisa primero fazer o cadastro da sua firma (chamado de \"abertura de firma\" ou registro de assinatura).\n\nPara isso, o processo é simples:\n\n- Você vem ao cartório com um documento de identidade com foto (RG ou CNH)\n- Assina na nossa presença para registrarmos sua assinatura\n- Não tem custo pra isso — é gratuito\n\nEsse cadastro fica valendo pra sempre, então depois não precisa repetir.\n\nO tempo é imediato — feito na hora, na hora que você vier.\n\nSobre o prazo do cartão em si: o registro é feito na hora que você assina. A gente emite na hora.\n\nSó uma observação: no caso do contrato de estágio, como a UFU também assina, eles provavelmente já têm firma aberta. Se for o seu primeiro reconhecimento aqui, aí sim precisa do cadastro.\n\nQuer vir hoje ou amanhã? Se vier, já traz o contrato de estágio que a gente faz tudo de uma vez."
+    }
+  ],
+  "validation": {
+    "identidade_pietra": true,
+    "tom_educado_acolhedor_seguro": true,
+    "clareza_valor_portaria_8664_2025": true,
+    "orientacao_cartao_autografo_rg_cpf": true,
+    "zero_vazamento_ferramentas_modelos": true,
+    "pass": true
+  }
+}

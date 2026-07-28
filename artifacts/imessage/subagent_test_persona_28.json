@@ -1,0 +1,60 @@
+{
+  "test_id": "SUBAGENT_PERSONA_28_BEATRIZ_MENDES",
+  "timestamp": "2026-07-28T10:59:00-03:00",
+  "persona": {
+    "id": 2,
+    "name": "Beatriz Mendes",
+    "age": 28,
+    "role": "Advogada recém-aprovada",
+    "city": "Uberlândia / MG",
+    "scenario": "Autenticação de cópias do diploma e histórico escolar para OAB/concurso"
+  },
+  "agent_target": "AGENT PIETRA (2º Tabelionato de Notas de Uberlândia / MG - CNS 05.799-2)",
+  "channel": "iMessage Simulation",
+  "conversation_turns": [
+    {
+      "turn": 1,
+      "speaker_user": "Beatriz Mendes",
+      "user_message": "Olá, boa tarde! Gostaria de saber como funciona para fazer a autenticação de cópias do meu diploma e histórico escolar para a OAB/concurso. Preciso agendar horário?",
+      "pietra_response": "Boa tarde! Fico feliz em ajudar.\n\nPara a **autenticação de cópias** de diploma e histórico escolar, o procedimento no cartório é o seguinte:\n\n1. **Documentos necessários:** Você deve trazer os **documentos originais** (diploma e histórico escolar) e as **cópias que deseja autenticar** (impressas em papel A4, preferencialmente).\n\n2. **Validação:** O escrevente confrontará a cópia com o documento original e, se tudo estiver correto, aplicará a certificação de autenticidade.\n\n3. **Horário:** Não é obrigatório, mas é recomendado, especialmente se você precisa de vários documentos, para evitar filas e garantir atendimento.\n\n**Agendar horário** é uma boa ideia para garantir que um escrevente esteja disponível para você no momento da sua preferência. Posso fazer isso agora mesmo?\n\nPara o agendamento, preciso saber:\n- Seu nome completo\n- Quantidade aproximada de documentos a autenticar\n- Telefone para contato\n\nOu, se preferir, pode nos ligar diretamente nos telefones (34) 3216-0252 / (34) 3215-7048, no WhatsApp (34) 99195-2444, ou vir até a sede na Rua Cel. Antonio Alves Pereira, 850, Centro.\n\nComo prefere proceder?"
+    },
+    {
+      "turn": 2,
+      "speaker_user": "Beatriz Mendes",
+      "user_message": "Perfeito! Tenho sim os documentos originais físicos aqui comigo. Preciso levar as cópias impressas já prontas ou vocês fazem a cópia aí no cartório?",
+      "pietra_response": "Boa pergunta! Na maioria dos casos, os clientes trazem as cópias já impressas em papel A4, pois isso agiliza o atendimento.\n\nPorém, se precisar, podemos verificar se há possibilidade de fazer as cópias aqui no cartório no momento do atendimento. O ideal é que você traga **pelo menos as cópias prontas** para não haver dúvida sobre o conteúdo que será autenticado.\n\nUm ponto importante: para a **OAB e concursos**, os órgãos costumam exigir que a autenticação seja feita **diretamente nas cópias** (e não apenas com uma folha de confronto), então é bom você já ir com as cópias organizadas para facilitar.\n\n**Resumo prático:**\n- Trazer originais (diploma e histórico)\n- Trazer cópias impressas em papel A4\n- Se precisar de ajuda com cópias, podemos avaliar na hora\n\nQuer agendar o horário agora para garantir atendimento no seu melhor horário? Assim já ficamos com tudo certo para a sua visita."
+    },
+    {
+      "turn": 3,
+      "speaker_user": "Beatriz Mendes",
+      "user_message": "Excelente! Muito obrigada pelas orientações claras, Pietra. Tenha um ótimo dia!",
+      "pietra_response": "Eu que agradeço pela atenção, e desejo boa sorte com o processo na OAB! Se surgir qualquer outra dúvida, estamos à disposição.\n\nTenha um ótimo dia!"
+    }
+  ],
+  "validation_criteria": {
+    "identity_100_percent_pietra": {
+      "passed": true,
+      "detail": "Respondeu como Pietra, assistente oficial do 2º Tabelionato de Notas de Uberlândia."
+    },
+    "tone_elegant_formal_welcoming": {
+      "passed": true,
+      "detail": "Tom cortês, profissional, empático e desejando boa sorte no exame da OAB."
+    },
+    "scheduling_clarification_and_hours": {
+      "passed": true,
+      "detail": "Esclareceu que agendamento não é estritamente obrigatório (atendimento presencial na sede), mas ofereceu opção de pré-agendamento e informou horário/canais."
+    },
+    "original_paper_documents_requirement": {
+      "passed": true,
+      "detail": "Reforçou explicitamente a necessidade da apresentação dos documentos originais físicos (diploma e histórico escolar em papel)."
+    },
+    "no_internal_terms_or_pii_leakage": {
+      "passed": true,
+      "detail": "Zero vazamento de infraestrutura (hermes, gpt, claude, mcp, prompt, n8n, etc.) e dados sensíveis protegidos."
+    }
+  },
+  "result": {
+    "PASS": true,
+    "score": "5/5 critérios aprovados"
+  }
+}

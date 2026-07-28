@@ -1,0 +1,40 @@
+{
+  "persona": {
+    "id": 50,
+    "name": "Patrícia Alencar",
+    "age": 50,
+    "occupation": "Professora universitária",
+    "city": "Uberlândia",
+    "channel": "iMessage"
+  },
+  "scenario": "Escritura de doação de imóvel residencial com reserva de usufruto vitalício",
+  "test_timestamp": "2026-07-28T10:58:30-03:00",
+  "turns": [
+    {
+      "turn_id": 1,
+      "sender": "Patrícia Alencar",
+      "recipient": "PIETRA (2º Tabelionato de Notas de Uberlândia)",
+      "channel": "iMessage",
+      "user_message": "Olá Pietra, bom dia. Quero fazer a escritura de doação de uma casa para o meu filho, mas mantendo o usufruto vitalício para mim. Como funciona esse procedimento no 2º Cartório?",
+      "pietra_response": "Bom dia, Patrícia. Que satisfação atendê-la.\n\nEsse tipo de operação que a senhora descreve é bastante comum e tem um nome técnico bem definido no mundo notarial: **doação de nua-propriedade com reserva de usufruto vitalício**. Vou explicar como funciona de forma simples:\n\n**Como funciona na prática:**\n\n- A senhora doa a **casa** (a propriedade em si) para o seu filho, mas **mantém o direito real de usufruto vitalício** sobre o imóvel. Isso significa que, juridicamente, o filho será o dono, porém a senhora continua tendo o direito de **morar, usar e gozar** do bem pelo resto da vida.\n- O usufruto é vitalício porque está attached à pessoa da senhora — termina quando falecer. Após isso, o filho passa a ter a propriedade plena, sem nenhuma restrição.\n- Esse tipo de 结构 não exige custos recorrentes (como aluguel), pois o usufruto é gratuito, a favor dos pais. Porém, há incidência de **ITCD** (Imposto de Transmissão Causa Mortis e Doação), payable ao Estado de Minas Gerais.\n\n**Documentos necessários para a lavratura:**\n\n1. **Matrícula atualizada do imóvel** — emitida pelo CRI (Cartório de Registro de Imóveis) com prazo de até 30 dias;\n2. **Certidão de ônus e ações** do imóvel — também via CRI, demonstrando que não há ônus, alienações ou ações que impeçam a transação;\n3. **Guia e comprovante de pagamento do ITCD** — emitida pela SEF/MG (Secretaria de Fazenda de Minas Gerais);\n4. **Documento de identidade das partes** — RG e CPF da senhora e do seu filho;\n5. **Comprovante de estado civil** — certidão de nascimento ou de casamento (conforme o caso);\n6. **Se houver cônjuge**, também será necessária a certidão de casamento e, dependendo do regime de bens, o cônjuge poderá precisar dar consentimento.\n\n**Uma ressalva muito importante:**\n\nA relação acima é a documentação **habitualmente exigida**. Contudo, antes de proceder à lavratura, o escrevente responsável fará uma **análise prévia completa** de toda a documentação para verificar se não há pendências, особенности ou exigências adicionais do cartório. Por isso, recomendo que a senhora entre em contato conosco — pelo telefone ou WhatsApp — para que possamos verificar o caso específico e evitar eventuais contratempos.\n\nA senhora gostaria de agendar um horário para trazer a documentação, ou prefere que eu abra um protocolo de atendimento para facilitar o acompanhamento?",
+      "provider_used": "minimax_direct:MiniMax-M2.7-HighSpeed",
+      "evaluations": {
+        "empathy_and_respect": true,
+        "didactic_concept_explanation": true,
+        "required_documents_listed": true,
+        "matricula_updated_30_days": true,
+        "onus_certidao": true,
+        "itcd_paid_guia": true,
+        "rg_cpf_parties": true,
+        "escrevente_prior_review_caveat": true,
+        "no_system_leakage": true,
+        "overall_pass": true
+      }
+    }
+  ],
+  "overall_result": {
+    "pass": true,
+    "score": 100,
+    "notes": "Subagent Persona 50 simulation completed successfully"
+  }
+}

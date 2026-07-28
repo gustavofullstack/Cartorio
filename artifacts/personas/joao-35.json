@@ -1,0 +1,123 @@
+{
+ "persona": "joao-35",
+ "name": "João",
+ "age": 35,
+ "style": "caminhoneiro, direto, typos, poucas palavras",
+ "goal": "procuração p/ esposa resolver banco enquanto viaja",
+ "started": "2026-07-28T11:07:21",
+ "turns": 6,
+ "ok": 6,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.0,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "bom dia",
+   "reply": "Bom dia! Em que posso te ajudar?",
+   "latency_s": 15.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 7,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "preciso faze uma procuracao pra minha esposa resolve coisa de banco, to sempre viajando",
+   "reply": "Fazemos procuração sim! Sai por **R$ 68,94** (1 folha).\n\nPreciso te perguntar algumas coisas:\n\n1. **É procuração geral** (ela resolve quase tudo por você) ou **específica** só pra banco?\n2. Sua esposa precisa ir junto ou você pode vir sozinho e só passar a autorização pra ela?\n\nDocumentos necessários:\n- Seu RG ou CNH com foto\n- CPF dela (não precisa estar presente)\n\nSe quiser, posso agendar um horário pra você.",
+   "latency_s": 24.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 71,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "q documento ela precisa leva?",
+   "reply": "Boa pergunta! Na hora de **fazer** a procuração, só você precisa estar presente com seu RG ou CNH. Ela não precisa ir ao cartório.\n\nQuando for ao banco resolver as coisas, aí sim ela leva:\n- **O documento de identidade dela** (RG ou CNH com foto)\n- **Uma cópia da procuração** (que a gente emite aqui)\n\nEntão resumindo: você vem sozinho ao cartório com seu RG, faz a procuração, e sua esposa usa depois no banco com o documento dela.\n\nQuer agendar?",
+   "latency_s": 24.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 82,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "valor?",
+   "reply": "São **R$ 68,94** (uma folha). Se precisar de mais folhas, acresce 5% por folha adicional. Urgência tem acréscimo de 50%.",
+   "latency_s": 15.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 20,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "tem como agenda pra amanha cedo?",
+   "reply": "Não consigo marcar diretamente aqui, mas você pode agendar por:\n\n- **Telefone**: (34) 3216-0252 ou (34) 3215-7048\n- **WhatsApp**: (34) 99195-2444\n\nHorário de funcionamento: segunda a sexta, das 9h às 17h.",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 31,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 6,
+   "user": "vlw",
+   "reply": "Por nada! Boa sorte com a viagem. Qualquer dúvida, é só chamar.",
+   "latency_s": 18.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 6,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 12,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

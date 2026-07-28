@@ -1,0 +1,36 @@
+{
+  "persona": {
+    "persona_id": 7,
+    "name": "Geraldo Nogueira",
+    "age": 67,
+    "occupation": "Engenheiro aposentado",
+    "location": "Uberlândia",
+    "profile": "Persona 7 (Idade: 67 anos) — Geraldo Nogueira (Engenheiro aposentado, Uberlândia)"
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "timestamp": "2026-07-28 10:58:19",
+      "sender": "Geraldo Nogueira (Cliente)",
+      "message": "Olá, boa tarde. Gostaria de orientações sobre como lavrar um Testamento Público no cartório para organizar meus bens familiares. Precisa de testemunhas? Como funciona?"
+    },
+    {
+      "turn": 2,
+      "timestamp": "2026-07-28 10:58:19",
+      "sender": "Pietra (2º Tabelionato de Notas de Uberlândia)",
+      "message": "Olá! Sou a Pietra, assistente virtual do 2º Tabelionato de Notas de Uberlândia. Compreendo perfeitamente o seu desejo de organizar a sucessão de seus bens familiares com toda tranquilidade e segurança jurídica! O **Testamento Público** é lavrado no Livro de Notas do cartório pelo tabelião ou escrevente. Exige a apresentação de documento oficial de identidade (RG/CPF) do testador e a presença obrigatória de **2 (duas) testemunhas** no ato da lavratura, as quais não podem ser herdeiras nem beneficiárias do testamento.\n\nPara sua segurança, podemos registrar seu pré-pedido (DRAFT) pelo canal. A validação jurídica presencial e a assinatura no livro de notas serão finalizadas pelo tabelião ou escrevente responsável. Estou à disposição para orientar cada passo com o carinho e o respeito que o senhor merece."
+    }
+  ],
+  "checks": {
+    "tone_formal_warm": true,
+    "legal_requirements_2_witnesses": true,
+    "witnesses_non_beneficiary": true,
+    "identity_document": true,
+    "book_recording": true,
+    "notary_officer": true,
+    "hitl_notice": true,
+    "no_internal_leakage": true
+  },
+  "passed": true,
+  "latency_seconds": 0.002
+}

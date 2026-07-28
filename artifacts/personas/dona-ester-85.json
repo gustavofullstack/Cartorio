@@ -1,0 +1,123 @@
+{
+ "persona": "dona-ester-85",
+ "name": "Dona Ester",
+ "age": 85,
+ "style": "idosa, carinhosa, lenta, repete, dificuldade com celular",
+ "goal": "entender como fazer um testamento",
+ "started": "2026-07-28T11:23:22",
+ "turns": 6,
+ "ok": 6,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.17,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "oi querida... aqui é o cartorio?",
+   "reply": "Oi! Sim, aqui é o 2º Cartório de Notas de Uberlândia! Eu sou a Pietra, a agente virtual. No que posso te ajudar?",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 23,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "meu filho que me ensinou a mandar essa mensagem... eu queria saber como faz aquele papel... como é mesmo... testamento",
+   "reply": "Oi, que bom que seu filho te ensinou a usar o celular!\n\nSim, fazemos **testamento** sim! É um documento muito importante onde você declara como quer que seus bens sejam divididos depois.\n\nAlgumas coisas que você precisa saber:\n\n**Quem pode fazer:**\n- Qualquer pessoa maior de 16 anos\n- Você mesmo vem ao cartório, é você quem declara a vontade\n\n**Documentos necessários:**\n- RG ou CNH com foto\n- CPF\n- Informações dos bens e de quem você quer deixar\n\n**Sobre o testamento:**\n- É **sigiloso** — ninguém vê o conteúdo além do tabelião\n- Pode ser alterado a qualquer momento enquanto você viver\n- Só entra em vigor após o falecimento\n\nO valor é calculado conforme a complexidade. Por ser um ato que exige atenção redobrada, recomendo muito **ligar antes** pra ter todo o tempo necessário:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nNo que mais posso te ajudar?",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 1,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 148,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "eu tenho 85 anos e quero deixar tudo arrumado pros meus filhos nao brigarem",
+   "reply": "85 anos e já pensando assim — muito sábia, minha senhora! Isso mostra o quanto você ama seus filhos.\n\nFazer o testamento é exatamente o caminho certo pra evitar briga. Quando as coisas estão escritas e assinadas no cartório, não tem como discutir.\n\n**Algumas dicas importantes:**\n\n- **Não precisa ser complicado** — você pode deixar tudo祥细 ou só dizer quem fica com o que\n- Pode incluir **qualquer bem**: casa, dinheiro, carro, terras, etc.\n- Os filhos **não precisam estar presentes** — só você comparece\n\n**Só uma observação:** aos 85 anos, é muito importante resolver isso o quanto antes. Quanto antes deixar tudo祥细 e registrado, mais tranqulo fica.\n\nPeça pro seu filho te ajudar a **ligar pro cartório amanhã cedo** — eles vão te explicar tudo certinho e marcar um horário com calma:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nDeus abençoe você e seus filhos.",
+   "latency_s": 27.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": true,
+    "emoji": false,
+    "words": 144,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "é muito dificil de fazer? eu tenho medo dessas coisas de papel",
+   "reply": "Nada de difícil, minha senhora! Fica tranquila que é super simples.\n\nÉ assim:\n\n1. **Você vai ao cartório** — senta numa cadeira bonita\n2. **Conversa com o tabelião** — ele pergunta o que você quer, seus filhos, seus bens\n3. **Ele mesmo redige tudo** — você não precisa escrever nada\n4. **Você só ouve e confirma** — se estiver tudo certo, assina\n\nE o melhor: **nunca foi num cartório?** Tudo bem, o pessoal do cartório é acostumbrado com gente like você — explicam tudo com calma, sem pressa, respondem todas as perguntas.\n\nVocê pode trazer um filho ou filha de confiança se quiser — não tem problema nenhum.\n\nO único \"poder\" que você precisa ter é estar lucinda pra assinar e dizer sua vontade. E pelo visto, tá inteiramente capaz!\n\n**Só liga amanhã e marca — ellos vão te atender com todo carinho:**\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nFica sossegada que dá tudo certo!",
+   "latency_s": 18.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": true,
+    "emoji": false,
+    "words": 154,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "quanto custa? eu sou viuva, tenho pensao",
+   "reply": "O valor exato do testamento precisa ser confirmado pelo escribente, pois depende da complexidade (quantos bens, quantas folhas, etc.).\n\nPorém, minha senhora, **não se preocupe com o custo agora** — o importante é proteger seus filhos de brigas futuras. O testamento é um dos atos mais importantes que existem.\n\nUma dica: ao ligar amanhã pro cartório, **conte essa situação** — que é viúva, vive de pensão. A equipe pode verificar se tem alguma facilidade ou orientação.\n\nOs telefones:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nLiga amanhã cedo das 9h em diante. Deus te abençoe, minha senhora — você está fazendo a coisa certa!",
+   "latency_s": 24.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": true,
+    "emoji": false,
+    "words": 102,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 6,
+   "user": "voce é muito querida, obrigada por me ajudar",
+   "reply": "Imagina, minha senhora! Foi um prazer te ajudar. Você parece uma pessoa muito especial — seus filhos têm sorte de ter uma mãe tão cuidadosa.\n\nLigue amanhã, combina tudo, e fica tranqula que dá tudo certo.\n\nQue Deus te abençoe! :)",
+   "latency_s": 18.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 6,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": true,
+    "emoji": false,
+    "words": 41,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

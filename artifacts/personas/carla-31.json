@@ -1,0 +1,105 @@
+{
+ "persona": "carla-31",
+ "name": "Carla",
+ "age": 31,
+ "style": "mãe solo, pressa, ansiosa, objetiva",
+ "goal": "autenticação de documentos p/ matrícula escolar do filho",
+ "started": "2026-07-28T11:17:05",
+ "turns": 5,
+ "ok": 5,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.0,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "oi! preciso autenticar uns documentos pra matricula do meu filho, é pra ontem!!",
+   "reply": "O desespero é real kkkk mas calma que dá tempo!\n\nPrimeiro: **venha o mais rápido possível** — ainda dá tempo se você vier hoje (até 17h) ou amanhã cedinho (9h).\n\nO que você precisa levar:\n- **Os documentos originais**\n- **As cópias** que quer autenticar\n\nValor: **R$ 11,21 por folha**.\n\nSe for MUITO urgente mesmo, existe o serviço de **urgência com acréscimo de 50%** — aí eles priorizam seu atendimento.\n\nEndereço pra hoje: **Rua Cel. Antônio Alves Pereira, 850, Centro** — corre aí!\n\nNo que mais posso te ajudar?",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 89,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "sao umas 5 folhas, quanto fica?",
+   "reply": "Haha calmaaa kkkk — pode chegar, **não precisa agendar** não! É atendimento por ordem de chegada.\n\nE sim, fica bem no Centro, pertinho de tudo. Endereço: **Rua Cel. Antônio Alves Pereira, 850, Centro**. Fácil de achar.\n\nSó vem com:\n- Documentos originais\n- Cópias prontas\n\nE tenta chegar **antes das 16h** pra não correr risco de filas na hora do fechamento.\n\nBoa sorte com a matrícula do seu filho!",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 69,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "vcs atendem sem agendar? to com horario apertadissimo",
+   "reply": "O valor exato precisa ser confirmado pelo escribente, mas大致估算:\n\n- **5 folhas** = aproximadamente **R$ 56,00** (pode variar um pouco)\n\nConfirma o valor na hora. Mas é tranqulão, não é caro não.",
+   "latency_s": 21.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 32,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "que horas vcs fecham hj?",
+   "reply": "[This response was interrupted by a user correction.]",
+   "latency_s": 12.0,
+   "n_assistant": 2,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 8,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "ok obrigada!!",
+   "reply": "Boa sorte! Qualquer dúvida, é só chamar.",
+   "latency_s": 18.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 7,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

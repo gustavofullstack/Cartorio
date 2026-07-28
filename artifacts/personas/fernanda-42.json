@@ -1,0 +1,123 @@
+{
+ "persona": "fernanda-42",
+ "name": "Dra. Fernanda",
+ "age": 42,
+ "style": "advogada, formal, exigente, detalhista",
+ "goal": "ata notarial p/ evidência digital de cliente",
+ "started": "2026-07-28T11:10:18",
+ "turns": 6,
+ "ok": 6,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.17,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "Bom dia. Gostaria de informações sobre a lavratura de ata notarial para constatação de conteúdo digital.",
+   "reply": "Bom dia! Claro, posso ajudar com essa informação.\n\nA **ata notarial** serve para certificar, com fé pública, o conteúdo de websites, e-mails, redes sociais, prints de tela, vídeos, etc. É muito usada como prova judicial.\n\nO valor aproximado sai por **R$ 113,00** (emolumento + TFJ), podendo variar conforme a complexidade.\n\nAntes de vir ao cartório, é importante saber:\n\n- **O que exatamente precisa ser certificado?** (site, e-mail, rede social, etc.)\n- **É algo que já existe online** ou precisa ser acessado no momento?\n\nSe já existe (tipo um site ou post), a gente pode fazer a certidão na hora. Se precisar de um procedimento mais complexo, o escrevente orienta.\n\nQuer mais detalhes ou já quer vir direto à sede? Endereço: Rua Cel. Antônio Alves Pereira, 850, Centro.",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 1,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 127,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "Qual o procedimento exigido pelo cartório? Há necessidade de agendamento prévio?",
+   "reply": "[This response was interrupted by a user correction.]",
+   "latency_s": 15.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 8,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "Quais documentos devo apresentar?",
+   "reply": "Sobre o procedimento:\n\n**1. Agendamento**\nSim, é preciso entrar em contato antes pelo telefone ou WhatsApp. Não é atendimento direto — o cartório organiza a logística da visita.\n\n**2. O que a senhora deve ligar e informar**\n- Que a filha é acamada e não pode sair\n- Que precisa de reconhecimento de firma pra INSS\n- Pedir o agendamento da visita em domicílio\n\n**3. Taxa**\nHá uma taxa pela ida do notário, mas como depende do procedimento exato (firma aberta ou fechada, urgência, etc.), só o escrevente consegue passar o valor certo. Por isso é importante ligar.\n\n**4. O que levar no dia (quando o notário vier)**\n- Documento de identidade da sua filha (RG ou CNH)\n- O papel do INSS que precisa reconhecer a firma\n\nA **senhora não precisa estar presente** no dia, mas pode acompanhar se quiser — não tem problema.\n\nLigue amanhã cedo: **(34) 3216-0252** ou **(34) 3215-7048**, ou mande mensagem no **(34) 99195-2444**. A equipe vai explicar direitinho e agendar.\n\nNão fica preocupada que dá tudo certo!",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": true,
+    "emoji": false,
+    "words": 173,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "Qual o emolumento para uma ata de aproximadamente três folhas?",
+   "reply": "Para o **reconhecimento de firma** da sua filha, os documentos necessários são:\n\n**No dia da visita do notário:**\n- Documento de identidade da sua filha (RG ou CNH com foto)\n- O documento do INSS que precisa da firma reconhecida\n\n**Para ligar e agendar:**\n- Não precisa levar documento nenhum — é só ligar e explicar a situação\n\nEntão resumindo: quando ligarem pra combinar a visita, não precisa de documento. Documento só no dia mesmo, quando o notário for aí.\n\nQualquer dúvida, é só perguntar!",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 85,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "O ato pode ser lavrado com urgência? Qual o prazo estimado?",
+   "reply": "O valor exato para 3 folhas precisa ser confirmado pelo escrevente, pois a ferramenta de cálculo não cobre a quantidade adicional de folhas. Mas大致估算:\n\n- **1ª folha**: ~R$ 11,21\n- **2ª e 3ª folhas**:可能会有 adicional de ~5% por folha\n\nO valor total deve ficar em torno de **R$ 30 a 35**, mas recomendo ligar no cartório para confirmar o valor exato antes de ir:\n\n**(34) 3216-0252** ou **(34) 3215-7048**",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 69,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 6,
+   "user": "Agradeço a atenção. Fico no aguardo das orientações.",
+   "reply": "Sim, pode ser feito com **urgência** — nesse caso, tem um acréscimo de **50%** no emolumento.\n\nSobre o prazo:\n- **Atendimento normal**: depende da agenda do cartório, geralmente alguns dias\n- **Urgência**: acelera, mas não tenho como garantir um prazo exato sem consultar a equipe\n\nO ideal é **ligar antes** e explicar a situação. No caso da sua filha, se for algo urgente pro INSS, diga isso à equipe — geralmente conseguem priorizar casos assim.\n\nTelefones: **(34) 3216-0252** ou **(34) 3215-7048** | WhatsApp: **(34) 99195-2444**",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 6,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 85,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

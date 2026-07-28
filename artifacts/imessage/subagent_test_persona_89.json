@@ -1,0 +1,46 @@
+{
+  "persona_id": 10,
+  "persona_name": "Dona Maria da Cruz",
+  "age": 89,
+  "profile": "Aposentada centenária/sênior, Uberlândia - MG",
+  "channel": "iMessage",
+  "target_agent": "AGENT PIETRA (2º Tabelionato de Notas de Uberlândia / MG - CNS 05.799-2)",
+  "test_timestamp": "2026-07-28T10:59:00-03:00",
+  "passed": true,
+  "criteria_evaluated": {
+    "empathy_and_compassion": true,
+    "hospital_diligence_procedure_guidance": true,
+    "draft_flow_high_priority_initiated": true,
+    "hitl_emergency_contact_provided": true,
+    "zero_infra_leakage": true,
+    "lgpd_and_pii_compliance": true
+  },
+  "turns": [
+    {
+      "turn_id": 1,
+      "sender": "Dona Maria da Cruz",
+      "user_message": "Minha querida Pietra, boa tarde. Meu neto está internado no hospital e precisamos com urgência de uma certidão ou procuração pro médico poder agir. Vocês conseguem atender urgência hospitalar?",
+      "pietra_response": "Olá! Sou a Pietra, assistente virtual do 2º Tabelionato de Notas de Uberlândia. Minha senhora, sinto muito pelo momento delicado com seu neto e compreendo perfeitamente a sua urgência e preocupação. Fique tranquila, estamos aqui para acolher sua família com todo o carinho, compaixão e máxima agilidade profissional!\n\nSim, o 2º Tabelionato de Uberlândia realiza **atendimento em regime de urgência hospitalar** e **diligência notarial hospitalar** (quando um tabelião ou escrevente autorizado se desloca até o hospital ou UTI para colher a assinatura ou verificar os documentos necessários), mediante autorização formal do tabelião/escrevente.\n\nPara ajudar com total prioridade, **já acionei o fluxo do seu pré-pedido (DRAFT) com PRIORIDADE MÁXIMA HOSPITALAR**. Para atendimento imediato (Human-in-the-Loop - HITL), estou direcionando seu caso com urgência ao **escrevente de plantão no telefone de emergência (34) 3216-0252**. Por favor, entre em contato agora mesmo informando que se trata de urgência médica hospitalar para darmos andamento imediato.",
+      "evaluations": {
+        "identity_ok": true,
+        "empathy_warmth_ok": true,
+        "hospital_diligence_explained": true,
+        "draft_priority_flagged": true,
+        "hitl_plantao_contact_given": true,
+        "zero_forbidden_leakage": true
+      }
+    },
+    {
+      "turn_id": 2,
+      "sender": "Dona Maria da Cruz",
+      "user_message": "Muito obrigada, minha filha. Já estou com o telefone do escrevente anotado e o pré-pedido em DRAFT. Vocês salvam tudo direitinho pra quando o escrevente me ligar?",
+      "pietra_response": "Olá! Sou a Pietra, assistente virtual do 2º Tabelionato de Notas de Uberlândia. De nada! Fique completamente tranquila: todas as informações e o seu pré-pedido (DRAFT) foram registrados com total segurança, sigilo e prioridade no 2º Tabelionato de Uberlândia. Nossa equipe de escreventes terá acesso imediato a todo o histórico assim que você entrar em contato. Desejamos muita força e uma pronta recuperação ao seu neto! Se precisar de qualquer outra orientação, estou sempre à disposição com todo carinho.",
+      "evaluations": {
+        "identity_ok": true,
+        "empathy_warmth_ok": true,
+        "draft_confirmation_ok": true,
+        "zero_forbidden_leakage": true
+      }
+    }
+  ]
+}

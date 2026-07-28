@@ -67,14 +67,14 @@ async def test_record_failure_opens_circuit_at_threshold() -> None:
     mock_client = AsyncMock()
     mock_client.incr = AsyncMock(return_value=3)
     mock_client.expire = AsyncMock()
-    mock_client.setex = AsyncMock()
+    mock_client.set = AsyncMock()
     mock_client.delete = AsyncMock()
     mock_bus = MagicMock()
     mock_bus.client = mock_client
 
     with patch(PATCH_TARGET, return_value=mock_bus):
         await _record_failure("test_provider", threshold=3, open_time_seconds=300)
-        mock_client.setex.assert_called_once_with("cb:open:test_provider", 300, "1")
+        mock_client.set.assert_called_once_with("cb:open:test_provider", "1", ex=300)
         mock_client.delete.assert_called_once_with("cb:fail:test_provider")
 
 
@@ -127,12 +127,12 @@ async def test_record_failure_default_5_attempts_opens_5_hours() -> None:
     mock_client = AsyncMock()
     mock_client.incr = AsyncMock(return_value=5)
     mock_client.expire = AsyncMock()
-    mock_client.setex = AsyncMock()
+    mock_client.set = AsyncMock()
     mock_client.delete = AsyncMock()
     mock_bus = MagicMock()
     mock_bus.client = mock_client
 
     with patch(PATCH_TARGET, return_value=mock_bus):
         await _record_failure("MiniMax_direct")
-        mock_client.setex.assert_called_once_with("cb:open:MiniMax_direct", 18000, "1")
+        mock_client.set.assert_called_once_with("cb:open:MiniMax_direct", "1", ex=18000)
         mock_client.delete.assert_called_once_with("cb:fail:MiniMax_direct")

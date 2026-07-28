@@ -1,0 +1,123 @@
+{
+ "persona": "lucas-20",
+ "name": "Lucas",
+ "age": 20,
+ "style": "jovem, muita gíria, caps, abreviações",
+ "goal": "abrir firma (cartão de assinatura) p/ estágio",
+ "started": "2026-07-28T11:25:59",
+ "turns": 6,
+ "ok": 6,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.0,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "EAE",
+   "reply": "Eae, tudo bem? No que posso te ajudar?",
+   "latency_s": 18.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 8,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "mano preciso abrir firma pro estagio, vcs fazem?",
+   "reply": "[This response was interrupted by a user correction.]",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 8,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "QTO CUSTA??",
+   "reply": "Boas perguntas, Camila!\n\n**1) Prazo de lavratura:**\nGeralmente é feito no mesmo dia, na hora — desde que toda documentação esteja correta e não haja necessidade de minuta específica mais complexa. Mas para confirmar o prazo exato, o melhor é verificar com o escrevente no momento.\n\n**2) Poderes especiais (transigir e receber citações):**\nEsses poderes são bastante comuns em procuração ad juditia e **não alteram o valor base** — continuam os R$ 68,94. Eles são tranquilos de incluir.\n\nO que pode alterar o valor:\n- Se precisar de mais folhas (acima de 1)\n- Se a minuta exigir redação mais complexa\n\nNa prática, aprocuração com esses dois poderes é bem padrão. Não tem complicação.\n\nQualquer outra dúvida, é só perguntar!",
+   "latency_s": 12.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 120,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "preciso levar oq?",
+   "reply": "O valor base é **R$ 68,94** (1 folha). Se precisar de mais folhas, acresce ~5% por folha adicional. Urgência tem acréscimo de 50%.",
+   "latency_s": 12.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 23,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "da pra fazer hj tipo AGORA kkk",
+   "reply": "Para abrir firma (reconhecimento de firma), você precisa levar:\n\n- **Seu documento de identidade** com foto (RG ou CNH)\n- **O documento que precisa da firma** (o papel do estágio)\n\nSe for firma aberta (já registrada antes), só traz o documento. Se for firma fechada (você assina na hora), é só chegar e assinar — eles comparam aí.\n\nTraga cópias também, au caso.",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 63,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 6,
+   "user": "top dms, vlw",
+   "reply": "Kkkk se você correr, dá! 😂\n\nVai **agora mesmo** na **Rua Cel. Antônio Alves Pereira, 850, Centro**. Chega antes das 16h pra garantir.\n\nLeva:\n- Seu RG ou CNH\n- O papel do estágio\n\nE torce pra não ter fila grande kkk\n\nBoa sorte!",
+   "latency_s": 3.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 6,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": true,
+    "words": 44,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

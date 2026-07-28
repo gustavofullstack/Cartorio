@@ -46,4 +46,5 @@ async def main() -> None:
         print("Response:", resp.text)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

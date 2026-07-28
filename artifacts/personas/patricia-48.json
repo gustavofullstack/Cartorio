@@ -1,0 +1,123 @@
+{
+ "persona": "patricia-48",
+ "name": "Patrícia",
+ "age": 48,
+ "style": "servidora pública, enlutada, educada mas abalada",
+ "goal": "inventário extrajudicial do marido falecido",
+ "started": "2026-07-28T11:29:25",
+ "turns": 6,
+ "ok": 6,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.5,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "Boa tarde. Meu marido faleceu há dois meses e preciso orientação sobre inventário.",
+   "reply": "Boa tarde. Sinto muito pela sua perda.\n\nSobre o inventário, existem duas opções:\n\n**1. Inventário Extrajudicial (no cartório)**\n- Mais rápido e barato\n- Só é possível se todos os herdeiros estiverem de acordo\n- Não há testamento (ou se houver, precisa ser verificado)\n\n**2. Inventário Judicial (no fórum)**\n- Mais demorado e caro\n- Usado quando há discordância entre herdeiros\n- Ou quando o cartório não pode processar\n\n**Documentos gerais que você vai precisar:**\n- RG e CPF sua e do marido\n- Certidão de óbito do marido\n- Documentos dos bens (imóveis, veículos, contas bancárias)\n- Certidão de casamento\n- Se houver testamento, a certidão\n\nComo fazer pelo cartório depende de vários fatores — recomendo **ligar ou ir pessoalmente** pra ter orientação específica pro seu caso:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nEndereço: **Rua Cel. Antônio Alves Pereira, 850, Centro**.\n\nNo que mais posso te ajudar?",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 1,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 147,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "Somos dois herdeiros, eu e minha filha maior. Todos de acordo. É possível fazer em cartório?",
+   "reply": "Sim, com certeza! Esse é o cenário perfeito pro **Inventário Extrajudicial** — que é feito aqui no cartório mesmo.\n\nComo vocês são só duas herdeiras e estão todas de acordo, dá pra resolver tudo de forma rápida e mais barata que o judicial.\n\n**Próximos passos:**\n\n1. **Ligar pro cartório** pra agendar — explicam direitinho os documentos\n2. **Você e sua filha vão juntas** ao cartório\n3. O tabelião redige tudo e vocês assinam\n\n**Documentos que você já pode ir separando:**\n- Certidão de óbito do marido\n- Certidão de casamento\n- RG e CPF seu e da sua filha\n- Documentos dos bens (imóveis, veículos, etc.)\n\n**Valor:** depende dos bens e da complexidade, mas o escribente passa tudo na hora.\n\nLigue o quanto antes pra iniciar — isso não precisa esperar o luto passar, quanto antes resolver, melhor:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nForça aí. Qualquer dúvida, é só chamar.",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 1,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 150,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "Ele deixou um apartamento e um carro. Quais documentos preciso reunir?",
+   "reply": "Boa pergunta! Separa esses documentos:\n\n**Do apartamento:**\n- Matrícula atualizada do imóvel (do cartório de registro de imóveis)\n- Ou escritura de compra e venda anterior\n- Carnê de IPTU\n\n**Do carro:**\n- Documento do veículo (CRV/CRLV)\n- Comprovante de compra, se tiver\n\n**Documentos pessoais teus e da sua filha:**\n- RG e CPF de vocês duas\n- Certidão de casamento\n- Certidão de óbito do marido\n\n**Bens em banco (se houver):**\n- Se souber quais bancos, pode ser útil ter os extratos ou documentação das contas\n\nO cartório pode pedir outros documentos dependendo do caso. Por isso é importante **ligar antes** — eles fazem uma lista personalizada:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nVai dando entrada o quanto antes que tudo se resolve!",
+   "latency_s": 18.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 123,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "É muito caro o processo todo?",
+   "reply": "O valor depende dos bens — como o apartamento e o carro têm valores diferentes, o custo varia. Por isso é melhor **ligar pro cartório** pra they passarem uma estimativa baseada nos bens:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nTe adianto que o Inventário Extrajudicial costuma ser **mais barato e rápido** que o Judicial — então já é uma boa notícia.\n\nTambém existem custas de registro (quando o imóvel passa pro nome de vocês) e do Detran (pro carro). Mas isso tudo é calculado junto.\n\nNão deixa de fazer por medo do custo —比不上 o custo de não resolver. E se ficar difícil, explains that situation ao cartório que eles orientam.\n\nForça aí! Qualquer dúvida, é só chamar.",
+   "latency_s": 30.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 117,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "Desculpa tantas perguntas, está sendo um período muito difícil...",
+   "reply": "Imagina, não precisa pedir desculpa! Pergunte à vontade — estou aqui pra ajudar.\n\nEsse período é muito difícil mesmo, e você está sendo muito corajosa cuidando de tudo. Respira fundo que aos poucos tudo se resolve.\n\nQualquer dúvida, é só chamar. Força aí! 💙",
+   "latency_s": 21.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 1,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": true,
+    "words": 44,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 6,
+   "user": "Obrigada pela paciência e pelo carinho.",
+   "reply": "Disponha. Você está na minha Gedanken — qualquer coisa, é só voltar a falar. Muita força e paz nesse momento. 💙",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 6,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": true,
+    "words": 21,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

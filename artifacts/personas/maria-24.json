@@ -1,0 +1,123 @@
+{
+ "persona": "maria-24",
+ "name": "Maria",
+ "age": 24,
+ "style": "estudante universitária, informal, gírias leves, direta",
+ "goal": "reconhecimento de firma urgente p/ faculdade",
+ "started": "2026-07-28T11:03:06",
+ "turns": 6,
+ "ok": 6,
+ "fail": 0,
+ "timeout": 0,
+ "warm_avg": 0.0,
+ "transcript": [
+  {
+   "turn": 1,
+   "user": "oiie, tudo bem?",
+   "reply": "Tudo bem sim, obrigado! E você, como está? No que posso te ajudar?",
+   "latency_s": 15.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 1,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 13,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 2,
+   "user": "preciso reconhecer firma num doc pra faculdade, vcs fazem isso?",
+   "reply": "Sim, fazemos reconhecimento de firma! Pode trazer o documento na sede (Rua Cel. Antônio Alves Pereira, 850, Centro) ou na unidade complementar (Rua Machado de Assis, 685).\n\nAtt, preciso saber: é firma aberta (já registrada aqui) ou firma fechada (vai assinar na hora)?",
+   "latency_s": 18.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 2,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 43,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 3,
+   "user": "quanto custa mais ou menos?",
+   "reply": "O reconhecimento de firma sai por **R$ 11,21** (emolumento + TFJ). Se for urgente, acresce 50%.\n\nPara reconhecer, traga um documento de identidade com foto (RG, CNH ou passaporte). Se for firma fechada (você assina na hora), é só vir ao cartório. Se for firma aberta (já registrada antes), traga o documento e compararse para confirmar a assinatura.\n\nQuer agendar?",
+   "latency_s": 24.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 3,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 60,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 4,
+   "user": "e demora mto? posso ir hj?",
+   "reply": "Você pode ir hoje, sim! Atendimento de segunda a sexta, das 9h às 17h. Mas como é via Photon (iMessage), não tenho como confirmar o horário exato agora. Recomendaria ligar antes para evitar fila:\n\n**(34) 3216-0252** ou **(34) 3215-7048**\n\nOu se preferir, posso agendar um horário com você — é só me passar a preferência de horário.",
+   "latency_s": 18.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 4,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 57,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 5,
+   "user": "ah e onde vcs ficam mesmo?",
+   "reply": "Estamos na Rua Coronel Antônio Alves Pereira, 850 — Centro, Uberlândia/MG (CEP 38400-104). Também temos uma unidade na Rua Machado de Assis, 685, no Centro.",
+   "latency_s": 18.1,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 5,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 25,
+    "hard_ok": true
+   },
+   "status": "OK"
+  },
+  {
+   "turn": 6,
+   "user": "obrigadaa, vc é um anjo",
+   "reply": "De nada, Gustavo! Qualquer outra dúvida, é só chamar. Boa sorte com o documento da faculdade!",
+   "latency_s": 18.0,
+   "n_assistant": 1,
+   "eval": {
+    "turn": 6,
+    "issues": [],
+    "warm_markers": 0,
+    "cold_markers": 0,
+    "formal_address": false,
+    "emoji": false,
+    "words": 16,
+    "hard_ok": true
+   },
+   "status": "OK"
+  }
+ ]
+}

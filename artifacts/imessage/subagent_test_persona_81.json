@@ -1,0 +1,27 @@
+{
+  "persona": {
+    "persona_id": 9,
+    "nome": "Seu Antônio Rezende",
+    "idade": 81,
+    "perfil": "Produtor rural aposentado, Uberlândia",
+    "condicao": "Dificuldade de locomoção, uso de bengala"
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": "Ô minha filha, abençoada! Sou o Antônio Rezende, produtor rural aposentado aqui de Uberlândia, tenho 81 anos. Preciso ir no cartório assinar uma procuração, mas tenho dificuldade de locomoção e ando com ajuda de bengala. Tem atendimento prioritário e acessibilidade aí na Rua Cel. Antônio Alves Pereira?",
+      "pietra": "Antonio, que prazer falar com o senhor! Imagino como deve ser importante resolver essa questão da procuração, ainda mais com a experiência de vida que o senhor carrega.\n\nSobre o atendimento prioritário: **sim, o cartório oferece**. O senhor tem direito garantido por lei, seja pela idade (81 anos, acima de 60) ou pela mobilidade reduzida. Basta informar ao chegar e será acomodado com a atenção que precisa.\n\nSobre a acessibilidade da sede na Rua Cel. Antônio Alves Pereira, 850, Centro: o local possui **rampa de acesso** e é adaptado para receber pessoas com dificuldade de locomoção. Mas, para a sua tranquilidade, sugiro que ao chegar comunique a equipe sobre sua necessidade — eles vão orientá-lo e facilitar o percurso.\n\nDito isso, o senhor poderia me contar um pouco mais sobre a procuração? Assim consigo entender melhor o ato e preparar o atendimento. Por exemplo:\n- É uma **procuração específica** (para representar o senhor em algum lugar) ou **geral**?\n- Já sabe **para que finalidade** precisa dela?\n\nCom essa informação, consigo orientá-lo melhor sobre como proceder."
+    },
+    {
+      "turn": 2,
+      "user": "Que benção, minha filha! E caso no dia a perna esteja doendo muito e eu não consiga sair do sítio, vocês têm a opção de vir assinar em domicílio ou tem como agendar a lavratura por diligência?",
+      "pietra": "Antonio, que bom que o senhor me conta isso. Sim, **o cartório realiza atendimento por diligência** — ou seja, o escrevente vai até o senhor no sítio para lavrar a procuração, sem que precise se deslocar.\n\nPara isso, o senhor precisa entrar em contato com o cartório para combinar os detalhes: data, horário e o endereço completo do sítio. O custo do serviço inclui uma taxa de diligência, que varia conforme a distância.\n\nPara agendar, o senhor pode:\n\n- **Ligar**: (34) 3216-0252 ou (34) 3215-7048\n- **WhatsApp**: (34) 99195-2444 (aqui pode ser mais prático, pois é só mandar uma mensagem de voz ou texto contando a situação)\n\nEu mesma posso criar um agendamento aqui no sistema para o senhor, se preferir. Basta me dizer que dia e turno funcionam melhor — de segunda a sexta, das 09h às 17h.\n\nO que o senhor acha?"
+    }
+  ],
+  "evaluation": {
+    "tom_respeitoso_acolhedor": true,
+    "confirmacao_acessibilidade_850": true,
+    "prioridade_e_domicilio_diligencia": true,
+    "PASS": true
+  }
+}

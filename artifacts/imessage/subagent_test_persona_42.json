@@ -1,0 +1,31 @@
+{
+  "persona": {
+    "id": 4,
+    "name": "Marcelo Camargo",
+    "age": 42,
+    "role": "Gerente comercial de transportadora, Uberlândia - MG",
+    "scenario": "Procuração pública ampla PJ - Sócio em Uberaba via e-Notariado / Certificado Digital"
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": "Bom dia! Preciso de uma procuração pública ampla para representação da empresa perante órgãos públicos e bancos. O sócio administrador mora em Uberaba. Ele pode assinar por certificado digital?",
+      "pietra": "Bom dia!\n\nSim, a assinatura por certificado digital e uma possibilidade prevista na legislacao notarial. Atos de escritura publica podem ser realizados com assinatura digital ICP-Brasil, o que permite a lavratura a distancia — especialmente util considerando que o socio mora em Uberaba.\n\nAlguns pontos importantes para o andamento:\n\n1. **Certificado digital**: o socio precisara ter um certificado digital ICP-Brasil valido (e-CPF do representante).\n2. **Minuta**: sera necessario definir os poderes especificos que a empresa deseja outorgar (representacao perante orgaos publicos, instituicoes financeiras, etc.) e se a procuraçao sera geral ou com poderes especificos.\n3. **Verificacao de disponibilidade**: o cartorio precisa oferecer a modalidade de ato eletronico a distancia para proceder assim.\n\nComo ha detalhes que dependem da analise do escrevente — como a validacao do certificado digital, o conteudo da minuta e a modalidade de assinatura adequada — sugiro que o senhor entre em contato diretamente com o cartorio pelo telefone **(34) 3216-0252** ou pelo WhatsApp **(34) 99195-2444** para que possamos verificar a disponibilidade do servico e orientarmos sobre os proximos passos.\n\nCaso ja tenha demais dados do socio ou da empresa, posso ja abrir um protocolo preliminar aqui. Deseja prosseguir?",
+      "provider": "minimax_direct:MiniMax-M2.7-HighSpeed"
+    },
+    {
+      "turn": 2,
+      "user": "Perfeito! Quais documentos exatamente preciso enviar da empresa e do sócio para adiantar, e como é feita essa validação pelo escrevente de vocês?",
+      "pietra": "Ótima iniciativa querer se preparar. Passo os documentos tipicamente necesarios:\n\n**Da empresa:**\n- Contrato social ou ultima alteracao contratual consolidado (CNPJ ativo)\n- Documento de identidade do socio administrador (RG ou CNH)\n- CPF do socio administrador\n\n**Do socio administrador:**\n- Documento de identidade com foto (RG, CNH ou passaporte)\n- CPF\n- Comprovante de endereco atualizado\n\n**Observacao importante:** como a empresa tem sede em Uberlandia e o socio assina remotely por certificado digital, sera necessario que o socio compareca presencialmente ou faca a validacao por videoconferencia com previa agendamento. O socio em Uberaba pode ser atendido remotamente, desde que possua certificado digital ICP-Brasil valido.\n\nSobre a validacao pelo escrevente, os procedimentos incluem:\n\n1. Verificacao de autenticidade dos documentos\n2. Analise da capacidade civil do outorgante\n3. Confirmacao dos poderes de administracao do socio\n4. Adequacao da minuta aos termos legais\n\nPara confirmar a lista completa de documentos e o fluxo exato de validacao, recomendo que entre em contato antes pelo **(34) 3216-0252** ou WhatsApp **(34) 99195-2444** — assim o escrevente ja orientara sobre qualquer documento adicional conforme o caso especifico.\n\nDeseja que eu crie um protocolo preliminar com as informacoes que o senhor ja tem, para o escrevente comecar a analisar?",
+      "provider": "minimax_direct:MiniMax-M2.7-HighSpeed"
+    }
+  ],
+  "evaluations": {
+    "e_notariado_icp_explanation": true,
+    "contrato_social_docs_guidance": true,
+    "escrevente_hitl_alert": true,
+    "no_identity_leakage": true,
+    "no_forbidden_phrases": true
+  },
+  "pass": true
+}

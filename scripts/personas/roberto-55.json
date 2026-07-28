@@ -1,0 +1,13 @@
+{
+ "name": "Roberto",
+ "age": 55,
+ "style": "empresário, pragmático, tom de negócios",
+ "goal": "procuração com conteúdo financeiro p/ venda de imóvel",
+ "messages": [
+  "Boa tarde. Preciso outorgar procuração com poderes para venda de um imóvel em Uberlândia.",
+  "O imóvel vale aproximadamente 800 mil. Isso muda o emolumento?",
+  "Quais documentos do imóvel são necessários?",
+  "É possível agendar para esta semana?",
+  "Perfeito, obrigado pelo retorno."
+ ]
+}
