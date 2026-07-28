@@ -19,7 +19,7 @@ services:
         if [ ! -f /opt/data/config.yaml ]; then
           cp /run/configs/config.cartorio.yaml /opt/data/config.yaml
         fi
-        exec hermes gateway run
+        exec /run/configs/lark-entrypoint.sh
     environment:
       HERMES_HOME: /opt/data
       API_SERVER_ENABLED: "true"
@@ -30,16 +30,28 @@ services:
       PHOTON_PROJECT_ID: ${PHOTON_PROJECT_ID:?set in the deployment environment}
       PHOTON_ALLOWED_USERS: ${PHOTON_ALLOWED_USERS:?set in the deployment environment}
       PHOTON_ALLOW_ALL_USERS: "false"
+      FEISHU_DOMAIN: lark
+      FEISHU_CONNECTION_MODE: websocket
+      FEISHU_ALLOW_ALL_USERS: "false"
+      FEISHU_GROUP_POLICY: allowlist
+      FEISHU_REQUIRE_MENTION: "true"
+      FEISHU_ALLOW_BOTS: none
       MCP_CARTORIO_URL: http://cartorio_api:8000/mcp
     configs:
       - source: hermes_cartorio_config_v1
         target: /run/configs/config.cartorio.yaml
         mode: 0440
+      - source: hermes_lark_entrypoint_v1
+        target: /run/configs/lark-entrypoint.sh
+        mode: 0555
     secrets:
       - hermes_api_server_key
       - hermes_llm_api_key
       - hermes_mcp_cartorio_api_key
       - hermes_photon_project_secret
+      - hermes_lark_app_id
+      - hermes_lark_app_secret
+      - hermes_lark_allowed_users
     volumes:
       - hermes_cartorio_data:/opt/data
     networks:
@@ -49,7 +61,6 @@ services:
       restart_policy:
         condition: on-failure
         delay: 10s
-        max_attempts: 3
       update_config:
         parallelism: 1
         order: start-first
@@ -68,6 +79,8 @@ services:
 configs:
   hermes_cartorio_config_v1:
     file: ./config.cartorio.yaml
+  hermes_lark_entrypoint_v1:
+    file: ./lark-entrypoint.sh
 
 secrets:
   hermes_api_server_key:
@@ -77,6 +90,12 @@ secrets:
   hermes_mcp_cartorio_api_key:
     external: true
   hermes_photon_project_secret:
+    external: true
+  hermes_lark_app_id:
+    external: true
+  hermes_lark_app_secret:
+    external: true
+  hermes_lark_allowed_users:
     external: true
 
 volumes:

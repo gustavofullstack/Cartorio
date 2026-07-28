@@ -21,6 +21,10 @@ import json
 import time
 import sqlite3
 import subprocess
+import base64
+import hashlib
+import hmac
+import secrets
 import requests
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,6 +53,48 @@ INBOX_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
 
+
+def _redact_identifier(value):
+    """Return a stable, non-reversible identifier suitable for local audit logs."""
+    if not value:
+        return ""
+    return f"id:{hashlib.sha256(str(value).encode('utf-8')).hexdigest()[:12]}"
+
+
+def _safe_attachment_metadata(attachments):
+    """Keep only attachment types in the local audit database, never paths or names."""
+    return [{"type": item.get("type", "unknown")} for item in attachments or []]
+
+
+def _scrub_value(value):
+    """Prevent structured logger callers from accidentally emitting PII or attachment paths."""
+    if isinstance(value, str):
+        return scrub_pii(value)
+    if isinstance(value, dict):
+        return {key: _scrub_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_scrub_value(item) for item in value]
+    return value
+
+
+def _lark_configuration_ready():
+    """Only accept callbacks when the complete plain-event configuration exists."""
+    # v6 handles Lark's plain JSON event format.  It does not decrypt callback
+    # envelopes, so an Encrypt Key is deliberately not required here.
+    return bool(APP_ID and APP_SECRET and VERIFICATION_TOKEN)
+
+
+def _provided_verification_token(body):
+    """Return the Lark verification token from either supported payload shape."""
+    header = body.get("header") if isinstance(body.get("header"), dict) else {}
+    return body.get("token") or header.get("token") or ""
+
+
+def _valid_lark_callback(body):
+    """Validate the configured Lark verification token without logging it."""
+    provided = _provided_verification_token(body)
+    return bool(provided) and hmac.compare_digest(str(provided), VERIFICATION_TOKEN)
+
 # === DB ===
 def db():
     conn = sqlite3.connect(DB_PATH)
@@ -70,16 +116,44 @@ def db():
             file_hash TEXT PRIMARY KEY,
             text TEXT, ts INTEGER DEFAULT (strftime('%s','now'))
         );
+        CREATE TABLE IF NOT EXISTS received_events (
+            event_id TEXT PRIMARY KEY,
+            received_at INTEGER DEFAULT (strftime('%s','now'))
+        );
     """)
     return conn
 
+
+def claim_event(event_id):
+    """Atomically claim a Lark event before any side effect is attempted.
+
+    A duplicate is acknowledged but never reaches downloads, OCR, Pietra, or
+    outbound delivery.  Keeping a claim after a handler failure is intentional:
+    replaying a partially processed inbound message can duplicate an external
+    response.
+    """
+    if not isinstance(event_id, str) or not event_id or len(event_id) > 256:
+        return False
+    try:
+        c = db()
+        cur = c.execute("INSERT OR IGNORE INTO received_events (event_id) VALUES (?)", (event_id,))
+        c.commit()
+        c.close()
+        return cur.rowcount == 1
+    except Exception as e:
+        log("ERR", "event claim failed", error=str(e))
+        # Fail closed: otherwise a transient local DB issue can duplicate a
+        # message after Lark retries it.
+        return False
+
 def log_event(chat_id, sender, msg_type, content_in, content_out, model, attachments=None, error=None):
+    """Persist a minimal, scrubbed audit record without raw identifiers or attachments."""
     try:
         c = db()
         c.execute("INSERT INTO events (chat_id,sender,msg_type,content_in,content_out,pietra_model,attachments,error) VALUES (?,?,?,?,?,?,?,?)",
-                  (chat_id, sender[:32] if sender else "", msg_type,
-                   content_in[:500], (content_out or "")[:500], model,
-                   json.dumps(attachments or []), error))
+                  (_redact_identifier(chat_id), _redact_identifier(sender), msg_type,
+                   scrub_pii(content_in)[:500], scrub_pii(content_out or "")[:500], model,
+                   json.dumps(_safe_attachment_metadata(attachments)), scrub_pii(error or "")[:500]))
         c.commit()
         c.close()
     except Exception as e:
@@ -110,7 +184,7 @@ def rate_ok(chat_id, max_per_min=10):
 def log(level, msg, **kw):
     ts = datetime.now(timezone.utc).isoformat()
     # Structured JSON log
-    entry = {"ts": ts, "level": level, "msg": msg, **kw}
+    entry = {"ts": ts, "level": level, "msg": scrub_pii(msg), **_scrub_value(kw)}
     print(json.dumps(entry, ensure_ascii=False), flush=True)
 
 # === LGPD scrub (defesa em profundidade) ===
@@ -472,13 +546,37 @@ def handle_command(chat_id, text, sender):
 @app.route("/lark/webhook", methods=["POST"])
 def webhook():
     body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        log("WARN", "lark callback rejected: invalid JSON payload")
+        return jsonify({"code": -1, "msg": "bad request"}), 400
+
+    if not _lark_configuration_ready():
+        # Do not accept unauthenticated traffic when an operator has not
+        # completed the Lark configuration.  No configuration value is logged.
+        log("WARN", "lark callback rejected: configuration incomplete")
+        return jsonify({"code": -1, "msg": "service unavailable"}), 503
+
+    if not _valid_lark_callback(body):
+        log("WARN", "lark callback rejected: invalid verification token")
+        return jsonify({"code": -1, "msg": "unauthorized"}), 401
 
     if body.get("type") == "url_verification":
         return jsonify({"challenge": body.get("challenge", "")})
 
     try:
-        header = body.get("header", {})
-        event = body.get("event", {})
+        header = body.get("header")
+        event = body.get("event")
+        if not isinstance(header, dict) or not isinstance(event, dict):
+            log("WARN", "lark callback rejected: invalid event envelope")
+            return jsonify({"code": -1, "msg": "bad request"}), 400
+        event_id = header.get("event_id")
+        if not claim_event(event_id):
+            # A duplicate (or an event that cannot safely be identified) must
+            # not cross the side-effect boundary.  Lark treats code=0 as an
+            # acknowledgement, so it will not keep retrying a known replay.
+            log("WARN", "lark event ignored: duplicate or invalid id",
+                event_id=_redact_identifier(event_id))
+            return jsonify({"code": 0})
         if header.get("event_type") == "im.message.receive_v1":
             handle_message(event)
         return jsonify({"code": 0})

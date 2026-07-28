@@ -26,6 +26,8 @@ gateway:
       enabled: true
       extra:
         sidecar_port: 8793
+    feishu:
+      enabled: true
 
 mcp_servers:
   cartorio:
@@ -38,4 +40,5 @@ mcp_servers:
 platform_toolsets:
   photon:
     - mcp-cartorio
-
+  feishu:
+    - mcp-cartorio
