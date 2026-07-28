@@ -824,6 +824,12 @@ recupera acesso quando profile é wipado.
 
 
 
+## Lesson 290 — Aceite iMessage exige round-trip real autorizado (2026-07-28)
+
+- Testes sintéticos, simulações de persona, health checks, estado `CONNECTED` e probes de CLI validam somente contratos parciais; nenhum deles é evidência de E2E do canal.
+- Transporte real só pode ser exercitado com autorização expressa e escopada para um chat de teste, correlação observável entre entrada e saída e dry-run seguro que não alcance conversa ou destinatário não autorizado.
+- O único aceite operacional é o round-trip completo `iPhone → linha → Hermes → resposta → iPhone`. Até essa evidência existir, registrar o canal como `NOT_E2E_VALIDATED`, sem inferir sucesso a partir de disponibilidade parcial.
+
 ### Lesson 287 — addendum (2026-07-28 tarde)
 
 - **3 formatos, não 1**: probe pós-deploy mostrou `<function_calls><parameter>` (Anthropic-style) e `[TOOL_CALL]+JSON` além do `]<]minimax[>[`. Parser multi-formato em `ea2ffd14` (+5 tests). Regra: NUNCA assumir que provider usa um único formato de tool call inline — probe com pergunta de preço N≥5 antes de declarar fix.

@@ -1,8 +1,13 @@
-"""Real-transport E2E test runner para AGENT PIETRA via iMessage (imsg CLI).
+"""Real-transport E2E runner da Pietra, protegido por autorizacao do operador.
 
 PROMPT P0 (PIETRA iMESSAGE REAL TRANSPORT):
-- Usa o chat REAL +16282649335 (Spectrum shared line do Photon).
-- Envia 1 mensagem por vez, aguarda resposta.
+- Nao possui chat, telefone ou identificador de conversa no repositorio.
+- Uma execucao real exige ``--authorization-file`` externo, expiravel e
+  assinado operacionalmente pelo responsavel. O arquivo informa o destino e
+  apenas os casos de teste autorizados para aquela janela.
+- Cada mensagem recebe um marcador de correlacao. Uma resposta so e aceita se
+  referenciar aquele marcador (ou o GUID do envio), nunca por ser simplesmente
+  a ultima mensagem recebida no chat.
 - Avalia cada resposta contra hard_fail_patterns + behavioral_checks.
 - Persiste resultados em artifacts/imessage/test_results_*.jsonl.
 - Checkpoints a cada N testes.
@@ -28,27 +33,123 @@ DISTRIBUICAO (scaled 100x do prompt original 10K):
 Total: 100 (vs 10K original = 1%)
 
 Usage:
-    uv run python scripts/imessage_e2e_runner.py
+    uv run python scripts/imessage_e2e_runner.py --dry-run
+    uv run python scripts/imessage_e2e_runner.py \
+      --authorization-file /caminho/fora-do-repo/imessage-e2e-authorization.json
 
 Modified by Gustavo Almeida · 2026-07-27
 """
 
 from __future__ import annotations
 
+import argparse
 import json
+import re
 import subprocess
 import sys
 import time
 import unicodedata
 from collections import Counter
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-ARTIFACTS = Path("/Users/gustavoalmeida/Projetos/Cartorio/artifacts/imessage")
-CHAT_ID = 364
-PHONE = "+16282649335"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+ARTIFACTS = REPO_ROOT / "artifacts" / "imessage"
 TIMEOUT_S = 60
+AUTH_PURPOSE = "pietra_imessage_e2e"
+
+
+class AuthorizationError(ValueError):
+    """A autorizacao de teste nao permite transporte real."""
+
+
+class ImsTransportError(RuntimeError):
+    """Falha explicita do imsg; nunca deve ser tratada como envio bem-sucedido."""
+
+
+@dataclass(frozen=True)
+class E2EAuthorization:
+    """Escopo minimo, externo e temporario para uma campanha real."""
+
+    operator: str
+    correlation_id: str
+    chat_id: int
+    recipient: str
+    test_ids: tuple[str, ...]
+    expires_at: datetime
+
+
+def _parse_timestamp(value: Any, field: str) -> datetime:
+    if not isinstance(value, str) or not value.strip():
+        raise AuthorizationError(f"authorization.{field} is required")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise AuthorizationError(f"authorization.{field} must be ISO-8601") from exc
+    if parsed.tzinfo is None:
+        raise AuthorizationError(f"authorization.{field} must include a timezone")
+    return parsed.astimezone(UTC)
+
+
+def load_authorization(path: Path) -> E2EAuthorization:
+    """Carrega autorizacao externa e falha fechada para qualquer inconsistência."""
+    resolved = path.expanduser().resolve()
+    try:
+        resolved.relative_to(REPO_ROOT)
+    except ValueError:
+        pass
+    else:
+        raise AuthorizationError("authorization file must remain outside the repository")
+    try:
+        data = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise AuthorizationError("authorization file is unreadable or invalid JSON") from exc
+    if not isinstance(data, dict) or data.get("purpose") != AUTH_PURPOSE:
+        raise AuthorizationError(f"authorization.purpose must be {AUTH_PURPOSE!r}")
+
+    operator = data.get("operator")
+    correlation_id = data.get("correlation_id")
+    transport = data.get("transport")
+    scope = data.get("scope")
+    if not isinstance(operator, str) or not operator.strip():
+        raise AuthorizationError("authorization.operator is required")
+    if not isinstance(correlation_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{7,127}", correlation_id):
+        raise AuthorizationError("authorization.correlation_id is invalid")
+    if not isinstance(transport, dict) or not isinstance(scope, dict):
+        raise AuthorizationError("authorization.transport and authorization.scope are required")
+    if scope.get("allow_real_transport") is not True:
+        raise AuthorizationError("authorization.scope.allow_real_transport must be true")
+    chat_id = transport.get("chat_id")
+    recipient = transport.get("recipient")
+    test_ids = scope.get("test_ids")
+    if not isinstance(chat_id, int) or chat_id <= 0:
+        raise AuthorizationError("authorization.transport.chat_id must be a positive integer")
+    if not isinstance(recipient, str) or not recipient.strip():
+        raise AuthorizationError("authorization.transport.recipient is required")
+    if not isinstance(test_ids, list) or not test_ids or not all(isinstance(item, str) for item in test_ids):
+        raise AuthorizationError("authorization.scope.test_ids must be a non-empty string list")
+    if len(set(test_ids)) != len(test_ids):
+        raise AuthorizationError("authorization.scope.test_ids cannot contain duplicates")
+    known_ids = {case["id"] for case in TEST_CASES}
+    unknown = set(test_ids) - known_ids
+    if unknown:
+        raise AuthorizationError("authorization.scope.test_ids contains unknown test cases")
+
+    issued_at = _parse_timestamp(data.get("issued_at"), "issued_at")
+    expires_at = _parse_timestamp(data.get("expires_at"), "expires_at")
+    now = datetime.now(UTC)
+    if issued_at > now or expires_at <= now or expires_at <= issued_at:
+        raise AuthorizationError("authorization is not currently valid")
+    return E2EAuthorization(
+        operator=operator.strip(),
+        correlation_id=correlation_id,
+        chat_id=chat_id,
+        recipient=recipient.strip(),
+        test_ids=tuple(test_ids),
+        expires_at=expires_at,
+    )
 
 
 def _norm(text: str) -> str:
@@ -341,44 +442,103 @@ TEST_CASES: list[dict[str, Any]] = [
 ]
 
 
-def send_imessage(text: str) -> str:
-    """Envia mensagem via imsg send e retorna o guid."""
-    cmd = ["imsg", "send", "--to", PHONE, "--text", text]
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        return result.stdout.strip() or result.stderr.strip() or "sent"
-    except subprocess.TimeoutExpired:
-        return "TIMEOUT"
-    except Exception as e:  # noqa: BLE001
-        return f"ERROR:{e}"
+def _test_marker(correlation_id: str, test_id: str) -> str:
+    """Marcador visível e único usado para aceitar somente a resposta daquele teste."""
+    return f"[PIETRA-E2E:{correlation_id}:{test_id}]"
 
 
-def get_last_message() -> dict[str, Any] | None:
-    """Pega a ultima mensagem do chat via imsg history."""
-    cmd = ["imsg", "history", "--chat-id", str(CHAT_ID), "--limit", "1", "--json"]
+def _sent_guid(output: str) -> str | None:
+    """Extrai GUID quando o imsg o retorna; ausência não relaxa a correlação."""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-        lines = [line for line in result.stdout.splitlines() if line.strip()]
-        if not lines:
-            return None
-        return json.loads(lines[0])
-    except Exception:  # noqa: BLE001
+        payload = json.loads(output)
+    except json.JSONDecodeError:
         return None
+    if isinstance(payload, dict):
+        for key in ("guid", "message_guid", "id"):
+            value = payload.get(key)
+            if isinstance(value, (str, int)) and str(value):
+                return str(value)
+    return None
 
 
-def wait_for_response(sent_text: str, prev_msg: dict[str, Any] | None, timeout_s: int = TIMEOUT_S) -> dict[str, Any] | None:
-    """Aguarda uma resposta (is_from_me=False) diferente do sent_text."""
-    start = time.time()
-    prev_id = prev_msg.get("id") if prev_msg else 0
-    while time.time() - start < timeout_s:
-        msg = get_last_message()
-        if msg is not None:
-            mid = msg.get("id", 0)
-            is_from_me = msg.get("is_from_me", False)
-            if mid > prev_id and not is_from_me:
-                # Small delay between tests
-                time.sleep(1)
-                return msg
+def send_imessage(recipient: str, text: str) -> str:
+    """Envia via imsg ou levanta erro; retorno não-zero nunca é considerado envio."""
+    try:
+        result = subprocess.run(
+            ["imsg", "send", "--to", recipient, "--text", text],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ImsTransportError("imsg send did not complete") from exc
+    if result.returncode != 0:
+        raise ImsTransportError("imsg send failed")
+    output = result.stdout.strip()
+    if not output:
+        raise ImsTransportError("imsg send returned no receipt")
+    return output
+
+
+def get_messages(chat_id: int) -> list[dict[str, Any]]:
+    """Lê uma janela pequena do chat autorizado sem assumir qual é a última inbound."""
+    try:
+        result = subprocess.run(
+            ["imsg", "history", "--chat-id", str(chat_id), "--limit", "50", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ImsTransportError("imsg history did not complete") from exc
+    if result.returncode != 0:
+        raise ImsTransportError("imsg history failed")
+    messages: list[dict[str, Any]] = []
+    for line in result.stdout.splitlines():
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ImsTransportError("imsg history returned invalid JSON") from exc
+        if isinstance(entry, dict):
+            messages.append(entry)
+    return messages
+
+
+def is_correlated_response(message: dict[str, Any], marker: str, sent_guid: str | None) -> bool:
+    """Exige vínculo explícito ao marcador ou recibo do envio, e ignora mensagens próprias."""
+    if message.get("is_from_me"):
+        return False
+    text = str(message.get("text") or "")
+    if marker in text:
+        return True
+    if sent_guid is None:
+        return False
+    related_keys = (
+        "reply_to_guid",
+        "reply_to_id",
+        "thread_originator_guid",
+        "associated_message_guid",
+        "in_reply_to",
+    )
+    return any(str(message.get(key) or "") == sent_guid for key in related_keys)
+
+
+def wait_for_response(
+    chat_id: int,
+    marker: str,
+    sent_guid: str | None,
+    timeout_s: int = TIMEOUT_S,
+) -> dict[str, Any] | None:
+    """Aguarda apenas resposta explicitamente correlacionada ao caso em execução."""
+    start = time.monotonic()
+    while time.monotonic() - start < timeout_s:
+        for message in get_messages(chat_id):
+            if is_correlated_response(message, marker, sent_guid):
+                return message
         time.sleep(2)
     return None
 
@@ -420,23 +580,46 @@ def evaluate(test_id: str, response_text: str, expected: list[str], forbidden: l
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="PIETRA iMessage E2E runner")
+    parser.add_argument(
+        "--authorization-file",
+        type=Path,
+        help="JSON externo, temporario e emitido pelo operador para a campanha real",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="valida a selecao de casos sem chamar imsg nem criar artefatos",
+    )
+    args = parser.parse_args(argv)
+    if args.dry_run:
+        print("DRY-RUN: imsg will not be invoked; no messages or artifacts will be created.")
+        print(f"Configured test cases: {len(TEST_CASES)}")
+        return 0
+    if args.authorization_file is None:
+        parser.error("--authorization-file is required for real iMessage transport")
+    try:
+        authorization = load_authorization(args.authorization_file)
+    except AuthorizationError as exc:
+        print(f"AUTHORIZATION DENIED: {exc}", file=sys.stderr)
+        return 2
+
+    selected_cases = [case for case in TEST_CASES if case["id"] in authorization.test_ids]
+    if not selected_cases:
+        print("AUTHORIZATION DENIED: scope selected no runnable tests", file=sys.stderr)
+        return 2
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_file = ARTIFACTS / f"test_results_{timestamp}.jsonl"
     failures_file = ARTIFACTS / f"failures_{timestamp}.jsonl"
 
     print("=== PIETRA iMESSAGE E2E CAMPAIGN ===")
-    print(f"Chat ID: {CHAT_ID} ({PHONE})")
-    print(f"Total tests: {len(TEST_CASES)}")
+    print(f"Operator: {authorization.operator}")
+    print(f"Correlation ID: {authorization.correlation_id}")
+    print(f"Authorized tests: {len(selected_cases)}")
     print(f"Timeout per case: {TIMEOUT_S}s")
     print(f"Results: {results_file}")
-    print()
-
-    # Pegar baseline
-    print("[*] Pegando baseline do chat...")
-    baseline = get_last_message()
-    print(f"    Baseline ID: {baseline.get('id') if baseline else 'none'}")
     print()
 
     results: list[dict[str, Any]] = []
@@ -444,39 +627,60 @@ def main() -> int:
     category_counter: Counter[str] = Counter()
     pass_counter: Counter[str] = Counter()
 
-    for idx, tc in enumerate(TEST_CASES, 1):
+    for idx, tc in enumerate(selected_cases, 1):
         test_id = tc["id"]
         cat = tc["cat"]
         msg = tc["msg"]
         expected = tc.get("expected", [])
         forbidden = tc.get("forbidden", [])
-        print(f"[{idx:3d}/{len(TEST_CASES)}] {test_id} ({cat}): {msg[:60]!r}")
-        # Enviar
-        send_imessage(msg)
-        # Aguardar
-        response = wait_for_response(msg, baseline, timeout_s=TIMEOUT_S)
+        marker = _test_marker(authorization.correlation_id, test_id)
+        outbound = f"{marker}\n{msg}"
+        print(f"[{idx:3d}/{len(selected_cases)}] {test_id} ({cat}): {msg[:60]!r}")
+        try:
+            receipt = send_imessage(authorization.recipient, outbound)
+            response = wait_for_response(
+                authorization.chat_id,
+                marker,
+                _sent_guid(receipt),
+                timeout_s=TIMEOUT_S,
+            )
+        except ImsTransportError:
+            result = {
+                "test_id": test_id,
+                "category": cat,
+                "input": msg,
+                "correlation_marker": marker,
+                "response": None,
+                "status": "TRANSPORT_ERROR",
+                "issues": ["transport_error"],
+            }
+            results.append(result)
+            failures.append(result)
+            category_counter[cat] += 1
+            with open(results_file, "a", encoding="utf-8") as result_handle:
+                result_handle.write(json.dumps(result, ensure_ascii=False) + "\n")
+            with open(failures_file, "a", encoding="utf-8") as failure_handle:
+                failure_handle.write(json.dumps(result, ensure_ascii=False) + "\n")
+            print("         ✗ TRANSPORT_ERROR | imsg command failed")
+            break
         if response is None:
             result = {
                 "test_id": test_id,
                 "category": cat,
                 "input": msg,
+                "correlation_marker": marker,
                 "response": None,
                 "status": "TIMEOUT",
-                "issues": ["no_response_within_timeout"],
+                "issues": ["no_correlated_response_within_timeout"],
             }
         else:
-            baseline = response  # Update baseline so next test waits for a newer message ID
             eval_result = evaluate(test_id, response.get("text", ""), expected, forbidden,
                                    require_identity=tc.get("require_identity", False))
             eval_result["input"] = msg
             eval_result["category"] = cat
+            eval_result["correlation_marker"] = marker
             eval_result["response_text"] = response.get("text", "")
             result = eval_result
-
-        # Update baseline to latest message in chat
-        latest = get_last_message()
-        if latest:
-            baseline = latest
         # Stats
         results.append(result)
         if result["status"] == "FAIL":
@@ -493,10 +697,10 @@ def main() -> int:
             for issue in result["issues"][:3]:
                 print(f"           - {issue}")
         # Save incremental
-        with open(results_file, "a") as f:
+        with open(results_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(result, ensure_ascii=False) + "\n")
         if result["status"] == "FAIL":
-            with open(failures_file, "a") as f:
+            with open(failures_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(result, ensure_ascii=False) + "\n")
         # Checkpoint a cada 25 testes
         if idx % 25 == 0:
@@ -507,7 +711,7 @@ def main() -> int:
     # Final summary
     total = len(results)
     passed = sum(1 for r in results if r["status"] == "PASS")
-    failed = sum(1 for r in results if r["status"] == "FAIL")
+    failed = sum(1 for r in results if r["status"] in {"FAIL", "TRANSPORT_ERROR"})
     timeouts = sum(1 for r in results if r["status"] == "TIMEOUT")
     print()
     print("=" * 60)
@@ -519,7 +723,7 @@ def main() -> int:
         n = category_counter[cat]
         p = pass_counter[cat]
         print(f"  {cat}: {p}/{n} ({100*p/n:.0f}%)")
-    return 0 if failed == 0 and timeouts == 0 else 1
+    return 0 if all(result["status"] == "PASS" for result in results) else 1
 
 
 if __name__ == "__main__":
