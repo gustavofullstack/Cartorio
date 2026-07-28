@@ -547,14 +547,26 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
                 tool_calls = inline_calls
 
     # Tool calls (MCP/function calling): repassar intactos, sem identity guard
-    # — nao ha texto de cliente envolvido.
+    # — nao ha texto de cliente envolvido. O content textual que acompanha o
+    # call, porem, passa pelo OUTBOUND GUARD (infra leak / language mixing).
+    from app.services.pietra_outbound_guard import OutboundAction, sanitize_outbound
+
     if msg and tool_calls:
+        tc_content = sanitize_outbound(
+            _strip_think_tags((msg.get("content") or "").strip()), channel="api"
+        )
+        if tc_content.action is not OutboundAction.PASS:
+            logger.warning(
+                "pietra chat outbound guard (tool_calls) action=%s reasons=%s",
+                tc_content.action.value,
+                ",".join(tc_content.reasons),
+            )
         response["choices"] = [
             {
                 "index": 0,
                 "message": {
                     "role": "assistant",
-                    "content": _strip_think_tags((msg.get("content") or "").strip()) or None,
+                    "content": tc_content.sanitized_text or None,
                     "tool_calls": tool_calls,
                 },
                 "finish_reason": "tool_calls",
@@ -566,6 +578,17 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
 
     content = (msg.get("content") or "").strip() if msg else ""
     content = _strip_think_tags(content)
+    # OUTBOUND GUARD (P0 2026-07-28): lixo de infra ("interrupting current
+    # task", "rate-limit", "empty response stream", ...) e language mixing
+    # (cirilico/CJK/full-width) NUNCA chegam crus ao cliente.
+    out = sanitize_outbound(content, channel="api")
+    if out.action is not OutboundAction.PASS:
+        logger.warning(
+            "pietra chat outbound guard action=%s reasons=%s",
+            out.action.value,
+            ",".join(out.reasons),
+        )
+    content = out.sanitized_text
     if not content:
         content = "Sou a Pietra, a agente do 2º Cartório de Notas de Uberlândia. Como posso ajudar?"
     else:
