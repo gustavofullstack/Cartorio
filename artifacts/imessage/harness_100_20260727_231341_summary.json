@@ -1,0 +1,12 @@
+{
+  "started_at": "2026-07-27T23:13:41.363053",
+  "finished_at": "2026-07-27T23:13:41.375140",
+  "total": 104,
+  "passed": 100,
+  "failed": 4,
+  "issue_breakdown": {
+    "issue:dedup_violation": 4
+  },
+  "results_file": "/Users/gustavoalmeida/Projetos/Cartorio/artifacts/imessage/harness_100_20260727_231341.jsonl",
+  "category": "HARNESS"
+}
