@@ -35,7 +35,7 @@ set -euo pipefail
 BACKUP_ROOT="/var/backups/cartorio/pgbase"
 # O nome do task Swarm muda em redeploys. O label do serviço é estável e evita
 # que um backup pare silenciosamente por depender de nome legado de container.
-PG_SERVICE_NAME="${PG_SERVICE_NAME:-cartorio_supabase}"
+PG_SERVICE_NAME="${PG_SERVICE_NAME:-cartorio_banco_de_dados}"
 RETENTION_DAYS=7
 DATE_UTC=$(date -u +%Y%m%d)
 HOUR_UTC=$(date -u +%H)

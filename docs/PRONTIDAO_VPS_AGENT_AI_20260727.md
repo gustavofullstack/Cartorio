@@ -1,5 +1,24 @@
 # Prontidão da VPS — Agent AI Cartório
 
+> **Addendum operacional de 28/07/2026:** este arquivo preserva a fotografia de
+> 27/07 abaixo. Ela foi superada nos pontos Hermes/Lark/provider. Hoje
+> `cartorio_hermes` está `1/1`; Gustavo e Felipe estão no escopo oficial do app
+> e nos dois stores de pairing; Felipe completou Lark → Hermes → MiniMax →
+> resposta no mesmo chat; M3 e M2.7-highspeed passaram inferência real; MCP
+> autenticado passou e mostra `1 selected`. Os serviços canônicos atuais são
+> `cartorio_system-api`, `cartorio_memory-cache`, `cartorio_banco_de_dados` e
+> `cartorio_whatsapp-api`. WhatsApp continua sem sessão e não está E2E. O filtro
+> contra PII nos logs está versionado e testado, mas só ficará ativo após um
+> replacement controlado; nenhum restart foi feito nesta correção. O backup
+> local foi reparado para o nome canônico do Postgres, gerou pg_basebackup de
+> 37 MB e um arquivo diário cujos três catálogos passaram `pg_restore -l`.
+> O n8n responde HTTP 200, porém o banco atual tem zero workflows, execuções,
+> credenciais e API keys; isso é processo saudável, não recuperação funcional.
+>
+> Para o contrato atual do Hermes, use `docs/HERMES_VPS_DEPLOYMENT.md` e
+> `docs/HERMES_LARK_MINIMAX_RUNBOOK.md`. Não use os nomes/segredos históricos
+> abaixo como instrução de deploy.
+
 **Data da evidência:** 27/07/2026. Este documento separa processo saudável,
 integração autenticada e aceitação real por canal. Nenhuma credencial, dado de
 cliente ou conteúdo de conversa foi usado ou registrado nesta auditoria.

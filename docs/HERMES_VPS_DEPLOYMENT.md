@@ -1,19 +1,21 @@
 # Hermes Cartorio na VPS — contrato de implantação
 
-**Estado atual em 2026-07-27:** `NOT_DEPLOYED`. A VPS executa OpenClaw, API,
-Postgres/Supabase, Redis, n8n, Evolution e Chatwoot; não há serviço Hermes.
-O MCP público foi autenticado, inicializado e respondeu `tools/list` com 15
-ferramentas. Isso certifica o limite de integração, não certifica o Hermes nem
-uma conversa real em qualquer canal.
+**Estado verificado em 2026-07-28:**
+`LARK_TRANSPORT_E2E_PASS / LGPD_RELOAD_PENDING`.
+`cartorio_hermes` está `1/1`, o WebSocket Lark está conectado, MiniMax-M3 e
+MiniMax-M2.7-highspeed responderam a inferências reais, o MCP autenticado está
+habilitado com uma única ferramenta selecionada e Felipe completou um
+round-trip real sem interromper a sessão de Gustavo.
 
 O alvo é um único serviço `cartorio_hermes` no Docker Swarm, na rede
-`easypanel-cartorio`, com estado persistente em volume próprio. Ele não substitui
-o FastAPI, OpenClaw, Evolution, Chatwoot ou n8n: integra-se a eles pela API e MCP.
+`easypanel-cartorio`, com estado persistente em volume próprio. Na VPS ele
+atende somente Lark/Feishu e integra-se ao FastAPI pela API/MCP. Photon/iMessage
+continua no Mac, onde existe a dependência nativa do Messages.app.
 
 ## Artefatos versionados
 
-- `infra/hermes/docker-stack.yml` — serviço isolado, uma réplica, health/API
-  interna na porta 8642, limites de recurso, rollback e Docker Secrets. Na
+- `infra/hermes/docker-stack.yml` — serviço isolado, uma réplica, limites de
+  recurso, rollback e Docker Secrets. Na
   primeira inicialização ele copia a configuração versionada para o volume;
   atualizações de perfil exigem migração revisada, não sobrescrita silenciosa.
 - `infra/hermes/config.cartorio.yaml` — perfil Hermes sem credenciais literais.
@@ -22,70 +24,67 @@ o FastAPI, OpenClaw, Evolution, Chatwoot ou n8n: integra-se a eles pela API e MC
 - `infra/hermes/preflight-vps.sh` — gate somente leitura de Swarm, rede e nomes
   dos secrets; não lê nem imprime conteúdo de credenciais.
 
-O serviço usa a imagem oficial `nousresearch/hermes-agent` fixada no digest
-AMD64 `sha256:6df245c22c49b5ad9f94dd9e3cf614263f4313f117d117a7d2abd4092fa804d2`,
-resolvido em 2026-07-26. A documentação oficial informa que a API compatível e
-health do gateway usam a porta 8642 e que o diretório persistente do container
-é `/opt/data`.
+O serviço usa uma imagem imutável do Hermes Agent publicada no registry do
+Easypanel e fixada por digest no manifesto. O diretório persistente é
+`/opt/data`; credenciais Lark criadas pelo onboarding nativo ficam nesse volume
+com modo `0600`.
 
-## Pré-requisitos bloqueantes
+## Segredos e limites atuais
 
-Os quatro segredos abaixo devem ser criados **diretamente no gerenciador de
+Os dois segredos abaixo devem existir **diretamente no gerenciador de
 segredos da VPS**; é proibido copiá-los de um Mac, `.env`, log ou repositório:
 
 | Segredo | Finalidade |
 | --- | --- |
-| `hermes_api_server_key` | autentica a API interna do Hermes |
-| `hermes_llm_api_key` | autentica o provider LLM aprovado |
+| `hermes_minimax_api_key` | autentica MiniMax-M3 e o fallback M2.7-highspeed |
 | `hermes_mcp_cartorio_api_key` | contém o valor do segredo de produção `MCP_API_KEY` e autentica MCP contra a API do Cartório |
-| `hermes_photon_project_secret` | autentica o sidecar Photon/iMessage |
 
-Também são necessários, como configuração não secreta: URL/modelo do provider
-aprovado, `PHOTON_PROJECT_ID` e allowlist E.164. `PHOTON_ALLOW_ALL_USERS` fica
-fixado em `false`. `CARTORIO_API_KEY` não substitui `MCP_API_KEY`: são contratos
-de autenticação diferentes.
+`FEISHU_ALLOW_ALL_USERS=false`, `FEISHU_GROUP_POLICY=allowlist` e
+`FEISHU_REQUIRE_MENTION=true` são invariantes. A disponibilidade do app no Lark
+é a fronteira organizacional upstream; o pairing do Hermes é uma segunda
+barreira fail-closed. `CARTORIO_API_KEY` não substitui `MCP_API_KEY`.
 
 ## Sequência obrigatória de implantação
 
-1. Criar os quatro Docker Secrets no ambiente de produção, sem imprimi-los.
+1. Confirmar os dois Docker Secrets no ambiente de produção, sem imprimi-los.
 2. Carregar a configuração não secreta exclusivamente no Easypanel/Swarm.
 3. Executar `bash infra/hermes/preflight-vps.sh` na VPS e exigir
    `HERMES_PREFLIGHT=PASS`.
 4. Validar o manifesto sem implantar: `docker stack config -c infra/hermes/docker-stack.yml`.
 5. Implantar como serviço novo: `docker stack deploy -c infra/hermes/docker-stack.yml cartorio`.
-6. Conferir `docker service ps cartorio_hermes` e logs sanitizados; nenhum serviço
-   existente deve ser reiniciado.
-7. Validar a API Hermes por dentro da rede com bearer token, depois `hermes mcp
-   test cartorio` no container.
+6. Conferir `docker service ps cartorio_hermes` e logs sanitizados; não faça
+   replacement durante atendimento ativo.
+7. Executar `hermes mcp test cartorio` no contexto do processo que recebeu os
+   secrets e confirmar `1 selected`.
 8. Validar uma chamada MCP sem PII e confirmar que a resposta contém apenas
    dados permitidos.
-9. Iniciar o sidecar Photon e provar o round-trip real: iPhone autorizado →
-   Photon → Hermes → MCP/API quando aplicável → resposta no mesmo iPhone.
-10. Validar separadamente WhatsApp (Evolution), Chatwoot e Telegram/webhook;
-   disponibilidade de container não certifica nenhum canal.
+9. Provar o round-trip Lark com cada novo usuário autorizado sem revogar grants
+   anteriores.
+10. Validar separadamente WhatsApp, Telegram e iMessage; disponibilidade de
+    container não certifica nenhum canal.
 
 ## Critérios de aceite
 
 | Camada | Evidência mínima |
 | --- | --- |
 | Serviço | `cartorio_hermes` 1/1 e sem crashloop |
-| API Hermes | health 200 interno e rejeição de chamada sem chave |
 | MCP | handshake + `tools/list` + uma tool permitida, sem PII em log |
 | Dados | acesso somente pela API/MCP, RLS preservada; Hermes não recebe acesso direto ao Postgres/Redis |
-| Photon/iMessage | mensagem e resposta reais na mesma conversa autorizada |
-| Evolution/Chatwoot | webhook → Hermes → resposta/hand-off por canal, cada um comprovado |
+| Lark | usuário no escopo do app + pairing → MiniMax → resposta no mesmo chat |
+| Outros canais | aceites independentes; não herdam o estado operacional do Lark |
 | LGPD/HITL | scrub antes de LLM, nenhuma decisão jurídica automática, auditoria registrada |
 
-Enquanto qualquer linha acima não tiver evidência, o estado é
-`REAL_TRANSPORT_NOT_CERTIFIED`, mesmo que o container esteja saudável.
+O transporte Lark passou para Gustavo e Felipe. O aceite LGPD completo depende
+de ativar o filtro de logs no próximo replacement controlado. Isso não promove
+WhatsApp ou iMessage a operacionais.
 
 ## Rollback
 
-Como Hermes é um serviço novo e isolado, o rollback não toca nos serviços atuais:
+Use o histórico do Swarm; não remova serviço ou volume durante um incidente:
 
 ```bash
-docker service rm cartorio_hermes
+docker service rollback cartorio_hermes
 ```
 
-Preservar o volume `cartorio_hermes_cartorio_hermes_data` para investigação e
-recuperação; só removê-lo mediante autorização explícita de retenção/LGPD.
+Preserve o volume `hermes_cartorio_data`. Excluir volume, pairing, sessão ou
+logs exige autorização explícita e análise de retenção/LGPD.

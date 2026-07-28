@@ -110,7 +110,7 @@
 
   <div class="doc-block">
     <h3>Semana 6 — iMessage, Pietra e Lark (26–28/jul)</h3>
-    <p>A semana mais densa. No iMessage: a bateria real T0-T5 prova que CONNECTED ≠ OPERATIONAL, e nasce a regra "só round-trip real no iPhone valida canal". A tabela de emolumentos ganha lastro oficial (Portaria CGJ/TJMG 8.664/2025, coletor reproduzível com diff zero). Em 27/07, o P0 <strong>IDENTITY_HERMES_LEAK</strong> ("Sou o Hermes" em mensagens ao cliente) revela memory poisoning no USER.md como causa-raiz do comportamento "doutora" — e leva à criação do <code>pietra_identity_guard</code> (17 padrões regex, 39 testes). Em 28/07: descoberta de que a tabela <code>EMOLUMENTOS_2026</code> em produção era placeholder com valores inventados; criação do <code>pietra_outbound_guard</code> (infra leak, language mixing latino/CJK, anti-glitch); recovery completo da VPS (n8n encryption key mismatch, supabase DB_HOST legado, postgrest órfão); e a abertura do bot Lark para toda a organização (Felipe liberado) sem derrubar a sessão do Gustavo.</p>
+    <p>A semana mais densa. No iMessage: a bateria real T0-T5 prova que CONNECTED ≠ OPERATIONAL, e nasce a regra "só round-trip real no iPhone valida canal". A tabela de emolumentos ganha lastro oficial (Portaria CGJ/TJMG 8.664/2025, coletor reproduzível com diff zero). Em 27/07, o P0 <strong>IDENTITY_HERMES_LEAK</strong> ("Sou o Hermes" em mensagens ao cliente) revela memory poisoning no USER.md como causa-raiz do comportamento "doutora" — e leva à criação do <code>pietra_identity_guard</code> (17 padrões regex, 39 testes). Em 28/07: descoberta de que a tabela <code>EMOLUMENTOS_2026</code> em produção era placeholder com valores inventados; criação do <code>pietra_outbound_guard</code> (infra leak, language mixing latino/CJK, anti-glitch); recuperação dos processos da VPS (o n8n voltou ao health, mas a auditoria posterior encontrou o banco atual vazio), correção de DB_HOST legado e postgrest; e validação do bot Lark para todos os usuários atualmente visíveis no app — Gustavo e Felipe — com pairing fail-closed e round-trip real do Felipe, sem derrubar a sessão do Gustavo.</p>
   </div>
 </section>
 
@@ -138,7 +138,7 @@
     <thead><tr><th>Agent</th><th>Papel no projeto</th><th>Trabalhos marcantes</th></tr></thead>
     <tbody>
       <tr><td><strong>MiniMax M3 / M2.7-HighSpeed</strong></td><td>Cérebro de produção da Pietra (provider oficial) + coding agent primário</td><td>Decisão formal 22/07 ($20 flat, IFBench #1); fallback M2.7-highspeed; thinking medium em prod</td></tr>
-      <tr><td><strong>Kimi K3 / K2.7-HighSpeed-Coding</strong></td><td>Worker de waves pesadas (TRAE work.app)</td><td>G9 hardening S3/S5, reconciliação de swarm paralela, abertura do Lark à organização (commit 9317e42a)</td></tr>
+      <tr><td><strong>Kimi K3 / K2.7-HighSpeed-Coding</strong></td><td>Worker de waves pesadas (TRAE work.app)</td><td>G9 hardening S3/S5, reconciliação de Swarm e diagnóstico inicial do Lark; a abertura ampla do commit 9317e42a foi depois restringida por defesa em profundidade no commit 957cebc1</td></tr>
       <tr><td><strong>GPT 5.6 Sol/Terra/Lua (Codex)</strong></td><td>Bridge de validação e testes de contrato</td><td>Bridge Terra G9 (23/07), alinhamento de parsers/FSM ao contrato sem tocar runtime</td></tr>
       <tr><td><strong>ZCode / Mavis</strong></td><td>Orquestrador master (super prompt v3.0.0)</td><td>Squads A-J, 60% do plano de 100 tasks, secrets management, 8 commits autorais</td></tr>
       <tr><td><strong>TRAE (esta sessão)</strong></td><td>Orquestrador de recovery e finalização Lark</td><td>Recovery VPS 28/07 (n8n, supabase, postgrest), merge hermes-swarm-lifecycle, liberação Felipe, GOALS.md, Lessons 295-296</td></tr>
@@ -168,12 +168,12 @@ flowchart LR
   TG -->|webhook + idempotência| API
   LK -->|WebSocket| HERMES[Hermes Gateway<br/>cartorio_hermes 1/1]
   IM -->|sidecar :8793| HERMESMAC[Hermes Mac<br/>canal iMessage]
-  HERMES -->|MCP tool call| MCP["/mcp — 16 tools<br/>cartorio-mcp-cabuloso"]
+  HERMES -->|MCP tool call| MCP["/mcp autenticado<br/>1 tool selecionada no profile"]
   HERMESMAC --> MCP
   API[FastAPI system-api<br/>api.2notasudi 200] --> PG[(Postgres 17<br/>banco_de_dados)]
   API --> RD[(Redis 8.8<br/>memory-cache)]
   MCP --> API
-  API --> N8N[n8n 1/1<br/>flow.2notasudi 200]
+  API --> N8N[n8n 1/1 + HTTP 200<br/>DB atual sem workflows]
   API --> SB[Supabase<br/>auth+storage+realtime+postgrest]
   API --> AUD[[Audit chain<br/>SHA256+HMAC append-only]]
   HERMES -->|MiniMax-M3<br/>fallback M2.7| MM[MiniMax API]
@@ -189,7 +189,7 @@ flowchart LR
     <tbody>
       <tr><td>Telegram</td><td>Operacional</td><td>Webhook HMAC + idempotência + typing; sendMessage 200; 20 cenários E2E</td><td>—</td></tr>
       <tr><td>WhatsApp (Evolution)</td><td>API UP, sessão fechada</td><td>whatsapp.2notasudi 200; evolution-api 1/1</td><td>QR/reconnect (SUI Gustavo)</td></tr>
-      <tr><td>Lark (Hermes VPS)</td><td>UP + aberto à organização</td><td>cartorio_hermes 1/1, gateway único, pairing Gustavo+Felipe, allow_all_users</td><td>Round-trip real do Felipe (camada 5)</td></tr>
+      <tr><td>Lark (Hermes VPS)</td><td>TRANSPORT_E2E_PASS / LGPD_RELOAD_PENDING</td><td>cartorio_hermes 1/1, gateway único, escopo oficial Gustavo+Felipe, dois pairings idênticos, allow_all_users=false; Felipe recebeu resposta real</td><td>Ativar filtro de PII em logs na próxima janela controlada</td></tr>
       <tr><td>iMessage (Photon/Mac)</td><td>NOT_E2E_VALIDATED</td><td>Bateria T0-T5 parcial; guards criados</td><td>Round-trip real autorizado no iPhone (Lesson 290)</td></tr>
       <tr><td>Chatwoot</td><td>Removido do Swarm (27/07)</td><td>DB + volumes preservados</td><td>Decisão: restaurar vs decomissionar</td></tr>
       <tr><td>OpenClaw</td><td>Removido do Swarm (27/07)</td><td>agent.2notasudi 404; volumes preservados</td><td>Decisão: restaurar vs decomissionar</td></tr>
@@ -201,7 +201,7 @@ flowchart LR
   <h2>LGPD, segurança e a audit chain</h2>
   <div class="doc-block">
     <p>O projeto é LGPD-by-design de verdade, não de slide: PII nunca sai raw (3 camadas de scrubbing — Pydantic validators, Sentry before_send, MaskingFilter), todo protocolo nasce DRAFT com validação humana obrigatória (HITL), e o audit log é append-only com SHA256 chain + HMAC — edição retroativa invalida a cadeia e derruba a suíte. No período foram entregues: direitos Art. 18 completos (acesso, correção, anonimização, portabilidade, eliminação, oposição, não-automação), check-digit CNS/CNH (art. 11), truncamento de IP dual-column, DLQ com criptografia Fernet e purge two-phase (30d soft + 180d hard), retenção diária 03:00 BRT, e o response shape <code>pii_blocked</code> + audit <code>conversa.pii_blocked</code> que provam ao DPO não só que PII foi detectado, mas que foi <em>bloqueado</em>.</p>
-    <p>O incidente mais instrutivo foi a audit chain quebrada em produção (24/07): 158 entradas legacy divergentes por canonicalização, não por adulteração. A decisão sobre re-cadeamento é do DPO (ADR-030) — reescrever violaria o princípio append-only (LGPD art. 37 / CNJ Prov. 74). Na persona pública, três camadas de guarda foram construídas em julho: <code>pietra_identity_guard</code> (anti-vazamento de identidade Hermes), <code>pietra_outbound_guard</code> (infra leak + language mixing + anti-glitch, com retry antes de strip) e o plugin <code>pietra-public-output</code> no hook <code>transform_llm_output</code> do gateway Lark.</p>
+    <p>O incidente mais instrutivo foi a audit chain quebrada em produção (24/07): 158 entradas legacy divergentes por canonicalização, não por adulteração. A decisão sobre re-cadeamento é do DPO (ADR-030) — reescrever violaria o princípio append-only (LGPD art. 37 / CNJ Prov. 74). Na persona pública, três camadas de guarda foram construídas em julho: <code>pietra_identity_guard</code> (anti-vazamento de identidade Hermes), <code>pietra_outbound_guard</code> (infra leak + language mixing + anti-glitch, com retry antes de strip) e o plugin <code>pietra-public-output</code> no hook <code>transform_llm_output</code> do gateway Lark. A auditoria final encontrou previews de mensagens em três loggers upstream; o commit <code>957cebc1</code> adiciona um filtro testado que remove texto, nomes e IDs, mas ele ainda depende de replacement controlado para ficar ativo no processo atual.</p>
   </div>
 </section>
 
@@ -227,8 +227,8 @@ flowchart LR
   <table class="doc-table">
     <thead><tr><th>Domínio</th><th>HTTP</th><th>Serviço Swarm</th><th>Nota</th></tr></thead>
     <tbody>
-      <tr><td>api.2notasudi.com.br</td><td>200</td><td>cartorio_system-api 1/1</td><td>Inclui /mcp público (16 tools) desde 27/07</td></tr>
-      <tr><td>flow.2notasudi.com.br</td><td>200</td><td>cartorio_n8n 1/1 + runner 1/1</td><td>Recuperado 28/07 (encryption key mismatch)</td></tr>
+      <tr><td>api.2notasudi.com.br</td><td>200</td><td>cartorio_system-api 1/1</td><td>/mcp alcançável e autenticado; Hermes seleciona somente 1 tool</td></tr>
+      <tr><td>flow.2notasudi.com.br</td><td>200</td><td>cartorio_n8n 1/1 + runner 1/1</td><td>Processo recuperado; DB atual tem 0 workflows/execuções/credenciais — restore funcional pendente</td></tr>
       <tr><td>whatsapp.2notasudi.com.br</td><td>200</td><td>cartorio_whatsapp-api 1/1</td><td>Sessão WA = QR pendente</td></tr>
       <tr><td>supbase.2notasudi.com.br</td><td>200</td><td>auth + storage + realtime + postgrest</td><td>Recuperado 28/07 (DB_HOST legado + postgrest órfão)</td></tr>
       <tr><td>easypanel.2notasudi.com.br</td><td>200</td><td>easypanel + traefik 1/1</td><td>—</td></tr>
@@ -236,7 +236,7 @@ flowchart LR
       <tr><td>agent.2notasudi.com.br</td><td>404</td><td>—</td><td>OpenClaw removido 27/07 — decisão pendente</td></tr>
     </tbody>
   </table>
-  <p>Radar interno (<code>/api/v1/health/radar</code>): database, redis, n8n e supabase <strong>online</strong>; openclaw/chatwoot offline (aguardando decisão); evolution offline no check interno (o check aponta para o serviço legado 0/0 — o real, whatsapp-api, está 1/1; ajuste do endpoint de health mapeado para a próxima wave).</p>
+  <p>Radar interno (<code>/api/v1/health/radar</code>): database, redis, n8n e supabase respondem, mas o health do n8n é apenas disponibilidade de processo — o banco atual está vazio e a chave de auditoria não corresponde a nenhuma API key ativa. OpenClaw/Chatwoot estão aposentados; Evolution segue offline no check interno porque a sessão WhatsApp não está conectada.</p>
 </section>
 
 <section id="pendencias">
@@ -245,7 +245,8 @@ flowchart LR
     <ol>
       <li><strong>Rotação das chaves Supabase (P0 segurança)</strong> — ANON_KEY + SERVICE_ROLE_KEY apareceram em output de diagnóstico em 28/07. Regra do projeto: nunca rotacionar sob pressão — decisão é sua, com calma.</li>
       <li><strong>Chatwoot + OpenClaw</strong> — restaurar (dados 100% preservados, restore barato) ou decomissionar (ajustar radar + docs).</li>
-      <li><strong>Round-trip real do Felipe no Lark</strong> — ele já está liberado (pairing aprovado + organização aberta). Uma mensagem real dele com resposta da Pietra fecha o aceite E2E do canal.</li>
+      <li><strong>Janela controlada do Hermes</strong> — ativar o filtro de PII dos logs já versionado e repetir um round-trip sintético; não fazer replacement durante atendimento ativo.</li>
+      <li><strong>n8n</strong> — selecionar a fonte correta dos workflows versionados/backup antes de importar; o banco live atual está vazio. Depois criar uma API key de observabilidade pela UI, sem inserir credencial diretamente no banco.</li>
       <li><strong>Round-trip real no iPhone (iMessage)</strong> — único aceite válido do canal (Lesson 290).</li>
       <li><strong>QR do WhatsApp</strong> — parear a sessão em whatsapp.2notasudi.com.br/manager.</li>
       <li><strong>ADR-030 (audit chain legacy)</strong> — decisão DPO sobre as 158 entradas legacy (sign-off cartorio-lgpd).</li>

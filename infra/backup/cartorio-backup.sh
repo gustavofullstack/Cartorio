@@ -17,7 +17,7 @@ set -euo pipefail
 BACKUP_DIR="/var/backups/cartorio"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RETAIN_DAYS=7
-PG_SERVICE_NAME="${PG_SERVICE_NAME:-cartorio_supabase}"
+PG_SERVICE_NAME="${PG_SERVICE_NAME:-cartorio_banco_de_dados}"
 LOG_PREFIX="[cartorio-backup ${TIMESTAMP}]"
 
 mkdir -p "${BACKUP_DIR}"
@@ -58,6 +58,28 @@ done
 #   4. extraida direto do service Swarm cartorio_n8n (var Spec.TaskTemplate)
 #   5. fallback interno da API do Cartório, caso a chave exclusiva de backup
 #      tenha sido revogada. O valor nunca é impresso nem arquivado.
+N8N_EXPORT_DIR="${BACKUP_DIR}/n8n_${TIMESTAMP}"
+N8N_EXPORT_FILE="${N8N_EXPORT_DIR}/workflows.json"
+
+export_n8n_via_cli() {
+  local container remote_file
+  container=$(docker ps -q --filter \
+    "label=com.docker.swarm.service.name=cartorio_n8n" | head -n 1)
+  remote_file="/tmp/cartorio-workflows-${TIMESTAMP}.json"
+  [[ -n "${container}" ]] || return 1
+
+  if docker exec "${container}" n8n export:workflow --all \
+      --output="${remote_file}" >/dev/null 2>&1 \
+    && docker cp "${container}:${remote_file}" "${N8N_EXPORT_FILE}" >/dev/null 2>&1; then
+    docker exec "${container}" rm -f "${remote_file}" >/dev/null 2>&1 || true
+    log "  - n8n workflows exportados pelo CLI interno"
+    return 0
+  fi
+
+  docker exec "${container}" rm -f "${remote_file}" >/dev/null 2>&1 || true
+  return 1
+}
+
 N8N_KEY="${N8N_API_KEY:-}"
 if [[ -z "${N8N_KEY}" && -f /etc/cartorio-backup/n8n-api-key.env ]]; then
   # shellcheck disable=SC1091
@@ -77,27 +99,34 @@ if [[ -z "${N8N_KEY}" ]]; then
 fi
 if [[ -n "${N8N_KEY}" ]]; then
   log "  - n8n workflows"
-  mkdir -p "${BACKUP_DIR}/n8n_${TIMESTAMP}"
+  mkdir -p "${N8N_EXPORT_DIR}"
   if ! curl -fsSk "https://flow.2notasudi.com.br/api/v1/workflows?limit=200" \
     -H "X-N8N-API-KEY: ${N8N_KEY}" \
-    -o "${BACKUP_DIR}/n8n_${TIMESTAMP}/workflows.json" 2>/dev/null; then
-    fallback_key=$(docker service inspect cartorio_api \
+    -o "${N8N_EXPORT_FILE}" 2>/dev/null; then
+    fallback_key=$(docker service inspect cartorio_system-api \
       --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' 2>/dev/null \
       | sed -n 's/^N8N_API_KEY=//p' | head -n 1 || true)
     if [[ -n "${fallback_key}" && "${fallback_key}" != "${N8N_KEY}" ]] \
       && curl -fsSk "https://flow.2notasudi.com.br/api/v1/workflows?limit=200" \
         -H "X-N8N-API-KEY: ${fallback_key}" \
-        -o "${BACKUP_DIR}/n8n_${TIMESTAMP}/workflows.json" 2>/dev/null; then
+        -o "${N8N_EXPORT_FILE}" 2>/dev/null; then
       log "  - n8n workflows exportados pelo fallback interno"
+    elif export_n8n_via_cli; then
+      :
     else
       # O dump PostgreSQL não pode ser descartado porque uma exportação auxiliar
       # de workflow falhou. O alerta deixa a lacuna explícita para operação.
       log "AVISO: exportação n8n falhou; bancos foram preservados no backup"
-      rm -rf "${BACKUP_DIR}/n8n_${TIMESTAMP}"
+      rm -rf "${N8N_EXPORT_DIR}"
     fi
   fi
 else
-  log "  - n8n: N8N_API_KEY nao encontrada em nenhum path, pulando workflows"
+  log "  - n8n: N8N_API_KEY nao encontrada; tentando CLI interno"
+  mkdir -p "${N8N_EXPORT_DIR}"
+  if ! export_n8n_via_cli; then
+    log "AVISO: exportação n8n falhou; bancos foram preservados no backup"
+    rm -rf "${N8N_EXPORT_DIR}"
+  fi
 fi
 
 # Segredos são recuperados exclusivamente pelo gerenciador de segredos; nunca
