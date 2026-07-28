@@ -70,6 +70,9 @@ gateway:
   platforms:
     feishu:
       enabled: true
+      allow_all_users: true
+      require_mention: false
+      group_policy: open
 
 mcp_servers:
   cartorio:
