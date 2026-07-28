@@ -221,8 +221,8 @@ def test_intent_emolumento_service_procuracao() -> None:
     """OpenClaw tool consultar_emolumento → service layer (no network)."""
     calc = calcular("procuracao", folhas=1, urgencia=False)
     assert calc.tipo == "procuracao"
-    assert calc.total == Decimal("156.40")
-    assert calc.base == Decimal("156.40")
+    assert calc.total == Decimal("68.94")
+    assert calc.base == Decimal("68.94")
     assert calc.tabela_referencia  # MG 2026 snapshot
 
 
@@ -238,7 +238,7 @@ def test_intent_emolumento_http_calcular_api(api_client: TestClient) -> None:
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["tipo"] == "procuracao"
-    assert float(body["total"]) == 156.40
+    assert float(body["total"]) == 68.94
     assert body["isento"] is False
 
 
@@ -252,7 +252,7 @@ def test_intent_emolumento_http_calcular_legacy(api_client: TestClient) -> None:
     body = resp.json()
     assert body.get("erro") is None
     assert body["tipo"] == "procuracao"
-    assert Decimal(body["total"]) == Decimal("156.40")
+    assert Decimal(body["total"]) == Decimal("68.94")
 
 
 # ============================================================================
@@ -276,7 +276,7 @@ def test_intent_protocolo_hitl_draft_create(
         json={
             "cliente_id": 1,
             "ato": "procuracao",
-            "valor_snapshot": "156.40",
+            "valor_snapshot": "68.94",
             "observacoes": "G7.06.T4 synthetic LobeChat→OpenClaw",
             "hitl_draft": True,
         },
@@ -310,8 +310,8 @@ def test_intent_protocolo_status_consulta(
                 cliente_id=1,
                 tipo="procuracao",
                 status="DRAFT",
-                valor_base=Decimal("156.40"),
-                valor_total=Decimal("156.40"),
+                valor_base=Decimal("68.94"),
+                valor_total=Decimal("68.94"),
                 tabela_referencia="TABELA_2026_MG",
                 prazo_dias=5,
                 canal_origem="web",  # CanalOrigem enum (OpenClaw/LobeChat → web)
@@ -345,7 +345,7 @@ def test_intent_protocolo_hitl_rejects_non_draft_flag(
         json={
             "cliente_id": 1,
             "ato": "procuracao",
-            "valor_snapshot": "156.40",
+            "valor_snapshot": "68.94",
             "hitl_draft": False,
         },
         headers={"X-API-Key": api_key},
@@ -442,7 +442,7 @@ def test_synthetic_chain_three_intents_end_to_end(
     assert r1.status_code == 200
     emol = r1.json()
     turns.append({"intent": skill1["name"], "tool": "consultar_emolumento", "result": emol})
-    assert float(emol["total"]) == 156.40
+    assert float(emol["total"]) == 68.94
 
     # --- Turn 2a: create draft (HITL) ---
     r2 = api_client.post(

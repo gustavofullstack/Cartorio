@@ -146,20 +146,20 @@ def test_urgencia_adicional_50_porcento_base():
 def test_urgencia_via_calcular_procuracao():
     """T047.3b: integração em `calcular()` — procuração com urgência = 234.60."""
     r = calcular("procuracao", urgencia=True)
-    # 156.40 + 50% = 156.40 + 78.20 = 234.60
-    assert r.adicional_urgencia == Decimal("78.20")
-    assert r.total == Decimal("234.60")
+    # 68.94 + 50% = 68.94 + 34.47 = 103.41 (Portaria 8.664/2025)
+    assert r.adicional_urgencia == Decimal("34.47")
+    assert r.total == Decimal("103.41")
 
 
 @pytest.mark.t047
 def test_urgencia_via_calcular_combina_folhas():
     """T047.3c: urgência + folhas adicionais combinam."""
     r = calcular("autenticacao", folhas=2, urgencia=True)
-    # 28.90 + 5%*1*28.90 + 50%*28.90 = 28.90 + 1.45 + 14.45 = 44.80
-    assert r.base == Decimal("28.90")
-    assert r.adicional_folhas == Decimal("1.45")
-    assert r.adicional_urgencia == Decimal("14.45")
-    assert r.total == Decimal("44.80")
+    # 11.21 + 5%*1*11.21 + 50%*11.21 = 11.21 + 0.56 + 5.61 = 17.38 (Portaria 8.664/2025)
+    assert r.base == Decimal("11.21")
+    assert r.adicional_folhas == Decimal("0.56")
+    assert r.adicional_urgencia == Decimal("5.61")
+    assert r.total == Decimal("17.38")
 
 
 @pytest.mark.t047
@@ -474,8 +474,8 @@ def test_adicional_folhas_puro_parametrizado_escritura(folhas, esperado):
     [
         (Decimal("0.00"), True, Decimal("0")),
         (Decimal("0.00"), False, Decimal("0")),
-        (Decimal("28.90"), True, Decimal("14.45")),  # autenticacao + urgencia
-        (Decimal("28.90"), False, Decimal("0")),
+        (Decimal("11.21"), True, Decimal("5.605")),  # autenticacao + urgencia
+        (Decimal("11.21"), False, Decimal("0")),
         (Decimal("4521.00"), True, Decimal("2260.50")),  # escritura + urgencia
         (Decimal("10000.00"), True, Decimal("5000.00")),
     ],
@@ -492,7 +492,7 @@ def test_adicional_urgencia_parametrizado_valor_extremo(base, urgencia, esperado
     """T048.4b: `calcular_adicional_urgencia` cobre base 0 e valores grandes.
 
     Regra MG 2026: 50% do valor base se urgencia justificada. Cobre base=0
-    (atos gratuitos com urgencia — embora raros), base=28.90 (autenticacao)
+    (atos gratuitos com urgencia — embora raros), base=11.21 (autenticacao)
     e bases de 5 casas para confirmar precisao sem perda.
     """
     assert calcular_adicional_urgencia(base, urgencia) == esperado

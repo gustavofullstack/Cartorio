@@ -48,16 +48,24 @@ __all__ = [
 ]  # noqa: F401
 
 
-# Tabela placeholder - MG 2026 (substituir por carga real do estado)
+# Tabela MG 2026 — valores oficiais Portaria CGJ/TJMG nº 8.664/2025 (Tabela 1,
+# "Valor Final ao Usuario" = emolumentos + TFJ). Corrigido 2026-07-28 apos
+# auditoria contra o PDF oficial (backend/data/fontes/cpo86642025.pdf):
+# autenticacao 28.90->11.21, reconhecimento_firma 32.10->11.21, procuracao 156.40->68.94.
+# Fonte autoritativa completa: app/services/emolumento_real_djalma.py.
+# ATENCAO: certidao_*/escritura_* seguem legados (serventia/modelo divergente —
+# escritura com conteudo financeiro e por faixas; certidoes de registro civil
+# nao sao atos desta serventia). Pendente decisao do escrevente; ver
+# docs/IMESSAGE_FAILURES.md (2026-07-28).
 EMOLUMENTOS_2026: dict[str, Decimal] = {
     "certidao_negativa": Decimal("87.50"),
     "certidao_positiva": Decimal("92.30"),
     "certidao_casamento": Decimal("105.40"),
     "escritura_compra_venda": Decimal("4521.00"),
     "escritura_doacao": Decimal("3205.50"),
-    "procuracao": Decimal("156.40"),
-    "autenticacao": Decimal("28.90"),
-    "reconhecimento_firma": Decimal("32.10"),
+    "procuracao": Decimal("68.94"),
+    "autenticacao": Decimal("11.21"),
+    "reconhecimento_firma": Decimal("11.21"),
     "registro_nascimento": Decimal("0.00"),  # gratuito
     "registro_obito": Decimal("0.00"),  # gratuito
 }

@@ -153,9 +153,10 @@ def _tool_error(code: str, exc: Exception, mensagem: str | None = None) -> dict:
 @mcp.tool(
     name="cartorio_calcular_emolumento",
     description=(
-        "Calcula emolumento cartorario oficial MG 2026 + adicionais por folha "
-        "(5% a partir da 2a) + adicional de urgencia (50%). NAO envolve PII - "
-        "pode ser consumido publicamente."
+        "Consulta emolumento oficial MG 2026 (Portaria CGJ/TJMG 8.664/2025, "
+        "Tabela 1 - Atos do Tabeliao de Notas). Atos compostos (folhas "
+        "adicionais, urgencia, conteudo financeiro) retornam HITL_REQUIRED - "
+        "nunca infira preco. NAO envolve PII - pode ser consumido publicamente."
     ),
 )
 @contabilizar_tool("cartorio_calcular_emolumento")
@@ -164,38 +165,39 @@ async def cartorio_calcular_emolumento(
     folhas: int = 1,
     urgencia: bool = False,
 ) -> dict:
-    """Calcula emolumento cartorario MG 2026.
+    """Calcula emolumento cartorario MG 2026 (Portaria CGJ/TJMG 8.664/2025).
+
+    Fonte autoritativa: app/services/emolumento_real_djalma.py (Tabela 1 —
+    Atos do Tabeliao de Notas, valor final ao usuario = emolumentos + TFJ).
+    Atos compostos (folhas adicionais, urgencia, conteudo financeiro) retornam
+    status=HITL_REQUIRED — o agente NUNCA infere preco (regra de governanca).
 
     Args:
-        tipo: Tipo do ato. Opcoes: certidao_negativa, certidao_positiva,
-              certidao_casamento, escritura_compra_venda, escritura_doacao,
-              procuracao, autenticacao, reconhecimento_firma,
-              registro_nascimento, registro_obito.
-        folhas: Numero de folhas (para atos com base por folha). 1 a 1000.
-        urgencia: Se true, aplica acrescimo de 50% por urgencia.
+        tipo: Tipo do ato. Aceita slugs oficiais (ex.: procuracao_geral,
+              autenticacao_copia_folha) e legados (procuracao, autenticacao,
+              reconhecimento_firma).
+        folhas: Numero de folhas. >1 retorna HITL_REQUIRED (composicao).
+        urgencia: Se true, retorna HITL_REQUIRED (sem acrescimo publicado).
 
     Returns:
-        Dict com tipo, folhas, urgencia, base, adicional_folhas,
-        adicional_urgencia, total, tabela_referencia, valido_ate.
+        Dict com status (PUBLISHED|HITL_REQUIRED), total, item_portaria,
+        motivo_hitl, tabela_referencia e ecos de tipo/folhas/urgencia.
     """
-    from app.services.emolumento import calcular as calcular_svc
+    from app.services.emolumento_real_djalma import calcular_emolumento_real_djalma
 
-    try:
-        resultado = calcular_svc(tipo, folhas=folhas, urgencia=urgencia)
-    except ValueError as e:
-        return {"erro": "TIPO_INVALIDO", "mensagem": str(e)}
-
-    return {
-        "tipo": resultado.tipo,
-        "folhas": resultado.folhas,
-        "urgencia": resultado.urgencia,
-        "base": str(resultado.base),
-        "adicional_folhas": str(resultado.adicional_folhas),
-        "adicional_urgencia": str(resultado.adicional_urgencia),
-        "total": str(resultado.total),
-        "tabela_referencia": resultado.tabela_referencia,
-        "valido_ate": resultado.valido_ate,
+    # Aliases de slugs legados do placeholder para slugs oficiais da Tabela 1.
+    _LEGACY_SLUGS = {
+        "procuracao": "procuracao_geral",
+        "autenticacao": "autenticacao_copia_folha",
+        "reconhecimento_firma": "reconhecimento_firma_assinatura",
     }
+    slug = _LEGACY_SLUGS.get(tipo, tipo)
+
+    resultado = calcular_emolumento_real_djalma(slug, folhas=folhas, urgencia=urgencia)
+    payload = resultado.to_dict()
+    payload["tipo"] = tipo
+    payload["urgencia"] = urgencia
+    return payload
 
 
 @mcp.tool(

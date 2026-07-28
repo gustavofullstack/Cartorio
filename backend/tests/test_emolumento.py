@@ -31,18 +31,18 @@ def test_calculo_com_folhas_adicionais():
 
 def test_calculo_com_urgencia():
     r = calcular("procuracao", urgencia=True)
-    # 156.40 + 50% = 234.60
-    assert r.adicional_urgencia == Decimal("78.20")
-    assert r.total == Decimal("234.60")
+    # 68.94 + 50% = 103.41 (Portaria 8.664/2025, item 4.f.1)
+    assert r.adicional_urgencia == Decimal("34.47")
+    assert r.total == Decimal("103.41")
 
 
 def test_calculo_combinado_folhas_e_urgencia():
     r = calcular("autenticacao", folhas=2, urgencia=True)
-    # base=28.90, folhas=1.45, urgencia=14.45 -> 44.80
-    assert r.base == Decimal("28.90")
-    assert r.adicional_folhas == Decimal("1.45")
-    assert r.adicional_urgencia == Decimal("14.45")
-    assert r.total == Decimal("44.80")
+    # base=11.21, folhas=0.56, urgencia=5.61 -> 17.38 (Portaria 8.664/2025, item 3)
+    assert r.base == Decimal("11.21")
+    assert r.adicional_folhas == Decimal("0.56")
+    assert r.adicional_urgencia == Decimal("5.61")
+    assert r.total == Decimal("17.38")
 
 
 def test_calculo_tipo_invalido_raise():

@@ -27,24 +27,24 @@ def test_calcular_emolumento_api_basico() -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["tipo"] == "procuracao"
-    assert float(body["base"]) == 156.40
+    assert float(body["base"]) == 68.94
     assert float(body["adicional_folhas"]) == 0.00
     assert float(body["adicional_urgencia"]) == 0.00
-    assert float(body["total"]) == 156.40
+    assert float(body["total"]) == 68.94
     assert body["isento"] is False
 
 
 def test_calcular_emolumento_api_com_adicionais() -> None:
     """GET /api/v1/emolumentos/calcular-api deve aplicar 50% de urgência e 5% por folha adicional."""
-    # base procuracao: 156.40. folhas=3 (2 adicionais = 10% = 15.64). urgencia=50% (78.20).
-    # total = 156.40 + 15.64 + 78.20 = 250.24
+    # base procuracao: 68.94. folhas=3 (2 adicionais = 10% = 6.89). urgencia=50% (34.47).
+    # total = 68.94 + 6.89 + 34.47 = 110.30
     resp = client.get("/api/v1/emolumentos/calcular-api?tipo=procuracao&folhas=3&urgencia=true")
     assert resp.status_code == 200
     body = resp.json()
-    assert float(body["base"]) == 156.40
-    assert float(body["adicional_folhas"]) == 15.64
-    assert float(body["adicional_urgencia"]) == 78.20
-    assert float(body["total"]) == 250.24
+    assert float(body["base"]) == 68.94
+    assert float(body["adicional_folhas"]) == 6.89
+    assert float(body["adicional_urgencia"]) == 34.47
+    assert float(body["total"]) == 110.30
 
 
 def test_calcular_emolumento_api_isencao_valida() -> None:

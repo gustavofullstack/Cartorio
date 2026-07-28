@@ -63,7 +63,7 @@ def test_wa_emolumento_synthetic_flow() -> None:
     assert "procuracao" in msg.text.lower() or "procuração" in msg.text.lower()
 
     calc = calcular("procuracao", folhas=1, urgencia=False)
-    assert calc.total == Decimal("156.40")
+    assert calc.total == Decimal("68.94")
     assert calc.tipo == "procuracao"
     # HITL: isencao nao automatica
     calc_u = calcular("procuracao", folhas=1, urgencia=True)
