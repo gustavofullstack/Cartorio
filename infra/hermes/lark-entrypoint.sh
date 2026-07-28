@@ -22,4 +22,9 @@ export FEISHU_GROUP_POLICY="allowlist"
 export FEISHU_REQUIRE_MENTION="true"
 export FEISHU_ALLOW_BOTS="none"
 
+# The image reconciles profiles before this entrypoint runs. A persisted
+# "running" state would start an s6-managed gateway and race this foreground
+# process, causing both instances to exit. Keep Swarm as the sole supervisor.
+hermes gateway stop >/dev/null 2>&1 || true
+
 exec hermes gateway run --no-supervise --external-supervisor
