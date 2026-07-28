@@ -60,9 +60,7 @@ def test_t6_response_does_not_echo_raw_cpf() -> None:
         channel_id="imessage_harness",
         user_id="felipe_test",
     )
-    assert T6_CPF_RAW not in response, (
-        f"PII LEAK: CPF cru ecoado na resposta: {response!r}"
-    )
+    assert T6_CPF_RAW not in response, f"PII LEAK: CPF cru ecoado na resposta: {response!r}"
 
 
 def test_t6_log_scrub_cpf() -> None:
@@ -81,10 +79,7 @@ def test_t6_log_scrub_cpf() -> None:
 
 def test_t6_multiple_synthetic_pii() -> None:
     """Multiplos PIIs no mesmo input sao tratados."""
-    multi = (
-        "CPF 000.000.000-00, RG MG-00.000.000-00, "
-        "tel (00) 00000-0000, email teste@dominio.com"
-    )
+    multi = "CPF 000.000.000-00, RG MG-00.000.000-00, tel (00) 00000-0000, email teste@dominio.com"
     scrubbed = _scrub(multi)
     assert isinstance(scrubbed, str)
     # Verifica que o scrubber processou sem erro
@@ -92,6 +87,7 @@ def test_t6_multiple_synthetic_pii() -> None:
 
 
 # === T7 — Session continuity ===
+
 
 def test_t7_topic_continuation() -> None:
     """Mesmo thread_id: topico ativo deve persistir entre chamadas."""
@@ -113,8 +109,7 @@ def test_t7_topic_continuation() -> None:
     )
     # Continuidade: resposta ainda no topico procuracao
     assert any(
-        kw in r2.lower()
-        for kw in ("procur", "documento", "levar", "rg", "cpf", "identidade")
+        kw in r2.lower() for kw in ("procur", "documento", "levar", "rg", "cpf", "identidade")
     ), f"Continuidade perdida: {r2!r}"
     # State continua (mesmo thread_id)
     assert state2.thread_id == "felipe_t7_session_v2"

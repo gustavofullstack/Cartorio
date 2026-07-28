@@ -136,4 +136,3 @@ async def test_record_failure_default_5_attempts_opens_5_hours() -> None:
         await _record_failure("MiniMax_direct")
         mock_client.setex.assert_called_once_with("cb:open:MiniMax_direct", 18000, "1")
         mock_client.delete.assert_called_once_with("cb:fail:MiniMax_direct")
-

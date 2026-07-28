@@ -62,6 +62,7 @@ router = APIRouter(prefix="/pietra", tags=["pietra"])
 
 # === Schemas Pydantic ===
 
+
 class CollectRequest(BaseModel):
     telefone: str = Field(..., description="Telefone E.164 ou BR (obrigatorio)")
     nome: Optional[str] = Field(None, max_length=255)
@@ -173,6 +174,7 @@ class MemoriaAppendRequest(BaseModel):
 
 # === Endpoints ===
 
+
 @router.get("/cliente/{telefone}", response_model=CollectResponse)
 def get_cliente(telefone: str, db: Session = Depends(get_db)) -> CollectResponse:
     """Retorna dados do cliente (LGPD-masked). PRIMARY KEY: telefone."""
@@ -182,6 +184,7 @@ def get_cliente(telefone: str, db: Session = Depends(get_db)) -> CollectResponse
     tel_hash = hash_phone(norm)
     from app.models.cliente import Cliente
     from sqlalchemy import select
+
     cliente = db.execute(
         select(Cliente).where(
             Cliente.telefone_hash == tel_hash,
@@ -218,7 +221,9 @@ def get_cliente(telefone: str, db: Session = Depends(get_db)) -> CollectResponse
 
 @router.post("/cliente/collect", response_model=CollectResponse)
 def collect_cliente(
-    req: CollectRequest, request: Request, db: Session = Depends(get_db),
+    req: CollectRequest,
+    request: Request,
+    db: Session = Depends(get_db),
 ) -> CollectResponse:
     """Coleta progressiva: cria ou atualiza cliente por telefone.
 
@@ -246,15 +251,19 @@ def collect_cliente(
         dados_pendentes=result.dados_pendentes,
         consentimento_lgpd=result.consentimento_lgpd,
         mensagem=(
-            f"Cliente #{result.cliente_id} criado" if result.cliente_criado
+            f"Cliente #{result.cliente_id} criado"
+            if result.cliente_criado
             else f"Cliente #{result.cliente_id} atualizado"
-        ) + f". Pendente: {', '.join(result.dados_pendentes) or 'nada'}",
+        )
+        + f". Pendente: {', '.join(result.dados_pendentes) or 'nada'}",
     )
 
 
 @router.post("/atendimento/iniciar", response_model=AtendimentoIniciarResponse)
 def atendimento_iniciar(
-    req: AtendimentoIniciarRequest, request: Request, db: Session = Depends(get_db),
+    req: AtendimentoIniciarRequest,
+    request: Request,
+    db: Session = Depends(get_db),
 ) -> AtendimentoIniciarResponse:
     """Inicia atendimento: coleta + cria atendimento + agendamento opcional + memoria."""
     atendimento_req = AtendimentoRequest(
@@ -297,7 +306,9 @@ def atendimento_iniciar(
 
 @router.post("/agendamento", response_model=AtendimentoIniciarResponse)
 def criar_agendamento(
-    req: AtendimentoIniciarRequest, request: Request, db: Session = Depends(get_db),
+    req: AtendimentoIniciarRequest,
+    request: Request,
+    db: Session = Depends(get_db),
 ) -> AtendimentoIniciarResponse:
     """Cria agendamento (online ou presencial) + coleta de dados + memoria."""
     if req.tipo not in ("agendamento_online", "agendamento_presencial"):
@@ -316,6 +327,7 @@ def get_historico_atendimentos(telefone: str, db: Session = Depends(get_db)) -> 
         raise HTTPException(status_code=400, detail="telefone invalido")
     tel_hash = hash_phone(norm)
     from sqlalchemy import text
+
     rows = db.execute(
         text("""
             SELECT id, cliente_id, canal, tipo, status,
@@ -378,7 +390,9 @@ def get_memoria(
 
 @router.post("/memoria/{telefone}/append")
 def append_memoria(
-    telefone: str, req: MemoriaAppendRequest, db: Session = Depends(get_db),
+    telefone: str,
+    req: MemoriaAppendRequest,
+    db: Session = Depends(get_db),
 ) -> dict:
     """Append uma mensagem na memoria persistente."""
     norm = _normalize_phone_br(telefone)
@@ -419,6 +433,7 @@ def get_stats_memoria(telefone: str, db: Session = Depends(get_db)) -> dict:
 def pietra_health() -> dict:
     """Health check do modulo PIETRA."""
     from app.services.pietra_memoria import get_redis
+
     r = get_redis()
     return {
         "status": "ok",
@@ -462,6 +477,7 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
         content = "Sou a Pietra, a agente do 2º Cartório de Notas de Uberlândia. Como posso ajudar?"
     else:
         from app.services.pietra_identity_guard import guard_identity
+
         res = guard_identity(content, channel="api")
         content = res.sanitized_text
 

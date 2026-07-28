@@ -148,14 +148,21 @@ async def test_run_agent_offline_path(monkeypatch: pytest.MonkeyPatch) -> None:
     async def _fail_llm(system: str, user: str) -> tuple[str, str]:
         return "", "none"
 
-    async def _fail_tools(*_args: object, **_kwargs: object) -> tuple[str, str, str | None, list[str]]:
+    async def _fail_tools(
+        *_args: object, **_kwargs: object
+    ) -> tuple[str, str, str | None, list[str]]:
         return "", "none", None, []
 
     monkeypatch.setattr("app.services.cartorio_agent._llm_minimax", _fail_llm)
     monkeypatch.setattr("app.services.cartorio_agent._llm_agent_with_tools", _fail_tools)
     reply = await run_cartorio_agent("quanto custa autenticacao de documento?")
     assert reply.text
-    assert "11,21" in reply.text or "Autentic" in reply.text or "autentic" in reply.text.lower() or "emolumento" in reply.text.lower()
+    assert (
+        "11,21" in reply.text
+        or "Autentic" in reply.text
+        or "autentic" in reply.text.lower()
+        or "emolumento" in reply.text.lower()
+    )
     assert reply.provider in ("offline", "pietra_planner_fallback", "offline:provider_rate_limited")
 
 
@@ -187,7 +194,9 @@ async def test_llm_context_scrubs_history_and_attachment_paths(
     """Histórico e metadados de mídia também cruzam a fronteira LLM sem PII."""
     captured: dict[str, str] = {}
 
-    async def _mock_chat_comp(messages: list[dict[str, Any]], **kwargs: Any) -> tuple[dict[str, Any] | None, str, str]:
+    async def _mock_chat_comp(
+        messages: list[dict[str, Any]], **kwargs: Any
+    ) -> tuple[dict[str, Any] | None, str, str]:
         user_content = ""
         for m in messages:
             if m.get("role") == "user":

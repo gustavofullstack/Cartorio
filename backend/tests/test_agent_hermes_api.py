@@ -27,9 +27,7 @@ def test_agent_hermes_status_probes_configured_runtime(monkeypatch: pytest.Monke
     monkeypatch.setattr(settings, "hermes_api_url", "http://hermes.test:8642")
     monkeypatch.setattr(settings, "hermes_api_server_key", "test-key")
     with respx.mock:
-        route = respx.get("http://hermes.test:8642/health").mock(
-            return_value=httpx.Response(200)
-        )
+        route = respx.get("http://hermes.test:8642/health").mock(return_value=httpx.Response(200))
         response = client.get("/api/v1/agent-hermes/status")
 
     assert response.status_code == 200
