@@ -121,12 +121,16 @@ def salvar_mensagem(
         try:
             key = _redis_key(telefone_hash, session_id)
             # Append em uma lista Redis (max 50 mensagens por sessao)
-            entry = json.dumps({
-                "role": role,
-                "content": content,
-                "metadata": metadata or {},
-                "created_at": now.isoformat(),
-            }, ensure_ascii=False, default=str)
+            entry = json.dumps(
+                {
+                    "role": role,
+                    "content": content,
+                    "metadata": metadata or {},
+                    "created_at": now.isoformat(),
+                },
+                ensure_ascii=False,
+                default=str,
+            )
             r.lpush(key, entry)
             r.ltrim(key, 0, 49)  # manter ultimas 50
             r.expire(key, REDIS_TTL_SECONDS)

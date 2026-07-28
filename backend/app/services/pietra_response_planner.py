@@ -66,6 +66,7 @@ TOPIC_TO_CAPABILITY: dict[str, str] = {
 
 # === Composicao ===
 
+
 def _topic_summary_text(topic: str) -> str:
     """Retorna um resumo curto (1-3 linhas) de um topico da Pietra.
 
@@ -137,8 +138,7 @@ def _catalog_full() -> str:
     for topic in PIETRA_TOPICS:
         parts.append(_topic_summary_text(topic))
     parts.append(
-        "\nEm qual desses eu te ajudo agora? (pode escrever em texto livre, "
-        "que eu entendo)"
+        "\nEm qual desses eu te ajudo agora? (pode escrever em texto livre, que eu entendo)"
     )
     return "\n\n".join(parts)
 
@@ -155,6 +155,7 @@ def _continuation_text(state: ConversationState) -> str:
 
 
 # === Planejador principal ===
+
 
 class ResponsePlanner:
     """Fase 3 do P0: response planner pipeline."""
@@ -213,15 +214,27 @@ class ResponsePlanner:
         return response, state
 
     def _answer_specific_question(
-        self, text: str, state: ConversationState,
+        self,
+        text: str,
+        state: ConversationState,
     ) -> str:
         """Resposta a uma pergunta especifica, dispatch por topico."""
         t = (text or "").lower()
         # Emolumentos
-        if any(w in t for w in (
-            "quanto custa", "valor", "preco", "preço", "emolumento",
-            "custa", "tabela", "reais", "r$",
-        )):
+        if any(
+            w in t
+            for w in (
+                "quanto custa",
+                "valor",
+                "preco",
+                "preço",
+                "emolumento",
+                "custa",
+                "tabela",
+                "reais",
+                "r$",
+            )
+        ):
             cap = get_capability("emoluments")
             if cap is None:
                 return "Emolumento e com a equipe no balcao. Quer anotar seu pedido?"
@@ -302,10 +315,7 @@ class ResponsePlanner:
                     mentioned += 1
                     break
         if mentioned >= 3 and len(response) > 300:
-            return (
-                "Ja passei por cima dos topicos principais. "
-                "Em qual eu aprofundo?"
-            )
+            return "Ja passei por cima dos topicos principais. Em qual eu aprofundo?"
         return response
 
     def _safe_fallback(self, state: ConversationState, blocked_phrase: str) -> str:
@@ -326,12 +336,23 @@ class ResponsePlanner:
         """
         # Phrases PROMESSA de execucao (nao explicacao)
         promise_phrases = (
-            "gero o link", "gero link", "vou gerar",
-            "faco seu agendamento", "vou agendar", "ja agendei",
-            "transfiro agora", "transfiro direto", "vou transferir",
-            "consultei seu protocolo", "vou consultar", "ja consultei",
-            "envio pelo whatsapp", "vou enviar", "ja enviei",
-            "seu documento esta pronto", "seu documento está pronto",
+            "gero o link",
+            "gero link",
+            "vou gerar",
+            "faco seu agendamento",
+            "vou agendar",
+            "ja agendei",
+            "transfiro agora",
+            "transfiro direto",
+            "vou transferir",
+            "consultei seu protocolo",
+            "vou consultar",
+            "ja consultei",
+            "envio pelo whatsapp",
+            "vou enviar",
+            "ja enviei",
+            "seu documento esta pronto",
+            "seu documento está pronto",
             "vou abrir o pre-protocolo",
             "vou te passar para um escrevente",
         )

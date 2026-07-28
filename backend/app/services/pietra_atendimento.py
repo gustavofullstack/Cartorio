@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MemoriaItem:
     """Item de memoria de conversa."""
+
     role: str  # user|assistant|system|tool
     content: str
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -48,6 +49,7 @@ class MemoriaItem:
 @dataclass
 class AtendimentoRequest:
     """Request de atendimento consolidado."""
+
     telefone: str  # PRIMARY KEY operacional
     canal: str = "imessage"
     tipo: str = "consulta"  # consulta|agendamento_online|agendamento_presencial|segunda_via|outro
@@ -69,6 +71,7 @@ class AtendimentoRequest:
 @dataclass
 class AtendimentoResult:
     """Resultado do atendimento."""
+
     atendimento_id: int
     cliente_id: int
     cliente_criado: bool
@@ -120,9 +123,7 @@ def iniciar_atendimento(
     agendamento_id: Optional[int] = None
     if req.tipo in ("agendamento_online", "agendamento_presencial"):
         if not req.data_hora or not req.titulo:
-            raise ValueError(
-                "agendamento_online/presencial requer data_hora e titulo"
-            )
+            raise ValueError("agendamento_online/presencial requer data_hora e titulo")
         cpf_raw = req.cpf or "00000000000"
         try:
             agendamento = AgendamentoService.criar_agendamento(
@@ -218,12 +219,14 @@ def iniciar_atendimento(
                 "session_id": session_id,
                 "canal": req.canal,
                 "content": f"atendimento_iniciado tipo={req.tipo}",
-                "metadata": _to_jsonb({
-                    "atendimento_id": atendimento_id,
-                    "cliente_id": coleta.cliente_id,
-                    "dados_coletados": dados_coletados,
-                    "dados_pendentes": dados_pendentes,
-                }),
+                "metadata": _to_jsonb(
+                    {
+                        "atendimento_id": atendimento_id,
+                        "cliente_id": coleta.cliente_id,
+                        "dados_coletados": dados_coletados,
+                        "dados_pendentes": dados_pendentes,
+                    }
+                ),
             },
         )
         memoria_salva = True
@@ -237,11 +240,14 @@ def iniciar_atendimento(
     audit_ids: list[int] = []
     try:
         from app.services.audit import AuditService
+
         actor_id = f"pietra:{req.canal}"
         # request_id extraido do header (LGPD-safe)
         request_id_val: str | None = None
         if request is not None:
-            request_id_val = request.headers.get("x-request-id") if hasattr(request, "headers") else None
+            request_id_val = (
+                request.headers.get("x-request-id") if hasattr(request, "headers") else None
+            )
         if coleta.cliente_criado:
             entry = AuditService.log(
                 db,
@@ -290,17 +296,14 @@ def iniciar_atendimento(
                     "se preferir só o telefone+data de nascimento já dá)."
                 )
             elif field_name == "data_nascimento":
-                proximos_passos.append(
-                    "Me confirma sua data de nascimento (AAAA-MM-DD)?"
-                )
+                proximos_passos.append("Me confirma sua data de nascimento (AAAA-MM-DD)?")
             elif field_name == "nome":
                 proximos_passos.append(
                     "Me passa seu nome completo para eu localizar o atendimento."
                 )
     if req.tipo in ("agendamento_online", "agendamento_presencial") and not agendamento_id:
         proximos_passos.append(
-            "Tive um problema ao criar o agendamento. Vou chamar um escrevente "
-            "para te ajudar."
+            "Tive um problema ao criar o agendamento. Vou chamar um escrevente para te ajudar."
         )
 
     return AtendimentoResult(
@@ -320,4 +323,5 @@ def iniciar_atendimento(
 def _to_jsonb(d: Any) -> str:
     """Serializa dict/list para JSON string (Postgres ::text::text::jsonb)."""
     import json
+
     return json.dumps(d, ensure_ascii=False, default=str)

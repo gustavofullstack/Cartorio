@@ -34,12 +34,14 @@ from app.services.pietra_identity_guard import (
 
 # === Setup: resetar contadores antes de cada teste ===
 
+
 @pytest.fixture(autouse=True)
 def _reset_metrics() -> None:
     reset_identity_leak_metrics()
 
 
 # === Detector: casos canonicos ===
+
 
 @pytest.mark.parametrize(
     "leaked_text",
@@ -68,6 +70,7 @@ def test_detect_canonical_hermes_leaks(leaked_text: str) -> None:
 
 # === Detector: bypass attempts ===
 
+
 @pytest.mark.parametrize(
     "bypass_text",
     [
@@ -88,6 +91,7 @@ def test_detect_bypass_attempts(bypass_text: str) -> None:
 
 
 # === Detector: negativos (nao deve detectar) ===
+
 
 @pytest.mark.parametrize(
     "clean_text",
@@ -110,6 +114,7 @@ def test_detect_clean_passes(clean_text: str) -> None:
 
 
 # === Guard: variantes de aacao ===
+
 
 def test_guard_pass_on_clean_text() -> None:
     """Texto limpo -> PASS, sem modificacao."""
@@ -146,6 +151,7 @@ def test_guard_hard_stop_pass_on_clean() -> None:
 
 
 # === Contadores Prometheus ===
+
 
 def test_metrics_incremented_on_substitute() -> None:
     """Substitute incrementa contador correto."""
@@ -191,6 +197,7 @@ def test_metrics_reset() -> None:
 
 # === Edge cases ===
 
+
 def test_empty_text_returns_pass() -> None:
     """Texto vazio -> PASS sem erro."""
     r1 = guard_identity("")
@@ -224,6 +231,7 @@ def test_intercept_result_is_frozen() -> None:
 
 # === Integracao minima com sanitize_response existente ===
 
+
 def test_guard_complementa_sanitize_existente() -> None:
     """O guard nao duplica sanitize_response; ambos rodam em camadas
     diferentes (sanitize = FORBIDDEN_PHRASES, guard = identity pattern regex)."""
@@ -233,4 +241,5 @@ def test_guard_complementa_sanitize_existente() -> None:
     assert detect_hermes_identity_leak(text) is not None
     # sanitize_response (do pietra_conversation_state) tb pegaria "hermes"
     from app.services.pietra_conversation_state import has_forbidden_phrase
+
     assert has_forbidden_phrase(text) is not None
