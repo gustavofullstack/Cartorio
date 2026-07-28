@@ -10,6 +10,8 @@
 
 **AGENT PIETRA · MINIMAX M3 1M XMAX 100% operacional no iMessage Spectrum** com anti-vazamento de dev, sem emoji, saudação contextual BRT, MCP tool `cartorio_calcular_emolumento` retornando valores exatos da Tabela TJMG 2026, e knowledge base das Tabelas Fixação 1+8 versionada em OCR.
 
+**Status atual (2026-07-27 22:40 BRT):** `IMESSAGE_REQUIRES_FIX` — gate oficial do canal ainda em P0 aguardando fix humano. Defense-in-depth implementado (`pietra_identity_guard.py` + 39 regression tests), mas causa raiz do IDENTITY_HERMES_LEAK (Camada 3, código fechado) continua em investigação. Hipótese MCP T2 FAIL_FUNCTIONAL CONFIRMADA — fix de 1 linha no Mac (`url: http://localhost:8000/mcp`) é a ação mais barata.
+
 ---
 
 ## GOALS H-K (atualizado 2026-07-27 — AGENT PIETRA LIVE)
