@@ -84,6 +84,57 @@ class TestSystemPromptInjection:
         assert "(34) 3216-0252" in msgs[0]["content"]
         assert "Djalma Pizarro" in msgs[0]["content"]
 
+
+class TestPromptPosturaResolutiva:
+    """Diretrizes P0 produto 2026-07-28 (evidencia iMessage: autonomia zero).
+
+    O prompt DEVE conter as novas diretrizes de comportamento:
+    - POSTURA RESOLUTIVA: responder diretamente, nunca defletir com
+      "ligue/va ao cartorio/mande email" para o que ela mesma resolve.
+    - Registro formal-carinhoso: senhor/senhora, nunca doutor(a) por padrao,
+      sem girias, acolhimento empatico com idosos/luto.
+    Teste FALHA se as diretrizes regredirem no prompt.
+    """
+
+    def _prompt(self, client, captured) -> str:
+        r = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={"messages": [{"role": "user", "content": "Olá"}]},
+        )
+        assert r.status_code == 200
+        return captured[0]["messages"][0]["content"]
+
+    def test_prompt_contem_postura_resolutiva(self, client, captured):
+        prompt = self._prompt(client, captured)
+        assert "POSTURA RESOLUTIVA" in prompt
+
+    def test_prompt_proibe_deflexao(self, client, captured):
+        prompt = self._prompt(client, captured)
+        # Proibicao explicita de defletir para o que ela mesma resolve.
+        assert "ligue para o cartorio" in prompt
+        assert "mande um email" in prompt or "mande email" in prompt
+
+    def test_prompt_escopo_escalonamento_humano(self, client, captured):
+        prompt = self._prompt(client, captured)
+        # Escalonamento humano restrito a decisao juridica/isencao/urgencia/emissao.
+        assert "isencao" in prompt
+        assert "urgencia" in prompt
+
+    def test_prompt_registro_formal_carinhoso(self, client, captured):
+        prompt = self._prompt(client, captured)
+        assert "senhor/senhora" in prompt
+        assert "doutor" in prompt  # proibicao de doutor(a) por padrao
+        # Sem girias/risadas mecanicas.
+        assert "kkk" in prompt
+
+    def test_prompt_acolhimento_empatico_luto(self, client, captured):
+        prompt = self._prompt(client, captured)
+        assert "Sinto muito pela sua perda" in prompt
+
+    def test_prompt_sem_emoji_mantido(self, client, captured):
+        prompt = self._prompt(client, captured)
+        assert "Sem emoji" in prompt
+
     def test_caller_system_does_not_replace_canonical(self, client, captured):
         r = client.post(
             "/api/v1/pietra/chat/completions",
