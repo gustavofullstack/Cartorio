@@ -110,6 +110,7 @@ def test_hermes_mounts_canonical_pietra_persona() -> None:
     assert "Você é a **Pietra" in soul
     assert "NUNCA mencione modelos de IA" in soul
     assert "NUNCA liste ferramentas internas" in soul
+    assert "Chatwoot" not in soul
 
 
 def test_photon_starts_fail_closed_with_allowlist() -> None:
