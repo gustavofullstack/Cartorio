@@ -99,7 +99,9 @@ def _opencode_free_configs() -> list[tuple[str, str, str]]:
     que a chain de fallback de 3 slots OpenCode Zen sempre funcione quando MiniMax exaurir quota.
     """
     configs: list[tuple[str, str, str]] = []
-    default_key = os.environ.get("OPENCODE_API_KEY", "") or os.environ.get("OPENCODE_GO_API_KEY", "")
+    default_key = os.environ.get("OPENCODE_API_KEY", "") or os.environ.get(
+        "OPENCODE_GO_API_KEY", ""
+    )
     for slot, default_model in enumerate(_OPENCODE_SLOT_DEFAULT_MODELS, start=1):
         free_prefix = f"OPENCODE_FREE_{slot}_"
         zen_prefix = f"OPENCODE_ZEN_ACCOUNT_{slot}_"
@@ -143,9 +145,7 @@ RETRY_ENVELOPE_BUDGET_S = float(os.environ.get("CARTORIO_AGENT_RETRY_BUDGET_S", 
 # decidir dinamicamente (provider FAILADO no attempt N ainda e elegivel nos
 # proximos attempts dentro do budget curto de 20s, ja que outro provider da
 # chain sera tentado na mesma round).
-RETRY_ENVELOPE_INTER_SLEEP_S = float(
-    os.environ.get("CARTORIO_AGENT_RETRY_INTER_SLEEP_S", "0.0")
-)
+RETRY_ENVELOPE_INTER_SLEEP_S = float(os.environ.get("CARTORIO_AGENT_RETRY_INTER_SLEEP_S", "0.0"))
 
 
 def _is_provider_rate_limited(status_code: int) -> bool:
@@ -220,9 +220,7 @@ async def _retry_envelope_3x20s(
             raise
         except Exception as exc:  # noqa: BLE001 — envelope nao derruba o request path
             last_err = f"{type(exc).__name__}: {exc}"
-            logger.warning(
-                "cartorio_agent 3x20s attempt=%d raised: %s", attempt, last_err
-            )
+            logger.warning("cartorio_agent 3x20s attempt=%d raised: %s", attempt, last_err)
             # Incrementa contador de retry exhaustion para o alerta.
             try:
                 _store.inc_llm_calls_total("multi_provider", "chat", "retry_attempt_failed")
@@ -933,7 +931,9 @@ async def _chat_completion(
                     elapsed = time.perf_counter() - start_t
                     store.observe_llm_call_seconds("litellm", "chat", elapsed)
                     if r.status_code != 200:
-                        status = "rate_limited" if _is_provider_rate_limited(r.status_code) else "error"
+                        status = (
+                            "rate_limited" if _is_provider_rate_limited(r.status_code) else "error"
+                        )
                         provider_rate_limited = provider_rate_limited or status == "rate_limited"
                         store.inc_llm_calls_total("litellm", "chat", status)
                         store.inc_llm_errors_total(

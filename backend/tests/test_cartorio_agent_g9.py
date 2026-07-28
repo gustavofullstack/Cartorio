@@ -195,9 +195,12 @@ async def test_provider_rate_limit_vira_resposta_cartorial_sem_texto_tecnico(
     assert provider in ("offline:provider_rate_limited", "pietra_planner_fallback")
     assert msg is not None
     assert "The model provider" not in str(msg["content"])
-    assert metrics.counters["cartorio_llm_calls_total"][
-        "model=MiniMax_direct|operation=chat|status=rate_limited"
-    ] == 1
+    assert (
+        metrics.counters["cartorio_llm_calls_total"][
+            "model=MiniMax_direct|operation=chat|status=rate_limited"
+        ]
+        == 1
+    )
     assert metrics.counters["cartorio_llm_degraded_total"]["reason=provider_rate_limited"] == 1
 
 
@@ -562,7 +565,9 @@ def test_scrub_bad_llm_phrases_suppresses_provider_403_and_rate_limit_errors() -
         "Your quota will be refreshed in the next cycle. "
         "To continue now, purchase extra usage or upgrade your plan: kimi.com"
     )
-    raw_rate_limit = "The model provider is rate-limiting requests. Please wait a moment and try again."
+    raw_rate_limit = (
+        "The model provider is rate-limiting requests. Please wait a moment and try again."
+    )
 
     assert cartorio_agent._scrub_bad_llm_phrases(raw_403) == ""
     assert cartorio_agent._scrub_bad_llm_phrases(raw_rate_limit) == ""
@@ -595,6 +600,5 @@ async def test_chat_completion_treats_403_as_rate_limited(
 
     assert msg is not None
     assert "content" in msg
-    assert ("limite momentaneo" in msg["content"] or "consigo fazer" in msg["content"])
+    assert "limite momentaneo" in msg["content"] or "consigo fazer" in msg["content"]
     assert provider in ("offline:provider_rate_limited", "pietra_planner_fallback")
-

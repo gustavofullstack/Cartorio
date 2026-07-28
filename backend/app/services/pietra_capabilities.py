@@ -60,16 +60,16 @@ class Capability:
 
 # Status atual do runtime (snapshot 2026-07-27 16:55 BRT, via `docker service ls` no VPS)
 _RUNTIME: Final[dict[str, GateState]] = {
-    "database": GateState.HEALTHY,        # cartorio_banco_de_dados 1/1
-    "cache": GateState.HEALTHY,            # cartorio_memory-cache 1/1
-    "api": GateState.HEALTHY,              # cartorio_system-api 1/1
+    "database": GateState.HEALTHY,  # cartorio_banco_de_dados 1/1
+    "cache": GateState.HEALTHY,  # cartorio_memory-cache 1/1
+    "api": GateState.HEALTHY,  # cartorio_system-api 1/1
     "whatsapp_container": GateState.HEALTHY,  # cartorio_whatsapp-api 1/1
-    "whatsapp_session": GateState.DOWN,    # session CLOSE
-    "chatwoot": GateState.DOWN,            # OFFLINE (SUI)
-    "openclaw": GateState.DOWN,            # OFFLINE (SUI Tailscale)
-    "n8n": GateState.HEALTHY,              # container UP, public path 503
-    "telegram": GateState.UNKNOWN,         # bot nao testado live
-    "imessage": GateState.HEALTHY,         # gateway local UP, validado 3x
+    "whatsapp_session": GateState.DOWN,  # session CLOSE
+    "chatwoot": GateState.DOWN,  # OFFLINE (SUI)
+    "openclaw": GateState.DOWN,  # OFFLINE (SUI Tailscale)
+    "n8n": GateState.HEALTHY,  # container UP, public path 503
+    "telegram": GateState.UNKNOWN,  # bot nao testado live
+    "imessage": GateState.HEALTHY,  # gateway local UP, validado 3x
 }
 
 _TOOL_AVAILABILITY: Final[dict[str, bool]] = {
@@ -229,7 +229,7 @@ def _registry() -> dict[str, Capability]:
     )
 
     # 9. HUMAN HANDOFF
-    runtime_h = (_RUNTIME.get("chatwoot") == GateState.HEALTHY)
+    runtime_h = _RUNTIME.get("chatwoot") == GateState.HEALTHY
     caps["human_handoff"] = Capability(
         capability_id="human_handoff",
         display_name="Encaminhamento para escrevente humano via Chatwoot",
@@ -271,11 +271,7 @@ def can_say_i_can_do_it(capability_id: str) -> bool:
     cap = get_capability(capability_id)
     if cap is None:
         return False
-    return (
-        cap.can_explain
-        and (not cap.requires_tool or cap.tool_available)
-        and cap.runtime_healthy
-    )
+    return cap.can_explain and (not cap.requires_tool or cap.tool_available) and cap.runtime_healthy
 
 
 def policy_summary() -> dict[str, str]:
