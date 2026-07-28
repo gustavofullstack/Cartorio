@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-28T04:24:57.303423+00:00",
+    "generated_at": "2026-07-28T05:10:54.808451+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -13,7 +13,7 @@
     "pyflakes_total": 0,
     "vulture_suspicions": 0,
     "vulture_min_confidence": 80,
-    "uncovered_files": 116,
+    "uncovered_files": 114,
     "zero_coverage_files": 0,
     "ruff_clean": true,
     "pyflakes_clean": true,
@@ -213,9 +213,9 @@
         },
         {
           "file": "app/api/v1/pietra.py",
-          "summary_pct": 73.91,
-          "statements": 230,
-          "missing_lines": 60,
+          "summary_pct": 64.06,
+          "statements": 256,
+          "missing_lines": 92,
           "excluded_lines": 0
         },
         {
@@ -899,9 +899,9 @@
         },
         {
           "file": "app/services/emolumento.py",
-          "summary_pct": 81.25,
+          "summary_pct": 100.0,
           "statements": 32,
-          "missing_lines": 6,
+          "missing_lines": 0,
           "excluded_lines": 0
         },
         {
@@ -934,9 +934,9 @@
         },
         {
           "file": "app/services/emolumento_real_djalma.py",
-          "summary_pct": 98.61,
+          "summary_pct": 100.0,
           "statements": 72,
-          "missing_lines": 1,
+          "missing_lines": 0,
           "excluded_lines": 0
         },
         {
@@ -1500,7 +1500,7 @@
           "excluded_lines": 0
         }
       ],
-      "total_uncovered_files": 116,
+      "total_uncovered_files": 114,
       "total_zero_coverage_files": 0
     }
   },
