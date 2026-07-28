@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-28T01:22:04.153192+00:00",
+    "generated_at": "2026-07-28T02:43:38.589253+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -214,8 +214,8 @@
         {
           "file": "app/api/v1/pietra.py",
           "summary_pct": 0.0,
-          "statements": 208,
-          "missing_lines": 208,
+          "statements": 211,
+          "missing_lines": 211,
           "excluded_lines": 0
         },
         {

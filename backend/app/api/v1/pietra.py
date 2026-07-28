@@ -460,6 +460,10 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
     content = (msg.get("content") or "").strip() if msg else ""
     if not content:
         content = "Sou a Pietra, a agente do 2º Cartório de Notas de Uberlândia. Como posso ajudar?"
+    else:
+        from app.services.pietra_identity_guard import guard_identity
+        res = guard_identity(content, channel="api")
+        content = res.sanitized_text
 
     return {
         "id": f"chatcmpl-pietra-{int(dt.datetime.now(dt.timezone.utc).timestamp())}",

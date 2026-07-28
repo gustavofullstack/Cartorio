@@ -194,7 +194,10 @@ def guard_identity(
 
     # Identity leak detectado -> SUBSTITUTE
     opening = substitute_opening or PIETRA_CANONICAL_OPENINGS[1]
-    sanitized = f"{opening}\n\n{text}"
+    cleaned_text = re.sub(r"(?i)\bsou\s+(?:o|a)\s+hermes[,\.\!]?", "", text).strip()
+    cleaned_text = re.sub(r"(?i)\bhermes-agent\b", "Pietra", cleaned_text)
+    cleaned_text = re.sub(r"(?i)\bhermes\b", "Pietra", cleaned_text)
+    sanitized = f"{opening}\n\n{cleaned_text}" if cleaned_text else opening
 
     _record_metric(InterceptAction.SUBSTITUTE)
     return InterceptResult(
