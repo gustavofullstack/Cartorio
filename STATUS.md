@@ -25,6 +25,33 @@
 
 # STATUS — Cartório OS (live)
 
+> **Atualização 2026-07-28 (IMENSAGER QA parcial — sanity + audit verdes, fases live bloqueadas):**
+> **Status:** `IMENSAGER_QA_PARTIAL_YELLOW` | P0 IDENTITY_HERMES_LEAK **aberto** (N≥30 não rodado)
+>
+> **Sessão 2026-07-28 — validação imensager (prompt v2.0):**
+> - **Fase 1 sanity ✅**: prod health/ready/radar 200 (<100ms); Photon :8793 LISTEN + 401 fail-closed; suites pietra/imessage **86 passed, 1 skipped**; retry envelope **15/15**.
+> - **Fase 5 audit ✅**: prod `verify_full_chain` = **33/33 intact** (container `cartorio_system-api`). Dev local 0% é esperado (rotação HMAC em dev) — não é tampering.
+> - **Achado F3**: `cartorio_hermes` VPS com models `deepseek-v4-flash-free`/`nemotron-3-ultra-free` (não minimax) — hipótese contribuinte do identity leak. SOUL.md OK (PIETRA canônica, 131 linhas).
+> - **Bloqueadas (aguardam Gustavo)**: Fases 2, 3, 4-live, 6 (HITL), 7-live, 8, 9 + N≥30 do P0 — requerem envio de iMessages reais.
+> - Relatório completo: `.harness/memory/TEST_IMENSAGER_2026-07-28.md`.
+
+---
+
+# STATUS — Cartório OS (live)
+
+> **Atualização 2026-07-27 23:14 BRT (B4 RESOLVED — MCP endpoint público funcional):**
+> **Status:** `STAGE_7_EMOLUMENTOS_REAL_PASS` + **P0_IDENTITY_LEAK_DEFENSE_IN_PLACE** + **MCP_ENDPOINT_RESOLVED (B4)** | `PAINEL_DADOS_LIVE`
+>
+> **Sessão 2026-07-27 — B4 deliverables:**
+> - **B4 RESOLVED**: `MCP_SERVER_ENABLED=true` deployado no serviço **`cartorio_system-api`** (não `cartorio_api`) — é o system-api que serve `api.2notasudi.com.br` via Traefik. `MCP_SERVER_ENABLED=false` era o bug real (404 no `/mcp` público). Fix aplicado via `docker service update --env-add`.
+> - **MCP round-trip validado**: `tools/list` retorna **16 tools** e `cartorio_calcular_emolumento` retorna **R$156,40** (procuração) via endpoint público.
+> - **Config Mac Hermes revertida** para `https://api.2notasudi.com.br/mcp` (agora funcional).
+> - **P0 blockers humanos remanescentes**: B1 (LGPD sign-off), B2 (WhatsApp QR), B3 (secrets rotation), B5 (Felipe confirmação visual no iPhone).
+
+---
+
+# STATUS — Cartório OS (live)
+
 > **Atualização 2026-07-26 22:33Z (Stage 7 — Real Price Collection, AI Extraction & Data Dashboard):**  
 > **Status:** `STAGE_7_EMOLUMENTOS_REAL_PASS` | `PAINEL_DADOS_LIVE`  
 > **Mapeamento Notarial Real — 2º Serviço Notarial de Uberlândia (Tabelionato Djalma):**  
