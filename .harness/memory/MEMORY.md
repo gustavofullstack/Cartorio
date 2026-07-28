@@ -859,3 +859,26 @@ recupera acesso quando profile é wipado.
 - **T3 — Bloco de prompt round 2 (commit 0c4b5a96):** `PIETRA_SYSTEM_PROMPT` ganhou: custo de atos complexos com orientação ("depende do valor dos bens; o escrevente confirma o cálculo exato") SEM número/percentual inventado e proibição de "% de urgência"; voz fixa feminina ("honesta", nunca "honesto"); gênero de TERCEIROS = o que o cliente usou, dúvida → forma neutra; máx ~8 linhas, idosos → 3-4 passos curtos desde a PRIMEIRA resposta sem bullets aninhados; Notas Técnicas Notariais (firma SEMELHANÇA vs AUTENTICIDADE; apostilamento Convenção de Haia + TRADUÇÃO JURAMENTADA p/ exterior; procuração no exterior = consulado brasileiro sem apostila / notário estrangeiro com apostila / e-Notariado, NUNCA "via Teams"; RG/CNH/RNE/passaporte válidos, CRM/OAB/CREA NÃO são documento civil; emolumento local só p/ ato lavrado aqui); reforço anti mixing ("reescreva em PT-BR se surgir inglês ou português europeu"). 11 novos asserts.
 - **Gates:** pytest -k pietra 243 passed / 2 skipped (0 fail), ruff 0 issues, mypy 0 issues (126 arquivos).
 - **Regra operacional:** strip cego NUNCA é primeira linha — detecção lexical (latina ou glitch) dispara retry 1x com system extra PT-BR e só então strip de sentença; fallback seguro é último recurso. Métricas por razão (`language_mixing_latin`, `token_glitch`, contadores `latin_mix_retry/strip`, `glitch_retry/strip` no sanitizer) permitem medir a taxa de escape do modelo e embasar a decisão M2.7 vs K3 (seção 5 da análise).
+
+## Lesson 294 — Lark público exige sessão renovada, perfil final-only e guard no gateway (2026-07-28)
+
+- A resposta genérica com GitHub, pesquisa, automação e Hue veio de uma sessão
+  Feishu congelada antes da persona Pietra. A linha `Redirected current run
+  (iteration 1/500)` era ACK de controle do gateway, não raciocínio do MiniMax.
+- O volume persistente deve ser reconciliado em todo boot: somente Feishu,
+  somente `mcp-cartorio`, somente `cartorio_calcular_emolumento`, skills
+  desabilitadas, plugins em allowlist e flags de streaming/progresso/reasoning/
+  busy ACK desligadas. Plataformas, MCPs e plugins executáveis devem ser
+  substituídos, não mesclados com estado legado.
+- A barreira final do Lark é o plugin `pietra-public-output` no hook
+  `transform_llm_output`: remove traces e controles internos, capacidades fora
+  do cartório, PII e alegações jurídicas autônomas antes da entrega pública.
+- Docker Configs desta imagem precisam de UID/GID 10000; root + modo 0440 causa
+  `PermissionError`. O MCP canônico é
+  `http://cartorio_system-api:8000/mcp/`, com chave em Docker Secret.
+- Após backup consistente, apague apenas a sessão Feishu e sua
+  `gateway_routing` para recarregar prompt/tools. Configure o DM como home
+  channel para não publicar o aviso operacional do Hermes em sessões novas.
+- Aceite observado: serviço 1/1, um gateway, resposta real no Lark com identidade
+  Pietra e zero contaminação, MiniMax-M3 com fallback M2.7-highspeed e chamada
+  real da tool oficial de emolumentos.
