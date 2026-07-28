@@ -120,3 +120,54 @@ Modified by Gustavo Almeida (via plan Mavis)
 - **OpenClaw Tailscale auth** (SUI marcado no `/mcp-servers`)
 
 Modified by Gustavo Almeida · 2026-07-27
+
+---
+
+## UPDATE 2026-07-28 — Lark Bot v6 + Hermes stub fix (sessão ZCode/Kimi K3)
+
+**Conquista da sessão (paralela, Gustavo longe do Mac):**
+
+- **Lark bot standalone v6** (`scripts/lark_bot_v6.py`, 24KB): substitui TRAE SOLO shell no grupo GG.
+  Plugado em PIETRA VPS via `api.2notasudi.com.br/api/v1/pietra/chat/completions`.
+- **OCR + LGPD scrub**: tesseract extrai texto de imagens, CPF/RG/TEL/EMAIL/CARTÃO scrubbed
+  ANTES do LLM. Validado: `123.456.789-00` → `123.***.***-**`.
+- **Detector de tipo de documento**: 9 tipos (CPF, RG, CNH, PROCURAÇÃO, ESCRITURA, CONTRATO,
+  RECEITA, FATURA, PROTOCOLO) com regex prioritário.
+- **Memória PIETRA VPS**: cada chat vinculado a telefone proxy no Postgres do cartório.
+- **Comandos admin** (owner only): `!stats`, `!doc`, `!bot stop/restart`, `!broadcast`.
+- **LaunchAgent** `ai.zcode.lark-bot.plist` (port 8083, 24/7).
+- **Bot v6 rodando AGORA**: PID 77420. `/health` retorna v6 ok + pietra_ok + ocr_available.
+- **Hermes stub fix** (Lesson 285): `/Applications/Hermes.app` era instalador quebrado que crashava
+  ao abrir (SIGABRT por library missing). Backup + symlink pro app funcional.
+
+**3 lessons salvas:**
+
+- 283: VPS `cartorio_hermes` com models free-tier = Camada 3 identity leak (pendente fechar com
+  `vps_fix_cartorio_hermes_F3.sh`)
+- 284: Bot Lark standalone Python > TRAE SOLO shell Electron (arquitetural, com trade-offs)
+- 285: Hermes.app stub em /Applications causa crashes silenciosos (Library missing @rpath)
+
+**Pendências humanas (inalteradas do 27/07 + novas):**
+
+- Subir cloudflared tunnel pra expor bot v6 ao Lark
+- Preencher `scripts/.env.lark` (App ID/Secret/Token do Developer Console)
+- Adicionar bot como **admin** no grupo GG (Settings → Members)
+- Configurar `LARK_OWNER_OPEN_ID` no `.env.lark` (pra ativar comandos admin)
+- Rodar `scripts/vps_fix_cartorio_hermes_F3.sh` no VPS via SSH (fecha P0 Camada 3)
+- Liberar Full Disk Access do OpenClaw no macOS (4+ dias crashloop)
+- **B1-B5** originais (audit sign-off, WhatsApp QR, secrets rotation, Felipe iPhone)
+
+**Artefatos pra revisar quando voltar:**
+
+- `SESSION_2026-07-28_INDEX.md` — consolidado completo
+- `CHECKLIST_VOLTA_MAC_2026-07-28.md` — passo-a-passo ordenado
+- `scripts/lark_bot_v6.py` — código principal (24KB, único a manter — v1-v5 são obsoletos)
+- `scripts/LARK_BOT_V3_RUNBOOK.md` — runbook atualizado v6
+
+**Não-feitos:**
+
+- git commit (Gustavo revisa antes)
+- Vision nativa LLM (PIETRA VPS só aceita `content:string`, não `image_url`)
+- Deletar `~/Library/LaunchAgents/ai.hermes.gateway.plist` legacy
+
+Modified by Gustavo Almeida · 2026-07-28 (sessão ZCode/Kimi K3)

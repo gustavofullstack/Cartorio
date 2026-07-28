@@ -129,3 +129,56 @@
 4. E3.14 GO/NO-GO (RC_READY só com QA verde)
 
 _Modified by Gustavo Almeida — orquestrador Etapa 3._
+
+---
+
+# STATUS — Sessão ZCode/Kimi K3 (paralela, 04:00 BRT)
+
+> **Status:** Bot Lark v6 construído e rodando localmente. Hermes stub crash corrigido.
+> **Sem deploy Lark** (depende de Gustavo criar app no Developer Console).
+
+**Sessão 2026-07-28 (ZCode) — deliverables:**
+
+- **Lark bot standalone v6** (`scripts/lark_bot_v6.py`): plugado em PIETRA VPS
+  (`api.2notasudi.com.br/api/v1/pietra/chat/completions`), persona canônica, PII scrub,
+  identity guard via backend. 6 versões iteradas em ~3h.
+- **OCR + LGPD scrub**: tesseract 5.5.2 extrai texto, scrubber mascara CPF/RG/TEL/EMAIL/CARTÃO
+  ANTES de mandar pro LLM. Validado: `CPF 123.456.789-00` → `123.***.***-**`.
+- **Detector de tipo documento**: 9 tipos (CPF, RG, CNH, PROCURAÇÃO, ESCRITURA, CONTRATO,
+  RECEITA, FATURA, PROTOCOLO). PIETRA recebe `[DOC DETECTADO: TIPO]` no contexto.
+- **Memória PIETRA VPS**: cada chat vinculado a "telefone proxy" (chat_id limpo + prefixo +55),
+  persiste no Postgres do cartório.
+- **Comandos admin** (owner only via `LARK_OWNER_OPEN_ID`): `!stats`, `!doc`, `!bot stop`,
+  `!bot restart`, `!broadcast <msg>`.
+- **Endpoint `/test-image` standalone** pra OCR fora do Lark.
+- **LaunchAgent** `ai.zcode.lark-bot.plist` (port 8083, v6, pillow + OCR).
+- **Bot v6 rodando AGORA**: PID 77420, valida `/health` retorna `{"bot":"v6 ok","pietra_ok":true,"ocr_available":true}`.
+- **Hermes stub fix** (Lesson 285): `/Applications/Hermes.app` era instalador stub (11MB)
+  referenciando path de ISO-build inexistente → SIGABRT diário. Backup em `~/.hermes_backup/`
+  + symlink pro app funcional. Crash reports velhos limpos.
+- **3 lessons salvas**: 283 (P0 VPS identity leak Camada 3), 284 (bot standalone > TRAE SOLO shell),
+  285 (Hermes stub vs functional).
+
+**Pendências (dependem Gustavo no Mac):**
+
+1. Subir cloudflared tunnel (`cloudflared tunnel --url http://localhost:8083`).
+2. Preencher `scripts/.env.lark` com App ID/Secret/Token do Developer Console.
+3. Adicionar bot como **admin** no grupo GG (Settings → Members).
+4. Configurar `LARK_OWNER_OPEN_ID` no `.env.lark`.
+5. Rodar `scripts/vps_fix_cartorio_hermes_F3.sh` no VPS (Lesson 283 → fecha P0 identity leak).
+6. Liberar Full Disk Access do OpenClaw no macOS System Settings (4+ dias crashloop).
+
+**Artefatos pra revisar:**
+
+- `SESSION_2026-07-28_INDEX.md` — consolidado completo
+- `CHECKLIST_VOLTA_MAC_2026-07-28.md` — passo-a-passo ordenado
+- `scripts/lark_bot_v6.py` — código principal
+- `scripts/LARK_BOT_V3_RUNBOOK.md` — runbook atualizado v6
+
+**Não-feitos (decisão consciente):**
+
+- git commit (Gustavo revisa antes).
+- LLM vision nativa (PIETRA VPS só aceita `content:string`, não `image_url`).
+- Deletar `~/Library/LaunchAgents/ai.hermes.gateway.plist` legacy (mencionado).
+
+_Modified by Gustavo Almeida — sessão ZCode/Kimi K3 04:00 BRT._
