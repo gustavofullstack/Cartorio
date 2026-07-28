@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import logging
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 import sys
@@ -109,6 +110,91 @@ def test_public_copy_masks_pii_without_mutating_input(guard: ModuleType) -> None
     assert "cliente@example.com" not in result.text
     assert "99988-7766" not in result.text
     assert "pii" in result.reasons
+
+
+@pytest.mark.parametrize(
+    ("logger_name", "template", "args"),
+    [
+        (
+            "hermes_plugins.feishu_platform.adapter",
+            (
+                "[Feishu] Inbound %s message received: id=%s type=%s chat_id=%s "
+                "sender=%s:%s text=%r media=%d"
+            ),
+            (
+                "dm",
+                "message-secret-id",
+                "text",
+                "chat-secret-id",
+                "user",
+                "user-secret-id",
+                "CPF 123.456.789-09 cliente@example.com (34) 99988-7766",
+                0,
+            ),
+        ),
+        (
+            "gateway.run",
+            (
+                "inbound message: platform=%s user=%s chat=%s msg=%r "
+                "reply_to_id=%s reply_to_text=%r"
+            ),
+            (
+                "feishu",
+                "Pessoa Sensível",
+                "chat-secret-id",
+                "CPF 123.456.789-09",
+                "reply-secret-id",
+                "cliente@example.com",
+            ),
+        ),
+        (
+            "agent.turn_context",
+            (
+                "conversation turn: session=%s model=%s provider=%s platform=%s "
+                "history=%d msg=%r"
+            ),
+            (
+                "session-secret-id",
+                "MiniMax-M3",
+                "minimax",
+                "feishu",
+                2,
+                "(34) 99988-7766",
+            ),
+        ),
+    ],
+)
+def test_sensitive_message_logs_keep_only_non_identifying_metadata(
+    guard: ModuleType,
+    logger_name: str,
+    template: str,
+    args: tuple[object, ...],
+) -> None:
+    record = logging.LogRecord(
+        logger_name,
+        logging.INFO,
+        __file__,
+        1,
+        template,
+        args,
+        None,
+    )
+    assert guard.SensitiveMessageLogFilter().filter(record) is True
+
+    rendered = record.getMessage()
+    for secret in (
+        "123.456.789-09",
+        "cliente@example.com",
+        "99988-7766",
+        "Pessoa Sensível",
+        "message-secret-id",
+        "chat-secret-id",
+        "user-secret-id",
+        "reply-secret-id",
+        "session-secret-id",
+    ):
+        assert secret not in rendered
+    assert "chars=" in rendered
 
 
 def test_autonomous_legal_claim_is_replaced_by_hitl_notice(guard: ModuleType) -> None:

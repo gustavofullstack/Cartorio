@@ -149,15 +149,22 @@ def test_hermes_reconciles_persisted_public_profile_and_plugin() -> None:
 
 
 def test_vps_runtime_is_narrowed_to_feishu() -> None:
-    """Photon/iMessage permanece no Mac e não ganha um segundo consumidor na VPS."""
+    """Feishu permanece isolado e limitado aos usuários explicitamente aprovados."""
     service = _stack()["services"]["hermes"]
     config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+    entrypoint = (ROOT / "infra" / "hermes" / "lark-entrypoint.sh").read_text(encoding="utf-8")
 
     assert "PHOTON_PROJECT_ID" not in service["environment"]
     assert "PHOTON_ALLOWED_USERS" not in service["environment"]
     assert set(config["gateway"]["platforms"]) == {"feishu"}
     assert set(config["platform_toolsets"]) == {"feishu"}
     feishu = config["gateway"]["platforms"]["feishu"]
-    assert feishu["allow_all_users"] is True
-    assert feishu["require_mention"] is False
-    assert feishu["group_policy"] == "open"
+    assert feishu["allow_all_users"] is False
+    assert feishu["require_mention"] is True
+    assert feishu["group_policy"] == "allowlist"
+    assert service["environment"]["FEISHU_ALLOW_ALL_USERS"] == "false"
+    assert service["environment"]["FEISHU_REQUIRE_MENTION"] == "true"
+    assert service["environment"]["FEISHU_GROUP_POLICY"] == "allowlist"
+    assert 'FEISHU_ALLOW_ALL_USERS="false"' in entrypoint
+    assert 'FEISHU_REQUIRE_MENTION="true"' in entrypoint
+    assert 'FEISHU_GROUP_POLICY="allowlist"' in entrypoint

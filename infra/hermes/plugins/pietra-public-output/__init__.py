@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .public_output_guard import sanitize_public_reply
+from .public_output_guard import install_sensitive_log_filter, sanitize_public_reply
 
 
 def _transform_public_output(
@@ -22,4 +22,5 @@ def _transform_public_output(
 
 def register(ctx: Any) -> None:
     """Register the official final-output hook exposed by Hermes."""
+    install_sensitive_log_filter()
     ctx.register_hook("transform_llm_output", _transform_public_output)

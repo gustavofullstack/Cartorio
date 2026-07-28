@@ -12,6 +12,7 @@ preserved.
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
 from typing import Final
@@ -85,6 +86,55 @@ _EMAIL_RE: Final[re.Pattern[str]] = re.compile(
 _PHONE_RE: Final[re.Pattern[str]] = re.compile(
     r"(?:\+?55[\s.-]*)?\(?\d{2}\)?[\s.-]*9\d{4}[\s.-]?\d{4}"
 )
+_FEISHU_INBOUND_LOG: Final[str] = "[Feishu] Inbound %s message received:"
+_GATEWAY_INBOUND_LOG: Final[str] = "inbound message: platform=%s user=%s"
+_TURN_LOG: Final[str] = "conversation turn: session=%s model=%s"
+
+
+class SensitiveMessageLogFilter(logging.Filter):
+    """Replace known Hermes message previews with non-identifying metadata."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        template = str(record.msg)
+        args = record.args if isinstance(record.args, tuple) else ()
+
+        if template.startswith(_FEISHU_INBOUND_LOG) and len(args) >= 8:
+            record.msg = (
+                "[Feishu] Inbound %s message received: type=%s text_chars=%d media=%d"
+            )
+            record.args = (args[0], args[2], len(str(args[6] or "")), args[7])
+        elif template.startswith(_GATEWAY_INBOUND_LOG) and len(args) >= 6:
+            record.msg = (
+                "inbound message: platform=%s text_chars=%d reply_chars=%d"
+            )
+            record.args = (
+                args[0],
+                len(str(args[3] or "")),
+                len(str(args[5] or "")),
+            )
+        elif template.startswith(_TURN_LOG) and len(args) >= 6:
+            record.msg = (
+                "conversation turn: provider=%s platform=%s history=%d text_chars=%d"
+            )
+            record.args = (
+                args[2],
+                args[3],
+                args[4],
+                len(str(args[5] or "")),
+            )
+        return True
+
+
+def install_sensitive_log_filter() -> None:
+    """Install the Cartório PII filter once on Hermes' message loggers."""
+    for logger_name in (
+        "hermes_plugins.feishu_platform.adapter",
+        "gateway.run",
+        "agent.turn_context",
+    ):
+        logger = logging.getLogger(logger_name)
+        if not any(isinstance(item, SensitiveMessageLogFilter) for item in logger.filters):
+            logger.addFilter(SensitiveMessageLogFilter())
 
 
 @dataclass(frozen=True)

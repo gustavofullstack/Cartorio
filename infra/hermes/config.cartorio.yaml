@@ -70,9 +70,11 @@ gateway:
   platforms:
     feishu:
       enabled: true
-      allow_all_users: true
-      require_mention: false
-      group_policy: open
+      # Lark visibility scopes the app to the organization; pairing remains an
+      # independent fail-closed authorization layer inside Hermes.
+      allow_all_users: false
+      require_mention: true
+      group_policy: allowlist
 
 mcp_servers:
   cartorio:

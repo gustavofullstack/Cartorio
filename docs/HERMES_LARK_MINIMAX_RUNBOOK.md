@@ -50,6 +50,40 @@ Quando o chat é destinado a entregas do próprio agente, configure-o como home
 channel uma única vez. Sem isso, uma sessão nova recebe o aviso operacional
 `No home channel is set`, que não deve aparecer em atendimento público.
 
+## Autorização de usuários Lark
+
+O limite primário de disponibilidade é configurado no Lark Admin. O gateway
+Hermes mantém uma segunda barreira independente:
+
+- `FEISHU_ALLOW_ALL_USERS=false`;
+- `FEISHU_GROUP_POLICY=allowlist`;
+- `FEISHU_REQUIRE_MENTION=true`;
+- usuários autorizados presentes nos stores global e do profile `default`.
+
+Não use `allow_all_users=true` como substituto de escopo organizacional: essa
+flag ignora o pairing no Hermes. Antes de liberar alguém, confirme pela API
+oficial de visibilidade que a conta pertence ao escopo do app; depois aprove o
+pairing sem revogar os grants existentes. Compare os dois stores e preserve
+owner UID/GID `10000` e modo `0600`. Uma aprovação só está validada quando uma
+mensagem real dessa pessoa percorre Lark → Hermes → provider → mesmo chat.
+
+O endpoint de Contacts scope descreve o alcance de dados autorizado ao app,
+mas não deve ser tratado como sincronizador automático do pairing. Se no futuro
+houver automação, ela deve ser tenant-aware, aditiva e fail-closed: erro ou
+escopo vazio nunca pode apagar grants existentes.
+
+## Privacidade dos logs
+
+O Hermes upstream registra previews de mensagens em três loggers internos.
+Neste deployment, o plugin `pietra-public-output` instala um filtro nesses
+loggers e substitui texto, nomes, IDs de usuário/chat/sessão e replies por
+metadados não identificadores (tipo, provider, plataforma, contagens e
+tamanhos). A proteção de secrets do upstream não substitui esse filtro de PII.
+
+Depois de ativar uma versão que contenha o filtro, valide com conteúdo
+sintético e faça a retenção/quarentena dos logs antigos conforme a política
+LGPD. Não copie conteúdo de mensagens para tickets, commits ou diagnósticos.
+
 ## Validação por camadas
 
 1. `docker service ls` deve mostrar `cartorio_hermes 1/1`.
@@ -94,6 +128,9 @@ somente os passos 7–9 autorizam declarar o canal público operacional.
 - A resposta genérica com GitHub, pesquisa, mídia e automação foi causada por
   sessão congelada antes da persona e por skills/toolsets genéricos, não por
   falha de autenticação do MiniMax.
+- `reqwest::Error(... IncompleteMessage)` com código `4028` pertence ao cliente
+  que abriu a requisição, não ao gateway Python. Correlacione URL e timestamp:
+  uma ocorrência em bridge antigo não prova falha do MiniMax da VPS.
 
 ## Atenção ao n8n
 
