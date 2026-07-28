@@ -170,8 +170,8 @@ _Modified by Gustavo Almeida — orquestrador Etapa 3._
 
 **Artefatos pra revisar:**
 
-- `SESSION_2026-07-28_INDEX.md` — consolidado completo
-- `CHECKLIST_VOLTA_MAC_2026-07-28.md` — passo-a-passo ordenado
+- `docs/sessions/2026-07/SESSION_2026-07-28_INDEX.md` — consolidado completo
+- `docs/sessions/2026-07/CHECKLIST_VOLTA_MAC_2026-07-28.md` — passo-a-passo ordenado
 - `scripts/lark_bot_v6.py` — código principal
 - `scripts/LARK_BOT_V3_RUNBOOK.md` — runbook atualizado v6
 
