@@ -13,7 +13,6 @@ services:
       - -ec
       - |
         export API_SERVER_KEY="$$(cat /run/secrets/hermes_api_server_key)"
-        export OPENAI_API_KEY="$$(cat /run/secrets/hermes_llm_api_key)"
         export MCP_CARTORIO_API_KEY="$$(cat /run/secrets/hermes_mcp_cartorio_api_key)"
         export PHOTON_PROJECT_SECRET="$$(cat /run/secrets/hermes_photon_project_secret)"
         if [ ! -f /opt/data/config.yaml ]; then
@@ -41,17 +40,17 @@ services:
       - source: hermes_cartorio_config_v1
         target: /run/configs/config.cartorio.yaml
         mode: 0440
-      - source: hermes_lark_entrypoint_v1
+      - source: hermes_lark_entrypoint_v3
         target: /run/configs/lark-entrypoint.sh
         mode: 0555
+      - source: hermes_cartorio_soul_v2
+        target: /run/configs/SOUL.md
+        mode: 0440
     secrets:
       - hermes_api_server_key
-      - hermes_llm_api_key
+      - hermes_minimax_api_key
       - hermes_mcp_cartorio_api_key
       - hermes_photon_project_secret
-      - hermes_lark_app_id
-      - hermes_lark_app_secret
-      - hermes_lark_allowed_users
     volumes:
       - hermes_cartorio_data:/opt/data
     networks:
@@ -79,25 +78,20 @@ services:
 configs:
   hermes_cartorio_config_v1:
     file: ./config.cartorio.yaml
-  hermes_lark_entrypoint_v1:
+  hermes_lark_entrypoint_v3:
     file: ./lark-entrypoint.sh
+  hermes_cartorio_soul_v2:
+    file: ../openclaw-agent/workspace/SOUL.md
 
 secrets:
   hermes_api_server_key:
     external: true
-  hermes_llm_api_key:
+  hermes_minimax_api_key:
     external: true
   hermes_mcp_cartorio_api_key:
     external: true
   hermes_photon_project_secret:
     external: true
-  hermes_lark_app_id:
-    external: true
-  hermes_lark_app_secret:
-    external: true
-  hermes_lark_allowed_users:
-    external: true
-
 volumes:
   hermes_cartorio_data:
 

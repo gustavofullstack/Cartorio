@@ -6,12 +6,9 @@ set -euo pipefail
 
 required_secrets=(
   hermes_api_server_key
-  hermes_llm_api_key
+  hermes_minimax_api_key
   hermes_mcp_cartorio_api_key
   hermes_photon_project_secret
-  hermes_lark_app_id
-  hermes_lark_app_secret
-  hermes_lark_allowed_users
 )
 network_name="${HERMES_NETWORK_NAME:-easypanel-cartorio}"
 failed=0

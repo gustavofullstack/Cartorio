@@ -10,10 +10,11 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 STACK_PATH = ROOT / "infra" / "hermes" / "docker-stack.yml"
 CONFIG_PATH = ROOT / "infra" / "hermes" / "config.cartorio.yaml"
+SOUL_PATH = ROOT / "infra" / "openclaw-agent" / "workspace" / "SOUL.md"
 
 EXPECTED_SECRETS = {
     "hermes_api_server_key",
-    "hermes_llm_api_key",
+    "hermes_minimax_api_key",
     "hermes_mcp_cartorio_api_key",
     "hermes_photon_project_secret",
 }
@@ -43,12 +44,19 @@ def test_hermes_vps_stack_uses_external_secrets_only() -> None:
     declared = set(stack["secrets"])
     mounted = {entry if isinstance(entry, str) else entry["source"] for entry in service["secrets"]}
     command = "\n".join(service["command"])
+    entrypoint = (
+        ROOT / "infra" / "hermes" / "lark-entrypoint.sh"
+    ).read_text(encoding="utf-8")
+    secret_readers = f"{command}\n{entrypoint}"
 
     assert declared == EXPECTED_SECRETS
     assert mounted == EXPECTED_SECRETS
     assert all(stack["secrets"][name]["external"] is True for name in EXPECTED_SECRETS)
     for name in EXPECTED_SECRETS:
-        assert f"/run/secrets/{name}" in command
+        assert (
+            f"/run/secrets/{name}" in secret_readers
+            or f"read_required_secret {name}" in secret_readers
+        )
 
 
 def test_hermes_uses_mcp_not_direct_database_or_redis_access() -> None:
@@ -62,6 +70,48 @@ def test_hermes_uses_mcp_not_direct_database_or_redis_access() -> None:
     assert "${MCP_CARTORIO_API_KEY}" in config
     assert "postgres" not in config.lower()
     assert "redis" not in config.lower()
+
+
+def test_hermes_uses_native_minimax_with_highspeed_fallback() -> None:
+    """O runtime usa providers que existem no Hermes e uma contingência testada."""
+    config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+    entrypoint = (
+        ROOT / "infra" / "hermes" / "lark-entrypoint.sh"
+    ).read_text(encoding="utf-8")
+
+    assert config["model"] == {
+        "default": "${HERMES_LLM_MODEL}",
+        "provider": "minimax",
+        "base_url": "${HERMES_LLM_BASE_URL}",
+    }
+    assert config["fallback_model"] == {
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "base_url": "${HERMES_LLM_BASE_URL}",
+    }
+    assert "read_required_secret hermes_minimax_api_key" in entrypoint
+    assert "provider: openai" not in CONFIG_PATH.read_text(encoding="utf-8")
+
+
+def test_hermes_mounts_canonical_pietra_persona() -> None:
+    """O gateway não pode voltar à persona genérica após substituir uma task."""
+    stack = _stack()
+    service = stack["services"]["hermes"]
+    entrypoint = (
+        ROOT / "infra" / "hermes" / "lark-entrypoint.sh"
+    ).read_text(encoding="utf-8")
+    soul = SOUL_PATH.read_text(encoding="utf-8")
+
+    mounted_configs = {
+        entry["source"]: entry["target"] for entry in service["configs"]
+    }
+    assert mounted_configs["hermes_lark_entrypoint_v3"] == "/run/configs/lark-entrypoint.sh"
+    assert mounted_configs["hermes_cartorio_soul_v2"] == "/run/configs/SOUL.md"
+    assert "install -m 0600 /run/configs/SOUL.md" in entrypoint
+    assert "Você é a **Pietra" in soul
+    assert "NUNCA mencione modelos de IA" in soul
+    assert "NUNCA liste ferramentas internas" in soul
+    assert "Chatwoot" not in soul
 
 
 def test_photon_starts_fail_closed_with_allowlist() -> None:
