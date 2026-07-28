@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -314,6 +315,28 @@ async def test_middleware_fail_open_quando_redis_offline() -> None:
 
     # Fail-open: passa pro next
     call_next.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_mock_redis_global_pipeline_fail_open_sem_corrotina_nao_aguardada() -> None:
+    """Mock autouse mantém comandos do pipeline síncronos e falha aberto.
+
+    Não há patch local: ``redis.asyncio.from_url`` vem do fixture global. Ao
+    pular o ping offline, exercitamos especificamente o erro de ``execute``;
+    assim ``-W error::RuntimeWarning`` captura uma regressão se ``incr`` ou
+    ``expire`` voltarem a ser corrotinas.
+    """
+    import redis.asyncio as redis_async
+
+    mw = RateLimitByKeyMiddleware(app=MagicMock(), redis_url="redis://fake")
+    mw._client = redis_async.from_url("redis://fake")
+    mw._client_loop = asyncio.get_running_loop()
+
+    result = await mw._check("hash-de-teste", "padrao")
+
+    assert result.allowed is True
+    assert result.current == 0
+    assert result.limit == 0
 
 
 @pytest.mark.asyncio

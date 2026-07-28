@@ -94,8 +94,6 @@ markers = [
     "coupling: architecture coupling tests (AST inspection of layer imports — G8.11.T4)",
 ] 
 filterwarnings = [
-    "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*:DeprecationWarning",
-    "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*:starlette.exceptions.StarletteDeprecationWarning",
     "ignore:SelectableGroups dict interface is deprecated.*:DeprecationWarning",
     "ignore:API NAO respondeu em.*:UserWarning",
     "ignore:Playwright cache root ausente.*:UserWarning",
@@ -106,10 +104,10 @@ filterwarnings = [
 dev = [
     "fakeredis>=2.36.2",
     "httpx>=0.28.1",
+    "httpx2>=2.0.0",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.15.1",
     "respx>=0.23.1",
     "types-pyyaml>=6.0.12.20260518",
 ] 
-

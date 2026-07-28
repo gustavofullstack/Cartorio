@@ -327,6 +327,66 @@ def _mock_redis_from_url():
         def __getattr__(self, name):
             return MagicMock()
 
+    class MockAsyncRedisPipeline:
+        """Pipeline offline com a mesma fronteira sync/async do redis-py.
+
+        Os métodos de comando de ``redis.asyncio`` apenas enfileiram trabalho;
+        portanto eles não são corrotinas.  Manter essa distinção no mock global
+        evita corrotinas não aguardadas quando um middleware usa ``INCR`` +
+        ``EXPIRE`` e só aguarda ``execute``.
+        """
+
+        def incr(self, *args, **kwargs):
+            return self
+
+        def expire(self, *args, **kwargs):
+            return self
+
+        def zadd(self, *args, **kwargs):
+            return self
+
+        def zremrangebyscore(self, *args, **kwargs):
+            return self
+
+        def zcount(self, *args, **kwargs):
+            return self
+
+        def __getattr__(self, name):
+            def _enqueue(*args, **kwargs):
+                return self
+
+            return _enqueue
+
+        async def execute(self):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+    class MockAsyncRedisPubSub:
+        """PubSub offline que preserva a interface assíncrona do redis-py.
+
+        ``Redis.pubsub()`` é síncrono; as operações no objeto retornado são
+        assíncronas. Modelar ambas as fronteiras impede corrotinas não
+        aguardadas no cleanup do WebSocket e mantém o caminho fail-open de
+        indisponibilidade do Redis fiel ao runtime.
+        """
+
+        async def subscribe(self, *channels, **kwargs):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def psubscribe(self, *patterns, **kwargs):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def get_message(self, *args, **kwargs):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def unsubscribe(self, *channels, **kwargs):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def punsubscribe(self, *patterns, **kwargs):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
+        async def aclose(self):
+            raise redis.exceptions.ConnectionError("Redis offline mock")
+
     class MockAsyncRedis:
         async def ping(self):
             raise redis.exceptions.ConnectionError("Redis offline mock")
@@ -346,11 +406,11 @@ def _mock_redis_from_url():
         async def zcount(self, *args, **kwargs):
             raise redis.exceptions.ConnectionError("Redis offline mock")
 
-        def pipeline(self):
-            return self
+        def pipeline(self, *args, **kwargs):
+            return MockAsyncRedisPipeline()
 
-        async def execute(self):
-            raise redis.exceptions.ConnectionError("Redis offline mock")
+        def pubsub(self, *args, **kwargs):
+            return MockAsyncRedisPubSub()
 
         async def aclose(self):
             return None
