@@ -44,7 +44,28 @@ INLINE_TOOL_CALL_TRUNCATED = (
     '<invoke name="cartorio_calcular_emolumen'
 )
 
-LEAK_TOKENS = ("minimax", "<invoke", "<tool_call", "]<]", "<act>", "</act>")
+# Variantes reais capturadas em prod pós-deploy 57653357 (2026-07-28 13:0x UTC)
+# — o upstream improvisa MAIS de um formato de tool call inline.
+INLINE_FUNCTION_CALLS_ANTHROPIC_STYLE = (
+    "<function_calls>\n"
+    '<invoke name="cartorio_calcular_emolumento">\n'
+    '<parameter name="ato">procuracao</parameter>\n'
+    "</invoke>\n"
+    "</function_calls>"
+)
+
+INLINE_TOOL_CALL_JSON_MARKER = (
+    "Vou consultar a tabela de emolumentos vigente para te passar o valor exato."
+    '[TOOL_CALL]\n{"name": "cartorio_calcular_emolumento", "arguments": {"ato": "procuracao"}}'
+)
+
+INLINE_TOOL_CALL_JSON_TRUNCATED = (
+    "Deixa eu verificar.[TOOL_CALL]\n"
+    '{"name": "cartorio_calcular_emolumen'
+)
+
+LEAK_TOKENS = ("minimax", "<invoke", "<tool_call", "]<]", "<act>", "</act>",
+               "<function_calls", "</function_calls", "[tool_call]", "<parameter")
 
 
 @pytest.fixture(scope="module")
@@ -151,3 +172,55 @@ class TestStripUnitario:
         assert calls == []  # incompleto → sem tool_call quebrado
         for token in LEAK_TOKENS:
             assert token not in text.lower()
+
+    def test_extract_anthropic_style(self):
+        """Formato <function_calls><invoke><parameter> (prod 13:0x UTC)."""
+        from app.services.cartorio_agent import _extract_inline_tool_calls
+
+        text, calls = _extract_inline_tool_calls(INLINE_FUNCTION_CALLS_ANTHROPIC_STYLE)
+        assert calls and calls[0]["function"]["name"] == "cartorio_calcular_emolumento"
+        import json as _json
+
+        args = _json.loads(calls[0]["function"]["arguments"])
+        assert args.get("ato") == "procuracao"
+        for token in LEAK_TOKENS:
+            assert token not in text.lower()
+
+    def test_extract_json_marker(self):
+        """Formato [TOOL_CALL] + JSON (prod 13:0x UTC)."""
+        from app.services.cartorio_agent import _extract_inline_tool_calls
+
+        text, calls = _extract_inline_tool_calls(INLINE_TOOL_CALL_JSON_MARKER)
+        assert calls and calls[0]["function"]["name"] == "cartorio_calcular_emolumento"
+        assert "consultar" in text
+        for token in LEAK_TOKENS:
+            assert token not in text.lower()
+
+    def test_extract_json_truncado(self):
+        """[TOOL_CALL] com JSON cortado → strip, sem call quebrado."""
+        from app.services.cartorio_agent import _extract_inline_tool_calls
+
+        text, calls = _extract_inline_tool_calls(INLINE_TOOL_CALL_JSON_TRUNCATED)
+        assert calls == []
+        for token in LEAK_TOKENS:
+            assert token not in text.lower()
+
+
+class TestEndpointVariantesInline:
+    def test_anthropic_style_nao_vaza_no_endpoint(self, client, monkeypatch):
+        _patch_llm(monkeypatch, INLINE_FUNCTION_CALLS_ANTHROPIC_STYLE)
+        r = _post(client)
+        choice = r.json()["choices"][0]
+        assert choice["finish_reason"] == "tool_calls"
+        content = choice["message"].get("content") or ""
+        for token in LEAK_TOKENS:
+            assert token not in content.lower()
+
+    def test_json_marker_nao_vaza_no_endpoint(self, client, monkeypatch):
+        _patch_llm(monkeypatch, INLINE_TOOL_CALL_JSON_MARKER)
+        r = _post(client)
+        choice = r.json()["choices"][0]
+        assert choice["finish_reason"] == "tool_calls"
+        content = choice["message"].get("content") or ""
+        for token in LEAK_TOKENS:
+            assert token not in content.lower()

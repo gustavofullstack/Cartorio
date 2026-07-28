@@ -587,62 +587,111 @@ def _strip_think_tags(text: str) -> str:
     return cleaned.strip()
 
 
-# Delimitador de tool call INLINE do MiniMax (P0 2026-07-28 — vazou em prod):
-# o upstream as vezes emite o tool call como markup no content em vez do campo
-# estruturado tool_calls. Formato observado (transcripts bulk10k emol):
-#   "texto…]<]minimax[>[<tool_call>\n]<]minimax[>[<invoke name="TOOL">]<]minimax[>[<act>valor]<]minimax[>[</act>]…"
-#   variante: <invoke name="param">valor</invoke> para argumentos nomeados.
+# Delimitadores de tool call INLINE (P0 2026-07-28 — vazou em prod): o upstream
+# MiniMax as vezes emite o tool call como markup no content em vez do campo
+# estruturado tool_calls. TRES formatos observados em prod (transcripts bulk10k
+# + probes pos-deploy 13:0x UTC):
+#   1. MiniMax nativo:  "…]<]minimax[>[<tool_call>…<invoke name="T">…<act>v</act>…</invoke>"
+#   2. Anthropic-style: "<function_calls><invoke name="T"><parameter name="p">v</parameter></invoke></function_calls>"
+#   3. JSON marker:     "[TOOL_CALL]\n{"name": "T", "arguments": {...}}"
 _MINIMAX_DELIM_RE = re.compile(r"\]<\]\w*\[>\[")
 _TOOL_NAME_RE = re.compile(r'<invoke\s+name="([^"]+)"\s*>')
 _PARAM_INVOKE_RE = re.compile(r'<invoke\s+name="([^"]+)"\s*>([^<]*)')
 _PARAM_TAG_RE = re.compile(r"<(act|ato|tipo|folhas|urgencia|valor)>([^<]*)", re.I)
+_PARAMETER_TAG_RE = re.compile(r'<parameter\s+name="([^"]+)"\s*>([^<]*)', re.I)
+_INLINE_MARKERS = ("<function_calls", "<tool_call", "[tool_call]")
 
 
-def _extract_inline_tool_calls(text: str) -> tuple[str, list[dict[str, Any]]]:
-    """Extrai tool call inline do MiniMax do content.
-
-    Retorna (texto_limpo, tool_calls_estruturados). Markup incompleto/truncado
-    (sem nome de tool parseavel ou sem fechamento) → ([], texto com markup
-    removido): NUNCA vaza `]<]minimax[>`, `<invoke`, `<tool_call` ao cliente.
-    """
-    if not text:
-        return text, []
+def _find_inline_cut(text: str) -> int:
+    """Indice do primeiro marcador de tool call inline (ou -1)."""
+    cuts: list[int] = []
     m = _MINIMAX_DELIM_RE.search(text)
-    if m is None and "<tool_call" not in text:
-        return text, []
-    cut = m.start() if m else text.index("<tool_call")
-    clean = text[:cut].strip()
-    markup = text[cut:]
+    if m:
+        cuts.append(m.start())
+    low = text.lower()
+    for marker in _INLINE_MARKERS:
+        idx = low.find(marker)
+        if idx >= 0:
+            cuts.append(idx)
+    return min(cuts) if cuts else -1
 
+
+def _mk_inline_call(name: str, params: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": f"call_inline_{int(time.time() * 1000)}",
+        "type": "function",
+        "function": {
+            "name": name,
+            "arguments": json.dumps(params, ensure_ascii=False),
+        },
+    }
+
+
+def _parse_minimax_style(markup: str) -> list[dict[str, Any]]:
     names = _TOOL_NAME_RE.findall(markup)
-    tool_name = names[0] if names else ""
-    # Fechamento minimo do call: sem </invoke> ou </tool_call> o call esta
-    # truncado (max_tokens) — nao sintetizar tool_call quebrado.
-    complete = ("</invoke>" in markup or "</tool_call>" in markup) and bool(tool_name)
-    if not complete:
-        return clean, []
-
+    if not names or ("</invoke>" not in markup and "</tool_call>" not in markup):
+        return []
     params: dict[str, Any] = {}
     # <invoke name="param">valor (o 1o invoke = tool name, demais = params)
     for pname, pval in _PARAM_INVOKE_RE.findall(markup)[1:]:
-        pval = pval.strip()
-        if pval:
-            params[pname] = pval
+        if pval.strip():
+            params[pname] = pval.strip()
     # <act>valor</act> / <ato>…</ato> (tags soltas do MiniMax)
     for ptag, pval in _PARAM_TAG_RE.findall(markup):
         key = "ato" if ptag.lower() in ("act", "ato") else ptag.lower()
         if pval.strip() and key not in params:
             params[key] = pval.strip()
+    return [_mk_inline_call(names[0], params)]
 
-    call = {
-        "id": f"call_inline_{int(time.time() * 1000)}",
-        "type": "function",
-        "function": {
-            "name": tool_name,
-            "arguments": json.dumps(params, ensure_ascii=False),
-        },
-    }
-    return clean, [call]
+
+def _parse_function_calls_style(markup: str) -> list[dict[str, Any]]:
+    if "</invoke>" not in markup and "</function_calls>" not in markup:
+        return []
+    names = _TOOL_NAME_RE.findall(markup)
+    if not names:
+        return []
+    params = {p: v.strip() for p, v in _PARAMETER_TAG_RE.findall(markup) if v.strip()}
+    return [_mk_inline_call(names[0], params)]
+
+
+def _parse_json_marker_style(markup: str) -> list[dict[str, Any]]:
+    idx = markup.lower().find("[tool_call]")
+    blob = markup[idx + len("[tool_call]"):].strip() if idx >= 0 else markup.strip()
+    try:
+        data = json.loads(blob)
+    except (json.JSONDecodeError, ValueError):
+        return []  # JSON truncado (max_tokens) → strip, sem call quebrado
+    name = data.get("name") or ""
+    if not name:
+        return []
+    args = data.get("arguments") or data.get("parameters") or {}
+    return [_mk_inline_call(name, args if isinstance(args, dict) else {})]
+
+
+def _extract_inline_tool_calls(text: str) -> tuple[str, list[dict[str, Any]]]:
+    """Extrai tool call inline (3 formatos conhecidos) do content.
+
+    Retorna (texto_limpo, tool_calls_estruturados). Markup incompleto/truncado
+    (sem nome de tool parseavel ou sem fechamento) → ([], texto com markup
+    removido): NUNCA vaza `]<]minimax[>`, `<invoke`, `<function_calls`,
+    `[TOOL_CALL]` ao cliente.
+    """
+    if not text:
+        return text, []
+    cut = _find_inline_cut(text)
+    if cut < 0:
+        return text, []
+    clean = text[:cut].strip()
+    markup = text[cut:]
+    low = markup.lower()
+
+    if low.startswith("[tool_call]"):
+        calls = _parse_json_marker_style(markup)
+    elif low.startswith("<function_calls"):
+        calls = _parse_function_calls_style(markup)
+    else:
+        calls = _parse_minimax_style(markup)
+    return clean, calls
 
 
 # Tools OpenAI-compatible (MiniMax-M3 tool use / agentic)
