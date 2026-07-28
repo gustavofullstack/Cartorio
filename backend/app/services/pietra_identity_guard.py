@@ -52,6 +52,15 @@ _HERMES_IDENTITY_PATTERNS: Final[tuple[str, ...]] = (
     # "HERMES aqui", etc.)
     r"(?:^|\W)hermes\s+respondendo(?:\W|$)",
     r"(?:^|\W)hermes\s+aqui(?:\W|$)",
+    # === Self-id de providers/modelos (leak REAL em prod 2026-07-28: ===
+    # "Eu sou o **MiniMax-M3**, um modelo de inteligencia artificial ===
+    # desenvolvido pela **MiniMax**"). Canal customer-facing NUNCA pode ===
+    # se identificar como modelo/provedor de IA. ===
+    r"(?:^|\W)sou\s+(?:o|a|um|uma)?\s*\*{0,2}(?:minimax(?:\s*-?\s*m[\d.]+)?|chatgpt|gpt-?\d[\w.-]*|claude|kimi|gemini|grok|deepseek|llama|qwen|mistral|copilot|openai)(?:\*{0,2})(?:\W|$)",
+    r"(?:^|\W)(?:meu\s+)?nome\s+(?:e|é)\s+\*{0,2}(?:minimax|chatgpt|claude|kimi|gemini|grok|deepseek)(?:\*{0,2})(?:\W|$)",
+    r"(?:^|\W)(?:me\s+)?chamo\s+\*{0,2}(?:minimax|chatgpt|claude|kimi|gemini|grok|deepseek)(?:\*{0,2})(?:\W|$)",
+    r"(?:^|\W)desenvolvid[oa]\s+pel[ao]\s+\*{0,2}(?:minimax|openai|anthropic|google|deepseek|xai|meta|moonshot|alibaba|mistral)(?:\*{0,2})(?:\W|$)",
+    r"(?:^|\W)sou\s+(?:um|uma)\s+modelo\s+de\s+(?:linguagem|inteligencia\s+artificial|ia)(?:\W|$)",
 )
 
 _COMPILED_PATTERNS: Final[tuple[re.Pattern[str], ...]] = tuple(
@@ -197,6 +206,17 @@ def guard_identity(
     cleaned_text = re.sub(r"(?i)\bsou\s+(?:o|a)\s+hermes[,\.\!]?", "", text).strip()
     cleaned_text = re.sub(r"(?i)\bhermes-agent\b", "Pietra", cleaned_text)
     cleaned_text = re.sub(r"(?i)\bhermes\b", "Pietra", cleaned_text)
+    # Providers/modelos: remover self-id e neutralizar nomes (2026-07-28).
+    cleaned_text = re.sub(
+        r"(?i)\bsou\s+(?:o|a|um|uma)\s+\*{0,2}(?:minimax(?:\s*-?\s*m[\d.]+)?|chatgpt|gpt-?\d[\w.-]*|claude|kimi|gemini|grok|deepseek|llama|qwen|mistral|copilot|openai)\*{0,2}[,\.\!]?",
+        "",
+        cleaned_text,
+    ).strip()
+    cleaned_text = re.sub(
+        r"(?i)\b(?:minimax(?:\s*-?\s*m[\d.]+)?|chatgpt|openai|anthropic|deepseek|moonshot|claude|kimi|gemini|grok|copilot)\b",
+        "Pietra",
+        cleaned_text,
+    )
     sanitized = f"{opening}\n\n{cleaned_text}" if cleaned_text else opening
 
     _record_metric(InterceptAction.SUBSTITUTE)

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "dead-code-audit/1.0",
-    "generated_at": "2026-07-28T02:43:38.589253+00:00",
+    "generated_at": "2026-07-28T03:32:54.210311+00:00",
     "repo_root": "/Users/gustavoalmeida/Projetos/Cartorio",
     "app_dir": "/Users/gustavoalmeida/Projetos/Cartorio/backend/app",
     "policy": "NUNCA remove codigo. Apenas reporta. Decisao humana via review (HITL).",
@@ -13,8 +13,8 @@
     "pyflakes_total": 0,
     "vulture_suspicions": 0,
     "vulture_min_confidence": 80,
-    "uncovered_files": 185,
-    "zero_coverage_files": 175,
+    "uncovered_files": 186,
+    "zero_coverage_files": 179,
     "ruff_clean": true,
     "pyflakes_clean": true,
     "vulture_clean": true
@@ -1144,9 +1144,9 @@
         },
         {
           "file": "app/services/metrics.py",
-          "summary_pct": 43.97,
+          "summary_pct": 0.0,
           "statements": 348,
-          "missing_lines": 195,
+          "missing_lines": 348,
           "excluded_lines": 1
         },
         {
@@ -1207,9 +1207,9 @@
         },
         {
           "file": "app/services/pietra_capabilities.py",
-          "summary_pct": 71.43,
+          "summary_pct": 0.0,
           "statements": 77,
-          "missing_lines": 22,
+          "missing_lines": 77,
           "excluded_lines": 0
         },
         {
@@ -1221,9 +1221,16 @@
         },
         {
           "file": "app/services/pietra_conversation_state.py",
-          "summary_pct": 76.0,
+          "summary_pct": 55.0,
           "statements": 100,
-          "missing_lines": 24,
+          "missing_lines": 45,
+          "excluded_lines": 0
+        },
+        {
+          "file": "app/services/pietra_identity_guard.py",
+          "summary_pct": 98.44,
+          "statements": 64,
+          "missing_lines": 1,
           "excluded_lines": 0
         },
         {
@@ -1235,16 +1242,16 @@
         },
         {
           "file": "app/services/pietra_response_planner.py",
-          "summary_pct": 45.86,
+          "summary_pct": 0.0,
           "statements": 133,
-          "missing_lines": 72,
+          "missing_lines": 133,
           "excluded_lines": 0
         },
         {
           "file": "app/services/pii.py",
-          "summary_pct": 39.64,
+          "summary_pct": 21.62,
           "statements": 111,
-          "missing_lines": 67,
+          "missing_lines": 87,
           "excluded_lines": 0
         },
         {
@@ -1298,9 +1305,9 @@
         },
         {
           "file": "app/services/redis_bus.py",
-          "summary_pct": 26.98,
+          "summary_pct": 0.0,
           "statements": 126,
-          "missing_lines": 92,
+          "missing_lines": 126,
           "excluded_lines": 0
         },
         {
@@ -1493,8 +1500,8 @@
           "excluded_lines": 0
         }
       ],
-      "total_uncovered_files": 185,
-      "total_zero_coverage_files": 175
+      "total_uncovered_files": 186,
+      "total_zero_coverage_files": 179
     }
   },
   "top_candidates_hitl": [

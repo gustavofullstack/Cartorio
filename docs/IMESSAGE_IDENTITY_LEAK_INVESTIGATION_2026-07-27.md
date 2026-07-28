@@ -225,3 +225,33 @@ labels:
 ### Conclusão
 
 **B4 NÃO foi resolvido** porque a "correção simples de URL" não existe — o problema é de **deployment config** (Traefik labels ausentes), não de config Hermes. Documento este achado para que o SUI Gustavo (com acesso SSH à VPS) possa aplicar o fix correto via deploy.
+
+---
+
+## ✅ RESOLUÇÃO FINAL 2026-07-28 00:40 BRT — Causa raiz encontrada e corrigida
+
+### Causa raiz definitiva (não era Traefik nem request_dumps)
+
+A tabela `sessions` do `~/.hermes/profiles/cartorio/state.db` **congela uma cópia do `system_prompt` no momento da criação da sessão**. A sessão Photon `20260726_153403_e2cb29ac` foi criada em 26/07 16:18 BRT quando o `SOUL.md` ainda era Hermes — e **permaneceu viva** (ended_at=NULL, 526 mensagens), reenviando o prompt Hermes ao LLM a cada turno, mesmo após o SOUL.md em disco ser trocado para Pietra em 27/07 16:50.
+
+**Por que `/reset` não resolvia:** o comando atualizava `updated_at` da sessão mas não a substituía (`is_fresh_reset: false` no gateway_routing). Os `request_dump_*.json` (250/250 com Hermes) eram **sintoma**, não causa — só são gravados em `max_retries_exhausted`.
+
+### Fix aplicado (00:30-00:33 BRT)
+
+1. Backup: `artifacts/imessage/b4_restore_20260727_233200/session_e2cb29ac_backup.json` (93KB) + `session_e2cb29ac_messages_heads.json` (526 msg heads, 56KB)
+2. `HERMES_HOME=~/.hermes/profiles/cartorio hermes sessions delete 20260726_153403_e2cb29ac` (0 sessões / 0 mensagens confirmado)
+3. `DELETE FROM gateway_routing WHERE session_key='agent:main:photon:dm:any;-;+5534992800250'`
+4. `launchctl kickstart -k gui/$(id -u)/ai.hermes.gateway-cartorio` → novo PID 10286, photon connected
+
+### Validação em produção (00:39-00:40 BRT)
+
+Nova sessão photon criada automaticamente na primeira mensagem pós-fix:
+- `system_prompt` = `# SOUL.md — AGENT PIETRA · MINIMAX M3 1M XMAX` ✅
+- Resposta real: **"Boa noite, Gustavo. Sou a Pietra, do 2º Cartório de Notas de Uberlândia. Como posso te ajudar?"** (2×, 00:39:46 e 00:40:08) ✅
+- Saudação contextual BRT + sem emoji, conforme SOUL ✅
+
+### Lesson 283
+
+**Sessões de longa duração congelam o system_prompt.** Sempre que o `SOUL.md` de um profile mudar, deletar as sessões ativas do canal correspondente (`hermes sessions delete <id>` + limpar `gateway_routing`) ou o prompt antigo continuará sendo enviado indefinidamente. Diagnóstico rápido: `sqlite3 <profile>/state.db "SELECT id, substr(system_prompt,1,60) FROM sessions WHERE ended_at IS NULL;"`.
+
+Modified by Gustavo Almeida

@@ -10,7 +10,7 @@
 
 **AGENT PIETRA · MINIMAX M3 1M XMAX 100% operacional no iMessage Spectrum** com anti-vazamento de dev, sem emoji, saudação contextual BRT, MCP tool `cartorio_calcular_emolumento` retornando valores exatos da Tabela TJMG 2026, e knowledge base das Tabelas Fixação 1+8 versionada em OCR.
 
-**Status atual (2026-07-27 22:40 BRT):** `IMESSAGE_REQUIRES_FIX` — gate oficial do canal ainda em P0 aguardando fix humano. Defense-in-depth implementado (`pietra_identity_guard.py` + 39 regression tests), mas causa raiz do IDENTITY_HERMES_LEAK (Camada 3, código fechado) continua em investigação. Hipótese MCP T2 FAIL_FUNCTIONAL CONFIRMADA — fix de 1 linha no Mac (`url: http://localhost:8000/mcp`) é a ação mais barata.
+**Status atual (2026-07-27 23:14 BRT):** `IMESSAGE_REQUIRES_FIX` — gate oficial do canal ainda em P0. **B4 RESOLVED**: `MCP_SERVER_ENABLED=true` deployado no `cartorio_system-api` (Traefik roteia `api.2notasudi.com.br` para system-api, não api); round-trip MCP validado (tools/list 16 tools, `cartorio_calcular_emolumento` = R$156,40 para procuração); config Mac Hermes revertida para `https://api.2notasudi.com.br/mcp`. Defense-in-depth implementado (`pietra_identity_guard.py` + 39 regression tests), mas causa raiz do IDENTITY_HERMES_LEAK (Camada 3, código fechado) continua em investigação. **Gate permanece `IMESSAGE_REQUIRES_FIX`**: confirmação visual do Felipe no próprio iPhone (B5) ainda pendente — só após ela o gate move para `IMESSAGE_FELIPE_ACCEPTED`.
 
 ---
 
