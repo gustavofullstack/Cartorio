@@ -164,7 +164,7 @@ Orquestrador + 9 reins em `.harness/`.
 ## Memória (dois lugares — não misturar)
 
 - **Memória de projeto** (cross-rein, commitada): `.harness/memory/MEMORY.md`. Adicione entrada quando a lição for reaproveitável.
-- **Memória de sessão** (per-user Claude, fora do git): `/Users/gustavoalmeida/.claude/projects/-Users-gustavoalmeida-Projetos-Cartorio/memory/`. Um arquivo por fato, YAML frontmatter (`name`, `description`, `type` ∈ `{user, feedback, project, reference}`), use `[[name]]` wikilinks.
+- **Memória de sessão** (per-user Claude/ZCode, fora do git): `/Users/gustavoalmeida/.claude/projects/-Users-gustavoalmeida-Projetos-Cartorio/memory/`. Um arquivo por fato, YAML frontmatter (`name`, `description`, `type` ∈ `{user, feedback, project, reference}`), use `[[name]]` wikilinks. Cross-session: skill `using-mavis-cross-session` (ZCode) ou `cross-session-communication` (legado).
 
 Não salve no repo o que já está em git ou em código. Salve o não-óbvio.
 
