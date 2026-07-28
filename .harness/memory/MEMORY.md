@@ -783,3 +783,11 @@ com cooldown longo (5h) precisa de reset operacional documentado — blip de red
 derrubou o cérebro da Pietra por horas; (4) secrets de projeto Spectrum podem ser
 rotacionados via `photon_auth.regenerate_project_secret(token, dashboard_id)` —
 recupera acesso quando profile é wipado.
+
+## Lesson 287 — Tool call INLINE do MiniMax vaza markup `]<]minimax[>` em prod (2026-07-28)
+
+- **Sintoma**: smoke bulk 10K (emol N=60, prod) com 21/60 FAIL `hard_fail:'minimax'` — upstream emite tool call como markup inline no content (`]<]minimax[>[<tool_call>…<invoke name="cartorio_calcular_emolumento">…`) em vez do campo estruturado.
+- **Impacto triplo**: internal vocab leak customer-facing (P0); REGRA DE OURO morta (caller só executa tool_calls estruturados); promessa sem entrega ("vou consultar…" sem valor).
+- **Fix (57653357)**: `_extract_inline_tool_calls()` converte inline→estruturado (finish_reason=tool_calls) ou remove markup truncado; 8 regression tests com transcripts reais.
+- **Regra permanente**: texto LLM → canal customer-facing passa por 3 strips (think tags, inline tool_call markup, identity guard). Smoke real em prod (N≥50) ANTES de campanha grande — suites mockam `_chat_completion` e não expõem markup do upstream. Parser de markup DEVE ter caminho "truncado → strip" (max_tokens corta fechamento).
+- **Detalhe completo**: `.harness/memory/lesson-287-imessage-bulk10k-inline-toolcall-minimax-leak-2026-07-28.md`. Pendente: deploy VPS + re-probe emol.
