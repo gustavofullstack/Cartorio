@@ -105,7 +105,8 @@ def test_hermes_mounts_canonical_pietra_persona() -> None:
     mounted_configs = {
         entry["source"]: entry["target"] for entry in service["configs"]
     }
-    assert mounted_configs["hermes_cartorio_soul_v1"] == "/run/configs/SOUL.md"
+    assert mounted_configs["hermes_lark_entrypoint_v3"] == "/run/configs/lark-entrypoint.sh"
+    assert mounted_configs["hermes_cartorio_soul_v2"] == "/run/configs/SOUL.md"
     assert "install -m 0600 /run/configs/SOUL.md" in entrypoint
     assert "Você é a **Pietra" in soul
     assert "NUNCA mencione modelos de IA" in soul

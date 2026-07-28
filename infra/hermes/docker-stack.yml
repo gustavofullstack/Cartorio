@@ -40,10 +40,10 @@ services:
       - source: hermes_cartorio_config_v1
         target: /run/configs/config.cartorio.yaml
         mode: 0440
-      - source: hermes_lark_entrypoint_v1
+      - source: hermes_lark_entrypoint_v3
         target: /run/configs/lark-entrypoint.sh
         mode: 0555
-      - source: hermes_cartorio_soul_v1
+      - source: hermes_cartorio_soul_v2
         target: /run/configs/SOUL.md
         mode: 0440
     secrets:
@@ -78,9 +78,9 @@ services:
 configs:
   hermes_cartorio_config_v1:
     file: ./config.cartorio.yaml
-  hermes_lark_entrypoint_v1:
+  hermes_lark_entrypoint_v3:
     file: ./lark-entrypoint.sh
-  hermes_cartorio_soul_v1:
+  hermes_cartorio_soul_v2:
     file: ../openclaw-agent/workspace/SOUL.md
 
 secrets:
