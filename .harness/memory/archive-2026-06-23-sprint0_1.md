@@ -130,7 +130,7 @@ CEO consolidou checklist obrigatório pra QUALQUER copy de prospecção em merca
 - Para escalar isso formalmente, criar agentes globais OU usar `mavis team plan` que conhece project reins
 
 ### Opencode-Go API key (DeepSeek-v4 flash) — LOW COST provider primario
-- Key: `sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr`
+- Key: `sk-***REDACTED-PURGED-2026-07-28***`
 - Base URL: `https://opencode.ai/zen/go/v1`
 - Model: `deepseek-v4-flash`
 - Salvo em `backend/.env` (nao commitado, gitignored)

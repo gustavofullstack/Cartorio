@@ -773,7 +773,7 @@ que ja existia (commit f63f704) agora ativado em `main.py`.
 - Easypanel API: <EXPIRED>
 - N8N MCP HTTP JWT: <eyJhbG...>
 - N8N public API JWT: <eyJhbG...>
-- Opencode-go: sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr
+- Opencode-go: sk-***REDACTED-PURGED-2026-07-28***
 - OpenClaw Gateway Token: fz1qzo2xka8n82rn62irscuqws75mm1e17mpsnxzqlp13z1p35skrbg2ck8yg8pg
 - Redis: default:@Techno832466@187.77.236.77:1001
 - Supabase DB: supabase_admin:e999b7439deb35dfe05c33f265dae1ea@db:5432/cartorio

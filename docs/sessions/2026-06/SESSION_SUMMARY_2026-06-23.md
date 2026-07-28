@@ -168,7 +168,7 @@ Total estimado: ~47 min de UI para P0+P1.
 
 | Servico | Key | Onde guardar |
 |---|---|---|
-| Opencode-Go | sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr | /etc/easypanel/projects/cartorio/api/code/.env |
+| Opencode-Go | sk-***REDACTED-PURGED-2026-07-28*** | /etc/easypanel/projects/cartorio/api/code/.env |
 | N8N MCP HTTP JWT | eyJhbGciOiJIUzI1NiIs... | /etc/cartorio-backup/n8n-api-key.env (chmod 600) |
 | N8N public API JWT | eyJhbGciOiJIUzI1NiIs... | /etc/cartorio-backup/n8n-api-key.env (chmod 600) |
 | OpenClaw Gateway Token | fz1qzo2xka8n82rn62irscuqws75mm1e17mpsnxzqlp13z1p35skrbg2ck8yg8pg | /etc/easypanel/projects/cartorio/openclaw-gateway/.env |

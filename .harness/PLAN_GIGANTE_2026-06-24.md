@@ -20,7 +20,7 @@
 | Telegram Bot @test_cartorio_bot | ✅ ativo | API Bot 6 | webhook deletado p/ teste (N8N workflow 31 seta de novo) |
 
 **OpenClaw config ANTES (estado quebrado que estava)**:
-- API key: `sk-j03KVdV6...` (ANTIGA, tinha limitado)
+- API key: `sk-***REDACTED-PURGED-2026-07-28***...` (ANTIGA, tinha limitado)
 - Thinking: **NÃO habilitado**
 - contextWindow: 131072 (deepseek-v4-flash limit)
 - Skills: 0 habilitadas (todas desabled)

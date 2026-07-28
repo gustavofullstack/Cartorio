@@ -111,7 +111,7 @@ Fora do escopo de código, mas bloqueante se não for feito em paralelo:
    - Senha `ve07sqrhminnd3clslzv` (DB N8N)
    - Senha `k08oy8ysymogr47ad7u8` (DB Evolution)
    - Senha `@Techno832466` (Redis Global)
-   - Chave `sk-j03KVdV6...` (OpenCode-Go)
+   - Chave `sk-***REDACTED-PURGED-2026-07-28***...` (OpenCode-Go)
 3. Usuário rotaciona manualmente no painel de cada serviço
 4. Atualizar `.env` na VPS e restart dos services
 

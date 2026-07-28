@@ -73,7 +73,7 @@ docker logs $(docker ps -q --filter "name=cartorio_openclaw-gateway") --tail 50
 ## OpenCode-Go (LLM provider)
 
 - Base URL: `https://opencode.ai/zen/go/v1`
-- API Key: `sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr`
+- API Key: `sk-***REDACTED-PURGED-2026-07-28***`
 - Model default: `deepseek-v4-flash` (low cost)
 - Configurado na API env: `OPENCODE_GO_API_KEY` (não commitado, ver `backend/.env.example`)
 

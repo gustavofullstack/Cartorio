@@ -53,7 +53,7 @@ Antes deste audit, o setup tinha **3 problemas críticos** que causavam `404 Pag
 ```
 
 **Endpoint correto:** `https://opencode.ai/zen/go/v1`
-**API key correta:** `$OPENCODE_GO_API_KEY` (sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr)
+**API key correta:** `$OPENCODE_GO_API_KEY` (sk-***REDACTED-PURGED-2026-07-28***)
 
 **Validação:**
 ```bash

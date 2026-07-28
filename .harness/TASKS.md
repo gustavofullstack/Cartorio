@@ -658,7 +658,7 @@ Modified by Pietra/Mavis - 2026-06-25 00:02 BRT
 - [ ] **T2.OC.T3** OpenClaw gateway rodando no VPS (porta 8082 ou 9000, escutando só na rede Tailscale 100.64.0.0/10)
 - [ ] **T2.OC.T4** OpenClaw firewall: DROP tudo de não-Tailscale (iptables INPUT chain, allow 100.64.0.0/10 only)
 - [ ] **T2.OC.T5** OpenClaw sandbox config (/opt/openclaw/sandbox/cartorio-agent-cartorio/ com brain/, memory/, skills/, tools/, plugins/, hooks/, goals/)
-- [ ] **T2.OC.T6** OpenClaw LLM provider = deepseek-v4-flash via OpenCode-Go (sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr)
+- [ ] **T2.OC.T6** OpenClaw LLM provider = deepseek-v4-flash via OpenCode-Go (sk-***REDACTED-PURGED-2026-07-28***)
 - [ ] **T2.OC.T7** OpenClaw tools registry (web_search, http_get, file_read, code_exec, memory_save, memory_recall, pii_scrub, audit_log)
 - [ ] **T2.OC.T8** OpenClaw skills registry (consulta-emolumento, criar-protocolo, agendar, handoff-human, faq, gerar-pdf)
 - [ ] **T2.OC.T9** OpenClaw plugins registry (lgpd-blocker, consent-gate, audit-logger, redis-cache, supabase-persist)

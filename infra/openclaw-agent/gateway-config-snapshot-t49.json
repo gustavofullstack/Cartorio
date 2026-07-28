@@ -145,10 +145,10 @@
       "status_2026_06_25": "AINDA PENDENTE — escopo T5.0 = openclaw.json only. agent.json NAO foi tocado."
     },
     "2_env_var": {
-      "issue": "OPENCODE_GO_API_KEY nao esta no env do container OpenClaw. Existe em /home/node/.openclaw/workspace/.env.production e em backend/.env.example (chave sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr).",
+      "issue": "OPENCODE_GO_API_KEY nao esta no env do container OpenClaw. Existe em /home/node/.openclaw/workspace/.env.production e em backend/.env.example (chave sk-***REDACTED-PURGED-2026-07-28***).",
       "fix_suggested": "Set OPENCODE_GO_API_KEY=<key> no Easypanel env do servico cartorio_openclaw-gateway e docker service update",
       "blocked_by": "SUI Gustavo (Easypanel UI) - Gustavo tem poder de injecao",
-      "key_value": "sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr"
+      "key_value": "sk-***REDACTED-PURGED-2026-07-28***"
     },
     "3_context_1m": {
       "issue": "AGENTS.md documenta max_context_tokens=1000000 mas openclaw.json NAO define. OpenClaw esta usando default (provavelmente 131k).",
@@ -162,7 +162,7 @@
     }
   },
   "_t51_changes_2026-07-14": {
-    "_comment": "URGENT FIX LobeChat integration. Diagnostico live (curl da maquina local em 2026-07-14): OPTIONS preflight /v1/chat/completions retorna 405 com ACAO vazio (sem CORS handler). POST /v1/chat/completions com Bearer @Techno832466 retorna 408 em 2.37s com body 'upstream provider timeout'. Probe direto no upstream https://opencode.ai/zen/go/v1/models retorna 200 em 0.57s com a sk-j03KVdV6r... = upstream OK, problema e default timeout do OpenClaw (~2.5s).",
+    "_comment": "URGENT FIX LobeChat integration. Diagnostico live (curl da maquina local em 2026-07-14): OPTIONS preflight /v1/chat/completions retorna 405 com ACAO vazio (sem CORS handler). POST /v1/chat/completions com Bearer @Techno832466 retorna 408 em 2.37s com body 'upstream provider timeout'. Probe direto no upstream https://opencode.ai/zen/go/v1/models retorna 200 em 0.57s com a sk-***REDACTED-PURGED-2026-07-28***... = upstream OK, problema e default timeout do OpenClaw (~2.5s).",
     "1_cors_origins": {
       "issue": "OPTIONS preflight nao retorna Access-Control-Allow-Origin para Origin: https://cartorio-lobechat.dfgdxq.easypanel.host. Sintoma: loke-chat browser aborta com 'CORS preflight channel didn't succeed' antes de chegar no POST. CAUSA: gateway.controlUi.allowedOrigins = ['*'] (wildcard para debug) mas para HTTP API endpoints, comportamento do OpenClaw 0.x/2026.6.10 e restritivo — nao emite ACAO/CORS headers em OPTIONS. Fix no snapshot: allowedOrigins explicito com origins do projeto.",
       "fix_applied": "gateway.controlUi.allowedOrigins: ['*'] -> array com 8 origins explicitas (lobechat.dfgdxq + localhost:3210 + agent/admin/app.2notasudi + tauri://localhost).",

@@ -38,7 +38,7 @@ curl -sS --max-time 35 -X POST https://agent.2notasudi.com.br/v1/chat/completion
 # Upstream direto (opencode-go) — SAUDAVEL
 curl -sS -o /dev/null -w "opencode-go=%{http_code} time=%{time_total}s\n" \
   --max-time 10 https://opencode.ai/zen/go/v1/models \
-  -H "Authorization: Bearer sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr"
+  -H "Authorization: Bearer sk-***REDACTED-PURGED-2026-07-28***"
 # → opencode-go=200 time=0.57s
 ```
 
@@ -48,7 +48,7 @@ curl -sS -o /dev/null -w "opencode-go=%{http_code} time=%{time_total}s\n" \
   no `openclaw.json` está como `"*"` (wildcard para debug), mas isso
   só abrange WebSocket / Control UI. O HTTP API não herda.
 - **Timeout**: o upstream `opencode-go` está saudável (200 ms) e a
-  chave `sk-j03KVdV6r...` está válida. O 408 vem de um **default
+  chave `sk-***REDACTED-PURGED-2026-07-28***...` está válida. O 408 vem de um **default
   muito curto** (~2-3s) do OpenClaw para `models.providers.*`.
 
 ## Fix proposto (aplicado no snapshot, deploy manual na VPS)

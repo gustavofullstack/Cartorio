@@ -9,7 +9,7 @@
 
 Diversas credenciais foram expostas no chat/log/git ao longo do projeto:
 
-- OpenCode-Go `sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr`
+- OpenCode-Go `sk-***REDACTED-PURGED-2026-07-28***`
 - N8N MCP HTTP JWT
 - N8N public API JWT
 - OpenClaw Gateway Token + Password

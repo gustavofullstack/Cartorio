@@ -44,10 +44,10 @@
       "blocked_by": "aguarda decisao Gustavo + coordenacao com cartorio-dev para nao quebrar testes de integracao OpenCode-Go ja existentes no backend"
     },
     "2_env_var": {
-      "issue": "OPENCODE_GO_API_KEY nao esta no env do container OpenClaw. Existe em /home/node/.openclaw/workspace/.env.production e em backend/.env.example (chave sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr).",
+      "issue": "OPENCODE_GO_API_KEY nao esta no env do container OpenClaw. Existe em /home/node/.openclaw/workspace/.env.production e em backend/.env.example (chave sk-***REDACTED-PURGED-2026-07-28***).",
       "fix_suggested": "Set OPENCODE_GO_API_KEY=<key> no Easypanel env do servico cartorio_openclaw-gateway e docker service update",
       "blocked_by": "SUI Gustavo (Easypanel UI) - Gustavo tem poder de injecao",
-      "key_value": "sk-j03KVdV6rDkSW1D2KmrmbCL8zRjhBw0IkOes2BNCEetOokTnbLJXwc7AyltoRscr"
+      "key_value": "sk-***REDACTED-PURGED-2026-07-28***"
     },
     "3_context_1m": {
       "issue": "AGENTS.md documenta max_context_tokens=1000000 mas openclaw.json NAO define. OpenClaw esta usando default (provavelmente 131k).",
