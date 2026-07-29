@@ -1,0 +1,4 @@
+## 2026-06-25 - Prevent Timing Attacks in API Key Validation
+**Vulnerability:** API key verification logic used standard string equality operators (`!=`) directly in route handlers instead of constant-time comparison methods, exposing the system to potential timing attacks.
+**Learning:** Python's standard equality checks compare strings character-by-character and fail fast, allowing attackers to theoretically deduce valid API keys by measuring response times. It was also noted that some endpoints bypassed the centralized secure dependency (`require_cartorio_api_key`) to perform manual checks.
+**Prevention:** Always use `hmac.compare_digest` for comparing secrets like API keys or tokens. Ensure that all endpoints leverage centralized, secure authentication dependencies (`require_cartorio_api_key`) rather than reimplementing checks ad-hoc.
