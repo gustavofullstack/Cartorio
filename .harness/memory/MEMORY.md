@@ -903,3 +903,20 @@ recupera acesso quando profile é wipado.
 - **Regra**: pairing approval NAO e o gate de acesso ao bot Lark — quem manda e `ALLOW_ALL_USERS`/`GROUP_POLICY`/`REQUIRE_MENTION`. Para abrir para a organizacao inteira, basta esses 3 flags; pairing so importa quando `allow_all_users=false`.
 - **Validacao**: `hermes pairing list` (2 aprovados), `hermes gateway status` running, env no processo `ALLOW_ALL_USERS=true`/`REQUIRE_MENTION=false`. Evento auxiliar `message_read processor not found` = benigno (runbook).
 - **Pendente (SUI Gustavo)**: pedir ao Felipe para mandar mensagem (DM ou grupo, com ou sem @) e confirmar resposta da Pietra — round-trip real fecha o aceite.
+
+## Lesson 296 — Lark: pairing é auto-sync da org; rejeição ≠ falta de liberação permanente (2026-07-28)
+
+- `sync_feishu_scope.py --interval 60` roda DENTRO do container `cartorio_hermes` e reescreve
+  `platforms/pairing/feishu-approved.json` (+ profile) com TODOS os usuários do Contacts scope
+  autorizado do app Lark, a cada 60s, fail-closed (escopo vazio/erro de API nunca esvazia grants).
+  Liberar usuário novo da org = garantir que ele está no Contacts scope do app no Lark Admin;
+  o resto é automático. NÃO precisa pairing code nem restart.
+- Sintoma "bot só responde o dono": checar `grep "Unauthorized user" /opt/data/logs/gateway.log`
+  e comparar timestamp com `approved_at` no feishu-approved.json — rejeições anteriores à
+  aprovação são esperadas (janela até 60s do sync + inclusão no scope).
+- ARMADILHA: rodar `docker exec` como root cria arquivos em `platforms/pairing/` com owner root
+  (ex: `_rate_limits.json`) e o gateway (uid 10000) perde acesso — warnings em loop.
+  Sempre `docker exec -u hermes` ou `chown 10000:10000` depois (Lesson 294: configs UID/GID 10000).
+- Verdade operacional só vale com round-trip real no log: `inbound message ... user=<pessoa>` +
+  `response ready ... Sending response` (Lesson 290). "Unauthorized" zerado depois do fix ≠
+  prova; a resposta enviada é a prova.

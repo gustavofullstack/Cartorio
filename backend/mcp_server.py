@@ -26,6 +26,7 @@ evitar timeout em recursao localhost:8000 -> /mcp -> localhost:8000.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 import functools
 import inspect
 import os
@@ -34,9 +35,10 @@ import sys
 import hashlib
 import time
 from pathlib import Path
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, AsyncIterator, Callable, TypeVar, cast
 
-from starlette.middleware import Middleware
+from starlette.applications import Starlette
+from starlette.routing import Mount
 
 # Adiciona backend/ ao path para importar app.*
 sys.path.insert(0, str(Path(__file__).parent))
@@ -111,6 +113,15 @@ mcp = FastMCP(
     ),
 )
 
+mcp_public = FastMCP(
+    name="cartorio-mcp-public",
+    version="0.6.0",
+    instructions=(
+        "Perfil publico do 2o Cartorio de Notas de Uberlandia. "
+        "Disponibiliza somente cartorio_calcular_emolumento."
+    ),
+)
+
 
 # ============================================================================
 # E2.06 — Erro estruturado + scrubbed para tools MCP
@@ -150,6 +161,13 @@ def _tool_error(code: str, exc: Exception, mensagem: str | None = None) -> dict:
 # ============================================================================
 
 
+@mcp_public.tool(
+    name="cartorio_calcular_emolumento",
+    description=(
+        "Consulta emolumento oficial MG 2026. Atos compostos retornam "
+        "HITL_REQUIRED; nunca infira preco."
+    ),
+)
 @mcp.tool(
     name="cartorio_calcular_emolumento",
     description=(
@@ -700,10 +718,23 @@ def mcp_app() -> Any:
     from app.middleware.mcp_api_key import MCPApiKeyMiddleware
 
     api_key = getattr(settings, "mcp_api_key", None) if settings is not None else None
-    return mcp.http_app(
-        path="/",
-        middleware=[Middleware(MCPApiKeyMiddleware, api_key=api_key)],
+    public_api_key = getattr(settings, "mcp_public_api_key", None) if settings is not None else None
+    internal_app = mcp.http_app(path="/")
+    public_app = mcp_public.http_app(path="/")
+    protected_app = MCPApiKeyMiddleware(
+        internal_app,
+        api_key=api_key,
+        public_api_key=public_api_key,
+        public_app=public_app,
     )
+
+    @asynccontextmanager
+    async def lifespan(app: Starlette) -> AsyncIterator[None]:
+        async with internal_app.router.lifespan_context(app):
+            async with public_app.router.lifespan_context(app):
+                yield
+
+    return Starlette(routes=[Mount("/", app=protected_app)], lifespan=lifespan)
 
 
 # ============================================================================
