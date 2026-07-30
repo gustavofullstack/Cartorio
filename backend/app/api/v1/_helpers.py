@@ -149,9 +149,7 @@ def list_with_pagination(
     stmt: Select[Any] = select(model)
     if where_clauses:
         stmt = stmt.where(and_(*where_clauses))
-    stmt = (
-        stmt.order_by(model.id.desc()).limit(page_size).offset((page - 1) * page_size)
-    )
+    stmt = stmt.order_by(model.id.desc()).limit(page_size).offset((page - 1) * page_size)
 
     items = db.execute(stmt).scalars().all()  # type: ignore[arg-type]
     return list(items), total
