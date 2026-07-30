@@ -39,6 +39,8 @@ EXEMPT_FILES = {
     "app/services/cartorio_agent.py",
     "app/services/chat_pipeline.py",
     "app/services/chatwoot_handoff.py",
+    "app/api/v1/lark.py",
+    "app/services/lark.py",
 }
 
 
