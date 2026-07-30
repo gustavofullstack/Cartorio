@@ -147,8 +147,8 @@ def test_chromium_browser_cache_via_filesystem() -> None:
     found_binary = False
     for d in chromium_dirs:
         candidates = [
-            d / "chrome-linux" / "chrome",
-            d / "chrome-linux" / "headless_shell",
+            d / "chrome-linux64" / "chrome",
+            d / "chrome-linux64" / "headless_shell",
             d / "chrome-mac" / "Chromium.app" / "Contents" / "MacOS" / "Chromium",
             # Windows
             d / "chrome-win" / "chrome.exe",
