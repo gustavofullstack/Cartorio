@@ -19,6 +19,10 @@ pipeline privado BRAIN/HITL, sem caminho absoluto local e sem eco de exceção.
 Validação local: `18 passed` em `tests/test_lark_legacy_security.py`, compilação
 Python e `git diff --check` aprovados.
 
+O gate pós-migração está em
+[`scripts/verify_hermes_lark_p2.sh`](../../scripts/verify_hermes_lark_p2.sh). Ele
+é somente leitura e falha fechado enquanto houver P1 ou nenhum inbound P2.
+
 ## Bloqueadores para T5
 
 1. Alterar no tenant Lark a assinatura para `im.message.receive_v1` e remover o
