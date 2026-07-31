@@ -88,7 +88,7 @@ def cliente_padrao(test_engine, test_session_factory):
 
     SessionLocal = test_session_factory
     with SessionLocal() as s:
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         cliente = Cliente(
             cpf_hash="a" * 64,
             nome="Joao da Silva",
@@ -401,7 +401,7 @@ def test_concluir_define_data_hora_fim(db, cliente_padrao):
     from app.models.agendamento import Agendamento  # type: ignore[import-not-found]
 
     # Data passada (ontem) para que now() > data_hora
-    data_passada = datetime.datetime.utcnow() - datetime.timedelta(hours=2)
+    data_passada = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=2)
     ag = Agendamento.criar(
         cliente_id=cliente_padrao,
         cliente_cpf="52998224725",

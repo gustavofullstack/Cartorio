@@ -294,7 +294,7 @@ class TestDeadMansSwitch:
         from app.api.v1 import dead_mans_switch as dms
 
         monkeypatch.setattr(dms.settings, "audit_dead_mans_switch_minutes", 15)
-        log = SimpleNamespace(timestamp=datetime.utcnow() - timedelta(seconds=10))  # naive
+        log = SimpleNamespace(timestamp=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=10))  # naive
         db = MagicMock()
         db.query.return_value.order_by.return_value.first.return_value = log
         resp = dms.get_status(db=db)

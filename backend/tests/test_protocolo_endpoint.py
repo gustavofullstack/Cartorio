@@ -70,7 +70,7 @@ def cliente_existente(test_engine, test_session_factory):
     """Insere cliente + protocolo ja existentes para teste de GET."""
     SessionLocal = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
     with SessionLocal() as db:
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         cliente = Cliente(
             cpf_hash="a" * 64,
             nome="Maria Souza",
@@ -239,7 +239,7 @@ def test_get_protocolo_historico_para_cada_status(
     Garante que etapa_atual NAO mente para estados terminais (cancelado/expirado).
     """
     SessionLocal = test_session_factory
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     with SessionLocal() as db:
         cliente = Cliente(
             cpf_hash="b" * 64,
@@ -288,7 +288,7 @@ def test_get_protocolo_soft_deletado_retorna_404(client, test_engine, test_sessi
     dados vazando via GET publico.
     """
     SessionLocal = test_session_factory
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     with SessionLocal() as db:
         cliente = Cliente(
             cpf_hash="c" * 64,
