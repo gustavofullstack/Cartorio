@@ -1,0 +1,530 @@
+{
+  "categories": {
+    "Testamento": {
+      "description": "Atos notariais de disposição de última vontade e diretivas de vontade, disciplinados no Código Civil (arts. 1.857 a 1.990) e provimentos do CNJ.",
+      "subcategories": {
+        "Testamento Público": "Escritura pública lavrada por tabelião ou substituto perante duas testemunhas, registrando a vontade patrimonial e extrapatrimonial do testador (art. 1.864 CC).",
+        "Testamento sem Conteúdo Financeiro": "Ato notarial solene restrito a disposições não patrimoniais, como nomeação de tutor para filhos menores (art. 1.729 parágrafo único CC) ou instruções éticas/pessoais (art. 1.857, § 2º CC).",
+        "DAV - Diretivas Antecipadas de Vontade (Testamento Vital)": "Declaração de vontade sobre recusar tratamentos médicos fúteis/obstinação terapêutica em estado terminal e nomeação de procurador de saúde (Res. CFM 1.995/2012, CC art. 15).",
+        "Revogação de Testamento": "Escritura pública de revogação total ou parcial de testamento anterior lavrado em qualquer serventia (art. 1.969 CC).",
+        "Substituição Testamentária": "Indicação notarial de herdeiro/legatário substituto (vulgar ou fideicomissária) para o caso de pré-morte ou renúncia do nomeado principal (arts. 1.938 a 1.946 CC).",
+        "Testamento Eletrônico (e-Notariado)": "Lavratura remota por videoconferência notarial com assinatura via certificado digital e-Notariado (Provimento CNJ 100/2020 e 149/2023)."
+      }
+    },
+    "Usucapião": {
+      "description": "Atos notariais de constatação e instrução probatória para aquisição originária da propriedade imobiliária e mobiliária.",
+      "subcategories": {
+        "Usucapião Extrajudicial Imobiliária": "Lavratura de ata notarial de constatação de posse ad usucapionem para instrução de requerimento perante o Registro de Imóveis (art. 216-A da Lei 6.015/73 e Prov. CNJ 149/2023).",
+        "Usucapião Notarial de Bem Móvel": "Ata notarial probatória atestando a posse mansa, pacífica e contínua sobre bem móvel/veículo por mais de 3 anos (art. 1.260 CC) para instrução da ação judicial correspondente."
+      }
+    },
+    "Inventário e Partilha": {
+      "description": "Procedimentos notariais para apuração e partilha do patrimônio de pessoa falecida ou dissolução societária/conjugal.",
+      "subcategories": {
+        "Inventário e Partilha Extrajudicial": "Escritura pública de transmissão do acervo hereditário e meação com assistência obrigatória de advogado (CPC art. 610, § 1º e Lei 11.441/2007).",
+        "Nomeação de Inventariante": "Escritura pública prévia ou autônoma declarando o inventariante para representação do espólio perante órgãos públicos e instituições financeiras.",
+        "Renúncia de Direitos Hereditários": "Ato notarial solene de renúncia abdicativa ao monte mor (art. 1.806 CC) ou translativa (cessão de direitos hereditários).",
+        "Partilha Amigável / Ato Inter Vivos": "Divisão consensual de bens inter vivos ou partilha amigável pós-óbito sem litígio."
+      }
+    },
+    "Divórcio": {
+      "description": "Procedimentos de dissolução do vínculo matrimonial pela via extrajudicial.",
+      "subcategories": {
+        "Divórcio Extrajudicial sem Partilha": "Escritura de divórcio direto sem partilha imediata de bens (CPC art. 733).",
+        "Divórcio Extrajudicial com Partilha": "Escritura de divórcio com divisão do patrimônio comum, apuração de meação e apuração de ITCD/ITBI sobre excedente de meação."
+      }
+    },
+    "União Estável": {
+      "description": "Atos notariais para constituição, regulamentação patrimonial e dissolução da entidade familiar convivencial.",
+      "subcategories": {
+        "Escritura Declaratória de União Estável": "Ato de formalização da união estável, com opção do regime de bens (comunhão parcial, universal, separação total ou participação final).",
+        "Dissolução de União Estável Extrajudicial": "Encerramento da convivência com partilha de bens acumulados durante a união e definição de pensão/alimentos se for o caso.",
+        "Alteração de Regime de Bens / Pacto Antenupcial": "Escritura pública que estipula as regras patrimoniais do casamento ou da união estável."
+      }
+    },
+    "Adjudicação Compulsória": {
+      "description": "Atos notariais e judiciais para transferência forçada da propriedade imobiliária quitada.",
+      "subcategories": {
+        "Adjudicação Compulsória Extrajudicial": "Ata notarial e procedimento registral de transferência de imóvel prometido à venda quando houver omissão/recusa do promitente vendedor (art. 216-B da Lei 6.015/73 e Prov. CNJ 149/2023).",
+        "Adjudicação Compulsória Judicial / Carta de Adjudicação": "Carta de adjudicação expedida pelo juiz em processo judicial executivo ou de inventário para registro no cartório imobiliário (CPC art. 877, § 1º)."
+      }
+    },
+    "Estremação": {
+      "description": "Procedimento de localização e individualização de fração ideal em imóvel comum pro indiviso.",
+      "subcategories": {
+        "Estremação Imobiliária": "Escritura pública para desmembramento e abertura de matrícula própria de área delimitada exercida com posse exclusiva por mais de 5 anos."
+      }
+    },
+    "Emolumentos": {
+      "description": "Estrutura remuneratória e tabelamento dos serviços notariais e registrais do estado.",
+      "subcategories": {
+        "Atos com Conteúdo Financeiro": "Escrituras e atas tabeladas conforme o valor declarativo/venal do negócio (Tabela 5 MG).",
+        "Atos sem Conteúdo Financeiro": "Atos com valor fixo independente do valor patrimonial (procurações, declarações sem valor, testamento sem conteúdo econômico).",
+        "Atos de Balcão e Certidões": "Reconhecimento de firma (incluindo DUT/veículos), autenticação física e eletrônica, certidões e arquivamento."
+      }
+    },
+    "Apostilamento": {
+      "description": "Legalização internacional de documentos públicos brasileiros.",
+      "subcategories": {
+        "Apostilamento de Haia": "Emissão de certificado de autenticidade no documento público para surtir efeitos nos países signatários da Convenção de Haia (Res. CNJ 228)."
+      }
+    },
+    "CNJ Provimentos": {
+      "description": "Conjunto de provimentos e atos normativos da Corregedoria Nacional de Justiça e STJ aplicáveis aos serviços notariais.",
+      "subcategories": {
+        "Provimento CNJ 149/2023": "Código Nacional de Normas da Corregedoria Nacional de Justiça - Foro Extrajudicial.",
+        "Provimento CNJ 103/2020": "Regulamentação da Autorização Eletrônica de Viagem (AEV) para menores de 16 anos.",
+        "Provimento Conjunto TJMG 0093/2020": "Código de Normas da Corregedoria-Geral de Justiça do Estado de Minas Gerais.",
+        "Jurisprudência STJ": "Enunciados e acórdãos balizadores (ex: Súmula 239 STJ, REsp 1.836.584/MG)."
+      }
+    }
+  },
+  "required_documents": {
+    "inventario_extrajudicial": {
+      "descricao": "Documentação obrigatória para lavratura de escritura pública de inventário e partilha extrajudicial.",
+      "de_cujus": [
+        "RG e CPF (original ou cópia autenticada).",
+        "Certidão de Nascimento atualizada após a data do óbito (se solteiro) ou Certidão de Casamento atualizada (< 90 dias) com averbações.",
+        "Certidão de Óbito (original).",
+        "Se o único herdeiro for o cônjuge, apresentar as certidões de óbito dos pais do de cujus.",
+        "Certidão Negativa de Testamento fornecida pelo CENSEC."
+      ],
+      "meeiro_e_herdeiros": [
+        "Documentos pessoais (RG/CNH com validade de até 10 anos) e CPF de todos os envolvidos e respetivos cônjuges/companheiros.",
+        "Herdeiros Solteiros: Certidão de nascimento atualizada (< 90 dias).",
+        "Herdeiros Casados: Certidão de casamento atualizada (< 90 dias) e certidão do pacto antenupcial registrada, se houver.",
+        "Herdeiros Divorciados/Separados/Viúvos: Certidão de casamento atualizada (< 90 dias) com as devidas averbações.",
+        "Herdeiros Conviventes: RG, CPF de ambos, certidões de estado civil (< 90 dias) e Escritura Declaratória de União Estável (se houver)."
+      ],
+      "certidoes_negativas": [
+        "CND de Débitos Tributários Municipal no CPF do de cujus (de todos os municípios onde possuir imóveis).",
+        "CND de Débitos Tributários Estadual no CPF do de cujus (de todos os estados onde possuir bens).",
+        "CND de Débitos Relativos a Créditos Tributários Federais e à Dívida Ativa da União no CPF do de cujus."
+      ],
+      "bens_imoveis": [
+        "Urbano: Certidão de Inteiro Teor com Ônus Reais e Alienações atualizada (< 30 dias) e Certidão de Valor Venal / Guia do IPTU.",
+        "Rural: Certidão de Inteiro Teor com Ônus Reais (< 30 dias), CCIR quitado do último período, ITR com recibo de entrega do último exercício, NIRF/CIB (Receita Federal) e Recibo de Inscrição no CAR (Cadastro Ambiental Rural)."
+      ],
+      "bens_moveis_e_direitos": [
+        "Veículos: CRLV atualizado.",
+        "Valores em conta: Extrato bancário oficial indicando o saldo na data exata do falecimento.",
+        "Empresas: Contrato Social consolidado com a última alteração contratual e Certidão Simplificada da Junta Comercial expedida (< 30 dias)."
+      ],
+      "procuracao_e_assistencia": [
+        "Advogado: Indispensável a assistência de advogado com carteira da OAB.",
+        "Procuração: Se herdeiro for representado, exige-se Procuração Pública com poderes específicos para inventário (validade de 30 dias). Se houver renúncia, deve constar poder expresso para renunciar ao ITCD/monte.",
+        "Assinatura: Presencial ou digital por certificado e-Notariado."
+      ],
+      "imposto": [
+        "Declaração de Bens e Direitos do ITCD (Imposto sobre Transmissão Causa Mortis e Doação).",
+        "DAE pago e Certidão de Pagamento/Desoneração do ITCD emitida pela Secretaria de Fazenda Estadual."
+      ]
+    },
+    "divorcio_extrajudicial": {
+      "descricao": "Documentos necessários para a lavratura da Escritura Pública de Divórcio.",
+      "conjuges": [
+        "RG e CPF de ambos os cônjuges (documentos válidos com emissão < 10 anos).",
+        "Certidão de Casamento atualizada expedida há menos de 90 dias."
+      ],
+      "assistencia_juridica": [
+        "Carteira da OAB do advogado(a) assistente."
+      ],
+      "filhos_maiores": [
+        "Documento oficial de identidade que comprove a data de nascimento e filiação dos filhos maiores (RG, CNH ou Certidão de Nascimento/Casamento)."
+      ],
+      "comprovacao_bens_partilha": [
+        "Imóvel: Certidão de Inteiro Teor com Ônus Reais e Alienações (< 30 dias).",
+        "Veículo: CRLV atualizado.",
+        "Empresa: Contrato Social com última alteração contratual e Certidão Simplificada da Junta Comercial (< 30 dias).",
+        "Valores Bancários: Extrato bancário atualizado.",
+        "Imóvel Financiado: Partilha restrita à proporção de 50% para cada cônjuge."
+      ],
+      "imposto_e_emolumentos": [
+        "Declaração e pagamento do ITCD referente ao eventual excedente de meação (mesmo quando a divisão for de 50% para cada cônjuge, se houver regras estaduais específicas).",
+        "Emolumentos cartorários de dissolução (R$ 678,87 + arquivamento R$ 13,91 por folha + autenticação R$ 11,61 por cópia se necessária)."
+      ]
+    },
+    "renuncia_hereditaria": {
+      "descricao": "Documentos exigidos para a Escritura Pública de Renúncia de Direitos Hereditários.",
+      "documentos": [
+        "Documento pessoal (RG ou CNH) do renunciante e do seu cônjuge.",
+        "Certidão de Estado Civil atualizada do renunciante (< 90 dias).",
+        "Certidão de Óbito do falecido (de cujus).",
+        "Procuração Pública se representado, com validade de 30 dias e poderes expressos para renunciar à herança/ITCD.",
+        "Valor emolumental fixo: R$ 75,48 acrescido de R$ 13,91 por folha de arquivamento."
+      ]
+    },
+    "usucapiao_extrajudicial_imovel": {
+      "descricao": "Checklist de documentos para a instrução da Ata Notarial e requerimento de Usucapião Extrajudicial no Registro de Imóveis (Art. 216-A Lei 6.015/73 e Prov. 149/2023).",
+      "documentos": [
+        "Requerimento formal assinado por advogado/defensor público com procuração com poderes específicos.",
+        "Planta e Memorial Descritivo assinados por engenheiro/arquiteto habilitado com Anotação de Responsabilidade Técnica (ART/CREA ou RRT/CAU).",
+        "Certidão de Matrícula ou Transcrição atualizada (< 30 dias) com negativa de ônus e alienações.",
+        "Certidão de Valor Venal do imóvel (ou Guia do IPTU/ITR).",
+        "Certidões Negativas dos Distribuidores Cíveis das Justiças Estadual e Federal pelo prazo de 20 anos em nome do requerente, antecessores na posse e proprietários registrais.",
+        "Documentos probatórios do tempo e qualidade da posse (contas de luz/água/gás, carnês de IPTU/ITR pago, contratos de cessão de posse, comprovantes de reformas/benfeitorias, fotografias a cores).",
+        "Consulta CNIB (Central Nacional de Indisponibilidade de Bens) emitida pelo tabelionato.",
+        "Ata Notarial lavrada por Tabelião de Notas com relatório de diligência no local, fotografias e depoimento de confrontantes/testemunhas."
+      ]
+    },
+    "usucapiao_notarial_bem_movel": {
+      "descricao": "Documentos para ata notarial probatória de usucapião de bem móvel (veículo/equipamento - CC art. 1.260).",
+      "documentos": [
+        "RG, CPF e Certidão de Estado Civil do possuidor solicitante.",
+        "Descrição pormenorizada do bem móvel (marca, modelo, ano, chassi, placa, cor, número de série).",
+        "Documentos probatórios da posse contínua, pacífica e de boa-fé pelo prazo legal mínimo de 3 anos (recibos de compra, notas fiscais de manutenção, histórico de impostos/licenciamento, trocas de e-mail).",
+        "Depoimento de testemunhas qualificadas perante o tabelião atestando o animus domini e o tempo de posse.",
+        "Minuta lavrada pelo Tabelião para servir de prova documental em ação judicial de usucapião de bem móvel."
+      ]
+    },
+    "testamento_publico_e_revogacao": {
+      "descricao": "Documentos exigidos para a lavratura de Testamento Público e sua Revogação.",
+      "documentos": [
+        "RG e CPF do testador (documento válido e com foto atualizada).",
+        "Certidão de Estado Civil atualizada do testador (< 90 dias).",
+        "Atestado médico recente atestando a plena capacidade mental e lucidez do testador (obrigatório se testador for idoso avançado ou estiver acamado/em hospital).",
+        "02 (duas) Testemunhas idôneas, maiores, capazes, não parentes das partes beneficiárias nem do testador (Art. 228 CC).",
+        "Qualificação completa dos herdeiros testamentários ou legatários.",
+        "Documentos comprobatórios da propriedade dos bens indicados (Matrículas de imóveis, CRLV, etc.).",
+        "Para Revogação de Testamento: Documentos de identificação, Certidão do Testamento a ser revogado (Livro e Folha) e Certidão do CENSEC."
+      ]
+    },
+    "adjudicacao_compulsoria_extrajudicial": {
+      "descricao": "Documentos necessários para a Ata Notarial de Adjudicação Compulsória Extrajudicial (Art. 216-B da Lei 6.015/73 e Prov. CNJ 149/2023).",
+      "documentos": [
+        "Qualificação completa dos Solicitantes e dos Proprietários Promitentes Vendedores (RG, CPF, Estado Civil < 90 dias, se falecidos certidão de óbito e inventário).",
+        "Assistência de Advogado inscrito na OAB com Procuração com poderes específicos para adjudicação compulsória extrajudicial (Art. 440-G, VI Prov. 149).",
+        "Certidão de Matrícula/Transcrição atualizada (< 30 dias) com negativa de ônus e alienações.",
+        "Instrumento contratual de Promessa de Compra e Venda, Cessão de Direitos ou Sucessão com a cadeia completa de transmissões.",
+        "Certidão de Valor Venal do ano corrente (IPTU/ITR).",
+        "Comprovação de Quitação Integral do Preço (recibos, extratos bancários, cheques compensados ou Termo de Quitação com firma reconhecida).",
+        "Comprovação de Notificação Extrajudicial prévia realizada pelo Registro de Imóveis ou RTD sem manifestação/outorga no prazo de 15 dias (Art. 216-B, § 1º, II).",
+        "Prova de Recusa ou Óbice (ex: falecimento sem inventário, dissolução ou extinção da empresa vendedora, paradeiro desconhecido).",
+        "Certidões Negativas dos Distribuidores Cíveis da Justiça Estadual e Federal do imóvel e do domicílio do requerente.",
+        "Consulta CNIB em nome de todas as partes no ato da lavratura.",
+        "ITBI (comprovante exigido pelo Registro de Imóveis para o ato final de registro da transferência)."
+      ]
+    },
+    "estremacao": {
+      "descricao": "Documentos e requisitos para lavratura de Escritura Pública de Estremação (Individualização de Fração Ideal).",
+      "documentos": [
+        "Documentos pessoais e de estado civil dos proprietários requerentes (< 90 dias).",
+        "Outorga conjugal / Anuência dos Cônjuges de todos os proprietários e confrontantes, independentemente do regime de bens (Art. 108 CC).",
+        "Certidão de Matrícula do Imóvel demonstrando a fração ideal registrada em condomínio pro indiviso.",
+        "Planta e Memorial Descritivo elaborados por profissional credenciado com ART/CREA ou RRT/CAU e aprovação municipal (se urbano) ou CAR/CCIR/ITR (se rural).",
+        "Anuência expressa de todos os confrontantes da área a ser estremanada e respectivos cônjuges.",
+        "Certidão de estado civil atualizada de todos os confrontantes (< 90 dias).",
+        "Certidões Negativas Tributárias do imóvel."
+      ]
+    },
+    "uniao_estavel_e_dissolucao": {
+      "descricao": "Documentação necessária para declaração e dissolução extrajudicial de União Estável.",
+      "documentos": [
+        "RG e CPF dos conviventes.",
+        "Certidão de Nascimento ou Casamento atualizada com averbação de separação/divórcio (< 90 dias).",
+        "Indicação expressa do regime de bens adotado.",
+        "Em caso de dissolução: Advogado assistente OAB, documentos dos bens adquiridos na união, comprovantes de meação e guia ITCD se houver partilha desproporcional."
+      ]
+    },
+    "procuracao_publica": {
+      "descricao": "Documentos para emissão de Procuração Pública (Pessoa Física, Jurídica ou Idoso em Diligência).",
+      "documentos": [
+        "Pessoa Física: RG, CPF e Certidão de Estado Civil do outorgante e qualificação do outorgado.",
+        "Pessoa Jurídica: Contrato Social/Estatuto atualizado e registrado, Certidão Simplificada da Junta Comercial (< 30 dias), CNPJ e RG/CPF do sócio/administrador com poderes estatutários.",
+        "Procuração por Idoso/Diligência: Avaliação de capacidade civil, eventual atestado médico e deslocamento do Tabelião/Escrevente até o local para coleta de assinatura."
+      ]
+    },
+    "apostilamento_haia": {
+      "descricao": "Requisitos para o Apostilamento de Haia.",
+      "documentos": [
+        "Documento público original emitido no território nacional.",
+        "Assinatura do agente emissor com sinal público cadastrado na serventia notarial ou no sistema da Central do Apostilamento do CNJ."
+      ]
+    }
+  },
+  "mandatory_clauses": {
+    "usucapiao_declaracao_obrigatoria": {
+      "texto": "O(a-s) solicitante(s) concorda(m) que os fatos narrados estão de acordo com o que conhece(m) e com os demais termos desta ata notarial e que foram orientadas por este tabelião substituto que a prestação de declaração falsa no referido instrumento configurará crime de falsidade, sujeitos às penas da lei e que esta ata notarial não tem valor como confirmação ou estabelecimento de propriedade, servindo apenas para instrução de requerimento extrajudicial de usucapião para processamento perante o registrador de imóveis.",
+      "fundamento_legal": "Art. 216-A da Lei 6.015/1973; Art. 384 da Lei 13.105/2015 (CPC); Arts. 398 a 423 do Provimento CNJ 149/2023.",
+      "advertencia_tabelionica": "As partes foram expressamente cientificadas de que a dúvida registral somente poderá ser suscitada por elas próprias perante o Oficial de Registro de Imóveis competente."
+    },
+    "testamento_clausulas_e_restricoes": {
+      "sem_conteudo_financeiro": {
+        "texto": "O(a) testador(a) declara que o presente ato não possui conteúdo econômico aferível, nos termos do art. 1.857, § 2º, do Código Civil.",
+        "aplicacao": "Testamentos restritos a nomeação de tutor, reconhecimento de paternidade ou disposições não patrimoniais."
+      },
+      "nomeacao_tutor_filho_menor": {
+        "texto": "Com amparo no artigo 1.729, parágrafo único, do Código Civil, a testadora nomeia tutor(es) para seu(s) filho(s) menor(es), declarando expressamente a incompatibilidade da tutela pelo genitor sobrevivente em razão do exclusivo interesse superior da criança.",
+        "fundamento_legal": "Art. 1.729, parágrafo único do Código Civil. Exige apreciação judiciária garantindo o melhor interesse do menor."
+      },
+      "clausulas_restritivas_legitima": {
+        "texto": "Ficam gravados os bens integrantes da legítima dos herdeiros necessários com as cláusulas restritivas de INALIENABILIDADE, IMPENHORABILIDADE e INCOMUNICABILIDADE, declarando-se como JUSTA CAUSA, nos termos do artigo 1.848 do Código Civil: [Descrever a motivação fática e jurídica idônea].",
+        "fundamento_legal": "Art. 1.848 do Código Civil. A ausência ou insuficiência da justa causa invalida a gravação da legítima."
+      },
+      "substituicao_testamentaria": {
+        "texto": "Na hipótese de o herdeiro/legatário nomeado vir a falecer antes do testador, renunciar à herança ou ser excluído por indignidade, fica designada a substituição vulgar em favor de [Nome do Substituto], conforme autorizado pelos artigos 1.938 a 1.946 do Código Civil.",
+        "fundamento_legal": "Arts. 1.938 a 1.946 do Código Civil."
+      },
+      "clausula_revogatoria": {
+        "texto": "O testador declara que a presente escritura expressa sua última vontade, revogando expressamente qualquer outro testamento lavrado anteriormente em qualquer cartório ou data, e em especial o lavrado no Livro [X], Folha [Y] deste Tabelionato.",
+        "fundamento_legal": "Art. 1.969 do Código Civil."
+      },
+      "diligencia_e_capacidade": {
+        "texto": "Eu, Tabelião/Escrevente, fui convocado a comparecer no endereço [Endereço], onde encontrei o testador, o qual apresentava-se em perfeito juízo e no pleno uso de suas faculdades mentais, conforme atestado médico assinado pelo Dr. [Nome/CRM] arquivado nestas notas, lavrando o ato perante 02 (duas) testemunhas idôneas.",
+        "fundamento_legal": "Art. 1.864 do Código Civil e normas da CGJ-MG."
+      }
+    },
+    "e_notariado_regras_e_procedimentos": {
+      "gratuidade_certificado": "O certificado digital e-Notariado é emitido gratuitamente pelos Cartórios de Notas credenciados em todo o território nacional.",
+      "videoconferencia_obrigatoria": "A lavratura de atos notariais eletrônicos exige a realização de videoconferência notarial gravada para a tomada e validação da manifestação de vontade das partes (Prov. CNJ 100/2020 e 149/2023).",
+      "competencia_territorial": "Para escrituras imobiliárias eletrônicas, a competência é do tabelião da circunscrição do imóvel ou do domicílio do adquirente; para testamentos, do domicílio do testador."
+    },
+    "dav_diretivas_antecipadas_vontade": {
+      "base_legal": "Resolução CFM nº 1.995/2012 e Artigo 15 do Código Civil brasileiro.",
+      "texto": "O declarante manifesta expressamente sua recusa a tratamentos médicos extraordinários, fúteis, artificiais ou de obstinação terapêutica (distanásia) caso venha a se encontrar em estado de enfermidade grave, irreversível ou terminal, nomeando procurador de cuidados de saúde para fazer cumprir suas diretivas.",
+      "validade": "Pode ser lavrada por escritura pública ou instrumento particular assinado perante duas testemunhas."
+    },
+    "adjudicacao_compulsoria_extrajudicial": {
+      "base_legal": "Artigo 216-B da Lei 6.015/1973 (incluído pela Lei 14.382/2022) e Arts. 440-A a 440-AR do Provimento CNJ 149/2023.",
+      "sumula_stj": "Súmula 239 do STJ: 'O direito à adjudicação compulsória não se condiciona ao registro do compromisso de compra e venda no cartório de imóveis.'",
+      "natureza_e_emolumentos": "A ata notarial de adjudicação tem conteúdo econômico, calculada com base no valor venal ou da transação. Trata-se de instrumento de verificação documental e fática, cabendo a qualificação e deferimento do registro ao Oficial de Registro de Imóveis."
+    },
+    "cessao_de_direitos_pro_soluto_vs_pro_solvendo": {
+      "pro_soluto": "Na cessão de direitos pro soluto, o cedente garante apenas a existência e legalidade do crédito ao tempo da cessão, não respondendo pela solvência do devedor cedido (Art. 295 CC).",
+      "pro_solvendo": "Na cessão pro solvendo, o cedente assume por cláusula expressa a responsabilidade solidária pela solvência do devedor (Art. 296 CC).",
+      "notificacao": "A cessão somente produz eficácia em relação ao devedor cedido a partir de sua notificação formal (Art. 290 CC)."
+    },
+    "estremacao_outorga_e_posse": {
+      "outorga_conjugal": "Na escritura de estremação, é obrigatória a assinatura e outorga de ambos os cônjuges dos proprietários e de todos os confrontantes, independentemente do regime de bens adotado (Art. 108 CC).",
+      "declaracao_posse": "Os proprietários declaram, sob responsabilidade civil e penal, que exercem a posse exclusiva, mansa, pacífica e delimitada sobre a fração ideal objeto da estremação há mais de 05 (cinco) anos ininterruptos."
+    },
+    "autenticacao_eletronica": {
+      "base_legal": "Artigo 309 do Provimento Conjunto TJMG 0093/2020.",
+      "termo_notarial": "Conferida e achada conforme, nesta data, com o original existente no meio eletrônico e no endereço registrado: [Inserir URL/Link oficial de conferência na internet]."
+    }
+  },
+  "fee_tables": {
+    "estrutura_remuneratoria": {
+      "descricao": "Os emolumentos notariais no Estado de Minas Gerais são compostos pelo valor dos Emolumentos + Recompe (Recomposição Tarifária) + ISSQN (5%) + Taxa Judiciária (Lei Estadual 15.424/2004 e Tabelas da CGJ-MG).",
+      "regras_aplicacao": "Atos com conteúdo financeiro utilizam a tabela progressiva com base no valor venal ou declarativo (o que for maior). Atos sem conteúdo financeiro têm valor fixo estipulado."
+    },
+    "tabela_5_escrituras_com_valor": {
+      "faixas": [
+        {
+          "faixa": "Ato até R$ 1.400,00",
+          "emolumentos": "R$ 148,06",
+          "recompe": "R$ 11,14",
+          "iss_5_percent": "R$ 7,40",
+          "taxa_judiciaria": "R$ 61,35",
+          "total": "R$ 227,95"
+        },
+        {
+          "faixa": "Ato até R$ 2.720,00",
+          "emolumentos": "R$ 241,50",
+          "recompe": "R$ 18,18",
+          "iss_5_percent": "R$ 12,08",
+          "taxa_judiciaria": "R$ 100,08",
+          "total": "R$ 371,84"
+        },
+        {
+          "faixa": "Ato até R$ 5.440,00",
+          "emolumentos": "R$ 350,00",
+          "recompe": "R$ 26,34",
+          "iss_5_percent": "R$ 17,50",
+          "taxa_judiciaria": "R$ 145,01",
+          "total": "R$ 538,85"
+        },
+        {
+          "faixa": "Ato até R$ 7.000,00",
+          "emolumentos": "R$ 484,52",
+          "recompe": "R$ 36,47",
+          "iss_5_percent": "R$ 24,23",
+          "taxa_judiciaria": "R$ 200,76",
+          "total": "R$ 745,98"
+        },
+        {
+          "faixa": "Ato até R$ 14.000,00",
+          "emolumentos": "R$ 646,15",
+          "recompe": "R$ 48,63",
+          "iss_5_percent": "R$ 32,31",
+          "taxa_judiciaria": "R$ 267,69",
+          "total": "R$ 994,78"
+        },
+        {
+          "faixa": "Ato até R$ 28.000,00",
+          "emolumentos": "R$ 834,75",
+          "recompe": "R$ 62,83",
+          "iss_5_percent": "R$ 41,74",
+          "taxa_judiciaria": "R$ 345,89",
+          "total": "R$ 1.285,21"
+        },
+        {
+          "faixa": "Ato até R$ 42.000,00",
+          "emolumentos": "R$ 1.049,58",
+          "recompe": "R$ 79,03",
+          "iss_5_percent": "R$ 52,48",
+          "taxa_judiciaria": "R$ 434,88",
+          "total": "R$ 1.615,97"
+        }
+      ]
+    },
+    "tabela_5_testamento_e_alteracao": {
+      "faixas": [
+        {
+          "faixa": "Ato até R$ 1.400,00",
+          "emolumentos": "R$ 74,03",
+          "recompe": "R$ 5,57",
+          "iss_5_percent": "R$ 3,70",
+          "taxa_judiciaria": "R$ 30,68",
+          "total": "R$ 113,98"
+        },
+        {
+          "faixa": "Ato até R$ 2.720,00",
+          "emolumentos": "R$ 120,75",
+          "recompe": "R$ 9,09",
+          "iss_5_percent": "R$ 6,04",
+          "taxa_judiciaria": "R$ 50,04",
+          "total": "R$ 185,92"
+        },
+        {
+          "faixa": "Ato até R$ 5.440,00",
+          "emolumentos": "R$ 175,00",
+          "recompe": "R$ 13,17",
+          "iss_5_percent": "R$ 8,75",
+          "taxa_judiciaria": "R$ 72,50",
+          "total": "R$ 269,42"
+        },
+        {
+          "faixa": "Ato até R$ 7.000,00",
+          "emolumentos": "R$ 242,26",
+          "recompe": "R$ 18,24",
+          "iss_5_percent": "R$ 12,11",
+          "taxa_judiciaria": "R$ 100,38",
+          "total": "R$ 372,99"
+        },
+        {
+          "faixa": "Ato até R$ 14.000,00",
+          "emolumentos": "R$ 323,07",
+          "recompe": "R$ 24,32",
+          "iss_5_percent": "R$ 16,15",
+          "taxa_judiciaria": "R$ 133,84",
+          "total": "R$ 497,38"
+        },
+        {
+          "faixa": "Ato até R$ 28.000,00",
+          "emolumentos": "R$ 417,37",
+          "recompe": "R$ 31,42",
+          "iss_5_percent": "R$ 20,87",
+          "taxa_judiciaria": "R$ 172,94",
+          "total": "R$ 642,60"
+        },
+        {
+          "faixa": "Ato até R$ 42.000,00",
+          "emolumentos": "R$ 524,99",
+          "recompe": "R$ 39,52",
+          "iss_5_percent": "R$ 26,25",
+          "taxa_judiciaria": "R$ 217,52",
+          "total": "R$ 808,28"
+        }
+      ]
+    },
+    "atos_especificos_e_balcao": {
+      "divorcio_sem_partilha": {
+        "codigo": "1101-5",
+        "emolumentos": "R$ 463,90",
+        "recompe": "R$ 34,92",
+        "iss_5_percent": "R$ 23,20",
+        "taxa_judiciaria": "R$ 156,88",
+        "total": "R$ 678,90"
+      },
+      "renuncia_hereditaria": {
+        "valor_escritura": "R$ 75,48",
+        "arquivamento_folha": "R$ 13,91",
+        "total_estimado": "R$ 89,39"
+      },
+      "autenticacao_por_folha": {
+        "codigo": "1502-4 / 1203-9",
+        "emolumentos": "R$ 7,95",
+        "recompe": "R$ 0,60",
+        "iss_5_percent": "R$ 0,40",
+        "taxa_judiciaria": "R$ 2,66",
+        "total": "R$ 11,61"
+      },
+      "arquivamento_por_folha": {
+        "codigo": "8101-8",
+        "emolumentos": "R$ 9,50",
+        "recompe": "R$ 0,72",
+        "iss_5_percent": "R$ 0,48",
+        "taxa_judiciaria": "R$ 3,21",
+        "total": "R$ 13,91"
+      }
+    },
+    "regras_impostos_itcmd_vs_itbi": {
+      "ITCMD": {
+        "competencia": "Estadual",
+        "fato_gerador": "Transmissão causa mortis (herança/inventário) e doação gratuita de quaisquer bens ou direitos.",
+        "excedente_de_meacao": "Incide quando a partilha de bens em divórcio ou inventário atribui a um dos cônjuges/herdeiros quota superior à sua meação ou legítima sem compensação financeira onerosa (caracterizando doação gratuita do excedente)."
+      },
+      "ITBI": {
+        "competencia": "Municipal",
+        "fato_gerador": "Transmissão onerosa inter vivos de bens imóveis e direitos a eles relativos (compra e venda, permuta, cessão onerosa).",
+        "partilha_onerosa": "Se a divisão desproporcional de bens na partilha for compensada por pagamento financeiro ou entrega de outros bens particulares, incide ITBI municipal sobre a torna/cessão onerosa.",
+        "base_de_calculo": "Valor venal de referência atribuído pelo município ou valor declarativo apurado do negócio, prevalecendo o de maior valor."
+      },
+      "holding_imobiliaria": {
+        "calculo_vp": "Patrimônio Líquido (PL) = Ativos Totais - Passivos Totais.",
+        "calculo_vpa": "Valor Patrimonial da Ação/Cota (VPA) = PL / Número Total de Ações ou Cotas Emitidas.",
+        "aplicacao_notarial": "Utilizado para apurar a base de cálculo tributária em integralização de capital social e doação de cotas sociais com reserva de usufruto."
+      }
+    }
+  },
+  "provimentos": {
+    "provimento_cnj_103_2020": {
+      "titulo": "Autorização Eletrônica de Viagem (AEV) para crianças e adolescentes",
+      "ementa": "Dispõe sobre a Autorização Eletrônica de Viagem nacional e internacional de crianças e adolescentes de até 16 anos desacompanhados de ambos ou um de seus pais.",
+      "regras_chave": [
+        "Processamento realizado de forma 100% digital pela plataforma e-Notariado (Módulo AEV).",
+        "Exige a concordância dos genitores ou responsáveis legais autenticada via certificado digital e-Notariado ou validação por videoconferência.",
+        "A AEV possui prazo de validade determinado pelos solicitantes (máximo de 2 anos).",
+        "Contém QR Code de segurança para validação imediata por agentes da Polícia Federal, empresas de transporte aéreo, terrestre e marítimo."
+      ]
+    },
+    "provimento_cnj_149_2023": {
+      "titulo": "Código Nacional de Normas da Corregedoria Nacional de Justiça do CNJ - Foro Extrajudicial",
+      "ementa": "Institui o Código Nacional de Normas (CNN/CN/CNJ-Extra), consolidando a regulamentação dos serviços notariais e de registro no Brasil.",
+      "regras_chave": [
+        "Usucapião Extrajudicial (Arts. 398 a 423): Requisitos detalhados da ata notarial, dispensa de testemunhas em casos de robusta prova documental, rito de notificação dos confrontantes e proprietários registrais, e processamento no Registro de Imóveis (art. 216-A da Lei 6.015/73).",
+        "Adjudicação Compulsória Extrajudicial (Arts. 440-A a 440-AR): Regulamentação completa do art. 216-B da Lei 6.015/73. Lavratura da ata notarial de constatação de quitação, notificação do promitente vendedor por 15 dias e envio ao RI.",
+        "Plataforma e-Notariado: Padronização da prática de atos notariais eletrônicos, escrituras públicas remotas, emissão do certificado digital notarial gratuito e delimitação das regras de competência territorial notarial."
+      ]
+    },
+    "provimento_conjunto_tjmg_0093_2020": {
+      "titulo": "Código de Normas da Corregedoria-Geral de Justiça do Estado de Minas Gerais",
+      "ementa": "Regulamenta os serviços notariais e de registro no Estado de Minas Gerais.",
+      "regras_chave": [
+        "Artigo 309: Regulamenta a autenticação eletrônica de documentos digitais. O Tabelião acessará a URL/endereço eletrônico informado no documento, conferirá a autenticidade e emitirá a autenticação com a menção expressa ao site consultado.",
+        "Normas para lavratura de escrituras públicas fora da serventia mediante diligência notarial devidamente justificada no instrumento.",
+        "Regras para exigência de pactos antenupciais, qualificação de idosos e atos de escrituração civil e imobiliária em Minas Gerais."
+      ]
+    },
+    "jurisprudencia_stj_e_tribunais": {
+      "sumula_239_stj": {
+        "enunciado": "O direito à adjudicação compulsória não se condiciona ao registro do compromisso de compra e venda no cartório de imóveis.",
+        "aplicacao_cartoraria": "Permite lavrar a ata notarial e processar a adjudicação extrajudicial mesmo que o contrato de compromisso de compra e venda não esteja previamente registrado na matrícula do imóvel."
+      },
+      "resp_1836584_mg_procuracao_poderes_especiais": {
+        "relatora": "Min. Nancy Andrighi",
+        "tese": "A procuração que estabelece poderes para alienação de imóveis e atos de disposição exige a outorga de poderes especiais E específicos (descrição individualizada do imóvel e da transação). Poderes amplos, gerais e ilimitados não suprem a necessidade de especificação do bem.",
+        "aplicacao_cartoraria": "Tabeliães devem recusar procurações genéricas para a lavratura de escrituras de compra e venda, doação ou alienação de imóveis."
+      },
+      "sucessao_conjuge_e_companheiro_tema_809": {
+        "tese": "É inconstitucional a distinção de regimes sucessórios entre cônjuges e companheiros (inconstitucionalidade do art. 1.790 CC). Aplica-se a ambos o artigo 1.829 do Código Civil.",
+        "aplicacao_cartoraria": "União estável e casamento possuem equiparação total nos inventários extrajudiciais para concorrência com descendentes e ascendentes."
+      },
+      "paternidade_socioafetiva_post_mortem_provimento_182_2024": {
+        "tese": "O Provimento CNJ 182/2024 revogou a possibilidade de reconhecimento extrajudicial post mortem de paternidade socioafetiva direta em cartório (revogação de dispositivos do Prov. 63/2017).",
+        "aplicacao_cartoraria": "Reconhecimento de paternidade socioafetiva após a morte do genitor só pode ser formalizado pela via judicial ou se houver testamento/escritura pública deixada em vida pelo pai (art. 1.609 CC)."
+      }
+    }
+  }
+}
