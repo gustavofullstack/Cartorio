@@ -2,11 +2,11 @@
   "title": "User Review & Support Operations",
   "subtitle": "Reviews · Support Tickets · Marketplace Q&A — refreshed from data/source_user_review.xlsx",
   "timezone": "America/Sao_Paulo",
-  "generatedAt": "2026-07-31T03:59:50+00:00",
+  "generatedAt": "2026-07-13T17:58:18+00:00",
   "freshness": {
     "latestDataDate": "2026-06-15",
     "earliestDataDate": "2026-04-14",
-    "latestCapturedAt": "2026-07-31T03:59:50+00:00",
+    "latestCapturedAt": "2026-07-13T17:58:18+00:00",
     "source": "data/source_user_review.xlsx (3 sheets, immutable)",
     "snapshotDate": "2026-06-15"
   },
