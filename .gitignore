@@ -57,6 +57,9 @@ appendonly.aof
 # Private corpus / quarantine — raw sources never enter git (LGPD-by-design)
 /.private/
 
+# Runtime lock for the tamper-evident BRAIN trace ledger
+/.evidence/brain-corpus/.agent-trace.jsonl.lock
+
 # pytest-cov annotation files (","-suffix bug seen in bf12203)
 ,cover
 *.cover

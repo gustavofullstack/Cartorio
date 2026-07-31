@@ -16,8 +16,8 @@ componente de produção.
 
 - Extração privada concluída: 90 fontes, total de 17.505.807 B.
 - Varredura antimalware (AV): **PASS**, 0 itens infectados.
-- Grok 4.5 está preparado como líder de revisão; Kimi está preparado localmente.
-- AGY já existia e será preservado, sem substituição ou tomada de controle.
+- A execução foi dividida entre `cartorio-documentos`, `cartorio-dev`,
+  `cartorio-lgpd` e `codex-root`, com correlação auditável.
 - Gemini 3.6 Flash está indisponível e não é dependência de entrega.
 - Nenhum dado bruto foi enviado a serviços externos.
 - Schema e pipeline permanecem em revisão; portanto T4 e T5 não podem ser declarados.
@@ -77,10 +77,10 @@ Transições são unidirecionais por padrão. Reprocessamento cria nova versão;
 
 | Gate | Evidência mínima de aceite | Estado |
 |---|---|---|
-| T0 — escopo | finalidade, dados permitidos, retenção, donos e limites aprovados | parcial (plano + docs pipeline) |
-| T1 — integridade | inventário opaco, hash, AV limpo e acesso privado verificados | parcial: AV PASS; 90/90 extract; 3083 units |
-| T2 — privacidade | classificação de PII, sanitização e prova de que nenhum raw sai externamente | parcial: scrub ingest + classificador bloqueia CPF bruto |
-| T3 — controle | schema, RBAC, audit append-only, HITL e flags revisados com testes | parcial: lifecycle/HITL/cálculo + 40 testes; sign-off LGPD pendente |
+| T0 — escopo | finalidade, dados permitidos, retenção, donos e limites aprovados | **pass local** |
+| T1 — integridade | inventário opaco, hash, AV limpo e acesso privado verificados | **pass local:** AV rc=0; 90/90; 3.087 units |
+| T2 — privacidade | classificação de PII, sanitização e prova de que nenhum raw sai externamente | **pass de padrões:** resíduo canônico 0; PII contextual em HITL |
+| T3 — controle | schema, RBAC, audit append-only, HITL e flags revisados com testes | **parcial:** código/testes verdes; enforcement DB/RBAC pendente |
 | T4 — integração controlada | ingestão/indexação em ambiente isolado, rollback exercitado e recuperação somente PUBLISHED | **não declarado** |
 | T5 — operação | consulta real autorizada, resposta segura no mesmo canal, monitoramento e evidência humana | **não declarado** |
 
@@ -91,12 +91,12 @@ no canal autorizado; sem isso, o sistema permanece não operacional para este co
 
 | Meta | Tarefa | Dono primário | Dependências | Aceite |
 |---|---|---|---|---|
-| M1: governança | Definir contrato `ConhecimentoInstitucional` e máquina de estados | @Codex | T0, revisão @Terra | schema versionado, transições fail-closed e decisão registrada |
-| M2: segurança | Formalizar inspeção, classificação e sanitização locais | @Terra | M1, parecer @Grok | testes com amostras sintéticas e bloqueio de PII/raw externo |
-| M3: revisão | Implementar fila HITL e aprovações por risco | @Grok | M1, política LGPD | dupla aprovação quando aplicável e audit encadeado |
-| M4: indexação | Indexar apenas versões APPROVED em ambiente isolado | @Kimi | M1–M3, feature flags | recuperação rejeita estados não publicados |
-| M5: publicação | Promover, revogar e reverter versões sem mutação histórica | @Codex | M1–M4, AGY preservado | exercício de rollback e rastreabilidade completa |
-| M6: certificação | Executar gates T0–T5 e tribunal de evidências | @AGY (coordenação) | M1–M5, autorização operacional | T4/T5 somente após evidência correspondente |
+| M1: governança | Definir contrato e máquina de estados | `codex-root` | T0, revisão LGPD | contrato e transições fail-closed |
+| M2: segurança | Inspeção, extração e sanitização locais | `cartorio-lgpd` | M1 | testes adversariais e resíduo canônico 0 |
+| M3: interpretação | Inventário e classificação integral | `cartorio-documentos` + `cartorio-dev` | M1–M2 | 90/90 fontes e 3.087/3.087 units |
+| M4: revisão | Fila HITL, dupla aprovação e trace | `cartorio-lgpd` | M1–M3 | 90 itens pending e ledger encadeado |
+| M5: indexação/publicação | Ambiente isolado e rollback | futuro | M1–M4, autorização T4 | **não executado nesta entrega** |
+| M6: operação | E2E real autorizado | futuro | T4 + autorização de canal | **não executado nesta entrega** |
 
 ## Matriz PII, HITL e audit
 
@@ -134,11 +134,10 @@ reprocessamento automático, mutação retroativa de audit ou alteração de Her
 
 | Agente | Papel | Evidência esperada | Limite |
 |---|---|---|---|
-| @Codex | contrato, plano, promoção e rollback | diff revisável, testes e decisão de release | não publica sem gates |
-| @Terra | arquitetura, schema e segurança de dados | revisão de isolamento, RBAC e PII | não envia raw externamente |
-| @Grok | liderança de revisão e qualidade | parecer de risco, HITL e critérios de aceite | não substitui aprovação humana |
-| @Kimi | execução local assistida e testes | resultados locais sanitizados | sem acesso/publicação externa por padrão |
-| @AGY | coordenação preexistente | consolidação de dependências e evidências | preservado; sem takeover ou mudança de runtime |
+| `codex-root` | integração, staging, gates e documentação | diff, testes e snapshot | não publica sem gates |
+| `cartorio-documentos` | inventário e fidelidade | reconciliação e lacunas estruturais | sem conteúdo raw no relatório |
+| `cartorio-dev` | classificação, identidade e cálculo | 3.087/3.087 + testes | sem acesso live |
+| `cartorio-lgpd` | scrub, permissões, HITL e tribunal | resíduo 0, `0700/0600`, parecer | não substitui revisão humana |
 
 ## Critério de conclusão
 

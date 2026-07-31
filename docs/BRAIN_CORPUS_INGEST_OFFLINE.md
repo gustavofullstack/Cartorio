@@ -7,6 +7,9 @@ Ele nao chama rede, LLM, embeddings, APIs, navegadores ou automacao de escritori
 ## Execucao
 
 ```bash
+uv run --project backend python scripts/brain_corpus_stage_zip.py \
+  /caminho/privado/corpus.zip --destination \
+  .private/brain-ingest-quarantine/<batch>
 uv run --project backend python scripts/brain_corpus_ingest.py
 ```
 
@@ -17,20 +20,24 @@ de PII. O processo retorna `2` quando existir qualquer erro parcial bloqueante.
 
 - Aceita somente DOCX, ODT, PDF e TXT locais; symlinks e formatos desconhecidos
   geram erro bloqueante opaco.
+- O staging rejeita path traversal, symlink, criptografia, colisão Unicode/case,
+  extensão inesperada, excesso de tamanho/ratio e nunca sobrescreve lote existente.
 - Cada arquivo e extraido em processo isolado, com timeout por arquivo. PDFs
-  usam somente o binario local `pdftotext`, tambem com timeout e stderr descartado.
+  usam somente `pdftotext -layout`, com timeout e stderr descartado.
+- DOCX preserva locators para body, tabelas/células, caixas de texto, cabeçalho,
+  rodapé, notas e comentários; elementos gráficos ainda exigem revisão visual.
 - PDF sem camada de texto usa fallback OCR exclusivamente local (`pdftoppm` e
   `tesseract`) por pagina. O fallback limita cinco paginas, 80 MiB de imagens,
-  10 segundos de renderizacao e 5 segundos por pagina; os temporarios vivem em
+  60 segundos de renderizacao e 20 segundos por pagina; os temporarios vivem em
   `derived/` e sao removidos. Limite, timeout ou dependencia ausente gera erro
   opaco bloqueante.
-- A saida e permitida apenas em `derived/`, subdiretorio da propria quarentena
-  ignorada pelo Git. Os arquivos-fonte nunca sao alterados.
+- A saida e permitida apenas em `derived/`, subdiretorio `0700` da quarentena
+  ignorada pelo Git; derivados são `0600`. Os arquivos-fonte nunca sao alterados.
 - IDs de fonte sao SHA-256 opacos do caminho relativo. Manifestos e relatorios
   nao contem nome, caminho, excecao original ou texto-fonte.
-- Unidades persistidas possuem localizador, ID e hash. Antes de persistir, os
-  padroes reconhecidos de CPF, CNPJ, email, telefone, CEP e RG sao substituidos.
-  URLs tambem sao removidas. Os manifestos guardam somente tipo e contagem de PII.
+- Unidades persistidas possuem localizador, ID e hash. Antes de persistir, máscaras
+  específicas e o scrubber canônico são aplicados; URLs são removidas. Nomes e
+  endereços livres continuam sob revisão contextual obrigatória.
 
 ## Derivados
 

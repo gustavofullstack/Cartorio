@@ -2,7 +2,7 @@
 
 **Data:** 2026-07-31  
 **Estado:** implementação local fail-closed; **sem T4/T5**; **Hermes/prod intocados**.  
-**Assinatura:** @Codex/brain_pipeline + revisão planejada @Grok/@cartorio-lgpd
+**Correlação:** `corr-brain-corpus-20260731`
 
 ## Objetivo
 
@@ -22,6 +22,7 @@ sanitizados participam do pipeline.
 
 | Camada | Path | Função |
 |---|---|---|
+| Staging ZIP | `scripts/brain_corpus_stage_zip.py` | Valida e extrai atomicamente sem overwrite |
 | Quarentena | `.private/brain-ingest-quarantine/<batch>/` | Corpus bruto + AV |
 | Ingest offline | `scripts/brain_corpus_ingest.py` | Extrai DOCX/ODT/PDF/TXT → derivados sanitizados |
 | Classificação | `scripts/brain_corpus_classify.py` + `app/services/conhecimento_pipeline.py` | Tipo documental local (keywords) |
@@ -30,7 +31,7 @@ sanitizados participam do pipeline.
 | Cálculo | `app/services/conhecimento_institucional.py` | Gramática fechada Decimal (fixed/percentage/sum) |
 | Classificador | `app/services/conhecimento_classificador.py` | Catálogo fechado de tipos notariais |
 | Persistência | `app/models/conhecimento_institucional.py` + Alembic `0030` | Tabelas `knowledge_*` |
-| Trace agentes | `scripts/brain_agent_trace.py` | Ledger append-only em `.evidence/brain-corpus/` |
+| Trace agentes | `scripts/brain_agent_trace.py` | Ledger encadeado e tamper-evident em `.evidence/brain-corpus/` |
 
 ## Ciclo de vida
 
@@ -51,16 +52,21 @@ Qualquer salto (ex.: CLASSIFIED → PUBLISHED) é rejeitado. Terminais
 
 | Gate | Estado | Evidência |
 |---|---|---|
-| T0 escopo | parcial | Super plano + este doc |
-| T1 integridade | parcial | 90 fontes, hash, AV PASS, extract 3083 units, `is_blocked=false` |
-| T2 privacidade | parcial | PII scrub no ingest; classificador rejeita CPF bruto; derivados sem nomes |
-| T3 controle | parcial | lifecycle + HITL + schema + testes unitários |
+| T0 escopo | **pass local** | objetivo, limites, donos, tarefas e aceites registrados |
+| T1 integridade | **pass local** | 90/90 hashes, CRC, AV local `rc=0`, sem traversal/link/criptografia |
+| T2 privacidade | **pass de padrões / HITL contextual** | 3.087 units, resíduo canônico 0, `0700/0600`; nomes/endereço livre exigem humano |
+| T3 controle | **parcial** | lifecycle/HITL/identidades/cálculo/testes verdes; enforcement DB/RBAC ainda pendente |
 | T4 integração | **não declarado** | sem indexação/publicação em ambiente de atendimento |
 | T5 operação | **não declarado** | sem consulta real no canal |
 
 ## Como rodar (somente local)
 
 ```bash
+# 0) Validar staging existente sem sobrescrever
+uv run --project backend python scripts/brain_corpus_stage_zip.py \
+  /caminho/privado/corpus.zip --destination \
+  .private/brain-ingest-quarantine/<batch>
+
 # 1) Ingestão offline (quarentena já populada)
 uv run --project backend python scripts/brain_corpus_ingest.py
 # stdout: {"is_blocked": false, "sources_discovered": 90, ...}
@@ -71,7 +77,7 @@ uv run --project backend python scripts/brain_corpus_classify.py
 
 # 3) Trace de agente (metadados opacos)
 uv run --project backend python scripts/brain_agent_trace.py \
-  --agent codex --action classify --gate T3 \
+  --agent codex-root --action classify --gate T3 \
   --result ok --evidence-ref derived/classification.sanitized.json
 
 # 4) Testes do bounded context
@@ -79,11 +85,11 @@ cd backend && uv run pytest -q --no-cov \
   tests/test_conhecimento_*.py tests/test_brain_corpus_ingest.py
 ```
 
-## HITL — como publicar (futuro, após T4 autorizado)
+## HITL — publicação bloqueada nesta entrega
 
 1. Escrevente/DPO revisa `classification.sanitized.json` (códigos + hashes).
-2. `registrar_decisao_humana(... APPROVED ...)` por versão.
-3. `publicar_versao(... APPROVED → PUBLISHED ...)`.
+2. Registrar aprovação humana da versão e sign-off separado DPO/LGPD.
+3. `publicar_versao` exige as duas decisões, `t4_authorized=true` e ambiente `isolated`.
 4. Somente então o BRAIN pode recuperar via `e_consumivel(PUBLISHED)`.
 5. Rollback: `revogar_publicacao` ou flag de recuperação desligada — audit preservado.
 
@@ -91,21 +97,22 @@ cd backend && uv run pytest -q --no-cov \
 
 | Agente | Papel nesta entrega |
 |---|---|
-| @Codex / implementer | lifecycle, classificador, pipeline, testes, docs |
-| @Grok | liderança de revisão (parecer de risco — pendente sign-off) |
-| @Terra | schema/RBAC/PII (modelo + migration 0030 pré-existente) |
-| @Kimi | execução local assistida (opcional) |
-| @AGY | coordenação preservada; sem takeover de runtime |
+| `codex-root` | integração, staging, publicação fail-closed, testes e docs |
+| `cartorio-documentos` | reconciliação 90/90 e auditoria de fidelidade estrutural |
+| `cartorio-dev` | classificador integral, identidade, schema lógico e cálculo |
+| `cartorio-lgpd` | scrub canônico, permissões, HITL, trace e tribunal independente |
 | Hermes | **intocado** — runtime prod preservado |
 
-Ledger: `.evidence/brain-corpus/agent-trace.jsonl` (append-only, sem PII).
+Ledger: `.evidence/brain-corpus/agent-trace.jsonl` (hash-chain, `flock`, `fsync`, `0600`).
 
 ## PII e segredos
 
 - Corpus bruto: somente `.private/` (gitignored).
-- Ingest substitui CPF/CNPJ/email/telefone/CEP/RG e remove URLs.
+- Ingest aplica máscaras específicas e o scrubber canônico completo; remove URLs.
+- A varredura final encontrou zero padrões canônicos residuais nas 3.087 unidades.
+- Nome e endereço livre não são decidíveis só por regex; o corpus continua privado e sob HITL.
 - Classificador recusa texto com CPF formatado cru.
-- Trace/agent ledger bloqueia padrões de chave (`sk-`, `ghp_`, etc.) e CPF/email.
+- Trace bloqueia PII, paths e padrões de segredo, inclusive códigos OAuth.
 - Cálculos usam só `Decimal` — sem `eval`, float ou I/O.
 
 ## Critério de não-regressão
@@ -118,5 +125,14 @@ Ledger: `.evidence/brain-corpus/agent-trace.jsonl` (append-only, sem PII).
 
 ---
 
-Próximo passo autorizado (fora desta entrega): revisão HITL humana + sign-off
-`cartorio-lgpd` antes de qualquer merge que toque publicação ou recuperação live.
+## Fila HITL
+
+```bash
+uv run --project backend python scripts/brain_corpus_hitl_queue.py
+```
+
+Gera `derived/hitl_queue.sanitized.json` (prioridade P0–P3, sem texto/PII).
+Checklist operacional: `docs/BRAIN_HITL_CHECKLIST.md`.
+
+Próximo passo autorizado: revisão HITL humana + sign-off `cartorio-lgpd`
+antes de qualquer publicação ou recuperação live (T4/T5).

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import stat
 import sys
 import zipfile
 from pathlib import Path
@@ -113,6 +114,71 @@ def test_ingestion_extracts_local_docx_and_odt_with_stable_locators(tmp_path: Pa
     assert {unit["locator"] for unit in units} == {"paragraph:1"}
     assert all(len(unit["source_id"]) == 64 for unit in units)
     assert all(len(unit["sanitized_text_sha256"]) == 64 for unit in units)
+
+
+def test_docx_preserves_tables_textboxes_and_auxiliary_parts_without_duplication(
+    tmp_path: Path,
+) -> None:
+    source_dir = tmp_path / "quarantine"
+    source_dir.mkdir()
+    path = source_dir / "structured.docx"
+    document_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        "<w:body>"
+        "<w:p><w:r><w:t>Corpo</w:t></w:r>"
+        "<w:r><w:txbxContent><w:p><w:r><w:t>Caixa</w:t></w:r></w:p>"
+        "</w:txbxContent></w:r></w:p>"
+        "<w:tbl><w:tr><w:tc><w:p><w:r><w:t>Célula</w:t></w:r></w:p>"
+        "</w:tc></w:tr></w:tbl>"
+        "</w:body></w:document>"
+    )
+    header_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        "<w:p><w:r><w:t>Cabeçalho</w:t></w:r></w:p></w:hdr>"
+    )
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("word/document.xml", document_xml)
+        archive.writestr("word/header1.xml", header_xml)
+
+    result = run_ingestion(source_dir, source_dir / "derived")
+
+    assert result.is_blocked is False
+    units = [
+        json.loads(line)
+        for line in (source_dir / "derived" / "units.sanitized.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    by_locator = {unit["locator"]: unit["text"] for unit in units}
+    assert by_locator == {
+        "paragraph:1": "Corpo",
+        "textbox:1/paragraph:1": "Caixa",
+        "table:1/row:1/cell:1/paragraph:1": "Célula",
+        "header:1/paragraph:1": "Cabeçalho",
+    }
+    assert sum(unit["text"] == "Caixa" for unit in units) == 1
+
+
+def test_ingestion_applies_canonical_scrubber_and_owner_only_permissions(tmp_path: Path) -> None:
+    source_dir = tmp_path / "quarantine"
+    source_dir.mkdir(mode=0o700)
+    (source_dir / "document.txt").write_text(
+        "Data 31/07/2026 e contato (34) 99999-0000",
+        encoding="utf-8",
+    )
+
+    result = run_ingestion(source_dir, source_dir / "derived")
+
+    assert result.is_blocked is False
+    derived = source_dir / "derived"
+    unit = json.loads((derived / "units.sanitized.jsonl").read_text(encoding="utf-8"))
+    assert "31/07/2026" not in unit["text"]
+    assert "99999-0000" not in unit["text"]
+    assert stat.S_IMODE(derived.stat().st_mode) == 0o700
+    for output in derived.iterdir():
+        assert stat.S_IMODE(output.stat().st_mode) == 0o600
 
 
 def test_ingestion_refuses_to_write_outside_the_quarantine_subdirectory(tmp_path: Path) -> None:

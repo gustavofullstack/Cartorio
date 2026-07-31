@@ -30,6 +30,9 @@ class EstadoConhecimentoInvalidoError(ValueError):
 
 _MONEY = Decimal("0.01")
 _MAX_RULE_DEPTH = 10
+_MAX_SUM_ITEMS = 100
+_MAX_VALUE = Decimal("1000000000000")
+_MAX_DECIMAL_PLACES = 10
 
 
 def gerar_chave_idempotencia(content_sha256: str, version_number: int) -> str:
@@ -53,6 +56,8 @@ def calcular_regra_declarativa(
     if estado != EstadoConhecimento.PUBLISHED:
         raise EstadoConhecimentoInvalidoError("regra de cálculo não está publicada")
     resultado = _calcular_expressao(regra, contexto, depth=0)
+    if resultado > _MAX_VALUE:
+        raise RegraDeclarativaInvalidaError("resultado excede o limite monetário")
     return resultado.quantize(_MONEY, rounding=ROUND_HALF_UP)
 
 
@@ -72,19 +77,26 @@ def _calcular_expressao(
             raise RegraDeclarativaInvalidaError("base percentual inválida")
         base = _coagir_contexto(contexto, base_name)
         rate = _coagir_decimal(expressao.get("rate"), "rate")
-        if rate < Decimal("0"):
-            raise RegraDeclarativaInvalidaError("rate não pode ser negativo")
-        return base * rate
+        if rate > Decimal("1"):
+            raise RegraDeclarativaInvalidaError("rate deve estar entre zero e um")
+        resultado = base * rate
+        if resultado > _MAX_VALUE:
+            raise RegraDeclarativaInvalidaError("resultado excede o limite monetário")
+        return resultado
     if operator == "sum":
         _validar_campos(expressao, {"operator", "items"})
         items = expressao.get("items")
         if not isinstance(items, list) or not items:
             raise RegraDeclarativaInvalidaError("sum exige uma lista não vazia de items")
+        if len(items) > _MAX_SUM_ITEMS:
+            raise RegraDeclarativaInvalidaError("sum excede o limite de items")
         total = Decimal("0")
         for item in items:
             if not isinstance(item, Mapping):
                 raise RegraDeclarativaInvalidaError("item de sum deve ser um objeto declarativo")
             total += _calcular_expressao(item, contexto, depth=depth + 1)
+            if total > _MAX_VALUE:
+                raise RegraDeclarativaInvalidaError("resultado excede o limite monetário")
         return total
     raise RegraDeclarativaInvalidaError("operator não permitido")
 
@@ -112,6 +124,15 @@ def _coagir_decimal(value: Any, name: str, *, context_value: bool = False) -> De
         raise error(f"{name} não é decimal válido") from None
     if not result.is_finite():
         raise error(f"{name} deve ser finito")
+    if result < Decimal("0"):
+        raise error(f"{name} não pode ser negativo")
+    if result > _MAX_VALUE:
+        raise error(f"{name} excede o limite permitido")
+    exponent = result.as_tuple().exponent
+    if not isinstance(exponent, int):
+        raise error(f"{name} deve ser decimal finito")
+    if exponent < -_MAX_DECIMAL_PLACES:
+        raise error(f"{name} excede a precisão decimal permitida")
     return result
 
 

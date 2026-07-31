@@ -69,3 +69,17 @@ def test_idempotencia_estavel() -> None:
     b = classificar_texto_sanitizado(texto, unit_id="f" * 64)
     assert a.idempotency_key == b.idempotency_key
     assert a.document_type_code == b.document_type_code
+
+
+def test_idempotencia_muda_quando_texto_muda() -> None:
+    first = classificar_texto_sanitizado(
+        "testamento com testador",
+        unit_id="a" * 64,
+    )
+    changed = classificar_texto_sanitizado(
+        "testamento com testamenteiro",
+        unit_id="a" * 64,
+    )
+    assert first.document_type_code == changed.document_type_code
+    assert first.confidence == changed.confidence
+    assert first.idempotency_key != changed.idempotency_key

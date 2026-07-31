@@ -102,6 +102,38 @@ def test_calculo_e_chave_sao_idempotentes() -> None:
     assert gerar_chave_idempotencia("a" * 64, 1) != gerar_chave_idempotencia("b" * 64, 1)
 
 
+@pytest.mark.parametrize(
+    ("regra", "contexto"),
+    [
+        ({"operator": "fixed", "amount": "-0.01"}, {}),
+        (
+            {"operator": "percentage", "base": "valor", "rate": "0.10"},
+            {"valor": "-1.00"},
+        ),
+        (
+            {"operator": "percentage", "base": "valor", "rate": "1.01"},
+            {"valor": "10.00"},
+        ),
+        ({"operator": "fixed", "amount": "1000000000000.01"}, {}),
+    ],
+)
+def test_calculo_rejeita_negativos_taxa_e_limites(
+    regra: dict[str, object],
+    contexto: dict[str, object],
+) -> None:
+    with pytest.raises((RegraDeclarativaInvalidaError, ContextoCalculoInvalidoError)):
+        calcular_regra_declarativa(regra, contexto, estado=EstadoConhecimento.PUBLISHED)
+
+
+def test_calculo_limita_quantidade_de_items() -> None:
+    regra = {
+        "operator": "sum",
+        "items": [{"operator": "fixed", "amount": "0.01"}] * 101,
+    }
+    with pytest.raises(RegraDeclarativaInvalidaError, match="limite de items"):
+        calcular_regra_declarativa(regra, {}, estado=EstadoConhecimento.PUBLISHED)
+
+
 def test_schema_falha_fechado_e_impede_versao_duplicada(db_session: Session) -> None:
     fonte_invalida = FonteConhecimento(
         source_kind="OFFICIAL",

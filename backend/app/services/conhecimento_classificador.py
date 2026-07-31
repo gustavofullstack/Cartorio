@@ -19,11 +19,17 @@ _CATALOGO: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
         "Testamento público / cláusulas",
         (
             r"testamento",
+            r"testador",
             r"testamenteiro",
             r"herdeiro\s+testament",
             r"revoga[cç][aã]o\s+de\s+testamento",
             r"cl[aá]usulas?\s+restritivas",
             r"nascituro",
+            r"inalienabilidade",
+            r"impenhorabilidade",
+            r"incomunicabilidade",
+            r"leg[ií]tima",
+            r"substitui[cç][aã]o\s+testament",
         ),
     ),
     "USUCAPIAO": (
@@ -129,6 +135,8 @@ _CATALOGO: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
             r"checklist",
             r"lista\s+de\s+doctos",
             r"documenta[cç][aã]o\s+para",
+            r"certid[aã]o\s+de\s+",
+            r"requerimento\s+para\s+certid",
         ),
     ),
     "SUCESSOES_HERANCA": (
@@ -137,9 +145,20 @@ _CATALOGO: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
             r"heran[cç]a",
             r"sucess[aã]o",
             r"herdeiro\s+necess",
+            r"herdeiros?",
             r"mea[cç][aã]o",
             r"colaterais?",
             r"c[oô]njuge\s+sobrevivente",
+            r"meios?-irm[aã]os?",
+            r"ordem\s+de\s+sucess",
+        ),
+    ),
+    "RECONHECIMENTO_PATERNIDADE": (
+        "Reconhecimento de paternidade",
+        (
+            r"reconhecimento\s+de\s+paternidade",
+            r"paternidade\s+p[oó]s\s+mort",
+            r"paternidade",
         ),
     ),
     "OUTROS_ATOS": (
@@ -151,8 +170,11 @@ _CATALOGO: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
             r"condom[ií]nio",
             r"holding",
             r"direito\s+de\s+superf[ií]cie",
-            r"paternidade",
-            r"dav\b",
+            r"direito\s+de\s+uso",
+            r"\bdav\b",
+            r"terapia\s+antir",
+            r"rescis[aã]o",
+            r"per[ií]odo\s+experi",
         ),
     ),
 }
@@ -202,8 +224,10 @@ def classificar_texto_sanitizado(
     """
     if not isinstance(texto_sanitizado, str) or not texto_sanitizado.strip():
         raise ValueError("texto_sanitizado obrigatório")
-    if not unit_id or len(unit_id) < 8:
-        raise ValueError("unit_id opaco obrigatório")
+    if re.fullmatch(r"[0-9a-f]{64}", unit_id) is None:
+        raise ValueError("unit_id deve ser SHA-256 hexadecimal opaco")
+    if not classifier_name or len(classifier_name) > 120:
+        raise ValueError("classifier_name inválido")
     if _contem_marcador_pii_bruta(texto_sanitizado):
         # Texto sanitizado legítimo usa [REDACTED:...]; rejeita se parecer bruto.
         raise ValueError("texto aparenta conter PII bruta; recusar classificação")
@@ -221,7 +245,10 @@ def classificar_texto_sanitizado(
             melhor_nome = display_name
 
     confidence = _score_confidence(melhor_hits, len(texto_sanitizado))
-    idem = sha256(f"{classifier_name}:{unit_id}:{melhor_code}:{confidence}".encode()).hexdigest()
+    text_sha256 = sha256(texto_sanitizado.encode("utf-8")).hexdigest()
+    idem = sha256(
+        f"{classifier_name}:{unit_id}:{text_sha256}:{melhor_code}:{confidence}".encode()
+    ).hexdigest()
 
     return ClassificacaoDocumento(
         document_type_code=melhor_code,

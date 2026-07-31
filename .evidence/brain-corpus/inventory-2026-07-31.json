@@ -1,83 +1,64 @@
 {
+  "archive_sha256": "ce236ba32b01e11139052867d189ce76ce14bf9d9030d9a24512ebdba2252efb",
   "artifacts_private": [
     "derived/manifest.sanitized.json",
     "derived/units.sanitized.jsonl",
     "derived/errors.blocking.json",
-    "derived/classification.sanitized.json"
-  ],
-  "artifacts_repo": [
-    "docs/BRAIN_PIPELINE_CONHECIMENTO.md",
-    "docs/BRAIN_CORPUS_INGEST_OFFLINE.md",
-    "docs/SUPER_PLAN_BRAIN_CORPUS_2026-07-31.md",
-    "backend/app/services/conhecimento_lifecycle.py",
-    "backend/app/services/conhecimento_classificador.py",
-    "backend/app/services/conhecimento_validacao.py",
-    "backend/app/services/conhecimento_pipeline.py",
-    "backend/app/services/conhecimento_institucional.py",
-    "backend/app/models/conhecimento_institucional.py",
-    "scripts/brain_corpus_ingest.py",
-    "scripts/brain_corpus_classify.py",
-    "scripts/brain_agent_trace.py",
-    ".evidence/brain-corpus/agent-trace.jsonl"
+    "derived/classification.sanitized.json",
+    "derived/hitl_queue.sanitized.json"
   ],
   "automatic_promotion_allowed": false,
+  "av_local_rc": 0,
   "batch_id": "2026-07-31-ce236ba32b01",
   "classification": {
+    "ambiguous_sources": 16,
     "automatic_promotion_allowed": false,
     "is_blocked": false,
-    "mode": "local_offline_fail_closed",
     "published_eligible": 0,
-    "schema_version": 1,
     "sources_classified": 90,
     "sources_total": 90,
-    "type_histogram": {
-      "ATA_NOTARIAL": 2,
-      "DIVORCIO_UNIAO_ESTAVEL": 4,
-      "EMOLUMENTOS": 1,
-      "ESCRITURA_COMPRA_VENDA": 3,
-      "ESTREMACAO": 5,
-      "INVENTARIO_PARTILHA": 3,
-      "NORMATIVO_CNJ": 5,
-      "OUTROS_ATOS": 36,
-      "PROCURACAO": 5,
-      "RECONHECIMENTO_FIRMA": 4,
-      "SUCESSOES_HERANCA": 5,
-      "TESTAMENTO": 12,
-      "USUCAPIAO": 5
-    },
-    "units_classified": 257,
-    "units_total": 3083
+    "units_classified": 3087,
+    "units_total": 3087
+  },
+  "derived_hashes": {
+    "classification": "6043c897b25745db4cca9c72fe8d072f7ac1d2a8d7763f540289c3d5c69cbf64",
+    "hitl_queue": "5158655ed3f6dcba48653b823d2fd0367c396ddb5e5d805e262c46868c6d97a0",
+    "manifest": "f33c7209449dc21a7acccbd7c0df05a4e9dec29d286470236dad896c013bcbc1",
+    "units": "cd530ffe5acb8af8ee64781fecbddabfc4e65180ccdfbd2a76bc736afef23b56"
+  },
+  "duplicate_file_instances": 1,
+  "file_formats": {
+    "docx": 75,
+    "odt": 1,
+    "pdf": 10,
+    "txt": 4
   },
   "gates": {
-    "T0_scope": "partial",
-    "T1_integrity": "partial_pass",
-    "T2_privacy": "partial_pass",
-    "T3_control": "partial_pass_unit_tests",
+    "T0_scope": "pass_local",
+    "T1_integrity": "pass_local",
+    "T2_privacy": "pass_canonical_patterns_contextual_hitl_required",
+    "T3_control": "partial_database_enforcement_pending",
     "T4_integration": "not_declared",
     "T5_operation": "not_declared"
   },
-  "generated_at_utc": "2026-07-31T16:33:38Z",
   "hermes_runtime_touched": false,
   "ingest": {
     "error_count": 0,
     "is_blocked": false,
-    "pii_aggregate_counts": {
-      "cpf": 4,
-      "email": 20,
-      "phone": 5
-    },
+    "residual_canonical_pattern_count": 0,
     "sources_discovered": 90,
     "sources_extracted": 90,
-    "units_written": 3083
+    "units_written": 3087
   },
   "live_services_restarted": false,
   "notes": [
-    "Corpus raw remains gitignored under .private/",
-    "No PUBLISHED content; HITL required before any BRAIN retrieval",
-    "Hermes stack and live services were not modified or restarted"
+    "Raw corpus and sanitized derivatives remain owner-only under gitignored private storage.",
+    "Canonical pattern scan is clean; contextual identifiers such as names and free-form addresses still require human LGPD review.",
+    "One OCR-derived source remains flagged for human review.",
+    "No PUBLISHED content exists and no live retrieval or production integration was enabled."
   ],
-  "schema_version": 1,
+  "schema_version": 2,
   "staging_files": 90,
-  "tests_passed": 40,
-  "zip_source_bytes": 13640042
+  "zip_source_bytes": 13640042,
+  "zip_uncompressed_bytes": 17505807
 }
