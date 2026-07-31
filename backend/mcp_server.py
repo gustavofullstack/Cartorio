@@ -161,13 +161,6 @@ def _tool_error(code: str, exc: Exception, mensagem: str | None = None) -> dict:
 # ============================================================================
 
 
-@mcp_public.tool(
-    name="cartorio_calcular_emolumento",
-    description=(
-        "Consulta emolumento oficial MG 2026. Atos compostos retornam "
-        "HITL_REQUIRED; nunca infira preco."
-    ),
-)
 @mcp.tool(
     name="cartorio_calcular_emolumento",
     description=(
@@ -216,6 +209,42 @@ async def cartorio_calcular_emolumento(
     payload["tipo"] = tipo
     payload["urgencia"] = urgencia
     return payload
+
+
+@mcp_public.tool(
+    name="cartorio_calcular_emolumento",
+    description=(
+        "Consulta somente atos canônicos da Tabela 1 de emolumentos MG 2026. "
+        "Tipo inválido ou ato composto não é aceito no perfil público."
+    ),
+)
+async def cartorio_calcular_emolumento_publico(
+    tipo: str,
+    folhas: int = 1,
+    urgencia: bool = False,
+) -> dict:
+    """Calcula somente um ato canônico e sem conteúdo identificável no perfil público."""
+    from app.services.emolumento_real_djalma import ATOS_PUBLICADOS_2026
+    from app.services.mcp_pii import scrub_mcp_output
+
+    if tipo not in ATOS_PUBLICADOS_2026:
+        return scrub_mcp_output(
+            {
+                "erro": "INVALID_EMOLUMENTO_TYPE",
+                "mensagem": "Tipo de ato não disponível para consulta pública.",
+            }
+        )
+    if folhas != 1 or urgencia:
+        return scrub_mcp_output(
+            {
+                "erro": "UNSUPPORTED_PUBLIC_EMOLUMENTO_REQUEST",
+                "mensagem": "A consulta pública aceita apenas um ato simples da Tabela 1.",
+            }
+        )
+
+    payload = await cartorio_calcular_emolumento(tipo=tipo, folhas=folhas, urgencia=urgencia)
+    payload["tipo"] = tipo
+    return scrub_mcp_output(payload)
 
 
 @mcp.tool(
@@ -719,6 +748,9 @@ def mcp_app() -> Any:
 
     api_key = getattr(settings, "mcp_api_key", None) if settings is not None else None
     public_api_key = getattr(settings, "mcp_public_api_key", None) if settings is not None else None
+    public_max_body_bytes = (
+        getattr(settings, "mcp_public_max_body_bytes", 16_384) if settings is not None else 16_384
+    )
     internal_app = mcp.http_app(path="/")
     public_app = mcp_public.http_app(path="/")
     protected_app = MCPApiKeyMiddleware(
@@ -726,6 +758,7 @@ def mcp_app() -> Any:
         api_key=api_key,
         public_api_key=public_api_key,
         public_app=public_app,
+        public_max_body_bytes=public_max_body_bytes,
     )
 
     @asynccontextmanager

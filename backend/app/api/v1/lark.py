@@ -1,12 +1,13 @@
 """Lark Bot webhook - canal Hermes Cartorio AI.
 
-Endpoints:
-- POST /api/v1/webhook/lark    : recebe eventos do Lark (url_verification + mensagens)
+Endpoints (rota atualmente nao registrada em ``app.main``):
+- POST /api/v1/lark/webhook/lark : recebe eventos do Lark (url_verification + mensagens)
 - GET  /api/v1/lark/qr        : gera QR Code PNG para adicionar o bot
 - GET  /api/v1/lark/qr-url    : retorna a URL configurada para adicionar o bot
 
 PII e seguranca:
-- X-Lark-Signature validado via HMAC-SHA256 quando LARK_ENCRYPT_KEY configurado.
+- X-Lark-Signature validado via HMAC-SHA256 com LARK_ENCRYPT_KEY obrigatoria.
+- Token de verificacao Lark obrigatorio para todo callback, inclusive challenge.
 - Conteudo scrubbado antes de ir ao LLM.
 - Idempotencia por event_id no Redis (SETNX, 24h).
 - Rate limit por tenant (100 req/min) no Redis, fail-open.
@@ -17,6 +18,7 @@ Modified by Gustavo Almeida.
 from __future__ import annotations
 
 import base64
+import hashlib
 import hmac
 import io
 import json
@@ -42,6 +44,7 @@ router = APIRouter(prefix="/lark", tags=["lark"])
 LARK_ENCRYPT_KEY: str | None = getattr(settings, "lark_encrypt_key", None) or os.environ.get(
     "LARK_ENCRYPT_KEY"
 ) or None
+LARK_VERIFICATION_TOKEN: str | None = os.environ.get("LARK_VERIFICATION_TOKEN") or None
 LARK_ADD_BOT_URL: str | None = getattr(settings, "lark_add_bot_url", None) or os.environ.get(
     "LARK_ADD_BOT_URL"
 ) or None
@@ -50,6 +53,12 @@ LARK_WEBHOOK_RATE_LIMIT_PER_MIN = int(
 )
 LARK_IDEMPOTENCY_TTL_SECONDS = int(
     os.environ.get("LARK_IDEMPOTENCY_TTL_SECONDS", "86400")
+)
+LARK_WEBHOOK_MAX_AGE_SECONDS = min(
+    max(int(os.environ.get("LARK_WEBHOOK_MAX_AGE_SECONDS", "300")), 30), 900
+)
+LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS = min(
+    max(int(os.environ.get("LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS", "30")), 0), 300
 )
 
 
@@ -71,16 +80,64 @@ def _verify_lark_signature(
     """Valida X-Lark-Signature usando LARK_ENCRYPT_KEY.
 
     Algoritmo Lark: HMAC-SHA256(timestamp + nonce + body, key).
-    Se LARK_ENCRYPT_KEY nao estiver configurado, retorna True (dev mode).
+    Ausencia de chave, assinatura, timestamp ou nonce e sempre uma rejeicao.
     """
-    if not LARK_ENCRYPT_KEY:
-        return True
-    if not signature:
+    if not LARK_ENCRYPT_KEY or not signature or not timestamp or not nonce:
+        return False
+    if not timestamp.isdigit() or not nonce.isascii() or not 16 <= len(nonce) <= 256:
+        return False
+    request_timestamp = int(timestamp)
+    now = int(time.time())
+    if not now - LARK_WEBHOOK_MAX_AGE_SECONDS <= request_timestamp <= now + LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS:
         return False
     key = LARK_ENCRYPT_KEY.encode("utf-8")
-    message = f"{timestamp or ''}{nonce or ''}{body_raw.decode('utf-8')}"
+    try:
+        body = body_raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    message = f"{timestamp}{nonce}{body}"
     expected = hmac.new(key, message.encode("utf-8"), "sha256").hexdigest()
     return hmac.compare_digest(expected, signature)
+
+
+def _lark_webhook_configuration_ready() -> bool:
+    """Require both independent inbound authentication factors before accepting a callback."""
+    return bool(LARK_ENCRYPT_KEY and LARK_VERIFICATION_TOKEN)
+
+
+def _verify_lark_event_token(payload: dict[str, Any]) -> bool:
+    """Validate Lark's event verification token without ever logging either value."""
+    verification_token = LARK_VERIFICATION_TOKEN
+    if not verification_token:
+        return False
+    header_candidate = payload.get("header")
+    header: dict[str, Any] = header_candidate if isinstance(header_candidate, dict) else {}
+    provided = payload.get("token") or header.get("token")
+    if not isinstance(provided, str) or not provided:
+        return False
+    return hmac.compare_digest(provided, verification_token)
+
+
+async def _claim_lark_nonce(nonce: str) -> bool:
+    """Consume one signed nonce in Redis; unavailable replay protection blocks the callback."""
+    if not nonce.isascii() or not 16 <= len(nonce) <= 256:
+        return False
+    try:
+        bus = get_bus()
+        nonce_digest = hashlib.sha256(nonce.encode("utf-8")).hexdigest()
+        result = await bus.client.set(
+            f"lark:nonce:{nonce_digest}",
+            "1",
+            nx=True,
+            ex=LARK_WEBHOOK_MAX_AGE_SECONDS + LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS,
+        )
+        return result is not None and result is not False
+    except Exception as exc:
+        logger.warning("Lark nonce store unavailable: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"erro": "LARK_REPLAY_PROTECTION_UNAVAILABLE", "mensagem": "Canal Lark indisponivel"},
+        ) from exc
 
 
 def _decrypt_lark_payload(encrypt_b64: str) -> dict[str, Any]:
@@ -184,8 +241,11 @@ async def _check_idempotency(event_id: str) -> bool:
             logger.warning("Lark duplicate event_id=%s blocked", event_id)
         return already
     except Exception as exc:
-        logger.warning("Lark idempotency check failed: %s - allowing", type(exc).__name__)
-        return False
+        logger.warning("Lark idempotency store unavailable: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"erro": "LARK_IDEMPOTENCY_UNAVAILABLE", "mensagem": "Canal Lark indisponivel"},
+        ) from exc
 
 
 async def _check_rate_limit(tenant_key: str) -> bool:
@@ -202,8 +262,11 @@ async def _check_rate_limit(tenant_key: str) -> bool:
         current, _ = await pipe.execute()
         return int(current) <= LARK_WEBHOOK_RATE_LIMIT_PER_MIN
     except Exception as exc:
-        logger.warning("Lark rate limit check failed: %s - allowing", type(exc).__name__)
-        return True
+        logger.warning("Lark rate limit store unavailable: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"erro": "LARK_RATE_LIMIT_UNAVAILABLE", "mensagem": "Canal Lark indisponivel"},
+        ) from exc
 
 
 async def _persist_conversa_lark(
@@ -247,7 +310,15 @@ async def lark_webhook(
     """
     body_raw = await request.body()
 
-    # 1. Valida assinatura HMAC-SHA256 quando configurado
+    # 1. Nunca habilita callback em modo sem credenciais: evita fail-open acidental.
+    if not _lark_webhook_configuration_ready():
+        logger.warning("Lark webhook rejected: inbound authentication is not configured")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"erro": "LARK_NOT_CONFIGURED", "mensagem": "Canal Lark indisponivel"},
+        )
+
+    # 2. Valida assinatura HMAC-SHA256.
     if not _verify_lark_signature(body_raw, x_lark_signature, x_lark_timestamp, x_lark_nonce):
         logger.warning("Lark webhook signature verification failed")
         raise HTTPException(
@@ -255,22 +326,49 @@ async def lark_webhook(
             detail={"erro": "UNAUTHORIZED", "mensagem": "Assinatura Lark invalida"},
         )
 
-    # 2. Parse payload (plain ou criptografado)
+    # 3. Consume the signed nonce before parsing or any downstream side effect.
+    if not await _claim_lark_nonce(x_lark_nonce or ""):
+        logger.warning("Lark webhook rejected: replayed nonce")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"erro": "REPLAYED_CALLBACK", "mensagem": "Callback repetido"},
+        )
+
+    # 4. Parse payload (plain ou criptografado)
     payload = _parse_event_payload(body_raw)
 
-    # 3. url_verification challenge
+    # 5. Valida token de verificacao apos decriptar o envelope, quando aplicavel.
+    if not _verify_lark_event_token(payload):
+        logger.warning("Lark webhook verification token rejected")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"erro": "UNAUTHORIZED", "mensagem": "Token de verificacao Lark invalido"},
+        )
+
+    # 6. url_verification challenge
     if payload.get("type") == "url_verification":
         challenge = payload.get("challenge")
+        if not isinstance(challenge, str) or not challenge or len(challenge) > 512:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"erro": "INVALID_CHALLENGE", "mensagem": "Challenge Lark invalido"},
+            )
         return {"challenge": challenge}
 
-    # 4. Processa eventos de mensagem
+    # 7. Processa eventos de mensagem
     event = payload.get("event", {}) or {}
     header = payload.get("header", {}) or {}
     event_id = header.get("event_id") or event.get("message", {}).get("message_id")
     tenant_key = header.get("tenant_key") or "default"
 
+    if not isinstance(event_id, str) or not event_id or len(event_id) > 256:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"erro": "MISSING_EVENT_ID", "mensagem": "Evento Lark invalido"},
+        )
+
     # Idempotencia
-    if await _check_idempotency(str(event_id)):
+    if await _check_idempotency(event_id):
         return {"status": "ignored", "reason": "duplicate_event_id"}
 
     # Rate limit por tenant
@@ -299,7 +397,7 @@ async def lark_webhook(
         )
         answer = reply.text or ""
     except Exception as exc:
-        logger.exception("Lark agent error: %s", exc)
+        logger.warning("Lark agent error: %s", type(exc).__name__)
         answer = (
             "Tive uma falha momentanea no raciocinio. "
             "Tente novamente em alguns instantes ou fale com um escrevente."
@@ -334,13 +432,7 @@ async def lark_webhook(
         handoff_to_human="escrevente" in answer.lower() or "humano" in answer.lower(),
     )
 
-    return {
-        "status": "ok" if sent else "partial",
-        "event_id": event_id,
-        "sender_open_id": sender_open_id,
-        "chat_id": chat_id,
-        "sent": sent,
-    }
+    return {"status": "ok" if sent else "partial"}
 
 
 @router.get("/qr")

@@ -21,7 +21,12 @@ MCP_PUBLIC_ALLOWED_TOOL = "cartorio_calcular_emolumento"
 MCP_PUBLIC_ALLOWED_METHODS = frozenset(
     {"initialize", "notifications/initialized", "ping", "tools/list", "tools/call"}
 )
+DEFAULT_MCP_PUBLIC_MAX_BODY_BYTES = 16_384
 MCPProfile = Literal["internal", "public"]
+
+
+class MCPBodyTooLargeError(ValueError):
+    """Raised before parsing a public MCP body that exceeds the configured limit."""
 
 
 class MCPApiKeyMiddleware:
@@ -38,11 +43,13 @@ class MCPApiKeyMiddleware:
         api_key: str | None,
         public_api_key: str | None = None,
         public_app: ASGIApp | None = None,
+        public_max_body_bytes: int = DEFAULT_MCP_PUBLIC_MAX_BODY_BYTES,
     ) -> None:
         self.app = app
         self.api_key = api_key.strip() if api_key else None
         self.public_api_key = public_api_key.strip() if public_api_key else None
         self.public_app = public_app
+        self.public_max_body_bytes = public_max_body_bytes
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -75,7 +82,29 @@ class MCPApiKeyMiddleware:
             await self.app(scope, receive, send)
             return
 
-        body = await self._read_body(receive)
+        framing_error = self._public_framing_error(scope)
+        if framing_error is not None:
+            status_code, detail = framing_error
+            await self._send_error(
+                scope,
+                receive,
+                send,
+                status_code=status_code,
+                detail=detail,
+            )
+            return
+
+        try:
+            body = await self._read_body(receive, self.public_max_body_bytes)
+        except MCPBodyTooLargeError:
+            await self._send_error(
+                scope,
+                receive,
+                send,
+                status_code=413,
+                detail="MCP public request body is too large.",
+            )
+            return
         request_data = self._json_rpc_request(body)
         if request_data is None or not self._public_request_is_allowed(request_data):
             await self._send_error(
@@ -124,16 +153,55 @@ class MCPApiKeyMiddleware:
             return None
         return token
 
+    def _public_framing_error(self, scope: Scope) -> tuple[int, str] | None:
+        """Validate public-request framing without collapsing duplicate headers.
+
+        ``Request.headers`` exposes a convenient mapping, but it loses repeated
+        ``Content-Length`` values.  Inspecting ASGI's raw header list keeps the
+        request boundary fail-closed against ambiguous HTTP message framing.
+        """
+
+        raw_headers = scope.get("headers", ())
+        content_lengths = [
+            value for name, value in raw_headers if name.lower() == b"content-length"
+        ]
+        transfer_encodings = [
+            value for name, value in raw_headers if name.lower() == b"transfer-encoding"
+        ]
+
+        if len(content_lengths) > 1:
+            return 400, "Invalid MCP public HTTP framing."
+        if content_lengths and transfer_encodings:
+            return 400, "Invalid MCP public HTTP framing."
+
+        if content_lengths:
+            content_length = content_lengths[0]
+            if not content_length or not all(48 <= byte <= 57 for byte in content_length):
+                return 400, "Invalid MCP public HTTP framing."
+            if int(content_length) > self.public_max_body_bytes:
+                return 413, "MCP public request body is too large."
+
+        if transfer_encodings:
+            if len(transfer_encodings) != 1 or transfer_encodings[0].strip().lower() != b"chunked":
+                return 400, "Invalid MCP public HTTP framing."
+
+        return None
+
     @staticmethod
-    async def _read_body(receive: Receive) -> bytes:
+    async def _read_body(receive: Receive, maximum_bytes: int) -> bytes:
         chunks: list[bytes] = []
+        received_bytes = 0
         while True:
             message = await receive()
             if message["type"] == "http.disconnect":
                 return b""
             if message["type"] != "http.request":
                 continue
-            chunks.append(message.get("body", b""))
+            chunk = message.get("body", b"")
+            received_bytes += len(chunk)
+            if received_bytes > maximum_bytes:
+                raise MCPBodyTooLargeError
+            chunks.append(chunk)
             if not message.get("more_body", False):
                 return b"".join(chunks)
 
@@ -193,6 +261,7 @@ class MCPApiKeyMiddleware:
 
 __all__ = [
     "MCP_AUTH_SCHEME",
+    "DEFAULT_MCP_PUBLIC_MAX_BODY_BYTES",
     "MCP_PUBLIC_ALLOWED_TOOL",
     "MCPApiKeyMiddleware",
 ]

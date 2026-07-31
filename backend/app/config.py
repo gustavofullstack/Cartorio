@@ -288,6 +288,7 @@ class Settings(BaseSettings):
     mcp_server_port: int = 8100
     mcp_api_key: Optional[str] = None  # Perfil interno: todas as tools MCP
     mcp_public_api_key: Optional[str] = None  # Perfil público: somente emolumentos
+    mcp_public_max_body_bytes: int = Field(default=16_384, ge=1_024, le=1_048_576)
 
     # Hermes é um serviço isolado e opcional. Sem URL não há runtime Hermes
     # certificado; a API nunca deve reportar um agente inexistente como healthy.

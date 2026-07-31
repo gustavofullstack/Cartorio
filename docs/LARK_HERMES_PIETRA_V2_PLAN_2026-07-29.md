@@ -22,7 +22,8 @@ definição explícita de fallback ativo-passivo.
 - Streaming, reasoning, commentary, progresso e footers estão desabilitados no canal.
 - `pietra-public-output` é o único plugin público declarado.
 - O toolset Lark está limitado a `mcp-cartorio` e `cartorio_calcular_emolumento`.
-- O plugin pessoal `lark-cartorio` possui skill, validador e MCP somente leitura.
+- O plugin pessoal `lark-cartorio` possui skill, validador e MCP somente leitura, incluindo
+  validação semântica estática da fronteira MCP pública.
 
 Esses fatos provam `CONFIGURED` no código local. Não provam configuração carregada, inferência,
 transporte, E2E ou certificação.
@@ -39,9 +40,12 @@ transporte, E2E ou certificação.
    contrato público LGPD.
 4. MiniMax ainda depende de decisão DPO/DPA. Coding/Token Plan não é SLA de produção e não
    autoriza cobrança on-demand.
-5. A allowlist do Hermes não é hoje imposta pelo servidor MCP. O mesmo backend possui tools de
-   escrita; o perfil público precisa de chave própria, `tools/list` restrito e `403` para chamada
-   direta fora de `cartorio_calcular_emolumento`.
+5. **[IMPLEMENTADO LOCALMENTE E REVISADO ESTATICAMENTE — NÃO DEPLOYED]** A fronteira MCP
+   pública agora usa chave separada, instância pública com a única tool
+   `cartorio_calcular_emolumento`, filtro de JSON-RPC, bloqueio de chamada direta fora da
+   allowlist, framing HTTP fail-closed e scrub/no-echo. A evidência é somente local
+   (código/testes/validador); não prova configuração carregada, deploy, transporte, E2E ou
+   certificação.
 6. O Flask legado usa nome de anexo sem contenção comprovada e pode permitir path traversal se
    voltar a ser ativado.
 

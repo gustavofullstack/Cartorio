@@ -18,22 +18,26 @@ Setup: mesmo do v5 (LARK_BOT_V3_RUNBOOK.md)
 import os
 import re
 import json
+import io
 import time
 import sqlite3
+import stat
 import subprocess
-import base64
 import hashlib
 import hmac
 import secrets
+import tempfile
 import requests
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 from flask import Flask, request, jsonify
 
 # === Config ===
 APP_ID = os.getenv("LARK_APP_ID", "")
 APP_SECRET = os.getenv("LARK_APP_SECRET", "")
-VERIFICATION_TOKEN = os.getenv("LARK_VERIFICATION_TOKEN", "")
+VERIFICATION_TOKEN: str = os.getenv("LARK_VERIFICATION_TOKEN", "")
+WEBHOOK_SIGNING_SECRET: str = os.getenv("LARK_WEBHOOK_SIGNING_SECRET", "")
 ENCRYPT_KEY = os.getenv("LARK_ENCRYPT_KEY", "")
 LARK_API = "https://open.larksuite.com/open-apis"
 PIETRA_BASE = os.getenv("PIETRA_BASE", "https://api.2notasudi.com.br")
@@ -48,10 +52,192 @@ OCR_LANG = os.getenv("OCR_LANG", "por+eng")  # tesseract langs
 OWNER_OPEN_ID = os.getenv("LARK_OWNER_OPEN_ID", "")  # só esse user usa !bot stop / !broadcast
 SUMMARY_THRESHOLD = int(os.getenv("SUMMARY_THRESHOLD", "500"))  # chars
 MEMORY_ENABLED = os.getenv("MEMORY_ENABLED", "true").lower() == "true"
+MAX_ATTACHMENT_BYTES = min(max(int(os.getenv("LARK_MAX_ATTACHMENT_BYTES", "10485760")), 1), 52428800)
+MAX_WEBHOOK_BODY_BYTES = min(max(int(os.getenv("LARK_MAX_WEBHOOK_BODY_BYTES", "1048576")), 1024), 10485760)
+WEBHOOK_MAX_AGE_SECONDS = min(max(int(os.getenv("LARK_WEBHOOK_MAX_AGE_SECONDS", "300")), 30), 900)
+WEBHOOK_MAX_FUTURE_SKEW_SECONDS = min(
+    max(int(os.getenv("LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS", "30")), 0), 300
+)
+ATTACHMENT_RETENTION_SECONDS = min(
+    max(int(os.getenv("LARK_ATTACHMENT_RETENTION_SECONDS", "3600")), 60), 86400
+)
+LOCAL_OCR_TEST_ENABLED = os.getenv("LARK_ENABLE_LOCAL_OCR_TEST", "false").lower() == "true"
+LOCAL_OCR_TEST_TOKEN = os.getenv("LARK_LOCAL_OCR_TEST_TOKEN", "")
+
+IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
+FILE_CONTENT_TYPES = {
+    "application/pdf",
+    "application/json",
+    "text/csv",
+    "text/plain",
+}
 
 INBOX_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = MAX_WEBHOOK_BODY_BYTES
+
+
+def _open_inbox_dirfd() -> int:
+    """Open the inbox itself (not a resolved string) to resist symlink and parent races."""
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    if hasattr(os, "O_CLOEXEC"):
+        flags |= os.O_CLOEXEC
+    return os.open(INBOX_DIR, flags)
+
+
+def _attachment_content_type(response: requests.Response) -> str:
+    """Return a normalized MIME type, discarding parameters supplied by the peer."""
+    return response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+
+
+def _attachment_extension(media_type: str, content_type: str) -> str:
+    """Choose an internal extension from the validated media type, never the remote name."""
+    if media_type == "image":
+        return {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp",
+        }[content_type]
+    return {
+        "application/pdf": ".pdf",
+        "application/json": ".json",
+        "text/csv": ".csv",
+        "text/plain": ".txt",
+    }[content_type]
+
+
+def _new_attachment_name(media_type: str, content_type: str) -> str:
+    """Create an opaque filename; remote names never become local path components."""
+    suffix = _attachment_extension(media_type, content_type)
+    return f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}_{secrets.token_hex(16)}{suffix}"
+
+
+def _validate_attachment_payload(media_type: str, content_type: str, payload: bytes) -> bool:
+    """Reject MIME spoofing before an attachment is persisted or sent to OCR."""
+    if media_type == "image":
+        magic = {
+            "image/jpeg": payload.startswith(b"\xff\xd8\xff"),
+            "image/png": payload.startswith(b"\x89PNG\r\n\x1a\n"),
+            "image/webp": len(payload) >= 12 and payload[:4] == b"RIFF" and payload[8:12] == b"WEBP",
+        }
+        if not magic.get(content_type, False):
+            return False
+        try:
+            from PIL import Image  # type: ignore[import-untyped]
+
+            with Image.open(io.BytesIO(payload)) as image:
+                image.verify()
+        except (ImportError, OSError, ValueError):
+            return False
+        return True
+    if content_type == "application/pdf":
+        return payload.startswith(b"%PDF-")
+    if content_type == "application/json":
+        try:
+            json.loads(payload.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return False
+        return True
+    if content_type in {"text/csv", "text/plain"}:
+        try:
+            payload.decode("utf-8")
+        except UnicodeDecodeError:
+            return False
+        return True
+    return False
+
+
+def _purge_expired_attachments() -> None:
+    """Bound local document exposure to the configured short diagnostic retention window."""
+    cutoff = time.time() - ATTACHMENT_RETENTION_SECONDS
+    try:
+        dirfd = _open_inbox_dirfd()
+    except OSError as exc:
+        log("WARN", "attachment retention unavailable", error=type(exc).__name__)
+        return
+    try:
+        for name in os.listdir(dirfd):
+            if not re.fullmatch(r"\d{8}T\d{6}Z_[0-9a-f]{32}\.(?:jpg|png|webp|pdf|json|csv|txt)", name):
+                continue
+            try:
+                info = os.stat(name, dir_fd=dirfd, follow_symlinks=False)
+                if stat.S_ISREG(info.st_mode) and info.st_mtime < cutoff:
+                    os.unlink(name, dir_fd=dirfd)
+            except OSError:
+                continue
+    finally:
+        os.close(dirfd)
+
+
+def _write_attachment(response: requests.Response, media_type: str) -> Path | None:
+    """Validate in a temporary buffer, then atomically write through an inbox dirfd."""
+    content_type = _attachment_content_type(response)
+    allowed_types = IMAGE_CONTENT_TYPES if media_type == "image" else FILE_CONTENT_TYPES
+    if content_type not in allowed_types:
+        log("WARN", "attachment rejected: unsupported media type", media_type=media_type)
+        return None
+
+    declared_size = response.headers.get("Content-Length")
+    if declared_size:
+        try:
+            if int(declared_size) > MAX_ATTACHMENT_BYTES:
+                log("WARN", "attachment rejected: declared size exceeds limit", media_type=media_type)
+                return None
+        except ValueError:
+            log("WARN", "attachment rejected: invalid content length", media_type=media_type)
+            return None
+
+    total = 0
+    try:
+        with tempfile.SpooledTemporaryFile(max_size=MAX_ATTACHMENT_BYTES, mode="w+b") as staged_file:
+            for chunk in response.iter_content(chunk_size=65536):
+                if not chunk:
+                    continue
+                total += len(chunk)
+                if total > MAX_ATTACHMENT_BYTES:
+                    raise ValueError("attachment exceeds limit")
+                staged_file.write(chunk)
+            staged_file.seek(0)
+            payload = staged_file.read()
+            if not _validate_attachment_payload(media_type, content_type, payload):
+                raise ValueError("attachment content validation failed")
+            _purge_expired_attachments()
+            name = _new_attachment_name(media_type, content_type)
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            if hasattr(os, "O_NOFOLLOW"):
+                flags |= os.O_NOFOLLOW
+            dirfd = _open_inbox_dirfd()
+            try:
+                descriptor = os.open(name, flags, 0o600, dir_fd=dirfd)
+                with os.fdopen(descriptor, "wb") as attachment_file:
+                    attachment_file.write(payload)
+                info = os.stat(name, dir_fd=dirfd, follow_symlinks=False)
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    os.unlink(name, dir_fd=dirfd)
+                    raise OSError("attachment file safety check failed")
+            finally:
+                os.close(dirfd)
+    except (OSError, ValueError) as exc:
+        log("WARN", "attachment download rejected", media_type=media_type, error=type(exc).__name__)
+        return None
+    return INBOX_DIR / name
+
+
+def _local_ocr_test_authorized() -> bool:
+    """Keep the diagnostic upload surface disabled unless an operator enables it locally."""
+    remote_address = request.remote_addr or ""
+    provided_token = request.headers.get("X-Lark-Local-OCR-Test-Token", "")
+    return (
+        LOCAL_OCR_TEST_ENABLED
+        and bool(LOCAL_OCR_TEST_TOKEN)
+        and remote_address in {"127.0.0.1", "::1"}
+        and hmac.compare_digest(provided_token, LOCAL_OCR_TEST_TOKEN)
+    )
 
 
 def _redact_identifier(value):
@@ -78,22 +264,54 @@ def _scrub_value(value):
 
 
 def _lark_configuration_ready():
-    """Only accept callbacks when the complete plain-event configuration exists."""
-    # v6 handles Lark's plain JSON event format.  It does not decrypt callback
-    # envelopes, so an Encrypt Key is deliberately not required here.
-    return bool(APP_ID and APP_SECRET and VERIFICATION_TOKEN)
+    """Only accept callbacks with all required, separately configured credentials."""
+    return bool(APP_ID and APP_SECRET and VERIFICATION_TOKEN and WEBHOOK_SIGNING_SECRET)
 
 
-def _provided_verification_token(body):
+def _provided_verification_token(body: dict) -> str:
     """Return the Lark verification token from either supported payload shape."""
     header = body.get("header") if isinstance(body.get("header"), dict) else {}
-    return body.get("token") or header.get("token") or ""
+    provided = body.get("token") or header.get("token") or ""
+    return provided if isinstance(provided, str) else ""
 
 
-def _valid_lark_callback(body):
+def _valid_lark_callback(body: dict) -> bool:
     """Validate the configured Lark verification token without logging it."""
     provided = _provided_verification_token(body)
-    return bool(provided) and hmac.compare_digest(str(provided), VERIFICATION_TOKEN)
+    return bool(provided and VERIFICATION_TOKEN) and hmac.compare_digest(provided, VERIFICATION_TOKEN)
+
+
+def _valid_webhook_freshness(timestamp: str | None) -> bool:
+    """Require a recent Unix timestamp to constrain replay of otherwise valid callbacks."""
+    if not timestamp or not timestamp.isdigit():
+        return False
+    request_time = int(timestamp)
+    now = int(time.time())
+    return now - WEBHOOK_MAX_AGE_SECONDS <= request_time <= now + WEBHOOK_MAX_FUTURE_SKEW_SECONDS
+
+
+def _valid_lark_signature(
+    body_raw: bytes, signature: str | None, timestamp: str | None, nonce: str | None
+) -> bool:
+    """Validate HMAC-SHA256 over timestamp, nonce and exact request bytes, fail-closed."""
+    if (
+        not WEBHOOK_SIGNING_SECRET
+        or not signature
+        or not nonce
+        or not re.fullmatch(r"[A-Za-z0-9_-]{16,256}", nonce)
+        or not _valid_webhook_freshness(timestamp)
+    ):
+        return False
+    try:
+        body = body_raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    expected = hmac.new(
+        WEBHOOK_SIGNING_SECRET.encode("utf-8"),
+        f"{timestamp}{nonce}{body}".encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
 
 # === DB ===
 def db():
@@ -120,6 +338,10 @@ def db():
             event_id TEXT PRIMARY KEY,
             received_at INTEGER DEFAULT (strftime('%s','now'))
         );
+        CREATE TABLE IF NOT EXISTS received_nonces (
+            nonce TEXT PRIMARY KEY,
+            expires_at INTEGER NOT NULL
+        );
     """)
     return conn
 
@@ -140,10 +362,30 @@ def claim_event(event_id):
         c.commit()
         c.close()
         return cur.rowcount == 1
-    except Exception as e:
-        log("ERR", "event claim failed", error=str(e))
+    except Exception as exc:
+        log("ERR", "event claim failed", error=type(exc).__name__)
         # Fail closed: otherwise a transient local DB issue can duplicate a
         # message after Lark retries it.
+        return False
+
+
+def claim_callback_nonce(nonce: str) -> bool:
+    """Atomically consume a validated callback nonce; SQLite failure is an authentication failure."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{16,256}", nonce):
+        return False
+    now = int(time.time())
+    try:
+        connection = db()
+        connection.execute("DELETE FROM received_nonces WHERE expires_at < ?", (now,))
+        cursor = connection.execute(
+            "INSERT OR IGNORE INTO received_nonces (nonce, expires_at) VALUES (?, ?)",
+            (nonce, now + WEBHOOK_MAX_AGE_SECONDS + WEBHOOK_MAX_FUTURE_SKEW_SECONDS),
+        )
+        connection.commit()
+        connection.close()
+        return cursor.rowcount == 1
+    except Exception as exc:
+        log("ERR", "nonce claim failed", error=type(exc).__name__)
         return False
 
 def log_event(chat_id, sender, msg_type, content_in, content_out, model, attachments=None, error=None):
@@ -302,7 +544,7 @@ def ocr_image(path):
             return text_scrubbed if text_scrubbed else None
         return None
     except subprocess.TimeoutExpired:
-        log("WARN", "ocr timeout", path=path)
+        log("WARN", "ocr timeout")
         return None
     except FileNotFoundError:
         log("WARN", "tesseract not found, OCR disabled")
@@ -329,19 +571,19 @@ def describe_image(path):
         info += "\n[sem texto detectável]"
     return info
 
-def describe_file(path, original_name):
-    """Descreve arquivo: nome, tamanho, primeiras linhas se texto."""
+def describe_file(path):
+    """Descreve arquivo sem propagar o nome externo recebido para logs ou LLM."""
     p = Path(path)
     if not p.exists():
-        return f"[arquivo: {original_name} (não baixado)]"
+        return "[arquivo não disponível para análise]"
     size_kb = p.stat().st_size / 1024
-    info = f"[arquivo: {original_name}, {size_kb:.0f}KB]"
+    info = f"[arquivo recebido: {size_kb:.0f}KB]"
 
     # Se for texto/code, mostra primeiras linhas
     text_exts = {".txt", ".md", ".py", ".js", ".ts", ".json", ".yaml", ".yml", ".csv", ".log", ".sh"}
     if p.suffix.lower() in text_exts and size_kb < 200:
         try:
-            content = p.read_text(errors="ignore")[:1500]
+            content = scrub_pii(p.read_text(errors="ignore"))[:1500]
             info += f"\n[conteúdo]: {content}"
         except Exception:
             pass
@@ -381,20 +623,31 @@ def send_text(chat_id, text):
             return False
     return True
 
-def download_resource(media_type, media_key, save_name=None):
-    """Baixa arquivo/imagem do CDN do Lark."""
+def download_resource(media_type, media_key):
+    """Baixa mídia validada para um nome interno, sem usar metadados remotos no path."""
+    if media_type not in {"image", "file"}:
+        return None
+    if not isinstance(media_key, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,512}", media_key):
+        log("WARN", "attachment rejected: invalid resource key", media_type=media_type)
+        return None
     try:
         tok = get_token()
-        url = f"{LARK_API}/im/v1/{'images' if media_type=='image' else 'files'}/{media_key}"
-        r = requests.get(url, headers={"Authorization": f"Bearer {tok}"}, timeout=30, allow_redirects=True)
+        if not tok:
+            return None
+        resource_kind = "images" if media_type == "image" else "files"
+        url = f"{LARK_API}/im/v1/{resource_kind}/{quote(media_key, safe='')}"
+        r = requests.get(
+            url,
+            headers={"Authorization": f"Bearer {tok}"},
+            timeout=30,
+            allow_redirects=False,
+            stream=True,
+        )
         if r.status_code == 200:
-            ext = ".jpg" if media_type == "image" else (Path(save_name).suffix if save_name else ".bin")
-            name = save_name or f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{media_key[:8]}{ext}"
-            path = INBOX_DIR / name
-            path.write_bytes(r.content)
-            return str(path)
+            path = _write_attachment(r, media_type)
+            return str(path) if path else None
     except Exception as e:
-        log("ERR", "download failed", type=media_type, error=str(e))
+        log("ERR", "download failed", media_type=media_type, error=type(e).__name__)
     return None
 
 # === PIETRA brain ===
@@ -545,44 +798,64 @@ def handle_command(chat_id, text, sender):
 # === Webhook ===
 @app.route("/lark/webhook", methods=["POST"])
 def webhook():
-    body = request.get_json(silent=True) or {}
+    if not _lark_configuration_ready():
+        log("WARN", "lark callback rejected: configuration incomplete")
+        return jsonify({"code": -1}), 503
+
+    body_raw = request.get_data(cache=True)
+    if not body_raw or len(body_raw) > MAX_WEBHOOK_BODY_BYTES:
+        log("WARN", "lark callback rejected: invalid body size")
+        return jsonify({"code": -1}), 413
+
+    timestamp = request.headers.get("X-Lark-Timestamp")
+    nonce = request.headers.get("X-Lark-Nonce")
+    signature = request.headers.get("X-Lark-Signature")
+    if not _valid_lark_signature(body_raw, signature, timestamp, nonce):
+        log("WARN", "lark callback rejected: invalid request signature")
+        return jsonify({"code": -1}), 401
+
+    try:
+        body = json.loads(body_raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        body = {}
     if not isinstance(body, dict):
         log("WARN", "lark callback rejected: invalid JSON payload")
-        return jsonify({"code": -1, "msg": "bad request"}), 400
-
-    if not _lark_configuration_ready():
-        # Do not accept unauthenticated traffic when an operator has not
-        # completed the Lark configuration.  No configuration value is logged.
-        log("WARN", "lark callback rejected: configuration incomplete")
-        return jsonify({"code": -1, "msg": "service unavailable"}), 503
+        return jsonify({"code": -1}), 400
 
     if not _valid_lark_callback(body):
         log("WARN", "lark callback rejected: invalid verification token")
-        return jsonify({"code": -1, "msg": "unauthorized"}), 401
+        return jsonify({"code": -1}), 401
+
+    if not claim_callback_nonce(nonce or ""):
+        log("WARN", "lark callback rejected: replay or nonce store unavailable")
+        return jsonify({"code": -1}), 409
 
     if body.get("type") == "url_verification":
-        return jsonify({"challenge": body.get("challenge", "")})
+        challenge = body.get("challenge")
+        if not isinstance(challenge, str) or not challenge or len(challenge) > 512:
+            log("WARN", "lark callback rejected: invalid challenge")
+            return jsonify({"code": -1}), 400
+        return jsonify({"challenge": challenge})
 
     try:
         header = body.get("header")
         event = body.get("event")
         if not isinstance(header, dict) or not isinstance(event, dict):
             log("WARN", "lark callback rejected: invalid event envelope")
-            return jsonify({"code": -1, "msg": "bad request"}), 400
+            return jsonify({"code": -1}), 400
         event_id = header.get("event_id")
+        if not isinstance(event_id, str) or not event_id or len(event_id) > 256:
+            log("WARN", "lark callback rejected: missing event id")
+            return jsonify({"code": -1}), 400
         if not claim_event(event_id):
-            # A duplicate (or an event that cannot safely be identified) must
-            # not cross the side-effect boundary.  Lark treats code=0 as an
-            # acknowledgement, so it will not keep retrying a known replay.
-            log("WARN", "lark event ignored: duplicate or invalid id",
-                event_id=_redact_identifier(event_id))
-            return jsonify({"code": 0})
+            log("WARN", "lark event rejected: replay or event store unavailable")
+            return jsonify({"code": -1}), 409
         if header.get("event_type") == "im.message.receive_v1":
             handle_message(event)
         return jsonify({"code": 0})
-    except Exception as e:
-        log("ERR", "webhook failed", error=str(e))
-        return jsonify({"code": -1}), 200
+    except Exception as exc:
+        log("ERR", "webhook failed", error=type(exc).__name__)
+        return jsonify({"code": -1}), 500
 
 def handle_message(event):
     msg = event.get("message", {})
@@ -610,12 +883,11 @@ def handle_message(event):
                 extra += "\n" + describe_image(p)
     elif msg_type == "file":
         fk = (msg.get("content") or {}).get("file_key")
-        fn = (msg.get("content") or {}).get("file_name", "arquivo")
         if fk:
-            p = download_resource("file", fk, save_name=fn)
+            p = download_resource("file", fk)
             if p:
-                attachments.append({"type": "file", "path": p, "name": fn})
-                extra += "\n" + describe_file(p, fn)
+                attachments.append({"type": "file", "path": p})
+                extra += "\n" + describe_file(p)
     elif msg_type == "media":  # vídeo/áudio
         # Não analisa, só registra
         extra += "\n[mídia (vídeo/áudio) — não analisada, salvo em disco]"
@@ -637,7 +909,7 @@ def handle_message(event):
         log_event(chat_id, sender, msg_type, text, cmd_resp, "command", attachments)
         return
 
-    user_msg = (text or f"(mensagem {msg_type} sem texto)") + extra
+    user_msg = scrub_pii((text or f"(mensagem {msg_type} sem texto)") + extra)
 
     # Detector de tipo de documento (se tiver OCR ou texto)
     if extra:
@@ -656,6 +928,7 @@ def handle_message(event):
     memory_append(telefone_proxy, user_msg[:500], "user")
 
     reply, model, err = ask_pietra(user_msg)
+    reply = scrub_pii(reply or "")
     memory_append(telefone_proxy, reply[:500], "assistant")
 
     send_text(chat_id, reply)
@@ -663,22 +936,36 @@ def handle_message(event):
 
 @app.route("/test-image", methods=["POST"])
 def test_image():
-    """Endpoint pra testar OCR localmente sem Lark."""
+    """Endpoint diagnóstico, deliberadamente indisponível fora do loopback autenticado."""
+    if not _local_ocr_test_authorized():
+        # A 404 avoids advertising a diagnostic upload endpoint in production.
+        return jsonify({"error": "not found"}), 404
     if 'file' not in request.files:
-        return jsonify({"error": "no file. use: curl -F file=@image.png http://localhost:8082/test-image"}), 400
+        return jsonify({"error": "missing file"}), 400
     f = request.files['file']
-    p = INBOX_DIR / f"test_{datetime.now().strftime('%H%M%S')}_{f.filename}"
-    p.write_bytes(f.read())
-    desc = describe_image(p)
-    # Manda pro PIETRA
-    reply, model, err = ask_pietra(f"O usuário mandou esta imagem:\n\n{desc}\n\nDescreva brevemente o que você vê.")
+    content_type = (f.content_type or "").lower()
+    if content_type not in IMAGE_CONTENT_TYPES:
+        return jsonify({"error": "unsupported media type"}), 415
+    try:
+        stream = f.stream
+        class _LocalUpload:
+            headers = {"Content-Type": content_type}
+
+            def iter_content(self, chunk_size=65536):
+                while chunk := stream.read(chunk_size):
+                    yield chunk
+
+        p = _write_attachment(_LocalUpload(), "image")
+    except OSError:
+        p = None
+    if not p:
+        return jsonify({"error": "upload rejected"}), 413
+    # OCR remains local and scrubbed; its output is intentionally not returned or sent upstream.
+    describe_image(p)
     return jsonify({
-        "file": str(p),
+        "status": "accepted",
         "size_kb": p.stat().st_size // 1024,
-        "ocr": desc,
-        "pietra_reply": reply,
-        "pietra_model": model,
-        "error": err,
+        "ocr_attempted": OCR_ENABLED,
     })
 
 @app.route("/health", methods=["GET"])
@@ -704,7 +991,7 @@ def health():
         "ocr_available": tess,
         "ocr_lang": OCR_LANG,
         "quiet_group": LARK_QUIET_GROUP,
-        "inbox": str(INBOX_DIR),
+        "attachment_retention_seconds": ATTACHMENT_RETENTION_SECONDS,
     })
 
 if __name__ == "__main__":
