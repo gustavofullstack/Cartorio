@@ -146,7 +146,11 @@ def verify_hash_sequence(entries: list[dict[str, Any]]) -> list[int]:
             action=action,
             hmac_key=hmac_key,
         )
-        hmac_ok = stored_hmac is not None and expected_hmac is not None and _hmac.compare_digest(stored_hmac, expected_hmac)
+        hmac_ok = (
+            stored_hmac is not None
+            and expected_hmac is not None
+            and _hmac.compare_digest(stored_hmac, expected_hmac)
+        )
 
         if not (chain_ok and hash_ok and hmac_ok):
             broken.append(i)
