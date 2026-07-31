@@ -28,10 +28,6 @@ import hmac
 import secrets
 import tempfile
 import requests
-import zipfile
-import sys
-if "/Users/gustavoalmeida/Cartorio" not in sys.path:
-    sys.path.insert(0, "/Users/gustavoalmeida/Cartorio")
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
@@ -74,12 +70,6 @@ FILE_CONTENT_TYPES = {
     "application/json",
     "text/csv",
     "text/plain",
-    "application/zip",
-    "application/x-zip-compressed",
-    "application/x-zip",
-    "application/octet-stream",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/msword",
 }
 
 INBOX_DIR.mkdir(parents=True, exist_ok=True)
@@ -582,28 +572,12 @@ def describe_image(path):
     return info
 
 def describe_file(path):
-    """Descreve arquivo e extrai ZIPs/documentos para o banco BRAIN."""
+    """Descreve arquivo sem propagar o nome externo recebido para logs ou LLM."""
     p = Path(path)
     if not p.exists():
         return "[arquivo não disponível para análise]"
     size_kb = p.stat().st_size / 1024
     info = f"[arquivo recebido: {size_kb:.0f}KB]"
-
-    # Se for ZIP, descompacta e indexa no BRAIN imediatamente
-    if p.suffix.lower() == ".zip" or zipfile.is_zipfile(p):
-        try:
-            from brain.lark_zip_handler import LarkZipHandler
-            handler = LarkZipHandler()
-            res = handler.process_incoming_zip(str(p))
-            if res.get("success"):
-                cnt = res.get("total_files_extracted", 0)
-                sample = ", ".join(res.get("files_sample", [])[:5])
-                info += f"\n[ZIP PROCESSADO E INDEXADO NO BRAIN]: {cnt} documentos extraídos com sucesso ({sample}...)"
-            else:
-                info += f"\n[ERRO AO DESCOMPACTAR ZIP]: {res.get('error')}"
-        except Exception as e:
-            info += f"\n[ERRO AO PROCESSAR ZIP]: {e}"
-        return info
 
     # Se for texto/code, mostra primeiras linhas
     text_exts = {".txt", ".md", ".py", ".js", ".ts", ".json", ".yaml", ".yml", ".csv", ".log", ".sh"}

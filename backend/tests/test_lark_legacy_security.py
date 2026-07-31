@@ -68,6 +68,7 @@ def legacy_lark_bot(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator
     class _Flask:
         def __init__(self, name: str) -> None:
             self.name = name
+            self.config: dict[str, object] = {}
 
         def route(self, *args: object, **kwargs: object):
             del args, kwargs
@@ -300,11 +301,23 @@ def test_fastapi_lark_signature_and_token_fail_closed(monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(lark, "LARK_ENCRYPT_KEY", "encryption-key")
     monkeypatch.setattr(lark, "LARK_VERIFICATION_TOKEN", "event-token")
-    signature = hmac.new(
-        b"encryption-key", b'1nonce{"token":"event-token"}', hashlib.sha256
-    ).hexdigest()
+    timestamp = str(int(time.time()))
+    nonce = "n" * 16
     assert lark._lark_webhook_configuration_ready()
-    assert lark._verify_lark_signature(payload, signature, "1", "nonce")
+    signature = hmac.new(
+        b"encryption-key",
+        f"{timestamp}{nonce}{payload.decode()}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    assert lark._verify_lark_signature(payload, signature, timestamp, nonce)
     assert not lark._verify_lark_signature(payload, signature, None, "nonce")
     assert lark._verify_lark_event_token({"token": "event-token"})
     assert not lark._verify_lark_event_token({"token": "wrong-token"})
+
+
+def test_legacy_lark_path_does_not_ingest_brain_or_expose_local_paths() -> None:
+    """The legacy Flask bot must not bypass the private BRAIN/HITL pipeline."""
+    source = LEGACY_SCRIPT.read_text(encoding="utf-8")
+    assert "brain.lark_zip_handler" not in source
+    assert "/Users/gustavoalmeida/Cartorio" not in source
+    assert "[ERRO AO PROCESSAR ZIP]" not in source
