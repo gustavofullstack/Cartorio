@@ -1,0 +1,83 @@
+{
+  "artifacts_private": [
+    "derived/manifest.sanitized.json",
+    "derived/units.sanitized.jsonl",
+    "derived/errors.blocking.json",
+    "derived/classification.sanitized.json"
+  ],
+  "artifacts_repo": [
+    "docs/BRAIN_PIPELINE_CONHECIMENTO.md",
+    "docs/BRAIN_CORPUS_INGEST_OFFLINE.md",
+    "docs/SUPER_PLAN_BRAIN_CORPUS_2026-07-31.md",
+    "backend/app/services/conhecimento_lifecycle.py",
+    "backend/app/services/conhecimento_classificador.py",
+    "backend/app/services/conhecimento_validacao.py",
+    "backend/app/services/conhecimento_pipeline.py",
+    "backend/app/services/conhecimento_institucional.py",
+    "backend/app/models/conhecimento_institucional.py",
+    "scripts/brain_corpus_ingest.py",
+    "scripts/brain_corpus_classify.py",
+    "scripts/brain_agent_trace.py",
+    ".evidence/brain-corpus/agent-trace.jsonl"
+  ],
+  "automatic_promotion_allowed": false,
+  "batch_id": "2026-07-31-ce236ba32b01",
+  "classification": {
+    "automatic_promotion_allowed": false,
+    "is_blocked": false,
+    "mode": "local_offline_fail_closed",
+    "published_eligible": 0,
+    "schema_version": 1,
+    "sources_classified": 90,
+    "sources_total": 90,
+    "type_histogram": {
+      "ATA_NOTARIAL": 2,
+      "DIVORCIO_UNIAO_ESTAVEL": 4,
+      "EMOLUMENTOS": 1,
+      "ESCRITURA_COMPRA_VENDA": 3,
+      "ESTREMACAO": 5,
+      "INVENTARIO_PARTILHA": 3,
+      "NORMATIVO_CNJ": 5,
+      "OUTROS_ATOS": 36,
+      "PROCURACAO": 5,
+      "RECONHECIMENTO_FIRMA": 4,
+      "SUCESSOES_HERANCA": 5,
+      "TESTAMENTO": 12,
+      "USUCAPIAO": 5
+    },
+    "units_classified": 257,
+    "units_total": 3083
+  },
+  "gates": {
+    "T0_scope": "partial",
+    "T1_integrity": "partial_pass",
+    "T2_privacy": "partial_pass",
+    "T3_control": "partial_pass_unit_tests",
+    "T4_integration": "not_declared",
+    "T5_operation": "not_declared"
+  },
+  "generated_at_utc": "2026-07-31T16:33:38Z",
+  "hermes_runtime_touched": false,
+  "ingest": {
+    "error_count": 0,
+    "is_blocked": false,
+    "pii_aggregate_counts": {
+      "cpf": 4,
+      "email": 20,
+      "phone": 5
+    },
+    "sources_discovered": 90,
+    "sources_extracted": 90,
+    "units_written": 3083
+  },
+  "live_services_restarted": false,
+  "notes": [
+    "Corpus raw remains gitignored under .private/",
+    "No PUBLISHED content; HITL required before any BRAIN retrieval",
+    "Hermes stack and live services were not modified or restarted"
+  ],
+  "schema_version": 1,
+  "staging_files": 90,
+  "tests_passed": 40,
+  "zip_source_bytes": 13640042
+}

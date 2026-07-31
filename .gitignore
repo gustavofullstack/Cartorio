@@ -54,8 +54,8 @@ appendonly.aof
 # Local secrets — never commit
 .secrets/
 
-# Private quarantine for source documents before controlled BRAIN ingestion
-/.private/brain-ingest-quarantine/
+# Private corpus / quarantine — raw sources never enter git (LGPD-by-design)
+/.private/
 
 # pytest-cov annotation files (","-suffix bug seen in bf12203)
 ,cover

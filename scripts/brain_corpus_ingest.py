@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import zipfile
 from collections import Counter
 from collections.abc import Iterable
@@ -25,6 +26,7 @@ from typing import Final
 from xml.etree import ElementTree
 
 ALLOWED_EXTENSIONS: Final[frozenset[str]] = frozenset({".docx", ".odt", ".pdf", ".txt"})
+CONTROL_FILENAMES: Final[frozenset[str]] = frozenset({"MANIFEST.private.json"})
 DEFAULT_QUARANTINE: Final[Path] = (
     Path(__file__).resolve().parents[1]
     / ".private/brain-ingest-quarantine/2026-07-31-ce236ba32b01"
@@ -33,7 +35,11 @@ MAX_SOURCE_BYTES: Final[int] = 50 * 1024 * 1024
 MAX_ARCHIVE_MEMBER_BYTES: Final[int] = 20 * 1024 * 1024
 MAX_ARCHIVE_UNCOMPRESSED_BYTES: Final[int] = 50 * 1024 * 1024
 MAX_UNIT_CHARS: Final[int] = 12_000
-EXTRACTION_TIMEOUT_SECONDS: Final[float] = 30.0
+EXTRACTION_TIMEOUT_SECONDS: Final[float] = 90.0
+OCR_MAX_PAGES: Final[int] = 5
+OCR_MAX_RENDERED_BYTES: Final[int] = 80 * 1024 * 1024
+OCR_RENDER_TIMEOUT_SECONDS: Final[int] = 60
+OCR_PAGE_TIMEOUT_SECONDS: Final[int] = 20
 
 WORD_NAMESPACE: Final[str] = (
     "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
@@ -67,6 +73,7 @@ PII_PATTERNS: Final[tuple[PatternSpec, ...]] = (
 URL_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(?i)\b(?:https?|ftp)://[^\s<>{}\[\]]+"
 )
+RawUnit = tuple[str, str] | tuple[str, str, bool]
 
 
 class ExtractionFailure(Exception):
@@ -128,7 +135,7 @@ def run_ingestion(
     source_paths = list(_iter_source_files(source_root, output_root))
     errors: list[ExtractionError] = []
     sources: list[dict[str, object]] = []
-    units: list[dict[str, str]] = []
+    units: list[dict[str, object]] = []
     extracted_sources = 0
 
     for source_path in source_paths:
@@ -185,7 +192,7 @@ def run_ingestion(
         source_record["sha256"] = _sha256_file(source_path)
 
         try:
-            raw_units = _extract_units_with_timeout(source_path, extension)
+            raw_units = _extract_units_with_timeout(source_path, extension, output_root)
         except ExtractionFailure as failure:
             errors.append(
                 ExtractionError(source_id, source_format, "extract", failure.code)
@@ -212,6 +219,7 @@ def run_ingestion(
     manifest = {
         "schema_version": 1,
         "mode": "local_offline_fail_closed",
+        "automatic_promotion_allowed": False,
         "is_blocked": is_blocked,
         "sources_discovered": len(source_paths),
         "sources_extracted": extracted_sources,
@@ -247,6 +255,8 @@ def _iter_source_files(source_root: Path, output_root: Path) -> Iterable[Path]:
     for candidate in sorted(source_root.rglob("*")):
         if candidate.is_relative_to(output_root):
             continue
+        if candidate.name in CONTROL_FILENAMES:
+            continue
         if candidate.is_file() or candidate.is_symlink():
             yield candidate
 
@@ -266,7 +276,9 @@ def _sha256_file(source_path: Path) -> str:
     return digest.hexdigest()
 
 
-def _extract_units(source_path: Path, extension: str) -> list[tuple[str, str]]:
+def _extract_units(
+    source_path: Path, extension: str, scratch_dir: Path | None = None
+) -> list[RawUnit]:
     """Route a locally supported document to its format-specific, side-effect-free reader."""
     try:
         if extension == ".txt":
@@ -276,20 +288,21 @@ def _extract_units(source_path: Path, extension: str) -> list[tuple[str, str]]:
         if extension == ".odt":
             return _extract_odt(source_path)
         if extension == ".pdf":
-            return _extract_pdf(source_path)
+            return _extract_pdf(source_path, scratch_dir)
     except (OSError, UnicodeError, zipfile.BadZipFile, ElementTree.ParseError):
         raise ExtractionFailure("malformed_document") from None
     raise ExtractionFailure("unsupported_extension")
 
 
 def _extract_units_with_timeout(
-    source_path: Path, extension: str
-) -> list[tuple[str, str]]:
+    source_path: Path, extension: str, scratch_dir: Path
+) -> list[RawUnit]:
     """Run each local parser in an isolated process with a hard fail-closed timeout."""
     context = multiprocessing.get_context("spawn")
     result_queue: multiprocessing.Queue[tuple[str, object]] = context.Queue(maxsize=1)
     worker = context.Process(
-        target=_extract_worker, args=(str(source_path), extension, result_queue)
+        target=_extract_worker,
+        args=(str(source_path), extension, str(scratch_dir), result_queue),
     )
     worker.start()
     try:
@@ -314,11 +327,14 @@ def _extract_units_with_timeout(
 def _extract_worker(
     source_path: str,
     extension: str,
+    scratch_dir: str,
     result_queue: multiprocessing.Queue[tuple[str, object]],
 ) -> None:
     """Return only local extraction data or a categorical failure through an in-memory queue."""
     try:
-        result_queue.put(("ok", _extract_units(Path(source_path), extension)))
+        result_queue.put(
+            ("ok", _extract_units(Path(source_path), extension, Path(scratch_dir)))
+        )
     except ExtractionFailure as failure:
         result_queue.put(("error", failure.code))
     except Exception:
@@ -399,7 +415,7 @@ def _paragraph_units(
     return units
 
 
-def _extract_pdf(source_path: Path) -> list[tuple[str, str]]:
+def _extract_pdf(source_path: Path, scratch_dir: Path | None = None) -> list[RawUnit]:
     """Extract PDF pages with local Poppler, suppressing parser diagnostics and bounding runtime."""
     pdftotext = shutil.which("pdftotext")
     if pdftotext is None:
@@ -420,32 +436,164 @@ def _extract_pdf(source_path: Path) -> list[tuple[str, str]]:
         extracted_text = completed.stdout.decode("utf-8", errors="strict")
     except UnicodeDecodeError:
         raise ExtractionFailure("pdf_decode_failure") from None
-    return [
+    text_units = [
         (f"page:{index}", page)
         for index, page in enumerate(extracted_text.split("\f"), start=1)
         if page.strip()
     ]
+    if text_units:
+        return text_units
+    if scratch_dir is None:
+        raise ExtractionFailure("ocr_scratch_unavailable")
+    return _extract_pdf_with_local_ocr(source_path, scratch_dir)
+
+
+def _extract_pdf_with_local_ocr(source_path: Path, scratch_dir: Path) -> list[RawUnit]:
+    """OCR a textless PDF locally, bounded by page, image-size, and subprocess time limits."""
+    pdftoppm = shutil.which("pdftoppm")
+    tesseract = shutil.which("tesseract")
+    if pdftoppm is None or tesseract is None:
+        raise ExtractionFailure("ocr_dependency_unavailable")
+    page_count = _pdf_page_count(source_path)
+    if page_count > OCR_MAX_PAGES:
+        raise ExtractionFailure("ocr_page_limit")
+    language = _local_ocr_language(tesseract)
+    if language is None:
+        raise ExtractionFailure("ocr_language_unavailable")
+
+    with tempfile.TemporaryDirectory(prefix=".ocr-", dir=scratch_dir) as temporary_dir:
+        temporary_path = Path(temporary_dir)
+        prefix = temporary_path / "page"
+        try:
+            completed = subprocess.run(
+                [
+                    pdftoppm,
+                    "-png",
+                    "-r",
+                    "150",
+                    "-scale-to",
+                    "2000",
+                    "-f",
+                    "1",
+                    "-l",
+                    str(page_count),
+                    str(source_path),
+                    str(prefix),
+                ],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=OCR_RENDER_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            raise ExtractionFailure("ocr_render_timeout") from None
+        if completed.returncode != 0:
+            raise ExtractionFailure("ocr_render_failure")
+
+        images = sorted(temporary_path.glob("page-*.png"))
+        if len(images) != page_count:
+            raise ExtractionFailure("ocr_render_failure")
+        if sum(image.stat().st_size for image in images) > OCR_MAX_RENDERED_BYTES:
+            raise ExtractionFailure("ocr_render_limit")
+        return _ocr_rendered_pages(tesseract, language, images)
+
+
+def _pdf_page_count(source_path: Path) -> int:
+    """Read PDF page count locally without emitting parser output."""
+    pdfinfo = shutil.which("pdfinfo")
+    if pdfinfo is None:
+        raise ExtractionFailure("ocr_dependency_unavailable")
+    try:
+        completed = subprocess.run(
+            [pdfinfo, str(source_path)],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=OCR_RENDER_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        raise ExtractionFailure("ocr_page_count_timeout") from None
+    if completed.returncode != 0:
+        raise ExtractionFailure("ocr_page_count_failure")
+    match = re.search(rb"(?m)^Pages:\s*(\d+)\s*$", completed.stdout)
+    if match is None:
+        raise ExtractionFailure("ocr_page_count_failure")
+    return int(match.group(1))
+
+
+def _local_ocr_language(tesseract: str) -> str | None:
+    """Select an installed local OCR language without reaching a package registry or network."""
+    try:
+        completed = subprocess.run(
+            [tesseract, "--list-langs"],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=OCR_RENDER_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        return None
+    if completed.returncode != 0:
+        return None
+    languages = set(completed.stdout.decode("utf-8", errors="ignore").splitlines())
+    if "por" in languages:
+        return "por"
+    if "eng" in languages:
+        return "eng"
+    return None
+
+
+def _ocr_rendered_pages(
+    tesseract: str, language: str, images: list[Path]
+) -> list[RawUnit]:
+    """Extract each rendered page separately so the persisted locator stays page-specific."""
+    units: list[RawUnit] = []
+    for index, image in enumerate(images, start=1):
+        try:
+            completed = subprocess.run(
+                [tesseract, str(image), "stdout", "-l", language],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                timeout=OCR_PAGE_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            raise ExtractionFailure("ocr_page_timeout") from None
+        if completed.returncode != 0:
+            raise ExtractionFailure("ocr_page_failure")
+        try:
+            page_text = completed.stdout.decode("utf-8", errors="strict").strip()
+        except UnicodeDecodeError:
+            raise ExtractionFailure("ocr_decode_failure") from None
+        if page_text:
+            units.append((f"page:{index}", page_text, True))
+    return units
 
 
 def _sanitize_units(
-    source_id: str, raw_units: list[tuple[str, str]]
-) -> tuple[list[dict[str, str]], Counter[str]]:
+    source_id: str, raw_units: list[RawUnit]
+) -> tuple[list[dict[str, object]], Counter[str]]:
     """Redact local text before it becomes any persisted derivative."""
     pii_counts: Counter[str] = Counter()
-    sanitized_units: list[dict[str, str]] = []
-    for locator, raw_text in raw_units:
+    sanitized_units: list[dict[str, object]] = []
+    for raw_unit in raw_units:
+        locator, raw_text = raw_unit[:2]
+        is_ocr = len(raw_unit) == 3 and raw_unit[2]
         sanitized_text, unit_counts = _sanitize_text(raw_text)
         pii_counts.update(unit_counts)
         for chunk_locator, chunk_text in _chunk_unit(locator, sanitized_text):
-            sanitized_units.append(
-                {
-                    "source_id": source_id,
-                    "locator": chunk_locator,
-                    "unit_id": _sha256_text(f"{source_id}:{chunk_locator}"),
-                    "sanitized_text_sha256": _sha256_text(chunk_text),
-                    "text": chunk_text,
-                }
-            )
+            unit: dict[str, object] = {
+                "source_id": source_id,
+                "locator": chunk_locator,
+                "unit_id": _sha256_text(f"{source_id}:{chunk_locator}"),
+                "sanitized_text_sha256": _sha256_text(chunk_text),
+                "text": chunk_text,
+            }
+            if is_ocr:
+                unit["ocr"] = True
+                unit["ocr_confidence"] = "unavailable"
+                unit["requires_human_review"] = True
+            sanitized_units.append(unit)
     return sanitized_units, pii_counts
 
 
@@ -480,7 +628,7 @@ def _sha256_text(text: str) -> str:
 def _write_derivatives(
     output_root: Path,
     manifest: dict[str, object],
-    units: list[dict[str, str]],
+    units: list[dict[str, object]],
     error_report: dict[str, object],
 ) -> None:
     """Atomically replace only files in the designated private derived directory."""

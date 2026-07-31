@@ -5,7 +5,10 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ---
 
-## INDICE RAPIDO (atualizado 2026-07-28 BRT)
+## INDICE RAPIDO (atualizado 2026-07-31 BRT)
+
+### Etapa 11 — BRAIN ConhecimentoInstitucional corpus pipeline (2026-07-31)
+- **Lesson 297 — Corpus institucional offline fail-closed (sem T4/T5, Hermes intocado)**: ZIP 90 fontes → `.private/` (gitignored). Ingest `scripts/brain_corpus_ingest.py` (DOCX/ODT/PDF+OCR local/TXT, PII scrub, IDs opacos). Classify `scripts/brain_corpus_classify.py` → `PENDING_HUMAN_VALIDATION`, `published_eligible=0`, `automatic_promotion_allowed=false`. Lifecycle/HITL/cálculo Decimal em `app/services/conhecimento_*.py`; schema `knowledge_*` + Alembic 0030. Trace agentes `.evidence/brain-corpus/agent-trace.jsonl`. Docs: `docs/BRAIN_PIPELINE_CONHECIMENTO.md`. **Nunca** promover a PUBLISHED sem HITL + sign-off `cartorio-lgpd`. **Nunca** tocar Hermes/prod neste fluxo.
 
 ### Etapa 10 — iMessage 10K Campaign + Infra Fixes (2026-07-28)
 - **Lesson 287 — iMessage 10K campaign: memory poisoning root cause + TCC-free transport + deploy path (2026-07-28)**: `.harness/memory/lesson-287-imessage-10k-campaign-infra-fixes-2026-07-28.md`. Root cause doutora = USER.md poisoning (não prompt/modelo); dados institucionais corrigidos p/ dossier (850/Pizarro/3216-0252) em pietra.py+SOUL.md+teste; deploy VPS = rsync+docker build (code dir não é git); transport campanha sem FDA = osascript send + state.db read; runner 10K (100×100 seeded, waves 500 resumíveis, higiene memória/wave) rodando — wave_01 17/17 PASS @ 16.4s avg. Verificação live 4/4 PASS.

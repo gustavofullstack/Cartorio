@@ -125,7 +125,9 @@ def test_ingestion_refuses_to_write_outside_the_quarantine_subdirectory(tmp_path
         run_ingestion(source_dir, tmp_path / "outside")
 
 
-def test_ingestion_skips_the_private_control_manifest_not_part_of_the_corpus(tmp_path: Path) -> None:
+def test_ingestion_skips_the_private_control_manifest_not_part_of_the_corpus(
+    tmp_path: Path,
+) -> None:
     """The pre-existing private manifest is control metadata, not an unsupported source."""
     source_dir = tmp_path / "quarantine"
     source_dir.mkdir()
@@ -174,3 +176,27 @@ def test_pdf_extraction_uses_local_pdftotext_with_a_hard_timeout(tmp_path: Path)
     assert units == [("page:1", "primeira pagina"), ("page:2", "segunda pagina")]
     assert run.call_args.kwargs["timeout"] < 30
     assert run.call_args.kwargs["stderr"] is not None
+
+
+def test_textless_pdf_delegates_to_local_ocr_with_private_scratch(tmp_path: Path) -> None:
+    """An empty text layer uses the bounded OCR fallback, preserving page locators."""
+    source_file = tmp_path / "document.pdf"
+    source_file.write_bytes(b"fixture")
+    scratch_dir = tmp_path / "derived"
+    scratch_dir.mkdir()
+
+    class CompletedProcess:
+        returncode = 0
+        stdout = b""
+
+    with (
+        patch("scripts.brain_corpus_ingest.subprocess.run", return_value=CompletedProcess()),
+        patch(
+            "scripts.brain_corpus_ingest._extract_pdf_with_local_ocr",
+            return_value=[("page:1", "texto reconhecido")],
+        ) as ocr,
+    ):
+        units = _extract_pdf(source_file, scratch_dir)
+
+    assert units == [("page:1", "texto reconhecido")]
+    ocr.assert_called_once_with(source_file, scratch_dir)
