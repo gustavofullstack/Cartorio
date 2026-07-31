@@ -1,0 +1,1 @@
+## 2026-07-31 - Optimize SQLAlchemy Count Queries\n**Learning:** Using `len(db.execute(stmt).scalars().all())` creates severe O(N) memory and data transfer bottlenecks for pagination counts.\n**Action:** Always use `func.count()` directly in the database query via `db.scalar(select(func.count()).select_from(model))` for efficient server-side counting.
