@@ -90,23 +90,31 @@ def test_approval_reason_rejects_detectable_personal_data(db: Session) -> None:
 
 def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> None:
     # Valores sentinela nunca podem atravessar a fronteira do artefato CNJ.
-    db.add(
-        Cliente(
-            nome="SENTINEL_NOME_PRIVADO",
-            cpf_hash="SENTINEL_CPF_HASH_PRIVADO",
-            email="sentinel.private@example.test",
-        )
+    from datetime import datetime, timezone
+
+    target_date = datetime(2026, 7, 15, 12, 0, 0, tzinfo=timezone.utc)
+
+    c = Cliente(
+        nome="SENTINEL_NOME_PRIVADO",
+        cpf_hash="SENTINEL_CPF_HASH_PRIVADO",
+        email="sentinel.private@example.test",
     )
+    db.add(c)
     db.commit()
-    cliente_id = db.query(Cliente.id).scalar()
-    db.add(
-        Protocolo(
-            numero="2026-00001",
-            cliente_id=cliente_id,
-            tipo="escritura",
-            canal_origem="telegram",
-        )
+
+    c.created_at = target_date
+    db.commit()
+
+    p = Protocolo(
+        numero="2026-00001",
+        cliente_id=c.id,
+        tipo="escritura",
+        canal_origem="telegram",
     )
+    db.add(p)
+    db.commit()
+
+    p.created_at = target_date
     db.commit()
 
     artifact = build_approved_export(db, request_id=_approved_request(db).id)
