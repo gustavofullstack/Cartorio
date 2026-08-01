@@ -46,7 +46,13 @@ def _approved_request(db: Session):
         resource="test:cnj",
         payload={"fixture": True},
     )
-    request = create_request(db, reference_period="2026-07", requested_by="dpo-requester")
+
+    from datetime import datetime
+
+    now = datetime.now()
+    period = f"{now.year}-{now.month:02d}"
+    request = create_request(db, reference_period=period, requested_by="dpo-requester")
+
     return approve_request(
         db,
         request_id=request.id,
