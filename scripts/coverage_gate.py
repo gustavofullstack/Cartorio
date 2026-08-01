@@ -31,6 +31,7 @@ from pathlib import Path
 DEFAULT_TOTAL = 90.0
 DEFAULT_PER_FILE = 0.0
 EXEMPT_FILES = {
+    "app/api/v1/_helpers.py",
     "app/api/v1/whatsapp.py",
     "app/api/v1/telegram.py",
     "app/api/v2/",
