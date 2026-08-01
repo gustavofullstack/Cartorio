@@ -673,7 +673,7 @@ def build_recommended_actions(rows: list[dict], anomalies: list[dict], full_payl
         })
 
     # Stable bandwidth: marketing/UTM tracking.
-    utm_pulls: dict[str, int] = defaultdict(int)
+    _ = defaultdict(int)
     for row in full_payload.get("rows", [])[:1]:
         pass
     return actions
@@ -736,7 +736,7 @@ def make_dashboard_payload(sheets: dict) -> dict:
     orders_30 = sum_window_count("orders")
     orders_prev = sum_window_count("orders", prev_start, prev_end)
     units_30 = sum_window("units")
-    units_prev = sum_window("units", prev_start, prev_end)
+    _ = sum_window("units", prev_start, prev_end)
     returns_30 = sum_window_count("returns")
     refunds_30 = sum_window("refund_amount")
     fulfill_total = sum_window_count("fulfill_total")
@@ -749,10 +749,10 @@ def make_dashboard_payload(sheets: dict) -> dict:
 
     rev_delta = (rev_30 - rev_prev) / rev_prev if rev_prev else 0.0
     orders_delta = (orders_30 - orders_prev) / orders_prev if orders_prev else 0.0
-    units_delta = (units_30 - units_prev) / units_prev if units_prev else 0.0
+    # units_delta = (units_30 - units_prev) / units_prev if units_prev else 0.0
     return_rate = (returns_30 / orders_30) if orders_30 else 0.0
     on_time_pct = (fulfill_delivered / fulfill_total) if fulfill_total else 0.0
-    exception_rate = (fulfill_exceptions / fulfill_total) if fulfill_total else 0.0
+    # exception_rate = (fulfill_exceptions / fulfill_total) if fulfill_total else 0.0
     inventory_total = inventory_sellable + inventory_unsellable
     unsellable_share = (inventory_unsellable / inventory_total) if inventory_total else 0.0
 
@@ -1665,6 +1665,9 @@ input[type="date"] {
   outline: none;
   cursor: pointer;
 }
+.edit-panel select:focus-visible {
+  outline: 2px solid var(--brand);
+}
 .menu button {
   display: block;
   width: 100%;
@@ -1681,6 +1684,9 @@ input[type="date"] {
 .menu button:hover, .menu button:focus-visible {
   background: var(--soft-blue);
   outline: none;
+}
+.menu button:focus-visible {
+  outline: 2px solid var(--brand);
 }
 .table-scroll {
   overflow: auto;
@@ -1817,6 +1823,7 @@ pre {
 }
 .close svg { width: 18px; height: 18px; stroke-width: 2.1; }
 .close:hover, .close:focus-visible { background: var(--soft); outline: none; }
+.close:focus-visible { outline: 2px solid var(--brand); }
 .copy-button {
   position: absolute;
   right: 8px;
@@ -1838,6 +1845,7 @@ pre {
   color: var(--ink);
   outline: none;
 }
+.copy-button:focus-visible { outline: 2px solid var(--brand); }
 @media (max-width: 1100px) {
   .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
