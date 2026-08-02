@@ -1,0 +1,665 @@
+{
+  "title": "SUPER_PLANO - 100 Granular Improvement Tasks",
+  "squads": [
+    {
+      "id": "S1",
+      "name": "S1: API Central & Performance",
+      "tasks": [
+        {
+          "id": "T1",
+          "title": "Implement targeted `uv run pytest` for specific API endpoints",
+          "description": "To avoid timeouts, configure automated tests to target individual endpoints instead of the whole suite.",
+          "status": "pending"
+        },
+        {
+          "id": "T2",
+          "title": "Optimize Supabase count queries in API",
+          "description": "Replace `.scalars().all()` with `func.count()` to prevent O(N) memory overhead for counting records.",
+          "status": "pending"
+        },
+        {
+          "id": "T3",
+          "title": "Validate HMAC keys in API webhooks securely",
+          "description": "Always use `hmac.compare_digest` when verifying Evolution-API webhooks to prevent timing attacks.",
+          "status": "pending"
+        },
+        {
+          "id": "T4",
+          "title": "Enable strict Pydantic model validation on API schemas",
+          "description": "Audit and enforce strictly typed requests to prevent unexpected inputs in API.",
+          "status": "pending"
+        },
+        {
+          "id": "T5",
+          "title": "Setup automatic local `uv venv` activation for API testing",
+          "description": "Create an automated script that creates a venv and installs dev dependencies before running tests locally.",
+          "status": "pending"
+        },
+        {
+          "id": "T6",
+          "title": "Add custom exception handlers in FastAPI",
+          "description": "Refine global exception handling to avoid exposing sensitive internal state in errors while still logging it properly.",
+          "status": "pending"
+        },
+        {
+          "id": "T7",
+          "title": "Review API rate limiting configurations",
+          "description": "Test and document the effectiveness of rate limiting on the `/api/v1/integrations/` endpoints.",
+          "status": "pending"
+        },
+        {
+          "id": "T8",
+          "title": "Implement Healthcheck and DB Probe in API",
+          "description": "Ensure there's an internal endpoint explicitly for checking Supabase and Redis connection health.",
+          "status": "pending"
+        },
+        {
+          "id": "T9",
+          "title": "Enhance API response speed via connection pooling",
+          "description": "Check SQLAlchemy configurations for optimal connection pooling with Supabase PostgreSQL.",
+          "status": "pending"
+        },
+        {
+          "id": "T10",
+          "title": "Review dependencies for security updates",
+          "description": "Analyze `pyproject.toml` and update any outdated/vulnerable dependencies safely.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "S2: N8N Workflows & Automation",
+      "tasks": [
+        {
+          "id": "T11",
+          "title": "Centralize Chatwoot webhook integration in N8N",
+          "description": "Move dispersed logic into a single cohesive workflow that directs events to Chatwoot appropriately.",
+          "status": "pending"
+        },
+        {
+          "id": "T12",
+          "title": "Configure N8N workflow error handling nodes",
+          "description": "Ensure all API calls from N8N have proper fallback paths to avoid silent workflow failures.",
+          "status": "pending"
+        },
+        {
+          "id": "T13",
+          "title": "Optimize N8N payload processing",
+          "description": "Ensure only required fields are transformed in N8N to reduce CPU utilization.",
+          "status": "pending"
+        },
+        {
+          "id": "T14",
+          "title": "Create standard workflow documentation templates",
+          "description": "Document each N8N workflow's inputs and outputs in the repository for consistency.",
+          "status": "pending"
+        },
+        {
+          "id": "T15",
+          "title": "Implement retry logic for Evolution-API nodes",
+          "description": "Configure N8N workflows interacting with Evolution-API to retry up to 3 times on network failure.",
+          "status": "pending"
+        },
+        {
+          "id": "T16",
+          "title": "Secure N8N webhook endpoints",
+          "description": "Verify that N8N webhook entry points validate request signatures sent from the API.",
+          "status": "pending"
+        },
+        {
+          "id": "T17",
+          "title": "Refine N8N logging mechanism",
+          "description": "Instead of keeping huge logs, configure workflows to write summarized logs to Supabase via API.",
+          "status": "pending"
+        },
+        {
+          "id": "T18",
+          "title": "Develop a test suite for N8N workflows",
+          "description": "Create synthetic events via curl scripts to trigger and assert correct N8N workflow executions.",
+          "status": "pending"
+        },
+        {
+          "id": "T19",
+          "title": "Standardize N8N variable naming conventions",
+          "description": "Review existing workflows and normalize variable names to camelCase for uniformity.",
+          "status": "pending"
+        },
+        {
+          "id": "T20",
+          "title": "Implement workflow monitoring alerts",
+          "description": "Configure N8N to send a Telegram alert to Gustavo/Pietra on workflow critical failures.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "S3: Supabase Integration & Database",
+      "tasks": [
+        {
+          "id": "T21",
+          "title": "Setup Supabase Database Webhooks for realtime events",
+          "description": "Configure triggers to notify the API or N8N when crucial tables are updated.",
+          "status": "pending"
+        },
+        {
+          "id": "T22",
+          "title": "Implement proper timestamps for CNJ reports",
+          "description": "Ensure all test records explicitly set `created_at` fields to support reliable date-filtered reporting.",
+          "status": "pending"
+        },
+        {
+          "id": "T23",
+          "title": "Configure Supabase CRON jobs for cleanup tasks",
+          "description": "Automate the deletion of old ephemeral session data directly in the database.",
+          "status": "pending"
+        },
+        {
+          "id": "T24",
+          "title": "Integrate Supabase Vault for secret management",
+          "description": "Evaluate if N8N/API keys should be migrated to Supabase Vault for enhanced security.",
+          "status": "pending"
+        },
+        {
+          "id": "T25",
+          "title": "Enhance RLS (Row Level Security) policies",
+          "description": "Audit and refine RLS policies to ensure user data isolation is strictly enforced at the database level.",
+          "status": "pending"
+        },
+        {
+          "id": "T26",
+          "title": "Implement robust pagination in Supabase queries",
+          "description": "Standardize pagination across API endpoints to avoid querying massive datasets at once.",
+          "status": "pending"
+        },
+        {
+          "id": "T27",
+          "title": "Optimize Database Indexing",
+          "description": "Review slow queries and create missing indices on frequently filtered columns in Supabase.",
+          "status": "pending"
+        },
+        {
+          "id": "T28",
+          "title": "Configure Supabase Queues for background tasks",
+          "description": "Offload non-critical asynchronous tasks (like email sending) to Supabase Queues.",
+          "status": "pending"
+        },
+        {
+          "id": "T29",
+          "title": "Integrate Supabase GraphQL for specific read-heavy endpoints",
+          "description": "Evaluate GraphQL for dashboards where flexible data retrieval reduces multiple API calls.",
+          "status": "pending"
+        },
+        {
+          "id": "T30",
+          "title": "Document the Supabase schema properly",
+          "description": "Ensure all tables and their relationships are accurately reflected in `docs/platforms/SUPABASE.md`.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "name": "S4: Redis Caching & Memory",
+      "tasks": [
+        {
+          "id": "T31",
+          "title": "Optimize Redis TTL strategies",
+          "description": "Ensure all cached items have explicit and optimal Time To Live (TTL) settings to prevent memory exhaustion.",
+          "status": "pending"
+        },
+        {
+          "id": "T32",
+          "title": "Standardize Redis key formats",
+          "description": "Use a strict namespace pattern (e.g., `cartorio:session:<id>`) for all Redis keys.",
+          "status": "pending"
+        },
+        {
+          "id": "T33",
+          "title": "Implement Redis connection resilience in API",
+          "description": "Ensure the API gracefully falls back to direct DB queries if Redis is temporarily unavailable.",
+          "status": "pending"
+        },
+        {
+          "id": "T34",
+          "title": "Optimize Sidekiq queue handling via Redis",
+          "description": "Analyze Chatwoot's Sidekiq queue performance in Redis and adjust concurrency settings.",
+          "status": "pending"
+        },
+        {
+          "id": "T35",
+          "title": "Centralize conversation context storage",
+          "description": "Ensure the N8N -> Redis and OpenClaw -> Redis context synchronization is flawless.",
+          "status": "pending"
+        },
+        {
+          "id": "T36",
+          "title": "Setup Redis memory monitoring alerts",
+          "description": "Implement a script to alert when Redis memory usage exceeds 80%.",
+          "status": "pending"
+        },
+        {
+          "id": "T37",
+          "title": "Review Redis security configurations",
+          "description": "Verify that Redis requires authentication and is not exposed to the public internet.",
+          "status": "pending"
+        },
+        {
+          "id": "T38",
+          "title": "Implement efficient Redis batch operations",
+          "description": "Refactor API logic to use pipelines for multiple Redis sets/gets instead of sequential calls.",
+          "status": "pending"
+        },
+        {
+          "id": "T39",
+          "title": "Document Redis session lifecycle",
+          "description": "Create a flow diagram of how session data enters and leaves Redis.",
+          "status": "pending"
+        },
+        {
+          "id": "T40",
+          "title": "Implement graceful Redis degradation",
+          "description": "Test and document system behavior when Redis is forcefully restarted.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "name": "S5: Chatwoot CRM & Customer Success",
+      "tasks": [
+        {
+          "id": "T41",
+          "title": "Optimize Chatwoot API integration",
+          "description": "Review how N8N updates Chatwoot conversations to reduce API payload sizes.",
+          "status": "pending"
+        },
+        {
+          "id": "T42",
+          "title": "Configure HITL (Human in the Loop) handoff logic",
+          "description": "Ensure OpenClaw's handoff endpoint cleanly transfers control to human agents in Chatwoot without race conditions.",
+          "status": "pending"
+        },
+        {
+          "id": "T43",
+          "title": "Customize Chatwoot conversation tags",
+          "description": "Automate tag assignment based on the user's intent classified by OpenClaw.",
+          "status": "pending"
+        },
+        {
+          "id": "T44",
+          "title": "Implement Chatwoot custom attributes mapping",
+          "description": "Ensure user data collected by OpenClaw is correctly saved as custom attributes in Chatwoot contacts.",
+          "status": "pending"
+        },
+        {
+          "id": "T45",
+          "title": "Refine Chatwoot automation rules",
+          "description": "Audit built-in Chatwoot automation rules to ensure they don't conflict with N8N workflows.",
+          "status": "pending"
+        },
+        {
+          "id": "T46",
+          "title": "Optimize Chatwoot webhook delivery",
+          "description": "Configure Chatwoot to only dispatch webhooks for relevant events (e.g., message created) to reduce N8N load.",
+          "status": "pending"
+        },
+        {
+          "id": "T47",
+          "title": "Enhance Chatwoot agent response speed",
+          "description": "Test and configure Chatwoot caching to improve the dashboard loading time for human agents.",
+          "status": "pending"
+        },
+        {
+          "id": "T48",
+          "title": "Implement automated summary notes in Chatwoot",
+          "description": "When a handoff occurs, the OpenClaw agent should post an internal note summarizing the conversation context.",
+          "status": "pending"
+        },
+        {
+          "id": "T49",
+          "title": "Configure Chatwoot Out-of-Office auto-replies",
+          "description": "Ensure auto-replies correctly pause OpenClaw processing to prevent double-replying.",
+          "status": "pending"
+        },
+        {
+          "id": "T50",
+          "title": "Document Chatwoot operator guidelines",
+          "description": "Create a standard operating procedure document for human agents using Chatwoot.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "name": "S6: Evolution API & WhatsApp Integrations",
+      "tasks": [
+        {
+          "id": "T51",
+          "title": "Ensure robust Evolution API webhook handling",
+          "description": "Refactor API webhook receivers to immediately return 200 OK and process the payload asynchronously.",
+          "status": "pending"
+        },
+        {
+          "id": "T52",
+          "title": "Implement secure webhook signature validation",
+          "description": "Enforce strict validation of Evolution API signatures using constant-time comparison in the API.",
+          "status": "pending"
+        },
+        {
+          "id": "T53",
+          "title": "Configure Evolution API connection auto-reconnect",
+          "description": "Ensure instances reliably reconnect on network failures and alert if manual intervention (QR scan) is needed.",
+          "status": "pending"
+        },
+        {
+          "id": "T54",
+          "title": "Optimize WhatsApp media handling",
+          "description": "Ensure media files received via Evolution API are properly processed, scanned, and stored in Supabase Storage.",
+          "status": "pending"
+        },
+        {
+          "id": "T55",
+          "title": "Implement robust message deduplication",
+          "description": "Use Redis to detect and discard duplicate webhook events from Evolution API.",
+          "status": "pending"
+        },
+        {
+          "id": "T56",
+          "title": "Configure WhatsApp consent management logic",
+          "description": "Ensure users can opt-out and their preferences are respected before sending any outbound messages.",
+          "status": "pending"
+        },
+        {
+          "id": "T57",
+          "title": "Enhance message formatting capabilities",
+          "description": "Standardize the formatting (bolding, lists) of AI-generated responses before sending to Evolution API.",
+          "status": "pending"
+        },
+        {
+          "id": "T58",
+          "title": "Implement interactive message support",
+          "description": "Test and integrate WhatsApp buttons and lists via Evolution API to improve user experience.",
+          "status": "pending"
+        },
+        {
+          "id": "T59",
+          "title": "Monitor Evolution API instance health",
+          "description": "Create a CRON job to periodically check the status of all Evolution API instances.",
+          "status": "pending"
+        },
+        {
+          "id": "T60",
+          "title": "Document Evolution API quirks and limitations",
+          "description": "Record specific behaviors (like rate limits or payload structures) in `EVOLUTION-API.md`.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "name": "S7: Openclaw Agent AI & NLP Capabilities",
+      "tasks": [
+        {
+          "id": "T61",
+          "title": "Activate DeepSeek-v4-flash thinking capabilities",
+          "description": "Verify the `thinking` enabled flag correctly activates the extended reasoning context window for the bot.",
+          "status": "pending"
+        },
+        {
+          "id": "T62",
+          "title": "Refine OpenClaw system prompts",
+          "description": "Continuously test and adjust prompts to guarantee direct, serious, and emoji-free responses.",
+          "status": "pending"
+        },
+        {
+          "id": "T63",
+          "title": "Implement robust PII scrubbing before NLP",
+          "description": "Ensure CPF, RG, and raw protocol numbers are strictly masked before sending to the LLM.",
+          "status": "pending"
+        },
+        {
+          "id": "T64",
+          "title": "Enhance OpenClaw Tool call reliability",
+          "description": "Add fallback strategies for when the `consultar_emolumento` API endpoint is slow or unresponsive.",
+          "status": "pending"
+        },
+        {
+          "id": "T65",
+          "title": "Test OpenClaw context window utilization",
+          "description": "Simulate long conversations to ensure the 1M context window is handled efficiently without causing excessive token costs.",
+          "status": "pending"
+        },
+        {
+          "id": "T66",
+          "title": "Implement strict formatting rules for OpenClaw outputs",
+          "description": "Configure the agent to strictly follow standard legal vocabulary as required by the cartorio context.",
+          "status": "pending"
+        },
+        {
+          "id": "T67",
+          "title": "Optimize OpenClaw MCP integrations",
+          "description": "Test the API, Supabase, and Chatwoot MCPs to ensure the agent correctly uses external tools.",
+          "status": "pending"
+        },
+        {
+          "id": "T68",
+          "title": "Implement automated intent classification testing",
+          "description": "Create a test suite to ensure the agent accurately identifies user intent across 50 common phrases.",
+          "status": "pending"
+        },
+        {
+          "id": "T69",
+          "title": "Configure fallback LLM providers",
+          "description": "Ensure OpenClaw gracefully degrading to fallback providers if DeepSeek experiences an outage.",
+          "status": "pending"
+        },
+        {
+          "id": "T70",
+          "title": "Monitor OpenClaw token consumption",
+          "description": "Integrate tracking using Codex-Bar to ensure token usage per conversation remains within acceptable limits.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "name": "S8: Security, Auditing & LGPD",
+      "tasks": [
+        {
+          "id": "T71",
+          "title": "Enforce strict LGPD consent checks",
+          "description": "Ensure all workflows and tools respect the `lgpd_scope` before processing user data.",
+          "status": "pending"
+        },
+        {
+          "id": "T72",
+          "title": "Implement automated PII deletion via Supabase CRON",
+          "description": "Ensure data older than the retention policy is securely and automatically wiped.",
+          "status": "pending"
+        },
+        {
+          "id": "T73",
+          "title": "Audit and restrict system API Keys",
+          "description": "Verify that all integrations use least-privilege tokens and that secrets are never hardcoded in files.",
+          "status": "pending"
+        },
+        {
+          "id": "T74",
+          "title": "Implement constant-time comparison for secrets",
+          "description": "Audit the entire codebase to ensure `hmac.compare_digest` is used for all token validations.",
+          "status": "pending"
+        },
+        {
+          "id": "T75",
+          "title": "Enhance audit logging granularity",
+          "description": "Ensure the `audit_logger` skill in OpenClaw accurately records HITL decisions and data access events.",
+          "status": "pending"
+        },
+        {
+          "id": "T76",
+          "title": "Conduct a mock security incident response drill",
+          "description": "Document the steps taken to handle a hypothetical data leak or unauthorized access attempt.",
+          "status": "pending"
+        },
+        {
+          "id": "T77",
+          "title": "Review EasyPanel firewall configurations",
+          "description": "Ensure only necessary ports are open and that databases/Redis are strictly internal.",
+          "status": "pending"
+        },
+        {
+          "id": "T78",
+          "title": "Implement secure headers in the API",
+          "description": "Add Helmet-like protections (CORS, CSP, HSTS) to the FastAPI application.",
+          "status": "pending"
+        },
+        {
+          "id": "T79",
+          "title": "Automate dependency vulnerability scanning",
+          "description": "Integrate a tool in the CI pipeline to flag known vulnerabilities in `pyproject.toml`.",
+          "status": "pending"
+        },
+        {
+          "id": "T80",
+          "title": "Document LGPD compliance procedures",
+          "description": "Maintain a clear, up-to-date document detailing how the system adheres to LGPD requirements.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S9",
+      "name": "S9: Frontend Dashboards & UX/UI",
+      "tasks": [
+        {
+          "id": "T81",
+          "title": "Migrate inline styles to CSS variables",
+          "description": "Ensure both `user-review-dashboard` and `operations-dashboard` utilize CSS variables for consistent theming.",
+          "status": "pending"
+        },
+        {
+          "id": "T82",
+          "title": "Fix `:focus-visible` accessibility issues",
+          "description": "Implement explicit focus outlines for interactive elements, ensuring `outline: none;` is isolated from `:focus-visible`.",
+          "status": "pending"
+        },
+        {
+          "id": "T83",
+          "title": "Optimize dashboard data generation scripts",
+          "description": "Ensure `python dashboard.py` runs efficiently and handles missing data gracefully.",
+          "status": "pending"
+        },
+        {
+          "id": "T84",
+          "title": "Implement Playwright verification scripts",
+          "description": "Create reproducible frontend tests to verify UI changes automatically.",
+          "status": "pending"
+        },
+        {
+          "id": "T85",
+          "title": "Enhance dashboard responsiveness",
+          "description": "Ensure dashboards are fully usable on mobile devices, adjusting grid layouts accordingly.",
+          "status": "pending"
+        },
+        {
+          "id": "T86",
+          "title": "Implement skeleton loaders in UI",
+          "description": "Add loading states to the dashboard to improve perceived performance during data fetching.",
+          "status": "pending"
+        },
+        {
+          "id": "T87",
+          "title": "Standardize error state UI",
+          "description": "Create a consistent visual pattern for displaying data loading errors in the dashboards.",
+          "status": "pending"
+        },
+        {
+          "id": "T88",
+          "title": "Implement robust form validation in UI",
+          "description": "Add client-side validation to all dashboard forms to prevent invalid data submission.",
+          "status": "pending"
+        },
+        {
+          "id": "T89",
+          "title": "Optimize dashboard assets for performance",
+          "description": "Minify generated CSS/JS and compress any images used in the dashboards.",
+          "status": "pending"
+        },
+        {
+          "id": "T90",
+          "title": "Document dashboard architecture",
+          "description": "Create a guide on how the Python script dynamically generates the HTML and injects data.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "name": "S10: DevOps, CI/CD & Monitoring",
+      "tasks": [
+        {
+          "id": "T91",
+          "title": "Automate API testing in CI",
+          "description": "Configure the CI pipeline to run `uv run pytest --no-cov` on all pull requests.",
+          "status": "pending"
+        },
+        {
+          "id": "T92",
+          "title": "Enforce strict linting in CI",
+          "description": "Configure the CI pipeline to fail if `uv run ruff check .` finds any errors or formatting issues.",
+          "status": "pending"
+        },
+        {
+          "id": "T93",
+          "title": "Implement automated token usage tracking",
+          "description": "Create a script to periodically query token consumption and report it to a monitoring dashboard.",
+          "status": "pending"
+        },
+        {
+          "id": "T94",
+          "title": "Configure Prometheus metrics collection",
+          "description": "Ensure the API exposes relevant metrics for monitoring system health and performance.",
+          "status": "pending"
+        },
+        {
+          "id": "T95",
+          "title": "Implement centralized logging",
+          "description": "Configure all services (API, N8N, Chatwoot) to send logs to a central aggregation service.",
+          "status": "pending"
+        },
+        {
+          "id": "T96",
+          "title": "Automate deployment rollbacks",
+          "description": "Configure EasyPanel to support quick rollbacks in case a new deployment introduces critical bugs.",
+          "status": "pending"
+        },
+        {
+          "id": "T97",
+          "title": "Implement infrastructure as code auditing",
+          "description": "Review EasyPanel configuration files to ensure consistency across environments.",
+          "status": "pending"
+        },
+        {
+          "id": "T98",
+          "title": "Create comprehensive disaster recovery plan",
+          "description": "Document the steps required to restore the entire system from backups.",
+          "status": "pending"
+        },
+        {
+          "id": "T99",
+          "title": "Optimize Docker image builds",
+          "description": "Refine Dockerfiles to use multi-stage builds and reduce the final image size.",
+          "status": "pending"
+        },
+        {
+          "id": "T100",
+          "title": "Setup automated dependency updates",
+          "description": "Implement a tool (like Dependabot/Renovate) to create PRs for outdated dependencies automatically.",
+          "status": "pending"
+        }
+      ]
+    }
+  ]
+}
