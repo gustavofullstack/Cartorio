@@ -1,0 +1,3 @@
+## 2026-08-02 - Proper focus outlines on elements with hover styles
+**Learning:** When elements share `:hover` and `:focus-visible` states in CSS (e.g. `.element:hover, .element:focus-visible { outline: none; }`), you cannot simply replace the shared rule's `outline: none` with a visible outline, as it incorrectly renders focus outlines on mouse hover.
+**Action:** Always preserve the `outline: none` on the combined hover/focus rule, and append a specific, distinct rule for `:focus-visible` (e.g. `.element:focus-visible { outline: 2px solid var(--brand); }`) to ensure keyboard users get focus indicators without affecting mouse users.
