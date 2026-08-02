@@ -81,7 +81,7 @@ class HmacKeyRouter:
                 return
             if kid in self._keys:
                 # Permite re-bootstrap idempotente (mesma key)
-                if self._keys[kid]["secret"] == secret:
+                if hmac.compare_digest(self._keys[kid]["secret"], secret):
                     self._bootstrapped = True
                     return
             self._keys[kid] = {

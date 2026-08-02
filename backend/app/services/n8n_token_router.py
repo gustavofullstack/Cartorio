@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import hmac
 from datetime import datetime, timedelta, UTC
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ class N8NTokenRouter:
                 return
             existing = self._tokens.get(kid)
             if existing is not None:
-                if existing["token"] == token:
+                if hmac.compare_digest(existing["token"], token):
                     self._bootstrapped = True
                     return
                 raise ValueError(
