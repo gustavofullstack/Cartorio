@@ -80,7 +80,9 @@ def _write_derived(tmp_path: Path, *, blocked: bool = False) -> Path:
         "units_written": 0 if blocked else 3,
         "sources": sources,
     }
-    (derived / "manifest.sanitized.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (derived / "manifest.sanitized.json").write_text(
+        json.dumps(manifest), encoding="utf-8"
+    )
     if not blocked:
         (derived / "units.sanitized.jsonl").write_text(
             "".join(json.dumps(u, ensure_ascii=False) + "\n" for u in units),
@@ -168,7 +170,10 @@ def test_classificar_units_limita_por_fonte() -> None:
 
 
 def test_classificacao_autoritativa_processa_todas_as_units() -> None:
-    units = [_unit("a" * 64, f"paragraph:{i}", f"testamento publico parte {i}") for i in range(12)]
+    units = [
+        _unit("a" * 64, f"paragraph:{i}", f"testamento publico parte {i}")
+        for i in range(12)
+    ]
     assert len(classificar_units_sanitizadas(units)) == 12
 
 
@@ -200,9 +205,9 @@ def test_identidade_da_fonte_depende_de_todo_conjunto_ordenado() -> None:
         ]
     )
     reordered = list(reversed(first))
-    key_first = agregar_classificacao_por_fonte(first, source_content_hashes={"a" * 64: "c" * 64})[
-        0
-    ]["version_idempotency_key"]
+    key_first = agregar_classificacao_por_fonte(
+        first, source_content_hashes={"a" * 64: "c" * 64}
+    )[0]["version_idempotency_key"]
     key_changed = agregar_classificacao_por_fonte(
         changed, source_content_hashes={"a" * 64: "c" * 64}
     )[0]["version_idempotency_key"]
@@ -214,7 +219,9 @@ def test_identidade_da_fonte_depende_de_todo_conjunto_ordenado() -> None:
 
 
 def test_agregacao_rejeita_tipo_fora_do_catalogo() -> None:
-    results = classificar_units_sanitizadas([_unit("a" * 64, "paragraph:1", "testamento publico")])
+    results = classificar_units_sanitizadas(
+        [_unit("a" * 64, "paragraph:1", "testamento publico")]
+    )
     results[0]["classification"]["document_type_code"] = "UNKNOWN"
     with pytest.raises(ValueError, match="fora do catálogo"):
         agregar_classificacao_por_fonte(

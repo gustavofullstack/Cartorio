@@ -134,7 +134,10 @@ def test_public_copy_masks_pii_without_mutating_input(guard: ModuleType) -> None
         ),
         (
             "gateway.run",
-            ("inbound message: platform=%s user=%s chat=%s msg=%r reply_to_id=%s reply_to_text=%r"),
+            (
+                "inbound message: platform=%s user=%s chat=%s msg=%r "
+                "reply_to_id=%s reply_to_text=%r"
+            ),
             (
                 "feishu",
                 "Pessoa Sensível",
@@ -146,7 +149,10 @@ def test_public_copy_masks_pii_without_mutating_input(guard: ModuleType) -> None
         ),
         (
             "agent.turn_context",
-            ("conversation turn: session=%s model=%s provider=%s platform=%s history=%d msg=%r"),
+            (
+                "conversation turn: session=%s model=%s provider=%s platform=%s "
+                "history=%d msg=%r"
+            ),
             (
                 "session-secret-id",
                 "MiniMax-M3",
