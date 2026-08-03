@@ -38,3 +38,5 @@ backend/scripts/integracoes_devops.py:45:ENV_FALLBACK
 
 # Hash de integridade público da Portaria CGJ/TJMG 8.664/2025; não é credencial.
 backend/app/services/emolumento_real_djalma.py:25:WEBHOOK_SECRET_HEX64
+backend/app/services/tjmg_ocr_loader.py:41:WEBHOOK_SECRET_HEX64
+backend/app/services/tjmg_ocr_loader.py:42:WEBHOOK_SECRET_HEX64
