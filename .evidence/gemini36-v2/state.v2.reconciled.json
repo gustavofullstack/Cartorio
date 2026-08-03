@@ -1,0 +1,13 @@
+{
+  "version": "v2-reconciled-2026-08-03",
+  "auditor": "FLASH-V2-FORENSIC-AUDITOR",
+  "verdict": "NO_GO",
+  "stats": {
+    "VALIDATED_ACCEPTED": 6,
+    "TESTED_LOCAL_ONLY": 12,
+    "CONFIGURED_ONLY": 15,
+    "UNVERIFIED": 37,
+    "BLOCKED_HUMAN": 29,
+    "INVALIDATED": 1
+  }
+}

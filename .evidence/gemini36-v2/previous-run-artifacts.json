@@ -1,0 +1,1633 @@
+[
+  {
+    "relative_path": ".brain/graph-engineer/lark-single-consumer.md",
+    "size_bytes": 525,
+    "mtime_utc": 1785769926.6296904,
+    "sha256": "d84610c253b4e026c943a7c3ef50833b8e3e4dd616f14d83d0d21e389c7ddc58",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/services-taxonomy-synonyms.md",
+    "size_bytes": 587,
+    "mtime_utc": 1785770404.905952,
+    "sha256": "b4cbae96a99d3bd67bfd18328edccc7ac5bc25ade564a43c5cd05d181c5cff6a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/pietra-output-guard-runtime.md",
+    "size_bytes": 444,
+    "mtime_utc": 1785770319.3226566,
+    "sha256": "a15ca2bee30f8beb822f5dab167187867bc450d8ebb10bce47d0f4a34990cf6b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/llm-analysis-downgrade.md",
+    "size_bytes": 544,
+    "mtime_utc": 1785770118.79418,
+    "sha256": "cdecfb37027f013d4b10947e97a0dd9506ebc591ce01d552031a0c7102f610de",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/staging-migration-applied.md",
+    "size_bytes": 384,
+    "mtime_utc": 1785770430.0378673,
+    "sha256": "72992dada27dfd0ff9c99971a8a0882f828940b2881997a059bd571fc51066f6",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/pii-scan-contextual.md",
+    "size_bytes": 524,
+    "mtime_utc": 1785770076.4080927,
+    "sha256": "ae386a6e3485e79c3d2ec3b12f305e94e2c4f9848d3a8e36699dcf962a103ae1",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-hermes-local-contracts-qa.md",
+    "size_bytes": 310,
+    "mtime_utc": 1785770564.6732066,
+    "sha256": "69c79625f64fd4bd5a8c438161d222117f5a49305bdf7b5487dfa2f03ca6f20c",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/note-xxv-limits-dual-layer.md",
+    "size_bytes": 488,
+    "mtime_utc": 1785770447.8944561,
+    "sha256": "c64c17573f5991003278d728d1394f1e608794feb0781d4ac2fc7e4d26d205bb",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/normative-citations.md",
+    "size_bytes": 486,
+    "mtime_utc": 1785770319.3135402,
+    "sha256": "f0203ef94ccbdbe8a4940a4328c77f4c43cfd4c3496ef4dde9297360df17d32f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/operational-catalog-comparison.md",
+    "size_bytes": 561,
+    "mtime_utc": 1785770461.6255112,
+    "sha256": "012523afe0fb39835060d223c178099a20c6a1c4826df6a1c38819cf7db4cb9f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-published-knowledge-only.md",
+    "size_bytes": 454,
+    "mtime_utc": 1785770640.3607087,
+    "sha256": "a68e8f4c05375fb2d18e7a543fb49a847788646fe3c888182c5bbe45f40460fc",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-calculation-source-hitl-test.md",
+    "size_bytes": 432,
+    "mtime_utc": 1785770704.456235,
+    "sha256": "20d491008c54567a51e598cb4a80fa4e4e19a86f7b848112bcb69a78f7592a34",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-pii-injection-e2e-security.md",
+    "size_bytes": 356,
+    "mtime_utc": 1785770689.5509768,
+    "sha256": "97346743253bfba55e3a79c28692f1433f2ff4072cc3d838e08e71f6afc15ffb",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/deduplicate-blocks.md",
+    "size_bytes": 459,
+    "mtime_utc": 1785770297.9510949,
+    "sha256": "24af0f58678895b8a308b24088abbcf3a5e5b61036a6e36d7a4df7c2405f27fe",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-legacy-quarantine.md",
+    "size_bytes": 500,
+    "mtime_utc": 1785769957.5629327,
+    "sha256": "dcc7b6fbc6f1340e5e598e1960ba218e43094702c7f00b34814e7298f1148e61",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/capability-matrix-definition.md",
+    "size_bytes": 632,
+    "mtime_utc": 1785770430.0348907,
+    "sha256": "c1cfd1973228a7e0b1394e0614a8f2cf16568c86a28e80bf471a9d43ad83bf03",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/memory-brain-seed-applied.md",
+    "size_bytes": 440,
+    "mtime_utc": 1785770640.3568554,
+    "sha256": "5f1dbd1943f3cc067a3719b3f09f2064e1e6986151042fd850b0051af0d90fd4",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/draft-only-creation-handoff-summary.md",
+    "size_bytes": 396,
+    "mtime_utc": 1785770461.647772,
+    "sha256": "d4bf606b61f5389592a064660afa8abc82e3f84256a97736914f2e824d5b6d75",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/final-documentation-memory-save.md",
+    "size_bytes": 606,
+    "mtime_utc": 1785770755.3967407,
+    "sha256": "52a7c88ce09f600227eb385aa59d5abbbec4d4aa9c5873e2f57fda52d22b1a4d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/arithmetic-inconsistencies-resolution.md",
+    "size_bytes": 498,
+    "mtime_utc": 1785770391.5696938,
+    "sha256": "20ad33ccdd20854b10b83b768e3c3575cd0e6278a2f754b805af2f30681cdcff",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/quarantine-permissions.md",
+    "size_bytes": 634,
+    "mtime_utc": 1785769923.152045,
+    "sha256": "168ed6ca8f9cfdf062dcf9996321aec11cc64d4e9b072da7d5dbd0546ce553cd",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/state.json",
+    "size_bytes": 80222,
+    "mtime_utc": 1785770760.0273404,
+    "sha256": "df067fa389035942b84e29d375ffbf9a4b9b1d654bff7896eeddb435a2d6758b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-least-privilege.md",
+    "size_bytes": 560,
+    "mtime_utc": 1785769957.5718124,
+    "sha256": "c4c15841a91de7c425abad8ce05744ee7d206368f3eb15c35f664227c076aa21",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/runtime-inventory.json",
+    "size_bytes": 990,
+    "mtime_utc": 1785769830.9709094,
+    "sha256": "48833d378cea2300b3d94987c2a0d888cc27f41ec38eef6b94646f04abd1585d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/evidence-ledger.jsonl",
+    "size_bytes": 49030,
+    "mtime_utc": 1785770760.0274734,
+    "sha256": "080d4af475c8bfc123f0f22bb2b3b9aeedb8b0c96efc8dc054febecf74c64e6c",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/human-validation-controlled-publication.md",
+    "size_bytes": 505,
+    "mtime_utc": 1785770564.6694078,
+    "sha256": "d904c72fedb1236e484f9c5754c5e35c7dd329427b1253a3535544c63c9291c0",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/provenance-conflict-internal-query.md",
+    "size_bytes": 344,
+    "mtime_utc": 1785770461.644517,
+    "sha256": "189696458cc6042e09012a454bf3a041303db2169ad7c606c051f5dd61a63679",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/sensitive-acts-escalation.md",
+    "size_bytes": 433,
+    "mtime_utc": 1785770663.7562964,
+    "sha256": "dbaa46b8ac0d60cc1d57e5e215b93689a5301aa500b27b0a313fa4ecb7f48a04",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/gold-qa-dataset-evals.md",
+    "size_bytes": 480,
+    "mtime_utc": 1785770519.9712706,
+    "sha256": "af6cece2017d443f74f1047c237e7ec6a06057804145a78a6fc9f6f391941646",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-resilience-fallback-e2e.md",
+    "size_bytes": 418,
+    "mtime_utc": 1785770689.5479147,
+    "sha256": "4030a174d7f14bed636e5dddb4aec43bbe3288b06da1a8ff11cb8ad7bdb83a1d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-dm-synthetic-roundtrip.md",
+    "size_bytes": 348,
+    "mtime_utc": 1785770663.7623532,
+    "sha256": "e6e953b427e5d1edb94eaf57ec88d69fd6322ebc4182a081b72c320b8c044bd8",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-p2-event-migration.md",
+    "size_bytes": 480,
+    "mtime_utc": 1785770052.2180238,
+    "sha256": "b639300e86cfb8e65f37feed24d1c719e8cbe5fee9de1a1144e826e344b470c1",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/operational-service-adapter-implementation.md",
+    "size_bytes": 575,
+    "mtime_utc": 1785770491.800526,
+    "sha256": "4ca5d6ac03e44ce00b0e1e132ad7e43410c018587356e776d1cd6f8deb374c83",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/typed-contracts-error-envelopes.md",
+    "size_bytes": 499,
+    "mtime_utc": 1785770447.9016082,
+    "sha256": "c30d1eaee36ab7e1f661ad43f6fd16215a7e3d56037b63d2e728650bcea189ab",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/atomize-documentary-requirements.md",
+    "size_bytes": 471,
+    "mtime_utc": 1785770391.550362,
+    "sha256": "6f2314da9ee1456b66b309ec2ee2783a1ba647abdd4ba01ac9b950b9d928231a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-single-websocket.md",
+    "size_bytes": 417,
+    "mtime_utc": 1785770232.4162695,
+    "sha256": "43ee94cf0f036dc13f2c63919c4ec1bc9d459adf2554fc67824987ec9df8fb75",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/evals-latency-cost-cache-metrics.md",
+    "size_bytes": 433,
+    "mtime_utc": 1785770564.665441,
+    "sha256": "56e44bab829d091c706376f53a0de58be1e1c70c653efb9cd654be194e775224",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-allowlist-pairing.md",
+    "size_bytes": 466,
+    "mtime_utc": 1785770052.2218401,
+    "sha256": "ee011aecd7c576d471fddf75e3fb9141a4c6679cd1e12bff3658f76117fcc6f4",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/mcp-channel-profiles-allowlist.md",
+    "size_bytes": 460,
+    "mtime_utc": 1785770519.9650106,
+    "sha256": "34c818b1571c0c615d469b2cb873c81f75e0a632d2d2c854cd71a86f863ed158",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/price-mapping-testamento.md",
+    "size_bytes": 419,
+    "mtime_utc": 1785770430.030576,
+    "sha256": "ffdb0e82d80552637be640e06aa15c3c5c85b3a9a229e3994233e6641e5edb4b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-tenant-ownership.md",
+    "size_bytes": 419,
+    "mtime_utc": 1785769926.6389418,
+    "sha256": "f30f12c3758b9afed6cbcdc10709774b55cfb8f33a03e94c9a36a8939315169e",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/price-tables-79rows-revalidation.md",
+    "size_bytes": 794,
+    "mtime_utc": 1785770052.2139869,
+    "sha256": "37aeba9d28be5cef9ed7bd24e12b9c4ab1b63d52c27c18633a225ee6ac16c72f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/parameterized-regression-79rows.md",
+    "size_bytes": 448,
+    "mtime_utc": 1785770506.5989642,
+    "sha256": "59c9c70f7a234fd7b517e42af6cd37c1e50bf2e1f37d9486d70dff324cf08144",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-unauthorized-user-group-e2e.md",
+    "size_bytes": 363,
+    "mtime_utc": 1785770689.540961,
+    "sha256": "bd7ee684d00440d230886882c134e3fc587a0d5e52fc900a3525074be48012a8",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-audit-relay-idempotent.md",
+    "size_bytes": 388,
+    "mtime_utc": 1785770704.4479892,
+    "sha256": "86e1a81b6a29038e5cc77c0eef08370fc16d9e12bd54ee741b7504e87fd0896a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/evals-hallucination-citation-abstention-metrics.md",
+    "size_bytes": 581,
+    "mtime_utc": 1785770550.0918078,
+    "sha256": "b443bc75b0bc5e795d76fd0bcf7eb50a02b4b3161daade9f04ff6fb307e8b606",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/hitl-prioritized-queue.md",
+    "size_bytes": 458,
+    "mtime_utc": 1785770118.789383,
+    "sha256": "5992f34abd828938ffcf34248cf6c115d6a30b24f517fd3bb00a8be01d571cda",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-no-streaming-clean-output.md",
+    "size_bytes": 431,
+    "mtime_utc": 1785770391.5925045,
+    "sha256": "941a5beb3ad3ba748267e5309b07474d00a7ab3d7a484a9ef56260c06a77f91b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/corpus-validation-90sources.md",
+    "size_bytes": 751,
+    "mtime_utc": 1785770052.2103062,
+    "sha256": "a5773d84439daa030149fab9e03e4e5f472c0ad45c154a831b22ac24d784c4e1",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/source-authority-classification.md",
+    "size_bytes": 542,
+    "mtime_utc": 1785770076.4169025,
+    "sha256": "ebd1456a389b42ef1e94f06a58ce6f98ccfb2a315a1b367bdd75b38eb0198704",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/formula-validator-implementation.md",
+    "size_bytes": 437,
+    "mtime_utc": 1785770430.017901,
+    "sha256": "d3cec570dfd5ee7d2be87a7d80dc630c4ee916016cd5b753f0584b0d422f2550",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/task1-final-acceptance.md",
+    "size_bytes": 936,
+    "mtime_utc": 1785770663.748867,
+    "sha256": "eaf631c2bd4a699ed69a443781eacd3e3c6c4c9d7264217b13de742c337c4c93",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/worktree-map.json",
+    "size_bytes": 1150,
+    "mtime_utc": 1785769811.8477907,
+    "sha256": "26a99d0697f47adf013de9f0d2fff36502e533cf823543f7c96e434307f3ac7f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-tools-profile-restriction.md",
+    "size_bytes": 435,
+    "mtime_utc": 1785770550.0962963,
+    "sha256": "8b4db7a3e9496150dea4e7601b75cd09e11873474d49673e462e94d20de9548f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/baseline.json",
+    "size_bytes": 1371,
+    "mtime_utc": 1785769783.3149056,
+    "sha256": "402a00d4a808e32c83154e7a1992015f33b07fd397c87a805ff14c69a8f412a5",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/component-provenance-tracking.md",
+    "size_bytes": 482,
+    "mtime_utc": 1785770447.8981798,
+    "sha256": "71635923310019a072ed301d3bfa43a6472b5fd1a44a60a9d21f8b58dd18b43a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/extract-validity-dates.md",
+    "size_bytes": 508,
+    "mtime_utc": 1785770297.9556477,
+    "sha256": "46331efd5903fd57913d67ef0b4f4bbc6040b5fa0f05d795733a91fd8d9cb1dc",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/hitl-validation-pack-dpo-fiscal.md",
+    "size_bytes": 485,
+    "mtime_utc": 1785770404.9119923,
+    "sha256": "98d2447aa5abcbec0174fad13a738ff17491ec58f61d0a5e5470a3f85603a3a2",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-reconciliation.md",
+    "size_bytes": 1310,
+    "mtime_utc": 1785769901.8741298,
+    "sha256": "c0026a8012e9c6b6c49e775da4bfe3651bc88438ba07f7507786c8645d9f763f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/evals-pii-injection-security-suite.md",
+    "size_bytes": 454,
+    "mtime_utc": 1785770533.991389,
+    "sha256": "d367fc7dae4be69870432bc8c7d8745b93dd6a092b589b5cdeccc6f0df801892",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-dedupe-idempotency-proof.md",
+    "size_bytes": 394,
+    "mtime_utc": 1785770689.5337381,
+    "sha256": "1a77d632315e49220bfb5ff91ebc075b4c258b3ef0a5a4f55c7177e8988ed679",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-authorized-test-window.md",
+    "size_bytes": 477,
+    "mtime_utc": 1785770741.1860871,
+    "sha256": "a8c4c2a530174c94c7d4d31cbbd83266b81c9609ef5df68215c048556d573121",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/price-mapping-geral.md",
+    "size_bytes": 408,
+    "mtime_utc": 1785770430.022316,
+    "sha256": "cb5b22c6106814d11fdac2daf1ca4a3ef4ac43aeb4883fe33c2ff17c2ec4960d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/price-mapping-escrituras.md",
+    "size_bytes": 431,
+    "mtime_utc": 1785770430.0264282,
+    "sha256": "e17e97a0e9179f768879ec6617fb703543e9c28ab9b8136ab42eb953ce184c57",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/felipe-25-tests-script.md",
+    "size_bytes": 637,
+    "mtime_utc": 1785770718.6639173,
+    "sha256": "08386520211e255cc888b5d6a43376978f42c8ab604a2477de253608385ddd5b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/documentary-checklist-readonly.md",
+    "size_bytes": 337,
+    "mtime_utc": 1785770461.6414409,
+    "sha256": "2ca7b1d5ec78786e64bea60e00c7df31cb8dfcb016b8ea06b0dab794daa0be59",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/minimax-sanitized-prompt-validation.md",
+    "size_bytes": 416,
+    "mtime_utc": 1785770297.9629526,
+    "sha256": "6a556d3d2afd6db56ce1a6d002f5f7da3dceeb1ffdc8f1ab48c4e0f9be0da44f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-p2-verifier-execution.md",
+    "size_bytes": 402,
+    "mtime_utc": 1785770640.3641675,
+    "sha256": "9ef5bdc64616fab51e5f6bfbec13451beda74d4bf81b7bbdb20b61c48cfe0c43",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-config-diff.md",
+    "size_bytes": 467,
+    "mtime_utc": 1785770118.798243,
+    "sha256": "27ba10139e118f5a3b03357cf3a1149bea52be2463ee5facb7cf52587bc9cc51",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/drift-report.md",
+    "size_bytes": 1926,
+    "mtime_utc": 1785769861.4472327,
+    "sha256": "f7f539ecdc31a8da8655cffabf17c175d6d86278818efcd8b26323fd28b13a7d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-processor-not-found-elimination.md",
+    "size_bytes": 487,
+    "mtime_utc": 1785770297.9594672,
+    "sha256": "882e94f201eaedd252e1febc00a77b672219ce185a2177eb9af25f78106bb6a7",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/dual-layer-schema-definition.md",
+    "size_bytes": 520,
+    "mtime_utc": 1785770404.9178083,
+    "sha256": "0a9a0b3eb032d5827e30d5b30ec0ea1682e8214c00385ac428a2c7de950a4531",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-app-release.md",
+    "size_bytes": 375,
+    "mtime_utc": 1785770076.4209287,
+    "sha256": "ad59c585c562c8790aca6704d76b31b84ababfa8ab36f313ea46eb3b2b2c41a1",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/risk-register.md",
+    "size_bytes": 1979,
+    "mtime_utc": 1785769838.2001917,
+    "sha256": "ba257afb9f63eff2ea32371f4f7f41efd3c1401069871a7a619a450413554aaf",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-price-behavior-applied.md",
+    "size_bytes": 390,
+    "mtime_utc": 1785770689.5286283,
+    "sha256": "f69a1c497719ce7367bc5eae766e775b0abfab2d5d2ad521d194f028ba1cc244",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/retrieval-published-only-enforcement.md",
+    "size_bytes": 481,
+    "mtime_utc": 1785770447.9047265,
+    "sha256": "5b3f75f267ab8fd607855aead5b5b62e5036a5ee7cd952cc02575df23643b0e6",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-concurrency-burst-test.md",
+    "size_bytes": 342,
+    "mtime_utc": 1785770704.4525774,
+    "sha256": "b93ddff85327f7d51eb6b581f7a31ecb3abfb3d965a1022a48bb4e5761291d1e",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/human-gates.json",
+    "size_bytes": 1149,
+    "mtime_utc": 1785769841.9144819,
+    "sha256": "a84e0f7b09aa7d29ffb23bbcc605cb76d3b64f595399ec43bce975046ed9b8a2",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-group-mention-silence-e2e.md",
+    "size_bytes": 356,
+    "mtime_utc": 1785770689.5374246,
+    "sha256": "5d65d2ac9e2e804e5c63c5f2969097b4be1a72d9770588f86341708cdaf08c60",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-mcp-secret-context-validation.md",
+    "size_bytes": 352,
+    "mtime_utc": 1785770533.99508,
+    "sha256": "77a989683afa212b3d97c93ffa5a240c2bf7f04040df1dd510085626151e021d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/felipe-25-tests-execution.md",
+    "size_bytes": 735,
+    "mtime_utc": 1785770741.1911576,
+    "sha256": "a07af92ebe73c0790103b1a2d3958292422df771ad41b6599996f4366d5759b8",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/ingest-pipeline-verification.md",
+    "size_bytes": 697,
+    "mtime_utc": 1785769957.5549617,
+    "sha256": "509aa55038c42a6f07bd737fc148cc2e36380517b37e4665a08b584f2eecbdc3",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-certification-manifest.md",
+    "size_bytes": 1382,
+    "mtime_utc": 1785770741.1999743,
+    "sha256": "17bf0e3c00bcb6919485b5a396fc46e72279f9652f30bb169fa2fb33af166f12",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/mcp-tool-emolumento-dual-layer-adaptation.md",
+    "size_bytes": 512,
+    "mtime_utc": 1785770506.6064117,
+    "sha256": "e16b80005e28a884b1736f09d5b71de77dfaafccb609704609065bbaf34b6222",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/evals-legal-ambiguity-abstention.md",
+    "size_bytes": 591,
+    "mtime_utc": 1785770533.9868295,
+    "sha256": "4bbdf67894500127e20fe7fadebcda3c4109213292deb99ef5ab267d6a4820ed",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/docker-secrets-fail-closed.md",
+    "size_bytes": 431,
+    "mtime_utc": 1785770232.4213893,
+    "sha256": "635f193c050cbd2b188bde599458b0ac2457c64aee2ba934125c0b96698df4d9",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/duplicates-consolidation.md",
+    "size_bytes": 538,
+    "mtime_utc": 1785770076.4125168,
+    "sha256": "2da52ba0e84db02f7f15879b8a21a62c389c6d2d26185e851e4497836fcd645b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/act-requirements-query-implementation.md",
+    "size_bytes": 437,
+    "mtime_utc": 1785770461.6383016,
+    "sha256": "827c4752732e2cfb17f787df5d2a68aa629f2c3fe44f3fac4b437d7257518027",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/conflict-registry-construction.md",
+    "size_bytes": 787,
+    "mtime_utc": 1785770319.3171947,
+    "sha256": "622e6e7e53cc08453f340d66bd8ef31fffa5a066644739d116ac25ebe2711f98",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/chat-user-tenant-isolation.md",
+    "size_bytes": 402,
+    "mtime_utc": 1785770663.759391,
+    "sha256": "e7ae76418963240dbc0d2109d7b05c72ba1aea25343aed79f417613f04b0c970",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/crosswalk-tjmg-8664-2025.md",
+    "size_bytes": 542,
+    "mtime_utc": 1785770391.585636,
+    "sha256": "7b055ac96728842d1be380b01597583d527bcc4be4dc3230728d97049c31160d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-rollback-drill.md",
+    "size_bytes": 419,
+    "mtime_utc": 1785770741.1959655,
+    "sha256": "afef828ab4b820b5e6da4855e1249f8e82ddcaa3aa9abb56931895361f11d628",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/canonical-map.json",
+    "size_bytes": 981,
+    "mtime_utc": 1785770228.2137108,
+    "sha256": "0ada90dc4409221a81e60b90186d86a3524858105973b8825f45c1eb6454d295",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/lark-multi-message-short-context-e2e.md",
+    "size_bytes": 336,
+    "mtime_utc": 1785770689.5445688,
+    "sha256": "0081cc2028583bb3efbca97a6aeb07cdee90e2a664b6106f8076e0121ea6f7f6",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/source-precedence.md",
+    "size_bytes": 1574,
+    "mtime_utc": 1785769787.2107882,
+    "sha256": "f0891f116b1f4368a29cdad03d7a6baebf5a93d6090a9c588e5a7000da716d85",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/graph-engineer/documentary-guidance-lark.md",
+    "size_bytes": 377,
+    "mtime_utc": 1785770663.7527885,
+    "sha256": "daf93b960395414123a93364221c851d5cf102a72d0d385f1dd4a1ebab780f13",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-single-consumer.md",
+    "size_bytes": 525,
+    "mtime_utc": 1785769926.633655,
+    "sha256": "d84610c253b4e026c943a7c3ef50833b8e3e4dd616f14d83d0d21e389c7ddc58",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/services-taxonomy-synonyms.md",
+    "size_bytes": 587,
+    "mtime_utc": 1785770404.9093714,
+    "sha256": "b4cbae96a99d3bd67bfd18328edccc7ac5bc25ade564a43c5cd05d181c5cff6a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/pietra-output-guard-runtime.md",
+    "size_bytes": 444,
+    "mtime_utc": 1785770319.3241122,
+    "sha256": "a15ca2bee30f8beb822f5dab167187867bc450d8ebb10bce47d0f4a34990cf6b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/llm-analysis-downgrade.md",
+    "size_bytes": 544,
+    "mtime_utc": 1785770118.7961743,
+    "sha256": "cdecfb37027f013d4b10947e97a0dd9506ebc591ce01d552031a0c7102f610de",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/staging-migration-applied.md",
+    "size_bytes": 384,
+    "mtime_utc": 1785770430.039474,
+    "sha256": "72992dada27dfd0ff9c99971a8a0882f828940b2881997a059bd571fc51066f6",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/pii-scan-contextual.md",
+    "size_bytes": 524,
+    "mtime_utc": 1785770076.4103024,
+    "sha256": "ae386a6e3485e79c3d2ec3b12f305e94e2c4f9848d3a8e36699dcf962a103ae1",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-hermes-local-contracts-qa.md",
+    "size_bytes": 310,
+    "mtime_utc": 1785770564.6749322,
+    "sha256": "69c79625f64fd4bd5a8c438161d222117f5a49305bdf7b5487dfa2f03ca6f20c",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/note-xxv-limits-dual-layer.md",
+    "size_bytes": 488,
+    "mtime_utc": 1785770447.8963482,
+    "sha256": "c64c17573f5991003278d728d1394f1e608794feb0781d4ac2fc7e4d26d205bb",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/normative-citations.md",
+    "size_bytes": 486,
+    "mtime_utc": 1785770319.315353,
+    "sha256": "f0203ef94ccbdbe8a4940a4328c77f4c43cfd4c3496ef4dde9297360df17d32f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/operational-catalog-comparison.md",
+    "size_bytes": 561,
+    "mtime_utc": 1785770461.629977,
+    "sha256": "012523afe0fb39835060d223c178099a20c6a1c4826df6a1c38819cf7db4cb9f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-published-knowledge-only.md",
+    "size_bytes": 454,
+    "mtime_utc": 1785770640.3623126,
+    "sha256": "a68e8f4c05375fb2d18e7a543fb49a847788646fe3c888182c5bbe45f40460fc",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-calculation-source-hitl-test.md",
+    "size_bytes": 432,
+    "mtime_utc": 1785770704.4580824,
+    "sha256": "20d491008c54567a51e598cb4a80fa4e4e19a86f7b848112bcb69a78f7592a34",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-pii-injection-e2e-security.md",
+    "size_bytes": 356,
+    "mtime_utc": 1785770689.5526173,
+    "sha256": "97346743253bfba55e3a79c28692f1433f2ff4072cc3d838e08e71f6afc15ffb",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/deduplicate-blocks.md",
+    "size_bytes": 459,
+    "mtime_utc": 1785770297.9535372,
+    "sha256": "24af0f58678895b8a308b24088abbcf3a5e5b61036a6e36d7a4df7c2405f27fe",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-legacy-quarantine.md",
+    "size_bytes": 500,
+    "mtime_utc": 1785769957.566447,
+    "sha256": "dcc7b6fbc6f1340e5e598e1960ba218e43094702c7f00b34814e7298f1148e61",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/capability-matrix-definition.md",
+    "size_bytes": 632,
+    "mtime_utc": 1785770430.036416,
+    "sha256": "c1cfd1973228a7e0b1394e0614a8f2cf16568c86a28e80bf471a9d43ad83bf03",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/memory-brain-seed-applied.md",
+    "size_bytes": 440,
+    "mtime_utc": 1785770640.358889,
+    "sha256": "5f1dbd1943f3cc067a3719b3f09f2064e1e6986151042fd850b0051af0d90fd4",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/draft-only-creation-handoff-summary.md",
+    "size_bytes": 396,
+    "mtime_utc": 1785770461.6491957,
+    "sha256": "d4bf606b61f5389592a064660afa8abc82e3f84256a97736914f2e824d5b6d75",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/final-documentation-memory-save.md",
+    "size_bytes": 606,
+    "mtime_utc": 1785770755.3995311,
+    "sha256": "52a7c88ce09f600227eb385aa59d5abbbec4d4aa9c5873e2f57fda52d22b1a4d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/arithmetic-inconsistencies-resolution.md",
+    "size_bytes": 498,
+    "mtime_utc": 1785770391.5774364,
+    "sha256": "20ad33ccdd20854b10b83b768e3c3575cd0e6278a2f754b805af2f30681cdcff",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/quarantine-permissions.md",
+    "size_bytes": 634,
+    "mtime_utc": 1785769923.1572988,
+    "sha256": "168ed6ca8f9cfdf062dcf9996321aec11cc64d4e9b072da7d5dbd0546ce553cd",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-least-privilege.md",
+    "size_bytes": 560,
+    "mtime_utc": 1785769957.5757725,
+    "sha256": "c4c15841a91de7c425abad8ce05744ee7d206368f3eb15c35f664227c076aa21",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/runtime-inventory.json",
+    "size_bytes": 990,
+    "mtime_utc": 1785769830.971189,
+    "sha256": "48833d378cea2300b3d94987c2a0d888cc27f41ec38eef6b94646f04abd1585d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/evidence-ledger.jsonl",
+    "size_bytes": 49030,
+    "mtime_utc": 1785770760.0275292,
+    "sha256": "080d4af475c8bfc123f0f22bb2b3b9aeedb8b0c96efc8dc054febecf74c64e6c",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/human-validation-controlled-publication.md",
+    "size_bytes": 505,
+    "mtime_utc": 1785770564.6713133,
+    "sha256": "d904c72fedb1236e484f9c5754c5e35c7dd329427b1253a3535544c63c9291c0",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/provenance-conflict-internal-query.md",
+    "size_bytes": 344,
+    "mtime_utc": 1785770461.646191,
+    "sha256": "189696458cc6042e09012a454bf3a041303db2169ad7c606c051f5dd61a63679",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/sensitive-acts-escalation.md",
+    "size_bytes": 433,
+    "mtime_utc": 1785770663.7577963,
+    "sha256": "dbaa46b8ac0d60cc1d57e5e215b93689a5301aa500b27b0a313fa4ecb7f48a04",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/gold-qa-dataset-evals.md",
+    "size_bytes": 480,
+    "mtime_utc": 1785770519.9735928,
+    "sha256": "af6cece2017d443f74f1047c237e7ec6a06057804145a78a6fc9f6f391941646",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-resilience-fallback-e2e.md",
+    "size_bytes": 418,
+    "mtime_utc": 1785770689.5494573,
+    "sha256": "4030a174d7f14bed636e5dddb4aec43bbe3288b06da1a8ff11cb8ad7bdb83a1d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-dm-synthetic-roundtrip.md",
+    "size_bytes": 348,
+    "mtime_utc": 1785770663.763788,
+    "sha256": "e6e953b427e5d1edb94eaf57ec88d69fd6322ebc4182a081b72c320b8c044bd8",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-p2-event-migration.md",
+    "size_bytes": 480,
+    "mtime_utc": 1785770052.2196636,
+    "sha256": "b639300e86cfb8e65f37feed24d1c719e8cbe5fee9de1a1144e826e344b470c1",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/operational-service-adapter-implementation.md",
+    "size_bytes": 575,
+    "mtime_utc": 1785770491.8033044,
+    "sha256": "4ca5d6ac03e44ce00b0e1e132ad7e43410c018587356e776d1cd6f8deb374c83",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/typed-contracts-error-envelopes.md",
+    "size_bytes": 499,
+    "mtime_utc": 1785770447.9030807,
+    "sha256": "c30d1eaee36ab7e1f661ad43f6fd16215a7e3d56037b63d2e728650bcea189ab",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/atomize-documentary-requirements.md",
+    "size_bytes": 471,
+    "mtime_utc": 1785770391.5614088,
+    "sha256": "6f2314da9ee1456b66b309ec2ee2783a1ba647abdd4ba01ac9b950b9d928231a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-single-websocket.md",
+    "size_bytes": 417,
+    "mtime_utc": 1785770232.419466,
+    "sha256": "43ee94cf0f036dc13f2c63919c4ec1bc9d459adf2554fc67824987ec9df8fb75",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/evals-latency-cost-cache-metrics.md",
+    "size_bytes": 433,
+    "mtime_utc": 1785770564.6675043,
+    "sha256": "56e44bab829d091c706376f53a0de58be1e1c70c653efb9cd654be194e775224",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-allowlist-pairing.md",
+    "size_bytes": 466,
+    "mtime_utc": 1785770052.2239447,
+    "sha256": "ee011aecd7c576d471fddf75e3fb9141a4c6679cd1e12bff3658f76117fcc6f4",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/mcp-channel-profiles-allowlist.md",
+    "size_bytes": 460,
+    "mtime_utc": 1785770519.9684005,
+    "sha256": "34c818b1571c0c615d469b2cb873c81f75e0a632d2d2c854cd71a86f863ed158",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/price-mapping-testamento.md",
+    "size_bytes": 419,
+    "mtime_utc": 1785770430.0328863,
+    "sha256": "ffdb0e82d80552637be640e06aa15c3c5c85b3a9a229e3994233e6641e5edb4b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-tenant-ownership.md",
+    "size_bytes": 419,
+    "mtime_utc": 1785769926.6464434,
+    "sha256": "f30f12c3758b9afed6cbcdc10709774b55cfb8f33a03e94c9a36a8939315169e",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/price-tables-79rows-revalidation.md",
+    "size_bytes": 794,
+    "mtime_utc": 1785770052.2160468,
+    "sha256": "37aeba9d28be5cef9ed7bd24e12b9c4ab1b63d52c27c18633a225ee6ac16c72f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/parameterized-regression-79rows.md",
+    "size_bytes": 448,
+    "mtime_utc": 1785770506.60307,
+    "sha256": "59c9c70f7a234fd7b517e42af6cd37c1e50bf2e1f37d9486d70dff324cf08144",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-unauthorized-user-group-e2e.md",
+    "size_bytes": 363,
+    "mtime_utc": 1785770689.5427117,
+    "sha256": "bd7ee684d00440d230886882c134e3fc587a0d5e52fc900a3525074be48012a8",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-audit-relay-idempotent.md",
+    "size_bytes": 388,
+    "mtime_utc": 1785770704.4503314,
+    "sha256": "86e1a81b6a29038e5cc77c0eef08370fc16d9e12bd54ee741b7504e87fd0896a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/evals-hallucination-citation-abstention-metrics.md",
+    "size_bytes": 581,
+    "mtime_utc": 1785770550.0940628,
+    "sha256": "b443bc75b0bc5e795d76fd0bcf7eb50a02b4b3161daade9f04ff6fb307e8b606",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/hitl-prioritized-queue.md",
+    "size_bytes": 458,
+    "mtime_utc": 1785770118.7920496,
+    "sha256": "5992f34abd828938ffcf34248cf6c115d6a30b24f517fd3bb00a8be01d571cda",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-no-streaming-clean-output.md",
+    "size_bytes": 431,
+    "mtime_utc": 1785770391.5951943,
+    "sha256": "941a5beb3ad3ba748267e5309b07474d00a7ab3d7a484a9ef56260c06a77f91b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/corpus-validation-90sources.md",
+    "size_bytes": 751,
+    "mtime_utc": 1785770052.2122762,
+    "sha256": "a5773d84439daa030149fab9e03e4e5f472c0ad45c154a831b22ac24d784c4e1",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/source-authority-classification.md",
+    "size_bytes": 542,
+    "mtime_utc": 1785770076.4188902,
+    "sha256": "ebd1456a389b42ef1e94f06a58ce6f98ccfb2a315a1b367bdd75b38eb0198704",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/formula-validator-implementation.md",
+    "size_bytes": 437,
+    "mtime_utc": 1785770430.0203328,
+    "sha256": "d3cec570dfd5ee7d2be87a7d80dc630c4ee916016cd5b753f0584b0d422f2550",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/task1-final-acceptance.md",
+    "size_bytes": 936,
+    "mtime_utc": 1785770663.7508664,
+    "sha256": "eaf631c2bd4a699ed69a443781eacd3e3c6c4c9d7264217b13de742c337c4c93",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/worktree-map.json",
+    "size_bytes": 1150,
+    "mtime_utc": 1785769811.8479345,
+    "sha256": "26a99d0697f47adf013de9f0d2fff36502e533cf823543f7c96e434307f3ac7f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-tools-profile-restriction.md",
+    "size_bytes": 435,
+    "mtime_utc": 1785770550.0985718,
+    "sha256": "8b4db7a3e9496150dea4e7601b75cd09e11873474d49673e462e94d20de9548f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/baseline.json",
+    "size_bytes": 1371,
+    "mtime_utc": 1785769783.3149967,
+    "sha256": "402a00d4a808e32c83154e7a1992015f33b07fd397c87a805ff14c69a8f412a5",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/component-provenance-tracking.md",
+    "size_bytes": 482,
+    "mtime_utc": 1785770447.8999612,
+    "sha256": "71635923310019a072ed301d3bfa43a6472b5fd1a44a60a9d21f8b58dd18b43a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/extract-validity-dates.md",
+    "size_bytes": 508,
+    "mtime_utc": 1785770297.9576077,
+    "sha256": "46331efd5903fd57913d67ef0b4f4bbc6040b5fa0f05d795733a91fd8d9cb1dc",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/hitl-validation-pack-dpo-fiscal.md",
+    "size_bytes": 485,
+    "mtime_utc": 1785770404.9148793,
+    "sha256": "98d2447aa5abcbec0174fad13a738ff17491ec58f61d0a5e5470a3f85603a3a2",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-reconciliation.md",
+    "size_bytes": 1310,
+    "mtime_utc": 1785769901.8788083,
+    "sha256": "c0026a8012e9c6b6c49e775da4bfe3651bc88438ba07f7507786c8645d9f763f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/evals-pii-injection-security-suite.md",
+    "size_bytes": 454,
+    "mtime_utc": 1785770533.9930708,
+    "sha256": "d367fc7dae4be69870432bc8c7d8745b93dd6a092b589b5cdeccc6f0df801892",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-dedupe-idempotency-proof.md",
+    "size_bytes": 394,
+    "mtime_utc": 1785770689.5354118,
+    "sha256": "1a77d632315e49220bfb5ff91ebc075b4c258b3ef0a5a4f55c7177e8988ed679",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-authorized-test-window.md",
+    "size_bytes": 477,
+    "mtime_utc": 1785770741.188438,
+    "sha256": "a8c4c2a530174c94c7d4d31cbbd83266b81c9609ef5df68215c048556d573121",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/price-mapping-geral.md",
+    "size_bytes": 408,
+    "mtime_utc": 1785770430.0243783,
+    "sha256": "cb5b22c6106814d11fdac2daf1ca4a3ef4ac43aeb4883fe33c2ff17c2ec4960d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/price-mapping-escrituras.md",
+    "size_bytes": 431,
+    "mtime_utc": 1785770430.0280495,
+    "sha256": "e17e97a0e9179f768879ec6617fb703543e9c28ab9b8136ab42eb953ce184c57",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/felipe-25-tests-script.md",
+    "size_bytes": 637,
+    "mtime_utc": 1785770718.667256,
+    "sha256": "08386520211e255cc888b5d6a43376978f42c8ab604a2477de253608385ddd5b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/documentary-checklist-readonly.md",
+    "size_bytes": 337,
+    "mtime_utc": 1785770461.6428783,
+    "sha256": "2ca7b1d5ec78786e64bea60e00c7df31cb8dfcb016b8ea06b0dab794daa0be59",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/minimax-sanitized-prompt-validation.md",
+    "size_bytes": 416,
+    "mtime_utc": 1785770297.964545,
+    "sha256": "6a556d3d2afd6db56ce1a6d002f5f7da3dceeb1ffdc8f1ab48c4e0f9be0da44f",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-p2-verifier-execution.md",
+    "size_bytes": 402,
+    "mtime_utc": 1785770640.365632,
+    "sha256": "9ef5bdc64616fab51e5f6bfbec13451beda74d4bf81b7bbdb20b61c48cfe0c43",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-config-diff.md",
+    "size_bytes": 467,
+    "mtime_utc": 1785770118.8000307,
+    "sha256": "27ba10139e118f5a3b03357cf3a1149bea52be2463ee5facb7cf52587bc9cc51",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/drift-report.md",
+    "size_bytes": 1926,
+    "mtime_utc": 1785769861.450427,
+    "sha256": "f7f539ecdc31a8da8655cffabf17c175d6d86278818efcd8b26323fd28b13a7d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-processor-not-found-elimination.md",
+    "size_bytes": 487,
+    "mtime_utc": 1785770297.961177,
+    "sha256": "882e94f201eaedd252e1febc00a77b672219ce185a2177eb9af25f78106bb6a7",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/dual-layer-schema-definition.md",
+    "size_bytes": 520,
+    "mtime_utc": 1785770404.9200072,
+    "sha256": "0a9a0b3eb032d5827e30d5b30ec0ea1682e8214c00385ac428a2c7de950a4531",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-app-release.md",
+    "size_bytes": 375,
+    "mtime_utc": 1785770076.4229941,
+    "sha256": "ad59c585c562c8790aca6704d76b31b84ababfa8ab36f313ea46eb3b2b2c41a1",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/risk-register.md",
+    "size_bytes": 1979,
+    "mtime_utc": 1785769838.204581,
+    "sha256": "ba257afb9f63eff2ea32371f4f7f41efd3c1401069871a7a619a450413554aaf",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-price-behavior-applied.md",
+    "size_bytes": 390,
+    "mtime_utc": 1785770689.5315225,
+    "sha256": "f69a1c497719ce7367bc5eae766e775b0abfab2d5d2ad521d194f028ba1cc244",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/retrieval-published-only-enforcement.md",
+    "size_bytes": 481,
+    "mtime_utc": 1785770447.9062264,
+    "sha256": "5b3f75f267ab8fd607855aead5b5b62e5036a5ee7cd952cc02575df23643b0e6",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-concurrency-burst-test.md",
+    "size_bytes": 342,
+    "mtime_utc": 1785770704.4543998,
+    "sha256": "b93ddff85327f7d51eb6b581f7a31ecb3abfb3d965a1022a48bb4e5761291d1e",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/human-gates.json",
+    "size_bytes": 1149,
+    "mtime_utc": 1785769841.914619,
+    "sha256": "a84e0f7b09aa7d29ffb23bbcc605cb76d3b64f595399ec43bce975046ed9b8a2",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-group-mention-silence-e2e.md",
+    "size_bytes": 356,
+    "mtime_utc": 1785770689.5389845,
+    "sha256": "5d65d2ac9e2e804e5c63c5f2969097b4be1a72d9770588f86341708cdaf08c60",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-mcp-secret-context-validation.md",
+    "size_bytes": 352,
+    "mtime_utc": 1785770533.9966033,
+    "sha256": "77a989683afa212b3d97c93ffa5a240c2bf7f04040df1dd510085626151e021d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/felipe-25-tests-execution.md",
+    "size_bytes": 735,
+    "mtime_utc": 1785770741.1936579,
+    "sha256": "a07af92ebe73c0790103b1a2d3958292422df771ad41b6599996f4366d5759b8",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/ingest-pipeline-verification.md",
+    "size_bytes": 697,
+    "mtime_utc": 1785769957.5587633,
+    "sha256": "509aa55038c42a6f07bd737fc148cc2e36380517b37e4665a08b584f2eecbdc3",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-certification-manifest.md",
+    "size_bytes": 1382,
+    "mtime_utc": 1785770741.2015462,
+    "sha256": "17bf0e3c00bcb6919485b5a396fc46e72279f9652f30bb169fa2fb33af166f12",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/mcp-tool-emolumento-dual-layer-adaptation.md",
+    "size_bytes": 512,
+    "mtime_utc": 1785770506.61032,
+    "sha256": "e16b80005e28a884b1736f09d5b71de77dfaafccb609704609065bbaf34b6222",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/evals-legal-ambiguity-abstention.md",
+    "size_bytes": 591,
+    "mtime_utc": 1785770533.9893663,
+    "sha256": "4bbdf67894500127e20fe7fadebcda3c4109213292deb99ef5ab267d6a4820ed",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/docker-secrets-fail-closed.md",
+    "size_bytes": 431,
+    "mtime_utc": 1785770232.4229567,
+    "sha256": "635f193c050cbd2b188bde599458b0ac2457c64aee2ba934125c0b96698df4d9",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/duplicates-consolidation.md",
+    "size_bytes": 538,
+    "mtime_utc": 1785770076.4145007,
+    "sha256": "2da52ba0e84db02f7f15879b8a21a62c389c6d2d26185e851e4497836fcd645b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/act-requirements-query-implementation.md",
+    "size_bytes": 437,
+    "mtime_utc": 1785770461.6398585,
+    "sha256": "827c4752732e2cfb17f787df5d2a68aa629f2c3fe44f3fac4b437d7257518027",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/conflict-registry-construction.md",
+    "size_bytes": 787,
+    "mtime_utc": 1785770319.3187723,
+    "sha256": "622e6e7e53cc08453f340d66bd8ef31fffa5a066644739d116ac25ebe2711f98",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/chat-user-tenant-isolation.md",
+    "size_bytes": 402,
+    "mtime_utc": 1785770663.7608237,
+    "sha256": "e7ae76418963240dbc0d2109d7b05c72ba1aea25343aed79f417613f04b0c970",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/crosswalk-tjmg-8664-2025.md",
+    "size_bytes": 542,
+    "mtime_utc": 1785770391.5897305,
+    "sha256": "7b055ac96728842d1be380b01597583d527bcc4be4dc3230728d97049c31160d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-rollback-drill.md",
+    "size_bytes": 419,
+    "mtime_utc": 1785770741.1981378,
+    "sha256": "afef828ab4b820b5e6da4855e1249f8e82ddcaa3aa9abb56931895361f11d628",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/canonical-map.json",
+    "size_bytes": 981,
+    "mtime_utc": 1785770228.2140179,
+    "sha256": "0ada90dc4409221a81e60b90186d86a3524858105973b8825f45c1eb6454d295",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/lark-multi-message-short-context-e2e.md",
+    "size_bytes": 336,
+    "mtime_utc": 1785770689.5461419,
+    "sha256": "0081cc2028583bb3efbca97a6aeb07cdee90e2a664b6106f8076e0121ea6f7f6",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/source-precedence.md",
+    "size_bytes": 1574,
+    "mtime_utc": 1785769787.2141893,
+    "sha256": "f0891f116b1f4368a29cdad03d7a6baebf5a93d6090a9c588e5a7000da716d85",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".evidence/graph-engineer/documentary-guidance-lark.md",
+    "size_bytes": 377,
+    "mtime_utc": 1785770663.754571,
+    "sha256": "daf93b960395414123a93364221c851d5cf102a72d0d385f1dd4a1ebab780f13",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-13.md",
+    "size_bytes": 9453,
+    "mtime_utc": 1784033562.0514433,
+    "sha256": "ff20b2e0f29008317279b0328387735a770818a9237df133bd5f7059b822ae0c",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-03-context.md",
+    "size_bytes": 3365,
+    "mtime_utc": 1783090348.7274787,
+    "sha256": "069f75b77438965a7d4561913c06025eb16e5c1ee6e892f9f9067bdf98650f12",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-06-29.md",
+    "size_bytes": 29679,
+    "mtime_utc": 1782819335.205788,
+    "sha256": "bcfac9c9311d14258c8ef9e9bd263b18322d311d1cb71dadf02526c4e591332a",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-27.md",
+    "size_bytes": 8333,
+    "mtime_utc": 1785210071.7879648,
+    "sha256": "5ae699a92fc0ee545f2905d99ab1dbf695e7d3a983a0e36ebba1932b7c95b230",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-03.md",
+    "size_bytes": 4637,
+    "mtime_utc": 1783107328.2084496,
+    "sha256": "f35e5063f853350dd1987b947f76de7fc246d14b8f7eb417274173da431b0395",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-23.md",
+    "size_bytes": 130,
+    "mtime_utc": 1784842624.8037417,
+    "sha256": "a1426b3d5e362f8b8d61c44ad6af3b5d23742319628946ffce17cf831263300c",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-01-turno44-n8n-system-recovery.md",
+    "size_bytes": 5053,
+    "mtime_utc": 1782874341.5855644,
+    "sha256": "b9665f4712e998101a1ef6ba3e47657dbbbc6ed961c69fc5d5298d7273072719",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-17.md",
+    "size_bytes": 1091,
+    "mtime_utc": 1784384631.4999747,
+    "sha256": "c4cce88ab75bf8f9d088292d4c10fd0270faa92f2d64661f075ac9bc4387b8f5",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-07.md",
+    "size_bytes": 2987,
+    "mtime_utc": 1783466645.7174988,
+    "sha256": "7c8753a286b288ebeb82565454231795953916ec64a149c855d735d2bb0bcb45",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-16.md",
+    "size_bytes": 4893,
+    "mtime_utc": 1784236930.0729074,
+    "sha256": "ec509cedca9aae1223b7ef2b9ee75501edaea2e2a466448a1e1d991d0bc71300",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-06.md",
+    "size_bytes": 1289,
+    "mtime_utc": 1783376270.4172611,
+    "sha256": "b4135d242f35ace0ae09e3325eb80574b9d93cd80b6e9037c895fa3a90280bfe",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-26.md",
+    "size_bytes": 3925,
+    "mtime_utc": 1785152856.2811475,
+    "sha256": "adaadadb94519c595188487cfd412dd5eb317352868831754fa9d208da2cea8d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-02.md",
+    "size_bytes": 43750,
+    "mtime_utc": 1783043861.965213,
+    "sha256": "be02fd819ff17c57a3a23d765e0ab32db399f43c66abd0db499dfb6fd0cc407d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-19.md",
+    "size_bytes": 5361,
+    "mtime_utc": 1784501980.8741941,
+    "sha256": "31553a0b73c5c8aae006cdc09c1d6fe6830b1dd189ecd0d7c6b1f9b248d02589",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-01-turno44-fix-database-url.md",
+    "size_bytes": 6131,
+    "mtime_utc": 1782873609.4905417,
+    "sha256": "91e431f0687c293474963d889d39fac33beec15f54db110e412a0a9f0897a353",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-09.md",
+    "size_bytes": 1260,
+    "mtime_utc": 1783645934.3285375,
+    "sha256": "fa18e9f6229a487a98e0c31ab787d396217c0e9c3144af2e6da49781a8cb7f6b",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-01-turno46-final-e2e-tests.md",
+    "size_bytes": 4550,
+    "mtime_utc": 1782908578.0959213,
+    "sha256": "362b991637d9c1f282a441226acdbdf2c31c1964981fd39719b9fdd6e56b81b7",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-28.md",
+    "size_bytes": 21078,
+    "mtime_utc": 1785279265.1562574,
+    "sha256": "0cbebf85337a84009e3d180576f22817f037325884de7b3e29273410abc8c2de",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-06-26.md",
+    "size_bytes": 79000,
+    "mtime_utc": 1785270967.8583837,
+    "sha256": "7ff44d872afc1b08d1cf595b911b93f025bb5b6202e71cfff1af672b801084d2",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-18.md",
+    "size_bytes": 598,
+    "mtime_utc": 1784402592.32661,
+    "sha256": "239d3b71d1e0058bb621a4e7be675dd2a53ff282a9a685afc4fcb5ac815a9277",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-13-easypanel-lobechat-telegram.md",
+    "size_bytes": 3682,
+    "mtime_utc": 1784485525.8419359,
+    "sha256": "1722c4af4dea315f64cc68a02dd5c5589ca76b482a51da60ff0365a722f81c82",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-06-26-validation.md",
+    "size_bytes": 1321,
+    "mtime_utc": 1782499941.0276659,
+    "sha256": "75502baf48c7a14cdc95b8b51ef65db76e8298feae5de15af9631f7ff7a675d7",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-08.md",
+    "size_bytes": 29861,
+    "mtime_utc": 1784485539.9534056,
+    "sha256": "f80daeffbaab8de12d3097eeb2e282ee9c5115cfec646a910bbc50be45adbf7d",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-06-25.md",
+    "size_bytes": 33416,
+    "mtime_utc": 1782426388.665264,
+    "sha256": "6b958ca3c88cbbc05ca83a3547105a7ad19327512d74b4bf8ef7fec730c73336",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-01-turno42-n8n-operational.md",
+    "size_bytes": 5559,
+    "mtime_utc": 1782870198.0035126,
+    "sha256": "2bff26aba786f498934a4a70e1fb48ab83a61c035bc40c4897e4afabb2455530",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/SESSION_2026-06-26_BRAIN8.md",
+    "size_bytes": 7711,
+    "mtime_utc": 1782494294.8967335,
+    "sha256": "9106d50f599ba5827641b720eb57e9595d7b87cc1e6acfff0524b63834759bf2",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-06-30.md",
+    "size_bytes": 19022,
+    "mtime_utc": 1782872642.285947,
+    "sha256": "f1be5ab62068019eea1973aeaa1497ae78e8f129a09580f4d247dfdbf7ae9750",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-08-03-super-graph-lessons.md",
+    "size_bytes": 2017,
+    "mtime_utc": 1785770646.307707,
+    "sha256": "03e35d89c0a500b1cdbb331dbd444ea97c7e9d8181ff2c43e7b95fe973e535b4",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/yolo-100t-round-counter",
+    "size_bytes": 5,
+    "mtime_utc": 1783695564.9294891,
+    "sha256": "f89affeaaef9ca2437ac6bce175ccf0254f13c68a2dc0b2a469ee362d395be3e",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/SESSION_2026-06-26.md",
+    "size_bytes": 1887,
+    "mtime_utc": 1782415890.5903447,
+    "sha256": "fb275a7383197b42e755654c9e36e428ac6fedf5e5b128067fc67ba7c47a2760",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-02-auditoria-pos-deploy.md",
+    "size_bytes": 10991,
+    "mtime_utc": 1783016819.6354454,
+    "sha256": "a2e5a98cae2587e292d9abdb81d6457bd05f4b4ba921e60f9ec22da8e29f3f9e",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-15.md",
+    "size_bytes": 736,
+    "mtime_utc": 1784140193.980941,
+    "sha256": "88635e647013a774dee76acbe4598629d9bb669cf2c2b0f8e944b5a501860acb",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-31.md",
+    "size_bytes": 580,
+    "mtime_utc": 1785523025.428829,
+    "sha256": "e20eec6f8aa3f0ef2f984309c8ac6145c7a01377942285080864337fa43d06c9",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-25.md",
+    "size_bytes": 1759,
+    "mtime_utc": 1785013653.1241448,
+    "sha256": "3aa6513b9e7d98e1e004d05af6e8e256325e764f808f48a1575cc551b3c9019c",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-01-turno45-n8n-removal-ai-stack.md",
+    "size_bytes": 5414,
+    "mtime_utc": 1782904441.784142,
+    "sha256": "dfa6121ac2d1983dc9d2062279173084a9ab63418e9e7a86ce949ad67c6cc44e",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-01.md",
+    "size_bytes": 34801,
+    "mtime_utc": 1784485539.9531133,
+    "sha256": "948d2013ec396a8503af375ba138ca3c35204a2e0bf2ef3195d7392c6bd93312",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-24.md",
+    "size_bytes": 2489,
+    "mtime_utc": 1784936052.7664356,
+    "sha256": "29ee04117b4e7e699cc3b77966cfb6a9482a04cd79127c7cb6b50de6279ab5aa",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-01-turno43-n8n-full-restore.md",
+    "size_bytes": 6980,
+    "mtime_utc": 1782871859.0925775,
+    "sha256": "a5650ad92a4938fb33997cc80b4ba05679ea06672a58cffc08a6cc9069df4441",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-20.md",
+    "size_bytes": 1851,
+    "mtime_utc": 1784591414.0702586,
+    "sha256": "5bebcf5d81cca0623a56ee5267718098c205dc38353924eada4efbfb52020045",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-14.md",
+    "size_bytes": 446,
+    "mtime_utc": 1784134741.5679379,
+    "sha256": "dd2536d08f89fbdbba433a01ccab498c9ef8e4d5515284465b9914966626f386",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-01-turno46-telegram-502-hotfix.md",
+    "size_bytes": 11368,
+    "mtime_utc": 1782905803.9566302,
+    "sha256": "d2899361753cb41ac8e8e4401b4a0e21b11ff28a85e983aa5fbffc61fc752785",
+    "source": "previous_run"
+  },
+  {
+    "relative_path": ".brain/memory/2026-07-03-loop-goals.md",
+    "size_bytes": 3719,
+    "mtime_utc": 1783100006.8974931,
+    "sha256": "25ca61c330f44fef6efee031813a72534473f42cfa3126c27d8d0f1e57da4a7f",
+    "source": "previous_run"
+  }
+]

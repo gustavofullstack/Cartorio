@@ -1,0 +1,31 @@
+{
+  "audit_timestamp": "2026-08-03T12:52:00Z",
+  "auditor": "FLASH-V2-FORENSIC-AUDITOR",
+  "incident": "EVIDENCE_INTEGRITY_FALSE_CERTIFICATION_2026_08_03",
+  "human_gates": {
+    "HG-01": {
+      "name": "Aprova\u00e7\u00e3o de Conte\u00fado Sanitizado para Publica\u00e7\u00e3o (BRAIN)",
+      "status": "BLOCKED_HUMAN",
+      "required_human": "Gustavo Almeida / Escrevente Respons\u00e1vel",
+      "reason": "Exige aceite humano expl\u00edcito sobre vers\u00e3o/hash espec\u00edfica. Fail-closed mantido."
+    },
+    "HG-02": {
+      "name": "Valida\u00e7\u00e3o Fiscal da Anomalia de R$ 0,01 no ISS (faixa 1606-3)",
+      "status": "BLOCKED_HUMAN",
+      "required_human": "Gustavo Almeida / Setor Fiscal",
+      "reason": "Exige decis\u00e3o fiscal expl\u00edcita sobre a linha de arredondamento R$ 154,64 vs R$ 154,65."
+    },
+    "HG-03": {
+      "name": "Configura\u00e7\u00e3o do Tenant Lark & Evento P2 im.message.receive_v1",
+      "status": "BLOCKED_HUMAN",
+      "required_human": "Gustavo Almeida / Admin Lark",
+      "reason": "Exige prova real de evento P2 im.message.receive_v1 e de permiss\u00f5es do tenant."
+    },
+    "HG-04": {
+      "name": "Aceite Final E2E das 25 Matrizes de Testes Sint\u00e9ticos",
+      "status": "BLOCKED_HUMAN",
+      "required_human": "Felipe Pizarro",
+      "reason": "Exige execu\u00e7\u00e3o real da matriz de 25 testes e aceite assinado emitido por Felipe Pizarro."
+    }
+  }
+}
