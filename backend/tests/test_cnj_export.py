@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Generator
+from datetime import datetime
 
 import pytest
 from sqlalchemy import create_engine
@@ -90,23 +91,24 @@ def test_approval_reason_rejects_detectable_personal_data(db: Session) -> None:
 
 def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> None:
     # Valores sentinela nunca podem atravessar a fronteira do artefato CNJ.
-    db.add(
-        Cliente(
-            nome="SENTINEL_NOME_PRIVADO",
-            cpf_hash="SENTINEL_CPF_HASH_PRIVADO",
-            email="sentinel.private@example.test",
-        )
+    cliente = Cliente(
+        nome="SENTINEL_NOME_PRIVADO",
+        cpf_hash="SENTINEL_CPF_HASH_PRIVADO",
+        email="sentinel.private@example.test",
     )
+    # _approved_request uses "2026-07"
+    cliente.created_at = datetime.strptime("2026-07-15", "%Y-%m-%d")
+    db.add(cliente)
     db.commit()
-    cliente_id = db.query(Cliente.id).scalar()
-    db.add(
-        Protocolo(
-            numero="2026-00001",
-            cliente_id=cliente_id,
-            tipo="escritura",
-            canal_origem="telegram",
-        )
+
+    protocolo = Protocolo(
+        numero="2026-00001",
+        cliente_id=cliente.id,
+        tipo="escritura",
+        canal_origem="telegram",
     )
+    protocolo.created_at = datetime.strptime("2026-07-15", "%Y-%m-%d")
+    db.add(protocolo)
     db.commit()
 
     artifact = build_approved_export(db, request_id=_approved_request(db).id)
