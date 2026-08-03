@@ -52,9 +52,7 @@ def test_stage_is_atomic_private_and_idempotently_verifies_existing_batch(
 
 
 @pytest.mark.parametrize("unsafe", ["../escape.txt", "/absolute.txt", "safe/../../x.txt"])
-def test_stage_rejects_path_traversal(
-    tmp_path: Path, private_root: Path, unsafe: str
-) -> None:
+def test_stage_rejects_path_traversal(tmp_path: Path, private_root: Path, unsafe: str) -> None:
     archive = tmp_path / "unsafe.zip"
     _zip(archive, {unsafe: b"blocked"})
     destination = private_root / "batch"
@@ -104,9 +102,7 @@ def test_stage_rejects_unsupported_extension(tmp_path: Path, private_root: Path)
         staging.stage_zip(archive, private_root / "batch")
 
 
-def test_stage_rejects_destination_outside_private_root(
-    tmp_path: Path, private_root: Path
-) -> None:
+def test_stage_rejects_destination_outside_private_root(tmp_path: Path, private_root: Path) -> None:
     archive = tmp_path / "corpus.zip"
     _zip(archive, {"Cartorio/a.txt": b"safe"})
 
@@ -114,9 +110,7 @@ def test_stage_rejects_destination_outside_private_root(
         staging.stage_zip(archive, tmp_path / "outside")
 
 
-def test_existing_batch_mismatch_never_overwrites(
-    tmp_path: Path, private_root: Path
-) -> None:
+def test_existing_batch_mismatch_never_overwrites(tmp_path: Path, private_root: Path) -> None:
     archive = tmp_path / "corpus.zip"
     _zip(archive, {"Cartorio/a.txt": b"original"})
     destination = private_root / "batch"
