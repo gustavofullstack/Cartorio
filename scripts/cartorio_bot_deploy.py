@@ -22,6 +22,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-llm — G6 wave 29.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -45,17 +46,24 @@ def get_config() -> tuple[str, str, str, str]:
     )
 
 
-def run_ssh(host: str, user: str, key: str, cmd: str, timeout: float) -> tuple[int, str, str]:
+def run_ssh(
+    host: str, user: str, key: str, cmd: str, timeout: float
+) -> tuple[int, str, str]:
     """Executa comando SSH. Retorna (exit_code, stdout, stderr)."""
     try:
         result = subprocess.run(
             [
                 "ssh",
-                "-i", key,
-                "-o", "StrictHostKeyChecking=no",
-                "-o", "UserKnownHostsFile=/dev/null",
-                "-o", "LogLevel=ERROR",
-                "-o", "ConnectTimeout=10",
+                "-i",
+                key,
+                "-o",
+                "StrictHostKeyChecking=no",
+                "-o",
+                "UserKnownHostsFile=/dev/null",
+                "-o",
+                "LogLevel=ERROR",
+                "-o",
+                "ConnectTimeout=10",
                 f"{user}@{host}",
                 cmd,
             ],
@@ -110,14 +118,18 @@ def render_openclaw_config(agent_name: str, password: str, api_base: str) -> str
 """
 
 
-def deploy_step_copy(host: str, user: str, key: str, src: str, dst: str, timeout: float) -> bool:
+def deploy_step_copy(
+    host: str, user: str, key: str, src: str, dst: str, timeout: float
+) -> bool:
     """Copia pasta local para VPS via scp."""
     try:
         result = subprocess.run(
             [
                 "scp",
-                "-i", key,
-                "-o", "StrictHostKeyChecking=no",
+                "-i",
+                key,
+                "-o",
+                "StrictHostKeyChecking=no",
                 "-r",
                 src,
                 f"{user}@{host}:{dst}",
@@ -132,7 +144,9 @@ def deploy_step_copy(host: str, user: str, key: str, src: str, dst: str, timeout
         return False
 
 
-def deploy_step_write_config(host: str, user: str, key: str, config_json: str, timeout: float) -> bool:
+def deploy_step_write_config(
+    host: str, user: str, key: str, config_json: str, timeout: float
+) -> bool:
     """Escreve openclaw.json no VPS."""
     cmd = f"echo '{config_json}' > {DEFAULT_OPENCLAW_CONFIG}"
     code, _, err = run_ssh(host, user, key, cmd, timeout)
@@ -164,10 +178,16 @@ def deploy_step_health_check(host: str, user: str, key: str, timeout: float) -> 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="CartorioBot deploy CLI")
-    parser.add_argument("--apply", action="store_true", help="aplicar (default: dry-run)")
+    parser.add_argument(
+        "--apply", action="store_true", help="aplicar (default: dry-run)"
+    )
     parser.add_argument("--dry-run", action="store_true", help="so mostra (default)")
-    parser.add_argument("--rollback", action="store_true", help="rollback para versao anterior")
-    parser.add_argument("--src", default="infra/openclaw/cartorio_bot", help="pasta fonte local")
+    parser.add_argument(
+        "--rollback", action="store_true", help="rollback para versao anterior"
+    )
+    parser.add_argument(
+        "--src", default="infra/openclaw/cartorio_bot", help="pasta fonte local"
+    )
     parser.add_argument("--timeout", type=float, default=120.0)
     args = parser.parse_args()
 
@@ -178,7 +198,9 @@ def main() -> int:
 
     print(f"VPS: {user}@{host}")
     print(f"Deploy dir: {deploy_dir}")
-    print(f"Mode: {'ROLLBACK' if args.rollback else 'APPLY' if args.apply else 'DRY-RUN'}")
+    print(
+        f"Mode: {'ROLLBACK' if args.rollback else 'APPLY' if args.apply else 'DRY-RUN'}"
+    )
     print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
     print()
 

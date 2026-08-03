@@ -434,7 +434,9 @@ def main() -> int:
                 extra = f" collected={c['collected']}"
             elif "status" in c:
                 extra = f" status={c['status']}"
-            print(f"  [{c.get('verdict', '?')}] {c['name']} (tier={c.get('tier')}){extra}")
+            print(
+                f"  [{c.get('verdict', '?')}] {c['name']} (tier={c.get('tier')}){extra}"
+            )
         if exit_code == EXIT_OK:
             print("[OK] all local + prod gates green")
         elif exit_code == EXIT_LOCAL_FAIL:

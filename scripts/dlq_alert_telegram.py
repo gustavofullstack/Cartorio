@@ -80,20 +80,26 @@ def collect_metrics(db_path: str | None = None) -> dict[str, dict[str, int]]:
         one_hour_ago = now.timestamp() - 3600
         for queue in OutboxQueue:
             # PENDING count
-            pending = session.execute(
-                select(func.count(OutboxMessage.id)).where(
-                    OutboxMessage.queue == queue,
-                    OutboxMessage.status == OutboxStatus.PENDING,
-                )
-            ).scalar() or 0
+            pending = (
+                session.execute(
+                    select(func.count(OutboxMessage.id)).where(
+                        OutboxMessage.queue == queue,
+                        OutboxMessage.status == OutboxStatus.PENDING,
+                    )
+                ).scalar()
+                or 0
+            )
             # FAILED nas últimas 1h
-            failed_1h = session.execute(
-                select(func.count(OutboxMessage.id)).where(
-                    OutboxMessage.queue == queue,
-                    OutboxMessage.status == OutboxStatus.FAILED,
-                    OutboxMessage.updated_at >= func.fromtimestamp(one_hour_ago),
-                )
-            ).scalar() or 0
+            failed_1h = (
+                session.execute(
+                    select(func.count(OutboxMessage.id)).where(
+                        OutboxMessage.queue == queue,
+                        OutboxMessage.status == OutboxStatus.FAILED,
+                        OutboxMessage.updated_at >= func.fromtimestamp(one_hour_ago),
+                    )
+                ).scalar()
+                or 0
+            )
             # Idade máxima (em minutos) das PENDING
             oldest = session.execute(
                 select(func.min(OutboxMessage.created_at)).where(
@@ -172,9 +178,15 @@ def send_telegram(message: str, token: str, chat_id: str) -> tuple[bool, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="DLQ alert to Telegram")
-    parser.add_argument("--apply", action="store_true", help="Envia Telegram real (default dry-run)")
-    parser.add_argument("--threshold-failed", type=int, default=10, help="Threshold FAILED em 1h")
-    parser.add_argument("--threshold-pending", type=int, default=100, help="Threshold PENDING total")
+    parser.add_argument(
+        "--apply", action="store_true", help="Envia Telegram real (default dry-run)"
+    )
+    parser.add_argument(
+        "--threshold-failed", type=int, default=10, help="Threshold FAILED em 1h"
+    )
+    parser.add_argument(
+        "--threshold-pending", type=int, default=100, help="Threshold PENDING total"
+    )
     parser.add_argument("--db", default=None, help="DATABASE_URL override")
     parser.add_argument(
         "--env-file",
@@ -207,7 +219,9 @@ def main() -> int:
         return 1  # Exit 1 = alerta detectado (dry-run)
 
     if not token or not chat_id:
-        print("[dlq_alert] ERROR: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID required in --apply mode.")
+        print(
+            "[dlq_alert] ERROR: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID required in --apply mode."
+        )
         return 2
 
     print(f"[dlq_alert] Sending Telegram message to chat {chat_id}...")

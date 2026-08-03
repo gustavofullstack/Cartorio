@@ -40,8 +40,12 @@ def _post(path: str, data: dict) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--apply", action="store_true", help="chama setWebhook de verdade")
-    parser.add_argument("--dry-run", action="store_true", help="só mostra plano (default)")
+    parser.add_argument(
+        "--apply", action="store_true", help="chama setWebhook de verdade"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="só mostra plano (default)"
+    )
     parser.add_argument("--info", action="store_true", help="getWebhookInfo")
     parser.add_argument("--url", default=DEFAULT_WEBHOOK_URL)
     args = parser.parse_args()
@@ -55,7 +59,9 @@ def main() -> int:
 
     print(f"token: {_mask(token)}")
     print(f"webhook_url: {args.url}")
-    print(f"secret_token: {'set' if secret else 'MISSING (backend dev-mode aceita vazio)'}")
+    print(
+        f"secret_token: {'set' if secret else 'MISSING (backend dev-mode aceita vazio)'}"
+    )
 
     base = f"{API}/bot{token}"
 
@@ -78,7 +84,9 @@ def main() -> int:
             }
             print("getWebhookInfo:", json.dumps(safe, indent=2, ensure_ascii=False))
         except Exception as exc:
-            print(f"[ERROR] getWebhookInfo: {type(exc).__name__}: {exc}", file=sys.stderr)
+            print(
+                f"[ERROR] getWebhookInfo: {type(exc).__name__}: {exc}", file=sys.stderr
+            )
             return 1
         if not args.apply:
             return 0

@@ -124,7 +124,11 @@ class OpenClawN8NBus:
             self._enforce_max_len_locked()
 
         await self._publish(
-            {"event": "job.submitted", "job_id": job.job_id, "workflow": scrubbed.get("workflow")}
+            {
+                "event": "job.submitted",
+                "job_id": job.job_id,
+                "workflow": scrubbed.get("workflow"),
+            }
         )
         return job
 

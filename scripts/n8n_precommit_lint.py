@@ -97,7 +97,9 @@ def lint_workflow(path: Path) -> list[str]:
 
     for i, node in enumerate(nodes):
         if not isinstance(node, dict):
-            errors.append(f"{path}: nodes[{i}] is not a dict (got {type(node).__name__})")
+            errors.append(
+                f"{path}: nodes[{i}] is not a dict (got {type(node).__name__})"
+            )
             continue
         if "name" not in node:
             errors.append(f"{path}: nodes[{i}] missing 'name'")
@@ -106,7 +108,9 @@ def lint_workflow(path: Path) -> list[str]:
 
         node_name = str(node.get("name", ""))
         for label in pii_hits(node_name):
-            errors.append(f"{path}: nodes[{i}].name contains PII ({label}): '{node_name}'")
+            errors.append(
+                f"{path}: nodes[{i}].name contains PII ({label}): '{node_name}'"
+            )
 
         params_str = _stringify_params(node.get("parameters"))
         for label in pii_hits(params_str):

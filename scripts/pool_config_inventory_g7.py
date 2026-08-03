@@ -91,7 +91,9 @@ def _db_py_notes(path: Path) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="G7 pool config inventory (offline)")
-    parser.add_argument("--workers", type=int, default=4, help="uvicorn workers (default 4)")
+    parser.add_argument(
+        "--workers", type=int, default=4, help="uvicorn workers (default 4)"
+    )
     parser.add_argument(
         "--pool-size",
         type=int,
@@ -107,9 +109,13 @@ def main() -> int:
     args = parser.parse_args()
 
     defaults = _parse_settings_defaults(CONFIG_PY)
-    pool_size = int(args.pool_size if args.pool_size is not None else defaults["db_pool_size"])  # type: ignore[arg-type]
+    pool_size = int(
+        args.pool_size if args.pool_size is not None else defaults["db_pool_size"]
+    )  # type: ignore[arg-type]
     max_overflow = int(
-        args.max_overflow if args.max_overflow is not None else defaults["db_max_overflow"]  # type: ignore[arg-type]
+        args.max_overflow
+        if args.max_overflow is not None
+        else defaults["db_max_overflow"]  # type: ignore[arg-type]
     )
     cap = pool_size + max_overflow
     multi = cap * args.workers
@@ -143,7 +149,9 @@ def main() -> int:
     print()
     rec = 25
     print(f"Recomendação G7 (simulação pool_size={rec}):")
-    print(f"  cap/worker={rec + max_overflow} multi={ (rec + max_overflow) * args.workers }")
+    print(
+        f"  cap/worker={rec + max_overflow} multi={(rec + max_overflow) * args.workers}"
+    )
     print()
     print("Load test live: HOLD (este script não gera carga).")
     print("Ver docs/CONNECTION_POOL_REPORT_G7.md")

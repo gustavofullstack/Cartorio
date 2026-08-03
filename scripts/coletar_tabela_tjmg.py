@@ -52,7 +52,9 @@ def main() -> int:
 
     print("[3/4] Extraindo Tabela 1 (Atos do Tabelião de Notas)...")
     extracao = extrair_tabela1(conteudo)
-    print(f"      itens extraídos: {len(extracao.itens)} | faixas 4.b: {len(extracao.faixas)}")
+    print(
+        f"      itens extraídos: {len(extracao.itens)} | faixas 4.b: {len(extracao.faixas)}"
+    )
 
     divergencias = diff_com_catalogo(extracao)
     print(f"[4/4] Diff contra o catálogo publicado: {len(divergencias)} divergência(s)")

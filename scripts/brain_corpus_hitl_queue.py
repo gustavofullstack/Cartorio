@@ -21,8 +21,7 @@ from app.services.conhecimento_hitl_queue import (  # noqa: E402
 )
 
 DEFAULT_DERIVED = (
-    PROJECT_ROOT
-    / ".private/brain-ingest-quarantine/2026-07-31-ce236ba32b01/derived"
+    PROJECT_ROOT / ".private/brain-ingest-quarantine/2026-07-31-ce236ba32b01/derived"
 )
 
 

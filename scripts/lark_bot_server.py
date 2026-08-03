@@ -21,6 +21,7 @@ Setup:
 Pra expor o webhook publicamente (teste local):
   cloudflared tunnel --url http://localhost:8080
 """
+
 import os
 import json
 import hmac
@@ -38,6 +39,7 @@ APP_SECRET = os.getenv("LARK_APP_SECRET", "")
 VERIFICATION_TOKEN = os.getenv("LARK_VERIFICATION_TOKEN", "")
 ENCRYPT_KEY = os.getenv("LARK_ENCRYPT_KEY", "")
 PORT = int(os.getenv("LARK_BOT_PORT", "8080"))
+
 
 # Log estruturado
 def log(level, msg, **kw):
@@ -139,7 +141,10 @@ def send_message(chat_id, text, chat_type="p2p"):
     }
     resp = requests.post(
         "https://open.larksuite.com/open-apis/im/v1/messages?receive_id_type=chat_id",
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
         json=payload,
         timeout=5,
     ).json()

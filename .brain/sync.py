@@ -14,6 +14,7 @@ Quando executar:
     - INICIO de cada sessao (para restaurar contexto)
     - AUTOMATICAMENTE via pre-commit hook
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -126,13 +127,15 @@ def list_snapshots() -> list[dict[str, str]]:
     for f in sorted(SNAPSHOTS_DIR.glob("*.json"), reverse=True):
         data = _read_json(f)
         if data:
-            snaps.append({
-                "file": f.name,
-                "id": data.get("snapshot_id", f.stem),
-                "exported_at": data.get("exported_at", "?"),
-                "label": data.get("label", ""),
-                "files": data.get("stats", {}).get("total_files", 0),
-            })
+            snaps.append(
+                {
+                    "file": f.name,
+                    "id": data.get("snapshot_id", f.stem),
+                    "exported_at": data.get("exported_at", "?"),
+                    "label": data.get("label", ""),
+                    "files": data.get("stats", {}).get("total_files", 0),
+                }
+            )
     return snaps
 
 

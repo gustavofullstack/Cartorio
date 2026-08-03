@@ -1,4 +1,5 @@
 """list_all_convs.py — Lista TODAS conversas de TODOS inboxes, todos status."""
+
 import json
 import os
 
@@ -29,7 +30,9 @@ def main() -> None:
         msgs_count = c.get("messages_count") or c.get("unread_count")
         sender = c.get("sender") or {}
         sender_name = sender.get("name") if isinstance(sender, dict) else "?"
-        print(f"  conv#{cid} inbox={inbox_id} status={status} msgs={msgs_count} sender={sender_name}")
+        print(
+            f"  conv#{cid} inbox={inbox_id} status={status} msgs={msgs_count} sender={sender_name}"
+        )
 
 
 if __name__ == "__main__":

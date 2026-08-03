@@ -1,4 +1,5 @@
 """dump_antigrav.py — Salva JSON dos 5 contatos ANTIGRAV."""
+
 import json
 import os
 
@@ -17,18 +18,20 @@ for c in contacts:
     ca = c.get("custom_attributes") or {}
     if ca.get("pii_sintetico") and ca.get("agent_owner") == "ANTIGRAV":
         slot = int(ca.get("persona_id", "sim-XX").split("-")[1])
-        resultados.append({
-            "slot": slot,
-            "agent": "ANTIGRAV",
-            "nome": c.get("name"),
-            "idade": ca.get("idade"),
-            "cenario": ca.get("cenario"),
-            "contact_id": c["id"],
-            "cpf_mascarado": ca.get("cpf_mascarado", ""),
-            "phone": c.get("phone_number"),
-            "email": c.get("email"),
-            "rg_mascarado": ca.get("rg_mascarado", ""),
-        })
+        resultados.append(
+            {
+                "slot": slot,
+                "agent": "ANTIGRAV",
+                "nome": c.get("name"),
+                "idade": ca.get("idade"),
+                "cenario": ca.get("cenario"),
+                "contact_id": c["id"],
+                "cpf_mascarado": ca.get("cpf_mascarado", ""),
+                "phone": c.get("phone_number"),
+                "email": c.get("email"),
+                "rg_mascarado": ca.get("rg_mascarado", ""),
+            }
+        )
 
 resultados.sort(key=lambda x: x["slot"])
 

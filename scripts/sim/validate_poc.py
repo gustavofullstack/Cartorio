@@ -1,4 +1,5 @@
 """validate_poc.py — Valida estado da simulação após POC persona 1."""
+
 import os
 import sys
 
@@ -41,7 +42,9 @@ def main() -> None:
     for c in convs:
         cid = c.get("id")
         msgs = c.get("messages_count", "?")
-        print(f"  conv#{cid} contact_id={c.get('contact_id')} status={c.get('status')} msgs={msgs}")
+        print(
+            f"  conv#{cid} contact_id={c.get('contact_id')} status={c.get('status')} msgs={msgs}"
+        )
 
     if convs:
         cid = convs[0]["id"]
@@ -65,8 +68,12 @@ def main() -> None:
     if r.status_code == 200:
         c = r.json().get("payload") or r.json()
         ca = c.get("custom_attributes") or {}
-        print(f"  name={c.get('name')} phone={c.get('phone_number')} email={c.get('email')}")
-        print(f"  idade={ca.get('idade')} cenario={ca.get('cenario')} cpf_masc={ca.get('cpf_mascarado')} pii_sint={ca.get('pii_sintetico')}")
+        print(
+            f"  name={c.get('name')} phone={c.get('phone_number')} email={c.get('email')}"
+        )
+        print(
+            f"  idade={ca.get('idade')} cenario={ca.get('cenario')} cpf_masc={ca.get('cpf_mascarado')} pii_sint={ca.get('pii_sintetico')}"
+        )
 
 
 if __name__ == "__main__":

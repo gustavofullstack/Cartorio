@@ -15,6 +15,7 @@ Diferenças vs v5:
 
 Setup: mesmo do v5 (LARK_BOT_V3_RUNBOOK.md)
 """
+
 import os
 import re
 import json
@@ -49,19 +50,29 @@ PORT = int(os.getenv("LARK_BOT_PORT", "8081"))  # v4 na 8081 pra coexistir com v
 LARK_QUIET_GROUP = os.getenv("LARK_QUIET_GROUP", "true").lower() == "true"
 OCR_ENABLED = os.getenv("OCR_ENABLED", "true").lower() == "true"
 OCR_LANG = os.getenv("OCR_LANG", "por+eng")  # tesseract langs
-OWNER_OPEN_ID = os.getenv("LARK_OWNER_OPEN_ID", "")  # só esse user usa !bot stop / !broadcast
+OWNER_OPEN_ID = os.getenv(
+    "LARK_OWNER_OPEN_ID", ""
+)  # só esse user usa !bot stop / !broadcast
 SUMMARY_THRESHOLD = int(os.getenv("SUMMARY_THRESHOLD", "500"))  # chars
 MEMORY_ENABLED = os.getenv("MEMORY_ENABLED", "true").lower() == "true"
-MAX_ATTACHMENT_BYTES = min(max(int(os.getenv("LARK_MAX_ATTACHMENT_BYTES", "10485760")), 1), 52428800)
-MAX_WEBHOOK_BODY_BYTES = min(max(int(os.getenv("LARK_MAX_WEBHOOK_BODY_BYTES", "1048576")), 1024), 10485760)
-WEBHOOK_MAX_AGE_SECONDS = min(max(int(os.getenv("LARK_WEBHOOK_MAX_AGE_SECONDS", "300")), 30), 900)
+MAX_ATTACHMENT_BYTES = min(
+    max(int(os.getenv("LARK_MAX_ATTACHMENT_BYTES", "10485760")), 1), 52428800
+)
+MAX_WEBHOOK_BODY_BYTES = min(
+    max(int(os.getenv("LARK_MAX_WEBHOOK_BODY_BYTES", "1048576")), 1024), 10485760
+)
+WEBHOOK_MAX_AGE_SECONDS = min(
+    max(int(os.getenv("LARK_WEBHOOK_MAX_AGE_SECONDS", "300")), 30), 900
+)
 WEBHOOK_MAX_FUTURE_SKEW_SECONDS = min(
     max(int(os.getenv("LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS", "30")), 0), 300
 )
 ATTACHMENT_RETENTION_SECONDS = min(
     max(int(os.getenv("LARK_ATTACHMENT_RETENTION_SECONDS", "3600")), 60), 86400
 )
-LOCAL_OCR_TEST_ENABLED = os.getenv("LARK_ENABLE_LOCAL_OCR_TEST", "false").lower() == "true"
+LOCAL_OCR_TEST_ENABLED = (
+    os.getenv("LARK_ENABLE_LOCAL_OCR_TEST", "false").lower() == "true"
+)
 LOCAL_OCR_TEST_TOKEN = os.getenv("LARK_LOCAL_OCR_TEST_TOKEN", "")
 
 IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -117,13 +128,17 @@ def _new_attachment_name(media_type: str, content_type: str) -> str:
     return f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}_{secrets.token_hex(16)}{suffix}"
 
 
-def _validate_attachment_payload(media_type: str, content_type: str, payload: bytes) -> bool:
+def _validate_attachment_payload(
+    media_type: str, content_type: str, payload: bytes
+) -> bool:
     """Reject MIME spoofing before an attachment is persisted or sent to OCR."""
     if media_type == "image":
         magic = {
             "image/jpeg": payload.startswith(b"\xff\xd8\xff"),
             "image/png": payload.startswith(b"\x89PNG\r\n\x1a\n"),
-            "image/webp": len(payload) >= 12 and payload[:4] == b"RIFF" and payload[8:12] == b"WEBP",
+            "image/webp": len(payload) >= 12
+            and payload[:4] == b"RIFF"
+            and payload[8:12] == b"WEBP",
         }
         if not magic.get(content_type, False):
             return False
@@ -162,7 +177,9 @@ def _purge_expired_attachments() -> None:
         return
     try:
         for name in os.listdir(dirfd):
-            if not re.fullmatch(r"\d{8}T\d{6}Z_[0-9a-f]{32}\.(?:jpg|png|webp|pdf|json|csv|txt)", name):
+            if not re.fullmatch(
+                r"\d{8}T\d{6}Z_[0-9a-f]{32}\.(?:jpg|png|webp|pdf|json|csv|txt)", name
+            ):
                 continue
             try:
                 info = os.stat(name, dir_fd=dirfd, follow_symlinks=False)
@@ -179,22 +196,34 @@ def _write_attachment(response: requests.Response, media_type: str) -> Path | No
     content_type = _attachment_content_type(response)
     allowed_types = IMAGE_CONTENT_TYPES if media_type == "image" else FILE_CONTENT_TYPES
     if content_type not in allowed_types:
-        log("WARN", "attachment rejected: unsupported media type", media_type=media_type)
+        log(
+            "WARN", "attachment rejected: unsupported media type", media_type=media_type
+        )
         return None
 
     declared_size = response.headers.get("Content-Length")
     if declared_size:
         try:
             if int(declared_size) > MAX_ATTACHMENT_BYTES:
-                log("WARN", "attachment rejected: declared size exceeds limit", media_type=media_type)
+                log(
+                    "WARN",
+                    "attachment rejected: declared size exceeds limit",
+                    media_type=media_type,
+                )
                 return None
         except ValueError:
-            log("WARN", "attachment rejected: invalid content length", media_type=media_type)
+            log(
+                "WARN",
+                "attachment rejected: invalid content length",
+                media_type=media_type,
+            )
             return None
 
     total = 0
     try:
-        with tempfile.SpooledTemporaryFile(max_size=MAX_ATTACHMENT_BYTES, mode="w+b") as staged_file:
+        with tempfile.SpooledTemporaryFile(
+            max_size=MAX_ATTACHMENT_BYTES, mode="w+b"
+        ) as staged_file:
             for chunk in response.iter_content(chunk_size=65536):
                 if not chunk:
                     continue
@@ -223,7 +252,12 @@ def _write_attachment(response: requests.Response, media_type: str) -> Path | No
             finally:
                 os.close(dirfd)
     except (OSError, ValueError) as exc:
-        log("WARN", "attachment download rejected", media_type=media_type, error=type(exc).__name__)
+        log(
+            "WARN",
+            "attachment download rejected",
+            media_type=media_type,
+            error=type(exc).__name__,
+        )
         return None
     return INBOX_DIR / name
 
@@ -278,7 +312,9 @@ def _provided_verification_token(body: dict) -> str:
 def _valid_lark_callback(body: dict) -> bool:
     """Validate the configured Lark verification token without logging it."""
     provided = _provided_verification_token(body)
-    return bool(provided and VERIFICATION_TOKEN) and hmac.compare_digest(provided, VERIFICATION_TOKEN)
+    return bool(provided and VERIFICATION_TOKEN) and hmac.compare_digest(
+        provided, VERIFICATION_TOKEN
+    )
 
 
 def _valid_webhook_freshness(timestamp: str | None) -> bool:
@@ -287,7 +323,11 @@ def _valid_webhook_freshness(timestamp: str | None) -> bool:
         return False
     request_time = int(timestamp)
     now = int(time.time())
-    return now - WEBHOOK_MAX_AGE_SECONDS <= request_time <= now + WEBHOOK_MAX_FUTURE_SKEW_SECONDS
+    return (
+        now - WEBHOOK_MAX_AGE_SECONDS
+        <= request_time
+        <= now + WEBHOOK_MAX_FUTURE_SKEW_SECONDS
+    )
 
 
 def _valid_lark_signature(
@@ -312,6 +352,7 @@ def _valid_lark_signature(
         hashlib.sha256,
     ).hexdigest()
     return hmac.compare_digest(expected, signature)
+
 
 # === DB ===
 def db():
@@ -358,7 +399,9 @@ def claim_event(event_id):
         return False
     try:
         c = db()
-        cur = c.execute("INSERT OR IGNORE INTO received_events (event_id) VALUES (?)", (event_id,))
+        cur = c.execute(
+            "INSERT OR IGNORE INTO received_events (event_id) VALUES (?)", (event_id,)
+        )
         c.commit()
         c.close()
         return cur.rowcount == 1
@@ -388,46 +431,80 @@ def claim_callback_nonce(nonce: str) -> bool:
         log("ERR", "nonce claim failed", error=type(exc).__name__)
         return False
 
-def log_event(chat_id, sender, msg_type, content_in, content_out, model, attachments=None, error=None):
+
+def log_event(
+    chat_id,
+    sender,
+    msg_type,
+    content_in,
+    content_out,
+    model,
+    attachments=None,
+    error=None,
+):
     """Persist a minimal, scrubbed audit record without raw identifiers or attachments."""
     try:
         c = db()
-        c.execute("INSERT INTO events (chat_id,sender,msg_type,content_in,content_out,pietra_model,attachments,error) VALUES (?,?,?,?,?,?,?,?)",
-                  (_redact_identifier(chat_id), _redact_identifier(sender), msg_type,
-                   scrub_pii(content_in)[:500], scrub_pii(content_out or "")[:500], model,
-                   json.dumps(_safe_attachment_metadata(attachments)), scrub_pii(error or "")[:500]))
+        c.execute(
+            "INSERT INTO events (chat_id,sender,msg_type,content_in,content_out,pietra_model,attachments,error) VALUES (?,?,?,?,?,?,?,?)",
+            (
+                _redact_identifier(chat_id),
+                _redact_identifier(sender),
+                msg_type,
+                scrub_pii(content_in)[:500],
+                scrub_pii(content_out or "")[:500],
+                model,
+                json.dumps(_safe_attachment_metadata(attachments)),
+                scrub_pii(error or "")[:500],
+            ),
+        )
         c.commit()
         c.close()
     except Exception as e:
         print(f"[DB ERR] {e}", flush=True)
 
+
 def rate_ok(chat_id, max_per_min=10):
     try:
         now = int(time.time())
         c = db()
-        row = c.execute("SELECT last_msg_ts, count_window FROM rate_limit WHERE chat_id=?", (chat_id,)).fetchone()
+        row = c.execute(
+            "SELECT last_msg_ts, count_window FROM rate_limit WHERE chat_id=?",
+            (chat_id,),
+        ).fetchone()
         if row:
             last, count = row
             if now - last < 60:
                 if count >= max_per_min:
                     c.close()
                     return False
-                c.execute("UPDATE rate_limit SET last_msg_ts=?, count_window=count_window+1 WHERE chat_id=?", (now, chat_id))
+                c.execute(
+                    "UPDATE rate_limit SET last_msg_ts=?, count_window=count_window+1 WHERE chat_id=?",
+                    (now, chat_id),
+                )
             else:
-                c.execute("UPDATE rate_limit SET last_msg_ts=?, count_window=1 WHERE chat_id=?", (now, chat_id))
+                c.execute(
+                    "UPDATE rate_limit SET last_msg_ts=?, count_window=1 WHERE chat_id=?",
+                    (now, chat_id),
+                )
         else:
-            c.execute("INSERT INTO rate_limit (chat_id,last_msg_ts,count_window) VALUES (?,?,1)", (chat_id, now))
+            c.execute(
+                "INSERT INTO rate_limit (chat_id,last_msg_ts,count_window) VALUES (?,?,1)",
+                (chat_id, now),
+            )
         c.commit()
         c.close()
         return True
     except Exception:
         return True
 
+
 def log(level, msg, **kw):
     ts = datetime.now(timezone.utc).isoformat()
     # Structured JSON log
     entry = {"ts": ts, "level": level, "msg": scrub_pii(msg), **_scrub_value(kw)}
     print(json.dumps(entry, ensure_ascii=False), flush=True)
+
 
 # === LGPD scrub (defesa em profundidade) ===
 PII_PATTERNS = [
@@ -438,6 +515,7 @@ PII_PATTERNS = [
     (re.compile(r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"), "[CARTAO]"),
 ]
 
+
 def scrub_pii(text):
     """Mascara PII em texto livre. Crítico antes de mandar OCR pro LLM."""
     if not text:
@@ -446,18 +524,36 @@ def scrub_pii(text):
         text = pat.sub(repl, text)
     return text
 
+
 # === Detector de tipo de documento ===
 DOC_PATTERNS = [
-    ("CPF",         re.compile(r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b"), "documento com CPF"),
-    ("RG",          re.compile(r"\b\d{2}\.\d{3}\.\d{3}-\d{1}\b|\bRG[:\s]*\d"), "RG"),
-    ("CNH",         re.compile(r"\bCNH\b|\bcnh\b|\bhabilitacao\b", re.I), "CNH"),
-    ("PROCURAÇÃO",  re.compile(r"\bprocuracao\b|\bprocuração\b|\bsubstabelecimento\b", re.I), "procuração"),
-    ("ESCRITURA",   re.compile(r"\bescritura\b|\bcompra\s*e\s*venda\b|\bdoacao\b", re.I), "escritura"),
-    ("CONTRATO",    re.compile(r"\bcontrato\b|\bclausula\b", re.I), "contrato"),
-    ("RECEITA",     re.compile(r"\breceita\b|\bprescri[cç]ao\b|\bdosagem\b|\bmedicamento\b", re.I), "receita médica"),
-    ("FATURA",      re.compile(r"\bfatura\b|\bboleto\b|\bvencimento\b|\bvalor\s*a\s*pagar\b", re.I), "fatura/boleto"),
-    ("PROTOCOLO",   re.compile(r"\bprotocolo\s*[:#]?\s*\d+", re.I), "protocolo cartório"),
+    ("CPF", re.compile(r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b"), "documento com CPF"),
+    ("RG", re.compile(r"\b\d{2}\.\d{3}\.\d{3}-\d{1}\b|\bRG[:\s]*\d"), "RG"),
+    ("CNH", re.compile(r"\bCNH\b|\bcnh\b|\bhabilitacao\b", re.I), "CNH"),
+    (
+        "PROCURAÇÃO",
+        re.compile(r"\bprocuracao\b|\bprocuração\b|\bsubstabelecimento\b", re.I),
+        "procuração",
+    ),
+    (
+        "ESCRITURA",
+        re.compile(r"\bescritura\b|\bcompra\s*e\s*venda\b|\bdoacao\b", re.I),
+        "escritura",
+    ),
+    ("CONTRATO", re.compile(r"\bcontrato\b|\bclausula\b", re.I), "contrato"),
+    (
+        "RECEITA",
+        re.compile(r"\breceita\b|\bprescri[cç]ao\b|\bdosagem\b|\bmedicamento\b", re.I),
+        "receita médica",
+    ),
+    (
+        "FATURA",
+        re.compile(r"\bfatura\b|\bboleto\b|\bvencimento\b|\bvalor\s*a\s*pagar\b", re.I),
+        "fatura/boleto",
+    ),
+    ("PROTOCOLO", re.compile(r"\bprotocolo\s*[:#]?\s*\d+", re.I), "protocolo cartório"),
 ]
+
 
 def detect_doc_type(text):
     """Detecta tipo de documento pelo texto. Retorna (tipo, hint) ou (None, None)."""
@@ -478,6 +574,7 @@ def detect_doc_type(text):
                 return name, hint
     return matches[0]
 
+
 # === Memória PIETRA (integração com Postgres do cartório) ===
 def memory_append(telefone, content, role="user"):
     """Salva msg na memória do PIETRA VPS (vinculada ao telefone)."""
@@ -490,6 +587,7 @@ def memory_append(telefone, content, role="user"):
     except Exception as e:
         log("WARN", "memory_append failed", error=str(e))
         return False
+
 
 def memory_get(telefone):
     """Recupera histórico do telefone."""
@@ -504,12 +602,16 @@ def memory_get(telefone):
         pass
     return []
 
+
 def summarize_if_long(text):
     """Se texto > SUMMARY_THRESHOLD chars, pede resumo pro PIETRA."""
     if not text or len(text) <= SUMMARY_THRESHOLD:
         return text
-    summary, _, _ = ask_pietra(f"Resuma em 2 frases (PT-BR, sem emoji):\n\n{text[:3000]}")
+    summary, _, _ = ask_pietra(
+        f"Resuma em 2 frases (PT-BR, sem emoji):\n\n{text[:3000]}"
+    )
     return f"[resumo automático, {len(text)} chars → {len(summary)} chars]\n{summary}"
+
 
 # === OCR ===
 def ocr_image(path):
@@ -519,9 +621,12 @@ def ocr_image(path):
     try:
         # Cache por hash do arquivo
         import hashlib
+
         h = hashlib.md5(Path(path).read_bytes()).hexdigest()
         c = db()
-        cached = c.execute("SELECT text FROM ocr_cache WHERE file_hash=?", (h,)).fetchone()
+        cached = c.execute(
+            "SELECT text FROM ocr_cache WHERE file_hash=?", (h,)
+        ).fetchone()
         if cached:
             c.close()
             return cached[0]
@@ -530,15 +635,20 @@ def ocr_image(path):
         # Passa path absoluto e cwd em pasta temp (tesseract tem bug com cwd=/)
         result = subprocess.run(
             ["tesseract", str(Path(path).resolve()), "-", "-l", OCR_LANG, "--psm", "6"],
-            capture_output=True, text=True, timeout=30,
-            cwd="/tmp"
+            capture_output=True,
+            text=True,
+            timeout=30,
+            cwd="/tmp",
         )
         text = result.stdout.strip()
         if text:
             # Cache + LGPD scrub (PII pode ter sido extraído pelo OCR)
             text_scrubbed = scrub_pii(text)
             c = db()
-            c.execute("INSERT OR REPLACE INTO ocr_cache (file_hash, text) VALUES (?, ?)", (h, text_scrubbed))
+            c.execute(
+                "INSERT OR REPLACE INTO ocr_cache (file_hash, text) VALUES (?, ?)",
+                (h, text_scrubbed),
+            )
             c.commit()
             c.close()
             return text_scrubbed if text_scrubbed else None
@@ -552,6 +662,7 @@ def ocr_image(path):
     except Exception as e:
         log("ERR", "ocr failed", error=str(e))
         return None
+
 
 def describe_image(path):
     """Descreve imagem sem vision LLM: tamanho, formato, OCR (se houver)."""
@@ -571,6 +682,7 @@ def describe_image(path):
         info += "\n[sem texto detectável]"
     return info
 
+
 def describe_file(path):
     """Descreve arquivo sem propagar o nome externo recebido para logs ou LLM."""
     p = Path(path)
@@ -580,7 +692,19 @@ def describe_file(path):
     info = f"[arquivo recebido: {size_kb:.0f}KB]"
 
     # Se for texto/code, mostra primeiras linhas
-    text_exts = {".txt", ".md", ".py", ".js", ".ts", ".json", ".yaml", ".yml", ".csv", ".log", ".sh"}
+    text_exts = {
+        ".txt",
+        ".md",
+        ".py",
+        ".js",
+        ".ts",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".csv",
+        ".log",
+        ".sh",
+    }
     if p.suffix.lower() in text_exts and size_kb < 200:
         try:
             content = scrub_pii(p.read_text(errors="ignore"))[:1500]
@@ -589,15 +713,20 @@ def describe_file(path):
             pass
     return info
 
+
 # === Lark helpers ===
 _token_cache = {"token": None, "exp": 0}
+
 
 def get_token():
     if _token_cache["token"] and _token_cache["exp"] > time.time():
         return _token_cache["token"]
     try:
-        r = requests.post(f"{LARK_API}/auth/v3/tenant_access_token/internal",
-                          json={"app_id": APP_ID, "app_secret": APP_SECRET}, timeout=5).json()
+        r = requests.post(
+            f"{LARK_API}/auth/v3/tenant_access_token/internal",
+            json={"app_id": APP_ID, "app_secret": APP_SECRET},
+            timeout=5,
+        ).json()
         tok = r.get("tenant_access_token", "")
         if tok:
             _token_cache["token"] = tok
@@ -607,27 +736,40 @@ def get_token():
         log("ERR", "get_token failed", error=str(e))
         return ""
 
+
 def send_text(chat_id, text):
     tok = get_token()
     if not tok:
         log("ERR", "no token")
         return False
     for i in range(0, len(text), 4000):
-        chunk = text[i:i+4000]
-        r = requests.post(f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
-            headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"},
-            json={"receive_id": chat_id, "msg_type": "text",
-                  "content": json.dumps({"text": chunk})}, timeout=10).json()
+        chunk = text[i : i + 4000]
+        r = requests.post(
+            f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
+            headers={
+                "Authorization": f"Bearer {tok}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "receive_id": chat_id,
+                "msg_type": "text",
+                "content": json.dumps({"text": chunk}),
+            },
+            timeout=10,
+        ).json()
         if r.get("code") != 0:
             log("ERR", "send failed", code=r.get("code"), msg=r.get("msg"))
             return False
     return True
 
+
 def download_resource(media_type, media_key):
     """Baixa mídia validada para um nome interno, sem usar metadados remotos no path."""
     if media_type not in {"image", "file"}:
         return None
-    if not isinstance(media_key, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,512}", media_key):
+    if not isinstance(media_key, str) or not re.fullmatch(
+        r"[A-Za-z0-9_-]{1,512}", media_key
+    ):
         log("WARN", "attachment rejected: invalid resource key", media_type=media_type)
         return None
     try:
@@ -650,9 +792,14 @@ def download_resource(media_type, media_key):
         log("ERR", "download failed", media_type=media_type, error=type(e).__name__)
     return None
 
+
 # === PIETRA brain ===
 def ask_pietra(user_msg, max_retries=2):
-    payload = {"messages": [{"role": "user", "content": user_msg}], "max_tokens": 800, "temperature": 0.7}
+    payload = {
+        "messages": [{"role": "user", "content": user_msg}],
+        "max_tokens": 800,
+        "temperature": 0.7,
+    }
     for attempt in range(max_retries + 1):
         try:
             r = requests.post(PIETRA_CHAT_URL, json=payload, timeout=20)
@@ -670,6 +817,7 @@ def ask_pietra(user_msg, max_retries=2):
         except Exception as e:
             return "_(Pietra indisponível. Tenta em 30s.)_", "error", str(e)
     return "_(Pietra ocupada. Tenta de novo.)_", "timeout", "max_retries"
+
 
 # === Comandos locais ===
 def handle_command(chat_id, text, sender):
@@ -707,7 +855,7 @@ def handle_command(chat_id, text, sender):
             f"**Bot v4:**\n"
             f"- Lark: {'✓' if APP_ID else '✗'}\n"
             f"- PIETRA: {'✓' if pietra_ok else '✗'}\n"
-            f"- OCR: {'✓ ('+OCR_LANG+')' if OCR_ENABLED else '✗'}\n"
+            f"- OCR: {'✓ (' + OCR_LANG + ')' if OCR_ENABLED else '✗'}\n"
             f"- Inbox: {INBOX_DIR}\n"
             f"- Modo grupo: {'silencioso' if LARK_QUIET_GROUP else 'responde tudo'}"
         )
@@ -734,7 +882,9 @@ def handle_command(chat_id, text, sender):
         try:
             c = db()
             n_msgs = c.execute("SELECT COUNT(*) FROM events").fetchone()[0]
-            n_chats = c.execute("SELECT COUNT(DISTINCT chat_id) FROM events").fetchone()[0]
+            n_chats = c.execute(
+                "SELECT COUNT(DISTINCT chat_id) FROM events"
+            ).fetchone()[0]
             n_ocr = c.execute("SELECT COUNT(*) FROM ocr_cache").fetchone()[0]
             c.close()
             return (
@@ -748,7 +898,10 @@ def handle_command(chat_id, text, sender):
             return f"✗ Erro: {e}"
 
     if t.startswith("!doc"):
-        sample = t[4:].strip() or "Procuracao para Joao da Silva, CPF 123.456.789-00, valor R$ 156,40"
+        sample = (
+            t[4:].strip()
+            or "Procuracao para Joao da Silva, CPF 123.456.789-00, valor R$ 156,40"
+        )
         doc_type, hint = detect_doc_type(sample)
         if doc_type:
             return f"🔎 Detectado: **{doc_type}** ({hint})"
@@ -763,9 +916,11 @@ def handle_command(chat_id, text, sender):
         log("WARN", "owner requested stop", sender=sender)
         # Agenda shutdown em 2s pra resposta chegar antes
         import threading
+
         def _kill():
             time.sleep(2)
             os._exit(0)
+
         threading.Thread(target=_kill, daemon=True).start()
         return "🛑 Bot encerrando em 2s..."
 
@@ -776,12 +931,15 @@ def handle_command(chat_id, text, sender):
         )
 
     if t.startswith("!broadcast"):
-        msg = text.strip()[len("!broadcast"):].strip()
+        msg = text.strip()[len("!broadcast") :].strip()
         if not msg:
             return "uso: `!broadcast <mensagem>`"
         try:
             c = db()
-            chats = [r[0] for r in c.execute("SELECT DISTINCT chat_id FROM events").fetchall()]
+            chats = [
+                r[0]
+                for r in c.execute("SELECT DISTINCT chat_id FROM events").fetchall()
+            ]
             c.close()
             ok, fail = 0, 0
             for ch in chats:
@@ -789,11 +947,12 @@ def handle_command(chat_id, text, sender):
                     ok += 1
                 else:
                     fail += 1
-            return f"📢 Broadcast: {ok}/{ok+fail} chats enviados"
+            return f"📢 Broadcast: {ok}/{ok + fail} chats enviados"
         except Exception as e:
             return f"✗ Erro: {e}"
 
     return None
+
 
 # === Webhook ===
 @app.route("/lark/webhook", methods=["POST"])
@@ -857,6 +1016,7 @@ def webhook():
         log("ERR", "webhook failed", error=type(exc).__name__)
         return jsonify({"code": -1}), 500
 
+
 def handle_message(event):
     msg = event.get("message", {})
     chat_id = msg.get("chat_id")
@@ -892,8 +1052,15 @@ def handle_message(event):
         # Não analisa, só registra
         extra += "\n[mídia (vídeo/áudio) — não analisada, salvo em disco]"
 
-    log("INFO", "msg", chat=chat_type[:1], sender=sender, type=msg_type, text=text[:60],
-        attachments=len(attachments))
+    log(
+        "INFO",
+        "msg",
+        chat=chat_type[:1],
+        sender=sender,
+        type=msg_type,
+        text=text[:60],
+        attachments=len(attachments),
+    )
 
     if not rate_ok(chat_id):
         return
@@ -924,7 +1091,9 @@ def handle_message(event):
     # Memória PIETRA (vinculada ao chat_id como telefone proxy)
     # chat_id formato: oc_xxx... → usa primeiros 13 chars + prefixo +55
     chat_clean = chat_id.replace("oc_", "")[:13]
-    telefone_proxy = f"+55{chat_clean}" if not chat_clean.startswith("+") else chat_clean
+    telefone_proxy = (
+        f"+55{chat_clean}" if not chat_clean.startswith("+") else chat_clean
+    )
     memory_append(telefone_proxy, user_msg[:500], "user")
 
     reply, model, err = ask_pietra(user_msg)
@@ -934,20 +1103,22 @@ def handle_message(event):
     send_text(chat_id, reply)
     log_event(chat_id, sender, msg_type, user_msg, reply, model, attachments, err)
 
+
 @app.route("/test-image", methods=["POST"])
 def test_image():
     """Endpoint diagnóstico, deliberadamente indisponível fora do loopback autenticado."""
     if not _local_ocr_test_authorized():
         # A 404 avoids advertising a diagnostic upload endpoint in production.
         return jsonify({"error": "not found"}), 404
-    if 'file' not in request.files:
+    if "file" not in request.files:
         return jsonify({"error": "missing file"}), 400
-    f = request.files['file']
+    f = request.files["file"]
     content_type = (f.content_type or "").lower()
     if content_type not in IMAGE_CONTENT_TYPES:
         return jsonify({"error": "unsupported media type"}), 415
     try:
         stream = f.stream
+
         class _LocalUpload:
             headers = {"Content-Type": content_type}
 
@@ -962,11 +1133,14 @@ def test_image():
         return jsonify({"error": "upload rejected"}), 413
     # OCR remains local and scrubbed; its output is intentionally not returned or sent upstream.
     describe_image(p)
-    return jsonify({
-        "status": "accepted",
-        "size_kb": p.stat().st_size // 1024,
-        "ocr_attempted": OCR_ENABLED,
-    })
+    return jsonify(
+        {
+            "status": "accepted",
+            "size_kb": p.stat().st_size // 1024,
+            "ocr_attempted": OCR_ENABLED,
+        }
+    )
+
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -984,15 +1158,18 @@ def health():
     except Exception:
         pass
 
-    return jsonify({
-        "bot": "v6 ok",
-        "lark_configured": bool(APP_ID),
-        "pietra_ok": pietra_ok,
-        "ocr_available": tess,
-        "ocr_lang": OCR_LANG,
-        "quiet_group": LARK_QUIET_GROUP,
-        "attachment_retention_seconds": ATTACHMENT_RETENTION_SECONDS,
-    })
+    return jsonify(
+        {
+            "bot": "v6 ok",
+            "lark_configured": bool(APP_ID),
+            "pietra_ok": pietra_ok,
+            "ocr_available": tess,
+            "ocr_lang": OCR_LANG,
+            "quiet_group": LARK_QUIET_GROUP,
+            "attachment_retention_seconds": ATTACHMENT_RETENTION_SECONDS,
+        }
+    )
+
 
 if __name__ == "__main__":
     log("INFO", "lark bot v4 starting", port=PORT, ocr=OCR_ENABLED, lang=OCR_LANG)

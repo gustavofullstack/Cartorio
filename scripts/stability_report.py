@@ -56,8 +56,16 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-SUPER_PLANO_G8 = (ROOT / "docs" / "plans" / "SUPER_PLANO_G8_100_TASKS.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_G8_100_TASKS.md").exists() else (ROOT / "SUPER_PLANO_G8_100_TASKS.md")
-SUPER_PLANO_G7 = (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md").exists() else (ROOT / "SUPER_PLANO_G7_100_TASKS.md")
+SUPER_PLANO_G8 = (
+    (ROOT / "docs" / "plans" / "SUPER_PLANO_G8_100_TASKS.md")
+    if (ROOT / "docs" / "plans" / "SUPER_PLANO_G8_100_TASKS.md").exists()
+    else (ROOT / "SUPER_PLANO_G8_100_TASKS.md")
+)
+SUPER_PLANO_G7 = (
+    (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md")
+    if (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md").exists()
+    else (ROOT / "SUPER_PLANO_G7_100_TASKS.md")
+)
 PROGRESS_MD = ROOT / "PROGRESS.md"
 HARNESS_LOOP_STATE = ROOT / ".harness" / "loop-engineer" / "state" / "last.json"
 MEMORY_DIR = ROOT / ".harness" / "memory"
@@ -75,8 +83,18 @@ WINDOWS: dict[str, timedelta] = {
 }
 
 SERVICES: list[dict[str, str]] = [
-    {"key": "api", "name": "API FastAPI", "host": "api.2notasudi.com.br", "path": "/health"},
-    {"key": "n8n", "name": "N8N Workflows", "host": "flow.2notasudi.com.br", "path": "/healthz"},
+    {
+        "key": "api",
+        "name": "API FastAPI",
+        "host": "api.2notasudi.com.br",
+        "path": "/health",
+    },
+    {
+        "key": "n8n",
+        "name": "N8N Workflows",
+        "host": "flow.2notasudi.com.br",
+        "path": "/healthz",
+    },
     {
         "key": "evolution",
         "name": "Evolution API (WA)",
@@ -274,7 +292,9 @@ def safe_run_git(args: list[str], cwd: Path = ROOT) -> tuple[int, str, str]:
         return 1, "", str(exc)
 
 
-def http_probe(host: str, path: str, timeout: float = 3.0) -> tuple[str, int | None, str]:
+def http_probe(
+    host: str, path: str, timeout: float = 3.0
+) -> tuple[str, int | None, str]:
     """Probe HTTP sem dependências externas (urllib stdlib)."""
     import urllib.request
     import urllib.error
@@ -319,7 +339,9 @@ class StabilityCollector:
         self.offline = offline
         self.super_plano = super_plano or SUPER_PLANO_G8
         self.since, self.until, self.window_label = (
-            parse_since(since, datetime.now(timezone.utc)) if since else parse_window(window)
+            parse_since(since, datetime.now(timezone.utc))
+            if since
+            else parse_window(window)
         )
 
     # ─── services ────────────────────────────────────────────────────
@@ -339,7 +361,9 @@ class StabilityCollector:
 
         signals: list[ServiceSignal] = []
         with ThreadPoolExecutor(max_workers=min(8, len(SERVICES))) as pool:
-            futures = {pool.submit(http_probe, s["host"], s["path"]): s for s in SERVICES}
+            futures = {
+                pool.submit(http_probe, s["host"], s["path"]): s for s in SERVICES
+            }
             for fut in as_completed(futures):
                 s = futures[fut]
                 try:
@@ -384,7 +408,9 @@ class StabilityCollector:
             sig.last_when = head[4] if len(head) >= 5 else ""
 
         # diff stats no intervalo (best-effort, não bloqueia)
-        rc2, diff_out, _ = safe_run_git(["diff", "--shortstat", f"--since={since_arg}", "HEAD"])
+        rc2, diff_out, _ = safe_run_git(
+            ["diff", "--shortstat", f"--since={since_arg}", "HEAD"]
+        )
         if rc2 == 0 and diff_out:
             m = re.search(r"(\d+) files? changed", diff_out)
             if m:
@@ -413,7 +439,9 @@ class StabilityCollector:
                 cov = coverage.Coverage(data_file=str(COVERAGE_FILE))
                 cov.load()
                 total = cov.report(show_missing=False, file=open(os.devnull, "w"))
-                sig.coverage_pct = float(total) if isinstance(total, (int, float)) else None
+                sig.coverage_pct = (
+                    float(total) if isinstance(total, (int, float)) else None
+                )
             except Exception:  # noqa: BLE001 — fail-soft
                 # Sem coverage instalado ou datafile corrupto — segue sem dado
                 sig.coverage_pct = None
@@ -600,7 +628,9 @@ class StabilityCollector:
         if self.offline:
             rep.notes.append("offline mode: HTTP probes pulados; DB opcional")
         if not AUDIT_LOG_TABLES_SQL.exists():
-            rep.notes.append("audit_log model ausente — métricas LGPD vêm de estado do loop")
+            rep.notes.append(
+                "audit_log model ausente — métricas LGPD vêm de estado do loop"
+            )
         return rep
 
 
@@ -623,7 +653,9 @@ def render_markdown(rep: StabilityReport) -> str:
     add("|--------|---------|------|---------:|---------|")
     for s in rep.services:
         lat = f"{s.latency_ms} ms" if s.latency_ms is not None else "—"
-        add(f"| {s.icon} | {s.name} | `{s.host}` | {lat} | {scrub_pii(s.detail)[:80]} |")
+        add(
+            f"| {s.icon} | {s.name} | `{s.host}` | {lat} | {scrub_pii(s.detail)[:80]} |"
+        )
     add("")
 
     add("## 2. Métricas de entrega")

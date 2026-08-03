@@ -274,7 +274,9 @@ def main():
     email = os.environ.get("N8N_LOGIN_EMAIL", "")
     password = os.environ.get("N8N_LOGIN_PASS", "")
     if not email or not password:
-        raise SystemExit("N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager")
+        raise SystemExit(
+            "N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager"
+        )
     s = login(email, password)
     time.sleep(2)
     r = s.post(BASE + "/rest/workflows", json=WF, timeout=30)

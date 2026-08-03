@@ -11,6 +11,7 @@ Valida:
   4. Bot v4 (se rodando) tem endpoint /health com ocr_available
   5. Webhook challenge
 """
+
 import os
 import sys
 import json
@@ -27,20 +28,26 @@ CHAT_URL = f"{PIETRA_BASE}/api/v1/pietra/chat/completions"
 PASS = 0
 FAIL = 0
 
+
 def check(name, ok, detail=""):
     global PASS, FAIL
     sym = "✓" if ok else "✗"
-    if ok: PASS += 1
-    else: FAIL += 1
+    if ok:
+        PASS += 1
+    else:
+        FAIL += 1
     print(f"  {sym} {name}" + (f" — {detail}" if detail else ""), flush=True)
     return ok
+
 
 def section(t):
     print(f"\n=== {t} ===", flush=True)
 
+
 # Setup: cria imagens de teste
 section("0. Setup — imagens de teste")
 from PIL import Image, ImageDraw
+
 test_dir = Path("/tmp/lark_bot_v4_test")
 test_dir.mkdir(exist_ok=True)
 
@@ -63,15 +70,26 @@ print(f"  • {img2}")
 section("1. OCR via tesseract")
 for f in [img1, img2]:
     try:
-        r = subprocess.run(["tesseract", str(f.resolve()), "-", "-l", "por", "--psm", "6"],
-                          capture_output=True, text=True, timeout=15, cwd="/tmp")
+        r = subprocess.run(
+            ["tesseract", str(f.resolve()), "-", "-l", "por", "--psm", "6"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd="/tmp",
+        )
         text = r.stdout.strip()
         # OCR pode trocar 1-2 dígitos. Aceita match parcial (CPF começa igual, valor R$ XX)
         import re
+
         has_cpf_start = "123.456" in text
-        has_valor = bool(re.search(r"R\$\s*1[5-6]\d", text)) or bool(re.search(r"R\$\s*15", text))
-        check(f"OCR em {f.name}", has_cpf_start and has_valor,
-              f"extraído: {text[:60].replace(chr(10),' ')}")
+        has_valor = bool(re.search(r"R\$\s*1[5-6]\d", text)) or bool(
+            re.search(r"R\$\s*15", text)
+        )
+        check(
+            f"OCR em {f.name}",
+            has_cpf_start and has_valor,
+            f"extraído: {text[:60].replace(chr(10), ' ')}",
+        )
     except Exception as e:
         check(f"OCR {f.name}", False, str(e)[:60])
 
@@ -89,11 +107,18 @@ except Exception as e:
 # 3. Webhook challenge
 section("3. Webhook handshake")
 try:
-    r = requests.post(f"{BOT_URL}/lark/webhook",
-        json={"type":"url_verification","challenge":"v4-challenge-xyz"}, timeout=4)
+    r = requests.post(
+        f"{BOT_URL}/lark/webhook",
+        json={"type": "url_verification", "challenge": "v4-challenge-xyz"},
+        timeout=4,
+    )
     if r.status_code == 200:
         j = r.json()
-        check("challenge echo", j.get("challenge") == "v4-challenge-xyz", json.dumps(j)[:80])
+        check(
+            "challenge echo",
+            j.get("challenge") == "v4-challenge-xyz",
+            json.dumps(j)[:80],
+        )
     else:
         check("challenge echo", False, f"HTTP {r.status_code}")
 except Exception as e:
@@ -110,14 +135,17 @@ try:
                 "chat_type": "p2p",
                 "message_type": "image",
                 "content": {"image_key": "fake_img_key"},
-                "mentions": []
+                "mentions": [],
             },
-            "sender": {"sender_id": {"open_id": "ou_test_user"}}
-        }
+            "sender": {"sender_id": {"open_id": "ou_test_user"}},
+        },
     }
     r = requests.post(f"{BOT_URL}/lark/webhook", json=fake_event, timeout=8)
-    check("webhook aceita imagem", r.status_code == 200 and r.json().get("code") == 0,
-          f"HTTP {r.status_code}")
+    check(
+        "webhook aceita imagem",
+        r.status_code == 200 and r.json().get("code") == 0,
+        f"HTTP {r.status_code}",
+    )
 except Exception as e:
     check("webhook imagem", False, str(e)[:60])
 

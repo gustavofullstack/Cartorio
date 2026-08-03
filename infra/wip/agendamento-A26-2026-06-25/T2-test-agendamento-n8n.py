@@ -35,6 +35,7 @@ def test_engine():
 @pytest.fixture
 def test_session_factory(test_engine):
     from sqlalchemy.orm import sessionmaker
+
     return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
 
@@ -111,7 +112,7 @@ def test_api_agendamentos_pendentes(client, test_session, cliente_test):
 
     # Cria um agendamento pendente
     data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
-    
+
     AgendamentoService.criar_agendamento(
         db=test_session,
         cliente_id=cliente_test.id,
@@ -124,9 +125,10 @@ def test_api_agendamentos_pendentes(client, test_session, cliente_test):
     )
 
     # Testa endpoint com API key válida
-    response = client.get("/api/v1/agendamento/pendentes", headers={
-        "X-API-Key": os.environ["CARTORIO_API_KEY"]
-    })
+    response = client.get(
+        "/api/v1/agendamento/pendentes",
+        headers={"X-API-Key": os.environ["CARTORIO_API_KEY"]},
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -141,7 +143,7 @@ def test_api_agendamentos_proximos(client, test_session, cliente_test):
     # Cria um agendamento próximo (dentro de 24 horas)
     agora = datetime.datetime.now(datetime.timezone.utc)
     data_hora = agora + datetime.timedelta(hours=2)  # Daqui a 2 horas
-    
+
     AgendamentoService.criar_agendamento(
         db=test_session,
         cliente_id=cliente_test.id,
@@ -154,9 +156,10 @@ def test_api_agendamentos_proximos(client, test_session, cliente_test):
     )
 
     # Testa endpoint com API key válida
-    response = client.get("/api/v1/agendamento/proximos", headers={
-        "X-API-Key": os.environ["CARTORIO_API_KEY"]
-    })
+    response = client.get(
+        "/api/v1/agendamento/proximos",
+        headers={"X-API-Key": os.environ["CARTORIO_API_KEY"]},
+    )
 
     assert response.status_code == 200
     data = response.json()

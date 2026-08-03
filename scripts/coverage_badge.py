@@ -24,6 +24,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-dev — G6 wave 16.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -105,7 +106,9 @@ def get_python_version_from_pyproject() -> str:
     match = re.search(r'requires-python\s*=\s*"([^"]+)"', content)
     if match:
         # Strip >= or ~= etc
-        version = match.group(1).replace(">=", "").replace("~=", "").replace(">", "").strip()
+        version = (
+            match.group(1).replace(">=", "").replace("~=", "").replace(">", "").strip()
+        )
         return version
     return "3.12"
 
@@ -128,29 +131,65 @@ def generate_badges(coverage: float | None, tests: int | None) -> list[dict]:
     badges: list[dict] = []
 
     if coverage is not None:
-        badges.append({
-            "label": "coverage",
-            "value": f"{coverage:.1f}%",
-            "color": get_color_for_coverage(coverage),
-            "link": "docs/COVERAGE_GATE_REPORT_2026-07-16.md",
-        })
+        badges.append(
+            {
+                "label": "coverage",
+                "value": f"{coverage:.1f}%",
+                "color": get_color_for_coverage(coverage),
+                "link": "docs/COVERAGE_GATE_REPORT_2026-07-16.md",
+            }
+        )
 
     if tests is not None:
-        badges.append({
-            "label": "tests",
-            "value": f"{tests} passed",
-            "color": "brightgreen",
-            "link": ".github/workflows/ci.yml",
-        })
+        badges.append(
+            {
+                "label": "tests",
+                "value": f"{tests} passed",
+                "color": "brightgreen",
+                "link": ".github/workflows/ci.yml",
+            }
+        )
 
-    badges.extend([
-        {"label": "python", "value": py_version, "color": "blue", "link": "backend/pyproject.toml"},
-        {"label": "lint", "value": "ruff", "color": get_color_for_status(True), "link": ".pre-commit-config.yaml"},
-        {"label": "types", "value": "mypy", "color": get_color_for_status(True), "link": "pyproject.toml"},
-        {"label": "LGPD", "value": "95%25 compliant", "color": "brightgreen", "link": "docs/ANPD_READY_2026-07-16.md"},
-        {"label": "N8N workflows", "value": "37", "color": "blue", "link": "infra/n8n-workflows/INDEX.md"},
-        {"label": "OpenClaw", "value": "live", "color": "brightgreen", "link": "docs/openclaw/E6-cartorio-bot-spec.md"},
-    ])
+    badges.extend(
+        [
+            {
+                "label": "python",
+                "value": py_version,
+                "color": "blue",
+                "link": "backend/pyproject.toml",
+            },
+            {
+                "label": "lint",
+                "value": "ruff",
+                "color": get_color_for_status(True),
+                "link": ".pre-commit-config.yaml",
+            },
+            {
+                "label": "types",
+                "value": "mypy",
+                "color": get_color_for_status(True),
+                "link": "pyproject.toml",
+            },
+            {
+                "label": "LGPD",
+                "value": "95%25 compliant",
+                "color": "brightgreen",
+                "link": "docs/ANPD_READY_2026-07-16.md",
+            },
+            {
+                "label": "N8N workflows",
+                "value": "37",
+                "color": "blue",
+                "link": "infra/n8n-workflows/INDEX.md",
+            },
+            {
+                "label": "OpenClaw",
+                "value": "live",
+                "color": "brightgreen",
+                "link": "docs/openclaw/E6-cartorio-bot-spec.md",
+            },
+        ]
+    )
     return badges
 
 
@@ -164,7 +203,9 @@ def render_markdown(badges: list[dict]) -> str:
     lines.append("## Markdown badges")
     lines.append("")
     for b in badges:
-        badge_md = make_badge_markdown(b["label"], b["value"], b["color"], b.get("link", ""))
+        badge_md = make_badge_markdown(
+            b["label"], b["value"], b["color"], b.get("link", "")
+        )
         lines.append(f"```")
         lines.append(badge_md)
         lines.append(f"```")
@@ -172,13 +213,17 @@ def render_markdown(badges: list[dict]) -> str:
     lines.append("## Visualizacao (como aparecem no GitHub)")
     lines.append("")
     for b in badges:
-        badge_md = make_badge_markdown(b["label"], b["value"], b["color"], b.get("link", ""))
+        badge_md = make_badge_markdown(
+            b["label"], b["value"], b["color"], b.get("link", "")
+        )
         lines.append(badge_md)
         lines.append(" ")
     lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append("**Modified by Gustavo Almeida + cartorio-dev — G6 wave 16 (auto-gerado)**")
+    lines.append(
+        "**Modified by Gustavo Almeida + cartorio-dev — G6 wave 16 (auto-gerado)**"
+    )
     return "\n".join(lines)
 
 
@@ -194,7 +239,9 @@ def update_readme(badges: list[dict]) -> int:
     # Gera bloco de badges
     badge_block_lines: list[str] = ["<!-- BADGES_START -->"]
     for b in badges:
-        badge_md = make_badge_markdown(b["label"], b["value"], b["color"], b.get("link", ""))
+        badge_md = make_badge_markdown(
+            b["label"], b["value"], b["color"], b.get("link", "")
+        )
         badge_block_lines.append(badge_md)
     badge_block_lines.append("<!-- BADGES_END -->")
     badge_block = "\n".join(badge_block_lines)
@@ -226,10 +273,16 @@ def update_readme(badges: list[dict]) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Coverage badge auto-generator")
-    parser.add_argument("--coverage", type=float, help="coverage % (auto-detect se omitido)")
-    parser.add_argument("--tests", type=int, help="pytest count (auto-detect se omitido)")
+    parser.add_argument(
+        "--coverage", type=float, help="coverage % (auto-detect se omitido)"
+    )
+    parser.add_argument(
+        "--tests", type=int, help="pytest count (auto-detect se omitido)"
+    )
     parser.add_argument("--report", type=Path, help="gerar report markdown")
-    parser.add_argument("--update-readme", action="store_true", help="atualizar README.md")
+    parser.add_argument(
+        "--update-readme", action="store_true", help="atualizar README.md"
+    )
     args = parser.parse_args()
 
     # Auto-detect coverage
@@ -246,14 +299,18 @@ def main() -> int:
             tests = parse_pytest_output(pytest_out)
 
     if coverage is None and tests is None:
-        print("[WARN] coverage e tests nao detectados. Use --coverage e --tests explicitos.")
+        print(
+            "[WARN] coverage e tests nao detectados. Use --coverage e --tests explicitos."
+        )
         print("  (rodou pytest com --cov? coverage.xml em backend/?)")
         return 1
 
     badges = generate_badges(coverage, tests)
     print(f"Generated {len(badges)} badges:")
     for b in badges:
-        badge_md = make_badge_markdown(b["label"], b["value"], b["color"], b.get("link", ""))
+        badge_md = make_badge_markdown(
+            b["label"], b["value"], b["color"], b.get("link", "")
+        )
         print(f"  {badge_md}")
 
     if args.update_readme:

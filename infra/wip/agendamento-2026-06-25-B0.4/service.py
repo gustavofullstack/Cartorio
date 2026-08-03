@@ -123,7 +123,9 @@ class AgendamentoService:
         return cliente
 
     @staticmethod
-    def _validar_protocolo_existe(db: Session, protocolo_id: int | None) -> Protocolo | None:
+    def _validar_protocolo_existe(
+        db: Session, protocolo_id: int | None
+    ) -> Protocolo | None:
         """Valida existência do protocolo (se fornecido).
 
         Args:
@@ -339,7 +341,9 @@ class AgendamentoService:
             action="agendamento.cancelled",
             resource=f"agendamento:{agendamento.id}",
             payload={
-                "status_anterior": "agendado" if agendamento.status == StatusAgendamento.AGENDADO else "confirmado",
+                "status_anterior": "agendado"
+                if agendamento.status == StatusAgendamento.AGENDADO
+                else "confirmado",
                 "status_novo": agendamento.status.value,
             },
             **audit_kwargs_dict,

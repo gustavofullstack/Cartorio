@@ -1,4 +1,5 @@
 """Testes do VPS Sync Catalog (BRAIN4)."""
+
 from __future__ import annotations
 
 
@@ -47,7 +48,14 @@ def test_vps_tailnet_definido() -> None:
 def test_total_containers_cobre_servicos_principais() -> None:
     """Containers cobrem os 11+ servicos canonicos."""
     services = {c.service for c in CONTAINERS}
-    essenciais = {"api", "chatwoot", "evolution-api", "n8n", "openclaw-gateway", "redis"}
+    essenciais = {
+        "api",
+        "chatwoot",
+        "evolution-api",
+        "n8n",
+        "openclaw-gateway",
+        "redis",
+    }
     for s in essenciais:
         assert s in services, f"Falta container: {s}"
 
@@ -147,7 +155,9 @@ def test_backups_cobrem_n8n_workflows() -> None:
 
 def test_dns_records_dominios_principais_configurados() -> None:
     """6 dominios principais configurados."""
-    dominios_config = [d for d, info in DNS_RECORDS.items() if "Configurado" in info["status"]]
+    dominios_config = [
+        d for d, info in DNS_RECORDS.items() if "Configurado" in info["status"]
+    ]
     assert len(dominios_config) >= 6
 
 

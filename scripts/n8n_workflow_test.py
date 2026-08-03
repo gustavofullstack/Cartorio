@@ -15,6 +15,7 @@ Uso:
 Ou via Makefile:
     make n8n-test
 """
+
 from __future__ import annotations
 
 import os
@@ -89,7 +90,14 @@ def main() -> int:
 
         if not wf_active:
             print("    SKIP: workflow inativo")
-            results.append({"id": wf_id, "name": wf_name, "status": "skipped", "reason": "inactive"})
+            results.append(
+                {
+                    "id": wf_id,
+                    "name": wf_name,
+                    "status": "skipped",
+                    "reason": "inactive",
+                }
+            )
             continue
 
         # Tenta executar (sem payload - usa default)
@@ -117,7 +125,9 @@ def main() -> int:
                 )
         except Exception as e:
             print(f"    ERROR: {e}")
-            results.append({"id": wf_id, "name": wf_name, "status": "error", "error": str(e)})
+            results.append(
+                {"id": wf_id, "name": wf_name, "status": "error", "error": str(e)}
+            )
 
     # Relatorio
     ok = sum(1 for r in results if r["status"] == "ok")
@@ -146,7 +156,12 @@ def main() -> int:
         f.write("| ID | Nome | Status | Detalhes |\n")
         f.write("|---|---|---|---|\n")
         for r in results:
-            det = r.get("elapsed_s") or r.get("http_status") or r.get("reason") or r.get("error", "")
+            det = (
+                r.get("elapsed_s")
+                or r.get("http_status")
+                or r.get("reason")
+                or r.get("error", "")
+            )
             f.write(f"| {r['id']} | {r['name']} | {r['status']} | {det} |\n")
 
     print(f"\nRelatorio salvo em {report_path}")

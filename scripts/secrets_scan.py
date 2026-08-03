@@ -23,6 +23,7 @@ turn an observability artifact into a second secret store.
 
 Modified by Gustavo Almeida + cartorio-security — G6 wave 10.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -45,12 +46,25 @@ SECRET_PATTERNS: dict[str, re.Pattern] = {
     "GOOGLE_TOKEN": re.compile(r"AQ\.[A-Za-z0-9_-]{20,}"),
     "SLACK_TOKEN": re.compile(r"xox[baprs]-[A-Za-z0-9-]+"),
     "GOOGLE_API": re.compile(r"AIza[0-9A-Za-z_-]{35}"),
-    "GENERIC_API_KEY": re.compile(r"api_key\s*[:=]\s*['\"][A-Za-z0-9_-]{16,}['\"]", re.IGNORECASE),
-    "GENERIC_PASSWORD": re.compile(r"password\s*[:=]\s*['\"][^'\"\s]{8,}['\"]", re.IGNORECASE),
+    "GENERIC_API_KEY": re.compile(
+        r"api_key\s*[:=]\s*['\"][A-Za-z0-9_-]{16,}['\"]", re.IGNORECASE
+    ),
+    "GENERIC_PASSWORD": re.compile(
+        r"password\s*[:=]\s*['\"][^'\"\s]{8,}['\"]", re.IGNORECASE
+    ),
 }
 
 # Diretorios a ignorar
-IGNORE_DIRS = {".venv", ".git", "node_modules", "__pycache__", ".mypy_cache", ".ruff_cache", "snapshots", ".brain"}
+IGNORE_DIRS = {
+    ".venv",
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    "snapshots",
+    ".brain",
+}
 IGNORE_FILE_PATTERNS = [
     "*.lock",
     "*.svg",
@@ -74,11 +88,18 @@ def scan_file(path: Path) -> list[tuple[str, int, str, str]]:
 
     for line_no, line in enumerate(content.splitlines(), start=1):
         # Comentarios explicitos sobre o pattern (mas NAO o valor real)
-        if "EXAMPLE" in line or "FAKE" in line or "PLACEHOLDER" in line or "TEST_TOKEN" in line:
+        if (
+            "EXAMPLE" in line
+            or "FAKE" in line
+            or "PLACEHOLDER" in line
+            or "TEST_TOKEN" in line
+        ):
             continue
         for kind, pattern in SECRET_PATTERNS.items():
             if pattern.search(line):
-                matches.append((kind, line_no, line.strip()[:120], pattern.pattern[:50]))
+                matches.append(
+                    (kind, line_no, line.strip()[:120], pattern.pattern[:50])
+                )
 
     return matches
 
@@ -93,7 +114,11 @@ def get_files_to_scan(all_files: bool) -> list[Path]:
     else:
         # Scan apenas staged (pre-commit default)
         result = subprocess.run(
-            ["git", "diff", "--cached", "--name-only"], cwd=ROOT, capture_output=True, text=True, check=False
+            ["git", "diff", "--cached", "--name-only"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         files = [ROOT / f for f in result.stdout.splitlines() if f]
 
@@ -158,7 +183,9 @@ def main() -> int:
             md.append("## [WORK] Nenhum secret detectado")
         md.append("---")
         md.append("")
-        md.append("**Modified by Gustavo Almeida + cartorio-security — G6 wave 10 (auto-gerado)**")
+        md.append(
+            "**Modified by Gustavo Almeida + cartorio-security — G6 wave 10 (auto-gerado)**"
+        )
         args.report.write_text("\n".join(md))
         print(f"  Report: {args.report}", file=sys.stderr)
 

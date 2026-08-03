@@ -25,7 +25,9 @@ EXPECTED_MARKER = "PORTARIA Nº 8.664/CGJ/2025"
 
 def download_pdf(url: str) -> bytes:
     """Baixa somente o documento oficial solicitado, com agente identificável."""
-    request = Request(url, headers={"User-Agent": "Cartorio-AgentAI-SourceCollector/1.0"})
+    request = Request(
+        url, headers={"User-Agent": "Cartorio-AgentAI-SourceCollector/1.0"}
+    )
     with urlopen(request, timeout=30) as response:  # noqa: S310 - URL supplied by operator
         return response.read()
 
@@ -45,7 +47,9 @@ def extract_text(pdf_bytes: bytes) -> str:
     return result.stdout
 
 
-def build_manifest(url: str, pdf_bytes: bytes, extracted_text: str) -> dict[str, object]:
+def build_manifest(
+    url: str, pdf_bytes: bytes, extracted_text: str
+) -> dict[str, object]:
     """Monta manifesto auditável sem armazenar conteúdo ou dados de titulares."""
     marker_found = EXPECTED_MARKER in extracted_text
     return {
@@ -64,14 +68,25 @@ def build_manifest(url: str, pdf_bytes: bytes, extracted_text: str) -> dict[str,
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default=DEFAULT_URL, help="URL do PDF oficial do TJMG")
-    parser.add_argument("--output", type=Path, required=True, help="Arquivo JSON do manifesto")
+    parser.add_argument(
+        "--output", type=Path, required=True, help="Arquivo JSON do manifesto"
+    )
     args = parser.parse_args()
 
     pdf_bytes = download_pdf(args.url)
     manifest = build_manifest(args.url, pdf_bytes, extract_text(pdf_bytes))
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"publication_state": manifest["publication_state"], "output": str(args.output)}))
+    args.output.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    print(
+        json.dumps(
+            {
+                "publication_state": manifest["publication_state"],
+                "output": str(args.output),
+            }
+        )
+    )
     return 0 if manifest["publication_state"] == "CAPTURED" else 2
 
 

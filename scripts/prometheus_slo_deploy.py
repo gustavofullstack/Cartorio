@@ -19,6 +19,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-sre — G6 wave 24.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -71,7 +72,10 @@ def reload_prometheus(url: str, password: str, timeout: float) -> bool:
             if r.status_code in (200, 204):
                 print(f"[WORK] Reload OK (status {r.status_code})")
                 return True
-            print(f"[ERROR] Reload falhou: HTTP {r.status_code} - {r.text[:200]}", file=sys.stderr)
+            print(
+                f"[ERROR] Reload falhou: HTTP {r.status_code} - {r.text[:200]}",
+                file=sys.stderr,
+            )
             return False
     except httpx.RequestError as exc:
         print(f"[ERROR] Conexao: {type(exc).__name__}: {exc}", file=sys.stderr)
@@ -96,8 +100,12 @@ def check_prometheus_health(url: str, password: str, timeout: float) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prometheus SLO rules deploy")
-    parser.add_argument("--url", help="Prometheus URL (default: PROMETHEUS_URL env ou localhost:9090)")
-    parser.add_argument("--password", help="basic auth password (default: PROMETHEUS_PASSWORD env)")
+    parser.add_argument(
+        "--url", help="Prometheus URL (default: PROMETHEUS_URL env ou localhost:9090)"
+    )
+    parser.add_argument(
+        "--password", help="basic auth password (default: PROMETHEUS_PASSWORD env)"
+    )
     parser.add_argument("--validate", action="store_true", help="apenas validar YAML")
     parser.add_argument("--no-reload", action="store_true", help="pular reload")
     parser.add_argument("--timeout", type=float, default=15.0)

@@ -19,8 +19,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PLANO = (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md") if (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md").exists() else (ROOT / "SUPER_PLANO_G7_100_TASKS.md")
-GOALS = (ROOT / "docs" / "plans" / "SUPER_GOALS_G7.md") if (ROOT / "docs" / "plans" / "SUPER_GOALS_G7.md").exists() else (ROOT / "SUPER_GOALS_G7.md")
+PLANO = (
+    (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md")
+    if (ROOT / "docs" / "plans" / "SUPER_PLANO_G7_100_TASKS.md").exists()
+    else (ROOT / "SUPER_PLANO_G7_100_TASKS.md")
+)
+GOALS = (
+    (ROOT / "docs" / "plans" / "SUPER_GOALS_G7.md")
+    if (ROOT / "docs" / "plans" / "SUPER_GOALS_G7.md").exists()
+    else (ROOT / "SUPER_GOALS_G7.md")
+)
 STATE = ROOT / ".brain" / "loop-state.json"
 
 
@@ -55,14 +63,20 @@ def status_cmd() -> int:
     partial = sum(1 for t in tasks if t["partial"])
     total = len(tasks) or 100
     pct = round(100.0 * done / total, 1) if total else 0.0
-    print(f"G7 Super Orquestrador — {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+    print(
+        f"G7 Super Orquestrador — {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+    )
     print(f"  Plan: {PLANO.name}")
-    print(f"  Tasks parsed: {total} | done: {done} | partial: {partial} | open: {total - done - partial}")
+    print(
+        f"  Tasks parsed: {total} | done: {done} | partial: {partial} | open: {total - done - partial}"
+    )
     print(f"  Progress: {pct}%")
     if STATE.exists():
         try:
             st = json.loads(STATE.read_text())
-            print(f"  loop-state: {st.get('status')} wave={st.get('metrics', {}).get('g7_wave')}")
+            print(
+                f"  loop-state: {st.get('status')} wave={st.get('metrics', {}).get('g7_wave')}"
+            )
         except json.JSONDecodeError:
             print("  loop-state: (invalid json)")
     open_tasks = [t for t in tasks if not t["done"]]
@@ -103,7 +117,11 @@ def next_cmd() -> int:
 
 def validate_cmd() -> int:
     r = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "g7_super_validator.py"), "--skip-ruff"],
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "g7_super_validator.py"),
+            "--skip-ruff",
+        ],
         cwd=str(ROOT),
     )
     return r.returncode

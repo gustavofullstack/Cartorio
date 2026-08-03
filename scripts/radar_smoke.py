@@ -16,6 +16,7 @@ Exit codes:
 Ref: backend/app/api/v1/health_radar_expanded.py (F6 2026-07-15).
 Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 3.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -93,16 +94,22 @@ def render_markdown(data: dict) -> str:
 
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 3 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 3 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Health radar smoke CLI")
-    parser.add_argument("--url", default=DEFAULT_URL, help="URL do /health/radar/expanded")
+    parser.add_argument(
+        "--url", default=DEFAULT_URL, help="URL do /health/radar/expanded"
+    )
     parser.add_argument("--json", action="store_true", help="output JSON puro")
     parser.add_argument("--report", type=Path, help="gerar report markdown")
-    parser.add_argument("--timeout", type=float, default=TIMEOUT, help="timeout em segundos")
+    parser.add_argument(
+        "--timeout", type=float, default=TIMEOUT, help="timeout em segundos"
+    )
     args = parser.parse_args()
 
     url_used = args.url
@@ -118,7 +125,10 @@ def main() -> int:
             url_used = FALLBACK_URL
             resp = httpx.get(FALLBACK_URL, timeout=args.timeout, verify=False)
     except Exception as exc:
-        print(f"[ERROR] Failed to fetch {args.url}: {type(exc).__name__}: {exc}", file=sys.stderr)
+        print(
+            f"[ERROR] Failed to fetch {args.url}: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
         return 2
 
     if resp.status_code != 200:

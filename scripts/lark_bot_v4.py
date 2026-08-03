@@ -13,6 +13,7 @@ Diferenças vs v3:
 
 Setup: mesmo do v3 (LARK_BOT_V3_RUNBOOK.md)
 """
+
 import os
 import re
 import json
@@ -44,6 +45,7 @@ INBOX_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
 
+
 # === DB ===
 def db():
     conn = sqlite3.connect(DB_PATH)
@@ -68,45 +70,79 @@ def db():
     """)
     return conn
 
-def log_event(chat_id, sender, msg_type, content_in, content_out, model, attachments=None, error=None):
+
+def log_event(
+    chat_id,
+    sender,
+    msg_type,
+    content_in,
+    content_out,
+    model,
+    attachments=None,
+    error=None,
+):
     try:
         c = db()
-        c.execute("INSERT INTO events (chat_id,sender,msg_type,content_in,content_out,pietra_model,attachments,error) VALUES (?,?,?,?,?,?,?,?)",
-                  (chat_id, sender[:32] if sender else "", msg_type,
-                   content_in[:500], (content_out or "")[:500], model,
-                   json.dumps(attachments or []), error))
+        c.execute(
+            "INSERT INTO events (chat_id,sender,msg_type,content_in,content_out,pietra_model,attachments,error) VALUES (?,?,?,?,?,?,?,?)",
+            (
+                chat_id,
+                sender[:32] if sender else "",
+                msg_type,
+                content_in[:500],
+                (content_out or "")[:500],
+                model,
+                json.dumps(attachments or []),
+                error,
+            ),
+        )
         c.commit()
         c.close()
     except Exception as e:
         print(f"[DB ERR] {e}", flush=True)
 
+
 def rate_ok(chat_id, max_per_min=10):
     try:
         now = int(time.time())
         c = db()
-        row = c.execute("SELECT last_msg_ts, count_window FROM rate_limit WHERE chat_id=?", (chat_id,)).fetchone()
+        row = c.execute(
+            "SELECT last_msg_ts, count_window FROM rate_limit WHERE chat_id=?",
+            (chat_id,),
+        ).fetchone()
         if row:
             last, count = row
             if now - last < 60:
                 if count >= max_per_min:
                     c.close()
                     return False
-                c.execute("UPDATE rate_limit SET last_msg_ts=?, count_window=count_window+1 WHERE chat_id=?", (now, chat_id))
+                c.execute(
+                    "UPDATE rate_limit SET last_msg_ts=?, count_window=count_window+1 WHERE chat_id=?",
+                    (now, chat_id),
+                )
             else:
-                c.execute("UPDATE rate_limit SET last_msg_ts=?, count_window=1 WHERE chat_id=?", (now, chat_id))
+                c.execute(
+                    "UPDATE rate_limit SET last_msg_ts=?, count_window=1 WHERE chat_id=?",
+                    (now, chat_id),
+                )
         else:
-            c.execute("INSERT INTO rate_limit (chat_id,last_msg_ts,count_window) VALUES (?,?,1)", (chat_id, now))
+            c.execute(
+                "INSERT INTO rate_limit (chat_id,last_msg_ts,count_window) VALUES (?,?,1)",
+                (chat_id, now),
+            )
         c.commit()
         c.close()
         return True
     except Exception:
         return True
 
+
 def log(level, msg, **kw):
     ts = datetime.now(timezone.utc).isoformat()
     # Structured JSON log
     entry = {"ts": ts, "level": level, "msg": msg, **kw}
     print(json.dumps(entry, ensure_ascii=False), flush=True)
+
 
 # === LGPD scrub (defesa em profundidade) ===
 PII_PATTERNS = [
@@ -117,6 +153,7 @@ PII_PATTERNS = [
     (re.compile(r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"), "[CARTAO]"),
 ]
 
+
 def scrub_pii(text):
     """Mascara PII em texto livre. Crítico antes de mandar OCR pro LLM."""
     if not text:
@@ -124,6 +161,7 @@ def scrub_pii(text):
     for pat, repl in PII_PATTERNS:
         text = pat.sub(repl, text)
     return text
+
 
 # === OCR ===
 def ocr_image(path):
@@ -133,9 +171,12 @@ def ocr_image(path):
     try:
         # Cache por hash do arquivo
         import hashlib
+
         h = hashlib.md5(Path(path).read_bytes()).hexdigest()
         c = db()
-        cached = c.execute("SELECT text FROM ocr_cache WHERE file_hash=?", (h,)).fetchone()
+        cached = c.execute(
+            "SELECT text FROM ocr_cache WHERE file_hash=?", (h,)
+        ).fetchone()
         if cached:
             c.close()
             return cached[0]
@@ -144,15 +185,20 @@ def ocr_image(path):
         # Passa path absoluto e cwd em pasta temp (tesseract tem bug com cwd=/)
         result = subprocess.run(
             ["tesseract", str(Path(path).resolve()), "-", "-l", OCR_LANG, "--psm", "6"],
-            capture_output=True, text=True, timeout=30,
-            cwd="/tmp"
+            capture_output=True,
+            text=True,
+            timeout=30,
+            cwd="/tmp",
         )
         text = result.stdout.strip()
         if text:
             # Cache + LGPD scrub (PII pode ter sido extraído pelo OCR)
             text_scrubbed = scrub_pii(text)
             c = db()
-            c.execute("INSERT OR REPLACE INTO ocr_cache (file_hash, text) VALUES (?, ?)", (h, text_scrubbed))
+            c.execute(
+                "INSERT OR REPLACE INTO ocr_cache (file_hash, text) VALUES (?, ?)",
+                (h, text_scrubbed),
+            )
             c.commit()
             c.close()
             return text_scrubbed if text_scrubbed else None
@@ -166,6 +212,7 @@ def ocr_image(path):
     except Exception as e:
         log("ERR", "ocr failed", error=str(e))
         return None
+
 
 def describe_image(path):
     """Descreve imagem sem vision LLM: tamanho, formato, OCR (se houver)."""
@@ -185,6 +232,7 @@ def describe_image(path):
         info += "\n[sem texto detectável]"
     return info
 
+
 def describe_file(path, original_name):
     """Descreve arquivo: nome, tamanho, primeiras linhas se texto."""
     p = Path(path)
@@ -194,7 +242,19 @@ def describe_file(path, original_name):
     info = f"[arquivo: {original_name}, {size_kb:.0f}KB]"
 
     # Se for texto/code, mostra primeiras linhas
-    text_exts = {".txt", ".md", ".py", ".js", ".ts", ".json", ".yaml", ".yml", ".csv", ".log", ".sh"}
+    text_exts = {
+        ".txt",
+        ".md",
+        ".py",
+        ".js",
+        ".ts",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".csv",
+        ".log",
+        ".sh",
+    }
     if p.suffix.lower() in text_exts and size_kb < 200:
         try:
             content = p.read_text(errors="ignore")[:1500]
@@ -203,15 +263,20 @@ def describe_file(path, original_name):
             pass
     return info
 
+
 # === Lark helpers ===
 _token_cache = {"token": None, "exp": 0}
+
 
 def get_token():
     if _token_cache["token"] and _token_cache["exp"] > time.time():
         return _token_cache["token"]
     try:
-        r = requests.post(f"{LARK_API}/auth/v3/tenant_access_token/internal",
-                          json={"app_id": APP_ID, "app_secret": APP_SECRET}, timeout=5).json()
+        r = requests.post(
+            f"{LARK_API}/auth/v3/tenant_access_token/internal",
+            json={"app_id": APP_ID, "app_secret": APP_SECRET},
+            timeout=5,
+        ).json()
         tok = r.get("tenant_access_token", "")
         if tok:
             _token_cache["token"] = tok
@@ -221,31 +286,54 @@ def get_token():
         log("ERR", "get_token failed", error=str(e))
         return ""
 
+
 def send_text(chat_id, text):
     tok = get_token()
     if not tok:
         log("ERR", "no token")
         return False
     for i in range(0, len(text), 4000):
-        chunk = text[i:i+4000]
-        r = requests.post(f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
-            headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"},
-            json={"receive_id": chat_id, "msg_type": "text",
-                  "content": json.dumps({"text": chunk})}, timeout=10).json()
+        chunk = text[i : i + 4000]
+        r = requests.post(
+            f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
+            headers={
+                "Authorization": f"Bearer {tok}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "receive_id": chat_id,
+                "msg_type": "text",
+                "content": json.dumps({"text": chunk}),
+            },
+            timeout=10,
+        ).json()
         if r.get("code") != 0:
             log("ERR", "send failed", code=r.get("code"), msg=r.get("msg"))
             return False
     return True
 
+
 def download_resource(media_type, media_key, save_name=None):
     """Baixa arquivo/imagem do CDN do Lark."""
     try:
         tok = get_token()
-        url = f"{LARK_API}/im/v1/{'images' if media_type=='image' else 'files'}/{media_key}"
-        r = requests.get(url, headers={"Authorization": f"Bearer {tok}"}, timeout=30, allow_redirects=True)
+        url = f"{LARK_API}/im/v1/{'images' if media_type == 'image' else 'files'}/{media_key}"
+        r = requests.get(
+            url,
+            headers={"Authorization": f"Bearer {tok}"},
+            timeout=30,
+            allow_redirects=True,
+        )
         if r.status_code == 200:
-            ext = ".jpg" if media_type == "image" else (Path(save_name).suffix if save_name else ".bin")
-            name = save_name or f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{media_key[:8]}{ext}"
+            ext = (
+                ".jpg"
+                if media_type == "image"
+                else (Path(save_name).suffix if save_name else ".bin")
+            )
+            name = (
+                save_name
+                or f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{media_key[:8]}{ext}"
+            )
             path = INBOX_DIR / name
             path.write_bytes(r.content)
             return str(path)
@@ -253,9 +341,14 @@ def download_resource(media_type, media_key, save_name=None):
         log("ERR", "download failed", type=media_type, error=str(e))
     return None
 
+
 # === PIETRA brain ===
 def ask_pietra(user_msg, max_retries=2):
-    payload = {"messages": [{"role": "user", "content": user_msg}], "max_tokens": 800, "temperature": 0.7}
+    payload = {
+        "messages": [{"role": "user", "content": user_msg}],
+        "max_tokens": 800,
+        "temperature": 0.7,
+    }
     for attempt in range(max_retries + 1):
         try:
             r = requests.post(PIETRA_CHAT_URL, json=payload, timeout=20)
@@ -273,6 +366,7 @@ def ask_pietra(user_msg, max_retries=2):
         except Exception as e:
             return "_(Pietra indisponível. Tenta em 30s.)_", "error", str(e)
     return "_(Pietra ocupada. Tenta de novo.)_", "timeout", "max_retries"
+
 
 # === Comandos locais ===
 def handle_command(chat_id, text, sender):
@@ -298,7 +392,7 @@ def handle_command(chat_id, text, sender):
             f"**Bot v4:**\n"
             f"- Lark: {'✓' if APP_ID else '✗'}\n"
             f"- PIETRA: {'✓' if pietra_ok else '✗'}\n"
-            f"- OCR: {'✓ ('+OCR_LANG+')' if OCR_ENABLED else '✗'}\n"
+            f"- OCR: {'✓ (' + OCR_LANG + ')' if OCR_ENABLED else '✗'}\n"
             f"- Inbox: {INBOX_DIR}\n"
             f"- Modo grupo: {'silencioso' if LARK_QUIET_GROUP else 'responde tudo'}"
         )
@@ -322,6 +416,7 @@ def handle_command(chat_id, text, sender):
             return f"✗ Erro: {e}"
     return None
 
+
 # === Webhook ===
 @app.route("/lark/webhook", methods=["POST"])
 def webhook():
@@ -339,6 +434,7 @@ def webhook():
     except Exception as e:
         log("ERR", "webhook failed", error=str(e))
         return jsonify({"code": -1}), 200
+
 
 def handle_message(event):
     msg = event.get("message", {})
@@ -376,8 +472,15 @@ def handle_message(event):
         # Não analisa, só registra
         extra += "\n[mídia (vídeo/áudio) — não analisada, salvo em disco]"
 
-    log("INFO", "msg", chat=chat_type[:1], sender=sender, type=msg_type, text=text[:60],
-        attachments=len(attachments))
+    log(
+        "INFO",
+        "msg",
+        chat=chat_type[:1],
+        sender=sender,
+        type=msg_type,
+        text=text[:60],
+        attachments=len(attachments),
+    )
 
     if not rate_ok(chat_id):
         return
@@ -398,25 +501,35 @@ def handle_message(event):
     send_text(chat_id, reply)
     log_event(chat_id, sender, msg_type, user_msg, reply, model, attachments, err)
 
+
 @app.route("/test-image", methods=["POST"])
 def test_image():
     """Endpoint pra testar OCR localmente sem Lark."""
-    if 'file' not in request.files:
-        return jsonify({"error": "no file. use: curl -F file=@image.png http://localhost:8081/test-image"}), 400
-    f = request.files['file']
+    if "file" not in request.files:
+        return jsonify(
+            {
+                "error": "no file. use: curl -F file=@image.png http://localhost:8081/test-image"
+            }
+        ), 400
+    f = request.files["file"]
     p = INBOX_DIR / f"test_{datetime.now().strftime('%H%M%S')}_{f.filename}"
     p.write_bytes(f.read())
     desc = describe_image(p)
     # Manda pro PIETRA
-    reply, model, err = ask_pietra(f"O usuário mandou esta imagem:\n\n{desc}\n\nDescreva brevemente o que você vê.")
-    return jsonify({
-        "file": str(p),
-        "size_kb": p.stat().st_size // 1024,
-        "ocr": desc,
-        "pietra_reply": reply,
-        "pietra_model": model,
-        "error": err,
-    })
+    reply, model, err = ask_pietra(
+        f"O usuário mandou esta imagem:\n\n{desc}\n\nDescreva brevemente o que você vê."
+    )
+    return jsonify(
+        {
+            "file": str(p),
+            "size_kb": p.stat().st_size // 1024,
+            "ocr": desc,
+            "pietra_reply": reply,
+            "pietra_model": model,
+            "error": err,
+        }
+    )
+
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -434,15 +547,18 @@ def health():
     except Exception:
         pass
 
-    return jsonify({
-        "bot": "v4 ok",
-        "lark_configured": bool(APP_ID),
-        "pietra_ok": pietra_ok,
-        "ocr_available": tess,
-        "ocr_lang": OCR_LANG,
-        "quiet_group": LARK_QUIET_GROUP,
-        "inbox": str(INBOX_DIR),
-    })
+    return jsonify(
+        {
+            "bot": "v4 ok",
+            "lark_configured": bool(APP_ID),
+            "pietra_ok": pietra_ok,
+            "ocr_available": tess,
+            "ocr_lang": OCR_LANG,
+            "quiet_group": LARK_QUIET_GROUP,
+            "inbox": str(INBOX_DIR),
+        }
+    )
+
 
 if __name__ == "__main__":
     log("INFO", "lark bot v4 starting", port=PORT, ocr=OCR_ENABLED, lang=OCR_LANG)

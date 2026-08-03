@@ -1,4 +1,5 @@
 """Testes do API Endpoints Catalog (BRAIN2)."""
+
 from __future__ import annotations
 
 

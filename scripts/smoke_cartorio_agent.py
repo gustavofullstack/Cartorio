@@ -17,6 +17,7 @@ Usage:
 
 Exit codes: 0 healthy, 1 an essential check failed, 2 invalid local setup.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -61,7 +62,9 @@ def check_agent_health(agent_url: str) -> ProbeResult:
     try:
         response = httpx.get(_join(agent_url, "/health"), timeout=TIMEOUT_SECONDS)
     except httpx.HTTPError as exc:
-        return ProbeResult("openclaw_health", "error", f"request failed: {_safe_error(exc)}")
+        return ProbeResult(
+            "openclaw_health", "error", f"request failed: {_safe_error(exc)}"
+        )
     status = "ok" if response.status_code == 200 else "error"
     return ProbeResult("openclaw_health", status, f"HTTP {response.status_code}")
 
@@ -84,7 +87,9 @@ def check_lobechat_proxy(name: str, lobe_url: str, *, optional: bool) -> ProbeRe
             return ProbeResult(name, "ok", detail)
         last_error = f"HTTP {response.status_code} path={path}"
 
-    return ProbeResult(name, "warn" if optional else "error", f"unhealthy: {last_error}")
+    return ProbeResult(
+        name, "warn" if optional else "error", f"unhealthy: {last_error}"
+    )
 
 
 def check_cors(agent_url: str, origin: str) -> ProbeResult:
@@ -96,15 +101,21 @@ def check_cors(agent_url: str, origin: str) -> ProbeResult:
     }
     try:
         response = httpx.options(
-            _join(agent_url, "/v1/chat/completions"), headers=headers, timeout=TIMEOUT_SECONDS
+            _join(agent_url, "/v1/chat/completions"),
+            headers=headers,
+            timeout=TIMEOUT_SECONDS,
         )
     except httpx.HTTPError as exc:
-        return ProbeResult("openclaw_cors", "error", f"preflight failed: {_safe_error(exc)}")
+        return ProbeResult(
+            "openclaw_cors", "error", f"preflight failed: {_safe_error(exc)}"
+        )
 
     allowed_origin = response.headers.get("access-control-allow-origin")
     allowed = allowed_origin in {origin, "*"}
     if 200 <= response.status_code < 300 and allowed:
-        return ProbeResult("openclaw_cors", "ok", f"HTTP {response.status_code}; origin allowed")
+        return ProbeResult(
+            "openclaw_cors", "ok", f"HTTP {response.status_code}; origin allowed"
+        )
     # Do not include returned header values: proxies can reflect unexpected data.
     return ProbeResult(
         "openclaw_cors",
@@ -123,23 +134,39 @@ async def check_websocket_challenge(agent_url: str, origin: str) -> ProbeResult:
     try:
         import websockets  # type: ignore[import-untyped]
     except ImportError:
-        return ProbeResult("openclaw_ws_challenge", "error", "websockets dependency unavailable")
+        return ProbeResult(
+            "openclaw_ws_challenge", "error", "websockets dependency unavailable"
+        )
 
-    ws_url = _join(agent_url.replace("https://", "wss://").replace("http://", "ws://"), "/v1/chat")
+    ws_url = _join(
+        agent_url.replace("https://", "wss://").replace("http://", "ws://"), "/v1/chat"
+    )
     try:
-        async with websockets.connect(ws_url, origin=origin, open_timeout=TIMEOUT_SECONDS) as websocket:
+        async with websockets.connect(
+            ws_url, origin=origin, open_timeout=TIMEOUT_SECONDS
+        ) as websocket:
             raw = await asyncio.wait_for(websocket.recv(), timeout=TIMEOUT_SECONDS)
     except Exception as exc:  # library exposes several version-specific exception types
-        return ProbeResult("openclaw_ws_challenge", "error", f"upgrade/challenge failed: {_safe_error(exc)}")
+        return ProbeResult(
+            "openclaw_ws_challenge",
+            "error",
+            f"upgrade/challenge failed: {_safe_error(exc)}",
+        )
 
     try:
         event = json.loads(raw)
     except (TypeError, json.JSONDecodeError):
-        return ProbeResult("openclaw_ws_challenge", "error", "first server frame is not JSON")
+        return ProbeResult(
+            "openclaw_ws_challenge", "error", "first server frame is not JSON"
+        )
     if event.get("type") == "event" and event.get("event") == "connect.challenge":
-        return ProbeResult("openclaw_ws_challenge", "ok", "connected; connect.challenge received")
+        return ProbeResult(
+            "openclaw_ws_challenge", "ok", "connected; connect.challenge received"
+        )
     # Intentionally identify only the schema shape, never serialise the frame.
-    return ProbeResult("openclaw_ws_challenge", "error", "unexpected first server event")
+    return ProbeResult(
+        "openclaw_ws_challenge", "error", "unexpected first server event"
+    )
 
 
 def _hostname(url: str) -> str:
@@ -167,21 +194,35 @@ def run_smoke(
     """Execute the read-only probes in a deterministic order."""
     return [
         check_agent_health(agent_url),
-        check_lobechat_proxy("lobechat_easypanel_proxy", easypanel_lobe_url, optional=False),
+        check_lobechat_proxy(
+            "lobechat_easypanel_proxy", easypanel_lobe_url, optional=False
+        ),
         check_dns_target(canonical_lobe_url),
-        check_lobechat_proxy("lobechat_canonical_proxy", canonical_lobe_url, optional=True),
+        check_lobechat_proxy(
+            "lobechat_canonical_proxy", canonical_lobe_url, optional=True
+        ),
         check_cors(agent_url, easypanel_lobe_url.rstrip("/")),
-        asyncio.run(check_websocket_challenge(agent_url, easypanel_lobe_url.rstrip("/"))),
+        asyncio.run(
+            check_websocket_challenge(agent_url, easypanel_lobe_url.rstrip("/"))
+        ),
     ]
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Safe Cartório agent/LobeChat smoke test")
+    parser = argparse.ArgumentParser(
+        description="Safe Cartório agent/LobeChat smoke test"
+    )
     parser.add_argument("--agent-url", default=DEFAULT_AGENT_URL)
     parser.add_argument("--easypanel-lobe-url", default=DEFAULT_EASYPANEL_LOBE_URL)
     parser.add_argument("--canonical-lobe-url", default=DEFAULT_CANONICAL_LOBE_URL)
-    parser.add_argument("--strict-canonical", action="store_true", help="treat branded DNS/proxy warnings as failures")
-    parser.add_argument("--json", action="store_true", help="print only redacted JSON results")
+    parser.add_argument(
+        "--strict-canonical",
+        action="store_true",
+        help="treat branded DNS/proxy warnings as failures",
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="print only redacted JSON results"
+    )
     args = parser.parse_args(argv)
 
     try:

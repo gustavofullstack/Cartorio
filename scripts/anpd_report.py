@@ -24,6 +24,7 @@ Exit codes:
 Ref: LGPD Lei 13.709/2018 + ANPD Resolucao CD/ANPD 4/2023.
 Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 14.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -76,17 +77,31 @@ def render_anpd_report() -> str:
     # 2. PII Inventory
     md.append("## 2. Inventario de Dados Pessoais (LGPD art. 37)")
     md.append("")
-    md.append("Catalogo de 18 PII fields identificados em `backend/app/models/` e `backend/app/schemas/`.")
+    md.append(
+        "Catalogo de 18 PII fields identificados em `backend/app/models/` e `backend/app/schemas/`."
+    )
     md.append("")
     md.append("| Categoria | Total | Base Legal | Retencao | Exemplos |")
     md.append("|---|---|---|---|---|")
-    md.append("| **identificacao_direta** | 6+ | art. 7 II | 5 anos | cpf, cnpj, rg, cnh, passaporte, nome |")
-    md.append("| **contato** | 5+ | art. 7 V | 5 anos | email, telefone, celular, endereco, cep |")
+    md.append(
+        "| **identificacao_direta** | 6+ | art. 7 II | 5 anos | cpf, cnpj, rg, cnh, passaporte, nome |"
+    )
+    md.append(
+        "| **contato** | 5+ | art. 7 V | 5 anos | email, telefone, celular, endereco, cep |"
+    )
     md.append("| **navegacao** | 3+ | art. 7 IX | 6 meses | ip, user_agent, cookies |")
-    md.append("| **financeiro** | 5+ | art. 7 V | 5 anos | valor, pix, conta, emolumento, cartao |")
-    md.append("| **biometrico** | 4+ | art. 11 I | ate revogacao | biometric, fingerprint, face_id, foto |")
-    md.append("| **saude** | 4+ | art. 11 II | 20 anos (CF art. 5 LXXIX) | saude, cid, deficiencia, medic |")
-    md.append("| **criptografado_hash** | 5+ | art. 46 | mesma do original | _hash, hashed_ |")
+    md.append(
+        "| **financeiro** | 5+ | art. 7 V | 5 anos | valor, pix, conta, emolumento, cartao |"
+    )
+    md.append(
+        "| **biometrico** | 4+ | art. 11 I | ate revogacao | biometric, fingerprint, face_id, foto |"
+    )
+    md.append(
+        "| **saude** | 4+ | art. 11 II | 20 anos (CF art. 5 LXXIX) | saude, cid, deficiencia, medic |"
+    )
+    md.append(
+        "| **criptografado_hash** | 5+ | art. 46 | mesma do original | _hash, hashed_ |"
+    )
     md.append("")
     md.append("Detalhamento completo: `docs/LGPD_DATA_INVENTORY_2026-07-16.md`")
     md.append("")
@@ -96,11 +111,21 @@ def render_anpd_report() -> str:
     md.append("")
     md.append("| Finalidade | Base Legal | Descricao |")
     md.append("|---|---|---|")
-    md.append("| Execucao do servico cartorario | **art. 7 II + V** | Provimento 74/2018 + relacao juridica |")
-    md.append("| Atendimento via chatbot IA | **art. 7 I** (consentimento) | Opt-in explicito via banner LGPD |")
-    md.append("| Seguranca + auditoria | **art. 7 IX** (interesse legitimo) | Logs, audit, dead man's switch |")
-    md.append("| Dados biometricos | **art. 11 I + II** (consentimento especifico + destaque) | Opt-in com revogacao |")
-    md.append("| Dados de saude | **art. 11 II e** (politica publica) | Tutela da saude |")
+    md.append(
+        "| Execucao do servico cartorario | **art. 7 II + V** | Provimento 74/2018 + relacao juridica |"
+    )
+    md.append(
+        "| Atendimento via chatbot IA | **art. 7 I** (consentimento) | Opt-in explicito via banner LGPD |"
+    )
+    md.append(
+        "| Seguranca + auditoria | **art. 7 IX** (interesse legitimo) | Logs, audit, dead man's switch |"
+    )
+    md.append(
+        "| Dados biometricos | **art. 11 I + II** (consentimento especifico + destaque) | Opt-in com revogacao |"
+    )
+    md.append(
+        "| Dados de saude | **art. 11 II e** (politica publica) | Tutela da saude |"
+    )
     md.append("")
 
     # 4. Retencoes
@@ -110,14 +135,18 @@ def render_anpd_report() -> str:
     md.append("|---|---|---|")
     md.append("| Protocolos | **5 anos** | Provimento 74/2018 |")
     md.append("| Conversas WhatsApp/Telegram | **365 dias** | Comunicacao |")
-    md.append("| **Conversas IA (LLM)** | **90 dias** | Consentimento revogavel (LGPD v3 2026-07-16) |")
+    md.append(
+        "| **Conversas IA (LLM)** | **90 dias** | Consentimento revogavel (LGPD v3 2026-07-16) |"
+    )
     md.append("| Audit log SHA256+HMAC | **5 anos** | LGPD art. 37 |")
     md.append("| Logs de acesso | **6 meses** | LGPD art. 37 |")
     md.append("| Backups | **5 anos** (AES-256) | Continuidade operacional |")
     md.append("| Biometricos | **ate revogacao** | art. 11 I |")
     md.append("| Saude | **20 anos** | CF art. 5 LXXIX |")
     md.append("")
-    md.append("Apos o periodo, dados sao **anonimizados** (nao deletados imediatamente) para preservar integridade do audit log.")
+    md.append(
+        "Apos o periodo, dados sao **anonimizados** (nao deletados imediatamente) para preservar integridade do audit log."
+    )
     md.append("")
 
     # 5. Direitos titular
@@ -131,9 +160,13 @@ def render_anpd_report() -> str:
     md.append("4. **Portabilidade** (art. 18 V): receber seus dados em JSON/ZIP")
     md.append("5. **Eliminacao** (art. 18 VI): deletar dados desnecessarios")
     md.append("6. **Oposicao** (art. 18 IX): opor-se a tratamento (especialmente IA)")
-    md.append("7. **Nao-automacao** (art. 18 X): revisao humana de decisoes automatizadas")
+    md.append(
+        "7. **Nao-automacao** (art. 18 X): revisao humana de decisoes automatizadas"
+    )
     md.append("")
-    md.append("**Canais para exercer**: dpo@2notasudi.com.br | /api/v1/lgpd/direitos | Telegram /lgpd")
+    md.append(
+        "**Canais para exercer**: dpo@2notasudi.com.br | /api/v1/lgpd/direitos | Telegram /lgpd"
+    )
     md.append("**Prazo legal**: 15 dias (LGPD art. 18 §5o)")
     md.append("")
 
@@ -142,13 +175,19 @@ def render_anpd_report() -> str:
     md.append("")
     md.append("| Medida | Implementacao | Status |")
     md.append("|---|---|---|")
-    md.append("| Audit log imutavel | SHA256+HMAC chain em `app/services/audit.py` | OK |")
-    md.append("| PII 3 camadas | `backend/app/services/pii.py` (scrub antes de logs/LLM) | OK |")
+    md.append(
+        "| Audit log imutavel | SHA256+HMAC chain em `app/services/audit.py` | OK |"
+    )
+    md.append(
+        "| PII 3 camadas | `backend/app/services/pii.py` (scrub antes de logs/LLM) | OK |"
+    )
     md.append("| Criptografia at-rest | pgcrypto + Fernet | OK |")
     md.append("| Criptografia in-transit | TLS 1.3 + Cloudflare proxy | OK |")
     md.append("| WAF | Cloudflare managed rules + custom cartorio | OK |")
     md.append("| Rate limit | 60/min por IP + 3-tier API key | OK |")
-    md.append("| Dead man's switch | Telegram GRUPO PIETRA alert >5min sem audit | OK |")
+    md.append(
+        "| Dead man's switch | Telegram GRUPO PIETRA alert >5min sem audit | OK |"
+    )
     md.append("| Pre-commit secrets scan | 11 patterns (AWS/GitHub/OpenAI/etc) | OK |")
     md.append("")
 
@@ -178,23 +217,38 @@ def render_anpd_report() -> str:
     md.append("")
     md.append("Conforme LGPD art. 38:")
     md.append("")
-    md.append("- **D21** Privacy by Design Checklist: `docs/lgpd/policy/D21-privacy-by-design-checklist.md`")
-    md.append("- **D23** Site Privacy Policy v3: `docs/lgpd/policy/D23-site-privacy-policy-v3.md`")
-    md.append("- **D24** DPO Contact Publicacao: `docs/lgpd/policy/D24-dpo-contact-publicado.md`")
+    md.append(
+        "- **D21** Privacy by Design Checklist: `docs/lgpd/policy/D21-privacy-by-design-checklist.md`"
+    )
+    md.append(
+        "- **D23** Site Privacy Policy v3: `docs/lgpd/policy/D23-site-privacy-policy-v3.md`"
+    )
+    md.append(
+        "- **D24** DPO Contact Publicacao: `docs/lgpd/policy/D24-dpo-contact-publicado.md`"
+    )
     md.append("- **D25** Auditoria ANPD: `docs/lgpd/policy/D25-auditoria-anpd.md`")
     md.append("")
     md.append("---")
     md.append("")
     md.append("**Compliance status**: 95% LGPD")
-    md.append("**Pendencias SUI**: 8 items (1 DPA pendente assinatura Gustavo, 4 free tiers pendentes, 3 SRE)")
+    md.append(
+        "**Pendencias SUI**: 8 items (1 DPA pendente assinatura Gustavo, 4 free tiers pendentes, 3 SRE)"
+    )
     md.append("")
-    md.append("**Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 14 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 14 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="ANPD-ready report generator")
-    parser.add_argument("--out", type=Path, default=Path("docs/ANPD_READY_2026-07-16.md"), help="output path")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=Path("docs/ANPD_READY_2026-07-16.md"),
+        help="output path",
+    )
     args = parser.parse_args()
 
     md = render_anpd_report()

@@ -1,6 +1,7 @@
 """MCP Server: coding-vps-orchestrator
 Tools para gerenciar coding agents da coding-vps_apenas_para_auxilio via Easypanel API v2.
 """
+
 import json
 import subprocess
 import urllib.request
@@ -17,7 +18,9 @@ MINIMAX_API_KEY = "sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gN
 MINIMAX_BASE_URL = "https://api.minimaxi.com/v1"
 
 
-def http(method: str, url: str, data: dict | None = None, token: str | None = None) -> dict:
+def http(
+    method: str, url: str, data: dict | None = None, token: str | None = None
+) -> dict:
     """HTTP JSON request."""
     headers = {"Content-Type": "application/json"}
     if token:
@@ -59,7 +62,9 @@ def easypanel_list_services(token: str) -> list[dict]:
     return services
 
 
-def docker_service_update(service: str, env_add: dict[str, str] | None = None, image: str | None = None) -> dict:
+def docker_service_update(
+    service: str, env_add: dict[str, str] | None = None, image: str | None = None
+) -> dict:
     """Update docker service via SSH."""
     cmd = f"docker service update"
     if image:
@@ -73,12 +78,19 @@ def docker_service_update(service: str, env_add: dict[str, str] | None = None, i
 
 # ===== MCP TOOLS =====
 
+
 def tool_coding_vps_status() -> dict[str, Any]:
     """Get status of all coding-vps coding agents."""
     token = easypanel_login()
     services = easypanel_list_services(token)
-    coding_vps = [s for s in services if s.get("projectName") == PROJECT or "coding-vps" in s.get("name", "")]
-    result = ssh("docker service ls --filter name=coding-vps_apenas_para_auxilio --format '{{.Name}}|{{.Replicas}}|{{.Image}}'")
+    coding_vps = [
+        s
+        for s in services
+        if s.get("projectName") == PROJECT or "coding-vps" in s.get("name", "")
+    ]
+    result = ssh(
+        "docker service ls --filter name=coding-vps_apenas_para_auxilio --format '{{.Name}}|{{.Replicas}}|{{.Image}}'"
+    )
     lines = [l.split("|") for l in result["stdout"].split("\n") if l]
     status = {}
     up_count = 0
@@ -99,7 +111,9 @@ def tool_coding_vps_status() -> dict[str, Any]:
 
 def tool_minimax_chat(prompt: str, max_tokens: int = 200) -> dict:
     """Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy."""
-    cid_result = ssh("docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1")
+    cid_result = ssh(
+        "docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1"
+    )
     cid = cid_result["stdout"]
     if not cid:
         return {"error": "litellm-app container not running"}
@@ -118,14 +132,16 @@ print(json.dumps({{
     'total_tokens': b['usage']['total_tokens']
 }}))
 """
-    result = ssh(f"docker exec {cid} python3 -c \"{py.replace(chr(10), ' ').replace(chr(34), chr(34)+chr(34))}\"")
+    result = ssh(
+        f'docker exec {cid} python3 -c "{py.replace(chr(10), " ").replace(chr(34), chr(34) + chr(34))}"'
+    )
     try:
         # Extract JSON from output
         out = result["stdout"]
         # Find first { and parse
         start = out.find("{")
         if start >= 0:
-            data = json.loads(out[start:out.rfind("}")+1])
+            data = json.loads(out[start : out.rfind("}") + 1])
             return data
         return {"error": "parse failed", "stdout": out}
     except Exception as e:
@@ -134,7 +150,11 @@ print(json.dumps({{
 
 def tool_configure_agent_minimax(service_name: str) -> dict[str, Any]:
     """Add MiniMax-M3 env vars to a coding-vps service."""
-    full_service = f"{PROJECT}_{service_name}" if not service_name.startswith(PROJECT) else service_name
+    full_service = (
+        f"{PROJECT}_{service_name}"
+        if not service_name.startswith(PROJECT)
+        else service_name
+    )
     env_vars = {
         "MINIMAX_API_KEY": MINIMAX_API_KEY,
         "MINIMAX_BASE_URL": MINIMAX_BASE_URL,
@@ -154,26 +174,59 @@ def tool_configure_agent_minimax(service_name: str) -> dict[str, Any]:
 
 def tool_health_check_all() -> dict[str, Any]:
     """Health check all coding agents."""
-    agents = ["litellm-app", "anything-llm", "langflow", "langflow-db", "langfuse-web", "langfuse-worker", "langfuse-db", "langfuse-clickhouse", "langfuse-minio", "langfuse-redis"]
+    agents = [
+        "litellm-app",
+        "anything-llm",
+        "langflow",
+        "langflow-db",
+        "langfuse-web",
+        "langfuse-worker",
+        "langfuse-db",
+        "langfuse-clickhouse",
+        "langfuse-minio",
+        "langfuse-redis",
+    ]
     results = {}
     for agent in agents:
-        cid_result = ssh(f"docker ps -q -f name=coding-vps_apenas_para_auxilio_{agent} | head -1")
+        cid_result = ssh(
+            f"docker ps -q -f name=coding-vps_apenas_para_auxilio_{agent} | head -1"
+        )
         if not cid_result["stdout"]:
             results[agent] = {"status": "DOWN"}
             continue
         cid = cid_result["stdout"]
         # Try Python health check
-        ports = {"litellm-app": 4000, "anything-llm": 3001, "langflow": 7860, "langfuse-web": 3000, "langfuse-worker": 3030, "langfuse-clickhouse": 8123, "langfuse-minio": 9000}
-        path = {"litellm-app": "/health/liveliness", "anything-llm": "/api/ping", "langflow": "/health", "langfuse-web": "/api/public/health", "langfuse-worker": "/health", "langfuse-clickhouse": "/ping", "langfuse-minio": "/minio/health/live"}
+        ports = {
+            "litellm-app": 4000,
+            "anything-llm": 3001,
+            "langflow": 7860,
+            "langfuse-web": 3000,
+            "langfuse-worker": 3030,
+            "langfuse-clickhouse": 8123,
+            "langfuse-minio": 9000,
+        }
+        path = {
+            "litellm-app": "/health/liveliness",
+            "anything-llm": "/api/ping",
+            "langflow": "/health",
+            "langfuse-web": "/api/public/health",
+            "langfuse-worker": "/health",
+            "langfuse-clickhouse": "/ping",
+            "langfuse-minio": "/minio/health/live",
+        }
         if agent not in ports:
             results[agent] = {"status": "DB/Redis", "note": "needs different check"}
             continue
         py = f"import urllib.request; r=urllib.request.urlopen('http://localhost:{ports[agent]}{path[agent]}', timeout=3); print(r.status)"
-        r = ssh(f"docker exec {cid} python3 -c \"{py}\"")
+        r = ssh(f'docker exec {cid} python3 -c "{py}"')
         if "200" in r["stdout"]:
             results[agent] = {"status": "UP", "http": 200}
         else:
-            results[agent] = {"status": "FAIL", "output": r["stdout"][:100], "stderr": r["stderr"][:100]}
+            results[agent] = {
+                "status": "FAIL",
+                "output": r["stdout"][:100],
+                "stderr": r["stderr"][:100],
+            }
     up = sum(1 for v in results.values() if v.get("status") == "UP")
     return {
         "checked": len(agents),
@@ -192,6 +245,7 @@ def tool_ask_minimax(prompt: str, max_tokens: int = 200) -> dict:
 # MCP Server (FastMCP 3.x)
 try:
     from fastmcp import FastMCP
+
     mcp = FastMCP("coding-vps-orchestrator")
 
     @mcp.tool()
@@ -221,6 +275,7 @@ except ImportError:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
         if cmd == "status":
@@ -232,6 +287,8 @@ if __name__ == "__main__":
         elif cmd == "configure" and len(sys.argv) > 2:
             print(json.dumps(tool_configure_agent_minimax(sys.argv[2]), indent=2))
     else:
-        print("Usage: python mcp_coding_vps.py {status|health|chat <prompt>|configure <service>}")
+        print(
+            "Usage: python mcp_coding_vps.py {status|health|chat <prompt>|configure <service>}"
+        )
         print("\n=== DEMO: status ===")
         print(json.dumps(tool_coding_vps_status(), indent=2))

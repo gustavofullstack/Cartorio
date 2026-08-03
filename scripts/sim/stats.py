@@ -1,4 +1,5 @@
 """stats.py — Estatísticas pós-simulação."""
+
 import httpx
 import os
 
@@ -19,7 +20,9 @@ def main() -> None:
     sint_by_agent: dict[str, list[dict]] = {}
     page = 1
     while True:
-        r = httpx.get(f"{BASE}/api/v1/accounts/1/contacts?page={page}", headers=HDR, timeout=10)
+        r = httpx.get(
+            f"{BASE}/api/v1/accounts/1/contacts?page={page}", headers=HDR, timeout=10
+        )
         r.raise_for_status()
         data = r.json()
         contacts = data.get("payload") or data.get("contacts") or []
@@ -31,7 +34,10 @@ def main() -> None:
                 sint_total += 1
                 agent = ca.get("agent_owner", "?")
                 sint_by_agent.setdefault(agent, []).append(c)
-        if data.get("meta", {}).get("total_pages") and page >= data["meta"]["total_pages"]:
+        if (
+            data.get("meta", {}).get("total_pages")
+            and page >= data["meta"]["total_pages"]
+        ):
             break
         if len(contacts) < 25:
             break
@@ -57,22 +63,30 @@ def main() -> None:
             timeout=10,
         )
         data = r.json()
-        payload = data.get("data", {}).get("payload") if isinstance(data, dict) else None
+        payload = (
+            data.get("data", {}).get("payload") if isinstance(data, dict) else None
+        )
         if payload is None:
             payload = data.get("payload") or []
         all_convs.extend(payload)
     print(f"\nCONVERSATIONS inbox=2 total (open+resolved+pending): {len(all_convs)}")
     for c in all_convs:
         cid = c.get("id")
-        msgs = httpx.get(
-            f"{BASE}/api/v1/accounts/1/conversations/{cid}/messages",
-            headers=HDR,
-            timeout=10,
-        ).json().get("payload", [])
+        msgs = (
+            httpx.get(
+                f"{BASE}/api/v1/accounts/1/conversations/{cid}/messages",
+                headers=HDR,
+                timeout=10,
+            )
+            .json()
+            .get("payload", [])
+        )
         incoming = sum(1 for m in msgs if m.get("message_type") == 0)
         outgoing = sum(1 for m in msgs if m.get("message_type") == 1)
         contact_id = c.get("contact_id") or c.get("sender", {}).get("id")
-        print(f"  conv#{cid:3d} contact={contact_id} status={c['status']:8s} incoming={incoming} outgoing={outgoing} total={len(msgs)}")
+        print(
+            f"  conv#{cid:3d} contact={contact_id} status={c['status']:8s} incoming={incoming} outgoing={outgoing} total={len(msgs)}"
+        )
 
 
 if __name__ == "__main__":

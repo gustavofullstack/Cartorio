@@ -16,6 +16,7 @@ Uso:
     print(VPS_DEPLOY.vps_ip_public)
     print([c.name for c in CONTAINERS])
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -222,16 +223,52 @@ BACKUP_PATHS: dict[str, str] = {
 
 
 DNS_RECORDS: dict[str, dict[str, str]] = {
-    "api.2notasudi.com.br": {"type": "A", "value": "187.77.236.77", "status": "✅ Configurado"},
-    "agent.2notasudi.com.br": {"type": "A", "value": "187.77.236.77", "status": "✅ Configurado"},
-    "chat.2notasudi.com.br": {"type": "A", "value": "187.77.236.77", "status": "✅ Configurado"},
-    "supbase.2notasudi.com.br": {"type": "A", "value": "187.77.236.77", "status": "✅ Configurado"},
-    "easypanel.2notasudi.com.br": {"type": "A", "value": "187.77.236.77", "status": "✅ Configurado"},
-    "whatsapp.2notasudi.com.br": {"type": "A", "value": "187.77.236.77", "status": "✅ Configurado"},
-    "cartorio-n8n.dfgdxq.easypanel.host": {"type": "CNAME", "value": "easypanel-host", "status": "✅ Configurado"},
+    "api.2notasudi.com.br": {
+        "type": "A",
+        "value": "187.77.236.77",
+        "status": "✅ Configurado",
+    },
+    "agent.2notasudi.com.br": {
+        "type": "A",
+        "value": "187.77.236.77",
+        "status": "✅ Configurado",
+    },
+    "chat.2notasudi.com.br": {
+        "type": "A",
+        "value": "187.77.236.77",
+        "status": "✅ Configurado",
+    },
+    "supbase.2notasudi.com.br": {
+        "type": "A",
+        "value": "187.77.236.77",
+        "status": "✅ Configurado",
+    },
+    "easypanel.2notasudi.com.br": {
+        "type": "A",
+        "value": "187.77.236.77",
+        "status": "✅ Configurado",
+    },
+    "whatsapp.2notasudi.com.br": {
+        "type": "A",
+        "value": "187.77.236.77",
+        "status": "✅ Configurado",
+    },
+    "cartorio-n8n.dfgdxq.easypanel.host": {
+        "type": "CNAME",
+        "value": "easypanel-host",
+        "status": "✅ Configurado",
+    },
     "n8n.2notasudi.com.br": {"type": "A", "value": "PENDENTE", "status": "⚠️ NXDOMAIN"},
-    "supabase.2notasudi.com.br": {"type": "A", "value": "PENDENTE", "status": "⚠️ NXDOMAIN"},
-    "flow.2notasudi.com.br": {"type": "A", "value": "OPCIONAL", "status": "🟡 Nice-to-have"},
+    "supabase.2notasudi.com.br": {
+        "type": "A",
+        "value": "PENDENTE",
+        "status": "⚠️ NXDOMAIN",
+    },
+    "flow.2notasudi.com.br": {
+        "type": "A",
+        "value": "OPCIONAL",
+        "status": "🟡 Nice-to-have",
+    },
 }
 
 
@@ -265,7 +302,9 @@ def get_all_health_urls() -> dict[str, str]:
 def get_critical_containers() -> tuple[str, ...]:
     """Containers criticos (sem dependencia, essenciais)."""
     critical = {"api", "redis", "n8n", "openclaw-gateway", "evolution-api", "supabase"}
-    return tuple(c.service for c in CONTAINERS if c.service in critical and not c.depends_on)
+    return tuple(
+        c.service for c in CONTAINERS if c.service in critical and not c.depends_on
+    )
 
 
 def get_total_health_urls() -> int:

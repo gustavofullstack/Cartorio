@@ -6,6 +6,7 @@ Compara:
 3. Conversas inbox=2 por status (open/resolved/pending)
 4. Usuários no Account 1 e seus access_tokens
 """
+
 import httpx
 import os
 
@@ -25,7 +26,9 @@ def list_accounts() -> None:
 
 
 def list_inboxes(account_id: int) -> list[dict]:
-    r = httpx.get(f"{BASE}/api/v1/accounts/{account_id}/inboxes", headers=HDR, timeout=10)
+    r = httpx.get(
+        f"{BASE}/api/v1/accounts/{account_id}/inboxes", headers=HDR, timeout=10
+    )
     return r.json().get("payload", []) if r.status_code == 200 else []
 
 
@@ -45,7 +48,9 @@ def list_conv_count(account_id: int, inbox_id: int, status: str) -> int:
 
 
 def list_users(account_id: int) -> list[dict]:
-    r = httpx.get(f"{BASE}/api/v1/accounts/{account_id}/agents", headers=HDR, timeout=10)
+    r = httpx.get(
+        f"{BASE}/api/v1/accounts/{account_id}/agents", headers=HDR, timeout=10
+    )
     if r.status_code != 200:
         return []
     return r.json()
@@ -60,20 +65,29 @@ def main() -> None:
         print(f"inboxes: {len(inboxes)}")
         for ib in inboxes:
             ib_id = ib["id"]
-            counts = {s: list_conv_count(acct, ib_id, s) for s in ("open", "resolved", "pending", "all")}
-            print(f"  inbox#{ib_id} {ib['name']:20s} open={counts['open']} resolved={counts['resolved']} pending={counts['pending']}")
+            counts = {
+                s: list_conv_count(acct, ib_id, s)
+                for s in ("open", "resolved", "pending", "all")
+            }
+            print(
+                f"  inbox#{ib_id} {ib['name']:20s} open={counts['open']} resolved={counts['resolved']} pending={counts['pending']}"
+            )
 
         agents = list_users(acct)
         print(f"agents: {len(agents)}")
-        for a in (agents if isinstance(agents, list) else agents.get("payload", [])):
-            print(f"  agent#{a.get('id')} {a.get('name')} email={a.get('email')} role={a.get('role')}")
+        for a in agents if isinstance(agents, list) else agents.get("payload", []):
+            print(
+                f"  agent#{a.get('id')} {a.get('name')} email={a.get('email')} role={a.get('role')}"
+            )
 
     # Quero entender o contexto geral
     print("\n=== ADMIN: TODOS USERS (account-wide) ===")
     r = httpx.get(f"{BASE}/api/v1/users", headers=HDR, timeout=10)
     if r.status_code == 200:
         for u in r.json():
-            print(f"  user#{u.get('id')} email={u.get('email')} type={u.get('type', 'User')}")
+            print(
+                f"  user#{u.get('id')} email={u.get('email')} type={u.get('type', 'User')}"
+            )
 
     print("\n=== ACCESS TOKENS ===")
     # Vou tentar via rails runner no container (mais confiável)

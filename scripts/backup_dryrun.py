@@ -26,6 +26,7 @@ Uso:
 
 Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 6 / G7 Wave 24.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,8 +39,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REQUIRED_TABLES = {
-    "cliente", "protocolo", "atendimento", "documento",
-    "emolumento", "audit_log", "conversa", "agendamento",
+    "cliente",
+    "protocolo",
+    "atendimento",
+    "documento",
+    "emolumento",
+    "audit_log",
+    "conversa",
+    "agendamento",
 }
 
 
@@ -77,7 +84,9 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
     with path.open("rb") as f:
         magic = f.read(2)
         if magic != b"\x1f\x8b":
-            problems.append(f"magic bytes invalidos (esperado 1f 8b, got {magic.hex()})")
+            problems.append(
+                f"magic bytes invalidos (esperado 1f 8b, got {magic.hex()})"
+            )
         else:
             stats["gzip_magic"] = "OK"
 
@@ -86,7 +95,11 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
         with gzip.open(path, "rt", encoding="utf-8", errors="replace") as f:
             sql = f.read(100_000_000)  # ate 100MB
     except Exception as exc:
-        return False, [f"falha ao descomprimir gzip: {type(exc).__name__}: {exc}"], stats
+        return (
+            False,
+            [f"falha ao descomprimir gzip: {type(exc).__name__}: {exc}"],
+            stats,
+        )
 
     stats["sql_size_chars"] = len(sql)
     stats["create_table_count"] = len(re.findall(r"CREATE TABLE", sql, re.IGNORECASE))
@@ -112,9 +125,7 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
 
     missing_tables = REQUIRED_TABLES - tables_found
     if missing_tables:
-        problems.append(
-            f"tabelas canonicas AUSENTES: {sorted(missing_tables)}"
-        )
+        problems.append(f"tabelas canonicas AUSENTES: {sorted(missing_tables)}")
 
     # 7. Restore simulado em sqlite
     # Extrai apenas CREATE TABLE statements e roda em sqlite
@@ -139,14 +150,25 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
                 flags=re.IGNORECASE,
             )
             # Remove tipos nao suportados em SQLite (BIGSERIAL, etc)
-            sqlite_stmt = re.sub(r"BIGSERIAL", "INTEGER", sqlite_stmt, flags=re.IGNORECASE)
+            sqlite_stmt = re.sub(
+                r"BIGSERIAL", "INTEGER", sqlite_stmt, flags=re.IGNORECASE
+            )
             sqlite_stmt = re.sub(r"SERIAL", "INTEGER", sqlite_stmt, flags=re.IGNORECASE)
             sqlite_stmt = re.sub(r"JSONB?", "TEXT", sqlite_stmt, flags=re.IGNORECASE)
             sqlite_stmt = re.sub(r"UUID", "TEXT", sqlite_stmt, flags=re.IGNORECASE)
-            sqlite_stmt = re.sub(r"TIMESTAMP(?:\s+WITH(?:OUT)?\s+TIME\s+ZONE)?", "TEXT", sqlite_stmt, flags=re.IGNORECASE)
-            sqlite_stmt = re.sub(r"BOOLEAN", "INTEGER", sqlite_stmt, flags=re.IGNORECASE)
+            sqlite_stmt = re.sub(
+                r"TIMESTAMP(?:\s+WITH(?:OUT)?\s+TIME\s+ZONE)?",
+                "TEXT",
+                sqlite_stmt,
+                flags=re.IGNORECASE,
+            )
+            sqlite_stmt = re.sub(
+                r"BOOLEAN", "INTEGER", sqlite_stmt, flags=re.IGNORECASE
+            )
             sqlite_stmt = re.sub(r"BYTEA", "BLOB", sqlite_stmt, flags=re.IGNORECASE)
-            sqlite_stmt = re.sub(r"NUMERIC\(\d+,\s*\d+\)", "REAL", sqlite_stmt, flags=re.IGNORECASE)
+            sqlite_stmt = re.sub(
+                r"NUMERIC\(\d+,\s*\d+\)", "REAL", sqlite_stmt, flags=re.IGNORECASE
+            )
             sqlite_stmt = re.sub(
                 r"DEFAULT\s+now\(\)",
                 "DEFAULT CURRENT_TIMESTAMP",
@@ -163,7 +185,9 @@ def validate_backup(path: Path) -> tuple[bool, list[str], dict]:
         stats["sqlite_restore_total"] = len(create_stmts[:100])
         sqlite_conn.close()
     except Exception as exc:
-        problems.append(f"restore simulado em sqlite falhou: {type(exc).__name__}: {exc}")
+        problems.append(
+            f"restore simulado em sqlite falhou: {type(exc).__name__}: {exc}"
+        )
 
     return len(problems) == 0, problems, stats
 
@@ -212,7 +236,8 @@ def tar_list_validate(path: Path) -> tuple[bool, list[str], dict]:
         stats["tar_members"] = names
         stats["tar_member_count"] = len(names)
         has_dump = any(
-            n.endswith(".dump") or n.endswith(".sql") or n.endswith(".sql.gz") for n in names
+            n.endswith(".dump") or n.endswith(".sql") or n.endswith(".sql.gz")
+            for n in names
         )
         if not has_dump:
             problems.append(
@@ -238,15 +263,21 @@ def render_markdown(path: Path, integro: bool, problems: list[str], stats: dict)
     md.append("")
     md.append("## Stats")
     md.append("")
-    md.append(f"- Tamanho: {stats.get('size_bytes', '?')} bytes ({stats.get('size_bytes', 0) / 1024 / 1024:.2f} MB)")
+    md.append(
+        f"- Tamanho: {stats.get('size_bytes', '?')} bytes ({stats.get('size_bytes', 0) / 1024 / 1024:.2f} MB)"
+    )
     md.append(f"- SQL chars: {stats.get('sql_size_chars', '?')}")
     md.append(f"- CREATE TABLE: {stats.get('create_table_count', '?')}")
     md.append(f"- INSERT INTO: {stats.get('insert_count', '?')}")
     md.append(f"- COPY: {stats.get('copy_count', '?')}")
     if "sqlite_restore_applied" in stats:
-        md.append(f"- SQLite restore: {stats['sqlite_restore_applied']}/{stats.get('sqlite_restore_total', '?')} tabelas aplicadas")
+        md.append(
+            f"- SQLite restore: {stats['sqlite_restore_applied']}/{stats.get('sqlite_restore_total', '?')} tabelas aplicadas"
+        )
     if "sha256_expected" in stats:
-        md.append(f"- SHA256: expected={stats['sha256_expected'][:16]}... actual={stats['sha256_actual'][:16]}...")
+        md.append(
+            f"- SHA256: expected={stats['sha256_expected'][:16]}... actual={stats['sha256_actual'][:16]}..."
+        )
     md.append("")
     md.append(f"## Tabelas encontradas: {len(stats.get('tables_found', []))}")
     md.append("")
@@ -261,14 +292,20 @@ def render_markdown(path: Path, integro: bool, problems: list[str], stats: dict)
         md.append("")
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 6 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 6 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Backup dry-run validator")
     parser.add_argument("backup_file", nargs="?", help="caminho do backup .sql.gz")
-    parser.add_argument("--latest", action="store_true", help="usar o backup mais recente em /var/backups/cartorio/")
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="usar o backup mais recente em /var/backups/cartorio/",
+    )
     parser.add_argument("--report", type=Path, help="gerar report markdown")
     parser.add_argument(
         "--tar-list",
@@ -297,20 +334,27 @@ def main() -> int:
     if args.latest:
         path = find_latest_backup()
         if path is None:
-            print("[ERROR] nenhum backup encontrado em /var/backups/cartorio/", file=sys.stderr)
+            print(
+                "[ERROR] nenhum backup encontrado em /var/backups/cartorio/",
+                file=sys.stderr,
+            )
             return 2
         print(f"Usando backup mais recente: {path}", file=sys.stderr)
     elif args.backup_file:
         path = Path(args.backup_file)
     else:
-        print("[ERROR] especifique backup_file, --latest ou --tar-list", file=sys.stderr)
+        print(
+            "[ERROR] especifique backup_file, --latest ou --tar-list", file=sys.stderr
+        )
         return 2
 
     print(f"Validando backup: {path}")
     integro, problems, stats = validate_backup(path)
 
     if integro:
-        print(f"[WORK] Backup integro ({stats.get('size_bytes', 0) / 1024 / 1024:.2f} MB)")
+        print(
+            f"[WORK] Backup integro ({stats.get('size_bytes', 0) / 1024 / 1024:.2f} MB)"
+        )
         print(f"  CREATE TABLE: {stats.get('create_table_count', 0)}")
         print(f"  Tabelas: {len(stats.get('tables_found', []))}")
     else:
