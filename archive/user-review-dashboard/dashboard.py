@@ -33,14 +33,14 @@ DASHBOARD_DATA = ROOT / "dashboard_data.json"
 
 DASHBOARD_TITLE = "User Review & Support Operations"
 DASHBOARD_SUBTITLE = (
-    "Reviews · Support Tickets · Marketplace Q&A — refreshed from "
-    "data/source_user_review.xlsx"
+    "Reviews · Support Tickets · Marketplace Q&A — refreshed from data/source_user_review.xlsx"
 )
 TIMEZONE_LABEL = "America/Sao_Paulo"
 DEFAULT_RANGE = "30D"
 
 
 # ---------- date helpers ----------
+
 
 def excel_serial_to_date(serial: float | int | None) -> str | None:
     """Convert Excel serial date (days since 1899-12-30) to ISO YYYY-MM-DD.
@@ -74,6 +74,7 @@ def safe_float(value, default=0.0) -> float:
 
 
 # ---------- snapshot I/O ----------
+
 
 def read_xlsx_rows() -> list[dict]:
     """Read the three sheets of source_user_review.xlsx into a long shape.
@@ -186,9 +187,7 @@ def read_json_snapshot(path: Path) -> list[dict]:
 
 def read_jsonl_snapshot(path: Path) -> list[dict]:
     return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
 
 
@@ -242,6 +241,7 @@ def pct(value: float) -> str:
 
 
 # ---------- aggregations ----------
+
 
 def daily_metrics(rows: list[dict]) -> list[dict]:
     """Day-by-day counts of reviews, tickets, Q&A + derived NPS-ish score."""
@@ -454,6 +454,7 @@ def geography_table(rows: list[dict]) -> list[dict]:
 
 # ---------- payload ----------
 
+
 def make_dashboard_payload(rows: list[dict]) -> dict:
     daily = daily_metrics(rows)
     dates = [item["date"] for item in daily]
@@ -504,8 +505,7 @@ def make_dashboard_payload(rows: list[dict]) -> dict:
     cur = totals(cur_start, cur_end)
     # Use the row count of `daily` to detect whether a prior period exists.
     if prev_start == cur_start and prev_end == cur_end:
-        prev = {"reviews": 0, "tickets": 0, "qa": 0, "answered": 0,
-                "avg_rating": 0, "csat_avg": 0}
+        prev = {"reviews": 0, "tickets": 0, "qa": 0, "answered": 0, "avg_rating": 0, "csat_avg": 0}
     else:
         prev = totals(prev_start, prev_end)
 
@@ -519,9 +519,7 @@ def make_dashboard_payload(rows: list[dict]) -> dict:
     qa_answer_rate = (cur["answered"] / cur["qa"]) if cur["qa"] else 0
     prev_qa_answer_rate = (prev["answered"] / prev["qa"]) if prev["qa"] else 0
 
-    latest_captured = max(
-        (row.get("captured_at", "") for row in rows), default=""
-    )
+    latest_captured = max((row.get("captured_at", "") for row in rows), default="")
     if not latest_captured:
         latest_captured = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -599,7 +597,9 @@ def make_dashboard_payload(rows: list[dict]) -> dict:
                 "label": "Reviews (window)",
                 "value": fmt_num(cur["reviews"]),
                 "delta": pct(delta(cur["reviews"], prev["reviews"])),
-                "detail": f"vs prior {len(dates)//2 or len(dates)}-day window" if prev["reviews"] else "no prior window",
+                "detail": f"vs prior {len(dates) // 2 or len(dates)}-day window"
+                if prev["reviews"]
+                else "no prior window",
             },
             {
                 "id": "rating30",
@@ -617,11 +617,7 @@ def make_dashboard_payload(rows: list[dict]) -> dict:
                 "label": "Support tickets",
                 "value": fmt_num(cur["tickets"]),
                 "delta": pct(delta(cur["tickets"], prev["tickets"])),
-                "detail": (
-                    f"CSAT {cur['csat_avg']:.2f}/5"
-                    if cur["csat_avg"]
-                    else "CSAT n/a"
-                ),
+                "detail": (f"CSAT {cur['csat_avg']:.2f}/5" if cur["csat_avg"] else "CSAT n/a"),
             },
             {
                 "id": "qa30",
@@ -646,23 +642,22 @@ def make_dashboard_payload(rows: list[dict]) -> dict:
 
 # ---------- formatting helpers ----------
 
+
 def js_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False).replace("</", "<\\/")
 
 
 def json_script(value) -> str:
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":")).replace(
-        "</", "<\\/"
-    )
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
 def render_kpi_block(block: dict) -> str:
     return f"""
-    <section class="kpi-tile" id="{html.escape(block['id'])}">
-      <p>{html.escape(block['label'])}</p>
-      <strong>{html.escape(block['value'])}</strong>
-      <span>{html.escape(block['delta'])}</span>
-      <small>{html.escape(block['detail'])}</small>
+    <section class="kpi-tile" id="{html.escape(block["id"])}">
+      <p>{html.escape(block["label"])}</p>
+      <strong>{html.escape(block["value"])}</strong>
+      <span>{html.escape(block["delta"])}</span>
+      <small>{html.escape(block["detail"])}</small>
     </section>
     """
 
@@ -679,9 +674,9 @@ def render_panel_actions(block: dict) -> str:
             f"<button onclick=\"toggleEdit('{html.escape(block['chart_id'])}')\">Edit</button>"
         )
         edit = f"""
-        <div class="edit-panel" id="edit-{html.escape(block['chart_id'])}">
-          <label for="select-{html.escape(block['chart_id'])}">Type</label>
-          <select id="select-{html.escape(block['chart_id'])}" onchange="setChartType('{html.escape(block['chart_id'])}', this.value)">
+        <div class="edit-panel" id="edit-{html.escape(block["chart_id"])}">
+          <label for="select-{html.escape(block["chart_id"])}">Type</label>
+          <select id="select-{html.escape(block["chart_id"])}" onchange="setChartType('{html.escape(block["chart_id"])}', this.value)">
             {options}
           </select>
         </div>
@@ -690,10 +685,10 @@ def render_panel_actions(block: dict) -> str:
     <div class="chart-actions">
       {edit}
       <div class="toolbox">
-        <button class="tool-button" aria-label="Panel actions" onclick="toggleMenu('{html.escape(block['chart_id'])}')"><span class="dot"></span><span class="dot"></span><span class="dot"></span></button>
-        <div class="menu" id="menu-{html.escape(block['chart_id'])}">
+        <button class="tool-button" aria-label="Panel actions" onclick="toggleMenu('{html.escape(block["chart_id"])}')"><span class="dot"></span><span class="dot"></span><span class="dot"></span></button>
+        <div class="menu" id="menu-{html.escape(block["chart_id"])}">
           {edit_command}
-          <button onclick="viewSource('{html.escape(block['source_key'])}')">View Data Source</button>
+          <button onclick="viewSource('{html.escape(block["source_key"])}')">View Data Source</button>
         </div>
       </div>
     </div>
@@ -724,16 +719,16 @@ def panel_span_attr(block: dict) -> str:
 
 def render_chart_block(block: dict) -> str:
     return f"""
-    <section class="dashboard-panel chart-panel" {panel_span_attr(block)} id="{html.escape(block['id'])}">
+    <section class="dashboard-panel chart-panel" {panel_span_attr(block)} id="{html.escape(block["id"])}">
       <header>
         <div>
-          <h2>{html.escape(block['title'])}</h2>
-          <p>{html.escape(block['subtitle'])}</p>
+          <h2>{html.escape(block["title"])}</h2>
+          <p>{html.escape(block["subtitle"])}</p>
         </div>
         {render_panel_actions(block)}
       </header>
-      <div class="chart" id="{html.escape(block['chart_id'])}" role="img" aria-label="{html.escape(block['title'])}"></div>
-      <footer>{html.escape(block['unit'])} | {html.escape(block['source_context'])}</footer>
+      <div class="chart" id="{html.escape(block["chart_id"])}" role="img" aria-label="{html.escape(block["title"])}"></div>
+      <footer>{html.escape(block["unit"])} | {html.escape(block["source_context"])}</footer>
     </section>
     """
 
@@ -741,40 +736,41 @@ def render_chart_block(block: dict) -> str:
 def render_table_block(block: dict) -> str:
     head = "".join(f"<th>{html.escape(col['label'])}</th>" for col in block["columns"])
     return f"""
-    <section class="dashboard-panel table-panel" {panel_span_attr(block)} id="{html.escape(block['id'])}">
+    <section class="dashboard-panel table-panel" {panel_span_attr(block)} id="{html.escape(block["id"])}">
       <header>
         <div>
-          <h2>{html.escape(block['title'])}</h2>
-          <p>{html.escape(block['subtitle'])}</p>
+          <h2>{html.escape(block["title"])}</h2>
+          <p>{html.escape(block["subtitle"])}</p>
         </div>
         <div class="toolbox">
-          <button class="tool-button" aria-label="Panel actions" onclick="toggleMenu('{html.escape(block['source_key'])}')"><span class="dot"></span><span class="dot"></span><span class="dot"></span></button>
-          <div class="menu" id="menu-{html.escape(block['source_key'])}">
-            <button onclick="viewSource('{html.escape(block['source_key'])}')">View Data Source</button>
+          <button class="tool-button" aria-label="Panel actions" onclick="toggleMenu('{html.escape(block["source_key"])}')"><span class="dot"></span><span class="dot"></span><span class="dot"></span></button>
+          <div class="menu" id="menu-{html.escape(block["source_key"])}">
+            <button onclick="viewSource('{html.escape(block["source_key"])}')">View Data Source</button>
           </div>
         </div>
       </header>
       <div class="table-scroll">
-        <table id="{html.escape(block['table_id'])}">
+        <table id="{html.escape(block["table_id"])}">
           <thead><tr>{head}</tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <footer>{html.escape(block['source_context'])}</footer>
+      <footer>{html.escape(block["source_context"])}</footer>
     </section>
     """
 
 
 def render_note_block(block: dict) -> str:
     return f"""
-    <section class="dashboard-note" {panel_span_attr(block)} id="{html.escape(block['id'])}">
-      <strong>{html.escape(block['title'])}</strong>
-      <span>{html.escape(block['body'])}</span>
+    <section class="dashboard-note" {panel_span_attr(block)} id="{html.escape(block["id"])}">
+      <strong>{html.escape(block["title"])}</strong>
+      <span>{html.escape(block["body"])}</span>
     </section>
     """
 
 
 # ---------- block composition ----------
+
 
 def build_dashboard_blocks(payload: dict) -> list[dict]:
     return [
@@ -907,7 +903,7 @@ def render_dashboard_blocks(blocks: list[dict]) -> str:
             panels.append(render_note_block(b))
     return f"""
     <section class="kpi-grid">{kpis}</section>
-    <section class="panel-grid">{''.join(panels)}</section>
+    <section class="panel-grid">{"".join(panels)}</section>
     """
 
 
@@ -945,9 +941,7 @@ def build_html(payload: dict) -> str:
     blocks = build_dashboard_blocks(payload)
     content = render_dashboard_blocks(blocks)
     initial_charts = [
-        {"id": b["chart_id"], "type": b["initial_type"]}
-        for b in blocks
-        if b["kind"] == "chart"
+        {"id": b["chart_id"], "type": b["initial_type"]} for b in blocks if b["kind"] == "chart"
     ]
     table_config = {
         "topProductsTable": {
@@ -1738,14 +1732,14 @@ def build_html(payload: dict) -> str:
 def main() -> None:
     rows = normalize_snapshots(read_sources())
     payload = make_dashboard_payload(rows)
-    DASHBOARD_DATA.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    DASHBOARD_DATA.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     DASHBOARD_HTML.write_text(build_html(payload), encoding="utf-8")
     print(f"Wrote {DASHBOARD_HTML}")
     print(f"Wrote {DASHBOARD_DATA}")
     print(f"Total events: {len(rows)}")
-    print(f"Date range:  {payload['freshness']['earliestDataDate']} -> {payload['freshness']['latestDataDate']}")
+    print(
+        f"Date range:  {payload['freshness']['earliestDataDate']} -> {payload['freshness']['latestDataDate']}"
+    )
 
 
 if __name__ == "__main__":

@@ -89,9 +89,9 @@ def fmt_money(value: float) -> str:
 
 def fmt_money_short(value: float) -> str:
     if abs(value) >= 1_000_000:
-        return f"${value/1_000_000:.2f}M"
+        return f"${value / 1_000_000:.2f}M"
     if abs(value) >= 1_000:
-        return f"${value/1_000:.1f}k"
+        return f"${value / 1_000:.1f}k"
     return f"${value:.0f}"
 
 
@@ -115,6 +115,7 @@ def _coerce_str(value) -> str:
 # ---------------------------------------------------------------------------
 # Data loading + normalization
 # ---------------------------------------------------------------------------
+
 
 def read_sources() -> dict:
     """Load the four sheets from the operations workbook."""
@@ -193,52 +194,69 @@ def normalize_snapshots(sheets: dict) -> list[dict]:
     if isinstance(returns, dict):
         returns = returns.get("rows", []) or []  # noqa: F841
 
-    by_date: dict[str, dict] = defaultdict(lambda: {
-        "date": "",
-        "revenue": 0.0,
-        "discount": 0.0,
-        "shipping": 0.0,
-        "tax": 0.0,
-        "orders": set(),
-        "lines": 0,
-        "units": 0,
-        "marketplaces": set(),
-        "categories": set(),
-        "by_marketplace": defaultdict(float),
-        "by_category": defaultdict(float),
-        "by_status": defaultdict(int),
-        "fulfill_total": 0,
-        "fulfill_delivered": 0,
-        "fulfill_inflight": 0,
-        "fulfill_exceptions": 0,
-        "fulfill_days_sum": 0.0,
-        "fulfill_days_n": 0,
-        "ship_cost": 0.0,
-        "ship_cost_delivered": 0.0,
-        "returns": 0,
-        "refund_amount": 0.0,
-        "refund_processed": 0,
-        "refund_failed": 0,
-        "return_reasons": defaultdict(int),
-        "return_countries": defaultdict(int),
-        "inventory_sellable": 0,
-        "inventory_inbound": 0,
-        "inventory_unsellable": 0,
-        "inventory_skus": set(),
-        "warehouses": set(),
-        "snapshots_seen": 0,
-    })
+    by_date: dict[str, dict] = defaultdict(
+        lambda: {
+            "date": "",
+            "revenue": 0.0,
+            "discount": 0.0,
+            "shipping": 0.0,
+            "tax": 0.0,
+            "orders": set(),
+            "lines": 0,
+            "units": 0,
+            "marketplaces": set(),
+            "categories": set(),
+            "by_marketplace": defaultdict(float),
+            "by_category": defaultdict(float),
+            "by_status": defaultdict(int),
+            "fulfill_total": 0,
+            "fulfill_delivered": 0,
+            "fulfill_inflight": 0,
+            "fulfill_exceptions": 0,
+            "fulfill_days_sum": 0.0,
+            "fulfill_days_n": 0,
+            "ship_cost": 0.0,
+            "ship_cost_delivered": 0.0,
+            "returns": 0,
+            "refund_amount": 0.0,
+            "refund_processed": 0,
+            "refund_failed": 0,
+            "return_reasons": defaultdict(int),
+            "return_countries": defaultdict(int),
+            "inventory_sellable": 0,
+            "inventory_inbound": 0,
+            "inventory_unsellable": 0,
+            "inventory_skus": set(),
+            "warehouses": set(),
+            "snapshots_seen": 0,
+        }
+    )
 
-    sku_totals: dict[str, dict] = defaultdict(lambda: {
-        "sku": "", "category": "", "revenue": 0.0, "units": 0,
-        "discounts": 0.0, "returns": 0, "qty_ordered": 0,
-    })
+    sku_totals: dict[str, dict] = defaultdict(
+        lambda: {
+            "sku": "",
+            "category": "",
+            "revenue": 0.0,
+            "units": 0,
+            "discounts": 0.0,
+            "returns": 0,
+            "qty_ordered": 0,
+        }
+    )
 
-    warehouse_load: dict[str, dict] = defaultdict(lambda: {
-        "warehouse": "", "sellable": 0, "inbound": 0, "unsellable": 0,
-        "snapshots": 0, "delivered": 0, "exceptions": 0,
-        "ship_cost": 0.0, "lines": 0,
-    })
+    warehouse_load: dict[str, dict] = defaultdict(
+        lambda: {
+            "warehouse": "",
+            "sellable": 0,
+            "inbound": 0,
+            "unsellable": 0,
+            "snapshots": 0,
+            "delivered": 0,
+            "exceptions": 0,
+            "ship_cost": 0.0,
+            "lines": 0,
+        }
+    )
 
     return_reason_country: dict[tuple[str, str], int] = defaultdict(int)
     status_counts: dict[str, int] = defaultdict(int)
@@ -392,14 +410,10 @@ def normalize_snapshots(sheets: dict) -> list[dict]:
         if not cell.get("date"):
             continue
         avg_days = (
-            cell["fulfill_days_sum"] / cell["fulfill_days_n"]
-            if cell["fulfill_days_n"]
-            else 0.0
+            cell["fulfill_days_sum"] / cell["fulfill_days_n"] if cell["fulfill_days_n"] else 0.0
         )
         on_time_pct = (
-            cell["fulfill_delivered"] / cell["fulfill_total"]
-            if cell["fulfill_total"]
-            else 0.0
+            cell["fulfill_delivered"] / cell["fulfill_total"] if cell["fulfill_total"] else 0.0
         )
         orders_count = len(cell["orders"])
         return_rate = (cell["returns"] / orders_count) if orders_count else 0.0
@@ -448,15 +462,19 @@ def normalize_snapshots(sheets: dict) -> list[dict]:
     for sku, info in sku_totals.items():
         sku_returns = sku_return_count.get(sku, 0)
         net = info["revenue"] - info["discounts"]
-        sku_table.append({
-            "sku": sku,
-            "category": info["category"],
-            "revenue": round(info["revenue"], 2),
-            "net_revenue": round(net, 2),
-            "units": info["units"],
-            "returns": sku_returns,
-            "return_rate_pct": round((sku_returns / info["units"]) * 100, 1) if info["units"] else 0.0,
-        })
+        sku_table.append(
+            {
+                "sku": sku,
+                "category": info["category"],
+                "revenue": round(info["revenue"], 2),
+                "net_revenue": round(net, 2),
+                "units": info["units"],
+                "returns": sku_returns,
+                "return_rate_pct": round((sku_returns / info["units"]) * 100, 1)
+                if info["units"]
+                else 0.0,
+            }
+        )
     sku_table.sort(key=lambda r: r["net_revenue"], reverse=True)
 
     warehouse_table = []
@@ -464,17 +482,19 @@ def normalize_snapshots(sheets: dict) -> list[dict]:
         delivered = info["delivered"]
         exceptions = info["exceptions"]
         total = max(delivered + exceptions, 1)
-        warehouse_table.append({
-            "warehouse": wh,
-            "inventory": info["sellable"],
-            "inbound": info["inbound"],
-            "unsellable": info["unsellable"],
-            "fulfill_lines": info["lines"],
-            "delivered": delivered,
-            "exceptions": exceptions,
-            "exception_rate_pct": round((exceptions / total) * 100, 1),
-            "ship_cost": round(info["ship_cost"], 2),
-        })
+        warehouse_table.append(
+            {
+                "warehouse": wh,
+                "inventory": info["sellable"],
+                "inbound": info["inbound"],
+                "unsellable": info["unsellable"],
+                "fulfill_lines": info["lines"],
+                "delivered": delivered,
+                "exceptions": exceptions,
+                "exception_rate_pct": round((exceptions / total) * 100, 1),
+                "ship_cost": round(info["ship_cost"], 2),
+            }
+        )
     warehouse_table.sort(key=lambda r: r["fulfill_lines"], reverse=True)
 
     return_reason_table = sorted(
@@ -491,13 +511,15 @@ def normalize_snapshots(sheets: dict) -> list[dict]:
         delivered = carrier_delivered.get(carrier, 0)
         avg_days_list = carrier_avg_days.get(carrier, [])
         avg_days = sum(avg_days_list) / len(avg_days_list) if avg_days_list else 0.0
-        carrier_table.append({
-            "carrier": carrier,
-            "lines": total,
-            "delivered": delivered,
-            "on_time_pct": round((delivered / total) * 100, 1) if total else 0.0,
-            "avg_days": round(avg_days, 2),
-        })
+        carrier_table.append(
+            {
+                "carrier": carrier,
+                "lines": total,
+                "delivered": delivered,
+                "on_time_pct": round((delivered / total) * 100, 1) if total else 0.0,
+                "avg_days": round(avg_days, 2),
+            }
+        )
     carrier_table.sort(key=lambda r: r["lines"], reverse=True)
 
     return {
@@ -522,13 +544,14 @@ def normalize_snapshots(sheets: dict) -> list[dict]:
 # Derived analytics: anomalies + recommended actions
 # ---------------------------------------------------------------------------
 
+
 def detect_anomalies(rows: list[dict], full_payload: dict) -> list[dict]:
     """Identify days with statistically unusual changes vs trailing-window baseline."""
     anomalies = []
     if len(rows) < 7:
         return anomalies
     for idx, row in enumerate(rows):
-        window = rows[max(0, idx - 14):idx]
+        window = rows[max(0, idx - 14) : idx]
         if len(window) < 5:
             continue
         baseline_rev = sum(r["revenue"] for r in window) / len(window)
@@ -536,41 +559,77 @@ def detect_anomalies(rows: list[dict], full_payload: dict) -> list[dict]:
         baseline_returns = sum(r["returns"] for r in window) / len(window)
         baseline_exceptions = sum(r["fulfill_exceptions"] for r in window) / len(window)
         signals = []
-        if baseline_rev >= 50 and row["revenue"] and abs(row["revenue"] - baseline_rev) / max(baseline_rev, 1) > 0.6:
+        if (
+            baseline_rev >= 50
+            and row["revenue"]
+            and abs(row["revenue"] - baseline_rev) / max(baseline_rev, 1) > 0.6
+        ):
             pct_delta = (row["revenue"] - baseline_rev) / baseline_rev
-            signals.append(("revenue_spike" if pct_delta > 0 else "revenue_drop",
-                            f"Revenue {pct_signed(pct_delta)} vs 14-day baseline (${baseline_rev:,.0f} avg → ${row['revenue']:,.0f}).",
-                            abs(pct_delta)))
-        if baseline_units >= 1 and row["units"] and abs(row["units"] - baseline_units) / max(baseline_units, 1) > 0.7:
+            signals.append(
+                (
+                    "revenue_spike" if pct_delta > 0 else "revenue_drop",
+                    f"Revenue {pct_signed(pct_delta)} vs 14-day baseline (${baseline_rev:,.0f} avg → ${row['revenue']:,.0f}).",
+                    abs(pct_delta),
+                )
+            )
+        if (
+            baseline_units >= 1
+            and row["units"]
+            and abs(row["units"] - baseline_units) / max(baseline_units, 1) > 0.7
+        ):
             pct_delta = (row["units"] - baseline_units) / baseline_units
-            signals.append(("units_spike" if pct_delta > 0 else "units_drop",
-                            f"Units {pct_signed(pct_delta)} vs baseline ({baseline_units:.1f} avg → {row['units']}).",
-                            abs(pct_delta) * 0.85))
-        if baseline_returns >= 0.1 and row["returns"] and (row["returns"] - baseline_returns) / max(baseline_returns, 1) > 1.5:
+            signals.append(
+                (
+                    "units_spike" if pct_delta > 0 else "units_drop",
+                    f"Units {pct_signed(pct_delta)} vs baseline ({baseline_units:.1f} avg → {row['units']}).",
+                    abs(pct_delta) * 0.85,
+                )
+            )
+        if (
+            baseline_returns >= 0.1
+            and row["returns"]
+            and (row["returns"] - baseline_returns) / max(baseline_returns, 1) > 1.5
+        ):
             delta = row["returns"] - baseline_returns
-            signals.append(("return_burst",
-                            f"Returns jumped to {row['returns']} (+{delta:.1f} vs baseline).",
-                            abs(row["returns"] - baseline_returns) / 8))
-        if baseline_exceptions >= 0.1 and row["fulfill_exceptions"] and row["fulfill_exceptions"] - baseline_exceptions >= 3:
-            signals.append(("exception_burst",
-                            f"Fulfillment exceptions {row['fulfill_exceptions']} vs baseline {baseline_exceptions:.1f}.",
-                            0.6))
+            signals.append(
+                (
+                    "return_burst",
+                    f"Returns jumped to {row['returns']} (+{delta:.1f} vs baseline).",
+                    abs(row["returns"] - baseline_returns) / 8,
+                )
+            )
+        if (
+            baseline_exceptions >= 0.1
+            and row["fulfill_exceptions"]
+            and row["fulfill_exceptions"] - baseline_exceptions >= 3
+        ):
+            signals.append(
+                (
+                    "exception_burst",
+                    f"Fulfillment exceptions {row['fulfill_exceptions']} vs baseline {baseline_exceptions:.1f}.",
+                    0.6,
+                )
+            )
         if not signals:
             continue
         magnitude = max(s for _, _, s in signals)
-        anomalies.append({
-            "date": row["date"],
-            "magnitude": round(magnitude, 2),
-            "signals": [{"type": stype, "detail": detail} for stype, detail, _ in signals],
-            "orders": row["orders"],
-            "revenue": row["revenue"],
-            "returns": row["returns"],
-        })
+        anomalies.append(
+            {
+                "date": row["date"],
+                "magnitude": round(magnitude, 2),
+                "signals": [{"type": stype, "detail": detail} for stype, detail, _ in signals],
+                "orders": row["orders"],
+                "revenue": row["revenue"],
+                "returns": row["returns"],
+            }
+        )
     anomalies.sort(key=lambda a: a["magnitude"], reverse=True)
     return anomalies
 
 
-def build_recommended_actions(rows: list[dict], anomalies: list[dict], full_payload: dict) -> list[dict]:
+def build_recommended_actions(
+    rows: list[dict], anomalies: list[dict], full_payload: dict
+) -> list[dict]:
     """Translate strongest signals into discrete recommended actions."""
     actions = []
 
@@ -589,12 +648,14 @@ def build_recommended_actions(rows: list[dict], anomalies: list[dict], full_payl
             title_bits.append("Audit fulfillment exceptions")
         if "units_drop" in targets:
             title_bits.append("Diagnose units decline")
-        actions.append({
-            "priority": severity,
-            "title": " · ".join(title_bits) or "Investigate anomaly",
-            "context": anomaly["date"],
-            "detail": " | ".join(s["detail"] for s in anomaly["signals"]),
-        })
+        actions.append(
+            {
+                "priority": severity,
+                "title": " · ".join(title_bits) or "Investigate anomaly",
+                "context": anomaly["date"],
+                "detail": " | ".join(s["detail"] for s in anomaly["signals"]),
+            }
+        )
 
     # Status mix alerts.
     status_totals = full_payload.get("status_totals", {})
@@ -603,33 +664,41 @@ def build_recommended_actions(rows: list[dict], anomalies: list[dict], full_payl
     cancel_share = status_totals.get("cancelled", 0) / total_lines
     refund_share = status_totals.get("refunded", 0) / total_lines
     if chargeback_share >= 0.10:
-        actions.append({
-            "priority": "high",
-            "title": "Address chargeback exposure",
-            "context": "Aggregate 62-day mix",
-            "detail": f"Chargeback-open lines at {chargeback_share*100:.1f}% of order volume — escalate to fraud/SaaS finance review.",
-        })
+        actions.append(
+            {
+                "priority": "high",
+                "title": "Address chargeback exposure",
+                "context": "Aggregate 62-day mix",
+                "detail": f"Chargeback-open lines at {chargeback_share * 100:.1f}% of order volume — escalate to fraud/SaaS finance review.",
+            }
+        )
     elif chargeback_share >= 0.06:
-        actions.append({
-            "priority": "medium",
-            "title": "Address chargeback exposure",
-            "context": "Aggregate 62-day mix",
-            "detail": f"Chargeback-open lines at {chargeback_share*100:.1f}% of order volume — schedule finance review.",
-        })
+        actions.append(
+            {
+                "priority": "medium",
+                "title": "Address chargeback exposure",
+                "context": "Aggregate 62-day mix",
+                "detail": f"Chargeback-open lines at {chargeback_share * 100:.1f}% of order volume — schedule finance review.",
+            }
+        )
     if cancel_share >= 0.16:
-        actions.append({
-            "priority": "medium",
-            "title": "Reduce order cancellations",
-            "context": "Aggregate 62-day mix",
-            "detail": f"Cancellations at {cancel_share*100:.1f}% — review checkout, inventory allocation, and SKU availability gates.",
-        })
+        actions.append(
+            {
+                "priority": "medium",
+                "title": "Reduce order cancellations",
+                "context": "Aggregate 62-day mix",
+                "detail": f"Cancellations at {cancel_share * 100:.1f}% — review checkout, inventory allocation, and SKU availability gates.",
+            }
+        )
     if refund_share >= 0.14:
-        actions.append({
-            "priority": "medium",
-            "title": "Refund throughput watch",
-            "context": "Aggregate 62-day mix",
-            "detail": f"Refunded lines at {refund_share*100:.1f}% — confirm refund_status=processed reconciliation between marketplace and finance.",
-        })
+        actions.append(
+            {
+                "priority": "medium",
+                "title": "Refund throughput watch",
+                "context": "Aggregate 62-day mix",
+                "detail": f"Refunded lines at {refund_share * 100:.1f}% — confirm refund_status=processed reconciliation between marketplace and finance.",
+            }
+        )
 
     # Return reason hotspots.
     reason_table = full_payload.get("return_reason_table", [])
@@ -638,24 +707,28 @@ def build_recommended_actions(rows: list[dict], anomalies: list[dict], full_payl
         reason_totals[entry["reason"]] += entry["count"]
     top_reason, top_count = max(reason_totals.items(), key=lambda kv: kv[1], default=("", 0))
     if top_count >= 25:
-        actions.append({
-            "priority": "high",
-            "title": f"Top return reason: {top_reason.replace('_',' ')}",
-            "context": "Aggregate 62-day returns",
-            "detail": f"{top_count} returns in the period — open product QA + PDP copy review for affected SKUs.",
-        })
+        actions.append(
+            {
+                "priority": "high",
+                "title": f"Top return reason: {top_reason.replace('_', ' ')}",
+                "context": "Aggregate 62-day returns",
+                "detail": f"{top_count} returns in the period — open product QA + PDP copy review for affected SKUs.",
+            }
+        )
 
     # Fulfillment carrier issue.
     carrier_table = full_payload.get("carrier_table", [])
     if carrier_table:
         worst = min(carrier_table, key=lambda c: c["on_time_pct"])
         if worst["on_time_pct"] < 70:
-            actions.append({
-                "priority": "medium",
-                "title": f"Re-rate carrier {worst['carrier']}",
-                "context": "Carrier on-time delivery",
-                "detail": f"On-time delivery {worst['on_time_pct']:.1f}% across {worst['lines']} labels — request SLA review or split volume.",
-            })
+            actions.append(
+                {
+                    "priority": "medium",
+                    "title": f"Re-rate carrier {worst['carrier']}",
+                    "context": "Carrier on-time delivery",
+                    "detail": f"On-time delivery {worst['on_time_pct']:.1f}% across {worst['lines']} labels — request SLA review or split volume.",
+                }
+            )
 
     # Inventory exposure.
     last_row = rows[-1] if rows else {}
@@ -665,12 +738,14 @@ def build_recommended_actions(rows: list[dict], anomalies: list[dict], full_payl
             last_row.get("inventory_sellable", 0) + last_row.get("inventory_unsellable", 1), 1
         )
     if unsellable_share >= 0.03:
-        actions.append({
-            "priority": "medium",
-            "title": "Manage unsellable inventory",
-            "context": f"Latest snapshot {last_row.get('date','')}",
-            "detail": f"Unsellable inventory at {unsellable_share*100:.1f}% — schedule liquidation or warehouse return authorization.",
-        })
+        actions.append(
+            {
+                "priority": "medium",
+                "title": "Manage unsellable inventory",
+                "context": f"Latest snapshot {last_row.get('date', '')}",
+                "detail": f"Unsellable inventory at {unsellable_share * 100:.1f}% — schedule liquidation or warehouse return authorization.",
+            }
+        )
 
     # Stable bandwidth: marketing/UTM tracking.
     utm_pulls: dict[str, int] = defaultdict(int)
@@ -682,6 +757,7 @@ def build_recommended_actions(rows: list[dict], anomalies: list[dict], full_payl
 # ---------------------------------------------------------------------------
 # Payload assembly
 # ---------------------------------------------------------------------------
+
 
 def make_dashboard_payload(sheets: dict) -> dict:
     normalized = normalize_snapshots(sheets)
@@ -756,9 +832,7 @@ def make_dashboard_payload(sheets: dict) -> dict:
     inventory_total = inventory_sellable + inventory_unsellable
     unsellable_share = (inventory_unsellable / inventory_total) if inventory_total else 0.0
 
-    latest_captured = (
-        f"snapshot_time latest {rows[-1].get('date') if rows else 'n/a'}"
-    )
+    latest_captured = f"snapshot_time latest {rows[-1].get('date') if rows else 'n/a'}"
 
     source_snippets = {
         "revenueTrend": """rows: list[dict] from normalize_snapshots()
@@ -851,14 +925,14 @@ priority = high when magnitude >= 1.0 or share >= 10%""",
             {
                 "id": "returnRate",
                 "label": "Return rate",
-                "value": f"{return_rate*100:.1f}%",
+                "value": f"{return_rate * 100:.1f}%",
                 "delta": f"{fmt_int(returns_30)} returns",
                 "detail": f"Refund exposure {fmt_money_short(refunds_30)} (native currency)",
             },
             {
                 "id": "onTime",
                 "label": "Fulfillment on-time",
-                "value": f"{on_time_pct*100:.1f}%",
+                "value": f"{on_time_pct * 100:.1f}%",
                 "delta": f"{fmt_int(fulfill_delivered)} delivered",
                 "detail": f"{fmt_int(fulfill_exceptions)} exceptions · {fmt_int(fulfill_inflight)} in-flight",
             },
@@ -867,7 +941,7 @@ priority = high when magnitude >= 1.0 or share >= 10%""",
                 "label": "Sellable inventory",
                 "value": fmt_int(inventory_sellable),
                 "delta": f"{fmt_int(inventory_inbound)} inbound",
-                "detail": f"{fmt_int(inventory_unsellable)} unsellable · {unsellable_share*100:.1f}% unsellable share",
+                "detail": f"{fmt_int(inventory_unsellable)} unsellable · {unsellable_share * 100:.1f}% unsellable share",
             },
         ],
         "datasets": {
@@ -890,6 +964,7 @@ priority = high when magnitude >= 1.0 or share >= 10%""",
 # ---------------------------------------------------------------------------
 # Markup helpers
 # ---------------------------------------------------------------------------
+
 
 def js_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False).replace("</", "<\\/")
@@ -924,7 +999,9 @@ def render_panel_actions(block: dict) -> str:
             f'<option value="{html.escape(kind)}"{" selected" if kind == block.get("initial_type") else ""}>{html.escape(kind)}</option>'
             for kind in block["allowed_types"]
         )
-        edit_command = f"""<button onclick="toggleEdit('{html.escape(block["chart_id"])}')">Edit</button>"""
+        edit_command = (
+            f"""<button onclick="toggleEdit('{html.escape(block["chart_id"])}')">Edit</button>"""
+        )
         edit = f"""
         <div class="edit-panel" id="edit-{html.escape(block["chart_id"])}">
           <label for="select-{html.escape(block["chart_id"])}">Type</label>
@@ -1034,9 +1111,9 @@ def render_actions_block(block: dict) -> str:
             f'<li class="action-row action-{cls}">'
             f'<span class="action-pill">{html.escape(item["priority"].upper())}</span>'
             f'<div class="action-body">'
-            f'<strong>{html.escape(item["title"])}</strong>'
-            f'<small>{html.escape(item["context"])} · {html.escape(item["detail"])}</small>'
-            f'</div></li>'
+            f"<strong>{html.escape(item['title'])}</strong>"
+            f"<small>{html.escape(item['context'])} · {html.escape(item['detail'])}</small>"
+            f"</div></li>"
         )
     return f"""
     <section class="dashboard-panel actions-panel" {panel_span_attr(block)} id="{html.escape(block["id"])}">
@@ -1062,225 +1139,228 @@ def render_actions_block(block: dict) -> str:
 # Block composition
 # ---------------------------------------------------------------------------
 
+
 def build_dashboard_blocks(payload: dict) -> list[dict]:
     blocks: list[dict] = []
     blocks.extend({"kind": "kpi", **kpi} for kpi in payload["kpis"])
 
-    blocks.extend([
-        {
-            "kind": "chart",
-            "id": "panel-revenue-trend",
-            "chart_id": "revenueTrend",
-            "source_key": "revenueTrend",
-            "title": "Revenue & orders",
-            "subtitle": "Daily revenue (line) with orders placed (bars) over the active range",
-            "unit": "Native currency · orders",
-            "source_context": "Source: order_line_export normalized to date grain",
-            "allowed_types": ["line", "bar"],
-            "initial_type": "line",
-        },
-        {
-            "kind": "chart",
-            "id": "panel-marketplace-mix",
-            "chart_id": "marketplaceMix",
-            "source_key": "marketplaceMix",
-            "title": "Marketplace mix",
-            "subtitle": "Revenue share per marketplace in the active range",
-            "unit": "Native currency",
-            "source_context": "Source: order_line_export · by_marketplace aggregate",
-            "allowed_types": ["bar", "pie"],
-            "initial_type": "pie",
-            "dense": True,
-        },
-        {
-            "kind": "chart",
-            "id": "panel-category-mix",
-            "chart_id": "categoryMix",
-            "source_key": "categoryMix",
-            "title": "Category revenue mix",
-            "subtitle": "Revenue share per product category in the active range",
-            "unit": "Native currency",
-            "source_context": "Source: order_line_export · by_category aggregate",
-            "allowed_types": ["bar", "pie"],
-            "initial_type": "bar",
-        },
-        {
-            "kind": "chart",
-            "id": "panel-order-status",
-            "chart_id": "orderStatusMix",
-            "source_key": "orderStatusMix",
-            "title": "Order status mix",
-            "subtitle": "Share of order lines per order_status in the active range",
-            "unit": "% of order lines",
-            "source_context": "Source: order_line_export · by_status count",
-            "allowed_types": ["bar", "pie"],
-            "initial_type": "pie",
-        },
-        {
-            "kind": "chart",
-            "id": "panel-fulfillment",
-            "chart_id": "fulfillmentPerf",
-            "source_key": "fulfillmentPerf",
-            "title": "Fulfillment performance",
-            "subtitle": "Daily labels, delivered share and exception count",
-            "unit": "Lines · delivered · exceptions",
-            "source_context": "Source: fulfillment_export by tracking_status",
-            "allowed_types": ["line", "bar"],
-            "initial_type": "line",
-        },
-        {
-            "kind": "chart",
-            "id": "panel-return-reasons",
-            "chart_id": "returnReasons",
-            "source_key": "returnReasons",
-            "title": "Return reason breakdown",
-            "subtitle": "Return counts by reason_code in the active range",
-            "unit": "Returns",
-            "source_context": "Source: return_refund_export · reason_code aggregate",
-            "allowed_types": ["bar", "pie"],
-            "initial_type": "bar",
-        },
-        {
-            "kind": "chart",
-            "id": "panel-warehouse-load",
-            "chart_id": "warehouseLoad",
-            "source_key": "warehouseLoad",
-            "title": "Warehouse load & inventory",
-            "subtitle": "Sellable + inbound vs unsellable by 3PL warehouse (latest snapshot)",
-            "unit": "Units",
-            "source_context": "Source: inventory_snapshot_export + fulfillment_export",
-            "allowed_types": ["bar"],
-            "initial_type": "bar",
-        },
-        {
-            "kind": "chart",
-            "id": "panel-inventory-health",
-            "chart_id": "inventoryHealth",
-            "source_key": "inventoryHealth",
-            "title": "Inventory health & utilization",
-            "subtitle": "Sellable vs inbound pipeline (line) and unsellable share (line, secondary)",
-            "unit": "Units · %",
-            "source_context": "Source: inventory_snapshot_export",
-            "allowed_types": ["line"],
-            "initial_type": "line",
-        },
-        {
-            "kind": "chart",
-            "id": "panel-return-cost",
-            "chart_id": "dailyReturnCost",
-            "source_key": "dailyReturnCost",
-            "title": "Daily return cost & refund failures",
-            "subtitle": "Returns per day with refund_amount and failed refunds",
-            "unit": "Returns · native currency",
-            "source_context": "Source: return_refund_export · refund_status",
-            "allowed_types": ["line", "bar"],
-            "initial_type": "bar",
-        },
-        {
-            "kind": "chart",
-            "id": "panel-anomalies",
-            "chart_id": "anomalyMarkers",
-            "source_key": "anomalyMarkers",
-            "title": "Anomaly markers (recommended actions)",
-            "subtitle": "Days flagged by revenue / units / return / exception deviation vs 14-day baseline",
-            "unit": "Score (signal magnitude)",
-            "source_context": "Source: detect_anomalies() over daily payload",
-            "allowed_types": ["scatter", "bar"],
-            "initial_type": "scatter",
-            "badge": "Recommended actions",
-        },
-        {
-            "kind": "actions",
-            "id": "panel-recommended-actions",
-            "source_key": "actionsPanel",
-            "title": "Recommended actions",
-            "subtitle": "Top operational follow-ups derived from anomaly detection, status mix, carrier SLA, and inventory state",
-            "unit": "Action backlog",
-            "source_context": "Source: build_recommended_actions() aggregate",
-            "items": payload["recommendedActions"],
-            "span": 12,
-        },
-        {
-            "kind": "table",
-            "id": "panel-sku-leaderboard",
-            "table_id": "skuLeaderboardTable",
-            "source_key": "skuLeaderboard",
-            "title": "SKU leaderboard",
-            "subtitle": "Top SKUs by net contribution (revenue − discounts) — returns flagging the riskiest lines",
-            "source_context": "Source: order_line_export · SKU aggregate",
-            "columns": [
-                {"field": "sku", "label": "SKU"},
-                {"field": "category", "label": "Category"},
-                {"field": "units", "label": "Units", "numeric": True},
-                {"field": "revenue", "label": "Revenue", "numeric": True},
-                {"field": "net_revenue", "label": "Net revenue", "numeric": True},
-                {"field": "returns", "label": "Returns", "numeric": True},
-                {"field": "return_rate_pct", "label": "Return %", "numeric": True},
-            ],
-        },
-        {
-            "kind": "table",
-            "id": "panel-warehouse-table",
-            "table_id": "warehouseTableTable",
-            "source_key": "warehouseTable",
-            "title": "Warehouse detail",
-            "subtitle": "Volume, on-time delivery and ship cost per 3PL warehouse",
-            "source_context": "Source: fulfillment_export + inventory_snapshot_export",
-            "columns": [
-                {"field": "warehouse", "label": "Warehouse"},
-                {"field": "fulfill_lines", "label": "Labels", "numeric": True},
-                {"field": "delivered", "label": "Delivered", "numeric": True},
-                {"field": "exceptions", "label": "Exceptions", "numeric": True},
-                {"field": "exception_rate_pct", "label": "Exception %", "numeric": True},
-                {"field": "inventory", "label": "Sellable", "numeric": True},
-                {"field": "inbound", "label": "Inbound", "numeric": True},
-                {"field": "unsellable", "label": "Unsellable", "numeric": True},
-                {"field": "ship_cost", "label": "Ship cost", "numeric": True},
-            ],
-        },
-        {
-            "kind": "table",
-            "id": "panel-return-matrix",
-            "table_id": "returnReasonMatrixTable",
-            "source_key": "returnMatrix",
-            "title": "Return hotspots (reason × country)",
-            "subtitle": "Top combinations from RMA feed — drives refund and PDP copy interventions",
-            "source_context": "Source: return_refund_export · reason_code × country",
-            "columns": [
-                {"field": "reason", "label": "Reason"},
-                {"field": "country", "label": "Country"},
-                {"field": "count", "label": "Returns", "numeric": True},
-            ],
-        },
-        {
-            "kind": "table",
-            "id": "panel-carrier-detail",
-            "table_id": "carrierDetailTable",
-            "source_key": "warehouseTable",
-            "title": "Carrier performance",
-            "subtitle": "On-time delivery rate and average ship time per carrier",
-            "source_context": "Source: fulfillment_export · carrier aggregate",
-            "columns": [
-                {"field": "carrier", "label": "Carrier"},
-                {"field": "lines", "label": "Labels", "numeric": True},
-                {"field": "delivered", "label": "Delivered", "numeric": True},
-                {"field": "on_time_pct", "label": "On-time %", "numeric": True},
-                {"field": "avg_days", "label": "Avg days", "numeric": True},
-            ],
-        },
-        {
-            "kind": "note",
-            "id": "automation-note",
-            "title": "Automation handoff",
-            "body": "Schedule a daily job to drop a refreshed operations_data.xlsx under data/, then run python dashboard.py to regenerate index.html and dashboard_data.json.",
-        },
-        {
-            "kind": "note",
-            "id": "freshness-note",
-            "title": "Data freshness",
-            "body": f"Source: {SOURCE_LABEL}. Latest dated snapshot: {payload['freshness']['latestDataDate']} · Generated {payload['generatedAt']} · Currency: native per line (no FX).",
-        },
-    ])
+    blocks.extend(
+        [
+            {
+                "kind": "chart",
+                "id": "panel-revenue-trend",
+                "chart_id": "revenueTrend",
+                "source_key": "revenueTrend",
+                "title": "Revenue & orders",
+                "subtitle": "Daily revenue (line) with orders placed (bars) over the active range",
+                "unit": "Native currency · orders",
+                "source_context": "Source: order_line_export normalized to date grain",
+                "allowed_types": ["line", "bar"],
+                "initial_type": "line",
+            },
+            {
+                "kind": "chart",
+                "id": "panel-marketplace-mix",
+                "chart_id": "marketplaceMix",
+                "source_key": "marketplaceMix",
+                "title": "Marketplace mix",
+                "subtitle": "Revenue share per marketplace in the active range",
+                "unit": "Native currency",
+                "source_context": "Source: order_line_export · by_marketplace aggregate",
+                "allowed_types": ["bar", "pie"],
+                "initial_type": "pie",
+                "dense": True,
+            },
+            {
+                "kind": "chart",
+                "id": "panel-category-mix",
+                "chart_id": "categoryMix",
+                "source_key": "categoryMix",
+                "title": "Category revenue mix",
+                "subtitle": "Revenue share per product category in the active range",
+                "unit": "Native currency",
+                "source_context": "Source: order_line_export · by_category aggregate",
+                "allowed_types": ["bar", "pie"],
+                "initial_type": "bar",
+            },
+            {
+                "kind": "chart",
+                "id": "panel-order-status",
+                "chart_id": "orderStatusMix",
+                "source_key": "orderStatusMix",
+                "title": "Order status mix",
+                "subtitle": "Share of order lines per order_status in the active range",
+                "unit": "% of order lines",
+                "source_context": "Source: order_line_export · by_status count",
+                "allowed_types": ["bar", "pie"],
+                "initial_type": "pie",
+            },
+            {
+                "kind": "chart",
+                "id": "panel-fulfillment",
+                "chart_id": "fulfillmentPerf",
+                "source_key": "fulfillmentPerf",
+                "title": "Fulfillment performance",
+                "subtitle": "Daily labels, delivered share and exception count",
+                "unit": "Lines · delivered · exceptions",
+                "source_context": "Source: fulfillment_export by tracking_status",
+                "allowed_types": ["line", "bar"],
+                "initial_type": "line",
+            },
+            {
+                "kind": "chart",
+                "id": "panel-return-reasons",
+                "chart_id": "returnReasons",
+                "source_key": "returnReasons",
+                "title": "Return reason breakdown",
+                "subtitle": "Return counts by reason_code in the active range",
+                "unit": "Returns",
+                "source_context": "Source: return_refund_export · reason_code aggregate",
+                "allowed_types": ["bar", "pie"],
+                "initial_type": "bar",
+            },
+            {
+                "kind": "chart",
+                "id": "panel-warehouse-load",
+                "chart_id": "warehouseLoad",
+                "source_key": "warehouseLoad",
+                "title": "Warehouse load & inventory",
+                "subtitle": "Sellable + inbound vs unsellable by 3PL warehouse (latest snapshot)",
+                "unit": "Units",
+                "source_context": "Source: inventory_snapshot_export + fulfillment_export",
+                "allowed_types": ["bar"],
+                "initial_type": "bar",
+            },
+            {
+                "kind": "chart",
+                "id": "panel-inventory-health",
+                "chart_id": "inventoryHealth",
+                "source_key": "inventoryHealth",
+                "title": "Inventory health & utilization",
+                "subtitle": "Sellable vs inbound pipeline (line) and unsellable share (line, secondary)",
+                "unit": "Units · %",
+                "source_context": "Source: inventory_snapshot_export",
+                "allowed_types": ["line"],
+                "initial_type": "line",
+            },
+            {
+                "kind": "chart",
+                "id": "panel-return-cost",
+                "chart_id": "dailyReturnCost",
+                "source_key": "dailyReturnCost",
+                "title": "Daily return cost & refund failures",
+                "subtitle": "Returns per day with refund_amount and failed refunds",
+                "unit": "Returns · native currency",
+                "source_context": "Source: return_refund_export · refund_status",
+                "allowed_types": ["line", "bar"],
+                "initial_type": "bar",
+            },
+            {
+                "kind": "chart",
+                "id": "panel-anomalies",
+                "chart_id": "anomalyMarkers",
+                "source_key": "anomalyMarkers",
+                "title": "Anomaly markers (recommended actions)",
+                "subtitle": "Days flagged by revenue / units / return / exception deviation vs 14-day baseline",
+                "unit": "Score (signal magnitude)",
+                "source_context": "Source: detect_anomalies() over daily payload",
+                "allowed_types": ["scatter", "bar"],
+                "initial_type": "scatter",
+                "badge": "Recommended actions",
+            },
+            {
+                "kind": "actions",
+                "id": "panel-recommended-actions",
+                "source_key": "actionsPanel",
+                "title": "Recommended actions",
+                "subtitle": "Top operational follow-ups derived from anomaly detection, status mix, carrier SLA, and inventory state",
+                "unit": "Action backlog",
+                "source_context": "Source: build_recommended_actions() aggregate",
+                "items": payload["recommendedActions"],
+                "span": 12,
+            },
+            {
+                "kind": "table",
+                "id": "panel-sku-leaderboard",
+                "table_id": "skuLeaderboardTable",
+                "source_key": "skuLeaderboard",
+                "title": "SKU leaderboard",
+                "subtitle": "Top SKUs by net contribution (revenue − discounts) — returns flagging the riskiest lines",
+                "source_context": "Source: order_line_export · SKU aggregate",
+                "columns": [
+                    {"field": "sku", "label": "SKU"},
+                    {"field": "category", "label": "Category"},
+                    {"field": "units", "label": "Units", "numeric": True},
+                    {"field": "revenue", "label": "Revenue", "numeric": True},
+                    {"field": "net_revenue", "label": "Net revenue", "numeric": True},
+                    {"field": "returns", "label": "Returns", "numeric": True},
+                    {"field": "return_rate_pct", "label": "Return %", "numeric": True},
+                ],
+            },
+            {
+                "kind": "table",
+                "id": "panel-warehouse-table",
+                "table_id": "warehouseTableTable",
+                "source_key": "warehouseTable",
+                "title": "Warehouse detail",
+                "subtitle": "Volume, on-time delivery and ship cost per 3PL warehouse",
+                "source_context": "Source: fulfillment_export + inventory_snapshot_export",
+                "columns": [
+                    {"field": "warehouse", "label": "Warehouse"},
+                    {"field": "fulfill_lines", "label": "Labels", "numeric": True},
+                    {"field": "delivered", "label": "Delivered", "numeric": True},
+                    {"field": "exceptions", "label": "Exceptions", "numeric": True},
+                    {"field": "exception_rate_pct", "label": "Exception %", "numeric": True},
+                    {"field": "inventory", "label": "Sellable", "numeric": True},
+                    {"field": "inbound", "label": "Inbound", "numeric": True},
+                    {"field": "unsellable", "label": "Unsellable", "numeric": True},
+                    {"field": "ship_cost", "label": "Ship cost", "numeric": True},
+                ],
+            },
+            {
+                "kind": "table",
+                "id": "panel-return-matrix",
+                "table_id": "returnReasonMatrixTable",
+                "source_key": "returnMatrix",
+                "title": "Return hotspots (reason × country)",
+                "subtitle": "Top combinations from RMA feed — drives refund and PDP copy interventions",
+                "source_context": "Source: return_refund_export · reason_code × country",
+                "columns": [
+                    {"field": "reason", "label": "Reason"},
+                    {"field": "country", "label": "Country"},
+                    {"field": "count", "label": "Returns", "numeric": True},
+                ],
+            },
+            {
+                "kind": "table",
+                "id": "panel-carrier-detail",
+                "table_id": "carrierDetailTable",
+                "source_key": "warehouseTable",
+                "title": "Carrier performance",
+                "subtitle": "On-time delivery rate and average ship time per carrier",
+                "source_context": "Source: fulfillment_export · carrier aggregate",
+                "columns": [
+                    {"field": "carrier", "label": "Carrier"},
+                    {"field": "lines", "label": "Labels", "numeric": True},
+                    {"field": "delivered", "label": "Delivered", "numeric": True},
+                    {"field": "on_time_pct", "label": "On-time %", "numeric": True},
+                    {"field": "avg_days", "label": "Avg days", "numeric": True},
+                ],
+            },
+            {
+                "kind": "note",
+                "id": "automation-note",
+                "title": "Automation handoff",
+                "body": "Schedule a daily job to drop a refreshed operations_data.xlsx under data/, then run python dashboard.py to regenerate index.html and dashboard_data.json.",
+            },
+            {
+                "kind": "note",
+                "id": "freshness-note",
+                "title": "Data freshness",
+                "body": f"Source: {SOURCE_LABEL}. Latest dated snapshot: {payload['freshness']['latestDataDate']} · Generated {payload['generatedAt']} · Currency: native per line (no FX).",
+            },
+        ]
+    )
     return blocks
 
 
@@ -1868,9 +1948,7 @@ def build_html(payload: dict) -> str:
     blocks = build_dashboard_blocks(payload)
     content = render_dashboard_blocks(blocks)
     initial_charts = [
-        {"id": b["chart_id"], "type": b["initial_type"]}
-        for b in blocks
-        if b["kind"] == "chart"
+        {"id": b["chart_id"], "type": b["initial_type"]} for b in blocks if b["kind"] == "chart"
     ]
     table_config = {
         "skuLeaderboardTable": {
@@ -2381,9 +2459,7 @@ def build_html(payload: dict) -> str:
 def main() -> None:
     sheets = read_sources()
     payload = make_dashboard_payload(sheets)
-    DASHBOARD_DATA.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    DASHBOARD_DATA.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     DASHBOARD_HTML.write_text(build_html(payload), encoding="utf-8")
     print(f"Wrote {DASHBOARD_HTML}")
     print(f"Wrote {DASHBOARD_DATA}")
