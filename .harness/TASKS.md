@@ -1392,3 +1392,29 @@ Ver `PROGRESS.md` + `.brain/loop-state.json` + `make g7-validate`.
 `docs/G7_DOR_DOD.md`
 
 Modified by Gustavo Almeida — G7 Wave 16
+
+## EPIC E6 — BRAIN (Base, Conhecimento, Cálculos, Validação, Identificação) [PENDENTE]
+
+- [ ] **E6.S1.T1** Definir contrato de ingestão para `Cartorio-20260731T144042Z-1-001.zip` com validação de nome, extensão, `magic bytes`, `manifest.json`, tamanho máximo, hash SHA-256 e recusa automática de pacote fora da política — owner: `cartorio-dev`
+- [ ] **E6.S1.T2** Implementar extração segura em caminho isolado (`staging`) com bloqueio de `path traversal`, symlink follow, sobrescrita e arquivos fora do sandbox — owner: `cartorio-dev`
+- [ ] **E6.S1.T3** Construir inventário de **B**ase: normalização de metadados de origem, esquema de validação por lote e trilha de checksum por documento — owner: `cartorio-dev`
+- [ ] **E6.S1.T4** Construir inventário de **K**nowledge: parser de contratos/documentos textuais, extração de termos críticos e versionamento de fonte (arquivo/origem/hash) sem exposição de PII — owner: `cartorio-lgpd`
+- [ ] **E6.S1.T5** Construir inventário de **C**álculos: catálogo de fórmulas, parâmetros, tabela de referência e reprodução determinística dos outputs em reprocessamento — owner: `cartorio-dev`
+- [ ] **E6.S1.T6** Construir matriz de **V**alidadores com nível semântico/estrutural/coerência, severidade por regra e fallback de bloqueio para aprovação sem risco — owner: `cartorio-dev`
+- [ ] **E6.S1.T7** Implementar identificação documental com classificação por tipo, confiança e trilha de decisão para casos não classificados (HUMAN_REVIEW) — owner: `cartorio-dev`
+- [ ] **E6.S1.T8** Definir pipeline de dados por agente com trilha: `agent_runtime`, `agent_owner`, `step_id`, `correlation_id`, timestamp UTC e cadeia auditável por etapa — owner: `cartorio-lgpd`
+- [ ] **E6.S1.T9** Criar suíte de testes `golden/corpos` para ingestão, parsing, cálculos e validações críticas, incluindo cenários de rejeição e regressão de segurança — owner: `cartorio-dev` + review `cartorio-lgpd`
+- [ ] **E6.S1.T10** Documentar runbook de operação da tarefa BRAIN, comandos de validação e política de não exposição de PII/segredos sem restart/redeploy de runtime em produção — owner: `cartorio-lgpd`
+
+### E6.S2 — BRAIN (execução prática do pacote `Cartorio-20260731T144042Z-1-001.zip`) [NOVA OLA]
+
+- [ ] **E6.S2.T1** Validar política de ingestão para `Cartorio-20260731T144042Z-1-001.zip`: nome, extensão, `magic bytes`, `manifest.json`, tamanho máximo e hash SHA-256; recusar pacotes fora da política em `reject` com razão explícita — owner: `cartorio-dev`
+- [ ] **E6.S2.T2** Implementar extração segura em caminho `staging` com sandbox por execução, bloqueio de `path traversal`, negação de `symlink` fora de escopo, proteção de sobrescrita e limpeza pós-run — owner: `cartorio-dev`
+- [ ] **E6.S2.T3** Construir catálogo Base com metadados normalizados por documento, lote de ingestão, hash de conteúdo, `checksum` por arquivo e trilha de aceitação/rejeição — owner: `cartorio-dev`
+- [ ] **E6.S2.T4** Construir catálogo Knowledge com parser de contratos/documentos textuais, extração de termos críticos e versionamento de fonte (`arquivo`, `origem`, `hash`) sem persistir PII — owner: `cartorio-lgpd`
+- [ ] **E6.S2.T5** Construir catálogo de Cálculos com fórmulas/tabelas de referência, parâmetros de entrada e saída, e trilha de execução determinística para reprocessamento — owner: `cartorio-dev`
+- [ ] **E6.S2.T6** Definir matriz de Validação (estrutural, semântica e de coerência) com severidade por regra, política de bloqueio e `fallback` de revisão humana para risco alto — owner: `cartorio-dev`
+- [ ] **E6.S2.T7** Implementar identificação documental com classificação de tipo, `confidence`, evidência de decisão e rota obrigatória para `HUMAN_REVIEW` quando a confiança for baixa/ambígua — owner: `cartorio-dev`
+- [ ] **E6.S2.T8** Implementar trilha de dados por agente (`agent_runtime`, `agent_owner`, `step_id`, `correlation_id`, `timestamp_utc`) com assinatura de etapa para rastreabilidade por agente — owner: `cartorio-lgpd`
+- [ ] **E6.S2.T9** Criar suíte de testes automatizados (ingestão, parsing, cálculos, validação, segurança) com cenários de rejeição, corrupção de arquivo, `path traversal` e regressão de máscara PII — owner: `cartorio-dev` + review `cartorio-lgpd`
+- [ ] **E6.S2.T10** Produzir runbook operacional BRAIN com validações e comandos de saúde (sem restart/redeploy), e regra de não exposição de PII/segredos em logs, docs e trilhas de execução — owner: `cartorio-lgpd`

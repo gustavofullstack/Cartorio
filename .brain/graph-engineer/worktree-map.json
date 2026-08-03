@@ -1,0 +1,45 @@
+{
+  "task_id": "G0.05",
+  "timestamp": "2026-08-03T15:10:11.847466+00:00",
+  "base_branch": "master",
+  "hotspots_serialized": [
+    "backend/app/services/pii.py",
+    "backend/app/services/audit.py",
+    "backend/mcp_server.py",
+    "infra/hermes/",
+    "SOUL.md",
+    ".harness/memory/MEMORY.md"
+  ],
+  "agent_worktrees": {
+    "SOL": {
+      "branch": "master",
+      "mode": "orchestrator_read_write_state_only"
+    },
+    "FLASH": {
+      "branch": "feature/flash-corpus-data",
+      "path": ".worktrees/flash-corpus"
+    },
+    "TERRA": {
+      "branch": "feature/terra-backend-domain",
+      "path": ".worktrees/terra-backend"
+    },
+    "SPARK": {
+      "branch": "feature/spark-fixtures-tests",
+      "path": ".worktrees/spark-tests"
+    },
+    "LUNA": {
+      "branch": "feature/luna-hermes-lark",
+      "path": ".worktrees/luna-lark"
+    },
+    "PRO": {
+      "branch": "feature/pro-review",
+      "path": ".worktrees/pro-review"
+    }
+  },
+  "rules": [
+    "Branch always derived from master",
+    "No direct push to master",
+    "Hotspots can only be modified by one active lease at a time",
+    "PR + Independent Review mandatory"
+  ]
+}

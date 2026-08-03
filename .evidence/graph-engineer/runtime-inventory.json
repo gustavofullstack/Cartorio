@@ -1,0 +1,33 @@
+{
+  "task_id": "G0.07",
+  "timestamp": "2026-08-03T15:10:30.970265+00:00",
+  "runtime_topology": {
+    "vps_hostinger": {
+      "tailscale_ip": "100.99.172.84",
+      "services": [
+        "cartorio_api (FastAPI v0.115)",
+        "redis (Redis 8)",
+        "n8n (Flow Engine)",
+        "chatwoot (CRM)",
+        "evolution_api (WhatsApp)"
+      ]
+    },
+    "mac_local_host": {
+      "launch_agent": "ai.hermes.gateway-cartorio",
+      "port": 8793,
+      "project_id": "438527e1-...",
+      "channel": "iMessage / Photon sidecar + Hermes Agent runtime"
+    },
+    "lark_integration": {
+      "gateway": "Hermes Lark Gateway",
+      "event_subscription": "im.message.receive_v1 (P2 mandatory)",
+      "connection_mode": "WebSocket (single replica, single connection)",
+      "status": "PILOT_PENDING_P2_CERTIFICATION"
+    }
+  },
+  "security_status": {
+    "secrets_exposed": false,
+    "pii_leak_detected": false,
+    "pii_scrubbing": "3-tier active (Pydantic -> Sentry -> LogMasker)"
+  }
+}

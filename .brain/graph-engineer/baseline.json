@@ -1,0 +1,31 @@
+{
+  "task_id": "G0.01",
+  "timestamp": "2026-08-03T15:09:43.314507+00:00",
+  "commit": "d5427b42ff998005fdef12b9b5a8f764033eeca7",
+  "branch": "master",
+  "working_tree_status": [
+    "## master...origin/master",
+    " M .brain/memory/2026-07-31.md",
+    " M .evidence/brain-corpus/agent-trace.jsonl",
+    " M .harness/TASKS.md",
+    "?? .evidence/brain-corpus/goal-2026-07-31-ce236ba32b01-run-batch.json",
+    "?? docs/BRAIN_CORPUS_RUN_2026-07-31-ce236ba32b01.md",
+    "?? docs/triqhub-agent-orchestrator/BRAIN_VAL_E7_2026-07-31T144042.md",
+    "?? docs/triqhub-agent-orchestrator/LARK_META_10_E6S3VAL5_20260801.md",
+    "?? docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRADOR_20260801_BLOCKED_RUNTIME.md",
+    "?? docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRADOR_20260801_SEGUNDA_PASSAGEM.md",
+    "?? docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRADOR_20260801_V3_T1.md",
+    "?? docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRADOR_20260801_V3_T1_RUN5.md",
+    "?? docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRATOR_T1_20260801.md"
+  ],
+  "target_repo": "gustavofullstack/Cartorio",
+  "target_services": [
+    "cartorio_api (FastAPI)",
+    "hermes (Lark Gateway)",
+    "mcp_server",
+    "redis",
+    "postgres/supabase"
+  ],
+  "zip_sha256": "ce236ba32b01e11139052867d189ce76ce14bf9d9030d9a24512ebdba2252efb",
+  "status": "ACCEPTED"
+}

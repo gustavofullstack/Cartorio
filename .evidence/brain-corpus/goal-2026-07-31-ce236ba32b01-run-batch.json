@@ -1,0 +1,60 @@
+{
+  "goal": "Extrair e orquestrar o BRAIN para Cartorio-20260731T144042Z-1-001.zip",
+  "batch_id": "2026-07-31-ce236ba32b01-run-batch",
+  "source_archive": "/Users/gustavoalmeida/Downloads/Cartorio-20260731T144042Z-1-001.zip",
+  "pipeline_mode": "local_offline_fail_closed",
+  "runtime_scope": "preserving_hermes",
+  "staging": {
+    "manifest": {
+      "path": ".private/brain-ingest-quarantine/2026-07-31-ce236ba32b01-run-batch/MANIFEST.private.json",
+      "archive_sha256": "ce236ba32b01e11139052867d189ce76ce14bf9d9030d9a24512ebdba2252efb",
+      "source_file_count": 90,
+      "source_total_bytes": 17505807
+    }
+  },
+  "ingest": {
+    "path": ".private/brain-ingest-quarantine/2026-07-31-ce236ba32b01-run-batch/derived/manifest.sanitized.json",
+    "sources_discovered": 90,
+    "sources_extracted": 90,
+    "units_written": 3087,
+    "is_blocked": false
+  },
+  "classify": {
+    "path": ".private/brain-ingest-quarantine/2026-07-31-ce236ba32b01-run-batch/derived/classification.sanitized.json",
+    "automatic_promotion_allowed": false,
+    "is_blocked": false,
+    "published_eligible": 0,
+    "sources_classified": 90,
+    "sources_total": 90,
+    "units_classified": 3087,
+    "units_total": 3087
+  },
+  "hitl_queue": {
+    "path": ".private/brain-ingest-quarantine/2026-07-31-ce236ba32b01-run-batch/derived/hitl_queue.sanitized.json",
+    "state": "PENDING_HUMAN_VALIDATION",
+    "total_items": 90,
+    "ambiguous": 16,
+    "published_eligible": 0,
+    "automatic_promotion_allowed": false,
+    "ocr_flagged": 1
+  },
+  "validation": {
+    "tests": {
+      "files": [
+        "tests/test_brain_corpus_ingest.py",
+        "tests/test_conhecimento_pipeline.py",
+        "tests/test_brain_agent_trace.py"
+      ],
+      "result": "32 passed",
+      "command": "uv run pytest tests/test_brain_corpus_ingest.py tests/test_conhecimento_pipeline.py tests/test_brain_agent_trace.py -q --no-cov"
+    },
+    "coverage_default_gate": "FAILED",
+    "coverage_default_reason": "project-wide 90% threshold not met for focused run",
+    "mitigation": "rerun with --no-cov for focused component validation only"
+  },
+  "trace": {
+    "agent_trace_ledger": ".evidence/brain-corpus/agent-trace.jsonl",
+    "entries_appended": 5,
+    "agent_trace_lines": 15
+  }
+}
