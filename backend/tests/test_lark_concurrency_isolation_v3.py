@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 
 def test_session_isolation_deterministic() -> None:
     session_a = {"user_id": "usr_001", "context": "Dúvida sobre inventário"}
