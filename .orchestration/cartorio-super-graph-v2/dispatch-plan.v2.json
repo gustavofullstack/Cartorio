@@ -1,8 +1,31 @@
 {
-  "next_batches": [
-    "G1.01",
-    "G1.02",
-    "G1.03",
-    "G1.04"
+  "version": 2,
+  "strategy": "FORWARD_ONLY_RECOVERY",
+  "concurrent_incident": "INC-GRAPH-EVIDENCE-2026-08-03",
+  "batch_1_post_go": [
+    {
+      "node": "G1.01",
+      "component": "Dual-Layer Emolumentos MG 2026",
+      "executor": "TERRA-DATA",
+      "reviewer": "TERRA-REVIEW"
+    },
+    {
+      "node": "G1.02",
+      "component": "PII 3-Layer Scrubber Suite",
+      "executor": "TERRA-QA",
+      "reviewer": "TERRA-REVIEW"
+    },
+    {
+      "node": "G2.01",
+      "component": "Lark Event Webhook & Dedupe Store",
+      "executor": "TERRA-SRE",
+      "reviewer": "TERRA-REVIEW"
+    },
+    {
+      "node": "G2.02",
+      "component": "MCP Envelope Verification",
+      "executor": "TERRA-QA",
+      "reviewer": "TERRA-REVIEW"
+    }
   ]
 }

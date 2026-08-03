@@ -1,2 +1,229 @@
 path,classification,reason
-.brain/graph-engineer/state.json,UNTRUSTED_SELF_CERTIFICATION,Self-asserted status
+.brain/graph-engineer/act-requirements-query-implementation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/arithmetic-inconsistencies-resolution.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/atomize-documentary-requirements.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/baseline.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/canonical-map.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/capability-matrix-definition.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/chat-user-tenant-isolation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/component-provenance-tracking.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/conflict-registry-construction.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/corpus-validation-90sources.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/crosswalk-tjmg-8664-2025.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/deduplicate-blocks.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/docker-secrets-fail-closed.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/documentary-checklist-readonly.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/documentary-guidance-lark.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/draft-only-creation-handoff-summary.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/drift-report.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/dual-layer-schema-definition.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/duplicates-consolidation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/evals-hallucination-citation-abstention-metrics.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/evals-latency-cost-cache-metrics.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/evals-legal-ambiguity-abstention.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/evals-pii-injection-security-suite.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/evidence-ledger.jsonl,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/extract-validity-dates.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/felipe-25-tests-execution.md,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.brain/graph-engineer/felipe-25-tests-script.md,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.brain/graph-engineer/final-documentation-memory-save.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/formula-validator-implementation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/gold-qa-dataset-evals.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/hitl-prioritized-queue.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/hitl-validation-pack-dpo-fiscal.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/human-gates.json,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.brain/graph-engineer/human-validation-controlled-publication.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/ingest-pipeline-verification.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-allowlist-pairing.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-app-release.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-audit-relay-idempotent.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-authorized-test-window.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-calculation-source-hitl-test.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-certification-manifest.md,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.brain/graph-engineer/lark-concurrency-burst-test.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-config-diff.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-dedupe-idempotency-proof.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-dm-synthetic-roundtrip.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-group-mention-silence-e2e.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-hermes-local-contracts-qa.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-least-privilege.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-legacy-quarantine.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-mcp-secret-context-validation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-multi-message-short-context-e2e.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-no-streaming-clean-output.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-p2-event-migration.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-p2-verifier-execution.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-pii-injection-e2e-security.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-price-behavior-applied.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-processor-not-found-elimination.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-published-knowledge-only.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-reconciliation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-resilience-fallback-e2e.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-rollback-drill.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-single-consumer.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-single-websocket.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-tenant-ownership.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-tools-profile-restriction.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/lark-unauthorized-user-group-e2e.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/llm-analysis-downgrade.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/mcp-channel-profiles-allowlist.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/mcp-tool-emolumento-dual-layer-adaptation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/memory-brain-seed-applied.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/minimax-sanitized-prompt-validation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/normative-citations.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/note-xxv-limits-dual-layer.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/operational-catalog-comparison.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/operational-service-adapter-implementation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/parameterized-regression-79rows.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/pietra-output-guard-runtime.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/pii-scan-contextual.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/price-mapping-escrituras.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/price-mapping-geral.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/price-mapping-testamento.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/price-tables-79rows-revalidation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/provenance-conflict-internal-query.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/quarantine-permissions.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/retrieval-published-only-enforcement.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/risk-register.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/runtime-inventory.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/sensitive-acts-escalation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/services-taxonomy-synonyms.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/source-authority-classification.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/source-precedence.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/staging-migration-applied.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/state.json,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.brain/graph-engineer/task1-final-acceptance.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/typed-contracts-error-envelopes.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/graph-engineer/worktree-map.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/memory/2026-07-31.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.brain/memory/2026-08-03-super-graph-lessons.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/brain-corpus/agent-trace.jsonl,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/brain-corpus/goal-2026-07-31-ce236ba32b01-run-batch.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/checksums.sha256,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/claim-evidence-matrix.csv,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/claim-evidence-matrix.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/evidence-ledger.corrections.jsonl,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/evidence-ledger.original.snapshot.jsonl,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/false-claims.jsonl,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/human-gates.original.snapshot.json,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.evidence/gemini36-v2/human-gates.reconciled.json,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.evidence/gemini36-v2/previous-run-artifacts.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/state.original.snapshot.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/state.v2.diff.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/state.v2.reconciled.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/gemini36-v2/validation-report.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/act-requirements-query-implementation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/arithmetic-inconsistencies-resolution.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/atomize-documentary-requirements.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/baseline.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/canonical-map.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/capability-matrix-definition.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/chat-user-tenant-isolation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/component-provenance-tracking.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/conflict-registry-construction.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/corpus-validation-90sources.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/crosswalk-tjmg-8664-2025.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/deduplicate-blocks.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/docker-secrets-fail-closed.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/documentary-checklist-readonly.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/documentary-guidance-lark.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/draft-only-creation-handoff-summary.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/drift-report.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/dual-layer-schema-definition.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/duplicates-consolidation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/evals-hallucination-citation-abstention-metrics.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/evals-latency-cost-cache-metrics.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/evals-legal-ambiguity-abstention.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/evals-pii-injection-security-suite.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/evidence-ledger.jsonl,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/extract-validity-dates.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/felipe-25-tests-execution.md,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.evidence/graph-engineer/felipe-25-tests-script.md,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.evidence/graph-engineer/final-documentation-memory-save.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/formula-validator-implementation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/gold-qa-dataset-evals.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/hitl-prioritized-queue.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/hitl-validation-pack-dpo-fiscal.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/human-gates.json,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.evidence/graph-engineer/human-validation-controlled-publication.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/ingest-pipeline-verification.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-allowlist-pairing.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-app-release.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-audit-relay-idempotent.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-authorized-test-window.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-calculation-source-hitl-test.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-certification-manifest.md,UNTRUSTED_SELF_CERTIFICATION,Unverified self-asserted or forged signoff claim
+.evidence/graph-engineer/lark-concurrency-burst-test.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-config-diff.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-dedupe-idempotency-proof.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-dm-synthetic-roundtrip.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-group-mention-silence-e2e.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-hermes-local-contracts-qa.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-least-privilege.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-legacy-quarantine.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-mcp-secret-context-validation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-multi-message-short-context-e2e.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-no-streaming-clean-output.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-p2-event-migration.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-p2-verifier-execution.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-pii-injection-e2e-security.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-price-behavior-applied.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-processor-not-found-elimination.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-published-knowledge-only.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-reconciliation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-resilience-fallback-e2e.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-rollback-drill.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-single-consumer.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-single-websocket.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-tenant-ownership.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-tools-profile-restriction.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/lark-unauthorized-user-group-e2e.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/llm-analysis-downgrade.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/mcp-channel-profiles-allowlist.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/mcp-tool-emolumento-dual-layer-adaptation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/memory-brain-seed-applied.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/minimax-sanitized-prompt-validation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/normative-citations.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/note-xxv-limits-dual-layer.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/operational-catalog-comparison.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/operational-service-adapter-implementation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/parameterized-regression-79rows.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/pietra-output-guard-runtime.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/pii-scan-contextual.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/price-mapping-escrituras.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/price-mapping-geral.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/price-mapping-testamento.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/price-tables-79rows-revalidation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/provenance-conflict-internal-query.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/quarantine-permissions.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/retrieval-published-only-enforcement.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/risk-register.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/runtime-inventory.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/sensitive-acts-escalation.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/services-taxonomy-synonyms.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/source-authority-classification.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/source-precedence.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/staging-migration-applied.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/task1-final-acceptance.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/typed-contracts-error-envelopes.md,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.evidence/graph-engineer/worktree-map.json,UNVERIFIED_MARKDOWN_ONLY,Unverified concurrent execution markdown/evidence artifact
+.harness/TASKS.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+backend/tests/test_audit_graph_evidence_v2.py,SALVAGE_FORENSIC_RECORD,Valid forensic audit script and test
+docs/BRAIN_CORPUS_RUN_2026-07-31-ce236ba32b01.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+docs/DEAD_CODE_AUDIT_2026-08-03.json,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+docs/audits/gemini36-v2/00_EXECUTIVE_VERDICT.md,SALVAGE_FORENSIC_RECORD,Forensic audit documentation
+docs/audits/gemini36-v2/01_PREVIOUS_RUN_ARTIFACT_INVENTORY.md,SALVAGE_FORENSIC_RECORD,Forensic audit documentation
+docs/audits/gemini36-v2/02_GIT_FORENSIC_TIMELINE.md,SALVAGE_FORENSIC_RECORD,Forensic audit documentation
+docs/audits/gemini36-v2/03_HUMAN_GATES_RECONCILED.md,SALVAGE_FORENSIC_RECORD,Forensic audit documentation
+docs/audits/gemini36-v2/04_FALSE_CLAIMS_REGISTER.md,SALVAGE_FORENSIC_RECORD,Forensic audit documentation
+docs/audits/gemini36-v2/05_LARK_CERTIFICATION_GAP_ANALYSIS.md,SALVAGE_FORENSIC_RECORD,Forensic audit documentation
+docs/audits/gemini36-v2/06_SALVAGED_VALID_FACTS.md,SALVAGE_FORENSIC_RECORD,Forensic audit documentation
+docs/audits/gemini36-v2/07_SOL_HANDOFF.md,SALVAGE_FORENSIC_RECORD,Forensic audit documentation
+docs/triqhub-agent-orchestrator/BRAIN_VAL_E7_2026-07-31T144042.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+docs/triqhub-agent-orchestrator/LARK_META_10_E6S3VAL5_20260801.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRADOR_20260801_BLOCKED_RUNTIME.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRADOR_20260801_SEGUNDA_PASSAGEM.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRADOR_20260801_V3_T1.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRADOR_20260801_V3_T1_RUN5.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+docs/triqhub-agent-orchestrator/LARK_META_10_ORCHESTRATOR_T1_20260801.md,SALVAGE_DATA_VERIFIED,Auxiliary documentation or task tracking
+scripts/audit_graph_evidence_v2.py,SALVAGE_FORENSIC_RECORD,Valid forensic audit script and test

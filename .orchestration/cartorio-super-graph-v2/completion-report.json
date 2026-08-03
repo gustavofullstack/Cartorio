@@ -1,4 +1,40 @@
 {
+  "program": "CARTORIO-SUPER-GRAPH-ENGINEER-2026-08-03-V2",
   "status": "WAVE_0R_GO",
-  "verdict": "PR_READY_PENDING_HUMANS"
+  "generated_at": "2026-08-03T17:00:00Z",
+  "orchestrator": "Codex GPT-5.6 SOL Extra High",
+  "verdict": "WAVE_0R_GO",
+  "completion_gate": "PASS",
+  "nodes_accepted": 30,
+  "human_gates_blocked": 4,
+  "next_action": "PR_READY_PENDING_HUMANS: aguardar validações humanas HG-01..HG-04 antes de avançar E5",
+  "commands": [
+    {
+      "name": "sol_v2_completion_gate",
+      "argv_redacted": [
+        "python3",
+        "scripts/sol_v2_completion_gate.py",
+        "--overlay",
+        ".orchestration/cartorio-super-graph-v2/state.v2.overlay.json",
+        "--evidence",
+        ".orchestration/cartorio-super-graph-v2/evidence.v2.jsonl",
+        "--incident",
+        ".evidence/incidents/INC-GRAPH-EVIDENCE-2026-08-03",
+        "--repo-root",
+        "."
+      ],
+      "cwd": "/Users/gustavoalmeida/Projetos/Cartorio",
+      "stdout_sha256": "c32173343957e3f2cebf0058ee0b2439b7fc9df389b637e697cdc9952b86f5b1",
+      "stderr_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "log_path": ".orchestration/cartorio-super-graph-v2/run-logs/sol_v2_completion_gate.log"
+    }
+  ],
+  "artifacts": [
+    ".orchestration/cartorio-super-graph-v2/state.v2.overlay.json",
+    ".orchestration/cartorio-super-graph-v2/evidence.v2.jsonl",
+    ".orchestration/cartorio-super-graph-v2/hotspots.v2.json",
+    ".orchestration/cartorio-super-graph-v2/dispatch-plan.v2.json",
+    ".evidence/incidents/INC-GRAPH-EVIDENCE-2026-08-03/commit-inventory.json",
+    ".evidence/incidents/INC-GRAPH-EVIDENCE-2026-08-03/original-checksums.sha256"
+  ]
 }

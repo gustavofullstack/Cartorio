@@ -1,7 +1,10 @@
 {
   "hotspots": [
-    "pyproject.toml",
-    "uv.lock",
-    "backend/app/main.py"
-  ]
+    "app/services/emolumento.py",
+    "app/services/pii.py",
+    "backend/mcp_server.py",
+    "app/main.py"
+  ],
+  "max_concurrent_executors": 4,
+  "serialization_required": true
 }

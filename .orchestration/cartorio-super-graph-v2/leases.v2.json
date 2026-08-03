@@ -1,3 +1,10 @@
 {
-  "active_leases": []
+  "active_leases": [
+    {
+      "node_id": "V2.R01-V2.R30",
+      "holder": "SOL-V2-RECOVERY-ORCHESTRATOR",
+      "acquired_at": "2026-08-03T16:56:30Z",
+      "status": "ACCEPTED"
+    }
+  ]
 }

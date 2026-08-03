@@ -1,5 +1,7 @@
 {
-  "version": "state.v2.overlay.json",
+  "version": "2",
+  "created_at": "2026-08-03T16:56:30Z",
+  "updated_at": "2026-08-03T16:56:45Z",
   "orchestrator": "SOL-V2-RECOVERY-ORCHESTRATOR",
   "substitutes": {
     "FLASH": "TERRA-DATA",
