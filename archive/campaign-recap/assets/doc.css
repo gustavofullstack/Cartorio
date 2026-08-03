@@ -259,6 +259,9 @@ a:hover {
   color: var(--ink);
   outline: none;
 }
+.diagram-zoom-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+}
 
 .diagram-lightbox {
   position: fixed;
@@ -322,6 +325,9 @@ a:hover {
   color: var(--ink);
   outline: none;
 }
+.diagram-lightbox-close:focus-visible {
+  outline: 2px solid var(--accent);
+}
 
 .chart-menu {
   position: absolute;
@@ -367,6 +373,9 @@ a:hover {
   color: var(--ink);
   outline: none;
 }
+.chart-menu-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+}
 
 .chart-menu-popover {
   display: none;
@@ -406,6 +415,9 @@ a:hover {
   background: var(--soft-2);
   color: var(--ink);
   outline: none;
+}
+.chart-menu-popover button:focus-visible {
+  outline: 2px solid var(--accent);
 }
 
 .chart-canvas {
