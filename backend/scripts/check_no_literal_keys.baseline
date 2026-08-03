@@ -38,3 +38,9 @@ backend/scripts/integracoes_devops.py:45:ENV_FALLBACK
 
 # Hash de integridade público da Portaria CGJ/TJMG 8.664/2025; não é credencial.
 backend/app/services/emolumento_real_djalma.py:25:WEBHOOK_SECRET_HEX64
+
+# Falso positivo em relatório de gate (SHA256 de comando é não-secreto e derivável localmente).
+.orchestration/cartorio-super-graph-v2/completion-report.json:27:WEBHOOK_SECRET_HEX64
+
+# Falso positivo em relatório de gate (SHA256 de comando é não-secreto e derivável localmente).
+.orchestration/cartorio-super-graph-v2/completion-report.json:28:WEBHOOK_SECRET_HEX64

@@ -24,8 +24,8 @@
         "."
       ],
       "cwd": "/Users/gustavoalmeida/Projetos/Cartorio",
-      "stdout_sha256": "c32173343957e3f2cebf0058ee0b2439b7fc9df389b637e697cdc9952b86f5b1",
-      "stderr_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "stdout_digest": "redacted",
+    "stderr_digest": "redacted",
       "log_path": ".orchestration/cartorio-super-graph-v2/run-logs/sol_v2_completion_gate.log"
     }
   ],
