@@ -1,0 +1,605 @@
+{
+  "version": "1.0",
+  "tasks": [
+    {
+      "id": "T1",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Otimizar rotas de Emolumentos (`/api/v1/emolumento/calcular`) implementando Redis Cache direto e validando dependência de banco de dados (`func.count()`).",
+      "status": "pending"
+    },
+    {
+      "id": "T2",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Revisar logs de erro e warnings (Ruff/Mypy/Sentry) e garantir supressão elegante sem ofuscar falhas reais.",
+      "status": "pending"
+    },
+    {
+      "id": "T3",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Expandir Testes Unitários de API para endpoints negligenciados. Rodar de forma cirúrgica (por arquivo/diretório).",
+      "status": "pending"
+    },
+    {
+      "id": "T4",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Auditar Middleware de Audit Chain e LGPD, garantindo PII Scrubber ativo em todas as rotas e payloads recebidos.",
+      "status": "pending"
+    },
+    {
+      "id": "T5",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Consolidar e otimizar Rate Limiting usando a estrutura Redis existente, bloqueando brute-forces na camada FastAPI (fail-open resiliente).",
+      "status": "pending"
+    },
+    {
+      "id": "T6",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Refatorar lógicas de Handoff na API para que respondam mais rápido ao Chatwoot/N8N via BackgroundTasks.",
+      "status": "pending"
+    },
+    {
+      "id": "T7",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Adicionar testes E2E específicos para o webhook da Evolution-API na API.",
+      "status": "pending"
+    },
+    {
+      "id": "T8",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Refinar as validações Pydantic V2 para que os erros retornem mensagens user-friendly (PT-BR) e não vazem detalhes de esquema.",
+      "status": "pending"
+    },
+    {
+      "id": "T9",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Configurar Prometheus custom metrics na API (tempo de PII scrub, taxa de acerto do cache, tempos de resposta LLM no gateway).",
+      "status": "pending"
+    },
+    {
+      "id": "T10",
+      "squad": "🟢 SQUAD 1 - S1: API FastAPI Core (Estabilização e Otimização)",
+      "description": "Revisar o arquivo `.env.example` e secret rotation guides (mesmo sem rotacionar chaves, a doc deve estar coerente).",
+      "status": "pending"
+    },
+    {
+      "id": "T11",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Auditar e organizar todos os workflows do N8N (1 a 11), categorizando-os e comentando cada step complexo.",
+      "status": "pending"
+    },
+    {
+      "id": "T12",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Configurar Dead Letter Queue (DLQ) global e rotinas de Retry no N8N (Exp Backoff já previsto, testar funcionalidade).",
+      "status": "pending"
+    },
+    {
+      "id": "T13",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Validar integração N8N ↔ Supabase (CRUD via Node Oficial).",
+      "status": "pending"
+    },
+    {
+      "id": "T14",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Refinar integração N8N ↔ Redis para controle de state das conversas e idempotência de Webhooks.",
+      "status": "pending"
+    },
+    {
+      "id": "T15",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Analisar os workflows atuais e identificar onde as requisições estão falhando ou lentas. Otimizar chamadas HTTP.",
+      "status": "pending"
+    },
+    {
+      "id": "T16",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Implementar verificação de HMAC/Assinatura em todos os webhooks N8N para máxima segurança.",
+      "status": "pending"
+    },
+    {
+      "id": "T17",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Revisar o nó \"Monitor Cartório\" para garantir que ele rode sem gerar gargalo ou timeout no runner externo.",
+      "status": "pending"
+    },
+    {
+      "id": "T18",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Atualizar dependências e plugins comunitários no ambiente N8N (Evolution-API, Chatwoot) - validando as integrações com os endpoints locais.",
+      "status": "pending"
+    },
+    {
+      "id": "T19",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Adicionar anotações \"LGPD\" dentro dos Workflows N8N indicando onde o dado mascarado transita e onde é persistido.",
+      "status": "pending"
+    },
+    {
+      "id": "T20",
+      "squad": "🟢 SQUAD 2 - S2: N8N (Workflows, Integrações e Resiliência)",
+      "description": "Testar E2E do Handoff (Evolution -> N8N -> Chatwoot -> API -> N8N) e logar os gargalos de performance.",
+      "status": "pending"
+    },
+    {
+      "id": "T21",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Validar o carregamento do `cartorio-bot.openclaw.json` com `deepseek-v4-flash`, 1M context e Thinking Mode ativados.",
+      "status": "pending"
+    },
+    {
+      "id": "T22",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Integrar o OpenClaw Agent com o MCP da API, validando todas as Tools via chamadas simuladas.",
+      "status": "pending"
+    },
+    {
+      "id": "T23",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Auditar o system_prompt do OpenClaw para ser direto, sério, sem emojis e com rigor máximo em LGPD e Emolumentos.",
+      "status": "pending"
+    },
+    {
+      "id": "T24",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Testar as Fallback Chains do OpenClaw (MiniMax, mimo, etc.) e garantir que o transition time é < 2s.",
+      "status": "pending"
+    },
+    {
+      "id": "T25",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Monitorar token consumption (Codex-Bar) da engine `deepseek-v4-flash` via logs do gateway.",
+      "status": "pending"
+    },
+    {
+      "id": "T26",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Revisar hooks on_message_in e on_response_out (PII Scrub e Audit) do gateway OpenClaw.",
+      "status": "pending"
+    },
+    {
+      "id": "T27",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Otimizar a persistência de sessão e janela deslizante no OpenClaw (evitar estouro dos 1M de token com sumarização).",
+      "status": "pending"
+    },
+    {
+      "id": "T28",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Revisar integração do OpenClaw com Chatwoot (pausar bot quando escrevente assume o controle).",
+      "status": "pending"
+    },
+    {
+      "id": "T29",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Adicionar logs detalhados de RAG/Thinking Process do deepseek no OpenClaw (para depuração via API).",
+      "status": "pending"
+    },
+    {
+      "id": "T30",
+      "squad": "🟢 SQUAD 3 - S3: OpenClaw Agent (Inteligência Artificial, Modelos e Contexto)",
+      "description": "Documentar as skills do OpenClaw atualizadas dentro da `infra/openclaw-agent/skills/`.",
+      "status": "pending"
+    },
+    {
+      "id": "T31",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Configurar backups automáticos, cron e pg_dump no Supabase.",
+      "status": "pending"
+    },
+    {
+      "id": "T32",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Implementar e testar Supabase Database Webhooks para tabelas sensíveis (notificar API de alterações críticas).",
+      "status": "pending"
+    },
+    {
+      "id": "T33",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Utilizar Supabase Edge Functions / Cron para rotinas de manutenção e limpeza (ex: excluir chats velhos base na política LGPD).",
+      "status": "pending"
+    },
+    {
+      "id": "T34",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Habilitar e configurar o Supabase Vault para dados sensíveis em repouso.",
+      "status": "pending"
+    },
+    {
+      "id": "T35",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Otimizar RLS (Row Level Security) nas 134 tabelas e garantir acessos apenas por Auth validado ou Service Role.",
+      "status": "pending"
+    },
+    {
+      "id": "T36",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Habilitar Supabase Queues (pgmq) e transferir tarefas pesadas da API para filas (geração de PDF, cálculos massivos).",
+      "status": "pending"
+    },
+    {
+      "id": "T37",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Implementar introspecção Supabase GraphQL para dashboards internos seguros.",
+      "status": "pending"
+    },
+    {
+      "id": "T38",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Monitorar performance (pg_stat_statements) do Supabase via queries lentas e criar índices necessários.",
+      "status": "pending"
+    },
+    {
+      "id": "T39",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Auditar uso de conexões (Connection Pooling / Supavisor) para garantir estabilidade em picos.",
+      "status": "pending"
+    },
+    {
+      "id": "T40",
+      "squad": "🟢 SQUAD 4 - S4: Supabase Core & Banco de Dados",
+      "description": "Atualizar diagramas ER da documentação Supabase e relacionamentos críticos de Audit/Emolumentos.",
+      "status": "pending"
+    },
+    {
+      "id": "T41",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Garantir funcionamento 100% do Telegram Bot (`@TestCartorioBot`) com o webhook configurado e seguro (`8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q`).",
+      "status": "pending"
+    },
+    {
+      "id": "T42",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Criar fluxos de testes de integração via script Python para mandar/receber via Telegram, validando a via expressa da IA.",
+      "status": "pending"
+    },
+    {
+      "id": "T43",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Tratar Edge-cases do Telegram (mídia pesada, áudio, contatos) via N8N ou OpenClaw.",
+      "status": "pending"
+    },
+    {
+      "id": "T44",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Garantir que as restrições LGPD se apliquem ao Telegram de forma isolada do WhatsApp (termo de aceite próprio).",
+      "status": "pending"
+    },
+    {
+      "id": "T45",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Auditar latência ponta a ponta (Bot -> API -> OpenClaw -> Supabase -> API -> Bot) e fixar metas < 2.5s.",
+      "status": "pending"
+    },
+    {
+      "id": "T46",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Atualizar a documentação do Telegram Guide, removendo configs de desenvolvimento obsoletas.",
+      "status": "pending"
+    },
+    {
+      "id": "T47",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Configurar botão \"Falar com Humano\" nativo no Telegram e garantir Handoff para o Chatwoot.",
+      "status": "pending"
+    },
+    {
+      "id": "T48",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Assegurar idempotência total no recebimento das mensagens do Telegram Webhook via Redis.",
+      "status": "pending"
+    },
+    {
+      "id": "T49",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Validar o comando /start para resetar sessões sem quebrar o log de auditoria.",
+      "status": "pending"
+    },
+    {
+      "id": "T50",
+      "squad": "🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal",
+      "description": "Adicionar suporte básico de Web Apps no Telegram (se necessário para envio seguro de docs).",
+      "status": "pending"
+    },
+    {
+      "id": "T51",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Auditar caixas de entrada (Inboxes) do Chatwoot e garantir segmentação correta (WhatsApp vs Telegram vs Web).",
+      "status": "pending"
+    },
+    {
+      "id": "T52",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Testar macros e \"Canned Responses\" no Chatwoot para os escreventes.",
+      "status": "pending"
+    },
+    {
+      "id": "T53",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Verificar integração de Webhooks do Chatwoot para sinalizar fim de Handoff (Escrevente fechou o chat -> Bot reassume).",
+      "status": "pending"
+    },
+    {
+      "id": "T54",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Configurar a UI do Chatwoot para exibição correta dos campos customizados (Protocolo, CPF Mascarado, Status Emolumento).",
+      "status": "pending"
+    },
+    {
+      "id": "T55",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Analisar os Sidekiq workers do Chatwoot no docker swarm para garantir que não haja memory leaks / restart loops.",
+      "status": "pending"
+    },
+    {
+      "id": "T56",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Criar Dashboard no Chatwoot (via scripts em app) para relatórios rápidos de atendimento e SLA de tempo de resposta.",
+      "status": "pending"
+    },
+    {
+      "id": "T57",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Garantir que mensagens do Chatwoot sejam integradas ao Audit Chain e sincronizadas no Supabase de forma segura.",
+      "status": "pending"
+    },
+    {
+      "id": "T58",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Melhorar a identificação de Leads Prospectados (S8 do ROADMAP) diretamente no Chatwoot CRM.",
+      "status": "pending"
+    },
+    {
+      "id": "T59",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Realizar backup das configurações e contatos atuais do Chatwoot (via API e pg_dump).",
+      "status": "pending"
+    },
+    {
+      "id": "T60",
+      "squad": "🟢 SQUAD 6 - S6: Chatwoot e CRM",
+      "description": "Escrever \"Runbook do Escrevente\" atualizado para uso do CRM sem quebrar compliance LGPD.",
+      "status": "pending"
+    },
+    {
+      "id": "T61",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Auditar estabilidade da Evolution-API v2.3.7 e checar conexões TypeBot / Webhook / RabbitMQ.",
+      "status": "pending"
+    },
+    {
+      "id": "T62",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Otimizar payloads do Webhook da Evolution (enviar só o necessário para a API / N8N).",
+      "status": "pending"
+    },
+    {
+      "id": "T63",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Implementar tratamento robusto para mensagens multimídia no WhatsApp (imagem para OCR de CNH/RG no futuro, hoje ignorar graciosamente).",
+      "status": "pending"
+    },
+    {
+      "id": "T64",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Melhorar gestão de status (HOLD_QR, CONNECTED, DISCONNECTED) e disparar alertas via N8N caso a instância caia.",
+      "status": "pending"
+    },
+    {
+      "id": "T65",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Documentar fluxo de rate limit no envio do Evolution-API para não tomar block do WhatsApp.",
+      "status": "pending"
+    },
+    {
+      "id": "T66",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Testar envios massivos (Prospecção) controlados pela API (N8N) com atraso randômico (human-like delay).",
+      "status": "pending"
+    },
+    {
+      "id": "T67",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Checar idempotência no recebimento das mensagens do WhatsApp, usando Redis e TTL 24h.",
+      "status": "pending"
+    },
+    {
+      "id": "T68",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Configurar labels e tags da Evolution para refletir no Chatwoot / Supabase.",
+      "status": "pending"
+    },
+    {
+      "id": "T69",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Testar formatações de markdown (negrito, itálico) recebidas do OpenClaw e enviadas via Evolution.",
+      "status": "pending"
+    },
+    {
+      "id": "T70",
+      "squad": "🟢 SQUAD 7 - S7: Evolution-API e Gateway WhatsApp",
+      "description": "Implementar rotina \"Dead Man's Switch\" na Evolution-API (reiniciar docker container via Easypanel API se ping falhar seguidamente).",
+      "status": "pending"
+    },
+    {
+      "id": "T71",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Auditar uso de memória no VPS master Hostinger (Easypanel metrics) e propor limites seguros (`--limit-memory`) nos containers.",
+      "status": "pending"
+    },
+    {
+      "id": "T72",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Configurar persistência e políticas de AOF/RDB no Redis. Monitorar chaves não deletadas (memory leak de cache).",
+      "status": "pending"
+    },
+    {
+      "id": "T73",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Auditar domínios, proxies e certificados Let's Encrypt no Traefik (Easypanel). Garantir renovação ok.",
+      "status": "pending"
+    },
+    {
+      "id": "T74",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Otimizar rede Overlay do Swarm/Easypanel para menor latência na ponte Supabase -> API -> N8N.",
+      "status": "pending"
+    },
+    {
+      "id": "T75",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Testar comunicação direta via IPs Docker vs DNS Swarm para isolar problemas de rede relatados no passado.",
+      "status": "pending"
+    },
+    {
+      "id": "T76",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Avaliar segurança do acesso ao Easypanel Admin via Browser Agent AI e via Tailscale.",
+      "status": "pending"
+    },
+    {
+      "id": "T77",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Implementar logs unificados (Grafana Loki ou semelhante via plugins locais) se aplicável, ou padronizar saídas stdout.",
+      "status": "pending"
+    },
+    {
+      "id": "T78",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Configurar healthchecks no Docker Compose / Swarm para todos os serviços com restart policy robusta.",
+      "status": "pending"
+    },
+    {
+      "id": "T79",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Atualizar configurações do Tailscale no servidor e garantir rotas MagicDNS corretas e persistentes.",
+      "status": "pending"
+    },
+    {
+      "id": "T80",
+      "squad": "🟢 SQUAD 8 - S8: Infraestrutura Easypanel, Redis, Traefik & Networking",
+      "description": "Testar bloqueios de Firewall (Fail2Ban/Crowdsec) via Traefik labels limitando IPs abusivos (Rate Limiting dinâmico).",
+      "status": "pending"
+    },
+    {
+      "id": "T81",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Revisar e rodar o `dashboard.py` local no diretório `operations-dashboard` garantindo geração sem bugs visuais.",
+      "status": "pending"
+    },
+    {
+      "id": "T82",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Corrigir bugs de acessibilidade CSS e foco (`:focus-visible` vs `:hover`) nas telas dinâmicas do front.",
+      "status": "pending"
+    },
+    {
+      "id": "T83",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Padronizar as views para o Escrevente/CEO consumirem os logs PII free via interface (ao invés do Supabase cru).",
+      "status": "pending"
+    },
+    {
+      "id": "T84",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Refinar Scripts Python para gerar painéis HTML estáticos do plano (como o `SUPER_STATUS.html`).",
+      "status": "pending"
+    },
+    {
+      "id": "T85",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Implementar visualização do Flow \"Evolution-API -> API -> N8N -> Chatwoot -> Redis -> Supabase\" num mini dashboard de Health.",
+      "status": "pending"
+    },
+    {
+      "id": "T86",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Garantir que as validações e testes Playwright cubram os componentes cruciais do Webchat / Dashboard.",
+      "status": "pending"
+    },
+    {
+      "id": "T87",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Limpar dependências obsoletas de frontend/dashboard (ex: npm/pnpm files erráticos se houver).",
+      "status": "pending"
+    },
+    {
+      "id": "T88",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Otimizar renderização do dashboard usando JS/CSS minificado quando gerado pelo Python (ex. Jinja templates).",
+      "status": "pending"
+    },
+    {
+      "id": "T89",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Verificar renderização Mobile dos dashboards e UI gerada.",
+      "status": "pending"
+    },
+    {
+      "id": "T90",
+      "squad": "🟢 SQUAD 9 - S9: UX, Dashboards Internos & Frontend Tooling",
+      "description": "Garantir que nenhum artefato de build (`index.html` gerado dinâmico) faça diff monstruoso no git, usando gitignore apropriadamente.",
+      "status": "pending"
+    },
+    {
+      "id": "T91",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Compilar um arquivo `.jules/sentinel.md` atualizado com logs de segurança (sem detalhes sensíveis expostos, focando na prevenção).",
+      "status": "pending"
+    },
+    {
+      "id": "T92",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Consolidar aprendizados de Frontend/UX no arquivo `.jules/palette.md` de acordo com a memória.",
+      "status": "pending"
+    },
+    {
+      "id": "T93",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Atualizar PROGRESS.md e GOALS.md para refletir o status exato pós-correções, mantendo integridade histórica.",
+      "status": "pending"
+    },
+    {
+      "id": "T94",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Criar arquivo `ROADMAP_JSON_COMPACT.json` espelhando este SUPER PLANO para uso otimizado de LLMs de contexto curto.",
+      "status": "pending"
+    },
+    {
+      "id": "T95",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Remover arquivos de teste ou scripts temporários, limpando a workspace de patches soltos (`*.patch`, `*.orig`).",
+      "status": "pending"
+    },
+    {
+      "id": "T96",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Testar e garantir aderência estrita de todas as novas rotas/modificações no arquivo `AGENTS.md` pertinente.",
+      "status": "pending"
+    },
+    {
+      "id": "T97",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Padronizar Commit Messages em todo o processo para seguir as diretrizes.",
+      "status": "pending"
+    },
+    {
+      "id": "T98",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Medir e salvar logs de consumo (Codex-Bar) das APIs da plataforma ao longo das sessões.",
+      "status": "pending"
+    },
+    {
+      "id": "T99",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Gerar um relatório resumido de \"Integrações 100% Funcionais\" para aprovação do CEO.",
+      "status": "pending"
+    },
+    {
+      "id": "T100",
+      "squad": "🟢 SQUAD 10 - S10: Organização, Memória e Documentação (Agent Brain)",
+      "description": "Fazer pre-commit instructions e verificação final cruzada e declarar o MVP pronto para uso real (Produção Go-Live Final).",
+      "status": "pending"
+    }
+  ]
+}
