@@ -53,7 +53,7 @@
 - [ ] **T40**: Atualizar diagramas ER da documentação Supabase e relacionamentos críticos de Audit/Emolumentos.
 
 ## 🟢 SQUAD 5 - S5: Telegram Bot e Testes Multi-Canal
-- [ ] **T41**: Garantir funcionamento 100% do Telegram Bot (`@TestCartorioBot`) com o webhook configurado e seguro (`8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q`).
+- [ ] **T41**: Garantir funcionamento 100% do Telegram Bot (`@TestCartorioBot`) com o webhook configurado e seguro (`${TELEGRAM_TOKEN}`).
 - [ ] **T42**: Criar fluxos de testes de integração via script Python para mandar/receber via Telegram, validando a via expressa da IA.
 - [ ] **T43**: Tratar Edge-cases do Telegram (mídia pesada, áudio, contatos) via N8N ou OpenClaw.
 - [ ] **T44**: Garantir que as restrições LGPD se apliquem ao Telegram de forma isolada do WhatsApp (termo de aceite próprio).
