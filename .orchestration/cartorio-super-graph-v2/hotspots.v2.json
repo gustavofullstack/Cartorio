@@ -1,0 +1,7 @@
+{
+  "hotspots": [
+    "pyproject.toml",
+    "uv.lock",
+    "backend/app/main.py"
+  ]
+}

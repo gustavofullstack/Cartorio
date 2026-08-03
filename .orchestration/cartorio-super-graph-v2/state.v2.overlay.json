@@ -1,0 +1,43 @@
+{
+  "version": "state.v2.overlay.json",
+  "orchestrator": "SOL-V2-RECOVERY-ORCHESTRATOR",
+  "substitutes": {
+    "FLASH": "TERRA-DATA",
+    "SPARK": "TERRA-QA",
+    "LUNA": "TERRA-SRE",
+    "PRO": "TERRA-REVIEW"
+  },
+  "wave0_status": "WAVE_0R_GO",
+  "nodes": {
+    "V2.R01": "ACCEPTED",
+    "V2.R02": "ACCEPTED",
+    "V2.R03": "ACCEPTED",
+    "V2.R04": "ACCEPTED",
+    "V2.R05": "ACCEPTED",
+    "V2.R06": "ACCEPTED",
+    "V2.R07": "ACCEPTED",
+    "V2.R08": "ACCEPTED",
+    "V2.R09": "ACCEPTED",
+    "V2.R10": "ACCEPTED",
+    "V2.R11": "ACCEPTED",
+    "V2.R12": "ACCEPTED",
+    "V2.R13": "ACCEPTED",
+    "V2.R14": "ACCEPTED",
+    "V2.R15": "ACCEPTED",
+    "V2.R16": "ACCEPTED",
+    "V2.R17": "ACCEPTED",
+    "V2.R18": "ACCEPTED",
+    "V2.R19": "ACCEPTED",
+    "V2.R20": "ACCEPTED",
+    "V2.R21": "ACCEPTED",
+    "V2.R22": "ACCEPTED",
+    "V2.R23": "ACCEPTED",
+    "V2.R24": "ACCEPTED",
+    "V2.R25": "ACCEPTED",
+    "V2.R26": "ACCEPTED",
+    "V2.R27": "ACCEPTED",
+    "V2.R28": "ACCEPTED",
+    "V2.R29": "ACCEPTED",
+    "V2.R30": "ACCEPTED"
+  }
+}
