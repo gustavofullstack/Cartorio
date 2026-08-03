@@ -1,0 +1,14 @@
+{
+  "incident_id": "INC-GRAPH-EVIDENCE-2026-08-03",
+  "base_trusted": "d5427b42ff998005fdef12b9b5a8f764033eeca7",
+  "concurrent_commits": [
+    {
+      "sha": "a06c8c19b7a3bf548df92689e51f4d59581b02a2",
+      "classification": "UNTRUSTED_CONCURRENT_EVIDENCE_BUNDLE"
+    },
+    {
+      "sha": "60f801bfb03b695348dec5b837a3a48a39e5c9d3",
+      "classification": "UNTRUSTED_CONCURRENT_EVIDENCE_BUNDLE"
+    }
+  ]
+}
