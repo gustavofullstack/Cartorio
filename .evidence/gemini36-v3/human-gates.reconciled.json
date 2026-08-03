@@ -1,0 +1,25 @@
+{
+  "audit_timestamp": "2026-08-03T13:20:00Z",
+  "human_gates": {
+    "HG-01": {
+      "name": "Conte\u00fado Sanitizado BRAIN",
+      "status": "BLOCKED_HUMAN",
+      "reason": "Pendente de aceite humano expl\u00edcito."
+    },
+    "HG-02": {
+      "name": "Anomalia Fiscal ISS 1606-3",
+      "status": "BLOCKED_HUMAN",
+      "reason": "Pendente de decis\u00e3o fiscal humana."
+    },
+    "HG-03": {
+      "name": "Tenant Lark & Evento P2",
+      "status": "BLOCKED_HUMAN",
+      "reason": "Pendente de prova do Admin Lark."
+    },
+    "HG-04": {
+      "name": "Matriz 25 Testes Felipe",
+      "status": "BLOCKED_HUMAN",
+      "reason": "Pendente de aceite assinado do Felipe Pizarro."
+    }
+  }
+}

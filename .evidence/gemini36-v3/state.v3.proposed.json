@@ -1,0 +1,12 @@
+{
+  "version": "v3-proposed-2026-08-03",
+  "verdict": "V3_PARTIAL_GO_FOR_LOCAL_PATCHSET",
+  "stats": {
+    "VALIDATED_ACCEPTED": 6,
+    "TESTED_LOCAL_ONLY": 28,
+    "CONFIGURED_ONLY": 15,
+    "UNVERIFIED": 21,
+    "BLOCKED_HUMAN": 29,
+    "INVALIDATED": 1
+  }
+}

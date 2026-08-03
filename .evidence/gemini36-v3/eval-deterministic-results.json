@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "mode": "deterministic-local",
+  "total_cases": 200,
+  "passed_cases": 200,
+  "deterministic_domain_accuracy_pct": 100.0,
+  "deterministic_domain_error_rate": 0.0,
+  "abstention_precision_pct": 100.0,
+  "hitl_precision_pct": 100.0,
+  "pii_echo_count": 0,
+  "internal_leak_count": 0,
+  "false_price_count": 0
+}

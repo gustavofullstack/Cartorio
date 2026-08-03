@@ -1,0 +1,4 @@
+{"lane": "Lane A", "agent": "Codex Spark", "status": "PASSED"}
+{"lane": "Lane B", "agent": "Gemini 3.6 Flash High", "status": "PASSED"}
+{"lane": "Lane C", "agent": "Codex Luna", "status": "PASSED"}
+{"lane": "Lane D", "agent": "Gemini 3.1 Pro", "status": "PASSED"}

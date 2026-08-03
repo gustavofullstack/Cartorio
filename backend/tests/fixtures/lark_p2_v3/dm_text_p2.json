@@ -1,0 +1,14 @@
+{
+  "schema": "2.0",
+  "header": {
+    "event_id": "ev_p2_001",
+    "event_type": "im.message.receive_v1"
+  },
+  "event": {
+    "message": {
+      "message_id": "om_001",
+      "chat_type": "p2p",
+      "content": "{\"text\":\"Ol\u00e1 Pietra\"}"
+    }
+  }
+}
