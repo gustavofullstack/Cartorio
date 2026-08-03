@@ -10,8 +10,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.sol_v2_completion_gate import verify_sol_v2_completion
-
 
 def _write_minimal_v2_artifacts(base: Path) -> tuple[Path, Path, Path]:
     overlay = base / "state.v2.overlay.json"
@@ -92,6 +90,8 @@ def _write_hg(base: Path) -> None:
 
 
 def test_sol_v2_completion_gate_pass(tmp_path: Path) -> None:
+    from scripts.sol_v2_completion_gate import verify_sol_v2_completion
+
     overlay, evidence, incident = _write_minimal_v2_artifacts(tmp_path)
     _write_hg(tmp_path)
     (tmp_path / "scripts").mkdir()
@@ -113,6 +113,8 @@ def test_sol_v2_completion_gate_pass(tmp_path: Path) -> None:
 
 
 def test_sol_v2_completion_gate_fails_without_overlay(tmp_path: Path) -> None:
+    from scripts.sol_v2_completion_gate import verify_sol_v2_completion
+
     evidence = tmp_path / "evidence.v2.jsonl"
     evidence.write_text("{}", encoding="utf-8")
     incident = tmp_path / "INC-GRAPH-EVIDENCE-2026-08-03"
@@ -124,6 +126,8 @@ def test_sol_v2_completion_gate_fails_without_overlay(tmp_path: Path) -> None:
 
 
 def test_sol_v2_completion_gate_fails_if_nodes_incomplete(tmp_path: Path) -> None:
+    from scripts.sol_v2_completion_gate import verify_sol_v2_completion
+
     overlay = tmp_path / "state.v2.overlay.json"
     evidence = tmp_path / "evidence.v2.jsonl"
     incident = tmp_path / "INC-GRAPH-EVIDENCE-2026-08-03"

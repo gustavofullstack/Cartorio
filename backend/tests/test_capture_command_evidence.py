@@ -11,10 +11,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.capture_command_evidence import redact_sensitive, run_and_capture
-
 
 def test_redact_sensitive() -> None:
+    from scripts.capture_command_evidence import redact_sensitive
+
     raw = "My key is sk-123456789012345678901234567890 and CPF is 123.456.789-00"
     redacted = redact_sensitive(raw)
     assert "sk-123456789012345678901234567890" not in redacted
@@ -24,6 +24,8 @@ def test_redact_sensitive() -> None:
 
 
 def test_run_and_capture_echo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.capture_command_evidence import run_and_capture
+
     test_dir = tmp_path / ".evidence" / "gemini36-v3" / "commands"
     test_dir.mkdir(parents=True)
     monkeypatch.setattr("scripts.capture_command_evidence.EVIDENCE_COMMANDS_DIR", test_dir)

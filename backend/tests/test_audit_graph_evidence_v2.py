@@ -13,10 +13,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.audit_graph_evidence_v2 import audit_evidence
-
 
 def test_audit_evidence_matrix_exists(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.audit_graph_evidence_v2 import audit_evidence
+
     test_evidence_dir = tmp_path / ".evidence" / "gemini36-v2"
     test_evidence_dir.mkdir(parents=True)
     
@@ -40,6 +40,8 @@ def test_audit_evidence_matrix_exists(tmp_path: Path, monkeypatch: pytest.Monkey
 
 
 def test_audit_evidence_detects_false_claim(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts.audit_graph_evidence_v2 import audit_evidence
+
     test_evidence_dir = tmp_path / ".evidence" / "gemini36-v2"
     test_evidence_dir.mkdir(parents=True)
     
