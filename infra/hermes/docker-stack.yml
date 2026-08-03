@@ -27,6 +27,7 @@ services:
       FEISHU_ALLOW_ALL_USERS: "false"
       FEISHU_GROUP_POLICY: allowlist
       FEISHU_REQUIRE_MENTION: "true"
+      FEISHU_ALLOWED_USERS: "d3983edd,2bbfa27a"
       FEISHU_ALLOW_BOTS: none
       MCP_CARTORIO_URL: http://cartorio_system-api:8000/mcp/
     configs:

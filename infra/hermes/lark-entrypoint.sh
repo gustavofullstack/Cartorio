@@ -27,6 +27,7 @@ export FEISHU_CONNECTION_MODE="websocket"
 export FEISHU_ALLOW_ALL_USERS="false"
 export FEISHU_GROUP_POLICY="allowlist"
 export FEISHU_REQUIRE_MENTION="true"
+export FEISHU_ALLOWED_USERS="d3983edd,2bbfa27a"
 export FEISHU_ALLOW_BOTS="none"
 export HERMES_GATEWAY_BUSY_ACK_ENABLED="false"
 
