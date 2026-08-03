@@ -1,0 +1,4 @@
+## 2025-02-15 - Timing Attack Vulnerability in Token Comparisons
+**Vulnerability:** The application was using the standard equality operator (`==`) to compare secrets in `backend/app/services/audit_keys.py` and tokens in `backend/app/services/n8n_token_router.py`. This is vulnerable to timing attacks, where an attacker can guess the token character-by-character based on the time it takes for the server to reject the request.
+**Learning:** Even internal registries or singleton services dealing with sensitive credentials (like HMAC secrets and API tokens) must use constant-time comparisons when validating inputs, regardless of whether the input comes directly from an external request or through an internal method call.
+**Prevention:** Always use `hmac.compare_digest` for comparing sensitive strings, secrets, or tokens to ensure the comparison takes a constant amount of time, mitigating timing attacks.
