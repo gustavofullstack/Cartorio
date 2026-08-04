@@ -141,14 +141,15 @@ def list_with_pagination(
     if extra_filters:
         where_clauses.extend(extra_filters)
 
-    from sqlalchemy import Select, and_, func
+    from sqlalchemy import and_, func
+    from sqlalchemy.sql.selectable import Select
 
-    count_stmt: Select[Any] = select(func.count()).select_from(model)
+    count_stmt: Select = select(func.count()).select_from(model)  # type: ignore[type-arg,arg-type]
     if where_clauses:
         count_stmt = count_stmt.where(and_(*where_clauses))
     total = db.scalar(count_stmt) or 0
 
-    stmt: Select[Any] = select(model)
+    stmt: Select = select(model)  # type: ignore[type-arg,arg-type]
     if where_clauses:
         stmt = stmt.where(and_(*where_clauses))
     stmt = (
