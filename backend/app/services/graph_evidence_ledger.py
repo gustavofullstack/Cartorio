@@ -16,13 +16,19 @@ class ChainedEvidenceLedger:
     def get_last_hash(self) -> str:
         if not self.ledger_file.exists() or self.ledger_file.stat().st_size == 0:
             return "0" * 64
-        lines = [line.strip() for line in self.ledger_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+        lines = [
+            line.strip()
+            for line in self.ledger_file.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
         if not lines:
             return "0" * 64
         last_entry = json.loads(lines[-1])
         return str(last_entry.get("entry_hash", "0" * 64))
 
-    def append_entry(self, task_id: str, status: str, evidence_data: dict[str, Any]) -> dict[str, Any]:
+    def append_entry(
+        self, task_id: str, status: str, evidence_data: dict[str, Any]
+    ) -> dict[str, Any]:
         prev_hash = self.get_last_hash()
         payload = {
             "task_id": task_id,
@@ -32,21 +38,25 @@ class ChainedEvidenceLedger:
         }
         canonical_str = json.dumps(payload, sort_keys=True, ensure_ascii=True)
         entry_hash = hashlib.sha256(canonical_str.encode("utf-8")).hexdigest()
-        
+
         full_record = {**payload, "entry_hash": entry_hash}
-        
+
         with open(self.ledger_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(full_record) + "\n")
-            
+
         return full_record
 
     def verify_chain(self) -> bool:
         if not self.ledger_file.exists():
             return True
-        lines = [line.strip() for line in self.ledger_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+        lines = [
+            line.strip()
+            for line in self.ledger_file.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
         if not lines:
             return True
-            
+
         expected_prev = "0" * 64
         for line in lines:
             entry = json.loads(line)
