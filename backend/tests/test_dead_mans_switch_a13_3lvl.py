@@ -482,6 +482,7 @@ def test_endpoint_admin_audit_check_now_audits_own_trigger() -> None:
     client, restore = _make_isolated_client_with_entry_age(entry_age_minutes=5)
     try:
         from sqlalchemy import func
+
         before_count = app.db.SessionLocal().scalar(select(func.count()).select_from(AuditLog)) or 0
 
         resp = client.post(
