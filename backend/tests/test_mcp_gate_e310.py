@@ -44,7 +44,7 @@ EXPECTED_TOOL_COUNT = 15  # snapshot E3.10 + Stage 7 — introspecção, não li
 
 # Formato realista de bot token Telegram: casa _BOT_TOKEN_RE do mcp_server
 # (bot\d+:[A-Za-z0-9_-]{10,}) para exercitar _strip_secrets de verdade.
-FAKE_TOKEN = "123456789:AAfakeTokenGateE310-abcdefghij"  # noqa: S105 (motivo: token Telegram SINTETICO formato 123456789:AAfake... — exercita _strip_secrets do gate MCP)
+FAKE_TOKEN = "123456789:AAfakeTokenGateE310-abcdefghij"  # noqa: S105  # ALLOW_KEY_FALLBACK (motivo: token Telegram SINTETICO formato 123456789:AAfake... — exercita _strip_secrets do gate MCP)
 FAKE_CPF = "123.456.789-09"
 FAKE_PHONE = "5534999998888"
 

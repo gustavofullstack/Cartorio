@@ -28,7 +28,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 MCP_SERVER = ROOT / "mcp_server.py"
 
-FAKE_TOKEN = "123456789:AAFakeToken_abcdefghi-1234567890"  # noqa: S105 (motivo: FAKE_TOKEN de E2.06 — fixture sintetica estabelecida p/ scrub de erros MCP)
+FAKE_TOKEN = "123456789:AAFakeToken_abcdefghi-1234567890"  # noqa: S105  # ALLOW_KEY_FALLBACK (motivo: FAKE_TOKEN de E2.06 — fixture sintetica estabelecida p/ scrub de erros MCP)
 FAKE_CPF = "123.456.789-09"
 FAKE_PHONE = "5534999998888"
 
