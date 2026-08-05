@@ -1,3 +1,4 @@
+# noqa: E402
 """Testes unitários para o SOL V2 Completion Gate."""
 
 from __future__ import annotations
@@ -10,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.sol_v2_completion_gate import verify_sol_v2_completion
+from scripts.sol_v2_completion_gate import verify_sol_v2_completion  # noqa: E402
 
 
 def _write_minimal_v2_artifacts(base: Path) -> tuple[Path, Path, Path]:
