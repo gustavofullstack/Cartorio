@@ -1682,6 +1682,9 @@ input[type="date"] {
   background: var(--soft-blue);
   outline: none;
 }
+.menu button:focus-visible {
+  outline: 2px solid var(--brand);
+}
 .table-scroll {
   overflow: auto;
   border: 1px solid var(--line);
@@ -1817,6 +1820,7 @@ pre {
 }
 .close svg { width: 18px; height: 18px; stroke-width: 2.1; }
 .close:hover, .close:focus-visible { background: var(--soft); outline: none; }
+.close:focus-visible { outline: 2px solid var(--brand); }
 .copy-button {
   position: absolute;
   right: 8px;
@@ -1838,6 +1842,7 @@ pre {
   color: var(--ink);
   outline: none;
 }
+.copy-button:focus-visible { outline: 2px solid var(--brand); }
 @media (max-width: 1100px) {
   .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
