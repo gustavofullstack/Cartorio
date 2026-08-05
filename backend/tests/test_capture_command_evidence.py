@@ -27,7 +27,7 @@ def test_run_and_capture_echo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     test_dir = tmp_path / ".evidence" / "gemini36-v3" / "commands"
     test_dir.mkdir(parents=True)
     monkeypatch.setattr("scripts.capture_command_evidence.EVIDENCE_COMMANDS_DIR", test_dir)
-    
+
     rec = run_and_capture("echo hello", ["G0.01"])
     assert rec["exit_code"] == 0
     assert rec["task_ids"] == ["G0.01"]
