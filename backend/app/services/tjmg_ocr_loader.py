@@ -38,8 +38,8 @@ TABELAS: Final[dict[str, str]] = {
 # para detectar tampering do arquivo original. Marcar como allow porque o
 # secret scanner confunde hex64 com API keys.
 SHA256_ORIGINAIS: Final[dict[str, str]] = {
-    "fixacao1": "202db21576f76d9a5f1ab45264a4e07ee6f25dd48391f7f7940f0353637a9d64",  # noqa: ALLOW_KEY_FALLBACK
-    "fixacao8": "2b6c862be0daf9bcb641641d638a6d3cd8805d829a9806fdd01d8eaec2a4b06e",  # noqa: ALLOW_KEY_FALLBACK
+    "fixacao1": "202db21576f76d9a5f1ab45264a4e07ee6f25dd48391f7f7940f0353637a9d64",  # noqa: S105  # ALLOW_KEY_FALLBACK
+    "fixacao8": "2b6c862be0daf9bcb641641d638a6d3cd8805d829a9806fdd01d8eaec2a4b06e",  # noqa: S105  # ALLOW_KEY_FALLBACK
 }
 
 # Headers emitidos pelo tesseract quando rodado por pagina individual. Usamos

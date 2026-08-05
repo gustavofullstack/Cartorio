@@ -10,7 +10,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.capture_command_evidence import run_and_capture, redact_sensitive
+# noqa: E402
+from scripts.capture_command_evidence import run_and_capture, redact_sensitive  # noqa: E402
 
 
 def test_redact_sensitive() -> None:
@@ -26,7 +27,7 @@ def test_run_and_capture_echo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     test_dir = tmp_path / ".evidence" / "gemini36-v3" / "commands"
     test_dir.mkdir(parents=True)
     monkeypatch.setattr("scripts.capture_command_evidence.EVIDENCE_COMMANDS_DIR", test_dir)
-    
+
     rec = run_and_capture("echo hello", ["G0.01"])
     assert rec["exit_code"] == 0
     assert rec["task_ids"] == ["G0.01"]
