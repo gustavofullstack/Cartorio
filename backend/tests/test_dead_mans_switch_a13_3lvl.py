@@ -481,7 +481,8 @@ def test_endpoint_admin_audit_check_now_audits_own_trigger() -> None:
 
     client, restore = _make_isolated_client_with_entry_age(entry_age_minutes=5)
     try:
-        before_count = len(app.db.SessionLocal().execute(select(AuditLog)).scalars().all())
+        from sqlalchemy import func
+        before_count = app.db.SessionLocal().scalar(select(func.count()).select_from(AuditLog)) or 0
 
         resp = client.post(
             "/api/v1/admin/audit/check-now",
@@ -490,7 +491,7 @@ def test_endpoint_admin_audit_check_now_audits_own_trigger() -> None:
         )
         assert resp.status_code == 200, resp.text
 
-        after_count = len(app.db.SessionLocal().execute(select(AuditLog)).scalars().all())
+        after_count = app.db.SessionLocal().scalar(select(func.count()).select_from(AuditLog)) or 0
         # 1 entry nova (audit.check.triggered) — alem da entry seed do test
         assert after_count - before_count == 1
 
