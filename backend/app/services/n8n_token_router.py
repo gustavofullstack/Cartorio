@@ -31,6 +31,7 @@ Modified by Gustavo Almeida + cartorio-n8n -- G8.23.T4 (Wave 53).
 
 from __future__ import annotations
 
+import hmac
 import logging
 import threading
 from datetime import datetime, timedelta, UTC
@@ -87,7 +88,7 @@ class N8NTokenRouter:
                 return
             existing = self._tokens.get(kid)
             if existing is not None:
-                if existing["token"] == token:
+                if hmac.compare_digest(existing["token"], token):
                     self._bootstrapped = True
                     return
                 raise ValueError(
