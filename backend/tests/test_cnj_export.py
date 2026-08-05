@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Generator
+from datetime import datetime
 
 import pytest
 from sqlalchemy import create_engine
@@ -95,6 +96,7 @@ def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> Non
             nome="SENTINEL_NOME_PRIVADO",
             cpf_hash="SENTINEL_CPF_HASH_PRIVADO",
             email="sentinel.private@example.test",
+            created_at=datetime(2026, 7, 15),
         )
     )
     db.commit()
@@ -105,6 +107,7 @@ def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> Non
             cliente_id=cliente_id,
             tipo="escritura",
             canal_origem="telegram",
+            created_at=datetime(2026, 7, 15),
         )
     )
     db.commit()
