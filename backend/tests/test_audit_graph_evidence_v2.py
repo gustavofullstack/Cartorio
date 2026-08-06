@@ -13,7 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.audit_graph_evidence_v2 import audit_evidence
+from scripts.audit_graph_evidence_v2 import audit_evidence  # noqa: E402
 
 
 def test_audit_evidence_matrix_exists(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

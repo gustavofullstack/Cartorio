@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.capture_command_evidence import redact_sensitive, run_and_capture
+from scripts.capture_command_evidence import redact_sensitive, run_and_capture  # noqa: E402
 
 
 def test_redact_sensitive() -> None:
