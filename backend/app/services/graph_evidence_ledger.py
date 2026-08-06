@@ -32,12 +32,12 @@ class ChainedEvidenceLedger:
         }
         canonical_str = json.dumps(payload, sort_keys=True, ensure_ascii=True)
         entry_hash = hashlib.sha256(canonical_str.encode("utf-8")).hexdigest()
-        
+
         full_record = {**payload, "entry_hash": entry_hash}
-        
+
         with open(self.ledger_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(full_record) + "\n")
-            
+
         return full_record
 
     def verify_chain(self) -> bool:
@@ -46,7 +46,7 @@ class ChainedEvidenceLedger:
         lines = [line.strip() for line in self.ledger_file.read_text(encoding="utf-8").splitlines() if line.strip()]
         if not lines:
             return True
-            
+
         expected_prev = "0" * 64
         for line in lines:
             entry = json.loads(line)

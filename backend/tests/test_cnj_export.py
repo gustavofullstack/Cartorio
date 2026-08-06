@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import json
 from collections.abc import Generator
+from datetime import datetime, timezone
+from unittest.mock import patch
+from app.services.audit import UTC
 
 import pytest
 from sqlalchemy import create_engine
@@ -38,14 +41,18 @@ def db() -> Generator[Session, None, None]:
 
 
 def _approved_request(db: Session):
-    AuditService.log(
-        db,
-        actor_id="system-test",
-        actor_type="system",
-        action="test.cnj.audit_seed",
-        resource="test:cnj",
-        payload={"fixture": True},
-    )
+    fixed_time = datetime(2026, 7, 15, tzinfo=timezone.utc).replace(tzinfo=None)
+    with patch("app.services.audit.datetime") as mock_dt:
+        mock_dt.now.return_value = fixed_time
+        mock_dt.UTC = UTC
+        AuditService.log(
+            db,
+            actor_id="system-test",
+            actor_type="system",
+            action="test.cnj.audit_seed",
+            resource="test:cnj",
+            payload={"fixture": True},
+        )
     request = create_request(db, reference_period="2026-07", requested_by="dpo-requester")
     return approve_request(
         db,
@@ -95,6 +102,7 @@ def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> Non
             nome="SENTINEL_NOME_PRIVADO",
             cpf_hash="SENTINEL_CPF_HASH_PRIVADO",
             email="sentinel.private@example.test",
+            created_at=datetime(2026, 7, 15, tzinfo=timezone.utc).replace(tzinfo=None),
         )
     )
     db.commit()
@@ -105,6 +113,7 @@ def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> Non
             cliente_id=cliente_id,
             tipo="escritura",
             canal_origem="telegram",
+            created_at=datetime(2026, 7, 15, tzinfo=timezone.utc).replace(tzinfo=None),
         )
     )
     db.commit()
