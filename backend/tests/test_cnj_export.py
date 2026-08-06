@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Generator
+from datetime import datetime, UTC
 
 import pytest
 from sqlalchemy import create_engine
@@ -90,11 +91,13 @@ def test_approval_reason_rejects_detectable_personal_data(db: Session) -> None:
 
 def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> None:
     # Valores sentinela nunca podem atravessar a fronteira do artefato CNJ.
+    # Inject created_at to match reference_period="2026-07"
     db.add(
         Cliente(
             nome="SENTINEL_NOME_PRIVADO",
             cpf_hash="SENTINEL_CPF_HASH_PRIVADO",
             email="sentinel.private@example.test",
+            created_at=datetime(2026, 7, 15, tzinfo=UTC),
         )
     )
     db.commit()
@@ -105,6 +108,7 @@ def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> Non
             cliente_id=cliente_id,
             tipo="escritura",
             canal_origem="telegram",
+            created_at=datetime(2026, 7, 15, tzinfo=UTC),
         )
     )
     db.commit()

@@ -4293,3 +4293,12 @@ Modified by Gustavo Almeida — 2026-07-26
 - Next: Felipe texts battery to +1 628 264-9335; reclassify; mark IMESSAGE_FELIPE_ACCEPTED only if all gates pass.
 
 Modified by Gustavo Almeida — 2026-07-26
+
+## Sessão de Planejamento - SUPER_PLANO gerado
+- Gerado SUPER_PLANO.md e SUPER_PLANO.json com 100 tarefas incrementais distribuídas em 10 squads.
+- Foco em melhorias e integrações sem refatoração.
+
+## Sessão de Planejamento - Telegram Bot e Integrações
+- O Telegram Bot (TOKEN: ${TELEGRAM_TOKEN}) está anotado para testes.
+- NÃO ROTACIONAR CHAVES, regra de ouro.
+- Integrações (EVOLUTION-API -> API -> N8N -> CHATWOOT -> REDIS -> SUPABASE -> REDIS -> CHATWOOT -> N8N -> API -> EVOLUTION-API) marcadas para documentação e aprimoramento contínuo nas squads geradas.
