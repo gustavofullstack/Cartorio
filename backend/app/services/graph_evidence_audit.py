@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 
 @dataclass(frozen=True)
@@ -28,7 +27,17 @@ class GraphEvidenceAuditor:
         matrix = json.loads(matrix_file.read_text(encoding="utf-8"))
         violations: list[str] = []
 
-        human_gate_tasks = {"G1.18", "G1.24", "G1.46", "G2.04", "G2.35", "G2.36", "G2.37", "G2.38", "G2.39"}
+        human_gate_tasks = {
+            "G1.18",
+            "G1.24",
+            "G1.46",
+            "G2.04",
+            "G2.35",
+            "G2.36",
+            "G2.37",
+            "G2.38",
+            "G2.39",
+        }
 
         for item in matrix:
             tid = item["task_id"]
@@ -41,14 +50,16 @@ class GraphEvidenceAuditor:
 
             # Check 2: Human Gate marked VALIDATED_ACCEPTED without E5_HUMAN_SIGNOFF
             if tid in human_gate_tasks and status == "VALIDATED_ACCEPTED":
-                violations.append(f"{tid}: Human gate marked VALIDATED_ACCEPTED without E5_HUMAN_SIGNOFF")
+                violations.append(
+                    f"{tid}: Human gate marked VALIDATED_ACCEPTED without E5_HUMAN_SIGNOFF"
+                )
 
             # Check 3: Self-assigned certification
             if tid in ("G2.39", "G2.40") and status == "ACCEPTED":
-                violations.append(f"{tid}: Certification task cannot be ACCEPTED without E6_END_TO_END proof")
+                violations.append(
+                    f"{tid}: Certification task cannot be ACCEPTED without E6_END_TO_END proof"
+                )
 
         return AuditResult(
-            is_valid=len(violations) == 0,
-            violations=violations,
-            nodes_verified=len(matrix)
+            is_valid=len(violations) == 0, violations=violations, nodes_verified=len(matrix)
         )
