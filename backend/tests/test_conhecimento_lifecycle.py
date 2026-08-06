@@ -90,5 +90,9 @@ def test_exige_actor_e_reason() -> None:
 
 
 def test_pode_transicionar_matriz() -> None:
-    assert pode_transicionar(EstadoConhecimento.APPROVED, EstadoConhecimento.PUBLISHED)
-    assert not pode_transicionar(EstadoConhecimento.INGESTED, EstadoConhecimento.PUBLISHED)
+    assert pode_transicionar(
+        EstadoConhecimento.APPROVED, EstadoConhecimento.PUBLISHED
+    )
+    assert not pode_transicionar(
+        EstadoConhecimento.INGESTED, EstadoConhecimento.PUBLISHED
+    )

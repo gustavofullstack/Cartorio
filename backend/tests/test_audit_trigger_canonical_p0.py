@@ -245,7 +245,9 @@ class TestMigration0029:
     def test_hmac_configuration_is_required_without_known_fallback(self) -> None:
         upgrade = self.SQL.split('UPGRADE_SQL = r"""')[1].split('"""')[0]
         assert "v_key := NULLIF(current_setting('app.audit_hmac_key', true), '');" in upgrade
-        assert "v_hmac_kid := NULLIF(current_setting('app.audit_hmac_kid', true), '');" in upgrade
+        assert (
+            "v_hmac_kid := NULLIF(current_setting('app.audit_hmac_kid', true), '');" in upgrade
+        )
         assert "IF v_key IS NULL OR length(v_key) < 32 THEN" in upgrade
         assert "IF v_hmac_kid IS NULL OR length(v_hmac_kid) > 64 THEN" in upgrade
         assert "RAISE EXCEPTION USING" in upgrade

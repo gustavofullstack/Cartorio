@@ -238,7 +238,9 @@ def revogar_publicacao(
     except TransicaoConhecimentoInvalidaError as error:
         raise ValidacaoConhecimentoError(str(error)) from error
 
-    reference = sha256(f"revoke:{version_id}:{actor}:{reason_safe}".encode()).hexdigest()[:32]
+    reference = sha256(
+        f"revoke:{version_id}:{actor}:{reason_safe}".encode()
+    ).hexdigest()[:32]
     return PublicacaoResultado(
         action="REVOKE",
         from_state=transicao.from_state,
@@ -271,7 +273,9 @@ def superseder_publicacao(
     except TransicaoConhecimentoInvalidaError as error:
         raise ValidacaoConhecimentoError(str(error)) from error
 
-    reference = sha256(f"supersede:{version_id}:{actor}:{reason_safe}".encode()).hexdigest()[:32]
+    reference = sha256(
+        f"supersede:{version_id}:{actor}:{reason_safe}".encode()
+    ).hexdigest()[:32]
     return PublicacaoResultado(
         action="SUPERSEDE",
         from_state=transicao.from_state,

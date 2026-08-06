@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.v3_completion_gate import verify_v3_completion  # noqa: E402
+from scripts.v3_completion_gate import verify_v3_completion
 
 
 def test_v3_completion_gate_pass(tmp_path: Path) -> None:
@@ -30,12 +31,10 @@ def test_v3_completion_gate_pass(tmp_path: Path) -> None:
             "HG-01": {"status": "BLOCKED_HUMAN"},
             "HG-02": {"status": "BLOCKED_HUMAN"},
             "HG-03": {"status": "BLOCKED_HUMAN"},
-            "HG-04": {"status": "BLOCKED_HUMAN"},
+            "HG-04": {"status": "BLOCKED_HUMAN"}
         }
     }
-    (evidence_root / "human-gates.reconciled.json").write_text(
-        json.dumps(hg_data), encoding="utf-8"
-    )
+    (evidence_root / "human-gates.reconciled.json").write_text(json.dumps(hg_data), encoding="utf-8")
 
     sample_json = json.dumps({"case_id": "1"}) + "\n"
     lines = [sample_json] * 200
