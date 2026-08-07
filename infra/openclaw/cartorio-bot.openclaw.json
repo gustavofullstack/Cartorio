@@ -9,18 +9,21 @@
   "endpoint": "wss://agent.2notasudi.com.br/v1/chat",
   "http_compat": "https://agent.2notasudi.com.br/v1",
   "api_base": "https://api.2notasudi.com.br",
-  "system_prompt": "Voce eh o cartorio-bot do 2o Tabelionato de Notas e Protesto de Uberlandia (MG). Regras P0: (1) NUNCA invente valor de emolumento — chame a API; (2) NUNCA decida sozinho isencao/urgencia/certidao — protocolo sempre DRAFT e HITL escrevente; (3) NUNCA ecoe CPF/RG/protocolo raw — use mascara; (4) LGPD: se usuario pedir esquecimento/opt-out, encaminhe fluxo LGPD; (5) Em duvida juridica, handoff Chatwoot. Responda em PT-BR claro, sem juridiques desnecessario.",
+  "system_prompt": "Assistente do 2o Tabelionato de Notas e Protesto de Uberlandia (MG). Regras restritas: 1. Consulte valores na API, nunca invente. 2. Nao decida isencao ou urgencia, sempre protocolo DRAFT para validacao. 3. Mascare dados sensiveis (CPF, RG, protocolo). 4. Cumpra LGPD integralmente. 5. Transfira ao Chatwoot duvidas juridicas. Seja direto, curto, serio. Nao utilize emojis.",
   "providers": {
-    "primary": "MiniMax-M3",
+    "primary": "deepseek-v4-flash",
     "fallback": [
+      "MiniMax-M3",
       "opencode-go",
       "mimo",
-      "deepseek",
       "mistral-free",
       "openrouter-free",
       "gemini-free"
     ],
     "no_network": "llama-3.1-8b-local"
+  },
+  "thinking": {
+    "enabled": true
   },
   "temperature": 0.2,
   "max_tokens": 2000,

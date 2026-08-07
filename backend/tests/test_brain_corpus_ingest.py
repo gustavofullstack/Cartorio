@@ -237,7 +237,8 @@ def test_pdf_extraction_uses_local_pdftotext_with_a_hard_timeout(tmp_path: Path)
     with patch(
         "scripts.brain_corpus_ingest.subprocess.run", return_value=CompletedProcess()
     ) as run:
-        units = _extract_pdf(source_file)
+        with patch("scripts.brain_corpus_ingest.shutil.which", return_value="/usr/bin/pdftotext"):
+            units = _extract_pdf(source_file)
 
     assert units == [("page:1", "primeira pagina"), ("page:2", "segunda pagina")]
     assert run.call_args.kwargs["timeout"] < 30
@@ -261,6 +262,7 @@ def test_textless_pdf_delegates_to_local_ocr_with_private_scratch(tmp_path: Path
             "scripts.brain_corpus_ingest._extract_pdf_with_local_ocr",
             return_value=[("page:1", "texto reconhecido")],
         ) as ocr,
+        patch("scripts.brain_corpus_ingest.shutil.which", return_value="/usr/bin/pdftotext"),
     ):
         units = _extract_pdf(source_file, scratch_dir)
 
