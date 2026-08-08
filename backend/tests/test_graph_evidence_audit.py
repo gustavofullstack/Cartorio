@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-import pytest
 
 from app.services.graph_evidence_audit import GraphEvidenceAuditor
 
