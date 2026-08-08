@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 
 def test_mcp_pilot_profile_allowlist() -> None:
