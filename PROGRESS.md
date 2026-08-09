@@ -4293,3 +4293,9 @@ Modified by Gustavo Almeida — 2026-07-26
 - Next: Felipe texts battery to +1 628 264-9335; reclassify; mark IMESSAGE_FELIPE_ACCEPTED only if all gates pass.
 
 Modified by Gustavo Almeida — 2026-07-26
+
+## 2026-08-09 - Squad 1 - Task 1 (S1-T1)
+- **Goal:** Test and verify core API endpoints (protocolo_api, health_radar_api, e2e_health).
+- **Execution:** Ran `uv run pytest` on core tests. Tests initially failed due to `test_e2e_health.py` expecting an older Playwright cache directory structure (`chrome-linux` instead of `chrome-linux64`).
+- **Fix:** Patched `backend/tests/test_e2e_health.py` to also check `chrome-linux64` which is used in Playwright v1.40+.
+- **Result:** Tests passed (17 passed, 1 skipped). API Core endpoints are verified and stable.

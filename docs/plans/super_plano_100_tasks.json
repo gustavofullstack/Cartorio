@@ -1,0 +1,606 @@
+{
+  "title": "SUPER_PLANO_MELHORIAS",
+  "description": "100 Tasks of iterative improvements organized into 10 squads, focusing on testing, fixing, and integrating existing infrastructure (API, N8N, Supabase, Chatwoot, Evolution-API, Redis, OpenClaw).",
+  "tasks": [
+    {
+      "id": "S1-T1",
+      "title": "[API Core & Endpoints] Improvement Task 1",
+      "description": "Audit and optimize all GET endpoints for reduced response times.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T2",
+      "title": "[API Core & Endpoints] Improvement Task 2",
+      "description": "Implement rate limiting logic on POST endpoints to prevent abuse.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T3",
+      "title": "[API Core & Endpoints] Improvement Task 3",
+      "description": "Add detailed OpenAPI descriptions for all query parameters.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T4",
+      "title": "[API Core & Endpoints] Improvement Task 4",
+      "description": "Ensure all endpoints return strict JSON problem details on errors.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T5",
+      "title": "[API Core & Endpoints] Improvement Task 5",
+      "description": "Review and enforce Pydantic validation across all incoming request schemas.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T6",
+      "title": "[API Core & Endpoints] Improvement Task 6",
+      "description": "Add health check probes for external API dependencies.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T7",
+      "title": "[API Core & Endpoints] Improvement Task 7",
+      "description": "Refactor API pagination to use keyset pagination instead of offset.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T8",
+      "title": "[API Core & Endpoints] Improvement Task 8",
+      "description": "Secure all endpoints with appropriate authentication scopes.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T9",
+      "title": "[API Core & Endpoints] Improvement Task 9",
+      "description": "Write integration tests for endpoints missing test coverage.",
+      "status": "pending"
+    },
+    {
+      "id": "S1-T10",
+      "title": "[API Core & Endpoints] Improvement Task 10",
+      "description": "Audit HTTP caching headers for all read-only endpoints.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T1",
+      "title": "[N8N Orchestration] Improvement Task 1",
+      "description": "Audit N8N error handling workflows to ensure no silent failures.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T2",
+      "title": "[N8N Orchestration] Improvement Task 2",
+      "description": "Implement idempotency checks across all webhook-triggered N8N nodes.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T3",
+      "title": "[N8N Orchestration] Improvement Task 3",
+      "description": "Optimize N8N Redis caching for frequent workflow data lookups.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T4",
+      "title": "[N8N Orchestration] Improvement Task 4",
+      "description": "Refactor complex N8N workflows into modular, reusable sub-workflows.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T5",
+      "title": "[N8N Orchestration] Improvement Task 5",
+      "description": "Add monitoring and alerting for N8N workflow execution timeouts.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T6",
+      "title": "[N8N Orchestration] Improvement Task 6",
+      "description": "Review N8N credentials security and ensure strict least-privilege.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T7",
+      "title": "[N8N Orchestration] Improvement Task 7",
+      "description": "Implement automatic retry mechanisms for external API calls within N8N.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T8",
+      "title": "[N8N Orchestration] Improvement Task 8",
+      "description": "Create documentation for all critical N8N workflows.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T9",
+      "title": "[N8N Orchestration] Improvement Task 9",
+      "description": "Ensure N8N handles graceful degradation during Supabase downtime.",
+      "status": "pending"
+    },
+    {
+      "id": "S2-T10",
+      "title": "[N8N Orchestration] Improvement Task 10",
+      "description": "Test N8N webhook triggers with malformed payloads to verify resilience.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T1",
+      "title": "[Supabase & Database] Improvement Task 1",
+      "description": "Audit Supabase RLS policies to ensure no unauthorized data access.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T2",
+      "title": "[Supabase & Database] Improvement Task 2",
+      "description": "Optimize Supabase PostgreSQL indexes for frequently queried tables.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T3",
+      "title": "[Supabase & Database] Improvement Task 3",
+      "description": "Implement Supabase Database Webhooks for real-time sync with N8N.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T4",
+      "title": "[Supabase & Database] Improvement Task 4",
+      "description": "Configure pg_cron jobs in Supabase for periodic data cleanup.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T5",
+      "title": "[Supabase & Database] Improvement Task 5",
+      "description": "Review Supabase Storage security rules and access patterns.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T6",
+      "title": "[Supabase & Database] Improvement Task 6",
+      "description": "Audit Supabase Vault usage for managing sensitive integration tokens.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T7",
+      "title": "[Supabase & Database] Improvement Task 7",
+      "description": "Analyze Supabase query performance using pg_stat_statements.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T8",
+      "title": "[Supabase & Database] Improvement Task 8",
+      "description": "Implement connection pooling (Supavisor) tuning for optimal concurrency.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T9",
+      "title": "[Supabase & Database] Improvement Task 9",
+      "description": "Create database backup verification and restore drill procedures.",
+      "status": "pending"
+    },
+    {
+      "id": "S3-T10",
+      "title": "[Supabase & Database] Improvement Task 10",
+      "description": "Setup Supabase real-time subscriptions for Chatwoot dashboard updates.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T1",
+      "title": "[Chatwoot & CRM] Improvement Task 1",
+      "description": "Refactor Chatwoot handoff logic to ensure smooth transitions to human agents.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T2",
+      "title": "[Chatwoot & CRM] Improvement Task 2",
+      "description": "Audit Chatwoot auto-assignment rules for efficient ticket distribution.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T3",
+      "title": "[Chatwoot & CRM] Improvement Task 3",
+      "description": "Integrate Chatwoot with N8N to trigger external workflows on ticket creation.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T4",
+      "title": "[Chatwoot & CRM] Improvement Task 4",
+      "description": "Implement Chatwoot canned responses matching via OpenClaw AI.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T5",
+      "title": "[Chatwoot & CRM] Improvement Task 5",
+      "description": "Optimize Chatwoot webhooks payload size for faster delivery.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T6",
+      "title": "[Chatwoot & CRM] Improvement Task 6",
+      "description": "Review Chatwoot Sidekiq queue performance and concurrency settings.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T7",
+      "title": "[Chatwoot & CRM] Improvement Task 7",
+      "description": "Ensure Chatwoot handles high volume concurrent connections smoothly.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T8",
+      "title": "[Chatwoot & CRM] Improvement Task 8",
+      "description": "Create automated tests for Chatwoot handoff API endpoints.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T9",
+      "title": "[Chatwoot & CRM] Improvement Task 9",
+      "description": "Audit Chatwoot data retention policies and implement automated cleanup.",
+      "status": "pending"
+    },
+    {
+      "id": "S4-T10",
+      "title": "[Chatwoot & CRM] Improvement Task 10",
+      "description": "Enhance Chatwoot user interface extensions for better agent experience.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T1",
+      "title": "[Evolution-API & Messaging] Improvement Task 1",
+      "description": "Audit Evolution-API connection stability and automatic reconnection logic.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T2",
+      "title": "[Evolution-API & Messaging] Improvement Task 2",
+      "description": "Implement strict Webhook signature verification for Evolution-API events.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T3",
+      "title": "[Evolution-API & Messaging] Improvement Task 3",
+      "description": "Optimize Evolution-API message delivery retry strategies.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T4",
+      "title": "[Evolution-API & Messaging] Improvement Task 4",
+      "description": "Review Evolution-API rate limiting to prevent WhatsApp bans.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T5",
+      "title": "[Evolution-API & Messaging] Improvement Task 5",
+      "description": "Ensure Evolution-API gracefully handles unsupported message types.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T6",
+      "title": "[Evolution-API & Messaging] Improvement Task 6",
+      "description": "Create end-to-end tests for WhatsApp message flow via Evolution-API.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T7",
+      "title": "[Evolution-API & Messaging] Improvement Task 7",
+      "description": "Audit Evolution-API database size and implement message archiving.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T8",
+      "title": "[Evolution-API & Messaging] Improvement Task 8",
+      "description": "Enhance monitoring for Evolution-API session status and QR code generation.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T9",
+      "title": "[Evolution-API & Messaging] Improvement Task 9",
+      "description": "Implement fallback mechanisms if Evolution-API becomes unresponsive.",
+      "status": "pending"
+    },
+    {
+      "id": "S5-T10",
+      "title": "[Evolution-API & Messaging] Improvement Task 10",
+      "description": "Document Evolution-API scaling strategies for high throughput events.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T1",
+      "title": "[Redis & Caching] Improvement Task 1",
+      "description": "Audit Redis memory usage and optimize data structures.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T2",
+      "title": "[Redis & Caching] Improvement Task 2",
+      "description": "Implement Redis eviction policies appropriate for different cache keys.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T3",
+      "title": "[Redis & Caching] Improvement Task 3",
+      "description": "Review Redis persistence configuration (RDB/AOF) for data safety.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T4",
+      "title": "[Redis & Caching] Improvement Task 4",
+      "description": "Optimize Redis connection pooling in the FastAPI backend.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T5",
+      "title": "[Redis & Caching] Improvement Task 5",
+      "description": "Create Lua scripts for atomic complex operations in Redis.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T6",
+      "title": "[Redis & Caching] Improvement Task 6",
+      "description": "Audit Redis security settings (authentication, network binding).",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T7",
+      "title": "[Redis & Caching] Improvement Task 7",
+      "description": "Implement Redis cluster mode evaluation for future scalability.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T8",
+      "title": "[Redis & Caching] Improvement Task 8",
+      "description": "Monitor Redis slowlog and optimize slow commands.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T9",
+      "title": "[Redis & Caching] Improvement Task 9",
+      "description": "Implement Redis Pub/Sub for real-time inter-service communication.",
+      "status": "pending"
+    },
+    {
+      "id": "S6-T10",
+      "title": "[Redis & Caching] Improvement Task 10",
+      "description": "Review Redis caching TTLs to ensure data freshness without excessive misses.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T1",
+      "title": "[OpenClaw Agent & AI] Improvement Task 1",
+      "description": "Audit OpenClaw agent context window usage to prevent truncation.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T2",
+      "title": "[OpenClaw Agent & AI] Improvement Task 2",
+      "description": "Refactor OpenClaw tools to use strict JSON schema validation.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T3",
+      "title": "[OpenClaw Agent & AI] Improvement Task 3",
+      "description": "Implement semantic caching for OpenClaw LLM responses to reduce costs.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T4",
+      "title": "[OpenClaw Agent & AI] Improvement Task 4",
+      "description": "Optimize OpenClaw prompt construction to reduce token consumption.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T5",
+      "title": "[OpenClaw Agent & AI] Improvement Task 5",
+      "description": "Review OpenClaw fallback chain for high availability during provider outages.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T6",
+      "title": "[OpenClaw Agent & AI] Improvement Task 6",
+      "description": "Create evaluations for OpenClaw response quality and adherence to rules.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T7",
+      "title": "[OpenClaw Agent & AI] Improvement Task 7",
+      "description": "Audit OpenClaw PII scrubbing logic to ensure complete anonymization.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T8",
+      "title": "[OpenClaw Agent & AI] Improvement Task 8",
+      "description": "Enhance OpenClaw Telegram bot integration with rich media support.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T9",
+      "title": "[OpenClaw Agent & AI] Improvement Task 9",
+      "description": "Implement OpenClaw 'thinking' mode metrics collection.",
+      "status": "pending"
+    },
+    {
+      "id": "S7-T10",
+      "title": "[OpenClaw Agent & AI] Improvement Task 10",
+      "description": "Review OpenClaw hitl routing logic for complex queries.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T1",
+      "title": "[Monitoring & Observability] Improvement Task 1",
+      "description": "Audit Prometheus metrics cardinality to prevent TSDB overload.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T2",
+      "title": "[Monitoring & Observability] Improvement Task 2",
+      "description": "Implement critical alerts in Alertmanager for Service Level Objectives.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T3",
+      "title": "[Monitoring & Observability] Improvement Task 3",
+      "description": "Refactor Grafana dashboards for better visualization of system health.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T4",
+      "title": "[Monitoring & Observability] Improvement Task 4",
+      "description": "Optimize Loki log aggregation queries for faster troubleshooting.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T5",
+      "title": "[Monitoring & Observability] Improvement Task 5",
+      "description": "Review application logging levels to reduce noise in production.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T6",
+      "title": "[Monitoring & Observability] Improvement Task 6",
+      "description": "Implement distributed tracing (e.g., OpenTelemetry) across all services.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T7",
+      "title": "[Monitoring & Observability] Improvement Task 7",
+      "description": "Audit uptime monitoring checks for all public-facing endpoints.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T8",
+      "title": "[Monitoring & Observability] Improvement Task 8",
+      "description": "Create automated reports for weekly SLA compliance.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T9",
+      "title": "[Monitoring & Observability] Improvement Task 9",
+      "description": "Enhance incident response playbooks with specific PromQL queries.",
+      "status": "pending"
+    },
+    {
+      "id": "S8-T10",
+      "title": "[Monitoring & Observability] Improvement Task 10",
+      "description": "Review monitoring data retention policies for compliance and cost.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T1",
+      "title": "[Security & Infrastructure] Improvement Task 1",
+      "description": "Audit Tailscale ACLs to enforce strict least-privilege access.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T2",
+      "title": "[Security & Infrastructure] Improvement Task 2",
+      "description": "Implement SSH key rotation policies for all VPS instances.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T3",
+      "title": "[Security & Infrastructure] Improvement Task 3",
+      "description": "Review firewall rules to ensure only necessary ports are exposed.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T4",
+      "title": "[Security & Infrastructure] Improvement Task 4",
+      "description": "Audit all application secrets for drift against source control.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T5",
+      "title": "[Security & Infrastructure] Improvement Task 5",
+      "description": "Implement automated vulnerability scanning for Docker images.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T6",
+      "title": "[Security & Infrastructure] Improvement Task 6",
+      "description": "Review CORS policies on all API endpoints for security.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T7",
+      "title": "[Security & Infrastructure] Improvement Task 7",
+      "description": "Audit EasyPanel configuration for secure deployments.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T8",
+      "title": "[Security & Infrastructure] Improvement Task 8",
+      "description": "Enhance secrets management using Doppler or Hashicorp Vault.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T9",
+      "title": "[Security & Infrastructure] Improvement Task 9",
+      "description": "Conduct a simulated security incident response drill.",
+      "status": "pending"
+    },
+    {
+      "id": "S9-T10",
+      "title": "[Security & Infrastructure] Improvement Task 10",
+      "description": "Review dependency vulnerability reports (e.g., Dependabot/Renovate).",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T1",
+      "title": "[Documentation & Architecture] Improvement Task 1",
+      "description": "Audit all Architecture Decision Records (ADRs) for accuracy.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T2",
+      "title": "[Documentation & Architecture] Improvement Task 2",
+      "description": "Update the central system diagram to reflect current integrations.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T3",
+      "title": "[Documentation & Architecture] Improvement Task 3",
+      "description": "Refactor the API documentation (Swagger/ReDoc) for clarity.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T4",
+      "title": "[Documentation & Architecture] Improvement Task 4",
+      "description": "Create a comprehensive onboarding guide for new developers.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T5",
+      "title": "[Documentation & Architecture] Improvement Task 5",
+      "description": "Review and update the project's README.md with setup instructions.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T6",
+      "title": "[Documentation & Architecture] Improvement Task 6",
+      "description": "Document the complete data flow from WhatsApp to Supabase.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T7",
+      "title": "[Documentation & Architecture] Improvement Task 7",
+      "description": "Create a runbook for common operational tasks and troubleshooting.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T8",
+      "title": "[Documentation & Architecture] Improvement Task 8",
+      "description": "Audit the LGPD documentation to ensure compliance tracking.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T9",
+      "title": "[Documentation & Architecture] Improvement Task 9",
+      "description": "Enhance inline code comments for complex business logic.",
+      "status": "pending"
+    },
+    {
+      "id": "S10-T10",
+      "title": "[Documentation & Architecture] Improvement Task 10",
+      "description": "Publish a post-mortem template for future incident reviews.",
+      "status": "pending"
+    }
+  ]
+}
