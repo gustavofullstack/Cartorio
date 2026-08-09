@@ -1,161 +1,131 @@
 {
-  "$schema": "https://openclaw.ai/schemas/agent-v1.json",
-  "name": "cartorio-bot",
-  "version": "1.0.0",
-  "type": "assistant",
-  "slug": "cartorio-bot",
-  "owner": "gustavoalmeida",
-  "description": "Assistente oficial do 2o Servico Notarial de Uberlandia \u2014 HITL obrigatorio em atos juridicos, LGPD-by-design.",
-  "endpoint": "wss://agent.2notasudi.com.br/v1/chat",
-  "http_compat": "https://agent.2notasudi.com.br/v1",
-  "api_base": "https://api.2notasudi.com.br",
-  "system_prompt": "Voce eh o cartorio-bot do 2o Tabelionato de Notas e Protesto de Uberlandia (MG). Responda de forma direta, curta, seria e sem emojis. Regras P0: (1) NUNCA invente valor de emolumento - chame a API; (2) NUNCA decida sozinho isencao/urgencia/certidao - protocolo sempre DRAFT e HITL escrevente; (3) NUNCA ecoe CPF/RG/protocolo raw - use mascara; (4) LGPD: se usuario pedir esquecimento/opt-out, encaminhe fluxo LGPD; (5) Em duvida juridica, handoff Chatwoot. Responda em PT-BR claro, sem juridiques desnecessario.",
-  "providers": {
-    "primary": "deepseek-v4-flash",
-    "fallback": [
-      "opencode-go",
-      "mimo",
-      "deepseek",
-      "mistral-free",
-      "openrouter-free",
-      "gemini-free"
+    "$schema": "https://openclaw.ai/schemas/agent-v1.json",
+    "name": "cartorio-bot",
+    "version": "1.0.0",
+    "type": "assistant",
+    "slug": "cartorio-bot",
+    "owner": "gustavoalmeida",
+    "description": "Assistente oficial do 2o Servico Notarial de Uberlandia \u2014 HITL obrigatorio em atos juridicos, LGPD-by-design.",
+    "endpoint": "wss://agent.2notasudi.com.br/v1/chat",
+    "http_compat": "https://agent.2notasudi.com.br/v1",
+    "api_base": "https://api.2notasudi.com.br",
+    "system_prompt": "Voce eh o cartorio-bot do 2o Tabelionato de Notas e Protesto de Uberlandia (MG). Responda de forma direta, curta, seria e sem emojis. Regras P0: (1) NUNCA invente valor de emolumento - chame a API; (2) NUNCA decida sozinho isencao/urgencia/certidao - protocolo sempre DRAFT e HITL escrevente; (3) NUNCA ecoe CPF/RG/protocolo raw - use mascara; (4) LGPD: se usuario pedir esquecimento/opt-out, encaminhe fluxo LGPD; (5) Em duvida juridica, handoff Chatwoot. Responda em PT-BR claro, sem juridiques desnecessario.",
+    "providers": {
+        "primary": "deepseek-v4-flash",
+        "fallback": [
+            "opencode-go",
+            "mimo",
+            "deepseek",
+            "mistral-free",
+            "openrouter-free",
+            "gemini-free",
+        ],
+        "no_network": "llama-3.1-8b-local",
+    },
+    "temperature": 0.2,
+    "max_tokens": 2000,
+    "context_window": 1048576,
+    "tools": [
+        {
+            "name": "consultar_emolumento",
+            "method": "POST",
+            "path": "/api/v1/emolumento/calcular",
+            "hitl": false,
+            "lgpd_scope": false,
+        },
+        {
+            "name": "consultar_protocolo",
+            "method": "GET",
+            "path": "/api/v1/protocolo/{numero}",
+            "hitl": false,
+            "lgpd_scope": true,
+        },
+        {
+            "name": "criar_protocolo",
+            "method": "POST",
+            "path": "/api/v1/protocolo",
+            "hitl": true,
+            "lgpd_scope": true,
+            "notes": "Sempre DRAFT; escrevente valida",
+        },
+        {
+            "name": "agendar_atendimento",
+            "method": "POST",
+            "path": "/api/v1/agendamento",
+            "hitl": true,
+            "lgpd_scope": true,
+        },
+        {
+            "name": "segunda_via",
+            "method": "POST",
+            "path": "/api/v1/documento/segunda-via",
+            "hitl": true,
+            "lgpd_scope": true,
+        },
+        {
+            "name": "lgpd_direitos",
+            "method": "POST",
+            "path": "/api/v1/lgpd/{direito}",
+            "hitl": true,
+            "lgpd_scope": true,
+        },
+        {
+            "name": "audit_verify",
+            "method": "POST",
+            "path": "/api/v1/audit/verify",
+            "hitl": false,
+            "lgpd_scope": false,
+        },
+        {
+            "name": "handoff_humano",
+            "method": "POST",
+            "path": "/api/v1/integrations/chatwoot/handoff",
+            "hitl": true,
+            "lgpd_scope": true,
+        },
     ],
-    "no_network": "llama-3.1-8b-local"
-  },
-  "temperature": 0.2,
-  "max_tokens": 2000,
-  "context_window": 1048576,
-  "tools": [
-    {
-      "name": "consultar_emolumento",
-      "method": "POST",
-      "path": "/api/v1/emolumento/calcular",
-      "hitl": false,
-      "lgpd_scope": false
-    },
-    {
-      "name": "consultar_protocolo",
-      "method": "GET",
-      "path": "/api/v1/protocolo/{numero}",
-      "hitl": false,
-      "lgpd_scope": true
-    },
-    {
-      "name": "criar_protocolo",
-      "method": "POST",
-      "path": "/api/v1/protocolo",
-      "hitl": true,
-      "lgpd_scope": true,
-      "notes": "Sempre DRAFT; escrevente valida"
-    },
-    {
-      "name": "agendar_atendimento",
-      "method": "POST",
-      "path": "/api/v1/agendamento",
-      "hitl": true,
-      "lgpd_scope": true
-    },
-    {
-      "name": "segunda_via",
-      "method": "POST",
-      "path": "/api/v1/documento/segunda-via",
-      "hitl": true,
-      "lgpd_scope": true
-    },
-    {
-      "name": "lgpd_direitos",
-      "method": "POST",
-      "path": "/api/v1/lgpd/{direito}",
-      "hitl": true,
-      "lgpd_scope": true
-    },
-    {
-      "name": "audit_verify",
-      "method": "POST",
-      "path": "/api/v1/audit/verify",
-      "hitl": false,
-      "lgpd_scope": false
-    },
-    {
-      "name": "handoff_humano",
-      "method": "POST",
-      "path": "/api/v1/integrations/chatwoot/handoff",
-      "hitl": true,
-      "lgpd_scope": true
-    }
-  ],
-  "skills": [
-    "pii_scrubber",
-    "lgpd_consent_checker",
-    "audit_logger",
-    "canned_response_matcher",
-    "hitl_router"
-  ],
-  "mcps": [
-    "cartorio_mcp_api",
-    "cartorio_mcp_supabase",
-    "cartorio_mcp_chatwoot"
-  ],
-  "hooks": {
-    "on_message_in": [
-      "pii_scrub",
-      "audit_log"
+    "skills": [
+        "pii_scrubber",
+        "lgpd_consent_checker",
+        "audit_logger",
+        "canned_response_matcher",
+        "hitl_router",
     ],
-    "on_tool_call": [
-      "lgpd_consent",
-      "rate_limit"
-    ],
-    "on_response_out": [
-      "output_scrub",
-      "handoff_decision"
-    ],
-    "on_error": [
-      "dead_mans_switch",
-      "telegram_grupo_pietra"
-    ]
-  },
-  "channels": {
-    "telegram": {
-      "enabled": true,
-      "status": "HOLD_TOKEN"
+    "mcps": ["cartorio_mcp_api", "cartorio_mcp_supabase", "cartorio_mcp_chatwoot"],
+    "hooks": {
+        "on_message_in": ["pii_scrub", "audit_log"],
+        "on_tool_call": ["lgpd_consent", "rate_limit"],
+        "on_response_out": ["output_scrub", "handoff_decision"],
+        "on_error": ["dead_mans_switch", "telegram_grupo_pietra"],
     },
-    "whatsapp": {
-      "enabled": true,
-      "via": "evolution",
-      "status": "HOLD_QR"
+    "channels": {
+        "telegram": {"enabled": true, "status": "HOLD_TOKEN"},
+        "whatsapp": {"enabled": true, "via": "evolution", "status": "HOLD_QR"},
+        "lobechat": {
+            "enabled": true,
+            "url": "https://agent.2notasudi.com.br",
+            "status": "HOLD_API_KEY",
+        },
+        "web": {"enabled": true},
     },
-    "lobechat": {
-      "enabled": true,
-      "url": "https://agent.2notasudi.com.br",
-      "status": "HOLD_API_KEY"
+    "auth": {
+        "required_scopes": ["operator.read", "operator.write"],
+        "notes": "Token health-only (scopes=[]) bloqueia agents.create \u2014 Lesson 177",
     },
-    "web": {
-      "enabled": true
-    }
-  },
-  "auth": {
-    "required_scopes": [
-      "operator.read",
-      "operator.write"
+    "deploy": {
+        "container_path": "/home/node/.openclaw/openclaw.json",
+        "sui": "G7.06.T3 / G7.14.T1 \u2014 Gustavo SSH ou EasyPanel volume mount",
+        "validate": [
+            "curl -sS https://agent.2notasudi.com.br/health",
+            "WS connect.challenge -> hello-ok with cartorio-bot in agents.list",
+        ],
+    },
+    "refs": [
+        "docs/openclaw/E6-cartorio-bot-spec.md",
+        "infra/lobechat/agent_cartorio_import.json",
+        "lesson-170",
+        "lesson-177",
+        "lesson-178",
     ],
-    "notes": "Token health-only (scopes=[]) bloqueia agents.create \u2014 Lesson 177"
-  },
-  "deploy": {
-    "container_path": "/home/node/.openclaw/openclaw.json",
-    "sui": "G7.06.T3 / G7.14.T1 \u2014 Gustavo SSH ou EasyPanel volume mount",
-    "validate": [
-      "curl -sS https://agent.2notasudi.com.br/health",
-      "WS connect.challenge -> hello-ok with cartorio-bot in agents.list"
-    ]
-  },
-  "refs": [
-    "docs/openclaw/E6-cartorio-bot-spec.md",
-    "infra/lobechat/agent_cartorio_import.json",
-    "lesson-170",
-    "lesson-177",
-    "lesson-178"
-  ],
-  "thinking": {
-    "enabled": true
-  }
+    "thinking": {"enabled": true},
 }
