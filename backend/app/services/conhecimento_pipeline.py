@@ -256,9 +256,7 @@ def agregar_classificacao_por_fonte(
         for item in items:
             code = str(item["classification"]["document_type_code"])
             counter[code] += 1
-            confidences.setdefault(code, []).append(
-                str(item["classification"]["confidence"])
-            )
+            confidences.setdefault(code, []).append(str(item["classification"]["confidence"]))
             if item.get("ocr_requires_human_review"):
                 ocr_flag = True
         winner_code = max(
@@ -266,9 +264,7 @@ def agregar_classificacao_por_fonte(
             key=lambda c: (_score_tipo(c, counter[c], confidences[c]), c),
         )
         winner_votes = counter[winner_code]
-        sample = next(
-            i for i in items if i["classification"]["document_type_code"] == winner_code
-        )
+        sample = next(i for i in items if i["classification"]["document_type_code"] == winner_code)
         content_set_hash = _hash_conjunto_ordenado(
             hashes_validados[source_id],
             items,

@@ -34,7 +34,9 @@ class _Response:
         yield from self._chunks
 
 
-def _signed_callback_request(module: ModuleType, body: dict, nonce: str = "n" * 16) -> SimpleNamespace:
+def _signed_callback_request(
+    module: ModuleType, body: dict, nonce: str = "n" * 16
+) -> SimpleNamespace:
     raw = json.dumps(body, separators=(",", ":")).encode("utf-8")
     timestamp = str(int(time.time()))
     signature = hmac.new(
@@ -167,7 +169,9 @@ def test_download_rejects_mime_spoof_before_persisting(
     assert list(module.INBOX_DIR.iterdir()) == []
 
 
-def test_download_rejects_symlinked_inbox(legacy_lark_bot: ModuleType, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_download_rejects_symlinked_inbox(
+    legacy_lark_bot: ModuleType, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     module = legacy_lark_bot
     target = tmp_path / "target"
     target.mkdir()
@@ -218,7 +222,9 @@ def test_download_does_not_overwrite_preexisting_hardlink(
     assert protected.read_bytes() == b"protected"
 
 
-def test_text_attachment_content_is_scrubbed_before_description(legacy_lark_bot: ModuleType) -> None:
+def test_text_attachment_content_is_scrubbed_before_description(
+    legacy_lark_bot: ModuleType,
+) -> None:
     attachment = legacy_lark_bot.INBOX_DIR / "internal.txt"
     attachment.write_text("CPF 123.456.789-00", encoding="utf-8")
 
@@ -232,7 +238,9 @@ def test_local_ocr_endpoint_is_disabled_by_default(legacy_lark_bot: ModuleType) 
     legacy_lark_bot.request = SimpleNamespace(
         remote_addr="127.0.0.1",
         headers={},
-        files={"file": SimpleNamespace(content_type="image/png", stream=io.BytesIO(b"not-an-image"))},
+        files={
+            "file": SimpleNamespace(content_type="image/png", stream=io.BytesIO(b"not-an-image"))
+        },
     )
     _, status_code = legacy_lark_bot.test_image()
 
@@ -259,7 +267,9 @@ def test_local_ocr_endpoint_never_echoes_path_or_ocr(legacy_lark_bot: ModuleType
     assert len(list(module.INBOX_DIR.iterdir())) == 1
 
 
-def test_webhook_requires_signature_freshness_and_one_time_nonce(legacy_lark_bot: ModuleType) -> None:
+def test_webhook_requires_signature_freshness_and_one_time_nonce(
+    legacy_lark_bot: ModuleType,
+) -> None:
     module = legacy_lark_bot
     body = {
         "type": "url_verification",
