@@ -6,10 +6,13 @@
 - Gerei backup dedicado da conexão WhatsApp antes das mudanças de roteamento final com o UUID informado.
 
 ## Evidência técnica
-- Backup gerado: `backend/backups/whatsapp-connection-backup-de39159d28f941a2.json`
+- Backup gerado: `backend/backups/whatsapp-connection-backup-40205ca5848b9fae.json` (registro pós-checagem final)
 - Instância alvo: `c18e80c2-4045-40ff-bd73-3924ef23c249`
 - Webhook registrado no backup: `https://api.2notasudi.com.br/api/v1/webhook/evolution`
 - Teste de contrato de rotas: `backend/tests/test_lark_main_router.py` (1/1 pass)
+- Validação adicional: `backend/tests/test_lark_p2_contract_v3.py` (1/1 pass),
+  `backend/tests/test_lark_concurrency_isolation_v3.py` (1/1 pass),
+  `backend/tests/test_whatsapp_consent.py` (4/4 pass)
 
 ## Observações de segurança
 - O backup não persiste secrets: guarda apenas flags de presença (webhook, flags Lark) e estado derivado da consulta.
