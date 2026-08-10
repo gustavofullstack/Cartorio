@@ -196,7 +196,7 @@ class Settings(BaseSettings):
     # ========================================================================
     evolution_base_url: str = "http://cartorio_evolution-api:8080"
     evolution_api_key: Optional[str] = None
-    evolution_instance: str = "cartorio-2notas"
+    evolution_instance: str = "cartorio-agent"
 
     # ========================================================================
     # Chatwoot (CRM / atendimento humano)

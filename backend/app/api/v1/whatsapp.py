@@ -78,7 +78,7 @@ router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
 # ===== Config (espelha telegram.py constantes) =====
 EVOLUTION_BASE_URL = settings.evolution_base_url or "http://cartorio_evolution-api:8080"
 EVOLUTION_API_KEY = settings.evolution_api_key or ""
-EVOLUTION_INSTANCE = settings.evolution_instance or "cartorio-2notas"
+EVOLUTION_INSTANCE = settings.evolution_instance or "cartorio-agent"
 EVOLUTION_TIMEOUT = 10.0
 
 # ===== Whitelist de comandos (espelha telegram.py) =====

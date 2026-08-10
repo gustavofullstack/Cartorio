@@ -7,6 +7,9 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 
 ## INDICE RAPIDO (atualizado 2026-07-31 BRT)
 
+### Etapa 12 — Super Backup WhatsApp & Agent Pietra MiniMax M3 Autônomo (2026-08-10)
+- **Lesson 298 — Super Backup WhatsApp Connection & Agent Pietra MiniMax M3 Autônomo (2026-08-10)**: Instância do Evolution API `cartorio-agent` (UUID `c18e80c2-4045-40ff-bd73-3924ef23c249`, JID `553491952444@s.whatsapp.net`) confirmada em estado `OPEN` e pareada com sucesso. Super backup completo gerado na VPS em `/var/backups/cartorio/whatsapp/SUPER_BACKUP_WHATSAPP_CARTORIO_AGENT_20260810_233718.tar.gz` (Postgres DB dump `evolution` 8.2M + volume Baileys `cartorio_whatsapp-api_instances`). Scripts automatizados `scripts/backup_whatsapp_session.sh` e `scripts/restore_whatsapp_session.sh` integrados. Webhook configurado ativamente para `https://api.2notasudi.com.br/api/v1/webhook/evolution` (`MESSAGES_UPSERT`, `MESSAGES_UPDATE`, `CONNECTION_UPDATE`). Backend configurado com `evolution_instance="cartorio-agent"`. PII scrubbing em 3 camadas, Audit Log imutável SHA256+HMAC e HITL ativados.
+
 ### Etapa 11 — BRAIN ConhecimentoInstitucional corpus pipeline (2026-07-31)
 - **Lesson 297 — Corpus institucional offline fail-closed (sem T4/T5, Hermes intocado)**: ZIP 90 fontes → `.private/` (gitignored). Ingest `scripts/brain_corpus_ingest.py` (DOCX/ODT/PDF+OCR local/TXT, PII scrub, IDs opacos). Classify `scripts/brain_corpus_classify.py` → `PENDING_HUMAN_VALIDATION`, `published_eligible=0`, `automatic_promotion_allowed=false`. Lifecycle/HITL/cálculo Decimal em `app/services/conhecimento_*.py`; schema `knowledge_*` + Alembic 0030. Trace agentes `.evidence/brain-corpus/agent-trace.jsonl`. Docs: `docs/BRAIN_PIPELINE_CONHECIMENTO.md`. **Nunca** promover a PUBLISHED sem HITL + sign-off `cartorio-lgpd`. **Nunca** tocar Hermes/prod neste fluxo.
 
