@@ -234,9 +234,10 @@ def test_pdf_extraction_uses_local_pdftotext_with_a_hard_timeout(tmp_path: Path)
         returncode = 0
         stdout = b"primeira pagina\fsegunda pagina"
 
-    with patch(
-        "scripts.brain_corpus_ingest.subprocess.run", return_value=CompletedProcess()
-    ) as run:
+    with (
+        patch("scripts.brain_corpus_ingest.subprocess.run", return_value=CompletedProcess()) as run,
+        patch("scripts.brain_corpus_ingest.shutil.which", return_value="/usr/bin/pdftotext"),
+    ):
         units = _extract_pdf(source_file)
 
     assert units == [("page:1", "primeira pagina"), ("page:2", "segunda pagina")]
