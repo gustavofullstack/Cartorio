@@ -128,11 +128,11 @@ AccessToken.create!(owner: user, token: SecureRandom.hex(32))
 ```bash
 # Listar instances
 curl -s https://whatsapp.2notasudi.com.br/instance/fetchInstances \
-  -H "apikey: 429683C4C977415CAAFCCE10F7D57E11"
+  -H "apikey: your_secure_api_key_here"
 
 # Configurar webhook
 curl -X POST https://whatsapp.2notasudi.com.br/webhook/set/cartorio-2notas \
-  -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" \
+  -H "apikey: your_secure_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
     "webhook": {

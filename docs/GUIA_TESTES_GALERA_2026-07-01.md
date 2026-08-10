@@ -51,7 +51,7 @@
 
 ```bash
 # Pegar QR atual via API
-curl -X POST -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" \
+curl -X POST -H "apikey: your_secure_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{"instanceName":"cartorio-2notas"}' \
   http://localhost:8080/instance/connect/cartorio-2notas
@@ -292,7 +292,7 @@ curl -sS -H "api_access_token: X6fRdztdTA2Z2seBwm9PHJgy" \
 curl -sS https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN_IN_SECRET_MANAGER>/getWebhookInfo | jq
 
 # Evolution instances
-curl -sS -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" \
+curl -sS -H "apikey: your_secure_api_key_here" \
   http://localhost:8080/instance/fetchInstances | jq
 ```
 
