@@ -74,7 +74,7 @@ networks:
 
 ```bash
 # .env
-EVOLUTION_API_KEY=24s6pdZqUwblg0v4UJTV3YilLm1WZQIu
+EVOLUTION_API_KEY=your_secure_api_key_here
 EVOLUTION_BASE_URL=https://whatsapp.2notasudi.com.br
 EVOLUTION_INSTANCE=cartorio-2notas
 POSTGRES_PASSWORD=<gerado via openssl rand -hex 32>
