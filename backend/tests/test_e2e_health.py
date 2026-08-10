@@ -31,6 +31,7 @@ from urllib.request import urlopen
 
 import pytest
 
+
 # ============================================================================
 # Cenarios
 # ============================================================================
@@ -69,7 +70,7 @@ def test_playwright_cli_via_subprocess() -> None:
     last_error: Exception | None = None
     for cli in candidates:
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # noqa: S603
                 [cli, "--version"],
                 capture_output=True,
                 text=True,
@@ -103,7 +104,7 @@ def test_api_health_via_urllib() -> None:
     health_url = urljoin(base_url + "/", "api/v1/health/live")
 
     try:
-        with urlopen(health_url, timeout=5) as resp:
+        with urlopen(health_url, timeout=5) as resp:  # noqa: S310
             status = resp.status
             body = resp.read().decode("utf-8", errors="replace")
     except Exception as exc:
@@ -148,8 +149,6 @@ def test_chromium_browser_cache_via_filesystem() -> None:
         candidates = [
             d / "chrome-linux" / "chrome",
             d / "chrome-linux" / "headless_shell",
-            d / "chrome-linux64" / "chrome",
-            d / "chrome-linux64" / "headless_shell",
             d / "chrome-mac" / "Chromium.app" / "Contents" / "MacOS" / "Chromium",
             # Windows
             d / "chrome-win" / "chrome.exe",
