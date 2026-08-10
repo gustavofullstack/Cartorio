@@ -1,141 +1,152 @@
-# Evolution API v2.x - Quick Reference
+# Evolution API — Instalação, QR, Webhook e Adapter
 
-> **5 endpoints + auth + webhooks para integracao WhatsApp Business.**
-> Versao: 2.x (2026-06-24)
-> Base URL prod: `https://whatsapp.2notasudi.com.br`
-> Doc oficial: https://doc.evolution-api.com/v2/api-reference/
+> **Versão**: 3.0 (2026-07-09)
+> **Status**: ✅ Instalado + funcional
+> **URL**: https://whatsapp.2notasudi.com.br/manager
 
-## Visao geral
+## 📋 Visão Geral
 
-Evolution API e' um **gateway WhatsApp Business** open-source. Roda em Docker (imagem `atendai/evolution-api:v2.x`). Suporta multi-instance, webhooks, REST API compativel com Baileys (lib Node.js WhatsApp Web).
+Evolution API é um gateway open-source para integração com WhatsApp (similar à Twilio). Cartório usa v2.3.7 self-hosted em Docker Swarm.
 
-**Por que usamos**: self-hosted (LGPD art. 33 - transferencia internacional), baixo custo, API REST simples, suporta multi-canal (WhatsApp, Telegram em breve).
+## 🏗️ Arquitetura
 
-## Autenticacao
-
-Todas as requisicoes exigem header `apikey`:
-```bash
-curl -H "apikey: <AUTHENTICATION_API_KEY>" ...
+```
+┌──────────────────────────────────────────────────────────────────┐
+│              EVOLUTION API v2.3.7 — STACK                        │
+└──────────────────────────────────────────────────────────────────┘
+                                │
+       ┌────────────────────────┼────────────────────────┐
+       ▼                        ▼                        ▼
+   Evolution API          PostgreSQL              Redis
+   (porta 8080)            (state)                (queue)
+       │
+       ▼
+   cartorio_evolution-api container
+   ├─ Express.js
+   ├─ Baileys (lib WhatsApp Web)
+   ├─ WebSocket para QR
+   └─ REST API para webhooks
 ```
 
-- **Global key**: definida em `AUTHENTICATION.API_KEY.KEY` (env)
-- **Per-instance key**: cada instance tem seu proprio `apikey` (token alternativo)
-- Sem header -> `401 Unauthorized`
+## 🔧 Instalação
 
-## 5 Endpoints principais (Cartorio usa esses)
+### Docker Compose (referência)
 
-### 1. POST /instance/create
+```yaml
+# /etc/easypanel/projects/cartorio/evolution-api/docker-compose.yml
+version: "3.8"
+services:
+  evolution-api:
+    image: atendai/evolution-api:v2.3.7
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:${POSTGRES_PASSWORD}@cartorio_postgres:5432/evolution
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://cartorio_redis:6379/3
+      - WEBHOOK_GLOBAL_ENABLED=true
+      - WEBHOOK_GLOBAL_URL=https://api.2notasudi.com.br/api/v1/webhook/evolution
+    networks:
+      - cartorio_net
+    volumes:
+      - evolution_data:/evolution/instances
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
 
-Cria nova instancia WhatsApp.
+volumes:
+  evolution_data:
+
+networks:
+  cartorio_net:
+    external: true
+```
+
+### Variáveis de Ambiente
 
 ```bash
-curl -X POST "https://whatsapp.2notasudi.com.br/instance/create" \
+# .env
+EVOLUTION_API_KEY=24s6pdZqUwblg0v4UJTV3YilLm1WZQIu
+EVOLUTION_BASE_URL=https://whatsapp.2notasudi.com.br
+EVOLUTION_INSTANCE=cartorio-2notas
+POSTGRES_PASSWORD=<gerado via openssl rand -hex 32>
+```
+
+### Deploy
+
+```bash
+cd /etc/easypanel/projects/cartorio/evolution-api
+docker stack deploy -c docker-compose.yml cartorio
+sleep 10
+
+# Verificar health
+curl -sS http://localhost:8080/ | jq .
+# Espera: {"status":"SUCCESS","message":"Evolution API is running"}
+
+# Verificar via Traefik
+curl -sS https://whatsapp.2notasudi.com.br/manager | head -5
+```
+
+## 📱 QR Scan (Pairing WhatsApp)
+
+### Fluxo (SUI Gustavo)
+
+1. **Acessar Manager UI**: https://whatsapp.2notasudi.com.br/manager
+2. **Login**: API Key (campo `apikey`)
+3. **Criar instância**:
+   ```bash
+   curl -X POST http://localhost:8080/instance/create \
+     -H "apikey: $EVOLUTION_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "instanceName": "cartorio-2notas",
+       "qrcode": true,
+       "integration": "WHATSAPP-BAILEYS"
+     }'
+   ```
+4. **Obter QR**:
+   ```bash
+   curl http://localhost:8080/instance/connect/cartorio-2notas \
+     -H "apikey: $EVOLUTION_API_KEY"
+   # Resposta: {"pairingCode": "...", "code": "...", "base64": "data:image/png;base64,..."}
+   ```
+5. **Escanear no celular**:
+   - WhatsApp → ⋮ (menu) → Aparelhos conectados → Conectar aparelho
+   - Escanear QR
+6. **Verificar status**:
+   ```bash
+   curl http://localhost:8080/instance/connectionState/cartorio-2notas \
+     -H "apikey: $EVOLUTION_API_KEY"
+   # Esperado: {"instance":{"state":"open"}}
+   ```
+
+### Pairing Code (alternativa)
+
+```bash
+# Para números que não conseguem scan (ex: corporativo)
+curl -X POST http://localhost:8080/instance/pairingCode/cartorio-2notas \
   -H "apikey: $EVOLUTION_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{
-    "instanceName": "cartorio-2notas",
-    "qrcode": true,
-    "integration": "WHATSAPP-BAILEYS"
-  }'
+  -d '{"phoneNumber": "5511999999999"}'
+
+# Resposta: {"code": "ABCD-1234"}
+# Inserir no WhatsApp → Configurações → Aparelhos conectados → Conectar com código
 ```
 
-**Response 201**:
-```json
-{
-  "instance": {
-    "instanceName": "cartorio-2notas",
-    "instanceId": "abc-123",
-    "status": "created",
-    "serverUrl": "https://whatsapp.2notasudi.com.br",
-    "apikey": "instance-specific-key",
-    "ownerJid": null
-  },
-  "hash": {"apikey": "..."},
-  "qrcode": {
-    "pairingCode": "...",
-    "code": "2@xxx",
-    "base64": "iVBORw0KGgo...",
-    "count": 0
-  }
-}
-```
+## 🔌 Webhook Configuration
 
-### 2. GET /instance/connect/{instance}
-
-Retorna QR code (base64) para escanear com WhatsApp.
+### Webhook Global
 
 ```bash
-curl "https://whatsapp.2notasudi.com.br/instance/connect/cartorio-2notas" \
-  -H "apikey: $EVOLUTION_API_KEY"
-```
-
-**Response 200**:
-```json
-{
-  "pairingCode": "ABCD1234",
-  "code": "2@xxx",
-  "base64": "iVBORw0KGgoAAAANSUhEUgAA...",
-  "count": 0
-}
-```
-
-### 3. GET /instance/connectionState/{instance}
-
-Status da conexao (open/close/connecting).
-
-```bash
-curl "https://whatsapp.2notasudi.com.br/instance/connectionState/cartorio-2notas" \
-  -H "apikey: $EVOLUTION_API_KEY"
-```
-
-**Response 200**:
-```json
-{
-  "instance": {
-    "instanceName": "cartorio-2notas",
-    "state": "open"  // ou "close", "connecting"
-  }
-}
-```
-
-### 4. POST /message/sendText/{instance}
-
-Envia mensagem de texto.
-
-```bash
-curl -X POST "https://whatsapp.2notasudi.com.br/message/sendText/cartorio-2notas" \
-  -H "apikey: $EVOLUTION_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "number": "5534988887777",
-    "text": "Ola! Sua certidao foi emitida.",
-    "delay": 0
-  }'
-```
-
-**Response 200**:
-```json
-{
-  "key": {
-    "remoteJid": "5534988887777@s.whatsapp.net",
-    "fromMe": true,
-    "id": "3EB0ABC123"
-  },
-  "message": {
-    "extendedTextMessage": {
-      "text": "Ola! Sua certidao foi emitida."
-    }
-  },
-  "messageTimestamp": "1719227400"
-}
-```
-
-### 5. POST /webhook/set/{instance}
-
-Configura webhook para receber eventos.
-
-```bash
-curl -X POST "https://whatsapp.2notasudi.com.br/webhook/set/cartorio-2notas" \
+curl -X POST http://localhost:8080/webhook/set/cartorio-2notas \
   -H "apikey: $EVOLUTION_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -144,126 +155,299 @@ curl -X POST "https://whatsapp.2notasudi.com.br/webhook/set/cartorio-2notas" \
     "webhook_base64": false,
     "events": [
       "MESSAGES_UPSERT",
+      "MESSAGES_UPDATE",
       "CONNECTION_UPDATE",
-      "MESSAGES_UPDATE"
+      "QRCODE_UPDATED"
+    ],
+    "enabled": true
+  }'
+```
+
+### Webhook HMAC Signature
+
+Evolution API envia `X-Hub-Signature-256: sha256=<hex>` calculado sobre o body bruto com a API Key.
+
+**Backend valida** (`backend/app/services/evolution_ingest.py`):
+```python
+import hmac, hashlib
+
+def validate_evolution_signature(raw_body: bytes, signature: str | None) -> bool:
+    if not signature or not signature.startswith("sha256="):
+        return False
+    expected = hmac.new(
+        settings.evolution_api_key.encode(),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    received = signature.removeprefix("sha256=")
+    return hmac.compare_digest(expected, received)
+```
+
+## 📤 Endpoints Envio
+
+### sendText
+
+```bash
+curl -X POST http://localhost:8080/message/sendText/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "5511999999999",
+    "text": "Olá! Esta é uma mensagem do Cartório 2º Notas."
+  }'
+```
+
+**Resposta**:
+```json
+{
+  "key": {"remoteJid": "5511999999999@s.whatsapp.net", "fromMe": true, "id": "3EB0..."},
+  "message": {"conversation": "Olá! ..."},
+  "messageTimestamp": 1720544400,
+  "status": "PENDING"
+}
+```
+
+### sendReaction
+
+```bash
+curl -X POST http://localhost:8080/message/sendReaction/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": {
+      "remoteJid": "5511999999999@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3EB0C2F8A8B4C0D0E1F2A3B4"
+    },
+    "reaction": "👍"
+  }'
+```
+
+### sendPresence (typing)
+
+```bash
+curl -X POST http://localhost:8080/chat/sendPresence/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "5511999999999",
+    "presence": "composing",
+    "delay": 4000
+  }'
+```
+
+**Presence values**: `composing` (digitando), `recording` (gravando áudio), `paused` (parou).
+
+### sendButtons
+
+```bash
+curl -X POST http://localhost:8080/message/sendButtons/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "5511999999999",
+    "title": "Menu Principal",
+    "description": "Escolha uma opção",
+    "footer": "Cartório 2º Notas",
+    "buttons": [
+      {"buttonId": "1", "buttonText": {"displayText": "📋 Protocolo"}, "type": 1},
+      {"buttonId": "2", "buttonText": {"displayText": "📅 Agendar"}, "type": 1},
+      {"buttonId": "3", "buttonText": {"displayText": "👤 Humano"}, "type": 1}
     ]
   }'
 ```
 
-**Response 200**:
+**Limite**: 3 botões (WhatsApp restriction). Para mais opções, usar list message.
+
+### sendList
+
+```bash
+curl -X POST http://localhost:8080/message/sendList/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "5511999999999",
+    "title": "Menu",
+    "description": "Escolha o serviço",
+    "buttonText": "Ver opções",
+    "sections": [
+      {
+        "title": "Serviços",
+        "rows": [
+          {"title": "Reconhecimento de firma", "description": "R$ XX,XX", "rowId": "1"},
+          {"title": "Procuração", "description": "R$ XX,XX", "rowId": "2"},
+          {"title": "Testamento", "description": "R$ XX,XX", "rowId": "3"}
+        ]
+      }
+    ]
+  }'
+```
+
+## 📨 Webhook Payload (Recebimento)
+
+### MESSAGES_UPSERT (mensagem recebida)
+
 ```json
 {
-  "webhook": {
-    "url": "https://api.2notasudi.com.br/api/v1/webhook/evolution",
-    "events": ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE"],
-    "byEvents": false,
-    "base64": false
+  "event": "MESSAGES_UPSERT",
+  "instance": "cartorio-2notas",
+  "data": {
+    "key": {
+      "remoteJid": "5511999999999@s.whatsapp.net",
+      "fromMe": false,
+      "id": "3EB0C2F8A8B4C0D0E1F2A3B4"
+    },
+    "pushName": "João Silva",
+    "message": {
+      "conversation": "oi"
+    },
+    "messageType": "conversation",
+    "messageTimestamp": 1720544400,
+    "status": "DELIVERED"
+  },
+  "sender": "5511999999999@s.whatsapp.net"
+}
+```
+
+### MESSAGES_UPDATE (status update)
+
+```json
+{
+  "event": "MESSAGES_UPDATE",
+  "instance": "cartorio-2notas",
+  "data": {
+    "key": {"remoteJid": "5511999999999@s.whatsapp.net", "fromMe": true, "id": "..."},
+    "update": {"status": "READ"},
+    "messageTimestamp": 1720544460
   }
 }
 ```
 
-### 6. POST /message/sendReaction/{instance}
+### CONNECTION_UPDATE
 
-Envia uma reação (emoji) a uma mensagem específica.
-
-```bash
-curl -X POST "https://whatsapp.2notasudi.com.br/message/sendReaction/cartorio-2notas" \
-  -H "apikey: $EVOLUTION_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "number": "5534988887777",
-    "reaction": "👍",
-    "key": {
-      "remoteJid": "5534988887777@s.whatsapp.net",
-      "fromMe": false,
-      "id": "3EB0ABC123"
-    }
-  }'
+```json
+{
+  "event": "CONNECTION_UPDATE",
+  "instance": "cartorio-2notas",
+  "data": {
+    "state": "open",
+    "statusReason": 200
+  }
+}
 ```
 
-### 7. POST /message/sendPoll/{instance}
+**States**: `open` (conectado), `close` (desconectado), `connecting` (reconectando).
 
-Envia uma enquete de escolha única ou múltipla.
+## 🔧 Adapter Implementation
 
-```bash
-curl -X POST "https://whatsapp.2notasudi.com.br/message/sendPoll/cartorio-2notas" \
-  -H "apikey: $EVOLUTION_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "number": "5534988887777",
-    "pollName": "Qual serviço deseja agendar?",
-    "options": ["Abertura de Firma", "Procuração", "Escritura"],
-    "selectableOptionsCount": 1
-  }'
+**Arquivo**: `backend/app/api/v1/whatsapp.py`
+
+```python
+class WhatsAppAdapter(ChannelAdapter):
+    """Adapter polimórfico para Evolution API."""
+
+    async def send(self, msg: OutboundMessage) -> bool:
+        url = f"{EVOLUTION_BASE_URL}/message/sendText/{INSTANCE}"
+        payload = {
+            "number": msg.recipient_id.replace("@s.whatsapp.net", ""),
+            "text": msg.text,
+        }
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.post(url, json=payload, headers={"apikey": EVOLUTION_API_KEY})
+        return r.status_code == 200
+
+    async def typing(self, recipient_id: str, action: str = "composing") -> bool:
+        if not action:
+            return True
+        url = f"{EVOLUTION_BASE_URL}/chat/sendPresence/{INSTANCE}"
+        payload = {"number": recipient_id.replace("@s.whatsapp.net", ""), "presence": action}
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.post(url, json=payload, headers={"apikey": EVOLUTION_API_KEY})
+        return r.status_code == 200
+
+    async def react(self, recipient_id: str, message_id: str, reaction: str = "thumbsup") -> bool:
+        emoji = {"thumbsup": "👍", "heart": "❤️", "laugh": "😂"}.get(reaction, "👍")
+        url = f"{EVOLUTION_BASE_URL}/message/sendReaction/{INSTANCE}"
+        payload = {
+            "key": {"remoteJid": recipient_id, "fromMe": False, "id": message_id},
+            "reaction": emoji,
+        }
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.post(url, json=payload, headers={"apikey": EVOLUTION_API_KEY})
+        return r.status_code == 200
+
+    async def verify_signature(self, raw_body: bytes, signature: str | None) -> bool:
+        return validate_evolution_signature(raw_body, signature)
 ```
 
-### 8. POST /message/sendMedia/{instance}
+## 🔍 Troubleshooting
 
-Envia mídias (imagens, vídeos, áudios ou documentos PDF) informando uma URL pública do arquivo.
+### Instância desconectada
 
 ```bash
-curl -X POST "https://whatsapp.2notasudi.com.br/message/sendMedia/cartorio-2notas" \
-  -H "apikey: $EVOLUTION_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "number": "5534988887777",
-    "mediaMessage": {
-      "mediatype": "document", // ou "image", "audio", "video"
-      "fileName": "tabela_emolumentos.pdf",
-      "media": "https://api.2notasudi.com.br/static/tabela.pdf",
-      "caption": "Tabela de emolumentos oficial"
-    }
-  }'
+# Status
+curl http://localhost:8080/instance/connectionState/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY"
+
+# Reconectar
+curl http://localhost:8080/instance/restart/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY"
+
+# Logout (limpar sessão, pedir novo QR)
+curl -X DELETE http://localhost:8080/instance/logout/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY"
 ```
 
-## Webhook events (todos suportados)
+### Webhook não recebe eventos
 
-| Event | Quando dispara |
-|---|---|
-| `MESSAGES_UPSERT` | Nova msg recebida OU enviada |
-| `MESSAGES_UPDATE` | Msg editada |
-| `MESSAGES_DELETE` | Msg apagada |
-| `SEND_MESSAGE` | Msg enviada por nos |
-| `CONNECTION_UPDATE` | Conexao WhatsApp mudou (open/close) |
-| `CALL` | Chamada recebida |
-| `CONTACTS_UPDATE` | Contato atualizado |
-| `CHATS_UPDATE` | Chat atualizado |
-| `CHATS_DELETE` | Chat apagado |
-| `GROUPS_UPSERT` | Grupo criado/atualizado |
-| `GROUP_UPDATE` | Grupo mudou |
-| `GROUP_PARTICIPANTS_UPDATE` | Participante entrou/saiu |
-| `PRESENCE_UPDATE` | Online/offline de contato |
-| `TYPEING` | Usuario digitando |
-| `NEW_JWT_TOKEN` | Token JWT novo |
-| `LOGOUT_INSTANCE` | Logout feito |
+```bash
+# Listar webhooks configurados
+curl http://localhost:8080/webhook/find/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY"
 
-## Rate limit
+# Reconfigurar
+curl -X POST http://localhost:8080/webhook/set/cartorio-2notas \
+  -H "apikey: $EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://api.2notasudi.com.br/api/v1/webhook/evolution", "events": ["MESSAGES_UPSERT"], "enabled": true}'
+```
 
-**Nao documentado oficialmente**. Recomendacao: usar retry com backoff em 429/5xx (ver `app/services/evolution_ingest.py`).
+### HMAC signature inválida
 
-## Integracao com o Cartorio
+```bash
+# Verificar API Key bate
+grep EVOLUTION_API_KEY /etc/easypanel/projects/cartorio/api/code/.env
+grep AUTHENTICATION_API_KEY /etc/easypanel/projects/cartorio/evolution-api/.env
 
-| Componente | Como usa |
-|---|---|
-| **API Backend** | Recebe webhook em `/api/v1/webhook/evolution` (idempotente por message_id) |
-| **N8N workflow #07** | Envia mensagens via Evolution (template marketing, lembretes) |
-| **OpenClaw gateway** | NAO usa diretamente - passa pela API |
-| **Chatwoot** | NAO usa Evolution direto - WhatsApp via Chatwoot (inbox separada) |
+# Devem ser IGUAIS
+```
 
-## Como adicionar nova instance
+### Container crash loop
 
-1. Chamar `POST /instance/create` (1)
-2. Escanear QR code retornado (2)
-3. Configurar webhook (5) apontando para API
-4. Testar com `GET /instance/connectionState` (3)
-5. Enviar msg de teste com `POST /message/sendText` (4)
+```bash
+# Logs
+docker service logs cartorio_evolution-api --tail 100
 
-## Referencias
+# Verificar Postgres + Redis
+docker exec cartorio_postgres pg_isready -U evolution
+docker exec cartorio_redis redis-cli PING
 
-- Doc oficial: https://doc.evolution-api.com/v2/api-reference/
-- GitHub: https://github.com/EvolutionAPI/evolution-api
-- Imagem Docker: `atendai/evolution-api:v2.x`
-- Estado no projeto: `infra/` (config Easypanel)
-- Integracao: `backend/app/services/evolution_ingest.py`
+# Restart
+docker service update --force cartorio_evolution-api
+```
 
-Modified by Gustavo Almeida - 2026-07-01
+## 📚 Referências
+
+- [`BOTS.md`](BOTS.md) — overview
+- [`WHATSAPP_GUIDE.md`](WHATSAPP_GUIDE.md) — guia operacional
+- [`TROUBLESHOOTING_BOTS.md`](TROUBLESHOOTING_BOTS.md)
+- [`LGPD_BOTS.md`](LGPD_BOTS.md) — consent WhatsApp
+- `backend/app/api/v1/whatsapp.py` — código adapter
+- `backend/app/services/evolution_ingest.py` — webhook ingest
+- `infra/evolution-api/` — Docker compose + config
+- `docs/EVOLUTION_API_INTEGRATION.md` — integração histórica
+- Lesson 143 (WhatsApp espelhado)
+
+---
+
+**Modified by**: OpenCode-MiniMax-M3-High · 2026-07-09T16:39:00Z
