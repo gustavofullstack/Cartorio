@@ -1,6 +1,6 @@
 """Lark Bot webhook - canal Hermes Cartorio AI.
 
-Endpoints (rota atualmente nao registrada em ``app.main``):
+Endpoints (rotas já registradas em ``app.main``):
 - POST /api/v1/lark/webhook/lark : recebe eventos do Lark (url_verification + mensagens)
 - GET  /api/v1/lark/qr        : gera QR Code PNG para adicionar o bot
 - GET  /api/v1/lark/qr-url    : retorna a URL configurada para adicionar o bot
@@ -41,19 +41,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/lark", tags=["lark"])
 
-LARK_ENCRYPT_KEY: str | None = getattr(settings, "lark_encrypt_key", None) or os.environ.get(
-    "LARK_ENCRYPT_KEY"
-) or None
+LARK_ENCRYPT_KEY: str | None = (
+    getattr(settings, "lark_encrypt_key", None) or os.environ.get("LARK_ENCRYPT_KEY") or None
+)
 LARK_VERIFICATION_TOKEN: str | None = os.environ.get("LARK_VERIFICATION_TOKEN") or None
-LARK_ADD_BOT_URL: str | None = getattr(settings, "lark_add_bot_url", None) or os.environ.get(
-    "LARK_ADD_BOT_URL"
-) or None
-LARK_WEBHOOK_RATE_LIMIT_PER_MIN = int(
-    os.environ.get("LARK_WEBHOOK_RATE_LIMIT_PER_MIN", "100")
+LARK_ADD_BOT_URL: str | None = (
+    getattr(settings, "lark_add_bot_url", None) or os.environ.get("LARK_ADD_BOT_URL") or None
 )
-LARK_IDEMPOTENCY_TTL_SECONDS = int(
-    os.environ.get("LARK_IDEMPOTENCY_TTL_SECONDS", "86400")
-)
+LARK_WEBHOOK_RATE_LIMIT_PER_MIN = int(os.environ.get("LARK_WEBHOOK_RATE_LIMIT_PER_MIN", "100"))
+LARK_IDEMPOTENCY_TTL_SECONDS = int(os.environ.get("LARK_IDEMPOTENCY_TTL_SECONDS", "86400"))
 LARK_WEBHOOK_MAX_AGE_SECONDS = min(
     max(int(os.environ.get("LARK_WEBHOOK_MAX_AGE_SECONDS", "300")), 30), 900
 )
@@ -65,9 +61,7 @@ LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS = min(
 def _get_lark_credentials() -> tuple[str, str]:
     """Retorna (app_id, app_secret) sem expor segredo em logs."""
     app_id = getattr(settings, "lark_app_id", None) or os.environ.get("LARK_APP_ID", "")
-    app_secret = getattr(settings, "lark_app_secret", None) or os.environ.get(
-        "LARK_APP_SECRET", ""
-    )
+    app_secret = getattr(settings, "lark_app_secret", None) or os.environ.get("LARK_APP_SECRET", "")
     return app_id, app_secret
 
 
@@ -88,7 +82,11 @@ def _verify_lark_signature(
         return False
     request_timestamp = int(timestamp)
     now = int(time.time())
-    if not now - LARK_WEBHOOK_MAX_AGE_SECONDS <= request_timestamp <= now + LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS:
+    if (
+        not now - LARK_WEBHOOK_MAX_AGE_SECONDS
+        <= request_timestamp
+        <= now + LARK_WEBHOOK_MAX_FUTURE_SKEW_SECONDS
+    ):
         return False
     key = LARK_ENCRYPT_KEY.encode("utf-8")
     try:
@@ -136,7 +134,10 @@ async def _claim_lark_nonce(nonce: str) -> bool:
         logger.warning("Lark nonce store unavailable: %s", type(exc).__name__)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"erro": "LARK_REPLAY_PROTECTION_UNAVAILABLE", "mensagem": "Canal Lark indisponivel"},
+            detail={
+                "erro": "LARK_REPLAY_PROTECTION_UNAVAILABLE",
+                "mensagem": "Canal Lark indisponivel",
+            },
         ) from exc
 
 
@@ -150,7 +151,9 @@ def _decrypt_lark_payload(encrypt_b64: str) -> dict[str, Any]:
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.primitives import padding
     except ImportError as exc:
-        raise RuntimeError("cryptography nao instalado - nao e possivel descriptografar Lark") from exc
+        raise RuntimeError(
+            "cryptography nao instalado - nao e possivel descriptografar Lark"
+        ) from exc
 
     if not LARK_ENCRYPT_KEY:
         raise RuntimeError("LARK_ENCRYPT_KEY nao configurado")
@@ -478,9 +481,11 @@ async def lark_qr_code(
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
-    return StreamingResponse(buffer, media_type="image/png", headers={
-        "Content-Disposition": "inline; filename=lark_add_bot.png"
-    })
+    return StreamingResponse(
+        buffer,
+        media_type="image/png",
+        headers={"Content-Disposition": "inline; filename=lark_add_bot.png"},
+    )
 
 
 @router.get("/qr-url")

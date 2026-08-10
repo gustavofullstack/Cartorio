@@ -993,6 +993,11 @@ from app.api.v1.whatsapp import router as whatsapp_router  # noqa: E402
 
 app.include_router(whatsapp_router, prefix="/api/v1")
 
+# Lark/Feishu bot webhook (Hermes): integrações de mensagens por Hermes runtime.
+from app.api.v1.lark import router as lark_router  # noqa: E402
+
+app.include_router(lark_router, prefix="/api/v1")
+
 # OpenAPI validation helper (A19 — squad A): aquece o schema enriquecido
 # somente depois que todos os routers foram registrados. Aquecer antes fazia o
 # FastAPI guardar um schema com zero paths, deixando Swagger e Postman vazios.

@@ -84,6 +84,8 @@ All endpoints require `X-API-Key` header unless noted.
 |--------|----------|------|-------------|
 | POST | `/api/v1/webhook/chatwoot` | HMAC | Receive Chatwoot handoff |
 | POST | `/api/v1/webhook/evolution` | HMAC | Receive Evolution events |
+| POST | `/api/v1/whatsapp/webhook` | HMAC | Receive Evolution webhook (legacy compatibility) |
+| POST | `/api/v1/lark/webhook/lark` | HMAC + verification token | Receive Lark/Feishu (Hermes) events |
 
 ---
 
@@ -161,7 +163,7 @@ All endpoints require `X-API-Key` header unless noted.
 
 ---
 
-## Total: 58 endpoints (v1) + 4 endpoints (v2) = 62 endpoints
+## Total: 60 endpoints (v1) + 4 endpoints (v2) = 64 endpoints
 
 **Auth**: Most endpoints require `X-API-Key` header
 **LGPD**: PII scrubbed before logging, audit trail on all mutations
@@ -172,6 +174,8 @@ All endpoints require `X-API-Key` header unless noted.
 POST `/api/v1/webhook/evolution` aceita **ambos**:
 - legado root-level: `payload.message` / `payload.key`
 - aninhado: `payload.data.message` / `payload.data.key`
+
+Observação operacional: o endpoint de produção para WhatsApp também mantém compatibilidade em `/api/v1/whatsapp/webhook`.
 
 Parser: `whatsapp.parse_evolution_payload` + `router._parse_dual_format`.
 Inventário N8N: **38** exports — `docs/N8N_WF_INVENTORY_WAVE29_G7.md`.
