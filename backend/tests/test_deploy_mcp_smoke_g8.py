@@ -34,3 +34,19 @@ def test_legacy_vps_deploy_is_manual_and_fail_closed() -> None:
     assert "inputs.confirm_deploy == true" in guard
     assert "vars.VPS_DEPLOY_ENABLED == 'true'" in guard
     assert "vars.SUI_CHECKLIST_APPROVED == 'true'" in guard
+
+
+def test_runtime_image_contains_alembic_migrations() -> None:
+    """A imagem imutavel precisa aplicar migrations sem copiar arquivos ad hoc."""
+
+    dockerfile = (Path(__file__).resolve().parents[2] / "Dockerfile").read_text(
+        encoding="utf-8"
+    )
+
+    assert "COPY backend/alembic ./alembic" in dockerfile
+    assert "COPY backend/alembic.ini ./alembic.ini" in dockerfile
+    assert "COPY --from=builder --chown=cartorio:cartorio /build/alembic /app/alembic" in dockerfile
+    assert (
+        "COPY --from=builder --chown=cartorio:cartorio /build/alembic.ini /app/alembic.ini"
+        in dockerfile
+    )

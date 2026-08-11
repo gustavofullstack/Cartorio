@@ -31,6 +31,8 @@ RUN uv sync --no-install-project --no-dev
 # mcp_server.py lives in backend/ root (not backend/app/), so copy whole backend
 COPY backend/app ./app
 COPY backend/mcp_server.py ./mcp_server.py
+COPY backend/alembic ./alembic
+COPY backend/alembic.ini ./alembic.ini
 COPY backend/pyproject.toml ./
 RUN uv sync --frozen --no-dev
 
@@ -54,6 +56,8 @@ WORKDIR /app
 COPY --from=builder --chown=cartorio:cartorio /build/.venv /app/.venv
 COPY --from=builder --chown=cartorio:cartorio /build/app /app/app
 COPY --from=builder --chown=cartorio:cartorio /build/mcp_server.py /app/mcp_server.py
+COPY --from=builder --chown=cartorio:cartorio /build/alembic /app/alembic
+COPY --from=builder --chown=cartorio:cartorio /build/alembic.ini /app/alembic.ini
 
 # Fix shebangs: uv generates absolute paths like /build/.venv/bin/python
 # which DON'T exist in the runtime stage. Rewrite to /app/.venv/bin/python.
