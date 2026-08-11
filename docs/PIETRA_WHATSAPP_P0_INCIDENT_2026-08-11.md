@@ -80,6 +80,17 @@ Valores transcritos e conferidos visualmente no arquivo privado `tabela geral 5_
 | 1698-0 | Autorizacao eletronica de viagem | 0,60 | - | 0,40 | 7,95 | 2,66 | **11,61** |
 | 1699-8 | Reconhecimento e-Not Assina | 0,60 | - | 0,40 | 7,95 | 2,66 | **11,61** |
 
+### Cenarios compostos registrados pelo Felipe
+
+Estes totais combinam mais de um ato/insumo e nao substituem o valor unitario da tabela geral.
+
+| Cenario de balcao | Total |
+|---|---:|
+| Firma simples, uma assinatura | **11,61** |
+| Autenticacao mais xerox de duas faces | **15,21** |
+| Abertura de firma completa do exemplo (cartao, arquivamentos e xerox) | **44,83** |
+| DUT/ATPV, um signatario com consulta | **16,61** |
+
 ## Escritura com conteudo financeiro
 
 | Codigo | Faixa | Total |
