@@ -1665,6 +1665,10 @@ input[type="date"] {
   outline: none;
   cursor: pointer;
 }
+.edit-panel select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
 .menu button {
   display: block;
   width: 100%;
@@ -1681,6 +1685,10 @@ input[type="date"] {
 .menu button:hover, .menu button:focus-visible {
   background: var(--soft-blue);
   outline: none;
+}
+.menu button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
 }
 .table-scroll {
   overflow: auto;
@@ -1817,6 +1825,7 @@ pre {
 }
 .close svg { width: 18px; height: 18px; stroke-width: 2.1; }
 .close:hover, .close:focus-visible { background: var(--soft); outline: none; }
+.close:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .copy-button {
   position: absolute;
   right: 8px;
@@ -1837,6 +1846,10 @@ pre {
   background: var(--soft);
   color: var(--ink);
   outline: none;
+}
+.copy-button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 @media (max-width: 1100px) {
   .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
