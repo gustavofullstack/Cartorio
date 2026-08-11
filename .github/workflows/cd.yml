@@ -117,7 +117,7 @@ jobs:
           APP_ENV: test
           AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
           CARTORIO_API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-          PIETRA_CONVERSATION_HMAC_KEY: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+          PIETRA_CONVERSATION_HMAC_KEY: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc  # noqa: ALLOW_KEY_FALLBACK (motivo: valor sintetico CI-only, nao rotacionavel)
         run: uv run pytest -n auto --dist loadfile --maxfail=1 --tb=short
 
       # GATE 4: secrets scan (literal API keys)

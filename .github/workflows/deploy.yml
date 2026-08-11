@@ -60,7 +60,7 @@ jobs:
       APP_ENV: test
       AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
       CARTORIO_API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-      PIETRA_CONVERSATION_HMAC_KEY: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      PIETRA_CONVERSATION_HMAC_KEY: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc  # noqa: ALLOW_KEY_FALLBACK (motivo: valor sintetico CI-only, nao rotacionavel)
     services:
       postgres:
         image: postgres:15
