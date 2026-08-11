@@ -187,7 +187,7 @@ def ingest_evolution_event(
     ).scalar_one_or_none()
 
     if existing is not None:
-        log.info("evolution_ingest idempotent: message_id=%s ja processado", message_id)
+        log.info("evolution_ingest idempotent: event already processed")
         return {"status": "idempotent", "message_id": message_id}
 
     # Grava evento pra idempotencia
@@ -202,12 +202,7 @@ def ingest_evolution_event(
     )
     db.flush()
 
-    log.info(
-        "evolution_ingest accepted: message_id=%s sender=%s instance=%s",
-        message_id,
-        sender,
-        instance,
-    )
+    log.info("evolution_ingest accepted: authenticated event persisted")
     return {
         "status": "accepted",
         "event_type": event,

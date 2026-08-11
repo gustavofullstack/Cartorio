@@ -83,6 +83,11 @@ os.environ["N8N_API_KEY"] = "header.payload.signature"
 # Produção DEVE ter REQUIRE=true e EVOLUTION_WEBHOOK_SECRET configurado.
 os.environ.setdefault("EVOLUTION_REQUIRE_SIGNATURE", "false")
 os.environ.setdefault("EVOLUTION_WEBHOOK_SECRET", "")
+os.environ["EVOLUTION_LEGACY_WEBHOOK_ENABLED"] = "true"
+os.environ["PIETRA_WHATSAPP_RESTRICT_INBOUND"] = "false"
+os.environ["PIETRA_WHATSAPP_ALLOWLIST_HMAC_KEY"] = "b" * 64
+os.environ["BRAIN_API_ENABLED"] = "true"
+os.environ["INTERNAL_API_REQUIRE_KEY"] = "false"
 
 TEST_CARTORIO_API_KEY = "a" * 64
 os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY

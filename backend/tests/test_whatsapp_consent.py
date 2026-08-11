@@ -5,7 +5,7 @@ Modified by Gustavo Almeida.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,7 +26,7 @@ def mock_background_process():
 def mock_adapter():
     """Mocks o WhatsAppAdapter.send para não fazer chamadas HTTP reais upstream."""
     with patch("app.api.v1.whatsapp.get_adapter") as mock_get:
-        adapter = AsyncMock()
+        adapter = MagicMock()
         adapter.send = AsyncMock(return_value=True)
         adapter.verify_signature = AsyncMock(return_value=True)
         mock_get.return_value = adapter

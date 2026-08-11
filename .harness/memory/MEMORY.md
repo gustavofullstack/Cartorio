@@ -930,3 +930,17 @@ recupera acesso quando profile é wipado.
 - Verdade operacional só vale com round-trip real no log: `inbound message ... user=<pessoa>` +
   `response ready ... Sending response` (Lesson 290). "Unauthorized" zerado depois do fix ≠
   prova; a resposta enviada é a prova.
+
+## Lesson 297 — WhatsApp P0: ACL antes de qualquer efeito e precos em duas camadas (2026-08-11)
+
+- A allowlist do WhatsApp deve usar somente hashes HMAC com chave dedicada injetada por secret
+  manager. Configuracao vazia ou malformada bloqueia tudo; telefone real nunca entra no Git.
+- O gate precisa ocorrer antes de idempotencia, banco, consentimento, Redis, fila, audit de negocio
+  ou LLM. O mesmo criterio deve proteger egress, typing e reacoes.
+- Evolution pode entregar celular brasileiro como JID legado sem o nono digito ou como LID com
+  `remoteJidAlt`; ambos precisam de regressao. Binding de LID deve ser curto e nascer somente de
+  inbound ja autorizado.
+- Nao truncar resposta para caber no canal: dividir em blocos e testar reconstrucao integral.
+- Preco regulatorio TJMG e preco operacional de balcao sao camadas diferentes. Nunca sobrescrever
+  a tabela regulatoria para acomodar Recompe, ISS, fundos ou composicoes locais; o catalogo publico
+  deve declarar a camada usada e atos financeiros permanecem HITL.

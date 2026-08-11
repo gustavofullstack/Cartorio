@@ -1180,6 +1180,8 @@ async def webhook_evolution(
         shared_secret_header=shared_secret_header,
     ):
         raise HTTPException(status_code=401, detail="invalid webhook signature")
+    if not settings.evolution_legacy_webhook_enabled:
+        return {"status": "ignored", "detail": "legacy_webhook_disabled"}
 
     # Idempotency check (Sprint 2) - so se payload tem formato novo
     # (data.key.id). Formato legado e ignorado silenciosamente.

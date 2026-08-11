@@ -25,20 +25,31 @@ from typing import Any
 import httpx
 
 from app.services.pii import scrub
+from app.services.emolumento_operacional_balcao import GENERAL_ITEMS, format_brl
 
 logger = logging.getLogger(__name__)
 
-# Catálogo público, revisado contra a Portaria CGJ/TJMG nº 8.664/2025,
-# Tabela 1, vigente em 01/01/2026. Os valores são o ``Valor Final ao Usuário``
-# da tabela estadual; não incluem atos acessórios nem substituem a conferência
-# do escrevente. A fonte e o hash de captura vivem em
-# ``docs/DADOS_PRECOS_E_PAINEL_AGENT_AI.md``.
+# Catalogo publico usa a camada operacional de balcao 2026. A camada regulatoria
+# TJMG permanece separada em ``emolumento_real_djalma`` para rastreabilidade.
+# Atos compostos e financeiros continuam sujeitos a conferencia do escrevente.
 SERVICOS_CATALOGO: dict[str, tuple[str, str]] = {
-    "reconhecimento_firma": ("Reconhecimento de Firma (por assinatura)", "R$ 11,21"),
-    "autenticacao": ("Autenticação de Cópia (por folha)", "R$ 11,21"),
-    "procuracao": ("Procuração Geral (por outorgante)", "R$ 68,94"),
-    "testamento": ("Testamento", "R$ 437,24"),
-    "ata_notarial": ("Ata Notarial (até duas folhas)", "R$ 218,42"),
+    "reconhecimento_firma": (
+        "Reconhecimento de Firma (por assinatura)",
+        format_brl(GENERAL_ITEMS["reconhecimento_firma"].total),
+    ),
+    "autenticacao": (
+        "Autenticação de Cópia (por folha)",
+        format_brl(GENERAL_ITEMS["autenticacao"].total),
+    ),
+    "procuracao": (
+        "Procuração Geral (por outorgante)",
+        format_brl(GENERAL_ITEMS["procuracao"].total),
+    ),
+    "testamento": ("Testamento", format_brl(GENERAL_ITEMS["testamento"].total)),
+    "ata_notarial": (
+        "Ata Notarial (até duas folhas)",
+        format_brl(GENERAL_ITEMS["ata_notarial"].total),
+    ),
 }
 
 # Perfil publico do cartorio. Os campos canonicos ``endereco`` e ``horario``

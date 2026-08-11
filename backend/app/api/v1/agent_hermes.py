@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.api.deps import require_internal_api_key
 from app.db import get_db
 from app.services.audit import AuditService
 from app.services.cartorio_agent import run_cartorio_agent
@@ -25,7 +26,11 @@ from app.services.pii import scrub
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/agent-hermes", tags=["agent-hermes"])
+router = APIRouter(
+    prefix="/agent-hermes",
+    tags=["agent-hermes"],
+    dependencies=[Depends(require_internal_api_key)],
+)
 
 
 class HermesExecuteRequest(BaseModel):

@@ -55,6 +55,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_cartorio_api_key
 from app.config import settings
 from app.db import get_db
 from app.services.chat_pipeline import (
@@ -66,6 +67,11 @@ from app.services.chat_pipeline import (
     health_check as pipeline_health,
 )
 from app.services.redis_bus import get_bus
+from app.services.whatsapp_access import (
+    decide_whatsapp_access,
+    normalize_whatsapp_number,
+    pseudonymous_sender_id,
+)
 from app.services.evolution_ingest import (
     ingest_evolution_event,
     is_messages_upsert_event,
@@ -108,6 +114,27 @@ DEBOUNCE_WINDOW = 1.2
 RATE_LIMIT_SECONDS = 3
 MAX_RESPONSE_LEN = 800
 
+
+def split_whatsapp_text(text: str, max_len: int = MAX_RESPONSE_LEN) -> list[str]:
+    """Divide texto sem descartar o restante nem cortar palavra quando possivel."""
+    if max_len < 1:
+        raise ValueError("max_len deve ser positivo")
+    remaining = text.strip()
+    chunks: list[str] = []
+    while remaining:
+        if len(remaining) <= max_len:
+            chunks.append(remaining)
+            break
+        window = remaining[: max_len + 1]
+        cut = max(window.rfind("\n\n"), window.rfind("\n"))
+        if cut < max_len // 2:
+            cut = window.rfind(" ")
+        if cut <= 0:
+            cut = max_len
+        chunks.append(remaining[:cut].rstrip())
+        remaining = remaining[cut:].lstrip()
+    return chunks
+
 LGPD_NOTICE = (
     "*AVISO LGPD (Lei 13.709/2018)*\n"
     "Este canal trata dados para atendimento do cartorio.\n"
@@ -115,7 +142,8 @@ LGPD_NOTICE = (
     "- Dados pessoais sao mascarados antes de qualquer processamento com IA.\n"
     "- Voce pode pedir acesso, correcao ou exclusao: dpo@2notasudi.com.br\n"
     "- Atos notariais exigem validacao humana (HITL).\n"
-    "Ao continuar, voce declara ciencia deste aviso."
+    "Para continuar, leia este aviso e digite *SIM*. Sem essa confirmacao, "
+    "nenhuma mensagem sera processada pela IA."
 )
 
 SERVICOS: dict[str, tuple[str, str]] = {
@@ -166,6 +194,32 @@ class WhatsAppAdapter(ChannelAdapter):
         self.timeout = httpx.Timeout(connect=3.0, read=EVOLUTION_TIMEOUT, write=5.0, pool=3.0)
         # User-Agent fixo (lesson 120: bypass Cloudflare 403)
         self._client: httpx.AsyncClient | None = None
+        self._authorized_lid_until: dict[str, float] = {}
+
+    @staticmethod
+    def _recipient_hash(recipient_id: str) -> str:
+        import hashlib
+
+        return hashlib.sha256(recipient_id.encode()).hexdigest()
+
+    def authorize_recipient(self, recipient_id: str) -> None:
+        """Cria binding curto apenas para LID ja aprovado via remoteJidAlt."""
+        if recipient_id.endswith("@lid"):
+            self._authorized_lid_until[self._recipient_hash(recipient_id)] = time.time() + 120
+
+    def _recipient_is_allowed(self, recipient_id: str) -> bool:
+        decision = decide_whatsapp_access(
+            recipient_id,
+            sender_id_alt=None,
+            allowed_sender_hashes=settings.pietra_whatsapp_allowed_sender_hashes,
+            hmac_key=settings.pietra_whatsapp_allowlist_hmac_key,
+            restrict_inbound=settings.pietra_whatsapp_restrict_inbound,
+        )
+        if decision.allowed:
+            return True
+        if not recipient_id.endswith("@lid"):
+            return False
+        return self._authorized_lid_until.get(self._recipient_hash(recipient_id), 0) >= time.time()
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -187,6 +241,9 @@ class WhatsAppAdapter(ChannelAdapter):
     async def send(self, msg: OutboundMessage) -> bool:
         """Envia mensagem de texto via Evolution sendText (sanitizada com 0% emojis)."""
         try:
+            if not self._recipient_is_allowed(msg.recipient_id or ""):
+                logger.warning("WhatsApp egress blocked: recipient not authorized")
+                return False
             from app.services.notificacao import _strip_emojis
             client = await self._get_client()
             url = f"{self.base_url}/message/sendText/{self.instance}"
@@ -194,38 +251,33 @@ class WhatsAppAdapter(ChannelAdapter):
             recipient = msg.recipient_id or ""
             if not recipient.endswith("@lid"):
                 recipient = recipient.replace("@s.whatsapp.net", "").replace("@g.us", "")
-            payload: dict[str, Any] = {
-                "number": recipient,
-                "text": clean_text[:MAX_RESPONSE_LEN],
-            }
-            # Buttons (max 3) se houver keyboard
-            if msg.keyboard:
-                flat = [b for row in msg.keyboard for b in row]
-                if len(flat) <= 3:
-                    buttons: list[dict[str, Any]] = []
-                    for i, btn in enumerate(flat[:3]):
-                        buttons.append(
-                            {
-                                "buttonId": btn.get("callback_data", f"btn_{i}"),
-                                "buttonText": {"displayText": btn.get("text", "")[:20]},
-                                "type": 1,
-                            }
-                        )
-                    if buttons:
-                        payload["buttons"] = buttons
-            resp = await client.post(url, json=payload)
             from app.services.metrics import store
 
-            if resp.status_code in (200, 201):
-                bump_metric("responses_ok")
+            chunks = split_whatsapp_text(clean_text)
+            if not chunks:
+                return False
+            flat = [button for row in msg.keyboard or [] for button in row]
+            buttons = [
+                {
+                    "buttonId": button.get("callback_data", f"btn_{index}"),
+                    "buttonText": {"displayText": button.get("text", "")[:20]},
+                    "type": 1,
+                }
+                for index, button in enumerate(flat[:3])
+            ]
+            for index, chunk in enumerate(chunks):
+                payload: dict[str, Any] = {"number": recipient, "text": chunk}
+                if buttons and len(flat) <= 3 and index == len(chunks) - 1:
+                    payload["buttons"] = buttons
+                resp = await client.post(url, json=payload)
+                if resp.status_code not in (200, 201):
+                    logger.warning("Evolution sendText failed: status=%s", resp.status_code)
+                    bump_metric("responses_failed")
+                    store.inc_counter("cartorio_whatsapp_erros_total")
+                    return False
                 store.inc_counter("cartorio_whatsapp_mensagens_total", labels={"direction": "out"})
-                return True
-            logger.warning(
-                "Evolution sendText status=%s body=%s", resp.status_code, resp.text[:200]
-            )
-            bump_metric("responses_failed")
-            store.inc_counter("cartorio_whatsapp_erros_total")
-            return False
+            bump_metric("responses_ok")
+            return True
         except Exception as e:
             logger.exception("WhatsApp send error: %s", e)
             bump_metric("responses_failed")
@@ -237,6 +289,9 @@ class WhatsAppAdapter(ChannelAdapter):
     async def typing(self, recipient_id: str, action: str = "composing") -> bool:
         """Indica typing via presence subscribe (Evolution). action='' cancela."""
         try:
+            if not self._recipient_is_allowed(recipient_id):
+                logger.warning("WhatsApp egress blocked: typing recipient not authorized")
+                return False
             if not action:
                 action = "paused"
             client = await self._get_client()
@@ -258,6 +313,9 @@ class WhatsAppAdapter(ChannelAdapter):
         Telegram reaction emoji mapeado → WhatsApp.
         """
         try:
+            if not self._recipient_is_allowed(recipient_id):
+                logger.warning("WhatsApp egress blocked: reaction recipient not authorized")
+                return False
             # Map Telegram emoji → WhatsApp emoji
             emoji_map = {
                 "thumbsup": "👍",
@@ -588,7 +646,23 @@ async def whatsapp_webhook(
     if not signature_required and not signature_valid:
         logger.warning("WhatsApp webhook: auth inválida aceita somente em modo não obrigatório")
 
-    # 2. Idempotency DB-level (evolution_ingest)
+    # 2. Parse + allowlist antes de banco, consentimento, cache, fila ou LLM.
+    inbound = parse_evolution_payload(payload)
+    if inbound is None:
+        return {"status": "ignored", "detail": "not a messages.upsert event"}
+    access = decide_whatsapp_access(
+        inbound.sender_id,
+        sender_id_alt=str(inbound.extra.get("remote_jid_alt") or ""),
+        allowed_sender_hashes=settings.pietra_whatsapp_allowed_sender_hashes,
+        hmac_key=settings.pietra_whatsapp_allowlist_hmac_key,
+        restrict_inbound=settings.pietra_whatsapp_restrict_inbound,
+    )
+    if not access.allowed:
+        logger.info("WhatsApp webhook ignored by sender policy: reason=%s", access.reason)
+        return {"status": "ignored", "detail": "sender_not_authorized"}
+    adapter.authorize_recipient(inbound.sender_id)
+
+    # 3. Idempotency DB-level somente para remetente autorizado.
     try:
         ingest_result = ingest_evolution_event(db, payload)
         if ingest_result.get("status") == "idempotent":
@@ -606,18 +680,23 @@ async def whatsapp_webhook(
         logger.error("evolution_ingest indisponível: %s", type(exc).__name__)
         raise HTTPException(status_code=503, detail="webhook idempotency unavailable") from exc
 
-    # 3. Parse → InboundMessage
-    inbound = parse_evolution_payload(payload)
-    if inbound is None:
-        return {"status": "ignored", "detail": "not a messages.upsert event"}
-
     # =========================================================================
     # LGPD Consent Banner + Opt-out (PARAR/SAIR) + Audit Log - Wave 3 (S3.T3)
     # =========================================================================
     from datetime import datetime, timezone
+    from app.services.audit import AuditService
 
     sender_id = inbound.sender_id
-    num_puro = sender_id.replace("@s.whatsapp.net", "").replace("@g.us", "")
+    sender_alt = str(inbound.extra.get("remote_jid_alt") or "")
+    normalized_sender = normalize_whatsapp_number(sender_alt) or normalize_whatsapp_number(
+        sender_id
+    )
+    num_puro = (normalized_sender or "").lstrip("+")
+    sender_hash = pseudonymous_sender_id(
+        sender_id,
+        hmac_key=settings.pietra_whatsapp_allowlist_hmac_key,
+    )
+    consent_key = f"consent:wa:{sender_hash}"
     text_clean = inbound.text.strip().lower()
 
     if not inbound.is_group:
@@ -627,7 +706,7 @@ async def whatsapp_webhook(
         # 1. Verifica no Redis
         if bus:
             try:
-                consent_flag = await bus.client.get(f"consent:wa:{sender_id}")
+                consent_flag = await bus.client.get(consent_key)
                 if consent_flag in (b"1", "1"):
                     has_consent = True
             except Exception as e:
@@ -645,47 +724,16 @@ async def whatsapp_webhook(
                 if cliente_db and cliente_db.consentimento_lgpd:
                     has_consent = True
                     if bus:
-                        await bus.client.set(f"consent:wa:{sender_id}", "1")
+                        await bus.client.set(consent_key, "1", ex=86400)
             except Exception as e:
                 logger.warning("DB consent check failed: %s", e)
 
-        # 3. Tratamento de consentimento LGPD: auto-concede no primeiro contato do cliente via WhatsApp (LGPD Art. 7 I/V/IX)
-        if not has_consent:
-            if bus:
-                try:
-                    await bus.client.set(f"consent:wa:{sender_id}", "1")
-                except Exception as e:
-                    logger.warning("Redis consent write failed: %s", e)
-
-            try:
-                from app.models.cliente import Cliente
-                from sqlalchemy import select
-
-                cliente_db = db.execute(
-                    select(Cliente).where(Cliente.whatsapp_number == num_puro)
-                ).scalar_one_or_none()
-                if cliente_db:
-                    cliente_db.consentimento_lgpd = True
-                    cliente_db.consentimento_em = datetime.now(timezone.utc)
-                    cliente_db.consentimento_canal = "whatsapp"
-                    db.commit()
-            except Exception as e:
-                logger.warning("DB consent update failed: %s", e)
-
-            from app.services.audit import AuditService
-
-            AuditService.log_system_action(
-                action="consent.whatsapp.auto_granted",
-                payload={"sender_id": sender_id, "status": "granted", "canal": "whatsapp", "reason": "inbound_contact"},
-            )
-            has_consent = True
-
-        # 4. Trata opt-out explícito (PARAR/SAIR)
-        else:
-            if text_clean in ("parar", "sair", "optout", "opt-out", "cancelar"):
+        # 3. Opt-out e opt-in sao sempre explicitos; contato inicial nao e consentimento.
+        if text_clean in ("parar", "sair", "optout", "opt-out", "cancelar"):
+            if has_consent:
                 if bus:
                     try:
-                        await bus.client.delete(f"consent:wa:{sender_id}")
+                        await bus.client.delete(consent_key)
                     except Exception as e:
                         logger.warning("Redis consent delete failed: %s", e)
 
@@ -704,15 +752,10 @@ async def whatsapp_webhook(
                 except Exception as e:
                     logger.warning("DB consent revocation failed: %s", e)
 
-                from app.services.audit import AuditService
-
                 AuditService.log_system_action(
                     action="consent.whatsapp.revoked",
-                    payload={"sender_id": sender_id, "status": "revoked", "canal": "whatsapp"},
+                    payload={"sender_hash": sender_hash, "status": "revoked", "canal": "whatsapp"},
                 )
-
-                from app.services.chat_pipeline import OutboundMessage
-
                 msg_optout = OutboundMessage(
                     channel=inbound.channel,
                     recipient_id=sender_id,
@@ -720,6 +763,47 @@ async def whatsapp_webhook(
                 )
                 await adapter.send(msg_optout)
                 return {"status": "ok", "detail": "consent_revoked"}
+            return {"status": "ok", "detail": "consent_required"}
+
+        if not has_consent and text_clean in ("sim", "s", "aceito", "aceitar"):
+            if bus:
+                try:
+                    await bus.client.set(consent_key, "1", ex=86400)
+                except Exception as e:
+                    logger.warning("Redis consent write failed: %s", e)
+            try:
+                from app.models.cliente import Cliente
+                from sqlalchemy import select
+
+                cliente_db = db.execute(
+                    select(Cliente).where(Cliente.whatsapp_number == num_puro)
+                ).scalar_one_or_none()
+                if cliente_db:
+                    cliente_db.consentimento_lgpd = True
+                    cliente_db.consentimento_em = datetime.now(timezone.utc)
+                    cliente_db.consentimento_canal = "whatsapp"
+                    db.commit()
+            except Exception as e:
+                logger.warning("DB consent update failed: %s", e)
+            AuditService.log_system_action(
+                action="consent.whatsapp",
+                payload={"sender_hash": sender_hash, "status": "granted", "canal": "whatsapp"},
+            )
+            return {"status": "ok", "detail": "consent_granted"}
+
+        if not has_consent:
+            await adapter.send(
+                OutboundMessage(
+                    channel=inbound.channel,
+                    recipient_id=sender_id,
+                    text=LGPD_NOTICE,
+                )
+            )
+            AuditService.log_system_action(
+                action="consent.whatsapp.requested",
+                payload={"sender_hash": sender_hash, "status": "pending", "canal": "whatsapp"},
+            )
+            return {"status": "ok", "detail": "consent_required"}
 
     # 4. Pipeline compartilhado
     request_id = request.headers.get("X-Request-ID", f"wa-{int(time.time() * 1000)}")
@@ -734,7 +818,9 @@ async def whatsapp_webhook(
 
 
 @router.get("/debug/last-messages")
-async def whatsapp_debug_last_messages() -> dict:
+async def whatsapp_debug_last_messages(
+    _api_key: str = Depends(require_cartorio_api_key),
+) -> dict:
     """Debug: últimas N mensagens processadas (do Redis audit log)."""
     bus = get_bus()
     if not bus:
@@ -748,12 +834,18 @@ async def whatsapp_debug_last_messages() -> dict:
 
 
 @router.post("/test/send")
-async def whatsapp_test_send(to: str, text: str) -> dict:
+async def whatsapp_test_send(
+    to: str,
+    text: str,
+    _api_key: str = Depends(require_cartorio_api_key),
+) -> dict:
     """Smoke test local: envia mensagem via Evolution sem webhook.
 
     Útil para SUI Gustavo validar após QR scan:
       curl -X POST 'https://api.2notasudi.com.br/api/v1/whatsapp/test/send?to=5511999999999&text=Oi'
     """
+    if settings.app_env == "production":
+        raise HTTPException(status_code=404, detail="not found")
     adapter = get_adapter()
     out = OutboundMessage(
         channel=Channel.WHATSAPP,
@@ -761,4 +853,4 @@ async def whatsapp_test_send(to: str, text: str) -> dict:
         text=text,
     )
     sent = await adapter.send(out)
-    return {"sent": sent, "to": out.recipient_id, "ts": time.time()}
+    return {"sent": sent, "ts": time.time()}

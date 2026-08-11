@@ -24,7 +24,13 @@ from app.api.v1.whatsapp import (
     get_adapter,
     parse_evolution_payload,
 )
+from app.config import settings
 from app.services.chat_pipeline import Channel, OutboundMessage
+from app.services.whatsapp_access import hmac_sender
+
+
+HMAC_KEY = "synthetic-adapter-key-with-at-least-32-characters"
+ALLOWED_NUMBER = "+5511998765432"
 
 
 def _make_response(status_code: int = 200, json_data: dict | None = None) -> MagicMock:
@@ -106,7 +112,7 @@ class TestWhatsAppSend:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_send_truncates_long_text(self) -> None:
+    async def test_send_splits_long_text_without_data_loss(self) -> None:
         adapter = WhatsAppAdapter(base_url="http://fake:8080", api_key="k", instance="i")
         long_text = "A" * 1500  # > MAX_RESPONSE_LEN
         msg = OutboundMessage(
@@ -115,9 +121,84 @@ class TestWhatsAppSend:
         mock_client = MagicMock()
         mock_client.post = AsyncMock(return_value=_make_response(200))
         with patch.object(adapter, "_get_client", AsyncMock(return_value=mock_client)):
-            await adapter.send(msg)
-        payload = mock_client.post.call_args.kwargs.get("json")
-        assert len(payload["text"]) <= MAX_RESPONSE_LEN
+            result = await adapter.send(msg)
+        payloads = [call.kwargs["json"] for call in mock_client.post.call_args_list]
+        assert result is True
+        assert len(payloads) == 2
+        assert all(len(payload["text"]) <= MAX_RESPONSE_LEN for payload in payloads)
+        assert "".join(payload["text"] for payload in payloads) == long_text
+
+    @pytest.mark.asyncio
+    async def test_restricted_egress_denies_unlisted_recipient(self, monkeypatch) -> None:
+        monkeypatch.setattr(settings, "pietra_whatsapp_restrict_inbound", True)
+        monkeypatch.setattr(settings, "pietra_whatsapp_allowlist_hmac_key", HMAC_KEY)
+        monkeypatch.setattr(
+            settings,
+            "pietra_whatsapp_allowed_sender_hashes",
+            hmac_sender(ALLOWED_NUMBER, hmac_key=HMAC_KEY),
+        )
+        adapter = WhatsAppAdapter(base_url="http://fake:8080", api_key="k", instance="i")
+        msg = OutboundMessage(
+            channel=Channel.WHATSAPP,
+            recipient_id="5511988888888@s.whatsapp.net",
+            text="Nao deve sair",
+        )
+        mock_client = MagicMock()
+        mock_client.post = AsyncMock(return_value=_make_response(200))
+        with patch.object(adapter, "_get_client", AsyncMock(return_value=mock_client)):
+            result = await adapter.send(msg)
+        assert result is False
+        mock_client.post.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_restricted_egress_revalidates_listed_recipient(self, monkeypatch) -> None:
+        monkeypatch.setattr(settings, "pietra_whatsapp_restrict_inbound", True)
+        monkeypatch.setattr(settings, "pietra_whatsapp_allowlist_hmac_key", HMAC_KEY)
+        monkeypatch.setattr(
+            settings,
+            "pietra_whatsapp_allowed_sender_hashes",
+            hmac_sender(ALLOWED_NUMBER, hmac_key=HMAC_KEY),
+        )
+        adapter = WhatsAppAdapter(base_url="http://fake:8080", api_key="k", instance="i")
+        msg = OutboundMessage(
+            channel=Channel.WHATSAPP,
+            recipient_id="5511998765432@s.whatsapp.net",
+            text="Pode sair",
+        )
+        mock_client = MagicMock()
+        mock_client.post = AsyncMock(return_value=_make_response(200))
+        with patch.object(adapter, "_get_client", AsyncMock(return_value=mock_client)):
+            result = await adapter.send(msg)
+        assert result is True
+        mock_client.post.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_lid_binding_expires_after_short_window(self, monkeypatch) -> None:
+        monkeypatch.setattr(settings, "pietra_whatsapp_restrict_inbound", True)
+        monkeypatch.setattr(settings, "pietra_whatsapp_allowlist_hmac_key", HMAC_KEY)
+        monkeypatch.setattr(
+            settings,
+            "pietra_whatsapp_allowed_sender_hashes",
+            hmac_sender(ALLOWED_NUMBER, hmac_key=HMAC_KEY),
+        )
+        adapter = WhatsAppAdapter(base_url="http://fake:8080", api_key="k", instance="i")
+        recipient = "162023748985056@lid"
+        msg = OutboundMessage(channel=Channel.WHATSAPP, recipient_id=recipient, text="Resposta")
+        mock_client = MagicMock()
+        mock_client.post = AsyncMock(return_value=_make_response(200))
+        with patch("app.api.v1.whatsapp.time.time", return_value=100):
+            adapter.authorize_recipient(recipient)
+        with (
+            patch.object(adapter, "_get_client", AsyncMock(return_value=mock_client)),
+            patch("app.api.v1.whatsapp.time.time", return_value=219),
+        ):
+            assert await adapter.send(msg) is True
+        with (
+            patch.object(adapter, "_get_client", AsyncMock(return_value=mock_client)),
+            patch("app.api.v1.whatsapp.time.time", return_value=221),
+        ):
+            assert await adapter.send(msg) is False
+        mock_client.post.assert_awaited_once()
 
 
 # =============================================================================

@@ -197,6 +197,12 @@ class Settings(BaseSettings):
     evolution_base_url: str = "http://cartorio_evolution-api:8080"
     evolution_api_key: Optional[str] = None
     evolution_instance: str = "cartorio-agent"
+    evolution_legacy_webhook_enabled: bool = False
+    pietra_whatsapp_restrict_inbound: bool = True
+    pietra_whatsapp_allowed_sender_hashes: str = ""
+    pietra_whatsapp_allowlist_hmac_key: str = ""
+    brain_api_enabled: bool = False
+    internal_api_require_key: bool = True
 
     # ========================================================================
     # Chatwoot (CRM / atendimento humano)

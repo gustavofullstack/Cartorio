@@ -17,19 +17,32 @@ LGPD-safe: endpoints NAO expoem PII. Apenas contadores agregados.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import settings
+from app.api.deps import require_internal_api_key
 
-brain_router = APIRouter(prefix="/brain", tags=["brain", "meta"])
+brain_router = APIRouter(
+    prefix="/brain",
+    tags=["brain", "meta"],
+    dependencies=[Depends(require_internal_api_key)],
+)
 
 BRAIN_DIR = Path("/Users/gustavoalmeida/projetos/Cartorio/.brain")
 SNAPSHOTS_DIR = BRAIN_DIR / "snapshots"
 MEMORY_DIR = BRAIN_DIR / "memory"
+_SNAPSHOT_ID = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def _snapshot_path(snapshot_id: str) -> Path:
+    if not _SNAPSHOT_ID.fullmatch(snapshot_id):
+        raise HTTPException(status_code=422, detail="snapshot_id invalido")
+    return SNAPSHOTS_DIR / f"{snapshot_id}.json"
 
 
 class LessonCreate(BaseModel):
@@ -332,7 +345,7 @@ async def list_snapshots(
 )
 async def get_snapshot_detail(snapshot_id: str) -> SnapshotDetail:
     """Retorna arquivos completos do snapshot para restauracao."""
-    snap_path = SNAPSHOTS_DIR / f"{snapshot_id}.json"
+    snap_path = _snapshot_path(snapshot_id)
     if not snap_path.exists():
         raise HTTPException(status_code=404, detail=f"snapshot {snapshot_id!r} nao encontrado")
     d = _read_json_safe(snap_path)
@@ -379,8 +392,6 @@ async def list_sessions(
                     title = line.lstrip("#").strip()
                     break
             # Conta commits no formato [hash]
-            import re
-
             commits_count = len(re.findall(r"`[0-9a-f]{7}`", content))
             # Detecta squads mencionados
             squad_match = re.findall(r"SQUAD\s+([A-Z0-9]+)", content)
@@ -428,7 +439,7 @@ async def restore_context(snapshot_id: str) -> ContextRestoreResponse:
     - memory_files (lista de arquivos de memoria)
     - key_files (arquivos criticos: STRUCTURE.md, loop-state.json, index.md, ...)
     """
-    snap_path = SNAPSHOTS_DIR / f"{snapshot_id}.json"
+    snap_path = _snapshot_path(snapshot_id)
     if not snap_path.exists():
         raise HTTPException(status_code=404, detail=f"snapshot {snapshot_id!r} nao encontrado")
     d = _read_json_safe(snap_path)

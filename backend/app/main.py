@@ -970,9 +970,10 @@ from app.api.v2 import api_v2_router  # noqa: E402
 app.include_router(api_v2_router, prefix="/api/v2")
 
 # BRAIN endpoints (BRAIN6) - tarefas, lessons, sync, loop-state
-from app.api.v1.brain import brain_router  # noqa: E402
+if settings.brain_api_enabled:
+    from app.api.v1.brain import brain_router  # noqa: E402
 
-app.include_router(brain_router, prefix="/api/v1")
+    app.include_router(brain_router, prefix="/api/v1")
 
 # Auth login (Turno 23+ 2026-06-29) - mint JWT for DPO/operador use
 # Sem este endpoint, os LGPD v2 endpoints (D26-D32) nao podem ser

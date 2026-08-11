@@ -144,6 +144,17 @@ def require_cartorio_api_key(
     return provided
 
 
+def require_internal_api_key(
+    request: Request,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    settings: Settings = Depends(get_settings),
+) -> str:
+    """Protege routers internos; bypass existe apenas para suites locais explicitas."""
+    if not settings.internal_api_require_key:
+        return "internal-auth-test-bypass"
+    return require_cartorio_api_key(request, x_api_key, settings)
+
+
 # ---------------------------------------------------------------------------
 # JWT-based DPO role dependencies (LGPD D26-D32)
 # ---------------------------------------------------------------------------

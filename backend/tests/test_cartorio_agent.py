@@ -17,13 +17,13 @@ from app.services.cartorio_agent import (
 )
 
 
-def test_catalogo_publico_usa_valores_finais_tjmg_2026() -> None:
-    """Itens simples só podem divulgar o valor final da fonte primária vigente."""
-    assert SERVICOS_CATALOGO["reconhecimento_firma"][1] == "R$ 11,21"
-    assert SERVICOS_CATALOGO["autenticacao"][1] == "R$ 11,21"
-    assert SERVICOS_CATALOGO["procuracao"][1] == "R$ 68,94"
-    assert SERVICOS_CATALOGO["testamento"][1] == "R$ 437,24"
-    assert SERVICOS_CATALOGO["ata_notarial"][1] == "R$ 218,42"
+def test_catalogo_publico_usa_camada_operacional_balcao_2026() -> None:
+    """Catalogo do cliente usa a camada operacional sem alterar o regulatorio."""
+    assert SERVICOS_CATALOGO["reconhecimento_firma"][1] == "R$ 11,61"
+    assert SERVICOS_CATALOGO["autenticacao"][1] == "R$ 11,61"
+    assert SERVICOS_CATALOGO["procuracao"][1] == "R$ 71,38"
+    assert SERVICOS_CATALOGO["testamento"][1] == "R$ 452,71"
+    assert SERVICOS_CATALOGO["ata_notarial"][1] == "R$ 226,15"
 
 
 def test_detect_intent_preco() -> None:
@@ -158,7 +158,7 @@ async def test_run_agent_offline_path(monkeypatch: pytest.MonkeyPatch) -> None:
     reply = await run_cartorio_agent("quanto custa autenticacao de documento?")
     assert reply.text
     assert (
-        "11,21" in reply.text
+        "11,61" in reply.text
         or "Autentic" in reply.text
         or "autentic" in reply.text.lower()
         or "emolumento" in reply.text.lower()
