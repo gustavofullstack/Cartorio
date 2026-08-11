@@ -1,0 +1,4 @@
+## 2024-08-08 - Use constant-time comparison for HMAC validation
+**Vulnerability:** Found standard string equality operator (`==`) used for comparing HMAC cryptographic signatures (`hmac_match = computed_hmac == expected_hmac` in LGPD Export Envelope and `hmac_ok = stored_hmac == expected_hmac` in Audit Integrity Service). This exposes the application to timing attacks, allowing an attacker to theoretically forge signatures by observing response times.
+**Learning:** Python's standard `==` string equality operator returns `False` as soon as the first mismatch is found. In a cryptographic context, this variable time leaks information about the correct HMAC string.
+**Prevention:** Always use `hmac.compare_digest(a, b)` for any operation involving the comparison of sensitive data like HMACs, API keys, or passwords.

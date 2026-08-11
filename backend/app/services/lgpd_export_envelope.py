@@ -377,7 +377,7 @@ def verify_envelope(
 
             # HMAC do content_hash
             computed_hmac = _hmac_signature(computed_hash, key)
-            hmac_match = computed_hmac == expected_hmac
+            hmac_match = hmac.compare_digest(computed_hmac, expected_hmac)
             if not hmac_match:
                 errors.append("HMAC signature mismatch (envelope may be tampered)")
 
