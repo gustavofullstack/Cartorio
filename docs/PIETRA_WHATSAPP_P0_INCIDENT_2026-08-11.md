@@ -30,6 +30,20 @@ Data: 2026-08-11. Estado: contido; webhook Evolution pausado durante o rollout.
 - O workflow de agendamento estava inativo e incorreto: condicao de dados ausentes, deduplicacao,
   HITL e confirmacao eram inalcancaveis ou incompletos. Ele nao deve ser ativado.
 
+## Contencao de agendamento
+
+- Toda solicitacao criada pela API ou webhook nasce com status `draft`; nenhum horario e
+  prometido ao cliente antes da decisao humana.
+- Apenas uma chamada autenticada de escrevente promove `draft` para `agendado`, com evento
+  `agendamento.approved_by_clerk` na auditoria.
+- Horarios passados, finais de semana e intervalos fora de 09h-17h no fuso
+  `America/Sao_Paulo` sao recusados. Datetime sem offset e interpretado como horario civil local,
+  nunca como UTC.
+- O endpoint antigo de disponibilidade estatica agora retorna 503 e informa que a validacao deve
+  ser humana; ele nao anuncia mais cinco vagas ficticias.
+- Os endpoints de criacao, listagem, cancelamento e aprovacao exigem `X-API-Key`. O workflow N8N
+  05 permanece inativo e nao deve ser ligado ate ser refeito e testado ponta a ponta.
+
 ## Tabela geral operacional de balcao
 
 Valores transcritos e conferidos visualmente no arquivo privado `tabela geral 5_.pdf`.
@@ -134,3 +148,5 @@ Valores transcritos e conferidos visualmente no arquivo privado `tabela geral 5_
 - A chave SSH exposta no pedido deve ser rotacionada depois de garantir uma segunda via de acesso.
 - O aceite final exige round-trip real controlado dos dois contatos autorizados e verificacao de
   que um terceiro sintetico e ignorado antes de qualquer persistencia.
+- Agendamento focal: validacao temporal, autenticacao, ciclo `draft` -> `agendado`, webhook,
+  cache e metricas cobertos por testes automatizados.

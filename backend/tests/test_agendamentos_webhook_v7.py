@@ -53,7 +53,7 @@ def test_criar_agendamento_webhook_without_lgpd_consent_fails(db_session: Sessio
     payload = {
         "cliente_id": cliente.id,
         "cliente_cpf": "12345678909",
-        "data_hora": (datetime.datetime.now() + datetime.timedelta(days=1)).isoformat(),
+        "data_hora": (datetime.datetime(2030, 7, 1, 10, 0, 0)).isoformat(),
         "titulo": "Agendamento de Teste",
         "tipo": "normal",
         "local": "balcao_1",
@@ -78,7 +78,7 @@ def test_criar_agendamento_webhook_success(db_session: Session) -> None:
     db_session.add(cliente)
     db_session.commit()
 
-    data_hora = datetime.datetime.now() + datetime.timedelta(days=1)
+    data_hora = datetime.datetime(2030, 7, 1, 10, 0, 0)
     payload = {
         "cliente_id": cliente.id,
         "cliente_cpf": "12345678909",
@@ -93,7 +93,7 @@ def test_criar_agendamento_webhook_success(db_session: Session) -> None:
     assert resp.status_code == 201
     body = resp.json()
     assert body["titulo"] == "Reconhecimento de Firma"
-    assert body["status"] == "agendado"
+    assert body["status"] == "draft"
     assert body["cliente_id"] == cliente.id
 
 
@@ -110,7 +110,7 @@ def test_criar_agendamento_webhook_concurrency_conflict(db_session: Session) -> 
     db_session.commit()
 
     # Cria agendamento inicial direto no DB para causar colisão
-    data_hora = datetime.datetime.now() + datetime.timedelta(days=2)
+    data_hora = datetime.datetime(2030, 7, 2, 10, 0, 0)
     agendamento_existente = Agendamento(
         cliente_id=cliente.id,
         data_hora=data_hora,

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import datetime
 from typing import Any, cast
+from zoneinfo import ZoneInfo
 
 from fastapi import Request
 
@@ -61,6 +62,36 @@ class AgendamentoService:
     """Serviço de agendamentos."""
 
     @staticmethod
+    def _validar_regras_temporais(
+        data_hora: datetime.datetime,
+        duration_minutes: int,
+        *,
+        agora: datetime.datetime | None = None,
+    ) -> datetime.datetime:
+        """Normaliza para o fuso local e rejeita horários inseguros."""
+        fuso_cartorio = ZoneInfo("America/Sao_Paulo")
+        if data_hora.tzinfo is None:
+            data_hora = data_hora.replace(tzinfo=fuso_cartorio)
+
+        horario_local = data_hora.astimezone(fuso_cartorio)
+        agora_local = (agora or datetime.datetime.now(datetime.timezone.utc)).astimezone(
+            fuso_cartorio
+        )
+        if horario_local <= agora_local:
+            raise ValueError("O horário solicitado deve estar no futuro")
+        if horario_local.weekday() >= 5:
+            raise ValueError("Agendamentos não são realizados aos finais de semana")
+        if duration_minutes <= 0:
+            raise ValueError("A duração do agendamento deve ser positiva")
+
+        inicio_expediente = horario_local.replace(hour=9, minute=0, second=0, microsecond=0)
+        fim_expediente = horario_local.replace(hour=17, minute=0, second=0, microsecond=0)
+        horario_fim = horario_local + datetime.timedelta(minutes=duration_minutes)
+        if horario_local < inicio_expediente or horario_fim > fim_expediente:
+            raise ValueError("Agendamentos devem ocorrer integralmente entre 09h e 17h")
+        return data_hora
+
+    @staticmethod
     def _validar_horario_disponivel(
         db: Session,
         data_hora: datetime.datetime,
@@ -100,6 +131,7 @@ class AgendamentoService:
             Agendamento.status.in_(
                 [
                     StatusAgendamento.AGENDADO,
+                    StatusAgendamento.DRAFT,
                     StatusAgendamento.CONFIRMADO,
                     StatusAgendamento.EM_ATENDIMENTO,
                 ]
@@ -203,9 +235,12 @@ class AgendamentoService:
             ProtocoloNotFoundError: Protocolo não encontrado
         """
         # Validações (raise se cliente/protocolo nao existem)
-        AgendamentoService._validar_horario_disponivel(db, data_hora, duration_minutes, local)
         AgendamentoService._validar_cliente_existe(db, cliente_id)
         AgendamentoService._validar_protocolo_existe(db, protocolo_id)
+        data_hora = AgendamentoService._validar_regras_temporais(
+            data_hora, duration_minutes
+        )
+        AgendamentoService._validar_horario_disponivel(db, data_hora, duration_minutes, local)
 
         # Cria agendamento
         agendamento = Agendamento.criar(
@@ -228,7 +263,7 @@ class AgendamentoService:
             db,
             actor_id=f"cliente:{cliente_id}",
             actor_type="user",
-            action="agendamento.created",
+            action="agendamento.draft_created",
             resource=f"agendamento:{agendamento.id}",
             payload={
                 "cliente_id": cliente_id,
@@ -250,6 +285,46 @@ class AgendamentoService:
 
         invalidate_agendamento_cache()
 
+        return agendamento
+
+    @staticmethod
+    def aprovar_agendamento(
+        db: Session,
+        agendamento_id: int,
+        *,
+        actor_id: str,
+        request: Request | None = None,
+    ) -> Agendamento:
+        """Promove DRAFT para AGENDADO após decisão explícita do escrevente."""
+        agendamento = db.execute(
+            select(Agendamento).where(Agendamento.id == agendamento_id)
+        ).scalar_one_or_none()
+        if agendamento is None:
+            raise ValueError(f"Agendamento #{agendamento_id} não encontrado")
+        if agendamento.status != StatusAgendamento.DRAFT:
+            raise ValueError(
+                f"Agendamento #{agendamento_id} não pode ser aprovado "
+                f"(status: {agendamento.status})"
+            )
+
+        agendamento.aprovar_por_escrevente()
+        db.add(agendamento)
+        audit_kwargs_dict = audit_kwargs(request) if request else {}
+        AuditService.log(
+            db,
+            actor_id=actor_id,
+            actor_type="staff",
+            action="agendamento.approved_by_clerk",
+            resource=f"agendamento:{agendamento.id}",
+            payload={"status_anterior": "draft", "status_novo": "agendado"},
+            **audit_kwargs_dict,
+        )
+        db.commit()
+        db.refresh(agendamento)
+
+        from app.services.agendamento_cache import invalidate_agendamento_cache
+
+        invalidate_agendamento_cache()
         return agendamento
 
     @staticmethod
@@ -353,6 +428,7 @@ class AgendamentoService:
             raise ValueError(f"Agendamento #{agendamento_id} não encontrado")
 
         if agendamento.status not in (
+            StatusAgendamento.DRAFT,
             StatusAgendamento.AGENDADO,
             StatusAgendamento.CONFIRMADO,
         ):
@@ -361,6 +437,11 @@ class AgendamentoService:
                 f"(status: {agendamento.status})"
             )
 
+        status_anterior = (
+            agendamento.status.value
+            if hasattr(agendamento.status, "value")
+            else agendamento.status
+        )
         agendamento.cancelar()
         db.add(agendamento)
 
@@ -373,9 +454,7 @@ class AgendamentoService:
             action="agendamento.cancelled",
             resource=f"agendamento:{agendamento.id}",
             payload={
-                "status_anterior": "agendado"
-                if agendamento.status == StatusAgendamento.AGENDADO
-                else "confirmado",
+                "status_anterior": status_anterior,
                 "status_novo": agendamento.status.value,
             },
             **audit_kwargs_dict,

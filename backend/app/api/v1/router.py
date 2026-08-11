@@ -2387,9 +2387,9 @@ async def health_backup_v2() -> JSONResponse:
     tags=["agendamento"],
     summary="Consultar disponibilidade de agenda (N8N workflow #05)",
     description=(
-        "Retorna slots disponiveis para atendimento presencial no cartorio. "
-        "v0.4.0 MVP: tabela estatica de segunda a sexta 09-17h com 5 vagas/hora. "
-        "Sprint 2 integra com Google Calendar API."
+        "Endpoint de compatibilidade fail-closed. Enquanto nao houver uma agenda "
+        "transacional real, retorna 503 e exige validacao humana; nunca anuncia "
+        "quantidade estatica de vagas."
     ),
     response_description="Lista de slots disponiveis no dia solicitado.",
 )
@@ -2405,8 +2405,9 @@ async def agendamento_disponibilidade(
         int,
         Query(ge=0, le=23, description="Hora do dia (0-23)."),
     ] = 9,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> dict:
-    """Retorna vagas disponiveis para o slot pedido + slots seguintes."""
+    """Falha de modo seguro enquanto não houver uma agenda transacional real."""
     dias_validos = {"segunda", "terca", "quarta", "quinta", "sexta"}
     if dia.lower() not in dias_validos:
         return {
@@ -2418,13 +2419,16 @@ async def agendamento_disponibilidade(
     if hora < 9 or hora >= 17:
         return {"vagas": 0, "slots": [], "erro": "Atendimento apenas das 09h as 17h"}
 
-    # MVP: tabela estatica - 5 vagas/hora
-    # TODO Sprint 2: integrar com Google Calendar API para bloquear slots ja agendados
-    slots = []
-    for h in range(max(9, hora), 17):
-        slots.append({"dia": dia.lower(), "hora": h, "vagas": 5})
-
-    return {"dia": dia.lower(), "hora_pedida": hora, "vagas": 5, "slots": slots}
+    raise HTTPException(
+        status_code=503,
+        detail={
+            "erro": "AGENDA_REAL_INDISPONIVEL",
+            "mensagem": (
+                "A disponibilidade deve ser validada por um escrevente; "
+                "nenhum horário foi reservado."
+            ),
+        },
+    )
 
 
 # ============================================================================
@@ -5082,18 +5086,20 @@ def post_dlq_enqueue(
     tags=["agendamento"],
     summary="Criar agendamento (LGPD + audit log)",
     description=(
-        "Cria um novo agendamento para atendimento presencial. Valida "
+        "Cria uma solicitacao DRAFT para atendimento presencial. Valida "
         "disponibilidade de horário, existência do cliente e protocolo (se "
         "fornecido).\n\n"
+        "**HITL**: o horario so vira AGENDADO depois de aprovacao autenticada "
+        "de um escrevente.\n\n"
         "**Gate LGPD**: CPF é hasheado antes de persistir. Nenhum dado pessoal "
         "em texto puro é salvo no banco.\n\n"
         "**Conflitos**: Retorna 409 se horário já estiver ocupado no local.\n\n"
         "**Audit log**: Registra criação (LGPD art. 37)."
     ),
     status_code=201,
-    response_description="Agendamento criado com sucesso.",
+    response_description="Solicitacao DRAFT criada com sucesso.",
     responses={
-        201: {"description": "Agendamento criado."},
+        201: {"description": "Solicitacao DRAFT criada."},
         400: {"description": "Payload inválido."},
         404: {"description": "Cliente não encontrado."},
         409: {"description": "Conflito de horário."},
@@ -5103,6 +5109,7 @@ def criar_agendamento(
     request: Request,
     payload: AgendamentoCreateRequest,
     db: Annotated[Session, Depends(get_db)],
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> AgendamentoResponse:
     """Cria agendamento com validações completas."""
     from app.services.agendamento import (
@@ -5326,6 +5333,7 @@ def listar_agendamentos_cliente(
         False,
         description=("A19 LGPD: incluir soft-deletados. EXIGE Bearer JWT com claim dpo=True."),
     ),
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> list[AgendamentoResponse]:
     """Lista agendamentos de um cliente."""
     # A19: gate admin DPO
@@ -5364,6 +5372,7 @@ def listar_agendamentos_data(
         False,
         description="A19 LGPD: incluir soft-deletados. EXIGE Bearer JWT dpo=True.",
     ),
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> list[AgendamentoResponse]:
     """Lista agendamentos para uma data."""
     # A19: gate admin DPO
@@ -5396,6 +5405,7 @@ def cancelar_agendamento(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
     agendamento_id: int,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> AgendamentoResponse:
     """Cancela um agendamento."""
     from app.services.agendamento import AgendamentoService
@@ -5418,10 +5428,10 @@ def cancelar_agendamento(
     tags=["agendamento"],
     summary="Confirmar agendamento",
     description=(
-        "Confirma um agendamento. Só pode confirmar agendamentos no status "
-        "'agendado'. Registra audit log da operação."
+        "Aprova uma solicitacao DRAFT apos validacao humana do escrevente. "
+        "A operacao exige X-API-Key e registra audit log."
     ),
-    response_description="Agendamento confirmado.",
+    response_description="Rascunho aprovado e promovido para AGENDADO.",
     responses={
         200: {"description": "Agendamento confirmado."},
         400: {"description": "Agendamento não pode ser confirmado."},
@@ -5432,12 +5442,18 @@ def confirmar_agendamento(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
     agendamento_id: int,
+    api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> AgendamentoResponse:
-    """Confirma um agendamento."""
+    """Aprova um rascunho após validação humana do escrevente."""
     from app.services.agendamento import AgendamentoService
 
     try:
-        agendamento = AgendamentoService.confirmar_agendamento(db, agendamento_id, request=request)
+        agendamento = AgendamentoService.aprovar_agendamento(
+            db,
+            agendamento_id,
+            actor_id=f"api_key:{hash_pii(api_key, salt=settings.audit_hmac_key[:32])[:16]}",
+            request=request,
+        )
         return AgendamentoResponse.model_validate(agendamento)
     except ValueError as e:
         raise HTTPException(

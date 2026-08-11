@@ -93,7 +93,7 @@ def client(test_engine, test_session_factory):
         app.dependency_overrides[get_db] = _override_get_db
 
         try:
-            with TestClient(app) as c:
+            with TestClient(app, headers={"X-API-Key": "a" * 64}) as c:
                 yield c
         finally:
             app.dependency_overrides.clear()
@@ -101,7 +101,7 @@ def client(test_engine, test_session_factory):
 
 def test_criar_agendamento_sucesso(test_session, cliente_test):
     """Testa criação de agendamento com sucesso."""
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     agendamento = AgendamentoService.criar_agendamento(
         db=test_session,
@@ -118,7 +118,7 @@ def test_criar_agendamento_sucesso(test_session, cliente_test):
 
     assert agendamento.id is not None
     assert agendamento.cliente_id == cliente_test.id
-    assert agendamento.status == StatusAgendamento.AGENDADO
+    assert agendamento.status == StatusAgendamento.DRAFT
     assert agendamento.titulo == "Reconhecimento de firma"
     # Compara data_hora sem timezone para evitar problemas de teste
     assert agendamento.data_hora.replace(tzinfo=None) == data_hora.replace(tzinfo=None)
@@ -126,11 +126,46 @@ def test_criar_agendamento_sucesso(test_session, cliente_test):
     assert len(agendamento.cpf_hash) == 64  # SHA-256 hex
 
 
+def test_regras_temporais_rejeitam_passado_fim_de_semana_e_fora_do_expediente():
+    """Agenda nunca aceita um slot impossível no fuso do cartório."""
+    from zoneinfo import ZoneInfo
+
+    fuso = ZoneInfo("America/Sao_Paulo")
+    agora = datetime.datetime(2030, 7, 1, 10, 0, tzinfo=fuso)
+
+    with pytest.raises(ValueError, match="futuro"):
+        AgendamentoService._validar_regras_temporais(
+            datetime.datetime(2030, 7, 1, 9, 30, tzinfo=fuso), 30, agora=agora
+        )
+    with pytest.raises(ValueError, match="finais de semana"):
+        AgendamentoService._validar_regras_temporais(
+            datetime.datetime(2030, 7, 6, 10, 0, tzinfo=fuso), 30, agora=agora
+        )
+    with pytest.raises(ValueError, match="09h e 17h"):
+        AgendamentoService._validar_regras_temporais(
+            datetime.datetime(2030, 7, 1, 16, 45, tzinfo=fuso), 30, agora=agora
+        )
+
+
+def test_horario_naive_e_interpretado_como_horario_local_do_cartorio():
+    """Datetime sem offset não pode sofrer o deslocamento silencioso de três horas."""
+    from zoneinfo import ZoneInfo
+
+    fuso = ZoneInfo("America/Sao_Paulo")
+    normalizado = AgendamentoService._validar_regras_temporais(
+        datetime.datetime(2030, 7, 1, 14, 0),
+        30,
+        agora=datetime.datetime(2030, 7, 1, 10, 0, tzinfo=fuso),
+    )
+    assert normalizado.hour == 14
+    assert normalizado.utcoffset() == datetime.timedelta(hours=-3)
+
+
 def test_criar_agendamento_conflito_horario(test_session, cliente_test):
     """Testa criação de agendamento com conflito de horário."""
     from app.services.agendamento import AgendamentoConflictError
 
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     # Cria primeiro agendamento
     AgendamentoService.criar_agendamento(
@@ -160,8 +195,8 @@ def test_criar_agendamento_conflito_horario(test_session, cliente_test):
 
 def test_listar_agendamentos_cliente(test_session, cliente_test):
     """Testa listagem de agendamentos de um cliente."""
-    data_hora1 = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
-    data_hora2 = datetime.datetime(2026, 7, 2, 10, 0, 0, tzinfo=datetime.timezone.utc)
+    data_hora1 = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora2 = datetime.datetime(2030, 7, 2, 13, 0, 0, tzinfo=datetime.timezone.utc)
 
     # Cria dois agendamentos
     AgendamentoService.criar_agendamento(
@@ -194,7 +229,7 @@ def test_listar_agendamentos_cliente(test_session, cliente_test):
 
 def test_cancelar_agendamento(test_session, cliente_test):
     """Testa cancelamento de agendamento."""
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     # Cria agendamento
     agendamento = AgendamentoService.criar_agendamento(
@@ -216,7 +251,7 @@ def test_cancelar_agendamento(test_session, cliente_test):
 def test_api_criar_agendamento(client, test_session, cliente_test):
     """Testa endpoint API de criação de agendamento."""
 
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     payload = {
         "cliente_id": cliente_test.id,
@@ -235,13 +270,13 @@ def test_api_criar_agendamento(client, test_session, cliente_test):
     data = response.json()
     assert data["titulo"] == "Agendamento via API"
     assert data["cliente_id"] == cliente_test.id
-    assert data["status"] == "agendado"
+    assert data["status"] == "draft"
 
 
 def test_api_listar_agendamentos_cliente(client, test_session, cliente_test):
     """Testa endpoint API de listagem de agendamentos."""
     # Cria um agendamento primeiro
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     payload = {
         "cliente_id": cliente_test.id,
@@ -266,7 +301,7 @@ def test_api_listar_agendamentos_cliente(client, test_session, cliente_test):
 def test_api_cancelar_agendamento(client, test_session, cliente_test):
     """Testa endpoint API de cancelamento de agendamento."""
     # Cria um agendamento primeiro
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     payload = {
         "cliente_id": cliente_test.id,
@@ -307,7 +342,7 @@ def test_cancelar_agendamento_status_invalido(test_session, cliente_test):
 
     import datetime
 
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     from app.models.agendamento import TipoAtendimento
 
@@ -336,7 +371,7 @@ def test_confirmar_agendamento_sucesso(test_session, cliente_test):
 
     import datetime
 
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     agendamento = AgendamentoService.criar_agendamento(
         db=test_session,
@@ -348,6 +383,9 @@ def test_confirmar_agendamento_sucesso(test_session, cliente_test):
         duration_minutes=30,
     )
 
+    AgendamentoService.aprovar_agendamento(
+        test_session, agendamento.id, actor_id="test:escrevente"
+    )
     confirmado = AgendamentoService.confirmar_agendamento(test_session, agendamento.id)
     assert confirmado.status == StatusAgendamento.CONFIRMADO
 
@@ -366,7 +404,7 @@ def test_confirmar_agendamento_status_invalido(test_session, cliente_test):
 
     import datetime
 
-    data_hora = datetime.datetime(2026, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 30, 0, tzinfo=datetime.timezone.utc)
 
     agendamento = AgendamentoService.criar_agendamento(
         db=test_session,
@@ -389,14 +427,14 @@ def test_listar_agendamentos_data(test_session, cliente_test):
     """listar_agendamentos_data retorna agendamentos de uma data específica."""
     import datetime
 
-    data_alvo = datetime.date(2026, 7, 15)
+    data_alvo = datetime.date(2030, 7, 15)
 
     # Cria agendamento no dia alvo
     agendamento = AgendamentoService.criar_agendamento(
         db=test_session,
         cliente_id=cliente_test.id,
         cliente_cpf="12345678909",
-        data_hora=datetime.datetime(2026, 7, 15, 10, 0, 0, tzinfo=datetime.timezone.utc),
+        data_hora=datetime.datetime(2030, 7, 15, 13, 0, 0, tzinfo=datetime.timezone.utc),
         titulo="Agendamento no dia",
         tipo=TipoAtendimento.NORMAL,
         duration_minutes=30,
@@ -407,7 +445,7 @@ def test_listar_agendamentos_data(test_session, cliente_test):
         db=test_session,
         cliente_id=cliente_test.id,
         cliente_cpf="12345678909",
-        data_hora=datetime.datetime(2026, 7, 16, 14, 0, 0, tzinfo=datetime.timezone.utc),
+        data_hora=datetime.datetime(2030, 7, 16, 14, 0, 0, tzinfo=datetime.timezone.utc),
         titulo="Agendamento outro dia",
         tipo=TipoAtendimento.NORMAL,
         duration_minutes=30,
@@ -424,13 +462,13 @@ def test_listar_agendamentos_data_com_filtro_local(test_session, cliente_test):
     """listar_agendamentos_data filtra por local quando especificado."""
     import datetime
 
-    data_alvo = datetime.date(2026, 7, 20)
+    data_alvo = datetime.date(2030, 7, 19)
 
     AgendamentoService.criar_agendamento(
         db=test_session,
         cliente_id=cliente_test.id,
         cliente_cpf="12345678909",
-        data_hora=datetime.datetime(2026, 7, 20, 10, 0, 0, tzinfo=datetime.timezone.utc),
+        data_hora=datetime.datetime(2030, 7, 19, 13, 0, 0, tzinfo=datetime.timezone.utc),
         titulo="Balcao 1",
         tipo=TipoAtendimento.NORMAL,
         local="balcao_1",
@@ -441,7 +479,7 @@ def test_listar_agendamentos_data_com_filtro_local(test_session, cliente_test):
         db=test_session,
         cliente_id=cliente_test.id,
         cliente_cpf="12345678909",
-        data_hora=datetime.datetime(2026, 7, 20, 11, 0, 0, tzinfo=datetime.timezone.utc),
+        data_hora=datetime.datetime(2030, 7, 19, 14, 0, 0, tzinfo=datetime.timezone.utc),
         titulo="Sala reuniao",
         tipo=TipoAtendimento.NORMAL,
         local="sala_2",
@@ -470,14 +508,17 @@ def test_listar_agendamentos_pendentes_sem_cache(test_session, cliente_test):
     """listar_agendamentos_pendentes retorna agendamentos com status AGENDADO."""
     import datetime
 
-    AgendamentoService.criar_agendamento(
+    agendamento = AgendamentoService.criar_agendamento(
         db=test_session,
         cliente_id=cliente_test.id,
         cliente_cpf="12345678909",
-        data_hora=datetime.datetime(2026, 8, 1, 9, 0, 0, tzinfo=datetime.timezone.utc),
+        data_hora=datetime.datetime(2030, 8, 1, 12, 0, 0, tzinfo=datetime.timezone.utc),
         titulo="Pendente 1",
         tipo=TipoAtendimento.NORMAL,
         duration_minutes=30,
+    )
+    AgendamentoService.aprovar_agendamento(
+        test_session, agendamento.id, actor_id="test:escrevente"
     )
 
     from unittest.mock import patch

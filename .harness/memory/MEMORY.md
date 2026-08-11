@@ -944,3 +944,16 @@ recupera acesso quando profile é wipado.
 - Preco regulatorio TJMG e preco operacional de balcao sao camadas diferentes. Nunca sobrescrever
   a tabela regulatoria para acomodar Recompe, ISS, fundos ou composicoes locais; o catalogo publico
   deve declarar a camada usada e atos financeiros permanecem HITL.
+
+## Lesson 298 — Agendamento seguro: DRAFT, fuso local e disponibilidade fail-closed (2026-08-11)
+
+- Pedido de agendamento nao e reserva: deve nascer `draft` e somente um escrevente autenticado
+  pode promove-lo para `agendado`, com evento persistente de auditoria.
+- Datetime sem offset recebido pelo cartorio representa horario civil de Uberlandia. Marca-lo como
+  UTC desloca o atendimento em tres horas; normalize com `America/Sao_Paulo` antes de validar.
+- Rejeite passado, fim de semana e qualquer intervalo que ultrapasse 09h-17h. Inclua `draft` na
+  deteccao de conflito para impedir duas solicitacoes ocuparem o mesmo slot antes da aprovacao.
+- Disponibilidade estatica e mais perigosa que indisponibilidade explicita. Sem agenda
+  transacional real, retorne 503/HITL e nunca publique uma quantidade ficticia de vagas.
+- Workflows que pedem "responda SIM" sem handler de confirmacao e branch HITL alcancavel devem
+  permanecer inativos.

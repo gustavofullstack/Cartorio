@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import CheckConstraint, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -26,6 +27,7 @@ from app.services.pii import hash_pii
 class StatusAgendamento(str, Enum):
     """Status do agendamento no ciclo de vida."""
 
+    DRAFT = "draft"  # Solicitação aguardando validação do escrevente (HITL)
     AGENDADO = "agendado"  # Confirmado, aguardando data/hora
     CONFIRMADO = "confirmado"  # Cliente confirmou presença
     EM_ATENDIMENTO = "em_atendimento"  # Em andamento no balcão
@@ -77,7 +79,7 @@ class Agendamento(Base, TimestampMixin, SoftDeleteMixin):
     status: Mapped[StatusAgendamento] = mapped_column(
         String(20),
         nullable=False,
-        default=StatusAgendamento.AGENDADO,
+        default=StatusAgendamento.DRAFT,
         index=True,
     )
     tipo: Mapped[TipoAtendimento] = mapped_column(
@@ -163,14 +165,12 @@ class Agendamento(Base, TimestampMixin, SoftDeleteMixin):
         Returns:
             Instância de Agendamento pronta para persistir
         """
-        import datetime
-
         if salt is None:
             salt = settings.audit_hmac_key[:32]
 
-        # Garante que data_hora tem timezone (para comparações consistentes)
+        # Entradas sem offset são horários civis locais do cartório, nunca UTC.
         if data_hora.tzinfo is None:
-            data_hora = data_hora.replace(tzinfo=datetime.timezone.utc)
+            data_hora = data_hora.replace(tzinfo=ZoneInfo("America/Sao_Paulo"))
 
         return cls(
             cliente_id=cliente_id,
@@ -179,7 +179,7 @@ class Agendamento(Base, TimestampMixin, SoftDeleteMixin):
             data_hora=data_hora,
             titulo=titulo,
             descricao=descricao,
-            status=StatusAgendamento.AGENDADO,
+            status=StatusAgendamento.DRAFT,
             tipo=tipo,
             local=local,
         )
@@ -189,9 +189,15 @@ class Agendamento(Base, TimestampMixin, SoftDeleteMixin):
         if self.status == StatusAgendamento.AGENDADO:
             self.status = StatusAgendamento.CONFIRMADO
 
+    def aprovar_por_escrevente(self) -> None:
+        """Aprova um rascunho após validação humana obrigatória."""
+        if self.status == StatusAgendamento.DRAFT:
+            self.status = StatusAgendamento.AGENDADO
+
     def cancelar(self) -> None:
         """Muda status para CANCELADO."""
         if self.status in (
+            StatusAgendamento.DRAFT,
             StatusAgendamento.AGENDADO,
             StatusAgendamento.CONFIRMADO,
         ):

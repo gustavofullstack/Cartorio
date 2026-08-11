@@ -78,7 +78,7 @@ def client(test_engine, test_session_factory):
     ):
         from app.main import app
 
-        with TestClient(app) as c:
+        with TestClient(app, headers={"X-API-Key": "a" * 64}) as c:
             yield c
 
 
@@ -117,9 +117,10 @@ def test_agendamento_model_existe():
 
 
 def test_agendamento_status_enum():
-    """StatusAgendamento deve ter os 6 estados esperados."""
+    """StatusAgendamento deve incluir o estado DRAFT para HITL."""
     from app.models.agendamento import StatusAgendamento  # type: ignore[import-not-found]
 
+    assert StatusAgendamento.DRAFT.value == "draft"
     assert StatusAgendamento.AGENDADO.value == "agendado"
     assert StatusAgendamento.CONFIRMADO.value == "confirmado"
     assert StatusAgendamento.EM_ATENDIMENTO.value == "em_atendimento"
@@ -147,7 +148,7 @@ def test_criar_agendamento_happy_path(db, cliente_padrao):
     from app.models.agendamento import TipoAtendimento  # type: ignore[import-not-found]
     from app.services.agendamento import AgendamentoService  # type: ignore[import-not-found]
 
-    data_hora = datetime.datetime(2026, 7, 1, 10, 0, 0)
+    data_hora = datetime.datetime(2030, 7, 1, 10, 0, 0)
     agendamento = AgendamentoService.criar_agendamento(
         db,
         cliente_id=cliente_padrao,
@@ -166,7 +167,7 @@ def test_criar_agendamento_happy_path(db, cliente_padrao):
     status_value = (
         agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status
     )
-    assert status_value == "agendado"
+    assert status_value == "draft"
     # LGPD: CPF deve estar hasheado, NAO em texto puro
     assert agendamento.cpf_hash != "52998224725"
     assert len(agendamento.cpf_hash) == 64  # SHA256 hex
@@ -189,7 +190,7 @@ def test_criar_agendamento_com_protocolo(db, cliente_padrao):
     db.commit()
     db.refresh(protocolo)
 
-    data_hora = datetime.datetime(2026, 7, 1, 11, 0, 0)
+    data_hora = datetime.datetime(2030, 7, 1, 11, 0, 0)
     agendamento = AgendamentoService.criar_agendamento(
         db,
         cliente_id=cliente_padrao,
@@ -219,7 +220,7 @@ def test_criar_agendamento_cliente_nao_existe(db):
             db,
             cliente_id=99999,
             cliente_cpf="52998224725",
-            data_hora=datetime.datetime(2026, 7, 1, 12, 0, 0),
+            data_hora=datetime.datetime(2030, 7, 1, 12, 0, 0),
             titulo="Teste",
         )
 
@@ -236,7 +237,7 @@ def test_criar_agendamento_protocolo_nao_existe(db, cliente_padrao):
             db,
             cliente_id=cliente_padrao,
             cliente_cpf="52998224725",
-            data_hora=datetime.datetime(2026, 7, 1, 13, 0, 0),
+            data_hora=datetime.datetime(2030, 7, 1, 13, 0, 0),
             titulo="Teste",
             protocolo_id=99999,
         )
@@ -249,7 +250,7 @@ def test_criar_agendamento_conflito_horario(db, cliente_padrao):
         AgendamentoService,
     )
 
-    data_hora = datetime.datetime(2026, 7, 1, 14, 0, 0)
+    data_hora = datetime.datetime(2030, 7, 1, 14, 0, 0)
 
     # Primeiro agendamento - deve funcionar
     AgendamentoService.criar_agendamento(
@@ -275,7 +276,7 @@ def test_criar_agendamento_conflito_local_diferente_ok(db, cliente_padrao):
     """Agendamentos em locais diferentes nao devem conflitar."""
     from app.services.agendamento import AgendamentoService  # type: ignore[import-not-found]
 
-    data_hora = datetime.datetime(2026, 7, 1, 15, 0, 0)
+    data_hora = datetime.datetime(2030, 7, 1, 15, 0, 0)
 
     AgendamentoService.criar_agendamento(
         db,
@@ -307,7 +308,7 @@ def test_criar_agendamento_gera_audit_log(db, cliente_padrao):
     """Criar agendamento deve gerar audit log (LGPD art. 37)."""
     from app.services.agendamento import AgendamentoService  # type: ignore[import-not-found]
 
-    data_hora = datetime.datetime(2026, 7, 1, 17, 0, 0)
+    data_hora = datetime.datetime(2030, 7, 1, 16, 0, 0)
     AgendamentoService.criar_agendamento(
         db,
         cliente_id=cliente_padrao,
@@ -320,13 +321,13 @@ def test_criar_agendamento_gera_audit_log(db, cliente_padrao):
     audit_logs = db.execute(select(AuditLog)).scalars().all()
     assert len(audit_logs) >= 1
 
-    # Deve ter action "agendamento.created"
+    # Deve ter action de criação do rascunho HITL.
     actions = [log.action for log in audit_logs]
-    assert "agendamento.created" in actions
+    assert "agendamento.draft_created" in actions
 
     # CPF em texto puro NAO deve aparecer no payload
     for log in audit_logs:
-        if log.action == "agendamento.created":
+        if log.action == "agendamento.draft_created":
             payload_str = str(log.payload or "")
             assert "52998224725" not in payload_str  # LGPD!
 
@@ -343,15 +344,19 @@ def test_confirmar_agendamento(db, cliente_padrao):
         StatusAgendamento,
     )
 
-    data_hora = datetime.datetime(2026, 7, 2, 10, 0, 0)
+    data_hora = datetime.datetime(2030, 7, 2, 10, 0, 0)
     ag = Agendamento.criar(
         cliente_id=cliente_padrao,
         cliente_cpf="52998224725",
         data_hora=data_hora,
         titulo="Teste confirmar",
     )
+    assert ag.status == StatusAgendamento.DRAFT
+
+    ag.aprovar_por_escrevente()
     assert ag.status == StatusAgendamento.AGENDADO
 
+    ag.aprovar_por_escrevente()
     ag.confirmar()
     assert ag.status == StatusAgendamento.CONFIRMADO
 
@@ -366,7 +371,7 @@ def test_cancelar_agendamento(db, cliente_padrao):
     ag = Agendamento.criar(
         cliente_id=cliente_padrao,
         cliente_cpf="52998224725",
-        data_hora=datetime.datetime(2026, 7, 2, 11, 0, 0),
+        data_hora=datetime.datetime(2030, 7, 2, 11, 0, 0),
         titulo="Teste cancelar",
     )
     ag.cancelar()
@@ -383,9 +388,10 @@ def test_cancelar_apos_concluido_nao_permite(db, cliente_padrao):
     ag = Agendamento.criar(
         cliente_id=cliente_padrao,
         cliente_cpf="52998224725",
-        data_hora=datetime.datetime(2026, 7, 2, 12, 0, 0),
+        data_hora=datetime.datetime(2030, 7, 2, 12, 0, 0),
         titulo="Teste cancelar concluido",
     )
+    ag.aprovar_por_escrevente()
     ag.confirmar()
     ag.iniciar_atendimento()
     ag.concluir()
@@ -408,6 +414,7 @@ def test_concluir_define_data_hora_fim(db, cliente_padrao):
         data_hora=data_passada,
         titulo="Teste concluir",
     )
+    ag.aprovar_por_escrevente()
     ag.confirmar()
     ag.iniciar_atendimento()
     assert ag.data_hora_fim is None
@@ -434,7 +441,7 @@ def test_agendamento_create_request_schema():
     payload = AgendamentoCreateRequest(
         cliente_id=1,
         cliente_cpf="52998224725",
-        data_hora=datetime.datetime(2026, 7, 1, 10, 0, 0),
+        data_hora=datetime.datetime(2030, 7, 1, 10, 0, 0),
         titulo="Teste schema",
     )
     assert payload.cliente_id == 1
@@ -463,7 +470,7 @@ def test_post_agendamento_endpoint_201(client, cliente_padrao):
     payload = {
         "cliente_id": cliente_padrao,
         "cliente_cpf": "52998224725",
-        "data_hora": "2026-07-01T10:00:00",
+        "data_hora": "2030-07-01T10:00:00",
         "titulo": "Reconhecimento de firma",
         "descricao": "Teste via API",
     }
@@ -472,7 +479,7 @@ def test_post_agendamento_endpoint_201(client, cliente_padrao):
     data = response.json()
     assert "id" in data
     assert data["titulo"] == "Reconhecimento de firma"
-    assert data["status"] == "agendado"
+    assert data["status"] == "draft"
 
 
 def test_post_agendamento_endpoint_404_cliente_inexistente(client):
@@ -480,7 +487,7 @@ def test_post_agendamento_endpoint_404_cliente_inexistente(client):
     payload = {
         "cliente_id": 99999,
         "cliente_cpf": "52998224725",
-        "data_hora": "2026-07-01T11:00:00",
+        "data_hora": "2030-07-01T11:00:00",
         "titulo": "Teste 404",
     }
     response = client.post("/api/v1/agendamento", json=payload)
@@ -495,7 +502,7 @@ def test_post_agendamento_endpoint_409_conflito(client, cliente_padrao):
     payload1 = {
         "cliente_id": cliente_padrao,
         "cliente_cpf": "52998224725",
-        "data_hora": "2026-07-01T14:00:00",
+        "data_hora": "2030-07-01T14:00:00",
         "titulo": "Primeiro",
     }
     response1 = client.post("/api/v1/agendamento", json=payload1)
@@ -505,7 +512,7 @@ def test_post_agendamento_endpoint_409_conflito(client, cliente_padrao):
     payload2 = {
         "cliente_id": cliente_padrao,
         "cliente_cpf": "52998224725",
-        "data_hora": "2026-07-01T14:10:00",  # sobrepoe
+        "data_hora": "2030-07-01T14:10:00",  # sobrepoe
         "titulo": "Conflito",
     }
     response2 = client.post("/api/v1/agendamento", json=payload2)
@@ -521,7 +528,7 @@ def test_get_agendamento_cliente_endpoint(client, cliente_padrao):
         payload = {
             "cliente_id": cliente_padrao,
             "cliente_cpf": "52998224725",
-            "data_hora": f"2026-07-0{i + 1}T10:00:00",
+            "data_hora": f"2030-07-0{i + 1}T10:00:00",
             "titulo": f"Agendamento {i + 1}",
         }
         client.post("/api/v1/agendamento", json=payload)
@@ -547,7 +554,7 @@ def test_listar_agendamentos_cliente(db, cliente_padrao):
             db,
             cliente_id=cliente_padrao,
             cliente_cpf="52998224725",
-            data_hora=datetime.datetime(2026, 7, 3, 10 + i, 0, 0),
+            data_hora=datetime.datetime(2030, 7, 3, 10 + i, 0, 0),
             titulo=f"Ag {i + 1}",
         )
 
