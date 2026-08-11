@@ -30,6 +30,12 @@ from app.models.webhook_event import WebhookEvent
 log = logging.getLogger(__name__)
 
 
+def is_messages_upsert_event(event: object) -> bool:
+    """Aceita messages.upsert, MESSAGES_UPSERT e variantes (dot/underscore)."""
+    raw = str(event or "").strip().lower().replace("_", ".")
+    return raw.endswith("messages.upsert")
+
+
 def _webhook_secrets() -> tuple[str, str]:
     """Retorna (current, prev) secrets de webhook Evolution (env dinâmico)."""
     return (
@@ -142,8 +148,8 @@ def ingest_evolution_event(
     event = payload.get("event", "")
     instance = payload.get("instance", "")
 
-    # Filtro: so processamos MESSAGES_UPSERT (com varias variacoes de casing)
-    if not event.lower().endswith("messages.upsert"):
+    # Filtro: so processamos MESSAGES_UPSERT (dot, underscore, casing).
+    if not is_messages_upsert_event(event):
         return {"status": "ignored", "reason": "event_not_messages_upsert", "event": event}
 
     data = payload.get("data")

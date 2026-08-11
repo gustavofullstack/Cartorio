@@ -68,6 +68,7 @@ from app.services.chat_pipeline import (
 from app.services.redis_bus import get_bus
 from app.services.evolution_ingest import (
     ingest_evolution_event,
+    is_messages_upsert_event,
     validate_evolution_webhook_auth,
 )
 
@@ -340,8 +341,8 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
     """
     try:
         event = payload.get("event", "")
-        if event and event.lower() != "messages.upsert":
-            # Alguns exports omitem event; so rejeita se event presente e diferente de messages.upsert
+        if event and not is_messages_upsert_event(event):
+            # Evolution envia messages.upsert E MESSAGES_UPSERT. Sem event, segue.
             return None
 
         # Dual-format: nested data.* OU root-level (G7.04.T3)
@@ -361,13 +362,11 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
         message = _message
 
         remote_jid = key.get("remoteJid", "") or ""
-        # WhatsApp LID addressing: remoteJid vem como NNN@lid e o telefone
-        # real fica em remoteJidAlt (ex.: 5534...@s.whatsapp.net). Sem isso o
-        # sendText falha com 400 "exists: false" e o bot fica mudo.
+        # WhatsApp LID: o cliente escreve em NNN@lid. sendText ACEITA @lid.
+        # Remapear para remoteJidAlt (@s.whatsapp.net) cria um chat paralelo
+        # e o cliente nao ve a resposta no thread onde digitou.
         remote_jid_alt = str(key.get("remoteJidAlt") or "").strip()
         reply_jid = remote_jid
-        if remote_jid.endswith("@lid") and remote_jid_alt.endswith("@s.whatsapp.net"):
-            reply_jid = remote_jid_alt
         msg_id = key.get("id", "") or ""
         # Texto: conversation OU extendedTextMessage.text
         ext = message.get("extendedTextMessage")
@@ -381,8 +380,12 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
         is_group = "@g.us" in remote_jid
         if not remote_jid or not msg_id:
             return None
-        # Ignora status broadcast e eco fromMe (nao sao mensagens de cliente).
-        if remote_jid == "status@broadcast" or key.get("fromMe") is True:
+        # Ignora status/newsletter broadcast e eco fromMe.
+        if (
+            remote_jid == "status@broadcast"
+            or remote_jid.endswith("@broadcast")
+            or key.get("fromMe") is True
+        ):
             return None
         message_type = ""
         if isinstance(data, dict):

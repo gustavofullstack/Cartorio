@@ -51,6 +51,25 @@ def test_ingest_ignores_non_message_events():
     assert result["reason"] == "event_not_messages_upsert"
 
 
+def test_ingest_accepts_messages_upsert_underscore():
+    """Evolution v2 envia MESSAGES_UPSERT (underscore) no campo event."""
+    from app.services.evolution_ingest import ingest_evolution_event
+
+    payload = {
+        "event": "MESSAGES_UPSERT",
+        "instance": "cartorio-agent",
+        "data": {
+            "key": {"remoteJid": "162023748985056@lid", "id": "LID123"},
+            "message": {"conversation": "Ola"},
+        },
+    }
+    db = MagicMock(spec=Session)
+    db.execute.return_value.scalar_one_or_none.return_value = None
+    result = ingest_evolution_event(db, payload)
+    assert result["status"] == "accepted"
+    assert result["message_id"] == "LID123"
+
+
 def test_ingest_idempotent_same_message_id():
     """Replay do mesmo message_id nao duplica processamento."""
     from app.services.evolution_ingest import ingest_evolution_event

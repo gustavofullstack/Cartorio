@@ -299,9 +299,9 @@ class TestParseEvolutionPayload:
         # Sem remoteJid/id → retorna None
         assert result is None
 
-    def test_parse_lid_uses_remote_jid_alt_for_reply(self) -> None:
+    def test_parse_lid_keeps_lid_jid_for_same_thread_reply(self) -> None:
         payload = {
-            "event": "messages.upsert",
+            "event": "MESSAGES_UPSERT",
             "instance": "cartorio-agent",
             "data": {
                 "key": {
@@ -318,9 +318,23 @@ class TestParseEvolutionPayload:
         }
         result = parse_evolution_payload(payload)
         assert result is not None
-        assert result.sender_id == "553492800250@s.whatsapp.net"
+        assert result.sender_id == "162023748985056@lid"
         assert result.extra["remote_jid_raw"] == "162023748985056@lid"
         assert result.extra["remote_jid_alt"] == "553492800250@s.whatsapp.net"
+
+    def test_parse_newsletter_broadcast_ignored(self) -> None:
+        payload = {
+            "event": "messages.upsert",
+            "data": {
+                "key": {
+                    "remoteJid": "1690204766@broadcast",
+                    "fromMe": False,
+                    "id": "bc-1",
+                },
+                "message": {"conversation": "promo"},
+            },
+        }
+        assert parse_evolution_payload(payload) is None
 
     def test_parse_status_broadcast_ignored(self) -> None:
         payload = {
