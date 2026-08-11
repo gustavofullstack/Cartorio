@@ -141,12 +141,15 @@ def list_with_pagination(
     if extra_filters:
         where_clauses.extend(extra_filters)
 
-    from sqlalchemy import Select, and_
+    from sqlalchemy import Select, and_, func
 
     count_stmt: Select[Any] = select(model)
     if where_clauses:
         count_stmt = count_stmt.where(and_(*where_clauses))
-    total = len(db.execute(count_stmt).scalars().all())  # type: ignore[arg-type]
+    # ⚡ Bolt: Removed O(N) memory anti-pattern (len(...all())) which loads all
+    # objects into memory to count them. Replaced with O(1) memory db.scalar(func.count()).
+    # Performance Impact: Significantly reduces memory footprint and database query time, especially on large tables.
+    total = db.scalar(select(func.count()).select_from(count_stmt.subquery())) or 0
 
     stmt: Select[Any] = select(model)
     if where_clauses:
