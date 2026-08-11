@@ -42,7 +42,7 @@ class Atendimento(Base, TimestampMixin, SoftDeleteMixin):
 
     # Status e tipo
     status: Mapped[str] = mapped_column(String(32), default="aberto", index=True)
-    # aberto, em_atendimento, aguardando_cliente, concluido, cancelado
+    # aberto, aguardando_escrevente, em_atendimento, aguardando_cliente, concluido, cancelado
     tipo: Mapped[str] = mapped_column(String(64))
     # consulta_emolumento, criar_protocolo, 2a_via, agendamento, duvida, reclamacao
 

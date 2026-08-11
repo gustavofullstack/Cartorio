@@ -112,7 +112,8 @@ def test_offline_preco_lista() -> None:
 def test_offline_saudacao_sem_botoes() -> None:
     r = _offline_reply("oi", "saudacao", ["intent:saudacao"], history=None)
     assert r.keyboard is None
-    assert "Ola" in r.text or "assistente" in r.text.lower()
+    assert "Olá" in r.text
+    assert "Pietra" in r.text
 
 
 def test_offline_nao_repete_welcome_em_loop() -> None:

@@ -5,8 +5,9 @@ atualizamos o atendimento correspondente no DB. Tambem aceitamos message_created
 como evento neutro (logar + idempotencia).
 
 Seguranca:
-- Se CHATWOOT_WEBHOOK_SECRET estiver setado, validamos HMAC-SHA256 do body.
-- Caso contrario, aceitamos sem signature (dev only - NAO recomendado em prod).
+- CHATWOOT_WEBHOOK_ENABLED=false por padrao enquanto o servico esta ausente.
+- Quando habilitado, CHATWOOT_WEBHOOK_SECRET + HMAC-SHA256 sao obrigatorios.
+- Respostas humanas nunca sao despachadas direto: exigem outbox transacional.
 
 Idempotencia: gravamos (source='chatwoot', event_id=payload.id) na tabela
 webhook_events. Replay nao duplica.
@@ -34,11 +35,41 @@ from app.services.pii import scrub
 log = logging.getLogger(__name__)
 
 
+def _pseudonymize_chatwoot_id(kind: str, value: object) -> str:
+    """Pseudonimiza IDs externos antes de logs, audit ou resposta."""
+
+    key = settings.pietra_conversation_hmac_key
+    if len(key) < 32:
+        raise RuntimeError("conversation HMAC key is not configured")
+    message = f"chatwoot:v1:{kind}:{value}".encode()
+    return hmac.new(key.encode(), message, hashlib.sha256).hexdigest()
+
+
+def _mute_conversation_id(atendimento: Atendimento) -> tuple[str, str] | None:
+    """Deriva a chave pseudonima usada pelo consumidor do mute no pipeline."""
+
+    from app.services.chat_pipeline import Channel, pseudonymize_conversation_id
+
+    external_id = str(atendimento.external_id or "")
+    if not external_id:
+        return None
+    try:
+        channel = Channel(atendimento.canal)
+    except ValueError:
+        return None
+    if external_id.startswith("hmac:v1:"):
+        conversation_pseudonym = external_id.removeprefix("hmac:v1:")
+        if len(conversation_pseudonym) != 64:
+            return None
+        return channel.value, conversation_pseudonym
+    return channel.value, pseudonymize_conversation_id(channel, external_id)
+
+
 def _validate_signature(raw_body: bytes, signature: Optional[str]) -> bool:
-    """Valida HMAC-SHA256 do body. Retorna True se OK ou se secret nao configurado."""
+    """Valida HMAC-SHA256; secret ausente sempre falha fechado."""
     secret = settings.chatwoot_webhook_secret
     if not secret:
-        return True  # dev mode: aceita sem signature
+        return False
     if not signature:
         return False
     expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
@@ -82,7 +113,8 @@ def process_chatwoot_event(
     elif event == "unknown" or payload.get("event") in (None, ""):
         return {"status": "rejected", "reason": "invalid_payload"}
 
-    event_id = str(payload.get("id") or payload.get("message_id") or "")
+    raw_event_id = str(payload.get("id") or payload.get("message_id") or "")
+    event_id = _pseudonymize_chatwoot_id("event", raw_event_id) if raw_event_id else ""
 
     # 2. Idempotencia
     if event_id:
@@ -93,7 +125,7 @@ def process_chatwoot_event(
             )
         ).scalar_one_or_none()
         if existing is not None:
-            log.info("chatwoot_handoff idempotent: event_id=%s", event_id)
+            log.info("chatwoot_handoff idempotent event_hash=%s", event_id[:16])
             return {"status": "idempotent", "event_id": event_id, "event": event}
 
     # 3. Processar evento especifico
@@ -128,6 +160,7 @@ def _handle_status_changed(db: Session, payload: dict[str, Any]) -> None:
 
     if not conv_id:
         return
+    conv_hash = _pseudonymize_chatwoot_id("conversation", conv_id)
 
     # HITL mute/unmute (best-effort Redis)
     try:
@@ -138,20 +171,20 @@ def _handle_status_changed(db: Session, payload: dict[str, Any]) -> None:
         client = getattr(bus, "client", None) if bus else None
         if client is not None:
             if status in {"open", "pending"} and assignee:
-                mute_bot(client, "chatwoot", str(conv_id), reason="hitl_assignee")
+                mute_bot(client, "chatwoot", conv_hash, reason="hitl_assignee")
                 # também mute por canal telegram se houver mapping no atendimento
                 at = db.execute(
                     select(Atendimento).where(Atendimento.chatwoot_conversation_id == conv_id)
                 ).scalar_one_or_none()
-                if at is not None and getattr(at, "external_id", None):
-                    mute_bot(client, "telegram", str(at.external_id), reason="hitl_assignee")
+                if at is not None and (mute_target := _mute_conversation_id(at)) is not None:
+                    mute_bot(client, mute_target[0], mute_target[1], reason="hitl_assignee")
             elif status == "resolved":
-                unmute_bot(client, "chatwoot", str(conv_id))
+                unmute_bot(client, "chatwoot", conv_hash)
                 at = db.execute(
                     select(Atendimento).where(Atendimento.chatwoot_conversation_id == conv_id)
                 ).scalar_one_or_none()
-                if at is not None and getattr(at, "external_id", None):
-                    unmute_bot(client, "telegram", str(at.external_id))
+                if at is not None and (mute_target := _mute_conversation_id(at)) is not None:
+                    unmute_bot(client, mute_target[0], mute_target[1])
     except Exception as exc:  # noqa: BLE001
         log.warning("chatwoot_handoff mute hook fail: %s", type(exc).__name__)
 
@@ -168,11 +201,11 @@ def _handle_status_changed(db: Session, payload: dict[str, Any]) -> None:
 
         AuditService.log(
             db,
-            actor_id=f"chatwoot:{conv_id}",
+            actor_id=f"chatwoot:{conv_hash}",
             action="atendimento.concluido",
             resource=f"atendimento:{atendimento.id}",
             actor_type="agent",
-            payload={"chatwoot_conversation_id": conv_id},
+            payload={"chatwoot_conversation_id_pseudonymized": conv_hash},
         )
 
 
@@ -188,13 +221,12 @@ def _handle_message_created(db: Session, payload: dict[str, Any]) -> None:
     conv = payload.get("conversation", {})
     conv_id = conv.get("id")
     sender = payload.get("sender", {})
-    sender_name = sender.get("name", "Escrevente")
 
+    conv_hash = _pseudonymize_chatwoot_id("conversation", conv_id) if conv_id else ""
     log.info(
-        "chatwoot_handoff: message_created conv=%s type=%s sender=%s",
-        conv_id,
+        "chatwoot_handoff: message_created conv_hash=%s type=%s",
+        conv_hash[:16],
         message_type,
-        sender_name,
     )
 
     # Só faz sync bidirecional para mensagens outgoing (escrevente → cliente)
@@ -209,7 +241,7 @@ def _handle_message_created(db: Session, payload: dict[str, Any]) -> None:
         bus = get_bus()
         client = getattr(bus, "client", None) if bus else None
         if client is not None:
-            mute_bot(client, "chatwoot", str(conv_id), reason="hitl_outgoing")
+            mute_bot(client, "chatwoot", conv_hash, reason="hitl_outgoing")
     except Exception as exc:  # noqa: BLE001
         log.warning("chatwoot_handoff mute on outgoing fail: %s", type(exc).__name__)
 
@@ -219,68 +251,46 @@ def _handle_message_created(db: Session, payload: dict[str, Any]) -> None:
     ).scalar_one_or_none()
 
     if not atendimento:
-        log.warning("chatwoot sync: atendimento nao encontrado para conv %s", conv_id)
+        log.warning("chatwoot sync: atendimento nao encontrado conv_hash=%s", conv_hash[:16])
         return
 
-    telegram_chat_id = atendimento.external_id
-    if not telegram_chat_id:
-        log.warning(
-            "chatwoot sync: chat_id Telegram nao encontrado para atendimento %s", atendimento.id
-        )
+    # O consumidor no chat_pipeline usa o pseudonimo de conversa, nao o
+    # external_id bruto. Registrar ambos os mutes evita corrida entre a primeira
+    # resposta do escrevente e uma nova resposta automatica.
+    try:
+        from app.services.bot_mute import mute_bot
+        from app.services.redis_bus import get_bus
+
+        bus = get_bus()
+        client = getattr(bus, "client", None) if bus else None
+        mute_target = _mute_conversation_id(atendimento)
+        if client is not None and mute_target is not None:
+            mute_bot(client, mute_target[0], mute_target[1], reason="hitl_outgoing")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("chatwoot_handoff channel mute on outgoing fail: %s", type(exc).__name__)
+
+    if not atendimento.external_id:
+        log.warning("chatwoot sync: channel identity not found atendimento=%s", atendimento.id)
         return
 
-    # Envia a mensagem de volta ao Telegram via bot API (async fire-and-forget)
-    import asyncio
-
-    asyncio.create_task(_send_to_telegram(telegram_chat_id, content, sender_name, conv_id))
-
-    # Audit log da mensagem bidirecional
+    # Contencao P0: nunca enviar direto ao Telegram. A reativacao exige outbox
+    # transacional com identidade recuperavel e worker auditado.
+    mute_target = _mute_conversation_id(atendimento)
+    sender_id = sender.get("id", "unknown")
     AuditService.log(
         db,
-        actor_id=f"chatwoot:{sender.get('id', 'unknown')}",
-        action="chatwoot.sync.outgoing_to_telegram",
+        actor_id=f"chatwoot:{_pseudonymize_chatwoot_id('sender', sender_id)}",
+        action="chatwoot.sync.outgoing_dispatch_blocked",
         resource=f"atendimento:{atendimento.id}",
         actor_type="agent",
         payload={
-            "chatwoot_conversation_id": conv_id,
-            "telegram_chat_id": str(telegram_chat_id),
-            "sender_name": sender_name,
+            "chatwoot_conversation_id_pseudonymized": conv_hash,
+            "channel_conversation_id_pseudonymized": mute_target[1] if mute_target else None,
+            "sender_id_pseudonymized": _pseudonymize_chatwoot_id("sender", sender_id),
             "content_length": len(content),
+            "dispatch": "disabled_requires_transactional_outbox",
         },
     )
-
-
-async def _send_to_telegram(
-    chat_id: str | int, content: str, sender_name: str, conv_id: Any
-) -> None:
-    """Envia mensagem do escrevente (Chatwoot) de volta ao Telegram."""
-    token = settings.telegram_bot_token
-    if not token:
-        log.warning("chatwoot sync: TELEGRAM_BOT_TOKEN nao configurado, mensagem nao enviada")
-        return
-
-    text = scrub(f"👤 *{sender_name}* (Atendente):\n{content}").text
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-
-    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
-        try:
-            r = await client.post(
-                url,
-                json={"chat_id": str(chat_id), "text": text, "parse_mode": "Markdown"},
-            )
-            if r.status_code == 200:
-                log.info(
-                    "chatwoot sync: mensagem enviada ao Telegram chat=%s conv=%s", chat_id, conv_id
-                )
-            else:
-                log.warning(
-                    "chatwoot sync: Telegram API retornou %d para chat=%s conv=%s",
-                    r.status_code,
-                    chat_id,
-                    conv_id,
-                )
-        except Exception as exc:
-            log.warning("chatwoot sync: falha ao enviar ao Telegram chat=%s: %s", chat_id, exc)
 
 
 def _save_event(db: Session, source: str, event_id: str, payload: dict[str, Any]) -> None:
@@ -319,6 +329,8 @@ async def handoff_to_chatwoot(
 
     Retorna (ok, info). Falha silenciosa se Chatwoot offline.
     """
+    if not settings.chatwoot_outbound_enabled:
+        return False, {"error": "chatwoot_disabled_requires_transactional_outbox"}
     if not CHATWOOT_API_KEY or not CHATWOOT_ACCOUNT_ID or not CHATWOOT_INBOX_ID:
         return False, {
             "error": "chatwoot_not_configured",
@@ -348,7 +360,7 @@ async def _ensure_contact(chat_id: int | str) -> str | None:
     headers = {"api_access_token": CHATWOOT_API_KEY, "Content-Type": "application/json"}
     # Chatwoot e uma fronteira externa: use identificador pseudonimizado.
     # O vinculo reverso fica no Atendimento local pelo conversation_id.
-    source_id = f"telegram:{hashlib.sha256(str(chat_id).encode('utf-8')).hexdigest()[:32]}"
+    source_id = f"telegram:{_pseudonymize_chatwoot_id('contact-source', chat_id)}"
     async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0)) as client:
         try:
             r = await client.get(
@@ -364,7 +376,7 @@ async def _ensure_contact(chat_id: int | str) -> str | None:
                         if c.get("source_id") == source_id:
                             return str(c.get("id"))
         except Exception as exc:
-            log.warning("chatwoot search contact fail: %s", exc)
+            log.warning("chatwoot search contact fail: %s", type(exc).__name__)
         try:
             r = await client.post(
                 f"{CHATWOOT_API_BASE_URL}/api/v1/accounts/{CHATWOOT_ACCOUNT_ID}/contacts",
@@ -380,7 +392,7 @@ async def _ensure_contact(chat_id: int | str) -> str | None:
                 contact = data.get("payload", data) if isinstance(data, dict) else data
                 return str(contact.get("id"))
         except Exception as exc:
-            log.warning("chatwoot create contact fail: %s", exc)
+            log.warning("chatwoot create contact fail: %s", type(exc).__name__)
         return None
 
 
@@ -398,7 +410,7 @@ async def _create_conversation(contact_id: str) -> str | None:
                 conv = data.get("payload", data) if isinstance(data, dict) else data
                 return str(conv.get("id"))
         except Exception as exc:
-            log.warning("chatwoot create conversation fail: %s", exc)
+            log.warning("chatwoot create conversation fail: %s", type(exc).__name__)
         return None
 
 
@@ -438,7 +450,7 @@ async def _send_message_to_conversation(conv_id: str, body: str) -> bool:
             )
             return r.status_code in (200, 201)
         except Exception as exc:
-            log.warning("chatwoot send message fail: %s", exc)
+            log.warning("chatwoot send message fail: %s", type(exc).__name__)
             return False
 
 

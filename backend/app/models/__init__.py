@@ -5,6 +5,7 @@ from app.models.atendimento import Atendimento
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin
 from app.models.cliente import Cliente, MotivoEncerramento
+from app.models.cliente_channel_identity import ClienteChannelIdentity
 from app.models.cnj_export_request import CNJExportRequest
 from app.models.conhecimento_institucional import (
     DecisaoValidacao,
@@ -32,6 +33,7 @@ __all__ = [
     "AuditLog",
     "Base",
     "Cliente",
+    "ClienteChannelIdentity",
     "CNJExportRequest",
     "Conversa",
     "DecisaoValidacao",

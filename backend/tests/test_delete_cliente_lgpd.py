@@ -32,7 +32,10 @@ from sqlalchemy.pool import StaticPool
 
 from app.models.audit_log import AuditLog
 from app.models.base import Base
+from app.models.cliente import Cliente
+from app.models.cliente_channel_identity import ClienteChannelIdentity
 from app.services.audit import AuditService
+from app.services.channel_identity import bind_channel_identity
 from tests.conftest import TEST_CARTORIO_API_KEY
 
 
@@ -151,6 +154,34 @@ def _auth_headers() -> dict[str, str]:
         "User-Agent": "DeleteClienteTest/1.0",
         "X-Canal": "test-delete",
     }
+
+
+def _make_bound_cliente(db: Session) -> Cliente:
+    cliente = Cliente(
+        nome="Cliente Bound Delete",
+        cpf_hash="b" * 64,
+        telefone_hash="c" * 64,
+        consentimento_lgpd=True,
+    )
+    db.add(cliente)
+    db.flush()
+    bind_channel_identity(
+        db,
+        cliente_id=cliente.id,
+        channel="whatsapp",
+        conversation_pseudonym="d" * 64,
+        hmac_kid="test-v1",
+    )
+    db.commit()
+    return cliente
+
+
+class _AvailableRedis:
+    def scan_iter(self, *, match: str, count: int):
+        return iter(())
+
+    def delete(self, *keys: str) -> int:
+        return 0
 
 
 # ============================================================================
@@ -321,6 +352,48 @@ class TestDeleteClienteErrorHandling:
         """DELETE sem X-API-Key → 401 UNAUTHORIZED."""
         response = client.delete(f"/api/v1/cliente/{cliente_sem_protocolo.id}")
         assert response.status_code == 401
+
+    def test_redis_failure_returns_503_and_preserves_cliente_and_binding(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        cliente = _make_bound_cliente(db_session)
+
+        class BrokenRedis:
+            def scan_iter(self, *, match: str, count: int):
+                raise ConnectionError("synthetic redis failure")
+
+        with patch("app.services.pietra_memoria.get_redis", return_value=BrokenRedis()):
+            response = client.delete(f"/api/v1/cliente/{cliente.id}", headers=_auth_headers())
+
+        assert response.status_code == 503
+        assert response.json().get("status") != "deleted"
+        db_session.expire_all()
+        assert db_session.get(Cliente, cliente.id) is not None
+        assert (
+            db_session.query(ClienteChannelIdentity).filter_by(cliente_id=cliente.id).count() == 1
+        )
+
+    def test_audit_failure_returns_503_and_rolls_back_cliente_and_binding(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        cliente = _make_bound_cliente(db_session)
+
+        with (
+            patch("app.services.pietra_memoria.get_redis", return_value=_AvailableRedis()),
+            patch(
+                "app.api.v1.router.AuditService.log",
+                side_effect=RuntimeError("synthetic audit failure"),
+            ),
+        ):
+            response = client.delete(f"/api/v1/cliente/{cliente.id}", headers=_auth_headers())
+
+        assert response.status_code == 503
+        assert response.json().get("status") != "deleted"
+        db_session.expire_all()
+        assert db_session.get(Cliente, cliente.id) is not None
+        assert (
+            db_session.query(ClienteChannelIdentity).filter_by(cliente_id=cliente.id).count() == 1
+        )
 
 
 class TestDeleteClienteAuditChainIntegrity:

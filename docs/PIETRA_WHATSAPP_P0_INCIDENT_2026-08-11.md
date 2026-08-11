@@ -18,6 +18,35 @@ Data: 2026-08-11. Estado: contido; webhook Evolution pausado durante o rollout.
 - Routers internos `/brain`, `/pietra` e `/agent-hermes` exigem `X-API-Key`.
 - Tabela de balcao virou uma camada operacional separada; a tabela regulatoria TJMG permanece
   imutavel e rastreavel. Atos financeiros continuam HITL.
+- Historico, fila, rate limit, mute, consentimento e idempotencia usam pseudonimos HMAC com
+  chave dedicada; identificadores de conversa e mensagem nao aparecem mais em chaves ou logs.
+- Handoff e pedido de agendamento geram apenas ticket local `aguardando_escrevente`, persistido e
+  auditado antes da resposta. A Pietra nunca afirma transferencia ou confirmacao inexistente.
+- Chatwoot permanece desligado por padrao; webhook sem segredo/assinatura falha fechado e a ponte
+  direta Chatwoot para Telegram foi bloqueada ate existir outbox transacional.
+- Respostas do modelo passam por scrub de PII antes do guardrail e nenhum texto interceptado e
+  registrado em claro. Webhooks Evolution exigem autenticacao em producao.
+- A cadeia de auditoria usa lock transacional compartilhado entre writer Python e trigger para
+  impedir bifurcacao concorrente.
+
+## Evidencias das capturas de producao
+
+As cinco capturas fornecidas pelo operador foram convertidas em testes de regressao. Elas
+confirmaram, sem depender de inferencia de logs:
+
+- aviso LGPD duplicado em mensagens consecutivas;
+- respostas extensas e catalogos repetidos;
+- contaminacao de intencao: consulta de protocolo/agendamento respondida como ata notarial;
+- valor antigo de 11,21 em contraste com a camada operacional corrigida de 11,61;
+- orientacao juridica incerta sobre testamento publico, incluindo quantidade errada de
+  testemunhas;
+- tentativa de obter instrucoes internas, modelo, chaves e ferramentas;
+- promessa de encaminhamento ou agendamento sem canal humano/agenda transacional disponivel.
+
+As correcoes correspondentes incluem debounce do aviso de consentimento, limite e divisao de
+mensagens, validacao de intencao antes do envio, bloqueio deterministico de divulgacao interna,
+regra juridica explicita de duas testemunhas para testamento publico e fail-safe honesto para
+handoff/agendamento.
 
 ## Diagnostico operacional
 
@@ -27,6 +56,9 @@ Data: 2026-08-11. Estado: contido; webhook Evolution pausado durante o rollout.
   respostas, 19 descartes por rate limit e 10 respostas truncadas acima de 800 caracteres.
 - O Redis continha chaves de historico e consentimento com identificador bruto; consentimentos
   nao tinham expiracao. Nao havia RAG/graph-summary no caminho real do WhatsApp.
+- Retencao e eliminacao agora abrangem memoria de conversa, estado de sessao e namespaces Redis
+  vinculados. Vector/graph externos continuam declarados como nao cobertos, sem falsa alegacao de
+  eliminacao completa.
 - O workflow de agendamento estava inativo e incorreto: condicao de dados ausentes, deduplicacao,
   HITL e confirmacao eram inalcancaveis ou incompletos. Ele nao deve ser ativado.
 

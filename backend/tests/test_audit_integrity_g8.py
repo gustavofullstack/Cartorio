@@ -17,14 +17,25 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from sqlalchemy.orm import Session
 
 from app.services.audit import AuditService
+from app.services.audit_keys import bootstrap_legacy, get_router, sign_audit_entry
 from app.services.audit_integrity import (
     from_db,
     verify_full_chain,
     verify_hash_sequence,
 )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_audit_key_registry():
+    """Cada regressao controla explicitamente as chaves historicas disponiveis."""
+    router = get_router()
+    router.reset_for_tests()
+    yield
+    router.reset_for_tests()
 
 
 def _seed_chain(db: Session, n: int = 5) -> list[dict[str, Any]]:
@@ -47,6 +58,74 @@ def test_chain_intact_returns_empty(db_session):
     assert len(entries) == 5
     broken = verify_hash_sequence(entries)
     assert broken == [], f"Cadeia intacta nao deveria ter breaks, achou {broken}"
+
+
+def test_from_db_includes_hmac_kid_and_trigger_marker(db_session):
+    """O verificador offline recebe os campos que definem HMAC e canonicalizador."""
+    entries = _seed_chain(db_session, n=1)
+    assert entries[0]["hmac_kid"]
+    assert "user_agent" in entries[0]
+
+
+def _trigger_entry(*, marker: bool = True) -> dict[str, Any]:
+    """Monta uma entrada SQL-trigger integralmente assinada pelo registry."""
+    timestamp = "2026-08-11T10:30:45.123456"
+    actor_id = "auto_audit" if marker else "api-client"
+    action = "cliente.update"
+    payload = {"id": 7, "canal": "whatsapp"}
+    stored_hash = AuditService._compute_hash_sql_trigger("0" * 64, payload, timestamp)
+    kid, signature = sign_audit_entry(
+        f"{stored_hash}:{timestamp}:{actor_id}:{action}".encode("utf-8")
+    )
+    return {
+        "id": 1,
+        "actor_id": actor_id,
+        "action": action,
+        "payload": payload,
+        "timestamp": timestamp,
+        "prev_hash": None,
+        "hash": stored_hash,
+        "hmac_signature": signature,
+        "hmac_kid": kid,
+        "user_agent": "auto_audit_trigger" if marker else "api-client",
+    }
+
+
+def test_trigger_canonical_hash_is_accepted_only_with_trigger_marker():
+    """Fallback SQL exige marcador estavel; entrada comum nunca ganha fallback."""
+    bootstrap_legacy(b"trigger-secret-" + b"x" * 18, kid="trigger-v1")
+
+    assert verify_hash_sequence([_trigger_entry(marker=True)]) == []
+    assert verify_hash_sequence([_trigger_entry(marker=False)]) == [0]
+
+
+def test_trigger_canonical_tamper_remains_fail_closed():
+    """Marcador trigger nao autoriza payload, hash ou assinatura adulterados."""
+    bootstrap_legacy(b"trigger-secret-" + b"x" * 18, kid="trigger-v1")
+    entry = _trigger_entry(marker=True)
+    entry["payload"] = {"id": 999, "canal": "adulterado"}
+
+    assert verify_hash_sequence([entry]) == [0]
+
+
+def test_hmac_rotation_is_verified_by_persisted_kid(db_session):
+    """Entradas antes e depois da rotacao usam suas chaves historicas corretas."""
+    bootstrap_legacy(b"audit-old-secret-" + b"o" * 16, kid="audit-v1")
+    _seed_chain(db_session, n=2)
+    get_router().rotate_to_new_key("audit-v2", b"audit-new-secret-" + b"n" * 16)
+    _seed_chain(db_session, n=2)
+
+    entries = list(from_db(db_session))
+    assert [entry["hmac_kid"] for entry in entries] == [
+        "audit-v1",
+        "audit-v1",
+        "audit-v2",
+        "audit-v2",
+    ]
+    assert verify_hash_sequence(entries) == []
+
+    entries[2]["hmac_kid"] = "unknown-kid"
+    assert verify_hash_sequence(entries) == [2, 3]
 
 
 def test_chain_break_detected_after_payload_edit(db_session):

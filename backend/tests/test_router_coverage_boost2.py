@@ -1011,11 +1011,13 @@ class TestAgendamentoDisponibilidade:
 
     @pytest.mark.asyncio
     async def test_valid(self):
+        from fastapi import HTTPException
         from app.api.v1.router import agendamento_disponibilidade
 
-        result = await agendamento_disponibilidade(dia="segunda", hora=10)
-        assert result["vagas"] == 5
-        assert len(result["slots"]) > 0
+        with pytest.raises(HTTPException) as exc_info:
+            await agendamento_disponibilidade(dia="segunda", hora=10)
+        assert exc_info.value.status_code == 503
+        assert exc_info.value.detail["erro"] == "AGENDA_REAL_INDISPONIVEL"
 
 
 # ============================================================================

@@ -33,6 +33,9 @@ from sqlalchemy.pool import StaticPool
 
 from app.models.base import Base
 from app.models.conversa import Conversa
+from tests.conftest import TEST_CARTORIO_API_KEY
+
+AUTH = {"X-API-Key": TEST_CARTORIO_API_KEY}
 
 
 # ============================================================================
@@ -119,24 +122,31 @@ def _insert_conversa(db_session_factory, external_id: str, canal: str, hours_ago
 
 def test_list_active_sem_conversa(client):
     """Sem conversa -> retorna lista vazia."""
-    resp = client.get("/api/v1/atendimento/list-active?since_hours=24")
+    resp = client.get("/api/v1/atendimento/list-active?since_hours=24", headers=AUTH)
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 0
     assert data["sessions"] == []
 
 
+def test_list_active_requires_api_key(client):
+    response = client.get("/api/v1/atendimento/list-active?since_hours=24")
+    assert response.status_code == 401
+
+
 def test_list_active_com_conversa_recente(client, test_session_factory):
     """Conversa atualizada 1h atras -> retorna 1 sessao."""
     _insert_conversa(test_session_factory, "5534999999999", "whatsapp", hours_ago=1.0)
 
-    resp = client.get("/api/v1/atendimento/list-active?since_hours=24")
+    resp = client.get("/api/v1/atendimento/list-active?since_hours=24", headers=AUTH)
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 1
     assert len(data["sessions"]) == 1
     s = data["sessions"][0]
-    assert s["external_id"] == "5534999999999"
+    assert "external_id" not in s
+    assert len(s["conversation_pseudonym"]) == 64
+    assert "5534999999999" not in str(s)
     assert s["canal"] == "whatsapp"
     assert "last_activity" in s
 
@@ -145,7 +155,7 @@ def test_list_active_exclui_conversa_velha(client, test_session_factory):
     """Conversa atualizada 30h atras com since_hours=24 -> NAO retorna."""
     _insert_conversa(test_session_factory, "5534888888888", "whatsapp", hours_ago=30.0)
 
-    resp = client.get("/api/v1/atendimento/list-active?since_hours=24")
+    resp = client.get("/api/v1/atendimento/list-active?since_hours=24", headers=AUTH)
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 0
@@ -156,11 +166,12 @@ def test_list_active_filtro_customizado(client, test_session_factory):
     """since_hours=48 inclui conversa de 30h atras."""
     _insert_conversa(test_session_factory, "5534777777777", "whatsapp", hours_ago=30.0)
 
-    resp = client.get("/api/v1/atendimento/list-active?since_hours=48")
+    resp = client.get("/api/v1/atendimento/list-active?since_hours=48", headers=AUTH)
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 1
-    assert data["sessions"][0]["external_id"] == "5534777777777"
+    assert "external_id" not in data["sessions"][0]
+    assert "5534777777777" not in str(data)
 
 
 def test_list_active_multi_canal_agupa_por_sender(client, test_session_factory):
@@ -168,7 +179,7 @@ def test_list_active_multi_canal_agupa_por_sender(client, test_session_factory):
     _insert_conversa(test_session_factory, "5534666666666", "whatsapp", hours_ago=1.0)
     _insert_conversa(test_session_factory, "5534666666666", "telegram", hours_ago=2.0)
 
-    resp = client.get("/api/v1/atendimento/list-active?since_hours=24")
+    resp = client.get("/api/v1/atendimento/list-active?since_hours=24", headers=AUTH)
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 2
@@ -182,13 +193,14 @@ def test_list_active_multi_conversa_mesma_sessao(client, test_session_factory):
         _insert_conversa(test_session_factory, "5534555555555", "whatsapp", hours_ago=hours)
 
     # Debug removed
-    resp = client.get("/api/v1/atendimento/list-active?since_hours=24")
+    resp = client.get("/api/v1/atendimento/list-active?since_hours=24", headers=AUTH)
     assert resp.status_code == 200
     data = resp.json()
     # 1 sessao (dedup), com last_activity = mais recente
     assert data["count"] == 1
     s = data["sessions"][0]
-    assert s["external_id"] == "5534555555555"
+    assert "external_id" not in s
+    assert "5534555555555" not in str(s)
     # last_activity deve ser a conversa mais recente (0.5h atras).
     # Conversa.updated_at eh naive datetime (SQLite default) — assume UTC.
     last_act_str = s["last_activity"].replace("Z", "+00:00")
@@ -197,3 +209,68 @@ def test_list_active_multi_conversa_mesma_sessao(client, test_session_factory):
         last_act = last_act.replace(tzinfo=timezone.utc)
     age_minutes = (datetime.now(timezone.utc) - last_act).total_seconds() / 60
     assert 20 <= age_minutes <= 40  # margem de 10min para 0.5h atras
+
+
+def test_safe_conversation_pseudonym_preserves_local_ticket_identity():
+    """Ticket local ja pseudonimizado deve correlacionar com o pipeline canonico."""
+    from app.api.v1.router import _safe_conversation_pseudonym
+
+    pseudonym = "a" * 64
+    assert _safe_conversation_pseudonym("whatsapp", f"hmac:v1:{pseudonym}") == pseudonym
+
+
+def test_history_requires_auth_and_rejects_raw_session_id(client):
+    raw_path = "/api/v1/atendimento/5534999999999/historico"
+    assert client.get(raw_path).status_code == 401
+    assert client.get(raw_path, headers=AUTH).status_code == 404
+
+
+def test_history_resolves_only_bound_pseudonym_without_returning_raw(
+    client,
+    test_session_factory,
+):
+    from app.models.cliente import Cliente
+    from app.services.channel_identity import bind_channel_identity
+    from app.services.chat_pipeline import Channel, pseudonymize_conversation_id
+
+    external_id = "synthetic-private-session"
+    pseudonym = pseudonymize_conversation_id(Channel.WHATSAPP, external_id)
+    with test_session_factory() as db:
+        cliente = Cliente(
+            cpf_hash="f" * 64,
+            nome="Cliente Sintetico",
+            consentimento_lgpd=True,
+        )
+        db.add(cliente)
+        db.flush()
+        bind_channel_identity(
+            db,
+            cliente_id=cliente.id,
+            channel="whatsapp",
+            conversation_pseudonym=pseudonym,
+            hmac_kid="test-v1",
+        )
+        db.add(
+            Conversa(
+                cliente_id=cliente.id,
+                canal="whatsapp",
+                external_id=external_id,
+                raw_message_hash="a" * 64,
+                raw_message_scrubbed="Mensagem segura",
+                bot_response="Resposta segura",
+            )
+        )
+        db.commit()
+
+    with patch("app.api.v1.router.redis.from_url", side_effect=ConnectionError("offline")):
+        response = client.get(
+            f"/api/v1/atendimento/{pseudonym}/historico",
+            headers=AUTH,
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["conversation_pseudonym"] == pseudonym
+    assert payload["total"] == 2
+    assert external_id not in response.text
+    assert "external_id" not in response.text

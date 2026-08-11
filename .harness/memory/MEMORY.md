@@ -957,3 +957,29 @@ recupera acesso quando profile é wipado.
   transacional real, retorne 503/HITL e nunca publique uma quantidade ficticia de vagas.
 - Workflows que pedem "responda SIM" sem handler de confirmacao e branch HITL alcancavel devem
   permanecer inativos.
+
+## Lesson 299 — Pietra P0: evidencia visual, consentimento atomico e memoria pseudonima (2026-08-11)
+
+- Capturas reais de conversa devem virar regressao: aviso LGPD duplicado, troca de intencao,
+  preco antigo, resposta juridica incerta, injecao para revelar infraestrutura e promessa falsa
+  de agendamento/handoff agora possuem testes deterministas.
+- Saida do LLM precisa passar por scrub de PII antes de identity/outbound guards; logs de
+  intercepcao registram somente hash, tipo e tamanho. Webhook Evolution em producao exige HMAC e
+  falha fechado quando o segredo estiver ausente ou a assinatura for invalida.
+- Consentimento WhatsApp e autoritativo no banco: binding pseudonimo e AuditService pertencem a
+  mesma transacao. Redis e somente cache; falha de DB/audit nunca pode responder "concedido" ou
+  "revogado". Falha de cache depois do commit deve ser informada honestamente sem desfazer a
+  evidencia duravel.
+- Queue, history, rate, mute, consent e idempotencia usam pseudonimo HMAC dedicado. DSAR apaga
+  pelos bindings exatos e os preserva se Redis falhar; vector/graph sem binding continuam
+  declarados como nao cobertos, sem falsa confirmacao de eliminacao completa.
+- Handoff/agendamento so dizem "registrado" apos ticket local e auditoria persistirem; Chatwoot
+  permanece desligado ate existir outbox transacional. Endpoints legados sem garantias iguais
+  devem ser autenticados/pseudonimizados ou retirados com 410.
+- Writers Python e trigger da cadeia de auditoria compartilham advisory lock. Verificadores
+  completos devem aceitar canonicalizacao SQL apenas com marker do trigger e validar HMAC pela
+  chave historica indicada em `hmac_kid`; unknown/deprecated/tamper falham fechado.
+- Gate final deste hotfix: 6.742 testes passaram, 27 integrações opcionais foram ignoradas e zero
+  falhas restaram; Ruff, mypy, scanner de segredos, Alembic head unico e sign-off LGPD verdes.
+- Rollout de migrations que alteram trigger exige writers antigos parados, GUCs HMAC verificadas
+  sem exibir segredos e smoke concorrente PostgreSQL real antes de reabrir o webhook.

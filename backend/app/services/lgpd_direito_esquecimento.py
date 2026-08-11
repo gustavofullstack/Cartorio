@@ -91,6 +91,21 @@ def direito_esquecimento(
     if not cliente_row:
         return {"erro": "cliente_nao_encontrado", "cliente_id": cliente_id}
 
+    memory_result = None
+    memory_uncovered = ["external:vector", "external:graph", "chat_pipeline:unbound_identity"]
+    telefone_hash = str(cliente_row.get("telefone_hash") or "")
+    if telefone_hash:
+        from app.services.lgpd_memory_retention import erase_subject_memory
+
+        try:
+            memory_result = erase_subject_memory(
+                db,
+                telefone_hash=telefone_hash,
+                cliente_id=cliente_id,
+            )
+        except ValueError:
+            memory_uncovered.append("legacy:invalid_telefone_hash")
+
     # 2. Gera hashes ANTES de anonimizar (para reversibilidade se necessario)
     hashes = {
         "nome_hash": hash_pii(cliente_row.get("nome") or ""),
@@ -147,6 +162,20 @@ def direito_esquecimento(
         "total_rows_affected": rows_affected,
         "reversivel_ate": reversivel_ate.isoformat(),
         "hashes_para_restauracao": hashes,
+        "memory_erasure": {
+            "memoria_conversa_deleted": (
+                memory_result.memoria_conversa_deleted if memory_result else 0
+            ),
+            "session_state_deleted": memory_result.session_state_deleted if memory_result else 0,
+            "redis_keys_deleted": memory_result.redis_keys_deleted if memory_result else 0,
+            "channel_bindings_deleted": (
+                memory_result.channel_bindings_deleted if memory_result else 0
+            ),
+            "redis_available": memory_result.redis_available if memory_result else False,
+            "uncovered_stores": (
+                list(memory_result.uncovered_stores) if memory_result else memory_uncovered
+            ),
+        },
     }
 
     audit_id = log_mutation(
@@ -176,6 +205,8 @@ def direito_esquecimento(
         "reversivel_ate": reversivel_ate.isoformat(),
         "audit_log_id": audit_id,
         "lgpd_article": "art. 18 V",
+        "memory_erasure": audit_payload["memory_erasure"],
+        "erasure_complete": False,
     }
 
 

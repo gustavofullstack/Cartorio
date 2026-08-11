@@ -23,6 +23,7 @@ Modified by Gustavo Almeida · 2026-07-28
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 from dataclasses import dataclass
@@ -166,6 +167,28 @@ _CANONICAL_HEADQUARTER: Final[str] = (
     "O 2º Tabelionato de Notas de Uberlândia atende exclusivamente na sede: "
     "Rua Cel. Antônio Alves Pereira, 850, Centro, Uberlândia - MG, CEP 38400-104. "
     "Não existe unidade complementar."
+)
+
+_PUBLIC_TESTAMENT_WRONG_WITNESSES_RE: Final[re.Pattern[str]] = re.compile(
+    r"(?:testamento[^.!?]{0,180}(?:quatro|4)\s+testemunhas)"
+    r"|(?:(?:quatro|4)\s+testemunhas[^.!?]{0,180}testamento)",
+    re.IGNORECASE | re.UNICODE,
+)
+_LEGAL_UNCERTAINTY_RE: Final[re.Pattern[str]] = re.compile(
+    r"\b(?:testamento|heran[cç]a|escritura|ata\s+notarial)\b[^.!?]{0,180}"
+    r"\b(?:creio|acho|talvez|provavelmente)\b"
+    r"|\b(?:creio|acho|talvez|provavelmente)\b[^.!?]{0,180}"
+    r"\b(?:testamento|heran[cç]a|escritura|ata\s+notarial)\b",
+    re.IGNORECASE | re.UNICODE,
+)
+_PUBLIC_TESTAMENT_SAFE_TEXT: Final[str] = (
+    "No testamento público, a leitura ocorre perante o testador e duas testemunhas, "
+    "conforme o art. 1.864, II, do Código Civil. Os demais requisitos e a minuta "
+    "precisam ser confirmados por um escrevente antes do ato."
+)
+_LEGAL_UNCERTAINTY_SAFE_TEXT: Final[str] = (
+    "Esse ponto exige confirmação jurídica de um escrevente. Não vou indicar um "
+    "requisito incerto nem tratar o ato como aprovado."
 )
 
 # Heuristica 1: token alfabetico com 16+ chars sem hifen — fora do PT-BR
@@ -354,6 +377,16 @@ def strip_institutional_falsehoods(text: str) -> tuple[str, bool]:
     return _cleanup_spacing(" ".join(kept)), True
 
 
+def correct_legal_falsehoods(text: str) -> tuple[str, bool]:
+    """Bloqueia requisito jurídico objetivamente errado ou assumidamente incerto."""
+
+    if _PUBLIC_TESTAMENT_WRONG_WITNESSES_RE.search(text):
+        return _PUBLIC_TESTAMENT_SAFE_TEXT, True
+    if _LEGAL_UNCERTAINTY_RE.search(text):
+        return _LEGAL_UNCERTAINTY_SAFE_TEXT, True
+    return text, False
+
+
 # === Helpers internos ===
 
 
@@ -456,6 +489,14 @@ def sanitize_outbound(text: str, *, channel: str = "api") -> OutboundResult:
         reasons.append("institutional_falsehood")
         work = work_institutional
 
+    # 2e. JURIDICO: o modelo nao pode improvisar requisitos ou enviar duvida
+    # para o cliente como se fosse orientacao. Correcao local baseada no art.
+    # 1.864, II, do Codigo Civil para o erro observado em producao.
+    work_legal, legal_corrected = correct_legal_falsehoods(work)
+    if legal_corrected:
+        reasons.append("legal_falsehood")
+        work = work_legal
+
     # 3. FALLBACK: interceptou mas nao restou conteudo util.
     if reasons and _alnum_count(work) < 10:
         reasons.append("fallback")
@@ -472,12 +513,15 @@ def sanitize_outbound(text: str, *, channel: str = "api") -> OutboundResult:
 
     action = OutboundAction.FALLBACK if "fallback" in reasons else OutboundAction.SANITIZED
     _record_metric(reasons)
+    content_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
     logger.warning(
-        "pietra outbound guard interceptou action=%s reasons=%s channel=%s original=%.120r",
+        "pietra outbound guard interceptou action=%s reasons=%s channel=%s "
+        "content_type=text content_sha256=%s content_len=%d",
         action.value,
         ",".join(reasons),
         channel,
-        text,
+        content_hash,
+        len(text),
     )
     return OutboundResult(
         action=action,

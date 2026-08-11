@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     # ========================================================================
     redis_url: str = "redis://localhost:6379/0"
     redis_session_ttl_seconds: int = 86400  # 24h para sessoes WhatsApp
+    # Chave dedicada para pseudonimos de conversa em chaves Redis. Vazio faz
+    # o chat pipeline falhar fechado antes de persistir identificadores crus.
+    pietra_conversation_hmac_key: str = Field(default="", min_length=32)
+    pietra_conversation_hmac_kid: str = Field(default="v1", min_length=1, max_length=64)
 
     # ========================================================================
     # Audit log
@@ -211,6 +215,8 @@ class Settings(BaseSettings):
     chatwoot_api_key: Optional[str] = None
     chatwoot_account_id: Optional[int] = None
     chatwoot_inbox_id: Optional[int] = None
+    chatwoot_webhook_enabled: bool = False
+    chatwoot_outbound_enabled: bool = False
 
     # ========================================================================
     # Webhook signature secrets (HMAC-SHA256, opcional mas recomendado em prod)

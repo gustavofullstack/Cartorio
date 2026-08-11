@@ -42,6 +42,7 @@ import json
 from datetime import datetime, UTC
 from typing import Any
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.models.audit_log import AuditLog
@@ -53,6 +54,21 @@ class AuditIntegrityError(Exception):
 
 
 class AuditService:
+    # Mesmo ID usado por fn_auto_audit na migration 0031. Todos os writers da
+    # cadeia precisam disputar o mesmo lock transacional para nao bifurcar.
+    AUDIT_CHAIN_ADVISORY_LOCK_ID = 5784376957523074609
+
+    @classmethod
+    def _acquire_chain_lock(cls, db: Session) -> None:
+        """Serializa writers da cadeia no PostgreSQL ate o proximo commit/rollback."""
+        bind = db.get_bind()
+        if bind is None or bind.dialect.name != "postgresql":
+            return
+        db.execute(
+            text("SELECT pg_advisory_xact_lock(:lock_id)"),
+            {"lock_id": cls.AUDIT_CHAIN_ADVISORY_LOCK_ID},
+        )
+
     @staticmethod
     def _canonical_block(prev_hash: str | None, payload: dict, timestamp: str) -> str:
         block = {
@@ -185,6 +201,7 @@ class AuditService:
         """
         from app.utils.ip import truncate_ip
 
+        cls._acquire_chain_lock(db)
         last = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
         prev_hash = last.hash if last else None
 

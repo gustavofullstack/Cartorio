@@ -21,7 +21,7 @@ class TestWebhookAPI:
             "/api/v1/webhook/chatwoot",
             json={"event": "test", "data": {}},
         )
-        assert response.status_code in (401, 403, 200, 422)
+        assert response.status_code in (401, 403, 422, 503)
 
     @pytest.mark.skip(reason="Requires DB connection - tested in integration")
     def test_webhook_evolution_requires_hmac(self) -> None:

@@ -27,14 +27,14 @@ Nao toca em `app/services/audit.py` (chain builder intocavel).
 from __future__ import annotations
 
 import hashlib
-import hmac as _hmac
 import json
 from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.models.audit_log import AuditLog
+from app.services.audit import AuditService
+from app.services.audit_keys import verify_audit_entry
 
 
 # Largura do prev_hash canonico para chain head (None -> zeros)
@@ -57,20 +57,16 @@ def _compute_hash(prev_hash: str, payload: dict[str, Any], timestamp: str) -> st
     ).hexdigest()
 
 
-def _compute_hmac_signature(
-    *,
-    new_hash: str,
-    timestamp: str,
-    actor_id: str,
-    action: str,
-    hmac_key: bytes,
-) -> str:
-    """Reproduz o HMAC gravado em AuditService.log (linha 107 de audit.py).
+def _compute_hash_sql_trigger(prev_hash: str, payload: dict[str, Any], timestamp: str) -> str:
+    """Reusa o canonicalizador exato do trigger, sem abrir fallback generico."""
+    return AuditService._compute_hash_sql_trigger(prev_hash, payload, timestamp)
 
-    `hmac_signature = HMAC-SHA256(key, f"{new_hash}:{timestamp}:{actor_id}:{action}")`
-    """
-    message = f"{new_hash}:{timestamp}:{actor_id}:{action}".encode("utf-8")
-    return _hmac.new(hmac_key, message, hashlib.sha256).hexdigest()
+
+def _is_trigger_written(entry: dict[str, Any]) -> bool:
+    """Aceita canonicalizacao SQL somente com marcador persistido do trigger."""
+    return (entry.get("user_agent") or "") == "auto_audit_trigger" or (
+        entry.get("actor_id") or ""
+    ) == "auto_audit"
 
 
 def _normalize_timestamp(ts: Any) -> str:
@@ -103,11 +99,13 @@ def verify_hash_sequence(entries: list[dict[str, Any]]) -> list[int]:
       - prev_hash: str | None (None ou zeros = chain head)
       - hash: str hex SHA256
       - hmac_signature: str
+      - hmac_kid: str | None
+      - user_agent: str | None (marcador do trigger SQL)
 
     Regras:
       1. Chain rule (entry N): `prev_hash[N] == hash[N-1]` (ou zeros se N=0)
       2. Hash rule (entry N): `hash[N] == SHA256(prev_hash_canonico, payload, timestamp)`
-      3. HMAC rule (entry N): `hmac_signature[N] == HMAC(key, f"{hash}:{timestamp}:{actor_id}:{action}")`
+      3. HMAC rule (entry N): verifica a assinatura pelo registry e `hmac_kid`
 
     Args:
         entries: lista ordenada por `id` ASC.
@@ -124,6 +122,8 @@ def verify_hash_sequence(entries: list[dict[str, Any]]) -> list[int]:
         timestamp = _normalize_timestamp(entry.get("timestamp"))
         stored_hash = str(entry.get("hash") or "")
         stored_hmac = str(entry.get("hmac_signature") or "")
+        hmac_kid_raw = entry.get("hmac_kid")
+        hmac_kid = str(hmac_kid_raw) if hmac_kid_raw is not None else None
         actor_id = str(entry.get("actor_id") or "")
         action = str(entry.get("action") or "")
         entry_prev_raw = entry.get("prev_hash")
@@ -136,17 +136,17 @@ def verify_hash_sequence(entries: list[dict[str, Any]]) -> list[int]:
         # Regra 2: hash — recalcula SHA256 sobre o bloco canonico
         expected_hash = _compute_hash(prev_for_hash, payload, timestamp)
         hash_ok = stored_hash == expected_hash
+        if not hash_ok and _is_trigger_written(entry):
+            expected_sql_hash = _compute_hash_sql_trigger(prev_for_hash, payload, timestamp)
+            hash_ok = stored_hash == expected_sql_hash
 
-        # Regra 3: HMAC — recalcula assinatura com a chave do servidor
-        hmac_key = settings.audit_hmac_key.encode("utf-8")
-        expected_hmac = _compute_hmac_signature(
-            new_hash=stored_hash,
-            timestamp=timestamp,
-            actor_id=actor_id,
-            action=action,
-            hmac_key=hmac_key,
+        # Regra 3: HMAC — resolve a chave historica pelo kid persistido. Kid
+        # desconhecido/deprecated falha fechado em verify_audit_entry().
+        hmac_ok = verify_audit_entry(
+            f"{stored_hash}:{timestamp}:{actor_id}:{action}".encode("utf-8"),
+            hmac_kid,
+            stored_hmac,
         )
-        hmac_ok = stored_hmac == expected_hmac
 
         if not (chain_ok and hash_ok and hmac_ok):
             broken.append(i)
@@ -186,6 +186,8 @@ def from_db(db: Session) -> list[dict[str, Any]]:
                 "prev_hash": entry.prev_hash,
                 "hash": entry.hash,
                 "hmac_signature": entry.hmac_signature,
+                "hmac_kid": entry.hmac_kid,
+                "user_agent": entry.user_agent,
             }
 
     # Type hint para mypy (yield_per retorna Query, nao generator tipado)

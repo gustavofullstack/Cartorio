@@ -42,15 +42,24 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import hmac
 import json
 import logging
+import re
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from app.config import settings
 from app.core.redis_keys import RedisKey
+from app.services.channel_failsafe import (
+    ChannelFailSafe,
+    action_failsafe,
+    registered_action_failsafe,
+    unsupported_whatsapp_media,
+)
 from app.services.pii import scrub
 from app.services.redis_bus import get_bus
 from app.services.tracing import current_trace_id, llm_span, get_tracer
@@ -63,6 +72,28 @@ from app.services.bot_metrics import (
 from app.integrations.fallback import chat_with_fallback, ChatResponse, ChatError, ChatErrorKind
 # audit_log usa AuditService.log (session-based) — versão simplificada abaixo
 # que grava log estruturado em JSON + Redis pub/sub (sem bloquear o pipeline).
+
+
+def _format_channel_text(text: str) -> str:
+    """Normaliza a resposta sem importar a camada HTTP do Telegram."""
+
+    if not text:
+        return text
+    from app.services.cartorio_agent import _strip_think_tags, sanitize_bot_output
+
+    normalized = _strip_think_tags(text.replace("\r\n", "\n").replace("\r", "\n"))
+    normalized = sanitize_bot_output(normalized) or normalized
+    normalized = re.sub(
+        "[\U0001f600-\U0001f64f\U0001f300-\U0001f5ff\U0001f680-\U0001f6ff"
+        "\U0001f1e0-\U0001f1ff\U00002700-\U000027bf\U0001f900-\U0001f9ff"
+        "\U00002600-\U000026ff\U0000fe00-\U0000fe0f]",
+        "",
+        normalized,
+    )
+    normalized = re.sub(r"[^\S\n]+", " ", normalized)
+    normalized = re.sub(r" *\n *", "\n", normalized)
+    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+    return normalized.strip() or "..."
 
 
 class _JsonFormatter(logging.Formatter):
@@ -205,6 +236,38 @@ class Channel(str, Enum):
     WHATSAPP = "whatsapp"
 
 
+def pseudonymize_conversation_id(
+    channel: Channel,
+    conversation_id: str,
+    *,
+    hmac_key: str | None = None,
+) -> str:
+    """Cria pseudonimo HMAC estavel para identificadores usados no Redis.
+
+    A separacao de dominio por canal impede que o mesmo identificador produza
+    a mesma chave em Telegram e WhatsApp. O valor bruto nunca integra a chave.
+    Este helper nao substitui o binding pseudonimo-only necessario para que o
+    fluxo DSAR localize todos os stores sem reter o identificador bruto.
+    """
+    if not conversation_id:
+        raise ValueError("conversation_id required")
+    key = hmac_key if hmac_key is not None else settings.pietra_conversation_hmac_key
+    if len(key) < 32:
+        raise RuntimeError("conversation HMAC key is not configured")
+    message = f"chat_pipeline:v1:{channel.value}:{conversation_id}".encode("utf-8")
+    return hmac.new(key.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+
+def _queue_key(channel: Channel, conversation_id: str) -> str:
+    pseudonym = pseudonymize_conversation_id(channel, conversation_id)
+    return f"queue:{channel.value}:{pseudonym}"
+
+
+def _history_id(channel: Channel, conversation_id: str) -> str:
+    pseudonym = pseudonymize_conversation_id(channel, conversation_id)
+    return f"{channel.value}:{pseudonym}"
+
+
 @dataclass
 class InboundMessage:
     """Mensagem normalizada vinda de qualquer canal."""
@@ -271,12 +334,31 @@ class ChannelAdapter(ABC):
 IDEMPOTENCY_TTL_SEC = 600  # 10min: evita reprocessar mesmo update_id
 
 
-async def check_idempotency(update_id: str, channel: Channel) -> bool:
+def _idempotency_key(channel: Channel, conversation_id: str, update_id: str) -> str:
+    """Cria chave opaca e apagavel por prefixo do pseudonimo da conversa."""
+    conversation_pseudonym = pseudonymize_conversation_id(channel, conversation_id)
+    key = settings.pietra_conversation_hmac_key
+    message = (
+        f"chat_pipeline:idempotency:v1:{channel.value}:{conversation_pseudonym}:{update_id}"
+    ).encode("utf-8")
+    update_pseudonym = hmac.new(key.encode("utf-8"), message, hashlib.sha256).hexdigest()[:32]
+    return RedisKey.idempotency(
+        "chat_pipeline",
+        f"{conversation_pseudonym}.{update_pseudonym}",
+    )
+
+
+async def check_idempotency(
+    update_id: str,
+    channel: Channel,
+    conversation_id: str,
+) -> bool:
     """Verifica se update_id já foi processado. False = processar, True = pular.
 
     Args:
         update_id: ID único da mensagem (update_id Telegram, message_id WhatsApp)
         channel: Canal de origem (para namespacing)
+        conversation_id: ID da conversa, pseudonimizado antes de compor a chave
 
     Returns:
         True se já foi processado (pular), False se novo (processar)
@@ -286,8 +368,7 @@ async def check_idempotency(update_id: str, channel: Channel) -> bool:
     bus = get_bus()
     if not bus:
         return False
-    # G8.12.T3: chave canonica via helper central.
-    key = RedisKey.idempotency("chat_pipeline", f"{channel.value}_{update_id}")
+    key = _idempotency_key(channel, conversation_id, update_id)
     # SETNX com TTL atômico
     is_new = await bus.client.set(key, "1", ex=IDEMPOTENCY_TTL_SEC, nx=True)
     return not bool(is_new)  # True se já existia (pular)
@@ -308,7 +389,8 @@ async def check_rate_limit(conv_key: str, channel: Channel) -> bool:
     if not bus:
         return True
     # G8.12.T3: chave canonica via helper central.
-    key = RedisKey.rate_limit("chat", f"{channel.value}_{conv_key}")
+    conversation_hash = pseudonymize_conversation_id(channel, conv_key)
+    key = RedisKey.rate_limit("chat", f"{channel.value}_{conversation_hash}")
     # SETNX EX 3 — se já existia, nega
     is_new = await bus.client.set(key, "1", ex=RATE_LIMIT_SECONDS, nx=True)
     return bool(is_new)
@@ -361,7 +443,7 @@ async def enqueue_message(msg: InboundMessage) -> bool:
     bus = get_bus()
     if not bus:
         return False
-    key = f"queue:{msg.channel.value}:{msg.sender_id}"
+    key = _queue_key(msg.channel, msg.sender_id)
     payload = json.dumps(
         {
             "text": msg.text,
@@ -384,7 +466,7 @@ async def fetch_queue(channel: Channel, sender_id: str) -> list[dict]:
     bus = get_bus()
     if not bus:
         return []
-    key = f"queue:{channel.value}:{sender_id}"
+    key = _queue_key(channel, sender_id)
     pipe = bus.client.pipeline(transaction=True)
     pipe.lrange(key, 0, -1)
     pipe.delete(key)
@@ -488,53 +570,68 @@ async def audit_log(
 ) -> None:
     """LGPD art. 37 — registro de operação de tratamento.
 
-    Non-blocking: usa Redis pub/sub + log estruturado JSON. NÃO usa DB sync
-    para não bloquear o pipeline. Audit chain completa fica em
-    AuditService.log() quando process_message é chamado com db=Session.
+    A cadeia PostgreSQL e a fonte de verdade e falha fechada. Redis/log sao
+    apenas espelhos operacionais com retencao limitada.
 
     Args:
         channel: telegram / whatsapp
-        sender_id: chat_id (hash) ou remoteJid (hash)
+        sender_id: identificador original usado somente em memoria para derivar HMAC
         content_hash: SHA256 do conteúdo (NUNCA conteúdo cru!)
         action: receive / send / debounce / fallback / consent / revoke
         status: ok / failed / rate_limited / idempotent
         request_id: correlation ID
     """
-    try:
-        # Hash do sender para LGPD (não armazenar PII direto)
-        sender_hash = hashlib.sha256(sender_id.encode("utf-8")).hexdigest()[:16]
-        record = {
-            "ts": time.time(),
-            "channel": channel.value,
-            "sender_hash": sender_hash,
-            "action": action,
-            "status": status,
-            "content_hash": content_hash,
-            "request_id": request_id or "",
-        }
-        # 1. Log estruturado (sempre)
-        logger.info(
-            "audit.bot.%s.%s channel=%s sender=%s status=%s req=%s",
-            channel.value,
-            action,
-            channel.value,
-            sender_hash,
-            status,
-            request_id or "",
-        )
-        # 2. Redis pub/sub (best-effort, non-blocking)
-        bus = get_bus()
-        if bus:
-            try:
-                await bus.client.lpush(
-                    f"audit:bot:{channel.value}",
-                    json.dumps(record, separators=(",", ":")),
-                )
-                await bus.client.ltrim(f"audit:bot:{channel.value}", 0, 9999)
-            except Exception:
-                pass  # não bloquear
-    except Exception as e:
-        logger.warning("audit_log falhou (non-blocking): %s", e)
+    conversation_pseudonym = pseudonymize_conversation_id(channel, sender_id)
+    record = {
+        "ts": time.time(),
+        "channel": channel.value,
+        "conversation_pseudonym": conversation_pseudonym,
+        "action": action,
+        "status": status,
+        "content_hash": content_hash,
+        "request_id": request_id or "",
+    }
+
+    def _persist_chain() -> None:
+        from app.db import session_scope
+        from app.services.audit import AuditService
+
+        with session_scope() as db:
+            AuditService.log(
+                db,
+                actor_id=f"bot:{channel.value}:{conversation_pseudonym[:32]}",
+                actor_type="bot",
+                action=f"bot.{action}",
+                resource=f"conversation:{conversation_pseudonym}",
+                payload={
+                    "channel": channel.value,
+                    "status": status,
+                    "content_hash": content_hash,
+                },
+                request_id=request_id,
+                canal=channel.value,
+            )
+
+    # Persistencia ocorre antes do espelho; falha impede continuar o pipeline.
+    await asyncio.to_thread(_persist_chain)
+    logger.info(
+        "audit.bot.%s.%s channel=%s conversation=%s status=%s req=%s",
+        channel.value,
+        action,
+        channel.value,
+        conversation_pseudonym[:16],
+        status,
+        request_id or "",
+    )
+    bus = get_bus()
+    if bus:
+        try:
+            audit_key = f"audit:bot:{channel.value}"
+            await bus.client.lpush(audit_key, json.dumps(record, separators=(",", ":")))
+            await bus.client.ltrim(audit_key, 0, 9999)
+            await bus.client.expire(audit_key, 30 * 86400)
+        except Exception:
+            logger.warning("audit Redis mirror unavailable")
 
 
 def hash_content(text: str) -> str:
@@ -542,6 +639,80 @@ def hash_content(text: str) -> str:
     if not text:
         return ""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:32]
+
+
+async def _send_channel_failsafe(
+    msg: InboundMessage,
+    adapter: ChannelAdapter,
+    fallback: ChannelFailSafe,
+    correlation_id: str | None,
+) -> OutboundMessage | None:
+    """Envia fallback institucional sem acionar LLM, N8N, agenda ou Chatwoot."""
+
+    clean_response, _ = scrub_with_metric(fallback.text, msg.channel.value)
+    out_msg = OutboundMessage(
+        channel=msg.channel,
+        recipient_id=msg.sender_id,
+        text=clean_response,
+        metadata={"failsafe_reason": fallback.reason},
+    )
+    await audit_log(
+        msg.channel,
+        msg.sender_id,
+        hash_content(clean_response),
+        "fallback",
+        f"{fallback.reason}_pending",
+        correlation_id,
+    )
+    sent = False
+    try:
+        sent = await adapter.send(out_msg)
+    except Exception as exc:  # noqa: BLE001 - webhook nao deve entrar em retry por falha de envio
+        _emit(
+            logging.ERROR,
+            "channel failsafe send failed",
+            event="bot.failsafe_error",
+            channel=msg.channel.value,
+            chat_id=hashlib.sha256(msg.sender_id.encode()).hexdigest()[:16],
+            correlation_id=correlation_id,
+            reason=fallback.reason,
+            error_type=type(exc).__name__,
+        )
+        try:
+            sentry_capture_exception(
+                exc,
+                extra={
+                    "channel": msg.channel.value,
+                    "correlation_id": correlation_id,
+                    "reason": fallback.reason,
+                },
+            )
+        except Exception:
+            pass
+
+    await audit_log(
+        msg.channel,
+        msg.sender_id,
+        hash_content(clean_response),
+        "fallback",
+        f"{fallback.reason}_{'sent' if sent else 'failed'}",
+        correlation_id,
+    )
+    _emit(
+        logging.INFO if sent else logging.WARNING,
+        "channel failsafe sent" if sent else "channel failsafe unavailable",
+        event="bot.failsafe",
+        channel=msg.channel.value,
+        chat_id=hashlib.sha256(msg.sender_id.encode()).hexdigest()[:16],
+        correlation_id=correlation_id,
+        reason=fallback.reason,
+        sent=sent,
+    )
+    if sent:
+        inc_bot_request(msg.channel.value, "ok")
+    else:
+        inc_bot_request(msg.channel.value, "failed")
+    return out_msg if sent else None
 
 
 # ===================== PROCESS MESSAGE (ENTRY POINT) =====================
@@ -572,7 +743,7 @@ async def process_message(
     correlation_id = request_id or current_trace_id()
 
     # 1. Idempotency
-    if await check_idempotency(msg.update_id, msg.channel):
+    if await check_idempotency(msg.update_id, msg.channel, msg.sender_id):
         _emit(
             logging.INFO,
             "idempotent skip",
@@ -580,7 +751,7 @@ async def process_message(
             channel=msg.channel.value,
             chat_id=hashlib.sha256(msg.sender_id.encode()).hexdigest()[:16],
             correlation_id=correlation_id,
-            update_id=msg.update_id,
+            update_hash=hash_content(msg.update_id),
         )
         await audit_log(
             msg.channel,
@@ -599,7 +770,12 @@ async def process_message(
 
         bus = get_bus()
         client = getattr(bus, "client", None) if bus else None
-        if client is not None and is_bot_muted(client, msg.channel.value, msg.sender_id):
+        conversation_pseudonym = pseudonymize_conversation_id(msg.channel, msg.sender_id)
+        if client is not None and is_bot_muted(
+            client,
+            msg.channel.value,
+            conversation_pseudonym,
+        ):
             _emit(
                 logging.INFO,
                 "bot muted (HITL)",
@@ -648,9 +824,18 @@ async def process_message(
         channel=msg.channel.value,
         chat_id=hashlib.sha256(msg.sender_id.encode()).hexdigest()[:16],
         correlation_id=correlation_id,
-        update_id=msg.update_id,
+        update_hash=hash_content(msg.update_id),
         text_len=len(msg.text),
     )
+
+    # Midias Evolution nao sao entregues ao agente neste pipeline. Responder de
+    # forma explicita evita silencio e impede que caption seja tratada como se a
+    # imagem/audio/documento tivesse sido realmente analisado.
+    media_fallback = None
+    if msg.channel == Channel.WHATSAPP:
+        media_fallback = unsupported_whatsapp_media(msg.extra.get("message_type"))
+    if media_fallback is not None:
+        return await _send_channel_failsafe(msg, adapter, media_fallback, correlation_id)
 
     # 5. Enqueue + debounce
     is_first = await enqueue_message(msg)
@@ -718,10 +903,10 @@ async def process_debounced(
       3. check_rate_limit
       4. typing_loop (background refresh 4s)
       5. call_llm_with_fallback (com OpenTelemetry span G6 T53)
-      6. scrub output (camada 3) + métrica
-      7. adapter.send() (com metric latency stage=send)
-      8. adapter.react() (ack)
-      9. audit_log send
+      6. scrub output + identity/outbound guards
+      7. persistir somente a resposta final em historico pseudonimizado
+      8. adapter.send() (com metric latency stage=send)
+      9. adapter.react() + audit_log send
       10. stop typing
     """
     correlation_id = request_id or current_trace_id()
@@ -785,13 +970,14 @@ async def process_debounced(
         try:
             # 5. LLM call (Hermes Agent AI Minimax) - span llm.chat
             fast = _is_fast_path(text_to_process)
-            
+
             from app.services.dialog_history import hist_get, hist_append, DialogHistoryConfig
             from app.services.cartorio_agent import run_cartorio_agent
             from app.services.redis_bus import get_bus
-            
+
             bus = get_bus()
-            hist_key = f"{channel.value}:{sender_id}"
+            conversation_pseudonym = pseudonymize_conversation_id(channel, sender_id)
+            hist_key = _history_id(channel, sender_id)
             history = await hist_get(bus, hist_key) if bus else []
             if bus:
                 cfg = DialogHistoryConfig(max_entries=20, ttl_sec=86400, max_tokens=2000)
@@ -804,31 +990,75 @@ async def process_debounced(
                         llm_sp.set_attribute("bot.fast_path", fast)
                     except Exception:
                         pass
-                
+
                 reply = await run_cartorio_agent(
                     text_to_process,
                     history=history,
                     attachments=None,
-                    chat_id=sender_id,
+                    chat_id=conversation_pseudonym,
                 )
-                raw_response = reply.text or "Desculpe, não consegui processar sua solicitação no momento."
-                if getattr(reply, "extra_messages", None):
-                    raw_response += "\n\n" + "\n\n".join(reply.extra_messages)
-                
-                # Melhorias Felipe: remove emojis, normaliza espaçamento e bloqueia blocos robóticos
-                try:
-                    from app.api.v1.telegram import format_bot_text, strip_emojis
-                    response_text = strip_emojis(format_bot_text(raw_response))
-                except Exception:
-                    response_text = raw_response
-            
+                raw_reply_action = getattr(reply, "action", None)
+                reply_action = raw_reply_action if isinstance(raw_reply_action, str) else None
+                action_fallback = action_failsafe(reply_action)
+                if action_fallback is not None and channel == Channel.WHATSAPP:
+                    try:
+                        from app.services.local_handoff_ticket import (
+                            create_local_handoff_ticket,
+                        )
+
+                        await asyncio.to_thread(
+                            create_local_handoff_ticket,
+                            channel=channel.value,
+                            external_id=sender_id,
+                            action=reply_action or "",
+                            request_id=correlation_id,
+                        )
+                        registered_fallback = registered_action_failsafe(reply_action)
+                        if registered_fallback is not None:
+                            action_fallback = registered_fallback
+                    except Exception as exc:  # noqa: BLE001 - fail-closed, sem alegar handoff
+                        _emit(
+                            logging.ERROR,
+                            "local handoff ticket was not persisted",
+                            event="bot.local_handoff_failed",
+                            channel=channel.value,
+                            chat_id=chat_hash,
+                            correlation_id=correlation_id,
+                            action=reply_action,
+                            error_type=type(exc).__name__,
+                        )
+                if action_fallback is not None:
+                    raw_response = action_fallback.text
+                else:
+                    raw_response = (
+                        reply.text or "Desculpe, não consegui processar sua solicitação no momento."
+                    )
+                    if getattr(reply, "extra_messages", None):
+                        raw_response += "\n\n" + "\n\n".join(reply.extra_messages)
+
+                # Remove emojis, normaliza espaçamento e bloqueia blocos robóticos
+                # sem acoplar a camada de serviço ao router HTTP do Telegram.
+                response_text = _format_channel_text(raw_response)
+
+            # 6. Scrub e guardrails antes de qualquer persistencia da resposta.
+            # O outbound guard pode registrar o texto interceptado; por isso ele
+            # recebe somente a versao ja limpa de PII.
+            with BotStageTimer(channel=channel.value, stage="llm", auto_inc_request=False):
+                scrubbed_response, _ = scrub_with_metric(response_text, channel.value)
+
+            from app.services.pietra_identity_guard import guard_identity
+            from app.services.pietra_outbound_guard import sanitize_outbound
+
+            identity_result = guard_identity(scrubbed_response, channel=channel.value)
+            outbound_result = sanitize_outbound(
+                identity_result.sanitized_text,
+                channel=channel.value,
+            )
+            clean_response = outbound_result.sanitized_text
+
             if bus:
                 cfg = DialogHistoryConfig(max_entries=20, ttl_sec=86400, max_tokens=2000)
-                await hist_append(bus, hist_key, "assistant", response_text, config=cfg)
-
-            # 6. Scrub output (camada 3) + métrica
-            with BotStageTimer(channel=channel.value, stage="llm", auto_inc_request=False):
-                clean_response, _ = scrub_with_metric(response_text, channel.value)
+                await hist_append(bus, hist_key, "assistant", clean_response, config=cfg)
 
             _emit(
                 logging.INFO,
@@ -841,7 +1071,15 @@ async def process_debounced(
                 fast_path=fast,
             )
 
-            # 7. Send (com metric latency stage=send)
+            # 8. Send (com metric latency stage=send)
+            await audit_log(
+                channel,
+                sender_id,
+                hash_content(clean_response),
+                "send",
+                "pending",
+                correlation_id,
+            )
             with BotStageTimer(channel=channel.value, stage="send", auto_inc_request=False):
                 out_msg = OutboundMessage(
                     channel=channel,
@@ -850,7 +1088,7 @@ async def process_debounced(
                 )
                 sent = await adapter.send(out_msg)
 
-            # 8. React (ack visual) — desativado no WhatsApp (pedido Felipe: zero emoji
+            # 9a. React (ack visual) — desativado no WhatsApp (pedido Felipe: zero emoji
             # na experiencia do cliente). Telegram mantem reacao nativa.
             if sent and msg_ids and channel != Channel.WHATSAPP:
                 try:
@@ -858,7 +1096,7 @@ async def process_debounced(
                 except Exception:
                     pass
 
-            # 9. Audit log send
+            # 9b. Audit log send
             await audit_log(
                 channel,
                 sender_id,
@@ -867,6 +1105,25 @@ async def process_debounced(
                 "ok" if sent else "failed",
                 correlation_id,
             )
+            if action_fallback is not None:
+                await audit_log(
+                    channel,
+                    sender_id,
+                    hash_content(clean_response),
+                    "fallback",
+                    f"{action_fallback.reason}_{'sent' if sent else 'failed'}",
+                    correlation_id,
+                )
+                _emit(
+                    logging.INFO if sent else logging.WARNING,
+                    "agent action replaced by channel failsafe",
+                    event="bot.action_failsafe",
+                    channel=channel.value,
+                    chat_id=chat_hash,
+                    correlation_id=correlation_id,
+                    reason=action_fallback.reason,
+                    sent=sent,
+                )
 
             # T51: structured log final
             _emit(

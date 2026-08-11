@@ -7,7 +7,7 @@ PRIMARY KEY TELEFONE DO CLIENTE!!"
 Arquitetura de memoria em 2 camadas:
   L1: Redis SETEX (TTL 30min) - session state rapido
       Chave: pietra:session:{telefone_hash}:{session_id}
-  L2: Postgres memoria_conversa (permanente)
+  L2: Postgres memoria_conversa (retencao maxima de 365 dias)
       PRIMARY KEY operacional: (telefone_hash, session_id, created_at)
 
 Fallback automatico: se Redis cair, cai para Postgres session_state
@@ -59,7 +59,7 @@ def get_redis() -> Optional[redis.Redis]:
             decode_responses=True,
         )
         _redis_client.ping()
-        logger.info("redis connected: %s", redis_url)
+        logger.info("redis connected")
     except Exception as e:
         logger.warning("redis connect failed: %s", e)
         _redis_client = None

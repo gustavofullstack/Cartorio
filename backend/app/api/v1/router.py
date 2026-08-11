@@ -21,7 +21,9 @@ import datetime
 import hashlib
 import hmac
 import json
+import logging
 import os
+import re
 import time
 from pathlib import Path as FilePath
 from typing import Annotated, Any, cast
@@ -71,6 +73,8 @@ from app.services.audit_query import get_audit_log_by_id, list_audit_logs
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
 from app.services.protocolo_query import buscar_protocolo_por_numero
+
+logger = logging.getLogger(__name__)
 
 # Integrations router (smoke test OpenCode-Go, etc)
 from app.api.v1.integrations import integrations_router  # noqa: E402
@@ -2535,6 +2539,21 @@ async def documento_segunda_via(
 # ============================================================================
 
 
+def _safe_conversation_pseudonym(channel: str, external_id: str) -> str | None:
+    """Retorna o pseudonimo canonico sem jamais devolver o identificador em claro."""
+    from app.services.chat_pipeline import Channel, pseudonymize_conversation_id
+
+    try:
+        normalized_channel = Channel(channel)
+        normalized_external_id = external_id.strip().lower()
+        ticket_match = re.fullmatch(r"hmac:v1:([0-9a-f]{64})", normalized_external_id)
+        if ticket_match:
+            return ticket_match.group(1)
+        return pseudonymize_conversation_id(normalized_channel, external_id)
+    except (RuntimeError, ValueError):
+        return None
+
+
 @api_router.get(
     "/atendimento/ultimas-24h",
     tags=["atendimento"],
@@ -2561,7 +2580,7 @@ async def atendimentos_ultimas_24h(
 
     # A18 - squad A: cache Redis 60s. Reduz carga DB 4-12x em pico.
     # Fail-open: se Redis offline, retorna None e cai pro DB.
-    cached = get_cached("24h")
+    cached = get_cached("24h-pseudonymous-v2")
     if cached is not None:
         return cached
 
@@ -2587,7 +2606,10 @@ async def atendimentos_ultimas_24h(
                 "id": a.id,
                 "protocolo_id": a.protocolo_id,
                 "canal": a.canal,
-                "external_id": a.external_id,
+                "conversation_pseudonym": _safe_conversation_pseudonym(
+                    a.canal,
+                    a.external_id,
+                ),
                 "tipo": a.tipo,
                 "concluido_em": a.concluido_em.isoformat() if a.concluido_em else None,
             }
@@ -2600,7 +2622,7 @@ async def atendimentos_ultimas_24h(
         "atendimentos": atendimentos,
     }
     # A18: cache Redis 60s - reduz carga DB no N8N workflow #07
-    set_cached(payload, "24h")
+    set_cached(payload, "24h-pseudonymous-v2")
     return payload
 
 
@@ -2608,8 +2630,13 @@ async def atendimentos_ultimas_24h(
     "/atendimento/{atendimento_id}/pesquisa-enviada",
     tags=["atendimento"],
     summary="Marcar pesquisa de satisfacao como enviada (N8N workflow #07)",
+    responses={401: {"description": "X-API-Key ausente ou invalida."}},
 )
-async def marcar_pesquisa_enviada(request: Request, atendimento_id: int) -> dict:
+async def marcar_pesquisa_enviada(
+    request: Request,
+    atendimento_id: int,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> dict:
     """Marca pesquisa_enviada_em = now() para evitar envio duplicado."""
     from datetime import datetime, timezone
     from sqlalchemy import select
@@ -2654,26 +2681,55 @@ async def marcar_pesquisa_enviada(request: Request, atendimento_id: int) -> dict
 @api_router.post(
     "/atendimento",
     tags=["atendimento"],
-    summary="Criar atendimento (handoff Chatwoot ou webhook externo)",
+    summary="Criar ticket local aguardando escrevente",
     description=(
-        "Cria atendimento. Chamado pelo workflow #03 (handoff humano) ou "
-        "diretamente pela UI quando conversa e escalada."
+        "Cria somente um ticket local autenticado. Nao aciona Chatwoot, N8N, "
+        "agenda nem confirma transferencia para um escrevente."
     ),
+    responses={401: {"description": "X-API-Key ausente ou invalida."}},
 )
-async def criar_atendimento(request: Request, payload: dict) -> dict:
-    """Cria atendimento (handoff)."""
+async def criar_atendimento(
+    request: Request,
+    payload: dict,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> dict:
+    """Cria ticket local pseudonimizado no estado aguardando_escrevente."""
     from datetime import datetime, timezone
     from app.models.atendimento import Atendimento
 
-    canal = payload.get("canal", "whatsapp")
-    external_id = payload.get("external_id", "unknown")
+    canal = str(payload.get("canal", "whatsapp")).strip().lower()
+    external_id_value = payload.get("external_id")
+    if not isinstance(external_id_value, str) or not external_id_value.strip():
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "erro": "EXTERNAL_ID_REQUIRED",
+                "mensagem": "external_id e obrigatorio para criar o ticket local.",
+            },
+        )
+    external_id_raw = external_id_value.strip()
+    from app.services.local_handoff_ticket import pseudonymize_external_id
+
+    try:
+        external_id = pseudonymize_external_id(canal, external_id_raw)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "erro": "INVALID_CHANNEL_IDENTITY",
+                "mensagem": "Canal ou identificador externo invalido.",
+            },
+        ) from exc
     tipo = payload.get("tipo", "duvida")
-    contexto = payload.get("contexto_scrubbed")
-    chatwoot_conv = payload.get("chatwoot_conversation_id")
-    chatwoot_inbox = payload.get("chatwoot_inbox_id")
-    chatwoot_agent = payload.get("chatwoot_agent_id")
+    contexto_raw = payload.get("contexto_scrubbed")
+    contexto = scrub(str(contexto_raw)).text if contexto_raw is not None else None
+    # Chatwoot esta contido/offline: IDs externos nao entram no ticket local.
+    chatwoot_conv = None
+    chatwoot_inbox = None
+    chatwoot_agent = None
     protocolo_id = payload.get("protocolo_id")
     cliente_cpf = payload.get("cliente_cpf")
+    consentimento_lgpd = payload.get("consentimento_lgpd") is True
 
     cliente_id = None
     if cliente_cpf:
@@ -2686,9 +2742,9 @@ async def criar_atendimento(request: Request, payload: dict) -> dict:
                 cliente = Cliente(
                     cpf_hash=cpf_hash,
                     nome=payload["cliente_nome"],
-                    consentimento_lgpd=True,
-                    consentimento_em=datetime.now(timezone.utc),
-                    consentimento_canal=canal,
+                    consentimento_lgpd=consentimento_lgpd,
+                    consentimento_em=(datetime.now(timezone.utc) if consentimento_lgpd else None),
+                    consentimento_canal=canal if consentimento_lgpd else None,
                 )
                 db.add(cliente)
                 db.flush()
@@ -2709,7 +2765,7 @@ async def criar_atendimento(request: Request, payload: dict) -> dict:
             cliente_id=cliente_id,
             handoff_para_humano=True,
             iniciado_em=datetime.now(timezone.utc),
-            status="em_atendimento",
+            status="aguardando_escrevente",
         )
         db.add(a)
         db.flush()
@@ -2747,11 +2803,13 @@ async def criar_atendimento(request: Request, payload: dict) -> dict:
     "/atendimento/{atendimento_id}/concluir",
     tags=["atendimento"],
     summary="Concluir atendimento (registra timestamp para pesquisa 24h)",
+    responses={401: {"description": "X-API-Key ausente ou invalida."}},
 )
 async def concluir_atendimento(
     request: Request,
     atendimento_id: int,
     payload: dict | None = None,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> dict:
     """Marca atendimento como concluido."""
     from datetime import datetime, timezone
@@ -2811,31 +2869,60 @@ async def concluir_atendimento(
     tags=["atendimento"],
     summary="Obter historico de atendimento (Redis + Supabase)",
     description=(
-        "Busca o historico de mensagens de uma sessao (canal/telefone). "
-        "Consulta primeiro o cache quente no Redis e depois une/complementa "
-        "com o historico de longo prazo persistido no Supabase."
+        "Busca o historico de mensagens associado a um pseudonimo previamente "
+        "vinculado. Consulta primeiro o cache quente no Redis e usa o historico "
+        "persistido como fallback. Requer `X-API-Key`."
     ),
 )
-async def obter_historico_atendimento(session_id: str) -> dict:
-    """Retorna o historico completo de mensagens para uma sessao."""
+async def obter_historico_atendimento(
+    session_id: str,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
+) -> dict:
+    """Retorna historico somente para pseudonimo previamente vinculado."""
     import json
     from sqlalchemy import select
     from app.models.conversa import Conversa
+    from app.models.cliente_channel_identity import ClienteChannelIdentity
 
-    messages = []
+    conversation_pseudonym = session_id.strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", conversation_pseudonym):
+        raise HTTPException(status_code=404, detail="conversation binding not found")
+
+    with session_scope() as db:
+        bindings = (
+            db.execute(
+                select(ClienteChannelIdentity).where(
+                    ClienteChannelIdentity.conversation_pseudonym == conversation_pseudonym,
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if len(bindings) != 1:
+            raise HTTPException(status_code=404, detail="conversation binding not found")
+        binding = bindings[0]
+        cliente_id = binding.cliente_id
+        channel = binding.channel
+
+    messages: list[dict[str, Any]] = []
 
     # 1. Tenta buscar do cache quente do Redis (ADR-014)
     try:
         r_client = redis.from_url(settings.redis_url, socket_timeout=2.0, decode_responses=True)
-        redis_key = f"cartorio:sess:{session_id}"
-        cached = r_client.lrange(redis_key, 0, -1)
+        redis_key = f"tg:hist:{channel}:{conversation_pseudonym}"
+        cached_payload = r_client.get(redis_key)
         r_client.close()
-        if cached:
+        cached = json.loads(cached_payload) if cached_payload else []
+        if isinstance(cached, list):
             for item in cached:
-                try:
-                    messages.append(json.loads(item))
-                except Exception:
-                    pass
+                if isinstance(item, str):
+                    role, separator, content = item.partition(": ")
+                    messages.append(
+                        {
+                            "role": role if separator else "assistant",
+                            "content": scrub(content if separator else item).text,
+                        }
+                    )
     except Exception:
         pass
 
@@ -2846,7 +2933,11 @@ async def obter_historico_atendimento(session_id: str) -> dict:
                 rows = (
                     db.execute(
                         select(Conversa)
-                        .where(Conversa.external_id == session_id)
+                        .where(
+                            Conversa.cliente_id == cliente_id,
+                            Conversa.canal == channel,
+                            Conversa.deleted_at.is_(None),
+                        )
                         .order_by(Conversa.created_at.asc())
                     )
                     .scalars()
@@ -2857,7 +2948,7 @@ async def obter_historico_atendimento(session_id: str) -> dict:
                     messages.append(
                         {
                             "role": "user",
-                            "content": row.raw_message_scrubbed,
+                            "content": scrub(row.raw_message_scrubbed).text,
                             "timestamp": row.created_at.isoformat() if row.created_at else None,
                         }
                     )
@@ -2865,14 +2956,18 @@ async def obter_historico_atendimento(session_id: str) -> dict:
                         messages.append(
                             {
                                 "role": "assistant",
-                                "content": row.bot_response,
+                                "content": scrub(row.bot_response).text,
                                 "timestamp": row.updated_at.isoformat() if row.updated_at else None,
                             }
                         )
         except Exception:
             pass
 
-    return {"session_id": session_id, "total": len(messages), "messages": messages}
+    return {
+        "conversation_pseudonym": conversation_pseudonym,
+        "total": len(messages),
+        "messages": messages,
+    }
 
 
 # ============================================================================
@@ -2885,14 +2980,13 @@ async def obter_historico_atendimento(session_id: str) -> dict:
     tags=["atendimento"],
     summary="Lista sessoes ativas (ultimas N horas)",
     description=(
-        "Retorna lista de sessoes com atividade recente, agrupadas por "
-        "external_id + canal. Usado pelo N8N workflow #15 (Session Sync) "
-        "que sincroniza Redis cache quente com DB. "
+        "Retorna lista autenticada de sessoes com atividade recente, agrupadas por "
+        "pseudonimo de conversa e canal. Usado pelo N8N workflow #15 (Session Sync). "
         "Substitui o proposto GET /sessao/list-active (que nunca existiu) "
-        "com path alinhado aos demais /atendimento/*. "
-        "Read-only, sem PII nova exposta (external_id ja eh publico para o cartorio)."
+        "com path alinhado aos demais /atendimento/*. Nenhum identificador externo "
+        "em claro e retornado."
     ),
-    response_description="Lista de sessoes ativas com external_id, canal e last_activity.",
+    response_description="Lista de sessoes ativas pseudonimizadas por canal.",
 )
 async def listar_sessoes_ativas(
     since_hours: Annotated[
@@ -2903,10 +2997,11 @@ async def listar_sessoes_ativas(
             description="Janela de tempo em horas (default 24h, max 7 dias).",
         ),
     ] = 24,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)] = "",
 ) -> dict:
-    """Lista sessoes ativas nas ultimas N horas.
+    """Lista sessoes pseudonimizadas ativas nas ultimas N horas.
 
-    Retorna sessoes unicas por (external_id, canal) com last_activity = MAX(updated_at).
+    Agrupa internamente por identificador e canal, mas expoe somente o pseudonimo.
     Ordenado por atividade mais recente primeiro.
     """
     from datetime import datetime, timedelta, timezone
@@ -2930,7 +3025,7 @@ async def listar_sessoes_ativas(
 
     sessions = [
         {
-            "external_id": r.external_id,
+            "conversation_pseudonym": _safe_conversation_pseudonym(r.canal, r.external_id),
             "canal": r.canal,
             "last_activity": r.last_activity.isoformat() if r.last_activity else None,
         }
@@ -2949,8 +3044,8 @@ async def listar_sessoes_ativas(
     tags=["webhook"],
     summary="Webhook Chatwoot (HMAC + idempotency)",
     description=(
-        "Recebe webhooks do Chatwoot. Valida signature HMAC-SHA256 (se "
-        "CHATWOOT_WEBHOOK_SECRET configurado), deduplica por event_id, e "
+        "Desativado por padrao. Quando habilitado explicitamente, exige signature "
+        "HMAC-SHA256 e secret configurado, deduplica por event_id, e "
         "processa conversation_status_changed -> resolved marcando o "
         "atendimento como concluido (workflow #07 pesquisa 24h depois).\n\n"
         "Eventos suportados (discriminator `event`):\n"
@@ -2960,6 +3055,10 @@ async def listar_sessoes_ativas(
         "dados pessoais (marcados com `**LGPD PII**` no schema). Schema canonico "
         "em `app.schemas.chatwoot_webhook.ChatwootWebhookModel`."
     ),
+    responses={
+        401: {"description": "Assinatura HMAC ausente ou invalida."},
+        503: {"description": "Integracao Chatwoot desativada."},
+    },
     openapi_extra={
         "requestBody": {
             "content": {
@@ -2995,10 +3094,28 @@ async def listar_sessoes_ativas(
 )
 async def webhook_chatwoot(request: Request) -> dict:
     """Processa webhook do Chatwoot com HMAC + idempotency (Sprint 2)."""
+    if not settings.chatwoot_webhook_enabled:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "erro": "CHATWOOT_DISABLED",
+                "mensagem": "Integracao Chatwoot desativada ate existir outbox auditavel.",
+            },
+        )
+
     import json as _json
-    from app.services.chatwoot_handoff import process_chatwoot_event
+    from app.services.chatwoot_handoff import _validate_signature, process_chatwoot_event
 
     raw_body = await request.body()
+    signature = request.headers.get("X-Chatwoot-Signature")
+    if not _validate_signature(raw_body, signature):
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "erro": "INVALID_CHATWOOT_SIGNATURE",
+                "mensagem": "Assinatura Chatwoot ausente ou invalida.",
+            },
+        )
     try:
         payload = _json.loads(raw_body) if raw_body else {}
     except Exception:
@@ -3017,8 +3134,6 @@ async def webhook_chatwoot(request: Request) -> dict:
         except Exception:
             pass
         return {"status": "rejected", "reason": "invalid_json"}
-
-    signature = request.headers.get("X-Chatwoot-Signature")
 
     with session_scope() as db:
         result = process_chatwoot_event(db, payload, signature=signature, raw_body=raw_body)
@@ -3121,6 +3236,7 @@ async def delete_cliente(
         ClienteNotFoundError,
         direito_esquecimento,
     )
+    from app.services.lgpd_memory_retention import MemoryErasureUnavailableError
 
     try:
         result = direito_esquecimento(db, cliente_id)
@@ -3142,22 +3258,59 @@ async def delete_cliente(
                 "detalhes": {"cliente_id": cliente_id},
             },
         )
+    except MemoryErasureUnavailableError:
+        db.rollback()
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "erro": "ERASURE_STORE_UNAVAILABLE",
+                "mensagem": "A eliminacao nao foi aplicada. Tente novamente mais tarde.",
+                "detalhes": {"cliente_id": cliente_id},
+            },
+        )
 
     # Audit log LGPD art. 37 (registro de operacao de tratamento)
-    audit = AuditService.log(
-        db,
-        actor_id=f"escrevente:{api_key[:8]}",
-        actor_type="bot",
-        action=f"cliente.delete.{result.tipo}",
-        resource=f"cliente:{cliente_id}",
-        payload={
-            "cliente_id": cliente_id,
-            "tipo": result.tipo,
-            "protocolos_ativos": result.protocolos_ativos,
-            "motivo": result.motivo.value,
-        },
-        **audit_kwargs(request),
-    )
+    memoria_conversa_deleted = int(getattr(result, "memoria_conversa_deleted", 0))
+    session_state_deleted = int(getattr(result, "session_state_deleted", 0))
+    redis_keys_deleted = int(getattr(result, "redis_keys_deleted", 0))
+    channel_bindings_deleted = int(getattr(result, "channel_bindings_deleted", 0))
+    redis_available = bool(getattr(result, "redis_available", False))
+    uncovered_stores = tuple(getattr(result, "uncovered_stores", ()))
+    erasure_complete = bool(getattr(result, "erasure_complete", False))
+    try:
+        # AuditService.log e o unico commit: mutacao + audit sao atomicos no DB.
+        audit = AuditService.log(
+            db,
+            actor_id=f"escrevente:{api_key[:8]}",
+            actor_type="bot",
+            action=f"cliente.delete.{result.tipo}",
+            resource=f"cliente:{cliente_id}",
+            payload={
+                "cliente_id": cliente_id,
+                "tipo": result.tipo,
+                "protocolos_ativos": result.protocolos_ativos,
+                "motivo": result.motivo.value,
+                "memoria_conversa_deleted": memoria_conversa_deleted,
+                "session_state_deleted": session_state_deleted,
+                "redis_keys_deleted": redis_keys_deleted,
+                "channel_bindings_deleted": channel_bindings_deleted,
+                "redis_available": redis_available,
+                "uncovered_stores": list(uncovered_stores),
+                "erasure_complete": erasure_complete,
+            },
+            **audit_kwargs(request),
+        )
+    except Exception as exc:
+        db.rollback()
+        logger.error("Audit duravel falhou; erasure DB revertida: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "erro": "ERASURE_AUDIT_UNAVAILABLE",
+                "mensagem": "A eliminacao nao foi aplicada. Tente novamente mais tarde.",
+                "detalhes": {"cliente_id": cliente_id},
+            },
+        ) from exc
 
     return {
         "status": "deleted",
@@ -3166,6 +3319,13 @@ async def delete_cliente(
         "protocolos_ativos": result.protocolos_ativos,
         "data_encerramento": result.data_encerramento.isoformat(),
         "motivo": result.motivo.value,
+        "memoria_conversa_deleted": memoria_conversa_deleted,
+        "session_state_deleted": session_state_deleted,
+        "redis_keys_deleted": redis_keys_deleted,
+        "channel_bindings_deleted": channel_bindings_deleted,
+        "redis_available": redis_available,
+        "uncovered_stores": list(uncovered_stores),
+        "erasure_complete": erasure_complete,
         "audit_id": audit.id,
     }
 

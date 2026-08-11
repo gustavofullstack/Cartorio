@@ -744,8 +744,12 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
     from app.services.pietra_outbound_guard import OutboundAction, sanitize_outbound
 
     if msg and tool_calls:
+        scrubbed_tool_content = pii_scrub(
+            _strip_think_tags((msg.get("content") or "").strip())
+        ).text
         tc_content = sanitize_outbound(
-            _strip_think_tags((msg.get("content") or "").strip()), channel="api"
+            scrubbed_tool_content,
+            channel="api",
         )
         if tc_content.action is not OutboundAction.PASS:
             logger.warning(
@@ -780,6 +784,9 @@ async def pietra_chat_completions(req: ChatCompletionRequest) -> dict:
         temperature=req.temperature or 0.7,
         max_tokens=req.max_tokens or 4096,
     )
+    # O retry do sanitizer tambem e output de LLM. Scrub deve ocorrer antes
+    # do outbound guard, que registra apenas metadados da interceptacao.
+    content = pii_scrub(content).text
     # OUTBOUND GUARD (P0 2026-07-28): lixo de infra ("interrupting current
     # task", "rate-limit", "empty response stream", ...) e language mixing
     # (cirilico/CJK/full-width) NUNCA chegam crus ao cliente.

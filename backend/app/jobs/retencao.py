@@ -43,6 +43,7 @@ class RetencaoConfig:
 
     retencao_5y_dias: int = 1825  # 5 anos
     retencao_inativo_dias: int = 730  # 2 anos
+    retencao_conversa_dias: int = 365
     enabled: bool = True
 
 
@@ -62,6 +63,8 @@ class RetencaoResult:
     skipped_exercicio_direito: int = 0  # EXERCICIO_DIREITO_TITULAR preservados
     skipped_already_deleted: int = 0
     errors: list[str] = field(default_factory=list)
+    memoria_conversa_deleted: int = 0
+    session_state_deleted: int = 0
     cutoff_5y: datetime | None = None
     cutoff_inativo: datetime | None = None
     duration_ms: int = 0
@@ -164,6 +167,25 @@ def run_retencao(
     soft_5y: list[int] = []
     soft_inativo: list[int] = []
     errors: list[str] = []
+    memoria_conversa_deleted = 0
+    session_state_deleted = 0
+
+    # Conversa e estado de sessao sao stores independentes de Cliente e nao
+    # possuem FK/cascade. A limpeza ocorre no mesmo batch diario, sem afirmar
+    # cobertura de vector/graph externos que nao tem subject binding neste app.
+    try:
+        from app.services.lgpd_memory_retention import purge_expired_memory
+
+        with db.begin_nested():
+            memory_result = purge_expired_memory(
+                db,
+                now=now_naive,
+                conversation_days=config.retencao_conversa_dias,
+            )
+        memoria_conversa_deleted = memory_result.memoria_conversa_deleted
+        session_state_deleted = memory_result.session_state_deleted
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"memory_retention:{type(exc).__name__}")
 
     for cliente in clientes_ativos:
         try:
@@ -250,6 +272,8 @@ def run_retencao(
         skipped_exercicio_direito=skipped_exercicio,
         skipped_already_deleted=0,
         errors=errors,
+        memoria_conversa_deleted=memoria_conversa_deleted,
+        session_state_deleted=session_state_deleted,
         cutoff_5y=cutoff_5y,
         cutoff_inativo=cutoff_inativo,
         duration_ms=duration_ms,

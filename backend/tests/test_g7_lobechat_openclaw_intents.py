@@ -382,6 +382,7 @@ async def test_intent_handoff_chatwoot_http_mocked(monkeypatch: pytest.MonkeyPat
     """OpenClaw handoff_humano → Chatwoot REST (respx, no live DNS)."""
     import app.services.chatwoot_handoff as handoff_mod
 
+    monkeypatch.setattr(handoff_mod.settings, "chatwoot_outbound_enabled", True)
     monkeypatch.setattr(handoff_mod, "CHATWOOT_API_KEY", "test-key-not-real")
     monkeypatch.setattr(handoff_mod, "CHATWOOT_ACCOUNT_ID", "1")
     monkeypatch.setattr(handoff_mod, "CHATWOOT_INBOX_ID", "9")

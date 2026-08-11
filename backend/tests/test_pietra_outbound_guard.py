@@ -20,6 +20,7 @@ Padrao: teste FALHA se regredir. Modified by Gustavo Almeida · 2026-07-28
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 
@@ -167,6 +168,18 @@ class TestSanitizeOutbound:
         assert res.action is OutboundAction.PASS
         assert res.sanitized_text == CLEAN_PTBR
         assert res.reasons == ()
+
+    def test_interception_log_contains_only_hash_not_raw_content(self, caplog) -> None:
+        raw_cpf = "000.000.000-00"
+        candidate = f"model provider is rate-limiting; CPF {raw_cpf}"
+
+        with caplog.at_level(logging.WARNING):
+            sanitize_outbound(candidate, channel="api")
+
+        log_text = caplog.text
+        assert raw_cpf not in log_text
+        assert candidate not in log_text
+        assert hashlib.sha256(candidate.encode("utf-8")).hexdigest() in log_text
 
     def test_texto_vazio_passa(self):
         res = sanitize_outbound("")

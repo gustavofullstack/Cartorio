@@ -442,17 +442,16 @@ def registrar_consentimento_v2(
 
 
 # ============================================================================
-# D28 — Direito ao esquecimento (soft/hard delete real)
+# D28 — Direito ao esquecimento legado (desativado)
 # ============================================================================
 
 
 @lgpd_v2_router.delete(
     "/lgpd/cliente/{cliente_id}",
-    summary="Direito ao esquecimento (LGPD art. 18 V)",
+    summary="Direito ao esquecimento legado (desativado)",
     description=(
-        "Executa soft delete com anonimizacao de PII (LGPD art. 18 V).\n\n"
-        " cascade em todas as tabelas que referenciam cliente_id.\n"
-        "Reversivel ate 30 dias (LGPD art. 18 V §2).\n\n"
+        "Rota retirada durante a contencao P0 por nao compartilhar a transacao "
+        "atomica do endpoint canonico DELETE /api/v1/cliente/{cliente_id}.\n\n"
         "Auth: JWT Bearer (titular ou DPO)."
     ),
 )
@@ -463,47 +462,16 @@ def direito_esquecimento_v2(
     _payload: dict = Depends(require_cliente_or_dpo),  # type: ignore[type-arg]
     motivo: str = "cliente_solicitou",
 ) -> dict[str, Any]:
-    """Direito ao esquecimento real (D28, LGPD art. 18 V)."""
-    from app.services.lgpd_direito_esquecimento import direito_esquecimento
-
-    result = direito_esquecimento(
-        db,
-        cliente_id,
-        actor_id=_payload.get("sub", "unknown"),
-        motivo=motivo,
-    )
-
-    if result.get("erro") == "cliente_nao_encontrado":
-        raise HTTPException(
-            status_code=404,
-            detail={"erro": "CLIENTE_NOT_FOUND", "cliente_id": cliente_id},
-        )
-
-    # Audit log adicional do endpoint
-    AuditService.log(
-        db,
-        actor_id=_payload.get("sub", "unknown"),
-        actor_type="dpo" if _payload.get("dpo") else "cliente",
-        action="lgpd.esquecimento.v2",
-        resource=f"cliente:{cliente_id}",
-        payload={
-            "motivo": motivo,
-            "total_rows_affected": result.get("total_rows_affected", 0),
-            "reversivel_ate": result.get("reversivel_ate"),
+    """Recusa o fluxo legado; a eliminacao atomica existe apenas no endpoint canonico."""
+    del request, db, _payload, motivo
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "erro": "LGPD_ERASURE_LEGACY_DISABLED",
+            "mensagem": "Use o fluxo canonico de eliminacao autenticada.",
+            "canonical_endpoint": f"/api/v1/cliente/{cliente_id}",
         },
-        **audit_kwargs(request),
     )
-
-    return {
-        "status": "ok",
-        "direito": "esquecimento",
-        "cliente_id": cliente_id,
-        "deleted_at": result.get("deleted_at"),
-        "anonymized_tables": result.get("anonymized_tables", []),
-        "total_rows_affected": result.get("total_rows_affected", 0),
-        "reversivel_ate": result.get("reversivel_ate"),
-        "audit_log_id": result.get("audit_log_id"),
-    }
 
 
 # ============================================================================

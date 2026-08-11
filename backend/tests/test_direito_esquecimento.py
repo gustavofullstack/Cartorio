@@ -26,6 +26,18 @@ from app.services.lgpd.direito_esquecimento import (  # noqa: E402
 )
 
 
+@pytest.fixture(autouse=True)
+def _disable_live_redis(monkeypatch):
+    class AvailableRedis:
+        def scan_iter(self, *, match: str, count: int):
+            return iter(())
+
+        def delete(self, *keys: str) -> int:
+            return 0
+
+    monkeypatch.setattr("app.services.pietra_memoria.get_redis", AvailableRedis)
+
+
 @pytest.fixture
 def db_session():
     """SQLite in-memory para testes de direito ao esquecimento."""
@@ -50,7 +62,7 @@ def _make_cliente(db, cpf_hash: str = "hash1234567890", nome: str = "Joao da Sil
         cpf_hash=cpf_hash,
         nome=nome,
         email="joao@example.com",
-        telefone_hash="tel_hash_456",
+        telefone_hash="b" * 64,
         consentimento_lgpd=True,
     )
     db.add(c)
@@ -93,6 +105,8 @@ def test_cliente_sem_protocolo_faz_hard_delete(db_session) -> None:
     assert result.cliente_id == cliente_id
     assert result.motivo == MotivoEncerramento.REVOGACAO_CONSENTIMENTO
     assert result.data_encerramento is not None
+    assert result.erasure_complete is False
+    assert "chat_pipeline:unbound_identity" in result.uncovered_stores
     # Cliente realmente removido do DB
     assert db_session.get(Cliente, cliente_id) is None
 

@@ -356,7 +356,7 @@ class TestDireitoEsquecimento:
     """Testes do endpoint DELETE /lgpd/cliente/{id} (D28)."""
 
     def test_esquecimento_200(self, client: TestClient, db_session):
-        """D28 happy path: soft delete com anonimizacao."""
+        """D28 legado aponta para o endpoint canonico atomico."""
         c = _create_cliente(db_session)
         dpo_token = _make_dpo_token()
 
@@ -365,17 +365,13 @@ class TestDireitoEsquecimento:
             headers={"Authorization": f"Bearer {dpo_token}"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 410
         data = response.json()
-        assert data["status"] == "ok"
-        assert data["direito"] == "esquecimento"
-        assert data["cliente_id"] == c.id
-        assert "deleted_at" in data
-        assert "anonymized_tables" in data
-        assert "reversivel_ate" in data
+        assert data["detail"]["erro"] == "LGPD_ERASURE_LEGACY_DISABLED"
+        assert data["detail"]["canonical_endpoint"] == f"/api/v1/cliente/{c.id}"
 
     def test_esquecimento_404(self, client: TestClient):
-        """D28: retorna 404 quando cliente nao existe."""
+        """D28 legado nao consulta nem altera o titular."""
         dpo_token = _make_dpo_token()
 
         response = client.delete(
@@ -383,7 +379,7 @@ class TestDireitoEsquecimento:
             headers={"Authorization": f"Bearer {dpo_token}"},
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 410
 
     def test_esquecimento_401_without_token(self, client: TestClient):
         """D28: retorna 401 sem token."""
@@ -391,14 +387,15 @@ class TestDireitoEsquecimento:
         assert response.status_code == 401
 
     def test_esquecimento_marcou_deleted_at(self, client: TestClient, db_session):
-        """D28: verifica que deleted_at foi setado no DB."""
+        """D28 legado nao executa mutacao parcial."""
         c = _create_cliente(db_session)
         dpo_token = _make_dpo_token()
 
-        client.delete(
+        response = client.delete(
             f"/api/v1/lgpd/cliente/{c.id}",
             headers={"Authorization": f"Bearer {dpo_token}"},
         )
+        assert response.status_code == 410
 
         # Verifica no DB
         row = (
@@ -410,8 +407,8 @@ class TestDireitoEsquecimento:
             .first()
         )
         assert row is not None
-        assert row["deleted_at"] is not None
-        assert row["nome"] == "[ANONIMIZADO art.18 V]"
+        assert row["deleted_at"] is None
+        assert row["nome"] != "[ANONIMIZADO art.18 V]"
 
     def test_esquecimento_with_motivo(self, client: TestClient, db_session):
         """D28: motivo customizado."""
@@ -423,7 +420,7 @@ class TestDireitoEsquecimento:
             headers={"Authorization": f"Bearer {dpo_token}"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 410
 
 
 # ===========================================================================

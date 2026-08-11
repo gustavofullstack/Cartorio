@@ -33,6 +33,7 @@ from app.services.chat_pipeline import (
     fetch_queue,
     hash_content,
     health_check,
+    pseudonymize_conversation_id,
     resume_burst,
     scrub_pii_3_layers,
 )
@@ -141,13 +142,13 @@ class TestChannelAdapter:
 class TestCheckIdempotency:
     @pytest.mark.asyncio
     async def test_no_update_id_always_process(self) -> None:
-        result = await check_idempotency("", Channel.TELEGRAM)
+        result = await check_idempotency("", Channel.TELEGRAM, "conversation-1")
         assert result is False
 
     @pytest.mark.asyncio
     async def test_no_bus_returns_false(self) -> None:
         with patch("app.services.chat_pipeline.get_bus", return_value=None):
-            result = await check_idempotency("upd-1", Channel.TELEGRAM)
+            result = await check_idempotency("upd-1", Channel.TELEGRAM, "conversation-1")
         assert result is False
 
     @pytest.mark.asyncio
@@ -155,7 +156,7 @@ class TestCheckIdempotency:
         bus = _make_bus_mock()
         bus.client.set = AsyncMock(return_value=True)  # SETNX succeeded
         with patch("app.services.chat_pipeline.get_bus", return_value=bus):
-            result = await check_idempotency("upd-1", Channel.WHATSAPP)
+            result = await check_idempotency("upd-1", Channel.WHATSAPP, "conversation-1")
         assert result is False  # False = processar
 
     @pytest.mark.asyncio
@@ -163,21 +164,25 @@ class TestCheckIdempotency:
         bus = _make_bus_mock()
         bus.client.set = AsyncMock(return_value=None)  # SETNX failed = ja existe
         with patch("app.services.chat_pipeline.get_bus", return_value=bus):
-            result = await check_idempotency("upd-1", Channel.WHATSAPP)
+            result = await check_idempotency("upd-1", Channel.WHATSAPP, "conversation-1")
         assert result is True  # True = pular
 
     @pytest.mark.asyncio
     async def test_idempotency_key_format(self) -> None:
-        """Key inclui canal para namespacing entre telegram e whatsapp."""
+        """Key usa apenas pseudonimos e permite purge por conversa."""
         bus = _make_bus_mock()
         bus.client.set = AsyncMock(return_value=True)
         with patch("app.services.chat_pipeline.get_bus", return_value=bus):
-            await check_idempotency("upd-1", Channel.WHATSAPP)
-        # Verifica que key foi construida com canal
+            await check_idempotency("upd-1", Channel.WHATSAPP, "conversation-1")
         call_args = bus.client.set.call_args
         key = call_args.args[0] if call_args.args else call_args.kwargs.get("key", "")
-        assert "whatsapp" in key
-        assert "upd-1" in key
+        conversation_pseudonym = pseudonymize_conversation_id(
+            Channel.WHATSAPP,
+            "conversation-1",
+        )
+        assert key.startswith(f"cartorio:idem:chat_pipeline:{conversation_pseudonym}.")
+        assert "conversation-1" not in key
+        assert "upd-1" not in key
 
 
 # =============================================================================

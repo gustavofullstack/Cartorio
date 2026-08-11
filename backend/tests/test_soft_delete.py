@@ -6,7 +6,7 @@ Usa a interface real de DeleteResult: tipo="hard"|"soft".
 from __future__ import annotations
 
 import datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -50,17 +50,23 @@ def test_direito_esquecimento_sem_protocolos_hard_delete() -> None:
     cliente.deleted_at = None
     cliente.nome = "Test"
     cliente.cpf_hash = "a" * 64
+    cliente.telefone_hash = "b" * 64
     db.get.return_value = cliente
     # Protocolos órfãos query (cancelado/expirado) retorna lista vazia
     db.query.return_value.filter.return_value.filter.return_value.all.return_value = []
 
-    result = direito_esquecimento(db, cliente_id=1)
+    redis_client = MagicMock()
+    redis_client.scan_iter.return_value = []
+    redis_client.delete.return_value = 0
+    with patch("app.services.pietra_memoria.get_redis", return_value=redis_client):
+        result = direito_esquecimento(db, cliente_id=1)
 
     # Interface real usa .tipo (não .action)
     assert result.tipo == "hard"
     assert result.protocolos_ativos == 0
     db.delete.assert_called_with(cliente)
-    db.commit.assert_called()
+    db.flush.assert_called()
+    db.commit.assert_not_called()
 
 
 def test_direito_esquecimento_com_protocolos_soft_delete() -> None:
@@ -72,17 +78,22 @@ def test_direito_esquecimento_com_protocolos_soft_delete() -> None:
     cliente = MagicMock()
     cliente.deleted_at = None  # não está soft-deletado ainda
     cliente.cpf_hash = "abcdef0123456789abcdef0123456789"
-    cliente.telefone_hash = "def"
+    cliente.telefone_hash = "b" * 64
     cliente.email = "test@x.com"
     db.get.return_value = cliente
 
-    result = direito_esquecimento(db, cliente_id=1, motivo="solicitacao_titular")
+    redis_client = MagicMock()
+    redis_client.scan_iter.return_value = []
+    redis_client.delete.return_value = 0
+    with patch("app.services.pietra_memoria.get_redis", return_value=redis_client):
+        result = direito_esquecimento(db, cliente_id=1, motivo="solicitacao_titular")
 
     assert result.tipo == "soft"
     assert cliente.deleted_at is not None
     assert cliente.email is None  # anonimizado
     assert cliente.nome.startswith("TITULAR_REVOGADO_")  # anonimizado
-    db.commit.assert_called()
+    db.flush.assert_called()
+    db.commit.assert_not_called()
 
 
 def test_delete_result_e_dataclass() -> None:

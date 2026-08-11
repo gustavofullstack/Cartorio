@@ -85,11 +85,12 @@ def client(test_engine, test_session_factory):
         try:
             from app.models.cliente import Cliente
             from app.services.pii import hash_pii
+            from app.services.pietra_coleta import hash_phone
 
             c = Cliente(
                 cpf_hash=hash_pii("123.456.789-00", salt="a" * 32),
                 nome="Cliente de Teste",
-                whatsapp_number="5511999999999",
+                telefone_hash=hash_phone("5511999999999"),
                 consentimento_lgpd=True,
             )
             db.add(c)
@@ -516,6 +517,62 @@ class TestWebhookHmacFailClosed:
                 "/api/v1/whatsapp/webhook",
                 content=self._raw_payload(),
                 headers={"Content-Type": "application/json"},
+            )
+        assert response.status_code == 503
+        assert pipeline.await_count == 0
+
+    def test_production_ignores_explicit_signature_opt_out(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from app.api.v1 import whatsapp
+
+        monkeypatch.setattr(whatsapp.settings, "app_env", "production")
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "false")
+        monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "test-webhook-secret")
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            response = client.post(
+                "/api/v1/whatsapp/webhook",
+                content=self._raw_payload(),
+                headers={"Content-Type": "application/json"},
+            )
+        assert response.status_code == 401
+        assert pipeline.await_count == 0
+
+    def test_production_without_secret_is_misconfigured_even_when_opted_out(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from app.api.v1 import whatsapp
+
+        monkeypatch.setattr(whatsapp.settings, "app_env", "production")
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "false")
+        monkeypatch.delenv("EVOLUTION_WEBHOOK_SECRET", raising=False)
+        monkeypatch.delenv("EVOLUTION_WEBHOOK_SECRET_PREV", raising=False)
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            response = client.post(
+                "/api/v1/whatsapp/webhook",
+                content=self._raw_payload(),
+                headers={"Content-Type": "application/json"},
+            )
+        assert response.status_code == 503
+        assert pipeline.await_count == 0
+
+    def test_supplied_auth_without_secret_is_never_treated_as_valid_dev_mode(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from app.api.v1 import whatsapp
+
+        monkeypatch.setattr(whatsapp.settings, "app_env", "test")
+        monkeypatch.setenv("EVOLUTION_REQUIRE_SIGNATURE", "false")
+        monkeypatch.delenv("EVOLUTION_WEBHOOK_SECRET", raising=False)
+        monkeypatch.delenv("EVOLUTION_WEBHOOK_SECRET_PREV", raising=False)
+        with patch("app.api.v1.whatsapp.process_message", new=AsyncMock()) as pipeline:
+            response = client.post(
+                "/api/v1/whatsapp/webhook",
+                content=self._raw_payload(),
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Hub-Signature-256": "invalid-signature",
+                },
             )
         assert response.status_code == 503
         assert pipeline.await_count == 0

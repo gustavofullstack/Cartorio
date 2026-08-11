@@ -52,18 +52,21 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_cartorio_api_key
 from app.config import settings
 from app.db import get_db
+from app.models.cliente import Cliente
 from app.services.chat_pipeline import (
     Channel,
     ChannelAdapter,
     InboundMessage,
     OutboundMessage,
     process_message,
+    pseudonymize_conversation_id,
     health_check as pipeline_health,
 )
 from app.services.redis_bus import get_bus
@@ -77,10 +80,46 @@ from app.services.evolution_ingest import (
     is_messages_upsert_event,
     validate_evolution_webhook_auth,
 )
+from app.services.pietra_coleta import hash_phone
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
+
+
+def _find_cliente_by_whatsapp_hash(
+    db: Session,
+    normalized_sender: str | None,
+) -> Cliente | None:
+    """Localiza cliente pelo hash canonico sem consultar telefone em claro."""
+    if not normalized_sender:
+        return None
+    telefone_hash = hash_phone(normalized_sender)
+    return db.execute(
+        select(Cliente).where(Cliente.telefone_hash == telefone_hash)
+    ).scalar_one_or_none()
+
+
+def _bind_whatsapp_identity(
+    db: Session,
+    *,
+    cliente: Cliente,
+    conversation_pseudonym: str,
+) -> None:
+    """Vincula o pseudonimo somente depois de consentimento valido."""
+
+    if cliente.id is None:
+        raise RuntimeError("cliente must be persisted before channel binding")
+    from app.services.channel_identity import bind_channel_identity
+
+    bind_channel_identity(
+        db,
+        cliente_id=cliente.id,
+        channel="whatsapp",
+        conversation_pseudonym=conversation_pseudonym,
+        hmac_kid=settings.pietra_conversation_hmac_kid,
+    )
+
 
 # ===== Config (espelha telegram.py constantes) =====
 EVOLUTION_BASE_URL = settings.evolution_base_url or "http://cartorio_evolution-api:8080"
@@ -134,6 +173,7 @@ def split_whatsapp_text(text: str, max_len: int = MAX_RESPONSE_LEN) -> list[str]
         chunks.append(remaining[:cut].rstrip())
         remaining = remaining[cut:].lstrip()
     return chunks
+
 
 LGPD_NOTICE = (
     "*AVISO LGPD (Lei 13.709/2018)*\n"
@@ -245,6 +285,7 @@ class WhatsAppAdapter(ChannelAdapter):
                 logger.warning("WhatsApp egress blocked: recipient not authorized")
                 return False
             from app.services.notificacao import _strip_emojis
+
             client = await self._get_client()
             url = f"{self.base_url}/message/sendText/{self.instance}"
             clean_text = _strip_emojis(msg.text or "").strip()
@@ -625,26 +666,30 @@ async def whatsapp_webhook(
     secret_configured = bool(
         os.getenv("EVOLUTION_WEBHOOK_SECRET") or os.getenv("EVOLUTION_WEBHOOK_SECRET_PREV")
     )
+    production_mode = settings.app_env == "production"
     require_env = os.getenv("EVOLUTION_REQUIRE_SIGNATURE")
     if require_env is not None:
-        signature_required = require_env.lower() == "true"
+        signature_required = production_mode or require_env.lower() == "true"
     else:
-        signature_required = secret_configured
-    if signature_required and not secret_configured:
+        signature_required = production_mode or secret_configured
+    auth_supplied = bool(signature or shared_secret_header)
+    if (signature_required or auth_supplied) and not secret_configured:
         logger.error("WhatsApp webhook: HMAC obrigatório sem secret configurado")
         raise HTTPException(status_code=503, detail="webhook authentication misconfigured")
 
     adapter = get_adapter()
-    signature_valid = await adapter.verify_signature(
-        raw_body, signature, shared_secret_header=shared_secret_header
-    )
-    if signature_required and not signature_valid:
+    signature_valid = False
+    if secret_configured:
+        signature_valid = await adapter.verify_signature(
+            raw_body, signature, shared_secret_header=shared_secret_header
+        )
+    if (signature_required or auth_supplied) and not signature_valid:
         logger.warning("WhatsApp webhook: auth inválida (rejeitando)")
         # E3.06: 401 do webhook vira serie observavel (anti brute-force/scan)
         store.inc_webhook_auth_failures("whatsapp")
         raise HTTPException(status_code=401, detail="invalid webhook signature")
-    if not signature_required and not signature_valid:
-        logger.warning("WhatsApp webhook: auth inválida aceita somente em modo não obrigatório")
+    if not signature_required and not auth_supplied:
+        logger.warning("WhatsApp webhook sem auth aceito somente fora de produção")
 
     # 2. Parse + allowlist antes de banco, consentimento, cache, fila ou LLM.
     inbound = parse_evolution_payload(payload)
@@ -691,114 +736,166 @@ async def whatsapp_webhook(
     normalized_sender = normalize_whatsapp_number(sender_alt) or normalize_whatsapp_number(
         sender_id
     )
-    num_puro = (normalized_sender or "").lstrip("+")
     sender_hash = pseudonymous_sender_id(
         sender_id,
         hmac_key=settings.pietra_whatsapp_allowlist_hmac_key,
     )
-    consent_key = f"consent:wa:{sender_hash}"
+    conversation_pseudonym = pseudonymize_conversation_id(Channel.WHATSAPP, sender_id)
+    consent_key = f"consent:wa:{conversation_pseudonym}"
+    consent_notice_key = f"consent:wa:notice:{conversation_pseudonym}"
     text_clean = inbound.text.strip().lower()
 
     if not inbound.is_group:
         bus = get_bus()
-        has_consent = False
+        # DB e a fonte canonica. Redis e somente cache e jamais concede acesso
+        # sozinho, evitando que uma chave stale reverta um opt-out duravel.
+        try:
+            cliente_db = _find_cliente_by_whatsapp_hash(db, normalized_sender)
+        except Exception as exc:
+            db.rollback()
+            logger.error("DB consent lookup failed: %s", type(exc).__name__)
+            raise HTTPException(status_code=503, detail="consent persistence unavailable") from exc
 
-        # 1. Verifica no Redis
-        if bus:
+        has_consent = bool(cliente_db and cliente_db.consentimento_lgpd)
+        if has_consent and cliente_db is not None:
             try:
-                consent_flag = await bus.client.get(consent_key)
-                if consent_flag in (b"1", "1"):
-                    has_consent = True
-            except Exception as e:
-                logger.warning("Redis consent check failed: %s", e)
-
-        # 2. Verifica no DB
-        if not has_consent:
-            try:
-                from app.models.cliente import Cliente
-                from sqlalchemy import select
-
-                cliente_db = db.execute(
-                    select(Cliente).where(Cliente.whatsapp_number == num_puro)
-                ).scalar_one_or_none()
-                if cliente_db and cliente_db.consentimento_lgpd:
-                    has_consent = True
-                    if bus:
-                        await bus.client.set(consent_key, "1", ex=86400)
-            except Exception as e:
-                logger.warning("DB consent check failed: %s", e)
+                _bind_whatsapp_identity(
+                    db,
+                    cliente=cliente_db,
+                    conversation_pseudonym=conversation_pseudonym,
+                )
+                db.commit()
+            except Exception as exc:
+                db.rollback()
+                logger.error("Consent identity binding failed: %s", type(exc).__name__)
+                raise HTTPException(
+                    status_code=503,
+                    detail="consent persistence unavailable",
+                ) from exc
+            if bus:
+                try:
+                    await bus.client.set(consent_key, "1", ex=86400)
+                except Exception as exc:
+                    logger.warning("Redis consent cache sync failed: %s", type(exc).__name__)
 
         # 3. Opt-out e opt-in sao sempre explicitos; contato inicial nao e consentimento.
         if text_clean in ("parar", "sair", "optout", "opt-out", "cancelar"):
-            if has_consent:
+            if has_consent and cliente_db is not None:
+                try:
+                    from app.models.cliente import MotivoEncerramento
+
+                    cliente_db.consentimento_lgpd = False
+                    cliente_db.motivo_encerramento = MotivoEncerramento.REVOGACAO_CONSENTIMENTO
+                    AuditService.log(
+                        db,
+                        actor_id="whatsapp:cliente",
+                        actor_type="user",
+                        action="consent.whatsapp.revoked",
+                        resource=f"cliente:{cliente_db.id}",
+                        payload={
+                            "sender_hash": sender_hash,
+                            "status": "revoked",
+                            "canal": "whatsapp",
+                        },
+                        canal="whatsapp",
+                    )
+                except Exception as exc:
+                    db.rollback()
+                    logger.error("Consent revocation transaction failed: %s", type(exc).__name__)
+                    raise HTTPException(
+                        status_code=503,
+                        detail="consent revocation not persisted",
+                    ) from exc
+
+                cache_synced = True
                 if bus:
                     try:
-                        await bus.client.delete(consent_key)
-                    except Exception as e:
-                        logger.warning("Redis consent delete failed: %s", e)
-
-                try:
-                    from app.models.cliente import Cliente
-                    from app.models.cliente import MotivoEncerramento
-                    from sqlalchemy import select
-
-                    cliente_db = db.execute(
-                        select(Cliente).where(Cliente.whatsapp_number == num_puro)
-                    ).scalar_one_or_none()
-                    if cliente_db:
-                        cliente_db.consentimento_lgpd = False
-                        cliente_db.motivo_encerramento = MotivoEncerramento.REVOGACAO_CONSENTIMENTO
-                        db.commit()
-                except Exception as e:
-                    logger.warning("DB consent revocation failed: %s", e)
-
-                AuditService.log_system_action(
-                    action="consent.whatsapp.revoked",
-                    payload={"sender_hash": sender_hash, "status": "revoked", "canal": "whatsapp"},
-                )
+                        await bus.client.delete(consent_key, consent_notice_key)
+                    except Exception as exc:
+                        cache_synced = False
+                        logger.warning("Redis consent delete failed: %s", type(exc).__name__)
                 msg_optout = OutboundMessage(
                     channel=inbound.channel,
                     recipient_id=sender_id,
                     text="Entendido. Seu consentimento foi revogado com sucesso. Seus dados de atendimento nao serao mais processados por nossa IA. Caso queira reativar, basta enviar uma nova mensagem e digitar SIM.",
                 )
                 await adapter.send(msg_optout)
-                return {"status": "ok", "detail": "consent_revoked"}
+                return {
+                    "status": "ok",
+                    "detail": "consent_revoked",
+                    "cache_synced": cache_synced,
+                }
             return {"status": "ok", "detail": "consent_required"}
 
         if not has_consent and text_clean in ("sim", "s", "aceito", "aceitar"):
+            if cliente_db is None:
+                raise HTTPException(status_code=503, detail="consent persistence unavailable")
+            try:
+                cliente_db.consentimento_lgpd = True
+                cliente_db.consentimento_em = datetime.now(timezone.utc)
+                cliente_db.consentimento_canal = "whatsapp"
+                _bind_whatsapp_identity(
+                    db,
+                    cliente=cliente_db,
+                    conversation_pseudonym=conversation_pseudonym,
+                )
+                AuditService.log(
+                    db,
+                    actor_id="whatsapp:cliente",
+                    actor_type="user",
+                    action="consent.whatsapp",
+                    resource=f"cliente:{cliente_db.id}",
+                    payload={
+                        "sender_hash": sender_hash,
+                        "status": "granted",
+                        "canal": "whatsapp",
+                    },
+                    canal="whatsapp",
+                )
+            except Exception as exc:
+                db.rollback()
+                logger.error("Consent grant transaction failed: %s", type(exc).__name__)
+                raise HTTPException(
+                    status_code=503,
+                    detail="consent grant not persisted",
+                ) from exc
+
+            cache_synced = True
             if bus:
                 try:
                     await bus.client.set(consent_key, "1", ex=86400)
-                except Exception as e:
-                    logger.warning("Redis consent write failed: %s", e)
-            try:
-                from app.models.cliente import Cliente
-                from sqlalchemy import select
-
-                cliente_db = db.execute(
-                    select(Cliente).where(Cliente.whatsapp_number == num_puro)
-                ).scalar_one_or_none()
-                if cliente_db:
-                    cliente_db.consentimento_lgpd = True
-                    cliente_db.consentimento_em = datetime.now(timezone.utc)
-                    cliente_db.consentimento_canal = "whatsapp"
-                    db.commit()
-            except Exception as e:
-                logger.warning("DB consent update failed: %s", e)
-            AuditService.log_system_action(
-                action="consent.whatsapp",
-                payload={"sender_hash": sender_hash, "status": "granted", "canal": "whatsapp"},
-            )
-            return {"status": "ok", "detail": "consent_granted"}
+                    await bus.client.delete(consent_notice_key)
+                except Exception as exc:
+                    cache_synced = False
+                    logger.warning("Redis consent write failed: %s", type(exc).__name__)
+            return {
+                "status": "ok",
+                "detail": "consent_granted",
+                "cache_synced": cache_synced,
+            }
 
         if not has_consent:
-            await adapter.send(
-                OutboundMessage(
-                    channel=inbound.channel,
-                    recipient_id=sender_id,
-                    text=LGPD_NOTICE,
+            should_send_notice = True
+            if bus:
+                try:
+                    should_send_notice = bool(
+                        await bus.client.set(
+                            consent_notice_key,
+                            "1",
+                            ex=600,
+                            nx=True,
+                        )
+                    )
+                except Exception as e:
+                    logger.warning("Redis consent notice debounce failed: %s", e)
+            if should_send_notice:
+                await adapter.send(
+                    OutboundMessage(
+                        channel=inbound.channel,
+                        recipient_id=sender_id,
+                        text=LGPD_NOTICE,
+                    )
                 )
-            )
             AuditService.log_system_action(
                 action="consent.whatsapp.requested",
                 payload={"sender_hash": sender_hash, "status": "pending", "canal": "whatsapp"},

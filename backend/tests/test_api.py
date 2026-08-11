@@ -176,53 +176,18 @@ def test_db_session_scope_rollback(test_engine, test_session_factory):
 
 
 def test_atendimento_historico_redis_and_db(client):
-    from unittest.mock import MagicMock, patch
-
-    # Mock Redis client
-    mock_redis = MagicMock()
-    mock_redis.lrange.return_value = [
-        '{"role": "user", "content": "Ola da fila do Redis", "timestamp": "2026-06-23T19:00:00Z"}',
-        '{"role": "assistant", "content": "Olá do Bot!", "timestamp": "2026-06-23T19:00:05Z"}',
-    ]
-
-    with patch("redis.from_url", return_value=mock_redis):
-        resp = client.get("/api/v1/atendimento/user123/historico")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["session_id"] == "user123"
-        assert data["total"] == 2
-        assert data["messages"][0]["content"] == "Ola da fila do Redis"
-        assert data["messages"][1]["content"] == "Olá do Bot!"
+    """Historico legado nunca aceita identificador externo nem sem API key."""
+    resp = client.get("/api/v1/atendimento/user123/historico")
+    assert resp.status_code == 401
 
 
 def test_atendimento_historico_db_fallback(client):
-    from unittest.mock import MagicMock, patch
-    from app.models.conversa import Conversa
-    from app.db import session_scope
+    """Mesmo autenticado, path raw falha fechado sem tentar resolver por PII."""
+    from tests.conftest import TEST_CARTORIO_API_KEY
 
-    # Mock Redis to return empty list (trigger fallback to DB)
-    mock_redis = MagicMock()
-    mock_redis.lrange.return_value = []
-
-    # Save a dummy conversa in SQLite test DB
     unique_external_id = "user_db_fallback_isolated_xyz"
-    with session_scope() as db:
-        conversa = Conversa(
-            canal="whatsapp",
-            external_id=unique_external_id,
-            raw_message_hash="hash123",
-            raw_message_scrubbed="Mensagem do DB",
-            bot_response="Resposta do Bot DB",
-        )
-        db.add(conversa)
-        db.flush()
-        db.commit()
-
-    with patch("redis.from_url", return_value=mock_redis):
-        resp = client.get(f"/api/v1/atendimento/{unique_external_id}/historico")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["session_id"] == unique_external_id
-        assert data["total"] == 2
-        assert data["messages"][0]["content"] == "Mensagem do DB"
-        assert data["messages"][1]["content"] == "Resposta do Bot DB"
+    resp = client.get(
+        f"/api/v1/atendimento/{unique_external_id}/historico",
+        headers={"X-API-Key": TEST_CARTORIO_API_KEY},
+    )
+    assert resp.status_code == 404

@@ -86,6 +86,8 @@ os.environ.setdefault("EVOLUTION_WEBHOOK_SECRET", "")
 os.environ["EVOLUTION_LEGACY_WEBHOOK_ENABLED"] = "true"
 os.environ["PIETRA_WHATSAPP_RESTRICT_INBOUND"] = "false"
 os.environ["PIETRA_WHATSAPP_ALLOWLIST_HMAC_KEY"] = "b" * 64
+os.environ["PIETRA_CONVERSATION_HMAC_KEY"] = "c" * 64
+os.environ["PIETRA_CONVERSATION_HMAC_KID"] = "test-v1"
 os.environ["BRAIN_API_ENABLED"] = "true"
 os.environ["INTERNAL_API_REQUIRE_KEY"] = "false"
 

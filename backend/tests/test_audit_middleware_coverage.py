@@ -38,7 +38,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -122,7 +122,7 @@ def cliente(db_session: Session):
         nome="Audit Coverage Cliente",
         cpf_hash="audit_coverage_hash_001",
         email="audit@test.com",
-        telefone_hash="audit_tel_hash_001",
+        telefone_hash="b" * 64,
         consentimento_lgpd=True,
         consentimento_em=datetime.now(tz=timezone.utc),
     )
@@ -310,10 +310,14 @@ class TestClienteMutationsAuditContext:
         self, client: TestClient, cliente, db_session: Session
     ):
         """DELETE /cliente/{id} → AuditLog com contexto completo."""
-        response = client.delete(
-            f"/api/v1/cliente/{cliente.id}",
-            headers=_request_context_headers(),
-        )
+        redis_client = MagicMock()
+        redis_client.scan_iter.return_value = []
+        redis_client.delete.return_value = 0
+        with patch("app.services.pietra_memoria.get_redis", return_value=redis_client):
+            response = client.delete(
+                f"/api/v1/cliente/{cliente.id}",
+                headers=_request_context_headers(),
+            )
         assert response.status_code == 200, response.text
         # DELETE action = f"cliente.delete.{tipo}" (hard ou soft)
         _assert_audit_log_has_context(

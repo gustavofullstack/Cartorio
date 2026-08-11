@@ -265,6 +265,76 @@ class TestThinkTagStrip:
         assert "raciocinio interno" not in content
         assert "Resposta limpa." in content
 
+
+class TestOutboundPiiScrub:
+    """Todo texto gerado pelo provider e scrubado antes dos guardrails."""
+
+    def test_normal_completion_never_returns_raw_cpf(self, client, monkeypatch):
+        raw_cpf = "000.000.000-00"
+        _patch_llm(monkeypatch, f"O CPF informado foi {raw_cpf}. Atendimento registrado.")
+
+        response = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={"messages": [{"role": "user", "content": "continue"}]},
+        )
+
+        assert response.status_code == 200
+        content = response.json()["choices"][0]["message"]["content"]
+        assert raw_cpf not in content
+        assert "REDACTED" in content
+
+    def test_tool_call_companion_is_scrubbed_before_outbound_guard(self, client, monkeypatch):
+        from app.services import pietra_outbound_guard
+
+        raw_cpf = "000.000.000-00"
+        seen_by_guard: list[str] = []
+        original_guard = pietra_outbound_guard.sanitize_outbound
+
+        def capture_guard(text: str, *, channel: str = "api"):
+            seen_by_guard.append(text)
+            return original_guard(text, channel=channel)
+
+        async def fake(messages, tools=None, **kwargs):
+            return (
+                {
+                    "content": f"Confirme o CPF {raw_cpf} antes da consulta.",
+                    "tool_calls": [
+                        {
+                            "id": "synthetic-call",
+                            "type": "function",
+                            "function": {"name": "cartorio_saudacao", "arguments": "{}"},
+                        }
+                    ],
+                },
+                "synthetic-provider",
+                "",
+            )
+
+        monkeypatch.setattr("app.services.cartorio_agent._chat_completion", fake)
+        monkeypatch.setattr(pietra_outbound_guard, "sanitize_outbound", capture_guard)
+
+        response = client.post(
+            "/api/v1/pietra/chat/completions",
+            json={
+                "messages": [{"role": "user", "content": "consulte"}],
+                "tools": [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "cartorio_saudacao",
+                            "parameters": {"type": "object", "properties": {}},
+                        },
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["choices"][0]["finish_reason"] == "tool_calls"
+        assert seen_by_guard
+        assert all(raw_cpf not in text for text in seen_by_guard)
+        assert raw_cpf not in (response.json()["choices"][0]["message"]["content"] or "")
+
     def test_unclosed_think_removed(self, client, monkeypatch):
         _patch_llm(monkeypatch, "<think>streaming cortado sem fechar")
         r = client.post(

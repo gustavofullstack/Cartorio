@@ -237,6 +237,23 @@ def erase_cliente(
     if reversivel_ate is None:
         reversivel_ate = datetime.now(tz=timezone.utc) + timedelta(days=30)
 
+    from app.models.cliente import Cliente
+
+    cliente_before = db.get(Cliente, cliente_id)
+    memory_result = None
+    memory_uncovered = ["external:vector", "external:graph", "chat_pipeline:unbound_identity"]
+    if cliente_before is not None and cliente_before.telefone_hash:
+        from app.services.lgpd_memory_retention import erase_subject_memory
+
+        try:
+            memory_result = erase_subject_memory(
+                db,
+                telefone_hash=cliente_before.telefone_hash,
+                cliente_id=cliente_id,
+            )
+        except ValueError:
+            memory_uncovered.append("legacy:invalid_telefone_hash")
+
     # Etapa 1: anonimizar cliente (PK preservada)
     cliente_result = _anonimizar_cliente_row(db, cliente_id, reversivel_ate=reversivel_ate)
     if "erro" in cliente_result:
@@ -265,6 +282,21 @@ def erase_cliente(
     summary = {
         "cliente": cliente_result,
         "conversas": conversas_result,
+        "memory_erasure": {
+            "memoria_conversa_deleted": (
+                memory_result.memoria_conversa_deleted if memory_result else 0
+            ),
+            "session_state_deleted": memory_result.session_state_deleted if memory_result else 0,
+            "redis_keys_deleted": memory_result.redis_keys_deleted if memory_result else 0,
+            "channel_bindings_deleted": (
+                memory_result.channel_bindings_deleted if memory_result else 0
+            ),
+            "redis_available": memory_result.redis_available if memory_result else False,
+            "uncovered_stores": (
+                list(memory_result.uncovered_stores) if memory_result else memory_uncovered
+            ),
+            "erasure_complete": False,
+        },
     }
     audit_id = _audit_erasure(
         db,

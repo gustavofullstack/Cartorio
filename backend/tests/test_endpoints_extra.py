@@ -28,6 +28,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.models.atendimento import Atendimento
 from app.models.base import Base
+from app.models.cliente import Cliente
 
 
 @pytest.fixture
@@ -56,7 +57,7 @@ def client(test_engine, test_session_factory):
     # aparentemente aleatoria (flakiness).
     from app.services.atendimento_cache import invalidate
 
-    invalidate("24h")
+    invalidate("24h-pseudonymous-v2")
     with (
         patch("app.db.engine", test_engine),
         patch("app.db.SessionLocal", test_session_factory),
@@ -90,18 +91,21 @@ def test_health_backup_sem_diretorio(client):
 
 
 def test_agendamento_disponibilidade_dia_valido(client):
-    """Retorna slots para dia valido."""
-    resp = client.get("/api/v1/agendamento/disponibilidade?dia=segunda&hora=10")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["dia"] == "segunda"
-    assert data["vagas"] == 5
-    assert len(data["slots"]) > 0
+    """Falha fechado para dia valido sem uma agenda transacional real."""
+    resp = client.get(
+        "/api/v1/agendamento/disponibilidade?dia=segunda&hora=10",
+        headers={"X-API-Key": "a" * 64},
+    )
+    assert resp.status_code == 503
+    assert resp.json()["detail"]["erro"] == "AGENDA_REAL_INDISPONIVEL"
 
 
 def test_agendamento_disponibilidade_dia_invalido(client):
     """Retorna erro para dia invalido."""
-    resp = client.get("/api/v1/agendamento/disponibilidade?dia=domingo&hora=10")
+    resp = client.get(
+        "/api/v1/agendamento/disponibilidade?dia=domingo&hora=10",
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert "erro" in data
@@ -110,7 +114,10 @@ def test_agendamento_disponibilidade_dia_invalido(client):
 
 def test_agendamento_disponibilidade_hora_fora_expediente(client):
     """Retorna erro para hora fora do expediente (9-17)."""
-    resp = client.get("/api/v1/agendamento/disponibilidade?dia=segunda&hora=20")
+    resp = client.get(
+        "/api/v1/agendamento/disponibilidade?dia=segunda&hora=20",
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert "erro" in data
@@ -118,11 +125,13 @@ def test_agendamento_disponibilidade_hora_fora_expediente(client):
 
 
 def test_agendamento_disponibilidade_hora_inicio(client):
-    """Aceita hora 9 (inicio do expediente)."""
-    resp = client.get("/api/v1/agendamento/disponibilidade?dia=terca&hora=9")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert "slots" in data
+    """Hora valida tambem exige validacao da agenda real."""
+    resp = client.get(
+        "/api/v1/agendamento/disponibilidade?dia=terca&hora=9",
+        headers={"X-API-Key": "a" * 64},
+    )
+    assert resp.status_code == 503
+    assert resp.json()["detail"]["erro"] == "AGENDA_REAL_INDISPONIVEL"
 
 
 # ============================================================================
@@ -233,7 +242,10 @@ def test_atendimentos_ultimas_24h_com_atendimento(client, test_engine):
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 1
-    assert data["atendimentos"][0]["external_id"] == "user1"
+    atendimento = data["atendimentos"][0]
+    assert "external_id" not in atendimento
+    assert len(atendimento["conversation_pseudonym"]) == 64
+    assert "user1" not in str(atendimento)
 
 
 def test_atendimentos_ultimas_24h_exclui_pesquisa_enviada(client, test_engine):
@@ -263,6 +275,30 @@ def test_atendimentos_ultimas_24h_exclui_pesquisa_enviada(client, test_engine):
 # ============================================================================
 
 
+@pytest.mark.parametrize(
+    ("path", "payload"),
+    (
+        ("/api/v1/atendimento/1/pesquisa-enviada", None),
+        ("/api/v1/atendimento", {"canal": "whatsapp", "external_id": "test"}),
+        ("/api/v1/atendimento/1/concluir", {}),
+    ),
+)
+def test_atendimento_mutations_require_api_key(client, path, payload):
+    response = client.post(path, json=payload)
+
+    assert response.status_code == 401
+
+
+def test_criar_atendimento_requires_external_id_even_with_api_key(client):
+    response = client.post(
+        "/api/v1/atendimento",
+        json={"canal": "whatsapp", "tipo": "duvida"},
+        headers={"X-API-Key": "a" * 64},
+    )
+
+    assert response.status_code == 422
+
+
 def test_marcar_pesquisa_enviada_existente(client, test_engine):
     """Marca pesquisa_enviada_em em atendimento existente."""
     SessionLocal = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
@@ -276,10 +312,14 @@ def test_marcar_pesquisa_enviada_existente(client, test_engine):
         s.commit()
         aid = a.id
 
-    resp = client.post(f"/api/v1/atendimento/{aid}/pesquisa-enviada")
+    resp = client.post(
+        f"/api/v1/atendimento/{aid}/pesquisa-enviada",
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is True
+
     assert data["atendimento_id"] == aid
 
     # Verifica que foi persistido
@@ -290,7 +330,10 @@ def test_marcar_pesquisa_enviada_existente(client, test_engine):
 
 def test_marcar_pesquisa_enviada_inexistente(client):
     """Retorna ok=False para atendimento inexistente."""
-    resp = client.post("/api/v1/atendimento/999999/pesquisa-enviada")
+    resp = client.post(
+        "/api/v1/atendimento/999999/pesquisa-enviada",
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is False
@@ -302,7 +345,7 @@ def test_marcar_pesquisa_enviada_inexistente(client):
 # ============================================================================
 
 
-def test_criar_atendimento_basico(client):
+def test_criar_atendimento_basico(client, test_engine):
     """Cria atendimento sem cliente (sem hash PII)."""
     payload = {
         "canal": "whatsapp",
@@ -310,12 +353,25 @@ def test_criar_atendimento_basico(client):
         "tipo": "duvida",
         "contexto_scrubbed": "Cliente perguntou sobre certidao",
     }
-    resp = client.post("/api/v1/atendimento", json=payload)
+    resp = client.post(
+        "/api/v1/atendimento",
+        json=payload,
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is True
+
     assert "atendimento_id" in data
     assert data["atendimento_id"] > 0
+
+    SessionLocal = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
+    with SessionLocal() as session:
+        atendimento = session.get(Atendimento, data["atendimento_id"])
+        assert atendimento is not None
+        assert atendimento.external_id.startswith("hmac:v1:")
+        assert payload["external_id"] not in atendimento.external_id
+        assert atendimento.status == "aguardando_escrevente"
 
 
 def test_criar_atendimento_com_cpf_cliente_novo(client, test_engine):
@@ -327,10 +383,20 @@ def test_criar_atendimento_com_cpf_cliente_novo(client, test_engine):
         "cliente_cpf": "12345678909",
         "cliente_nome": "Joao da Silva",
     }
-    resp = client.post("/api/v1/atendimento", json=payload)
+    resp = client.post(
+        "/api/v1/atendimento",
+        json=payload,
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is True
+
+    SessionLocal = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
+    with SessionLocal() as session:
+        cliente = session.query(Cliente).one()
+        assert cliente.consentimento_lgpd is False
+        assert cliente.consentimento_em is None
 
 
 # ============================================================================
@@ -352,7 +418,11 @@ def test_concluir_atendimento_existente(client, test_engine):
         aid = a.id
 
     payload = {"nota": 5, "comentario": "Otimo atendimento"}
-    resp = client.post(f"/api/v1/atendimento/{aid}/concluir", json=payload)
+    resp = client.post(
+        f"/api/v1/atendimento/{aid}/concluir",
+        json=payload,
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is True
@@ -367,7 +437,11 @@ def test_concluir_atendimento_existente(client, test_engine):
 
 def test_concluir_atendimento_inexistente(client):
     """Retorna ok=False para atendimento inexistente."""
-    resp = client.post("/api/v1/atendimento/999999/concluir", json={})
+    resp = client.post(
+        "/api/v1/atendimento/999999/concluir",
+        json={},
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is False
@@ -380,16 +454,12 @@ def test_concluir_atendimento_inexistente(client):
 
 
 def test_webhook_chatwoot_evento_desconhecido(client):
-    """Evento desconhecido retorna ignored sem acao (Sprint 2 contrato)."""
+    """Chatwoot ausente permanece contido por default."""
     resp = client.post(
         "/api/v1/webhook/chatwoot",
         json={"event": "unknown_event", "foo": "bar"},
     )
-    assert resp.status_code == 200
-    data = resp.json()
-    # Sprint 2: chatwoot_handoff retorna {status, event} em vez de {ok, event}
-    assert data["status"] == "ignored"
-    assert data["event"] == "unknown_event"
+    assert resp.status_code == 503
 
 
 def test_webhook_chatwoot_conversation_resolved(client, test_engine):
@@ -414,16 +484,12 @@ def test_webhook_chatwoot_conversation_resolved(client, test_engine):
         "conversation": {"id": 42, "status": "resolved"},
     }
     resp = client.post("/api/v1/webhook/chatwoot", json=payload)
-    assert resp.status_code == 200
-    data = resp.json()
-    # Sprint 2: contrato mudou para {status: "processed", event_type: ...}
-    assert data["status"] == "processed"
-    assert data["event_type"] == "conversation_status_changed"
+    assert resp.status_code == 503
 
     with SessionLocal() as s:
         a = s.get(Atendimento, aid)
-        assert a.concluido_em is not None
-        assert a.status == "concluido"
+        assert a.concluido_em is None
+        assert a.status == "em_atendimento"
 
 
 def test_webhook_chatwoot_conversation_status_changed_other(client):
@@ -435,9 +501,4 @@ def test_webhook_chatwoot_conversation_status_changed_other(client):
         "conversation": {"id": 99, "status": "open"},
     }
     resp = client.post("/api/v1/webhook/chatwoot", json=payload)
-    assert resp.status_code == 200
-    data = resp.json()
-    # Processa o evento (status open), mas nao marca atendimento como concluido
-    # pois status != resolved
-    assert data["status"] == "processed"
-    assert data["event_type"] == "conversation_status_changed"
+    assert resp.status_code == 503

@@ -907,12 +907,13 @@ class TestAgendamentoDisponibilidade:
 
     @pytest.mark.asyncio
     async def test_valid_dia(self):
+        from fastapi import HTTPException
         from app.api.v1.router import agendamento_disponibilidade
 
-        result = await agendamento_disponibilidade(dia="segunda", hora=10)
-        assert result["dia"] == "segunda"
-        assert result["vagas"] == 5
-        assert len(result["slots"]) > 0
+        with pytest.raises(HTTPException) as exc_info:
+            await agendamento_disponibilidade(dia="segunda", hora=10)
+        assert exc_info.value.status_code == 503
+        assert exc_info.value.detail["erro"] == "AGENDA_REAL_INDISPONIVEL"
 
     @pytest.mark.asyncio
     async def test_invalid_dia(self):
@@ -940,18 +941,22 @@ class TestAgendamentoDisponibilidade:
 
     @pytest.mark.asyncio
     async def test_all_valid_days(self):
+        from fastapi import HTTPException
         from app.api.v1.router import agendamento_disponibilidade
 
         for day in ["segunda", "terca", "quarta", "quinta", "sexta"]:
-            result = await agendamento_disponibilidade(dia=day, hora=12)
-            assert result["vagas"] == 5
+            with pytest.raises(HTTPException) as exc_info:
+                await agendamento_disponibilidade(dia=day, hora=12)
+            assert exc_info.value.status_code == 503
 
     @pytest.mark.asyncio
     async def test_hour_range(self):
+        from fastapi import HTTPException
         from app.api.v1.router import agendamento_disponibilidade
 
-        result = await agendamento_disponibilidade(dia="segunda", hora=15)
-        assert len(result["slots"]) == 2  # 15, 16
+        with pytest.raises(HTTPException) as exc_info:
+            await agendamento_disponibilidade(dia="segunda", hora=15)
+        assert exc_info.value.status_code == 503
 
 
 # ============================================================================
@@ -2007,15 +2012,16 @@ class TestObterHistoricoAtendimento:
         from app.api.v1.router import obter_historico_atendimento
 
         mock_r = MagicMock()
-        mock_r.lrange.return_value = []
+        mock_r.get.return_value = None
         mock_redis_cls.from_url.return_value = mock_r
 
         mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
         mock_session.return_value.__exit__ = MagicMock(return_value=False)
         db = mock_session.return_value.__enter__.return_value
-        db.execute.return_value.scalars.return_value.all.return_value = []
+        binding = SimpleNamespace(cliente_id=1, channel="whatsapp")
+        db.execute.return_value.scalars.return_value.all.side_effect = [[binding], []]
 
-        result = await obter_historico_atendimento("whatsapp:5511999999999:inst")
+        result = await obter_historico_atendimento("a" * 64)
         assert result["total"] == 0
         assert result["messages"] == []
 
@@ -2026,13 +2032,15 @@ class TestObterHistoricoAtendimento:
         from app.api.v1.router import obter_historico_atendimento
 
         mock_r = MagicMock()
-        mock_r.lrange.return_value = [
-            json.dumps({"role": "user", "content": "Hello"}),
-            json.dumps({"role": "assistant", "content": "Hi"}),
-        ]
+        mock_r.get.return_value = json.dumps(["user: Hello", "assistant: Hi"])
         mock_redis_cls.from_url.return_value = mock_r
+        binding = SimpleNamespace(cliente_id=1, channel="whatsapp")
+        mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
+        mock_session.return_value.__exit__ = MagicMock(return_value=False)
+        db = mock_session.return_value.__enter__.return_value
+        db.execute.return_value.scalars.return_value.all.return_value = [binding]
 
-        result = await obter_historico_atendimento("whatsapp:5511999999999:inst")
+        result = await obter_historico_atendimento("b" * 64)
         assert result["total"] == 2
 
     @patch("app.api.v1.router.redis")
@@ -2042,15 +2050,16 @@ class TestObterHistoricoAtendimento:
         from app.api.v1.router import obter_historico_atendimento
 
         mock_r = MagicMock()
-        mock_r.lrange.side_effect = Exception("Redis down")
+        mock_r.get.side_effect = Exception("Redis down")
         mock_redis_cls.from_url.return_value = mock_r
 
         mock_session.return_value.__enter__ = MagicMock(return_value=MagicMock())
         mock_session.return_value.__exit__ = MagicMock(return_value=False)
         db = mock_session.return_value.__enter__.return_value
-        db.execute.return_value.scalars.return_value.all.return_value = []
+        binding = SimpleNamespace(cliente_id=1, channel="whatsapp")
+        db.execute.return_value.scalars.return_value.all.side_effect = [[binding], []]
 
-        result = await obter_historico_atendimento("whatsapp:5511999999999:inst")
+        result = await obter_historico_atendimento("c" * 64)
         assert result["total"] == 0
 
 

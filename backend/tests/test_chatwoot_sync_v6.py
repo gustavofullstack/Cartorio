@@ -11,7 +11,6 @@ Modified by Gustavo Almeida.
 
 from __future__ import annotations
 
-import asyncio
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -62,26 +61,17 @@ def test_message_created_outgoing_triggers_sync(mock_db: MagicMock) -> None:
     assert result["event_type"] == "message_created"
 
 
-@pytest.mark.asyncio
-async def test_message_created_outgoing_uses_local_external_id_for_telegram(
+def test_message_created_outgoing_is_audited_but_direct_dispatch_is_blocked(
     mock_db: MagicMock, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """O canal e metadado; somente external_id e um destino Telegram valido."""
+    """Contencao P0 exige outbox transacional antes de qualquer envio."""
     import app.services.chatwoot_handoff as handoff
 
     mock_db.execute.return_value.scalar_one_or_none.return_value = SimpleNamespace(
         id=3, canal="telegram", external_id="123"
     )
-    sent: dict[str, object] = {}
-
-    async def fake_send(
-        chat_id: str | int, content: str, sender_name: str, conv_id: object
-    ) -> None:
-        sent["chat_id"] = chat_id
-        sent["content"] = content
-
-    monkeypatch.setattr(handoff, "_send_to_telegram", fake_send)
-    monkeypatch.setattr(handoff.AuditService, "log", MagicMock())
+    audit = MagicMock()
+    monkeypatch.setattr(handoff.AuditService, "log", audit)
     handoff._handle_message_created(
         mock_db,
         {
@@ -91,10 +81,8 @@ async def test_message_created_outgoing_uses_local_external_id_for_telegram(
             "sender": {"name": "Escrevente", "id": 5},
         },
     )
-    await asyncio.sleep(0)
-
-    assert sent["chat_id"] == "123"
-    assert "pronto" in str(sent["content"])
+    assert audit.call_args.kwargs["action"] == "chatwoot.sync.outgoing_dispatch_blocked"
+    assert audit.call_args.kwargs["payload"]["dispatch"] == "disabled_requires_transactional_outbox"
 
 
 def test_unknown_event_is_ignored(mock_db: MagicMock) -> None:

@@ -160,7 +160,10 @@ def test_marcar_pesquisa_enviada_grava_audit(client, test_engine):
         db.refresh(a)
         atendimento_id = a.id
 
-    resp = client.post(f"/api/v1/atendimento/{atendimento_id}/pesquisa-enviada")
+    resp = client.post(
+        f"/api/v1/atendimento/{atendimento_id}/pesquisa-enviada",
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200, resp.text
 
     with SessionLocal() as db:
@@ -174,7 +177,10 @@ def test_marcar_pesquisa_enviada_grava_audit(client, test_engine):
 
 def test_marcar_pesquisa_enviada_not_found_grava_audit(client, test_engine):
     """POST /api/v1/atendimento/{id}/pesquisa-enviada com id inexistente grava audit de not_found."""
-    resp = client.post("/api/v1/atendimento/99999/pesquisa-enviada")
+    resp = client.post(
+        "/api/v1/atendimento/99999/pesquisa-enviada",
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["ok"] is False
@@ -202,6 +208,7 @@ def test_concluir_atendimento_grava_audit(client, test_engine):
     resp = client.post(
         f"/api/v1/atendimento/{atendimento_id}/concluir",
         json={"nota": 9, "comentario": "otimo"},
+        headers={"X-API-Key": "a" * 64},
     )
     assert resp.status_code == 200, resp.text
 
@@ -503,7 +510,11 @@ def test_endpoint_atendimento_criar(client, test_engine):
         "tipo": "duvida",
         "contexto_scrubbed": "Cliente perguntou sobre certidao",
     }
-    resp = client.post("/api/v1/atendimento", json=payload)
+    resp = client.post(
+        "/api/v1/atendimento",
+        json=payload,
+        headers={"X-API-Key": "a" * 64},
+    )
     assert resp.status_code == 200, resp.text
 
     SessionLocal = sessionmaker(bind=test_engine)
@@ -564,8 +575,15 @@ def test_todos_endpoints_mutantes_pelo_menos_um_audit_por_request(client, test_e
         },
     )
     client.post("/api/v1/documento/segunda-via", params={"protocolo": "2026-00001"})
-    client.post(f"/api/v1/atendimento/{atendimento_id}/pesquisa-enviada")
-    client.post(f"/api/v1/atendimento/{atendimento_id}/concluir", json={"nota": 10})
+    client.post(
+        f"/api/v1/atendimento/{atendimento_id}/pesquisa-enviada",
+        headers={"X-API-Key": "a" * 64},
+    )
+    client.post(
+        f"/api/v1/atendimento/{atendimento_id}/concluir",
+        json={"nota": 10},
+        headers={"X-API-Key": "a" * 64},
+    )
     client.post("/api/v1/cron/stale-detector")
 
     final_count = 0
