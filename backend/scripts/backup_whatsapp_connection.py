@@ -33,7 +33,7 @@ def _load_env_file(path: Path) -> dict[str, str]:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        values[key.strip()] = value.strip().strip("\"\'")
+        values[key.strip()] = value.strip().strip("\"'")
     return values
 
 
@@ -59,9 +59,7 @@ def main() -> int:
     webhook_url = _env_value("EVOLUTION_WEBHOOK_URL", env)
 
     if not api_key:
-        print(
-            "ERRO: EVOLUTION_API_KEY não encontrada. Defina no ambiente ou no .env."
-        )
+        print("ERRO: EVOLUTION_API_KEY não encontrada. Defina no ambiente ou no .env.")
         return 2
 
     base_candidates = [
@@ -83,9 +81,7 @@ def main() -> int:
         "manager_url": f"{base_url}/manager",
         "webhook_url": webhook_url,
         "webhook_configured": bool(webhook_url),
-        "lark_app_id_set": bool(
-            _env_value("LARK_APP_ID", env) or _env_value("lark_app_id", env)
-        ),
+        "lark_app_id_set": bool(_env_value("LARK_APP_ID", env) or _env_value("lark_app_id", env)),
         "lark_verification_token_set": bool(_env_value("LARK_VERIFICATION_TOKEN", env)),
         "lark_encrypt_key_set": bool(_env_value("LARK_ENCRYPT_KEY", env)),
     }

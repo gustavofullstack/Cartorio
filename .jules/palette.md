@@ -1,0 +1,3 @@
+## 2024-08-11 - Accessibility for elements with removed outline
+**Learning:** In this codebase, for UI accessibility when applying `outline: none;` to combined `:hover, :focus-visible` states (to prevent focus rings on mouse clicks), a separate, distinct rule exclusively for `:focus-visible` must be appended (e.g., `outline: 2px solid var(--brand);`) to ensure keyboard navigation remains accessible.
+**Action:** When removing focus rings via `outline: none;` for visual aesthetics, always verify and implement a secondary distinct `.class:focus-visible` rule so keyboard users can still see focus states.
