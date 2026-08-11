@@ -41,13 +41,13 @@ jobs:
     timeout-minutes: 180  # 3h max para subset critico
 
     env:
-      DATABASE_URL: sqlite:///:memory:
+      DATABASE_URL: "sqlite:///:memory:"
       CHATWOOT_ACCOUNT_ID: "0"
       CHATWOOT_INBOX_ID: "0"
-      CARTORIO_API_KEY: ${{ secrets.CARTORIO_API_KEY_TEST || 'a' }}
-      AUDIT_HMAC_KEY: ${{ secrets.AUDIT_HMAC_KEY_TEST || 'a' }}
-      # Quatro As de testing:
-      APP_ENV: testing
+      CARTORIO_API_KEY: ${{ secrets.CARTORIO_API_KEY_TEST || 'ci-test-only-not-a-secret-cartorio-key' }}  # noqa: ALLOW_KEY_FALLBACK (motivo: fallback sintetico CI-only)
+      AUDIT_HMAC_KEY: ${{ secrets.AUDIT_HMAC_KEY_TEST || 'ci-test-only-not-a-secret-audit-key-0001' }}  # noqa: ALLOW_KEY_FALLBACK (motivo: fallback sintetico CI-only)
+      PIETRA_CONVERSATION_HMAC_KEY: ${{ secrets.PIETRA_CONVERSATION_HMAC_KEY_TEST || 'ci-test-only-not-a-secret-pietra-conversation-key' }}  # noqa: ALLOW_KEY_FALLBACK (motivo: fallback sintetico CI-only)
+      APP_ENV: test
       LLM_PROVIDER: mock
       REDIS_URL: redis://localhost:6379/0
 
