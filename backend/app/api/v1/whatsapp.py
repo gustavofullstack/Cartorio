@@ -80,7 +80,7 @@ from app.services.evolution_ingest import (
     is_messages_upsert_event,
     validate_evolution_webhook_auth,
 )
-from app.services.pietra_coleta import hash_phone
+from app.services.pietra_coleta import hash_phone, upsert_cliente_por_telefone
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +119,28 @@ def _bind_whatsapp_identity(
         conversation_pseudonym=conversation_pseudonym,
         hmac_kid=settings.pietra_conversation_hmac_kid,
     )
+
+
+def _provision_allowed_whatsapp_cliente(
+    db: Session,
+    *,
+    normalized_sender: str | None,
+    access_reason: str,
+) -> Cliente | None:
+    """Cria o registro minimo somente no SIM de remetente allowlisted.
+
+    O telefone nunca e persistido em claro. O upsert canonico grava apenas
+    ``telefone_hash`` e permanece na mesma transacao do consentimento/audit.
+    Em modo aberto de teste ou sem numero normalizado, continua fail-closed.
+    """
+    if access_reason != "sender_allowed" or not normalized_sender:
+        return None
+    result = upsert_cliente_por_telefone(
+        db,
+        telefone=normalized_sender,
+        consentimento_lgpd=False,
+    )
+    return db.get(Cliente, result.cliente_id)
 
 
 # ===== Config (espelha telegram.py constantes) =====
@@ -827,9 +849,38 @@ async def whatsapp_webhook(
                 }
             return {"status": "ok", "detail": "consent_required"}
 
-        if not has_consent and text_clean in ("sim", "s", "aceito", "aceitar"):
+        opt_in_requested = text_clean in ("sim", "s", "aceito", "aceitar")
+        if has_consent and opt_in_requested:
+            ack_sent = await adapter.send(
+                OutboundMessage(
+                    channel=inbound.channel,
+                    recipient_id=sender_id,
+                    text="Consentimento ja confirmado. Como posso ajudar?",
+                )
+            )
+            return {
+                "status": "ok",
+                "detail": "consent_already_granted",
+                "ack_sent": ack_sent,
+            }
+
+        if not has_consent and opt_in_requested:
             if cliente_db is None:
-                raise HTTPException(status_code=503, detail="consent persistence unavailable")
+                try:
+                    cliente_db = _provision_allowed_whatsapp_cliente(
+                        db,
+                        normalized_sender=normalized_sender,
+                        access_reason=access.reason,
+                    )
+                except Exception as exc:
+                    db.rollback()
+                    logger.error("Consent cliente provisioning failed: %s", type(exc).__name__)
+                    raise HTTPException(
+                        status_code=503,
+                        detail="consent persistence unavailable",
+                    ) from exc
+                if cliente_db is None:
+                    raise HTTPException(status_code=503, detail="consent persistence unavailable")
             try:
                 cliente_db.consentimento_lgpd = True
                 cliente_db.consentimento_em = datetime.now(timezone.utc)
@@ -868,10 +919,18 @@ async def whatsapp_webhook(
                 except Exception as exc:
                     cache_synced = False
                     logger.warning("Redis consent write failed: %s", type(exc).__name__)
+            ack_sent = await adapter.send(
+                OutboundMessage(
+                    channel=inbound.channel,
+                    recipient_id=sender_id,
+                    text="Consentimento confirmado. Como posso ajudar?",
+                )
+            )
             return {
                 "status": "ok",
                 "detail": "consent_granted",
                 "cache_synced": cache_synced,
+                "ack_sent": ack_sent,
             }
 
         if not has_consent:

@@ -134,6 +134,68 @@ async def test_whatsapp_opt_in_grant_consent(mock_adapter, db_session) -> None:
     assert entry.payload["status"] == "granted"
     db_session.refresh(cliente)
     assert cliente.consentimento_lgpd is True
+    mock_adapter.send.assert_awaited_once()
+    assert "consentimento confirmado" in mock_adapter.send.call_args[0][0].text.lower()
+
+
+@pytest.mark.asyncio
+async def test_allowlisted_opt_in_provisions_minimal_cliente_and_leaves_notice(
+    mock_adapter,
+    db_session,
+    mock_background_process,
+    monkeypatch,
+) -> None:
+    """Remetente autorizado sem cliente deve sair do aviso apos SIM."""
+    from app.config import settings
+    from app.models.cliente import Cliente
+    from app.services.pietra_coleta import hash_phone
+    from app.services.whatsapp_access import hmac_sender, normalize_whatsapp_number
+
+    sender = "5534933333333"
+    hmac_key = "synthetic-whatsapp-allowlist-key-32-bytes"
+    normalized = normalize_whatsapp_number(sender)
+    assert normalized is not None
+    monkeypatch.setattr(settings, "pietra_whatsapp_restrict_inbound", True)
+    monkeypatch.setattr(settings, "pietra_whatsapp_allowlist_hmac_key", hmac_key)
+    monkeypatch.setattr(
+        settings,
+        "pietra_whatsapp_allowed_sender_hashes",
+        hmac_sender(normalized, hmac_key=hmac_key),
+    )
+
+    granted = client.post(
+        "/api/v1/whatsapp/webhook",
+        json=_make_evolution_payload(
+            "SIM",
+            sender=sender,
+            message_id="CONSENT-ALLOWLISTED-NO-CLIENT",
+        ),
+    )
+
+    assert granted.status_code == 200
+    assert granted.json()["detail"] == "consent_granted"
+    assert granted.json()["ack_sent"] is True
+    cliente = db_session.query(Cliente).filter_by(telefone_hash=hash_phone(sender)).one()
+    assert cliente.consentimento_lgpd is True
+    assert cliente.consentimento_canal == "whatsapp"
+    assert cliente.whatsapp_number is None
+    mock_adapter.send.assert_awaited_once()
+    assert "consentimento confirmado" in mock_adapter.send.call_args[0][0].text.lower()
+
+    mock_adapter.send.reset_mock()
+    next_message = client.post(
+        "/api/v1/whatsapp/webhook",
+        json=_make_evolution_payload(
+            "Quero falar sobre outro assunto",
+            sender=sender,
+            message_id="CONSENT-ALLOWLISTED-AFTER-SIM",
+        ),
+    )
+
+    assert next_message.status_code == 200
+    assert "detail" not in next_message.json()
+    mock_adapter.send.assert_not_awaited()
+    mock_background_process.assert_called_once()
 
 
 @pytest.mark.asyncio
