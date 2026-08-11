@@ -983,3 +983,27 @@ recupera acesso quando profile é wipado.
   falhas restaram; Ruff, mypy, scanner de segredos, Alembic head unico e sign-off LGPD verdes.
 - Rollout de migrations que alteram trigger exige writers antigos parados, GUCs HMAC verificadas
   sem exibir segredos e smoke concorrente PostgreSQL real antes de reabrir o webhook.
+
+## Lesson 300 — Rollout P0: adocao de schema, fingerprint e reabertura controlada (2026-08-11)
+
+- Quando a base runtime foi criada por `create_all` e nao possui `alembic_version`, `alembic
+  stamp` e somente adocao de baseline: nunca significa que migrations historicas rodaram. Antes
+  de qualquer `upgrade`, compare o schema real e crie uma migration de reconciliacao aditiva e
+  fail-closed; neste incidente, a sequencia segura foi `0030 -> 0030p1 -> 0031 -> 0032`.
+- Escale todos os writers para zero, pause o webhook, confirme zero sessoes, valide GUCs sem
+  imprimir valores e capture contagem/max-id/cauda da auditoria. A migration nao pode reescrever
+  nenhuma entrada. A impressao pre/pos deve ser identica antes de iniciar a nova imagem.
+- O primeiro evento depois do restart deve ligar exatamente a cauda anterior. Depois, anexe um
+  unico evento sintetico permanente e rode tanto `AuditService.verify_chain` quanto o verificador
+  HMAC completo. Neste rollout ambos permaneceram integros depois dos smokes.
+- Antes de reabrir o canal, prove com webhook assinado e remetente sintetico nao autorizado que o
+  gate ocorre antes de banco, Redis e conversa. So entao habilite `MESSAGES_UPSERT`, preservando
+  URL e header secreto, enquanto n8n e Chatwoot continuam desligados.
+- Chaves Redis legadas devem ser identificadas por formato, contadas sem exibir nomes e removidas
+  apenas depois de backup RDB. Foram eliminadas 37 chaves fora do contrato pseudonimo; zero
+  restaram. Tabelas de memoria/knowledge vazias foram verificadas somente por contagem.
+- Divida historica de RLS, triggers e least privilege nao deve ser misturada ao hotfix quando ha
+  risco de dupla escrita. Registre-a separadamente e nao alegue que o baseline adotado comprova
+  conformidade de todas as migrations antigas.
+- O aceite de canal permanece pendente ate observar round-trip real dos dois contatos permitidos;
+  imagem saudavel, testes verdes e remetente sintetico bloqueado nao substituem a prova humana.

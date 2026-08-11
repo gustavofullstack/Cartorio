@@ -1,6 +1,7 @@
 # Pietra WhatsApp - incidente P0 e tabela operacional 2026
 
-Data: 2026-08-11. Estado: contido; webhook Evolution pausado durante o rollout.
+Data: 2026-08-11. Estado: hotfix implantado e canal restrito reaberto; falta o round-trip
+real dos dois contatos autorizados para encerrar o aceite operacional.
 
 ## Correcoes implementadas
 
@@ -185,7 +186,28 @@ Estes totais combinam mais de um ato/insumo e nao substituem o valor unitario da
 
 ## Gates e pendencias
 
-- Unitario/focal: ACL, adapter, consentimento, ingest, HMAC, pipeline, PII e audit.
+- Imagem de producao `p0-7f8c0b14`, uma replica saudavel; `/health`, `/ready` e radar retornam
+  200. O webhook Evolution aponta para a rota canonica autenticada, aceita somente
+  `MESSAGES_UPSERT` e a conexao esta `open`.
+- A base runtime correta e `postgres`. Como ela havia sido criada por `create_all` e nao tinha
+  `alembic_version`, o `stamp 0030` foi uma adocao documentada do schema existente, nao prova de
+  execucao historica. Foram aplicadas somente as migrations aditivas `0030p1`, `0031` e `0032`.
+- A impressao da cadeia antes/depois da migration permaneceu identica em 167 entradas. Depois do
+  startup e dos smokes, um unico evento sintetico `pietra_p0_rollout_smoke` foi anexado; a cadeia
+  completa permaneceu integra, com HMAC valido e vinculo continuo.
+- O teste assinado de remetente sintetico nao autorizado retornou `sender_not_authorized` sem
+  criar webhook, conversa ou cliente. Foram removidas 37 chaves Redis legadas recuperaveis pelo
+  backup RDB: 18 consentimentos, 17 historicos e duas idempotencias; a nova varredura encontrou
+  zero chave bruta nesses namespaces.
+- As nove tabelas `knowledge_*` e `memoria_conversa` estavam vazias. Existem dois clientes ativos
+  pseudonimizados e nenhum binding WhatsApp ainda; cada binding deve nascer apenas no opt-in real.
+- QA completa: 6.742 testes passaram, 27 foram ignorados e 56 desmarcados; Ruff, mypy, scanner de
+  segredos, Alembic head unico e revisao LGPD ficaram verdes.
+- Backups Postgres, Redis, configuracao do servico e fingerprint de auditoria foram preservados
+  em diretorio restrito da VPS antes da mudanca.
+- Divida separada: o schema runtime historico ainda nao prova RLS/triggers de todas as migrations
+  anteriores, e o role atual possui privilegios elevados. Nao instalar triggers antigos neste
+  rollout, pois isso criaria risco de dupla escrita; abrir reconciliacao de least privilege/RLS.
 - Nenhum workflow N8N de WhatsApp/agendamento deve ser ativado no estado atual.
 - Handoff real precisa ser restaurado antes de a Pietra afirmar que encaminhou algo.
 - A chave SSH exposta no pedido deve ser rotacionada depois de garantir uma segunda via de acesso.
