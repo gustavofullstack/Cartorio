@@ -10,7 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.sol_v2_completion_gate import verify_sol_v2_completion
+from scripts.sol_v2_completion_gate import verify_sol_v2_completion  # noqa: E402
 
 
 def _write_minimal_v2_artifacts(base: Path) -> tuple[Path, Path, Path]:
@@ -41,11 +41,23 @@ def _write_minimal_v2_artifacts(base: Path) -> tuple[Path, Path, Path]:
         encoding="utf-8",
     )
     (incident / "salvaged-artifacts.json").write_text('{"salvaged_facts":[]}', encoding="utf-8")
-    (incident / "supersession-manifest.json").write_text('{"superseded_by":"V2_FORWARD_ONLY_REMEDIATION","action":"QUARANTINED"}', encoding="utf-8")
-    (incident / "invalidated-claims.jsonl").write_text('{"claim":"LARK_CERTIFIED","status":"INVALIDATED"}\n', encoding="utf-8")
+    (incident / "supersession-manifest.json").write_text(
+        '{"superseded_by":"V2_FORWARD_ONLY_REMEDIATION","action":"QUARANTINED"}', encoding="utf-8"
+    )
+    (incident / "invalidated-claims.jsonl").write_text(
+        '{"claim":"LARK_CERTIFIED","status":"INVALIDATED"}\n', encoding="utf-8"
+    )
 
-    (base / ".evidence" / "incidents" / "INC-GRAPH-EVIDENCE-2026-08-03").mkdir(parents=True, exist_ok=True)
-    (base / ".evidence" / "incidents" / "INC-GRAPH-EVIDENCE-2026-08-03" / "invalidated-claims.jsonl").write_text('{"claim":"LARK_CERTIFIED","status":"INVALIDATED"}\n', encoding="utf-8")
+    (base / ".evidence" / "incidents" / "INC-GRAPH-EVIDENCE-2026-08-03").mkdir(
+        parents=True, exist_ok=True
+    )
+    (
+        base
+        / ".evidence"
+        / "incidents"
+        / "INC-GRAPH-EVIDENCE-2026-08-03"
+        / "invalidated-claims.jsonl"
+    ).write_text('{"claim":"LARK_CERTIFIED","status":"INVALIDATED"}\n', encoding="utf-8")
 
     overlay.write_text(
         json.dumps(
@@ -70,7 +82,9 @@ def _write_minimal_v2_artifacts(base: Path) -> tuple[Path, Path, Path]:
 
     (base / ".orchestration" / "cartorio-super-graph-v2").mkdir(parents=True, exist_ok=True)
     (base / ".orchestration" / "cartorio-super-graph-v2" / "completion-report.json").write_text(
-        json.dumps({"status": "WAVE_0R_GO", "verdict": "PR_READY_PENDING_HUMANS"}, ensure_ascii=False),
+        json.dumps(
+            {"status": "WAVE_0R_GO", "verdict": "PR_READY_PENDING_HUMANS"}, ensure_ascii=False
+        ),
         encoding="utf-8",
     )
 
@@ -118,7 +132,9 @@ def test_sol_v2_completion_gate_fails_without_overlay(tmp_path: Path) -> None:
     incident = tmp_path / "INC-GRAPH-EVIDENCE-2026-08-03"
     incident.mkdir(parents=True)
     (incident / "commit-inventory.json").write_text("{}", encoding="utf-8")
-    is_pass, violations = verify_sol_v2_completion(tmp_path / "missing-overlay.json", evidence, incident, tmp_path)
+    is_pass, violations = verify_sol_v2_completion(
+        tmp_path / "missing-overlay.json", evidence, incident, tmp_path
+    )
     assert is_pass is False
     assert any("Overlay file missing" in item for item in violations)
 
@@ -152,7 +168,7 @@ def test_sol_v2_completion_gate_fails_if_nodes_incomplete(tmp_path: Path) -> Non
     )
 
     evidence.write_text(
-        "{\"task_id\":\"V2.R01\",\"status\":\"ACCEPTED\"}\n",
+        '{"task_id":"V2.R01","status":"ACCEPTED"}\n',
         encoding="utf-8",
     )
 
@@ -174,8 +190,12 @@ def test_sol_v2_completion_gate_fails_if_nodes_incomplete(tmp_path: Path) -> Non
     (incident / "file-classification.csv").write_text("path,classification\n", encoding="utf-8")
     (incident / "original-checksums.sha256").write_text("abc  x\n", encoding="utf-8")
     (incident / "salvaged-artifacts.json").write_text('{"salvaged_facts": []}', encoding="utf-8")
-    (incident / "supersession-manifest.json").write_text('{"superseded_by":"V2_FORWARD_ONLY_REMEDIATION","action":"QUARANTINED"}', encoding="utf-8")
-    (incident / "invalidated-claims.jsonl").write_text('{"claim":"LARK_CERTIFIED","status":"INVALIDATED"}\n', encoding="utf-8")
+    (incident / "supersession-manifest.json").write_text(
+        '{"superseded_by":"V2_FORWARD_ONLY_REMEDIATION","action":"QUARANTINED"}', encoding="utf-8"
+    )
+    (incident / "invalidated-claims.jsonl").write_text(
+        '{"claim":"LARK_CERTIFIED","status":"INVALIDATED"}\n', encoding="utf-8"
+    )
 
     (tmp_path / ".evidence" / "gemini36-v3").mkdir(parents=True)
     (tmp_path / ".evidence" / "gemini36-v3" / "human-gates.reconciled.json").write_text(
@@ -195,7 +215,9 @@ def test_sol_v2_completion_gate_fails_if_nodes_incomplete(tmp_path: Path) -> Non
 
     (tmp_path / ".orchestration" / "cartorio-super-graph-v2").mkdir(parents=True)
     (tmp_path / ".orchestration" / "cartorio-super-graph-v2" / "completion-report.json").write_text(
-        json.dumps({"status": "WAVE_0R_GO", "verdict": "PR_READY_PENDING_HUMANS"}, ensure_ascii=False),
+        json.dumps(
+            {"status": "WAVE_0R_GO", "verdict": "PR_READY_PENDING_HUMANS"}, ensure_ascii=False
+        ),
         encoding="utf-8",
     )
 
