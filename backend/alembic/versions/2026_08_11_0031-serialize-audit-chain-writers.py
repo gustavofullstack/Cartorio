@@ -1,7 +1,7 @@
 """Serializa writers Python e trigger da cadeia de audit log.
 
 Revision ID: 0031
-Revises: 0030
+Revises: 0030p1
 Create Date: 2026-08-11
 
 Migration aditiva: substitui apenas a funcao do trigger e nao altera ou apaga
@@ -13,7 +13,7 @@ from alembic import op
 
 
 revision = "0031"
-down_revision = "0030"
+down_revision = "0030p1"
 branch_labels = None
 depends_on = None
 
