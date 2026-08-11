@@ -91,6 +91,7 @@ def test_approval_reason_rejects_detectable_personal_data(db: Session) -> None:
 def test_export_is_aggregate_and_never_serializes_source_pii(db: Session) -> None:
     # Valores sentinela nunca podem atravessar a fronteira do artefato CNJ.
     from datetime import datetime
+
     ref_dt = datetime(2026, 7, 15, 12, 0, 0)
     db.add(
         Cliente(

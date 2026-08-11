@@ -187,6 +187,7 @@ class WhatsAppAdapter(ChannelAdapter):
         """Envia mensagem de texto via Evolution sendText (sanitizada com 0% emojis)."""
         try:
             from app.services.notificacao import _strip_emojis
+
             client = await self._get_client()
             url = f"{self.base_url}/message/sendText/{self.instance}"
             clean_text = _strip_emojis(msg.text or "").strip()
@@ -673,7 +674,12 @@ async def whatsapp_webhook(
 
             AuditService.log_system_action(
                 action="consent.whatsapp.auto_granted",
-                payload={"sender_id": sender_id, "status": "granted", "canal": "whatsapp", "reason": "inbound_contact"},
+                payload={
+                    "sender_id": sender_id,
+                    "status": "granted",
+                    "canal": "whatsapp",
+                    "reason": "inbound_contact",
+                },
             )
             has_consent = True
 
