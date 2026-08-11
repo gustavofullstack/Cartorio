@@ -12,7 +12,8 @@ Base URL: `https://api.2notasudi.com.br`
 | `/api/v1/emolumento/calcular` | GET | `X-API-Key` | Calcula emolumento MG 2026 (tipo, folhas, urgência) |
 | `/api/v1/agendamento/disponibilidade` | GET | `X-API-Key` | Lista slots livres |
 | `/api/v1/protocolo` | POST | `X-API-Key` | Cria protocolo (LGPD) |
-| `/api/v1/webhook/evolution` | POST | `X-API-Key` | Recebe mensagens WhatsApp |
+| `/api/v1/whatsapp/webhook` | POST | `X-API-Key` | Recebe mensagens WhatsApp (rota autônoma principal) |
+| `/api/v1/webhook/evolution` | POST | `X-API-Key` | Rota legado de compatibilidade WhatsApp |
 | `/api/v1/webhook/chatwoot` | POST | `X-API-Key` | Recebe eventos Chatwoot (handoff) |
 | `/mcp-servers` | GET | — | Lista tools do nosso MCP server |
 | `/docs` | GET | — | Swagger UI |

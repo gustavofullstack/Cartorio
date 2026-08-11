@@ -85,7 +85,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.2notasudi.com.br/api/v1/webhook/evolution",
+        "url": "https://api.2notasudi.com.br/api/v1/whatsapp/webhook",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
