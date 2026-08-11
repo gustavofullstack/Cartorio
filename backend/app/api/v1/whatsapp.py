@@ -190,8 +190,11 @@ class WhatsAppAdapter(ChannelAdapter):
             client = await self._get_client()
             url = f"{self.base_url}/message/sendText/{self.instance}"
             clean_text = _strip_emojis(msg.text or "").strip()
+            recipient = msg.recipient_id or ""
+            if not recipient.endswith("@lid"):
+                recipient = recipient.replace("@s.whatsapp.net", "").replace("@g.us", "")
             payload: dict[str, Any] = {
-                "number": msg.recipient_id.replace("@s.whatsapp.net", "").replace("@g.us", ""),
+                "number": recipient,
                 "text": clean_text[:MAX_RESPONSE_LEN],
             }
             # Buttons (max 3) se houver keyboard
@@ -337,8 +340,8 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
     """
     try:
         event = payload.get("event", "")
-        if event and event != "messages.upsert":
-            # Alguns exports omitem event; so rejeita se event presente e diferente
+        if event and event.lower() != "messages.upsert":
+            # Alguns exports omitem event; so rejeita se event presente e diferente de messages.upsert
             return None
 
         # Dual-format: nested data.* OU root-level (G7.04.T3)
