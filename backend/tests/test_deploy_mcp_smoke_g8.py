@@ -39,9 +39,7 @@ def test_legacy_vps_deploy_is_manual_and_fail_closed() -> None:
 def test_runtime_image_contains_alembic_migrations() -> None:
     """A imagem imutavel precisa aplicar migrations sem copiar arquivos ad hoc."""
 
-    dockerfile = (Path(__file__).resolve().parents[2] / "Dockerfile").read_text(
-        encoding="utf-8"
-    )
+    dockerfile = (Path(__file__).resolve().parents[2] / "Dockerfile").read_text(encoding="utf-8")
 
     assert "COPY backend/alembic ./alembic" in dockerfile
     assert "COPY backend/alembic.ini ./alembic.ini" in dockerfile

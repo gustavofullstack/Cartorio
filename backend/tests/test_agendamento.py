@@ -383,9 +383,7 @@ def test_confirmar_agendamento_sucesso(test_session, cliente_test):
         duration_minutes=30,
     )
 
-    AgendamentoService.aprovar_agendamento(
-        test_session, agendamento.id, actor_id="test:escrevente"
-    )
+    AgendamentoService.aprovar_agendamento(test_session, agendamento.id, actor_id="test:escrevente")
     confirmado = AgendamentoService.confirmar_agendamento(test_session, agendamento.id)
     assert confirmado.status == StatusAgendamento.CONFIRMADO
 
@@ -517,9 +515,7 @@ def test_listar_agendamentos_pendentes_sem_cache(test_session, cliente_test):
         tipo=TipoAtendimento.NORMAL,
         duration_minutes=30,
     )
-    AgendamentoService.aprovar_agendamento(
-        test_session, agendamento.id, actor_id="test:escrevente"
-    )
+    AgendamentoService.aprovar_agendamento(test_session, agendamento.id, actor_id="test:escrevente")
 
     from unittest.mock import patch
 

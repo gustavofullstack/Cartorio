@@ -237,9 +237,7 @@ class AgendamentoService:
         # Validações (raise se cliente/protocolo nao existem)
         AgendamentoService._validar_cliente_existe(db, cliente_id)
         AgendamentoService._validar_protocolo_existe(db, protocolo_id)
-        data_hora = AgendamentoService._validar_regras_temporais(
-            data_hora, duration_minutes
-        )
+        data_hora = AgendamentoService._validar_regras_temporais(data_hora, duration_minutes)
         AgendamentoService._validar_horario_disponivel(db, data_hora, duration_minutes, local)
 
         # Cria agendamento
@@ -438,9 +436,7 @@ class AgendamentoService:
             )
 
         status_anterior = (
-            agendamento.status.value
-            if hasattr(agendamento.status, "value")
-            else agendamento.status
+            agendamento.status.value if hasattr(agendamento.status, "value") else agendamento.status
         )
         agendamento.cancelar()
         db.add(agendamento)
