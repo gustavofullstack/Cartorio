@@ -299,6 +299,57 @@ class TestParseEvolutionPayload:
         # Sem remoteJid/id → retorna None
         assert result is None
 
+    def test_parse_lid_uses_remote_jid_alt_for_reply(self) -> None:
+        payload = {
+            "event": "messages.upsert",
+            "instance": "cartorio-agent",
+            "data": {
+                "key": {
+                    "remoteJid": "162023748985056@lid",
+                    "remoteJidAlt": "553492800250@s.whatsapp.net",
+                    "addressingMode": "lid",
+                    "fromMe": False,
+                    "id": "lid-msg-1",
+                },
+                "message": {"conversation": "Ola"},
+                "messageType": "conversation",
+                "pushName": "Gustavo",
+            },
+        }
+        result = parse_evolution_payload(payload)
+        assert result is not None
+        assert result.sender_id == "553492800250@s.whatsapp.net"
+        assert result.extra["remote_jid_raw"] == "162023748985056@lid"
+        assert result.extra["remote_jid_alt"] == "553492800250@s.whatsapp.net"
+
+    def test_parse_status_broadcast_ignored(self) -> None:
+        payload = {
+            "event": "messages.upsert",
+            "data": {
+                "key": {
+                    "remoteJid": "status@broadcast",
+                    "fromMe": False,
+                    "id": "st-1",
+                },
+                "message": {"conversation": ""},
+            },
+        }
+        assert parse_evolution_payload(payload) is None
+
+    def test_parse_from_me_ignored(self) -> None:
+        payload = {
+            "event": "messages.upsert",
+            "data": {
+                "key": {
+                    "remoteJid": "553492800250@s.whatsapp.net",
+                    "fromMe": True,
+                    "id": "echo-1",
+                },
+                "message": {"conversation": "eco"},
+            },
+        }
+        assert parse_evolution_payload(payload) is None
+
 
 # =============================================================================
 # T-Extras: get_adapter + ALLOWED_COMMANDS

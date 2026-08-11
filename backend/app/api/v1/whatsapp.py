@@ -361,6 +361,13 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
         message = _message
 
         remote_jid = key.get("remoteJid", "") or ""
+        # WhatsApp LID addressing: remoteJid vem como NNN@lid e o telefone
+        # real fica em remoteJidAlt (ex.: 5534...@s.whatsapp.net). Sem isso o
+        # sendText falha com 400 "exists: false" e o bot fica mudo.
+        remote_jid_alt = str(key.get("remoteJidAlt") or "").strip()
+        reply_jid = remote_jid
+        if remote_jid.endswith("@lid") and remote_jid_alt.endswith("@s.whatsapp.net"):
+            reply_jid = remote_jid_alt
         msg_id = key.get("id", "") or ""
         # Texto: conversation OU extendedTextMessage.text
         ext = message.get("extendedTextMessage")
@@ -374,6 +381,9 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
         is_group = "@g.us" in remote_jid
         if not remote_jid or not msg_id:
             return None
+        # Ignora status broadcast e eco fromMe (nao sao mensagens de cliente).
+        if remote_jid == "status@broadcast" or key.get("fromMe") is True:
+            return None
         message_type = ""
         if isinstance(data, dict):
             message_type = str(data.get("messageType") or "")
@@ -381,7 +391,7 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
             message_type = str(payload.get("messageType") or "")
         return InboundMessage(
             channel=Channel.WHATSAPP,
-            sender_id=remote_jid,
+            sender_id=reply_jid,
             sender_name=str(push_name),
             text=str(text),
             update_id=msg_id,  # message_id do WhatsApp = idempotency key
@@ -392,6 +402,9 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
                 "from_me": key.get("fromMe", False),
                 "message_type": message_type,
                 "format": "nested" if payload.get("data") else "root",
+                "remote_jid_raw": remote_jid,
+                "remote_jid_alt": remote_jid_alt or None,
+                "addressing_mode": key.get("addressingMode"),
             },
         )
     except Exception as e:

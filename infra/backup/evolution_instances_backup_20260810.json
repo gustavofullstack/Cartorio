@@ -1,0 +1,45 @@
+[
+  {
+    "id": "c18e80c2-4045-40ff-bd73-3924ef23c249",
+    "name": "cartorio-agent",
+    "connectionStatus": "open",
+    "ownerJid": "553491952444@s.whatsapp.net",
+    "profileName": "Cartório 2 Ofício de Notas de Uberlândia",
+    "profilePicUrl": "https://pps.whatsapp.net/v/t61.24694-24/725032936_1357065336307245_7191764181801633933_n.jpg?ccb=11-4&oh=01_Q5Aa5QHH-O2moOtAEUpp2iDlOvRR6lfhzx0SKbW654fkZkM8jQ&oe=6A8769F1&_nc_sid=5e03e0&_nc_cat=107",
+    "integration": "WHATSAPP-BAILEYS",
+    "number": null,
+    "businessId": null,
+    "token": "1E3DBEA624D5-447B-B6CD-E7C48CE9DFD8",
+    "clientName": "evolution_exchange",
+    "disconnectionReasonCode": 401,
+    "disconnectionObject": "{\"error\":{\"data\":{\"tag\":\"conflict\",\"attrs\":{\"type\":\"device_removed\"}},\"isBoom\":true,\"isServer\":false,\"output\":{\"statusCode\":401,\"payload\":{\"statusCode\":401,\"error\":\"Unauthorized\",\"message\":\"Stream Errored (conflict)\"},\"headers\":{}}},\"date\":\"2026-08-10T19:50:01.488Z\"}",
+    "disconnectionAt": "2026-08-10T19:50:01.494Z",
+    "createdAt": "2026-08-07T17:58:08.131Z",
+    "updatedAt": "2026-08-10T21:49:53.931Z",
+    "Chatwoot": null,
+    "Proxy": null,
+    "Rabbitmq": null,
+    "Nats": null,
+    "Sqs": null,
+    "Websocket": null,
+    "Setting": {
+      "id": "cmsj8zz0r0003pa4xqnf4w1aj",
+      "rejectCall": true,
+      "msgCall": "",
+      "groupsIgnore": true,
+      "alwaysOnline": true,
+      "readMessages": true,
+      "readStatus": true,
+      "syncFullHistory": true,
+      "wavoipToken": "",
+      "createdAt": "2026-08-07T17:58:08.137Z",
+      "updatedAt": "2026-08-10T23:34:14.562Z",
+      "instanceId": "c18e80c2-4045-40ff-bd73-3924ef23c249"
+    },
+    "_count": {
+      "Message": 6780,
+      "Contact": 1948,
+      "Chat": 276
+    }
+  }
+]

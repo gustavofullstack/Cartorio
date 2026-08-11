@@ -850,8 +850,9 @@ async def process_debounced(
                 )
                 sent = await adapter.send(out_msg)
 
-            # 8. React (ack visual)
-            if sent and msg_ids:
+            # 8. React (ack visual) — desativado no WhatsApp (pedido Felipe: zero emoji
+            # na experiencia do cliente). Telegram mantem reacao nativa.
+            if sent and msg_ids and channel != Channel.WHATSAPP:
                 try:
                     await adapter.react(sender_id, msg_ids[-1], "thumbsup")
                 except Exception:
