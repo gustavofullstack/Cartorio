@@ -785,11 +785,11 @@ async def process_debounced(
         try:
             # 5. LLM call (Hermes Agent AI Minimax) - span llm.chat
             fast = _is_fast_path(text_to_process)
-            
+
             from app.services.dialog_history import hist_get, hist_append, DialogHistoryConfig
             from app.services.cartorio_agent import run_cartorio_agent
             from app.services.redis_bus import get_bus
-            
+
             bus = get_bus()
             hist_key = f"{channel.value}:{sender_id}"
             history = await hist_get(bus, hist_key) if bus else []
@@ -804,24 +804,27 @@ async def process_debounced(
                         llm_sp.set_attribute("bot.fast_path", fast)
                     except Exception:
                         pass
-                
+
                 reply = await run_cartorio_agent(
                     text_to_process,
                     history=history,
                     attachments=None,
                     chat_id=sender_id,
                 )
-                raw_response = reply.text or "Desculpe, não consegui processar sua solicitação no momento."
+                raw_response = (
+                    reply.text or "Desculpe, não consegui processar sua solicitação no momento."
+                )
                 if getattr(reply, "extra_messages", None):
                     raw_response += "\n\n" + "\n\n".join(reply.extra_messages)
-                
+
                 # Melhorias Felipe: remove emojis, normaliza espaçamento e bloqueia blocos robóticos
                 try:
                     from app.api.v1.telegram import format_bot_text, strip_emojis
+
                     response_text = strip_emojis(format_bot_text(raw_response))
                 except Exception:
                     response_text = raw_response
-            
+
             if bus:
                 cfg = DialogHistoryConfig(max_entries=20, ttl_sec=86400, max_tokens=2000)
                 await hist_append(bus, hist_key, "assistant", response_text, config=cfg)
