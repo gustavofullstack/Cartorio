@@ -36,8 +36,13 @@ logger = logging.getLogger(__name__)
 SERVICOS_CATALOGO: dict[str, tuple[str, str]] = {
     "reconhecimento_firma": ("Reconhecimento de Firma (por assinatura)", "R$ 11,21"),
     "autenticacao": ("Autenticação de Cópia (por folha)", "R$ 11,21"),
+    "autenticacao_eletronica": (
+        "Autenticação de documento eletrônico/digital (por unidade)",
+        "R$ 12,99",
+    ),
+    "cartao_autografo": ("Confecção e guarda do cartão/ficha de assinatura", "R$ 11,21"),
     "procuracao": ("Procuração Geral (por outorgante)", "R$ 68,94"),
-    "testamento": ("Testamento", "R$ 437,24"),
+    "testamento": ("Testamento básico (sem conteúdo financeiro avaliado)", "R$ 437,24"),
     "ata_notarial": ("Ata Notarial (até duas folhas)", "R$ 218,42"),
 }
 
@@ -65,10 +70,10 @@ MINIMAX_API_KEY = (
     or os.environ.get("MINIMAX_CODING_PLAN_KEY_API", "")
     or os.environ.get("hermes_llm_api_key", "")
 )
-MINIMAX_BASE_URL = os.environ.get("MINIMAX_BASE_URL", "https://api.minimax.io/v1").rstrip("/")
+MINIMAX_BASE_URL = os.environ.get("MINIMAX_BASE_URL", "https://api.minimaxi.com/v1").rstrip("/")
 MINIMAX_MODEL = os.environ.get(
     "CARTORIO_AGENT_MODEL",
-    os.environ.get("MINIMAX_MODEL_PRIMARY", "MiniMax-M2.7-HighSpeed"),
+    os.environ.get("MINIMAX_MODEL", os.environ.get("MINIMAX_MODEL_PRIMARY", "MiniMax-M3")),
 )
 LITELLM_URLS = [
     os.environ.get(
@@ -78,7 +83,7 @@ LITELLM_URLS = [
     os.environ.get("LITELLM_BASE_URL", "http://cartorio_litellm-app:4000"),
 ]
 LITELLM_KEY = os.environ.get("LITELLM_API_KEY", "")
-LITELLM_MODEL = os.environ.get("CARTORIO_AGENT_MODEL", "MiniMax-M3")
+LITELLM_MODEL = os.environ.get("LITELLM_MODEL", MINIMAX_MODEL)
 
 # OpenCode Zen free accounts are an independent, credential-isolated fallback
 # chain.  Values are injected by the secret manager; no key belongs in source.
@@ -362,6 +367,21 @@ REGRAS CRITICAS
 8. ZERO emoji. Resposta limpa com paragrafos.
 9. NUNCA mencione "gateway", "MCP", "LiteLLM", "OpenClaw", "API", "prompt", "modelos" ou infraestrutura interna ao cliente.
 
+FATOS JURIDICOS OBRIGATORIOS (nunca contradiga; se incerto, acione HITL)
+- Voce e a Pietra. NUNCA "pedra", Hermes, MiniMax, modelo ou provedor.
+- Testamento publico: DUAS testemunhas. Nunca quatro. Nunca diga "creio".
+- Filhos sao herdeiros necessarios. Da para beneficiar um com a parte disponivel; NAO se retira a legitima dos demais sem hipotese legal de exclusao/deserdacao.
+- Testamento com patrimonio/conteudo financeiro: R$ 437,24 e so o item basico; o escrevente calcula a faixa.
+- Reconhecimento por semelhanca: confronta com o cartao/livro de autografos DESTA serventia, nunca com RG avulso. Nao escolha a modalidade sozinha.
+- PDF no celular nao basta: original eletronico com endereco verificavel, acessado e impresso pela serventia. Eletronico/digital = R$ 12,99; copia fisica = R$ 11,21/folha.
+- Orcamento de firma: pergunte se ja existe cartao/ficha (R$ 11,21 a mais se nao houver).
+- ITBI Uberlandia: 2% (nao faixa 2% a 3%). Escritura pela Tabela 1 MG 2026; HITL. Registro de Imoveis e cobrado separado.
+- Hospital: procuracao PUBLICA (nao "escritura"). Agenda, avaliacao de capacidade e HITL. Nao presuma poderes bancarios.
+- Ata notarial: o tabeliao constata e descreve o que percebe; NAO garante autenticidade do perfil/conteudo.
+- Protocolo, segunda via e horario: use as tools. Se a tool falhar, diga indisponivel + HITL. NUNCA responda com catalogo.
+- LGPD: nao repita CPF; peca verificacao de identidade; registre DRAFT; encaminhe ao DPO (dpo@2notasudi.com.br). Eliminacao pode ser limitada por conservacao legal.
+- Todo protocolo nasce DRAFT. Bot nunca decide isencao, urgencia, validade juridica ou emissao.
+
 FERRAMENTAS / FATOS (nao chute)
 {tools_context}
 
@@ -393,6 +413,11 @@ def _servicos_kb() -> list[list[dict[str, str]]]:
 
 def _match_servico(text: str) -> str | None:
     t = text.lower()
+    if any(w in t for w in ("pdf", "eletron", "eletrôn", "digitalmente", "assinatura digital")):
+        if any(w in t for w in ("autentic", "copia", "cópia")):
+            return "autenticacao_eletronica"
+    if any(w in t for w in ("cartao de autografo", "cartão de autógrafo", "ficha de assinatura")):
+        return "cartao_autografo"
     aliases = {
         "reconhecimento_firma": ["firma", "reconhecimento", "assinatura"],
         "autenticacao": ["autentic", "copia", "cópia", "autenticacao"],
@@ -442,8 +467,10 @@ def _wants_catalog_continue(text: str) -> bool:
             "o restante",
             "continua",
             "continue",
-            "proximo",
-            "próximo",
+            "proximo servico",
+            "próximo serviço",
+            "proxima mensagem",
+            "próxima mensagem",
             "e o resto",
             "falta",
             "so veio",
@@ -482,14 +509,41 @@ def _detect_intent(text: str) -> str:
     t = text.lower()
     if _wants_catalog_series(t) or _wants_catalog_continue(t):
         return "catalogo_serie"
+    if any(
+        w in t
+        for w in (
+            "lgpd",
+            "exclusao dos dados",
+            "exclusão dos dados",
+            "apagar meus dados",
+            "direito de acesso",
+        )
+    ):
+        return "lgpd"
     # Dados pessoais: cartorio PODE e DEVE aceitar (com LGPD) — path offline
     if _has_personal_data(text):
         return "dados"
     if any(w in t for w in ("humano", "escrevente", "atendente", "pessoa real", "falar com")):
         return "humano"
-    if any(w in t for w in ("protocolo", "andamento", "status do", "consulta protocolo")):
+    if any(
+        w in t for w in ("protocolo", "andamento", "status do", "consulta protocolo", "segunda via")
+    ):
         return "protocolo"
-    if any(w in t for w in ("agendar", "marcar", "horario", "horário", "visita", "comparecer")):
+    if any(
+        w in t
+        for w in (
+            "horario de funcionamento",
+            "horarios",
+            "horários",
+            "funciona",
+            "abre",
+            "fecha",
+            "sabado",
+            "sábado",
+        )
+    ) and not any(w in t for w in ("agendar", "marcar", "visita")):
+        return "horario"
+    if any(w in t for w in ("agendar", "marcar", "visita", "comparecer")):
         return "agendar"
     if any(
         w in t
@@ -509,11 +563,6 @@ def _detect_intent(text: str) -> str:
         return "preco"
     if any(w in t for w in ("endereco", "endereço", "onde fica", "localizacao", "localização")):
         return "endereco"
-    if any(
-        w in t
-        for w in ("horario de funcionamento", "funciona", "abre", "fecha", "sabado", "sábado")
-    ):
-        return "horario"
     if any(
         w in t
         for w in (
@@ -558,7 +607,7 @@ def _build_tools_context(text: str) -> tuple[str, list[str]]:
     if intent == "preco" and not svc:
         parts.append(
             "PRECO: cliente perguntou valor sem especificar servico. "
-            "Liste os 5 servicos do catalogo e peca qual deseja."
+            "Liste os servicos do catalogo (sem despejar propaganda) e peca qual deseja."
         )
         used.append("preco:list")
 
@@ -571,13 +620,19 @@ def _build_tools_context(text: str) -> tuple[str, list[str]]:
         used.append("horario")
 
     # Protocolo number in text?
-    m = re.search(r"\b(20\d{2}-\d{4,6})\b", text)
+    m = re.search(r"\b((?:TESTE-)?20\d{2}-\d{4,6})\b", text, flags=re.I)
     if m:
+        numero = m.group(1)
         parts.append(
-            f"PROTOCOLO_MENCIONADO: {m.group(1)} — diga que pode confirmar o status "
-            "se o cliente usar /protocolo ou digitar o numero apos o comando."
+            f"PROTOCOLO_MENCIONADO: {numero}. Consulte a tool consultar_protocolo_real. "
+            "Se a consulta falhar, informe indisponibilidade, preserve o numero, "
+            "abra DRAFT/HITL e NUNCA substitua por catalogo de servicos. "
+            "Se o cliente tambem pediu segunda via e horarios, responda as TRES "
+            f"perguntas: status do protocolo {numero}; segunda via depende de "
+            f"analise do escrevente (HITL, protocolo em DRAFT); "
+            f"horario oficial: {CARTORIO_INFO['horario']}."
         )
-        used.append(f"protocolo:{m.group(1)}")
+        used.append(f"protocolo:{numero}")
 
     return "\n\n".join(parts), used
 
@@ -876,6 +931,25 @@ async def _run_remote_tool(
         servico = str(args.get("servico", ""))
         data = str(args.get("data", ""))
         hora = str(args.get("hora", ""))
+        from app.services.agendamento_slot import validate_public_slot
+
+        slot = validate_public_slot(data, hora)
+        if not slot["ok"]:
+            return (
+                json.dumps(
+                    {
+                        "status": "slot_rejeitado",
+                        "erro": slot["erro"],
+                        "servico": scrub(servico).text,
+                        "data": data,
+                        "hora": hora,
+                        "hint": slot["hint"],
+                    },
+                    ensure_ascii=False,
+                ),
+                "humano",
+                used,
+            )
         # HITL: modelo nunca cria um agendamento real. A confirmacao de um
         # atendente dispara o workflow com idempotencia fora desta tool.
         return (
@@ -885,7 +959,7 @@ async def _run_remote_tool(
                     "servico": scrub(servico).text,
                     "data": data,
                     "hora": hora,
-                    "hint": "encaminhar para atendente confirmar antes de agendar",
+                    "hint": slot["hint"],
                 },
                 ensure_ascii=False,
             ),
@@ -1497,7 +1571,7 @@ def _offline_reply_inner(
             )
         return AgentReply(
             text=(
-                f"Ola. Sou o Agent AI do {CARTORIO_INFO['nome']}.\n"
+                f"Ola. Sou a Pietra, assistente do {CARTORIO_INFO['nome']}.\n"
                 "\n"
                 "Pode falar em texto livre — valores, agendamento, protocolo "
                 "ou /humano para escrevente.\n"
@@ -1611,11 +1685,58 @@ def _offline_reply_inner(
             provider="offline",
         )
     if intent == "protocolo":
+        proto = re.search(r"\b((?:TESTE-)?20\d{2}-\d{4,6})\b", text, flags=re.I)
+        numero = proto.group(1) if proto else None
+        segunda = any(w in text.lower() for w in ("segunda via", "2a via", "2ª via"))
+        pede_horario = any(
+            w in text.lower() for w in ("horario", "horário", "horarios", "horários")
+        )
+        if numero:
+            body = (
+                f"Registrei o pedido de consulta do protocolo {numero} em DRAFT.\n"
+                "\n"
+                "Nao confirmo andamento automatico sem a ferramenta de protocolo "
+                "e a validacao do escrevente.\n"
+            )
+            if segunda:
+                body += (
+                    "\nSegunda via de ato notarial depende de conferencia na serventia "
+                    "(HITL). Posso abrir o pedido em DRAFT, mas a emissao nao e automatica.\n"
+                )
+            if pede_horario:
+                body += f"\nHorario oficial: {CARTORIO_INFO['horario']}.\n"
+            body += "\nSe a consulta estiver indisponivel agora, o escrevente retoma o andamento."
+            return AgentReply(
+                text=body,
+                action="protocolo",
+                keyboard=None,
+                tools_used=list(tools_used) + ["protocolo:draft_hitl"],
+                provider="offline",
+            )
         return AgentReply(
             text=("Consulta de protocolo\n\nMe informe o numero no formato:\n2026-000123"),
             action="protocolo",
             keyboard=None,
             tools_used=tools_used,
+            provider="offline",
+        )
+    if intent == "lgpd":
+        return AgentReply(
+            text=(
+                "Direitos do titular (LGPD): confirmacao, acesso, correcao, "
+                "revogacao e, quando couber, eliminacao.\n"
+                "\n"
+                "Nao repito CPF/RG. A identidade precisa ser verificada pelo DPO/"
+                "escrevente. Vou registrar o pedido em DRAFT.\n"
+                "\n"
+                "A eliminacao nao e absoluta: dados com dever legal de conservacao "
+                "(atos notariais, audit log) podem ser mantidos.\n"
+                "\n"
+                "Canal: dpo@2notasudi.com.br"
+            ),
+            action="humano",
+            keyboard=None,
+            tools_used=list(tools_used) + ["lgpd:draft_dpo"],
             provider="offline",
         )
     if intent == "humano":
@@ -1652,7 +1773,7 @@ def _offline_reply_inner(
         )
     return AgentReply(
         text=(
-            f"Ola. Sou o assistente do {CARTORIO_INFO['nome']}.\n"
+            f"Ola. Sou a Pietra, assistente do {CARTORIO_INFO['nome']}.\n"
             "\n"
             "Pode falar em texto livre. Exemplos:\n"
             "\n"

@@ -204,8 +204,8 @@ TEMPLATE_PROTOCOLO_CONCLUIDO = MetaTemplate(
                 "📋 *Serviço:* {{3}}\n"
                 "📅 *Concluído em:* {{4}}\n\n"
                 "📍 *Retirar em:*\n"
-                "Rua X, nº Y, Centro, Uberlândia/MG\n"
-                "🕐 Horário: 08h00-17h00 (seg-sex)\n\n"
+                "Rua Cel. Antônio Alves Pereira, 850, Centro, Uberlândia/MG\n"
+                "🕐 Horário: 09h00-17h00 (seg-sex)\n\n"
                 "Documentos necessários para retirada:\n"
                 "• RG e CPF (originais)"
             ),

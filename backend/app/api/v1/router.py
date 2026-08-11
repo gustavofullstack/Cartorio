@@ -1007,7 +1007,7 @@ def post_protocolo_criar_api(
 
 def _parse_dual_format(payload: dict) -> tuple[str, str, str]:
     """Auxiliar para extração de dados do payload da Evolution."""
-    _data = payload.get("data") or {}
+    _data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
     _key_raw = _data.get("key") if isinstance(_data, dict) else None
 
     _msg = (
@@ -1021,7 +1021,6 @@ def _parse_dual_format(payload: dict) -> tuple[str, str, str]:
         else (payload.get("sender") or "unknown")
     )
     instance = payload.get("instance", "")
-
     raw_text = ""
     if isinstance(_msg, dict):
         raw_text = (
@@ -1180,6 +1179,35 @@ async def webhook_evolution(
         shared_secret_header=shared_secret_header,
     ):
         raise HTTPException(status_code=401, detail="invalid webhook signature")
+    if not settings.evolution_legacy_webhook_enabled:
+        return {"status": "ignored", "detail": "legacy_webhook_disabled"}
+
+    # P0: bloquear remetentes nao autorizados antes de idempotencia, banco,
+    # pipeline de PII ou LLM. Um LID so e autorizado quando remoteJidAlt
+    # fornece um telefone verificavel presente na allowlist de producao.
+    from app.services.whatsapp_access import decide_whatsapp_access
+
+    access_data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    access_key = (
+        access_data.get("key")
+        if isinstance(access_data.get("key"), dict)
+        else payload.get("key")
+    )
+    if not isinstance(access_key, dict):
+        access_key = {}
+    if access_key.get("fromMe") is True:
+        return {"status": "ignored", "detail": "outbound_echo"}
+
+    access = decide_whatsapp_access(
+        str(access_key.get("remoteJid") or payload.get("sender") or ""),
+        sender_id_alt=str(access_key.get("remoteJidAlt") or ""),
+        allowed_sender_hashes=settings.pietra_whatsapp_allowed_sender_hashes,
+        hmac_key=settings.pietra_whatsapp_allowlist_hmac_key,
+        app_env=settings.app_env,
+        restrict_inbound=settings.pietra_whatsapp_restrict_inbound,
+    )
+    if not access.allowed:
+        return {"status": "ignored", "detail": "sender_not_authorized"}
 
     # Idempotency check (Sprint 2) - so se payload tem formato novo
     # (data.key.id). Formato legado e ignorado silenciosamente.
@@ -1224,6 +1252,9 @@ async def webhook_evolution(
         else (payload.get("sender") or "unknown")
     )
     instance = payload.get("instance", "")
+    from app.services.pii import hash_pii
+
+    sender_hash = hash_pii(str(sender), salt=settings.audit_hmac_key[:32])
 
     # Evolution API / WhatsApp envia message.conversation OU message.extendedTextMessage
     # (formato BAILEYS). Verifica ambos para garantir compatibilidade.
@@ -1269,7 +1300,7 @@ async def webhook_evolution(
             ctx["canal"] = "whatsapp"
         AuditService.log(
             db,
-            actor_id=sender,
+            actor_id=sender_hash,
             actor_type="bot",
             action="conversa.received",
             resource=f"whatsapp:{instance}",
@@ -1313,7 +1344,7 @@ async def webhook_evolution(
                     ctx_pii["canal"] = "whatsapp"
                 AuditService.log(
                     db_pii,
-                    actor_id=sender,
+                    actor_id=sender_hash,
                     actor_type="bot",
                     action="conversa.pii_blocked",
                     resource=f"whatsapp:{instance}",
@@ -1342,8 +1373,8 @@ async def webhook_evolution(
         # LGPD: consent inferido pelo canal (cliente iniciou conversa via WhatsApp).
         # Em sprint 2 adicionar gate explicito ("digite SIM para autorizar uso de IA").
         # Rate limit 60/min por sender (cost guard contra abuso).
-        session_id = f"whatsapp:{sender}:{instance}"
-        actor_id_audit = f"whatsapp:{sender}"
+        session_id = f"whatsapp:{sender_hash}:{instance}"
+        actor_id_audit = f"whatsapp:{sender_hash}"
 
         # LGPD-015: request_id + client_ip do request.state (RequestContextMiddleware)
         # Propagados para o wrapper opencode_go para audit log de output scrub.
@@ -1417,7 +1448,7 @@ async def webhook_evolution(
 
             conversa = Conversa(
                 canal="whatsapp",
-                external_id=sender,
+                external_id=sender_hash,
                 raw_message_hash=raw_message_hash,
                 raw_message_scrubbed=scrub_result.text,
                 intent_detected=intent,
@@ -1440,7 +1471,7 @@ async def webhook_evolution(
         import json
 
         r_client = redis.from_url(settings.redis_url, socket_timeout=2.0)
-        redis_key = f"cartorio:sess:{sender}"
+        redis_key = f"cartorio:sess:{sender_hash}"
         user_msg = json.dumps(
             {
                 "role": "user",

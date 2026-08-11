@@ -152,9 +152,16 @@ def ingest_evolution_event(
     if not is_messages_upsert_event(event):
         return {"status": "ignored", "reason": "event_not_messages_upsert", "event": event}
 
+    # Evolution antigo publica ``key``/``message`` na raiz. O parser do
+    # webhook aceita os dois formatos; a reserva de idempotência precisa usar
+    # exatamente a mesma ACL para não descartar o evento antes dele chegar lá.
     data = payload.get("data")
     if not isinstance(data, dict):
-        return {"status": "rejected", "reason": "missing_data"}
+        if not isinstance(payload.get("key"), dict) and not isinstance(
+            payload.get("message"), dict
+        ):
+            return {"status": "rejected", "reason": "missing_data"}
+        data = payload
 
     key = data.get("key") or {}
     message = data.get("message") or {}
@@ -163,10 +170,12 @@ def ingest_evolution_event(
     sender = key.get("remoteJid")
 
     # Texto pode estar em varios campos dependendo do tipo de msg
+    extended = message.get("extendedTextMessage")
+    image = message.get("imageMessage")
     text = (
         message.get("conversation")
-        or message.get("extendedTextMessage", {}).get("text")
-        or message.get("imageMessage", {}).get("caption")
+        or (extended.get("text", "") if isinstance(extended, dict) else "")
+        or (image.get("caption", "") if isinstance(image, dict) else "")
         or ""
     )
 
@@ -187,7 +196,7 @@ def ingest_evolution_event(
     ).scalar_one_or_none()
 
     if existing is not None:
-        log.info("evolution_ingest idempotent: message_id=%s ja processado", message_id)
+        log.info("evolution_ingest idempotent: event already processed")
         return {"status": "idempotent", "message_id": message_id}
 
     # Grava evento pra idempotencia
@@ -202,12 +211,7 @@ def ingest_evolution_event(
     )
     db.flush()
 
-    log.info(
-        "evolution_ingest accepted: message_id=%s sender=%s instance=%s",
-        message_id,
-        sender,
-        instance,
-    )
+    log.info("evolution_ingest accepted: authenticated event persisted")
     return {
         "status": "accepted",
         "event_type": event,

@@ -196,29 +196,29 @@
       "main": [
         [
           {
+            "node": "Dedup Webhook (SETNX)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedup Webhook (SETNX)": {
+      "main": [
+        [
+          {
+            "node": "Redis SETNX 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis SETNX 24h": {
+      "main": [
+        [
+          {
             "node": "POST to Backend",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "webhook-evo-in-1": {
-      "main": [
-        [
-          {
-            "node": "dedup-webhook-idempotency",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "dedup-webhook-idempotency": {
-      "main": [
-        [
-          {
-            "node": "redis-setnx-24h",
             "type": "main",
             "index": 0
           }

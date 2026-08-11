@@ -8,6 +8,8 @@ Criterio pra escrever aqui: a licao afeta mais de um rein ou mais de uma sprint.
 ## INDICE RAPIDO (atualizado 2026-07-31 BRT)
 
 ### Etapa 12 — Super Backup WhatsApp & Agent Pietra MiniMax M3 Autônomo (2026-08-10)
+- **Lesson 303 — Pietra WhatsApp piloto Felipe+Gustavo (2026-08-11)**: Producao estava aberta (`APP_ENV=test`, sem allowlist no container, modelo HighSpeed). ACL agora e HMAC + piloto `+5534998807228` / `+5534992800250` independente de APP_ENV. Agenda rejeita sabado/08h. Horario oficial 09h-17h. Detalhe: `.harness/memory/lesson-303-pietra-whatsapp-pilot-allowlist-2026-08-11.md`.
+- **Lesson 302 — Pietra WhatsApp P0 orquestracao + guardrails (2026-08-11)**: Auditoria real 41/100. Causas: `resume_burst` dropava 1a de 2; debounce sem sleep; rate-limit DROP; sem lock/idempotencia de saida; `_wants_catalog_continue("proximo")` transformava “proximos horarios” em catalogo; WhatsApp sem identity/allowlist. Fix na branch `fix/pietra-whatsapp-p0-audit-20260811` (sem deploy). Replay sanitizado 10/10. Detalhe: `.harness/memory/lesson-302-pietra-whatsapp-p0-orchestration-2026-08-11.md`.
 - **Lesson 301 — WhatsApp LID same-thread + MESSAGES_UPSERT underscore (2026-08-11)**: Respostas iam para `5534...@s.whatsapp.net` enquanto o cliente escreve em `@lid` — chat paralelo, bot "mudo". `MESSAGES_UPSERT.lower()` nao e `messages.upsert` (underscore vs ponto); parse devolvia ignored. Fix: responder no mesmo JID `@lid`; `is_messages_upsert_event()` normaliza `_`/`.`; rebuild `--no-cache`. Live `LID_LIVE_*` → send ok no thread LID. Backup `SUPER_BACKUP_WHATSAPP_CARTORIO_AGENT_20260811_110455.tar.gz`. Detalhe: `.harness/memory/lesson-301-whatsapp-lid-same-thread-2026-08-11.md`.
 - **Lesson 300 — WhatsApp mudo: webhook sem sendText + Evolution host/key + LID + MiniMax (2026-08-11)**: Instancia `cartorio-agent` OPEN mas muda. Causas: (1) webhook em `/api/v1/webhook/evolution` so retorna JSON e nao chama `sendText` — path correto `/api/v1/whatsapp/webhook`; (2) `EVOLUTION_BASE_URL` apontava `cartorio_evolution-api` (0/0) em vez de `cartorio_whatsapp-api`; (3) `EVOLUTION_API_KEY` errada no system-api (401); (4) `OPENCODE_GO_BASE_URL=localhost:9999`; (5) inbound `@lid` sem `remoteJidAlt`. Super backup `SUPER_BACKUP_WHATSAPP_CARTORIO_AGENT_20260811_014322.tar.gz`. Live test `LIVE_AUTONOMOUS_*` → `bot.send ok`. Detalhe: `.harness/memory/lesson-300-whatsapp-mute-rootcause-2026-08-11.md`.
 
@@ -930,3 +932,21 @@ recupera acesso quando profile é wipado.
 - Verdade operacional só vale com round-trip real no log: `inbound message ... user=<pessoa>` +
   `response ready ... Sending response` (Lesson 290). "Unauthorized" zerado depois do fix ≠
   prova; a resposta enviada é a prova.
+
+## Lesson 303 — WhatsApp Evolution: corte, consentimento e formato dual (2026-08-11)
+
+- `WhatsAppAdapter.send` não pode usar `text[:limite]`: isso descarta a cauda e
+  corta palavras. Fragmentar por parágrafo/espaço mantém a resposta completa;
+  o retorno deve ser falso se qualquer bloco falhar.
+- A reserva de idempotência precisa normalizar root-level e nested antes de
+  gravar `WebhookEvent`; caso contrário eventos legados são rejeitados antes do
+  parser que já sabe ler os dois formatos.
+- Primeiro contato não é consentimento LGPD. Exigir `SIM`, registrar somente o
+  hash do remetente e tratar `PARAR` mesmo quando ainda não há consentimento.
+- Memória Redis/Postgres é superfície de saída: aplicar `scrub()` dentro do
+  serviço de persistência, não confiar apenas no caller.
+- Em N8N, conexões são resolvidas pelo **nome do nó**, não pelo `id` JSON.
+  Segredos de header devem ser credencial N8N/secret manager; nunca export literal.
+- Estado 2026-08-11: API/Redis/N8N/Evolution/Supabase online, sessão
+  `cartorio-agent` aberta; OpenClaw/Chatwoot offline. SSH key local ausente,
+  portanto nenhum deploy/restart foi feito.

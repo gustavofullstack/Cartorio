@@ -259,7 +259,9 @@ def format_bot_text(text: str) -> str:
     t = re.sub(r"\n{3,}", "\n\n", t)
     # Remove espacos no fim de cada linha
     t = "\n".join(line.rstrip() for line in t.split("\n"))
-    return t.strip()
+    from app.services.ptbr_output import normalize_ptbr_output
+
+    return normalize_ptbr_output(t.strip())
 
 
 def telegram_html(text: str) -> str:

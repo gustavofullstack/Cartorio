@@ -22,6 +22,8 @@ from __future__ import annotations
 from collections.abc import MutableSet, Sequence
 from typing import Any
 
+from app.services.whatsapp_orchestration import number_burst_messages
+
 # Alinhado com chat_pipeline.DEBOUNCE_WINDOW_SEC e telegram.DEBOUNCE_WINDOW
 DEBOUNCE_WINDOW_SEC: float = 1.2
 
@@ -61,8 +63,8 @@ def merge_burst_texts(texts: Sequence[str] | None) -> str:
     Espelha `chat_pipeline.resume_burst` + dedupe leve de strings vazias:
 
     - vazio / só whitespace → \"\"
-    - 1 ou 2 textos não-vazios → último texto (comportamento v2.0 anti-spam)
-    - 3+ textos → \"[N mensagens] t1 | t2 | ...\" truncado a BURST_JOIN_MAX_CHARS
+    - 1 texto → passthrough
+    - 2+ textos → bloco numerado (nunca descarta a primeira)
 
     Não chama LLM; é pure merge para o agent path.
 
@@ -86,12 +88,7 @@ def merge_burst_texts(texts: Sequence[str] | None) -> str:
     if not cleaned:
         return ""
 
-    if len(cleaned) <= BURST_RESUME_THRESHOLD:
-        return cleaned[-1]
-
-    joined = " | ".join(cleaned)
-    body = joined[:BURST_JOIN_MAX_CHARS]
-    return f"[{len(cleaned)} mensagens] {body}"
+    return number_burst_messages(cleaned)
 
 
 def is_duplicate_update(

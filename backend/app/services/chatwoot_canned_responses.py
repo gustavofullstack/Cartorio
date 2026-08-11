@@ -101,9 +101,8 @@ CANNED_HORARIO_ATENDIMENTO = CannedResponse(
     short_code="horario_atendimento",
     content=(
         "🕐 **Horário de Atendimento**\n\n"
-        "Segunda a Sexta: 08h00 às 17h00\n"
-        "Sábado: 08h00 às 12h00\n"
-        "Domingo: fechado\n\n"
+        "Segunda a Sexta: 09h00 às 17h00\n"
+        "Sábado, domingo e feriados: sem expediente regular\n\n"
         "Fora do horário, sua mensagem será respondida no próximo dia útil. "
         "Para emergências, procure o Plantão Judicial."
     ),
@@ -164,7 +163,7 @@ CANNED_CERTIDAO_PRONTA = CannedResponse(
         "Protocolo: **#{{custom.protocolo}}**\n\n"
         "Para retirar:\n"
         "📍 Presencialmente: Rua X, nº Y, Centro, Uberlândia/MG\n"
-        "🕐 Horário: 08h00 às 17h00 (seg-sex)\n\n"
+        "🕐 Horário: 09h00 às 17h00 (seg-sex)\n\n"
         "Documentos necessários:\n"
         "• Documento com foto\n"
         "• Comprovante de pagamento (se aplicável)"
@@ -297,7 +296,7 @@ CANNED_AGENDAMENTO_HORARIO = CannedResponse(
     short_code="agendamento_horario",
     content=(
         "📅 **Horários Disponíveis para Agendamento**\n\n"
-        "🕐 **Manhã**: 08h00, 09h00, 10h00, 11h00\n"
+        "🕐 **Manhã**: 09h00, 10h00, 11h00\n"
         "🕐 **Tarde**: 13h30, 14h30, 15h30, 16h30\n\n"
         "Qual horário prefere?"
     ),
@@ -447,8 +446,8 @@ CANNED_LGPD_DPO = CannedResponse(
         "👤 **Encarregado de Proteção de Dados (DPO)**\n\n"
         "Para questões sobre tratamento de dados pessoais:\n\n"
         "📧 **dpo@2notasudi.com.br**\n"
-        "📞 (34) 3250-XXXX\n\n"
-        "Horário de atendimento: seg-sex 08h00-17h00"
+        "📞 (34) 3216-0252\n\n"
+        "Horário de atendimento: seg-sex 09h00-17h00"
     ),
     tags=("lgpd", "dpo", "contato"),
 )
@@ -575,7 +574,7 @@ CANNED_FERIADO = CannedResponse(
     content=(
         "📅 **Aviso de Feriado**\n\n"
         "Hoje é feriado nacional/municipal.\n\n"
-        "🕐 Retornaremos o atendimento no próximo dia útil, às 08h00.\n\n"
+        "🕐 Retornaremos o atendimento no próximo dia útil, às 09h00.\n\n"
         "Para emergências, procure o Plantão Judicial."
     ),
     tags=("aviso", "feriado"),

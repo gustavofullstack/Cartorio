@@ -158,3 +158,29 @@ async def test_whatsapp_opt_out_revokes_consent(mock_adapter, db_session) -> Non
         db_session.refresh(c)
         assert c.consentimento_lgpd is False
         assert c.motivo_encerramento.value == "revogacao_consentimento"
+
+
+@pytest.mark.asyncio
+async def test_whatsapp_blocks_non_pilot_when_restricted(mock_adapter, monkeypatch) -> None:
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "pietra_whatsapp_restrict_inbound", True)
+    monkeypatch.setattr(settings, "pietra_whatsapp_allowed_sender_hashes", "")
+    payload = _make_evolution_payload("Ola assistente", sender="5511988888888")
+    resp = client.post("/api/v1/whatsapp/webhook", json=payload)
+    assert resp.status_code == 200
+    assert resp.json()["detail"] == "sender_not_authorized"
+    mock_adapter.send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_whatsapp_allows_felipe_pilot_when_restricted(mock_adapter, monkeypatch) -> None:
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "pietra_whatsapp_restrict_inbound", True)
+    monkeypatch.setattr(settings, "pietra_whatsapp_allowed_sender_hashes", "")
+    payload = _make_evolution_payload("Ola assistente", sender="5534998807228")
+    resp = client.post("/api/v1/whatsapp/webhook", json=payload)
+    assert resp.status_code == 200
+    assert resp.json()["detail"] == "consent_required"
+    mock_adapter.send.assert_called_once()

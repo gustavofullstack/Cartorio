@@ -58,13 +58,13 @@
             {
               "id": "raw",
               "name": "raw_text",
-              "value": "={{ $json.body.message.text }}",
+              "value": "={{ $json.body?.data?.message?.conversation || $json.body?.data?.message?.extendedTextMessage?.text || $json.body?.message?.text || $json.body?.message?.conversation || '' }}",
               "type": "string"
             },
             {
               "id": "sender",
               "name": "sender",
-              "value": "={{ $json.body.sender }}",
+              "value": "={{ $json.body?.data?.key?.remoteJid || $json.body?.sender || 'unknown' }}",
               "type": "string"
             },
             {
@@ -115,10 +115,6 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-API-Key",
-              "value": "dffe2d0321dcf03f729d5967da45eb7b04cc478935f86131a52b0d649889c69b"
-            },
-            {
               "name": "Content-Type",
               "value": "application/json"
             }
@@ -140,6 +136,12 @@
       "name": "MCP: cartorio_chatbot_responder",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ADNkyTP2e6uYskUZ",
+          "name": "cartorio-api-key"
+        }
+      },
       "position": [
         900,
         300
@@ -177,6 +179,28 @@
   ],
   "connections": {
     "Webhook Evolution": {
+      "main": [
+        [
+          {
+            "node": "Dedup Webhook (SETNX)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedup Webhook (SETNX)": {
+      "main": [
+        [
+          {
+            "node": "Redis SETNX 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis SETNX 24h": {
       "main": [
         [
           {
@@ -225,28 +249,6 @@
         [
           {
             "node": "Respond",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "webhook-trigger": {
-      "main": [
-        [
-          {
-            "node": "dedup-webhook-idempotency",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "dedup-webhook-idempotency": {
-      "main": [
-        [
-          {
-            "node": "redis-setnx-24h",
             "type": "main",
             "index": 0
           }

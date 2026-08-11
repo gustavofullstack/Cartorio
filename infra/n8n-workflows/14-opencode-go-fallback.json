@@ -94,10 +94,6 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "X-API-Key",
-              "value": "dffe2d0321dcf03f729d5967da45eb7b04cc478935f86131a52b0d649889c69b"
-            },
-            {
               "name": "Content-Type",
               "value": "application/json"
             }
@@ -119,6 +115,12 @@
       "name": "POST OpenCode-Go Direct",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ADNkyTP2e6uYskUZ",
+          "name": "cartorio-api-key"
+        }
+      },
       "position": [
         680,
         300

@@ -61,6 +61,9 @@ _HERMES_IDENTITY_PATTERNS: Final[tuple[str, ...]] = (
     r"(?:^|\W)(?:me\s+)?chamo\s+\*{0,2}(?:minimax|chatgpt|claude|kimi|gemini|grok|deepseek)(?:\*{0,2})(?:\W|$)",
     r"(?:^|\W)desenvolvid[oa]\s+pel[ao]\s+\*{0,2}(?:minimax|openai|anthropic|google|deepseek|xai|meta|moonshot|alibaba|mistral)(?:\*{0,2})(?:\W|$)",
     r"(?:^|\W)sou\s+(?:um|uma)\s+modelo\s+de\s+(?:linguagem|inteligencia\s+artificial|ia)(?:\W|$)",
+    # Corrupcao de identidade Pietra -> "pedra" (auditoria WhatsApp 2026-08-11)
+    r"(?:^|\W)(?:eu\s+)?sou\s+a\s+pedra(?:\W|$)",
+    r"(?:^|\W)pedra do cart[oó]rio(?:\W|$)",
 )
 
 _COMPILED_PATTERNS: Final[tuple[re.Pattern[str], ...]] = tuple(
@@ -204,6 +207,9 @@ def guard_identity(
     cleaned_text = re.sub(r"(?i)\bsou\s+(?:o|a)\s+hermes[,\.\!]?", "", text).strip()
     cleaned_text = re.sub(r"(?i)\bhermes-agent\b", "Pietra", cleaned_text)
     cleaned_text = re.sub(r"(?i)\bhermes\b", "Pietra", cleaned_text)
+    cleaned_text = re.sub(r"(?i)\bpedra do cart[oó]rio\b", "Pietra", cleaned_text)
+    cleaned_text = re.sub(r"(?i)\beu sou a pedra\b", "Eu sou a Pietra", cleaned_text)
+    cleaned_text = re.sub(r"(?i)\ba pedra\b", "a Pietra", cleaned_text)
     # Providers/modelos: remover self-id e neutralizar nomes (2026-07-28).
     cleaned_text = re.sub(
         r"(?i)\bsou\s+(?:o|a|um|uma)\s+\*{0,2}(?:minimax(?:\s*-?\s*m[\d.]+)?|chatgpt|gpt-?\d[\w.-]*|claude|kimi|gemini|grok|deepseek|llama|qwen|mistral|copilot|openai)\*{0,2}[,\.\!]?",

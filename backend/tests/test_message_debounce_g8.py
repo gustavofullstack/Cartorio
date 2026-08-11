@@ -66,30 +66,36 @@ class TestMergeBurstTexts:
     def test_single_text(self) -> None:
         assert merge_burst_texts(["ola"]) == "ola"
 
-    def test_two_texts_returns_last(self) -> None:
-        # espelha resume_burst: <=2 → último
-        assert merge_burst_texts(["oi", "quero certidao"]) == "quero certidao"
+    def test_two_texts_keeps_both(self) -> None:
+        out = merge_burst_texts(["oi", "quero certidao"])
+        assert "oi" in out
+        assert "quero certidao" in out
+        assert "2 mensagens" in out
 
     def test_three_plus_summarizes(self) -> None:
         out = merge_burst_texts(["a", "b", "c"])
-        assert out.startswith("[3 mensagens] ")
-        assert "a | b | c" in out
+        assert "3 mensagens" in out
+        assert "1) a" in out
+        assert "2) b" in out
+        assert "3) c" in out
 
     def test_strips_and_skips_empty_in_burst(self) -> None:
         out = merge_burst_texts([" a ", "", "  b  ", "c"])
-        assert out.startswith("[3 mensagens] ")
-        assert out.endswith("a | b | c") or "a | b | c" in out
+        assert "3 mensagens" in out
+        assert "1) a" in out
+        assert "2) b" in out
+        assert "3) c" in out
 
-    def test_truncates_long_join(self) -> None:
+    def test_keeps_all_messages_in_long_burst(self) -> None:
         long_parts = [f"msg{i}-{'x' * 50}" for i in range(20)]
         out = merge_burst_texts(long_parts)
-        assert out.startswith(f"[{len(long_parts)} mensagens] ")
-        body = out.split("] ", 1)[1]
-        assert len(body) <= BURST_JOIN_MAX_CHARS
+        assert "20 mensagens" in out
+        for i, part in enumerate(long_parts, start=1):
+            assert f"{i}) {part}" in out
 
     def test_preserves_order(self) -> None:
         out = merge_burst_texts(["primeiro", "segundo", "terceiro"])
-        assert "primeiro | segundo | terceiro" in out
+        assert out.index("primeiro") < out.index("segundo") < out.index("terceiro")
 
 
 class TestIsDuplicateUpdate:
@@ -163,5 +169,6 @@ class TestWorkflowIntegration:
         assert started == 1
         assert queue == ["oi", "preciso de certidao", "nascimento"]
         merged = merge_burst_texts(queue)
-        assert merged.startswith("[3 mensagens]")
+        assert "3 mensagens" in merged
         assert "nascimento" in merged
+        assert "oi" in merged

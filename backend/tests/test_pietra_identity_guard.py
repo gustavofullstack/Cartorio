@@ -232,6 +232,16 @@ def test_intercept_result_is_frozen() -> None:
 # === Integracao minima com sanitize_response existente ===
 
 
+def test_pedra_do_cartorio_e_identity_leak() -> None:
+    """Auditoria WhatsApp 2026-08-11: 'pedra do cartorio' nao pode ir ao cliente."""
+    leaked = "Eu sou a pedra do cartorio."
+    assert detect_hermes_identity_leak(leaked) is not None
+    result = guard_identity(leaked, channel="whatsapp")
+    assert result.action is InterceptAction.SUBSTITUTE
+    assert "pietra" in result.sanitized_text.lower()
+    assert "pedra do cartorio" not in result.sanitized_text.lower()
+
+
 def test_guard_complementa_sanitize_existente() -> None:
     """O guard nao duplica sanitize_response; ambos rodam em camadas
     diferentes (sanitize = FORBIDDEN_PHRASES, guard = identity pattern regex)."""

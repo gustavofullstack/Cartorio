@@ -83,6 +83,11 @@ os.environ["N8N_API_KEY"] = "header.payload.signature"
 # Produção DEVE ter REQUIRE=true e EVOLUTION_WEBHOOK_SECRET configurado.
 os.environ.setdefault("EVOLUTION_REQUIRE_SIGNATURE", "false")
 os.environ.setdefault("EVOLUTION_WEBHOOK_SECRET", "")
+os.environ["EVOLUTION_LEGACY_WEBHOOK_ENABLED"] = "true"
+# Suíte local permanece aberta. Produção default é restrict_inbound=true
+# (piloto Felipe+Gustavo). Nao herdar APP_ENV=test da VPS.
+os.environ["PIETRA_WHATSAPP_RESTRICT_INBOUND"] = "false"
+os.environ.setdefault("PIETRA_WHATSAPP_ALLOWED_SENDER_HASHES", "")
 
 TEST_CARTORIO_API_KEY = "a" * 64
 os.environ["CARTORIO_API_KEY"] = TEST_CARTORIO_API_KEY
@@ -102,6 +107,8 @@ from app.config import get_settings, settings  # noqa: E402
 
 get_settings.cache_clear()
 settings.jwt_secret = "a" * 64
+settings.pietra_whatsapp_restrict_inbound = False
+settings.pietra_whatsapp_allowed_sender_hashes = ""
 
 
 from app.models.base import Base  # noqa: E402

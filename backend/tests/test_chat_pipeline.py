@@ -254,14 +254,15 @@ class TestResumeBurst:
     def test_single_text(self) -> None:
         assert resume_burst(["Oi"]) == "Oi"
 
-    def test_two_texts_returns_last(self) -> None:
-        # <= 2 retorna a ultima sem prefixo
-        assert resume_burst(["Oi", "Quanto custa?"]) == "Quanto custa?"
+    def test_two_texts_keeps_both(self) -> None:
+        result = resume_burst(["Oi", "Quanto custa?"])
+        assert "Oi" in result
+        assert "Quanto custa?" in result
+        assert "2 mensagens" in result
 
     def test_three_or_more_returns_resumed(self) -> None:
-        # > 2 retorna versao resumida
         result = resume_burst(["Oi", "Tudo bem?", "Quanto custa?"])
-        assert "[3 mensagens]" in result
+        assert "3 mensagens" in result
         assert "Oi" in result
         assert "Quanto custa?" in result
 

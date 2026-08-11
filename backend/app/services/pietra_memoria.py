@@ -30,6 +30,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.models.base import utc_now_naive
+from app.services.pii import scrub
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +90,15 @@ def salvar_mensagem(
         raise ValueError(f"role invalida: {role!r}")
 
     now = utc_now_naive()
-    metadata_json = json.dumps(metadata or {}, ensure_ascii=False, default=str)
+    # Memória é armazenamento externo ao pipeline de resposta: nunca grave
+    # CPF, telefone, e-mail ou data em claro mesmo quando o caller esquece o
+    # scrub. O identificador operacional já chega como hash.
+    safe_content = scrub(content).text
+    safe_metadata = {
+        key: scrub(value).text if isinstance(value, str) else value
+        for key, value in (metadata or {}).items()
+    }
+    metadata_json = json.dumps(safe_metadata, ensure_ascii=False, default=str)
 
     # 1. Postgres (persistente)
     postgres_ok = False
@@ -106,7 +115,7 @@ def salvar_mensagem(
                 "session_id": session_id,
                 "canal": canal,
                 "role": role,
-                "content": content,
+                "content": safe_content,
                 "metadata": metadata_json,
                 "now": now,
             },
@@ -126,8 +135,8 @@ def salvar_mensagem(
             entry = json.dumps(
                 {
                     "role": role,
-                    "content": content,
-                    "metadata": metadata or {},
+                    "content": safe_content,
+                    "metadata": safe_metadata,
                     "created_at": now.isoformat(),
                 },
                 ensure_ascii=False,

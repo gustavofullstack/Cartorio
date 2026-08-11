@@ -197,6 +197,15 @@ class Settings(BaseSettings):
     evolution_base_url: str = "http://cartorio_evolution-api:8080"
     evolution_api_key: Optional[str] = None
     evolution_instance: str = "cartorio-agent"
+    # Endpoint legado inline fica desligado; o path canonico e /whatsapp/webhook.
+    evolution_legacy_webhook_enabled: bool = False
+    # CSV de hashes HMAC-SHA256 dos E.164 autorizados a usar a Pietra.
+    # Lista ou chave vazia com restrict_inbound=true bloqueia todo atendimento.
+    pietra_whatsapp_allowed_sender_hashes: str = ""
+    # Chave dedicada: a rotacao da chave de auditoria nao pode alterar a ACL.
+    pietra_whatsapp_allowlist_hmac_key: str = ""
+    # True (default): inbound restrito. False somente na suite local.
+    pietra_whatsapp_restrict_inbound: bool = True
 
     # ========================================================================
     # Chatwoot (CRM / atendimento humano)

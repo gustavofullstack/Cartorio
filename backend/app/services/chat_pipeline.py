@@ -61,6 +61,17 @@ from app.services.bot_metrics import (
     scrub_with_metric,
 )
 from app.integrations.fallback import chat_with_fallback, ChatResponse, ChatError, ChatErrorKind
+from app.services.whatsapp_orchestration import (
+    IDEMPOTENCY_TTL_SEC as ORCH_IDEMPOTENCY_TTL_SEC,
+    acquire_conversation_lock,
+    check_output_idempotency,
+    is_stale_event,
+    number_burst_messages,
+    release_conversation_lock,
+)
+from app.services.pietra_legal_guardrails import apply_legal_guardrails
+from app.services.pietra_identity_guard import guard_identity
+from app.services.outbound_scrub import scrub_bot_outbound
 # audit_log usa AuditService.log (session-based) — versão simplificada abaixo
 # que grava log estruturado em JSON + Redis pub/sub (sem bloquear o pipeline).
 
@@ -268,7 +279,7 @@ class ChannelAdapter(ABC):
 
 # ===================== IDEMPOTENCY =====================
 
-IDEMPOTENCY_TTL_SEC = 600  # 10min: evita reprocessar mesmo update_id
+IDEMPOTENCY_TTL_SEC = ORCH_IDEMPOTENCY_TTL_SEC  # 24h — contrato do projeto
 
 
 async def check_idempotency(update_id: str, channel: Channel) -> bool:
@@ -339,17 +350,11 @@ DEBOUNCE_WINDOW_SEC = 1.2  # janela para coletar msgs antes de processar
 
 
 def resume_burst(texts: list[str]) -> str:
-    """Se cliente mandou 10 msg em 5s, resume em 1 só resposta.
+    """Consolida rajada sem perder nenhuma mensagem (auditoria P0 2026-08-11).
 
-    Regra Telegram v2.0 (turno 49): se len(textos) > 2, resume.
-
-    Returns:
-        Texto único consolidado.
+    1 msg: texto puro. 2+: bloco numerado na ordem de chegada.
     """
-    if len(texts) <= 2:
-        return texts[-1] if texts else ""
-    joined = " | ".join(t.strip() for t in texts if t.strip())
-    return f"[{len(texts)} mensagens] {joined[:600]}"
+    return number_burst_messages(texts)
 
 
 async def enqueue_message(msg: InboundMessage) -> bool:
@@ -374,7 +379,7 @@ async def enqueue_message(msg: InboundMessage) -> bool:
     pipe = bus.client.pipeline(transaction=True)
     pipe.rpush(key, payload)
     pipe.llen(key)
-    pipe.expire(key, 10)  # TTL fila
+    pipe.expire(key, 30)  # TTL fila cobre debounce + lock retry
     _, llen, _ = await pipe.execute()
     return llen == 1  # primeiro → dispara debounce
 
@@ -744,175 +749,254 @@ async def process_debounced(
             except Exception:
                 pass
 
-        # 1. Fetch queue (com metric latency stage=debounce)
-        with BotStageTimer(channel=channel.value, stage="debounce", auto_inc_request=False):
-            queue = await fetch_queue(channel, sender_id)
-        if not queue:
-            return
-        textos = [m["text"] for m in queue if m.get("text")]
-        msg_ids = [m["msg_id"] for m in queue if m.get("msg_id")]
+        # 0. Janela real de debounce (antes o sleep nao existia no WhatsApp).
+        await asyncio.sleep(DEBOUNCE_WINDOW_SEC)
 
-        # 2. Resume burst
-        text_to_process = resume_burst(textos)
-        if not text_to_process:
-            return
-
-        # 3. Rate limit
-        if not await check_rate_limit(sender_id, channel):
-            _emit(
-                logging.INFO,
-                "rate limited",
-                event="bot.rate_limited",
-                channel=channel.value,
-                chat_id=chat_hash,
-                correlation_id=correlation_id,
-            )
-            await audit_log(
-                channel,
-                sender_id,
-                hash_content(text_to_process),
-                "rate_limited",
-                "dropped",
-                correlation_id,
-            )
-            inc_bot_request(channel.value, "rate_limited")
-            return
-
-        # 4. Typing loop
-        stop_typing = asyncio.Event()
-        typing_task = asyncio.create_task(typing_loop(adapter, sender_id, stop_typing))
+        locked = await acquire_conversation_lock(channel.value, sender_id)
+        if not locked:
+            await asyncio.sleep(1.0)
+            locked = await acquire_conversation_lock(channel.value, sender_id)
+            if not locked:
+                _emit(
+                    logging.INFO,
+                    "conversation lock busy",
+                    event="bot.lock_busy",
+                    channel=channel.value,
+                    chat_id=chat_hash,
+                    correlation_id=correlation_id,
+                )
+                return
 
         try:
-            # 5. LLM call (Hermes Agent AI Minimax) - span llm.chat
-            fast = _is_fast_path(text_to_process)
-            
-            from app.services.dialog_history import hist_get, hist_append, DialogHistoryConfig
-            from app.services.cartorio_agent import run_cartorio_agent
-            from app.services.redis_bus import get_bus
-            
-            bus = get_bus()
-            hist_key = f"{channel.value}:{sender_id}"
-            history = await hist_get(bus, hist_key) if bus else []
-            if bus:
-                cfg = DialogHistoryConfig(max_entries=20, ttl_sec=86400, max_tokens=2000)
-                await hist_append(bus, hist_key, "user", text_to_process, config=cfg)
-
-            with llm_span(model="auto", operation="chat") as llm_sp:
-                if llm_sp is not None and hasattr(llm_sp, "set_attribute"):
-                    try:
-                        llm_sp.set_attribute("bot.channel", channel.value)
-                        llm_sp.set_attribute("bot.fast_path", fast)
-                    except Exception:
-                        pass
-                
-                reply = await run_cartorio_agent(
-                    text_to_process,
-                    history=history,
-                    attachments=None,
-                    chat_id=sender_id,
-                )
-                raw_response = reply.text or "Desculpe, não consegui processar sua solicitação no momento."
-                if getattr(reply, "extra_messages", None):
-                    raw_response += "\n\n" + "\n\n".join(reply.extra_messages)
-                
-                # Melhorias Felipe: remove emojis, normaliza espaçamento e bloqueia blocos robóticos
-                try:
-                    from app.api.v1.telegram import format_bot_text, strip_emojis
-                    response_text = strip_emojis(format_bot_text(raw_response))
-                except Exception:
-                    response_text = raw_response
-            
-            if bus:
-                cfg = DialogHistoryConfig(max_entries=20, ttl_sec=86400, max_tokens=2000)
-                await hist_append(bus, hist_key, "assistant", response_text, config=cfg)
-
-            # 6. Scrub output (camada 3) + métrica
-            with BotStageTimer(channel=channel.value, stage="llm", auto_inc_request=False):
-                clean_response, _ = scrub_with_metric(response_text, channel.value)
-
-            _emit(
-                logging.INFO,
-                "bot llm ok",
-                event="bot.llm_ok",
-                channel=channel.value,
-                chat_id=chat_hash,
+            await _process_debounced_locked(
+                channel=channel,
+                sender_id=sender_id,
+                adapter=adapter,
                 correlation_id=correlation_id,
-                response_len=len(clean_response),
-                fast_path=fast,
+                chat_hash=chat_hash,
             )
+        finally:
+            await release_conversation_lock(channel.value, sender_id)
+        return
 
-            # 7. Send (com metric latency stage=send)
-            with BotStageTimer(channel=channel.value, stage="send", auto_inc_request=False):
-                out_msg = OutboundMessage(
-                    channel=channel,
-                    recipient_id=sender_id,
-                    text=clean_response,
-                )
-                sent = await adapter.send(out_msg)
 
-            # 8. React (ack visual) — desativado no WhatsApp (pedido Felipe: zero emoji
-            # na experiencia do cliente). Telegram mantem reacao nativa.
-            if sent and msg_ids and channel != Channel.WHATSAPP:
+async def _process_debounced_locked(
+    *,
+    channel: Channel,
+    sender_id: str,
+    adapter: ChannelAdapter,
+    correlation_id: str | None,
+    chat_hash: str,
+) -> None:
+    """Corpo do debounce com lock ja adquirido (FIFO por conversa)."""
+    # 1. Fetch queue (com metric latency stage=debounce)
+    with BotStageTimer(channel=channel.value, stage="debounce", auto_inc_request=False):
+        queue = await fetch_queue(channel, sender_id)
+    if not queue:
+        return
+    now = time.time()
+    fresh = [m for m in queue if not is_stale_event(float(m.get("ts") or now), now=now)]
+    if not fresh:
+        _emit(
+            logging.INFO,
+            "EXPIRED_STALE_EVENT",
+            event="bot.stale_expired",
+            channel=channel.value,
+            chat_id=chat_hash,
+            correlation_id=correlation_id,
+        )
+        await audit_log(
+            channel,
+            sender_id,
+            hash_content("stale"),
+            "receive",
+            "EXPIRED_STALE_EVENT",
+            correlation_id,
+        )
+        return
+    textos = [m["text"] for m in fresh if m.get("text")]
+    msg_ids = [m["msg_id"] for m in fresh if m.get("msg_id")]
+
+    # 2. Resume burst (todas as msgs, numeradas)
+    text_to_process = resume_burst(textos)
+    if not text_to_process:
+        return
+
+    # 3. Rate limit: espera em vez de descartar (P0 — pergunta perdida)
+    if not await check_rate_limit(sender_id, channel):
+        _emit(
+            logging.INFO,
+            "rate limited wait",
+            event="bot.rate_limited",
+            channel=channel.value,
+            chat_id=chat_hash,
+            correlation_id=correlation_id,
+        )
+        await asyncio.sleep(RATE_LIMIT_SECONDS)
+
+    # 4. Typing loop
+    stop_typing = asyncio.Event()
+    typing_task = asyncio.create_task(typing_loop(adapter, sender_id, stop_typing))
+
+    try:
+        # 5. LLM call (Hermes Agent AI Minimax) - span llm.chat
+        fast = _is_fast_path(text_to_process)
+
+        from app.services.dialog_history import hist_get, hist_append, DialogHistoryConfig
+        from app.services.cartorio_agent import run_cartorio_agent
+        from app.services.redis_bus import get_bus
+
+        bus = get_bus()
+        hist_key = f"{channel.value}:{sender_id}"
+        history = await hist_get(bus, hist_key) if bus else []
+        if bus:
+            cfg = DialogHistoryConfig(max_entries=20, ttl_sec=86400, max_tokens=2000)
+            await hist_append(bus, hist_key, "user", text_to_process, config=cfg)
+
+        with llm_span(model="auto", operation="chat") as llm_sp:
+            if llm_sp is not None and hasattr(llm_sp, "set_attribute"):
                 try:
-                    await adapter.react(sender_id, msg_ids[-1], "thumbsup")
+                    llm_sp.set_attribute("bot.channel", channel.value)
+                    llm_sp.set_attribute("bot.fast_path", fast)
                 except Exception:
                     pass
 
-            # 9. Audit log send
-            await audit_log(
-                channel,
-                sender_id,
-                hash_content(clean_response),
-                "send",
-                "ok" if sent else "failed",
-                correlation_id,
+            reply = await run_cartorio_agent(
+                text_to_process,
+                history=history,
+                attachments=None,
+                chat_id=sender_id,
             )
+            raw_response = (
+                reply.text or "Desculpe, não consegui processar sua solicitação no momento."
+            )
+            if getattr(reply, "extra_messages", None):
+                raw_response += "\n\n" + "\n\n".join(reply.extra_messages)
 
-            # T51: structured log final
+            try:
+                from app.api.v1.telegram import format_bot_text, strip_emojis
+
+                response_text = strip_emojis(format_bot_text(raw_response))
+            except Exception:
+                response_text = raw_response
+
+        if bus:
+            cfg = DialogHistoryConfig(max_entries=20, ttl_sec=86400, max_tokens=2000)
+            await hist_append(bus, hist_key, "assistant", response_text, config=cfg)
+
+        # 6. Scrub output (camada 3) + métrica + guardrails P0
+        with BotStageTimer(channel=channel.value, stage="llm", auto_inc_request=False):
+            clean_response, _ = scrub_with_metric(response_text, channel.value)
+        clean_response = apply_legal_guardrails(user_text=text_to_process, bot_text=clean_response)
+        id_result = guard_identity(clean_response, channel=channel.value)
+        clean_response = id_result.sanitized_text
+        if id_result.action.value != "pass":
+            _emit(
+                logging.WARNING,
+                "identity guard intercepted",
+                event="bot.identity_blocked",
+                channel=channel.value,
+                chat_id=chat_hash,
+                correlation_id=correlation_id,
+            )
+        clean_response = scrub_bot_outbound(clean_response)
+
+        _emit(
+            logging.INFO,
+            "bot llm ok",
+            event="bot.llm_ok",
+            channel=channel.value,
+            chat_id=chat_hash,
+            correlation_id=correlation_id,
+            response_len=len(clean_response),
+            fast_path=fast,
+        )
+
+        # 6b. Idempotencia de saida — nao reenviar o mesmo texto
+        dup_out = await check_output_idempotency(channel.value, sender_id, clean_response)
+        if dup_out:
             _emit(
                 logging.INFO,
-                "bot send ok" if sent else "bot send failed",
-                event="bot.send",
+                "output idempotent skip",
+                event="bot.output_dup",
                 channel=channel.value,
                 chat_id=chat_hash,
                 correlation_id=correlation_id,
-                sent=sent,
             )
+            return
 
-        except Exception as e:
-            # T59: capture LLM/pipeline exceptions via Sentry (lesson 145)
-            _emit(
-                logging.ERROR,
-                f"process_debounced error: {e}",
-                event="bot.error",
-                channel=channel.value,
-                chat_id=chat_hash,
-                correlation_id=correlation_id,
-                error=str(e),
-                error_type=type(e).__name__,
+        # 7. Send (com metric latency stage=send)
+        with BotStageTimer(channel=channel.value, stage="send", auto_inc_request=False):
+            out_msg = OutboundMessage(
+                channel=channel,
+                recipient_id=sender_id,
+                text=clean_response,
             )
+            sent = await adapter.send(out_msg)
+
+        # 8. React (ack visual) — desativado no WhatsApp (pedido Felipe: zero emoji
+        # na experiencia do cliente). Telegram mantem reacao nativa.
+        if sent and msg_ids and channel != Channel.WHATSAPP:
             try:
-                sentry_capture_exception(
-                    e,
-                    extra={
-                        "channel": channel.value,
-                        "correlation_id": correlation_id,
-                        "chat_hash": chat_hash,
-                        "stage": "llm_or_send",
-                    },
-                )
+                await adapter.react(sender_id, msg_ids[-1], "thumbsup")
             except Exception:
                 pass
-            await audit_log(
-                channel, sender_id, hash_content(text_to_process), "send", "failed", correlation_id
+
+        # 9. Audit log send
+        await audit_log(
+            channel,
+            sender_id,
+            hash_content(clean_response),
+            "send",
+            "ok" if sent else "failed",
+            correlation_id,
+        )
+
+        # T51: structured log final
+        _emit(
+            logging.INFO,
+            "bot send ok" if sent else "bot send failed",
+            event="bot.send",
+            channel=channel.value,
+            chat_id=chat_hash,
+            correlation_id=correlation_id,
+            sent=sent,
+        )
+
+    except Exception as e:
+        # T59: capture LLM/pipeline exceptions via Sentry (lesson 145)
+        _emit(
+            logging.ERROR,
+            f"process_debounced error: {e}",
+            event="bot.error",
+            channel=channel.value,
+            chat_id=chat_hash,
+            correlation_id=correlation_id,
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        try:
+            sentry_capture_exception(
+                e,
+                extra={
+                    "channel": channel.value,
+                    "correlation_id": correlation_id,
+                    "chat_hash": chat_hash,
+                    "stage": "llm_or_send",
+                },
             )
-        finally:
-            # 10. Stop typing
-            stop_typing.set()
-            try:
-                await asyncio.wait_for(typing_task, timeout=1.0)
-            except (asyncio.TimeoutError, asyncio.CancelledError):
-                typing_task.cancel()
+        except Exception:
+            pass
+        await audit_log(
+            channel, sender_id, hash_content(text_to_process), "send", "failed", correlation_id
+        )
+    finally:
+        # 10. Stop typing
+        stop_typing.set()
+        try:
+            await asyncio.wait_for(typing_task, timeout=1.0)
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            typing_task.cancel()
 
 
 class _nullcontext:

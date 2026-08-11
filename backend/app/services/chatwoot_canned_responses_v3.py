@@ -25,7 +25,7 @@ CANNED_2VIA_INSTRUCOES = CannedResponse(
         "Para solicitar 2a via de documentos, voce pode:\n\n"
         "1. **Pelo portal**: https://2notasudi.com.br/2via (autenticacao CPF)\n"
         "2. **Por este chat**: digite o numero do protocolo (formato: PROT-2026-XXXXX)\n"
-        "3. **Presencialmente**: Av. XXXX, XXX, Uberlandia/MG (seg-sex 8h-17h)\n\n"
+        "3. **Presencialmente**: Rua Cel. Antonio Alves Pereira, 850, Centro, Uberlandia/MG (seg-sex 09h-17h)\n\n"
         "Prazo: PDF disponivel em ate 24h uteis apos solicitacao.\n"
         "Validade: URL assinada SHA256 com expiracao em 24h."
     ),
@@ -67,7 +67,7 @@ CANNED_PROTESTO_CONSULTA = CannedResponse(
         "Para consultar titulos em protesto:\n\n"
         "1. **Por CPF/CNPJ**: https://2notasudi.com.br/protesto/consulta\n"
         "2. **Por numero do titulo**: necessario numero do protocolo + data protesto\n"
-        "3. **Presencialmente**: Av. XXXX, XXX, Uberlandia/MG (seg-sex 8h-17h)\n\n"
+        "3. **Presencialmente**: Rua Cel. Antonio Alves Pereira, 850, Centro, Uberlandia/MG (seg-sex 09h-17h)\n\n"
         "Prazo: consulta gratuita ate 5 titulos/CPF/dia.\n"
         "LGPD: o CPF NAO eh armazenado na consulta (LGPD art. 18 IV)."
     ),

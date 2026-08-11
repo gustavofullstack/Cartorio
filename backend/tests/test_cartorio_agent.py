@@ -24,6 +24,23 @@ def test_catalogo_publico_usa_valores_finais_tjmg_2026() -> None:
     assert SERVICOS_CATALOGO["procuracao"][1] == "R$ 68,94"
     assert SERVICOS_CATALOGO["testamento"][1] == "R$ 437,24"
     assert SERVICOS_CATALOGO["ata_notarial"][1] == "R$ 218,42"
+    assert SERVICOS_CATALOGO["autenticacao_eletronica"][1] == "R$ 12,99"
+    assert SERVICOS_CATALOGO["cartao_autografo"][1] == "R$ 11,21"
+
+
+def test_proximos_horarios_nao_dispara_catalogo() -> None:
+    from app.services.cartorio_agent import _wants_catalog_continue
+
+    q = "Protocolo TESTE-2026-000123, segunda via e proximos horarios"
+    assert _wants_catalog_continue(q) is False
+    assert _detect_intent(q) == "protocolo"
+
+
+def test_match_servico_pdf_eletronico() -> None:
+    assert (
+        _match_servico("Recebi um PDF assinado digitalmente. Posso autenticar?")
+        == "autenticacao_eletronica"
+    )
 
 
 def test_detect_intent_preco() -> None:
@@ -173,7 +190,7 @@ async def test_agendamento_tool_requires_human_confirmation() -> None:
         "criar_agendamento_real",
         {
             "servico": "autenticacao",
-            "data": "20/07/2026",
+            "data": "20/08/2026",
             "hora": "10:00",
             "nome": "Cliente 123.456.789-09",
         },
@@ -185,6 +202,23 @@ async def test_agendamento_tool_requires_human_confirmation() -> None:
     assert "draft_requires_human_confirmation" in payload
     assert "123.456.789-09" not in payload
     assert used == ["tool_remote:criar_agendamento_real"]
+
+
+@pytest.mark.asyncio
+async def test_agendamento_tool_rejeita_sabado_e_oito_da_manha() -> None:
+    sabado = await _run_remote_tool(
+        "criar_agendamento_real",
+        {"servico": "autenticacao", "data": "15/08/2026", "hora": "10:00"},
+    )
+    cedo = await _run_remote_tool(
+        "criar_agendamento_real",
+        {"servico": "autenticacao", "data": "20/08/2026", "hora": "08:00"},
+    )
+    assert sabado is not None and cedo is not None
+    assert "slot_rejeitado" in sabado[0]
+    assert "fim_de_semana" in sabado[0]
+    assert "slot_rejeitado" in cedo[0]
+    assert "fora_do_expediente" in cedo[0]
 
 
 @pytest.mark.asyncio
