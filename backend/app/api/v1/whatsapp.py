@@ -4,7 +4,7 @@ Sprint 4 / Turn 51 (2026-07-09): paridade 100% com Telegram via chat_pipeline.py
 
 ARQUITETURA:
   Evolution API (whatsapp.2notasudi.com.br/manager)
-    └─ webhook POST /api/v1/webhook/evolution
+    └─ webhook POST /api/v1/whatsapp/webhook (legado: /api/v1/webhook/evolution)
          └─ WhatsAppAdapter (este arquivo)
               └─ chat_pipeline.process_message()
                    ├─ check_idempotency (message_id Evolution)
@@ -545,10 +545,14 @@ async def whatsapp_webhook(
         or request.headers.get("X-Webhook-Secret")
         or request.headers.get("Authorization")
     )
-    signature_required = os.getenv("EVOLUTION_REQUIRE_SIGNATURE", "true").lower() == "true"
     secret_configured = bool(
         os.getenv("EVOLUTION_WEBHOOK_SECRET") or os.getenv("EVOLUTION_WEBHOOK_SECRET_PREV")
     )
+    require_env = os.getenv("EVOLUTION_REQUIRE_SIGNATURE")
+    if require_env is not None:
+        signature_required = require_env.lower() == "true"
+    else:
+        signature_required = secret_configured
     if signature_required and not secret_configured:
         logger.error("WhatsApp webhook: HMAC obrigatório sem secret configurado")
         raise HTTPException(status_code=503, detail="webhook authentication misconfigured")
