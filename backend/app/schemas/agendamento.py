@@ -99,7 +99,7 @@ class AgendamentoResponse(AgendamentoBase):
         min_length=64,
         max_length=64,
         description="CPF hasheado (SHA256 - LGPD)",
-        examples=["a" * 64],
+        examples=["sha256_redacted_" + "x" * 48],
     )
 
     model_config = ConfigDict(
@@ -118,7 +118,7 @@ class AgendamentoResponse(AgendamentoBase):
                     "data_hora_fim": None,
                     "criado_em": "2026-06-25T10:00:00-03:00",
                     "atualizado_em": "2026-06-25T10:00:00-03:00",
-                    "cpf_hash": "a" * 64,
+                    "cpf_hash": "sha256_redacted_" + "x" * 48,
                 }
             ]
         }
