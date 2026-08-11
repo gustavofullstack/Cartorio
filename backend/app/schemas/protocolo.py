@@ -363,7 +363,10 @@ class ProtocoloResponse(BaseModel):
                 "numero": "2026-00001",
                 "status": "DRAFT",
                 "etapa_atual": "criado",
-                "cliente": {"nome": "Joao da Silva", "cpf_hash": "a" * 64},
+                "cliente": {
+                    "nome": "Joao da Silva",
+                    "cpf_hash": "sha256_redacted_" + "x" * 48,
+                },
                 "tipo": "certidao_negativa",
                 "canal_origem": "web",
                 "valor_base": "87.50",
