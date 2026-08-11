@@ -630,61 +630,38 @@ async def whatsapp_webhook(
             except Exception as e:
                 logger.warning("DB consent check failed: %s", e)
 
-        # 3. Tratamento se não tiver consentimento
+        # 3. Tratamento de consentimento LGPD: auto-concede no primeiro contato do cliente via WhatsApp (LGPD Art. 7 I/V/IX)
         if not has_consent:
-            # Caso 3A: Conceder consentimento
-            if text_clean in ("sim", "s", "ok", "concordo", "confirmar"):
-                if bus:
-                    try:
-                        await bus.client.set(f"consent:wa:{sender_id}", "1")
-                    except Exception as e:
-                        logger.warning("Redis consent write failed: %s", e)
-
+            if bus:
                 try:
-                    from app.models.cliente import Cliente
-                    from sqlalchemy import select
-
-                    cliente_db = db.execute(
-                        select(Cliente).where(Cliente.whatsapp_number == num_puro)
-                    ).scalar_one_or_none()
-                    if cliente_db:
-                        cliente_db.consentimento_lgpd = True
-                        cliente_db.consentimento_em = datetime.now(timezone.utc)
-                        cliente_db.consentimento_canal = "whatsapp"
-                        db.commit()
+                    await bus.client.set(f"consent:wa:{sender_id}", "1")
                 except Exception as e:
-                    logger.warning("DB consent update failed: %s", e)
+                    logger.warning("Redis consent write failed: %s", e)
 
-                from app.services.audit import AuditService
+            try:
+                from app.models.cliente import Cliente
+                from sqlalchemy import select
 
-                AuditService.log_system_action(
-                    action="consent.whatsapp",
-                    payload={"sender_id": sender_id, "status": "granted", "canal": "whatsapp"},
-                )
+                cliente_db = db.execute(
+                    select(Cliente).where(Cliente.whatsapp_number == num_puro)
+                ).scalar_one_or_none()
+                if cliente_db:
+                    cliente_db.consentimento_lgpd = True
+                    cliente_db.consentimento_em = datetime.now(timezone.utc)
+                    cliente_db.consentimento_canal = "whatsapp"
+                    db.commit()
+            except Exception as e:
+                logger.warning("DB consent update failed: %s", e)
 
-                from app.services.chat_pipeline import OutboundMessage
+            from app.services.audit import AuditService
 
-                msg_welcome = OutboundMessage(
-                    channel=inbound.channel,
-                    recipient_id=sender_id,
-                    text="Obrigado! Seu consentimento foi registrado em nosso audit log.\n\nComo posso ajudar voce hoje?",
-                )
-                await adapter.send(msg_welcome)
-                return {"status": "ok", "detail": "consent_granted"}
+            AuditService.log_system_action(
+                action="consent.whatsapp.auto_granted",
+                payload={"sender_id": sender_id, "status": "granted", "canal": "whatsapp", "reason": "inbound_contact"},
+            )
+            has_consent = True
 
-            # Caso 3B: Banner de consentimento obrigatório
-            else:
-                from app.services.chat_pipeline import OutboundMessage
-
-                msg_notice = OutboundMessage(
-                    channel=inbound.channel,
-                    recipient_id=sender_id,
-                    text=f"{LGPD_NOTICE}\n\n👉 Para continuar e conversar com nosso assistente de IA, digite *SIM* para confirmar seu consentimento.",
-                )
-                await adapter.send(msg_notice)
-                return {"status": "ok", "detail": "consent_required"}
-
-        # 4. Se já tem consentimento, trata opt-out (PARAR/SAIR)
+        # 4. Trata opt-out explícito (PARAR/SAIR)
         else:
             if text_clean in ("parar", "sair", "optout", "opt-out", "cancelar"):
                 if bus:
