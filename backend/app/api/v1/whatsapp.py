@@ -184,13 +184,15 @@ class WhatsAppAdapter(ChannelAdapter):
             self._client = None
 
     async def send(self, msg: OutboundMessage) -> bool:
-        """Envia mensagem de texto via Evolution sendText."""
+        """Envia mensagem de texto via Evolution sendText (sanitizada com 0% emojis)."""
         try:
+            from app.services.notificacao import _strip_emojis
             client = await self._get_client()
             url = f"{self.base_url}/message/sendText/{self.instance}"
+            clean_text = _strip_emojis(msg.text or "").strip()
             payload: dict[str, Any] = {
                 "number": msg.recipient_id.replace("@s.whatsapp.net", "").replace("@g.us", ""),
-                "text": msg.text[:MAX_RESPONSE_LEN],
+                "text": clean_text[:MAX_RESPONSE_LEN],
             }
             # Buttons (max 3) se houver keyboard
             if msg.keyboard:
