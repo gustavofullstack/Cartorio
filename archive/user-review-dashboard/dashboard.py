@@ -1319,6 +1319,10 @@ def build_html(payload: dict) -> str:
       background: var(--soft-blue);
       outline: none;
     }
+    .menu button:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: -2px;
+    }
     .table-scroll {
       overflow: auto;
       border: 1px solid var(--line);
@@ -1384,6 +1388,7 @@ def build_html(payload: dict) -> str:
     }
     .close svg { width: 18px; height: 18px; stroke-width: 2.1; }
     .close:hover, .close:focus-visible { background: var(--soft); outline: none; }
+    .close:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
     .copy-button {
       position: absolute;
       right: 8px; top: 8px;
@@ -1397,6 +1402,7 @@ def build_html(payload: dict) -> str:
     }
     .copy-button svg { width: 15px; height: 15px; stroke-width: 2; }
     .copy-button:hover, .copy-button:focus-visible { background: var(--soft); color: var(--ink); outline: none; }
+    .copy-button:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
     @media (max-width: 1100px) {
       .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
