@@ -591,7 +591,7 @@ que ja existia (commit f63f704) agora ativado em `main.py`.
 ### Adicionado
 - **N8N credential `evolution-api-cartorio` criada** (id `adbzRn9sEZD7VZbs`):
   - serverUrl: `http://cartorio_evolution-api:8080`
-  - apikey: `429683C4C977415CAAFCCE10F7D57E11` (Evolution env)
+  - apikey: `your_secure_api_key_here` (Evolution env)
 - **Workflow N8N #07 SIMPLIFICADO E ATIVADO** (era o unico inativo):
   - Cron 24h → GET atendimentos → Evolution sendText
   - Usa instance `cartorio-2notas`

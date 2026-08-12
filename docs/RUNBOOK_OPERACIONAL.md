@@ -107,15 +107,15 @@ curl -X GET "https://flow.2notasudi.com.br/api/v1/executions?limit=10" -H "X-N8N
 ```bash
 # Status instâncias
 curl -X GET "https://whatsapp.2notasudi.com.br/instance/fetchInstances" \
-  -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" | jq
+  -H "apikey: your_secure_api_key_here" | jq
 
 # QR Code (regenerar)
 curl -X GET "https://whatsapp.2notasudi.com.br/instance/connect/cartorio-2notas" \
-  -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" | jq
+  -H "apikey: your_secure_api_key_here" | jq
 
 # Restart instance
 curl -X POST "https://whatsapp.2notasudi.com.br/instance/restart/cartorio-2notas" \
-  -H "apikey: 429683C4C977415CAAFCCE10F7D57E11"
+  -H "apikey: your_secure_api_key_here"
 ```
 
 ### Chatwoot
@@ -281,7 +281,7 @@ curl -X POST "https://flow.2notasudi.com.br/webhook/evo-in" \
 
 # 2. Verificar Evolution
 curl -X GET "https://whatsapp.2notasudi.com.br/instance/connectionState/cartorio-2notas" \
-  -H "apikey: 429683C4C977415CAAFCCE10F7D57E11"
+  -H "apikey: your_secure_api_key_here"
 
 # 3. Verificar OpenClaw
 curl https://agent.2notasudi.com.br/health

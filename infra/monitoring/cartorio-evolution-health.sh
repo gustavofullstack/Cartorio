@@ -6,7 +6,7 @@
 set -euo pipefail
 
 INSTANCE="${1:-cartorio-2notas}"
-EVO_KEY="429683C4C977415CAAFCCE10F7D57E11"
+EVO_KEY="your_secure_api_key_here"
 
 # Resolve IP dinamicamente (Easypanel pode re-escalar container)
 CID=$(docker ps -qf "name=cartorio_evolution-api" | head -1)
