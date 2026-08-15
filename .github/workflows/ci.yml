@@ -239,6 +239,15 @@ jobs:
 
       # G6.A.T2 — OpenAPI snapshot CI gate
       - name: OpenAPI snapshot check (G6.A.T2)
+        env:
+          APP_ENV: test
+          DATABASE_URL: sqlite:///:memory:
+          REDIS_URL: redis://localhost:6379/0
+          LLM_DEFAULT_PROVIDER: "opencode_go"
+          BRAIN_API_ENABLED: "1"
+          AUDIT_HMAC_KEY: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          CARTORIO_API_KEY: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          PIETRA_CONVERSATION_HMAC_KEY: "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
         run: python3 scripts/openapi_snapshot.py --check
 
       # G6.B.T1 — N8N workflow validator CI gate
