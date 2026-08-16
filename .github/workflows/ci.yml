@@ -193,6 +193,7 @@ jobs:
       # `testing`). These values are synthetic CI-only credentials required
       # for importing the application during the OpenAPI snapshot gate.
       APP_ENV: test
+      BRAIN_API_ENABLED: "1"
       # Credenciais SINTETICAS CI-only (nao sao secrets reais) — optout documentado
       # pro secrets scanner (E3.03): hex-64 literal usado apenas pra import do app.
       AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  # noqa: ALLOW_KEY_FALLBACK (motivo: valor sintetico CI-only, nao rotacionavel)
