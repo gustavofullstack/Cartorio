@@ -85,6 +85,7 @@ def _scrub_value(data: Any, *, depth: int, max_depth: int) -> Any:
 
 _cpf_re = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
 
+
 def mcp_output_has_raw_cpf(data: Any) -> bool:
     """True se ainda restar padrão de CPF não redigido (para testes)."""
     if isinstance(data, dict):
