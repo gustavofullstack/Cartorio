@@ -134,7 +134,7 @@ class TestPayloadSemSecrets:
     async def test_body_llm_nao_contem_valores_secret_env(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        secret_value = "sk-cp-FAKESECRET-G9S3-NAO-PODE-VAZAR"  # noqa: F401, F841 (motivo: chave MiniMax SINTETICA de fixture — formato realista p/ testar gate de seguranca S3, sem valor real)
+        secret_value = "sk-cp-FAKESECRET-G9S3-NAO-PODE-VAZAR"  # noqa: F401, F841  # ALLOW_KEY_FALLBACK (motivo: chave MiniMax SINTETICA de fixture — formato realista p/ testar gate de seguranca S3, sem valor real)
         _setup_minimax(monkeypatch)
         monkeypatch.setattr(cartorio_agent, "MINIMAX_API_KEY", secret_value)
         failures: list[str] = []
