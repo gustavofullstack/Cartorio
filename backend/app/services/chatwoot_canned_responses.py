@@ -247,15 +247,14 @@ CANNED_PROCURACAO = CannedResponse(
     short_code="procuracao",
     content=(
         "✍️ **Procuração**\n\n"
-        "Tipos mais comuns:\n"
-        "• Procuração com poderes específicos\n"
-        "• Procuração geral\n"
-        "• Procuração para representação em juízo\n"
-        "• Procuração para fins previdenciários\n\n"
-        "Valor: R$ 156,40 (base)\n"
+        "O valor depende da finalidade:\n"
+        "• Genérica (representação simples, órgãos, ad judicia): R$ 71,38\n"
+        "• Financeira/Patrimonial (venda de bens, banco, valores): R$ 226,14\n"
+        "• Previdenciária/INSS: R$ 37,91\n\n"
+        "Qual será a finalidade da procuração?\n\n"
         "Comparecer presencialmente com:\n"
         "• Outorgante: RG, CPF, comprovante de residência\n"
-        "• Outorgado: RG e CPF (cópia)"
+        "• Outorgado: RG e CPF (dados completos)"
     ),
     tags=("procuracao", "servico"),
 )
@@ -264,13 +263,11 @@ CANNED_AUTENTICACAO = CannedResponse(
     short_code="autenticacao",
     content=(
         "📋 **Autenticação de Documentos**\n\n"
-        "Valor: R$ 28,90 por documento\n\n"
-        "Documentos aceitos:\n"
-        "• Cópias de RG, CPF, CNH\n"
-        "• Certidões\n"
-        "• Comprovantes\n"
-        "• Documentos assinados\n\n"
-        "Traga o **documento original** + a **cópia** para autenticação."
+        "Totais operacionais:\n"
+        "• Cópia física: R$ 11,61 por folha/documento (se o cliente trouxer a cópia)\n"
+        "• Documento eletrônico: R$ 13,91\n"
+        "• Cópia xerox fornecida pelo cartório: R$ 1,80 (1 face) / R$ 3,60 (frente e verso)\n\n"
+        "Atendimento presencial por ordem de chegada, sem agendamento."
     ),
     tags=("autenticacao", "servico"),
 )
@@ -279,11 +276,11 @@ CANNED_RECONHECIMENTO_FIRMA = CannedResponse(
     short_code="reconhecimento_firma",
     content=(
         "🖊️ **Reconhecimento de Firma**\n\n"
-        "Valor: R$ 32,10 por assinatura\n\n"
-        "Modalidades:\n"
-        "• Por autenticidade (firma registrada no cartório)\n"
-        "• Por semelhança (firma comparada com documento anterior)\n\n"
-        "Para reconhecimento por autenticidade, é necessário ter firma aberta no cartório."
+        "Totais operacionais:\n"
+        "• Por assinatura (semelhança ou autenticidade): R$ 11,61\n"
+        "• Abertura/cartão de assinatura: R$ 11,61\n"
+        "• Em DUT/ATPV (com consulta CNTV/MG): R$ 16,61 por assinatura\n\n"
+        "Atendimento presencial por ordem de chegada, sem agendamento."
     ),
     tags=("reconhecimento_firma", "servico"),
 )
@@ -296,10 +293,13 @@ CANNED_RECONHECIMENTO_FIRMA = CannedResponse(
 CANNED_AGENDAMENTO_HORARIO = CannedResponse(
     short_code="agendamento_horario",
     content=(
-        "📅 **Horários Disponíveis para Agendamento**\n\n"
-        "🕐 **Manhã**: 08h00, 09h00, 10h00, 11h00\n"
-        "🕐 **Tarde**: 13h30, 14h30, 15h30, 16h30\n\n"
-        "Qual horário prefere?"
+        "📅 **Atendimento e agendamento**\n\n"
+        "Atos simples de balcão (reconhecimento de firma, autenticação, "
+        "abertura de firma, arquivamento, DUT/ATPV e xerox) **não têm "
+        "pré-agendamento**. O atendimento é presencial, por ordem de chegada, "
+        "no horário da serventia (segunda a sexta, 09h às 17h).\n\n"
+        "Senha preferencial: pessoa idosa, pessoa autista, advogado(a) e PCD.\n\n"
+        "Escrituras e atos complexos seguem análise e agendamento pelo setor responsável."
     ),
     tags=("agendamento", "horario"),
 )
@@ -690,11 +690,11 @@ CANNED_PROCURACAO_JUDICIAL = CannedResponse(
     short_code="procuracao_judicial",
     content=(
         "⚖️ **Procuração Judicial (Ad Judicia)**\n\n"
-        "Para representação em processos judiciais:\n\n"
+        "Para representação em processos judiciais (modalidade genérica):\n\n"
         "• Outorgante: RG, CPF, comprovante residência\n"
         "• Outorgado: advogado com OAB ativa\n"
         "• Especificar poderes (substabelecimento, etc)\n\n"
-        "Valor: R$ 245,80\n"
+        "Valor operacional: R$ 71,38\n"
         "Prazo: mesmo dia."
     ),
     tags=("procuracao", "judicial", "servico"),
@@ -705,10 +705,10 @@ CANNED_PROCURACAO_PREVIDENCIARIA = CannedResponse(
     content=(
         "🏛️ **Procuração Previdenciária**\n\n"
         "Para representação junto ao INSS:\n\n"
-        "• Outorgante: RG, CPF, comprovante residência, NIS\n"
+        "• Outorgante: RG, CPF, comprovante residência, NIS/benefício\n"
         "• Outorgado: advogado ou preposto\n\n"
-        "Valor: R$ 198,60\n"
-        "Prazo: 24h."
+        "Valor operacional: R$ 37,91\n"
+        "Prazo: mesmo dia."
     ),
     tags=("procuracao", "previdenciaria", "servico"),
 )
@@ -720,7 +720,7 @@ CANNED_SUBSTABELECIMENTO = CannedResponse(
         "Para transferir poderes a outro advogado:\n\n"
         "• Procuração original (com poderes para substabelecer)\n"
         "• Documentos do novo outorgado (RG, CPF, OAB)\n\n"
-        "Valor: R$ 132,40\n"
+        "Valor operacional: R$ 47,59\n"
         "Comparecer presencialmente."
     ),
     tags=("procuracao", "substabelecimento", "servico"),

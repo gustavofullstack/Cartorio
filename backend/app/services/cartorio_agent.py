@@ -29,6 +29,66 @@ from app.services.emolumento_operacional_balcao import GENERAL_ITEMS, format_brl
 
 logger = logging.getLogger(__name__)
 
+_PROCURACAO_INSS_TERMS: tuple[str, ...] = (
+    "inss",
+    "beneficio",
+    "benefícios",
+    "previd",
+    "requerimento",
+    "benefic",
+    "aposent",
+)
+_PROCURACAO_FINANCEIRA_TERMS: tuple[str, ...] = (
+    "vender",
+    "venda",
+    "comprar",
+    "compra",
+    "imovel",
+    "imóvel",
+    "veiculo",
+    "veículo",
+    "carro",
+    "casa",
+    "imposto",
+    "banco",
+    "conta",
+    "bens",
+    "patrimonial",
+    "financeir",
+    "receber",
+    "trabalhista",
+    "acerto",
+    "quit",
+)
+_PROCURACAO_GENERICA_TERMS: tuple[str, ...] = (
+    "ad judicia",
+    "adjudicia",
+    "advogado",
+    "constituição",
+    "representação",
+    "representacao",
+    "repart",
+    "simples",
+    "ordem administrativa",
+    "ordem judicial",
+)
+_SERVICOS_BLOQUEIA_AGENDAMENTO_BLOCO: tuple[str, ...] = (
+    "reconhecimento de firma",
+    "reconhecer firma",
+    "autenticacao",
+    "autenticação",
+    "autenticar",
+    "abertura de firma",
+    "abrir firma",
+    "cartao de assinatura",
+    "cartão de assinatura",
+    "arquivamento",
+    "arquivar",
+    "dut",
+    "atpv",
+    "xerox",
+)
+
 # Catalogo publico usa a camada operacional de balcao 2026. A camada regulatoria
 # TJMG permanece separada em ``emolumento_real_djalma`` para rastreabilidade.
 # Atos compostos e financeiros continuam sujeitos a conferencia do escrevente.
@@ -42,13 +102,45 @@ SERVICOS_CATALOGO: dict[str, tuple[str, str]] = {
         format_brl(GENERAL_ITEMS["autenticacao"].total),
     ),
     "procuracao": (
-        "Procuração Geral (por outorgante)",
+        "Procuração genérica",
         format_brl(GENERAL_ITEMS["procuracao"].total),
+    ),
+    "procuracao_financeira": (
+        "Procuração com conteúdo financeiro/patrimonial",
+        format_brl(GENERAL_ITEMS["procuracao_financeira"].total),
+    ),
+    "procuracao_inss": (
+        "Procuração para INSS/previdência",
+        format_brl(GENERAL_ITEMS["procuracao_inss"].total),
     ),
     "testamento": ("Testamento", format_brl(GENERAL_ITEMS["testamento"].total)),
     "ata_notarial": (
         "Ata Notarial (até duas folhas)",
         format_brl(GENERAL_ITEMS["ata_notarial"].total),
+    ),
+    "autenticacao_documento_eletronico": (
+        "Autenticação de documento eletrônico",
+        format_brl(GENERAL_ITEMS["autenticacao_documento_eletronico"].total),
+    ),
+    "reconhecimento_dut_atpv": (
+        "Reconhecimento de firma em DUT/ATPV (com CNTV/MG)",
+        format_brl(GENERAL_ITEMS["reconhecimento_dut_atpv"].total),
+    ),
+    "xerox_1_face": (
+        "Xerox — uma face",
+        format_brl(GENERAL_ITEMS["xerox_1_face"].total),
+    ),
+    "xerox_2_faces": (
+        "Xerox — frente e verso",
+        format_brl(GENERAL_ITEMS["xerox_2_faces"].total),
+    ),
+    "abertura_firma": (
+        "Abertura de firma / cartão de assinatura",
+        format_brl(GENERAL_ITEMS["abertura_firma"].total),
+    ),
+    "arquivamento": (
+        "Arquivamento — por documento",
+        format_brl(GENERAL_ITEMS["arquivamento"].total),
     ),
 }
 
@@ -368,7 +460,9 @@ REGRAS CRITICAS
 2. NUNCA invente servicos fora do CATALOGO. Escritura complexa, usucapiao, inventario: acione humano.
 3. NUNCA de conselho juridico definitivo; acione humano via tool ou [[ACTION:humano]].
 4. Agendar: confirme servico e peca "data (DD/MM/AAAA) e horario (HH:MM)".
-5. Protocolo: peca numero no formato AAAA-NNNNNN. Use tool consultar_protocolo se tiver.
+5. Procuração: quando a pergunta não trouxer a finalidade completa, pergunte antes de informar valor.
+6. Agendar: atos de balcão (reconhecimento de firma, autenticação, abertura de firma, arquivamento, DUT/ATPV e xerox) são presenciais por ordem de chegada.
+7. Protocolo: peca numero no formato AAAA-NNNNNN. Use tool consultar_protocolo se tiver.
 6. Catalogo em varias mensagens: NAO envie mais. Responda consolidado em 1 msg.
 7. ZERO link externo. Unico dominio permitido: 2notasudi.com.br.
 8. ZERO emoji. Resposta limpa com paragrafos.
@@ -407,10 +501,36 @@ def _servicos_kb() -> list[list[dict[str, str]]]:
 
 def _match_servico(text: str) -> str | None:
     t = text.lower()
+    if any(w in t for w in ("procurac", "procuração", "procuracao", "poderes")):
+        if any(w in t for w in _PROCURACAO_INSS_TERMS):
+            return "procuracao_inss"
+        if any(w in t for w in _PROCURACAO_FINANCEIRA_TERMS):
+            return "procuracao_financeira"
+        return "procuracao"
+    if any(w in t for w in ("dut", "atpv", "cntv")):
+        return "reconhecimento_dut_atpv"
+    if "xerox" in t:
+        if any(w in t for w in ("frente e verso", "frente-verso", "2 faces", "duas faces")):
+            return "xerox_2_faces"
+        return "xerox_1_face"
+    if any(w in t for w in ("autentic", "autenticacao", "autenticação")):
+        if any(w in t for w in ("eletron", "eletrôn", "digital", "pdf", "cenad")):
+            return "autenticacao_documento_eletronico"
+        return "autenticacao"
+    if any(
+        w in t
+        for w in (
+            "abertura de firma",
+            "abrir firma",
+            "cartao de assinatura",
+            "cartão de assinatura",
+        )
+    ):
+        return "abertura_firma"
+    if "arquivamento" in t or "arquivar" in t:
+        return "arquivamento"
     aliases = {
         "reconhecimento_firma": ["firma", "reconhecimento", "assinatura"],
-        "autenticacao": ["autentic", "copia", "cópia", "autenticacao"],
-        "procuracao": ["procurac", "procuração", "procuracao", "poderes"],
         "testamento": ["testamento"],
         "ata_notarial": ["ata notarial", "ata "],
     }
@@ -418,6 +538,30 @@ def _match_servico(text: str) -> str | None:
         if any(w in t for w in words):
             return key
     return None
+
+
+def _procuracao_requer_contexto(text: str) -> bool:
+    """Retorna True quando o texto cita procuração sem finalidade clara."""
+    t = text.lower()
+    if not any(w in t for w in ("procurac", "procuração", "procuracao", "poderes")):
+        return False
+    if any(w in t for w in _PROCURACAO_INSS_TERMS):
+        return False
+    if any(w in t for w in _PROCURACAO_FINANCEIRA_TERMS):
+        return False
+    if any(w in t for w in _PROCURACAO_GENERICA_TERMS):
+        return False
+    return True
+
+
+def _bloqueia_agendamento_balcao(text: str) -> bool:
+    """Retorna True para atos de balcao com atendimento presencial sem pré-agendamento."""
+    t = text.lower()
+    if any(w in t for w in _SERVICOS_BLOQUEIA_AGENDAMENTO_BLOCO):
+        return True
+    # Procura pelo par "atendimento presencial" também evita falso positivo em pedido
+    # de "ordem de chegada", que já aparece como orientação institucional.
+    return False
 
 
 def _wants_catalog_series(text: str) -> bool:
@@ -624,7 +768,14 @@ def _build_tools_context(text: str) -> tuple[str, list[str]]:
     )
 
     svc = _match_servico(text)
-    if svc:
+    if svc == "procuracao" and _procuracao_requer_contexto(text):
+        parts.append(
+            "REGRA_POR_PROCURAÇÃO: não informe só R$ 71,38. O valor depende da finalidade: "
+            "genérica R$ 71,38; financeira/patrimonial R$ 226,14; INSS/previdência R$ 37,91. "
+            "Pergunta obrigatória: qual será a finalidade da procuração?"
+        )
+        used.append("preco:procuracao_ambigua")
+    elif svc and svc in SERVICOS_CATALOGO:
         nome, valor = SERVICOS_CATALOGO[svc]
         parts.append(f"SERVICO_DETECTADO: {svc} | {nome} | {valor}")
         used.append(f"servico:{svc}")
@@ -980,6 +1131,21 @@ def _run_local_tool(name: str, args: dict[str, Any]) -> tuple[str, str | None, l
         key = _match_servico(raw)
         if not key and raw in SERVICOS_CATALOGO:
             key = raw
+        if key == "procuracao" and _procuracao_requer_contexto(raw):
+            return (
+                json.dumps(
+                    {
+                        "erro": "procuracao_requer_contexto",
+                        "pergunta": (
+                            "Qual será a finalidade da procuração? Por exemplo: representação simples, "
+                            "INSS, banco, venda de veículo, venda de imóvel ou recebimento de valores."
+                        ),
+                    },
+                    ensure_ascii=False,
+                ),
+                None,
+                used,
+            )
         if not key or key not in SERVICOS_CATALOGO:
             return (
                 json.dumps(
@@ -1617,16 +1783,37 @@ def _offline_reply_inner(
         )
     svc = _match_servico(text)
     if intent == "preco" and svc:
+        if svc == "procuracao" and _procuracao_requer_contexto(text):
+            return AgentReply(
+                text=(
+                    "O valor depende da finalidade. Procuração genérica custa R$ 71,38; "
+                    "procuração com conteúdo financeiro custa R$ 226,14; e procuração para "
+                    "INSS/previdência custa R$ 37,91.\n"
+                    "\n"
+                    "Qual será a finalidade da procuração? Por exemplo: representação simples, "
+                    "INSS, banco, venda de veículo, venda de imóvel ou recebimento de valores."
+                ),
+                keyboard=None,
+                tools_used=tools_used,
+                provider="offline:preco_procuracao_ambigua",
+            )
         nome, valor = SERVICOS_CATALOGO[svc]
+        if _bloqueia_agendamento_balcao(nome):
+            agendar_orientacao = (
+                "Para esse atendimento de balcão não há pré-agendamento. "
+                "O atendimento é presencial e por ordem de chegada. "
+                "Pessoas idosas, pessoas autistas, advogados e pessoas com deficiência recebem senha preferencial."
+            )
+        else:
+            agendar_orientacao = f"Para agendar, digite por exemplo:\nquero agendar {nome.lower()}"
         return AgentReply(
             text=(
                 f"Sobre {nome}:\n"
                 "\n"
                 f"Valor de referencia: {valor}\n"
-                "(tabela operacional do bot / referencia MG)\n"
+                "(tabela operacional do balcão / referência 2026)\n"
                 "\n"
-                "Para agendar, digite por exemplo:\n"
-                f"quero agendar {nome.lower()}"
+                f"{agendar_orientacao}"
             ),
             keyboard=None,
             action=None,
@@ -1660,6 +1847,19 @@ def _offline_reply_inner(
             provider="offline",
         )
     if intent == "agendar":
+        if _bloqueia_agendamento_balcao(text):
+            return AgentReply(
+                text=(
+                    "Para esse atendimento de balcão não há pré-agendamento. "
+                    "O atendimento é presencial e por ordem de chegada. "
+                    "Pessoas idosas, pessoas autistas, advogados e pessoas com deficiência "
+                    "recebem senha preferencial."
+                ),
+                keyboard=None,
+                action=None,
+                tools_used=tools_used,
+                provider="offline:agendar_balcao_nao",
+            )
         return AgentReply(
             text=(
                 "Posso registrar seu pedido de agendamento para validação humana.\n"

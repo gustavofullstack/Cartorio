@@ -41,7 +41,7 @@ GENERAL_ITEMS: Final[dict[str, OperationalItem]] = {
     "ata_notarial": OperationalItem("1202-1", "Ata notarial ate duas folhas", Decimal("226.15")),
     "ata_notarial_folha": OperationalItem("1203-9", "Ata notarial por folha", Decimal("11.61")),
     "autenticacao_documento_eletronico": OperationalItem(
-        "1302-9", "Autenticacao de documento eletronico", Decimal("13.46")
+        "1302-9", "Autenticacao de documento eletronico", Decimal("13.91")
     ),
     "autenticacao": OperationalItem("1301-1", "Autenticacao", Decimal("11.61")),
     "busca_livros_5_anos": OperationalItem(
@@ -71,6 +71,11 @@ GENERAL_ITEMS: Final[dict[str, OperationalItem]] = {
     "procuracao": OperationalItem("1437-3", "Procuracao generica", Decimal("71.38")),
     "procuracao_inss": OperationalItem("1438-1", "Procuracao INSS", Decimal("37.91")),
     "reconhecimento_firma": OperationalItem("1501-6", "Reconhecimento de firma", Decimal("11.61")),
+    "reconhecimento_dut_atpv": OperationalItem(
+        "1501-6+CNTV", "Reconhecimento de firma em DUT/ATPV (com CNTV/MG)", Decimal("16.61")
+    ),
+    "xerox_1_face": OperationalItem("XEROX-1", "Xerox - uma face", Decimal("1.80")),
+    "xerox_2_faces": OperationalItem("XEROX-2", "Xerox - frente e verso", Decimal("3.60")),
     "revogacao_testamento": OperationalItem("1457-1", "Revogacao de testamento", Decimal("226.36")),
     "substabelecimento": OperationalItem("1455-5", "Substabelecimento", Decimal("47.59")),
     "testamento": OperationalItem("1456-3", "Testamento generico", Decimal("452.71")),
@@ -237,3 +242,116 @@ TESTAMENTO_ALTERACAO_BANDS: Final[tuple[OperationalBand, ...]] = tuple(
 
 def format_brl(value: Decimal) -> str:
     return f"R$ {value:.2f}".replace(".", ",")
+
+
+OPERATIONAL_ALIASES: Final[dict[str, str]] = {
+    "procuracao_geral": "procuracao",
+    "procuracao_generica": "procuracao",
+    "procuracao_patrimonial": "procuracao_financeira",
+    "procuracao_banco": "procuracao_financeira",
+    "procuracao_veiculo": "procuracao_financeira",
+    "procuracao_imovel": "procuracao_financeira",
+    "procuracao_previdenciaria": "procuracao_inss",
+    "procuracao_previdencia": "procuracao_inss",
+    "autenticacao_copia_folha": "autenticacao",
+    "autenticacao_fisica": "autenticacao",
+    "autenticacao_eletronica": "autenticacao_documento_eletronico",
+    "reconhecimento_firma_assinatura": "reconhecimento_firma",
+    "dut_atpv": "reconhecimento_dut_atpv",
+    "reconhecimento_dut": "reconhecimento_dut_atpv",
+    "xerox": "xerox_1_face",
+    "xerox_uma_face": "xerox_1_face",
+    "xerox_frente_verso": "xerox_2_faces",
+}
+
+
+def calcular_emolumento_operacional(
+    tipo_ato: str,
+    *,
+    valor_declarado: Decimal | float | int | None = None,
+    folhas: int = 1,
+    urgencia: bool = False,
+) -> dict[str, object]:
+    """Calcula o total operacional praticado no balcão da serventia (MG 2026).
+
+    Retorna status PUBLISHED para atos simples diretos de balcão e HITL_REQUIRED
+    para urgência, valores declarados ou situações que exijam validação do escrevente.
+    """
+    folhas = max(1, folhas)
+    slug = OPERATIONAL_ALIASES.get(tipo_ato, tipo_ato)
+
+    if urgencia:
+        return {
+            "cartorio": "2º Tabelionato de Notas de Uberlândia",
+            "tipo_ato": slug,
+            "valor_declarado": str(valor_declarado) if valor_declarado is not None else None,
+            "folhas": folhas,
+            "status": "HITL_REQUIRED",
+            "total": None,
+            "pricing_layer": "operational_pos_2notas",
+            "tabela_referencia": "TABELA_OPERACIONAL_BALCAO_2NOTAS_2026",
+            "motivo_hitl": "Atendimento com urgência exige conferência do escrevente.",
+            "vigencia": "2026",
+        }
+
+    if valor_declarado is not None:
+        return {
+            "cartorio": "2º Tabelionato de Notas de Uberlândia",
+            "tipo_ato": slug,
+            "valor_declarado": str(valor_declarado),
+            "folhas": folhas,
+            "status": "HITL_REQUIRED",
+            "total": None,
+            "pricing_layer": "operational_pos_2notas",
+            "tabela_referencia": "TABELA_OPERACIONAL_BALCAO_2NOTAS_2026",
+            "motivo_hitl": "Ato com conteúdo financeiro depende de faixa e composição pelo escrevente.",
+            "vigencia": "2026",
+        }
+
+    item = GENERAL_ITEMS.get(slug)
+    if item is None:
+        return {
+            "cartorio": "2º Tabelionato de Notas de Uberlândia",
+            "tipo_ato": slug,
+            "valor_declarado": None,
+            "folhas": folhas,
+            "status": "HITL_REQUIRED",
+            "total": None,
+            "pricing_layer": "operational_pos_2notas",
+            "tabela_referencia": "TABELA_OPERACIONAL_BALCAO_2NOTAS_2026",
+            "motivo_hitl": "Ato não localizado na tabela operacional de balcão; encaminhado ao escrevente.",
+            "vigencia": "2026",
+        }
+
+    total_val = item.total
+    if slug == "autenticacao" and folhas > 1:
+        total_val = item.total * Decimal(folhas)
+    elif folhas > 1 and slug not in ("ata_notarial", "ata_notarial_folha"):
+        return {
+            "cartorio": "2º Tabelionato de Notas de Uberlândia",
+            "tipo_ato": slug,
+            "valor_declarado": None,
+            "folhas": folhas,
+            "status": "HITL_REQUIRED",
+            "total": None,
+            "pricing_layer": "operational_pos_2notas",
+            "tabela_referencia": "TABELA_OPERACIONAL_BALCAO_2NOTAS_2026",
+            "motivo_hitl": "Quantidade de folhas adicional para este ato exige composição pelo escrevente.",
+            "vigencia": "2026",
+        }
+
+    return {
+        "cartorio": "2º Tabelionato de Notas de Uberlândia",
+        "tipo_ato": slug,
+        "valor_declarado": None,
+        "folhas": folhas,
+        "status": "PUBLISHED",
+        "total": f"{total_val:.2f}",
+        "item_codigo": item.code,
+        "descricao": item.nature,
+        "pricing_layer": "operational_pos_2notas",
+        "tabela_referencia": "TABELA_OPERACIONAL_BALCAO_2NOTAS_2026",
+        "motivo_hitl": None,
+        "vigencia": "2026",
+    }
+
