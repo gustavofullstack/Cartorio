@@ -139,7 +139,9 @@ def test_chromium_browser_cache_via_filesystem() -> None:
         pytest.skip(f"Playwright cache root ausente em {cache_root}")
 
     # Procura qualquer versao de chromium-* (Playwright versiona dirs).
-    chromium_dirs = sorted(cache_root.glob("chromium-*"))
+    chromium_dirs = sorted(cache_root.glob("chromium-*")) + sorted(
+        cache_root.glob("chromium_headless_shell-*")
+    )
     if not chromium_dirs:
         pytest.skip(f"Nenhum chromium-* em {cache_root}. Rode: playwright install chromium")
 
@@ -149,6 +151,10 @@ def test_chromium_browser_cache_via_filesystem() -> None:
         candidates = [
             d / "chrome-linux" / "chrome",
             d / "chrome-linux" / "headless_shell",
+            # Playwright v1.40+ paths
+            d / "chrome-linux64" / "chrome",
+            d / "chrome-linux64" / "headless_shell",
+            d / "headless_shell" / "headless_shell",
             d / "chrome-mac" / "Chromium.app" / "Contents" / "MacOS" / "Chromium",
             # Windows
             d / "chrome-win" / "chrome.exe",
