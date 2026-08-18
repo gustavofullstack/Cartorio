@@ -101,11 +101,10 @@ CANNED_HORARIO_ATENDIMENTO = CannedResponse(
     short_code="horario_atendimento",
     content=(
         "🕐 **Horário de Atendimento**\n\n"
-        "Segunda a Sexta: 08h00 às 17h00\n"
-        "Sábado: 08h00 às 12h00\n"
-        "Domingo: fechado\n\n"
-        "Fora do horário, sua mensagem será respondida no próximo dia útil. "
-        "Para emergências, procure o Plantão Judicial."
+        "Segunda a sexta: 09h às 17h\n"
+        "Expedição administrativa até 18h.\n"
+        "Não há funcionamento regular aos sábados, domingos e feriados.\n\n"
+        "Atos simples de balcão: presencial, por ordem de chegada, sem pré-agendamento."
     ),
     tags=("atendimento", "horario", "geral"),
 )
@@ -118,15 +117,14 @@ CANNED_HORARIO_ATENDIMENTO = CannedResponse(
 CANNED_CERTIDAO_NEGATIVA = CannedResponse(
     short_code="certidao_negativa",
     content=(
-        "📜 **Certidão Negativa**\n\n"
-        "Para emitir uma certidão negativa, preciso dos seguintes dados:\n\n"
-        "• Nome completo\n"
-        "• CPF\n"
-        "• Data de nascimento\n"
-        "• Estado civil\n\n"
-        "Valor: R$ 87,50 (tabela oficial MG 2026)\n"
-        "Prazo: até 5 dias úteis\n\n"
-        "Deseja prosseguir? Responda **SIM** para iniciar o atendimento."
+        "📜 **Certidão**\n\n"
+        "Este é um tabelionato de notas. Não inventamos valor para certidão "
+        "negativa de outro ofício.\n\n"
+        "Aqui emitimos:\n"
+        "• Inteiro teor: R$ 42,49\n"
+        "• Conforme quesitos: R$ 66,30\n"
+        "Prazo: até 5 dias úteis.\n\n"
+        "Qual tipo você precisa? Se for certidão de outro cartório, a equipe valida."
     ),
     tags=("certidao", "negativa", "servico"),
 )
@@ -134,11 +132,11 @@ CANNED_CERTIDAO_NEGATIVA = CannedResponse(
 CANNED_CERTIDAO_POSITIVA = CannedResponse(
     short_code="certidao_positiva",
     content=(
-        "📜 **Certidão Positiva**\n\n"
-        "A certidão positiva atesta a existência de registros em nome do solicitante.\n\n"
-        "Valor: R$ 92,30\n"
-        "Prazo: até 5 dias úteis\n\n"
-        "Deseja prosseguir? Responda **SIM**."
+        "📜 **Certidão**\n\n"
+        "Não há tabela operacional própria de “certidão positiva” neste "
+        "tabelionato de notas.\n\n"
+        "Informe se precisa de inteiro teor (R$ 42,49) ou conforme quesitos "
+        "(R$ 66,30). Prazo: até 5 dias úteis. A equipe valida o caso concreto."
     ),
     tags=("certidao", "positiva", "servico"),
 )
@@ -147,12 +145,10 @@ CANNED_CERTIDAO_CASAMENTO = CannedResponse(
     short_code="certidao_casamento",
     content=(
         "💒 **Certidão de Casamento**\n\n"
-        "Para emitir a 2ª via da certidão de casamento:\n\n"
-        "• Nome completo dos cônjuges\n"
-        "• Data do casamento\n"
-        "• Cartório onde foi registrado (se souber)\n\n"
-        "Valor: R$ 105,40\n"
-        "Prazo: até 5 dias úteis"
+        "A 2ª via de certidão de casamento é emitida pelo Registro Civil, "
+        "não por este Tabelionato de Notas.\n\n"
+        "Aqui lavramos escritura de pacto antenupcial, união estável ou "
+        "divórcio extrajudicial, após análise do Setor de Escrituras."
     ),
     tags=("certidao", "casamento", "servico"),
 )
@@ -162,12 +158,10 @@ CANNED_CERTIDAO_PRONTA = CannedResponse(
     content=(
         "✅ **Sua certidão está pronta!**\n\n"
         "Protocolo: **#{{custom.protocolo}}**\n\n"
-        "Para retirar:\n"
-        "📍 Presencialmente: Rua X, nº Y, Centro, Uberlândia/MG\n"
-        "🕐 Horário: 08h00 às 17h00 (seg-sex)\n\n"
-        "Documentos necessários:\n"
-        "• Documento com foto\n"
-        "• Comprovante de pagamento (se aplicável)"
+        "Retirada: Rua Cel. Antonio Alves Pereira, 850, Centro, Uberlândia/MG\n"
+        "Horário: segunda a sexta, 09h às 17h.\n\n"
+        "Em regra, somente quem solicitou pode retirar, salvo exceção admitida "
+        "pela serventia. Leve documento com foto."
     ),
     tags=("certidao", "pronta", "entrega"),
 )
@@ -197,14 +191,13 @@ CANNED_ESCRITURA_COMPRA_VENDA = CannedResponse(
     short_code="escritura_compra_venda",
     content=(
         "🏠 **Escritura de Compra e Venda**\n\n"
-        "Documentos necessários:\n"
-        "• RG e CPF de comprador e vendedor\n"
-        "• Certidão de matrícula atualizada do imóvel\n"
-        "• Certidão negativa de débitos municipais\n"
-        "• Guia de ITBI paga\n\n"
-        "Valor: R$ 4.521,00 (base, tabela MG 2026)\n"
-        "+ 5% por folha adicional a partir da 2ª\n\n"
-        "Agendar atendimento presencial."
+        "Documentos normalmente necessários:\n"
+        "• Certidão de Ônus Reais (30 dias)\n"
+        "• ITBI, comprovante, protocolo e CND municipal para transferência\n"
+        "• RG, CPF/CNH, certidão de nascimento ou casamento atualizada (90 dias) "
+        "e comprovante de endereço\n\n"
+        "O valor depende da faixa do negócio e será confirmado pelo Setor de "
+        "Escrituras. Entregue os documentos impressos para análise e agendamento."
     ),
     tags=("escritura", "compra_venda", "imovel"),
 )
@@ -213,13 +206,12 @@ CANNED_ESCRITURA_DOACAO = CannedResponse(
     short_code="escritura_doacao",
     content=(
         "🎁 **Escritura de Doação**\n\n"
-        "Documentos:\n"
-        "• RG e CPF do doador e donatário\n"
-        "• Certidão de matrícula atualizada\n"
-        "• Certidão negativa de débitos\n"
-        "• Avaliação do bem (se imóvel)\n\n"
-        "Valor: R$ 3.205,50 (base)\n"
-        "Atenção: há incidência de ITCMD (imposto estadual)."
+        "Documentos normalmente necessários:\n"
+        "• Certidão de Inteiro Teor e Ônus (30 dias)\n"
+        "• ITCD (guia paga e certidão de pagamento ou desoneração)\n"
+        "• RG, CPF, certidão de nascimento ou casamento, comprovante de endereço\n\n"
+        "O valor depende da faixa do ato e será confirmado pelo Setor de Escrituras. "
+        "Entregue os documentos impressos para análise e agendamento."
     ),
     tags=("escritura", "doacao"),
 )
@@ -247,15 +239,14 @@ CANNED_PROCURACAO = CannedResponse(
     short_code="procuracao",
     content=(
         "✍️ **Procuração**\n\n"
-        "Tipos mais comuns:\n"
-        "• Procuração com poderes específicos\n"
-        "• Procuração geral\n"
-        "• Procuração para representação em juízo\n"
-        "• Procuração para fins previdenciários\n\n"
-        "Valor: R$ 156,40 (base)\n"
+        "O valor depende da finalidade:\n"
+        "• Genérica (representação simples, órgãos, ad judicia): R$ 71,38\n"
+        "• Financeira/Patrimonial (venda de bens, banco, valores): R$ 226,14\n"
+        "• Previdenciária/INSS: R$ 37,91\n\n"
+        "Qual será a finalidade da procuração?\n\n"
         "Comparecer presencialmente com:\n"
         "• Outorgante: RG, CPF, comprovante de residência\n"
-        "• Outorgado: RG e CPF (cópia)"
+        "• Outorgado: RG e CPF (dados completos)"
     ),
     tags=("procuracao", "servico"),
 )
@@ -264,13 +255,11 @@ CANNED_AUTENTICACAO = CannedResponse(
     short_code="autenticacao",
     content=(
         "📋 **Autenticação de Documentos**\n\n"
-        "Valor: R$ 28,90 por documento\n\n"
-        "Documentos aceitos:\n"
-        "• Cópias de RG, CPF, CNH\n"
-        "• Certidões\n"
-        "• Comprovantes\n"
-        "• Documentos assinados\n\n"
-        "Traga o **documento original** + a **cópia** para autenticação."
+        "Totais operacionais:\n"
+        "• Cópia física: R$ 11,61 por folha/documento (se o cliente trouxer a cópia)\n"
+        "• Documento eletrônico: R$ 13,91\n"
+        "• Cópia xerox fornecida pelo cartório: R$ 1,80 (1 face) / R$ 3,60 (frente e verso)\n\n"
+        "Atendimento presencial por ordem de chegada, sem agendamento."
     ),
     tags=("autenticacao", "servico"),
 )
@@ -279,11 +268,11 @@ CANNED_RECONHECIMENTO_FIRMA = CannedResponse(
     short_code="reconhecimento_firma",
     content=(
         "🖊️ **Reconhecimento de Firma**\n\n"
-        "Valor: R$ 32,10 por assinatura\n\n"
-        "Modalidades:\n"
-        "• Por autenticidade (firma registrada no cartório)\n"
-        "• Por semelhança (firma comparada com documento anterior)\n\n"
-        "Para reconhecimento por autenticidade, é necessário ter firma aberta no cartório."
+        "Totais operacionais:\n"
+        "• Por assinatura (semelhança ou autenticidade): R$ 11,61\n"
+        "• Abertura/cartão de assinatura: R$ 11,61\n"
+        "• Em DUT/ATPV (com consulta CNTV/MG): R$ 16,61 por assinatura\n\n"
+        "Atendimento presencial por ordem de chegada, sem agendamento."
     ),
     tags=("reconhecimento_firma", "servico"),
 )
@@ -296,10 +285,13 @@ CANNED_RECONHECIMENTO_FIRMA = CannedResponse(
 CANNED_AGENDAMENTO_HORARIO = CannedResponse(
     short_code="agendamento_horario",
     content=(
-        "📅 **Horários Disponíveis para Agendamento**\n\n"
-        "🕐 **Manhã**: 08h00, 09h00, 10h00, 11h00\n"
-        "🕐 **Tarde**: 13h30, 14h30, 15h30, 16h30\n\n"
-        "Qual horário prefere?"
+        "📅 **Atendimento e agendamento**\n\n"
+        "Atos simples de balcão (reconhecimento de firma, autenticação, "
+        "abertura de firma, arquivamento, DUT/ATPV e xerox) **não têm "
+        "pré-agendamento**. O atendimento é presencial, por ordem de chegada, "
+        "no horário da serventia (segunda a sexta, 09h às 17h).\n\n"
+        "Senha preferencial: pessoa idosa, pessoa autista, advogado(a) e PCD.\n\n"
+        "Escrituras e atos complexos seguem análise e agendamento pelo setor responsável."
     ),
     tags=("agendamento", "horario"),
 )
@@ -601,14 +593,11 @@ CANNED_MANUTENCAO = CannedResponse(
 CANNED_CERTIDAO_NASCIMENTO = CannedResponse(
     short_code="certidao_nascimento",
     content=(
-        "👶 **Certidão de Nascimento (2ª via)**\n\n"
-        "Documentos necessários:\n"
-        "• Nome completo do registrado\n"
-        "• Data de nascimento\n"
-        "• Nome completo dos pais\n"
-        "• Município de registro\n\n"
-        "Valor: GRATUITO (1ª via) | 2ª via consultar valores vigentes\n"
-        "Prazo: até 5 dias úteis"
+        "👶 **Certidão de Nascimento**\n\n"
+        "A 2ª via de certidão de nascimento é emitida pelo Registro Civil, "
+        "não por este Tabelionato de Notas.\n\n"
+        "Aqui emitimos certidão de inteiro teor (R$ 42,49) ou conforme quesitos "
+        "(R$ 66,30) de atos lavrados nesta serventia, em até 5 dias úteis."
     ),
     tags=("certidao", "nascimento", "servico"),
 )
@@ -616,14 +605,12 @@ CANNED_CERTIDAO_NASCIMENTO = CannedResponse(
 CANNED_CERTIDAO_OBITO = CannedResponse(
     short_code="certidao_obito",
     content=(
-        "🕊️ **Certidão de Óbito (2ª via)**\n\n"
-        "Documentos necessários:\n"
-        "• Nome completo do falecido\n"
-        "• Data do falecimento\n"
-        "• CPF (se houver)\n\n"
-        "Valor: GRATUITO\n"
-        "Prazo: até 3 dias úteis\n\n"
-        "Nossos sentimentos à família."
+        "🕊️ **Certidão de Óbito**\n\n"
+        "Sinto muito pela sua perda.\n\n"
+        "A 2ª via de certidão de óbito é emitida pelo Registro Civil, não por "
+        "este Tabelionato de Notas.\n\n"
+        "Se a certidão for de um ato lavrado aqui, a equipe valida legitimidade, "
+        "documentos e o prazo de até 5 dias úteis."
     ),
     tags=("certidao", "obito", "servico"),
 )
@@ -659,10 +646,12 @@ CANNED_CERTIDAO_DISTRAT = CannedResponse(
 CANNED_CERTIDAO_TEOR = CannedResponse(
     short_code="certidao_teor",
     content=(
-        "📑 **Certidão de Teor (Inteiro Teor)**\n\n"
-        "Cópia fiel do documento original arquivado.\n\n"
-        "Valor: R$ 45,80 por folha\n"
-        "Prazo: até 2 dias úteis"
+        "📑 **Certidão de Inteiro Teor**\n\n"
+        "Cópia fiel do ato arquivado nesta serventia.\n\n"
+        "Total operacional: R$ 42,49\n"
+        "Prazo: até 5 dias úteis\n\n"
+        "Em regra, qualquer interessado pode solicitar, ressalvadas regras "
+        "específicas (ex.: testamento). A retirada segue as regras da serventia."
     ),
     tags=("certidao", "teor", "servico"),
 )
@@ -690,11 +679,11 @@ CANNED_PROCURACAO_JUDICIAL = CannedResponse(
     short_code="procuracao_judicial",
     content=(
         "⚖️ **Procuração Judicial (Ad Judicia)**\n\n"
-        "Para representação em processos judiciais:\n\n"
+        "Para representação em processos judiciais (modalidade genérica):\n\n"
         "• Outorgante: RG, CPF, comprovante residência\n"
         "• Outorgado: advogado com OAB ativa\n"
         "• Especificar poderes (substabelecimento, etc)\n\n"
-        "Valor: R$ 245,80\n"
+        "Valor operacional: R$ 71,38\n"
         "Prazo: mesmo dia."
     ),
     tags=("procuracao", "judicial", "servico"),
@@ -705,10 +694,10 @@ CANNED_PROCURACAO_PREVIDENCIARIA = CannedResponse(
     content=(
         "🏛️ **Procuração Previdenciária**\n\n"
         "Para representação junto ao INSS:\n\n"
-        "• Outorgante: RG, CPF, comprovante residência, NIS\n"
+        "• Outorgante: RG, CPF, comprovante residência, NIS/benefício\n"
         "• Outorgado: advogado ou preposto\n\n"
-        "Valor: R$ 198,60\n"
-        "Prazo: 24h."
+        "Valor operacional: R$ 37,91\n"
+        "Prazo: mesmo dia."
     ),
     tags=("procuracao", "previdenciaria", "servico"),
 )
@@ -720,7 +709,7 @@ CANNED_SUBSTABELECIMENTO = CannedResponse(
         "Para transferir poderes a outro advogado:\n\n"
         "• Procuração original (com poderes para substabelecer)\n"
         "• Documentos do novo outorgado (RG, CPF, OAB)\n\n"
-        "Valor: R$ 132,40\n"
+        "Valor operacional: R$ 47,59\n"
         "Comparecer presencialmente."
     ),
     tags=("procuracao", "substabelecimento", "servico"),
@@ -734,13 +723,13 @@ CANNED_SUBSTABELECIMENTO = CannedResponse(
 CANNED_USUFRUTO = CannedResponse(
     short_code="usufruto",
     content=(
-        "🏡 **Constituição de Usufruto**\n\n"
-        "Documentos:\n"
-        "• RG e CPF do nu-proprietário e usufrutuário\n"
-        "• Matrícula atualizada do imóvel\n"
-        "• Certidão negativa de débitos\n\n"
-        "Valor: R$ 2.876,40 (base)\n"
-        "Comparecer presencialmente."
+        "🏡 **Renúncia ou constituição de usufruto**\n\n"
+        "Documentos normalmente necessários:\n"
+        "• Certidão de Ônus (30 dias)\n"
+        "• Certidão de Valor Venal\n"
+        "• RG, CPF e certidão de nascimento ou casamento atualizada (90 dias)\n\n"
+        "O valor depende da faixa do ato. Entregue os documentos impressos no "
+        "Setor de Escrituras para análise e agendamento."
     ),
     tags=("escritura", "usufruto", "servico"),
 )
@@ -749,12 +738,10 @@ CANNED_HIPOTECA = CannedResponse(
     short_code="hipoteca",
     content=(
         "🏦 **Constituição de Hipoteca**\n\n"
-        "Documentos:\n"
-        "• RG, CPF e estado civil do devedor e cônjuge\n"
-        "• Matrícula atualizada do imóvel\n"
-        "• Certidão negativa de débitos\n"
-        "• Contrato de dívida (se houver)\n\n"
-        "Valor: R$ 3.245,80 (base)"
+        "Ato de escritura com conteúdo financeiro. O total depende da faixa "
+        "do valor do negócio e será confirmado pelo Setor de Escrituras.\n\n"
+        "Leve RG, CPF, estado civil, matrícula atualizada e certidões do imóvel. "
+        "Não há valor fechado sem análise."
     ),
     tags=("escritura", "hipoteca", "servico"),
 )
@@ -776,11 +763,10 @@ CANNED_CONVENCAO_CONDOMINIO = CannedResponse(
     short_code="convencao_condominio",
     content=(
         "🏢 **Convenção de Condomínio**\n\n"
-        "Para registrar convenção nova ou alteração:\n\n"
-        "• Convenção aprovada em assembleia (ata + lista presença)\n"
-        "• Documentos do síndico (RG, CPF)\n"
-        "• CNPJ do condomínio\n\n"
-        "Valor: R$ 1.876,20 (base)"
+        "Este tabelionato analisa o caso no Setor de Escrituras. Não há total "
+        "operacional único cadastrado para informar ao cliente sem análise.\n\n"
+        "Leve a convenção aprovada, ata, documentos do síndico e CNPJ do "
+        "condomínio para validação humana."
     ),
     tags=("escritura", "condominio", "servico"),
 )

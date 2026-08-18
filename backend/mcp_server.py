@@ -58,6 +58,8 @@ try:
 except ImportError:
     _metrics_store = None  # type: ignore[assignment]
 
+from app.services.mcp_pii import scrub_mcp_output
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -161,13 +163,28 @@ def _tool_error(code: str, exc: Exception, mensagem: str | None = None) -> dict:
 # ============================================================================
 
 
+def _normalizar_slug_calculo(tipo: str) -> str:
+    # Aliases de slugs legados do placeholder para slugs oficiais da Tabela 1.
+    legacy = {
+        "procuracao": "procuracao_geral",
+        "autenticacao": "autenticacao_copia_folha",
+        "autenticação": "autenticacao_copia_folha",
+        "reconhecimento_firma": "reconhecimento_firma_assinatura",
+    }
+    return legacy.get(tipo, tipo)
+
+
+def _normalizar_layer(pricing_layer: str) -> str:
+    return (pricing_layer or "regulatory_tjmg").strip().lower()
+
+
 @mcp.tool(
     name="cartorio_calcular_emolumento",
     description=(
         "Consulta emolumento oficial MG 2026 (Portaria CGJ/TJMG 8.664/2025, "
-        "Tabela 1 - Atos do Tabeliao de Notas). Atos compostos (folhas "
-        "adicionais, urgencia, conteudo financeiro) retornam HITL_REQUIRED - "
-        "nunca infira preco. NAO envolve PII - pode ser consumido publicamente."
+        "Tabela 1 - Atos do Tabeliao de Notas) ou tabela operacional do balcão 2026. "
+        "Atos compostos (folhas adicionais, urgencia, conteudo financeiro) retornam "
+        "HITL_REQUIRED - nunca infira preco. NAO envolve PII - pode ser consumido publicamente."
     ),
 )
 @contabilizar_tool("cartorio_calcular_emolumento")
@@ -175,38 +192,55 @@ async def cartorio_calcular_emolumento(
     tipo: str,
     folhas: int = 1,
     urgencia: bool = False,
+    pricing_layer: str = "regulatory_tjmg",
 ) -> dict:
     """Calcula emolumento cartorario MG 2026 (Portaria CGJ/TJMG 8.664/2025).
 
     Fonte autoritativa: app/services/emolumento_real_djalma.py (Tabela 1 —
-    Atos do Tabeliao de Notas, valor final ao usuario = emolumentos + TFJ).
-    Atos compostos (folhas adicionais, urgencia, conteudo financeiro) retornam
-    status=HITL_REQUIRED — o agente NUNCA infere preco (regra de governanca).
+    Atos do Tabeliao de Notas, valor final ao usuario = emolumentos + TFJ)
+    ou app/services/emolumento_operacional_balcao.py (Tabela Operacional de Balcão).
 
     Args:
-        tipo: Tipo do ato. Aceita slugs oficiais (ex.: procuracao_geral,
-              autenticacao_copia_folha) e legados (procuracao, autenticacao,
-              reconhecimento_firma).
-        folhas: Numero de folhas. >1 retorna HITL_REQUIRED (composicao).
+        tipo: Tipo do ato. Aceita slugs oficiais e operacionais.
+        folhas: Numero de folhas.
         urgencia: Se true, retorna HITL_REQUIRED (sem acrescimo publicado).
+        pricing_layer: Camada de preço ('regulatory_tjmg' ou 'operational_pos_2notas').
 
     Returns:
         Dict com status (PUBLISHED|HITL_REQUIRED), total, item_portaria,
         motivo_hitl, tabela_referencia e ecos de tipo/folhas/urgencia.
     """
     from app.services.emolumento_real_djalma import calcular_emolumento_real_djalma
+    from app.services.emolumento_operacional_balcao import calcular_emolumento_operacional
 
-    # Aliases de slugs legados do placeholder para slugs oficiais da Tabela 1.
-    _LEGACY_SLUGS = {
-        "procuracao": "procuracao_geral",
-        "autenticacao": "autenticacao_copia_folha",
-        "reconhecimento_firma": "reconhecimento_firma_assinatura",
-    }
-    slug = _LEGACY_SLUGS.get(tipo, tipo)
+    layer = _normalizar_layer(pricing_layer)
+    if layer in {"operational_pos_2notas", "operational"}:
+        res = calcular_emolumento_operacional(tipo, folhas=folhas, urgencia=urgencia)
+        res["tipo"] = tipo
+        res["folhas"] = folhas
+        res["urgencia"] = urgencia
+        return res
 
-    resultado = calcular_emolumento_real_djalma(slug, folhas=folhas, urgencia=urgencia)
+    if layer not in {"regulatory_tjmg"}:
+        return {
+            "status": "HITL_REQUIRED",
+            "tipo": tipo,
+            "motivo_hitl": f"Camada de precificacao desconhecida: {pricing_layer}",
+            "tabela_referencia": "INVALID_LAYER",
+            "pricing_layer": layer,
+            "item_portaria": None,
+            "total": None,
+            "folhas": folhas,
+            "urgencia": urgencia,
+        }
+
+    resultado = calcular_emolumento_real_djalma(
+        _normalizar_slug_calculo(tipo), folhas=folhas, urgencia=urgencia
+    )
     payload = resultado.to_dict()
     payload["tipo"] = tipo
+    payload["pricing_layer"] = "regulatory_tjmg"
+    payload["folhas"] = folhas
     payload["urgencia"] = urgencia
     return payload
 
@@ -222,16 +256,23 @@ async def cartorio_calcular_emolumento_publico(
     tipo: str,
     folhas: int = 1,
     urgencia: bool = False,
+    pricing_layer: str = "regulatory_tjmg",
 ) -> dict:
     """Calcula somente um ato canônico e sem conteúdo identificável no perfil público."""
     from app.services.emolumento_real_djalma import ATOS_PUBLICADOS_2026
-    from app.services.mcp_pii import scrub_mcp_output
 
     if tipo not in ATOS_PUBLICADOS_2026:
         return scrub_mcp_output(
             {
                 "erro": "INVALID_EMOLUMENTO_TYPE",
                 "mensagem": "Tipo de ato não disponível para consulta pública.",
+            }
+        )
+    if pricing_layer != "regulatory_tjmg":
+        return scrub_mcp_output(
+            {
+                "erro": "UNSUPPORTED_PRICING_LAYER",
+                "mensagem": "No perfil publico, apenas pricing_layer=regulatory_tjmg é suportado.",
             }
         )
     if folhas != 1 or urgencia:
@@ -242,7 +283,12 @@ async def cartorio_calcular_emolumento_publico(
             }
         )
 
-    payload = await cartorio_calcular_emolumento(tipo=tipo, folhas=folhas, urgencia=urgencia)
+    payload = await cartorio_calcular_emolumento(
+        tipo=tipo,
+        folhas=folhas,
+        urgencia=urgencia,
+        pricing_layer=pricing_layer,
+    )
     payload["tipo"] = tipo
     return scrub_mcp_output(payload)
 

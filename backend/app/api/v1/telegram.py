@@ -105,11 +105,11 @@ ALLOWED_COMMANDS: frozenset[str] = frozenset(
 )
 
 SERVICOS: dict[str, tuple[str, str]] = {
-    "reconhecimento_firma": ("Reconhecimento de Firma", "R$ 8,50"),
-    "autenticacao": ("Autenticacao de Documento", "R$ 6,80"),
-    "procuracao": ("Procuracao", "R$ 95,20"),
-    "testamento": ("Testamento", "R$ 320,00"),
-    "ata_notarial": ("Ata Notarial", "R$ 480,00"),
+    "reconhecimento_firma": ("Reconhecimento de Firma", "R$ 11,61"),
+    "autenticacao": ("Autenticacao de Documento", "R$ 11,61"),
+    "procuracao": ("Procuracao (valor depende da finalidade)", "R$ 71,38 a R$ 226,14"),
+    "testamento": ("Testamento", "R$ 452,71"),
+    "ata_notarial": ("Ata Notarial", "R$ 226,15"),
 }
 
 BOT_COMMANDS = [

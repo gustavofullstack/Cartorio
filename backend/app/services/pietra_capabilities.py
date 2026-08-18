@@ -107,8 +107,9 @@ def _registry() -> dict[str, Capability]:
         requires_human_review=False,
         can_execute=(runtime_h and _TOOL_AVAILABILITY.get(tool, False)),
         evidence=[
-            "2026-07-27: cartorio_calcular_emolumento retornou R$ 68,94 (procuracao generica) via hermes -z",
-            "OCR TJMG 2026 Tabela Fixacao 1+8 em docs/tjmg-ocr/",
+            "pricing_layer=regulatory_tjmg: procuracao_geral R$ 68,94 (Portaria TJMG, auditoria)",
+            "pricing_layer=operational_pos_2notas: procuracao generica R$ 71,38 (total de balcao)",
+            "Cliente recebe somente a camada operacional; regulatoria nao e anunciada como preco de balcao",
         ],
     )
 
@@ -216,7 +217,9 @@ def _registry() -> dict[str, Capability]:
     runtime_h = _gate(["database", "api"])
     caps["appointment"] = Capability(
         capability_id="appointment",
-        display_name="Pre-agendamento de atendimento (escrevente confirma)",
+        display_name=(
+            "Pre-agendamento so para atos complexos (escrituras); balcao simples e ordem de chegada"
+        ),
         can_explain=True,
         requires_tool=True,
         tool_name=tool,
@@ -225,7 +228,11 @@ def _registry() -> dict[str, Capability]:
         runtime_healthy=runtime_h,
         requires_human_review=True,  # escrevente confirma sempre
         can_execute=(runtime_h and _TOOL_AVAILABILITY.get(tool, False)),
-        evidence=["tool registrado no inventory MCP"],
+        evidence=[
+            "Nao ha pre-agendamento para reconhecimento de firma, autenticacao, "
+            "abertura de firma, arquivamento, DUT/ATPV e xerox — ordem de chegada",
+            "tool registrado no inventory MCP (escrituras e atos complexos)",
+        ],
     )
 
     # 9. HUMAN HANDOFF
