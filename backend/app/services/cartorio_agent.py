@@ -142,6 +142,18 @@ SERVICOS_CATALOGO: dict[str, tuple[str, str]] = {
         "Arquivamento — por documento",
         format_brl(GENERAL_ITEMS["arquivamento"].total),
     ),
+    "certidao_inteiro_teor": (
+        "Certidão de inteiro teor",
+        format_brl(GENERAL_ITEMS["certidao_inteiro_teor"].total),
+    ),
+    "certidao_quesitos": (
+        "Certidão conforme quesitos",
+        format_brl(GENERAL_ITEMS["certidao_quesitos"].total),
+    ),
+    "apostilamento": (
+        "Apostilamento — por documento",
+        format_brl(GENERAL_ITEMS["apostilamento"].total),
+    ),
 }
 
 # Perfil publico do cartorio. Os campos canonicos ``endereco`` e ``horario``
@@ -462,6 +474,10 @@ REGRAS CRITICAS
 4. Agendar: confirme servico e peca "data (DD/MM/AAAA) e horario (HH:MM)".
 5. Procuração: quando a pergunta não trouxer a finalidade completa, pergunte antes de informar valor.
 6. Agendar: atos de balcão (reconhecimento de firma, autenticação, abertura de firma, arquivamento, DUT/ATPV e xerox) são presenciais por ordem de chegada.
+12. Certidão: se o cliente não disser se é inteiro teor ou conforme quesitos, pergunte. Totais: inteiro teor R$ 42,49; quesitos R$ 66,30; prazo até 5 dias úteis. Certidão de testamento exige validação humana.
+13. Autenticação: se não disser se o documento é físico ou digital, pergunte. Física R$ 11,61; eletrônica R$ 13,91.
+14. Escritura com conteúdo financeiro: NUNCA feche um total sem a faixa do negócio. Encaminhe documentos e orçamento ao setor.
+15. NUNCA detalhe discriminativo fiscal contraditório (RECIVIL/RECOMPE do reconhecimento; R$ 11,61 vs R$ 13,91 de arquivamento). Informe só o total operacional consolidado.
 7. Protocolo: peca numero no formato AAAA-NNNNNN. Use tool consultar_protocolo se tiver.
 6. Catalogo em varias mensagens: NAO envie mais. Responda consolidado em 1 msg.
 7. ZERO link externo. Unico dominio permitido: 2notasudi.com.br.
@@ -529,6 +545,14 @@ def _match_servico(text: str) -> str | None:
         return "abertura_firma"
     if "arquivamento" in t or "arquivar" in t:
         return "arquivamento"
+    if any(w in t for w in ("apostil", "apostila")):
+        return "apostilamento"
+    if "certid" in t:
+        if "quesito" in t:
+            return "certidao_quesitos"
+        if "inteiro teor" in t or "teor" in t:
+            return "certidao_inteiro_teor"
+        return None
     aliases = {
         "reconhecimento_firma": ["firma", "reconhecimento", "assinatura"],
         "testamento": ["testamento"],
@@ -552,6 +576,65 @@ def _procuracao_requer_contexto(text: str) -> bool:
     if any(w in t for w in _PROCURACAO_GENERICA_TERMS):
         return False
     return True
+
+
+def _autenticacao_requer_contexto(text: str) -> bool:
+    """True quando pede autenticação sem dizer se o documento é físico ou digital."""
+    t = text.lower()
+    if not any(w in t for w in ("autentic", "autenticacao", "autenticação")):
+        return False
+    if any(
+        w in t
+        for w in (
+            "eletron",
+            "eletrôn",
+            "digital",
+            "pdf",
+            "cenad",
+            "fisic",
+            "físic",
+            "copia",
+            "cópia",
+            "folha",
+            "xerox",
+        )
+    ):
+        return False
+    return True
+
+
+def _certidao_requer_contexto(text: str) -> bool:
+    """True quando pede certidão sem distinguir inteiro teor e quesitos."""
+    t = text.lower()
+    if "certid" not in t:
+        return False
+    if "testament" in t:
+        return False
+    if any(w in t for w in ("inteiro teor", "quesito", "teor")):
+        return False
+    return True
+
+
+def _orientacao_pos_preco(text: str, servico_key: str | None = None) -> str:
+    """Evita oferecer pré-agendamento para ato simples de balcão."""
+    blob = f"{text} {servico_key or ''}"
+    if servico_key in {"certidao_inteiro_teor", "certidao_quesitos"} or "certid" in text.lower():
+        return (
+            "O prazo informado pela serventia é de até 5 dias úteis. "
+            "A retirada segue as regras internas e, em caso de dúvida de legitimidade, "
+            "a equipe valida o pedido."
+        )
+    if _bloqueia_agendamento_balcao(blob):
+        return (
+            "Para esse atendimento de balcão não há pré-agendamento. "
+            "O atendimento é presencial e por ordem de chegada. "
+            "Pessoas idosas, pessoas autistas, advogados e pessoas com deficiência "
+            "recebem senha preferencial."
+        )
+    return (
+        "Escrituras e atos complexos seguem análise e agendamento pelo setor responsável. "
+        "Se quiser, descreva o ato para encaminharmos."
+    )
 
 
 def _bloqueia_agendamento_balcao(text: str) -> bool:
@@ -684,13 +767,13 @@ def _build_catalog_series() -> list[str]:
         lines.append(f"  {i}. {nome} - {valor}")
     lines.append("")
     lines.append("Para avancar, escreva em texto livre. Exemplos:")
-    lines.append('  - "quero agendar autenticacao amanha as 10h"')
+    lines.append('  - "quanto custa autenticacao de copia fisica"')
     lines.append('  - "quanto custa procuracao"')
     lines.append('  - "consultar protocolo 2026-000123"')
     lines.append('  - "falar com escrevente"')
     lines.append("")
     lines.append(
-        "Atos fora desta lista (escritura complexa, usucapiao, inventario) precisam de atendimento humano."
+        "Atos de balcão (firma, autenticação, xerox) são presenciais por ordem de chegada, sem pré-agendamento."
     )
     return ["\n".join(lines)]
 
@@ -1763,7 +1846,7 @@ def _offline_reply_inner(
                 text=(
                     f"Sobre {nome}: valor de referencia {valor}.\n"
                     "\n"
-                    f"Se quiser agendar, digite: quero agendar {nome.lower()}\n"
+                    f"{_orientacao_pos_preco(text, svc)}\n"
                     "Se preferir pessoa: /humano"
                 ),
                 keyboard=None,
@@ -1782,8 +1865,8 @@ def _offline_reply_inner(
             provider="offline:livre",
         )
     svc = _match_servico(text)
-    if intent == "preco" and svc:
-        if svc == "procuracao" and _procuracao_requer_contexto(text):
+    if intent == "preco":
+        if _procuracao_requer_contexto(text):
             return AgentReply(
                 text=(
                     "O valor depende da finalidade. Procuração genérica custa R$ 71,38; "
@@ -1797,30 +1880,47 @@ def _offline_reply_inner(
                 tools_used=tools_used,
                 provider="offline:preco_procuracao_ambigua",
             )
-        nome, valor = SERVICOS_CATALOGO[svc]
-        if _bloqueia_agendamento_balcao(nome):
-            agendar_orientacao = (
-                "Para esse atendimento de balcão não há pré-agendamento. "
-                "O atendimento é presencial e por ordem de chegada. "
-                "Pessoas idosas, pessoas autistas, advogados e pessoas com deficiência recebem senha preferencial."
+        if _autenticacao_requer_contexto(text):
+            return AgentReply(
+                text=(
+                    "O documento é físico ou digital?\n"
+                    "\n"
+                    "Autenticação de cópia física custa R$ 11,61 por folha/documento. "
+                    "Autenticação de documento eletrônico custa R$ 13,91."
+                ),
+                keyboard=None,
+                tools_used=tools_used,
+                provider="offline:preco_autenticacao_ambigua",
             )
-        else:
-            agendar_orientacao = f"Para agendar, digite por exemplo:\nquero agendar {nome.lower()}"
-        return AgentReply(
-            text=(
-                f"Sobre {nome}:\n"
-                "\n"
-                f"Valor de referencia: {valor}\n"
-                "(tabela operacional do balcão / referência 2026)\n"
-                "\n"
-                f"{agendar_orientacao}"
-            ),
-            keyboard=None,
-            action=None,
-            tools_used=tools_used,
-            provider="offline",
-        )
-    if intent == "preco":
+        if _certidao_requer_contexto(text):
+            return AgentReply(
+                text=(
+                    "O valor depende do tipo. Certidão de inteiro teor custa R$ 42,49; "
+                    "certidão conforme quesitos custa R$ 66,30. "
+                    "O prazo informado pela serventia é de até 5 dias úteis.\n"
+                    "\n"
+                    "Qual certidão você precisa: inteiro teor ou conforme quesitos?"
+                ),
+                keyboard=None,
+                tools_used=tools_used,
+                provider="offline:preco_certidao_ambigua",
+            )
+        if svc:
+            nome, valor = SERVICOS_CATALOGO[svc]
+            return AgentReply(
+                text=(
+                    f"Sobre {nome}:\n"
+                    "\n"
+                    f"Valor de referencia: {valor}\n"
+                    "(tabela operacional do balcão / referência 2026)\n"
+                    "\n"
+                    f"{_orientacao_pos_preco(text, svc)}"
+                ),
+                keyboard=None,
+                action=None,
+                tools_used=tools_used,
+                provider="offline",
+            )
         lines = [f"- {n}: {v}" for _, (n, v) in SERVICOS_CATALOGO.items()]
         return AgentReply(
             text=(

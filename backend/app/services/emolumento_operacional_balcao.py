@@ -262,6 +262,11 @@ OPERATIONAL_ALIASES: Final[dict[str, str]] = {
     "xerox": "xerox_1_face",
     "xerox_uma_face": "xerox_1_face",
     "xerox_frente_verso": "xerox_2_faces",
+    "certidao_teor": "certidao_inteiro_teor",
+    "inteiro_teor": "certidao_inteiro_teor",
+    "certidao_conforme_quesitos": "certidao_quesitos",
+    "apostila": "apostilamento",
+    "apostilamento_haia": "apostilamento",
 }
 
 
