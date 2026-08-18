@@ -1021,5 +1021,6 @@ recupera acesso quando profile é wipado.
   3. Tratamento explícito de `poll_answer` gravando `tg:lgpd:consent:{conv}` para opção 0 (Sim) e limpando para opção 1 (Não).
   4. Manutenção de fallback textual normalizado (`sim`/`s`/`aceito` vs `nao`/`rejeito`) para clientes que digitam em vez de votar.
   5. Inclusão de `poll_answer` em `allowed_updates` do `setWebhook`.
-- **Prevenção de Regressão**: Regressões automatizadas em `backend/tests/test_telegram_webhook.py` e `backend/tests/test_telegram_regressions_g9.py` cobrem tanto `poll_answer` quanto parsing textual e envio via webhook.
+- **Prevenção de Regressão**: `backend/tests/test_lgpd_poll_p0.py` (11 casos P0: poll yes/no, retry idempotente, fallback `sim`, 1ª/2ª pergunta pós-consentimento, lock, webhook duplicado) + regressões G9/`poll_answer`.
+- **Addendum**: o loop visível não era só parsing de `SIM`. Com poll já aberta, cada webhook reenviava "Aguardando sua autorizacao LGPD". Corrigido para espera silenciosa + `tg:lgpd:active_poll:{conv}` + retry idempotente em `tg:lgpd:poll_resolved:{poll_id}`. Copy da enquete alinhada ao aceite. Roteamento pós-consentimento no FastAPI já enfileirava debounce; silêncio residual em produção ainda exige smoke na VPS Agent Cartório e checagem se o canal vivo não está no stub `/api/v1/agent-hermes/webhook`.
 

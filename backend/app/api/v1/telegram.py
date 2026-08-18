@@ -154,6 +154,11 @@ LGPD_NOTICE = (
 LGPD_CONSENT_TTL = 60 * 60 * 24 * 30
 LGPD_CONSENT_NOTICE_TTL = 600
 LGPD_POLL_TTL = 60 * 60
+LGPD_POLL_QUESTION = (
+    "Voce concorda com o tratamento dos seus dados para realizacao "
+    "do atendimento, conforme informado acima?"
+)
+LGPD_POLL_OPTIONS = ["Sim", "Nao"]
 
 
 def _lgpd_consent_key(key: int | str) -> str:
@@ -166,6 +171,14 @@ def _lgpd_prompt_key(key: int | str) -> str:
 
 def _lgpd_poll_key(poll_id: str) -> str:
     return f"tg:lgpd:poll:{poll_id}"
+
+
+def _lgpd_active_poll_key(key: int | str) -> str:
+    return f"tg:lgpd:active_poll:{key}"
+
+
+def _lgpd_poll_resolved_key(poll_id: str) -> str:
+    return f"tg:lgpd:poll_resolved:{poll_id}"
 
 
 async def _get_lgpd_consent(bus: Any, key: int | str | None = None) -> bool:
@@ -183,6 +196,7 @@ async def _set_lgpd_consent(bus: Any, key: int | str | None = None) -> bool:
     try:
         await bus.client.set(_lgpd_consent_key(key), "1", ex=LGPD_CONSENT_TTL)
         await bus.client.delete(_lgpd_prompt_key(key))
+        await bus.client.delete(_lgpd_active_poll_key(key))
         return True
     except Exception:
         return False
@@ -194,6 +208,7 @@ async def _clear_lgpd_consent(bus: Any, key: int | str | None = None) -> bool:
     try:
         await bus.client.delete(_lgpd_consent_key(key))
         await bus.client.delete(_lgpd_prompt_key(key))
+        await bus.client.delete(_lgpd_active_poll_key(key))
         return True
     except Exception:
         return False
@@ -959,6 +974,9 @@ async def _send_poll(
                     await bus.client.set(
                         _lgpd_poll_key(str(poll_id)), str(conv_key), ex=LGPD_POLL_TTL
                     )
+                    await bus.client.set(
+                        _lgpd_active_poll_key(conv_key), str(poll_id), ex=LGPD_POLL_TTL
+                    )
             return True
     except Exception as e:
         logger.exception("TG poll error: %s", e)
@@ -970,23 +988,21 @@ async def _send_lgpd_consent_request(
     bus: Any,
     conv_key: int | str,
 ) -> bool:
-    should_send = True
+    """Envia aviso LGPD + enquete nativa. Nao reenvia se ja houver poll ativa."""
     if bus:
         try:
+            if await bus.client.get(_lgpd_active_poll_key(conv_key)):
+                return True
+        except Exception:
+            pass
+        try:
             should_send = bool(
-                await bus.client.set(
-                    _lgpd_prompt_key(conv_key), "1", nx=True, ex=LGPD_CONSENT_NOTICE_TTL
-                )
+                await bus.client.set(_lgpd_prompt_key(conv_key), "1", nx=True, ex=LGPD_POLL_TTL)
             )
         except Exception:
             should_send = True
-
-    if not should_send:
-        await _send_message(
-            chat_id,
-            "Aguardando sua autorizacao LGPD. Se estiver em grupo, use a enquete acima ou envie SIM para continuar.",
-        )
-        return True
+        if not should_send:
+            return True
 
     notice_ok = await _send_message(
         chat_id,
@@ -1001,11 +1017,16 @@ async def _send_lgpd_consent_request(
 
     poll_ok = await _send_poll(
         chat_id,
-        "Voce autoriza continuar com o tratamento de dados LGPD?",
-        ["Sim", "Nao"],
+        LGPD_POLL_QUESTION,
+        LGPD_POLL_OPTIONS,
         bus=bus,
         conv_key=conv_key,
     )
+    if poll_ok and bus:
+        try:
+            await bus.client.set(_lgpd_active_poll_key(conv_key), "1", ex=LGPD_POLL_TTL)
+        except Exception:
+            pass
     if not poll_ok:
         await _send_message(
             chat_id,
@@ -2448,11 +2469,27 @@ async def _telegram_webhook_impl(
         voter_chat = poll_answer.get("voter_chat", {}) or {}
         reply_chat = voter_chat.get("id") or (poll_answer.get("user") or {}).get("id")
 
+        try:
+            first_vote = bool(
+                await bus.client.set(
+                    _lgpd_poll_resolved_key(poll_id), "1", nx=True, ex=LGPD_POLL_TTL
+                )
+            )
+        except Exception:
+            first_vote = True
+        if not first_vote:
+            return {
+                "status": "ok",
+                "kind": "poll_answer",
+                "poll_id": poll_id,
+                "idempotent": True,
+            }
+
         if option == 0:
             await _set_lgpd_consent(bus, conv_key)
             answer = (
                 "Consentimento LGPD confirmado.\n\n"
-                "Agora pode continuar normalmente com /start ou enviando sua mensagem."
+                "Pode continuar com o atendimento. Envie sua pergunta."
             )
         else:
             await _clear_lgpd_consent(bus, conv_key)
@@ -2463,10 +2500,6 @@ async def _telegram_webhook_impl(
                 " fica desabilitado para esta conversa.\n\n"
                 "Para tentar novamente, envie /start."
             )
-        try:
-            await bus.client.delete(_lgpd_poll_key(poll_id))
-        except Exception:
-            pass
         sent = await _send_message(int(reply_chat), answer) if reply_chat else False
         return {
             "status": "ok" if sent else "partial",
