@@ -36,8 +36,8 @@ make test-fast            # pytest SEM coverage (dev loop)
 make test-one TEST=tests/test_pii.py::test_foo   # 1 teste especifico
 make lint                 # ruff check + mypy app/ (gates: 0 errors)
 make format               # ruff format + ruff check --fix
-make qa                   # lint + test (quality gate local)
-make ci                   # mais estrito que qa: secrets-scan + format --check + lint + test + openapi-check + n8n-validate + coverage-gate
+make qa                   # lint + test (mesmo gate do CI)
+make ci                   # alias de qa — simula GitHub Actions
 make pre-commit           # lint + fast test (rodar antes de push)
 make clean                # remove __pycache__, .mypy_cache, .ruff_cache, .coverage
 
