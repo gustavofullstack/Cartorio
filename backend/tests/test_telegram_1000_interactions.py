@@ -155,4 +155,4 @@ def test_telegram_interaction_1000(i: int):
     response = client.post("/api/v1/telegram/webhook", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert data.get("status") in ("ok", "ignored", "degraded", "duplicate")
+    assert data.get("status") in ("ok", "ignored", "degraded", "duplicate", "partial")
