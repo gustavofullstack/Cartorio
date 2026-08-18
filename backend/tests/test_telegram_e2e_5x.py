@@ -339,6 +339,7 @@ class TestE2ETelegramAgendar:
 
     def test_agendar_inicio_pede_servico(self, client: TestClient) -> None:
         bus = StatefulBus()
+        bus.store["tg:lgpd:consent:6682284055"] = "1"
         update = _telegram_update(update_id=30001, text="/agendar")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
@@ -361,6 +362,7 @@ class TestE2ETelegramAgendar:
         self, client: TestClient, stateful_bus: StatefulBus
     ) -> None:
         """Walkthrough: /agendar -> servico -> data -> hora -> confirmar (sem commit)."""
+        stateful_bus.store["tg:lgpd:consent:6682284055"] = "1"
         chat_id = 6682284055
 
         # Step 1: /agendar
@@ -437,6 +439,7 @@ class TestE2ETelegramAgendar:
 
     def test_agendar_escolha_invalida(self, client: TestClient, stateful_bus: StatefulBus) -> None:
         """Opcao invalida no servico retorna 'opcao invalida'."""
+        stateful_bus.store["tg:lgpd:consent:6682284055"] = "1"
         # Step 1: /agendar
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
@@ -478,6 +481,7 @@ class TestE2ETelegramHumano:
     def test_humano_inicio_aguarda_descricao(self, client: TestClient) -> None:
         """Comando /humano retorna orientacao inicial."""
         bus = StatefulBus()
+        bus.store["tg:lgpd:consent:6682284055"] = "1"
         update = _telegram_update(update_id=40001, text="/humano")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
@@ -499,6 +503,7 @@ class TestE2ETelegramHumano:
         self, client: TestClient, stateful_bus: StatefulBus
     ) -> None:
         """Fluxo: /humano -> descricao -> cria atendimento no HITL system."""
+        stateful_bus.store["tg:lgpd:consent:6682284055"] = "1"
         # Step 1: /humano (inicia state HITL)
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
