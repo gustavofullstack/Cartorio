@@ -2,6 +2,7 @@
 Tools para gerenciar coding agents da coding-vps_apenas_para_auxilio via Easypanel API v2.
 """
 import json
+import os
 import subprocess
 import urllib.request
 from typing import Any
@@ -9,11 +10,11 @@ from typing import Any
 # Easypanel config
 BASE = "http://100.99.172.84:3000"
 USER = "gustavomar.fullstack@gmail.com"
-PASSWORD = "@Techno832466"
+PASSWORD = os.environ.get("EASYPANEL_PASSWORD", "")
 PROJECT = "coding-vps_apenas_para_auxilio"
 SSH_KEY = "~/.ssh/id_ed25519_cartorio"
 SSH_HOST = "root@100.99.172.84"
-MINIMAX_API_KEY = "sk-cp-kRIbiqKy9F-0aN0rrWUAHSAvNc_e0e00Gr1U4QlYWi_CIgguvXKr7gNLBo6DaEVU7JpY0GnJFinOFMOhBMNFD6Sp8pMuN9UEXyNR4mMi4V4hqm9eUr_7j5s"
+MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
 MINIMAX_BASE_URL = "https://api.minimaxi.com/v1"
 
 
