@@ -161,12 +161,16 @@ async def test_webhook_returns_200_when_redis_down() -> None:
 @pytest.mark.asyncio
 async def test_webhook_returns_200_degraded_when_enqueue_fails() -> None:
     """Falha no enqueue/lock (Redis morrendo no meio) -> 200 degraded (sem fix: 500)."""
-    bus = _FakeBus(broken_get=True)
+    bus = _FakeBus()
+    bus.store["tg:lgpd:consent:4242"] = "1"
     update = _private_text_update(9002, "preciso de uma certidao de nascimento")
     with (
         patch.object(tg, "get_bus", return_value=bus),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
+        patch.object(
+            tg, "_enqueue_message", new=AsyncMock(side_effect=ConnectionError("redis down"))
+        ),
     ):
         resp = await tg.telegram_webhook(
             _make_request(update), BackgroundTasks(), None, MagicMock()
@@ -201,6 +205,8 @@ async def test_two_users_same_group_both_processed() -> None:
     bus = _FakeBus()
     chat_id = -100999
     conv1, conv2 = f"{chat_id}:111", f"{chat_id}:222"
+    bus.store[f"tg:lgpd:consent:{conv1}"] = "1"
+    bus.store[f"tg:lgpd:consent:{conv2}"] = "1"
     upd1 = _group_text_update(9101, 111, "@test_cartorio_bot quero agendar", chat_id)
     upd2 = _group_text_update(9102, 222, "@test_cartorio_bot consultar protocolo", chat_id)
     bt = BackgroundTasks()
@@ -268,6 +274,7 @@ async def test_sync_webhook_sends_secret_and_env_url(monkeypatch: pytest.MonkeyP
     payload = pool.post.call_args.kwargs["json"]
     assert payload["secret_token"] == "segredo-de-teste"
     assert payload["url"] == "https://example.test/hook"
+    assert "poll_answer" in payload["allowed_updates"]
 
 
 # =============================================================================

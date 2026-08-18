@@ -1007,3 +1007,19 @@ recupera acesso quando profile é wipado.
   conformidade de todas as migrations antigas.
 - O aceite de canal permanece pendente ate observar round-trip real dos dois contatos permitidos;
   imagem saudavel, testes verdes e remetente sintetico bloqueado nao substituem a prova humana.
+
+## Lesson 301 — Pietra P0: Enquete Nativa LGPD, Webhook Allowed Updates e Desbloqueio do Router (2026-08-18)
+
+- **Incidente #194**: Clientes paravam no onboarding LGPD ou ficavam sem resposta após o aviso inicial.
+- **Causa Raiz**:
+  1. O fluxo de consentimento dependia exclusivamente de parsing frágil de texto (`SIM`/`Sim`/`sim`), sem suporte primário a enquetes estruturadas.
+  2. A sincronização de webhook (`sync_telegram_webhook`) não registrava `poll_answer` em `allowed_updates`, impedindo o recebimento de votos de enquetes na API Telegram.
+  3. Bloqueio no pipeline não persistia o estado de consentimento no cache de forma a liberar imediatamente as perguntas subsequentes dos clientes.
+- **Solução**:
+  1. Uso prioritário de `_send_poll` com opções binárias e inequívocas: `["Sim", "Nao"]`.
+  2. Mapeamento atômico `poll_id -> conv_key` em Redis com TTL (`tg:lgpd:poll:{id}`).
+  3. Tratamento explícito de `poll_answer` gravando `tg:lgpd:consent:{conv}` para opção 0 (Sim) e limpando para opção 1 (Não).
+  4. Manutenção de fallback textual normalizado (`sim`/`s`/`aceito` vs `nao`/`rejeito`) para clientes que digitam em vez de votar.
+  5. Inclusão de `poll_answer` em `allowed_updates` do `setWebhook`.
+- **Prevenção de Regressão**: Regressões automatizadas em `backend/tests/test_telegram_webhook.py` e `backend/tests/test_telegram_regressions_g9.py` cobrem tanto `poll_answer` quanto parsing textual e envio via webhook.
+

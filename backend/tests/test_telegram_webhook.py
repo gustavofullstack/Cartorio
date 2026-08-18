@@ -268,6 +268,76 @@ def test_callback_cancelar_returns_menu(client: TestClient) -> None:
     assert "menu" in sent_text.lower()
 
 
+def test_poll_answer_sim_aceita_consentimento(client: TestClient) -> None:
+    update = {
+        "update_id": 5001,
+        "poll_answer": {
+            "poll_id": "poll-001",
+            "option_ids": [0],
+            "voter_chat": {"id": 6682284055},
+            "user": {"id": 6682284055},
+        },
+    }
+
+    mock_bus = MagicMock()
+    mock_bus.client = MagicMock()
+    mock_bus.client.get = AsyncMock(return_value=b"6682284055")
+    mock_bus.client.set = AsyncMock(return_value=True)
+    mock_bus.client.delete = AsyncMock(return_value=True)
+
+    with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
+        with patch(
+            "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            resp = client.post("/api/v1/telegram/webhook", json=update)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ok"
+    assert data["kind"] == "poll_answer"
+    assert mock_send.call_count == 1
+    sent_text = mock_send.call_args.args[1]
+    assert "confirmado" in sent_text.lower()
+    set_calls = [call.args[0] for call in mock_bus.client.set.call_args_list]
+    assert "tg:lgpd:consent:6682284055" in set_calls
+
+
+def test_poll_answer_nao_rejeita_consentimento(client: TestClient) -> None:
+    update = {
+        "update_id": 5002,
+        "poll_answer": {
+            "poll_id": "poll-002",
+            "option_ids": [1],
+            "voter_chat": {"id": 6682284055},
+            "user": {"id": 6682284055},
+        },
+    }
+
+    mock_bus = MagicMock()
+    mock_bus.client = MagicMock()
+    mock_bus.client.get = AsyncMock(return_value=b"6682284055")
+    mock_bus.client.set = AsyncMock(return_value=True)
+    mock_bus.client.delete = AsyncMock(return_value=True)
+
+    with patch("app.api.v1.telegram.get_bus", return_value=mock_bus):
+        with patch(
+            "app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)
+        ) as mock_send:
+            with patch("app.api.v1.telegram._clear_state", new=AsyncMock(return_value=None)):
+                with patch(
+                    "app.api.v1.telegram._clear_lgpd_consent", new=AsyncMock(return_value=True)
+                ):
+                    resp = client.post("/api/v1/telegram/webhook", json=update)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ok"
+    assert data["kind"] == "poll_answer"
+    assert mock_send.call_count == 1
+    sent_text = mock_send.call_args.args[1]
+    assert "nao" in sent_text.lower() or "não" in sent_text.lower()
+
+
 # === State machine (com Redis mock) ===
 
 

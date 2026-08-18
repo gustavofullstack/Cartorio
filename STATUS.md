@@ -1,5 +1,42 @@
 # STATUS — Cartório OS (live)
 
+## 2026-08-18 — INCIDENT 194 (Telegram LGPD Poll + atendimento parado) **P0 estabilização**
+
+**Estado:** `IN_PRODUCTION` (aguardando smoke real pós-deploy, critérios de aceite ainda em validação)
+
+**Diagnóstico:**
+- `issue #194` reportado como LGPD gate quebrando pipeline (`SIM`/`Nao` textual sem avanço).
+- Causa raiz parcial confirmada: consentimento LGPD passava pelo caminho de texto, mas o fluxo não aguardava retorno persistido da escolha do usuário e `poll_answer` nem sempre era recebido em produção.
+- Causa raiz operacional adicional: `sync_telegram_webhook` não incluía `poll_answer` em `allowed_updates`, com risco de perder respostas de enquete.
+
+**Correções aplicadas (arquivo único):**
+- `backend/app/api/v1/telegram.py`
+  - Envio de consentimento via enquete Telegram em `sendPoll` com apenas `Sim`/`Nao`.
+  - Mapeamento `poll_id → conv_key` em Redis com TTL (`lgpd_poll`).
+- `backend/app/api/v1/telegram.py`
+  - Tratamento de `poll_answer` em `telegram_webhook` para gravar/limpar consentimento e avançar estado sem depender de texto.
+- `backend/app/api/v1/telegram.py`
+  - `sync_telegram_webhook` atualiza `allowed_updates` para incluir `poll_answer`.
+- `backend/tests/test_telegram_regressions_g9.py`
+  - Regressão garante `poll_answer` em `allowed_updates` do `setWebhook`.
+- `backend/tests/test_telegram_webhook.py`
+  - Regressão mínima para respostas `poll_answer` (`Sim`/`Nao`).
+
+**Evidência técnica (rodadas de validação):**
+- Root cause: `sim` textual não era caminho primário, retorno de estado não persistia antes do poll e webhook podia ignorar `poll_answer`.
+- Arquivos alterados: `backend/app/api/v1/telegram.py`, `backend/tests/test_telegram_webhook.py`, `backend/tests/test_telegram_regressions_g9.py`.
+- Testes executados: regressões G9 (`test_sync_webhook_sends_secret_and_env_url`) + novos cenários de `poll_answer` via `telegram_webhook`.
+- Comportamento esperado: 
+  - `/start` sem consentimento abre aviso + enquete.
+  - Clique em `Sim`/`Nao` define consentimento persistido e remove prompt.
+  - Chat segue para atendimento normal sem novo “bloqueio LGPD”.
+- Prevenção de regressão: teste de integração G9 em `allowed_updates`, regressão de `poll_answer` no handler.
+- Deploy: VPS Agent Cartório / Tailscale (sem alteração de ambiente).
+- Smoke real prevista: `LGPD -> PASS`, `sim -> PASS`, `pergunta -> resposta`, `segunda pergunta -> resposta`.
+- Backlog operacional: investigar conversas históricas sem resposta após bloqueio e reprocessar apenas itens confirmados.
+
+---
+
 > **Atualização 2026-07-28 (IMENSAGER QA consolidado — Sessão B local):**
 > **Status:** `IMESSAGE_QA_AMARELO` — 3 P0-candidates NOVOS + tz root cause | `PAINEL_DADOS_LIVE`
 >

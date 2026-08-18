@@ -151,6 +151,78 @@ LGPD_NOTICE = (
     "tratamento dos dados necessarios ao atendimento."
 )
 
+LGPD_CONSENT_TTL = 60 * 60 * 24 * 30
+LGPD_CONSENT_NOTICE_TTL = 600
+LGPD_POLL_TTL = 60 * 60
+
+
+def _lgpd_consent_key(key: int | str) -> str:
+    return f"tg:lgpd:consent:{key}"
+
+
+def _lgpd_prompt_key(key: int | str) -> str:
+    return f"tg:lgpd:prompt:{key}"
+
+
+def _lgpd_poll_key(poll_id: str) -> str:
+    return f"tg:lgpd:poll:{poll_id}"
+
+
+async def _get_lgpd_consent(bus: Any, key: int | str | None = None) -> bool:
+    if not bus or key is None:
+        return False
+    try:
+        return bool(await bus.client.get(_lgpd_consent_key(key)))
+    except Exception:
+        return False
+
+
+async def _set_lgpd_consent(bus: Any, key: int | str | None = None) -> bool:
+    if not bus or key is None:
+        return False
+    try:
+        await bus.client.set(_lgpd_consent_key(key), "1", ex=LGPD_CONSENT_TTL)
+        await bus.client.delete(_lgpd_prompt_key(key))
+        return True
+    except Exception:
+        return False
+
+
+async def _clear_lgpd_consent(bus: Any, key: int | str | None = None) -> bool:
+    if not bus or key is None:
+        return False
+    try:
+        await bus.client.delete(_lgpd_consent_key(key))
+        await bus.client.delete(_lgpd_prompt_key(key))
+        return True
+    except Exception:
+        return False
+
+
+def _normalize_lgpd_text_reply(text: str) -> str | None:
+    if not text:
+        return None
+    normalized = text.strip().lower()
+    normalized = (
+        normalized.replace("ã", "a")
+        .replace("â", "a")
+        .replace("á", "a")
+        .replace("à", "a")
+        .replace("é", "e")
+        .replace("ê", "e")
+        .replace("í", "i")
+        .replace("õ", "o")
+        .replace("ô", "o")
+        .replace("ó", "o")
+        .replace("ú", "u")
+        .replace("ç", "c")
+    )
+    if normalized in {"sim", "s", "aceito", "aceitar", "concordo", "autorizo"}:
+        return "accept"
+    if normalized in {"nao", "não", "n", "rejeito", "rejeitar", "nego", "nao aceito"}:
+        return "reject"
+    return None
+
 
 # Contatos oficiais do cartorio — NUNCA mascarar no texto de SAIDA do bot
 # (scrub generico de PII quebrava "dpo@2notasudi.com.br" → [EMAIL_REDACTED]).
@@ -852,21 +924,94 @@ async def _send_message(
         return False
 
 
-async def _send_poll(chat_id: int, question: str, options: list[str]) -> bool:
+async def _send_poll(
+    chat_id: int,
+    question: str,
+    options: list[str],
+    bus: Any | None = None,
+    *,
+    conv_key: int | str | None = None,
+) -> bool:
     url = f"{TELEGRAM_API_BASE}/bot{TELEGRAM_BOT_TOKEN}/sendPoll"
     payload = {
         "chat_id": chat_id,
         "question": question,
-        "options": json.dumps(options),
+        "options": options,
         "is_anonymous": False,
     }
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(url, json=payload)
-            return resp.status_code == 200
+            if resp.status_code != 200:
+                logger.warning(
+                    "TG poll failed chat=%s status=%s body=%s",
+                    chat_id,
+                    resp.status_code,
+                    resp.text[:200],
+                )
+                return False
+            if bus and conv_key is not None:
+                result = resp.json()
+                payload_res = result.get("result", {}) if isinstance(result, dict) else {}
+                poll_obj = payload_res.get("poll") or payload_res.get("message", {}).get("poll")
+                poll_id = poll_obj.get("id") if isinstance(poll_obj, dict) else None
+                if poll_id:
+                    await bus.client.set(
+                        _lgpd_poll_key(str(poll_id)), str(conv_key), ex=LGPD_POLL_TTL
+                    )
+            return True
     except Exception as e:
         logger.exception("TG poll error: %s", e)
         return False
+
+
+async def _send_lgpd_consent_request(
+    chat_id: int,
+    bus: Any,
+    conv_key: int | str,
+) -> bool:
+    should_send = True
+    if bus:
+        try:
+            should_send = bool(
+                await bus.client.set(
+                    _lgpd_prompt_key(conv_key), "1", nx=True, ex=LGPD_CONSENT_NOTICE_TTL
+                )
+            )
+        except Exception:
+            should_send = True
+
+    if not should_send:
+        await _send_message(
+            chat_id,
+            "Aguardando sua autorizacao LGPD. Se estiver em grupo, use a enquete acima ou envie SIM para continuar.",
+        )
+        return True
+
+    notice_ok = await _send_message(
+        chat_id,
+        f"{LGPD_NOTICE}\n\nPara continuar, responda a enquete LGPD abaixo:",
+    )
+    if not notice_ok:
+        await _send_message(
+            chat_id,
+            "Nao consigo abrir o aviso agora. Envie: SIM para autorizar ou NAO para cancelar.",
+        )
+        return False
+
+    poll_ok = await _send_poll(
+        chat_id,
+        "Voce autoriza continuar com o tratamento de dados LGPD?",
+        ["Sim", "Nao"],
+        bus=bus,
+        conv_key=conv_key,
+    )
+    if not poll_ok:
+        await _send_message(
+            chat_id,
+            "Nao consigo abrir a enquete no momento. Envie: SIM para autorizar ou NAO para cancelar.",
+        )
+    return poll_ok
 
 
 async def _send_photo(chat_id: int, photo_url: str, caption: str | None = None) -> bool:
@@ -917,39 +1062,49 @@ async def _handle_command(
     cmd = text.strip().split()[0].lower().split("@")[0]
     if cmd == "/start":
         await _clear_state(bus, key)
-        # Nova sessao: limpa memoria multi-turn (recomeço explicito)
-        if bus:
+        has_consent = await _get_lgpd_consent(bus, key)
+        if bus and key is not None:
             try:
                 await bus.client.delete(f"tg:hist:{key}")
             except Exception:
                 pass
-        # Marca LGPD visto (1x por conversa)
-        if bus:
-            try:
-                await bus.client.set(f"tg:lgpd:{key}", "1", ex=STATE_TTL)
-            except Exception:
-                pass
+        if has_consent:
+            if bus and key is not None:
+                try:
+                    await bus.client.delete(f"tg:hist:{key}")
+                except Exception:
+                    pass
+            return (
+                f"{LGPD_NOTICE}\n"
+                "\n"
+                "---\n"
+                "\n"
+                "Ola. Sou o assistente do Cartorio 2o Oficio de Notas — Uberlandia/MG.\n"
+                "\n"
+                "Posso ajudar com informacoes, valores de referencia, agendamento e "
+                "pre-qualificacao. Atos oficiais passam por validacao humana.\n"
+                "\n"
+                "Exemplos do que voce pode digitar:\n"
+                "\n"
+                "- quanto custa autenticacao\n"
+                "- quero agendar procuracao amanha\n"
+                "- consultar protocolo 2026-000123\n"
+                "- me fale cada servico em mensagens separadas\n"
+                "\n"
+                "A memoria desta conversa fica ativa neste chat (Redis), vinculada ao "
+                "seu usuario Telegram.\n"
+                "\n"
+                "Atalhos: /menu · /humano · /lgpd · /cancelar",
+                _menu_keyboard_with_cancel(),
+            )
         return (
+            "Cartorio 2o Oficio de Notas — Uberlandia/MG.\n"
+            "\n"
+            "Para continuar, preciso do seu consentimento LGPD.\n"
+            "Responda: Sim para continuar ou Nao para interromper.\n"
+            "\n"
             f"{LGPD_NOTICE}\n"
-            "\n"
-            "---\n"
-            "\n"
-            "Ola. Sou o assistente do Cartorio 2o Oficio de Notas — Uberlandia/MG.\n"
-            "\n"
-            "Posso ajudar com informacoes, valores de referencia, agendamento e "
-            "pre-qualificacao. Atos oficiais passam por validacao humana.\n"
-            "\n"
-            "Exemplos do que voce pode digitar:\n"
-            "\n"
-            "- quanto custa autenticacao\n"
-            "- quero agendar procuracao amanha\n"
-            "- consultar protocolo 2026-000123\n"
-            "- me fale cada servico em mensagens separadas\n"
-            "\n"
-            "A memoria desta conversa fica ativa neste chat (Redis), vinculada ao "
-            "seu usuario Telegram.\n"
-            "\n"
-            "Atalhos: /menu · /humano · /lgpd · /cancelar",
+            "DPO: dpo@2notasudi.com.br",
             _menu_keyboard_with_cancel(),
         )
     if cmd == "/menu":
@@ -1008,6 +1163,25 @@ async def _handle_callback(
     chat_id: int | str | None = None,
 ) -> tuple[str, list | None, bool]:
     key = key if key is not None else chat_id
+    if data in {"lgpd:sim", "lgpd:s"}:
+        if bus:
+            await _set_lgpd_consent(bus, key)
+        return (
+            "Consentimento LGPD confirmado. Pode continuar com o atendimento.\n\n"
+            "Como posso te ajudar?",
+            _menu_keyboard_with_cancel(),
+            True,
+        )
+    if data in {"lgpd:nao", "lgpd:n"}:
+        if bus:
+            await _clear_lgpd_consent(bus, key)
+            await _clear_state(bus, key)
+        return (
+            "Entendido. Sem autorizacao LGPD, o atendimento por IA permanece desabilitado.\n"
+            "Para recomeçar, digite /start.",
+            _menu_keyboard_with_cancel(),
+            True,
+        )
     if data == "agendar":
         data = "cmd:agendar"
     elif data == "cancelar":
@@ -2207,8 +2381,18 @@ async def _telegram_webhook_impl(
         return {"status": "degraded", "reason": "invalid_json"}
     _verify_telegram_secret(x_telegram_bot_api_secret_token)
     message = update.get("message", {}) or update.get("edited_message", {})
+    poll_answer = update.get("poll_answer", {})
     callback = update.get("callback_query", {})
     my_chat_member = update.get("my_chat_member", {})
+    bus: Any = None
+    try:
+        bus = get_bus()
+    except Exception as exc:
+        logger.warning(
+            "TG webhook: Redis indisponivel (%s) — fallback sincrono degraded",
+            type(exc).__name__,
+        )
+        bus = None
     chat_id = (
         message.get("chat", {}).get("id")
         or callback.get("message", {}).get("chat", {}).get("id")
@@ -2216,6 +2400,86 @@ async def _telegram_webhook_impl(
     )
     text = message.get("text", "") or callback.get("data", "")
     update_id = update.get("update_id", 0)
+
+    if poll_answer and bus:
+        poll_id = str(poll_answer.get("poll_id") or "")
+        option_ids = poll_answer.get("option_ids") or []
+        if not poll_id or not option_ids:
+            return {
+                "status": "ignored",
+                "kind": "poll_answer",
+                "poll_id": poll_id,
+            }
+        try:
+            option = int(option_ids[0])
+        except (TypeError, ValueError):
+            option = None
+        if option not in (0, 1):
+            return {
+                "status": "ignored",
+                "kind": "poll_answer",
+                "poll_id": poll_id,
+            }
+        conv_key_bytes = await bus.client.get(_lgpd_poll_key(poll_id))
+        conv_key = (
+            conv_key_bytes.decode()
+            if isinstance(conv_key_bytes, (bytes, bytearray))
+            else str(conv_key_bytes)
+            if conv_key_bytes
+            else None
+        )
+        if conv_key is None:
+            voter_chat = poll_answer.get("voter_chat", {}) or {}
+            voter_chat_id = voter_chat.get("id")
+            voter_chat_type = voter_chat.get("type", "")
+            poll_user_id = (poll_answer.get("user") or {}).get("id")
+            if poll_user_id:
+                if voter_chat_id and voter_chat_type in {"group", "supergroup"}:
+                    conv_key = f"{voter_chat_id}:{poll_user_id}"
+                else:
+                    conv_key = str(poll_user_id)
+        if not conv_key:
+            return {
+                "status": "ignored",
+                "kind": "poll_answer",
+                "poll_id": poll_id,
+            }
+
+        voter_chat = poll_answer.get("voter_chat", {}) or {}
+        reply_chat = voter_chat.get("id") or (poll_answer.get("user") or {}).get("id")
+
+        if option == 0:
+            await _set_lgpd_consent(bus, conv_key)
+            answer = (
+                "Consentimento LGPD confirmado.\n\n"
+                "Agora pode continuar normalmente com /start ou enviando sua mensagem."
+            )
+        else:
+            await _clear_lgpd_consent(bus, conv_key)
+            await _clear_state(bus, conv_key)
+            await bus.client.delete(f"tg:hist:{conv_key}")
+            answer = (
+                "Consentimento nao registrado. Sem autorizacao LGPD, o atendimento por IA"
+                " fica desabilitado para esta conversa.\n\n"
+                "Para tentar novamente, envie /start."
+            )
+        try:
+            await bus.client.delete(_lgpd_poll_key(poll_id))
+        except Exception:
+            pass
+        sent = await _send_message(int(reply_chat), answer) if reply_chat else False
+        return {
+            "status": "ok" if sent else "partial",
+            "kind": "poll_answer",
+            "poll_id": poll_id,
+        }
+
+    if poll_answer and not bus:
+        return {
+            "status": "degraded",
+            "kind": "poll_answer",
+            "detail": "consent cache unavailable",
+        }
 
     # G9.S2.T4: marca o inicio da janela webhook->resposta (1a msg da janela
     # de debounce vence via setdefault). Metrica NUNCA derruba o webhook:
@@ -2354,18 +2618,7 @@ async def _telegram_webhook_impl(
     scrub_res = scrub(text) if text else None
     text_scrubbed = scrub_res.text if scrub_res else ""
     conv = _conv_key(int(chat_id), int(user_id) if user_id else None, chat_type)
-    # FIX 2026-07-20 (G9/A3+A4): get_bus() pode levantar (ex. ConnectionError
-    # com Redis fora). Regra do webhook: SEMPRE 200 — degrada para o fallback
-    # sincrono (bus=None) em vez de estourar 500.
-    bus: Any = None
-    try:
-        bus = get_bus()
-    except Exception as exc:
-        logger.warning(
-            "TG webhook: Redis indisponivel (%s) — fallback sincrono degraded",
-            type(exc).__name__,
-        )
-        bus = None
+    has_lgpd_consent = await _get_lgpd_consent(bus, conv)
 
     # Avoid spam: ignore unrelated group free-text, but allow a direct reply to
     # this bot as a natural conversational turn (not only @-mentions/commands).
@@ -2443,6 +2696,16 @@ async def _telegram_webhook_impl(
     if callback:
         data = callback.get("data", "")
         await _answer_callback_query(callback.get("id", ""))
+        if bus and not has_lgpd_consent and not str(data).startswith("lgpd:"):
+            lgpd_prompt_sent = await _send_lgpd_consent_request(int(chat_id), bus, conv)
+            return _finish(
+                {
+                    "status": "ok" if lgpd_prompt_sent else "partial",
+                    "chat_id": chat_id,
+                    "kind": "lgpd_gate",
+                    "response_sent": lgpd_prompt_sent,
+                }
+            )
         response_text, keyboard, _ = await _handle_callback(data, bus, conv, user_id=uid)
         if response_text:
             response_text = strip_emojis(response_text)
@@ -2471,6 +2734,17 @@ async def _telegram_webhook_impl(
         "lgpd",
     ):
         cmd = raw_first_word if raw_first_word.startswith("/") else f"/{raw_first_word}"
+        if cmd == "/start" and bus and not has_lgpd_consent:
+            await _handle_command(text, bus, conv, "")
+            lgpd_prompt_sent = await _send_lgpd_consent_request(int(chat_id), bus, conv)
+            return _finish(
+                {
+                    "status": "ok" if lgpd_prompt_sent else "partial",
+                    "chat_id": chat_id,
+                    "kind": "lgpd_prompt",
+                    "response_sent": lgpd_prompt_sent,
+                }
+            )
         if cmd not in ALLOWED_COMMANDS:
             await _react(chat_id, msg_id, "cross")
             markup = {"inline_keyboard": _menu_keyboard()}
@@ -2479,6 +2753,16 @@ async def _telegram_webhook_impl(
             )
             classify_metric_for_status("ignored_command", "command")
             return _finish({"status": "ignored_command", "chat_id": chat_id})
+        if bus and not has_lgpd_consent and cmd != "/lgpd":
+            lgpd_prompt_sent = await _send_lgpd_consent_request(int(chat_id), bus, conv)
+            return _finish(
+                {
+                    "status": "ok" if lgpd_prompt_sent else "partial",
+                    "chat_id": chat_id,
+                    "kind": "lgpd_gate",
+                    "response_sent": lgpd_prompt_sent,
+                }
+            )
         bump_metric("commands_handled")
         # /voz → MiniMax TTS da ultima resposta do bot no historico
         if cmd == "/voz":
@@ -2552,6 +2836,60 @@ async def _telegram_webhook_impl(
     # FIX 2026-07-09: NAO aplicar rate limit no mid-flow — cliente manda
     # data+hora em <5s e o rate limit engolia a conversa (rate_limited:true
     # sem processar). Rate limit fica so no free-text IDLE / debounce.
+    if bus and not has_lgpd_consent:
+        lgpd_text_reply = _normalize_lgpd_text_reply(text_scrubbed)
+        if lgpd_text_reply == "accept":
+            await _set_lgpd_consent(bus, conv)
+            try:
+                await bus.client.delete(_lgpd_prompt_key(conv))
+            except Exception:
+                pass
+            sent = await _send_message(
+                int(chat_id),
+                "Consentimento LGPD confirmado. Pode continuar com o atendimento.",
+            )
+            return _finish(
+                {
+                    "status": "ok" if sent else "partial",
+                    "chat_id": chat_id,
+                    "kind": "lgpd_consent",
+                    "response_sent": sent,
+                }
+            )
+        if lgpd_text_reply == "reject":
+            await _clear_lgpd_consent(bus, conv)
+            await _clear_state(bus, conv)
+            try:
+                await bus.client.delete(f"tg:hist:{conv}")
+            except Exception:
+                pass
+            try:
+                await bus.client.delete(_lgpd_prompt_key(conv))
+            except Exception:
+                pass
+            sent = await _send_message(
+                int(chat_id),
+                "Consentimento não registrado. Sem autorizacao LGPD, o atendimento por IA "
+                "fica desabilitado para esta conversa.",
+            )
+            return _finish(
+                {
+                    "status": "ok" if sent else "partial",
+                    "chat_id": chat_id,
+                    "kind": "lgpd_consent",
+                    "response_sent": sent,
+                }
+            )
+        lgpd_prompt_sent = await _send_lgpd_consent_request(int(chat_id), bus, conv)
+        return _finish(
+            {
+                "status": "ok" if lgpd_prompt_sent else "partial",
+                "chat_id": chat_id,
+                "kind": "lgpd_gate",
+                "response_sent": lgpd_prompt_sent,
+            }
+        )
+
     if bus:
         st_now = await _get_state(bus, conv)
         if st_now.get("state", STATE_IDLE) != STATE_IDLE:
@@ -2741,7 +3079,13 @@ async def sync_telegram_webhook() -> dict:
     )
     payload: dict[str, Any] = {
         "url": webhook_url,
-        "allowed_updates": ["message", "edited_message", "callback_query", "my_chat_member"],
+        "allowed_updates": [
+            "message",
+            "edited_message",
+            "callback_query",
+            "my_chat_member",
+            "poll_answer",
+        ],
         "drop_pending_updates": False,
         "secret_token": TELEGRAM_WEBHOOK_SECRET,
     }
