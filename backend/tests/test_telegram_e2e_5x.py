@@ -37,6 +37,9 @@ class StatefulBus:
 
     def __init__(self) -> None:
         self.store: dict[str, str] = {}
+        # Ensure LGPD consent is mocked for tests requiring it
+        self.store["tg:lgpd:consent:4242"] = "1"
+        self.store["tg:lgpd:consent:6682284055"] = "1"
         self.client = self
 
     async def set(

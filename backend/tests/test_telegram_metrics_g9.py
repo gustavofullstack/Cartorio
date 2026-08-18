@@ -244,6 +244,7 @@ async def test_webhook_invalid_json_conta_200_nao_5xx(store_isolado: MetricsStor
 @pytest.mark.asyncio
 async def test_debounce_agendado_contabiliza(store_isolado: MetricsStore) -> None:
     bus = _FakeBus()
+    bus.store["tg:lgpd:consent:4242"] = "1"
     update = _private_text_update(7004, "quero agendar uma escritura")
     bt = BackgroundTasks()
     with (
@@ -265,6 +266,7 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
 ) -> None:
     """Lock presente -> acumula na fila SEM novo agendamento (1 por janela)."""
     bus = _FakeBus()
+    bus.store["tg:lgpd:consent:4242"] = "1"
     bus.store["tg:lock:4242"] = "1"  # janela ja aberta
     update = _private_text_update(7005, "mais uma mensagem na mesma janela")
     bt = BackgroundTasks()
@@ -354,6 +356,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
 ) -> None:
     """Webhook (200 + schedule) -> debounce task -> send: pipeline completo."""
     bus = _FakeBus()
+    bus.store["tg:lgpd:consent:4242"] = "1"
     update = _private_text_update(7006, "qual o valor da autenticacao?")
     bt = BackgroundTasks()
     with (
