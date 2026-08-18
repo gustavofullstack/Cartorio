@@ -155,7 +155,7 @@ def iniciar_atendimento(
                 VALUES
                     (:cliente_id, :telefone_hash, :canal, :tipo, :status,
                      CAST(:dados_coletados AS jsonb), CAST(:dados_pendentes AS jsonb), :protocolo_id, :agendamento_id, :observacoes,
-                     NOW(), NOW())
+                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 RETURNING id
             """),
             {
@@ -171,7 +171,7 @@ def iniciar_atendimento(
                 "observacoes": req.observacoes,
             },
         )
-        atendimento_id_row = db.execute(text("SELECT lastval()")).scalar()
+        atendimento_id_row = db.execute(text("SELECT last_insert_rowid()")).scalar()
         atendimento_id = int(atendimento_id_row) if atendimento_id_row else 0
     except Exception as e:
         logger.error("falha ao criar atendimentos_v2: %s", e)
@@ -186,7 +186,7 @@ def iniciar_atendimento(
                          dados_coletados, dados_pendentes, observacoes, criado_em, atualizado_em)
                     VALUES
                         (:cliente_id, :telefone_hash, :canal, :tipo, :status,
-                         CAST('{}' AS jsonb), CAST('[]' AS jsonb), :observacoes, NOW(), NOW())
+                         CAST('{}' AS jsonb), CAST('[]' AS jsonb), :observacoes, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                     RETURNING id
                 """),
                 {
@@ -198,7 +198,7 @@ def iniciar_atendimento(
                     "observacoes": (req.observacoes or "") + " [fallback sem dados_coletados]",
                 },
             )
-            atendimento_id_row = db.execute(text("SELECT lastval()")).scalar()
+            atendimento_id_row = db.execute(text("SELECT last_insert_rowid()")).scalar()
             atendimento_id = int(atendimento_id_row) if atendimento_id_row else 0
         except Exception as e2:
             logger.error("falha ao criar atendimentos_v2 (fallback): %s", e2)
@@ -212,7 +212,7 @@ def iniciar_atendimento(
                 INSERT INTO memoria_conversa
                     (telefone_hash, session_id, canal, role, content, metadata_json, created_at, updated_at)
                 VALUES
-                    (:telefone_hash, :session_id, :canal, 'system', :content, CAST(:metadata AS jsonb), NOW(), NOW())
+                    (:telefone_hash, :session_id, :canal, 'system', :content, CAST(:metadata AS jsonb), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """),
             {
                 "telefone_hash": coleta.telefone_hash,
