@@ -66,7 +66,16 @@ def test_evolution_media_types_are_classified_as_unsupported(message_type: str) 
     assert "não consegue analisar" in fallback.text
 
 
-@pytest.mark.parametrize("message_type", ("", "conversation", "extendedTextMessage"))
+@pytest.mark.parametrize(
+    "message_type",
+    (
+        "",
+        "conversation",
+        "extendedTextMessage",
+        "pollUpdateMessage",
+        "pollCreationMessageV3",
+    ),
+)
 def test_evolution_text_types_do_not_trigger_media_fallback(message_type: str) -> None:
     assert unsupported_whatsapp_media(message_type) is None
 

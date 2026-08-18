@@ -127,20 +127,195 @@ def _provision_allowed_whatsapp_cliente(
     normalized_sender: str | None,
     access_reason: str,
 ) -> Cliente | None:
-    """Cria o registro minimo somente no SIM de remetente allowlisted.
+    """Cria o registro minimo no aceite explicito de remetente autorizado.
 
     O telefone nunca e persistido em claro. O upsert canonico grava apenas
     ``telefone_hash`` e permanece na mesma transacao do consentimento/audit.
-    Em modo aberto de teste ou sem numero normalizado, continua fail-closed.
+    Sem numero normalizado continua fail-closed.
     """
-    if access_reason != "sender_allowed" or not normalized_sender:
+    if not normalized_sender:
         return None
+    logger.debug("provisioning whatsapp cliente reason=%s", access_reason)
     result = upsert_cliente_por_telefone(
         db,
         telefone=normalized_sender,
         consentimento_lgpd=False,
     )
     return db.get(Cliente, result.cliente_id)
+
+
+def _normalize_lgpd_text_reply(text: str) -> str | None:
+    """Classifica aceite/recusa textual explicita. None = nao e resposta de gate."""
+    normalized = text.strip().lower()
+    normalized = (
+        normalized.replace("ã", "a")
+        .replace("â", "a")
+        .replace("á", "a")
+        .replace("à", "a")
+        .replace("é", "e")
+        .replace("ê", "e")
+        .replace("í", "i")
+        .replace("õ", "o")
+        .replace("ô", "o")
+        .replace("ó", "o")
+        .replace("ú", "u")
+        .replace("ç", "c")
+    )
+    if normalized in LGPD_YES_LABELS:
+        return "accept"
+    if normalized in LGPD_NO_LABELS:
+        return "reject"
+    return None
+
+
+def _whatsapp_identity_tokens(sender_id: str, sender_alt: str) -> list[str]:
+    tokens: list[str] = []
+    for raw in (sender_id, sender_alt):
+        token = str(raw or "").strip()
+        if token and token not in tokens:
+            tokens.append(token)
+    return tokens
+
+
+def _conversation_pseudonyms(sender_id: str, sender_alt: str) -> list[str]:
+    seen: list[str] = []
+    for token in _whatsapp_identity_tokens(sender_id, sender_alt):
+        pseudo = pseudonymize_conversation_id(Channel.WHATSAPP, token)
+        if pseudo not in seen:
+            seen.append(pseudo)
+    return seen
+
+
+def _consent_cache_keys(pseudonyms: list[str]) -> list[str]:
+    return [f"consent:wa:{pseudo}" for pseudo in pseudonyms]
+
+
+def _notice_cache_keys(pseudonyms: list[str]) -> list[str]:
+    return [f"consent:wa:notice:{pseudo}" for pseudo in pseudonyms]
+
+
+def _active_poll_keys(pseudonyms: list[str]) -> list[str]:
+    return [f"wa:lgpd:active_poll:{pseudo}" for pseudo in pseudonyms]
+
+
+def _poll_map_key(poll_id: str) -> str:
+    return f"wa:lgpd:poll:{poll_id}"
+
+
+def _poll_resolved_key(poll_id: str) -> str:
+    return f"wa:lgpd:poll_resolved:{poll_id}"
+
+
+def _find_cliente_for_inbound(
+    db: Session,
+    *,
+    normalized_sender: str | None,
+    conversation_pseudonyms: list[str],
+) -> Cliente | None:
+    cliente = _find_cliente_by_whatsapp_hash(db, normalized_sender)
+    if cliente is not None:
+        return cliente
+    from app.services.channel_identity import find_cliente_id_by_channel_identity
+
+    for pseudo in conversation_pseudonyms:
+        cliente_id = find_cliente_id_by_channel_identity(
+            db,
+            channel="whatsapp",
+            conversation_pseudonym=pseudo,
+        )
+        if cliente_id is not None:
+            found = db.get(Cliente, cliente_id)
+            if found is not None:
+                return found
+    return None
+
+
+def _bind_all_whatsapp_identities(
+    db: Session,
+    *,
+    cliente: Cliente,
+    conversation_pseudonyms: list[str],
+) -> None:
+    for pseudo in conversation_pseudonyms:
+        _bind_whatsapp_identity(
+            db,
+            cliente=cliente,
+            conversation_pseudonym=pseudo,
+        )
+
+
+def extract_whatsapp_lgpd_poll_vote(payload: dict) -> tuple[str | None, int | None]:
+    """Extrai (poll_id, option) de voto estruturado da Evolution.
+
+    option=0 -> Sim; option=1 -> Nao. Prefere IDs/labels estaveis a texto livre.
+    """
+    raw_data = payload.get("data")
+    data: dict[str, Any] = raw_data if isinstance(raw_data, dict) else {}
+    raw_message = data.get("message")
+    message: dict[str, Any] = raw_message if isinstance(raw_message, dict) else {}
+    if not message:
+        raw_root = payload.get("message")
+        message = raw_root if isinstance(raw_root, dict) else {}
+    poll_update = message.get("pollUpdateMessage")
+    updates = data.get("pollUpdates")
+    selected: list[object] = []
+    poll_id = ""
+    if isinstance(poll_update, dict):
+        creation = poll_update.get("pollCreationMessageKey")
+        if isinstance(creation, dict):
+            poll_id = str(creation.get("id") or "")
+        vote = poll_update.get("vote") if isinstance(poll_update.get("vote"), dict) else {}
+        raw_selected = vote.get("selectedOptions") if isinstance(vote, dict) else None
+        if isinstance(raw_selected, list):
+            selected = raw_selected
+        elif isinstance(poll_update.get("selectedOptions"), list):
+            selected = poll_update["selectedOptions"]
+    if not selected and isinstance(updates, list) and updates:
+        first = updates[0] if isinstance(updates[0], dict) else {}
+        key = first.get("pollUpdateMessageKey") or first.get("key") or {}
+        if isinstance(key, dict) and not poll_id:
+            poll_id = str(key.get("id") or "")
+        vote = first.get("vote") if isinstance(first.get("vote"), dict) else first
+        raw_selected = vote.get("selectedOptions") if isinstance(vote, dict) else None
+        if isinstance(raw_selected, list):
+            selected = raw_selected
+    if not selected:
+        return (poll_id or None, None)
+
+    labels: list[str] = []
+    for item in selected:
+        if isinstance(item, dict):
+            label = str(item.get("optionName") or item.get("name") or item.get("value") or "")
+        else:
+            label = str(item)
+        label = label.strip()
+        if label:
+            labels.append(label)
+    if not labels:
+        return (poll_id or None, None)
+
+    first_label = labels[0]
+    if first_label.isdigit():
+        option = int(first_label)
+        if option in (0, 1):
+            return (poll_id or None, option)
+        return (poll_id or None, None)
+    decision = _normalize_lgpd_text_reply(first_label)
+    if decision == "accept":
+        return (poll_id or None, 0)
+    if decision == "reject":
+        return (poll_id or None, 1)
+    lowered = first_label.strip().lower()
+    if lowered == LGPD_POLL_OPTIONS[0].lower():
+        return (poll_id or None, 0)
+    if lowered == LGPD_POLL_OPTIONS[1].lower():
+        return (poll_id or None, 1)
+    return (poll_id or None, None)
+
+
+def _payload_has_poll_vote(payload: dict) -> bool:
+    poll_id, option = extract_whatsapp_lgpd_poll_vote(payload)
+    return option in (0, 1) or bool(poll_id)
 
 
 # ===== Config (espelha telegram.py constantes) =====
@@ -204,8 +379,23 @@ LGPD_NOTICE = (
     "- Dados pessoais sao mascarados antes de qualquer processamento com IA.\n"
     "- Voce pode pedir acesso, correcao ou exclusao: dpo@2notasudi.com.br\n"
     "- Atos notariais exigem validacao humana (HITL).\n"
-    "Para continuar, leia este aviso e digite *SIM*. Sem essa confirmacao, "
-    "nenhuma mensagem sera processada pela IA."
+    "Para continuar, responda a enquete *Sim* / *Nao*. Sem essa confirmacao, "
+    "nenhuma mensagem sera processada pela IA. Se a enquete nao aparecer, "
+    "envie *SIM* ou *NAO*."
+)
+
+LGPD_POLL_QUESTION = (
+    "Voce concorda com o tratamento dos seus dados para realizacao "
+    "do atendimento, conforme informado acima?"
+)
+LGPD_POLL_OPTIONS = ["Sim", "Nao"]
+LGPD_POLL_TTL = 60 * 60
+LGPD_YES_LABELS = frozenset({"sim", "s", "aceito", "aceitar", "concordo", "autorizo"})
+LGPD_NO_LABELS = frozenset({"nao", "não", "n", "rejeito", "rejeitar", "nego", "nao aceito"})
+LGPD_CONSENT_ACK = "Consentimento confirmado. Como posso ajudar?"
+LGPD_CONSENT_DENIED = (
+    "Consentimento nao registrado. Sem autorizacao LGPD, o atendimento por IA "
+    "fica desabilitado para esta conversa. Para tentar novamente, envie SIM."
 )
 
 SERVICOS: dict[str, tuple[str, str]] = {
@@ -349,6 +539,49 @@ class WhatsAppAdapter(ChannelAdapter):
             store.inc_counter("cartorio_whatsapp_erros_total")
             return False
 
+    async def send_poll(self, recipient_id: str, question: str, options: list[str]) -> str | None:
+        """Envia enquete nativa via Evolution sendPoll. Retorna poll/message id."""
+        try:
+            if not self._recipient_is_allowed(recipient_id or ""):
+                logger.warning("WhatsApp egress blocked: poll recipient not authorized")
+                return None
+            from app.services.notificacao import _strip_emojis
+
+            client = await self._get_client()
+            url = f"{self.base_url}/message/sendPoll/{self.instance}"
+            recipient = recipient_id or ""
+            if not recipient.endswith("@lid"):
+                recipient = recipient.replace("@s.whatsapp.net", "").replace("@g.us", "")
+            payload = {
+                "number": recipient,
+                "pollName": _strip_emojis(question),
+                "options": [_strip_emojis(option) for option in options],
+                "selectableOptionsCount": 1,
+            }
+            resp = await client.post(url, json=payload)
+            if resp.status_code not in (200, 201):
+                logger.warning("Evolution sendPoll failed: status=%s", resp.status_code)
+                return None
+            body: dict[str, Any] = {}
+            try:
+                parsed = resp.json()
+                if isinstance(parsed, dict):
+                    body = parsed
+            except Exception:
+                body = {}
+            raw_key = body.get("key")
+            key: dict[str, Any] = raw_key if isinstance(raw_key, dict) else {}
+            if not key:
+                nested = body.get("message")
+                nested_dict = nested if isinstance(nested, dict) else {}
+                nested_key = nested_dict.get("key")
+                key = nested_key if isinstance(nested_key, dict) else {}
+            poll_id = str(key.get("id") or body.get("pollId") or "")
+            return poll_id or "poll-sent"
+        except Exception as e:
+            logger.exception("WhatsApp send_poll error: %s", e)
+            return None
+
     async def typing(self, recipient_id: str, action: str = "composing") -> bool:
         """Indica typing via presence subscribe (Evolution). action='' cancela."""
         try:
@@ -462,7 +695,7 @@ def parse_evolution_payload(payload: dict) -> InboundMessage | None:
     """
     try:
         event = payload.get("event", "")
-        if event and not is_messages_upsert_event(event):
+        if event and not is_messages_upsert_event(event) and not _payload_has_poll_vote(payload):
             # Evolution envia messages.upsert E MESSAGES_UPSERT. Sem event, segue.
             return None
 
@@ -590,6 +823,96 @@ async def whatsapp_health() -> dict:
     }
 
 
+async def _cache_consent_granted(bus: Any, pseudonyms: list[str]) -> bool:
+    if not bus:
+        return True
+    try:
+        for key in _consent_cache_keys(pseudonyms):
+            await bus.client.set(key, "1", ex=86400)
+        notice_keys = _notice_cache_keys(pseudonyms)
+        poll_keys = _active_poll_keys(pseudonyms)
+        if notice_keys or poll_keys:
+            await bus.client.delete(*notice_keys, *poll_keys)
+        return True
+    except Exception as exc:
+        logger.warning("Redis consent write failed: %s", type(exc).__name__)
+        return False
+
+
+async def _cache_consent_cleared(bus: Any, pseudonyms: list[str]) -> bool:
+    if not bus:
+        return True
+    try:
+        keys = (
+            _consent_cache_keys(pseudonyms)
+            + _notice_cache_keys(pseudonyms)
+            + _active_poll_keys(pseudonyms)
+        )
+        if keys:
+            await bus.client.delete(*keys)
+        return True
+    except Exception as exc:
+        logger.warning("Redis consent delete failed: %s", type(exc).__name__)
+        return False
+
+
+async def _has_active_lgpd_poll(bus: Any, pseudonyms: list[str]) -> bool:
+    if not bus:
+        return False
+    try:
+        for key in _active_poll_keys(pseudonyms):
+            if await bus.client.get(key):
+                return True
+    except Exception:
+        return False
+    return False
+
+
+async def _remember_lgpd_poll(bus: Any, poll_id: str, pseudonyms: list[str]) -> None:
+    if not bus or not poll_id:
+        return
+    try:
+        await bus.client.set(_poll_map_key(poll_id), "1", ex=LGPD_POLL_TTL)
+        for key in _active_poll_keys(pseudonyms):
+            await bus.client.set(key, poll_id, ex=LGPD_POLL_TTL)
+    except Exception as exc:
+        logger.warning("Redis poll map write failed: %s", type(exc).__name__)
+
+
+async def _send_whatsapp_lgpd_request(
+    adapter: WhatsAppAdapter,
+    *,
+    sender_id: str,
+    bus: Any,
+    pseudonyms: list[str],
+) -> bool:
+    if await _has_active_lgpd_poll(bus, pseudonyms):
+        return True
+    if bus:
+        try:
+            for key in _notice_cache_keys(pseudonyms):
+                if await bus.client.get(key):
+                    return True
+        except Exception as exc:
+            logger.warning("Redis consent notice read failed: %s", type(exc).__name__)
+    notice_ok = await adapter.send(
+        OutboundMessage(channel=Channel.WHATSAPP, recipient_id=sender_id, text=LGPD_NOTICE)
+    )
+    poll_id = None
+    send_poll = getattr(adapter, "send_poll", None)
+    if callable(send_poll):
+        poll_id = await send_poll(sender_id, LGPD_POLL_QUESTION, list(LGPD_POLL_OPTIONS))
+    if bus:
+        try:
+            for key in _notice_cache_keys(pseudonyms):
+                await bus.client.set(key, "1", ex=600)
+        except Exception as exc:
+            logger.warning("Redis consent notice debounce failed: %s", type(exc).__name__)
+    if poll_id:
+        await _remember_lgpd_poll(bus, str(poll_id), pseudonyms)
+    return bool(notice_ok or poll_id)
+
+
 @router.get("/metrics")
 async def whatsapp_metrics() -> dict:
     """Métricas in-process."""
@@ -613,8 +936,8 @@ async def whatsapp_metrics() -> dict:
         "`app.schemas.webhook_payloads.EvolutionPayload`.\n\n"
         "**Idempotency**: `data.key.id` dedup via `evolution_ingest` (DB) + "
         "Redis SETNX (`chat_pipeline.check_idempotency`).\n\n"
-        "**LGPD consent gate**: cliente deve aceitar LGPD via `SIM` antes do "
-        "primeiro atendimento. Opt-out via `PARAR`/`SAIR` revoga consentimento.\n\n"
+        "**LGPD consent gate**: poll nativa Sim/Nao (Hermes/Evolution sendPoll) "
+        "com fallback textual `SIM`/`NAO`. Opt-out via `PARAR`/`SAIR` revoga.\n\n"
         "**Flow**: HMAC -> idempotency -> parse -> consent gate -> pipeline "
         "(debounce 1.2s -> rate limit 3s -> LLM com fallback chain -> scrub output)."
     ),
@@ -762,17 +1085,20 @@ async def whatsapp_webhook(
         sender_id,
         hmac_key=settings.pietra_whatsapp_allowlist_hmac_key,
     )
-    conversation_pseudonym = pseudonymize_conversation_id(Channel.WHATSAPP, sender_id)
-    consent_key = f"consent:wa:{conversation_pseudonym}"
-    consent_notice_key = f"consent:wa:notice:{conversation_pseudonym}"
-    text_clean = inbound.text.strip().lower()
+    conversation_pseudonyms = _conversation_pseudonyms(sender_id, sender_alt)
+    text_decision = _normalize_lgpd_text_reply(inbound.text)
+    poll_id, poll_option = extract_whatsapp_lgpd_poll_vote(payload)
 
     if not inbound.is_group:
         bus = get_bus()
         # DB e a fonte canonica. Redis e somente cache e jamais concede acesso
         # sozinho, evitando que uma chave stale reverta um opt-out duravel.
         try:
-            cliente_db = _find_cliente_by_whatsapp_hash(db, normalized_sender)
+            cliente_db = _find_cliente_for_inbound(
+                db,
+                normalized_sender=normalized_sender,
+                conversation_pseudonyms=conversation_pseudonyms,
+            )
         except Exception as exc:
             db.rollback()
             logger.error("DB consent lookup failed: %s", type(exc).__name__)
@@ -781,10 +1107,10 @@ async def whatsapp_webhook(
         has_consent = bool(cliente_db and cliente_db.consentimento_lgpd)
         if has_consent and cliente_db is not None:
             try:
-                _bind_whatsapp_identity(
+                _bind_all_whatsapp_identities(
                     db,
                     cliente=cliente_db,
-                    conversation_pseudonym=conversation_pseudonym,
+                    conversation_pseudonyms=conversation_pseudonyms,
                 )
                 db.commit()
             except Exception as exc:
@@ -794,14 +1120,25 @@ async def whatsapp_webhook(
                     status_code=503,
                     detail="consent persistence unavailable",
                 ) from exc
-            if bus:
-                try:
-                    await bus.client.set(consent_key, "1", ex=86400)
-                except Exception as exc:
-                    logger.warning("Redis consent cache sync failed: %s", type(exc).__name__)
+            await _cache_consent_granted(bus, conversation_pseudonyms)
+
+        if poll_option in (0, 1) and bus and poll_id:
+            try:
+                already_resolved = bool(await bus.client.get(_poll_resolved_key(poll_id)))
+            except Exception:
+                already_resolved = False
+            if already_resolved:
+                return {
+                    "status": "ok",
+                    "detail": "consent_granted"
+                    if has_consent or poll_option == 0
+                    else "consent_declined",
+                    "idempotent": True,
+                    "kind": "poll_answer",
+                }
 
         # 3. Opt-out e opt-in sao sempre explicitos; contato inicial nao e consentimento.
-        if text_clean in ("parar", "sair", "optout", "opt-out", "cancelar"):
+        if inbound.text.strip().lower() in ("parar", "sair", "optout", "opt-out", "cancelar"):
             if has_consent and cliente_db is not None:
                 try:
                     from app.models.cliente import MotivoEncerramento
@@ -829,13 +1166,7 @@ async def whatsapp_webhook(
                         detail="consent revocation not persisted",
                     ) from exc
 
-                cache_synced = True
-                if bus:
-                    try:
-                        await bus.client.delete(consent_key, consent_notice_key)
-                    except Exception as exc:
-                        cache_synced = False
-                        logger.warning("Redis consent delete failed: %s", type(exc).__name__)
+                cache_synced = await _cache_consent_cleared(bus, conversation_pseudonyms)
                 msg_optout = OutboundMessage(
                     channel=inbound.channel,
                     recipient_id=sender_id,
@@ -849,8 +1180,16 @@ async def whatsapp_webhook(
                 }
             return {"status": "ok", "detail": "consent_required"}
 
-        opt_in_requested = text_clean in ("sim", "s", "aceito", "aceitar")
+        opt_in_requested = text_decision == "accept" or poll_option == 0
+        opt_out_requested = text_decision == "reject" or poll_option == 1
         if has_consent and opt_in_requested:
+            if poll_option == 0:
+                return {
+                    "status": "ok",
+                    "detail": "consent_already_granted",
+                    "idempotent": True,
+                    "kind": "poll_answer",
+                }
             ack_sent = await adapter.send(
                 OutboundMessage(
                     channel=inbound.channel,
@@ -862,6 +1201,28 @@ async def whatsapp_webhook(
                 "status": "ok",
                 "detail": "consent_already_granted",
                 "ack_sent": ack_sent,
+            }
+
+        if not has_consent and opt_out_requested:
+            if bus:
+                await _cache_consent_cleared(bus, conversation_pseudonyms)
+            if bus and poll_id:
+                try:
+                    await bus.client.set(_poll_resolved_key(poll_id), "1", ex=LGPD_POLL_TTL)
+                except Exception:
+                    pass
+            declined = await adapter.send(
+                OutboundMessage(
+                    channel=inbound.channel,
+                    recipient_id=sender_id,
+                    text=LGPD_CONSENT_DENIED,
+                )
+            )
+            return {
+                "status": "ok",
+                "detail": "consent_declined",
+                "ack_sent": declined,
+                "kind": "poll_answer" if poll_option == 1 else "lgpd_consent",
             }
 
         if not has_consent and opt_in_requested:
@@ -885,10 +1246,10 @@ async def whatsapp_webhook(
                 cliente_db.consentimento_lgpd = True
                 cliente_db.consentimento_em = datetime.now(timezone.utc)
                 cliente_db.consentimento_canal = "whatsapp"
-                _bind_whatsapp_identity(
+                _bind_all_whatsapp_identities(
                     db,
                     cliente=cliente_db,
-                    conversation_pseudonym=conversation_pseudonym,
+                    conversation_pseudonyms=conversation_pseudonyms,
                 )
                 AuditService.log(
                     db,
@@ -911,19 +1272,18 @@ async def whatsapp_webhook(
                     detail="consent grant not persisted",
                 ) from exc
 
-            cache_synced = True
-            if bus:
+            cache_synced = await _cache_consent_granted(bus, conversation_pseudonyms)
+            if bus and poll_id:
                 try:
-                    await bus.client.set(consent_key, "1", ex=86400)
-                    await bus.client.delete(consent_notice_key)
-                except Exception as exc:
-                    cache_synced = False
-                    logger.warning("Redis consent write failed: %s", type(exc).__name__)
+                    await bus.client.set(_poll_resolved_key(poll_id), "1", ex=LGPD_POLL_TTL)
+                except Exception:
+                    pass
+            db.commit()
             ack_sent = await adapter.send(
                 OutboundMessage(
                     channel=inbound.channel,
                     recipient_id=sender_id,
-                    text="Consentimento confirmado. Como posso ajudar?",
+                    text=LGPD_CONSENT_ACK,
                 )
             )
             return {
@@ -931,35 +1291,21 @@ async def whatsapp_webhook(
                 "detail": "consent_granted",
                 "cache_synced": cache_synced,
                 "ack_sent": ack_sent,
+                "kind": "poll_answer" if poll_option == 0 else "lgpd_consent",
             }
 
         if not has_consent:
-            should_send_notice = True
-            if bus:
-                try:
-                    should_send_notice = bool(
-                        await bus.client.set(
-                            consent_notice_key,
-                            "1",
-                            ex=600,
-                            nx=True,
-                        )
-                    )
-                except Exception as e:
-                    logger.warning("Redis consent notice debounce failed: %s", e)
-            if should_send_notice:
-                await adapter.send(
-                    OutboundMessage(
-                        channel=inbound.channel,
-                        recipient_id=sender_id,
-                        text=LGPD_NOTICE,
-                    )
-                )
+            await _send_whatsapp_lgpd_request(
+                adapter,
+                sender_id=sender_id,
+                bus=bus,
+                pseudonyms=conversation_pseudonyms,
+            )
             AuditService.log_system_action(
                 action="consent.whatsapp.requested",
                 payload={"sender_hash": sender_hash, "status": "pending", "canal": "whatsapp"},
             )
-            return {"status": "ok", "detail": "consent_required"}
+            return {"status": "ok", "detail": "consent_required", "kind": "lgpd_gate"}
 
     # 4. Pipeline compartilhado
     request_id = request.headers.get("X-Request-ID", f"wa-{int(time.time() * 1000)}")
