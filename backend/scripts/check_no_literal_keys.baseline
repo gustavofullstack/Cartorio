@@ -44,3 +44,9 @@ backend/app/services/emolumento_real_djalma.py:25:WEBHOOK_SECRET_HEX64
 
 # Falso positivo em relatório de gate (SHA256 de comando é não-secreto e derivável localmente).
 .orchestration/cartorio-super-graph-v2/completion-report.json:28:WEBHOOK_SECRET_HEX64
+
+# Exemplos de schema gerado para doc do OpenAPI (não sao segredos vivos)
+snapshots/openapi.baseline.json:5520:WEBHOOK_SECRET_HEX64
+
+# Exemplos de schema gerado para doc do OpenAPI (não sao segredos vivos)
+snapshots/openapi.baseline.json:14780:WEBHOOK_SECRET_HEX64
