@@ -70,8 +70,8 @@ jobs:
             REF="origin/${{ github.base_ref }}"
           else
             REF="${{ github.event.before }}"
-            # Push de branch nova (before = zeros): melhor esforco = commit anterior.
-            if [ -z "$REF" ] || [ "$REF" = "0000000000000000000000000000000000000000" ]; then
+            # Push de branch nova (before = zeros) ou ref reescrito: fallback seguro.
+            if [ -z "$REF" ] || [ "$REF" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "${REF}^{commit}" 2>/dev/null; then
               REF="HEAD~1"
             fi
           fi
