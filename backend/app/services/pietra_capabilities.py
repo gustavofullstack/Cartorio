@@ -218,8 +218,7 @@ def _registry() -> dict[str, Capability]:
     caps["appointment"] = Capability(
         capability_id="appointment",
         display_name=(
-            "Pre-agendamento so para atos complexos (escrituras); "
-            "balcao simples e ordem de chegada"
+            "Pre-agendamento so para atos complexos (escrituras); balcao simples e ordem de chegada"
         ),
         can_explain=True,
         requires_tool=True,

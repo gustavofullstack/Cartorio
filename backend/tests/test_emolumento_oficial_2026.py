@@ -103,28 +103,39 @@ class TestMcpToolFonteAutoritativa:
         """Camada operational_pos_2notas retorna totais de balcão da serventia."""
         from mcp_server import cartorio_calcular_emolumento
 
-        r_proc = await cartorio_calcular_emolumento("procuracao", pricing_layer="operational_pos_2notas")
+        r_proc = await cartorio_calcular_emolumento(
+            "procuracao", pricing_layer="operational_pos_2notas"
+        )
         assert r_proc["status"] == "PUBLISHED"
         assert r_proc["total"] == "71.38"
         assert r_proc["pricing_layer"] == "operational_pos_2notas"
 
-        r_proc_fin = await cartorio_calcular_emolumento("procuracao_financeira", pricing_layer="operational_pos_2notas")
+        r_proc_fin = await cartorio_calcular_emolumento(
+            "procuracao_financeira", pricing_layer="operational_pos_2notas"
+        )
         assert r_proc_fin["status"] == "PUBLISHED"
         assert r_proc_fin["total"] == "226.14"
 
-        r_proc_inss = await cartorio_calcular_emolumento("procuracao_inss", pricing_layer="operational_pos_2notas")
+        r_proc_inss = await cartorio_calcular_emolumento(
+            "procuracao_inss", pricing_layer="operational_pos_2notas"
+        )
         assert r_proc_inss["status"] == "PUBLISHED"
         assert r_proc_inss["total"] == "37.91"
 
-        r_aut = await cartorio_calcular_emolumento("autenticacao", pricing_layer="operational_pos_2notas")
+        r_aut = await cartorio_calcular_emolumento(
+            "autenticacao", pricing_layer="operational_pos_2notas"
+        )
         assert r_aut["status"] == "PUBLISHED"
         assert r_aut["total"] == "11.61"
 
-        r_aut_e = await cartorio_calcular_emolumento("autenticacao_documento_eletronico", pricing_layer="operational_pos_2notas")
+        r_aut_e = await cartorio_calcular_emolumento(
+            "autenticacao_documento_eletronico", pricing_layer="operational_pos_2notas"
+        )
         assert r_aut_e["status"] == "PUBLISHED"
         assert r_aut_e["total"] == "13.91"
 
-        r_dut = await cartorio_calcular_emolumento("dut_atpv", pricing_layer="operational_pos_2notas")
+        r_dut = await cartorio_calcular_emolumento(
+            "dut_atpv", pricing_layer="operational_pos_2notas"
+        )
         assert r_dut["status"] == "PUBLISHED"
         assert r_dut["total"] == "16.61"
-

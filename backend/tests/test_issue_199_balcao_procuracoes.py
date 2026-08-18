@@ -127,19 +127,27 @@ async def test_mcp_tool_camadas_regulatoria_e_operacional() -> None:
     assert r_op["total"] == "71.38"
     assert r_op["pricing_layer"] == "operational_pos_2notas"
 
-    r_op_fin = await cartorio_calcular_emolumento("procuracao_financeira", pricing_layer="operational_pos_2notas")
+    r_op_fin = await cartorio_calcular_emolumento(
+        "procuracao_financeira", pricing_layer="operational_pos_2notas"
+    )
     assert r_op_fin["status"] == "PUBLISHED"
     assert r_op_fin["total"] == "226.14"
 
-    r_op_inss = await cartorio_calcular_emolumento("procuracao_inss", pricing_layer="operational_pos_2notas")
+    r_op_inss = await cartorio_calcular_emolumento(
+        "procuracao_inss", pricing_layer="operational_pos_2notas"
+    )
     assert r_op_inss["status"] == "PUBLISHED"
     assert r_op_inss["total"] == "37.91"
 
-    r_op_aut = await cartorio_calcular_emolumento("autenticacao_documento_eletronico", pricing_layer="operational_pos_2notas")
+    r_op_aut = await cartorio_calcular_emolumento(
+        "autenticacao_documento_eletronico", pricing_layer="operational_pos_2notas"
+    )
     assert r_op_aut["status"] == "PUBLISHED"
     assert r_op_aut["total"] == "13.91"
 
-    r_op_fisica = await cartorio_calcular_emolumento("autenticacao", pricing_layer="operational_pos_2notas")
+    r_op_fisica = await cartorio_calcular_emolumento(
+        "autenticacao", pricing_layer="operational_pos_2notas"
+    )
     assert r_op_fisica["total"] == "11.61"
 
 

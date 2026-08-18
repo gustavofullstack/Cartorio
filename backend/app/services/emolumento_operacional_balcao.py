@@ -354,4 +354,3 @@ def calcular_emolumento_operacional(
         "motivo_hitl": None,
         "vigencia": "2026",
     }
-

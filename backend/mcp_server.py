@@ -234,7 +234,9 @@ async def cartorio_calcular_emolumento(
             "urgencia": urgencia,
         }
 
-    resultado = calcular_emolumento_real_djalma(_normalizar_slug_calculo(tipo), folhas=folhas, urgencia=urgencia)
+    resultado = calcular_emolumento_real_djalma(
+        _normalizar_slug_calculo(tipo), folhas=folhas, urgencia=urgencia
+    )
     payload = resultado.to_dict()
     payload["tipo"] = tipo
     payload["pricing_layer"] = "regulatory_tjmg"
