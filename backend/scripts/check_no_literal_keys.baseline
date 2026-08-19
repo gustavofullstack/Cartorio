@@ -46,3 +46,6 @@ backend/app/services/emolumento_real_djalma.py:25:WEBHOOK_SECRET_HEX64
 .orchestration/cartorio-super-graph-v2/completion-report.json:28:WEBHOOK_SECRET_HEX64
 backend/app/services/tjmg_ocr_loader.py:41:WEBHOOK_SECRET_HEX64
 backend/app/services/tjmg_ocr_loader.py:42:WEBHOOK_SECRET_HEX64
+backend/tests/test_agent_security_g9.py:137:MINIMAX_KEY
+backend/tests/test_mcp_gate_e310.py:47:TELEGRAM_BOT_TOKEN
+backend/tests/test_mcp_tool_errors_e206.py:31:TELEGRAM_BOT_TOKEN
