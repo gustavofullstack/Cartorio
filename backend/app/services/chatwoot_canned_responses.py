@@ -870,9 +870,8 @@ def get_by_tag(tag: str) -> tuple[CannedResponse, ...]:
 
 
 # O(1) lookup pre-computed dictionary for short_codes
-_CANNED_RESPONSES_BY_SHORT_CODE = {
-    cr.short_code.lower(): cr for cr in CANNED_RESPONSES
-}
+_CANNED_RESPONSES_BY_SHORT_CODE = {cr.short_code.lower(): cr for cr in CANNED_RESPONSES}
+
 
 def get_by_short_code(short_code: str) -> CannedResponse | None:
     """Busca template por short_code (case-insensitive)."""
