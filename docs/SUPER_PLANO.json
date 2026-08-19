@@ -1,0 +1,1202 @@
+[
+  {
+    "id": "T001",
+    "title": "Testing: Melhoria em Evolution API",
+    "description": "Atualizar os fluxos e workflows no N8N para Evolution API, focando em testing para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "evolution-api",
+      "testing",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T002",
+    "title": "Code Quality: Melhoria em N8N",
+    "description": "Otimizar as queries de banco de dados para N8N, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "n8n",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T003",
+    "title": "UI/UX: Melhoria em N8N",
+    "description": "Configurar alertas e monitoramento via Prometheus em N8N, focando em ui/ux para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "n8n",
+      "ui/ux",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T004",
+    "title": "Integration: Melhoria em Telegram Bot",
+    "description": "Otimizar as queries de banco de dados para Telegram Bot, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "telegram-bot",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T005",
+    "title": "Caching: Melhoria em API",
+    "description": "Configurar alertas e monitoramento via Prometheus em API, focando em caching para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "api",
+      "caching",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T006",
+    "title": "Code Quality: Melhoria em Supabase",
+    "description": "Refatorar a estrutura do projeto para Supabase, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "supabase",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T007",
+    "title": "Observability: Melhoria em Evolution API",
+    "description": "Implementar testes de carga e stress em Evolution API, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "evolution-api",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T008",
+    "title": "Testing: Melhoria em N8N",
+    "description": "Otimizar as queries de banco de dados para N8N, focando em testing para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "n8n",
+      "testing",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T009",
+    "title": "Integration: Melhoria em OpenClaw Agent",
+    "description": "Implementar testes de carga e stress em OpenClaw Agent, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "openclaw-agent",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T010",
+    "title": "Security: Melhoria em API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de API, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "api",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T011",
+    "title": "Integration: Melhoria em Redis",
+    "description": "Refatorar a estrutura do projeto para Redis, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "redis",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T012",
+    "title": "Security: Melhoria em Evolution API",
+    "description": "Configurar alertas e monitoramento via Prometheus em Evolution API, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "evolution-api",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T013",
+    "title": "Code Quality: Melhoria em API",
+    "description": "Melhorar a documentação dos endpoints relacionados a API, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "api",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T014",
+    "title": "Performance: Melhoria em Evolution API",
+    "description": "Implementar testes de carga e stress em Evolution API, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "evolution-api",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T015",
+    "title": "Code Quality: Melhoria em N8N",
+    "description": "Otimizar as queries de banco de dados para N8N, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "high",
+    "tags": [
+      "n8n",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T016",
+    "title": "Code Quality: Melhoria em Redis",
+    "description": "Melhorar a documentação dos endpoints relacionados a Redis, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "redis",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T017",
+    "title": "Observability: Melhoria em Supabase",
+    "description": "Revisar o código e aplicar as regras do linter em Supabase, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T018",
+    "title": "Security: Melhoria em API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de API, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "api",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T019",
+    "title": "Security: Melhoria em Redis",
+    "description": "Melhorar a documentação dos endpoints relacionados a Redis, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "redis",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T020",
+    "title": "Security: Melhoria em OpenClaw Agent",
+    "description": "Auditar e reforçar a segurança em OpenClaw Agent, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T021",
+    "title": "Caching: Melhoria em Supabase",
+    "description": "Auditar e reforçar a segurança em Supabase, focando em caching para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "caching",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T022",
+    "title": "LGPD Compliance: Melhoria em Telegram Bot",
+    "description": "Configurar alertas e monitoramento via Prometheus em Telegram Bot, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T023",
+    "title": "Observability: Melhoria em Evolution API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Evolution API, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T024",
+    "title": "LGPD Compliance: Melhoria em Evolution API",
+    "description": "Revisar o código e aplicar as regras do linter em Evolution API, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T025",
+    "title": "Performance: Melhoria em OpenClaw Agent",
+    "description": "Configurar alertas e monitoramento via Prometheus em OpenClaw Agent, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T026",
+    "title": "Testing: Melhoria em Chatwoot",
+    "description": "Otimizar as queries de banco de dados para Chatwoot, focando em testing para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "testing",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T027",
+    "title": "Performance: Melhoria em N8N",
+    "description": "Atualizar os fluxos e workflows no N8N para N8N, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T028",
+    "title": "Code Quality: Melhoria em Telegram Bot",
+    "description": "Otimizar as queries de banco de dados para Telegram Bot, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T029",
+    "title": "Code Quality: Melhoria em Telegram Bot",
+    "description": "Configurar alertas e monitoramento via Prometheus em Telegram Bot, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T030",
+    "title": "Integration: Melhoria em OpenClaw Agent",
+    "description": "Revisar o código e aplicar as regras do linter em OpenClaw Agent, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T031",
+    "title": "Integration: Melhoria em OpenClaw Agent",
+    "description": "Garantir conformidade rigorosa com LGPD em OpenClaw Agent, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T032",
+    "title": "Observability: Melhoria em Chatwoot",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Chatwoot, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T033",
+    "title": "Documentation: Melhoria em N8N",
+    "description": "Revisar o código e aplicar as regras do linter em N8N, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T034",
+    "title": "LGPD Compliance: Melhoria em API",
+    "description": "Atualizar os fluxos e workflows no N8N para API, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "api",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T035",
+    "title": "Performance: Melhoria em Evolution API",
+    "description": "Garantir conformidade rigorosa com LGPD em Evolution API, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T036",
+    "title": "UI/UX: Melhoria em Chatwoot",
+    "description": "Refatorar a estrutura do projeto para Chatwoot, focando em ui/ux para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "ui/ux",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T037",
+    "title": "Documentation: Melhoria em N8N",
+    "description": "Implementar testes de carga e stress em N8N, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T038",
+    "title": "Code Quality: Melhoria em OpenClaw Agent",
+    "description": "Otimizar as queries de banco de dados para OpenClaw Agent, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T039",
+    "title": "Caching: Melhoria em API",
+    "description": "Garantir conformidade rigorosa com LGPD em API, focando em caching para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "api",
+      "caching",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T040",
+    "title": "Security: Melhoria em Evolution API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Evolution API, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T041",
+    "title": "Documentation: Melhoria em Supabase",
+    "description": "Auditar e reforçar a segurança em Supabase, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T042",
+    "title": "Security: Melhoria em N8N",
+    "description": "Garantir conformidade rigorosa com LGPD em N8N, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T043",
+    "title": "Caching: Melhoria em API",
+    "description": "Auditar e reforçar a segurança em API, focando em caching para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "api",
+      "caching",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T044",
+    "title": "Security: Melhoria em Evolution API",
+    "description": "Configurar alertas e monitoramento via Prometheus em Evolution API, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T045",
+    "title": "UI/UX: Melhoria em Supabase",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Supabase, focando em ui/ux para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "ui/ux",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T046",
+    "title": "Integration: Melhoria em N8N",
+    "description": "Melhorar a documentação dos endpoints relacionados a N8N, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T047",
+    "title": "Code Quality: Melhoria em N8N",
+    "description": "Revisar o código e aplicar as regras do linter em N8N, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T048",
+    "title": "Performance: Melhoria em Telegram Bot",
+    "description": "Refatorar a estrutura do projeto para Telegram Bot, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T049",
+    "title": "Performance: Melhoria em Supabase",
+    "description": "Otimizar as queries de banco de dados para Supabase, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T050",
+    "title": "Caching: Melhoria em Supabase",
+    "description": "Atualizar os fluxos e workflows no N8N para Supabase, focando em caching para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "caching",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T051",
+    "title": "Code Quality: Melhoria em API",
+    "description": "Implementar testes de carga e stress em API, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "api",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T052",
+    "title": "UI/UX: Melhoria em N8N",
+    "description": "Revisar o código e aplicar as regras do linter em N8N, focando em ui/ux para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "ui/ux",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T053",
+    "title": "Documentation: Melhoria em Supabase",
+    "description": "Otimizar as queries de banco de dados para Supabase, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T054",
+    "title": "LGPD Compliance: Melhoria em N8N",
+    "description": "Refatorar a estrutura do projeto para N8N, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T055",
+    "title": "Documentation: Melhoria em Redis",
+    "description": "Atualizar os fluxos e workflows no N8N para Redis, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "redis",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T056",
+    "title": "Integration: Melhoria em N8N",
+    "description": "Otimizar as queries de banco de dados para N8N, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T057",
+    "title": "Performance: Melhoria em OpenClaw Agent",
+    "description": "Auditar e reforçar a segurança em OpenClaw Agent, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T058",
+    "title": "Security: Melhoria em N8N",
+    "description": "Analisar e reduzir o consumo de tokens na integração de N8N, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T059",
+    "title": "Integration: Melhoria em Evolution API",
+    "description": "Auditar e reforçar a segurança em Evolution API, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T060",
+    "title": "Testing: Melhoria em OpenClaw Agent",
+    "description": "Melhorar a documentação dos endpoints relacionados a OpenClaw Agent, focando em testing para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "testing",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T061",
+    "title": "UI/UX: Melhoria em N8N",
+    "description": "Refatorar a estrutura do projeto para N8N, focando em ui/ux para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "ui/ux",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T062",
+    "title": "UI/UX: Melhoria em Evolution API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Evolution API, focando em ui/ux para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "ui/ux",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T063",
+    "title": "LGPD Compliance: Melhoria em Evolution API",
+    "description": "Auditar e reforçar a segurança em Evolution API, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T064",
+    "title": "Documentation: Melhoria em Telegram Bot",
+    "description": "Otimizar as queries de banco de dados para Telegram Bot, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T065",
+    "title": "Security: Melhoria em Telegram Bot",
+    "description": "Configurar alertas e monitoramento via Prometheus em Telegram Bot, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T066",
+    "title": "Caching: Melhoria em Chatwoot",
+    "description": "Revisar o código e aplicar as regras do linter em Chatwoot, focando em caching para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "caching",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T067",
+    "title": "LGPD Compliance: Melhoria em OpenClaw Agent",
+    "description": "Otimizar as queries de banco de dados para OpenClaw Agent, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T068",
+    "title": "Observability: Melhoria em API",
+    "description": "Configurar alertas e monitoramento via Prometheus em API, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "api",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T069",
+    "title": "Observability: Melhoria em OpenClaw Agent",
+    "description": "Melhorar a documentação dos endpoints relacionados a OpenClaw Agent, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T070",
+    "title": "Observability: Melhoria em Supabase",
+    "description": "Configurar alertas e monitoramento via Prometheus em Supabase, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T071",
+    "title": "Code Quality: Melhoria em Evolution API",
+    "description": "Implementar testes de carga e stress em Evolution API, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T072",
+    "title": "Documentation: Melhoria em Redis",
+    "description": "Atualizar os fluxos e workflows no N8N para Redis, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "redis",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T073",
+    "title": "Documentation: Melhoria em Chatwoot",
+    "description": "Configurar alertas e monitoramento via Prometheus em Chatwoot, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T074",
+    "title": "Security: Melhoria em N8N",
+    "description": "Melhorar a documentação dos endpoints relacionados a N8N, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T075",
+    "title": "UI/UX: Melhoria em Evolution API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Evolution API, focando em ui/ux para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "ui/ux",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T076",
+    "title": "Performance: Melhoria em N8N",
+    "description": "Analisar e reduzir o consumo de tokens na integração de N8N, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T077",
+    "title": "LGPD Compliance: Melhoria em Chatwoot",
+    "description": "Implementar testes de carga e stress em Chatwoot, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T078",
+    "title": "LGPD Compliance: Melhoria em Evolution API",
+    "description": "Refatorar a estrutura do projeto para Evolution API, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T079",
+    "title": "Performance: Melhoria em Telegram Bot",
+    "description": "Atualizar os fluxos e workflows no N8N para Telegram Bot, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T080",
+    "title": "Performance: Melhoria em Redis",
+    "description": "Revisar o código e aplicar as regras do linter em Redis, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "redis",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T081",
+    "title": "Documentation: Melhoria em Chatwoot",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Chatwoot, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T082",
+    "title": "Observability: Melhoria em OpenClaw Agent",
+    "description": "Analisar e reduzir o consumo de tokens na integração de OpenClaw Agent, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T083",
+    "title": "Testing: Melhoria em Redis",
+    "description": "Melhorar a documentação dos endpoints relacionados a Redis, focando em testing para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "redis",
+      "testing",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T084",
+    "title": "Security: Melhoria em Telegram Bot",
+    "description": "Atualizar os fluxos e workflows no N8N para Telegram Bot, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T085",
+    "title": "Documentation: Melhoria em Chatwoot",
+    "description": "Atualizar os fluxos e workflows no N8N para Chatwoot, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T086",
+    "title": "Testing: Melhoria em N8N",
+    "description": "Melhorar a documentação dos endpoints relacionados a N8N, focando em testing para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "testing",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T087",
+    "title": "Observability: Melhoria em Evolution API",
+    "description": "Configurar alertas e monitoramento via Prometheus em Evolution API, focando em observability para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "observability",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T088",
+    "title": "Security: Melhoria em Supabase",
+    "description": "Revisar o código e aplicar as regras do linter em Supabase, focando em security para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "security",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T089",
+    "title": "Integration: Melhoria em N8N",
+    "description": "Analisar e reduzir o consumo de tokens na integração de N8N, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T090",
+    "title": "Integration: Melhoria em Chatwoot",
+    "description": "Refatorar a estrutura do projeto para Chatwoot, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T091",
+    "title": "Integration: Melhoria em Evolution API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Evolution API, focando em integration para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "integration",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T092",
+    "title": "Code Quality: Melhoria em N8N",
+    "description": "Analisar e reduzir o consumo de tokens na integração de N8N, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "n8n",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T093",
+    "title": "Caching: Melhoria em Redis",
+    "description": "Refatorar a estrutura do projeto para Redis, focando em caching para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "redis",
+      "caching",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T094",
+    "title": "Performance: Melhoria em Telegram Bot",
+    "description": "Otimizar as queries de banco de dados para Telegram Bot, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "telegram-bot",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T095",
+    "title": "Performance: Melhoria em OpenClaw Agent",
+    "description": "Revisar o código e aplicar as regras do linter em OpenClaw Agent, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "openclaw-agent",
+      "performance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T096",
+    "title": "Documentation: Melhoria em Supabase",
+    "description": "Melhorar a documentação dos endpoints relacionados a Supabase, focando em documentation para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "supabase",
+      "documentation",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T097",
+    "title": "LGPD Compliance: Melhoria em Evolution API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de Evolution API, focando em lgpd compliance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "evolution-api",
+      "lgpd-compliance",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T098",
+    "title": "Code Quality: Melhoria em API",
+    "description": "Analisar e reduzir o consumo de tokens na integração de API, focando em code quality para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "api",
+      "code-quality",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T099",
+    "title": "Testing: Melhoria em Chatwoot",
+    "description": "Melhorar a documentação dos endpoints relacionados a Chatwoot, focando em testing para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "chatwoot",
+      "testing",
+      "continuous-improvement"
+    ]
+  },
+  {
+    "id": "T100",
+    "title": "Performance: Melhoria em API",
+    "description": "Garantir conformidade rigorosa com LGPD em API, focando em performance para assegurar melhor estabilidade e escalabilidade do sistema geral.",
+    "status": "todo",
+    "priority": "medium",
+    "tags": [
+      "api",
+      "performance",
+      "continuous-improvement"
+    ]
+  }
+]
