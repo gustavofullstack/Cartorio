@@ -248,12 +248,13 @@ async def test_debounce_agendado_contabiliza(store_isolado: MetricsStore) -> Non
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
-    assert resp["scheduled"] is True
+    assert resp.get("scheduled") is True
     assert len(bt.tasks) == 1
     assert _counter(store_isolado, "telegram_debounce_scheduled_total") == 1
     assert _counter(store_isolado, "telegram_webhook_total", {"result": "200"}) == 1
@@ -270,12 +271,13 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
-    assert resp["accumulated"] is True
+    assert resp.get("accumulated") is True
     assert _counter(store_isolado, "telegram_debounce_scheduled_total") == 0
 
 
@@ -358,6 +360,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
@@ -367,7 +370,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
         patch.object(tg, "_get_tg_pool", return_value=_pool_ok()),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
-        assert resp["scheduled"] is True
+        assert resp.get("scheduled") is True
         for task in bt.tasks:
             await task()
     assert _counter(store_isolado, "telegram_webhook_total", {"result": "200"}) == 1
