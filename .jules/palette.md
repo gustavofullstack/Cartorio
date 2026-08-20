@@ -1,0 +1,3 @@
+## 2026-07-27 - Keyboard Navigation Focus Indicators
+**Learning:** The dashboard UI for the Agent AI lacked explicit focus indicators on the primary action button (`.btn-action`) despite having them for inputs. This is a common accessibility issue where users relying on keyboard navigation cannot visually distinguish when they've tabbed to a critical interaction point.
+**Action:** Always ensure that `.btn-action` or similar highly interactive elements include a `:focus-visible` pseudo-class (preferably using existing CSS variables like `--primary-light`) to outline the element explicitly for keyboard users, making the app more robustly accessible. Also adding aria-live regions on dynamically updated result containers helps screen readers announce changes.
