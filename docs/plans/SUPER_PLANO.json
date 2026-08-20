@@ -1,0 +1,502 @@
+[
+  {
+    "task_id": 6,
+    "title": "Ativar e configurar extens\u00f5es do Supabase (pg_stat_statements, pgcrypto).",
+    "status": "pending"
+  },
+  {
+    "task_id": 7,
+    "title": "Otimizar \u00edndices nas tabelas principais para ganho de performance (O(1)).",
+    "status": "pending"
+  },
+  {
+    "task_id": 8,
+    "title": "Criar webhooks de database do Supabase apontando para o N8N.",
+    "status": "pending"
+  },
+  {
+    "task_id": 9,
+    "title": "Mapear rotinas cr\u00edticas para rodar via Supabase Cron.",
+    "status": "pending"
+  },
+  {
+    "task_id": 10,
+    "title": "Estruturar permiss\u00f5es RLS (Row Level Security) b\u00e1sicas e testar no backend.",
+    "status": "pending"
+  },
+  {
+    "task_id": 11,
+    "title": "Habilitar Supabase Vault para armazenar segredos n\u00e3o expostos em envs locais se necess\u00e1rio (n\u00e3o rotacionar, apenas organizar).",
+    "status": "pending"
+  },
+  {
+    "task_id": 12,
+    "title": "Criar GraphQL schema views para consultas otimizadas do N8N.",
+    "status": "pending"
+  },
+  {
+    "task_id": 13,
+    "title": "Configurar Queue no Supabase via pg_net para tarefas ass\u00edncronas do webhook.",
+    "status": "pending"
+  },
+  {
+    "task_id": 14,
+    "title": "Migrar cache est\u00e1tico (canned responses) para Redis sincronizado via Supabase trigger.",
+    "status": "pending"
+  },
+  {
+    "task_id": 15,
+    "title": "Revisar testes locais com DATABASE_URL de sqlite memory.",
+    "status": "pending"
+  },
+  {
+    "task_id": 16,
+    "title": "Auditar chamadas de API do Supabase (MCP/REST) evitando N+1 queries.",
+    "status": "pending"
+  },
+  {
+    "task_id": 17,
+    "title": "Criar painel b\u00e1sico no Supabase para acompanhamento do DPO.",
+    "status": "pending"
+  },
+  {
+    "task_id": 18,
+    "title": "Otimizar pool de conex\u00e3o usando SQLAlchemy Async no backend.",
+    "status": "pending"
+  },
+  {
+    "task_id": 19,
+    "title": "Implementar healthcheck dedicado de Supabase na API.",
+    "status": "pending"
+  },
+  {
+    "task_id": 20,
+    "title": "Escrever/Documentar as estruturas do Banco de Dados no diret\u00f3rio de docs.",
+    "status": "pending"
+  },
+  {
+    "task_id": 23,
+    "title": "Revisar healthcheck do Evolution-API no backend (test_evolution_health.py).",
+    "status": "pending"
+  },
+  {
+    "task_id": 24,
+    "title": "Otimizar parser de eventos do Evolution API p/ reduzir aloca\u00e7\u00e3o de string.",
+    "status": "pending"
+  },
+  {
+    "task_id": 25,
+    "title": "Integrar Evolution webhook diretamente na API/N8N usando HMCA verifier.",
+    "status": "pending"
+  },
+  {
+    "task_id": 26,
+    "title": "Testar envio em massa limitando RPS (rate limiting).",
+    "status": "pending"
+  },
+  {
+    "task_id": 27,
+    "title": "Mapear tipos de mensagens (audio, documento) para tratamento em LLM.",
+    "status": "pending"
+  },
+  {
+    "task_id": 28,
+    "title": "Garantir que LGPD mascaramento de PII ocorra antes de salvar hist\u00f3rico.",
+    "status": "pending"
+  },
+  {
+    "task_id": 29,
+    "title": "Evitar retentativas c\u00edclicas no Evolution webhook (Dead-Letter-Queue).",
+    "status": "pending"
+  },
+  {
+    "task_id": 30,
+    "title": "Documentar fluxo Evolution API.",
+    "status": "pending"
+  },
+  {
+    "task_id": 31,
+    "title": "Adicionar monitoramento no Redis sobre taxa de falhas do Evolution.",
+    "status": "pending"
+  },
+  {
+    "task_id": 32,
+    "title": "Mapear testes mockados no pytest de Evolution HMAC.",
+    "status": "pending"
+  },
+  {
+    "task_id": 35,
+    "title": "Auditar e testar fluxo do N8N webhook -> Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "task_id": 36,
+    "title": "Criar/revisar workflow no N8N para automa\u00e7\u00e3o de mensagens de cobran\u00e7a.",
+    "status": "pending"
+  },
+  {
+    "task_id": 37,
+    "title": "Adicionar sub-workflow no N8N para LGPD DPO alert.",
+    "status": "pending"
+  },
+  {
+    "task_id": 38,
+    "title": "Revisar integra\u00e7\u00e3o N8N -> Supabase (usando GraphQL).",
+    "status": "pending"
+  },
+  {
+    "task_id": 39,
+    "title": "Otimizar polling no N8N (usar webhooks push em vez de pull).",
+    "status": "pending"
+  },
+  {
+    "task_id": 40,
+    "title": "Tratar erros globais no N8N e jogar no Discord/Telegram Log.",
+    "status": "pending"
+  },
+  {
+    "task_id": 41,
+    "title": "Conectar N8N \u00e0 API usando harness de contexto.",
+    "status": "pending"
+  },
+  {
+    "task_id": 42,
+    "title": "Simplificar branches do N8N para fluxos de handoff (Bot para Humano).",
+    "status": "pending"
+  },
+  {
+    "task_id": 43,
+    "title": "Adicionar retries e idempotency blocks nos workflows cr\u00edticos.",
+    "status": "pending"
+  },
+  {
+    "task_id": 44,
+    "title": "Criar pipeline no N8N para sincroniza\u00e7\u00e3o de contatos.",
+    "status": "pending"
+  },
+  {
+    "task_id": 45,
+    "title": "Utilizar Redis node no N8N para gerenciar locks distribu\u00eddos de processos.",
+    "status": "pending"
+  },
+  {
+    "task_id": 46,
+    "title": "Testar workflows localmente e analisar consumo de token/CPU.",
+    "status": "pending"
+  },
+  {
+    "task_id": 47,
+    "title": "Criar documenta\u00e7\u00e3o extensa no diret\u00f3rio `/docs/n8n/`.",
+    "status": "pending"
+  },
+  {
+    "task_id": 48,
+    "title": "Validar m\u00e9tricas de execu\u00e7\u00e3o do N8N na API.",
+    "status": "pending"
+  },
+  {
+    "task_id": 49,
+    "title": "Refatorar n\u00f3s duplicados para modularidade (Execute Workflow nodes).",
+    "status": "pending"
+  },
+  {
+    "task_id": 52,
+    "title": "Testar endpoint de handoff humano no Chatwoot (handoff_humano).",
+    "status": "pending"
+  },
+  {
+    "task_id": 53,
+    "title": "Criar macros \u00fateis no Chatwoot para os atendentes (escreventes).",
+    "status": "pending"
+  },
+  {
+    "task_id": 54,
+    "title": "Sincronizar automa\u00e7\u00f5es do N8N com tags no Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "task_id": 55,
+    "title": "Criar rotinas de pre-computation para respostas enlatadas (CANNED_RESPONSES) no Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "task_id": 56,
+    "title": "Validar que o Bot pausa a atua\u00e7\u00e3o quando a conversa recebe 'hitl_router' no Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "task_id": 57,
+    "title": "Integrar webhook do Chatwoot no Redis para pub/sub veloz (Event Bus).",
+    "status": "pending"
+  },
+  {
+    "task_id": 58,
+    "title": "Assegurar mascaramento PII nas interfaces vis\u00edveis, exceto para escopos autorizados.",
+    "status": "pending"
+  },
+  {
+    "task_id": 59,
+    "title": "Testar integra\u00e7\u00e3o Chatwoot-Sidekiq (Background jobs).",
+    "status": "pending"
+  },
+  {
+    "task_id": 60,
+    "title": "Melhorar logs do webhook do Chatwoot no backend (test_webhook_chatwoot_api.py).",
+    "status": "pending"
+  },
+  {
+    "task_id": 61,
+    "title": "Gerar documenta\u00e7\u00e3o profunda da arquitetura do Chatwoot + API.",
+    "status": "pending"
+  },
+  {
+    "task_id": 62,
+    "title": "Limitar hist\u00f3rico exposto do Chatwoot no payload para o N8N (corte para tokens curtos).",
+    "status": "pending"
+  },
+  {
+    "task_id": 63,
+    "title": "Refinar pipeline de sincroniza\u00e7\u00e3o do DPO (Right to Erasure) dentro do Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "task_id": 64,
+    "title": "Fazer testes de concorr\u00eancia massiva de webhooks de entrada.",
+    "status": "pending"
+  },
+  {
+    "task_id": 65,
+    "title": "Monitorar filas do Sidekiq via m\u00e9tricas no Prometheus (se ativados).",
+    "status": "pending"
+  },
+  {
+    "task_id": 66,
+    "title": "Confirmar sync dos contatos Evolution -> Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "task_id": 69,
+    "title": "Testar todos os endpoints de `/api/v1/agendamento`.",
+    "status": "pending"
+  },
+  {
+    "task_id": 70,
+    "title": "Testar todos os endpoints de `/api/v1/protocolo`.",
+    "status": "pending"
+  },
+  {
+    "task_id": 71,
+    "title": "Testar endpoints de emolumento real e aplicar cache O(1).",
+    "status": "pending"
+  },
+  {
+    "task_id": 72,
+    "title": "Atualizar depend\u00eancias cr\u00edticas se necess\u00e1rio (sem quebrar NADA).",
+    "status": "pending"
+  },
+  {
+    "task_id": 73,
+    "title": "Executar `uv run ruff format .` em todos os diret\u00f3rios backend.",
+    "status": "pending"
+  },
+  {
+    "task_id": 74,
+    "title": "Aplicar `# noqa: F401, F841` para silenciar temporariamente falsos positivos se isolado.",
+    "status": "pending"
+  },
+  {
+    "task_id": 75,
+    "title": "Configurar Redis com prefixos por ambiente (`dev:`, `prod:`).",
+    "status": "pending"
+  },
+  {
+    "task_id": 76,
+    "title": "Integrar MCP API ao OpenClaw com descri\u00e7\u00f5es r\u00edgidas (harness).",
+    "status": "pending"
+  },
+  {
+    "task_id": 77,
+    "title": "Validar schemas OpenAPI, preenchendo strings dummy (64 chars) nos envs.",
+    "status": "pending"
+  },
+  {
+    "task_id": 78,
+    "title": "Prevenir N+1 queries na leitura do hist\u00f3rico de atendimento.",
+    "status": "pending"
+  },
+  {
+    "task_id": 79,
+    "title": "Testar idempot\u00eancia nas rotas mut\u00e1veis (POST, PUT).",
+    "status": "pending"
+  },
+  {
+    "task_id": 80,
+    "title": "Corrigir falhas pendentes de testes locais (skip nos do Playwright filesystem `test_chromium_browser_cache_via_filesystem`).",
+    "status": "pending"
+  },
+  {
+    "task_id": 81,
+    "title": "Rodar testes de integra\u00e7\u00e3o E2E com `pytest -m \"not playwright\"`.",
+    "status": "pending"
+  },
+  {
+    "task_id": 82,
+    "title": "Criar documenta\u00e7\u00e3o estruturada `/docs/api/`.",
+    "status": "pending"
+  },
+  {
+    "task_id": 83,
+    "title": "Otimizar serializa\u00e7\u00e3o Pydantic em retornos longos.",
+    "status": "pending"
+  },
+  {
+    "task_id": 84,
+    "title": "Analisar logs de gargalos nas chamadas LLM e adicionar traces.",
+    "status": "pending"
+  },
+  {
+    "task_id": 85,
+    "title": "Implementar caching de JWT public keys O(1) na inicializa\u00e7\u00e3o.",
+    "status": "pending"
+  },
+  {
+    "task_id": 86,
+    "title": "Validar m\u00e9tricas de SLO.",
+    "status": "pending"
+  },
+  {
+    "task_id": 87,
+    "title": "Aplicar circuit breaker nas integra\u00e7\u00f5es externas (N8N).",
+    "status": "pending"
+  },
+  {
+    "task_id": 88,
+    "title": "Revisar e documentar uso dos MCP servers (Model Context Protocol).",
+    "status": "pending"
+  },
+  {
+    "task_id": 91,
+    "title": "Garantir configura\u00e7\u00e3o cartorio-bot.openclaw.json com `deepseek-v4-flash`, context 1M, thinking enabled (Feito em parte!).",
+    "status": "pending"
+  },
+  {
+    "task_id": 92,
+    "title": "Restringir system prompt para n\u00e3o usar emojis, ser s\u00e9rio, n\u00e3o decidir isen\u00e7\u00f5es e usar API. (Feito em parte!)",
+    "status": "pending"
+  },
+  {
+    "task_id": 93,
+    "title": "Validar pipeline: Recebimento Evento -> Trigger Agent -> Run Skills.",
+    "status": "pending"
+  },
+  {
+    "task_id": 94,
+    "title": "Testar as Skills: `pii_scrubber`, `lgpd_consent_checker`, `audit_logger`.",
+    "status": "pending"
+  },
+  {
+    "task_id": 95,
+    "title": "Revisar fluxo do Telegram Bot integrado ao OpenClaw para testes diretos (N\u00e3o mexer no token, \u00e9 intoc\u00e1vel).",
+    "status": "pending"
+  },
+  {
+    "task_id": 96,
+    "title": "Corrigir poss\u00edveis falhas de conex\u00e3o WebSocket do OpenClaw.",
+    "status": "pending"
+  },
+  {
+    "task_id": 97,
+    "title": "Criar scripts de simula\u00e7\u00e3o (mock chat) pro OpenClaw agent local.",
+    "status": "pending"
+  },
+  {
+    "task_id": 98,
+    "title": "Conectar ferramentas MCP diretamente ao context do Agente, for\u00e7ando-o a us\u00e1-las (Harnessing forte).",
+    "status": "pending"
+  },
+  {
+    "task_id": 99,
+    "title": "Auditar respostas geradas garantindo zero alucina\u00e7\u00e3o no valor do emolumento.",
+    "status": "pending"
+  },
+  {
+    "task_id": 100,
+    "title": "Testar Dead Man's Switch (On Error) do OpenClaw acionando o Telegram do grupo da Pietra.",
+    "status": "pending"
+  },
+  {
+    "task_id": 101,
+    "title": "Monitorar e logar o uso de tokens por conversa do OpenClaw.",
+    "status": "pending"
+  },
+  {
+    "task_id": 102,
+    "title": "Testar comportamento do agente via API com falhas injetadas nos endpoints MCP.",
+    "status": "pending"
+  },
+  {
+    "task_id": 103,
+    "title": "Melhorar a documenta\u00e7\u00e3o do agente.",
+    "status": "pending"
+  },
+  {
+    "task_id": 104,
+    "title": "Realizar teste de carga no OpenClaw local/vps se dispon\u00edvel.",
+    "status": "pending"
+  },
+  {
+    "task_id": 105,
+    "title": "Assegurar que o agente responda com protocolo DRAFT quando solicitado cria\u00e7\u00e3o.",
+    "status": "pending"
+  },
+  {
+    "task_id": 108,
+    "title": "Validar todos os fluxos do Easypanel para deploy (arquivos YAML/JSON).",
+    "status": "pending"
+  },
+  {
+    "task_id": 109,
+    "title": "Revisar uso de vari\u00e1veis obrigat\u00f3rias de CI (AUDIT_HMAC_KEY, etc).",
+    "status": "pending"
+  },
+  {
+    "task_id": 110,
+    "title": "Automatizar scripts de checagem do openapi snapshot para n\u00e3o falharem.",
+    "status": "pending"
+  },
+  {
+    "task_id": 111,
+    "title": "Analisar e testar integra\u00e7\u00e3o de metrics Prometheus com API e Redis.",
+    "status": "pending"
+  },
+  {
+    "task_id": 112,
+    "title": "Conferir configs do ambiente production vs dev para evitar vazamentos de mem\u00f3ria.",
+    "status": "pending"
+  },
+  {
+    "task_id": 113,
+    "title": "Configurar testes para rodar arquivos separadamente (n\u00e3o todos de uma vez p/ evitar timeouts no pytest).",
+    "status": "pending"
+  },
+  {
+    "task_id": 114,
+    "title": "Integrar memory logging (`.jules/bolt.md`, `.jules/sentinel.md`) para anota\u00e7\u00f5es cr\u00edticas.",
+    "status": "pending"
+  },
+  {
+    "task_id": 115,
+    "title": "Escrever documenta\u00e7\u00e3o final de arquitetura de alta disponibilidade (HA).",
+    "status": "pending"
+  },
+  {
+    "task_id": 116,
+    "title": "Validar funcionamento e acessos da API via SSH e EasyPanel (nenhum erro pendente).",
+    "status": "pending"
+  },
+  {
+    "task_id": 117,
+    "title": "Relat\u00f3rio de Fechamento de Ciclo (todas 100 tasks checadas) apontando otimiza\u00e7\u00f5es consolidadas.",
+    "status": "pending"
+  }
+]
