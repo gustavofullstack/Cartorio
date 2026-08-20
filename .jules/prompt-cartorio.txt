@@ -1,0 +1,8 @@
+O sistema principal é: EVOLUTION-API -> API -> N8N -> CHATWOOT -> REDIS -> SUPABASE -> REDIS -> CHATWOOT -> N8N -> API -> EVOLUTION-API.
+Supabase: banco de dados central (API, MCP, Cron, Webhooks, GraphQL, Queues, Vault). Tudo deve ser centralizado lá.
+OpenClaw (cartorio-bot): Configurar p/ ser direto, curto, sério, sem emojis e usar as APIs/MCPs/Tools, deepseek-v4-flash, thinking habilitado, 1M context.
+Documentar tudo (Evolution-API, N8N, Chatwoot, Supabase, Redis e da nossa API interna).
+Criar SUPER_PLANO (100 tarefas). Não refazer coisas, apenas melhorar/otimizar/integrar/testar. Salvar em .md e .json.
+Não rodar muitos agents/subagents ao mesmo tempo, máximo 1 ou 2 para não estourar o rate limit de tokens e otimizar tempo.
+NUNCA, JAMAIS rotacionar chaves de APIs/Tokens.
+Gastar a menor quantidade de tokens possível entregando o melhor resultado, sempre verificar via codex-bar.
