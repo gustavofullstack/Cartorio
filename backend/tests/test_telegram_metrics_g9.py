@@ -271,12 +271,13 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
-    assert resp["accumulated"] is True
+    assert resp.get("accumulated") is True
     assert _counter(store_isolado, "telegram_debounce_scheduled_total") == 0
 
 
