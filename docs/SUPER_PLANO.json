@@ -1,0 +1,702 @@
+[
+  {
+    "id": 1,
+    "component": "API",
+    "category": "Security",
+    "title": "Implement rate limiting per IP",
+    "description": "Add IP-based rate limiting to all public API endpoints using Redis to prevent DDoS and abuse."
+  },
+  {
+    "id": 2,
+    "component": "API",
+    "category": "Security",
+    "title": "Audit trailing slashes in endpoints",
+    "description": "Ensure strict enforcement of trailing slash policies across API routes to avoid duplicate content and routing errors."
+  },
+  {
+    "id": 3,
+    "component": "Supabase",
+    "category": "Database",
+    "title": "Implement Row Level Security (RLS) for public tables",
+    "description": "Review and enforce Supabase RLS policies on all user-facing tables to prevent unauthorized data access."
+  },
+  {
+    "id": 4,
+    "component": "Chatwoot",
+    "category": "Integration",
+    "title": "Configure Webhooks to N8N",
+    "description": "Set up and secure Chatwoot webhooks pointing to N8N for automated ticket categorization."
+  },
+  {
+    "id": 5,
+    "component": "N8N",
+    "category": "Workflow",
+    "title": "Optimize WhatsApp message routing",
+    "description": "Refactor N8N workflow to route incoming WhatsApp messages faster by reducing redundant conditional nodes."
+  },
+  {
+    "id": 6,
+    "component": "Evolution-API",
+    "category": "Performance",
+    "title": "Enable caching for static media",
+    "description": "Configure Evolution-API and Traefik to aggressively cache frequently sent media like PDF forms and images."
+  },
+  {
+    "id": 7,
+    "component": "Redis",
+    "category": "Monitoring",
+    "title": "Set up memory usage alerts",
+    "description": "Configure Prometheus and Grafana alerts for Redis memory usage exceeding 80% to prevent eviction issues."
+  },
+  {
+    "id": 8,
+    "component": "Agent AI",
+    "category": "Testing",
+    "title": "Add E2E tests for tool execution",
+    "description": "Create automated tests in pytest to verify the OpenClaw agent correctly calls the emolumento API tool with mock data."
+  },
+  {
+    "id": 9,
+    "component": "Agent AI",
+    "category": "Security",
+    "title": "Sanitize user inputs before LLM",
+    "description": "Implement a preprocessing step to strip executable code or injection attempts before passing user text to DeepSeek-v4."
+  },
+  {
+    "id": 10,
+    "component": "API",
+    "category": "Documentation",
+    "title": "Document all MCP tool schemas",
+    "description": "Update the OpenAPI spec to fully describe the schemas used by the Model Context Protocol tools exposed to the agent."
+  },
+  {
+    "id": 11,
+    "component": "Supabase",
+    "category": "Integration",
+    "title": "Setup Supabase Database Webhooks",
+    "description": "Configure database triggers to notify N8N automatically when a new 'Protocolo' is created."
+  },
+  {
+    "id": 12,
+    "component": "Supabase",
+    "category": "Performance",
+    "title": "Add indexes for high-frequency queries",
+    "description": "Analyze slow query logs and add composite indexes on created_at and status columns for the protocols table."
+  },
+  {
+    "id": 13,
+    "component": "Chatwoot",
+    "category": "UX/UI",
+    "title": "Customize Agent Handoff message",
+    "description": "Create a clear, non-robotic standard greeting for when human agents take over a conversation from the Cartorio-Bot."
+  },
+  {
+    "id": 14,
+    "component": "N8N",
+    "category": "Monitoring",
+    "title": "Implement workflow failure notifications",
+    "description": "Add a catch-all error trigger in N8N to send a Telegram alert to the dev team upon any workflow failure."
+  },
+  {
+    "id": 15,
+    "component": "Telegram Bot",
+    "category": "Testing",
+    "title": "Test Telegram bot response latency",
+    "description": "Benchmark the end-to-end response time of the Telegram test bot and identify bottlenecks in the Redis cache layer."
+  },
+  {
+    "id": 16,
+    "component": "API",
+    "category": "Testing",
+    "title": "Migrate tests to use parameterized inputs",
+    "description": "Refactor pytest suites for API endpoints to use pytest.mark.parametrize for broader edge-case coverage."
+  },
+  {
+    "id": 17,
+    "component": "Redis",
+    "category": "Architecture",
+    "title": "Separate Cache and Queue databases",
+    "description": "Configure distinct Redis logical databases (e.g., DB 0 for cache, DB 1 for Sidekiq queues) to avoid key collisions."
+  },
+  {
+    "id": 18,
+    "component": "Agent AI",
+    "category": "Optimization",
+    "title": "Optimize system prompt context tokens",
+    "description": "Condense the Cartorio-Bot system prompt to save tokens while retaining the strict serious tone and P0 rules."
+  },
+  {
+    "id": 19,
+    "component": "Evolution-API",
+    "category": "Integration",
+    "title": "Test instance recovery on reboot",
+    "description": "Simulate a VPS restart and verify that Evolution-API automatically reconnects to WhatsApp without requiring manual QR scan."
+  },
+  {
+    "id": 20,
+    "component": "Chatwoot",
+    "category": "Architecture",
+    "title": "Configure Sidekiq concurrency",
+    "description": "Tune Chatwoot's Sidekiq worker concurrency settings in EasyPanel based on available VPS CPU cores."
+  },
+  {
+    "id": 21,
+    "component": "Supabase",
+    "category": "Security",
+    "title": "Store third-party keys in Vault",
+    "description": "Migrate raw API keys in Supabase edge functions/cron jobs to use Supabase Vault for secure secrets management."
+  },
+  {
+    "id": 22,
+    "component": "N8N",
+    "category": "Documentation",
+    "title": "Document N8N environment variables",
+    "description": "Create a comprehensive markdown file explaining all N8N custom environment variables used in the cartorio project."
+  },
+  {
+    "id": 23,
+    "component": "API",
+    "category": "Performance",
+    "title": "Implement pagination for large lists",
+    "description": "Ensure all GET endpoints returning lists (e.g., /protocolos) enforce pagination to prevent memory exhaustion."
+  },
+  {
+    "id": 24,
+    "component": "Agent AI",
+    "category": "UX/UI",
+    "title": "Standardize 'emolumento' formatting",
+    "description": "Ensure the agent always returns monetary values in Brazilian Reais (R$) format (e.g., R$ 1.234,56)."
+  },
+  {
+    "id": 25,
+    "component": "Agent AI",
+    "category": "Integration",
+    "title": "Verify fallback provider failover",
+    "description": "Test if OpenClaw correctly routes to fallback models when the primary deepseek-v4-flash API is simulated to be down."
+  },
+  {
+    "id": 26,
+    "component": "Supabase",
+    "category": "Database",
+    "title": "Automate database backups",
+    "description": "Configure pg_dump cron jobs or Supabase Point-in-Time Recovery to ensure daily backups are shipped to external storage."
+  },
+  {
+    "id": 27,
+    "component": "Redis",
+    "category": "Security",
+    "title": "Enable Redis TLS/SSL",
+    "description": "Secure Redis connections using TLS to encrypt data in transit between API/N8N and the Redis instance."
+  },
+  {
+    "id": 28,
+    "component": "Evolution-API",
+    "category": "Monitoring",
+    "title": "Add health check endpoint to monitoring",
+    "description": "Integrate Evolution-API's /health endpoint into Prometheus and setup Uptime Kuma alerts."
+  },
+  {
+    "id": 29,
+    "component": "Chatwoot",
+    "category": "Documentation",
+    "title": "Create SLA response time report specs",
+    "description": "Draft SQL queries to extract first-response and resolution SLA metrics from Chatwoot's Postgres database."
+  },
+  {
+    "id": 30,
+    "component": "API",
+    "category": "Testing",
+    "title": "Add E2E tests for database connection pooling",
+    "description": "Create a load test using Locust to verify SQLAlchemy connection pool limits and timeouts under heavy concurrent load."
+  },
+  {
+    "id": 31,
+    "component": "N8N",
+    "category": "Performance",
+    "title": "Prune N8N execution logs",
+    "description": "Configure EXECUTIONS_DATA_PRUNE in N8N to automatically delete old workflow execution logs and save disk space."
+  },
+  {
+    "id": 32,
+    "component": "Supabase",
+    "category": "Architecture",
+    "title": "Implement GraphQL introspection limits",
+    "description": "Disable GraphQL introspection in Supabase production to prevent unauthorized schema discovery."
+  },
+  {
+    "id": 33,
+    "component": "Telegram Bot",
+    "category": "UX/UI",
+    "title": "Add inline keyboard buttons",
+    "description": "Improve the Telegram bot test interface by adding inline buttons for common actions like 'Consultar Protocolo'."
+  },
+  {
+    "id": 34,
+    "component": "Agent AI",
+    "category": "Security",
+    "title": "Harden PII Scrubber skill",
+    "description": "Update the pii_scrubber regex to aggressively mask CPF/RG and credit card numbers before logging prompts."
+  },
+  {
+    "id": 35,
+    "component": "API",
+    "category": "Security",
+    "title": "Rotate JWT signing keys",
+    "description": "Implement a secure procedure (without actually rotating now) for how JWT secrets will be managed and rotated annually."
+  },
+  {
+    "id": 36,
+    "component": "Evolution-API",
+    "category": "Testing",
+    "title": "Test bulk message sending rate limits",
+    "description": "Verify Evolution-API handles rate limits gracefully when N8N attempts to send 100+ notifications simultaneously."
+  },
+  {
+    "id": 37,
+    "component": "Chatwoot",
+    "category": "Integration",
+    "title": "Sync Chatwoot contacts with Supabase",
+    "description": "Create an N8N workflow to upsert Chatwoot contact details into Supabase whenever a new user starts a chat."
+  },
+  {
+    "id": 38,
+    "component": "Redis",
+    "category": "Performance",
+    "title": "Tune Redis persistence settings",
+    "description": "Adjust Redis AOF (Append Only File) settings to balance between data durability and write performance."
+  },
+  {
+    "id": 39,
+    "component": "Agent AI",
+    "category": "Architecture",
+    "title": "Implement context window pruning",
+    "description": "Ensure OpenClaw dynamically summarizes older conversation history when nearing the 1M context token limit."
+  },
+  {
+    "id": 40,
+    "component": "API",
+    "category": "Monitoring",
+    "title": "Add Datadog/NewRelic APM tracing",
+    "description": "Integrate OpenTelemetry into the FastAPI backend to trace request latency across the microservices."
+  },
+  {
+    "id": 41,
+    "component": "Supabase",
+    "category": "Documentation",
+    "title": "Document ER diagram",
+    "description": "Generate and store an Entity-Relationship diagram mapping out the core tables: users, protocols, messages, logs."
+  },
+  {
+    "id": 42,
+    "component": "N8N",
+    "category": "Security",
+    "title": "Restrict N8N webhook IP access",
+    "description": "Configure N8N to only accept incoming webhook requests from the internal API and Chatwoot IPs."
+  },
+  {
+    "id": 43,
+    "component": "Evolution-API",
+    "category": "UX/UI",
+    "title": "Customize WhatsApp presence",
+    "description": "Ensure Evolution-API sets the 'typing...' presence state while the Agent AI is processing a response."
+  },
+  {
+    "id": 44,
+    "component": "Telegram Bot",
+    "category": "Integration",
+    "title": "Link Telegram IDs to Supabase users",
+    "description": "Update the API to map a user's Telegram chat ID to their master account profile in the database."
+  },
+  {
+    "id": 45,
+    "component": "Agent AI",
+    "category": "Testing",
+    "title": "Simulate LGPD opt-out request",
+    "description": "Write a test case validating that if a user says 'apague meus dados', the agent correctly triggers the LGPD workflow."
+  },
+  {
+    "id": 46,
+    "component": "Redis",
+    "category": "Documentation",
+    "title": "Document Redis key namespaces",
+    "description": "Create a dictionary defining the structure and TTL for all Redis keys (e.g., 'session:{id}', 'ratelimit:{ip}')."
+  },
+  {
+    "id": 47,
+    "component": "API",
+    "category": "Architecture",
+    "title": "Containerize API with minimal base image",
+    "description": "Optimize the API Dockerfile to use python:3.11-alpine or slim to reduce image size and attack surface."
+  },
+  {
+    "id": 48,
+    "component": "Chatwoot",
+    "category": "Monitoring",
+    "title": "Monitor Sidekiq queue depth",
+    "description": "Add a Grafana dashboard panel specifically tracking the depth of Chatwoot's 'default' and 'mailers' queues."
+  },
+  {
+    "id": 49,
+    "component": "Supabase",
+    "category": "Testing",
+    "title": "Test RLS policies with anonymous role",
+    "description": "Write API tests using an unauthenticated Supabase client to prove that sensitive data cannot be read."
+  },
+  {
+    "id": 50,
+    "component": "N8N",
+    "category": "Integration",
+    "title": "Connect N8N to Redis for deduplication",
+    "description": "Use N8N Redis node to store processed message IDs and prevent processing duplicate webhooks from Evolution-API."
+  },
+  {
+    "id": 51,
+    "component": "Evolution-API",
+    "category": "Performance",
+    "title": "Optimize Webhook delivery timeout",
+    "description": "Adjust Evolution-API webhook timeout settings to fail fast and retry gracefully if the API is momentarily down."
+  },
+  {
+    "id": 52,
+    "component": "Agent AI",
+    "category": "UX/UI",
+    "title": "Implement structured output for tools",
+    "description": "Ensure all tools called by the agent return data in strict JSON schema to prevent parsing errors."
+  },
+  {
+    "id": 53,
+    "component": "Telegram Bot",
+    "category": "Architecture",
+    "title": "Migrate to Webhooks instead of Polling",
+    "description": "Change the Telegram bot integration from long-polling to webhooks to reduce CPU usage and improve response time."
+  },
+  {
+    "id": 54,
+    "component": "API",
+    "category": "Performance",
+    "title": "Enable Gzip/Brotli compression",
+    "description": "Add compression middleware to FastAPI to reduce the payload size of large JSON responses."
+  },
+  {
+    "id": 55,
+    "component": "Redis",
+    "category": "Testing",
+    "title": "Simulate Redis failure",
+    "description": "Write an E2E test verifying that the API gracefully degrades (e.g., skips caching) if the Redis instance crashes."
+  },
+  {
+    "id": 56,
+    "component": "Chatwoot",
+    "category": "Security",
+    "title": "Enforce 2FA for agents",
+    "description": "Configure Chatwoot instance settings to mandate Two-Factor Authentication for all human operators and admins."
+  },
+  {
+    "id": 57,
+    "component": "Supabase",
+    "category": "Optimization",
+    "title": "Clean up unused storage buckets",
+    "description": "Audit Supabase Storage and remove any test buckets or orphaned files to optimize costs."
+  },
+  {
+    "id": 58,
+    "component": "N8N",
+    "category": "UX/UI",
+    "title": "Standardize workflow naming convention",
+    "description": "Rename all N8N workflows using a prefix system (e.g., 'CRON - Cleanup', 'WH - WhatsApp Inbound')."
+  },
+  {
+    "id": 59,
+    "component": "Evolution-API",
+    "category": "Documentation",
+    "title": "Document WebSocket event payload",
+    "description": "Record the exact JSON structure of Evolution-API's message.upsert WebSocket events for developer reference."
+  },
+  {
+    "id": 60,
+    "component": "Agent AI",
+    "category": "Integration",
+    "title": "Integrate OpenClaw with Supabase Vector",
+    "description": "Configure the agent to query a Supabase pgvector table for semantic search on Cartorio knowledge base articles."
+  },
+  {
+    "id": 61,
+    "component": "API",
+    "category": "Architecture",
+    "title": "Implement CQRS for Protocols",
+    "description": "Separate the read models and write models for the Protocolos entity to improve query performance on the dashboard."
+  },
+  {
+    "id": 62,
+    "component": "Redis",
+    "category": "Optimization",
+    "title": "Switch to Redis Cluster",
+    "description": "Evaluate and plan the migration from standalone Redis to Redis Cluster for high availability."
+  },
+  {
+    "id": 63,
+    "component": "Chatwoot",
+    "category": "Performance",
+    "title": "Optimize asset precompilation",
+    "description": "Ensure Chatwoot Docker image precompiles Rails assets correctly so they are served instantly via NGINX."
+  },
+  {
+    "id": 64,
+    "component": "Supabase",
+    "category": "Monitoring",
+    "title": "Monitor Postgres connection count",
+    "description": "Set up an alert if the Supabase Postgres instance exceeds 80% of its max_connections limit."
+  },
+  {
+    "id": 65,
+    "component": "N8N",
+    "category": "Testing",
+    "title": "Create a dummy workflow for healthchecks",
+    "description": "Build a simple N8N workflow triggered by HTTP GET to verify that the N8N execution engine is alive."
+  },
+  {
+    "id": 66,
+    "component": "Evolution-API",
+    "category": "Security",
+    "title": "Rotate Global API Key",
+    "description": "Verify the process for updating the Evolution-API global authentication key without downtime (do not rotate now)."
+  },
+  {
+    "id": 67,
+    "component": "Agent AI",
+    "category": "Documentation",
+    "title": "Write guidelines for adding new tools",
+    "description": "Create a tutorial in the docs explaining how developers can add new MCP tools to the Cartorio-Bot."
+  },
+  {
+    "id": 68,
+    "component": "Telegram Bot",
+    "category": "Monitoring",
+    "title": "Track active user sessions",
+    "description": "Add metrics to count how many unique Telegram users interact with the test bot daily."
+  },
+  {
+    "id": 69,
+    "component": "API",
+    "category": "Optimization",
+    "title": "Remove unused dependencies",
+    "description": "Audit requirements.txt/pyproject.toml and remove any Python packages that are no longer imported in the codebase."
+  },
+  {
+    "id": 70,
+    "component": "Redis",
+    "category": "UX/UI",
+    "title": "Add prefix to all keys",
+    "description": "Ensure all Redis keys use a domain prefix (e.g., 'cartorio:dev:session') to allow multiple environments on one Redis."
+  },
+  {
+    "id": 71,
+    "component": "Chatwoot",
+    "category": "Testing",
+    "title": "Test Chatwoot API limits",
+    "description": "Write a script to deliberately hit Chatwoot's rate limits and verify it returns a 429 Too Many Requests response."
+  },
+  {
+    "id": 72,
+    "component": "Supabase",
+    "category": "Integration",
+    "title": "Setup Supabase Cron for stale sessions",
+    "description": "Use pg_cron in Supabase to automatically delete or archive conversation sessions older than 30 days."
+  },
+  {
+    "id": 73,
+    "component": "N8N",
+    "category": "Architecture",
+    "title": "Migrate from SQLite to Postgres for N8N",
+    "description": "Ensure N8N is configured to use Supabase Postgres as its main database instead of the default SQLite."
+  },
+  {
+    "id": 74,
+    "component": "Evolution-API",
+    "category": "Architecture",
+    "title": "Configure multi-device support",
+    "description": "Ensure Evolution-API instance is configured to handle WhatsApp multi-device sync seamlessly."
+  },
+  {
+    "id": 75,
+    "component": "Agent AI",
+    "category": "Performance",
+    "title": "Cache frequent agent responses",
+    "description": "Implement a semantic cache layer (e.g., using Redis) so identical questions bypass the LLM entirely."
+  },
+  {
+    "id": 76,
+    "component": "Telegram Bot",
+    "category": "Security",
+    "title": "Restrict test bot to whitelisted IDs",
+    "description": "Modify the Telegram bot logic to only respond to user IDs explicitly added to an allowlist in the database."
+  },
+  {
+    "id": 77,
+    "component": "API",
+    "category": "Security",
+    "title": "Audit CORS origins",
+    "description": "Review FastAPI CORS middleware to ensure only the production frontend and EasyPanel domains are allowed."
+  },
+  {
+    "id": 78,
+    "component": "Redis",
+    "category": "Integration",
+    "title": "Integrate Redis with FastAPI Cache",
+    "description": "Use fastapi-cache2 with the Redis backend to easily cache expensive endpoint responses via decorators."
+  },
+  {
+    "id": 79,
+    "component": "Chatwoot",
+    "category": "UX/UI",
+    "title": "Configure custom domain for Help Center",
+    "description": "Setup DNS and SSL via Traefik to map Chatwoot's Help Center to 'ajuda.2notasudi.com.br'."
+  },
+  {
+    "id": 80,
+    "component": "Supabase",
+    "category": "Performance",
+    "title": "Optimize Realtime configuration",
+    "description": "Restrict Supabase Realtime broadcasts to only the specific tables (e.g., 'messages') that the frontend needs."
+  },
+  {
+    "id": 81,
+    "component": "N8N",
+    "category": "Optimization",
+    "title": "Consolidate duplicate HTTP nodes",
+    "description": "Refactor workflows to use a sub-workflow for standard API calls instead of repeating HTTP Request nodes."
+  },
+  {
+    "id": 82,
+    "component": "Evolution-API",
+    "category": "Testing",
+    "title": "Test media attachment handling",
+    "description": "Write a test to ensure PDF attachments sent via WhatsApp are correctly parsed and saved to Supabase Storage."
+  },
+  {
+    "id": 83,
+    "component": "Agent AI",
+    "category": "Monitoring",
+    "title": "Log LLM token usage",
+    "description": "Ensure every interaction logs the prompt/completion token count to Prometheus to monitor DeepSeek API costs."
+  },
+  {
+    "id": 84,
+    "component": "Telegram Bot",
+    "category": "Documentation",
+    "title": "Document Telegram command list",
+    "description": "Create a help page detailing all available slash commands (e.g., /start, /status, /ajuda) for the bot."
+  },
+  {
+    "id": 85,
+    "component": "API",
+    "category": "Documentation",
+    "title": "Generate Pydantic model diagrams",
+    "description": "Use erdantic to automatically generate UML diagrams of the Pydantic schemas used in the API."
+  },
+  {
+    "id": 86,
+    "component": "Redis",
+    "category": "Architecture",
+    "title": "Configure Redis Eviction Policy",
+    "description": "Set maxmemory-policy to allkeys-lru to ensure the cache degrades gracefully when full."
+  },
+  {
+    "id": 87,
+    "component": "Chatwoot",
+    "category": "Security",
+    "title": "Disable public signups",
+    "description": "Ensure ENABLE_ACCOUNT_SIGNUP is false in Chatwoot ENV to prevent unauthorized users from creating admin accounts."
+  },
+  {
+    "id": 88,
+    "component": "Supabase",
+    "category": "UX/UI",
+    "title": "Create Dashboard Views",
+    "description": "Create Postgres SQL Views specifically tailored to provide aggregated stats for the admin operations dashboard."
+  },
+  {
+    "id": 89,
+    "component": "N8N",
+    "category": "Monitoring",
+    "title": "Track N8N memory usage over time",
+    "description": "Monitor Node.js heap usage in N8N to detect memory leaks caused by large data processing in workflows."
+  },
+  {
+    "id": 90,
+    "component": "Evolution-API",
+    "category": "UX/UI",
+    "title": "Implement custom typing delays",
+    "description": "Add artificial delays (e.g., 1-3 seconds) before sending Evolution-API messages to simulate human typing."
+  },
+  {
+    "id": 91,
+    "component": "Agent AI",
+    "category": "Testing",
+    "title": "Stress test concurrent agent sessions",
+    "description": "Simulate 50 users talking to Cartorio-Bot simultaneously to verify the Gateway and LLM handle the concurrency."
+  },
+  {
+    "id": 92,
+    "component": "Telegram Bot",
+    "category": "Optimization",
+    "title": "Use async/await strictly",
+    "description": "Review the Telegram bot code to ensure no blocking synchronous calls are made in the event loop."
+  },
+  {
+    "id": 93,
+    "component": "API",
+    "category": "Integration",
+    "title": "Expose Prometheus metrics endpoint",
+    "description": "Add a /metrics endpoint to FastAPI using prometheus-client to expose request counts and latencies."
+  },
+  {
+    "id": 94,
+    "component": "Redis",
+    "category": "Monitoring",
+    "title": "Monitor slowlog commands",
+    "description": "Periodically pull Redis SLOWLOG to identify if any API queries are taking longer than 10ms to execute."
+  },
+  {
+    "id": 95,
+    "component": "Chatwoot",
+    "category": "Architecture",
+    "title": "Setup PostgreSQL read replica",
+    "description": "Configure Chatwoot to route heavy analytical dashboard queries to a Supabase read replica."
+  },
+  {
+    "id": 96,
+    "component": "Supabase",
+    "category": "Security",
+    "title": "Review JWT expiration times",
+    "description": "Ensure Supabase auth tokens have short lifespans (e.g., 1 hour) and rely on secure refresh token rotation."
+  },
+  {
+    "id": 97,
+    "component": "N8N",
+    "category": "Documentation",
+    "title": "Document N8N backup strategy",
+    "description": "Write a guide on how to export N8N workflows as JSON files and commit them to the git repository automatically."
+  },
+  {
+    "id": 98,
+    "component": "Evolution-API",
+    "category": "Integration",
+    "title": "Handle disconnected instance events",
+    "description": "Ensure the system sends an urgent admin alert if Evolution-API emits a 'connection.update' event showing 'close'."
+  },
+  {
+    "id": 99,
+    "component": "Agent AI",
+    "category": "Security",
+    "title": "Audit OpenClaw configuration file",
+    "description": "Review the openclaw.json file for any hardcoded keys, ensuring it strictly uses environment variable references."
+  },
+  {
+    "id": 100,
+    "component": "API",
+    "category": "Architecture",
+    "title": "Implement API versioning",
+    "description": "Ensure all routes are properly versioned under /api/v1/ and plan the structure for future /api/v2/ breaking changes."
+  }
+]
