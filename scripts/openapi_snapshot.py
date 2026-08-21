@@ -67,6 +67,7 @@ def get_openapi_spec() -> dict:
     print("Generating OpenAPI spec from app.main:app ...", file=sys.stderr)
     env = os.environ.copy()
     env.setdefault("APP_ENV", "development")
+    env.setdefault("BRAIN_API_ENABLED", "1")
     result = subprocess.run(
         [
             "uv", "run", "python", "-c",
