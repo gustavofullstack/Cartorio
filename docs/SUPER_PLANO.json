@@ -1,0 +1,704 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "category": "API",
+      "title": "Otimização API - Módulo 1",
+      "description": "Analisar e melhorar endpoints do módulo 1, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 2,
+      "category": "API",
+      "title": "Otimização API - Módulo 2",
+      "description": "Analisar e melhorar endpoints do módulo 2, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "category": "API",
+      "title": "Otimização API - Módulo 3",
+      "description": "Analisar e melhorar endpoints do módulo 3, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "category": "API",
+      "title": "Otimização API - Módulo 4",
+      "description": "Analisar e melhorar endpoints do módulo 4, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 5,
+      "category": "API",
+      "title": "Otimização API - Módulo 5",
+      "description": "Analisar e melhorar endpoints do módulo 5, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 6,
+      "category": "API",
+      "title": "Otimização API - Módulo 6",
+      "description": "Analisar e melhorar endpoints do módulo 6, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 7,
+      "category": "API",
+      "title": "Otimização API - Módulo 7",
+      "description": "Analisar e melhorar endpoints do módulo 7, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 8,
+      "category": "API",
+      "title": "Otimização API - Módulo 8",
+      "description": "Analisar e melhorar endpoints do módulo 8, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 9,
+      "category": "API",
+      "title": "Otimização API - Módulo 9",
+      "description": "Analisar e melhorar endpoints do módulo 9, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 10,
+      "category": "API",
+      "title": "Otimização API - Módulo 10",
+      "description": "Analisar e melhorar endpoints do módulo 10, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 11,
+      "category": "API",
+      "title": "Otimização API - Módulo 11",
+      "description": "Analisar e melhorar endpoints do módulo 11, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 12,
+      "category": "API",
+      "title": "Otimização API - Módulo 12",
+      "description": "Analisar e melhorar endpoints do módulo 12, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 13,
+      "category": "API",
+      "title": "Otimização API - Módulo 13",
+      "description": "Analisar e melhorar endpoints do módulo 13, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 14,
+      "category": "API",
+      "title": "Otimização API - Módulo 14",
+      "description": "Analisar e melhorar endpoints do módulo 14, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 15,
+      "category": "API",
+      "title": "Otimização API - Módulo 15",
+      "description": "Analisar e melhorar endpoints do módulo 15, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 16,
+      "category": "API",
+      "title": "Otimização API - Módulo 16",
+      "description": "Analisar e melhorar endpoints do módulo 16, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 17,
+      "category": "API",
+      "title": "Otimização API - Módulo 17",
+      "description": "Analisar e melhorar endpoints do módulo 17, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 18,
+      "category": "API",
+      "title": "Otimização API - Módulo 18",
+      "description": "Analisar e melhorar endpoints do módulo 18, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 19,
+      "category": "API",
+      "title": "Otimização API - Módulo 19",
+      "description": "Analisar e melhorar endpoints do módulo 19, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 20,
+      "category": "API",
+      "title": "Otimização API - Módulo 20",
+      "description": "Analisar e melhorar endpoints do módulo 20, implementando cache Redis eficiente, validando tipagem estrita com Pydantic v2 e adicionando testes de carga focados. O objetivo é reduzir latência em 20%.",
+      "status": "pending"
+    },
+    {
+      "id": 21,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 1",
+      "description": "Refatorar fluxo 1 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 22,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 2",
+      "description": "Refatorar fluxo 2 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 23,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 3",
+      "description": "Refatorar fluxo 3 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 24,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 4",
+      "description": "Refatorar fluxo 4 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 25,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 5",
+      "description": "Refatorar fluxo 5 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 26,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 6",
+      "description": "Refatorar fluxo 6 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 27,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 7",
+      "description": "Refatorar fluxo 7 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 28,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 8",
+      "description": "Refatorar fluxo 8 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 29,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 9",
+      "description": "Refatorar fluxo 9 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 30,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 10",
+      "description": "Refatorar fluxo 10 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 31,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 11",
+      "description": "Refatorar fluxo 11 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 32,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 12",
+      "description": "Refatorar fluxo 12 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 33,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 13",
+      "description": "Refatorar fluxo 13 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 34,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 14",
+      "description": "Refatorar fluxo 14 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 35,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 15",
+      "description": "Refatorar fluxo 15 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 36,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 16",
+      "description": "Refatorar fluxo 16 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 37,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 17",
+      "description": "Refatorar fluxo 17 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 38,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 18",
+      "description": "Refatorar fluxo 18 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 39,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 19",
+      "description": "Refatorar fluxo 19 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 40,
+      "category": "N8N",
+      "title": "Refatoração Workflow N8N 20",
+      "description": "Refatorar fluxo 20 para utilizar sub-workflows, tratar erros com nós de Catch nativos, centralizar credenciais e reduzir execuções redundantes. Testar integridade no n8n-runner local.",
+      "status": "pending"
+    },
+    {
+      "id": 41,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 1",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 1. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 42,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 2",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 2. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 43,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 3",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 3. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 44,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 4",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 4. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 45,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 5",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 5. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 46,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 6",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 6. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 47,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 7",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 7. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 48,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 8",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 8. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 49,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 9",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 9. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 50,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 10",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 10. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 51,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 11",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 11. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 52,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 12",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 12. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 53,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 13",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 13. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 54,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 14",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 14. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 55,
+      "category": "Evolution-API",
+      "title": "Melhoria Evolution-API Fase 15",
+      "description": "Aperfeiçoar a integração do WhatsApp via Evolution-API na fase 15. Implementar webhooks mais resilientes, fila de mensagens com retry automático, e garantir que multimídia é salva diretamente no Supabase Storage via stream.",
+      "status": "pending"
+    },
+    {
+      "id": 56,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 1",
+      "description": "Implementar melhoria 1 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 57,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 2",
+      "description": "Implementar melhoria 2 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 58,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 3",
+      "description": "Implementar melhoria 3 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 59,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 4",
+      "description": "Implementar melhoria 4 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 60,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 5",
+      "description": "Implementar melhoria 5 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 61,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 6",
+      "description": "Implementar melhoria 6 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 62,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 7",
+      "description": "Implementar melhoria 7 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 63,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 8",
+      "description": "Implementar melhoria 8 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 64,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 9",
+      "description": "Implementar melhoria 9 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 65,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 10",
+      "description": "Implementar melhoria 10 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 66,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 11",
+      "description": "Implementar melhoria 11 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 67,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 12",
+      "description": "Implementar melhoria 12 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 68,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 13",
+      "description": "Implementar melhoria 13 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 69,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 14",
+      "description": "Implementar melhoria 14 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 70,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 15",
+      "description": "Implementar melhoria 15 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 71,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 16",
+      "description": "Implementar melhoria 16 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 72,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 17",
+      "description": "Implementar melhoria 17 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 73,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 18",
+      "description": "Implementar melhoria 18 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 74,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 19",
+      "description": "Implementar melhoria 19 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 75,
+      "category": "Supabase",
+      "title": "Escalabilidade Supabase - Tarefa 20",
+      "description": "Implementar melhoria 20 no Supabase: migrar lógica pesada de polling para Database Webhooks, configurar Cron Jobs para limpeza de sessões expiradas, criar RLS (Row Level Security) mais robusto e preparar views materializadas.",
+      "status": "pending"
+    },
+    {
+      "id": 76,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 1",
+      "description": "Aperfeiçoamento 1 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 77,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 2",
+      "description": "Aperfeiçoamento 2 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 78,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 3",
+      "description": "Aperfeiçoamento 3 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 79,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 4",
+      "description": "Aperfeiçoamento 4 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 80,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 5",
+      "description": "Aperfeiçoamento 5 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 81,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 6",
+      "description": "Aperfeiçoamento 6 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 82,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 7",
+      "description": "Aperfeiçoamento 7 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 83,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 8",
+      "description": "Aperfeiçoamento 8 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 84,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 9",
+      "description": "Aperfeiçoamento 9 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 85,
+      "category": "Chatwoot",
+      "title": "Aprimoramento UX/UI Chatwoot - 10",
+      "description": "Aperfeiçoamento 10 do Chatwoot: configurar macros de atendimento, sincronizar contatos automaticamente com API externa, customizar labels via webhook e treinar AI Agent para handoff perfeito ao humano.",
+      "status": "pending"
+    },
+    {
+      "id": 86,
+      "category": "Redis",
+      "title": "Tuning Redis - Otimização 1",
+      "description": "Ajuste 1 do cluster Redis: implementar TTLs agressivos para dados voláteis de bot, configurar persistência AOF híbrida, auditar uso de memória de chaves orfãs e melhorar velocidade de leitura via pipelines.",
+      "status": "pending"
+    },
+    {
+      "id": 87,
+      "category": "Redis",
+      "title": "Tuning Redis - Otimização 2",
+      "description": "Ajuste 2 do cluster Redis: implementar TTLs agressivos para dados voláteis de bot, configurar persistência AOF híbrida, auditar uso de memória de chaves orfãs e melhorar velocidade de leitura via pipelines.",
+      "status": "pending"
+    },
+    {
+      "id": 88,
+      "category": "Redis",
+      "title": "Tuning Redis - Otimização 3",
+      "description": "Ajuste 3 do cluster Redis: implementar TTLs agressivos para dados voláteis de bot, configurar persistência AOF híbrida, auditar uso de memória de chaves orfãs e melhorar velocidade de leitura via pipelines.",
+      "status": "pending"
+    },
+    {
+      "id": 89,
+      "category": "Redis",
+      "title": "Tuning Redis - Otimização 4",
+      "description": "Ajuste 4 do cluster Redis: implementar TTLs agressivos para dados voláteis de bot, configurar persistência AOF híbrida, auditar uso de memória de chaves orfãs e melhorar velocidade de leitura via pipelines.",
+      "status": "pending"
+    },
+    {
+      "id": 90,
+      "category": "Redis",
+      "title": "Tuning Redis - Otimização 5",
+      "description": "Ajuste 5 do cluster Redis: implementar TTLs agressivos para dados voláteis de bot, configurar persistência AOF híbrida, auditar uso de memória de chaves orfãs e melhorar velocidade de leitura via pipelines.",
+      "status": "pending"
+    },
+    {
+      "id": 91,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 1",
+      "description": "Treinamento 1: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 92,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 2",
+      "description": "Treinamento 2: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 93,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 3",
+      "description": "Treinamento 3: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 94,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 4",
+      "description": "Treinamento 4: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 95,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 5",
+      "description": "Treinamento 5: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 96,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 6",
+      "description": "Treinamento 6: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 97,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 7",
+      "description": "Treinamento 7: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 98,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 8",
+      "description": "Treinamento 8: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 99,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 9",
+      "description": "Treinamento 9: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    },
+    {
+      "id": 100,
+      "category": "OpenClaw Agent",
+      "title": "Evolução Cartorio-Bot Módulo 10",
+      "description": "Treinamento 10: aumentar a precisão de ferramentas via MCPs, refinar system prompt para ser mais conciso sem emojis, configurar validação rigorosa pré-execução de hook e simular 100 cenários de stress com deepseek-v4-flash.",
+      "status": "pending"
+    }
+  ]
+}
