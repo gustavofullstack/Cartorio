@@ -15,7 +15,7 @@ import subprocess
 from datetime import datetime
 from typing import Dict, Any, List
 
-PROJECT_ROOT = "/Users/gustavoalmeida/Projetos/Cartorio"
+PROJECT_ROOT = "."
 BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
 PROGRESS_FILE = os.path.join(PROJECT_ROOT, "PROGRESS.md")
 _goals_docs = os.path.join(PROJECT_ROOT, "docs", "plans", "GOALS.md")
