@@ -29,7 +29,7 @@ import httpx
 LINEAR_API = "https://api.linear.app/graphql"
 LINEAR_API_KEY = os.environ.get(
     "LINEAR_API_KEY",
-    "lin_api_9Bmfyw0EAeAGMzEClLB9OncAT5A66TuQGtCNpLPl",  # noqa: S105 — Sprint 3 Goal #3: chave queimada em chat, NAO rotacionada (Gustavo+agent unicos com acesso)
+    "",  # [REDACTED_SECRET] — removed by Sentinel
 )
 LINEAR_TEAM = "cartorio-2notas"
 
@@ -37,14 +37,14 @@ LINEAR_TEAM = "cartorio-2notas"
 RENDER_API = "https://api.render.com/v1"
 RENDER_API_KEY = os.environ.get("RENDER_API_KEY") or os.environ.get(
     "RENDER_API",
-    "rnd_QP8GWTShurLmVGSp3H2e25pXsKti",  # noqa: S105 — Sprint 3 Goal #3: chave queimada em chat, NAO rotacionada (Gustavo+agent unicos com acesso)
+    "",  # [REDACTED_SECRET] — removed by Sentinel
 )
 
 # JULES
 JULES_API = "https://jules.googleapis.com/v1alpha"
 JULES_API_KEY = os.environ.get("JULES_API_KEY") or os.environ.get(
     "JULES_API",
-    "AQ.Ab8RN6K26NJ3FFYfkXpT3-_dwFtDH-Lrmqm5jrkkE7CNUGzsBQ",  # noqa: S105 — Sprint 3 Goal #3: chave queimada em chat, NAO rotacionada (Gustavo+agent unicos com acesso)
+    "",  # [REDACTED_SECRET] — removed by Sentinel
 )
 
 
