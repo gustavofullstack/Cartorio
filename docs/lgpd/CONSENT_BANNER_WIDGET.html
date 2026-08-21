@@ -109,6 +109,7 @@
   }
 
   #lgpd-consent-badge.visible { display: inline-block; }
+  #lgpd-consent-badge:focus-visible { outline: 2px solid white; outline-offset: 2px; }
 </style>
 
 <div id="lgpd-consent-banner" role="dialog" aria-live="polite" aria-label="Banner de consentimento LGPD">
@@ -133,9 +134,9 @@
   </div>
 </div>
 
-<div id="lgpd-consent-badge" role="status" aria-label="Status do consentimento">
+<button id="lgpd-consent-badge" aria-label="Revogar consentimento LGPD">
   ✓ LGPD OK
-</div>
+</button>
 
 <script>
 (function() {
