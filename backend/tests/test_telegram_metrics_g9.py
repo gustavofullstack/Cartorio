@@ -248,6 +248,7 @@ async def test_debounce_agendado_contabiliza(store_isolado: MetricsStore) -> Non
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
@@ -270,6 +271,7 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
@@ -358,6 +360,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),

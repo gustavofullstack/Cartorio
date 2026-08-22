@@ -1,0 +1,25 @@
+{
+  "task": "Update OpenClaw AI agent config",
+  "steps": [
+    {
+      "step": 1,
+      "description": "Verify infra/openclaw/cartorio-bot.openclaw.json is updated correctly (deepseek-v4-flash, thinking enabled, 1048576 context window, updated system prompt).",
+      "status": "done"
+    },
+    {
+      "step": 2,
+      "description": "Run integration tests backend/tests/test_g7_wave15_integration.py and backend/tests/test_g7_wave21_integration.py.",
+      "status": "done"
+    },
+    {
+      "step": 3,
+      "description": "Complete pre-commit steps to ensure proper testing, verification, review, and reflection are done.",
+      "status": "done"
+    },
+    {
+      "step": 4,
+      "description": "Submit changes.",
+      "status": "pending"
+    }
+  ]
+}
