@@ -70,13 +70,19 @@ class TestPietraAtendimento:
             assert isinstance(data["proximos_passos"], list)
 
     def test_atendimento_iniciar_agendamento(self, client):
+        from datetime import datetime, timedelta, UTC
+
+        future_date = (
+            (datetime.now(UTC) + timedelta(days=2)).replace(hour=14, minute=0, second=0).isoformat()
+        )
+
         r = client.post(
             "/api/v1/pietra/atendimento/iniciar",
             json={
                 "telefone": "+5534991234569",
                 "canal": "imessage",
                 "tipo": "agendamento_presencial",
-                "data_hora": "2026-08-17T14:00:00",
+                "data_hora": future_date,
                 "titulo": "Escritura de compra e venda",
                 "nome": "Maria Silva",
                 "consentimento_lgpd": True,
