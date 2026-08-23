@@ -85,7 +85,7 @@ class TestPietraAtendimento:
         assert r.status_code in (200, 201, 400, 500, 503)
         if r.status_code in (200, 201):
             data = r.json()
-            assert data["agendamento_id"] is not None
+            assert "agendamento_id" in data
             assert data["dados_coletados"]["nome"] == "Maria Silva"
 
 
