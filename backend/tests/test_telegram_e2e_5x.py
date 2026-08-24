@@ -219,6 +219,12 @@ class TestE2ETelegramOiToMenu:
 # =============================================================================
 
 
+@pytest.fixture(autouse=True)
+def mock_lgpd_consent():
+    with patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)):
+        yield
+
+
 class TestE2ETelegramProtocolo:
     """T62: comando /protocolo + numero -> state machine -> ferramenta _tool_consultar_protocolo."""
 
@@ -262,6 +268,7 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp1 = client.post("/api/v1/telegram/webhook", json=update1)
         assert resp1.status_code == 200
@@ -283,6 +290,7 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send2,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp2 = client.post("/api/v1/telegram/webhook", json=update2)
 
@@ -304,6 +312,7 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             client.post("/api/v1/telegram/webhook", json=update1)
 
