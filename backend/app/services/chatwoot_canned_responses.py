@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+from collections import defaultdict
 
 
 def extract_short_codes(responses: Iterable[CannedResponse]) -> tuple[str, ...]:
@@ -864,18 +865,23 @@ def get_all_short_codes() -> tuple[str, ...]:
     return extract_short_codes(CANNED_RESPONSES)
 
 
+_BY_TAG: dict[str, list[CannedResponse]] = defaultdict(list)
+for _cr in CANNED_RESPONSES:
+    for _tag in _cr.tags:
+        _BY_TAG[_tag].append(_cr)
+
+
 def get_by_tag(tag: str) -> tuple[CannedResponse, ...]:
-    """Filtra templates por tag."""
-    return tuple(cr for cr in CANNED_RESPONSES if tag in cr.tags)
+    """Filtra templates por tag usando busca O(1)."""
+    return tuple(_BY_TAG.get(tag, []))
+
+
+_BY_SHORT_CODE: dict[str, CannedResponse] = {cr.short_code.lower(): cr for cr in CANNED_RESPONSES}
 
 
 def get_by_short_code(short_code: str) -> CannedResponse | None:
-    """Busca template por short_code (case-insensitive)."""
-    sc_lower = short_code.lower()
-    for cr in CANNED_RESPONSES:
-        if cr.short_code.lower() == sc_lower:
-            return cr
-    return None
+    """Busca template por short_code (case-insensitive) usando busca O(1)."""
+    return _BY_SHORT_CODE.get(short_code.lower())
 
 
 # Total: 51 templates (superando o requisito de 50+)
