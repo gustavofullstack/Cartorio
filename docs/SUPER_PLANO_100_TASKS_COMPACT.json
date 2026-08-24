@@ -1,0 +1,14 @@
+{
+  "project": "Cartorio OS Improvement",
+  "focus": "Integration: Evo -> API -> N8N -> Chatwoot -> Redis -> Supabase -> Redis -> Chatwoot -> N8N -> API -> Evo",
+  "tasks_by_squad": {
+    "supabase": "T01-T10",
+    "n8n": "T11-T30",
+    "openclaw": "T31-T50",
+    "chatwoot": "T51-T65",
+    "api_backend": "T66-T80",
+    "infra_security": "T81-T100"
+  },
+  "current_status": "Planning Phase Completed",
+  "next_action": "Execute 1 or 2 tasks concurrently via agent orchestration."
+}
