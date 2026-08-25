@@ -313,6 +313,15 @@ def _reset_jwt_secret(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _mock_lgpd_consent():
+    """Mocka globalmente o LGPD consent no Telegram para não bloquear testes E2E."""
+    from unittest.mock import patch
+
+    with patch("app.api.v1.telegram._get_lgpd_consent", return_value=True):
+        yield
+
+
+@pytest.fixture(autouse=True)
 def _mock_redis_from_url():
     """Mocka Redis sync/async globalmente para evitar estado compartilhado."""
     import redis
