@@ -1,0 +1,24 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "description": "Atualizar OpenClaw Agent Config",
+      "status": "completed"
+    },
+    {
+      "id": 2,
+      "description": "Integração e Validação do Telegram",
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "description": "Qualidade de Código",
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "description": "Testes do Backend",
+      "status": "pending"
+    }
+  ]
+}

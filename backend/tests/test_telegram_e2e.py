@@ -102,6 +102,7 @@ class TestTelegramE2E:
         """Comando /start -> resposta com saudacao + menu."""
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -133,6 +134,7 @@ class TestTelegramE2E:
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._call_cartorio_agent",
                 new=AsyncMock(return_value=("Ok", None)),
@@ -159,6 +161,7 @@ class TestTelegramE2E:
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch("app.api.v1.telegram._send_message", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
@@ -183,6 +186,7 @@ class TestTelegramE2E:
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._call_cartorio_agent",
                 new=AsyncMock(return_value=("", None)),
@@ -219,6 +223,7 @@ class TestTelegramE2E:
         llm_response = "Seu CPF e 123.456.789-09 e seu RG e MG-12.345.678"
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._call_cartorio_agent",
                 new=AsyncMock(return_value=(llm_response, None)),
@@ -241,6 +246,7 @@ class TestTelegramE2E:
         """Comando nativo /start nao chama LLM."""
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._call_cartorio_agent",
                 new=AsyncMock(),
@@ -266,6 +272,7 @@ class TestTelegramE2E:
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=None),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._call_cartorio_agent",
                 new=AsyncMock(return_value=("Horarios: seg-sex 9h-17h", None)),
