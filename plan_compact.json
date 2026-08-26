@@ -1,0 +1,12 @@
+[
+  {"id": 1, "squad": "cartorio-dev", "title": "Verify OpenClaw Configuration", "description": "Ensure cartorio-bot uses deepseek-v4-flash, thinking: true, 1M context window, and strict serious tone without emojis."},
+  {"id": 2, "squad": "cartorio-docs", "title": "Generate comprehensive docs", "description": "Create detailed documentation for Evolution API, N8N, Chatwoot, Supabase, and Redis integrations."},
+  {"id": 3, "squad": "cartorio-data", "title": "Supabase Deep Integration", "description": "Configure Supabase Webhooks, Cron, Vault, and fully utilize its MCP for centralized DB operations."},
+  {"id": 4, "squad": "cartorio-n8n", "title": "N8N Workflow Audit", "description": "Test and fix the 34 N8N workflows ensuring they properly integrate with API, Chatwoot, and Evolution API."},
+  {"id": 5, "squad": "cartorio-dev", "title": "API & Redis Caching Optimization", "description": "Optimize Redis caching for API lists and N8N workflow states to reduce latency and Supabase load."},
+  {"id": 6, "squad": "cartorio-bot", "title": "Telegram Bot Testing", "description": "Test the Telegram Bot flow using the test token, ensuring LGPD compliance mocking works."},
+  {"id": 7, "squad": "cartorio-docs", "title": "Memory updates", "description": "Update local memory, loop memory, and session tracking to optimize token usage."},
+  {"id": 8, "squad": "cartorio-n8n", "title": "Chatwoot CRM Integrations", "description": "Ensure Chatwoot handles human handoffs and pauses OpenClaw agent correctly."},
+  {"id": 9, "squad": "cartorio-dev", "title": "Test Suite Adjustments", "description": "Fix broken tests, ignore Playwright cache tests if needed, mock Telegram early exits."},
+  {"id": 10, "squad": "cartorio-orchestration", "title": "Setup Subagent Tasks", "description": "Prepare the next batch of 10 tasks for the subagents."}
+]
