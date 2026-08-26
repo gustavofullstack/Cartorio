@@ -1,0 +1,3 @@
+## 2025-02-18 - Async Action Accessibility & Loading State
+**Learning:** When simulating async operations (like API calls) in vanilla HTML/JS mockups using `setTimeout`, buttons lacked visual loading indicators, disabling mechanisms, and screen reader feedback (`aria-busy`), which caused poor accessibility and user experience during the 'wait' phase.
+**Action:** Always refactor simulated async actions to explicitly toggle `.disabled`, update button text (e.g. 'Processando...'), apply `aria-busy="true"` to the button, set `aria-live="polite"` on the results container, and use a `try...finally` block to guarantee state restoration.
