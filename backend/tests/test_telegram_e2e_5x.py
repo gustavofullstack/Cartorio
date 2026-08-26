@@ -169,7 +169,7 @@ class TestE2ETelegramOiToMenu:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data.get("status") in ("ok", "partial")
+        assert data["status"] == "ok"
         # free-text IDLE+no bus -> entra no path `if not bus` -> chama agent
         mock_agent.assert_called_once()
         # Texto foi enviado ao Telegram
@@ -220,11 +220,6 @@ class TestE2ETelegramOiToMenu:
 
 
 class TestE2ETelegramProtocolo:
-    @pytest.fixture(autouse=True)
-    def setup_lgpd_mock(self):
-        with patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)):
-            yield
-
     """T62: comando /protocolo + numero -> state machine -> ferramenta _tool_consultar_protocolo."""
 
     def test_protocolo_comando_inicial_retorna_pedido_numero(self, client: TestClient) -> None:
@@ -233,7 +228,6 @@ class TestE2ETelegramProtocolo:
         update = _telegram_update(update_id=20001, text="/protocolo")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -243,8 +237,8 @@ class TestE2ETelegramProtocolo:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data.get("status") == "ok"
-        assert data.get("kind") == "command"
+        assert data["status"] == "ok"
+        assert data["kind"] == "command"
         # Mensagem enviada deve pedir o numero
         sent_text = mock_send.call_args[0][1]
         assert "protocolo" in sent_text.lower()
@@ -293,7 +287,7 @@ class TestE2ETelegramProtocolo:
 
         assert resp2.status_code == 200
         data = resp2.json()
-        assert data.get("status") in ("ok", "partial")
+        assert data["status"] == "ok"
         # Texto enviado ao Telegram tem protocolo + status
         sent_text = mock_send2.call_args[0][1]
         assert "12345" in sent_text
@@ -338,11 +332,6 @@ class TestE2ETelegramProtocolo:
 
 
 class TestE2ETelegramAgendar:
-    @pytest.fixture(autouse=True)
-    def setup_lgpd_mock(self):
-        with patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)):
-            yield
-
     """T63: comando /agendar -> state machine servico->data->hora->confirmar."""
 
     def test_agendar_inicio_pede_servico(self, client: TestClient) -> None:
@@ -359,7 +348,7 @@ class TestE2ETelegramAgendar:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data.get("status") in ("ok", "partial")
+        assert data["status"] == "ok"
         assert data["kind"] == "command"
         sent_text = mock_send.call_args[0][1]
         # Pede servico
@@ -481,11 +470,6 @@ class TestE2ETelegramAgendar:
 
 
 class TestE2ETelegramHumano:
-    @pytest.fixture(autouse=True)
-    def setup_lgpd_mock(self):
-        with patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)):
-            yield
-
     """T64: comando /humano -> cria atendimento HITL via _tool_criar_atendimento."""
 
     def test_humano_inicio_aguarda_descricao(self, client: TestClient) -> None:
@@ -503,7 +487,7 @@ class TestE2ETelegramHumano:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data.get("status") in ("ok", "partial")
+        assert data["status"] == "ok"
         assert data["kind"] == "command"
         sent_text = mock_send.call_args[0][1]
         assert "escrevente" in sent_text.lower() or "atendimento" in sent_text.lower()
@@ -543,7 +527,7 @@ class TestE2ETelegramHumano:
             )
         assert resp.status_code == 200
         data = resp.json()
-        assert data.get("status") in ("ok", "partial")
+        assert data["status"] == "ok"
         assert data["kind"] == "state"
         # Texto enviado tem numero do ticket
         sent_text = mock_send.call_args[0][1]
@@ -572,7 +556,7 @@ class TestE2ETelegramLgpd:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data.get("status") in ("ok", "partial")
+        assert data["status"] == "ok"
         assert data["kind"] == "command"
         sent_text = mock_send.call_args[0][1]
         # Inclui elementos chave do LGPD_NOTICE
