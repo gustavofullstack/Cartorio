@@ -68,7 +68,7 @@ class CancelarRequest(BaseModel):
     # G8.13.T1 — strict=True. channel eh Literal, aceita str wire nativamente.
     model_config = _STRICT_REQ
 
-    channel: Literal["telegram", "whatsapp"]
+    channel: Literal["telegram", "whatsapp", "imessage"]
     sender_id: str = Field(..., min_length=1, max_length=128)
     request_id: str | None = None
 
@@ -89,7 +89,7 @@ class ExportRequest(BaseModel):
 
     model_config = _STRICT_REQ
 
-    channel: Literal["telegram", "whatsapp"]
+    channel: Literal["telegram", "whatsapp", "imessage"]
     sender_id: str = Field(..., min_length=1, max_length=128)
     cliente_id: int | None = Field(default=None, ge=1)
     request_id: str | None = None
@@ -111,7 +111,7 @@ class AccessRequest(BaseModel):
 
     model_config = _STRICT_REQ
 
-    channel: Literal["telegram", "whatsapp"]
+    channel: Literal["telegram", "whatsapp", "imessage"]
     sender_id: str = Field(..., min_length=1, max_length=128)
     cliente_id: int | None = Field(default=None, ge=1)
     request_id: str | None = None
