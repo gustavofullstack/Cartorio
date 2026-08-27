@@ -1,0 +1,6 @@
+[
+  {"id": 1, "task": "FB1: Escalonamento proativo (HITL) para isencao e outros atos offline na intent_detect de cartorio_agent.py"},
+  {"id": 2, "task": "FB5: Corrigir regex RG no pii.py para suportar padrão MG-12.345.678"},
+  {"id": 3, "task": "FB10: Permitir canal imessage no bot_lgpd.py (Literal de schemas)"},
+  {"id": 4, "task": "Pre-commit instructions e commit das correcoes"}
+]

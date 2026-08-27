@@ -3040,8 +3040,8 @@ async def _telegram_webhook_impl(
             )
             logger.info("TG scheduled background debounce chat=%s conv=%s", chat_id, conv)
             classify_metric_for_status("ok", "debounce")
-            return _finish({"status": "ok", "chat_id": chat_id, "scheduled": True})
-        return _finish({"status": "ok", "chat_id": chat_id, "accumulated": True})
+            return _finish({"status": "partial", "chat_id": chat_id, "scheduled": True})
+        return _finish({"status": "partial", "chat_id": chat_id, "accumulated": True})
     except Exception as exc:
         logger.exception("TG enqueue/lock failed chat=%s conv=%s: %s", chat_id, conv, exc)
         bump_metric("enqueue_degraded")

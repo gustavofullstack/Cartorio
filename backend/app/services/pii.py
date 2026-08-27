@@ -176,7 +176,14 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     "pis": re.compile(r"\b\d{3}\.?\d{5}\.?\d{3}\b"),
     # 10. RG - 7-9 digitos + verificador (digito ou X). EXIGE pelo menos
     # um ponto para nao colidir com CEP.
-    "rg": re.compile(r"\b\d{1,2}\.\d{3}\.?\d{3}-?[\dxX]\b"),
+    # Adicionado (Wave 49 FB5): Suporte flexivel a formato MG (MG-12.345.678 ou similar),
+    # incluindo formato numerico com palavra-chave proxima.
+    "rg": re.compile(
+        r"(?i)\brg\s*[:\-]?\s*\d{1,2}\.?\d{3}\.?\d{3}-?[\dxX]?\b"  # Keyword RG explicitly
+        r"|\b[a-z]{2}\s*-\s*\d{1,2}\.?\d{3}\.?\d{3}-?[\dxX]?\b"  # State code explicitly (MG-12.345.678)
+        r"|\b\d{1,2}\.\d{3}\.\d{3}\s+ssp\s+[a-z]{2}\b"  # SSP [State] explicitly
+        r"|\b\d{1,2}\.\d{3}\.?\d{3}-[\dxX]\b"  # Formato rigoroso com ponto e verificador
+    ),
     # 11. TITULO_ELEITOR - 12 digitos com espacos opcionais (3 grupos de 4)
     "titulo_eleitor": re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b"),
     # 12. PHONE_BR - telefone brasileiro 10-11 digitos

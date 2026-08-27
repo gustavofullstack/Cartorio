@@ -555,7 +555,29 @@ def _detect_intent(text: str) -> str:
     t = text.lower()
     if _wants_catalog_series(t) or _wants_catalog_continue(t):
         return "catalogo_serie"
-    if any(w in t for w in ("humano", "escrevente", "atendente", "pessoa real", "falar com")):
+    if any(
+        w in t
+        for w in (
+            "humano",
+            "escrevente",
+            "atendente",
+            "pessoa real",
+            "falar com",
+            "isenç",
+            "isenc",
+            "urgente",
+            "urgência",
+            "urgencia",
+            "escritura",
+            "certidão",
+            "certidao",
+            "testamento",
+            "inventário",
+            "inventario",
+            "usucapião",
+            "usucapiao",
+        )
+    ):
         return "humano"
     if any(w in t for w in ("protocolo", "andamento", "status do", "consulta protocolo")):
         return "protocolo"
