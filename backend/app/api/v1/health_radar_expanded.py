@@ -187,7 +187,7 @@ async def _check_traefik(domain: str) -> dict[str, Any]:
     start = time.perf_counter()
     url = f"https://{domain}/"
     try:
-        async with httpx.AsyncClient(timeout=TRAEFIK_SOCKET_TIMEOUT, verify=False) as client:
+        async with httpx.AsyncClient(timeout=TRAEFIK_SOCKET_TIMEOUT) as client:
             resp = await client.head(url, follow_redirects=False)
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         content_length = int(resp.headers.get("content-length", 0) or 0)
