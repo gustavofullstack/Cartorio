@@ -7,6 +7,8 @@ Modified by Gustavo Almeida · 2026-07-27
 """
 
 from __future__ import annotations
+from unittest.mock import patch
+from datetime import datetime, timedelta
 
 import os
 
@@ -69,14 +71,29 @@ class TestPietraAtendimento:
             assert "dados_pendentes" in data
             assert isinstance(data["proximos_passos"], list)
 
-    def test_atendimento_iniciar_agendamento(self, client):
+    @patch("app.api.v1.pietra.iniciar_atendimento")
+    def test_atendimento_iniciar_agendamento(self, mock_iniciar, client):
+        from app.services.pietra_atendimento import AtendimentoResult
+
+        mock_iniciar.return_value = AtendimentoResult(
+            atendimento_id=123,
+            cliente_id=456,
+            protocolo_id=None,
+            agendamento_id=789,
+            dados_pendentes=["data_nascimento", "email"],
+            proximos_passos=[],
+            dados_coletados={"nome": "Maria Silva", "cpf": "***CPF hasheado***"},
+            cliente_criado=False,
+        )
         r = client.post(
             "/api/v1/pietra/atendimento/iniciar",
             json={
                 "telefone": "+5534991234569",
                 "canal": "imessage",
                 "tipo": "agendamento_presencial",
-                "data_hora": "2026-08-17T14:00:00",
+                "data_hora": (datetime.now() + timedelta(days=30))
+                .replace(hour=14, minute=0, second=0)
+                .isoformat(),
                 "titulo": "Escritura de compra e venda",
                 "nome": "Maria Silva",
                 "consentimento_lgpd": True,

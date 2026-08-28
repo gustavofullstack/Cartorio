@@ -164,6 +164,7 @@ async def test_webhook_200_contabiliza_result(store_isolado: MetricsStore) -> No
     with (
         patch.object(tg, "get_bus", side_effect=ConnectionError("redis down")),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
         patch.object(tg, "_send_message", new=AsyncMock(return_value=True)),
@@ -198,6 +199,7 @@ async def test_webhook_401_contabiliza_result_e_auth_failure(
     with (
         patch.object(tg, "get_bus", side_effect=ConnectionError("redis down")),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
         patch.object(tg, "_send_message", new=AsyncMock(return_value=True)),
@@ -249,6 +251,7 @@ async def test_debounce_agendado_contabiliza(store_isolado: MetricsStore) -> Non
     with (
         patch.object(tg, "get_bus", return_value=bus),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
     ):
@@ -271,6 +274,7 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
     with (
         patch.object(tg, "get_bus", return_value=bus),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
     ):
@@ -359,6 +363,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
     with (
         patch.object(tg, "get_bus", return_value=bus),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
         patch.object(tg, "_typing_loop", new=AsyncMock()),
@@ -453,6 +458,7 @@ async def test_gate_lgpd_render_nao_contem_pii_apos_fluxo_completo(
     with (
         patch.object(tg, "get_bus", return_value=bus),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
         patch.object(tg, "_typing_loop", new=AsyncMock()),
