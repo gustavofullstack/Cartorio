@@ -864,18 +864,22 @@ def get_all_short_codes() -> tuple[str, ...]:
     return extract_short_codes(CANNED_RESPONSES)
 
 
+_SHORT_CODE_INDEX = {cr.short_code.lower(): cr for cr in CANNED_RESPONSES}
+_TAG_INDEX: dict[str, list[CannedResponse]] = {}
+for _cr in CANNED_RESPONSES:
+    for _tag in _cr.tags:
+        _TAG_INDEX.setdefault(_tag, []).append(_cr)
+_TAG_INDEX_TUPLE = {k: tuple(v) for k, v in _TAG_INDEX.items()}
+
+
 def get_by_tag(tag: str) -> tuple[CannedResponse, ...]:
     """Filtra templates por tag."""
-    return tuple(cr for cr in CANNED_RESPONSES if tag in cr.tags)
+    return _TAG_INDEX_TUPLE.get(tag, ())
 
 
 def get_by_short_code(short_code: str) -> CannedResponse | None:
     """Busca template por short_code (case-insensitive)."""
-    sc_lower = short_code.lower()
-    for cr in CANNED_RESPONSES:
-        if cr.short_code.lower() == sc_lower:
-            return cr
-    return None
+    return _SHORT_CODE_INDEX.get(short_code.lower())
 
 
 # Total: 51 templates (superando o requisito de 50+)
