@@ -101,10 +101,12 @@ ci:  ## CI local: reproduz os gates bloqueantes do GitHub Actions
 # ============================================================================
 
 .PHONY: openapi-check
-openapi-check:  ## Valida OpenAPI snapshot contra baseline (G6.A.T2 gate CI)
+openapi-check:  ## Valida OpenAPI snapshot contra baseline (G6.A.T2 gate CI) e valida schema estrutural (A23)
 	@echo "$(YELLOW)[OpenAPI] Comparando snapshot contra baseline...$(RESET)"
 	@python3 scripts/openapi_snapshot.py --check
-	@echo "$(GREEN)[OpenAPI] Snapshot OK (sem breaking changes)$(RESET)"
+	@echo "$(YELLOW)[OpenAPI] Validando schema OpenAPI 3.0+ com openapi-spec-validator...$(RESET)"
+	@cd backend && uv run python ../scripts/validate_openapi_spec.py
+	@echo "$(GREEN)[OpenAPI] Snapshot OK (valido e sem breaking changes)$(RESET)"
 
 .PHONY: openapi-update
 openapi-update:  ## Atualiza baseline OpenAPI (apos bump de versao)
