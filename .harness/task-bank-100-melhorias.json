@@ -125,15 +125,18 @@
     },
     "A23": {
       "title": "OpenAPI spec validada openapi-spec-validator no CI",
-      "type": "api"
+      "type": "api",
+      "status": "done"
     },
     "A24": {
       "title": "Versionamento /api/v1 + /api/v2 alpha sunset 2027",
-      "type": "api"
+      "type": "api",
+      "status": "done"
     },
     "A25": {
       "title": "RFC 7807 problem+json em todos 4xx/5xx",
-      "type": "api"
+      "type": "api",
+      "status": "done"
     }
   },
   "SQUAD_B_N8N_POLISH": {

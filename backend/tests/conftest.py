@@ -291,6 +291,21 @@ def _bypass_atendimento_cache(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _mock_lgpd_consent(monkeypatch, request):
+    """Mocks _get_lgpd_consent to always return True for tests, except for LGPD specific tests."""
+    if "test_lgpd_poll_p0.py" in str(request.node.fspath):
+        yield
+        return
+
+    from unittest.mock import AsyncMock
+    import app.api.v1.telegram as tg
+
+    if hasattr(tg, "_get_lgpd_consent"):
+        monkeypatch.setattr(tg, "_get_lgpd_consent", AsyncMock(return_value=True))
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _reset_jwt_secret(monkeypatch):
     """Garante JWT_SECRET canonico (='a'*64) em TODOS os testes.
 

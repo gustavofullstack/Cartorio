@@ -251,6 +251,8 @@ async def test_debounce_agendado_contabiliza(store_isolado: MetricsStore) -> Non
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
+        patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
+        patch("app.api.v1.telegram._typing_loop", new=AsyncMock()),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
     assert resp["scheduled"] is True
@@ -273,6 +275,8 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
+        patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
+        patch("app.api.v1.telegram._typing_loop", new=AsyncMock()),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
     assert resp["accumulated"] is True
@@ -365,6 +369,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
         patch.object(tg, "DEBOUNCE_WINDOW", 0),
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
         patch.object(tg, "_get_tg_pool", return_value=_pool_ok()),
+        patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
         assert resp["scheduled"] is True
@@ -459,6 +464,7 @@ async def test_gate_lgpd_render_nao_contem_pii_apos_fluxo_completo(
         patch.object(tg, "DEBOUNCE_WINDOW", 0),
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
         patch.object(tg, "_get_tg_pool", return_value=_pool_ok()),
+        patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
     ):
         await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
         for task in bt.tasks:
