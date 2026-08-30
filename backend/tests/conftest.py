@@ -291,8 +291,12 @@ def _bypass_atendimento_cache(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _mock_lgpd_consent(monkeypatch):
-    """Mocks _get_lgpd_consent to always return True for tests."""
+def _mock_lgpd_consent(monkeypatch, request):
+    """Mocks _get_lgpd_consent to always return True for tests, except for LGPD specific tests."""
+    if "test_lgpd_poll_p0.py" in str(request.node.fspath):
+        yield
+        return
+
     from unittest.mock import AsyncMock
     import app.api.v1.telegram as tg
 
