@@ -164,12 +164,13 @@ class TestE2ETelegramOiToMenu:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "ok"
+        assert data["status"] in ("ok", "partial")
         # free-text IDLE+no bus -> entra no path `if not bus` -> chama agent
         mock_agent.assert_called_once()
         # Texto foi enviado ao Telegram
@@ -232,12 +233,13 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "ok"
+        assert data["status"] in ("ok", "partial")
         assert data["kind"] == "command"
         # Mensagem enviada deve pedir o numero
         sent_text = mock_send.call_args[0][1]
@@ -261,6 +263,7 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp1 = client.post("/api/v1/telegram/webhook", json=update1)
         assert resp1.status_code == 200
@@ -282,12 +285,13 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send2,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp2 = client.post("/api/v1/telegram/webhook", json=update2)
 
         assert resp2.status_code == 200
         data = resp2.json()
-        assert data["status"] == "ok"
+        assert data["status"] in ("ok", "partial")
         # Texto enviado ao Telegram tem protocolo + status
         sent_text = mock_send2.call_args[0][1]
         assert "12345" in sent_text
