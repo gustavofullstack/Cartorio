@@ -219,7 +219,8 @@ class TestE2ETelegramOiToMenu:
 # =============================================================================
 
 
-from unittest.mock import AsyncMock
+
+
 class TestE2ETelegramProtocolo:
     """T62: comando /protocolo + numero -> state machine -> ferramenta _tool_consultar_protocolo."""
 
@@ -229,7 +230,9 @@ class TestE2ETelegramProtocolo:
         update = _telegram_update(update_id=20001, text="/protocolo")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -259,7 +262,9 @@ class TestE2ETelegramProtocolo:
         update1 = _telegram_update(update_id=20002, text="/protocolo")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -277,7 +282,9 @@ class TestE2ETelegramProtocolo:
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._tool_consultar_protocolo",
                 new=AsyncMock(return_value=mock_tool_result),
@@ -303,7 +310,9 @@ class TestE2ETelegramProtocolo:
         update1 = _telegram_update(update_id=20004, text="/protocolo")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -315,7 +324,9 @@ class TestE2ETelegramProtocolo:
         # Tool retorna erro (simula protocolo inexistente)
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._tool_consultar_protocolo",
                 new=AsyncMock(return_value={"erro": "not_found"}),
@@ -345,7 +356,9 @@ class TestE2ETelegramAgendar:
         update = _telegram_update(update_id=30001, text="/agendar")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -370,7 +383,9 @@ class TestE2ETelegramAgendar:
         # Step 1: /agendar
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -387,7 +402,9 @@ class TestE2ETelegramAgendar:
         mock_send.reset_mock()
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -407,7 +424,9 @@ class TestE2ETelegramAgendar:
         mock_send.reset_mock()
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -427,7 +446,9 @@ class TestE2ETelegramAgendar:
         mock_send.reset_mock()
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -448,7 +469,9 @@ class TestE2ETelegramAgendar:
         # Step 1: /agendar
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -461,7 +484,9 @@ class TestE2ETelegramAgendar:
         # Step 2: opcao invalida
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -491,7 +516,9 @@ class TestE2ETelegramHumano:
         update = _telegram_update(update_id=40001, text="/humano")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -513,7 +540,9 @@ class TestE2ETelegramHumano:
         # Step 1: /humano (inicia state HITL)
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -527,7 +556,9 @@ class TestE2ETelegramHumano:
         # Step 2: descricao -> tool_criar_atendimento retorna ticket_id
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._tool_criar_atendimento",
                 new=AsyncMock(return_value={"atendimento_id": 7777, "id": 7777}),
@@ -563,7 +594,9 @@ class TestE2ETelegramLgpd:
         update = _telegram_update(update_id=50001, text="/lgpd")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -589,7 +622,9 @@ class TestE2ETelegramLgpd:
         update = _telegram_update(update_id=50002, text="/lgpd")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
-            patch("app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True),
+            patch(
+                "app.api.v1.telegram._get_lgpd_consent", new_callable=AsyncMock, return_value=True
+            ),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
