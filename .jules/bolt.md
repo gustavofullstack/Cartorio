@@ -1,0 +1,3 @@
+## 2024-05-24 - Pre-compute static list indices for O(1) lookups
+**Learning:** Found that searching through static arrays via O(N) linear loops was slowing down request handling. When static arrays (like CANNED_RESPONSES) are accessed frequently during execution, it is critical to pre-compute their lookups at module initialization to avoid repeated O(N) operations.
+**Action:** Replaced O(N) list searches with pre-computed O(1) dictionary lookups during module load (e.g. `{cr.short_code.lower(): cr for cr in CANNED_RESPONSES}`). This is a repeatable pattern for other configuration lists in the backend.
