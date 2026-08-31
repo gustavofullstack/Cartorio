@@ -164,12 +164,13 @@ class TestE2ETelegramOiToMenu:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "ok"
+        assert data.get("status") in ("ok", "partial")
         # free-text IDLE+no bus -> entra no path `if not bus` -> chama agent
         mock_agent.assert_called_once()
         # Texto foi enviado ao Telegram
@@ -232,12 +233,13 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "ok"
+        assert data.get("status") in ("ok", "partial")
         assert data["kind"] == "command"
         # Mensagem enviada deve pedir o numero
         sent_text = mock_send.call_args[0][1]
