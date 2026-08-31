@@ -344,6 +344,7 @@ class TestE2ETelegramAgendar:
         update = _telegram_update(update_id=30001, text="/agendar")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -368,6 +369,7 @@ class TestE2ETelegramAgendar:
         # Step 1: /agendar
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -384,6 +386,7 @@ class TestE2ETelegramAgendar:
         mock_send.reset_mock()
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -403,6 +406,7 @@ class TestE2ETelegramAgendar:
         mock_send.reset_mock()
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -422,6 +426,7 @@ class TestE2ETelegramAgendar:
         mock_send.reset_mock()
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -442,6 +447,7 @@ class TestE2ETelegramAgendar:
         # Step 1: /agendar
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -454,6 +460,7 @@ class TestE2ETelegramAgendar:
         # Step 2: opcao invalida
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -483,6 +490,7 @@ class TestE2ETelegramHumano:
         update = _telegram_update(update_id=40001, text="/humano")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -504,6 +512,7 @@ class TestE2ETelegramHumano:
         # Step 1: /humano (inicia state HITL)
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -517,6 +526,7 @@ class TestE2ETelegramHumano:
         # Step 2: descricao -> tool_criar_atendimento retorna ticket_id
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
             patch(
                 "app.api.v1.telegram._tool_criar_atendimento",
                 new=AsyncMock(return_value={"atendimento_id": 7777, "id": 7777}),
