@@ -276,6 +276,7 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
+        patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
     assert resp["accumulated"] is True
