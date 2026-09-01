@@ -367,6 +367,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_typing_loop", new=AsyncMock()),
         patch.object(tg, "DEBOUNCE_WINDOW", 0),
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
