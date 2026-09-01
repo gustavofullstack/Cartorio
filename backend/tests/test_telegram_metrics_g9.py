@@ -251,6 +251,9 @@ async def test_debounce_agendado_contabiliza(store_isolado: MetricsStore) -> Non
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
+        patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
+        patch("app.api.v1.telegram._typing_loop", new=AsyncMock()),
+        patch("app.api.v1.telegram.DEBOUNCE_WINDOW", 0),
     ):
         resp = await tg.telegram_webhook(_make_request(update), bt, None, MagicMock())
     assert resp["scheduled"] is True
