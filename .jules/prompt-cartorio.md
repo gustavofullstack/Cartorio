@@ -9,7 +9,7 @@ EVOLUTION-API -> API -> N8N -> CHATWOOT -> REDIS -> SUPABASE -> REDIS -> CHATWOO
 - **Agent AI Cartorio (OpenClaw)**: Handles WhatsApp (Evolution-API) via API/N8N. Needs short, serious tone without emojis. Currently using `deepseek-v4-flash`. Needs "thinkings" enabled and full 1M context unlocked.
 - **Chatwoot**: Used purely as a CRM for WhatsApp integration (HITL - Human in the Loop). Contains features that need to be utilized.
 - **Redis**: Fast memory cache.
-- **Telegram Bot**: Test bot token `8859206262:AAHNZ1a5L9O0U_4sXXTWQAVtEI4BnQjPH_Q`. Used for E2E testing of the architecture.
+- **Telegram Bot**: Test bot token `[REDACTED]`. Used for E2E testing of the architecture.
 - **EasyPanel**: Deployment central on VPS.
 
 ## Core Directives
