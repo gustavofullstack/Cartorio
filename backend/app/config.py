@@ -292,6 +292,31 @@ class Settings(BaseSettings):
         ]
     )
 
+    # Metodos e headers explicitos em vez de "*". Com allow_credentials=True,
+    # curinga concede a qualquer origem permitida mais superficie do que a API
+    # usa. Lista derivada do que o codigo realmente le (middlewares + deps).
+    # Configuravel por env: um cliente novo com header proprio se resolve sem
+    # mudanca de codigo.
+    cors_allow_methods: list[str] = Field(
+        default_factory=lambda: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+    )
+    cors_allow_headers: list[str] = Field(
+        default_factory=lambda: [
+            "Accept",
+            "Authorization",
+            "Content-Type",
+            "Idempotency-Key",
+            "X-Idempotency-Key",
+            "X-Api-Key",
+            "X-Api-Version",
+            "X-Canal",
+            "X-Correlation-Id",
+            "X-Request-Id",
+            "X-Session-Id",
+            "X-Sensivel",
+        ]
+    )
+
     # ========================================================================
     # MCP server (expõe tools MCP da API)
     # ========================================================================
