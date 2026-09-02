@@ -1,0 +1,4 @@
+## 2026-09-02 - Ensure SSL Verification in httpx Clients
+**Vulnerability:** Found `verify=False` passed to `httpx.AsyncClient` in `app/api/v1/health_radar_expanded.py`, which disabled SSL certificate validation and exposed the health check endpoint to Man-In-The-Middle (MITM) attacks.
+**Learning:** Hardcoding `verify=False` to bypass certificate errors is a common but dangerous anti-pattern. While it might seem convenient for local or internal network testing, it introduces a severe security flaw in production systems.
+**Prevention:** Always enforce strict SSL validation in HTTP clients by keeping `verify=True` (or leaving it to its default). If interacting with internal endpoints with self-signed certificates, proper trust configurations should be used at the OS or container level instead of disabling security in the application code.
