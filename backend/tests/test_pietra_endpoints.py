@@ -76,7 +76,7 @@ class TestPietraAtendimento:
                 "telefone": "+5534991234569",
                 "canal": "imessage",
                 "tipo": "agendamento_presencial",
-                "data_hora": "2026-08-17T14:00:00",
+                "data_hora": "2028-08-17T14:00:00",
                 "titulo": "Escritura de compra e venda",
                 "nome": "Maria Silva",
                 "consentimento_lgpd": True,
