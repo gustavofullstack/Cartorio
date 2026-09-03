@@ -20,12 +20,18 @@ import os
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Final
 
 import httpx
 
 from app.services.pii import scrub
-from app.services.emolumento_operacional_balcao import GENERAL_ITEMS, format_brl
+from app.services.emolumento_operacional_balcao import (
+    CNTV_MG,
+    GENERAL_ITEMS,
+    REPROGRAFIA,
+    format_brl,
+    reconhecimento_firma_dut_total,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +55,36 @@ SERVICOS_CATALOGO: dict[str, tuple[str, str]] = {
     "ata_notarial": (
         "Ata Notarial (até duas folhas)",
         format_brl(GENERAL_ITEMS["ata_notarial"].total),
+    ),
+    # Transferência veicular tem consulta obrigatória à CNTV/MG por signatário.
+    # Sem esta entrada o agente responde R$ 11,61 num ato que custa R$ 16,61.
+    "reconhecimento_firma_dut": (
+        "Reconhecimento de Firma em DUT/ATPV (por assinatura, já com consulta CNTV/MG)",
+        format_brl(reconhecimento_firma_dut_total()),
+    ),
+    "xerox_1_face": (
+        "Xerox 1 face (somente quando a cópia é fornecida pelo cartório)",
+        format_brl(REPROGRAFIA["xerox_1_face"].total),
+    ),
+    "xerox_2_faces": (
+        "Xerox 2 faces (somente quando a cópia é fornecida pelo cartório)",
+        format_brl(REPROGRAFIA["xerox_2_faces"].total),
+    ),
+}
+
+# Regras de balcão informadas pela serventia (Felipe Pizarro, 2026-08-12).
+# O atendimento presencial não é agendado: o agente não deve oferecer horário.
+ATENDIMENTO_PRESENCIAL = {
+    "ordem": (
+        "O atendimento no balcão é por ordem de chegada. Não há pré-agendamento "
+        "para os atos de balcão."
+    ),
+    "preferencial": (
+        "Têm senha preferencial: pessoa idosa, pessoa autista, pessoa com deficiência e advogado."
+    ),
+    "repasse_cntv": (
+        f"A consulta {CNTV_MG.nature} ({format_brl(CNTV_MG.total)}) é repassada "
+        f"à {CNTV_MG.destinatario} e não constitui emolumento."
     ),
 }
 
@@ -405,10 +441,36 @@ def _servicos_kb() -> list[list[dict[str, str]]]:
     return []
 
 
+_FIRMA_WORDS: Final[tuple[str, ...]] = ("firma", "reconhecimento", "assinatura")
+
+# Termos que caracterizam transferencia veicular. Reconhecer firma nesse
+# contexto dispara a consulta CNTV/MG e muda o total (R$ 16,61, nao R$ 11,61).
+_VEICULO_WORDS: Final[tuple[str, ...]] = (
+    "dut",
+    "atpv",
+    "crv",
+    "veiculo",
+    "veículo",
+    "carro",
+    "moto",
+    "transferencia de veiculo",
+    "transferência de veículo",
+    "documento do carro",
+)
+
+
 def _match_servico(text: str) -> str | None:
     t = text.lower()
+
+    # Caso especifico antes do generico: firma + veiculo e outro preco.
+    # "procuracao para vender o carro" nao entra aqui — nao ha termo de firma.
+    if any(w in t for w in _FIRMA_WORDS) and any(w in t for w in _VEICULO_WORDS):
+        return "reconhecimento_firma_dut"
+
     aliases = {
-        "reconhecimento_firma": ["firma", "reconhecimento", "assinatura"],
+        "xerox_2_faces": ["frente e verso", "2 faces", "duas faces"],
+        "xerox_1_face": ["xerox", "fotocopia", "fotocópia", "reprografia"],
+        "reconhecimento_firma": list(_FIRMA_WORDS),
         "autenticacao": ["autentic", "copia", "cópia", "autenticacao"],
         "procuracao": ["procurac", "procuração", "procuracao", "poderes"],
         "testamento": ["testamento"],
@@ -622,6 +684,12 @@ def _build_tools_context(text: str) -> tuple[str, list[str]]:
         f"- endereco: {CARTORIO_INFO['endereco']}\n"
         f"- horario: {CARTORIO_INFO['horario']}"
     )
+    parts.append(
+        "ATENDIMENTO_PRESENCIAL:\n"
+        f"- {ATENDIMENTO_PRESENCIAL['ordem']}\n"
+        f"- {ATENDIMENTO_PRESENCIAL['preferencial']}\n"
+        f"- {ATENDIMENTO_PRESENCIAL['repasse_cntv']}"
+    )
 
     svc = _match_servico(text)
     if svc:
@@ -632,7 +700,7 @@ def _build_tools_context(text: str) -> tuple[str, list[str]]:
     if intent == "preco" and not svc:
         parts.append(
             "PRECO: cliente perguntou valor sem especificar servico. "
-            "Liste os 5 servicos do catalogo e peca qual deseja."
+            f"Liste os {len(SERVICOS_CATALOGO)} servicos do catalogo e peca qual deseja."
         )
         used.append("preco:list")
 

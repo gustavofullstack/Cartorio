@@ -30,6 +30,34 @@ class OperationalBand:
     per_excess_block: bool = False
 
 
+@dataclass(frozen=True)
+class OperationalRepasse:
+    """Valor cobrado do cliente que NAO e emolumento da serventia.
+
+    E repassado integralmente a terceiro, por isso vive fora de
+    ``GENERAL_ITEMS``: entra na conta final, mas nunca na base de calculo
+    de ISS, TFJ ou RECOMPE.
+    """
+
+    code: str
+    nature: str
+    total: Decimal
+    destinatario: str
+
+
+# Consulta obrigatoria a Central Notarial de Transferencia Veicular por
+# signatario, no reconhecimento de firma por autenticidade em DUT/ATPV.
+# Base: Lei Estadual 15.424/2004, arts. 17 e 18-A, par. 3o.
+# Confirmado pela serventia (Felipe Pizarro, 2026-08-12): R$ 5,00 repassados
+# a CNB/MG, sem natureza de emolumento.
+CNTV_MG: Final[OperationalRepasse] = OperationalRepasse(
+    code="CNTV-MG",
+    nature="Consulta CNTV/MG por signatario",
+    total=Decimal("5.00"),
+    destinatario="CNB/MG",
+)
+
+
 GENERAL_ITEMS: Final[dict[str, OperationalItem]] = {
     "abertura_firma": OperationalItem("1502-4", "Abertura de firma", Decimal("11.61")),
     "aditamento": OperationalItem("1418-3", "Aditamento/rerratificacao", Decimal("44.88")),
@@ -235,5 +263,27 @@ TESTAMENTO_ALTERACAO_BANDS: Final[tuple[OperationalBand, ...]] = tuple(
 ) + (OperationalBand(("1627-9", "1669-1"), None, Decimal("1127.24"), per_excess_block=True),)
 
 
+# Reprografia: cobrada apenas quando a copia e fornecida pela serventia.
+# Fora de GENERAL_ITEMS porque nao e ato notarial nem gera selo.
+# Confirmado pela serventia (Felipe Pizarro, 2026-08-12).
+REPROGRAFIA: Final[dict[str, OperationalItem]] = {
+    "xerox_1_face": OperationalItem("REPRO-1", "Xerox 1 face (frente)", Decimal("1.80")),
+    "xerox_2_faces": OperationalItem("REPRO-2", "Xerox 2 faces (frente e verso)", Decimal("3.60")),
+}
+
+
 def format_brl(value: Decimal) -> str:
     return f"R$ {value:.2f}".replace(".", ",")
+
+
+def reconhecimento_firma_dut_total() -> Decimal:
+    """Total por assinatura no reconhecimento de firma em DUT/ATPV.
+
+    O reconhecimento por autenticidade em transferencia veicular exige consulta
+    a CNTV/MG por signatario. O total ao cliente e o selo somado ao repasse:
+    R$ 11,61 + R$ 5,00 = R$ 16,61.
+
+    Informar apenas ``GENERAL_ITEMS["reconhecimento_firma"]`` neste ato cobra a
+    menor e foi o erro reportado pela serventia.
+    """
+    return GENERAL_ITEMS["reconhecimento_firma"].total + CNTV_MG.total

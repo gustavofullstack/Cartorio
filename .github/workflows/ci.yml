@@ -238,7 +238,15 @@ jobs:
         run: uv run pytest -n auto --dist loadfile --maxfail=1 --tb=short --cov-report=json:coverage_gate.json
 
       # G6.A.T2 — OpenAPI snapshot CI gate
+      # BRAIN_API_ENABLED: o baseline foi gerado com a API do Brain montada,
+      # mas `brain_api_enabled` tem default False. Sem esta env o spec sai sem
+      # as 10 rotas /api/v1/brain/* e o gate acusa "path removed" -- quebra de
+      # contrato falsa: os endpoints existem em app/api/v1/brain.py, so estao
+      # atras da feature flag. Gerar sob a mesma flag do baseline compara igual
+      # com igual.
       - name: OpenAPI snapshot check (G6.A.T2)
+        env:
+          BRAIN_API_ENABLED: "true"
         run: python3 scripts/openapi_snapshot.py --check
 
       # G6.B.T1 — N8N workflow validator CI gate

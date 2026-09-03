@@ -113,6 +113,12 @@ jobs:
         run: uv run pytest -n auto --tb=short
 
       - name: G6 scripts (CI gates)
+        # BRAIN_API_ENABLED: mesmo motivo do ci.yml -- o baseline do OpenAPI foi
+        # gerado com a API do Brain montada, e `brain_api_enabled` tem default
+        # False. Sem a flag o gate acusa "path removed" nas 10 rotas
+        # /api/v1/brain/*, que existem em app/api/v1/brain.py.
+        env:
+          BRAIN_API_ENABLED: "true"
         run: |
           echo "=== N8N workflow validator ==="
           python3 scripts/n8n_workflow_validator.py

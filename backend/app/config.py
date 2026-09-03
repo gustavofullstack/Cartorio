@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     app_name: str = "cartorio-backend"
     app_port: int = 8000
     log_level: str = "INFO"
+    # Banner "sistema em fase de testes" — controla aviso visível no agente Pietra
+    # Desligar em produção via env PIETRA_TEST_PHASE_BANNER=false
+    pietra_test_phase_banner: bool = True
 
     # ========================================================================
     # Database (Supabase - container db:5432 na rede cartorio_supabase_default)
