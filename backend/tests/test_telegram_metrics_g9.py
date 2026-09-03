@@ -111,6 +111,22 @@ def _make_request(payload: dict) -> MagicMock:
     return req
 
 
+def _com_consentimento_lgpd(bus: _FakeBus, chat_id: int = 4242) -> _FakeBus:
+    """Grava consentimento LGPD para o chat e devolve o proprio bus.
+
+    Desde `fix(lgpd): stop Telegram LGPD poll loop and restore post-consent
+    routing`, o webhook barra no gate de consentimento ANTES do debounce e
+    responde ``{"kind": "lgpd_gate"}``. Os testes de metrica de debounce
+    exercitam o caminho POS-consentimento: sem esta semente eles medem o gate,
+    nao o debounce, e quebram com ``KeyError: 'scheduled'``.
+
+    Usa ``tg._lgpd_consent_key`` de proposito, em vez da string literal, para
+    que uma mudanca no formato da chave quebre aqui junto com a producao.
+    """
+    bus.store[tg._lgpd_consent_key(chat_id)] = "1"
+    return bus
+
+
 def _private_text_update(update_id: int, text: str, chat_id: int = 4242) -> dict:
     return {
         "update_id": update_id,
@@ -243,7 +259,7 @@ async def test_webhook_invalid_json_conta_200_nao_5xx(store_isolado: MetricsStor
 
 @pytest.mark.asyncio
 async def test_debounce_agendado_contabiliza(store_isolado: MetricsStore) -> None:
-    bus = _FakeBus()
+    bus = _com_consentimento_lgpd(_FakeBus())
     update = _private_text_update(7004, "quero agendar uma escritura")
     bt = BackgroundTasks()
     with (
@@ -264,7 +280,7 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
     store_isolado: MetricsStore,
 ) -> None:
     """Lock presente -> acumula na fila SEM novo agendamento (1 por janela)."""
-    bus = _FakeBus()
+    bus = _com_consentimento_lgpd(_FakeBus())
     bus.store["tg:lock:4242"] = "1"  # janela ja aberta
     update = _private_text_update(7005, "mais uma mensagem na mesma janela")
     bt = BackgroundTasks()
@@ -353,7 +369,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
     store_isolado: MetricsStore,
 ) -> None:
     """Webhook (200 + schedule) -> debounce task -> send: pipeline completo."""
-    bus = _FakeBus()
+    bus = _com_consentimento_lgpd(_FakeBus())
     update = _private_text_update(7006, "qual o valor da autenticacao?")
     bt = BackgroundTasks()
     with (
