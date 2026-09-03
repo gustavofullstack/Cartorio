@@ -121,7 +121,35 @@ def client(test_engine, test_session_factory):
 
 @pytest.fixture
 def stateful_bus():
-    return StatefulBus()
+    """Bus de uma conversa que JA consentiu com a LGPD.
+
+    Os testes desta fixture exercitam comandos e state machine, nao o gate de
+    consentimento. Quem testa o gate constroi o ``StatefulBus()`` direto.
+    """
+    return _com_consentimento_lgpd(StatefulBus())
+
+
+CHAT_ID_PADRAO = 6682284055
+
+
+def _com_consentimento_lgpd(bus, chat_id: int = CHAT_ID_PADRAO):
+    """Grava consentimento LGPD no bus e devolve o proprio bus.
+
+    Desde `fix(lgpd): stop Telegram LGPD poll loop and restore post-consent
+    routing`, uma conversa sem consentimento para no gate: o webhook tenta
+    enviar a enquete de consentimento, o envio falha no ambiente de teste
+    (sem bot token real) e a resposta vira ``{"status": "partial"}``.
+
+    Os testes de comando exercitam o caminho POS-consentimento. Sem esta
+    semente eles medem o gate, nao o comando.
+
+    Usa ``tg._lgpd_consent_key`` em vez da string literal para que uma mudanca
+    no formato da chave quebre aqui junto com a producao.
+    """
+    import app.api.v1.telegram as tg
+
+    bus.store[tg._lgpd_consent_key(chat_id)] = "1"
+    return bus
 
 
 def _telegram_update(update_id: int, text: str, chat_id: int = 6682284055) -> dict:
@@ -224,7 +252,7 @@ class TestE2ETelegramProtocolo:
 
     def test_protocolo_comando_inicial_retorna_pedido_numero(self, client: TestClient) -> None:
         """Comando /protocolo (sem numero) inicializa state machine via bus."""
-        bus = StatefulBus()
+        bus = _com_consentimento_lgpd(StatefulBus())
         update = _telegram_update(update_id=20001, text="/protocolo")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
@@ -335,7 +363,7 @@ class TestE2ETelegramAgendar:
     """T63: comando /agendar -> state machine servico->data->hora->confirmar."""
 
     def test_agendar_inicio_pede_servico(self, client: TestClient) -> None:
-        bus = StatefulBus()
+        bus = _com_consentimento_lgpd(StatefulBus())
         update = _telegram_update(update_id=30001, text="/agendar")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
@@ -474,7 +502,7 @@ class TestE2ETelegramHumano:
 
     def test_humano_inicio_aguarda_descricao(self, client: TestClient) -> None:
         """Comando /humano retorna orientacao inicial."""
-        bus = StatefulBus()
+        bus = _com_consentimento_lgpd(StatefulBus())
         update = _telegram_update(update_id=40001, text="/humano")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
