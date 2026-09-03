@@ -1,0 +1,4 @@
+## 2026-06-30 - [Missing Auth on Admin LGPD Bot Endpoints]
+**Vulnerability:** Admin endpoints for the LGPD Bot (listing pending revocations and marking them as deleted) were missing authorization. They should be restricted to authenticated administrative actors (cron jobs and authorized staff).
+**Learning:** Some endpoints, particularly those meant to be hit internally by admin tools or scheduled cron jobs (like `get_revogacoes` and `post_marcar_deletado`), might accidentally lack explicit dependency injection for authentication (`require_cartorio_api_key`) in FastAPI since they were slated for a future sprint (Sprint 5+).
+**Prevention:** Ensure all admin/operational routes specifically include the `_api_key: Annotated[str, Depends(require_cartorio_api_key)]` dependency immediately. Avoid deferring authentication for administrative functions, even if they're internal.
