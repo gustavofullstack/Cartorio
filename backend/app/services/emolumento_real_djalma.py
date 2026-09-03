@@ -38,16 +38,27 @@ class ItemTabela1(TypedDict):
     item_portaria: str
     emolumentos: Decimal
     tfj: Decimal
+    recompe: Decimal
+    fundos: Decimal
+    iss: Decimal
     valor_final: Decimal
 
 
 # Tabela 1 — itens de consulta direta (sem composição), transcritos do PDF oficial.
+# NOTA: A Portaria CGJ/TJMG 8.664/2025 (Tabela 1) publica apenas Emolumentos + TFJ = Valor Final.
+# A decomposição completa (RECOMPE, Fundos, ISS) encontra-se na tabela operacional de balcão
+# (emolumento_operacional_balcao.py). Aqui calculamos ISS = 5% dos emolumentos (art. 88 LC 116/03
+# c/c Lei Municipal Uberlândia) e mantemos RECOMPE/Fundos como 0 para a tabela regulatória.
+# O valor_final continua sendo Emolumentos + TFJ (conforme Portaria).
 ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
     "aprovacao_testamento_cerrado": {
         "ato": "Aprovação de testamento cerrado",
         "item_portaria": "Tabela 1, item 1",
         "emolumentos": Decimal("498.82"),
         "tfj": Decimal("156.88"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("24.94"),  # 5% de 498.82
         "valor_final": Decimal("655.70"),
     },
     "ata_notarial_ate_2_folhas": {
@@ -55,6 +66,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 2.1",
         "emolumentos": Decimal("166.18"),
         "tfj": Decimal("52.24"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("8.31"),  # 5% de 166.18
         "valor_final": Decimal("218.42"),
     },
     "ata_notarial_folha_acrescida": {
@@ -62,6 +76,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 2.1.1",
         "emolumentos": Decimal("8.55"),
         "tfj": Decimal("2.66"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("0.43"),  # 5% de 8.55
         "valor_final": Decimal("11.21"),
     },
     "autenticacao_copia_folha": {
@@ -69,6 +86,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 3",
         "emolumentos": Decimal("8.55"),
         "tfj": Decimal("2.66"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("0.43"),  # 5% de 8.55
         "valor_final": Decimal("11.21"),
     },
     "autenticacao_documento_eletronico": {
@@ -76,6 +96,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 3.1",
         "emolumentos": Decimal("10.01"),
         "tfj": Decimal("2.98"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("0.50"),  # 5% de 10.01
         "valor_final": Decimal("12.99"),
     },
     "autenticacao_digital": {
@@ -83,6 +106,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 3.2",
         "emolumentos": Decimal("10.01"),
         "tfj": Decimal("2.98"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("0.50"),  # 5% de 10.01
         "valor_final": Decimal("12.99"),
     },
     "escritura_sem_conteudo_financeiro": {
@@ -90,6 +116,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.a",
         "emolumentos": Decimal("55.45"),
         "tfj": Decimal("17.45"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("2.77"),  # 5% de 55.45
         "valor_final": Decimal("72.90"),
     },
     "escritura_aditamento_sem_valor": {
@@ -97,6 +126,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.c",
         "emolumentos": Decimal("32.98"),
         "tfj": Decimal("10.37"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("1.65"),  # 5% de 32.98
         "valor_final": Decimal("43.35"),
     },
     "escritura_convencao_condominio": {
@@ -104,6 +136,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.e",
         "emolumentos": Decimal("132.88"),
         "tfj": Decimal("41.80"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("6.64"),  # 5% de 132.88
         "valor_final": Decimal("174.68"),
     },
     "procuracao_geral": {
@@ -111,6 +146,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.f.1",
         "emolumentos": Decimal("52.43"),
         "tfj": Decimal("16.51"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("2.62"),  # 5% de 52.43
         "valor_final": Decimal("68.94"),
     },
     "procuracao_previdenciaria": {
@@ -118,6 +156,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.f.2",
         "emolumentos": Decimal("27.86"),
         "tfj": Decimal("8.75"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("1.39"),  # 5% de 27.86
         "valor_final": Decimal("36.61"),
     },
     "procuracao_com_conteudo_financeiro": {
@@ -125,6 +166,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.f.4",
         "emolumentos": Decimal("166.18"),
         "tfj": Decimal("52.23"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("8.31"),  # 5% de 166.18
         "valor_final": Decimal("218.41"),
     },
     "substabelecimento_procuracao": {
@@ -132,6 +176,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.g",
         "emolumentos": Decimal("34.96"),
         "tfj": Decimal("11.00"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("1.75"),  # 5% de 34.96
         "valor_final": Decimal("45.96"),
     },
     "testamento": {
@@ -139,6 +186,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.h.1",
         "emolumentos": Decimal("332.64"),
         "tfj": Decimal("104.60"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("16.63"),  # 5% de 332.64
         "valor_final": Decimal("437.24"),
     },
     "testamento_cerrado_a_rogo": {
@@ -146,6 +196,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.h.2",
         "emolumentos": Decimal("665.27"),
         "tfj": Decimal("209.22"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("33.26"),  # 5% de 665.27
         "valor_final": Decimal("874.49"),
     },
     "revogacao_testamento": {
@@ -153,6 +206,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.h.3",
         "emolumentos": Decimal("166.29"),
         "tfj": Decimal("52.34"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("8.31"),  # 5% de 166.29
         "valor_final": Decimal("218.63"),
     },
     "inventario_sem_conteudo_financeiro": {
@@ -160,6 +216,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.i.1",
         "emolumentos": Decimal("166.18"),
         "tfj": Decimal("52.23"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("8.31"),  # 5% de 166.18
         "valor_final": Decimal("218.41"),
     },
     "escritura_pacto_divorcio_uniao_estavel": {
@@ -170,6 +229,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 4.j",
         "emolumentos": Decimal("498.82"),
         "tfj": Decimal("156.86"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("24.94"),  # 5% de 498.82
         "valor_final": Decimal("655.68"),
     },
     "reconhecimento_firma_assinatura": {
@@ -177,6 +239,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 5.a",
         "emolumentos": Decimal("8.55"),
         "tfj": Decimal("2.66"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("0.43"),  # 5% de 8.55
         "valor_final": Decimal("11.21"),
     },
     "reconhecimento_firma_cartao": {
@@ -184,6 +249,9 @@ ATOS_PUBLICADOS_2026: Final[dict[str, ItemTabela1]] = {
         "item_portaria": "Tabela 1, item 5.b",
         "emolumentos": Decimal("8.55"),
         "tfj": Decimal("2.66"),
+        "recompe": Decimal("0.00"),
+        "fundos": Decimal("0.00"),
+        "iss": Decimal("0.43"),  # 5% de 8.55
         "valor_final": Decimal("11.21"),
     },
 }
@@ -400,6 +468,9 @@ class EmolumentoDetalhados:
     status: str  # PUBLISHED | HITL_REQUIRED
     emolumento_base: Decimal | None
     tfj: Decimal | None
+    recompe: Decimal | None
+    fundos: Decimal | None
+    iss: Decimal | None
     total: Decimal | None
     item_portaria: str | None
     motivo_hitl: str | None
@@ -419,6 +490,9 @@ class EmolumentoDetalhados:
             if self.emolumento_base is not None
             else None,
             "tfj": f"{self.tfj:.2f}" if self.tfj is not None else None,
+            "recompe": f"{self.recompe:.2f}" if self.recompe is not None else None,
+            "fundos": f"{self.fundos:.2f}" if self.fundos is not None else None,
+            "iss": f"{self.iss:.2f}" if self.iss is not None else None,
             "total": f"{self.total:.2f}" if self.total is not None else None,
             "item_portaria": self.item_portaria,
             "motivo_hitl": self.motivo_hitl,
@@ -442,6 +516,9 @@ def _hitl(
         status=STATUS_HITL,
         emolumento_base=None,
         tfj=None,
+        recompe=None,
+        fundos=None,
+        iss=None,
         total=None,
         item_portaria=None,
         motivo_hitl=motivo,
@@ -452,7 +529,7 @@ def _hitl(
 def calcular_emolumento_real_djalma(
     tipo_ato: str,
     *,
-    valor_declarado: Decimal | float | int | None = None,
+    valor_declarado: Decimal | float | None = None,
     folhas: int = 1,
     urgencia: bool = False,
 ) -> EmolumentoDetalhados:
@@ -511,6 +588,9 @@ def calcular_emolumento_real_djalma(
         status=STATUS_PUBLISHED,
         emolumento_base=item["emolumentos"],
         tfj=item["tfj"],
+        recompe=item["recompe"],
+        fundos=item["fundos"],
+        iss=item["iss"],
         total=item["valor_final"],
         item_portaria=item["item_portaria"],
         motivo_hitl=None,
@@ -532,6 +612,9 @@ def catalogo_publico() -> dict[str, object]:
             "item_portaria": item["item_portaria"],
             "emolumentos": f"{item['emolumentos']:.2f}",
             "tfj": f"{item['tfj']:.2f}",
+            "recompe": f"{item['recompe']:.2f}",
+            "fundos": f"{item['fundos']:.2f}",
+            "iss": f"{item['iss']:.2f}",
             "valor_final": f"{item['valor_final']:.2f}",
             "status": STATUS_PUBLISHED,
             "escopo": "consulta direta; sem folhas adicionais, urgência ou composição",

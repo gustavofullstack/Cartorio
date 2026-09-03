@@ -25,6 +25,12 @@ from app.models.documento import Documento
 from app.models.emolumento_catalogo import EmolumentoItem, EstadoEmolumento, FonteCaptura
 from app.models.outbox_message import OutboxMessage
 from app.models.protocolo import Protocolo
+from app.models.setor import (
+    SETOR_POR_TIPO_ATO_DEFAULT,
+    SETORES_PADRAO,
+    ProtocoloSetor,
+    Setor,
+)
 from app.models.webhook_event import WebhookEvent
 
 __all__ = [
@@ -48,9 +54,13 @@ __all__ = [
     "MotivoEncerramento",
     "OutboxMessage",
     "Protocolo",
+    "ProtocoloSetor",
     "PublicacaoConhecimento",
     "RegraCalculoConhecimento",
     "ResultadoClassificacaoConhecimento",
+    "SETORES_PADRAO",
+    "SETOR_POR_TIPO_ATO_DEFAULT",
+    "Setor",
     "StatusAgendamento",
     "TimestampMixin",
     "TipoAtendimento",

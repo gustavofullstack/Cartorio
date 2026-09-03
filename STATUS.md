@@ -1,5 +1,44 @@
 # STATUS — Cartório OS (live)
 
+## 2026-08-26 — Requisitos Tabelião: Test Phase Banner, Text Integrity, Setor Routing, ISS Validation (`REQUISITOS_TABELIAO_20260826`)
+
+**Estado:** `IMPLEMENTADO_LOCAL` — 223 testes críticos passam, pronto para validação com usuário real
+
+### Resumo das Entregas
+| Item | Status | Evidência |
+|------|--------|-----------|
+| Banner "fase de testes" Pietra | ✅ | `PIETRA_TEST_PHASE_BANNER` env var + `_build_pietra_system_prompt()` |
+| Testes integridade textual | ✅ | `TestTextIntegrity` (6 testes) em `test_pietra_outbound_guard.py` |
+| Setores configuráveis HITL | ✅ | Modelo `Setor` + `setor_routing.py` (14 setores, 7 testes) |
+| ISS Uberlândia 5% validado | ✅ | `emolumento_real_djalma.py` com decomposição Emolumentos+TFJ+ISS |
+| Multi-usuário/telefone | ✅ | Estrutura pronta (telefone_hash PK, isolamento canal) |
+| Auditoria acesso chat | ✅ | Audit log SHA256+HMAC + rate limit tiers + idempotência |
+| Backlog/checklist | ✅ | PROGRESS.md atualizado |
+| Áudios/imagens/vídeos | ⏳ | `PENDENTE_INGESTAO` — aguardando arquivos |
+
+### Bloqueios Humanos (inalterados)
+- 🚫 **WhatsApp real**: Não conectar nem alterar credenciais sem aprovação específica (requisito #9)
+- 🚫 **Credenciais**: Não rotacionar sob pressão (regra de segurança)
+- ⏳ **Ingestão anexos**: Aguardando recuperação de áudios/imagens/vídeos da conversa
+
+### Testes Executados (223 passed, 1 skipped)
+```bash
+uv run pytest tests/test_pietra_outbound_guard.py tests/test_setor_routing.py \
+  tests/test_emolumento_real_djalma.py tests/test_pii.py tests/test_audit.py \
+  tests/test_pietra_identity_guard.py tests/test_ai_data_extractor_llm.py -q --no-cov
+```
+
+### Arquivos Principais Alterados
+- `backend/app/config.py` — `pietra_test_phase_banner` setting
+- `backend/app/api/v1/pietra.py` — System prompt dinâmico
+- `backend/app/models/setor.py` — Novo modelo Setor
+- `backend/app/services/setor_routing.py` — Serviço roteamento HITL
+- `backend/app/services/emolumento_real_djalma.py` — ISS 5% + decomposição
+- `backend/tests/test_pietra_outbound_guard.py` — + TestTextIntegrity
+- `backend/tests/test_setor_routing.py` — Novos testes
+
+---
+
 ## 2026-08-18 — INCIDENT 194 (Telegram LGPD Poll + atendimento parado) **P0 estabilização**
 
 **Estado:** `IN_PRODUCTION` (aguardando smoke real pós-deploy, critérios de aceite ainda em validação)

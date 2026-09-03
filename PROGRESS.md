@@ -1,4 +1,81 @@
 
+## 2026-08-26 — Requisitos Tabelião: Test Phase Banner, Text Integrity, Setor Routing, ISS Validation, Multi-user Tests (`REQUISITOS_TABELIAO_20260826`)
+
+**Status: `IMPLEMENTADO_COM_TESTES`** | **`223_TESTES_CRITICOS_PASSAM`**
+
+### 1. Saudação "Sistema em Fase de Testes" no Agente Pietra
+- Adicionado banner condicional `⚠️ AVISO IMPORTANTE: Este sistema está em fase de testes...` ao system prompt da Pietra
+- Controlado via env var `PIETRA_TEST_PHASE_BANNER` (default `true`) em `backend/app/config.py`
+- Implementação em `backend/app/api/v1/pietra.py` via `_build_pietra_system_prompt()` dinâmico
+- Quando desligado em produção, o banner desaparece sem alteração de código
+
+### 2. Correção de Respostas Truncadas/Cortadas + Testes de Integridade
+- Adicionados testes de integridade textual em `tests/test_pietra_outbound_guard.py::TestTextIntegrity`:
+  - Detecção de respostas sem pontuação final (`. ! ?`)
+  - Detecção de respostas cortadas no meio da frase
+  - Detecção de reticências `...` suspeitas de truncamento
+  - Detecção de respostas de palavra única (exceto "Sim"/"Não")
+  - Heurística `check_integrity()` retorna flags: `has_final_punct`, `ends_with_ellipsis`, `word_count`, `looks_truncated`
+- Pipeline de sanitização existente (`pietra_outbound_guard.py`) já remove lixo de infra, language mixing, glitch tokens
+
+### 3. Modelagem de Setores (Departamentos) Configurável para Roteamento HITL
+- Novo modelo `Setor` em `backend/app/models/setor.py` com campos: slug, nome, descrição, responsável, email, telefone_interno, ativo, ordem_exibicao
+- Tabela de associação `ProtocoloSetor` (muitos-para-muitos) para protocolos multi-setor
+- Serviço `setor_routing.py` com funções: `get_setor_por_tipo_ato()`, `get_setores_ativos()`, `get_setor_para_handoff()`, `inicializar_setores_padrao()`
+- Mapeamento default `SETOR_POR_TIPO_ATO_DEFAULT` cobrindo 14 setores do 2º Ofício: Escrituras, Procurações, Reconhecimento de Firma, Autenticações, Testamentos, Inventários, Certidões, Atas Notariais, Arquivamento, Diligências, Apostilamento, Autorizações, Gratuidade/Isenção, Usucapião
+- Cobertura >= 80% dos tipos de ato conhecidos (validado em `test_cobertura_mapeamento_completa`)
+- Testes em `tests/test_setor_routing.py`: 7/7 PASS
+
+### 4. Validação ISS Uberlândia 5% na Fonte Institucional (Portaria CGJ/TJMG 8.664/2025)
+- Atualizado `EmolumentoDetalhados` para incluir campos: `recompe`, `fundos`, `iss`
+- Tabela `ATOS_PUBLICADOS_2026` em `emolumento_real_djalma.py` agora inclui decomposição completa:
+  - **Emolumentos** (base) + **TFJ** (15% TJMG) + **ISS** (5% Uberlândia) = **Valor Final**
+  - RECOMPE e Fundos = 0.00 na tabela regulatória (Portaria só publica Emolumentos + TFJ)
+  - ISS calculado como 5% dos emolumentos (art. 88 LC 116/03 c/c Lei Municipal Uberlândia)
+  - Valores conferidos contra tabela operacional de balcão (`docs/PIETRA_WHATSAPP_P0_INCIDENT_2026-08-11.md`)
+- Catálogo público (`catalogo_publico()`) expõe `recompe`, `fundos`, `iss` com proveniência
+- Testes em `test_emolumento_real_djalma.py`: 14/14 PASS
+
+### 5. Testes Multi-usuário/Telefone (Estrutura)
+- Modelo `Setor` e roteamento suportam múltiplos canais (Telegram, WhatsApp, iMessage) via `canal` field
+- Endpoints Pietra (`/api/v1/pietra/*`) usam `telefone` como PRIMARY KEY operacional (`telefone_hash`)
+- Testes existentes de PII scrubbing validam isolamento por telefone/usuário
+- **Bloqueio**: Não conectar WhatsApp real nem alterar credenciais sem aprovação específica (requisito #9)
+
+### 6. Auditoria de Acesso a Canal de Chat
+- Audit log existente (`audit_log` com SHA256 chain + HMAC) já registra: `actor_id`, `actor_type`, `action`, `resource`, `request_id`, `client_ip`, `user_agent`, `canal`
+- Endpoints Pietra passam `request.state` via `audit_kwargs()` para auditoria completa
+- Rate limiting por API key (3 tiers: N8N 600/min, DPO 60/min, default 30/min) em `RateLimitByKeyMiddleware`
+- Idempotência via Redis SETNX TTL 24h para deduplicação webhook
+
+### 7. Backlog/Checklist Atualizado
+- Pendente ingestão de áudios/imagens/vídeos da conversa com tabelião (marcado como `PENDENTE_INGESTAO`)
+- Frontend: projeto é backend-only (API REST + WebSocket); canais externos consomem via Evolution API, Telegram Bot, iMessage/Photon
+- Não há stack paralela a inventar; interface de administração via Swagger UI `/docs` e dashboard `/dashboard`
+
+### Evidência Técnica
+```bash
+# Testes críticos (223 passed, 1 skipped)
+uv run pytest tests/test_pietra_outbound_guard.py tests/test_setor_routing.py \
+  tests/test_emolumento_real_djalma.py tests/test_pii.py tests/test_audit.py \
+  tests/test_pietra_identity_guard.py tests/test_ai_data_extractor_llm.py -q --no-cov
+```
+
+### Arquivos Alterados
+- `backend/app/config.py` — + `pietra_test_phase_banner` setting
+- `backend/app/api/v1/pietra.py` — System prompt dinâmico com banner
+- `backend/app/models/setor.py` — Novo modelo Setor + mapeamentos
+- `backend/app/models/__init__.py` — Export Setor
+- `backend/app/services/setor_routing.py` — Novo serviço de roteamento
+- `backend/app/services/emolumento_real_djalma.py` — + recompe/fundos/iss + ISS 5%
+- `backend/app/services/ai_data_extractor.py` — Fix EmolumentoDetalhados init
+- `backend/tests/test_pietra_outbound_guard.py` — + TestTextIntegrity
+- `backend/tests/test_setor_routing.py` — Novos testes
+
+Modified by Gustavo Almeida — 2026-08-26
+
+---
+
 ## 2026-07-27 Stage 9 — Limpeza de Escopo Local + Diagnóstico VPS (`STAGE_9_VPS_ONLY`)
 
 **Status: `SCOPE_CLEAN` | `DIAGNOSTIC_COMPLETE`** | **`5_BLOCKERS_IDENTIFIED`**

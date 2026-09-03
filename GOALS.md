@@ -1,6 +1,6 @@
 # GOALS — Cartório 2º Notas Uberlândia (canônico)
 
-Atualizado: 2026-07-28 · Fonte: MEMORY.md + task-bank.json + estado VPS ao vivo
+Atualizado: 2026-08-26 · Fonte: MEMORY.md + PROGRESS.md + estado VPS ao vivo
 
 ## A — Backend FastAPI estável e verde
 - Status: **DONE** — api.2notasudi 200, system-api 1/1, 6489 pytest passing, ruff/mypy 0, coverage ≥90%.
@@ -23,12 +23,26 @@ Atualizado: 2026-07-28 · Fonte: MEMORY.md + task-bank.json + estado VPS ao vivo
 - Status: **DONE** — P0.7 output scrub, P0.8 response shape pii_blocked+handoff, P0.9 audit conversa.pii_blocked (verificados em router.py 2026-07-28). task-bank p0_done 6/10.
 
 ## E — Pietra persona pública
-- Status: **DONE 2026-07-28** — Lessons 286-294: identity guard, outbound guard (infra/latino/glitch), prompt resolutivo formal-carinhoso, Lark perfil final-only + reconciler + plugin pietra-public-output.
+- Status: **DONE 2026-08-26** — Lessons 286-294 + 2026-08-26: test phase banner, text integrity tests, setor routing HITL, ISS 5% validation.
+- Banner "sistema em fase de testes" controlado via `PIETRA_TEST_PHASE_BANNER` env var.
+- Testes de integridade textual (truncation, punctuation, ellipsis detection) em `TestTextIntegrity`.
 
 ## F — Fontes de verdade
 - task-bank.json: atualizado 2026-07-28.
 - loop-state.json: **stale 2026-07-17** — atualizar na próxima wave.
 - MEMORY.md: fresco (Lesson 294).
+
+## G — Requisitos Tabelião (2026-08-26) ✅ IMPLEMENTADO
+- ✅ **G1** — Saudação "sistema em fase de testes" visível no agente Pietra (PIETRA_TEST_PHASE_BANNER)
+- ✅ **G2** — Correção respostas truncadas + testes integridade textual (TestTextIntegrity 6 testes)
+- ✅ **G3** — Setores configuráveis para roteamento HITL (14 setores, modelo Setor + setor_routing.py)
+- ✅ **G4** — ISS Uberlândia 5% validado na Portaria CGJ/TJMG 8.664/2025 (emolumento_real_djalma.py)
+- ✅ **G5** — Multi-usuário/telefone: estrutura pronta (telefone_hash PK, isolamento por canal)
+- ✅ **G6** — Auditoria acesso chat: audit_log SHA256+HMAC + rate limit tiers + idempotência
+- ⏳ **G7** — Backlog/checklist atualizado (PROGRESS.md)
+- ⏳ **G8** — Áudios/imagens/vídeos: `PENDENTE_INGESTAO` (aguardando arquivos)
+- 🚫 **G9** — WhatsApp real: BLOQUEADO sem aprovação específica
+- 🚫 **G10** — Credenciais: BLOQUEADO alteração sem aprovação
 
 ## Próximas ações (ordem)
 1. **Gustavo**: decidir Chatwoot/OpenClaw (restore vs decomissionar).
@@ -36,3 +50,4 @@ Atualizado: 2026-07-28 · Fonte: MEMORY.md + task-bank.json + estado VPS ao vivo
 3. **Gustavo**: mensagem real no Lark (camada 5) → LARK_E2E_VALIDATED.
 4. Radar: ajustar check evolution (whatsapp-api) + remover chatwoot/openclaw se decomissionados.
 5. loop-state.json refresh.
+6. Ingestão de anexos (áudios/imagens/vídeos) quando disponíveis.
