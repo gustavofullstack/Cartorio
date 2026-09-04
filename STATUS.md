@@ -1,5 +1,43 @@
 # STATUS — Cartório OS (live)
 
+## 2026-09-04 22:20 BRT — RESTAURAÇÃO TOTAL HOSTINGER & SANEAMENTO OPERACIONAL (v0.6.1 LIVE + RADAR GREEN + QR WHATSAPP)
+
+**Estado:** `HOSTINGER_PROD_100_ONLINE` | Radar `GREEN` | Backend `v0.6.1` | WhatsApp `QR_GENERATED` (aguardando scan)
+
+**Ações Executadas e Evidências Reais:**
+1. **Deploy v0.6.1 na VPS Hostinger**:
+   - Easypanel acionado com o ambiente unificado e canônico (`cartorio_system-api`).
+   - Commit `cc25ee62` em produção.
+   - Endpoint `https://api.2notasudi.com.br/health` respondendo 200 OK com `{"status":"ok","service":"cartorio-backend","version":"0.6.1"}`.
+   - PR #247 (regras da serventia e correção de preços de emolumentos) ativo em produção.
+2. **Radar de Saúde 100% Verde**:
+   - `https://api.2notasudi.com.br/api/v1/health/radar` retorna `status: "green"` com todos os serviços ativos (database, redis, n8n, evolution, supabase) online e serviços descomissionados (openclaw, chatwoot) devidamente isolados sem falso alarme.
+3. **Saneamento de Loops Zumbis no Swarm**:
+   - Serviços legados `cartorio_api` e `vps_whoami` escalados para 0 réplicas. Cessado o loop contínuo de rejeição.
+4. **P0 Canal Mudo WhatsApp (Evolution API)**:
+   - Identificada e eliminada a causa raiz: chaves antigas de sessão Baileys no Redis causavam conflito `401 device_removed`, mantendo o status em falso-open e canal mudo há 18 dias.
+   - Tabela e Redis higienizados com backup preservado.
+   - Novo QR Code gerado em tempo real com sucesso para pareamento do número oficial (+55 34 9195-2444).
+
+---
+
+## 2026-09-04 — Auditoria Operacional Hostinger VPS (187.77.236.77 / Tailscale 100.99.172.84) **LIVE PASS**
+
+**Estado:** `HOSTINGER_PROD_ONLINE` | WhatsApp `OPEN` | DB 1ms | Redis 3ms | MiniMax-M3 200 OK | FastMCP 200 OK
+
+**Diagnóstico & Evidência Real:**
+- **VPS Hostinger**: Uptime de 40 dias ininterruptos, Tailscale ativo (`100.99.172.84`).
+- **Traefik 3.6.7**: SSL ativo e respondendo em 4 subdomínios canônicos (`api`, `flow`, `whatsapp`, `easypanel.2notasudi.com.br`).
+- **Postgres 17 (pgvector)**: 27 tabelas notariais íntegras, migration Alembic no `0032`, latência 1ms.
+- **Redis 8.8**: Cache operacional, latência 3ms.
+- **Evolution API (WhatsApp)**: Instância `cartorio-agent` pareada, sessão `OPEN`, `session_connected: true`.
+- **Hermes Agent (Lark)**: Conexão ativa via WebSocket, FastMCP server autenticado sob `/mcp/` com Bearer JWT.
+- **MiniMax M3 LLM**: Endpoint `/v1/models` responde HTTP 200 com a chave operacional.
+- **Saneamento de Radar**: Refatoradas sondas de `health_radar` e `health_integracoes` para não gerarem falso alarme com serviços aposentados (`chatwoot`/`openclaw` desligados em 27/07) e adicionado header Bearer na checagem de modelos LLM.
+- **Identificado Serviço Zumbi**: `cartorio_api` (0/1 réplicas) no Swarm em loop de rejeição contínuo tentando baixar imagem inexistente (`easypanel/cartorio/api:latest`) enquanto `cartorio_system-api` é o container ativo.
+
+---
+
 ## 2026-08-18 — INCIDENT 194 (Telegram LGPD Poll + atendimento parado) **P0 estabilização**
 
 **Estado:** `IN_PRODUCTION` (aguardando smoke real pós-deploy, critérios de aceite ainda em validação)

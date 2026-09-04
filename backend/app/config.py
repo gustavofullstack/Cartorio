@@ -15,7 +15,7 @@ Convencao: `Optional[T] = None` significa que o servico desabilita se nao setado
 from functools import lru_cache
 from typing import Literal, Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -58,8 +58,15 @@ class Settings(BaseSettings):
     redis_session_ttl_seconds: int = 86400  # 24h para sessoes WhatsApp
     # Chave dedicada para pseudonimos de conversa em chaves Redis. Vazio faz
     # o chat pipeline falhar fechado antes de persistir identificadores crus.
-    pietra_conversation_hmac_key: str = Field(default="", min_length=32)
+    pietra_conversation_hmac_key: str = ""
     pietra_conversation_hmac_kid: str = Field(default="v1", min_length=1, max_length=64)
+
+    @field_validator("pietra_conversation_hmac_key")
+    @classmethod
+    def _validate_pietra_hmac_key(cls, v: str) -> str:
+        if v and len(v.strip()) < 32:
+            raise ValueError("pietra_conversation_hmac_key must be at least 32 characters")
+        return v
 
     # ========================================================================
     # Audit log

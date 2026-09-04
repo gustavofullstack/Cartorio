@@ -43,7 +43,7 @@ Render (`cd.yml`) é caminho paralelo (free/Ohio) — útil para smoke externo, 
 | **CI** | push/PR → `ci.yml` | GitHub runners | **Ativo** — gates de qualidade |
 | **CD Render** | push `master` paths `backend/**` → `cd.yml` | Render service Ohio | **Ativo** (legado/staging) |
 | **Deploy VPS GHA** | push `master` / tag `v*` / manual → `deploy.yml` | SSH → VPS | **Parcial** — assume `git pull` + `docker compose` |
-| **EasyPanel rebuild** | UI Deploy / git hook / API | Swarm service `cartorio_api` etc. | **Canônico prod** |
+| **EasyPanel rebuild** | UI Deploy / git hook / API | Swarm service cartorio_system-api | **Canônico prod** |
 | **`scripts/deploy.sh`** | manual local | tag + push + (TODO) API EasyPanel | **Hook EasyPanel ainda TODO** |
 
 ### 1.2 EasyPanel — modelo de fonte
@@ -52,7 +52,7 @@ Serviços do projeto `cartorio` no painel:
 
 | Serviço Swarm | Imagem típica | Domínio |
 |---------------|---------------|---------|
-| `cartorio_api` | `easypanel/cartorio/api:…` ou build git | `api.2notasudi.com.br` |
+| cartorio_system-api | easypanel/cartorio/system-api:<tag> | api.2notasudi.com.br |
 | `cartorio_n8n` | `n8nio/n8n:1.94.x` | `flow.2notasudi.com.br` |
 | `cartorio_evolution-api` | `evolutionapi/evolution-api:v2.3.7` | `whatsapp.2notasudi.com.br` |
 | `cartorio_chatwoot` (+ sidekiq) | `chatwoot/chatwoot:v3.x` | `chat.2notasudi.com.br` |
@@ -90,7 +90,7 @@ Serviços do projeto `cartorio` no painel:
 2. make qa   # local, antes/depois
 3. https://easypanel.2notasudi.com.br
    → Project cartorio
-   → Service cartorio_api (ou outro)
+   → Service cartorio_system-api
    → Deploy / Redeploy
 4. Aguardar task Swarm 1/1
 5. Smoke + radar (§5)
@@ -102,16 +102,11 @@ Serviços do projeto `cartorio` no painel:
 # Host canônico Tailscale
 ssh root@100.99.172.84
 
-# Rebuild/restart sem trocar imagem
-docker service update --force cartorio_api
+# Preflight sem mutação
+infra/scripts/deploy_system_api.sh --check
 
-# Ou apontar imagem/tag explícita
-docker service update --image easypanel/cartorio/api:<tag> cartorio_api
-
-# Build local na VPS (quando o fluxo é build no host)
-# docker buildx build --platform linux/amd64 -f Dockerfile \
-#   -t easypanel/cartorio/api:$(git rev-parse --short HEAD) --load .
-# docker service update --image easypanel/cartorio/api:<sha> cartorio_api
+# Só após revisão e autorização explícita do rollout
+CARTORIO_DEPLOY_APPROVED=YES infra/scripts/deploy_system_api.sh --apply
 ```
 
 **Swarm host-mode (port conflict):** se o service publicar porta em modo `host`, fazer **scale 0 → 1**, nunca 1→1 direto (AGENTS.md).

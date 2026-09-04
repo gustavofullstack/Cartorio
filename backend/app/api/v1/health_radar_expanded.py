@@ -387,10 +387,16 @@ async def _check_health_category() -> dict[str, dict[str, Any]]:
             "detail": f"HTTP {response.status_code}; endpoint reachable but health is not confirmed",
         }
 
+    openclaw_url = settings.openclaw_base_url if settings.openclaw_enabled else None
+    chatwoot_url = (
+        settings.chatwoot_base_url
+        if (settings.chatwoot_webhook_enabled or settings.chatwoot_outbound_enabled)
+        else None
+    )
     probes = (
-        ("openclaw", settings.openclaw_base_url, "/health", (200,)),
+        ("openclaw", openclaw_url, "/health", (200,)),
         ("evolution", settings.evolution_base_url, "/", (200,)),
-        ("chatwoot", settings.chatwoot_base_url, "/health", (200, 201)),
+        ("chatwoot", chatwoot_url, "/health", (200, 201)),
         ("supabase", settings.supabase_url, "/rest/v1/", (200, 401)),
         ("n8n", settings.n8n_base_url, "/healthz", (200,)),
     )

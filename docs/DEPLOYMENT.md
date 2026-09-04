@@ -1,5 +1,13 @@
 # Deployment — Cartório Chatbot
 
+> **Estado reconciliado em 2026-09-04:** o backend público é
+> cartorio_system-api, não o legado cartorio_api. A imagem ativa é
+> easypanel/cartorio/system-api:<tag> e a fonte de build na VPS é
+> /etc/easypanel/projects/cartorio/system-api/code. Não execute os comandos
+> abaixo que citam cartorio_api: são histórico e podem apontar para uma imagem
+> inexistente. Use infra/scripts/deploy_system_api.sh --check; somente uma
+> autorização explícita deve usar o modo --apply.
+
 > Guia completo de deploy em Easypanel + Traefik + Tailscale.
 > Última atualização: 2026-06-24.
 

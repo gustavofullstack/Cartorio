@@ -1984,12 +1984,17 @@ async def health_integracoes() -> dict:
 
     async with httpx.AsyncClient(timeout=3.0) as client:
         # HTTP-based checks (paralelos)
-        checks_to_run = {
+        checks_to_run: dict[str, Any] = {
             "n8n": check("n8n", client.get(f"{settings.n8n_base_url}/healthz")),
-            "openclaw": check("openclaw", client.get(f"{settings.openclaw_base_url}/health")),
             "evolution": check("evolution", client.get(f"{settings.evolution_base_url}/")),
         }
-        if settings.chatwoot_base_url:
+        if settings.openclaw_enabled and settings.openclaw_base_url:
+            checks_to_run["openclaw"] = check(
+                "openclaw", client.get(f"{settings.openclaw_base_url}/health")
+            )
+        if (
+            settings.chatwoot_webhook_enabled or settings.chatwoot_outbound_enabled
+        ) and settings.chatwoot_base_url:
             checks_to_run["chatwoot"] = check(
                 "chatwoot", client.get(f"{settings.chatwoot_base_url}/health")
             )
@@ -1997,10 +2002,16 @@ async def health_integracoes() -> dict:
             checks_to_run["supabase"] = check(
                 "supabase", client.get(f"{settings.supabase_url}/rest/v1/")
             )
-        # OpenCode-Go LLM: usa endpoint /models se disponivel, senao root
+        # OpenCode-Go LLM: usa endpoint /models se disponivel, com auth header quando presente
         if settings.opencode_go_base_url:
+            llm_headers = (
+                {"Authorization": f"Bearer {settings.opencode_go_api_key}"}
+                if settings.opencode_go_api_key
+                else None
+            )
             checks_to_run["opencode_go"] = check(
-                "opencode_go", client.get(f"{settings.opencode_go_base_url}/models")
+                "opencode_go",
+                client.get(f"{settings.opencode_go_base_url}/models", headers=llm_headers),
             )
 
         # Sync checks (DB + Redis) - executa direto
