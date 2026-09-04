@@ -1879,11 +1879,17 @@ async def health_radar() -> dict:
             supabase_status,
         ) = await asyncio.gather(
             probe_http(client, f"{settings.n8n_base_url}/healthz", (200,)),
-            probe_http(client, f"{settings.openclaw_base_url}/health", (200,)),
+            probe_http(
+                client,
+                f"{settings.openclaw_base_url}/health" if settings.openclaw_enabled and settings.openclaw_base_url else None,
+                (200,),
+            ),
             probe_http(client, f"{settings.evolution_base_url}/", (200,)),
             probe_http(
                 client,
-                f"{settings.chatwoot_base_url}/health" if settings.chatwoot_base_url else None,
+                f"{settings.chatwoot_base_url}/health"
+                if (settings.chatwoot_webhook_enabled or settings.chatwoot_outbound_enabled) and settings.chatwoot_base_url
+                else None,
                 (200, 201),
             ),
             probe_http(
