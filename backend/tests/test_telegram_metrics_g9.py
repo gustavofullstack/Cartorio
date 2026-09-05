@@ -179,6 +179,7 @@ async def test_webhook_200_contabiliza_result(store_isolado: MetricsStore) -> No
     update = _private_text_update(7001, "quanto custa uma procuracao?")
     with (
         patch.object(tg, "get_bus", side_effect=ConnectionError("redis down")),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
@@ -213,6 +214,7 @@ async def test_webhook_401_contabiliza_result_e_auth_failure(
     # Com o token certo: passa e contabiliza 200 (Redis fora -> degraded ok)
     with (
         patch.object(tg, "get_bus", side_effect=ConnectionError("redis down")),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_call_cartorio_agent", new=AsyncMock(return_value=("Resposta", None))),
@@ -264,6 +266,7 @@ async def test_debounce_agendado_contabiliza(store_isolado: MetricsStore) -> Non
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
@@ -286,6 +289,7 @@ async def test_segunda_msg_na_janela_nao_agenda_novo_debounce(
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
@@ -374,6 +378,7 @@ async def test_fluxo_webhook_debounce_e2e_emite_todas_series(
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),
@@ -468,6 +473,7 @@ async def test_gate_lgpd_render_nao_contem_pii_apos_fluxo_completo(
     bt = BackgroundTasks()
     with (
         patch.object(tg, "get_bus", return_value=bus),
+        patch.object(tg, "_get_lgpd_consent", new=AsyncMock(return_value=True)),
         patch.object(tg, "_send_typing_fast", new=AsyncMock()),
         patch.object(tg, "_react", new=AsyncMock()),
         patch.object(tg, "_client_profile_upsert", new=AsyncMock()),

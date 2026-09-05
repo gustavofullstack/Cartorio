@@ -50,6 +50,24 @@
         "keepRecentTokens": 16384,
         "maxActiveTranscriptBytes": "200mb",
         "truncateAfterCompaction": true
+      },
+      "thinking": {
+        "enabled": "adaptive",
+        "max_thinking_tokens": 8000,
+        "triggers": {
+          "keywords": [
+            "calcular",
+            "validar",
+            "analisar",
+            "debug",
+            "LGPD",
+            "PII",
+            "erro",
+            "exception",
+            "handoff"
+          ],
+          "complexity_threshold": 0.7
+        }
       }
     }
   },
@@ -65,7 +83,7 @@
           {
             "id": "deepseek-v4-flash",
             "name": "deepseek-v4-flash",
-            "contextWindow": 131072
+            "contextWindow": 1048576
           },
           {
             "id": "anthropic-claude-sonnet-4.5",
@@ -101,7 +119,7 @@
   "meta": {
     "lastTouchedVersion": "2026.6.10",
     "lastTouchedAt": "2026-07-14T00:00:00.000Z",
-    "lastTouchBy": "URGENT LobeChat fix T5.1 — Modified by Gustavo Almeida"
+    "lastTouchBy": "URGENT LobeChat fix T5.1 \u2014 Modified by Gustavo Almeida"
   },
   "_t50_changes_2026-06-25": {
     "_comment": "Mudancas aplicadas via openclaw config patch --file /tmp/openclaw-t50-patch.json5 em 2026-06-25 02:48 BRT. 13 operations validadas contra schema + resolvability. Backup pre-T5.0: /home/node/.openclaw/openclaw.json.bak-pre-1m-think-20260625-054736 (md5=28ea7f3b823b7458b90cd010d970cce3).",
@@ -112,7 +130,7 @@
       "caveat_for_gustavo": "Se preferir outro modelo 1M+reasoning, edite o JSON ou use: openclaw config set agents.defaults.model 'openai/<outro>' --strict-json. Candidatos: deepseek-v4-pro (1M, reasoning, supportsReasoningEffort), mimo-v2.5-pro (1M, reasoning), qwen3.7-max (1M, thinkingFormat). anthropic-claude-opus-4-8 requer anthropic provider com API key Anthropic real (separada)."
     },
     "2_thinking_adaptive": {
-      "issue": "Briefing pediu thinking adaptativo. TENTATIVA ANTERIOR (2026-06-24 18:17) usou agents.defaults.thinking {enabled:adaptive,max_thinking_tokens:8000,triggers:...} — campo NAO EXISTE no schema, configuracao hallucinated.",
+      "issue": "Briefing pediu thinking adaptativo. TENTATIVA ANTERIOR (2026-06-24 18:17) usou agents.defaults.thinking {enabled:adaptive,max_thinking_tokens:8000,triggers:...} \u2014 campo NAO EXISTE no schema, configuracao hallucinated.",
       "fix_applied": "agents.defaults.thinkingDefault = 'adaptive' (campo VALIDO no schema, enum: off|minimal|low|medium|high|xhigh|adaptive|max). Controla reasoning effort global dos agents que herdam defaults.",
       "validation": "openclaw config get agents.defaults.thinkingDefault -> 'adaptive'"
     },
@@ -131,9 +149,9 @@
       "restart_needed": "Mensagem 'Restart the gateway to apply' apareceu MAS gateway continua respondendo 200 com novas configs (hot-reload pegou). Para garantir model picker use nova config, gateway restart manual opcional (escopo briefing = NAO fazer). Se Gustavo quiser restart: docker service update --force cartorio_openclaw-gateway (Easypanel) ou docker restart <container>."
     },
     "6_caveats": {
-      "agent_level_override": "agents/main/agent/agent.json AINDA tem model='minimax-m3' (NAO alterado — escopo briefing foi openclaw.json only). Para main agent usar qwen3.7-max, editar agent.json ou remover override. Reportado ao Pietra para decisao.",
+      "agent_level_override": "agents/main/agent/agent.json AINDA tem model='minimax-m3' (NAO alterado \u2014 escopo briefing foi openclaw.json only). Para main agent usar qwen3.7-max, editar agent.json ou remover override. Reportado ao Pietra para decisao.",
       "key_no_rotation": "sk-xcRwE... (QUEIMADA) NAO rotacionada. Nova chave: Gustavo em .env (NAO replicada para openclaw.json alem da ja existente).",
-      "anthropic_claude_opus_4_8": "NAO aplicado — modelo nao existe no catalogo opencode-go. Substituicao documentada (qwen3.7-max). Gustavo pode aprovar alternativa (deepseek-v4-pro, mimo-v2.5-pro, qwen3.7-max) ou injetar anthropic provider com API key real."
+      "anthropic_claude_opus_4_8": "NAO aplicado \u2014 modelo nao existe no catalogo opencode-go. Substituicao documentada (qwen3.7-max). Gustavo pode aprovar alternativa (deepseek-v4-pro, mimo-v2.5-pro, qwen3.7-max) ou injetar anthropic provider com API key real."
     }
   },
   "_t49_pendencies": {
@@ -142,7 +160,7 @@
       "issue": "agents/main/agent/agent.json tem provider='openai' mas model='minimax-m3' (que so existe em opencode-go). OpenClaw tenta api.openai.com/v1/responses e recebe 401.",
       "fix_suggested": "Alterar provider='opencode-go' em /home/node/.openclaw/agents/main/agent/agent.json (hot-reload nao pega agent.json, requer restart do agente ou recriar sessao)",
       "blocked_by": "aguarda decisao Gustavo + coordenacao com cartorio-dev para nao quebrar testes de integracao OpenCode-Go ja existentes no backend",
-      "status_2026_06_25": "AINDA PENDENTE — escopo T5.0 = openclaw.json only. agent.json NAO foi tocado."
+      "status_2026_06_25": "AINDA PENDENTE \u2014 escopo T5.0 = openclaw.json only. agent.json NAO foi tocado."
     },
     "2_env_var": {
       "issue": "OPENCODE_GO_API_KEY nao esta no env do container OpenClaw. Existe em /home/node/.openclaw/workspace/.env.production e em backend/.env.example (chave sk-***REDACTED-PURGED-2026-07-28***).",
@@ -164,23 +182,23 @@
   "_t51_changes_2026-07-14": {
     "_comment": "URGENT FIX LobeChat integration. Diagnostico live (curl da maquina local em 2026-07-14): OPTIONS preflight /v1/chat/completions retorna 405 com ACAO vazio (sem CORS handler). POST /v1/chat/completions com Bearer @Techno832466 retorna 408 em 2.37s com body 'upstream provider timeout'. Probe direto no upstream https://opencode.ai/zen/go/v1/models retorna 200 em 0.57s com a sk-***REDACTED-PURGED-2026-07-28***... = upstream OK, problema e default timeout do OpenClaw (~2.5s).",
     "1_cors_origins": {
-      "issue": "OPTIONS preflight nao retorna Access-Control-Allow-Origin para Origin: https://cartorio-lobechat.dfgdxq.easypanel.host. Sintoma: loke-chat browser aborta com 'CORS preflight channel didn't succeed' antes de chegar no POST. CAUSA: gateway.controlUi.allowedOrigins = ['*'] (wildcard para debug) mas para HTTP API endpoints, comportamento do OpenClaw 0.x/2026.6.10 e restritivo — nao emite ACAO/CORS headers em OPTIONS. Fix no snapshot: allowedOrigins explicito com origins do projeto.",
+      "issue": "OPTIONS preflight nao retorna Access-Control-Allow-Origin para Origin: https://cartorio-lobechat.dfgdxq.easypanel.host. Sintoma: loke-chat browser aborta com 'CORS preflight channel didn't succeed' antes de chegar no POST. CAUSA: gateway.controlUi.allowedOrigins = ['*'] (wildcard para debug) mas para HTTP API endpoints, comportamento do OpenClaw 0.x/2026.6.10 e restritivo \u2014 nao emite ACAO/CORS headers em OPTIONS. Fix no snapshot: allowedOrigins explicito com origins do projeto.",
       "fix_applied": "gateway.controlUi.allowedOrigins: ['*'] -> array com 8 origins explicitas (lobechat.dfgdxq + localhost:3210 + agent/admin/app.2notasudi + tauri://localhost).",
       "validation_pending_on_vps": "docker exec openclaw config get gateway.controlUi.allowedOrigins deve retornar 8 entries (nao '*'); curl -X OPTIONS -H 'Origin: https://cartorio-lobechat.dfgdxq.easypanel.host' -H 'Access-Control-Request-Method: POST' https://agent.2notasudi.com.br/v1/chat/completions deve retornar ACAO com a origin do request.",
       "rollback": "git checkout HEAD~1 -- infra/openclaw-agent/gateway-config-snapshot-t49.json (volta wildcard). Em prod, se o container ja foi patched, fazer cp /home/node/.openclaw/openclaw.json.bak-pre-t51-* /home/node/.openclaw/openclaw.json."
     },
     "2_upstream_timeout": {
-      "issue": "POST /v1/chat/completions retorna 408 upstream provider timeout em ~2.37s para TODOS os 3 models (deepseek-v4-flash, anthropic-claude-sonnet-4.5, qwen3.7-max). Opencode-go backend respondeu 200 OK em 0.57s no probe direto — upstream nao e o gargalo. OpenClaw aplica um timeout default muito curto em transport.upstream / models.providers.*.",
-      "fix_applied": "models.providers.openai.timeoutSeconds: (ausente/default ~2) -> 30 (30 segundos, nao 30000 ms — campo usa segundos em OpenClaw docs). Doc source: docs.openclaw.ai/gateway/configuration 'models.providers.<id>.timeoutSeconds'.",
+      "issue": "POST /v1/chat/completions retorna 408 upstream provider timeout em ~2.37s para TODOS os 3 models (deepseek-v4-flash, anthropic-claude-sonnet-4.5, qwen3.7-max). Opencode-go backend respondeu 200 OK em 0.57s no probe direto \u2014 upstream nao e o gargalo. OpenClaw aplica um timeout default muito curto em transport.upstream / models.providers.*.",
+      "fix_applied": "models.providers.openai.timeoutSeconds: (ausente/default ~2) -> 30 (30 segundos, nao 30000 ms \u2014 campo usa segundos em OpenClaw docs). Doc source: docs.openclaw.ai/gateway/configuration 'models.providers.<id>.timeoutSeconds'.",
       "validation_pending_on_vps": "openclaw config get models.providers.openai.timeoutSeconds -> 30; curl -X POST https://agent.2notasudi.com.br/v1/chat/completions -H 'Authorization: Bearer @Techno832466' -d '{\"model\":\"openclaw\",\"messages\":[{\"role\":\"user\",\"content\":\"oi\"}],\"max_tokens\":20}' nao retorna 408; resposta 200 com id=chatcmpl-xxx.",
       "rollback": "remover campo timeoutSeconds (deixa OpenClaw usar default)"
     },
     "3_alternative_paths_to_explore_if_snapshot_keys_reject": {
       "_comment": "Se openclaw config validate reclamar dos campos acima (schema estrito), os caminhos alternativos abaixo devem funcionar. Pedro/Pietra/Gustavo podem testar em SSH cartorio.",
-      "alt_gateway_http_cors": "gateway.http.cors.allowedOrigins = [mesmo array] — NAO documentado oficialmente mas pode existir. Validar com: openclaw config validate + openclaw config schema | grep -i cors.",
-      "alt_agent_upstream_timeout": "agents.defaults.transportTimeoutSeconds ou agents.defaults.requestTimeoutSeconds ou agents.defaults.upstreamTimeoutMs — testar cada um se timeoutSeconds em providers nao for reconhecido.",
-      "alt_via_traefik": "Adicionar Traefik middleware CORS no servico docker cartorio_openclaw-gateway: --label-add 'traefik.http.middlewares.cors-lobechat.headers.accesscontrolalloworigin=https://cartorio-lobechat.dfgdxq.easypanel.host,http://localhost:3210' --label-add 'traefik.http.routers.openclaw-cors.middlewares=cors-lobechat@docker'. Bypass completo do OpenClaw — funciona mesmo se OpenClaw nao tiver knob CORS.",
-      "alt_via_env_var": "OPENCLAW_HTTP_CORS_ALLOWED_ORIGINS=https://cartorio-lobechat.dfgdxq.easypanel.host,http://localhost:3210 OPENCLAW_UPSTREAM_TIMEOUT_SECONDS=30 — Testar como env override (OpenClaw le esses via dotenv). Adicionar via docker service update --env-add."
+      "alt_gateway_http_cors": "gateway.http.cors.allowedOrigins = [mesmo array] \u2014 NAO documentado oficialmente mas pode existir. Validar com: openclaw config validate + openclaw config schema | grep -i cors.",
+      "alt_agent_upstream_timeout": "agents.defaults.transportTimeoutSeconds ou agents.defaults.requestTimeoutSeconds ou agents.defaults.upstreamTimeoutMs \u2014 testar cada um se timeoutSeconds em providers nao for reconhecido.",
+      "alt_via_traefik": "Adicionar Traefik middleware CORS no servico docker cartorio_openclaw-gateway: --label-add 'traefik.http.middlewares.cors-lobechat.headers.accesscontrolalloworigin=https://cartorio-lobechat.dfgdxq.easypanel.host,http://localhost:3210' --label-add 'traefik.http.routers.openclaw-cors.middlewares=cors-lobechat@docker'. Bypass completo do OpenClaw \u2014 funciona mesmo se OpenClaw nao tiver knob CORS.",
+      "alt_via_env_var": "OPENCLAW_HTTP_CORS_ALLOWED_ORIGINS=https://cartorio-lobechat.dfgdxq.easypanel.host,http://localhost:3210 OPENCLAW_UPSTREAM_TIMEOUT_SECONDS=30 \u2014 Testar como env override (OpenClaw le esses via dotenv). Adicionar via docker service update --env-add."
     },
     "4_deploy_script_path": "infra/scripts/openclaw_fix_lobechat_cors_timeout.sh (gerado 2026-07-14, idempotente, faz patch + force-restart do servico cartorio_openclaw-gateway).",
     "5_validated": false,
