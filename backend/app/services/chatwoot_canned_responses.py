@@ -869,13 +869,14 @@ def get_by_tag(tag: str) -> tuple[CannedResponse, ...]:
     return tuple(cr for cr in CANNED_RESPONSES if tag in cr.tags)
 
 
+# O(1) dictionary index pre-computed on module load for fast case-insensitive lookups.
+# Replaces the previous O(N) linear array search, improving performance when resolving commands.
+_SHORT_CODE_INDEX = {cr.short_code.lower(): cr for cr in CANNED_RESPONSES}
+
+
 def get_by_short_code(short_code: str) -> CannedResponse | None:
     """Busca template por short_code (case-insensitive)."""
-    sc_lower = short_code.lower()
-    for cr in CANNED_RESPONSES:
-        if cr.short_code.lower() == sc_lower:
-            return cr
-    return None
+    return _SHORT_CODE_INDEX.get(short_code.lower())
 
 
 # Total: 51 templates (superando o requisito de 50+)
