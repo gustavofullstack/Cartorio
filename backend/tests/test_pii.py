@@ -653,6 +653,8 @@ def test_pii_pre_llm_rg_scrubbing():
 
     r = scrub("RG 12.345.678-9")
     assert "12.345.678-9" not in r.text
+    r = scrub("MG-12.345.678-9")
+    assert "MG-12.345.678-9" not in r.text
 
 
 def test_pii_pre_llm_cnh_scrubbing():

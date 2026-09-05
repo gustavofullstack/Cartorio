@@ -175,8 +175,11 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     # Diferenciado de CPF por ter 3 grupos em vez de 4.
     "pis": re.compile(r"\b\d{3}\.?\d{5}\.?\d{3}\b"),
     # 10. RG - 7-9 digitos + verificador (digito ou X). EXIGE pelo menos
-    # um ponto para nao colidir com CEP.
-    "rg": re.compile(r"\b\d{1,2}\.\d{3}\.?\d{3}-?[\dxX]\b"),
+    # um ponto para nao colidir com CEP. Suporta UF e SSP como prefixo (FB5).
+    "rg": re.compile(
+        r"\b(?:[A-Za-z]{2}[-\s]?|SSP[-\s]?[A-Za-z]{2}[-\s]?)?\d{1,2}\.\d{3}\.?\d{3}-?[\dxX]\b",
+        re.IGNORECASE,
+    ),
     # 11. TITULO_ELEITOR - 12 digitos com espacos opcionais (3 grupos de 4)
     "titulo_eleitor": re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b"),
     # 12. PHONE_BR - telefone brasileiro 10-11 digitos
