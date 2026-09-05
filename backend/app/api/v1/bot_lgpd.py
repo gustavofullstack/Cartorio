@@ -26,6 +26,7 @@ import logging
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from app.api.deps import require_cartorio_api_key
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
@@ -383,6 +384,7 @@ async def post_restaurar(
     ),
 )
 async def get_revogacoes(
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)],
     db: Annotated[Session, Depends(get_db)],
 ) -> RevogacoesListResponse:
     """T47: lista revogacoes pendentes para o cron job."""
@@ -400,6 +402,7 @@ async def get_revogacoes(
 )
 async def post_marcar_deletado(
     revogacao_id: str,
+    _api_key: Annotated[str, Depends(require_cartorio_api_key)],
     db: Annotated[Session, Depends(get_db)],
 ) -> RestaurarResponse:
     """T47: cron chama apos aplicar hard delete."""
