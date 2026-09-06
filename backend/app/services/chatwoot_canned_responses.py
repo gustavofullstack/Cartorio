@@ -859,6 +859,10 @@ CANNED_RESPONSES: tuple[CannedResponse, ...] = (
 )
 
 
+# Pre-computed index for O(1) lookups instead of O(N) array search
+_SHORT_CODE_INDEX = {cr.short_code.lower(): cr for cr in CANNED_RESPONSES}
+
+
 def get_all_short_codes() -> tuple[str, ...]:
     """Retorna todos os short codes (para validacao)."""
     return extract_short_codes(CANNED_RESPONSES)
@@ -871,11 +875,7 @@ def get_by_tag(tag: str) -> tuple[CannedResponse, ...]:
 
 def get_by_short_code(short_code: str) -> CannedResponse | None:
     """Busca template por short_code (case-insensitive)."""
-    sc_lower = short_code.lower()
-    for cr in CANNED_RESPONSES:
-        if cr.short_code.lower() == sc_lower:
-            return cr
-    return None
+    return _SHORT_CODE_INDEX.get(short_code.lower())
 
 
 # Total: 51 templates (superando o requisito de 50+)
