@@ -1,0 +1,3 @@
+## 2024-05-30 - Focus States & Dynamic Content Accessibility
+**Learning:** Custom interactive elements (buttons) and dynamically populated result containers (AI extraction output) in static HTML dashboards often lack proper focus states and ARIA attributes for screen readers.
+**Action:** When adding focus states to custom interactive elements in the UI, use a double `box-shadow` leveraging existing design tokens (e.g., `var(--bg-dark)` and `var(--primary-light)`) for high contrast, unless strictly operating under a 'no custom CSS' constraint. Additionally, ensure dynamically populated result containers (like AI extraction outputs) include `aria-live="polite"` for screen reader accessibility.
