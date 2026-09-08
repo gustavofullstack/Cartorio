@@ -34,8 +34,8 @@
   },
   "agents": {
     "defaults": {
-      "model": "openai/qwen3.7-max",
-      "thinkingDefault": "adaptive",
+      "model": "openai/deepseek-v4-flash",
+      "thinkingDefault": "enabled",
       "contextTokens": 1048576,
       "skills": [
         "cartorio-saudacoes",
@@ -65,7 +65,8 @@
           {
             "id": "deepseek-v4-flash",
             "name": "deepseek-v4-flash",
-            "contextWindow": 131072
+            "contextWindow": 1048576,
+            "reasoning": true
           },
           {
             "id": "anthropic-claude-sonnet-4.5",
