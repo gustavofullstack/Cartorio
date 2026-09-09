@@ -1,0 +1,3 @@
+## 2026-06-29 - Optimize static list lookups
+**Learning:** The codebase frequently uses statically defined lists of configurations (like `CANNED_RESPONSES` in `app/services/chatwoot_canned_responses.py`). Functions that query these lists by a unique key (like `get_by_short_code`) often default to O(N) linear array searches, which becomes a bottleneck as the lists grow and are queried frequently.
+**Action:** When optimizing lookups for static configuration lists in Python, pre-compute dictionary indices (`{key: value}`) on module load to replace O(N) linear array searches with O(1) lookups. This is a codebase-specific performance pattern to reuse across backend services.
