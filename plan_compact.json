@@ -1,0 +1,21 @@
+{
+  "project": "cartorio-v2",
+  "total_tasks": 100,
+  "squads": {
+    "A_CORE_API": [
+      {"id": "API-001", "desc": "Normalize all FastAPI endpoints"},
+      {"id": "API-002", "desc": "Refactor lgpd_relatorio.py"}
+    ],
+    "B_INTEGRATION": [
+      {"id": "INT-011", "desc": "Audit 35 N8N workflows"}
+    ],
+    "C_EVOLUTION_TELEGRAM": [
+      {"id": "EVO-021", "desc": "Rate limits on Evolution"}
+    ],
+    "D_AGENT_OPENCLAW": [
+      {"id": "OCL-031", "desc": "Fix fallback chains for DeepSeek"},
+      {"id": "OCL-032", "desc": "Audit system_prompt context"}
+    ]
+  },
+  "status": "pending_orchestration"
+}
