@@ -1,0 +1,8 @@
+{
+  "goal": "Fix OpenClaw gateway configuration and save user instructions",
+  "steps": [
+    {"action": "patch JSON", "file": "infra/openclaw-agent/gateway-config-snapshot-t49.json", "details": "set contextWindow to 1048576, reasoning to true for deepseek-v4-flash, and thinkingDefault to adaptive"},
+    {"action": "create file", "file": "prompts/prompt-cartorio.txt", "details": "Save user orchestration instructions"},
+    {"action": "verify", "details": "Run pytest for telegram and vps tests to ensure system stability"}
+  ]
+}
