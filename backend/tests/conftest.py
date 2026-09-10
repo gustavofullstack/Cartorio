@@ -8,7 +8,6 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 import pytest
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
