@@ -1,0 +1,161 @@
+{
+  "project": "Cartorio AI",
+  "version": "1.0",
+  "status": "planned",
+  "orchestration_limits": {
+    "max_concurrent_agents": 2,
+    "strategy": "sequential_or_pair"
+  },
+  "squads": [
+    {
+      "name": "Squad A: Infraestrutura e Deploy",
+      "tasks": [
+        "Atualizar/rotacionar chaves simuladas infra local",
+        "Monitorar health-check (cron)",
+        "Scripts backup PostgreSQL para S3",
+        "Otimizar Traefik caching",
+        "Pipeline staging -> prod (CI/CD)",
+        "Trivy scan CVEs docker",
+        "Atualizar uv.lock dependabot",
+        "Alertas Prometheus/Grafana latencia > 1s",
+        "Isolar Redis na Tailscale/Swarm",
+        "Otimizar workers N8N EasyPanel"
+      ]
+    },
+    {
+      "name": "Squad B: Banco de Dados e Supabase",
+      "tasks": [
+        "Implementar Row Level Security (RLS)",
+        "Supabase Webhooks API integration",
+        "Cron logs LGPD > 365 dias",
+        "Configurar Supabase GraphQL API no N8N",
+        "Filas Pgmq processing backend",
+        "Supabase Vault pra tokens PII",
+        "Query index optimizações",
+        "Otimizar pooler PgBouncer",
+        "Read-replicas HA",
+        "Views/Functions mapping DB"
+      ]
+    },
+    {
+      "name": "Squad C: API Backend",
+      "tasks": [
+        "Roles/scopes HMAC/API Keys",
+        "Benchmark MCP tools < 500ms",
+        "Swagger Docs Openapi refresh",
+        "Endpoints reports/stats",
+        "Lookups O(1) in-memory lists",
+        "100% _get_lgpd_consent nas tools",
+        "Reduzir deps pyproject.toml",
+        "Rate Limits IP+User-Agent",
+        "Ruff format global checks",
+        "Unit tests PII Mocks coverage"
+      ]
+    },
+    {
+      "name": "Squad D: Integração N8N",
+      "tasks": [
+        "Tokens env var no N8N workflow",
+        "E2E test 34 workflows N8N mock payloads",
+        "Error nodes/Dead-letter N8N",
+        "Docs markdown N8N nodes",
+        "Ajustar webhook timeouts 30s limit",
+        "Scripts Import/Export N8N",
+        "Reduzir nodes delegando ao backend",
+        "Regex filter nodes pré-LLM",
+        "Fallback min/max N8N test",
+        "Roteamento HITL rules fix"
+      ]
+    },
+    {
+      "name": "Squad E: OpenClaw e Modelos AI",
+      "tasks": [
+        "Test thinkings deep complex prompts",
+        "Refinar SOUL.md sem emojis e resolutivo",
+        "Hardcoded limit remove pra outros llms",
+        "Auditar latency deepseek flash",
+        "Limpar AGENTS.md obsolete limits",
+        "Test Handoff command /humano",
+        "Test prompt caching LLM",
+        "Analise pydantic schema LLM output json",
+        "Test sessions limits long running",
+        "Hooks pre/post response checks"
+      ]
+    },
+    {
+      "name": "Squad F: Chatwoot e CRM",
+      "tasks": [
+        "Triggers urgência automáticos",
+        "Refine human/bot handoff control",
+        "Painel manager view queues",
+        "API Chatwoot clean archive > year",
+        "Dynamic Labels on tickets",
+        "Chatwoot Inbox limit checks",
+        "NPS integracao pós handoff widget",
+        "Sidekiq redis queues tuning",
+        "Retry mechanism webhook events",
+        "Draft protocol UI chatwoot test"
+      ]
+    },
+    {
+      "name": "Squad G: Evolution API",
+      "tasks": [
+        "Webhooks SLA < 1s checks",
+        "Auto-read receipt WABA",
+        "Failsafe retry network down",
+        "WABA templates / medias test",
+        "Traefik rate-limits WABA requests",
+        "Sync Profile cache in-memory",
+        "Test suite evolution e2e",
+        "Fix erratic status callbacks",
+        "Timeout connections confs evolution",
+        "LGPD deleta/ignora messages logic fix"
+      ]
+    },
+    {
+      "name": "Squad H: LGPD, Segurança e Auditoria",
+      "tasks": [
+        "Regex CPF PII edge cases",
+        "HMAC constant timing comparisons",
+        "Retention policy logs > 1825 dias test",
+        "Sanitize HTML/MD reports generated",
+        "Endpoints auth required check",
+        "Refactor JWT ed25519 (optional)",
+        "Secrets scan gitleaks pre-commits",
+        "Pentest traefik open ports",
+        "Consent gate edge case bypass test",
+        "Audit service ban logic brute force"
+      ]
+    },
+    {
+      "name": "Squad I: Documentação e Conhecimento",
+      "tasks": [
+        "Docs completas N8N",
+        "Docs completas Supabase DB/RLS",
+        "Docs completas Chatwoot",
+        "Docs completas Evolution WABA",
+        "Docs Markdown PII Scrubber details",
+        "Arquitetura UML Diagram Generation",
+        "MCP Python comments docs",
+        "AGENTS.md rules copy every path",
+        "Organizar .brain categories memory",
+        "Plano incidentes offline guides"
+      ]
+    },
+    {
+      "name": "Squad J: Interface, Frontend e Playwright",
+      "tasks": [
+        "Validar Playwright frontend dashboard tests",
+        "Focus states double box-shadow UI",
+        "Aria-live attributes pra outputs dash",
+        "CSS custom properties variáveis dash",
+        "PII placeholders render test",
+        "Mobile resolutions dashboard dash",
+        "WebP optimize static assets",
+        "Docs for internal dashboard dash",
+        "Toast visual feedbacks UX dash",
+        "Dark mode prefers color scheme integration"
+      ]
+    }
+  ]
+}
