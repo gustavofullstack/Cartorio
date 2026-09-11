@@ -65,7 +65,7 @@
           {
             "id": "deepseek-v4-flash",
             "name": "deepseek-v4-flash",
-            "contextWindow": 131072
+            "contextWindow": 1048576
           },
           {
             "id": "anthropic-claude-sonnet-4.5",
