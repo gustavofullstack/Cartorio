@@ -29,6 +29,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_cartorio_api_key
 from app.config import settings
 from app.db import get_db
 
@@ -74,6 +75,7 @@ def fetch_n8n_executions(
 def prometheus_metrics(
     hours: int = Query(default=24, ge=1, le=168, description="Janela em horas"),
     db: Session = Depends(get_db),  # noqa: ARG001
+    _api_key: str = Depends(require_cartorio_api_key),
 ) -> str:
     """Endpoint scrape-friendly para Prometheus."""
     api_key = settings.n8n_api_key
@@ -145,6 +147,7 @@ def prometheus_metrics(
 def summary_metrics(
     hours: int = Query(default=24, ge=1, le=168),
     db: Session = Depends(get_db),  # noqa: ARG001
+    _api_key: str = Depends(require_cartorio_api_key),
 ) -> dict[str, Any]:
     """Retorna summary JSON com top WFs e agregacoes."""
     api_key = settings.n8n_api_key
