@@ -87,7 +87,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_DIR = REPO_ROOT / "backend"
 DEFAULT_BASELINE = BACKEND_DIR / "scripts" / "check_no_literal_keys.baseline"
 
-OPTOUT_MARKER = "# ALLOW_KEY_FALLBACK"
+OPTOUT_MARKER = "# noqa: ALLOW_KEY_FALLBACK"
 
 # Diretorias ignoradas (vendor / caches / build artifacts).
 SKIP_DIRS = frozenset(
@@ -787,7 +787,7 @@ def main(argv: list[str] | None = None) -> int:
         print("  1. Rotacione a chave (URGENTE — LGPD Art. 46).")
         print("  2. Mova pra .env / vault / secret manager.")
         print("  3. Em ultimo caso, marque a linha com:")
-        print("     # ALLOW_KEY_FALLBACK  (motivo: ...)")
+        print("     # noqa: ALLOW_KEY_FALLBACK  (motivo: ...)")
         print("  4. Ou adicione fingerprint ao baseline (FP whitelist):")
         print(f"     echo '<path>:<lineno>:<rule>' >> {args.baseline}")
         return 1
