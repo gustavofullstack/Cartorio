@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text as sa_text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -146,6 +146,10 @@ def db_session(monkeypatch) -> Iterator[Session]:
         poolclass=StaticPool,
     )
     Base.metadata.create_all(eng)
+    with eng.connect() as conn:
+        conn.execute(sa_text('CREATE TABLE IF NOT EXISTS atendimentos_v2 (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER, telefone_hash TEXT, canal TEXT, tipo TEXT, status TEXT, dados_coletados JSON, dados_pendentes JSON, protocolo_id INTEGER, agendamento_id INTEGER, observacoes TEXT, criado_em TIMESTAMP, atualizado_em TIMESTAMP)'))
+        conn.execute(sa_text('CREATE TABLE IF NOT EXISTS memoria_conversa (id INTEGER PRIMARY KEY AUTOINCREMENT, telefone_hash TEXT, session_id TEXT, canal TEXT, role TEXT, content TEXT, metadata_json JSON, created_at TIMESTAMP, updated_at TIMESTAMP)'))
+        conn.execute(sa_text('CREATE TABLE IF NOT EXISTS historico_atendimento (id TEXT PRIMARY KEY, cliente_id INTEGER, session_id TEXT, message_content TEXT, source TEXT, tokens_input INTEGER, tokens_output INTEGER, context_window INTEGER, created_at TIMESTAMP, deleted_at TIMESTAMP)'))
     SessionLocal = sessionmaker(bind=eng, autoflush=False, autocommit=False, expire_on_commit=False)
     session = SessionLocal()
     # Redireciona a engine global para a engine deste teste
@@ -199,6 +203,10 @@ def _patch_db_session_for_all_tests():
         poolclass=StaticPool,
     )
     Base.metadata.create_all(eng)
+    with eng.connect() as conn:
+        conn.execute(sa_text('CREATE TABLE IF NOT EXISTS atendimentos_v2 (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER, telefone_hash TEXT, canal TEXT, tipo TEXT, status TEXT, dados_coletados JSON, dados_pendentes JSON, protocolo_id INTEGER, agendamento_id INTEGER, observacoes TEXT, criado_em TIMESTAMP, atualizado_em TIMESTAMP)'))
+        conn.execute(sa_text('CREATE TABLE IF NOT EXISTS memoria_conversa (id INTEGER PRIMARY KEY AUTOINCREMENT, telefone_hash TEXT, session_id TEXT, canal TEXT, role TEXT, content TEXT, metadata_json JSON, created_at TIMESTAMP, updated_at TIMESTAMP)'))
+        conn.execute(sa_text('CREATE TABLE IF NOT EXISTS historico_atendimento (id TEXT PRIMARY KEY, cliente_id INTEGER, session_id TEXT, message_content TEXT, source TEXT, tokens_input INTEGER, tokens_output INTEGER, context_window INTEGER, created_at TIMESTAMP, deleted_at TIMESTAMP)'))
     NewSL = sessionmaker(bind=eng, autoflush=False, autocommit=False, expire_on_commit=False)
 
     # Substituir os objetos no modulo app.db
