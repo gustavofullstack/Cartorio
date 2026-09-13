@@ -18,6 +18,7 @@ Padrao:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hmac
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -40,7 +41,7 @@ lgpd_router = APIRouter()
 def _require_api_key(request: Request) -> str:
     """Valida X-API-Key. Retorna a key para uso no audit log."""
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.cartorio_api_key):
         raise HTTPException(
             status_code=401,
             detail={
