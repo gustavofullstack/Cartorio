@@ -28,25 +28,18 @@ fi
 
 # 2. Mostrar config ANTES
 echo "$LOG_PREFIX --- Config ANTES ---"
-docker exec "$OPENCLAW_CONTAINER" openclaw config get max_context_tokens 2>/dev/null || echo "max_context_tokens: NAO DEFINIDO"
-docker exec "$OPENCLAW_CONTAINER" openclaw config get max_output_tokens 2>/dev/null || echo "max_output_tokens: NAO DEFINIDO"
-docker exec "$OPENCLAW_CONTAINER" openclaw config get agent.thinking.enabled 2>/dev/null || echo "agent.thinking.enabled: NAO DEFINIDO"
+docker exec "$OPENCLAW_CONTAINER" openclaw config get agents.defaults.contextTokens 2>/dev/null || echo "agents.defaults.contextTokens: NAO DEFINIDO"
+docker exec "$OPENCLAW_CONTAINER" openclaw config get agents.defaults.thinkingDefault 2>/dev/null || echo "agents.defaults.thinkingDefault: NAO DEFINIDO"
 
 # 3. Aplicar config
 echo "$LOG_PREFIX --- Aplicando config 1M + adaptive ---"
-docker exec "$OPENCLAW_CONTAINER" openclaw config set max_context_tokens 1000000
-docker exec "$OPENCLAW_CONTAINER" openclaw config set max_output_tokens 8192
-docker exec "$OPENCLAW_CONTAINER" openclaw config set agent.thinking.enabled adaptive
-docker exec "$OPENCLAW_CONTAINER" openclaw config set agent.thinking.max_thinking_tokens 8000
-docker exec "$OPENCLAW_CONTAINER" openclaw config set agent.thinking.triggers.keywords '["calcular","validar","analisar","debug","LGPD","PII","erro","exception","handoff"]'
-docker exec "$OPENCLAW_CONTAINER" openclaw config set agent.thinking.triggers.complexity_threshold 0.7
+docker exec "$OPENCLAW_CONTAINER" openclaw config set agents.defaults.contextTokens 1048576
+docker exec "$OPENCLAW_CONTAINER" openclaw config set agents.defaults.thinkingDefault adaptive
 
 # 4. Mostrar config DEPOIS
 echo "$LOG_PREFIX --- Config DEPOIS ---"
-docker exec "$OPENCLAW_CONTAINER" openclaw config get max_context_tokens
-docker exec "$OPENCLAW_CONTAINER" openclaw config get max_output_tokens
-docker exec "$OPENCLAW_CONTAINER" openclaw config get agent.thinking.enabled
-docker exec "$OPENCLAW_CONTAINER" openclaw config get agent.thinking.max_thinking_tokens
+docker exec "$OPENCLAW_CONTAINER" openclaw config get agents.defaults.contextTokens
+docker exec "$OPENCLAW_CONTAINER" openclaw config get agents.defaults.thinkingDefault
 
 # 5. Validar health
 echo "$LOG_PREFIX --- Validando /health ---"
