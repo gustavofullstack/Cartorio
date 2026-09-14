@@ -62,7 +62,7 @@
           "parameters": [
             {
               "name": "X-API-Key",
-              "value": "cartorio-api-shared-secret-v1"
+              "value": "={{ $env.CARTORIO_API_KEY }}"
             },
             {
               "name": "X-Correlation-ID",
