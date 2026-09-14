@@ -37,6 +37,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, ConfigDict, Field  # noqa: F401  (usado nos schemas abaixo)
 
 from app.config import settings
+
 from app.db import get_db, session_scope
 from app.models.cliente import Cliente
 from app.models.protocolo import Protocolo
@@ -73,6 +74,8 @@ from app.services.audit_query import get_audit_log_by_id, list_audit_logs
 from app.services.emolumento import TIPOS_VALIDOS, calcular as calcular_emolumento_svc
 from app.services.pii import hash_pii, scrub
 from app.services.protocolo_query import buscar_protocolo_por_numero
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -3148,8 +3151,8 @@ async def webhook_chatwoot(request: Request) -> dict:
                     payload={"body_size": len(raw_body)},
                     **audit_kwargs(request),
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Falha ao gravar audit log: %s", e)
         return {"status": "rejected", "reason": "invalid_json"}
 
     with session_scope() as db:
