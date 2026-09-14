@@ -198,6 +198,7 @@ jobs:
       AUDIT_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  # noqa: ALLOW_KEY_FALLBACK (motivo: valor sintetico CI-only, nao rotacionavel)
       CARTORIO_API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb  # noqa: ALLOW_KEY_FALLBACK (motivo: valor sintetico CI-only, nao rotacionavel)
       PIETRA_CONVERSATION_HMAC_KEY: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc  # noqa: ALLOW_KEY_FALLBACK (motivo: valor sintetico CI-only, nao rotacionavel)
+      BRAIN_API_ENABLED: "1"  # Fix for missing paths in openapi snapshot
 
     steps:
       - name: Checkout
