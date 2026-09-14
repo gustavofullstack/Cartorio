@@ -67,6 +67,16 @@ def get_openapi_spec() -> dict:
     print("Generating OpenAPI spec from app.main:app ...", file=sys.stderr)
     env = os.environ.copy()
     env.setdefault("APP_ENV", "development")
+    env.setdefault("BRAIN_API_ENABLED", "1")
+    env.setdefault("LLM_DEFAULT_PROVIDER", "opencode_go")
+    env.setdefault("AUDIT_HMAC_KEY", "a" * 64)
+    env.setdefault("CARTORIO_API_KEY", "a" * 64)
+    env.setdefault("PIETRA_CONVERSATION_HMAC_KEY", "a" * 64)
+    env.setdefault("BRAIN_API_ENABLED", "1")
+    env.setdefault("LLM_DEFAULT_PROVIDER", "opencode_go")
+    env.setdefault("AUDIT_HMAC_KEY", "a" * 64)
+    env.setdefault("CARTORIO_API_KEY", "a" * 64)
+    env.setdefault("PIETRA_CONVERSATION_HMAC_KEY", "a" * 64)
     result = subprocess.run(
         [
             "uv", "run", "python", "-c",
