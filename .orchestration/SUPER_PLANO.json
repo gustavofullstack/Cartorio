@@ -1,0 +1,702 @@
+[
+  {
+    "id": 1,
+    "category": "API",
+    "title": "API Core Optimization 1",
+    "description": "Refactor and optimize core API endpoint 1 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 2,
+    "category": "API",
+    "title": "API Core Optimization 2",
+    "description": "Refactor and optimize core API endpoint 2 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 3,
+    "category": "API",
+    "title": "API Core Optimization 3",
+    "description": "Refactor and optimize core API endpoint 3 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 4,
+    "category": "API",
+    "title": "API Core Optimization 4",
+    "description": "Refactor and optimize core API endpoint 4 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 5,
+    "category": "API",
+    "title": "API Core Optimization 5",
+    "description": "Refactor and optimize core API endpoint 5 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 6,
+    "category": "API",
+    "title": "API Core Optimization 6",
+    "description": "Refactor and optimize core API endpoint 6 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 7,
+    "category": "API",
+    "title": "API Core Optimization 7",
+    "description": "Refactor and optimize core API endpoint 7 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 8,
+    "category": "API",
+    "title": "API Core Optimization 8",
+    "description": "Refactor and optimize core API endpoint 8 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 9,
+    "category": "API",
+    "title": "API Core Optimization 9",
+    "description": "Refactor and optimize core API endpoint 9 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 10,
+    "category": "API",
+    "title": "API Core Optimization 10",
+    "description": "Refactor and optimize core API endpoint 10 to ensure high performance, add detailed logging, and enforce strict typing.",
+    "status": "pending"
+  },
+  {
+    "id": 11,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 1",
+    "description": "Review and test N8N workflow 1, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 12,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 2",
+    "description": "Review and test N8N workflow 2, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 13,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 3",
+    "description": "Review and test N8N workflow 3, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 14,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 4",
+    "description": "Review and test N8N workflow 4, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 15,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 5",
+    "description": "Review and test N8N workflow 5, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 16,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 6",
+    "description": "Review and test N8N workflow 6, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 17,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 7",
+    "description": "Review and test N8N workflow 7, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 18,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 8",
+    "description": "Review and test N8N workflow 8, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 19,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 9",
+    "description": "Review and test N8N workflow 9, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 20,
+    "category": "N8N",
+    "title": "N8N Workflow Integration 10",
+    "description": "Review and test N8N workflow 10, ensuring robust error handling, proper retries, and seamless integration with the API and Chatwoot.",
+    "status": "pending"
+  },
+  {
+    "id": 21,
+    "category": "Supabase",
+    "title": "Supabase Integration: API",
+    "description": "Fully configure and integrate the Supabase API feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 22,
+    "category": "Supabase",
+    "title": "Supabase Integration: MCP",
+    "description": "Fully configure and integrate the Supabase MCP feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 23,
+    "category": "Supabase",
+    "title": "Supabase Integration: Cron",
+    "description": "Fully configure and integrate the Supabase Cron feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 24,
+    "category": "Supabase",
+    "title": "Supabase Integration: Database Webhooks",
+    "description": "Fully configure and integrate the Supabase Database Webhooks feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 25,
+    "category": "Supabase",
+    "title": "Supabase Integration: GraphQL",
+    "description": "Fully configure and integrate the Supabase GraphQL feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 26,
+    "category": "Supabase",
+    "title": "Supabase Integration: Queues",
+    "description": "Fully configure and integrate the Supabase Queues feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 27,
+    "category": "Supabase",
+    "title": "Supabase Integration: Vault",
+    "description": "Fully configure and integrate the Supabase Vault feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 28,
+    "category": "Supabase",
+    "title": "Supabase Integration: RLS Policies",
+    "description": "Fully configure and integrate the Supabase RLS Policies feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 29,
+    "category": "Supabase",
+    "title": "Supabase Integration: Edge Functions",
+    "description": "Fully configure and integrate the Supabase Edge Functions feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 30,
+    "category": "Supabase",
+    "title": "Supabase Integration: Storage",
+    "description": "Fully configure and integrate the Supabase Storage feature, ensuring it is centralized and connected with the API and N8N.",
+    "status": "pending"
+  },
+  {
+    "id": 31,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 1",
+    "description": "Implement and optimize Redis caching strategy 1 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 32,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 2",
+    "description": "Implement and optimize Redis caching strategy 2 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 33,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 3",
+    "description": "Implement and optimize Redis caching strategy 3 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 34,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 4",
+    "description": "Implement and optimize Redis caching strategy 4 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 35,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 5",
+    "description": "Implement and optimize Redis caching strategy 5 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 36,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 6",
+    "description": "Implement and optimize Redis caching strategy 6 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 37,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 7",
+    "description": "Implement and optimize Redis caching strategy 7 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 38,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 8",
+    "description": "Implement and optimize Redis caching strategy 8 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 39,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 9",
+    "description": "Implement and optimize Redis caching strategy 9 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 40,
+    "category": "Redis",
+    "title": "Redis Fast Memory Layer 10",
+    "description": "Implement and optimize Redis caching strategy 10 for session data, reducing latency between Supabase and the API.",
+    "status": "pending"
+  },
+  {
+    "id": 41,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 1",
+    "description": "Enhance Chatwoot integration 1, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 42,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 2",
+    "description": "Enhance Chatwoot integration 2, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 43,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 3",
+    "description": "Enhance Chatwoot integration 3, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 44,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 4",
+    "description": "Enhance Chatwoot integration 4, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 45,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 5",
+    "description": "Enhance Chatwoot integration 5, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 46,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 6",
+    "description": "Enhance Chatwoot integration 6, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 47,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 7",
+    "description": "Enhance Chatwoot integration 7, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 48,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 8",
+    "description": "Enhance Chatwoot integration 8, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 49,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 9",
+    "description": "Enhance Chatwoot integration 9, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 50,
+    "category": "Chatwoot",
+    "title": "Chatwoot CRM Optimization 10",
+    "description": "Enhance Chatwoot integration 10, configuring automated handoffs, tag management, and custom attributes for the AI agent.",
+    "status": "pending"
+  },
+  {
+    "id": 51,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 1",
+    "description": "Test and stabilize Evolution API WhatsApp connection 1, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 52,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 2",
+    "description": "Test and stabilize Evolution API WhatsApp connection 2, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 53,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 3",
+    "description": "Test and stabilize Evolution API WhatsApp connection 3, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 54,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 4",
+    "description": "Test and stabilize Evolution API WhatsApp connection 4, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 55,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 5",
+    "description": "Test and stabilize Evolution API WhatsApp connection 5, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 56,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 6",
+    "description": "Test and stabilize Evolution API WhatsApp connection 6, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 57,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 7",
+    "description": "Test and stabilize Evolution API WhatsApp connection 7, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 58,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 8",
+    "description": "Test and stabilize Evolution API WhatsApp connection 8, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 59,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 9",
+    "description": "Test and stabilize Evolution API WhatsApp connection 9, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 60,
+    "category": "Evolution-API",
+    "title": "Evolution API Messaging 10",
+    "description": "Test and stabilize Evolution API WhatsApp connection 10, handling webhooks correctly and forwarding to the API/N8N securely.",
+    "status": "pending"
+  },
+  {
+    "id": 61,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 1",
+    "description": "Improve OpenClaw Agent configuration 1, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 62,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 2",
+    "description": "Improve OpenClaw Agent configuration 2, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 63,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 3",
+    "description": "Improve OpenClaw Agent configuration 3, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 64,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 4",
+    "description": "Improve OpenClaw Agent configuration 4, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 65,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 5",
+    "description": "Improve OpenClaw Agent configuration 5, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 66,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 6",
+    "description": "Improve OpenClaw Agent configuration 6, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 67,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 7",
+    "description": "Improve OpenClaw Agent configuration 7, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 68,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 8",
+    "description": "Improve OpenClaw Agent configuration 8, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 69,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 9",
+    "description": "Improve OpenClaw Agent configuration 9, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 70,
+    "category": "OpenClaw",
+    "title": "OpenClaw Agent Refinement 10",
+    "description": "Improve OpenClaw Agent configuration 10, adjusting system prompts to be direct/serious, and fine-tuning tool definitions.",
+    "status": "pending"
+  },
+  {
+    "id": 71,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 1",
+    "description": "Write and execute comprehensive unit and E2E tests for module 1, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 72,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 2",
+    "description": "Write and execute comprehensive unit and E2E tests for module 2, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 73,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 3",
+    "description": "Write and execute comprehensive unit and E2E tests for module 3, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 74,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 4",
+    "description": "Write and execute comprehensive unit and E2E tests for module 4, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 75,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 5",
+    "description": "Write and execute comprehensive unit and E2E tests for module 5, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 76,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 6",
+    "description": "Write and execute comprehensive unit and E2E tests for module 6, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 77,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 7",
+    "description": "Write and execute comprehensive unit and E2E tests for module 7, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 78,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 8",
+    "description": "Write and execute comprehensive unit and E2E tests for module 8, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 79,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 9",
+    "description": "Write and execute comprehensive unit and E2E tests for module 9, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 80,
+    "category": "Tests",
+    "title": "Test Coverage Expansion 10",
+    "description": "Write and execute comprehensive unit and E2E tests for module 10, ensuring no regressions in the CI/CD pipeline.",
+    "status": "pending"
+  },
+  {
+    "id": 81,
+    "category": "Security",
+    "title": "Security Audit & Fix 1",
+    "description": "Perform deep security audit 1 on endpoints, preventing timing attacks and ensuring secure payload parsing.",
+    "status": "pending"
+  },
+  {
+    "id": 82,
+    "category": "Security",
+    "title": "Security Audit & Fix 2",
+    "description": "Perform deep security audit 2 on endpoints, preventing timing attacks and ensuring secure payload parsing.",
+    "status": "pending"
+  },
+  {
+    "id": 83,
+    "category": "Security",
+    "title": "Security Audit & Fix 3",
+    "description": "Perform deep security audit 3 on endpoints, preventing timing attacks and ensuring secure payload parsing.",
+    "status": "pending"
+  },
+  {
+    "id": 84,
+    "category": "Security",
+    "title": "Security Audit & Fix 4",
+    "description": "Perform deep security audit 4 on endpoints, preventing timing attacks and ensuring secure payload parsing.",
+    "status": "pending"
+  },
+  {
+    "id": 85,
+    "category": "Security",
+    "title": "Security Audit & Fix 5",
+    "description": "Perform deep security audit 5 on endpoints, preventing timing attacks and ensuring secure payload parsing.",
+    "status": "pending"
+  },
+  {
+    "id": 86,
+    "category": "Performance",
+    "title": "Performance Tuning 1",
+    "description": "Analyze and resolve performance bottlenecks 1 in backend queries, utilizing proper SQLAlchemy count methods.",
+    "status": "pending"
+  },
+  {
+    "id": 87,
+    "category": "Performance",
+    "title": "Performance Tuning 2",
+    "description": "Analyze and resolve performance bottlenecks 2 in backend queries, utilizing proper SQLAlchemy count methods.",
+    "status": "pending"
+  },
+  {
+    "id": 88,
+    "category": "Performance",
+    "title": "Performance Tuning 3",
+    "description": "Analyze and resolve performance bottlenecks 3 in backend queries, utilizing proper SQLAlchemy count methods.",
+    "status": "pending"
+  },
+  {
+    "id": 89,
+    "category": "Performance",
+    "title": "Performance Tuning 4",
+    "description": "Analyze and resolve performance bottlenecks 4 in backend queries, utilizing proper SQLAlchemy count methods.",
+    "status": "pending"
+  },
+  {
+    "id": 90,
+    "category": "Performance",
+    "title": "Performance Tuning 5",
+    "description": "Analyze and resolve performance bottlenecks 5 in backend queries, utilizing proper SQLAlchemy count methods.",
+    "status": "pending"
+  },
+  {
+    "id": 91,
+    "category": "Docs",
+    "title": "System Documentation 1",
+    "description": "Update system documentation 1, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 92,
+    "category": "Docs",
+    "title": "System Documentation 2",
+    "description": "Update system documentation 2, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 93,
+    "category": "Docs",
+    "title": "System Documentation 3",
+    "description": "Update system documentation 3, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 94,
+    "category": "Docs",
+    "title": "System Documentation 4",
+    "description": "Update system documentation 4, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 95,
+    "category": "Docs",
+    "title": "System Documentation 5",
+    "description": "Update system documentation 5, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 96,
+    "category": "Docs",
+    "title": "System Documentation 6",
+    "description": "Update system documentation 6, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 97,
+    "category": "Docs",
+    "title": "System Documentation 7",
+    "description": "Update system documentation 7, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 98,
+    "category": "Docs",
+    "title": "System Documentation 8",
+    "description": "Update system documentation 8, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 99,
+    "category": "Docs",
+    "title": "System Documentation 9",
+    "description": "Update system documentation 9, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  },
+  {
+    "id": 100,
+    "category": "Docs",
+    "title": "System Documentation 10",
+    "description": "Update system documentation 10, maintaining the architecture context, memory files, and API usage guides.",
+    "status": "pending"
+  }
+]
