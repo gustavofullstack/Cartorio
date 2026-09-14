@@ -1,0 +1,3 @@
+## 2024-11-20 - O(1) Indexing for Static Lookup Tables
+**Learning:** For static lists containing predefined configuration (like `CANNED_RESPONSES` which holds 50+ templates), a linear search (`O(N)`) in accessor functions (like `get_by_short_code`) executes a full array scan each time a response is matched via `short_code`.
+**Action:** Always pre-compute a dictionary index (`{key: value}`) upon module load for static tuple/list data to turn O(N) lookups into O(1) cacheable operations. This guarantees fast, constant-time resolution without side-effects for repeated execution within the application lifecycle.
