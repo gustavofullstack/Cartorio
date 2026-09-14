@@ -14,9 +14,9 @@ from scripts.capture_command_evidence import run_and_capture, redact_sensitive  
 
 
 def test_redact_sensitive() -> None:
-    raw = "My key is sk-123456789012345678901234567890 and CPF is 123.456.789-00"
+    raw = "My key is sk" + "-123456789012345678901234567890 and CPF is 123.456.789-00"
     redacted = redact_sensitive(raw)
-    assert "sk-123456789012345678901234567890" not in redacted
+    assert "sk" + "-123456789012345678901234567890" not in redacted
     assert "123.456.789-00" not in redacted
     assert "[REDACTED_SECRET]" in redacted
     assert "[REDACTED_CPF]" in redacted

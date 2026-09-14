@@ -256,6 +256,7 @@ class TestE2ETelegramProtocolo:
         update = _telegram_update(update_id=20001, text="/protocolo")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", return_value=True),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -285,6 +286,7 @@ class TestE2ETelegramProtocolo:
         update1 = _telegram_update(update_id=20002, text="/protocolo")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", return_value=True),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -302,6 +304,7 @@ class TestE2ETelegramProtocolo:
         }
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", return_value=True),
             patch(
                 "app.api.v1.telegram._tool_consultar_protocolo",
                 new=AsyncMock(return_value=mock_tool_result),
@@ -327,6 +330,7 @@ class TestE2ETelegramProtocolo:
         update1 = _telegram_update(update_id=20004, text="/protocolo")
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", return_value=True),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -465,6 +469,7 @@ class TestE2ETelegramAgendar:
         # Step 1: /agendar
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", return_value=True),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
@@ -527,6 +532,7 @@ class TestE2ETelegramHumano:
         # Step 1: /humano (inicia state HITL)
         with (
             patch("app.api.v1.telegram.get_bus", return_value=stateful_bus),
+            patch("app.api.v1.telegram._get_lgpd_consent", return_value=True),
             patch(
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
