@@ -1,0 +1,4 @@
+[
+  {"task_id": 1, "description": "Elaborar Documentacao de Integracoes", "status": "pending"},
+  {"task_id": 2, "description": "Centralizar Supabase", "status": "pending"}
+]
