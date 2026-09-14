@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility improvements on dynamically populated UI elements
+**Learning:** Using `aria-live="polite"` on dynamically populated elements (like calculation results and JSON logs) is essential for screen readers to announce new data correctly without disrupting the user's workflow. Additionally, custom buttons frequently miss `:focus-visible` styles which hampers keyboard navigation.
+**Action:** Always verify that dynamic content containers have `aria-live` attributes and custom interactive elements have a clear, high-contrast `:focus-visible` state using a double `box-shadow` with design tokens like `var(--bg-dark)` and `var(--primary-light)`.
