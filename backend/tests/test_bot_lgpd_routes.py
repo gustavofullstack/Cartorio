@@ -385,7 +385,7 @@ class TestBotLgpdRestaurar:
 class TestBotLgpdRevogacoes:
     def test_200_empty_list(self, client_with_db: TestClient) -> None:
         """Sem revogações pendentes → 200 com count=0."""
-        resp = client_with_db.get("/api/v1/bot/lgpd/revogacoes")
+        resp = client_with_db.get("/api/v1/bot/lgpd/revogacoes", headers={"X-API-Key": "a" * 64})
         assert resp.status_code == 200
         body = resp.json()
         assert body["count"] == 0
@@ -444,7 +444,7 @@ class TestBotLgpdRevogacoes:
             )
         db.commit()
 
-        resp = client.get("/api/v1/bot/lgpd/revogacoes")
+        resp = client.get("/api/v1/bot/lgpd/revogacoes", headers={"X-API-Key": "a" * 64})
         assert resp.status_code == 200
         body = resp.json()
         assert body["count"] >= 2
@@ -468,18 +468,24 @@ class TestBotLgpdMarcarDeletado:
         _seed_revogacao(db, revogacao_id=rev_id, cliente_id=None)
 
         # Primeira chamada: pending → deleted (sucesso)
-        resp1 = client.post(f"/api/v1/bot/lgpd/revogacoes/{rev_id}/delete")
+        resp1 = client.post(
+            f"/api/v1/bot/lgpd/revogacoes/{rev_id}/delete", headers={"X-API-Key": "a" * 64}
+        )
         assert resp1.status_code == 200
         assert resp1.json()["status"] == "ok"
 
         # Segunda chamada: já está deleted → not_found (idempotente)
-        resp2 = client.post(f"/api/v1/bot/lgpd/revogacoes/{rev_id}/delete")
+        resp2 = client.post(
+            f"/api/v1/bot/lgpd/revogacoes/{rev_id}/delete", headers={"X-API-Key": "a" * 64}
+        )
         assert resp2.status_code == 200
         assert resp2.json()["status"] == "not_found"
 
     def test_200_bogus_id_returns_not_found(self, client_with_db: TestClient) -> None:
         """ID inexistente → 200 com status='not_found' (não 404 hard)."""
-        resp = client_with_db.post("/api/v1/bot/lgpd/revogacoes/bogus-id-zzz/delete")
+        resp = client_with_db.post(
+            "/api/v1/bot/lgpd/revogacoes/bogus-id-zzz/delete", headers={"X-API-Key": "a" * 64}
+        )
         assert resp.status_code == 200
         body = resp.json()
         assert body["status"] == "not_found"
