@@ -67,13 +67,14 @@ def get_openapi_spec() -> dict:
     print("Generating OpenAPI spec from app.main:app ...", file=sys.stderr)
     env = os.environ.copy()
     env.setdefault("APP_ENV", "development")
+    cwd = "backend" if os.path.exists("backend") else "."
     result = subprocess.run(
         [
             "uv", "run", "python", "-c",
             "from app.main import app; import json; "
             "print(json.dumps(app.openapi(), indent=2, ensure_ascii=False))",
         ],
-        cwd="backend",
+        cwd=cwd,
         capture_output=True,
         text=True,
         env=env,

@@ -1,0 +1,804 @@
+{
+  "tasks": [
+    {
+      "id": "TSK-001",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Auditar e validar todos os workflows existentes no N8N para garantir fluxo bidirecional",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-002",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Implementar tratamento de erros (Error Trigger) global nos workflows do N8N",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-003",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Migrar credenciais em texto plano nos n\u00f3s N8N para uso centralizado via N8N Credentials",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-004",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Implementar n\u00f3 N8N para gerenciar timeout entre respostas lentas da API ou Supabase",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-005",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Configurar cache no n\u00f3 HTTP Request do N8N para reduzir acessos redundantes \u00e0 API",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-006",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Testar resili\u00eancia com N8N Queue Mode (Workers) configurado em alta disponibilidade",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-007",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Padronizar o JSON de sa\u00edda de todos os sub-workflows para manter o contrato da API",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-008",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Otimizar logs e execu\u00e7\u00e3o de hist\u00f3rico no N8N para economizar banco de dados",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-009",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Criar workflow N8N de monitoramento (ping di\u00e1rio) nos Endpoints de sa\u00fade da infraestrutura",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-010",
+      "category": "N8N_ORCHESTRATION",
+      "title": "Remodelar sub-workflows complexos com Merge nodes para otimizar processamento paralelo",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema N8N_ORCHESTRATION para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-011",
+      "category": "API_ENHANCEMENTS",
+      "title": "Criar endpoints dedicados na API para Health Check aprimorado e M\u00e9tricas Prometheus",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-012",
+      "category": "API_ENHANCEMENTS",
+      "title": "Implementar rate limiting via Redis para todos os endpoints da API p\u00fablica",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-013",
+      "category": "API_ENHANCEMENTS",
+      "title": "Refatorar estrutura de depend\u00eancias (deps) em Pydantic PII serializers",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-014",
+      "category": "API_ENHANCEMENTS",
+      "title": "Assegurar que todas as rotas validam Authorization tokens de maneira constant-time",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-015",
+      "category": "API_ENHANCEMENTS",
+      "title": "Revisar manipula\u00e7\u00e3o de exceptions globais FastAPI, retornando respostas consistentes Pydantic",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-016",
+      "category": "API_ENHANCEMENTS",
+      "title": "Otimizar o FastAPI Gunicorn workers e concorr\u00eancia para reduzir picos de lat\u00eancia",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-017",
+      "category": "API_ENHANCEMENTS",
+      "title": "Adicionar auditoria de requests sens\u00edveis nos Controllers da API (gravar em DB)",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-018",
+      "category": "API_ENHANCEMENTS",
+      "title": "Isolar l\u00f3gica de Chatwoot Webhooks em Router pr\u00f3prio na API, fora das rotas Gen\u00e9ricas",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-019",
+      "category": "API_ENHANCEMENTS",
+      "title": "Implementar teste de contrato (Contract Testing) na rota de c\u00e1lculo de Emolumentos",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-020",
+      "category": "API_ENHANCEMENTS",
+      "title": "Melhorar a serializa\u00e7\u00e3o de Timestamp/Timezones nas respostas JSON da API",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema API_ENHANCEMENTS para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-021",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Configurar Database Webhooks no Supabase para sincroniza\u00e7\u00e3o em tempo real de protocolos",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-022",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Migrar armazenamento de chaves sens\u00edveis obsoletas para o Supabase Vault",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-023",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Criar rotinas no Supabase Cron (pg_cron) para limpeza de logs antigos > 30 dias",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-024",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Implementar Supabase Queues com pgmq para fila de mensagens ass\u00edncronas",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-025",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Estabelecer pol\u00edticas RLS (Row Level Security) s\u00f3lidas em todas as tabelas expostas",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-026",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Otimizar \u00edndices B-Tree no PostgreSQL para queries do dashboard em `protocolos`",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-027",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Configurar replica\u00e7\u00e3o read-only no Supabase para aliviar a carga das queries anal\u00edticas",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-028",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Testar e ativar PostgREST limit configurations e max_rows nas respostas nativas",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-029",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Implementar migrations controladas no ambiente Dev e Prod",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-030",
+      "category": "SUPABASE_FULL_USAGE",
+      "title": "Ativar Supabase Storage para lidar com uploads/anexos tempor\u00e1rios recebidos pelo WhatsApp",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema SUPABASE_FULL_USAGE para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-031",
+      "category": "CHATWOOT_CRM",
+      "title": "Configurar Chatwoot Sidekiq para alta disponibilidade de jobs e Background Workers",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-032",
+      "category": "CHATWOOT_CRM",
+      "title": "Implementar automa\u00e7\u00e3o de Hand-off (HITL) no Chatwoot via regra de roteamento",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-033",
+      "category": "CHATWOOT_CRM",
+      "title": "Adicionar Tags autom\u00e1ticas baseadas em Intent do bot via OpenClaw/Chatwoot API",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-034",
+      "category": "CHATWOOT_CRM",
+      "title": "Sincronizar a inatividade de agente humano do Chatwoot para retornar controle ao Bot",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-035",
+      "category": "CHATWOOT_CRM",
+      "title": "Revisar webhooks Chatwoot (Inbound e Outbound) para tratar conversas como JSON robusto",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-036",
+      "category": "CHATWOOT_CRM",
+      "title": "Otimizar performance de carregamento no Painel Chatwoot rodando na VPS",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-037",
+      "category": "CHATWOOT_CRM",
+      "title": "Testar fallback visual e avisos sonoros de Notification Server do Chatwoot",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-038",
+      "category": "CHATWOOT_CRM",
+      "title": "Implementar Macros do Chatwoot para encerramento padr\u00e3o e pesquisa de satisfa\u00e7\u00e3o CSAT",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-039",
+      "category": "CHATWOOT_CRM",
+      "title": "Personalizar as Inbox e Widgets do Chatwoot para identificar Evolution-API claramente",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-040",
+      "category": "CHATWOOT_CRM",
+      "title": "Adicionar scripts para limpeza agendada de anexos pesados de conversas expiradas",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema CHATWOOT_CRM para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-041",
+      "category": "EVOLUTION_API",
+      "title": "Configurar Webhooks do Evolution-API para recebimento de mensagens na API central",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-042",
+      "category": "EVOLUTION_API",
+      "title": "Tratar status de entrega de mensagem do Evolution (Read Receipts, Delivered)",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-043",
+      "category": "EVOLUTION_API",
+      "title": "Otimizar tratativa de medias Inbound (imagens/\u00e1udios) convertendo-os no N8N/API",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-044",
+      "category": "EVOLUTION_API",
+      "title": "Criar rotina de Heartbeat pro Evolution API e auto-reconnect do Socket do WhatsApp",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-045",
+      "category": "EVOLUTION_API",
+      "title": "Implementar Rate Limiter no disparo em lote no Evolution-API para evitar banimentos de conta",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-046",
+      "category": "EVOLUTION_API",
+      "title": "Validar o fluxo Inbound/Outbound do Chatwoot + Evolution-API Inbox Channel",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-047",
+      "category": "EVOLUTION_API",
+      "title": "Revisar persist\u00eancia do Session ID e tokeniza\u00e7\u00e3o no Redis",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-048",
+      "category": "EVOLUTION_API",
+      "title": "Configurar auto-limpeza de cache de m\u00eddias baixadas temporariamente no Evolution-API",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-049",
+      "category": "EVOLUTION_API",
+      "title": "Fazer deploy e testes rigorosos da fila RabbitMQ/Redis integrada no Evolution-API",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-050",
+      "category": "EVOLUTION_API",
+      "title": "Testar envio din\u00e2mico de bot\u00f5es interativos e Message Templates pelo WhatsApp",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema EVOLUTION_API para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-051",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Mapear a hierarquia de chaves (Key Space) no Redis para Sess\u00f5es do WhatsApp e Bot",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-052",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Definir pol\u00edticas de TTL autom\u00e1ticas (Eviction) para n\u00e3o esgotar a RAM da VPS",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-053",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Implementar Redis Lock (Redlock) para evitar concorr\u00eancia em scripts de gera\u00e7\u00e3o de protocolo",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-054",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Mover hist\u00f3rico recente de conversas para lista Redis antes da inser\u00e7\u00e3o em batch no DB",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-055",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Otimizar o Redis Persistence (AOF / RDB) para seguran\u00e7a sem matar performance de IO",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-056",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Usar Hashes do Redis em vez de Strings serializadas JSON para sess\u00e3o de usu\u00e1rios",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-057",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Implementar alertas de alto consumo de Mem\u00f3ria no Redis",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-058",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Estruturar cache de Respostas Comuns e FAQs est\u00e1ticas sem acessar DB principal",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-059",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Separar namespaces para ambientes diferentes ou multi-inbox no Chatwoot",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-060",
+      "category": "REDIS_STATE_MEMORY",
+      "title": "Otimizar Redis Pub/Sub usado entre FastMCP, Gateway e OpenClaw",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema REDIS_STATE_MEMORY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-061",
+      "category": "OPENCLAW_AGENT",
+      "title": "Testar a skill 'pii_scrubber' do OpenClaw com payloads reais do WhatsApp (CPF/RG)",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-062",
+      "category": "OPENCLAW_AGENT",
+      "title": "Validar limits do context_window e o uso de thinking via deepseek-v4-flash",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-063",
+      "category": "OPENCLAW_AGENT",
+      "title": "Enriquecer o System Prompt com regras e exemplos few-shot de respostas de c\u00e1lculo de Emolumentos",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-064",
+      "category": "OPENCLAW_AGENT",
+      "title": "Refinar as Tools do OpenClaw (consultar_emolumento) adicionando schemas JSON robustos",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-065",
+      "category": "OPENCLAW_AGENT",
+      "title": "Otimizar os hooks de on_message_in e on_response_out para auditar Logs sem delay excessivo",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-066",
+      "category": "OPENCLAW_AGENT",
+      "title": "Adicionar Tool espec\u00edfica para handoff expl\u00edcito de atendente humano ao OpenClaw",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-067",
+      "category": "OPENCLAW_AGENT",
+      "title": "Validar e simular comportamento de erro via hook on_error (Dead Man Switch)",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-068",
+      "category": "OPENCLAW_AGENT",
+      "title": "Melhorar a conex\u00e3o Websocket do endpoint do Agente e testes de auto-recover",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-069",
+      "category": "OPENCLAW_AGENT",
+      "title": "Limitar temperatura e token outputs baseados na task usando LLM Router Config",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-070",
+      "category": "OPENCLAW_AGENT",
+      "title": "Verificar fluxo de consentimento LGPD antes da extra\u00e7\u00e3o de dados PII pelo Agente",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPENCLAW_AGENT para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-071",
+      "category": "TESTING_QA",
+      "title": "Expandir testes E2E do fluxo Inbound In\u00edcio: WhatsApp -> OpenClaw -> Supabase",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-072",
+      "category": "TESTING_QA",
+      "title": "Criar testes unit\u00e1rios para o N8N Workflow Executor (mocks de chamadas HTTP)",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-073",
+      "category": "TESTING_QA",
+      "title": "Adicionar testes unit\u00e1rios rigorosos na camada de Sanitiza\u00e7\u00e3o de PII (CPF/RG/Tel)",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-074",
+      "category": "TESTING_QA",
+      "title": "Validar c\u00e1lculo de Emolumentos comparando as faixas com Tabela Oficial via Pytest",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-075",
+      "category": "TESTING_QA",
+      "title": "Implementar testes de carga (Load Testing) simples na API e N8N com Locust",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-076",
+      "category": "TESTING_QA",
+      "title": "Integrar verifica\u00e7\u00e3o est\u00e1tica rigorosa no pre-commit para Pydantic 2.x incompatibilities",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-077",
+      "category": "TESTING_QA",
+      "title": "Garantir 100% test coverage na camada de Criptografia HMAC e Valida\u00e7\u00f5es Seguras",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-078",
+      "category": "TESTING_QA",
+      "title": "Adicionar testes visuais do fluxo Dashboard Operations na rotina Playwright",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-079",
+      "category": "TESTING_QA",
+      "title": "Criar su\u00edte de teste de resili\u00eancia e failover redis",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-080",
+      "category": "TESTING_QA",
+      "title": "Desenvolver testes contratuais via Schemathesis nas rotas expostas no OpenAPI JSON",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema TESTING_QA para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-081",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Configurar e automatizar backup agendado do Supabase no painel Hostinger/EasyPanel",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-082",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Migrar segredos em Actions ou Webhooks local para inje\u00e7\u00e3o via EasyPanel Secrets",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-083",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Implementar notifica\u00e7\u00e3o Telegram de sucesso/falha do CI/CD de produ\u00e7\u00e3o",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-084",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Estruturar Build Cache de imagens Docker para reduzir o tempo de deploy no EasyPanel",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-085",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Adicionar regras de Healthcheck DockerCompose nas depend\u00eancias (Redis, API, DB)",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-086",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Reduzir logs esp\u00farios (DEBUG) dos containers rodando em Produ\u00e7\u00e3o",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-087",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Adicionar prote\u00e7\u00e3o rate_limit no n\u00edvel do ingress Traefik dentro do EasyPanel",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-088",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Rotacionar chaves de dev obsoletas ou separar estritamente vari\u00e1veis de dev/prod",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-089",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Configurar alerta Uptime Kuma na porta do OpenClaw WebSocket Gateway",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-090",
+      "category": "OPS_CI_CD_EASYPANEL",
+      "title": "Validar volumes persistentes do N8N e Chatwoot para evitar perdas de storage",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema OPS_CI_CD_EASYPANEL para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-091",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Documentar toda a topologia arquitetural atual em formato PlantUML",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-092",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Publicar documenta\u00e7\u00e3o das rotas da API em Redoc / Swagger UI atualizados",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-093",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Criar Dashboard com Grafana exportando m\u00e9tricas do FastAPI, Redis e Supabase",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    },
+    {
+      "id": "TSK-094",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Estruturar logs estruturados em JSON no padr\u00e3o ECS e configurar envio para Logstash ou similar",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-095",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Atualizar o guia de Quickstart para desenvolvedores, rodando a stack m\u00ednima local",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-096",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Documentar vari\u00e1veis obrigat\u00f3rias no `.env.example` sem expor secrets",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-097",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Registrar ADRs (Architecture Decision Records) sobre as configura\u00e7\u00f5es do OpenClaw",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-098",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Adicionar coment\u00e1rios nos trechos dif\u00edceis do c\u00e1lculo de PII e Emolumentos na API",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-099",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Criar documento explicativo das permiss\u00f5es Role-based do Supabase",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "TSK-100",
+      "category": "DOCS_DX_OBSERVABILITY",
+      "title": "Refatorar nomes de vari\u00e1veis confusas no core para self-documenting code",
+      "description": "Executar a tarefa descrita focada em melhoria do subsistema DOCS_DX_OBSERVABILITY para elevar confiabilidade, estabilidade ou performance.",
+      "status": "TODO",
+      "priority": "HIGH"
+    }
+  ]
+}
