@@ -1,0 +1,3 @@
+## 2026-07-12 - Improve Swagger UI Accessibility in Python string templates
+**Learning:** Custom Swagger UI HTML strings embedded within backend code often override default structural HTML and lose basic accessibility features. A common pattern is the use of `<div>`s instead of semantic HTML.
+**Action:** When working on custom internal UI pages (like Swagger or error pages embedded in python strings), always ensure that semantic HTML tags (`<main>`, `<header>`, `<nav>`), skip links (`<a href="#main-content" class="skip-link">`), and distinct `:focus-visible` CSS are included to maintain keyboard and screen reader accessibility. Ensure double curly braces `{{` and `}}` are used for inline CSS in Python f-strings or `.format()` compatible strings.
