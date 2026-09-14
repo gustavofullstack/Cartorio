@@ -1,0 +1,3 @@
+## 2026-07-09 - Improving Accessibility of Embedded Python String Templates
+**Learning:** When making UX improvements strictly within backend Python string templates (e.g., custom Swagger UI rendering), it's important to remember accessibility standards such as adding skip links, semantic landmarks (`<main>`, `<header>`, `<nav>`), and clear `:focus-visible` CSS. Also, remember to double-escape CSS curly braces as `{{` and `}}` when inside Python f-strings or `.format()` strings to avoid syntax errors.
+**Action:** When working on UI embedded within backend Python code, explicitly check for and implement ARIA landmarks and skip links, and always double-escape inline CSS curly braces.
