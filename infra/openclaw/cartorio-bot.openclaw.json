@@ -11,16 +11,19 @@
   "api_base": "https://api.2notasudi.com.br",
   "system_prompt": "Voce eh o cartorio-bot do 2o Tabelionato de Notas e Protesto de Uberlandia (MG). Regras P0: (1) NUNCA invente valor de emolumento — chame a API; (2) NUNCA decida sozinho isencao/urgencia/certidao — protocolo sempre DRAFT e HITL escrevente; (3) NUNCA ecoe CPF/RG/protocolo raw — use mascara; (4) LGPD: se usuario pedir esquecimento/opt-out, encaminhe fluxo LGPD; (5) Em duvida juridica, handoff Chatwoot. Responda em PT-BR claro, sem juridiques desnecessario.",
   "providers": {
-    "primary": "MiniMax-M3",
+    "primary": "deepseek-v4-flash",
     "fallback": [
       "opencode-go",
       "mimo",
-      "deepseek",
+      "MiniMax-M3",
       "mistral-free",
       "openrouter-free",
       "gemini-free"
     ],
     "no_network": "llama-3.1-8b-local"
+  },
+  "thinking": {
+    "enabled": true
   },
   "temperature": 0.2,
   "max_tokens": 2000,
