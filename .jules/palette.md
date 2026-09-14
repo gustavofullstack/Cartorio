@@ -1,0 +1,3 @@
+## 2026-07-13 - [Semantic Landmarks in Python Backend HTML Strings]
+**Learning:** Embedded HTML templates in backend Python files (like Swagger UI) often lack proper accessibility out-of-the-box. We must ensure they maintain proper semantic structure (e.g. `<header>`, `<main>`, `<nav>`), skip links, and `:focus-visible` CSS just like standard frontend code.
+**Action:** When overriding default API documentation endpoints (like Swagger/ReDoc) via custom HTML string literals, always verify and implement semantic landmarks, skip links, and focus styles, ensuring curly braces are double-escaped for python string formatting.
