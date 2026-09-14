@@ -57,7 +57,8 @@
       background: #1e3a8a; color: white; border: none; padding: 10px 16px;
       border-radius: 6px; cursor: pointer; font-size: 14px;
     }
-    button:hover { background: #1e40af; }
+    button:hover:not(:disabled) { background: #1e40af; }
+    button:disabled { opacity: 0.7; cursor: not-allowed; }
     button.secondary { background: #6b7280; }
     input, select {
       padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;
@@ -109,10 +110,10 @@
     <h2>Audit Trail — Busca por Cliente</h2>
     <div class="form-row">
       <div>
-        <label>Cliente ID</label>
+        <label for="clienteIdInput">Cliente ID</label>
         <input type="text" id="clienteIdInput" placeholder="ex: cliente-12345" />
       </div>
-      <button onclick="buscarAuditTrail()">Buscar</button>
+      <button id="btnBuscarAudit" onclick="buscarAuditTrail()">Buscar</button>
       <button class="secondary" onclick="exportarAudit()">Exportar CSV</button>
     </div>
     <table>
@@ -206,22 +207,36 @@
     }
 
     async function buscarAuditTrail() {
-      const clienteId = document.getElementById('clienteIdInput').value;
-      if (!clienteId) return alert('Digite um Cliente ID');
-      const data = await fetchAPI(`/audit-trail/${encodeURIComponent(clienteId)}`);
-      const tbody = document.getElementById('auditTbody');
-      if (data && data.entries) {
-        tbody.innerHTML = data.entries.map(e => `
-          <tr>
-            <td>${e.timestamp}</td>
-            <td>${e.action}</td>
-            <td>${e.entity}</td>
-            <td>${e.actor}</td>
-            <td><code>${e.hash ? e.hash.slice(0, 16) + '...' : 'N/A'}</code></td>
-          </tr>
-        `).join('');
-      } else {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #dc2626;">Erro ao buscar audit trail</td></tr>';
+      const input = document.getElementById('clienteIdInput');
+      const clienteId = input.value;
+      if (!clienteId) {
+        input.focus();
+        return alert('Digite um Cliente ID');
+      }
+      const btn = document.getElementById('btnBuscarAudit');
+      const originalText = btn.textContent;
+      btn.textContent = 'Buscando...';
+      btn.disabled = true;
+
+      try {
+        const data = await fetchAPI(`/audit-trail/${encodeURIComponent(clienteId)}`);
+        const tbody = document.getElementById('auditTbody');
+        if (data && data.entries) {
+          tbody.innerHTML = data.entries.map(e => `
+            <tr>
+              <td>${e.timestamp}</td>
+              <td>${e.action}</td>
+              <td>${e.entity}</td>
+              <td>${e.actor}</td>
+              <td><code>${e.hash ? e.hash.slice(0, 16) + '...' : 'N/A'}</code></td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #dc2626;">Erro ao buscar audit trail</td></tr>';
+        }
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
       }
     }
 
