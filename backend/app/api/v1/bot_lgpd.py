@@ -30,6 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.api.deps import require_cartorio_api_key
 from app.db import get_db
 from app.models.cliente import Cliente, MotivoEncerramento
 from app.services.audit import AuditService
@@ -384,6 +385,7 @@ async def post_restaurar(
 )
 async def get_revogacoes(
     db: Annotated[Session, Depends(get_db)],
+    _auth: str = Depends(require_cartorio_api_key),
 ) -> RevogacoesListResponse:
     """T47: lista revogacoes pendentes para o cron job."""
     revogacoes = listar_revogacoes_pendentes(db)
@@ -401,6 +403,7 @@ async def get_revogacoes(
 async def post_marcar_deletado(
     revogacao_id: str,
     db: Annotated[Session, Depends(get_db)],
+    _auth: str = Depends(require_cartorio_api_key),
 ) -> RestaurarResponse:
     """T47: cron chama apos aplicar hard delete."""
     ok = marcar_como_deletado(db, revogacao_id)
