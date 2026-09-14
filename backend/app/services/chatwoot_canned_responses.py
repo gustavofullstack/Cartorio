@@ -869,13 +869,13 @@ def get_by_tag(tag: str) -> tuple[CannedResponse, ...]:
     return tuple(cr for cr in CANNED_RESPONSES if tag in cr.tags)
 
 
+# O(1) lookup pre-computed dictionary for short_codes
+_CANNED_RESPONSES_BY_SHORT_CODE = {cr.short_code.lower(): cr for cr in CANNED_RESPONSES}
+
+
 def get_by_short_code(short_code: str) -> CannedResponse | None:
     """Busca template por short_code (case-insensitive)."""
-    sc_lower = short_code.lower()
-    for cr in CANNED_RESPONSES:
-        if cr.short_code.lower() == sc_lower:
-            return cr
-    return None
+    return _CANNED_RESPONSES_BY_SHORT_CODE.get(short_code.lower())
 
 
 # Total: 51 templates (superando o requisito de 50+)
