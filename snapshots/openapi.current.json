@@ -735,6 +735,279 @@
         "title": "AlertManagerPayload",
         "type": "object"
       },
+      "AprovacaoHumana": {
+        "description": "Revisao humana da captura vigente (bloco 1).",
+        "properties": {
+          "mensagem": {
+            "description": "Estado da aprovacao humana em linguagem operacional.",
+            "title": "Mensagem",
+            "type": "string"
+          },
+          "revisado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Instante ISO da revisao, se houve.",
+            "title": "Revisado Em"
+          },
+          "revisado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Identificador funcional do revisor, se houve.",
+            "title": "Revisado Por"
+          }
+        },
+        "required": [
+          "revisado_por",
+          "revisado_em",
+          "mensagem"
+        ],
+        "title": "AprovacaoHumana",
+        "type": "object"
+      },
+      "AtendimentoIniciarRequest": {
+        "properties": {
+          "canal": {
+            "default": "imessage",
+            "title": "Canal",
+            "type": "string"
+          },
+          "consentimento_ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consentimento Ip"
+          },
+          "consentimento_lgpd": {
+            "default": false,
+            "title": "Consentimento Lgpd",
+            "type": "boolean"
+          },
+          "cpf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpf",
+            "x-sensivel": true
+          },
+          "data_hora": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Hora"
+          },
+          "data_nascimento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Nascimento"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "x-sensivel": true
+          },
+          "local": {
+            "default": "balcao_1",
+            "title": "Local",
+            "type": "string"
+          },
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "protocolo_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocolo Id"
+          },
+          "telefone": {
+            "title": "Telefone",
+            "type": "string",
+            "x-sensivel": true
+          },
+          "tipo": {
+            "default": "consulta",
+            "title": "Tipo",
+            "type": "string"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          }
+        },
+        "required": [
+          "telefone"
+        ],
+        "title": "AtendimentoIniciarRequest",
+        "type": "object"
+      },
+      "AtendimentoIniciarResponse": {
+        "properties": {
+          "agendamento_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agendamento Id"
+          },
+          "atendimento_id": {
+            "title": "Atendimento Id",
+            "type": "integer"
+          },
+          "audit_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Audit Ids",
+            "type": "array"
+          },
+          "cliente_criado": {
+            "title": "Cliente Criado",
+            "type": "boolean"
+          },
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "integer"
+          },
+          "dados_coletados": {
+            "additionalProperties": true,
+            "title": "Dados Coletados",
+            "type": "object"
+          },
+          "dados_pendentes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dados Pendentes",
+            "type": "array"
+          },
+          "memoria_salva": {
+            "title": "Memoria Salva",
+            "type": "boolean"
+          },
+          "mensagem": {
+            "title": "Mensagem",
+            "type": "string"
+          },
+          "protocolo_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocolo Id"
+          },
+          "proximos_passos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Proximos Passos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "atendimento_id",
+          "cliente_id",
+          "cliente_criado",
+          "dados_coletados",
+          "dados_pendentes",
+          "memoria_salva",
+          "audit_ids",
+          "proximos_passos",
+          "mensagem"
+        ],
+        "title": "AtendimentoIniciarResponse",
+        "type": "object"
+      },
       "AtoProtocolar": {
         "description": "Ato juridico objeto do protocolo.\n\nCatalogo inicial cobre atos mais comuns do cartorio do 2o Oficio de\nNotas de Uberlandia. Valores sincronizados com TIPOS_VALIDOS em\napp.services.emolumento para manter consistencia de pricing.",
         "enum": [
@@ -1168,6 +1441,20 @@
         "title": "BackupStatusUpdate",
         "type": "object"
       },
+      "Body_extrair_e_calcular_ai_endpoint_api_v1_emolumentos_real_extrair_ai_post": {
+        "properties": {
+          "texto_usuario": {
+            "description": "Mensagem em linguagem natural do cliente.",
+            "title": "Texto Usuario",
+            "type": "string"
+          }
+        },
+        "required": [
+          "texto_usuario"
+        ],
+        "title": "Body_extrair_e_calcular_ai_endpoint_api_v1_emolumentos_real_extrair_ai_post",
+        "type": "object"
+      },
       "Body_upload_documento_api_v1_documento_upload_post": {
         "properties": {
           "hash_sha256": {
@@ -1448,6 +1735,245 @@
           "message"
         ],
         "title": "CancelarResponse",
+        "type": "object"
+      },
+      "CatalogoItemResponse": {
+        "description": "Item publicado do catalogo (bloco 2).",
+        "properties": {
+          "ato": {
+            "title": "Ato",
+            "type": "string"
+          },
+          "emolumentos": {
+            "title": "Emolumentos",
+            "type": "string"
+          },
+          "escopo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escopo"
+          },
+          "item_portaria": {
+            "title": "Item Portaria",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "tfj": {
+            "title": "Tfj",
+            "type": "string"
+          },
+          "tipo_ato": {
+            "title": "Tipo Ato",
+            "type": "string"
+          },
+          "valor_final": {
+            "title": "Valor Final",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo_ato",
+          "ato",
+          "item_portaria",
+          "emolumentos",
+          "tfj",
+          "valor_final",
+          "status",
+          "escopo"
+        ],
+        "title": "CatalogoItemResponse",
+        "type": "object"
+      },
+      "CatalogoPainelResponse": {
+        "description": "Bloco 2 — catalogo publicado vigente.",
+        "properties": {
+          "escopo": {
+            "title": "Escopo",
+            "type": "string"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogoItemResponse"
+            },
+            "title": "Itens",
+            "type": "array"
+          },
+          "origem": {
+            "description": "'banco' quando ha itens PUBLISHED; 'constantes' no fallback.",
+            "title": "Origem",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "escopo",
+          "itens",
+          "origem"
+        ],
+        "title": "CatalogoPainelResponse",
+        "type": "object"
+      },
+      "ChatCompletionRequest": {
+        "properties": {
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 4096,
+            "title": "Max Tokens",
+            "x-sensivel": true
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "MiniMax-M3",
+            "title": "Model"
+          },
+          "stream": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": false,
+            "title": "Stream"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.7,
+            "title": "Temperature"
+          },
+          "tool_choice": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Choice"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "title": "ChatCompletionRequest",
+        "type": "object"
+      },
+      "ChatMessage": {
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "ChatMessage",
         "type": "object"
       },
       "ChatwootAssignee": {
@@ -2020,6 +2546,140 @@
           "total_count"
         ],
         "title": "ClientesV2Response",
+        "type": "object"
+      },
+      "CollectRequest": {
+        "properties": {
+          "consentimento_canal": {
+            "default": "imessage",
+            "title": "Consentimento Canal",
+            "type": "string"
+          },
+          "consentimento_ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consentimento Ip"
+          },
+          "consentimento_lgpd": {
+            "default": false,
+            "title": "Consentimento Lgpd",
+            "type": "boolean"
+          },
+          "cpf": {
+            "anyOf": [
+              {
+                "maxLength": 14,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpf",
+            "x-sensivel": true
+          },
+          "data_nascimento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "AAAA-MM-DD",
+            "title": "Data Nascimento"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "x-sensivel": true
+          },
+          "nome": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "telefone": {
+            "description": "Telefone E.164 ou BR (obrigatorio)",
+            "title": "Telefone",
+            "type": "string",
+            "x-sensivel": true
+          }
+        },
+        "required": [
+          "telefone"
+        ],
+        "title": "CollectRequest",
+        "type": "object"
+      },
+      "CollectResponse": {
+        "properties": {
+          "cliente_criado": {
+            "title": "Cliente Criado",
+            "type": "boolean"
+          },
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "integer"
+          },
+          "consentimento_lgpd": {
+            "title": "Consentimento Lgpd",
+            "type": "boolean"
+          },
+          "dados_coletados": {
+            "additionalProperties": true,
+            "title": "Dados Coletados",
+            "type": "object"
+          },
+          "dados_pendentes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dados Pendentes",
+            "type": "array"
+          },
+          "mensagem": {
+            "title": "Mensagem",
+            "type": "string"
+          },
+          "telefone_hash": {
+            "title": "Telefone Hash",
+            "type": "string",
+            "x-sensivel": true
+          }
+        },
+        "required": [
+          "cliente_id",
+          "cliente_criado",
+          "telefone_hash",
+          "dados_coletados",
+          "dados_pendentes",
+          "consentimento_lgpd",
+          "mensagem"
+        ],
+        "title": "CollectResponse",
         "type": "object"
       },
       "ConsentPropagationRequest": {
@@ -2844,6 +3504,131 @@
         "title": "ExportResponse",
         "type": "object"
       },
+      "ExtracaoPainelResponse": {
+        "description": "Bloco 3 — extracao por IA, agregada por rotulo categorico (sem PII).",
+        "properties": {
+          "extracoes_por_outcome": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Extracoes Por Outcome",
+            "type": "object"
+          },
+          "extracoes_total": {
+            "title": "Extracoes Total",
+            "type": "integer"
+          },
+          "handoffs_por_reason": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Handoffs Por Reason",
+            "type": "object"
+          },
+          "handoffs_total": {
+            "title": "Handoffs Total",
+            "type": "integer"
+          },
+          "llm_fallback_por_reason": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Llm Fallback Por Reason",
+            "type": "object"
+          },
+          "llm_fallback_total": {
+            "title": "Llm Fallback Total",
+            "type": "integer"
+          },
+          "retencao": {
+            "title": "Retencao",
+            "type": "string"
+          },
+          "rotulos": {
+            "title": "Rotulos",
+            "type": "string"
+          }
+        },
+        "required": [
+          "extracoes_por_outcome",
+          "extracoes_total",
+          "handoffs_por_reason",
+          "handoffs_total",
+          "llm_fallback_por_reason",
+          "llm_fallback_total",
+          "retencao",
+          "rotulos"
+        ],
+        "title": "ExtracaoPainelResponse",
+        "type": "object"
+      },
+      "FontePainelResponse": {
+        "description": "Bloco 1 — qualidade da fonte oficial de precos.",
+        "properties": {
+          "aprovacao_humana": {
+            "$ref": "#/components/schemas/AprovacaoHumana"
+          },
+          "capturado_em": {
+            "title": "Capturado Em",
+            "type": "string"
+          },
+          "estado": {
+            "title": "Estado",
+            "type": "string"
+          },
+          "idade_dias": {
+            "description": "Dias entre a captura e hoje (calculado no servidor).",
+            "title": "Idade Dias",
+            "type": "integer"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "origem": {
+            "description": "'banco' quando ha captura PUBLISHED; 'constantes' no fallback.",
+            "title": "Origem",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "vigencia_fim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vigencia Fim"
+          },
+          "vigencia_inicio": {
+            "title": "Vigencia Inicio",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "url",
+          "sha256",
+          "capturado_em",
+          "idade_dias",
+          "vigencia_inicio",
+          "vigencia_fim",
+          "estado",
+          "aprovacao_humana",
+          "origem"
+        ],
+        "title": "FontePainelResponse",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2855,6 +3640,167 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HermesExecuteRequest": {
+        "properties": {
+          "attachments": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Anexos recebidos",
+            "title": "Attachments"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "api",
+            "description": "Canal de origem (whatsapp, telegram, imessage, web, api)",
+            "title": "Channel"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ID único da conversa",
+            "title": "Conversation Id"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Histórico de mensagens recentes",
+            "title": "History"
+          },
+          "user_message": {
+            "description": "Mensagem de entrada do usuário",
+            "title": "User Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_message"
+        ],
+        "title": "HermesExecuteRequest",
+        "type": "object"
+      },
+      "HermesExecuteResponse": {
+        "properties": {
+          "answer": {
+            "description": "Resposta do agente com PII scrubbing aplicado",
+            "title": "Answer",
+            "type": "string"
+          },
+          "audit_logged": {
+            "default": true,
+            "description": "Confirmação de gravação no Audit Log SHA256",
+            "title": "Audit Logged",
+            "type": "boolean"
+          },
+          "hitl_required": {
+            "default": false,
+            "description": "Flag indicando se ato exige validação do escrevente (HITL)",
+            "title": "Hitl Required",
+            "type": "boolean"
+          },
+          "provider_used": {
+            "default": "cartorio-agent",
+            "description": "LLM / Provider utilizado",
+            "title": "Provider Used",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status da execução (success, degraded, hitl_required)",
+            "title": "Status",
+            "type": "string"
+          },
+          "tools_used": {
+            "description": "Tools invocadas no ciclo",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools Used",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "answer"
+        ],
+        "title": "HermesExecuteResponse",
+        "type": "object"
+      },
+      "HermesStatusResponse": {
+        "properties": {
+          "detail": {
+            "default": "Hermes não configurado na VPS",
+            "title": "Detail",
+            "type": "string"
+          },
+          "hitl_enabled": {
+            "default": true,
+            "title": "Hitl Enabled",
+            "type": "boolean"
+          },
+          "lgpd_scrubbing": {
+            "default": true,
+            "title": "Lgpd Scrubbing",
+            "type": "boolean"
+          },
+          "mcp_tools_available": {
+            "default": 0,
+            "title": "Mcp Tools Available",
+            "type": "integer"
+          },
+          "service": {
+            "default": "agent-hermes-cartorio",
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "default": "not_deployed",
+            "title": "Status",
+            "type": "string"
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "number"
+          },
+          "vps_hosted": {
+            "default": false,
+            "title": "Vps Hosted",
+            "type": "boolean"
+          }
+        },
+        "title": "HermesStatusResponse",
         "type": "object"
       },
       "HistoricoEtapa": {
@@ -3479,6 +4425,46 @@
         "title": "MeResponse",
         "type": "object"
       },
+      "MemoriaAppendRequest": {
+        "properties": {
+          "canal": {
+            "default": "imessage",
+            "title": "Canal",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "role",
+          "content"
+        ],
+        "title": "MemoriaAppendRequest",
+        "type": "object"
+      },
       "MetricsResponse": {
         "description": "Response do GET /api/v1/metrics.\n\nShape canonico (Sprint 4 STREAM 1 - 2026-06-24):\n- clientes_total: int - total de clientes ativos\n- protocolos_total: dict[status, int] - count por status (aberto, concluido, etc)\n- audit_chain_length: int - total entries no audit log (LGPD art. 37)\n- uptime_seconds: float - tempo de vida do processo\n- counters: dict - contadores in-process (http_requests_total, pii_blocked_total, etc)\n- gauges: dict - gauges in-process (dlq_depth, cartorio_uptime_seconds, etc)",
         "example": {
@@ -4093,6 +5079,39 @@
           "config"
         ],
         "title": "OpenCodeTestResponse",
+        "type": "object"
+      },
+      "OperacaoPainelResponse": {
+        "description": "Bloco 4 — operacao de consulta de precos.",
+        "properties": {
+          "consultas_por_outcome": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Consultas Por Outcome",
+            "type": "object"
+          },
+          "consultas_total": {
+            "title": "Consultas Total",
+            "type": "integer"
+          },
+          "handoffs_total": {
+            "title": "Handoffs Total",
+            "type": "integer"
+          },
+          "taxa_handoff": {
+            "description": "handoffs/consultas; 0.0 quando nao ha consultas.",
+            "title": "Taxa Handoff",
+            "type": "number"
+          }
+        },
+        "required": [
+          "consultas_por_outcome",
+          "consultas_total",
+          "handoffs_total",
+          "taxa_handoff"
+        ],
+        "title": "OperacaoPainelResponse",
         "type": "object"
       },
       "OutboxDispatchRequest": {
@@ -5035,6 +6054,7 @@
       "StatusAgendamento": {
         "description": "Status do agendamento no ciclo de vida.",
         "enum": [
+          "draft",
           "agendado",
           "confirmado",
           "em_atendimento",
@@ -6361,8 +7381,26 @@
     },
     "/api/v1/agendamento": {
       "post": {
-        "description": "Cria um novo agendamento para atendimento presencial. Valida disponibilidade de horário, existência do cliente e protocolo (se fornecido).\n\n**Gate LGPD**: CPF é hasheado antes de persistir. Nenhum dado pessoal em texto puro é salvo no banco.\n\n**Conflitos**: Retorna 409 se horário já estiver ocupado no local.\n\n**Audit log**: Registra criação (LGPD art. 37).",
+        "description": "Cria uma solicitacao DRAFT para atendimento presencial. Valida disponibilidade de horário, existência do cliente e protocolo (se fornecido).\n\n**HITL**: o horario so vira AGENDADO depois de aprovacao autenticada de um escrevente.\n\n**Gate LGPD**: CPF é hasheado antes de persistir. Nenhum dado pessoal em texto puro é salvo no banco.\n\n**Conflitos**: Retorna 409 se horário já estiver ocupado no local.\n\n**Audit log**: Registra criação (LGPD art. 37).",
         "operationId": "criar_agendamento_api_v1_agendamento_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -6382,7 +7420,7 @@
                 }
               }
             },
-            "description": "Agendamento criado."
+            "description": "Solicitacao DRAFT criada."
           },
           "400": {
             "description": "Payload inválido."
@@ -6457,6 +7495,22 @@
               "description": "A19 LGPD: incluir soft-deletados. EXIGE Bearer JWT com claim dpo=True.",
               "title": "Include Deleted",
               "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
             }
           }
         ],
@@ -6545,6 +7599,22 @@
               "title": "Include Deleted",
               "type": "boolean"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "responses": {
@@ -6584,7 +7654,7 @@
     },
     "/api/v1/agendamento/disponibilidade": {
       "get": {
-        "description": "Retorna slots disponiveis para atendimento presencial no cartorio. v0.4.0 MVP: tabela estatica de segunda a sexta 09-17h com 5 vagas/hora. Sprint 2 integra com Google Calendar API.",
+        "description": "Endpoint de compatibilidade fail-closed. Enquanto nao houver uma agenda transacional real, retorna 503 e exige validacao humana; nunca anuncia quantidade estatica de vagas.",
         "operationId": "agendamento_disponibilidade_api_v1_agendamento_disponibilidade_get",
         "parameters": [
           {
@@ -6617,6 +7687,22 @@
               "minimum": 0,
               "title": "Hora",
               "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
             }
           }
         ],
@@ -6779,6 +7865,22 @@
               "title": "Agendamento Id",
               "type": "integer"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "responses": {
@@ -6817,7 +7919,7 @@
     },
     "/api/v1/agendamento/{agendamento_id}/confirmar": {
       "post": {
-        "description": "Confirma um agendamento. Só pode confirmar agendamentos no status 'agendado'. Registra audit log da operação.",
+        "description": "Aprova uma solicitacao DRAFT apos validacao humana do escrevente. A operacao exige X-API-Key e registra audit log.",
         "operationId": "confirmar_agendamento_api_v1_agendamento__agendamento_id__confirmar_post",
         "parameters": [
           {
@@ -6827,6 +7929,22 @@
             "schema": {
               "title": "Agendamento Id",
               "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
             }
           }
         ],
@@ -6924,10 +8042,190 @@
         ]
       }
     },
+    "/api/v1/agent-hermes/execute": {
+      "post": {
+        "description": "Executa mensagem ou tarefa através do Agent Hermes Cartório na VPS.",
+        "operationId": "execute_hermes_task_api_v1_agent_hermes_execute_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HermesExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HermesExecuteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Execute Hermes Task",
+        "tags": [
+          "agent-hermes"
+        ]
+      }
+    },
+    "/api/v1/agent-hermes/status": {
+      "get": {
+        "description": "Retorna o estado real do runtime Hermes, sem inferir de serviços vizinhos.",
+        "operationId": "get_hermes_status_api_v1_agent_hermes_status_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HermesStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Hermes Status",
+        "tags": [
+          "agent-hermes"
+        ]
+      }
+    },
+    "/api/v1/agent-hermes/webhook": {
+      "post": {
+        "description": "Ingestão genérica de webhooks para o Agent Hermes.",
+        "operationId": "hermes_webhook_ingest_api_v1_agent_hermes_webhook_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Hermes Webhook Ingest Api V1 Agent Hermes Webhook Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hermes Webhook Ingest",
+        "tags": [
+          "agent-hermes"
+        ]
+      }
+    },
     "/api/v1/atendimento": {
       "post": {
-        "description": "Cria atendimento. Chamado pelo workflow #03 (handoff humano) ou diretamente pela UI quando conversa e escalada.",
+        "description": "Cria somente um ticket local autenticado. Nao aciona Chatwoot, N8N, agenda nem confirma transferencia para um escrevente.",
         "operationId": "criar_atendimento_api_v1_atendimento_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -6953,6 +8251,9 @@
             },
             "description": "Successful Response"
           },
+          "401": {
+            "description": "X-API-Key ausente ou invalida."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -6964,7 +8265,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Criar atendimento (handoff Chatwoot ou webhook externo)",
+        "summary": "Criar ticket local aguardando escrevente",
         "tags": [
           "atendimento"
         ]
@@ -6972,7 +8273,7 @@
     },
     "/api/v1/atendimento/list-active": {
       "get": {
-        "description": "Retorna lista de sessoes com atividade recente, agrupadas por external_id + canal. Usado pelo N8N workflow #15 (Session Sync) que sincroniza Redis cache quente com DB. Substitui o proposto GET /sessao/list-active (que nunca existiu) com path alinhado aos demais /atendimento/*. Read-only, sem PII nova exposta (external_id ja eh publico para o cartorio).",
+        "description": "Retorna lista autenticada de sessoes com atividade recente, agrupadas por pseudonimo de conversa e canal. Usado pelo N8N workflow #15 (Session Sync). Substitui o proposto GET /sessao/list-active (que nunca existiu) com path alinhado aos demais /atendimento/*. Nenhum identificador externo em claro e retornado.",
         "operationId": "listar_sessoes_ativas_api_v1_atendimento_list_active_get",
         "parameters": [
           {
@@ -6988,6 +8289,22 @@
               "title": "Since Hours",
               "type": "integer"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "responses": {
@@ -7001,7 +8318,7 @@
                 }
               }
             },
-            "description": "Lista de sessoes ativas com external_id, canal e last_activity."
+            "description": "Lista de sessoes ativas pseudonimizadas por canal."
           },
           "422": {
             "content": {
@@ -7088,6 +8405,22 @@
               "title": "Atendimento Id",
               "type": "integer"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "requestBody": {
@@ -7121,6 +8454,9 @@
             },
             "description": "Successful Response"
           },
+          "401": {
+            "description": "X-API-Key ausente ou invalida."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -7151,6 +8487,22 @@
               "title": "Atendimento Id",
               "type": "integer"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "responses": {
@@ -7165,6 +8517,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "X-API-Key ausente ou invalida."
           },
           "422": {
             "content": {
@@ -7185,7 +8540,7 @@
     },
     "/api/v1/atendimento/{session_id}/historico": {
       "get": {
-        "description": "Busca o historico de mensagens de uma sessao (canal/telefone). Consulta primeiro o cache quente no Redis e depois une/complementa com o historico de longo prazo persistido no Supabase.",
+        "description": "Busca o historico de mensagens associado a um pseudonimo previamente vinculado. Consulta primeiro o cache quente no Redis e usa o historico persistido como fallback. Requer `X-API-Key`.",
         "operationId": "obter_historico_atendimento_api_v1_atendimento__session_id__historico_get",
         "parameters": [
           {
@@ -7195,6 +8550,22 @@
             "schema": {
               "title": "Session Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
             }
           }
         ],
@@ -7970,6 +9341,24 @@
       "get": {
         "description": "Retorna contexto live: loop-state + index + lessons count + tasks count.\n\nEquivalente a /context/restore/{latest_snapshot} mas SEMPRE live.\nIdeal para um agent iniciar uma sessao.",
         "operationId": "current_context_api_v1_brain_context_current_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -7982,6 +9371,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Contexto atual (alias para restoration live)",
@@ -8003,6 +9402,22 @@
             "schema": {
               "title": "Snapshot Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
             }
           }
         ],
@@ -8038,6 +9453,24 @@
     "/api/v1/brain/lesson": {
       "post": {
         "operationId": "create_lesson_api_v1_brain_lesson_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -8111,6 +9544,22 @@
               "title": "Limit",
               "type": "integer"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "responses": {
@@ -8150,6 +9599,24 @@
       "get": {
         "description": "Le .brain/loop-state.json e retorna.",
         "operationId": "get_loop_state_api_v1_brain_loop_state_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -8160,6 +9627,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Estado compacto do loop",
@@ -8184,6 +9661,22 @@
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
             }
           }
         ],
@@ -8236,6 +9729,22 @@
               "title": "Limit",
               "type": "integer"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "responses": {
@@ -8284,6 +9793,22 @@
               "title": "Snapshot Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "responses": {
@@ -8319,6 +9844,24 @@
       "post": {
         "description": "Forca rsync bidirecional. Requer SSH Tailscale configurado.",
         "operationId": "trigger_sync_api_v1_brain_sync_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -8331,6 +9874,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Forca sync .brain local <-> VPS",
@@ -8376,6 +9929,22 @@
                 }
               ],
               "title": "Squad"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
             }
           }
         ],
@@ -9560,6 +11129,179 @@
         ]
       }
     },
+    "/api/v1/emolumentos/real/calcular": {
+      "post": {
+        "description": "Nunca infere tributos ou composição de ato. Parâmetros adicionais retornam HITL_REQUIRED.",
+        "operationId": "calcular_emolumento_real_endpoint_api_v1_emolumentos_real_calcular_post",
+        "parameters": [
+          {
+            "description": "Tipo do ato notarial.",
+            "in": "query",
+            "name": "tipo_ato",
+            "required": true,
+            "schema": {
+              "description": "Tipo do ato notarial.",
+              "title": "Tipo Ato",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Valor do imóvel/negócio.",
+            "in": "query",
+            "name": "valor_declarado",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Valor do imóvel/negócio.",
+              "title": "Valor Declarado"
+            }
+          },
+          {
+            "description": "Quantidade de folhas.",
+            "in": "query",
+            "name": "folhas",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "Quantidade de folhas.",
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Folhas",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Se true, aplica taxa de urgência.",
+            "in": "query",
+            "name": "urgencia",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Se true, aplica taxa de urgência.",
+              "title": "Urgencia",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Calcular Emolumento Real Endpoint Api V1 Emolumentos Real Calcular Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultar item publicado ou encaminhar orçamento ao escrevente",
+        "tags": [
+          "emolumento"
+        ]
+      }
+    },
+    "/api/v1/emolumentos/real/djalma": {
+      "get": {
+        "description": "Retorna itens publicados da tabela oficial, com fonte, hash e vigência.",
+        "operationId": "obter_tabela_real_djalma_api_v1_emolumentos_real_djalma_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Obter Tabela Real Djalma Api V1 Emolumentos Real Djalma Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Obter tabela oficial de preços do 2º Ofício de Uberlândia (Djalma)",
+        "tags": [
+          "emolumento"
+        ]
+      }
+    },
+    "/api/v1/emolumentos/real/extrair-ai": {
+      "post": {
+        "description": "Sanitiza PII, extrai sinais e só retorna total para item publicado sem parâmetros adicionais.",
+        "operationId": "extrair_e_calcular_ai_endpoint_api_v1_emolumentos_real_extrair_ai_post",
+        "parameters": [
+          {
+            "description": "Forçar urgência.",
+            "in": "query",
+            "name": "forcar_urgencia",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Forçar urgência.",
+              "title": "Forcar Urgencia",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_extrair_e_calcular_ai_endpoint_api_v1_emolumentos_real_extrair_ai_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Extrair E Calcular Ai Endpoint Api V1 Emolumentos Real Extrair Ai Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Extrair intenção com PII Scrubbing e triagem de emolumento",
+        "tags": [
+          "emolumento"
+        ]
+      }
+    },
     "/api/v1/health/audit": {
       "get": {
         "description": "Verifica se o audit_log esta vivo. Retorna 200 com `alive=true` se ultima entrada <= 1h, 200 com `alive=false` se > 1h, ou 503 se cold start (tabela vazia). Usado por cron externo para alertar se o audit log parar (LGPD art. 37 - continuidade da auditoria).",
@@ -10270,6 +12012,188 @@
         ]
       }
     },
+    "/api/v1/inteligencia-dados/agent-ai": {
+      "get": {
+        "description": "Catálogo com proveniência e contadores em memória, sem PII ou texto de cliente.",
+        "operationId": "dados_agent_ai_api_v1_inteligencia_dados_agent_ai_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Dados Agent Ai Api V1 Inteligencia Dados Agent Ai Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Dados agregados de preços e uso do Agent AI",
+        "tags": [
+          "inteligencia-dados"
+        ]
+      }
+    },
+    "/api/v1/lark/qr": {
+      "get": {
+        "description": "Gera QR Code PNG para adicionar o bot Lark.\n\nUsa LARK_ADD_BOT_URL do .env se nenhuma URL for passada via query string.\nSe nem configuracao nem parametro existirem, retorna 503 com instrucoes.",
+        "operationId": "lark_qr_code_api_v1_lark_qr_get",
+        "parameters": [
+          {
+            "description": "URL opcional para gerar o QR Code",
+            "in": "query",
+            "name": "url",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "URL opcional para gerar o QR Code",
+              "title": "Url"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lark Qr Code",
+        "tags": [
+          "lark"
+        ]
+      }
+    },
+    "/api/v1/lark/qr-url": {
+      "get": {
+        "description": "Retorna a URL configurada para adicionar o bot (sem expor segredos).",
+        "operationId": "lark_qr_url_api_v1_lark_qr_url_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Lark Qr Url Api V1 Lark Qr Url Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Lark Qr Url",
+        "tags": [
+          "lark"
+        ]
+      }
+    },
+    "/api/v1/lark/webhook/lark": {
+      "post": {
+        "description": "Webhook do Lark Bot.\n\n- url_verification: retorna challenge imediatamente.\n- Mensagens: valida assinatura, idempotencia, rate limit, scrub PII,\n  executa agente e responde pelo Lark.",
+        "operationId": "lark_webhook_api_v1_lark_webhook_lark_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Lark-Signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lark-Signature"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Lark-Timestamp",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lark-Timestamp"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Lark-Nonce",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lark-Nonce"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Lark Webhook Api V1 Lark Webhook Lark Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lark Webhook",
+        "tags": [
+          "lark"
+        ]
+      }
+    },
     "/api/v1/lgpd/access/{cliente_id}": {
       "get": {
         "description": "Confirma a existencia de tratamento e retorna resumo das categorias\nde dados pessoais tratados sobre o titular.\n\nInclui: dados identificacao, contato, atos juridicos, consentimentos.\nNao retorna valores PII — apenas categorias e contagens.\n\nAuth: JWT Bearer (titular ou DPO).",
@@ -10374,7 +12298,7 @@
     },
     "/api/v1/lgpd/cliente/{cliente_id}": {
       "delete": {
-        "description": "Executa soft delete com anonimizacao de PII (LGPD art. 18 V).\n\n cascade em todas as tabelas que referenciam cliente_id.\nReversivel ate 30 dias (LGPD art. 18 V §2).\n\nAuth: JWT Bearer (titular ou DPO).",
+        "description": "Rota retirada durante a contencao P0 por nao compartilhar a transacao atomica do endpoint canonico DELETE /api/v1/cliente/{cliente_id}.\n\nAuth: JWT Bearer (titular ou DPO).",
         "operationId": "direito_esquecimento_v2_api_v1_lgpd_cliente__cliente_id__delete",
         "parameters": [
           {
@@ -10421,9 +12345,63 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Direito ao esquecimento (LGPD art. 18 V)",
+        "summary": "Direito ao esquecimento legado (desativado)",
         "tags": [
           "lgpd-v2"
+        ]
+      }
+    },
+    "/api/v1/lgpd/cnj-exports/massive-dump": {
+      "get": {
+        "description": "Exportação em massa do Audit Log preservando a cadeia SHA256 (Padrão CNJ).\n\nExige API key e JWT de DPO. O payload e o IP integral permanecem\nmascarados no pacote destinado ao CNJ; a cadeia/hash de auditoria é\npreservada para verificação independente.",
+        "operationId": "massive_dump_cnj_api_v1_lgpd_cnj_exports_massive_dump_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Massive Dump Cnj",
+        "tags": [
+          "lgpd-cnj-export"
         ]
       }
     },
@@ -11711,6 +13689,859 @@
         ]
       }
     },
+    "/api/v1/painel/agent-ai": {
+      "get": {
+        "description": "Painel sem PII para proveniência de preços, extração e encaminhamento humano.",
+        "operationId": "painel_agent_ai_api_v1_painel_agent_ai_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Painel de dados do Agent AI",
+        "tags": [
+          "inteligencia-dados"
+        ]
+      }
+    },
+    "/api/v1/painel/catalogo": {
+      "get": {
+        "description": "Itens PUBLISHED cuja vigencia contem a data da consulta. Sem banco, cai no catalogo publico versionado (constantes).",
+        "operationId": "painel_catalogo_api_v1_painel_catalogo_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoPainelResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Catálogo publicado vigente",
+        "tags": [
+          "painel"
+        ]
+      }
+    },
+    "/api/v1/painel/extracao": {
+      "get": {
+        "description": "Contadores em memoria por rotulo categorico: extracoes por outcome, handoffs por reason e fallbacks de LLM por reason. Nunca texto, CPF, telefone ou identificador de conversa.",
+        "operationId": "painel_extracao_api_v1_painel_extracao_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtracaoPainelResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Extração por IA agregada (sem PII)",
+        "tags": [
+          "painel"
+        ]
+      }
+    },
+    "/api/v1/painel/fonte": {
+      "get": {
+        "description": "Proveniencia, integridade (SHA-256), vigencia, idade da captura e aprovacao humana. Usa a captura PUBLISHED mais recente do banco; sem banco, cai nas constantes versionadas da Portaria CGJ/TJMG 8.664/2025.",
+        "operationId": "painel_fonte_api_v1_painel_fonte_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FontePainelResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Qualidade da fonte oficial de preços",
+        "tags": [
+          "painel"
+        ]
+      }
+    },
+    "/api/v1/painel/ia-usage": {
+      "get": {
+        "description": "Proxy de ia_usage.uso_agregado: custo, chamadas e tokens por modelo e por dia. Retorna {'disponivel': False, 'motivo': ...} quando a telemetria nao esta configurada — nunca vaza exception.",
+        "operationId": "painel_ia_usage_api_v1_painel_ia_usage_get",
+        "parameters": [
+          {
+            "description": "Janela de agregação em dias.",
+            "in": "query",
+            "name": "dias",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Janela de agregação em dias.",
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Dias",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Painel Ia Usage Api V1 Painel Ia Usage Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Uso agregado da IA (LiteLLM spend)",
+        "tags": [
+          "painel"
+        ]
+      }
+    },
+    "/api/v1/painel/operacao": {
+      "get": {
+        "description": "Consultas ao endpoint /emolumentos/real/calcular por outcome, handoffs ao escrevente e taxa de handoff (divisao por zero tratada).",
+        "operationId": "painel_operacao_api_v1_painel_operacao_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperacaoPainelResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Operação de consulta de preços",
+        "tags": [
+          "painel"
+        ]
+      }
+    },
+    "/api/v1/pietra/agendamento": {
+      "post": {
+        "description": "Cria agendamento (online ou presencial) + coleta de dados + memoria.",
+        "operationId": "criar_agendamento_api_v1_pietra_agendamento_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoIniciarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoIniciarResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Criar Agendamento",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/atendimento/iniciar": {
+      "post": {
+        "description": "Inicia atendimento: coleta + cria atendimento + agendamento opcional + memoria.",
+        "operationId": "atendimento_iniciar_api_v1_pietra_atendimento_iniciar_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtendimentoIniciarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendimentoIniciarResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Atendimento Iniciar",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/atendimento/{telefone}/historico": {
+      "get": {
+        "description": "Lista atendimentos do cliente por telefone.",
+        "operationId": "get_historico_atendimentos_api_v1_pietra_atendimento__telefone__historico_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "telefone",
+            "required": true,
+            "schema": {
+              "title": "Telefone",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Historico Atendimentos Api V1 Pietra Atendimento  Telefone  Historico Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Historico Atendimentos",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/chat/completions": {
+      "post": {
+        "description": "OpenAI-compatible Chat Completions endpoint para AGENT PIETRA.\n\nPipeline P0 (campanha 2026-07-28):\n1. System prompt canonico Pietra prependido (autoridade VPS sobre persona).\n2. PII scrub pre-LLM em mensagens do usuario (LGPD: nada raw vai ao provider).\n3. Chain multi-provedor com circuit breaker (MiniMax -> Zen -> planner).\n4. Strip de tags <think>/<reasoning> (nunca vazam ao cliente).\n5. Identity guard HARD-STOP: self-id nao-Pietra (MiniMax/Claude/GPT/Hermes)\n   nunca chega ao canal — resposta vira mensagem de instabilidade.\n6. Tools passthrough: function calling (MCP) retorna tool_calls intactos.",
+        "operationId": "pietra_chat_completions_api_v1_pietra_chat_completions_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatCompletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Pietra Chat Completions Api V1 Pietra Chat Completions Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pietra Chat Completions",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/cliente/collect": {
+      "post": {
+        "description": "Coleta progressiva: cria ou atualiza cliente por telefone.\n\nLGPD: consentimento_lgpd deve ser True. Telefone e PRIMARY KEY.",
+        "operationId": "collect_cliente_api_v1_pietra_cliente_collect_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Collect Cliente",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/cliente/{telefone}": {
+      "get": {
+        "description": "Retorna dados do cliente (LGPD-masked). PRIMARY KEY: telefone.",
+        "operationId": "get_cliente_api_v1_pietra_cliente__telefone__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "telefone",
+            "required": true,
+            "schema": {
+              "title": "Telefone",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Cliente",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/health": {
+      "get": {
+        "description": "Health check do modulo PIETRA.",
+        "operationId": "pietra_health_api_v1_pietra_health_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Pietra Health Api V1 Pietra Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pietra Health",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/memoria/{telefone}": {
+      "get": {
+        "description": "Recupera historico de conversa (Redis cache + Postgres).",
+        "operationId": "get_memoria_api_v1_pietra_memoria__telefone__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "telefone",
+            "required": true,
+            "schema": {
+              "title": "Telefone",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "session_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Memoria Api V1 Pietra Memoria  Telefone  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Memoria",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/memoria/{telefone}/append": {
+      "post": {
+        "description": "Append uma mensagem na memoria persistente.",
+        "operationId": "append_memoria_api_v1_pietra_memoria__telefone__append_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "telefone",
+            "required": true,
+            "schema": {
+              "title": "Telefone",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemoriaAppendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Append Memoria Api V1 Pietra Memoria  Telefone  Append Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Append Memoria",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/memoria/{telefone}/stats": {
+      "get": {
+        "description": "Estatisticas de uso de memoria do cliente.",
+        "operationId": "get_stats_memoria_api_v1_pietra_memoria__telefone__stats_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "telefone",
+            "required": true,
+            "schema": {
+              "title": "Telefone",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Stats Memoria Api V1 Pietra Memoria  Telefone  Stats Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Stats Memoria",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
+    "/api/v1/pietra/v1/chat/completions": {
+      "post": {
+        "description": "OpenAI-compatible Chat Completions endpoint para AGENT PIETRA.\n\nPipeline P0 (campanha 2026-07-28):\n1. System prompt canonico Pietra prependido (autoridade VPS sobre persona).\n2. PII scrub pre-LLM em mensagens do usuario (LGPD: nada raw vai ao provider).\n3. Chain multi-provedor com circuit breaker (MiniMax -> Zen -> planner).\n4. Strip de tags <think>/<reasoning> (nunca vazam ao cliente).\n5. Identity guard HARD-STOP: self-id nao-Pietra (MiniMax/Claude/GPT/Hermes)\n   nunca chega ao canal — resposta vira mensagem de instabilidade.\n6. Tools passthrough: function calling (MCP) retorna tool_calls intactos.",
+        "operationId": "pietra_chat_completions_api_v1_pietra_v1_chat_completions_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatCompletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Pietra Chat Completions Api V1 Pietra V1 Chat Completions Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pietra Chat Completions",
+        "tags": [
+          "pietra"
+        ]
+      }
+    },
     "/api/v1/postman": {
       "get": {
         "description": "Retorna a colecao Postman no schema v2.1.0 para download. Util para QA e desenvolvedores testarem os endpoints localmente.",
@@ -12171,6 +15002,58 @@
         ]
       }
     },
+    "/api/v1/telegram/set-webhook": {
+      "post": {
+        "description": "Configura/sincroniza o webhook do Telegram com secret_token e allowed_updates.",
+        "operationId": "telegram_set_webhook_api_v1_telegram_set_webhook_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Telegram Set Webhook Api V1 Telegram Set Webhook Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Telegram Set Webhook",
+        "tags": [
+          "telegram"
+        ]
+      }
+    },
     "/api/v1/telegram/webhook": {
       "post": {
         "description": "Recebe updates do Telegram Bot API (https://core.telegram.org/bots/api#update).\n\n**Auth**: header `X-Telegram-Bot-Api-Secret-Token` validado contra `TELEGRAM_WEBHOOK_SECRET` (HMAC).\n\n**Idempotency**: `update_id` eh deduplicado via Redis SETNX (TTL 10min).\n\n**LGPD**: payload NAO eh persistido cru; `message.text`/`from` passam por scrubber antes de qualquer LLM call. Schema canonico documentado em `app.schemas.webhook_payloads.TelegramUpdate`.\n\n**Handler paths**:\n- `message` (texto/comando/midia) - flow principal\n- `callback_query` (botao inline) - callback handler\n- `edited_message` - re-processa edicao\n- `my_chat_member` - auto-detect entrada/saida de grupo",
@@ -12587,7 +15470,7 @@
     },
     "/api/v1/webhook/chatwoot": {
       "post": {
-        "description": "Recebe webhooks do Chatwoot. Valida signature HMAC-SHA256 (se CHATWOOT_WEBHOOK_SECRET configurado), deduplica por event_id, e processa conversation_status_changed -> resolved marcando o atendimento como concluido (workflow #07 pesquisa 24h depois).\n\nEventos suportados (discriminator `event`):\n- `conversation_status_changed` - atualizou status da conversa\n- `message_created` - nova mensagem (incoming/outgoing)\n\nLGPD: campos `assignee.name/email`, `content`, `sender.*` carregam dados pessoais (marcados com `**LGPD PII**` no schema). Schema canonico em `app.schemas.chatwoot_webhook.ChatwootWebhookModel`.",
+        "description": "Desativado por padrao. Quando habilitado explicitamente, exige signature HMAC-SHA256 e secret configurado, deduplica por event_id, e processa conversation_status_changed -> resolved marcando o atendimento como concluido (workflow #07 pesquisa 24h depois).\n\nEventos suportados (discriminator `event`):\n- `conversation_status_changed` - atualizou status da conversa\n- `message_created` - nova mensagem (incoming/outgoing)\n\nLGPD: campos `assignee.name/email`, `content`, `sender.*` carregam dados pessoais (marcados com `**LGPD PII**` no schema). Schema canonico em `app.schemas.chatwoot_webhook.ChatwootWebhookModel`.",
         "operationId": "webhook_chatwoot_api_v1_webhook_chatwoot_post",
         "requestBody": {
           "content": {
@@ -12642,6 +15525,12 @@
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "description": "Assinatura HMAC ausente ou invalida."
+          },
+          "503": {
+            "description": "Integracao Chatwoot desativada."
           }
         },
         "summary": "Webhook Chatwoot (HMAC + idempotency)",
@@ -12749,6 +15638,24 @@
       "get": {
         "description": "Debug: últimas N mensagens processadas (do Redis audit log).",
         "operationId": "whatsapp_debug_last_messages_api_v1_whatsapp_debug_last_messages_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -12761,6 +15668,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Whatsapp Debug Last Messages",
@@ -12771,7 +15688,7 @@
     },
     "/api/v1/whatsapp/health": {
       "get": {
-        "description": "Health check: Evolution API + pipeline.",
+        "description": "Health check: Evolution API + sessao WhatsApp REAL + pipeline.\n\nE2.08 / Lesson 260: ``evolution_api=online`` NUNCA implica sessao\nconectada. Parseamos o ``connectionState`` real da instancia\n(open|close|connecting) e so reportamos ``status=ok`` quando a sessao\nesta efetivamente ``open``.",
         "operationId": "whatsapp_health_api_v1_whatsapp_health_get",
         "responses": {
           "200": {
@@ -12839,6 +15756,22 @@
               "title": "Text",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
           }
         ],
         "responses": {
@@ -12873,7 +15806,7 @@
     },
     "/api/v1/whatsapp/webhook": {
       "post": {
-        "description": "Recebe mensagens do WhatsApp via Evolution API (https://doc.evolution-api.com/v2/api-reference).\n\n**Auth**: header `X-Hub-Signature-256` validado contra `EVOLUTION_API_KEY` (HMAC-SHA256).\n\n**Dual-format**: aceita **nested moderno** (`data.key.remoteJid`/`data.message.conversation`) e **root-level legado** (`sender`/`message` na raiz). Schema canonico em `app.schemas.webhook_payloads.EvolutionPayload`.\n\n**Idempotency**: `data.key.id` dedup via `evolution_ingest` (DB) + Redis SETNX (`chat_pipeline.check_idempotency`).\n\n**LGPD consent gate**: cliente deve aceitar LGPD via `SIM` antes do primeiro atendimento. Opt-out via `PARAR`/`SAIR` revoga consentimento.\n\n**Flow**: HMAC -> idempotency -> parse -> consent gate -> pipeline (debounce 1.2s -> rate limit 3s -> LLM com fallback chain -> scrub output).",
+        "description": "Recebe mensagens do WhatsApp via Evolution API (https://doc.evolution-api.com/v2/api-reference).\n\n**Auth**: header `X-Hub-Signature-256` (ou `X-Evolution-Signature`) validado contra `EVOLUTION_WEBHOOK_SECRET` (HMAC-SHA256). Fail-closed: 401 se inválida; 503 se REQUIRE=true sem secret.\n\n**Dual-format**: aceita **nested moderno** (`data.key.remoteJid`/`data.message.conversation`) e **root-level legado** (`sender`/`message` na raiz). Schema canonico em `app.schemas.webhook_payloads.EvolutionPayload`.\n\n**Idempotency**: `data.key.id` dedup via `evolution_ingest` (DB) + Redis SETNX (`chat_pipeline.check_idempotency`).\n\n**LGPD consent gate**: cliente deve aceitar LGPD via `SIM` antes do primeiro atendimento. Opt-out via `PARAR`/`SAIR` revoga consentimento.\n\n**Flow**: HMAC -> idempotency -> parse -> consent gate -> pipeline (debounce 1.2s -> rate limit 3s -> LLM com fallback chain -> scrub output).",
         "operationId": "whatsapp_webhook_api_v1_whatsapp_webhook_post",
         "requestBody": {
           "content": {
