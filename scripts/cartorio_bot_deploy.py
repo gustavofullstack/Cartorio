@@ -22,6 +22,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-llm — G6 wave 29.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -45,17 +46,24 @@ def get_config() -> tuple[str, str, str, str]:
     )
 
 
-def run_ssh(host: str, user: str, key: str, cmd: str, timeout: float) -> tuple[int, str, str]:
+def run_ssh(
+    host: str, user: str, key: str, cmd: str, timeout: float
+) -> tuple[int, str, str]:
     """Executa comando SSH. Retorna (exit_code, stdout, stderr)."""
     try:
         result = subprocess.run(
             [
                 "ssh",
-                "-i", key,
-                "-o", "StrictHostKeyChecking=no",
-                "-o", "UserKnownHostsFile=/dev/null",
-                "-o", "LogLevel=ERROR",
-                "-o", "ConnectTimeout=10",
+                "-i",
+                key,
+                "-o",
+                "StrictHostKeyChecking=no",
+                "-o",
+                "UserKnownHostsFile=/dev/null",
+                "-o",
+                "LogLevel=ERROR",
+                "-o",
+                "ConnectTimeout=10",
                 f"{user}@{host}",
                 cmd,
             ],
@@ -71,53 +79,23 @@ def run_ssh(host: str, user: str, key: str, cmd: str, timeout: float) -> tuple[i
 
 
 def render_openclaw_config(agent_name: str, password: str, api_base: str) -> str:
-    """Renderiza openclaw.json para cartorio-bot."""
-    return f"""{{
-  "agents": [
-    {{
-      "name": "{agent_name}",
-      "type": "cartorio-bot",
-      "description": "Bot conversacional do 2o Tabelionato de Notas e Protesto de Uberlandia",
-      "model": "gpt-4o-mini",
-      "system_prompt": "Voce eh o cartorio-bot, assistente do 2o Tabelionato de Uberlandia. Sempre responda em portugues BR, formal mas acessivel. LGPD: nunca armazene ou compartilhe dados pessoais sem consentimento explicito.",
-      "tools": [
-        {{"name": "api", "base_url": "{api_base}"}},
-        {{"name": "n8n", "webhook_url": "https://flow.2notasudi.com.br/webhook"}},
-        {{"name": "supabase", "url": "https://supbase.2notasudi.com.br"}},
-        {{"name": "redis", "url": "redis://redis.2notasudi.com.br:6379"}},
-        {{"name": "chatwoot", "url": "https://cartorio-chatwoot.dfgdxq.easypanel.host"}},
-        {{"name": "evolution", "url": "https://whatsapp.2notasudi.com.br"}}
-      ],
-      "skills": [
-        "cartorio_certidoes",
-        "cartorio_protocolos",
-        "cartorio_atendimento",
-        "lgpd_consentimento"
-      ],
-      "mcp_servers": [
-        "cartorio-mcp-cabuloso",
-        "cartorio-mcp-sre",
-        "cartorio-mcp-lgpd"
-      ],
-      "auth": {{
-        "type": "challenge",
-        "password_required": true,
-        "password_set": true
-      }}
-    }}
-  ]
-}}
-"""
+    """Read openclaw.json para cartorio-bot."""
+    with open("infra/openclaw/cartorio-bot.openclaw.json", "r") as f:
+        return f.read()
 
 
-def deploy_step_copy(host: str, user: str, key: str, src: str, dst: str, timeout: float) -> bool:
+def deploy_step_copy(
+    host: str, user: str, key: str, src: str, dst: str, timeout: float
+) -> bool:
     """Copia pasta local para VPS via scp."""
     try:
         result = subprocess.run(
             [
                 "scp",
-                "-i", key,
-                "-o", "StrictHostKeyChecking=no",
+                "-i",
+                key,
+                "-o",
+                "StrictHostKeyChecking=no",
                 "-r",
                 src,
                 f"{user}@{host}:{dst}",
@@ -132,7 +110,9 @@ def deploy_step_copy(host: str, user: str, key: str, src: str, dst: str, timeout
         return False
 
 
-def deploy_step_write_config(host: str, user: str, key: str, config_json: str, timeout: float) -> bool:
+def deploy_step_write_config(
+    host: str, user: str, key: str, config_json: str, timeout: float
+) -> bool:
     """Escreve openclaw.json no VPS."""
     cmd = f"echo '{config_json}' > {DEFAULT_OPENCLAW_CONFIG}"
     code, _, err = run_ssh(host, user, key, cmd, timeout)
@@ -164,10 +144,16 @@ def deploy_step_health_check(host: str, user: str, key: str, timeout: float) -> 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="CartorioBot deploy CLI")
-    parser.add_argument("--apply", action="store_true", help="aplicar (default: dry-run)")
+    parser.add_argument(
+        "--apply", action="store_true", help="aplicar (default: dry-run)"
+    )
     parser.add_argument("--dry-run", action="store_true", help="so mostra (default)")
-    parser.add_argument("--rollback", action="store_true", help="rollback para versao anterior")
-    parser.add_argument("--src", default="infra/openclaw/cartorio_bot", help="pasta fonte local")
+    parser.add_argument(
+        "--rollback", action="store_true", help="rollback para versao anterior"
+    )
+    parser.add_argument(
+        "--src", default="infra/openclaw/cartorio_bot", help="pasta fonte local"
+    )
     parser.add_argument("--timeout", type=float, default=120.0)
     args = parser.parse_args()
 
@@ -178,7 +164,9 @@ def main() -> int:
 
     print(f"VPS: {user}@{host}")
     print(f"Deploy dir: {deploy_dir}")
-    print(f"Mode: {'ROLLBACK' if args.rollback else 'APPLY' if args.apply else 'DRY-RUN'}")
+    print(
+        f"Mode: {'ROLLBACK' if args.rollback else 'APPLY' if args.apply else 'DRY-RUN'}"
+    )
     print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
     print()
 
@@ -204,18 +192,18 @@ def main() -> int:
     if not deploy_step_copy(host, user, key, args.src, deploy_dir, args.timeout):
         return 1
 
-    print(f"[2/4] Write openclaw.json...")
+    print("[2/4] Write openclaw.json...")
     config_json = render_openclaw_config("cartorio-bot", api_key_password, api_base)
     # Substituir newlines por \\n para SSH inline
     config_escaped = config_json.replace("'", "'\\''")
     if not deploy_step_write_config(host, user, key, config_escaped, args.timeout):
         return 1
 
-    print(f"[3/4] Restart OpenClaw container...")
+    print("[3/4] Restart OpenClaw container...")
     if not deploy_step_restart(host, user, key, args.timeout):
         return 1
 
-    print(f"[4/4] Health check /health...")
+    print("[4/4] Health check /health...")
     if not deploy_step_health_check(host, user, key, args.timeout):
         return 1
 

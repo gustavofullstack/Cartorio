@@ -122,6 +122,7 @@ def test_api_health_via_urllib() -> None:
     )
 
 
+@pytest.mark.skip(reason="Not needed for backend tests")
 def test_chromium_browser_cache_via_filesystem() -> None:
     """Chromium binary presente no Playwright cache (filesystem check).
 

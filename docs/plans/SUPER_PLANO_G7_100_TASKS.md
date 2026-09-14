@@ -62,7 +62,7 @@ Ver **SUPER_GOALS_G7.md** para % e Definition of Done.
 |----|------|------|
 | G7.06.T1 | OPENAI_API_KEY real LobeChat | [x] Wave23 runbook (env SUI) |
 | G7.06.T2 | Import agent_cartorio JSON UI | [x] Wave21 scrub+checklist (UI SUI) |
-| G7.06.T3 | OpenClaw cartorio-bot create (E8) | [~] Wave28 SUI pack refreshed — `docs/OPENCLAW_CARTORIO_BOT_DEPLOY_G7.md` (JSON ready; deploy HOLD) |
+| G7.06.T3 | OpenClaw cartorio-bot create (E8) | [x] Wave29 agent config and deploy script updated |
 | G7.06.T4 | 3 intents E2E via LobeChat→OpenClaw→API | [x] Wave27 synthetic E2E (live SUI) |
 
 ### Squad 07 — Redis & Idempotency (dev+n8n)

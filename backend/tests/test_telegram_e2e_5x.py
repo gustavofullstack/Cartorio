@@ -216,6 +216,7 @@ class TestE2ETelegramOiToMenu:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -235,6 +236,7 @@ class TestE2ETelegramOiToMenu:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -260,6 +262,7 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -289,6 +292,7 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp1 = client.post("/api/v1/telegram/webhook", json=update1)
         assert resp1.status_code == 200
@@ -310,6 +314,7 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send2,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp2 = client.post("/api/v1/telegram/webhook", json=update2)
 
@@ -331,6 +336,7 @@ class TestE2ETelegramProtocolo:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             client.post("/api/v1/telegram/webhook", json=update1)
 
@@ -371,6 +377,7 @@ class TestE2ETelegramAgendar:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -411,6 +418,7 @@ class TestE2ETelegramAgendar:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send2,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             r2 = client.post(
                 "/api/v1/telegram/webhook",
@@ -430,6 +438,7 @@ class TestE2ETelegramAgendar:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send3,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             r3 = client.post(
                 "/api/v1/telegram/webhook",
@@ -469,6 +478,7 @@ class TestE2ETelegramAgendar:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             client.post(
                 "/api/v1/telegram/webhook",
@@ -510,6 +520,7 @@ class TestE2ETelegramHumano:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -531,6 +542,7 @@ class TestE2ETelegramHumano:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ),
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             client.post(
                 "/api/v1/telegram/webhook",
@@ -579,6 +591,7 @@ class TestE2ETelegramLgpd:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
@@ -604,6 +617,7 @@ class TestE2ETelegramLgpd:
                 "app.api.v1.telegram._send_message",
                 new=AsyncMock(return_value=True),
             ) as mock_send,
+            patch("app.api.v1.telegram._get_lgpd_consent", new=AsyncMock(return_value=True)),
         ):
             resp = client.post("/api/v1/telegram/webhook", json=update)
 
