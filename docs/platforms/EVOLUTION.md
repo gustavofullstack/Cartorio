@@ -13,7 +13,7 @@
 | URL externa | `https://whatsapp.2notasudi.com.br` |
 | Manager UI | `https://whatsapp.2notasudi.com.br/manager` |
 | Versão | Evolution API v2.3.7 |
-| API key global | `429683C4C977415CAAFCCE10F7D57E11` |
+| API key global | `your_secure_api_key_here` |
 | Instância | `cartorio-2notas` (state=`close`, connectionStatus=`connecting`) |
 | Webhook | `https://cartorio-n8n.dfgdxq.easypanel.host/webhook/evo-in` (5 eventos) |
 | WhatsApp teste | TriQ Hub (conectado para testes) |

@@ -11,7 +11,7 @@
       "instance": "cartorio-2notas",
       "instance_state": "close",
       "instance_connection": "connecting",
-      "api_key": "429683C4C977415CAAFCCE10F7D57E11",
+      "api_key": "your_secure_api_key_here",
       "webhook_url": "https://flow.2notasudi.com.br/webhook/evo-in",
       "webhook_events": 5,
       "db_tables": 37,

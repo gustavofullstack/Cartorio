@@ -17,7 +17,7 @@ N8N community license não inclui `feat:variables`. Workaround: injetar env vars
 | # | Key | Value | Source | Status |
 |---|-----|-------|--------|--------|
 | 1 | `EVOLUTION_API_URL` | `http://cartorio_evolution-api:8080` | cartorio_api container env | ✅ **INJECTED** |
-| 2 | `EVOLUTION_API_KEY` | `429683C4C977415CAAFCCE10F7D57E11` | cartorio_api container env | ✅ **INJECTED** |
+| 2 | `EVOLUTION_API_KEY` | `your_secure_api_key_here` | cartorio_api container env | ✅ **INJECTED** |
 | 3 | `CARTORIO_API_KEY` | (empty) | n/a | ❌ **BLOCKED** — value not in any container, .env, or backend code |
 | 4 | `CHATWOOT_BOT_TOKEN` | (empty) | `backend/.env.example`: `PENDING_GUSTAVO_UI` | ❌ **BLOCKED** — needs Gustavo UI |
 | 5 | `TELEGRAM_BOT_TOKEN` | (not configured) | n/a | ❌ **BLOCKED** — value doesn't exist anywhere |

@@ -22,7 +22,7 @@
 ```
 URL:     https://whatsapp.2notasudi.com.br/manager
 Instance: cartorio-2notas
-API Key: 24s6pdZqUwblg0v4UJTV3YilLm1WZQIu (em .env: EVOLUTION_API_KEY)
+API Key: your_secure_api_key_here (em .env: EVOLUTION_API_KEY)
 ```
 
 ### QR Scan (uma vez)
@@ -307,7 +307,7 @@ CREATE UNIQUE INDEX idx_whatsapp_consent_jid ON whatsapp_consent(remote_jid);
 
 ```bash
 EVOLUTION_BASE_URL=https://whatsapp.2notasudi.com.br
-EVOLUTION_API_KEY=24s6pdZqUwblg0v4UJTV3YilLm1WZQIu
+EVOLUTION_API_KEY=your_secure_api_key_here
 EVOLUTION_INSTANCE=cartorio-2notas
 WHATSAPP_CONSENT_REQUIRED=true
 ```

@@ -72,7 +72,7 @@ chmod 600 /Users/gustavoalmeida/projetos/Cartorio/.secrets/cloudflare.env
 ```
 Evolution API v2.3.7 ✅ UP
 Container: cartorio_evolution-api.1.ajxytouy87i5fo9iind2eobnb
-AUTHENTICATION_API_KEY=429683C4C977415CAAFCCE10F7D57E11
+AUTHENTICATION_API_KEY=your_secure_api_key_here
 Instance: cartorio-2notas (state=close)
 Webhook: https://flow.2notasudi.com.br/webhook/evo-in
 ```
@@ -80,7 +80,7 @@ Webhook: https://flow.2notasudi.com.br/webhook/evo-in
 ### 🛠️ Ação Gustavo (UI — 2min):
 
 1. Abra https://whatsapp.2notasudi.com.br/manager
-2. Login com `AUTHENTICATION_API_KEY = 429683C4C977415CAAFCCE10F7D57E11`
+2. Login com `AUTHENTICATION_API_KEY = your_secure_api_key_here`
 3. Selecione instância `cartorio-2notas`
 4. **Aparecerá QR code** se instance estiver `close` (estado atual)
 5. Abra WhatsApp Business no celular **+55 34 99999-9999** (Gustavo pessoal)
@@ -92,7 +92,7 @@ Webhook: https://flow.2notasudi.com.br/webhook/evo-in
 ```bash
 ssh root@100.99.172.84 'docker exec cartorio_evolution-api.1.ajxytouy87i5fo9iind2eobnb \
   wget -q -O - "http://localhost:8080/instance/connectionState/cartorio-2notas" \
-  --header="apikey: 429683C4C977415CAAFCCE10F7D57E11"'
+  --header="apikey: your_secure_api_key_here"'
 # Esperado: {"instance":{"state":"open"}}
 ```
 
@@ -133,7 +133,7 @@ done
 # 2. EVO QR
 ssh root@100.99.172.84 'docker exec cartorio_evolution-api.1.*.*.* \
   wget -q -O - "http://localhost:8080/instance/connectionState/cartorio-2notas" \
-  --header="apikey: 429683C4C977415CAAFCCE10F7D57E11"'
+  --header="apikey: your_secure_api_key_here"'
 # Esperado: state=open
 
 # 3. Bot Telegram (já funcional, opcional):

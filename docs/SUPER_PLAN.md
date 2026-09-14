@@ -103,7 +103,7 @@ Centralizado em `.env` (nunca commitado, em `/etc/easypanel/projects/cartorio/.e
 - `DB_PASS=your-super-secret-and-long-postgres-password` (Supabase)
 - `DB_NAME=cartorio`
 - `REDIS_URL=redis://default:%40Techno832466@cartorio_redis:6379/0`
-- `EVOLUTION_API_KEY=429683C4C977415CAAFCCE10F7D57E11`
+- `EVOLUTION_API_KEY=your_secure_api_key_here`
 - `OPENCLAW_GATEWAY_TOKEN=fz1qzo2xka8n82rn62irscuqws75mm1e17mpsnxzqlp13z1p35skrbg2ck8yg8pg`
 - `ANTHROPIC_API_KEY=__PENDENTE_GUSTAVO__`
 - `OPENAI_API_KEY=__PENDENTE_GUSTAVO__`

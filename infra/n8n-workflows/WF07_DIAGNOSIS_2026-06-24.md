@@ -49,7 +49,7 @@ This is **NOT** a credential issue. The credential `evolution-api-cartorio` (id 
 |------|--------|----------|
 | Credential `evolution-api-cartorio` exists | ✅ | id `adbzRn9sEZD7VZbs`, type `evolutionApi` |
 | Credential bound to WF #07 Evolution sendText | ✅ | N8N workflow JSON shows `credentials.evolutionApi.id` |
-| AUTHENTICATION_API_KEY matches EVOLUTION_API_KEY | ✅ | Both = `429683C4C977415CAAFCCE10F7D57E11` |
+| AUTHENTICATION_API_KEY matches EVOLUTION_API_KEY | ✅ | Both = `your_secure_api_key_here` |
 | Instance `cartorio-2notas` exists in Evolution API | ✅ | DB row confirmed |
 | API key works for fetchInstances | ✅ | Returns full JSON with instance data |
 | QR code generation endpoint works | ✅ | `/instance/connect/cartorio-2notas` returns valid base64 PNG |
@@ -70,7 +70,7 @@ This is **NOT** a credential issue. The credential `evolution-api-cartorio` (id 
 
 ```bash
 # Get QR code as base64 PNG
-curl -sS -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" \
+curl -sS -H "apikey: your_secure_api_key_here" \
   "https://whatsapp.2notasudi.com.br/instance/connect/cartorio-2notas" \
   | python3 -c "import json, sys, base64; d=json.load(sys.stdin); img=base64.b64decode(d['base64'].split(',')[1]); open('/tmp/qr.png','wb').write(img); print('QR saved to /tmp/qr.png')"
 # Open /tmp/qr.png and scan with WhatsApp

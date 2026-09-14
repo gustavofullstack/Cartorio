@@ -96,7 +96,7 @@
 ssh -i ~/.ssh/id_ed25519 root@100.99.172.84 'docker service scale zk9ap1crb0ho=0 && sleep 5 && docker service scale zk9ap1crb0ho=1'
 
 # Setar Evolution webhook
-curl -X POST -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" -H "Content-Type: application/json" \
+curl -X POST -H "apikey: your_secure_api_key_here" -H "Content-Type: application/json" \
   -d '{"webhook":{"enabled":true,"url":"https://flow.2notasudi.com.br/webhook/evo-in","events":["MESSAGES_UPSERT","MESSAGES_UPDATE","CONNECTION_UPDATE","QRCODE_UPDATED","SEND_MESSAGE"]}}' \
   http://172.16.2.9:8080/webhook/set/cartorio-2notas
 

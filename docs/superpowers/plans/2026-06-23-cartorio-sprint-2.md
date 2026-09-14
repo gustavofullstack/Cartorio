@@ -37,7 +37,7 @@
 ### Task 1.1: Conectar WhatsApp (UI - Gustavo)
 - [ ] Gustavo acessa `https://whatsapp.2notasudi.com.br/manager/instance/cartorio-2notas`
 - [ ] Escaneia QR Code com WhatsApp do cartorio
-- [ ] Valida: `curl -sk -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" "http://172.16.2.7:8080/instance/connectionState/cartorio-2notas"` retorna `state: open`
+- [ ] Valida: `curl -sk -H "apikey: your_secure_api_key_here" "http://172.16.2.7:8080/instance/connectionState/cartorio-2notas"` retorna `state: open`
 - **Tempo**: 2 min
 
 ### Task 1.2: Configurar webhook Evolution -> N8N (Mavis/SSH)
