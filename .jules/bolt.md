@@ -1,0 +1,3 @@
+## 2026-07-14 - [Fix N+1 query in agendamentos lists]
+**Learning:** In endpoints that return a list of items (`get_agendamentos_pendentes` and `get_agendamentos_proximos`), executing individual `db.execute(select(Cliente).where(Cliente.id == cliente_id))` queries within a loop leads to severe N+1 performance issues, executing an extra DB query for every single item.
+**Action:** When mapping relationships across a list of items, always pre-fetch the necessary data by collecting unique foreign keys (e.g., `cliente_id`) beforehand and batching the lookup with `in_` clauses outside the loop, creating an in-memory dictionary for O(1) lookups.
