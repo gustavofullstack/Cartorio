@@ -28,6 +28,7 @@ def mock_adapter():
     with patch("app.api.v1.whatsapp.get_adapter") as mock_get:
         adapter = MagicMock()
         adapter.send = AsyncMock(return_value=True)
+        adapter.send_poll = AsyncMock(return_value="POLL_TEST_CONSENT")
         adapter.verify_signature = AsyncMock(return_value=True)
         mock_get.return_value = adapter
         yield adapter
@@ -70,7 +71,8 @@ async def test_whatsapp_first_message_requires_consent(mock_adapter, db_session)
     mock_adapter.send.assert_called_once()
     sent_text = mock_adapter.send.call_args[0][0].text
     assert "AVISO LGPD" in sent_text
-    assert "digite *SIM*" in sent_text
+    assert "SIM" in sent_text
+    mock_adapter.send_poll.assert_awaited()
 
 
 @pytest.mark.asyncio
@@ -80,10 +82,27 @@ async def test_whatsapp_consent_notice_is_not_duplicated_within_ten_minutes(
 ) -> None:
     """Duas mensagens antes do SIM geram um unico aviso, como exigido pelos prints."""
 
+    store: dict[str, str] = {}
+
+    async def fake_get(key: str) -> str | None:
+        return store.get(key)
+
+    async def fake_set(key: str, value: str, **_kwargs: object) -> str:
+        store[key] = value
+        return "OK"
+
+    async def fake_delete(*keys: str) -> int:
+        removed = 0
+        for key in keys:
+            if store.pop(key, None) is not None:
+                removed += 1
+        return removed
+
     with patch("app.api.v1.whatsapp.get_bus") as mock_get_bus:
         mock_bus = MagicMock()
-        mock_bus.client.get = AsyncMock(return_value=None)
-        mock_bus.client.set = AsyncMock(side_effect=[True, False])
+        mock_bus.client.get = AsyncMock(side_effect=fake_get)
+        mock_bus.client.set = AsyncMock(side_effect=fake_set)
+        mock_bus.client.delete = AsyncMock(side_effect=fake_delete)
         mock_get_bus.return_value = mock_bus
 
         first = client.post(
@@ -98,6 +117,7 @@ async def test_whatsapp_consent_notice_is_not_duplicated_within_ten_minutes(
     assert first.json()["detail"] == "consent_required"
     assert second.json()["detail"] == "consent_required"
     mock_adapter.send.assert_awaited_once()
+    mock_adapter.send_poll.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -344,20 +364,26 @@ async def test_redis_down_does_not_block_durable_database_consent(mock_adapter, 
 
 
 @pytest.mark.asyncio
-async def test_opt_in_without_persisted_cliente_never_claims_granted(
+async def test_opt_in_without_persisted_cliente_provisions_and_grants(
     mock_adapter, db_session
 ) -> None:
+    sender = "5534933333333"
     response = client.post(
         "/api/v1/whatsapp/webhook",
         json=_make_evolution_payload(
             "SIM",
-            sender="5534933333333",
+            sender=sender,
             message_id="CONSENT-NO-CLIENT",
         ),
     )
 
-    assert response.status_code == 503
-    assert "consent_granted" not in response.text
+    assert response.status_code == 200
+    assert response.json()["detail"] == "consent_granted"
+    from app.models.cliente import Cliente
+    from app.services.pietra_coleta import hash_phone
+
+    cliente = db_session.query(Cliente).filter_by(telefone_hash=hash_phone(sender)).one()
+    assert cliente.consentimento_lgpd is True
 
 
 @pytest.mark.asyncio

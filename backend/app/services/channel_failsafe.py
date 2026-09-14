@@ -66,7 +66,16 @@ _UNSUPPORTED_MEDIA = ChannelFailSafe(
     ),
 )
 
-_WHATSAPP_TEXT_TYPES = frozenset({"conversation", "extendedtextmessage"})
+_WHATSAPP_TEXT_TYPES = frozenset(
+    {
+        "conversation",
+        "extendedtextmessage",
+        "pollupdatemessage",
+        "pollcreationmessage",
+        "pollcreationmessagev2",
+        "pollcreationmessagev3",
+    }
+)
 
 
 def action_failsafe(action: str | None) -> ChannelFailSafe | None:
