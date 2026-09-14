@@ -415,6 +415,8 @@ def test_text_free_shows_menu(client: TestClient, telegram_update_text: dict) ->
         or "cartório" in sent_text.lower()
         or "emolumento" in sent_text.lower()
         or "tabela" in sent_text.lower()
+        or "humano" in sent_text.lower()
+        or "escrevente" in sent_text.lower()
     )
 
 
