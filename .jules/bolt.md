@@ -1,0 +1,3 @@
+## 2024-05-19 - MCP PII Scrub Optimization
+**Learning:** Found string processing bottleneck in MCP payload scrubbing. `mcp_output_has_raw_cpf` was converting the entire arbitrary `data` object to a string `str(data)` right away, before applying regexes, which causes major memory copying and serialization overhead for large backend payloads. Additionally, it recompiles the regex on every call.
+**Action:** Extract `cpf_re` to module level so it compiles once. Avoid `str(data)` when `data` is a large structure unless necessary, or use a faster traversal strategy. But given this function says `(para testes)`, it might be less critical than a production bottleneck. Let's look further.

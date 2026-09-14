@@ -15,6 +15,7 @@ Modified by Gustavo Almeida — G8 Wave 33 A2.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from app.services.pii import scrub
@@ -82,17 +83,22 @@ def _scrub_value(data: Any, *, depth: int, max_depth: int) -> Any:
     return data
 
 
+_cpf_re = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
+
+
 def mcp_output_has_raw_cpf(data: Any) -> bool:
     """True se ainda restar padrão de CPF não redigido (para testes)."""
-    import re
+    if isinstance(data, dict):
+        return any(mcp_output_has_raw_cpf(k) or mcp_output_has_raw_cpf(v) for k, v in data.items())
+    if isinstance(data, (list, tuple)):
+        return any(mcp_output_has_raw_cpf(v) for v in data)
 
-    cpf_re = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
     blob = str(data)
     # redacted markers ok
     if "CPF_REDACTED" in blob or "[REDACTED]" in blob:
         # still search for unredacted
         pass
-    for m in cpf_re.finditer(blob):
+    for m in _cpf_re.finditer(blob):
         if "REDACTED" not in m.group(0):
             return True
     return False
