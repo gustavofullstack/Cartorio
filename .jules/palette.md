@@ -1,0 +1,3 @@
+## 2026-07-10 - Accessibility in embedded HTML strings
+**Learning:** When customizing API documentation interfaces like Swagger UI via inline HTML strings in Python backends (like FastAPI), it is easy to miss standard web accessibility practices since these strings aren't checked by frontend UI linters.
+**Action:** Always verify that embedded templates maintain proper semantic HTML structure (using tags like `<header>`, `<nav>`, `<main>`), include skip-to-content links, and clearly define `:focus-visible` styles for keyboard navigation, double-escaping curly braces for CSS as `{{` and `}}`.
