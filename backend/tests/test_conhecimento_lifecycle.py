@@ -92,3 +92,10 @@ def test_exige_actor_e_reason() -> None:
 def test_pode_transicionar_matriz() -> None:
     assert pode_transicionar(EstadoConhecimento.APPROVED, EstadoConhecimento.PUBLISHED)
     assert not pode_transicionar(EstadoConhecimento.INGESTED, EstadoConhecimento.PUBLISHED)
+
+
+def test_destinos_permitidos_estado_desconhecido() -> None:
+    with pytest.raises(
+        TransicaoConhecimentoInvalidaError, match="estado desconhecido: INVALID_STATE"
+    ):
+        destinos_permitidos("INVALID_STATE")
