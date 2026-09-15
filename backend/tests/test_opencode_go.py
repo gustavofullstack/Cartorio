@@ -672,3 +672,37 @@ def test_docstring_declares_correct_model():
     assert "OpenCode-Go" in docstring
     # A inconsistência com MiniMax foi resolvida (opencode.json = Mavis runtime)
     assert "MiniMax" in docstring or "Mavis runtime" in docstring
+
+
+@pytest.mark.asyncio
+async def test_chat_sends_thinking_mode_adaptive():
+    """Chat envia payload com thinking=adaptive se configurado."""
+    from app.integrations.opencode_go import chat
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": "ok"}}],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+    }
+
+    with patch("app.integrations.opencode_go.httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__aenter__.return_value = mock_client
+        mock_client.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_client
+
+        await chat(
+            messages=[{"role": "user", "content": "hello"}],
+            model="deepseek-v4-flash",
+            api_key="valid",
+            base_url="http://valid",
+            consent_granted=True,
+            thinking_mode="adaptive",
+        )
+
+        mock_client.post.assert_called_once()
+        kwargs = mock_client.post.call_args.kwargs
+        assert "thinking" in kwargs["json"]
+        assert kwargs["json"]["thinking"] == {"type": "adaptive"}
