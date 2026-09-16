@@ -1,0 +1,3 @@
+## 2026-06-22 - Accessibility improvements needed
+**Learning:** Found static HTML panels like `dashboard.html` and `agent_ai_data_panel.html` that dynamically render results. They lack accessibility features like `aria-live="polite"` for screen readers to announce dynamically loaded data, as dictated by standard a11y practices and explicit memory instructions ("ensure dynamically populated result containers (like AI extraction outputs) include `aria-live="polite"` for screen reader accessibility").
+**Action:** Add `aria-live="polite"` and `aria-atomic="true"` to containers that are dynamically updated via JS fetch calls.
