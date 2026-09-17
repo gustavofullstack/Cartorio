@@ -1881,14 +1881,17 @@ async def health_radar() -> dict:
             probe_http(client, f"{settings.n8n_base_url}/healthz", (200,)),
             probe_http(
                 client,
-                f"{settings.openclaw_base_url}/health" if settings.openclaw_enabled and settings.openclaw_base_url else None,
+                f"{settings.openclaw_base_url}/health"
+                if settings.openclaw_enabled and settings.openclaw_base_url
+                else None,
                 (200,),
             ),
             probe_http(client, f"{settings.evolution_base_url}/", (200,)),
             probe_http(
                 client,
                 f"{settings.chatwoot_base_url}/health"
-                if (settings.chatwoot_webhook_enabled or settings.chatwoot_outbound_enabled) and settings.chatwoot_base_url
+                if (settings.chatwoot_webhook_enabled or settings.chatwoot_outbound_enabled)
+                and settings.chatwoot_base_url
                 else None,
                 (200, 201),
             ),
@@ -4383,7 +4386,7 @@ async def get_protocolos_recentes_concluidos(
     assert_dpo_for_include_deleted(request, include_deleted)
 
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.cartorio_api_key):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key obrigatoria."},
@@ -4694,7 +4697,7 @@ async def admin_validate_n8n_wfs(request: Request) -> dict:
     from app.services.n8n_workflow_validator import validate_all
 
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.cartorio_api_key):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
@@ -4798,7 +4801,7 @@ async def admin_lgpd_relatorio_anual(
     from app.services.lgpd_relatorio import gerar_relatorio_anual, render_markdown
 
     api_key = request.headers.get("x-api-key")
-    if not api_key or api_key != settings.cartorio_api_key:
+    if not api_key or not hmac.compare_digest(api_key, settings.cartorio_api_key):
         raise HTTPException(
             status_code=401,
             detail={"erro": "UNAUTHORIZED", "mensagem": "X-API-Key invalida"},
