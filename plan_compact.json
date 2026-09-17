@@ -1,0 +1,45 @@
+{
+  "project": "Cartorio Agent AI",
+  "total_tasks": 100,
+  "strategy": "Improve, do not rewrite. Max 1-2 concurrent subagents. Strict memory usage.",
+  "phases": {
+    "API_CORE": [
+      "Review PII pre-LLM", "Add Telegram tests", "Traefik rate limit", "Supabase DB indexes",
+      "Redis caching/TTL", "Log masking", "Traefik failover", "Swarm health probes",
+      "Swagger API dedupe", "Deprecate v2 APIs", "Update models.json", "Sync MCP tools",
+      "Chatwoot E2E latency", "LGPD audit", "N8N key config", "Pydantic schema validation",
+      "Update deps", "FastAPI error handling", "Httpx timeout", "Evolution API retry"
+    ],
+    "N8N_WORKFLOWS": [
+      "WF #1 optimization", "N8N timeouts", "Webhook schemas", "Telegram WF isolation",
+      "N8N credentials sync", "Evolution webhook check", "Supabase logic integration",
+      "Redis cron polling", "Handoff overhead", "Global error handler", "Chatwoot triggers",
+      "V1 API update", "PII log review", "Queue monitoring", "Alerting via Slack/TG",
+      "Clean old workflows", "E2E testing (n8n+FastAPI)", "N8N Rate limits", "Auth headers",
+      "n8n_runner testing"
+    ],
+    "SUPABASE_DB_REDIS": [
+      "Supabase Vault", "Supabase Cron", "DB Webhooks", "Redis memory optimization",
+      "Redis persistence", "TLS connections", "Supabase Realtime", "RLS permissions",
+      "Clean Alembic", "Pgvector functions", "Redis deduplication", "Read replica/PgBouncer",
+      "Supabase REST", "Supabase GraphQL", "Redis sliding window", "DLQ setup",
+      "Schema documentation", "Dashboard metrics", "Auth proxy Traefik", "DB Index review"
+    ],
+    "AGENT_OPENCLAW": [
+      "1M context tokens", "Adaptive thinkings", "MCP accuracy", "Short system prompt",
+      "Opencode-Zen fallback", "Qwen coder test", "Prompt caching", "No-emoji outputs",
+      "Token usage minimize", "DeepSeek limits", "ZCode/Zed integration", "Chatwoot handoff",
+      "OpenClaw skill registry", "max_tokens_per_response", "Codex-bar logs", "Memory retention",
+      "Giant context stress-test", "Recall automated tests", "Intent classification", "UX WhatsApp refactor"
+    ],
+    "CHATWOOT_EVOLUTION": [
+      "Chatwoot handoff webhooks", "Chatwoot pause bot rules", "Evolution instances",
+      "Evolution retries", "Webhook idempotency", "Read/Delivered status", "Media sending",
+      "Contacts sync", "Auto-assignment Chatwoot", "Evolution gateway connection",
+      "WhatsApp 'go-live' docs", "TLS Chatwoot review", "Telegram bot webhook fallback",
+      "Telegram/N8N isolation", "Clear unresolved messages", "LGPD tags Chatwoot",
+      "Chatwoot -> Supabase N8N sync", "Quick replies", "Vanilla JS dashboard review",
+      "Final 100% integration audit"
+    ]
+  }
+}

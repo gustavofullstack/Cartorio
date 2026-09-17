@@ -1139,7 +1139,7 @@ async def _chat_completion(
     }
     payload_rich: dict[str, Any] = {
         **payload_min,
-        "thinking": {"type": os.environ.get("MINIMAX_THINKING_TYPE", "medium")},
+        "thinking": {"type": os.environ.get("MINIMAX_THINKING_TYPE", "adaptive")},
     }
     if tools:
         payload_rich["tools"] = tools
