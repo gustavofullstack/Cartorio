@@ -1,0 +1,604 @@
+{
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "squad": "N8N",
+      "title": "Improvement Task 1 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-002",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 2 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-003",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 3 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-004",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 4 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-005",
+      "squad": "REDIS",
+      "title": "Improvement Task 5 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-006",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 6 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-007",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 7 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-008",
+      "squad": "DOCS",
+      "title": "Improvement Task 8 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-009",
+      "squad": "TESTS",
+      "title": "Improvement Task 9 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-010",
+      "squad": "API",
+      "title": "Improvement Task 10 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-011",
+      "squad": "N8N",
+      "title": "Improvement Task 11 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-012",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 12 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-013",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 13 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-014",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 14 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-015",
+      "squad": "REDIS",
+      "title": "Improvement Task 15 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-016",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 16 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-017",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 17 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-018",
+      "squad": "DOCS",
+      "title": "Improvement Task 18 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-019",
+      "squad": "TESTS",
+      "title": "Improvement Task 19 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-020",
+      "squad": "API",
+      "title": "Improvement Task 20 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-021",
+      "squad": "N8N",
+      "title": "Improvement Task 21 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-022",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 22 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-023",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 23 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-024",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 24 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-025",
+      "squad": "REDIS",
+      "title": "Improvement Task 25 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-026",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 26 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-027",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 27 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-028",
+      "squad": "DOCS",
+      "title": "Improvement Task 28 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-029",
+      "squad": "TESTS",
+      "title": "Improvement Task 29 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-030",
+      "squad": "API",
+      "title": "Improvement Task 30 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-031",
+      "squad": "N8N",
+      "title": "Improvement Task 31 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-032",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 32 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-033",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 33 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-034",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 34 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-035",
+      "squad": "REDIS",
+      "title": "Improvement Task 35 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-036",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 36 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-037",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 37 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-038",
+      "squad": "DOCS",
+      "title": "Improvement Task 38 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-039",
+      "squad": "TESTS",
+      "title": "Improvement Task 39 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-040",
+      "squad": "API",
+      "title": "Improvement Task 40 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-041",
+      "squad": "N8N",
+      "title": "Improvement Task 41 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-042",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 42 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-043",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 43 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-044",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 44 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-045",
+      "squad": "REDIS",
+      "title": "Improvement Task 45 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-046",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 46 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-047",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 47 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-048",
+      "squad": "DOCS",
+      "title": "Improvement Task 48 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-049",
+      "squad": "TESTS",
+      "title": "Improvement Task 49 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-050",
+      "squad": "API",
+      "title": "Improvement Task 50 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-051",
+      "squad": "N8N",
+      "title": "Improvement Task 51 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-052",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 52 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-053",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 53 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-054",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 54 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-055",
+      "squad": "REDIS",
+      "title": "Improvement Task 55 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-056",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 56 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-057",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 57 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-058",
+      "squad": "DOCS",
+      "title": "Improvement Task 58 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-059",
+      "squad": "TESTS",
+      "title": "Improvement Task 59 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-060",
+      "squad": "API",
+      "title": "Improvement Task 60 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-061",
+      "squad": "N8N",
+      "title": "Improvement Task 61 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-062",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 62 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-063",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 63 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-064",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 64 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-065",
+      "squad": "REDIS",
+      "title": "Improvement Task 65 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-066",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 66 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-067",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 67 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-068",
+      "squad": "DOCS",
+      "title": "Improvement Task 68 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-069",
+      "squad": "TESTS",
+      "title": "Improvement Task 69 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-070",
+      "squad": "API",
+      "title": "Improvement Task 70 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-071",
+      "squad": "N8N",
+      "title": "Improvement Task 71 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-072",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 72 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-073",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 73 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-074",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 74 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-075",
+      "squad": "REDIS",
+      "title": "Improvement Task 75 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-076",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 76 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-077",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 77 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-078",
+      "squad": "DOCS",
+      "title": "Improvement Task 78 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-079",
+      "squad": "TESTS",
+      "title": "Improvement Task 79 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-080",
+      "squad": "API",
+      "title": "Improvement Task 80 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-081",
+      "squad": "N8N",
+      "title": "Improvement Task 81 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-082",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 82 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-083",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 83 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-084",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 84 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-085",
+      "squad": "REDIS",
+      "title": "Improvement Task 85 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-086",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 86 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-087",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 87 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-088",
+      "squad": "DOCS",
+      "title": "Improvement Task 88 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-089",
+      "squad": "TESTS",
+      "title": "Improvement Task 89 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-090",
+      "squad": "API",
+      "title": "Improvement Task 90 for API",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-091",
+      "squad": "N8N",
+      "title": "Improvement Task 91 for N8N",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-092",
+      "squad": "SUPABASE",
+      "title": "Improvement Task 92 for SUPABASE",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-093",
+      "squad": "CHATWOOT",
+      "title": "Improvement Task 93 for CHATWOOT",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-094",
+      "squad": "OPENCLAW",
+      "title": "Improvement Task 94 for OPENCLAW",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-095",
+      "squad": "REDIS",
+      "title": "Improvement Task 95 for REDIS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-096",
+      "squad": "EVOLUTION",
+      "title": "Improvement Task 96 for EVOLUTION",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-097",
+      "squad": "DEVSEC",
+      "title": "Improvement Task 97 for DEVSEC",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-098",
+      "squad": "DOCS",
+      "title": "Improvement Task 98 for DOCS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-099",
+      "squad": "TESTS",
+      "title": "Improvement Task 99 for TESTS",
+      "status": "TODO"
+    },
+    {
+      "id": "TASK-100",
+      "squad": "API",
+      "title": "Improvement Task 100 for API",
+      "status": "TODO"
+    }
+  ]
+}
