@@ -1,0 +1,5 @@
+
+## 2024-05-18 - Parameterized Queries in Python Date Expressions
+**Vulnerability:** Used Python string interpolation (`f"SELECT ... {ts_1d}"`) to construct raw SQL queries containing date expressions (`backend/app/api/v1/lgpd_dpo_dashboard.py` and `backend/app/api/v1/lgpd_direitos_v2.py`).
+**Learning:** Even if the injected variables are internally generated safe values (like date expressions or intervals) and not user inputs, using string interpolation for raw SQL construction sets a dangerous pattern (CWE-89 SQL Injection) that could be exploited if refactored to include user inputs. Generating dialect-specific SQL snippets via string manipulation is also fragile.
+**Prevention:** Always use parameterized SQL queries (e.g., `:ts_1d`) and pass the Python native objects (like `datetime.datetime`) through the bindings dictionary (`db.execute(stmt, {"ts_1d": dt})`). This delegates the secure serialization of data types (like timestamps) to the ORM/driver, completely preventing injection possibilities and standardizing cross-dialect support.
