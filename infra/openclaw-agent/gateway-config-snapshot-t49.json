@@ -34,7 +34,7 @@
   },
   "agents": {
     "defaults": {
-      "model": "openai/qwen3.7-max",
+      "model": "openai/deepseek-v4-flash",
       "thinkingDefault": "adaptive",
       "contextTokens": 1048576,
       "skills": [
