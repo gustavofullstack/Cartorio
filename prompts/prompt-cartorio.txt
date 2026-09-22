@@ -1,0 +1,9 @@
+Orquestrar de 1 ou 2 agents no maximo;
+Tudo deve ser acessado via MCPs, APIs, SSH, SSH-Tailscale;
+Nunca rotacionar chaves;
+Testar os workflows N8N e documentar;
+Banco de dados central supabase: configurar;
+Agent AI Cartorio (Openclaw) provider model deepseek-v4-flash e thinking adaptive;
+Openclaw agente bot prompt: direto, curto, serio e sem emojis;
+TELEGRAM BOT TOKEN: REDACTED_TELEGRAM_TOKEN;
+MINIMAX_API_KEY: REDACTED_MINIMAX_KEY;
