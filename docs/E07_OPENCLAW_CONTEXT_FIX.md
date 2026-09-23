@@ -148,5 +148,5 @@ Se após o fix o contexto continuar limitado:
 ---
 
 **Criado em**: 2026-06-26 (ZCode/Mavis)
-**Status**: Script pronto, aguardando execução por Gustavo/agente com SSH
+**Status**: ✅ DONE (1M context + reasoning: true para deepseek-v4-flash aplicados no infra json)
 **Commit**: `88f7b87` (scripts/fix_openclaw_context_1M.sh)
