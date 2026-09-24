@@ -1,5 +1,4 @@
 """cleanup_sim.py — Limpa contatos + conversas duplicados da POC anterior."""
-
 import json
 import os
 
@@ -61,9 +60,7 @@ def main() -> None:
                         timeout=10,
                     )
                     deleted += 1
-                    print(
-                        f"  delete contact#{cid} ({c.get('name')}) status={rd.status_code}"
-                    )
+                    print(f"  delete contact#{cid} ({c.get('name')}) status={rd.status_code}")
         # Paginação
         if meta.get("total_pages") and page >= meta["total_pages"]:
             break

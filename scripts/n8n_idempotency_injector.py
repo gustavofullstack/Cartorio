@@ -20,7 +20,6 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-n8n — G6 wave 13.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -157,9 +156,7 @@ def inject_idempotency(wf_path: Path) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="N8N idempotency injector")
-    parser.add_argument(
-        "--apply", action="store_true", help="aplicar injecao (sem isso, dry-run)"
-    )
+    parser.add_argument("--apply", action="store_true", help="aplicar injecao (sem isso, dry-run)")
     parser.add_argument("--report", type=Path, help="gerar report markdown")
     args = parser.parse_args()
 
@@ -168,9 +165,7 @@ def main() -> int:
         return 2
 
     wfs = sorted(WF_DIR.glob("*.json"))
-    missing: list[Path] = [
-        w for w in wfs if not has_idempotency(w) and get_webhook_node(w)
-    ]
+    missing: list[Path] = [w for w in wfs if not has_idempotency(w) and get_webhook_node(w)]
     applied: list[Path] = []
 
     print(f"Total WFs: {len(wfs)}")
@@ -192,9 +187,7 @@ def main() -> int:
             for w in missing:
                 md.append(f"- `{w.name}`")
             md.append("\n## Para aplicar:\n")
-            md.append(
-                "```bash\npython3 scripts/n8n_idempotency_injector.py --apply\n```\n"
-            )
+            md.append("```bash\npython3 scripts/n8n_idempotency_injector.py --apply\n```\n")
             args.report.write_text("\n".join(md))
             print(f"  Report: {args.report}", file=sys.stderr)
         return 1
@@ -224,9 +217,7 @@ def main() -> int:
         md.append("2. Dedup key: `webhook:{path}:{webhook_id}`")
         md.append("3. Throw `DUPLICATE_WEBHOOK` se ja existir")
         md.append("\n---\n")
-        md.append(
-            "**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 13 (auto-gerado)**"
-        )
+        md.append("**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 13 (auto-gerado)**")
         args.report.write_text("\n".join(md))
         print(f"  Report: {args.report}", file=sys.stderr)
 

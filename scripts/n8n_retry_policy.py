@@ -20,7 +20,6 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-n8n — G6 wave 26.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -88,9 +87,7 @@ def apply_retry_policy(
 ) -> bool:
     """Aplica retry policy em 1 workflow."""
     if dry_run:
-        print(
-            f"[DRY-RUN] Aplicaria em {workflow_id}: {json.dumps(settings, ensure_ascii=False)}"
-        )
+        print(f"[DRY-RUN] Aplicaria em {workflow_id}: {json.dumps(settings, ensure_ascii=False)}")
         return True
 
     try:
@@ -101,9 +98,7 @@ def apply_retry_policy(
             timeout=timeout,
         )
         if r.status_code != 200:
-            print(
-                f"[ERROR] GET workflow {workflow_id}: {r.status_code}", file=sys.stderr
-            )
+            print(f"[ERROR] GET workflow {workflow_id}: {r.status_code}", file=sys.stderr)
             return False
 
         wf = r.json()
@@ -120,14 +115,9 @@ def apply_retry_policy(
             timeout=timeout,
         )
         if r.status_code in (200, 201):
-            print(
-                f"[WORK] {wf.get('name', workflow_id)}: maxTries={settings['maxTries']}, wait={settings['waitBetweenTries']}ms"
-            )
+            print(f"[WORK] {wf.get('name', workflow_id)}: maxTries={settings['maxTries']}, wait={settings['waitBetweenTries']}ms")
             return True
-        print(
-            f"[ERROR] PUT workflow {workflow_id}: {r.status_code} - {r.text[:200]}",
-            file=sys.stderr,
-        )
+        print(f"[ERROR] PUT workflow {workflow_id}: {r.status_code} - {r.text[:200]}", file=sys.stderr)
         return False
     except Exception as exc:
         print(f"[ERROR] {type(exc).__name__}: {exc}", file=sys.stderr)
@@ -136,27 +126,11 @@ def apply_retry_policy(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="N8N retry policy config")
-    parser.add_argument(
-        "--max-tries",
-        type=int,
-        default=DEFAULT_MAX_TRIES,
-        help="max tentativas (default 3)",
-    )
-    parser.add_argument(
-        "--wait",
-        type=int,
-        default=DEFAULT_WAIT_MS,
-        help="wait entre tentativas em ms (default 5000)",
-    )
-    parser.add_argument(
-        "--no-retry-on-fail", action="store_true", help="desabilitar retryOnFail"
-    )
-    parser.add_argument(
-        "--apply", action="store_true", help="aplicar (default: dry-run)"
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="so mostra o que faria (default)"
-    )
+    parser.add_argument("--max-tries", type=int, default=DEFAULT_MAX_TRIES, help="max tentativas (default 3)")
+    parser.add_argument("--wait", type=int, default=DEFAULT_WAIT_MS, help="wait entre tentativas em ms (default 5000)")
+    parser.add_argument("--no-retry-on-fail", action="store_true", help="desabilitar retryOnFail")
+    parser.add_argument("--apply", action="store_true", help="aplicar (default: dry-run)")
+    parser.add_argument("--dry-run", action="store_true", help="so mostra o que faria (default)")
     parser.add_argument("--timeout", type=float, default=30.0)
     args = parser.parse_args()
 
@@ -175,9 +149,7 @@ def main() -> int:
 
     print(f"N8N URL: {base_url}")
     print(f"Mode: {'APPLY' if args.apply else 'DRY-RUN'}")
-    print(
-        f"Settings: maxTries={settings_block['maxTries']}, wait={settings_block['waitBetweenTries']}ms, retryOnFail={settings_block['retryOnFail']}"
-    )
+    print(f"Settings: maxTries={settings_block['maxTries']}, wait={settings_block['waitBetweenTries']}ms, retryOnFail={settings_block['retryOnFail']}")
     print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
     print()
 
@@ -193,9 +165,7 @@ def main() -> int:
     for wf in workflows:
         wf_id = wf.get("id", "?")
         wf_name = wf.get("name", wf_id)
-        if apply_retry_policy(
-            base_url, api_key, wf_id, settings_block, dry_run, args.timeout
-        ):
+        if apply_retry_policy(base_url, api_key, wf_id, settings_block, dry_run, args.timeout):
             success += 1
         else:
             failed += 1

@@ -1,7 +1,7 @@
 """Testes para o cache de agendamentos (A26)."""
-
 import json
 from unittest.mock import MagicMock, patch
+
 
 
 def test_cache_key_functions():

@@ -1,5 +1,4 @@
 """Testes do Cross-session Context Sync (BRAIN8)."""
-
 from __future__ import annotations
 
 import importlib.util
@@ -27,14 +26,10 @@ def fake_brain():
     (tmp / "memory").mkdir()
     (tmp / "lessons").mkdir()
     (tmp / "snapshots").mkdir()
-    (tmp / "loop-state.json").write_text(
-        json.dumps(
-            {
-                "current_squad": "TEST",
-                "gates": {"mypy": 0, "ruff": 0},
-            }
-        )
-    )
+    (tmp / "loop-state.json").write_text(json.dumps({
+        "current_squad": "TEST",
+        "gates": {"mypy": 0, "ruff": 0},
+    }))
     (tmp / "index.md").write_text("# Brain Index v1\nStatus: OK")
     (tmp / "lessons" / "L999.md").write_text("# Lesson 999\nTeste lesson")
 
@@ -83,7 +78,7 @@ def test_diff_snapshots_detecta_mudancas(fake_brain) -> None:
     sa = sync.export_snapshot(label="diff-a")
     (tmp / "index.md").write_text("# Index B MODIFICADO\n")
     sb = sync.export_snapshot(label="diff-b")
-    diff = sync.diff_snapshots(f"{sa['snapshot_id']}.json", f"{sb['snapshot_id']}.json")
+    diff = sync.diff_snapshots(f'{sa["snapshot_id"]}.json', f'{sb["snapshot_id"]}.json')
     assert "error" not in diff
     assert "index.md" in diff["modified"]
 
@@ -94,7 +89,7 @@ def test_diff_snapshots_detecta_adicoes(fake_brain) -> None:
     sa = sync.export_snapshot(label="add-a")
     (tmp / "lessons" / "new.md").write_text("# New\n")
     sb = sync.export_snapshot(label="add-b")
-    diff = sync.diff_snapshots(f"{sa['snapshot_id']}.json", f"{sb['snapshot_id']}.json")
+    diff = sync.diff_snapshots(f'{sa["snapshot_id"]}.json', f'{sb["snapshot_id"]}.json')
     assert "lessons/new.md" in diff["added"]
 
 
@@ -111,9 +106,7 @@ def test_snapshot_inclui_py_files(fake_brain) -> None:
     """Snapshot inclui arquivos Python (sync.py, etc) - exceto __pycache__."""
     sync, _ = fake_brain
     snap = sync.export_snapshot(label="include-py")
-    py_files = [
-        k for k in snap["files"] if k.endswith(".py") and "__pycache__" not in k
-    ]
+    py_files = [k for k in snap["files"] if k.endswith(".py") and "__pycache__" not in k]
     # Em runtime, sync.py nao existe no fake_brain (apenas no .brain real)
     # Verificamos que a logica de inclusao de .py funciona quando ha arquivos
     assert isinstance(py_files, list)  # Logica funciona, mesmo se lista vazia no fake

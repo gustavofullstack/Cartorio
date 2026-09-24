@@ -35,9 +35,7 @@ def _jsonl_lines(path: Path, violations: list[str]) -> list[dict[str, Any]]:
         violations.append(f"JSONL file missing: {path}")
         return []
     entries: list[dict[str, Any]] = []
-    for index, line in enumerate(
-        path.read_text(encoding="utf-8").splitlines(), start=1
-    ):
+    for index, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         raw = line.strip()
         if not raw:
             continue
@@ -108,9 +106,7 @@ def verify_sol_v2_completion(
     if commits is not None:
         concurrent_commits: Iterable[str] = []
         try:
-            concurrent_commits = [
-                entry["sha"] for entry in commits.get("concurrent_commits", [])
-            ]
+            concurrent_commits = [entry["sha"] for entry in commits.get("concurrent_commits", [])]
         except AttributeError:
             violations.append("commit-inventory.json does not have expected shape")
         for sha in CONCURRENT_COMMITS:
@@ -118,9 +114,7 @@ def verify_sol_v2_completion(
                 violations.append(f"Concurrent commit missing from inventory: {sha}")
         base_sha = commits.get("base_trusted")
         if base_sha != BASE_TRUSTED_SHA:
-            violations.append(
-                f"Unexpected base_trusted in commit inventory: {base_sha}"
-            )
+            violations.append(f"Unexpected base_trusted in commit inventory: {base_sha}")
 
     incident_files = [
         "commit-inventory.json",
@@ -132,10 +126,7 @@ def verify_sol_v2_completion(
     ]
     for name in incident_files:
         file_path = incident_dir / name
-        if (
-            not _read_non_empty_file(file_path, violations)
-            and name != "original-checksums.sha256"
-        ):
+        if not _read_non_empty_file(file_path, violations) and name != "original-checksums.sha256":
             continue
         if name == "original-checksums.sha256":
             lines = _load_json_lines(file_path)
@@ -146,11 +137,7 @@ def verify_sol_v2_completion(
     if not evidence_entries:
         violations.append("Evidence ledger has no valid entries")
     else:
-        task_ids = {
-            entry.get("task_id")
-            for entry in evidence_entries
-            if isinstance(entry, dict)
-        }
+        task_ids = {entry.get("task_id") for entry in evidence_entries if isinstance(entry, dict)}
         missing = [node for node in REQUIRED_NODES if node not in task_ids]
         if missing:
             violations.append(f"Evidence ledger missing task_ids: {missing}")
@@ -167,32 +154,18 @@ def verify_sol_v2_completion(
                 violations.append(f"Human gate {gate_id} is not BLOCKED_HUMAN")
 
     for required_file in (
-        Path(".evidence")
-        / "incidents"
-        / "INC-GRAPH-EVIDENCE-2026-08-03"
-        / "invalidated-claims.jsonl",
+        Path(".evidence") / "incidents" / "INC-GRAPH-EVIDENCE-2026-08-03" / "invalidated-claims.jsonl",
         Path("scripts/sol_v2_completion_gate.py"),
         Path("backend/tests/test_sol_v2_completion_gate.py"),
     ):
         if not _read_non_empty_file(repo_root / required_file, violations):
             continue
 
-    completion_report = (
-        repo_root
-        / ".orchestration"
-        / "cartorio-super-graph-v2"
-        / "completion-report.json"
-    )
+    completion_report = repo_root / ".orchestration" / "cartorio-super-graph-v2" / "completion-report.json"
     report_data = _json_or_fail(completion_report, violations)
     if report_data is not None:
-        if report_data.get("status") not in {
-            "WAVE_0R_GO",
-            "WAVE_0R_NO_GO",
-            "PR_READY_PENDING_HUMANS",
-        }:
-            violations.append(
-                f"Unexpected completion status: {report_data.get('status')}"
-            )
+        if report_data.get("status") not in {"WAVE_0R_GO", "WAVE_0R_NO_GO", "PR_READY_PENDING_HUMANS"}:
+            violations.append(f"Unexpected completion status: {report_data.get('status')}")
 
     return len(violations) == 0, violations
 
@@ -205,9 +178,7 @@ def main() -> int:
     parser.add_argument("--repo-root", required=True, type=Path)
     args = parser.parse_args()
 
-    is_pass, violations = verify_sol_v2_completion(
-        args.overlay, args.evidence, args.incident, args.repo_root
-    )
+    is_pass, violations = verify_sol_v2_completion(args.overlay, args.evidence, args.incident, args.repo_root)
 
     if not is_pass:
         print(f"[SOL V2 COMPLETION GATE FAIL] Found {len(violations)} violations:")

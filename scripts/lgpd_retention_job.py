@@ -21,7 +21,6 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 28.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -46,9 +45,7 @@ def get_db_config() -> tuple[str, str]:
     )
 
 
-def query_count_eligible(
-    entity: str, days: int, base_url: str, api_key: str, timeout: float
-) -> int:
+def query_count_eligible(entity: str, days: int, base_url: str, api_key: str, timeout: float) -> int:
     """Busca contagem de items elegiveis via API interna."""
     try:
         with httpx.Client(timeout=timeout) as client:
@@ -58,9 +55,7 @@ def query_count_eligible(
                 headers={"X-API-Key": api_key},
             )
             if r.status_code != 200:
-                print(
-                    f"[ERROR] preview {entity}: HTTP {r.status_code}", file=sys.stderr
-                )
+                print(f"[ERROR] preview {entity}: HTTP {r.status_code}", file=sys.stderr)
                 return 0
             return r.json().get("count", 0)
     except Exception as exc:
@@ -68,9 +63,7 @@ def query_count_eligible(
         return 0
 
 
-def execute_delete(
-    entity: str, days: int, base_url: str, api_key: str, timeout: float
-) -> tuple[bool, int]:
+def execute_delete(entity: str, days: int, base_url: str, api_key: str, timeout: float) -> tuple[bool, int]:
     """Executa DELETE via API interna."""
     try:
         with httpx.Client(timeout=timeout) as client:
@@ -82,10 +75,7 @@ def execute_delete(
             if r.status_code == 200:
                 deleted = r.json().get("deleted", 0)
                 return (True, deleted)
-            print(
-                f"[ERROR] apply {entity}: HTTP {r.status_code} - {r.text[:200]}",
-                file=sys.stderr,
-            )
+            print(f"[ERROR] apply {entity}: HTTP {r.status_code} - {r.text[:200]}", file=sys.stderr)
             return (False, 0)
     except Exception as exc:
         print(f"[ERROR] {type(exc).__name__}: {exc}", file=sys.stderr)
@@ -95,9 +85,7 @@ def execute_delete(
 def main() -> int:
     parser = argparse.ArgumentParser(description="LGPD retention job")
     parser.add_argument("--entity", help="entity especifica (default: todas)")
-    parser.add_argument(
-        "--apply", action="store_true", help="aplicar (default: dry-run)"
-    )
+    parser.add_argument("--apply", action="store_true", help="aplicar (default: dry-run)")
     parser.add_argument("--dry-run", action="store_true", help="so mostra (default)")
     parser.add_argument("--timeout", type=float, default=60.0)
     args = parser.parse_args()

@@ -24,21 +24,10 @@ PROJECT_ROOT = "/Users/gustavoalmeida/Projetos/Cartorio"
 BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
 PROGRESS_FILE = os.path.join(PROJECT_ROOT, "PROGRESS.md")
 _g8_goals_docs = os.path.join(PROJECT_ROOT, "docs", "plans", "SUPER_GOALS_G8.md")
-GOALS_FILE = (
-    _g8_goals_docs
-    if os.path.exists(_g8_goals_docs)
-    else os.path.join(PROJECT_ROOT, "SUPER_GOALS_G8.md")
-)
-_g8_plano_docs = os.path.join(
-    PROJECT_ROOT, "docs", "plans", "SUPER_PLANO_G8_100_TASKS.md"
-)
-SUPER_PLANO_FILE = (
-    _g8_plano_docs
-    if os.path.exists(_g8_plano_docs)
-    else os.path.join(PROJECT_ROOT, "SUPER_PLANO_G8_100_TASKS.md")
-)
+GOALS_FILE = _g8_goals_docs if os.path.exists(_g8_goals_docs) else os.path.join(PROJECT_ROOT, "SUPER_GOALS_G8.md")
+_g8_plano_docs = os.path.join(PROJECT_ROOT, "docs", "plans", "SUPER_PLANO_G8_100_TASKS.md")
+SUPER_PLANO_FILE = _g8_plano_docs if os.path.exists(_g8_plano_docs) else os.path.join(PROJECT_ROOT, "SUPER_PLANO_G8_100_TASKS.md")
 STATE_FILE = os.path.join(PROJECT_ROOT, ".brain", "loop-state-g8.json")
-
 
 class G8Orchestrator:
     def __init__(self):
@@ -63,7 +52,7 @@ class G8Orchestrator:
             "completed_tasks": [],
             "last_wave": -1,
             "status": "ready",
-            "last_updated": datetime.now().isoformat(),
+            "last_updated": datetime.now().isoformat()
         }
 
     def save_state(self):
@@ -71,9 +60,7 @@ class G8Orchestrator:
         with open(STATE_FILE, "w") as f:
             json.dump(self.state, f, indent=2)
 
-    def parse_super_plano(
-        self,
-    ) -> Tuple[List[Dict[str, Any]], Dict[int, Dict[str, Any]]]:
+    def parse_super_plano(self) -> Tuple[List[Dict[str, Any]], Dict[int, Dict[str, Any]]]:
         """Parseia o markdown do SUPER_PLANO_G8_100_TASKS.md e extrai squads e suas tasks."""
         tasks = []
         squads = {}
@@ -86,30 +73,27 @@ class G8Orchestrator:
 
         # Regex para encontrar blocos de Squads e tabelas markdown
         # Exemplo de seção de squad: ### Squad 01 — API Core & WebSockets Hardening (dev×4)
-        squad_sections = re.split(r"### Squad (\d+) — (.*?)\n", content)
+        squad_sections = re.split(r'### Squad (\d+) — (.*?)\n', content)
         if len(squad_sections) < 3:
             return tasks, squads
 
         for i in range(1, len(squad_sections), 3):
             squad_num = int(squad_sections[i])
-            squad_title = squad_sections[i + 1].strip()
-            squad_text = squad_sections[i + 2]
+            squad_title = squad_sections[i+1].strip()
+            squad_text = squad_sections[i+2]
 
             # Parsear as linhas da tabela markdown do squad
             # Formato: | G8.01.T1 | descrição | [ ] | cartorio-dev |
-            table_lines = re.findall(
-                r"\|\s*(G8\.\d+\.T\d+)\s*\|\s*(.*?)\s*\|\s*\[([ x~])\]\s*\|\s*(.*?)\s*\|",
-                squad_text,
-            )
+            table_lines = re.findall(r'\|\s*(G8\.\d+\.T\d+)\s*\|\s*(.*?)\s*\|\s*\[([ x~])\]\s*\|\s*(.*?)\s*\|', squad_text)
 
             squad_tasks = []
             for task_id, desc, status, agent in table_lines:
                 task_data = {
                     "id": task_id.strip(),
                     "description": desc.strip(),
-                    "done": status.strip() in ["x", "X"],
+                    "done": status.strip() in ['x', 'X'],
                     "agent": agent.strip(),
-                    "squad": squad_num,
+                    "squad": squad_num
                 }
                 tasks.append(task_data)
                 squad_tasks.append(task_data)
@@ -117,7 +101,7 @@ class G8Orchestrator:
             squads[squad_num] = {
                 "number": squad_num,
                 "title": squad_title,
-                "tasks": squad_tasks,
+                "tasks": squad_tasks
             }
         return tasks, squads
 
@@ -130,8 +114,8 @@ class G8Orchestrator:
             content = f.read()
 
         # Regex para substituir o status especificamente da task
-        pattern = rf"(\|\s*{re.escape(task_id)}\s*\|.*?\|)\s*\[\s*\]\s*(\|)"
-        replacement = r"\1 [x] \2"
+        pattern = rf'(\|\s*{re.escape(task_id)}\s*\|.*?\|)\s*\[\s*\]\s*(\|)'
+        replacement = r'\1 [x] \2'
         new_content = re.sub(pattern, replacement, content)
 
         with open(SUPER_PLANO_FILE, "w") as f:
@@ -149,9 +133,7 @@ class G8Orchestrator:
 
         # 1. Ruff
         print("  └─ Running ruff check... ", end="", flush=True)
-        rc_ruff, out_ruff = self.run_command(
-            ["uv", "run", "ruff", "check", "app/"], cwd=BACKEND_DIR
-        )
+        rc_ruff, out_ruff = self.run_command(["uv", "run", "ruff", "check", "app/"], cwd=BACKEND_DIR)
         if rc_ruff != 0 and "All checks passed" not in out_ruff:
             print("FAILED ❌")
             print(out_ruff[:500])
@@ -160,9 +142,7 @@ class G8Orchestrator:
 
         # 2. Mypy
         print("  └─ Running mypy type checks... ", end="", flush=True)
-        rc_mypy, out_mypy = self.run_command(
-            ["uv", "run", "mypy", "app/"], cwd=BACKEND_DIR
-        )
+        rc_mypy, out_mypy = self.run_command(["uv", "run", "mypy", "app/"], cwd=BACKEND_DIR)
         if rc_mypy != 0 and "Success: no issues found" not in out_mypy:
             print("FAILED ❌")
             print(out_mypy[:500])
@@ -171,9 +151,7 @@ class G8Orchestrator:
 
         # 3. Pytest (Sem coverage para loop rápido)
         print("  └─ Running fast pytest suite... ", end="", flush=True)
-        rc_pytest, out_pytest = self.run_command(
-            ["uv", "run", "pytest", "--no-cov", "-q"], cwd=BACKEND_DIR
-        )
+        rc_pytest, out_pytest = self.run_command(["uv", "run", "pytest", "--no-cov", "-q"], cwd=BACKEND_DIR)
         if "failed" in out_pytest or rc_pytest != 0:
             print("FAILED ❌")
             print(out_pytest[-500:])
@@ -191,9 +169,7 @@ class G8Orchestrator:
             f"- **Tasks Processed:**\n"
         )
         for task in squad_info["tasks"]:
-            entry += (
-                f"  - [x] **{task['id']}** ({task['agent']}) — {task['description']}\n"
-            )
+            entry += f"  - [x] **{task['id']}** ({task['agent']}) — {task['description']}\n"
 
         entry += f"- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅\n"
         entry += f"Modified by Gustavo Almeida (via G8 loop orchestrator)\n"
@@ -210,11 +186,7 @@ class G8Orchestrator:
         if total_tasks == 0:
             return
 
-        completed_tasks_count = sum(
-            1
-            for t in self.tasks
-            if t["done"] or t["id"] in self.state["completed_tasks"]
-        )
+        completed_tasks_count = sum(1 for t in self.tasks if t["done"] or t["id"] in self.state["completed_tasks"])
         pct_global = min(100, int((completed_tasks_count / total_tasks) * 100))
 
         with open(GOALS_FILE, "r") as f:
@@ -222,12 +194,12 @@ class G8Orchestrator:
 
         # Regex para substituir porcentagens de metas atreladas ao progresso global ou estimativas
         # Atualiza a linha de progresso
-        progress_pattern = r"(\|\s*\*?\*?% progress\*?\*?\s*\|).*?(\||$)"
-        content = re.sub(progress_pattern, rf"\g<1> **{pct_global}%** \g<2>", content)
+        progress_pattern = r'(\|\s*\*?\*?% progress\*?\*?\s*\|).*?(\||$)'
+        content = re.sub(progress_pattern, rf'\g<1> **{pct_global}%** \g<2>', content)
 
         # Atualiza a média ponderada estimada
-        avg_pattern = r"(\*\*Média ponderada atual:\*\*).*?(\s*·)"
-        content = re.sub(avg_pattern, rf"\g<1> ~{pct_global}%\g<2>", content)
+        avg_pattern = r'(\*\*Média ponderada atual:\*\*).*?(\s*·)'
+        content = re.sub(avg_pattern, rf'\g<1> ~{pct_global}%\g<2>', content)
 
         with open(GOALS_FILE, "w") as f:
             f.write(content)
@@ -258,19 +230,13 @@ class G8Orchestrator:
                 break
 
         if next_wave is not None:
-            print(
-                f"Next Wave to Run: Squad {next_wave:02d} ({self.squads[next_wave]['title']})"
-            )
+            print(f"Next Wave to Run: Squad {next_wave:02d} ({self.squads[next_wave]['title']})")
             print("Tasks in this wave:")
             for t in self.squads[next_wave]["tasks"]:
                 status_str = "✅ DONE" if t["done"] else "⬜ PENDING"
-                print(
-                    f"  └─ [{t['id']}] ({t['agent']}): {t['description']} ({status_str})"
-                )
+                print(f"  └─ [{t['id']}] ({t['agent']}): {t['description']} ({status_str})")
         else:
-            print(
-                "All 25 squads and 100 tasks of SUPER PLANO G8 are fully completed! 🎉"
-            )
+            print("All 25 squads and 100 tasks of SUPER PLANO G8 are fully completed! 🎉")
         print("=" * 60)
 
     def run_wave(self, wave_num: int):
@@ -284,16 +250,7 @@ class G8Orchestrator:
         print("=" * 60)
 
         # Simula/Processa cada uma das 4 tarefas de forma ordenada com o ciclo
-        phases = [
-            "analisar",
-            "testar",
-            "corrigir",
-            "melhorar",
-            "otimizar",
-            "documentar",
-            "comentar",
-            "salvar_memoria",
-        ]
+        phases = ["analisar", "testar", "corrigir", "melhorar", "otimizar", "documentar", "comentar", "salvar_memoria"]
 
         for task in squad["tasks"]:
             print(f"\nProcessing Task {task['id']} [{task['agent']}]...")
@@ -324,10 +281,7 @@ class G8Orchestrator:
         self.update_goals()
         self.save_state()
 
-        print(
-            f"\n🎉 Wave Squad {wave_num:02d} completed successfully, goals updated, and progress logged!"
-        )
-
+        print(f"\n🎉 Wave Squad {wave_num:02d} completed successfully, goals updated, and progress logged!")
 
 if __name__ == "__main__":
     orchestrator = G8Orchestrator()
@@ -344,13 +298,13 @@ if __name__ == "__main__":
         orchestrator.print_status()
     elif cmd == "reset":
         confirm = input("Are you sure you want to reset loop state for G8? (y/N): ")
-        if confirm.lower() == "y":
+        if confirm.lower() == 'y':
             orchestrator.state = {
                 "completed_waves": [],
                 "completed_tasks": [],
                 "last_wave": -1,
                 "status": "ready",
-                "last_updated": datetime.now().isoformat(),
+                "last_updated": datetime.now().isoformat()
             }
             orchestrator.save_state()
             print("G8 State reset successfully.")

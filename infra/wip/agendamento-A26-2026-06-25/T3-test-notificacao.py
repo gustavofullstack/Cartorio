@@ -28,7 +28,6 @@ def test_engine():
 @pytest.fixture
 def test_session_factory(test_engine):
     from sqlalchemy.orm import sessionmaker
-
     return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
 
@@ -105,14 +104,18 @@ def cliente_sem_consentimento(test_session):
     return cliente
 
 
+
 async def test_enviar_notificacao_telegram(cliente_completo, test_session):
     """Testa envio de notificação via Telegram."""
     # Mock do método de envio para não chamar API real
     import unittest.mock
 
     with unittest.mock.patch.object(
-        NotificationService, "_enviar_telegram", return_value=True
+        NotificationService,
+        '_enviar_telegram',
+        return_value=True
     ) as mock_telegram:
+
         success = await NotificationService.enviar_notificacao(
             db=test_session,
             cliente_id=cliente_completo.id,
@@ -122,7 +125,8 @@ async def test_enviar_notificacao_telegram(cliente_completo, test_session):
 
         assert success is True
         mock_telegram.assert_called_once_with(
-            cliente_completo.telegram_chat_id, "Teste de notificação Telegram"
+            cliente_completo.telegram_chat_id,
+            "Teste de notificação Telegram"
         )
 
 
@@ -131,8 +135,11 @@ async def test_enviar_notificacao_whatsapp(cliente_completo, test_session):
     import unittest.mock
 
     with unittest.mock.patch.object(
-        NotificationService, "_enviar_whatsapp", return_value=True
+        NotificationService,
+        '_enviar_whatsapp',
+        return_value=True
     ) as mock_whatsapp:
+
         success = await NotificationService.enviar_notificacao(
             db=test_session,
             cliente_id=cliente_completo.id,
@@ -142,7 +149,8 @@ async def test_enviar_notificacao_whatsapp(cliente_completo, test_session):
 
         assert success is True
         mock_whatsapp.assert_called_once_with(
-            cliente_completo.whatsapp_number, "Teste de notificação WhatsApp"
+            cliente_completo.whatsapp_number,
+            "Teste de notificação WhatsApp"
         )
 
 
@@ -151,8 +159,11 @@ async def test_enviar_notificacao_metodo_preferido(cliente_completo, test_sessio
     import unittest.mock
 
     with unittest.mock.patch.object(
-        NotificationService, "_enviar_telegram", return_value=True
+        NotificationService,
+        '_enviar_telegram',
+        return_value=True
     ) as mock_telegram:
+
         success = await NotificationService.enviar_notificacao(
             db=test_session,
             cliente_id=cliente_completo.id,
@@ -175,15 +186,16 @@ async def test_enviar_notificacao_sem_contato(cliente_sem_contato, test_session)
         )
 
 
-async def test_enviar_notificacao_sem_consentimento(
-    cliente_sem_consentimento, test_session
-):
+async def test_enviar_notificacao_sem_consentimento(cliente_sem_consentimento, test_session):
     """Testa envio para cliente sem consentimento LGPD."""
     import unittest.mock
 
     with unittest.mock.patch.object(
-        NotificationService, "_enviar_whatsapp", return_value=True
+        NotificationService,
+        '_enviar_whatsapp',
+        return_value=True
     ) as mock_whatsapp:
+
         success = await NotificationService.enviar_notificacao(
             db=test_session,
             cliente_id=cliente_sem_consentimento.id,
@@ -201,8 +213,11 @@ async def test_notificar_agendamento_criado(cliente_completo, test_session):
     import unittest.mock
 
     with unittest.mock.patch.object(
-        NotificationService, "_enviar_telegram", return_value=True
+        NotificationService,
+        '_enviar_telegram',
+        return_value=True
     ) as mock_telegram:
+
         success = await NotificationService.notificar_agendamento_criado(
             db=test_session,
             cliente_id=cliente_completo.id,
@@ -225,8 +240,11 @@ async def test_notificar_agendamento_lembrete(cliente_completo, test_session):
     import unittest.mock
 
     with unittest.mock.patch.object(
-        NotificationService, "_enviar_telegram", return_value=True
+        NotificationService,
+        '_enviar_telegram',
+        return_value=True
     ) as mock_telegram:
+
         success = await NotificationService.notificar_agendamento_lembrete(
             db=test_session,
             cliente_id=cliente_completo.id,
@@ -249,8 +267,11 @@ async def test_notificar_agendamento_cancelado(cliente_completo, test_session):
     import unittest.mock
 
     with unittest.mock.patch.object(
-        NotificationService, "_enviar_telegram", return_value=True
+        NotificationService,
+        '_enviar_telegram',
+        return_value=True
     ) as mock_telegram:
+
         success = await NotificationService.notificar_agendamento_cancelado(
             db=test_session,
             cliente_id=cliente_completo.id,

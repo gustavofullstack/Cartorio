@@ -238,16 +238,10 @@ def evaluate_response(persona: Persona, response_text: str) -> dict[str, Any]:
     norm_resp = _normalize(response_text)
 
     # 1. Identity Check
-    identity_ok = (
-        "pietra" in norm_resp
-        or "2º tabelionato" in norm_resp
-        or "tabelionato" in norm_resp
-    )
+    identity_ok = "pietra" in norm_resp or "2º tabelionato" in norm_resp or "tabelionato" in norm_resp
 
     # 2. Forbidden leakage check
-    forbidden_found = [
-        term for term in FORBIDDEN_TERMS if _normalize(term) in norm_resp
-    ]
+    forbidden_found = [term for term in FORBIDDEN_TERMS if _normalize(term) in norm_resp]
     no_leakage = len(forbidden_found) == 0
 
     # 3. Warmth and empathy check
@@ -255,21 +249,15 @@ def evaluate_response(persona: Persona, response_text: str) -> dict[str, Any]:
     warmth_ok = warmth_count >= 1
 
     # 4. Formalidade acolhedora, sem rejeitar a pessoa de forma fria.
-    formal_count = sum(
-        1 for indicator in FORMAL_INDICATORS if _normalize(indicator) in norm_resp
-    )
+    formal_count = sum(1 for indicator in FORMAL_INDICATORS if _normalize(indicator) in norm_resp)
     formal_ok = formal_count >= 1
-    cold_tone_found = [
-        pattern for pattern in COLD_TONE_PATTERNS if _normalize(pattern) in norm_resp
-    ]
+    cold_tone_found = [pattern for pattern in COLD_TONE_PATTERNS if _normalize(pattern) in norm_resp]
     no_cold_tone = not cold_tone_found
 
     # 5. LGPD: resposta não ecoa PII nem pede dado integral sem necessidade.
     raw_pii_found = _has_raw_pii(response_text)
     unminimized_pii_request = [
-        pattern
-        for pattern in UNMINIMIZED_PII_REQUESTS
-        if _normalize(pattern) in norm_resp
+        pattern for pattern in UNMINIMIZED_PII_REQUESTS if _normalize(pattern) in norm_resp
     ]
     lgpd_ok = not raw_pii_found and not unminimized_pii_request
 
@@ -279,21 +267,14 @@ def evaluate_response(persona: Persona, response_text: str) -> dict[str, Any]:
         for term in ("escrevente", "equipe", "atendimento presencial", "validacao")
     )
     unconfirmed_action_found = [
-        pattern
-        for pattern in UNCONFIRMED_ACTION_PATTERNS
-        if _normalize(pattern) in norm_resp
+        pattern for pattern in UNCONFIRMED_ACTION_PATTERNS if _normalize(pattern) in norm_resp
     ]
     no_unconfirmed_action = not unconfirmed_action_found
 
     # 7. Acessibilidade precisa ser abordada quando a persona a declara.
     accessibility_ok = not persona.requires_accessibility or any(
         _normalize(term) in norm_resp
-        for term in (
-            "acessibilidade",
-            "cadeira de rodas",
-            "atendimento agendado",
-            "prioridade",
-        )
+        for term in ("acessibilidade", "cadeira de rodas", "atendimento agendado", "prioridade")
     )
 
     # 4. Persona-tailored appropriateness
@@ -353,12 +334,10 @@ def run_sequential_simulation(output_json: bool = False) -> int:
     failures = 0
 
     for persona in PERSONAS:
-        print(
-            f"\n--- [Subagent {persona.id}/10] {persona.name} ({persona.age} anos) ---"
-        )
+        print(f"\n--- [Subagent {persona.id}/10] {persona.name} ({persona.age} anos) ---")
         print(f"Perfil: {persona.profile}")
         print(f"Cenário: {persona.scenario}")
-        print(f'Mensagem do Cliente: "{persona.input_message}"')
+        print(f"Mensagem do Cliente: \"{persona.input_message}\"")
 
         session_id = f"sim_subagent_{persona.id}_{persona.age}"
         start_t = time.time()
@@ -378,9 +357,7 @@ def run_sequential_simulation(output_json: bool = False) -> int:
 
         print(f"⏱️ Tempo de Resposta: {elapsed:.2f}s")
         print(f"🤖 Resposta da Pietra:\n{response}")
-        print(
-            f"📊 Avaliação: PASS = {eval_res['passed']} | Identidade: {eval_res['metrics']['identity_ok']} | Acolhimento: {eval_res['metrics']['warmth_ok']} | Zero Leak: {eval_res['metrics']['no_leakage']}"
-        )
+        print(f"📊 Avaliação: PASS = {eval_res['passed']} | Identidade: {eval_res['metrics']['identity_ok']} | Acolhimento: {eval_res['metrics']['warmth_ok']} | Zero Leak: {eval_res['metrics']['no_leakage']}")
 
         if not eval_res["passed"]:
             failures += 1
@@ -389,9 +366,7 @@ def run_sequential_simulation(output_json: bool = False) -> int:
         time.sleep(0.5)
 
     print("\n" + "=" * 80)
-    print(
-        f"🏁 SIMULAÇÃO FINALIZADA: {len(PERSONAS) - failures}/{len(PERSONAS)} Subagents Aprovados"
-    )
+    print(f"🏁 SIMULAÇÃO FINALIZADA: {len(PERSONAS) - failures}/{len(PERSONAS)} Subagents Aprovados")
     print("=" * 80)
 
     if output_json:
@@ -402,9 +377,7 @@ def run_sequential_simulation(output_json: bool = False) -> int:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Subagent iMessage Simulator")
-    parser.add_argument(
-        "--json", action="store_true", help="Output results in JSON format"
-    )
+    parser.add_argument("--json", action="store_true", help="Output results in JSON format")
     args = parser.parse_args()
 
     sys.exit(run_sequential_simulation(output_json=args.json))

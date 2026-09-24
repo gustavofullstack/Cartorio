@@ -7,5 +7,4 @@ Pacote Python com modulos de gestao do "cerebro" do agent:
 - api-specs/catalog: 58 endpoints (BRAIN2)
 - lessons/sessao-*: lessons aprendidas (BRAIN3)
 """
-
 __version__ = "1.0.0"

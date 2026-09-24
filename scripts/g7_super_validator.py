@@ -38,9 +38,7 @@ MCP_SERVER = ROOT / "backend" / "mcp_server.py"
 WF_DIR = ROOT / "infra" / "n8n-workflows"
 
 
-def _run(
-    cmd: list[str], cwd: Path | None = None, timeout: int = 120
-) -> tuple[int, str]:
+def _run(cmd: list[str], cwd: Path | None = None, timeout: int = 120) -> tuple[int, str]:
     try:
         p = subprocess.run(
             cmd,
@@ -81,9 +79,7 @@ def count_n8n_workflows() -> tuple[int, int]:
 
 
 def check_radar() -> dict:
-    code, out = _run(
-        [sys.executable, str(ROOT / "scripts" / "radar_smoke.py")], timeout=45
-    )
+    code, out = _run([sys.executable, str(ROOT / "scripts" / "radar_smoke.py")], timeout=45)
     status = "unknown"
     if "Status: green" in out:
         status = "green"
@@ -95,9 +91,7 @@ def check_radar() -> dict:
         "exit": code,
         "status": status,
         "detail": out.strip()[-500:],
-        "verdict": "WORK"
-        if status in ("green", "yellow")
-        else ("HOLD" if status == "red" else "FAIL"),
+        "verdict": "WORK" if status in ("green", "yellow") else ("HOLD" if status == "red" else "FAIL"),
     }
 
 
@@ -211,10 +205,8 @@ def main() -> int:
         if code != 0:
             soft_hold = True
 
-    code_be, out_be = _run(
-        [sys.executable, str(ROOT / "scripts" / "check_no_bare_exception.py")],
-        timeout=30,
-    )
+
+    code_be, out_be = _run([sys.executable, str(ROOT / "scripts" / "check_no_bare_exception.py")], timeout=30)
     checks["bare_exception"] = {
         "exit": code_be,
         "verdict": "WORK" if code_be == 0 else "FAIL",
@@ -222,6 +214,7 @@ def main() -> int:
     }
     if checks["bare_exception"]["verdict"] == "FAIL":
         hard_fail = True
+
 
     inv = ROOT / "scripts" / "pii_pre_llm_inventory.py"
     if inv.exists():
@@ -268,9 +261,7 @@ def main() -> int:
             "|---|---|---|",
         ]
         for name, payload in checks.items():
-            notes = str(
-                payload.get("count", payload.get("status", payload.get("exit", "")))
-            )[:80]
+            notes = str(payload.get("count", payload.get("status", payload.get("exit", ""))))[:80]
             lines.append(f"| {name} | {payload.get('verdict')} | {notes} |")
         lines += [
             "",

@@ -20,7 +20,6 @@ EVIDENCE_COMMANDS_DIR = PROJECT_ROOT / ".evidence" / "gemini36-v3" / "commands"
 def redact_sensitive(text: str) -> str:
     """Redige chaves, tokens e PII de outputs."""
     import re
-
     text = re.sub(r"(sk-[a-zA-Z0-9]{20,})", "[REDACTED_SECRET]", text)
     text = re.sub(r"(lin_api_[a-zA-Z0-9]{20,})", "[REDACTED_SECRET]", text)
     text = re.sub(r"(\b\d{3}\.\d{3}\.\d{3}-\d{2}\b)", "[REDACTED_CPF]", text)
@@ -38,7 +37,7 @@ def run_and_capture(cmd: str, task_ids: list[str], cwd: str | None = None) -> di
         cwd=cwd or str(PROJECT_ROOT),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True,
+        text=True
     )
 
     t1 = time.time()
@@ -51,7 +50,7 @@ def run_and_capture(cmd: str, task_ids: list[str], cwd: str | None = None) -> di
     stdout_hash = hashlib.sha256(stdout_redacted.encode("utf-8")).hexdigest()
     stderr_hash = hashlib.sha256(stderr_redacted.encode("utf-8")).hexdigest()
 
-    cmd_id = f"cmd_{int(t0 * 1000)}_{proc.returncode}"
+    cmd_id = f"cmd_{int(t0*1000)}_{proc.returncode}"
 
     stdout_file = EVIDENCE_COMMANDS_DIR / f"{cmd_id}.stdout.redacted.txt"
     stderr_file = EVIDENCE_COMMANDS_DIR / f"{cmd_id}.stderr.redacted.txt"
@@ -73,7 +72,7 @@ def run_and_capture(cmd: str, task_ids: list[str], cwd: str | None = None) -> di
         "stderr_sha256": stderr_hash,
         "environment": "local_execution",
         "has_network": False,
-        "captured_by": "FLASH-V3-DEEP-REMEDIATION-ORCHESTRATOR",
+        "captured_by": "FLASH-V3-DEEP-REMEDIATION-ORCHESTRATOR"
     }
 
     json_file.write_text(json.dumps(record, indent=2), encoding="utf-8")
@@ -87,9 +86,7 @@ def main() -> int:
     args = parser.parse_args()
 
     rec = run_and_capture(args.cmd, args.tasks)
-    print(
-        f"[EVIDENCE CAPTURED] Command ID: {rec['command_id']} Exit Code: {rec['exit_code']}"
-    )
+    print(f"[EVIDENCE CAPTURED] Command ID: {rec["command_id"]} Exit Code: {rec["exit_code"]}")
     return rec["exit_code"]
 
 

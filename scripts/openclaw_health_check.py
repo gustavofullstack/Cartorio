@@ -18,7 +18,6 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-llm — G6 wave 15.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -45,11 +44,7 @@ def check_health(base_url: str) -> dict:
             "body": resp.text[:200],
         }
     except Exception as exc:
-        return {
-            "name": "health",
-            "status": "error",
-            "details": f"{type(exc).__name__}: {exc}",
-        }
+        return {"name": "health", "status": "error", "details": f"{type(exc).__name__}: {exc}"}
 
 
 def check_agents(base_url: str) -> dict:
@@ -80,11 +75,7 @@ def check_agents(base_url: str) -> dict:
             "agents": agents,
         }
     except Exception as exc:
-        return {
-            "name": "agents",
-            "status": "error",
-            "details": f"{type(exc).__name__}: {exc}",
-        }
+        return {"name": "agents", "status": "error", "details": f"{type(exc).__name__}: {exc}"}
 
 
 async def check_websocket(base_url: str) -> dict:
@@ -93,11 +84,7 @@ async def check_websocket(base_url: str) -> dict:
     ws_url = f"{ws_url}/v1/chat"
     try:
         async with websockets.connect(ws_url, timeout=TIMEOUT) as ws:
-            await ws.send(
-                json.dumps(
-                    {"type": "ping", "ts": datetime.now(timezone.utc).isoformat()}
-                )
-            )
+            await ws.send(json.dumps({"type": "ping", "ts": datetime.now(timezone.utc).isoformat()}))
             # Esperar pong ou primeira mensagem
             response = await asyncio_wait_for(ws.recv(), timeout=TIMEOUT)  # type: ignore[name-defined]
             return {
@@ -147,9 +134,7 @@ def render_markdown(results: list[dict], base_url: str) -> str:
     md.append("")
     md.append("---")
     md.append("")
-    md.append(
-        "**Modified by Gustavo Almeida + cartorio-llm — G6 wave 15 (auto-gerado)**"
-    )
+    md.append("**Modified by Gustavo Almeida + cartorio-llm — G6 wave 15 (auto-gerado)**")
     return "\n".join(md)
 
 
@@ -183,14 +168,9 @@ def main() -> int:
     print("Checking WebSocket /v1/chat...")
     try:
         import asyncio
-
         ws = asyncio.run(check_websocket(args.url))
     except ImportError:
-        ws = {
-            "name": "websocket",
-            "status": "warn",
-            "details": "websockets module nao instalado",
-        }
+        ws = {"name": "websocket", "status": "warn", "details": "websockets module nao instalado"}
     results.append(ws)
     print(f"  [{ws['status']}] {ws['name']}: {ws['details']}")
 

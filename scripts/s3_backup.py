@@ -22,7 +22,6 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-sre — G6 wave 23.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -122,15 +121,11 @@ def list_local_backups() -> list[dict]:
         return []
     results: list[dict] = []
     for archive in sorted(BACKUP_ROOT.glob("*.tar.gz"), reverse=True):
-        results.append(
-            {
-                "name": archive.name,
-                "size_bytes": archive.stat().st_size,
-                "created": datetime.fromtimestamp(
-                    archive.stat().st_mtime, tz=timezone.utc
-                ).isoformat(),
-            }
-        )
+        results.append({
+            "name": archive.name,
+            "size_bytes": archive.stat().st_size,
+            "created": datetime.fromtimestamp(archive.stat().st_mtime, tz=timezone.utc).isoformat(),
+        })
     return results
 
 
@@ -152,13 +147,9 @@ def prune_local(max_keep: int) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="S3 backup script")
-    parser.add_argument(
-        "--target", choices=["db", "workflows", "docs", "full"], default="full"
-    )
+    parser.add_argument("--target", choices=["db", "workflows", "docs", "full"], default="full")
     parser.add_argument("--list", action="store_true", help="listar backups locais")
-    parser.add_argument(
-        "--prune", type=int, metavar="N", help="manter N backups locais mais recentes"
-    )
+    parser.add_argument("--prune", type=int, metavar="N", help="manter N backups locais mais recentes")
     parser.add_argument("--no-upload", action="store_true", help="apenas local, sem S3")
     args = parser.parse_args()
 
@@ -180,9 +171,7 @@ def main() -> int:
     # Criar archive local
     print(f"Criando backup {args.target}...")
     archive = create_local_archive(args.target, timestamp)
-    print(
-        f"[WORK] Archive local: {archive} ({archive.stat().st_size / 1024 / 1024:.2f} MB)"
-    )
+    print(f"[WORK] Archive local: {archive} ({archive.stat().st_size / 1024 / 1024:.2f} MB)")
 
     # Upload S3 (se creds + nao --no-upload)
     if not args.no_upload:

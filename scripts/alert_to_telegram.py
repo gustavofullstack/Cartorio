@@ -66,12 +66,7 @@ _PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("RG", re.compile(r"\d{1,2}\.?\d{3}\.?\d{3}-?\d{1,2}")),
     ("EMAIL", re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")),
     # PHONE_BR: aceita (XX) 9XXXX-XXXX, (XX) XXXX-XXXX, +55 XX 9XXXX-XXXX, etc.
-    (
-        "PHONE_BR",
-        re.compile(
-            r"\+?55?\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4}|\(?\d{2}\)?\s?\d{4,5}-?\d{4}"
-        ),
-    ),
+    ("PHONE_BR", re.compile(r"\+?55?\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4}|\(?\d{2}\)?\s?\d{4,5}-?\d{4}")),
     ("PROTOCOL", re.compile(r"\bPROT-\d{4}-\d{6}\b", re.IGNORECASE)),
     ("ESCRITURA", re.compile(r"\bESCR-\d{6}\b", re.IGNORECASE)),
 )
@@ -195,7 +190,9 @@ def format_alert(payload: dict[str, Any]) -> list[FormattedAlert]:
         )
         status_marker = STATUS_MARKERS.get(status, "❓ UNKNOWN")
 
-        summary, summary_redactions = _scrub_pii(str(annotations.get("summary", "")))
+        summary, summary_redactions = _scrub_pii(
+            str(annotations.get("summary", ""))
+        )
         description, description_redactions = _scrub_pii(
             str(annotations.get("description", ""))
         )
@@ -242,7 +239,6 @@ def format_alert(payload: dict[str, Any]) -> list[FormattedAlert]:
 
 # --- Telegram sender ---
 
-
 def send_telegram(
     message: str,
     token: str,
@@ -279,9 +275,7 @@ def send_telegram(
         return False, str(exc)
 
 
-def send_telegram_async(
-    messages: list[FormattedAlert], token: str, chat_id: str
-) -> list[tuple[bool, str]]:
+def send_telegram_async(messages: list[FormattedAlert], token: str, chat_id: str) -> list[tuple[bool, str]]:
     """Envia várias mensagens em sequência (sync).
 
     Async nativo do script seria overkill — Telegram Bot API é HTTP síncrono.
@@ -295,7 +289,6 @@ def send_telegram_async(
 
 
 # --- Dedup store (in-memory, defesa em profundidade) ---
-
 
 class DedupCache:
     """Dedup de alertas em janela curta.
@@ -322,7 +315,6 @@ class DedupCache:
 
 
 # --- CLI ---
-
 
 def _load_payload(args: argparse.Namespace) -> dict[str, Any]:
     if args.input and args.input != "-":
@@ -352,12 +344,8 @@ def _load_env_file(path: Path) -> dict[str, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="AlertManager → Telegram (LGPD-safe)")
-    parser.add_argument(
-        "--input", "-i", default="-", help="Payload JSON file (default stdin)"
-    )
-    parser.add_argument(
-        "--apply", action="store_true", help="Envia Telegram real (default dry-run)"
-    )
+    parser.add_argument("--input", "-i", default="-", help="Payload JSON file (default stdin)")
+    parser.add_argument("--apply", action="store_true", help="Envia Telegram real (default dry-run)")
     parser.add_argument(
         "--env-file",
         default=str(PROJECT_ROOT / ".secrets" / "telegram.env"),
@@ -411,19 +399,15 @@ def main() -> int:
 
     print(f"[alert_to_telegram] {len(to_send)} alert(s) ready:")
     for msg in to_send:
-        print(
-            f"  → {msg.severity.upper():8s} {msg.alertname:30s} "
-            f"status={msg.status:8s} fp={msg.fingerprint}"
-        )
+        print(f"  → {msg.severity.upper():8s} {msg.alertname:30s} "
+              f"status={msg.status:8s} fp={msg.fingerprint}")
         print("---")
         print(msg.text)
         print("---")
 
     if not args.apply:
         print("\n[alert_to_telegram] DRY-RUN (default). Use --apply to send.")
-        print(
-            "[alert_to_telegram] LGPD-safe verified: payload purged, only metadata sent."
-        )
+        print("[alert_to_telegram] LGPD-safe verified: payload purged, only metadata sent.")
         return 0
 
     env = _load_env_file(Path(args.env_file))

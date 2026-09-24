@@ -16,7 +16,6 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-llm — G6 wave 18.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -74,9 +73,7 @@ async def interactive_session(url: str, timeout: float) -> None:
     try:
         async with websockets.connect(url, open_timeout=timeout) as ws:
             print(f"=== CartorioBot Chat (sessao {session_id}) ===", file=sys.stderr)
-            print(
-                "Digite 'exit' para sair, 'reset' para nova sessao.\n", file=sys.stderr
-            )
+            print("Digite 'exit' para sair, 'reset' para nova sessao.\n", file=sys.stderr)
             while True:
                 try:
                     user_input = input("voce> ")
@@ -86,9 +83,7 @@ async def interactive_session(url: str, timeout: float) -> None:
                 if user_input.lower() in ("exit", "quit"):
                     break
                 if user_input.lower() == "reset":
-                    session_id = (
-                        f"cli-interactive-{datetime.now(timezone.utc).timestamp()}"
-                    )
+                    session_id = f"cli-interactive-{datetime.now(timezone.utc).timestamp()}"
                     print(f"[nova sessao {session_id}]", file=sys.stderr)
                     continue
                 if not user_input.strip():
@@ -112,23 +107,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="CartorioBot Chat CLI")
     parser.add_argument("--url", default=DEFAULT_URL, help="OpenClaw WebSocket URL")
     parser.add_argument("--message", help="enviar 1 mensagem e sair")
-    parser.add_argument(
-        "--interactive", action="store_true", help="modo interativo (REPL)"
-    )
-    parser.add_argument(
-        "--timeout", type=float, default=TIMEOUT, help="timeout em segundos"
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="apenas mostra request sem enviar"
-    )
+    parser.add_argument("--interactive", action="store_true", help="modo interativo (REPL)")
+    parser.add_argument("--timeout", type=float, default=TIMEOUT, help="timeout em segundos")
+    parser.add_argument("--dry-run", action="store_true", help="apenas mostra request sem enviar")
     args = parser.parse_args()
 
     if args.dry_run:
-        print(
-            json.dumps(
-                build_message("(mensagem exemplo)"), indent=2, ensure_ascii=False
-            )
-        )
+        print(json.dumps(build_message("(mensagem exemplo)"), indent=2, ensure_ascii=False))
         return 0
 
     if not args.message and not args.interactive:

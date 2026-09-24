@@ -16,7 +16,6 @@ Uso:
     )
     md_content = build_summary(summary)
 """
-
 from __future__ import annotations
 
 import datetime as dt
@@ -140,11 +139,9 @@ def build_summary(summary: SessionSummary) -> str:
     """Constroi SESSION_SUMMARY markdown completo."""
     delta_pytest = summary.pytest_passed_after - summary.pytest_passed_before
     health_status = (
-        "🟢 GREEN"
-        if summary.health_radar_status == "green"
-        else "🟡 YELLOW"
-        if summary.health_radar_status == "yellow"
-        else "🔴 RED"
+        "🟢 GREEN" if summary.health_radar_status == "green" else
+        "🟡 YELLOW" if summary.health_radar_status == "yellow" else
+        "🔴 RED"
     )
 
     return TEMPLATE.format(
@@ -196,7 +193,9 @@ def example_session() -> SessionSummary:
         tasks_pending_today=39,
         commits_pushed=1,
         services_online=7,
-        lessons_learned=("BRAIN6: Session memory template padroniza SUMMARY_*.md",),
+        lessons_learned=(
+            "BRAIN6: Session memory template padroniza SUMMARY_*.md",
+        ),
         proximas_trilhas=(
             "BRAIN7 lessons cross-rein",
             "A26 retomada",

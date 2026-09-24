@@ -9,7 +9,6 @@ Uso:
 Ou:
   TELEGRAM_BOT_TOKEN=xxx python scripts/telegram_clean_bot_profile.py
 """
-
 from __future__ import annotations
 
 import os

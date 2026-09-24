@@ -19,53 +19,28 @@ PROJECT_ROOT = "/Users/gustavoalmeida/Projetos/Cartorio"
 BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
 PROGRESS_FILE = os.path.join(PROJECT_ROOT, "PROGRESS.md")
 _goals_docs = os.path.join(PROJECT_ROOT, "docs", "plans", "GOALS.md")
-GOALS_FILE = (
-    _goals_docs
-    if os.path.exists(_goals_docs)
-    else os.path.join(PROJECT_ROOT, "GOALS.md")
-)
+GOALS_FILE = _goals_docs if os.path.exists(_goals_docs) else os.path.join(PROJECT_ROOT, "GOALS.md")
 LOOP_STATE_FILE = os.path.join(PROJECT_ROOT, ".brain", "loop-state.json")
 
 # Estruturação das 4 squads com 4 subagentes
 SQUADS = {
     "squad-core": {
         "name": "Core API & DB Hardening",
-        "agents": [
-            "cartorio-dev-api",
-            "cartorio-dev-db",
-            "cartorio-dev-integrations",
-            "cartorio-dev-mcp",
-        ],
+        "agents": ["cartorio-dev-api", "cartorio-dev-db", "cartorio-dev-integrations", "cartorio-dev-mcp"]
     },
     "squad-security": {
         "name": "Privacy & Security Compliance",
-        "agents": [
-            "cartorio-lgpd-scrubber",
-            "cartorio-lgpd-audit",
-            "cartorio-lgpd-retention",
-            "cartorio-security-validator",
-        ],
+        "agents": ["cartorio-lgpd-scrubber", "cartorio-lgpd-audit", "cartorio-lgpd-retention", "cartorio-security-validator"]
     },
     "squad-infra": {
         "name": "Infrastructure & Devops",
-        "agents": [
-            "cartorio-infra-swarm",
-            "cartorio-infra-network",
-            "cartorio-infra-cicd",
-            "cartorio-infra-observability",
-        ],
+        "agents": ["cartorio-infra-swarm", "cartorio-infra-network", "cartorio-infra-cicd", "cartorio-infra-observability"]
     },
     "squad-governance": {
         "name": "Governance & Agility",
-        "agents": [
-            "cartorio-scrum-master",
-            "cartorio-loop-engineer",
-            "cartorio-brain-sync",
-            "cartorio-docs-swagger",
-        ],
-    },
+        "agents": ["cartorio-scrum-master", "cartorio-loop-engineer", "cartorio-brain-sync", "cartorio-docs-swagger"]
+    }
 }
-
 
 class LoopOrchestrator:
     def __init__(self):
@@ -115,49 +90,30 @@ class LoopOrchestrator:
         print("Executing testing gates (ruff, mypy, pytest)...")
 
         # 1. Ruff check
-        rc_ruff, out_ruff = self.run_command(
-            ["uv", "run", "ruff", "check", "app/"], cwd=BACKEND_DIR
-        )
+        rc_ruff, out_ruff = self.run_command(["uv", "run", "ruff", "check", "app/"], cwd=BACKEND_DIR)
         if rc_ruff != 0 and "All checks passed" not in out_ruff:
             print("⚠️ Ruff verification failed!")
             return False
 
         # 2. Mypy check
-        rc_mypy, out_mypy = self.run_command(
-            ["uv", "run", "mypy", "app/"], cwd=BACKEND_DIR
-        )
+        rc_mypy, out_mypy = self.run_command(["uv", "run", "mypy", "app/"], cwd=BACKEND_DIR)
         if rc_mypy != 0 and "Success: no issues found" not in out_mypy:
             print("⚠️ Mypy verification failed!")
             # Retornar True temporariamente se houver pendências de tipos parciais, mas o ideal é strict 0
             # return False
 
         # 3. Pytest check (skip slow coverages in rapid loop check)
-        rc_pytest, out_pytest = self.run_command(
-            ["uv", "run", "pytest", "--no-cov", "-q"], cwd=BACKEND_DIR
-        )
+        rc_pytest, out_pytest = self.run_command(["uv", "run", "pytest", "--no-cov", "-q"], cwd=BACKEND_DIR)
         if "failed" in out_pytest or rc_pytest != 0:
             print("⚠️ Pytest suite failed!")
             return False
 
         return True
 
-    def execute_workflow(
-        self, task_id: str, squad_key: str, agent_name: str, task_desc: str
-    ):
+    def execute_workflow(self, task_id: str, squad_key: str, agent_name: str, task_desc: str):
         """Simula e executa a máquina de estados para cada task"""
-        phases = [
-            "analisar",
-            "testar",
-            "corrigir",
-            "melhorar",
-            "otimizar",
-            "documentar",
-            "comentar",
-            "salvar_memoria",
-        ]
-        print(
-            f"\n🚀 Squad [{SQUADS[squad_key]['name']}] -> Agent [{agent_name}] running {task_id}: {task_desc}"
-        )
+        phases = ["analisar", "testar", "corrigir", "melhorar", "otimizar", "documentar", "comentar", "salvar_memoria"]
+        print(f"\n🚀 Squad [{SQUADS[squad_key]['name']}] -> Agent [{agent_name}] running {task_id}: {task_desc}")
 
         for phase in phases:
             print(f"  └─ Phase: {phase.upper()}... ", end="", flush=True)
@@ -170,9 +126,7 @@ class LoopOrchestrator:
         # Append ao PROGRESS.md
         self.log_progress(task_id, squad_key, agent_name, task_desc)
 
-    def log_progress(
-        self, task_id: str, squad_key: str, agent_name: str, task_desc: str
-    ):
+    def log_progress(self, task_id: str, squad_key: str, agent_name: str, task_desc: str):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
         entry = (
             f"\n## {timestamp} — TASK COMPLETED: {task_id}\n"
@@ -201,13 +155,9 @@ class LoopOrchestrator:
         new_lines = []
         for line in lines:
             if "Multi-provider fallback validado" in line:
-                new_lines.append(
-                    f"| **G** | Multi-provider fallback validado | 🟡 in_progress | {pct_global}% | loop integration progressing |\n"
-                )
+                new_lines.append(f"| **G** | Multi-provider fallback validado | 🟡 in_progress | {pct_global}% | loop integration progressing |\n")
             elif "Docs sincronizadas turn 50+" in line:
-                new_lines.append(
-                    f"| **F** | Docs sincronizadas turn 50+ | 🟡 in_progress | {pct_global}% | synced via loop |\n"
-                )
+                new_lines.append(f"| **F** | Docs sincronizadas turn 50+ | 🟡 in_progress | {pct_global}% | synced via loop |\n")
             else:
                 new_lines.append(line)
 
@@ -220,9 +170,7 @@ class LoopOrchestrator:
         print("=" * 60)
 
         self.state["current_cycle"] += 1
-        print(
-            f"Cycle #{self.state['current_cycle']} started at {datetime.now().isoformat()}"
-        )
+        print(f"Cycle #{self.state['current_cycle']} started at {datetime.now().isoformat()}")
 
         # Roda 1 task por squad neste ciclo (loop de squads em paralelo)
         tasks_run = 0
@@ -246,9 +194,7 @@ class LoopOrchestrator:
             # Valida integridade após execução das tasks
             gates_ok = self.run_tests()
             if not gates_ok:
-                print(
-                    "⚠️ Testing gates failed after loop step execution! Reverting progress or triggering fix-agent."
-                )
+                print("⚠️ Testing gates failed after loop step execution! Reverting progress or triggering fix-agent.")
                 # Em ambiente de execução real, acionaríamos o fix-agent ou rollback.
             else:
                 print("🎉 All quality gates passed successfully!")
@@ -259,7 +205,6 @@ class LoopOrchestrator:
             print("All 100 tasks are already completed! Loop finished successfully.")
             self.state["status"] = "finished"
             self.save_state()
-
 
 if __name__ == "__main__":
     orchestrator = LoopOrchestrator()

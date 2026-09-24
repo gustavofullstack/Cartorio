@@ -35,7 +35,6 @@ def test_engine():
 @pytest.fixture
 def test_session_factory(test_engine):
     from sqlalchemy.orm import sessionmaker
-
     return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
 
@@ -125,10 +124,9 @@ def test_api_agendamentos_pendentes(client, test_session, cliente_test):
     )
 
     # Testa endpoint com API key válida
-    response = client.get(
-        "/api/v1/agendamento/pendentes",
-        headers={"X-API-Key": os.environ["CARTORIO_API_KEY"]},
-    )
+    response = client.get("/api/v1/agendamento/pendentes", headers={
+        "X-API-Key": os.environ["CARTORIO_API_KEY"]
+    })
 
     assert response.status_code == 200
     data = response.json()
@@ -156,10 +154,9 @@ def test_api_agendamentos_proximos(client, test_session, cliente_test):
     )
 
     # Testa endpoint com API key válida
-    response = client.get(
-        "/api/v1/agendamento/proximos",
-        headers={"X-API-Key": os.environ["CARTORIO_API_KEY"]},
-    )
+    response = client.get("/api/v1/agendamento/proximos", headers={
+        "X-API-Key": os.environ["CARTORIO_API_KEY"]
+    })
 
     assert response.status_code == 200
     data = response.json()

@@ -20,7 +20,6 @@ Exit codes:
 LGPD art. 37 + art. 18 IV (direito a portabilidade).
 Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 11.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -142,15 +141,13 @@ def scan_models() -> list[dict]:
             cat = categorize_field(field_name)
             if cat:
                 category, base_legal = cat
-                findings.append(
-                    {
-                        "file": str(py_file.relative_to(ROOT)),
-                        "line": line_no,
-                        "field": field_name,
-                        "category": category,
-                        "base_legal": base_legal,
-                    }
-                )
+                findings.append({
+                    "file": str(py_file.relative_to(ROOT)),
+                    "line": line_no,
+                    "field": field_name,
+                    "category": category,
+                    "base_legal": base_legal,
+                })
 
     return findings
 
@@ -174,15 +171,13 @@ def scan_schemas() -> list[dict]:
             cat = categorize_field(field_name)
             if cat:
                 category, base_legal = cat
-                findings.append(
-                    {
-                        "file": str(py_file.relative_to(ROOT)),
-                        "line": line_no,
-                        "field": field_name,
-                        "category": category,
-                        "base_legal": base_legal,
-                    }
-                )
+                findings.append({
+                    "file": str(py_file.relative_to(ROOT)),
+                    "line": line_no,
+                    "field": field_name,
+                    "category": category,
+                    "base_legal": base_legal,
+                })
 
     return findings
 
@@ -199,21 +194,17 @@ def scan_pii_service() -> list[dict]:
         match = re.match(r"def (\w*pii\w*|\w*scrub\w*|\w*mask\w*|\w*hash\w*)", line)
         if not match:
             continue
-        findings.append(
-            {
-                "file": str(PII_SERVICE.relative_to(ROOT)),
-                "line": line_no,
-                "field": match.group(1),
-                "category": "protecao",
-                "base_legal": "art. 46",
-            }
-        )
+        findings.append({
+            "file": str(PII_SERVICE.relative_to(ROOT)),
+            "line": line_no,
+            "field": match.group(1),
+            "category": "protecao",
+            "base_legal": "art. 46",
+        })
     return findings
 
 
-def render_markdown(
-    model_findings: list[dict], schema_findings: list[dict], pii_findings: list[dict]
-) -> str:
+def render_markdown(model_findings: list[dict], schema_findings: list[dict], pii_findings: list[dict]) -> str:
     md: list[str] = []
     md.append("# LGPD Data Inventory")
     md.append("")
@@ -245,9 +236,7 @@ def render_markdown(
         md.append("| File | Line | Field | Categoria | Base legal |")
         md.append("|---|---|---|---|---|")
         for f in model_findings:
-            md.append(
-                f"| `{f['file']}` | {f['line']} | `{f['field']}` | {f['category']} | {f['base_legal']} |"
-            )
+            md.append(f"| `{f['file']}` | {f['line']} | `{f['field']}` | {f['category']} | {f['base_legal']} |")
         md.append("")
 
     # Schemas
@@ -257,9 +246,7 @@ def render_markdown(
         md.append("| File | Line | Field | Categoria | Base legal |")
         md.append("|---|---|---|---|---|")
         for f in schema_findings:
-            md.append(
-                f"| `{f['file']}` | {f['line']} | `{f['field']}` | {f['category']} | {f['base_legal']} |"
-            )
+            md.append(f"| `{f['file']}` | {f['line']} | `{f['field']}` | {f['category']} | {f['base_legal']} |")
         md.append("")
 
     # Protection
@@ -274,13 +261,9 @@ def render_markdown(
 
     md.append("---")
     md.append("")
-    md.append(
-        "**Compliance**: LGPD art. 37 (registro das operacoes) + art. 18 IV (portabilidade)."
-    )
+    md.append("**Compliance**: LGPD art. 37 (registro das operacoes) + art. 18 IV (portabilidade).")
     md.append("")
-    md.append(
-        "**Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 11 (auto-gerado)**"
-    )
+    md.append("**Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 11 (auto-gerado)**")
     return "\n".join(md)
 
 
@@ -297,18 +280,12 @@ def main() -> int:
     total = len(model_findings) + len(schema_findings)
 
     if args.json:
-        print(
-            json.dumps(
-                {
-                    "models": model_findings,
-                    "schemas": schema_findings,
-                    "protection": pii_findings,
-                    "total_pii": total,
-                },
-                indent=2,
-                ensure_ascii=False,
-            )
-        )
+        print(json.dumps({
+            "models": model_findings,
+            "schemas": schema_findings,
+            "protection": pii_findings,
+            "total_pii": total,
+        }, indent=2, ensure_ascii=False))
     else:
         print(f"PII em models: {len(model_findings)}")
         print(f"PII em schemas: {len(schema_findings)}")
@@ -316,9 +293,7 @@ def main() -> int:
         print(f"Total: {total}")
 
     if args.report:
-        args.report.write_text(
-            render_markdown(model_findings, schema_findings, pii_findings)
-        )
+        args.report.write_text(render_markdown(model_findings, schema_findings, pii_findings))
         print(f"  Report: {args.report}", file=sys.stderr)
 
     return 0
