@@ -236,14 +236,14 @@ def _has_raw_pii(text: str) -> bool:
 
 def evaluate_response(persona: Persona, response_text: str) -> dict[str, Any]:
     norm_resp = _normalize(response_text)
-    
+
     # 1. Identity Check
     identity_ok = "pietra" in norm_resp or "2º tabelionato" in norm_resp or "tabelionato" in norm_resp
-    
+
     # 2. Forbidden leakage check
     forbidden_found = [term for term in FORBIDDEN_TERMS if _normalize(term) in norm_resp]
     no_leakage = len(forbidden_found) == 0
-    
+
     # 3. Warmth and empathy check
     warmth_count = sum(1 for w in WARMTH_INDICATORS if _normalize(w) in norm_resp)
     warmth_ok = warmth_count >= 1
@@ -276,7 +276,7 @@ def evaluate_response(persona: Persona, response_text: str) -> dict[str, Any]:
         _normalize(term) in norm_resp
         for term in ("acessibilidade", "cadeira de rodas", "atendimento agendado", "prioridade")
     )
-    
+
     # 4. Persona-tailored appropriateness
     length_ok = len(response_text.strip()) > 30
 
@@ -329,7 +329,7 @@ def run_sequential_simulation(output_json: bool = False) -> int:
     print("=" * 80)
     print("🚀 INICIANDO SIMULAÇÃO SEQUENCIAL DE 10 SUBAGENTS CLIENTES (20 A 90 ANOS)")
     print("=" * 80)
-    
+
     results: list[dict[str, Any]] = []
     failures = 0
 
@@ -341,7 +341,7 @@ def run_sequential_simulation(output_json: bool = False) -> int:
 
         session_id = f"sim_subagent_{persona.id}_{persona.age}"
         start_t = time.time()
-        
+
         # Execute Pietra response planner
         response, state = plan_response(
             user_text=persona.input_message,

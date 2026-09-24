@@ -82,7 +82,7 @@ def run_manual_purge():
                 "backup_file": BACKUP_PATH,
                 "trigger": "manual_vps_cli",
             }
-            
+
             AuditService.log_system_action(
                 action="system.manual_purge",
                 payload=audit_payload,

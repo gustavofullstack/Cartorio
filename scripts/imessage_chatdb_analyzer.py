@@ -75,11 +75,11 @@ def analyze_chat_db(db_path: str) -> Dict[str, Any]:
     """Inspeciona o banco de dados chat.db do iMessage."""
     if not os.path.exists(db_path):
         return {"error": f"Arquivo {db_path} não encontrado.", "accessible": False}
-    
+
     try:
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         cursor = conn.cursor()
-        
+
         # Total de mensagens
         cursor.execute("SELECT count(*) FROM message;")
         total_messages = cursor.fetchone()[0]
@@ -128,7 +128,7 @@ def analyze_chat_db(db_path: str) -> Dict[str, Any]:
                     if re.search(pat, lower_text):
                         category_counts[cat] += 1
                         break
-            
+
             # Coloquialismos
             for key, pat in COLLOQUIAL_PATTERNS.items():
                 matches = re.findall(pat, lower_text)
@@ -157,7 +157,7 @@ def analyze_chat_db(db_path: str) -> Dict[str, Any]:
 def analyze_artifacts(artifacts_dir: str) -> Dict[str, Any]:
     """Inspeciona os artefatos de mensagens em artifacts/imessage/."""
     results = {}
-    
+
     # 1. Analisar cartorio_bot_history.jsonl
     bot_history_file = os.path.join(artifacts_dir, "cartorio_bot_history.jsonl")
     if os.path.exists(bot_history_file):
@@ -169,24 +169,24 @@ def analyze_artifacts(artifacts_dir: str) -> Dict[str, Any]:
                         lines.append(json.loads(l.strip()))
                     except Exception:
                         pass
-        
+
         bot_cat_counts = Counter()
         bot_incoming = 0
         bot_outgoing = 0
-        
+
         for item in lines:
             if item.get("is_from_me"):
                 bot_outgoing += 1
             else:
                 bot_incoming += 1
-            
+
             text = (item.get("text") or "").lower()
             for cat, patterns in CATEGORIES_PATTERNS.items():
                 for pat in patterns:
                     if re.search(pat, text):
                         bot_cat_counts[cat] += 1
                         break
-                        
+
         results["cartorio_bot_history"] = {
             "total_records": len(lines),
             "incoming": bot_incoming,
@@ -209,7 +209,7 @@ def analyze_artifacts(artifacts_dir: str) -> Dict[str, Any]:
                         cat_distribution[cat] += 1
                     except Exception:
                         pass
-        
+
         results["corpus_10k"] = {
             "total_prompts": len(corpus_items),
             "categories": dict(cat_distribution)
@@ -220,7 +220,7 @@ def analyze_artifacts(artifacts_dir: str) -> Dict[str, Any]:
 def generate_markdown_report(chat_db_stats: Dict[str, Any], artifact_stats: Dict[str, Any], output_path: str):
     """Gera relatório consolidado em Markdown."""
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     md_content = f"""# 📊 Relatório de Análise do Histórico de Mensagens iMessage / Messages.app
 
 > **Subagente:** Especialista em Análise da Base iMessage (`chat.db`)  
@@ -334,7 +334,7 @@ def main():
     print(f"=== Análise da Base iMessage / Messages.app ===")
     print(f"Analisando chat.db: {chat_db_path}")
     chat_db_stats = analyze_chat_db(chat_db_path)
-    
+
     print(f"Analisando artefatos em: {artifacts_dir}")
     artifact_stats = analyze_artifacts(artifacts_dir)
 

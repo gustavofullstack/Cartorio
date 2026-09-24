@@ -85,7 +85,7 @@ class G8Orchestrator:
             # Parsear as linhas da tabela markdown do squad
             # Formato: | G8.01.T1 | descrição | [ ] | cartorio-dev |
             table_lines = re.findall(r'\|\s*(G8\.\d+\.T\d+)\s*\|\s*(.*?)\s*\|\s*\[([ x~])\]\s*\|\s*(.*?)\s*\|', squad_text)
-            
+
             squad_tasks = []
             for task_id, desc, status, agent in table_lines:
                 task_data = {
@@ -130,7 +130,7 @@ class G8Orchestrator:
 
     def run_quality_gates(self) -> bool:
         print("Executing quality gates (Ruff, Mypy, Pytest)...")
-        
+
         # 1. Ruff
         print("  └─ Running ruff check... ", end="", flush=True)
         rc_ruff, out_ruff = self.run_command(["uv", "run", "ruff", "check", "app/"], cwd=BACKEND_DIR)
@@ -139,7 +139,7 @@ class G8Orchestrator:
             print(out_ruff[:500])
             return False
         print("PASSED ✅")
-            
+
         # 2. Mypy
         print("  └─ Running mypy type checks... ", end="", flush=True)
         rc_mypy, out_mypy = self.run_command(["uv", "run", "mypy", "app/"], cwd=BACKEND_DIR)
@@ -148,7 +148,7 @@ class G8Orchestrator:
             print(out_mypy[:500])
             return False
         print("PASSED ✅")
-            
+
         # 3. Pytest (Sem coverage para loop rápido)
         print("  └─ Running fast pytest suite... ", end="", flush=True)
         rc_pytest, out_pytest = self.run_command(["uv", "run", "pytest", "--no-cov", "-q"], cwd=BACKEND_DIR)
@@ -157,12 +157,12 @@ class G8Orchestrator:
             print(out_pytest[-500:])
             return False
         print("PASSED ✅")
-            
+
         return True
 
     def log_wave_progress(self, squad_num: int, squad_info: Dict[str, Any]):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-        
+
         entry = (
             f"\n## {timestamp} — Wave G8.S{squad_num:02d} COMPLETED ✅\n"
             f"- **Squad {squad_num:02d}:** {squad_info['title']}\n"
@@ -170,10 +170,10 @@ class G8Orchestrator:
         )
         for task in squad_info["tasks"]:
             entry += f"  - [x] **{task['id']}** ({task['agent']}) — {task['description']}\n"
-            
+
         entry += f"- **Gates Status:** All tests passed successfully (pytest, mypy, ruff) ✅\n"
         entry += f"Modified by Gustavo Almeida (via G8 loop orchestrator)\n"
-        
+
         with open(PROGRESS_FILE, "a") as f:
             f.write(entry)
 
@@ -181,17 +181,17 @@ class G8Orchestrator:
         """Atualiza a porcentagem concluída das metas em SUPER_GOALS_G8.md baseado nas tasks concluídas."""
         if not os.path.exists(GOALS_FILE):
             return
-            
+
         total_tasks = len(self.tasks)
         if total_tasks == 0:
             return
-            
+
         completed_tasks_count = sum(1 for t in self.tasks if t["done"] or t["id"] in self.state["completed_tasks"])
         pct_global = min(100, int((completed_tasks_count / total_tasks) * 100))
-        
+
         with open(GOALS_FILE, "r") as f:
             content = f.read()
-            
+
         # Regex para substituir porcentagens de metas atreladas ao progresso global ou estimativas
         # Atualiza a linha de progresso
         progress_pattern = r'(\|\s*\*?\*?% progress\*?\*?\s*\|).*?(\||$)'
@@ -200,7 +200,7 @@ class G8Orchestrator:
         # Atualiza a média ponderada estimada
         avg_pattern = r'(\*\*Média ponderada atual:\*\*).*?(\s*·)'
         content = re.sub(avg_pattern, rf'\g<1> ~{pct_global}%\g<2>', content)
-        
+
         with open(GOALS_FILE, "w") as f:
             f.write(content)
 
@@ -208,27 +208,27 @@ class G8Orchestrator:
         print("=" * 60)
         print("         SUPER PLANO G8 - ORCHESTRATOR STATUS")
         print("=" * 60)
-        
+
         total_tasks = len(self.tasks)
         completed_tasks_count = sum(1 for t in self.tasks if t["done"])
-        
+
         # Obter waves concluídas
         completed_waves = []
         for s_num, squad in self.squads.items():
             if all(t["done"] for t in squad["tasks"]):
                 completed_waves.append(s_num)
-        
+
         print(f"Waves Completed: {len(completed_waves)} / 25")
         print(f"Tasks Completed: {completed_tasks_count} / {total_tasks}")
         print(f"Last Wave Run: {self.state['last_wave']}")
-        
+
         # Identificar próxima wave pendente
         next_wave = None
         for s_num in sorted(self.squads.keys()):
             if not all(t["done"] for t in self.squads[s_num]["tasks"]):
                 next_wave = s_num
                 break
-                
+
         if next_wave is not None:
             print(f"Next Wave to Run: Squad {next_wave:02d} ({self.squads[next_wave]['title']})")
             print("Tasks in this wave:")
@@ -248,39 +248,39 @@ class G8Orchestrator:
         print("=" * 60)
         print(f"🚀 Running Wave Squad {wave_num:02d} - {squad['title']}")
         print("=" * 60)
-        
+
         # Simula/Processa cada uma das 4 tarefas de forma ordenada com o ciclo
         phases = ["analisar", "testar", "corrigir", "melhorar", "otimizar", "documentar", "comentar", "salvar_memoria"]
-        
+
         for task in squad["tasks"]:
             print(f"\nProcessing Task {task['id']} [{task['agent']}]...")
             for phase in phases:
                 print(f"  └─ Phase: {phase.upper()}... ", end="", flush=True)
                 time.sleep(0.05)  # simulando ciclo de raciocínio do agente
                 print("DONE ✅")
-            
+
             # Marca a task como completa na memória interna e no arquivo markdown
             self.mark_task_done_in_markdown(task["id"])
             if task["id"] not in self.state["completed_tasks"]:
                 self.state["completed_tasks"].append(task["id"])
-            
+
         # Validação final das Quality Gates
         gates_ok = self.run_quality_gates()
         if not gates_ok:
             print("\n❌ Quality gates failed! Wave cannot be declared completed.")
             return
-            
+
         if wave_num not in self.state["completed_waves"]:
             self.state["completed_waves"].append(wave_num)
         self.state["last_wave"] = wave_num
-        
+
         # Recarregar status após modificação no markdown
         self.tasks, self.squads = self.parse_super_plano()
-        
+
         self.log_wave_progress(wave_num, squad)
         self.update_goals()
         self.save_state()
-        
+
         print(f"\n🎉 Wave Squad {wave_num:02d} completed successfully, goals updated, and progress logged!")
 
 if __name__ == "__main__":

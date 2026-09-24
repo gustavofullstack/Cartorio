@@ -21,14 +21,14 @@ def main():
     password = os.environ.get("N8N_LOGIN_PASS", "")
     if not email or not password:
         raise SystemExit("N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager")
-    
+
     # Tentativa de login
     try:
         s = login(email, password)
     except Exception as e:
         print(f"Login error with {email}: {e}")
         return
-            
+
     print("Login successful. Checking credentials...")
     r = s.get(BASE + "/rest/credentials")
     if r.ok:
@@ -49,7 +49,7 @@ def main():
                                .replace("http://localhost:8000", "https://api.2notasudi.com.br")\
                                .replace("http://cartorio:8000", "https://api.2notasudi.com.br")
                     needs_update = True
-            
+
             if needs_update:
                 print(f"  Updating credential {c_detail.get('name')}...")
                 upd = s.patch(f"{BASE}/rest/credentials/{cred.get('id')}", json={"data": data})

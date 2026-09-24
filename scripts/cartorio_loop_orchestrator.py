@@ -55,21 +55,21 @@ class LoopOrchestrator:
                     state = json.load(f)
             except json.JSONDecodeError:
                 pass
-        
+
         # Garante chaves criticas de forma resiliente para evitar KeyError
         if not isinstance(state, dict):
             state = {}
-            
+
         state.setdefault("current_cycle", state.get("current_round", 0))
         state.setdefault("completed_tasks", [])
-        
+
         squad_prog = state.get("squad_progress")
         if not isinstance(squad_prog, dict):
             squad_prog = {}
         for squad_key in SQUADS:
             squad_prog.setdefault(squad_key, 0)
         state["squad_progress"] = squad_prog
-        
+
         state.setdefault("status", "ready")
         state.setdefault("last_updated", datetime.now().isoformat())
         return state
@@ -88,41 +88,41 @@ class LoopOrchestrator:
 
     def run_tests(self) -> bool:
         print("Executing testing gates (ruff, mypy, pytest)...")
-        
+
         # 1. Ruff check
         rc_ruff, out_ruff = self.run_command(["uv", "run", "ruff", "check", "app/"], cwd=BACKEND_DIR)
         if rc_ruff != 0 and "All checks passed" not in out_ruff:
             print("⚠️ Ruff verification failed!")
             return False
-            
+
         # 2. Mypy check
         rc_mypy, out_mypy = self.run_command(["uv", "run", "mypy", "app/"], cwd=BACKEND_DIR)
         if rc_mypy != 0 and "Success: no issues found" not in out_mypy:
             print("⚠️ Mypy verification failed!")
             # Retornar True temporariamente se houver pendências de tipos parciais, mas o ideal é strict 0
             # return False
-            
+
         # 3. Pytest check (skip slow coverages in rapid loop check)
         rc_pytest, out_pytest = self.run_command(["uv", "run", "pytest", "--no-cov", "-q"], cwd=BACKEND_DIR)
         if "failed" in out_pytest or rc_pytest != 0:
             print("⚠️ Pytest suite failed!")
             return False
-            
+
         return True
 
     def execute_workflow(self, task_id: str, squad_key: str, agent_name: str, task_desc: str):
         """Simula e executa a máquina de estados para cada task"""
         phases = ["analisar", "testar", "corrigir", "melhorar", "otimizar", "documentar", "comentar", "salvar_memoria"]
         print(f"\n🚀 Squad [{SQUADS[squad_key]['name']}] -> Agent [{agent_name}] running {task_id}: {task_desc}")
-        
+
         for phase in phases:
             print(f"  └─ Phase: {phase.upper()}... ", end="", flush=True)
             time.sleep(0.1)  # Simula tempo de raciocínio de processamento rápido
             print("DONE ✅")
-            
+
         self.state["completed_tasks"].append(task_id)
         self.state["squad_progress"][squad_key] += 1
-        
+
         # Append ao PROGRESS.md
         self.log_progress(task_id, squad_key, agent_name, task_desc)
 
@@ -144,14 +144,14 @@ class LoopOrchestrator:
         # Carrega GOALS.md
         if not os.path.exists(GOALS_FILE):
             return
-            
+
         with open(GOALS_FILE, "r") as f:
             lines = f.readlines()
-            
+
         # Calcula porcentagens baseadas nas tasks completadas
         total_completed = len(self.state["completed_tasks"])
         pct_global = min(100, int((total_completed / 100) * 100))
-        
+
         new_lines = []
         for line in lines:
             if "Multi-provider fallback validado" in line:
@@ -160,7 +160,7 @@ class LoopOrchestrator:
                 new_lines.append(f"| **F** | Docs sincronizadas turn 50+ | 🟡 in_progress | {pct_global}% | synced via loop |\n")
             else:
                 new_lines.append(line)
-                
+
         with open(GOALS_FILE, "w") as f:
             f.writelines(new_lines)
 
@@ -168,10 +168,10 @@ class LoopOrchestrator:
         print("=" * 60)
         print("         CARTÓRIO SUPER LOOP ORCHESTRATOR ACTIVE")
         print("=" * 60)
-        
+
         self.state["current_cycle"] += 1
         print(f"Cycle #{self.state['current_cycle']} started at {datetime.now().isoformat()}")
-        
+
         # Roda 1 task por squad neste ciclo (loop de squads em paralelo)
         tasks_run = 0
         for squad_key, squad_info in SQUADS.items():
@@ -179,17 +179,17 @@ class LoopOrchestrator:
             if current_idx >= 25:
                 print(f"Squad [{squad_info['name']}] has completed all 25 tasks! 🎉")
                 continue
-                
+
             task_num = (list(SQUADS.keys()).index(squad_key) * 25) + current_idx + 1
             task_id = f"T{task_num:03d}"
-            
+
             # Mapeamento do subagente (4 agentes por squad, circular)
             agent_name = squad_info["agents"][current_idx % 4]
             task_desc = f"Execution of squad task sequence index {current_idx} for {squad_info['name']}"
-            
+
             self.execute_workflow(task_id, squad_key, agent_name, task_desc)
             tasks_run += 1
-            
+
         if tasks_run > 0:
             # Valida integridade após execução das tasks
             gates_ok = self.run_tests()
@@ -198,7 +198,7 @@ class LoopOrchestrator:
                 # Em ambiente de execução real, acionaríamos o fix-agent ou rollback.
             else:
                 print("🎉 All quality gates passed successfully!")
-                
+
             self.update_goals()
             self.save_state()
         else:

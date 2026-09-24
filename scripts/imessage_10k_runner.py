@@ -76,7 +76,7 @@ def gen_variant(msg: str, rng: random.Random) -> str:
     elif r < 0.35:
         v = swap_typo(v, rng)
     elif r < 0.45:
-        v = v.rstrip("?!.") 
+        v = v.rstrip("?!.")
     elif r < 0.52:
         v = v.upper() if len(v) < 40 else v
     pre = rng.choice(PREFIXES)
