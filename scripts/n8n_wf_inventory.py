@@ -22,6 +22,7 @@ Exit codes:
 Modified by Gustavo Almeida — G7 Wave 29 A2 (cartorio-n8n).
 Extended by G8.13.T2 (cartorio-n8n).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -146,7 +147,9 @@ def inventariar(wf_dir: Path, strict: bool = False, workers: int = 8) -> dict:
 
     valid_count = sum(1 for e in entries if e.get("validation_status") == "valid")
     invalid_count = sum(1 for e in entries if e.get("validation_status") == "invalid")
-    broken_count = sum(1 for e in entries if e.get("validation_status") == "broken_json")
+    broken_count = sum(
+        1 for e in entries if e.get("validation_status") == "broken_json"
+    )
     basic_ok_count = sum(1 for e in entries if e.get("validation_status") == "basic_ok")
 
     return {
@@ -198,7 +201,9 @@ def render_markdown(report: dict, generated_at: str) -> str:
     lines.append("")
     lines.append("## Schema")
     lines.append("")
-    lines.append("- Validator: `app.schemas.n8n_workflow.N8nWorkflow` (Pydantic v2 strict)")
+    lines.append(
+        "- Validator: `app.schemas.n8n_workflow.N8nWorkflow` (Pydantic v2 strict)"
+    )
     lines.append("- `ConfigDict(strict=True, extra='forbid')` em todos os modelos")
     lines.append(
         "- LGPD Art. 46: regex anti-PII (CPF/CNPJ/RG/tel/email) em `name`, "
@@ -209,14 +214,18 @@ def render_markdown(report: dict, generated_at: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Offline N8N WF inventory (no network)")
+    parser = argparse.ArgumentParser(
+        description="Offline N8N WF inventory (no network)"
+    )
     parser.add_argument(
         "--dir",
         type=Path,
         default=None,
         help="Directory with workflow JSON exports (default: <repo>/infra/n8n-workflows)",
     )
-    parser.add_argument("--json", action="store_true", help="Machine-readable JSON output")
+    parser.add_argument(
+        "--json", action="store_true", help="Machine-readable JSON output"
+    )
     parser.add_argument(
         "--strict",
         action="store_true",
@@ -245,6 +254,7 @@ def main() -> int:
         if backend_dir.is_dir() and str(backend_dir) not in sys.path:
             sys.path.insert(0, str(backend_dir))
         import os
+
         os.environ.setdefault("APP_ENV", "development")
 
     report = inventariar(args.dir, strict=args.strict, workers=args.workers)
@@ -255,6 +265,7 @@ def main() -> int:
 
     if args.md_out:
         from datetime import datetime, timezone
+
         generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
         args.md_out.parent.mkdir(parents=True, exist_ok=True)
         args.md_out.write_text(render_markdown(report, generated_at), encoding="utf-8")

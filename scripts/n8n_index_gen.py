@@ -9,6 +9,7 @@ Output:
 
 Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 2.
 """
+
 from __future__ import annotations
 
 import json
@@ -66,14 +67,16 @@ def main() -> None:
                 if "trigger" in str(n.get("type", "")).lower()
                 or "webhook" in str(n.get("type", "")).lower()
             ]
-            entries.append({
-                "file": wf.name,
-                "name": data.get("name", wf.stem),
-                "active": "✅" if data.get("active") else "❌",
-                "n_nodes": len(nodes),
-                "triggers": triggers[:3],
-                "first_nodes": [n.get("name", "?") for n in nodes[:5]],
-            })
+            entries.append(
+                {
+                    "file": wf.name,
+                    "name": data.get("name", wf.stem),
+                    "active": "✅" if data.get("active") else "❌",
+                    "n_nodes": len(nodes),
+                    "triggers": triggers[:3],
+                    "first_nodes": [n.get("name", "?") for n in nodes[:5]],
+                }
+            )
         except Exception as e:
             entries.append({"file": wf.name, "name": wf.stem, "error": str(e)[:60]})
 
@@ -88,7 +91,9 @@ def main() -> None:
     md.append("# N8N Workflows Registry — INDEX")
     md.append("")
     md.append("**Auto-gerado**: rodar `python3 scripts/n8n_index_gen.py`.")
-    md.append(f"**Total WFs**: {len(entries)} | **Ativos**: {total_active} | **Total nodes**: {total_nodes}")
+    md.append(
+        f"**Total WFs**: {len(entries)} | **Ativos**: {total_active} | **Total nodes**: {total_nodes}"
+    )
     md.append("")
     md.append("## Tabela de workflows")
     md.append("")
@@ -96,11 +101,15 @@ def main() -> None:
     md.append("|---|---|---|---|---|---|---|")
     for i, e in enumerate(entries, 1):
         if "error" in e:
-            md.append(f"| {i} | `{e['file']}` | {e['name']} | ⚠️ | - | - | `{e['error']}` |")
+            md.append(
+                f"| {i} | `{e['file']}` | {e['name']} | ⚠️ | - | - | `{e['error']}` |"
+            )
             continue
         triggers_str = ", ".join(e["triggers"]) if e["triggers"] else "manual"
         first_nodes = ", ".join(f"`{n}`" for n in e["first_nodes"])
-        md.append(f"| {i} | `{e['file']}` | {e['name']} | {e['active']} | {e['n_nodes']} | {triggers_str} | {first_nodes} |")
+        md.append(
+            f"| {i} | `{e['file']}` | {e['name']} | {e['active']} | {e['n_nodes']} | {triggers_str} | {first_nodes} |"
+        )
     md.append("")
     md.append("## Por trigger")
     md.append("")
@@ -127,7 +136,9 @@ def main() -> None:
     md.append("")
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 2 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 2 (auto-gerado)**"
+    )
 
     OUT_FILE.write_text("\n".join(md))
     print(f"OK {OUT_FILE} ({len(entries)} WFs, {total_active} ativos)")

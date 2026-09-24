@@ -20,6 +20,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-n8n — G6 wave 16.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -55,8 +56,11 @@ def create_snapshot() -> Path:
 
     # Calcular SHA256
     import hashlib
+
     sha256 = hashlib.sha256(archive_path.read_bytes()).hexdigest()
-    (archive_path.parent / f"{archive_name}.sha256").write_text(f"{sha256}  {archive_name}\n")
+    (archive_path.parent / f"{archive_name}.sha256").write_text(
+        f"{sha256}  {archive_name}\n"
+    )
 
     # Manifest
     manifest = {
@@ -81,21 +85,27 @@ def list_snapshots() -> list[dict]:
         if not snap_dir.is_dir():
             continue
         for archive in sorted(snap_dir.glob("snapshot-*.tar.gz"), reverse=True):
-            manifest_files = list(snap_dir.glob(f"manifest-{archive.name.replace('snapshot-', '').replace('.tar.gz', '')}.json"))
+            manifest_files = list(
+                snap_dir.glob(
+                    f"manifest-{archive.name.replace('snapshot-', '').replace('.tar.gz', '')}.json"
+                )
+            )
             manifest: dict = {}
             if manifest_files:
                 try:
                     manifest = json.loads(manifest_files[0].read_text())
                 except (json.JSONDecodeError, OSError):
                     pass
-            snapshots.append({
-                "date": snap_dir.name,
-                "archive": archive.name,
-                "path": str(archive),
-                "size_bytes": archive.stat().st_size,
-                "sha256": manifest.get("sha256"),
-                "workflow_count": manifest.get("workflow_count"),
-            })
+            snapshots.append(
+                {
+                    "date": snap_dir.name,
+                    "archive": archive.name,
+                    "path": str(archive),
+                    "size_bytes": archive.stat().st_size,
+                    "sha256": manifest.get("sha256"),
+                    "workflow_count": manifest.get("workflow_count"),
+                }
+            )
     return snapshots
 
 
@@ -158,19 +168,27 @@ def render_markdown(snapshots: list[dict]) -> str:
         for s in snapshots:
             sha = s["sha256"][:16] + "..." if s["sha256"] else "?"
             size_mb = s["size_bytes"] / 1024 / 1024
-            md.append(f"| {s['date']} | `{s['archive']}` | {s['workflow_count']} | {size_mb:.2f} MB | `{sha}` |")
+            md.append(
+                f"| {s['date']} | `{s['archive']}` | {s['workflow_count']} | {size_mb:.2f} MB | `{sha}` |"
+            )
     md.append("")
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 16 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 16 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="N8N workflow versioned backup")
-    parser.add_argument("--restore", metavar="DATE_OR_LATEST", help="restaurar snapshot")
+    parser.add_argument(
+        "--restore", metavar="DATE_OR_LATEST", help="restaurar snapshot"
+    )
     parser.add_argument("--list", action="store_true", help="listar snapshots")
-    parser.add_argument("--prune", type=int, metavar="N", help="manter N snapshots mais recentes")
+    parser.add_argument(
+        "--prune", type=int, metavar="N", help="manter N snapshots mais recentes"
+    )
     parser.add_argument("--report", type=Path, help="gerar report markdown")
     args = parser.parse_args()
 
@@ -178,7 +196,9 @@ def main() -> int:
         snaps = list_snapshots()
         print(f"Total snapshots: {len(snaps)}")
         for s in snaps[:10]:
-            print(f"  {s['date']} {s['archive']} ({s['workflow_count']} WFs, {s['size_bytes']/1024/1024:.2f} MB)")
+            print(
+                f"  {s['date']} {s['archive']} ({s['workflow_count']} WFs, {s['size_bytes'] / 1024 / 1024:.2f} MB)"
+            )
         if args.report:
             args.report.write_text(render_markdown(snaps))
             print(f"  Report: {args.report}", file=sys.stderr)
@@ -197,9 +217,15 @@ def main() -> int:
                 return 2
             target = snaps[0]
         else:
-            matches = [s for s in snaps if args.restore in s["date"] or args.restore in s["archive"]]
+            matches = [
+                s
+                for s in snaps
+                if args.restore in s["date"] or args.restore in s["archive"]
+            ]
             if not matches:
-                print(f"[ERROR] snapshot '{args.restore}' nao encontrado", file=sys.stderr)
+                print(
+                    f"[ERROR] snapshot '{args.restore}' nao encontrado", file=sys.stderr
+                )
                 return 2
             target = matches[0]
         ok = restore_snapshot(target)
@@ -222,7 +248,9 @@ def main() -> int:
     # Prune automatico
     deleted = prune_old_snapshots(MAX_SNAPSHOTS)
     if deleted:
-        print(f"[prune] {deleted} snapshots antigos removidos (mantendo {MAX_SNAPSHOTS})")
+        print(
+            f"[prune] {deleted} snapshots antigos removidos (mantendo {MAX_SNAPSHOTS})"
+        )
 
     if args.report:
         snaps = list_snapshots()

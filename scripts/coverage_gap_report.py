@@ -30,7 +30,9 @@ def analyze(threshold: float) -> list[tuple[float, int, int, str]]:
         return []
 
     if not COV_FILE.is_file():
-        print(f"[FAIL] missing {COV_FILE} — run pytest with --cov first", file=sys.stderr)
+        print(
+            f"[FAIL] missing {COV_FILE} — run pytest with --cov first", file=sys.stderr
+        )
         return []
 
     c = Coverage(data_file=str(COV_FILE))

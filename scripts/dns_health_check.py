@@ -15,6 +15,7 @@ Uso:
 
 Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 2 (G6.D.T5).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -66,14 +67,26 @@ def check_host(host: str) -> HostCheck:
         # AF_INET forca IPv4 (evita Happy Eyeballs returning IPv6 first)
         infos = socket.getaddrinfo(subdomain, None, family=socket.AF_INET)
         if not infos:
-            return HostCheck(host, subdomain, expected_status, service, None, "NXDOMAIN", "no infos (IPv4)")
+            return HostCheck(
+                host,
+                subdomain,
+                expected_status,
+                service,
+                None,
+                "NXDOMAIN",
+                "no infos (IPv4)",
+            )
         ip = infos[0][4][0]
         status = "OK" if ip == EXPECTED_IP else "WRONG_IP"
         return HostCheck(host, subdomain, expected_status, service, ip, status)
     except socket.gaierror as e:
-        return HostCheck(host, subdomain, expected_status, service, None, "NXDOMAIN", str(e))
+        return HostCheck(
+            host, subdomain, expected_status, service, None, "NXDOMAIN", str(e)
+        )
     except Exception as e:
-        return HostCheck(host, subdomain, expected_status, service, None, "ERROR", str(e))
+        return HostCheck(
+            host, subdomain, expected_status, service, None, "ERROR", str(e)
+        )
 
 
 def run_all_checks() -> list[HostCheck]:
@@ -91,7 +104,9 @@ def render_markdown_report(checks: list[HostCheck]) -> str:
     md.append("")
     md.append(f"**Data**: {datetime.now(timezone.utc).isoformat()}")
     md.append(f"**IP esperado**: `{EXPECTED_IP}`")
-    md.append(f"**Resolvers**: {' / '.join(f'{ip} ({name})' for ip, name in RESOLVERS)} (via system resolver)")
+    md.append(
+        f"**Resolvers**: {' / '.join(f'{ip} ({name})' for ip, name in RESOLVERS)} (via system resolver)"
+    )
     md.append("")
     md.append("## Resumo")
     md.append("")
@@ -112,31 +127,48 @@ def render_markdown_report(checks: list[HostCheck]) -> str:
     md.append("")
     md.append("## Tabela detalhada")
     md.append("")
-    md.append("| # | Host | Subdomínio | Status esperado | Resolved IP | Status | Serviço |")
+    md.append(
+        "| # | Host | Subdomínio | Status esperado | Resolved IP | Status | Serviço |"
+    )
     md.append("|---|---|---|---|---|---|---|")
     for i, c in enumerate(checks, 1):
         ip_str = f"`{c.resolved_ip}`" if c.resolved_ip else "-"
-        status_emoji = {"OK": "✅", "NXDOMAIN": "❌", "WRONG_IP": "⚠️", "ERROR": "🔴"}.get(c.status, "?")
-        md.append(f"| {i} | `{c.host}` | `{c.subdomain}` | {c.expected_status} | {ip_str} | {status_emoji} {c.status} | {c.service} |")
+        status_emoji = {
+            "OK": "✅",
+            "NXDOMAIN": "❌",
+            "WRONG_IP": "⚠️",
+            "ERROR": "🔴",
+        }.get(c.status, "?")
+        md.append(
+            f"| {i} | `{c.host}` | `{c.subdomain}` | {c.expected_status} | {ip_str} | {status_emoji} {c.status} | {c.service} |"
+        )
     md.append("")
     md.append("## Próximos passos")
     md.append("")
     if nxdomain > 0:
         md.append("### 🔴 Criar A records faltantes no Cloudflare UI")
         md.append("")
-        md.append(f"Para cada host NXDOMAIN, criar A record `{EXPECTED_IP}` no Cloudflare:")
+        md.append(
+            f"Para cada host NXDOMAIN, criar A record `{EXPECTED_IP}` no Cloudflare:"
+        )
         md.append("")
         for c in checks:
             if c.status == "NXDOMAIN":
-                md.append(f"- `{c.host}.{DOMAIN}` → A → `{EXPECTED_IP}` (proxy recomendado)")
+                md.append(
+                    f"- `{c.host}.{DOMAIN}` → A → `{EXPECTED_IP}` (proxy recomendado)"
+                )
         md.append("")
-        md.append("**Passo-a-passo**: ver `infra/dns/CLOUDFLARE_RUNBOOK.md` (~5min total).")
+        md.append(
+            "**Passo-a-passo**: ver `infra/dns/CLOUDFLARE_RUNBOOK.md` (~5min total)."
+        )
         md.append("")
         md.append("Após criar, rodar `make dns-check` para validar.")
     md.append("")
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 2 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 2 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
@@ -156,7 +188,12 @@ def main() -> int:
         nxdomain = sum(1 for c in checks if c.status == "NXDOMAIN")
         for c in checks:
             ip_str = c.resolved_ip or c.error or "-"
-            status_emoji = {"OK": "✅", "NXDOMAIN": "❌", "WRONG_IP": "⚠️", "ERROR": "🔴"}.get(c.status, "?")
+            status_emoji = {
+                "OK": "✅",
+                "NXDOMAIN": "❌",
+                "WRONG_IP": "⚠️",
+                "ERROR": "🔴",
+            }.get(c.status, "?")
             print(f"  {status_emoji} {c.host:12} {c.subdomain:35} {ip_str}")
         print()
         print(f"  OK: {ok}/10 | NXDOMAIN: {nxdomain}/10")

@@ -77,8 +77,9 @@ async def rate_limiter(interval: float) -> None:
     await asyncio.sleep(interval)
 
 
-async def run_case(client: Any, case: dict[str, Any], sem: asyncio.Semaphore,
-                   rps_interval: float) -> dict[str, Any]:
+async def run_case(
+    client: Any, case: dict[str, Any], sem: asyncio.Semaphore, rps_interval: float
+) -> dict[str, Any]:
     """Executa 1 caso multi-turn; retorna resultado avaliado."""
     messages: list[dict[str, str]] = []
     last_text = ""
@@ -95,8 +96,9 @@ async def run_case(client: Any, case: dict[str, Any], sem: asyncio.Semaphore,
             ok = False
             for attempt in range(MAX_RETRIES + 1):
                 try:
-                    r = await client.post(ENDPOINT, json=payload,
-                                          timeout=REQUEST_TIMEOUT_S)
+                    r = await client.post(
+                        ENDPOINT, json=payload, timeout=REQUEST_TIMEOUT_S
+                    )
                     if r.status_code == 429:
                         await asyncio.sleep(5 * (attempt + 1))
                         continue
@@ -113,13 +115,21 @@ async def run_case(client: Any, case: dict[str, Any], sem: asyncio.Semaphore,
                     await asyncio.sleep(2 * (attempt + 1))
             if not ok:
                 return {
-                    "id": case["id"], "cat": case["cat"], "status": "ERROR",
-                    "issues": [f"transport:{error}"], "response": "",
+                    "id": case["id"],
+                    "cat": case["cat"],
+                    "status": "ERROR",
+                    "issues": [f"transport:{error}"],
+                    "response": "",
                     "ts": datetime.now(timezone.utc).isoformat(),
                 }
 
-    ev = evaluate(case["id"], last_text, case["expected"], case["forbidden"],
-                  case.get("require_identity", False))
+    ev = evaluate(
+        case["id"],
+        last_text,
+        case["expected"],
+        case["forbidden"],
+        case.get("require_identity", False),
+    )
     # regressão G1: placeholder de emolumento em qualquer resposta de caso emol
     if case["cat"] == "emol":
         for ph in EMO_PLACEHOLDER_FORBIDDEN:
@@ -131,8 +141,11 @@ async def run_case(client: Any, case: dict[str, Any], sem: asyncio.Semaphore,
             ev["tool_call"] = last_tool_calls[0]["function"]["name"]
     ev["status"] = "PASS" if not ev["issues"] else "FAIL"
     return {
-        "id": case["id"], "cat": case["cat"], "status": ev["status"],
-        "issues": ev["issues"], "response": ev["response"],
+        "id": case["id"],
+        "cat": case["cat"],
+        "status": ev["status"],
+        "issues": ev["issues"],
+        "response": ev["response"],
         "ts": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -157,17 +170,27 @@ async def campaign(args: argparse.Namespace) -> int:
         wanted = set(args.cats.split(","))
         cases = [c for c in cases if c["cat"] in wanted]
     if args.offset:
-        cases = cases[args.offset:]
+        cases = cases[args.offset :]
     if args.limit:
         cases = cases[: args.limit]
 
-    results_file = Path(args.results) if args.results else (
-        ARTIFACTS / f"bulk10k_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl")
+    results_file = (
+        Path(args.results)
+        if args.results
+        else (
+            ARTIFACTS
+            / f"bulk10k_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
+        )
+    )
     done = load_completed(results_file)
     pending = [c for c in cases if c["id"] not in done]
     print(f"=== BULK 10K HTTP — {ENDPOINT}")
-    print(f"casos: {len(cases)} · já completos: {len(done)} · pendentes: {len(pending)}")
-    print(f"rps: {args.rps} · concorrência: {args.concurrency} · results: {results_file}")
+    print(
+        f"casos: {len(cases)} · já completos: {len(done)} · pendentes: {len(pending)}"
+    )
+    print(
+        f"rps: {args.rps} · concorrência: {args.concurrency} · results: {results_file}"
+    )
     if not pending:
         print("Nada a fazer.")
         return 0
@@ -191,9 +214,11 @@ async def campaign(args: argparse.Namespace) -> int:
                     el = time.monotonic() - t0
                     rate = i / el * 60 if el else 0
                     eta = (len(pending) - i) / (i / el) / 60 if i else 0
-                    print(f"[{i}/{len(pending)}] PASS={counts['PASS']} "
-                          f"FAIL={counts['FAIL']} ERR={counts['ERROR']} "
-                          f"({rate:.0f}/min, ETA {eta:.0f}min)")
+                    print(
+                        f"[{i}/{len(pending)}] PASS={counts['PASS']} "
+                        f"FAIL={counts['FAIL']} ERR={counts['ERROR']} "
+                        f"({rate:.0f}/min, ETA {eta:.0f}min)"
+                    )
 
     # Summary + gates Seção 7
     total = sum(counts.values())
@@ -207,9 +232,11 @@ async def campaign(args: argparse.Namespace) -> int:
     }
     summary_file = results_file.with_suffix(".summary.json")
     summary_file.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
-    print(f"\n=== FINAL: {counts['PASS']}/{total} PASS "
-          f"({100 * counts['PASS'] / max(total, 1):.1f}%) · "
-          f"FAIL={counts['FAIL']} ERR={counts['ERROR']}")
+    print(
+        f"\n=== FINAL: {counts['PASS']}/{total} PASS "
+        f"({100 * counts['PASS'] / max(total, 1):.1f}%) · "
+        f"FAIL={counts['FAIL']} ERR={counts['ERROR']}"
+    )
     for cat, s in sorted(cat_stats.items()):
         n = sum(s.values())
         print(f"  {cat:20s} {s['PASS']}/{n} ({100 * s['PASS'] / n:.0f}%)")

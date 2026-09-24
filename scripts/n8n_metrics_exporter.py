@@ -20,6 +20,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-n8n — G6 wave 19.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,7 +39,9 @@ HISTOGRAM_BUCKETS = (0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0)
 
 def get_n8n_config() -> tuple[str, str | None]:
     """Retorna (base_url, api_key)."""
-    return os.environ.get("N8N_BASE_URL", DEFAULT_N8N_URL), os.environ.get("N8N_API_KEY")
+    return os.environ.get("N8N_BASE_URL", DEFAULT_N8N_URL), os.environ.get(
+        "N8N_API_KEY"
+    )
 
 
 def fetch_workflows(base_url: str, api_key: str, timeout: float) -> list[dict]:
@@ -58,7 +61,9 @@ def fetch_workflows(base_url: str, api_key: str, timeout: float) -> list[dict]:
         return []
 
 
-def fetch_executions(base_url: str, api_key: str, workflow_id: str, limit: int, timeout: float) -> list[dict]:
+def fetch_executions(
+    base_url: str, api_key: str, workflow_id: str, limit: int, timeout: float
+) -> list[dict]:
     """Busca ultimas N execucoes de um workflow."""
     try:
         resp = httpx.get(
@@ -74,7 +79,9 @@ def fetch_executions(base_url: str, api_key: str, workflow_id: str, limit: int, 
         return []
 
 
-def compute_workflow_metrics(workflows: list[dict], executions: dict[str, list[dict]]) -> list[str]:
+def compute_workflow_metrics(
+    workflows: list[dict], executions: dict[str, list[dict]]
+) -> list[str]:
     """Calcula metricas em formato Prometheus."""
     lines: list[str] = []
     lines.append(f"# N8N metrics exported at {datetime.now(timezone.utc).isoformat()}")
@@ -88,8 +95,12 @@ def compute_workflow_metrics(workflows: list[dict], executions: dict[str, list[d
 
         execs = executions.get(wf_id, [])
         if not execs:
-            lines.append(f'n8n_workflow_execution_total{{workflow="{wf_name}",status="success"}} 0')
-            lines.append(f'n8n_workflow_execution_total{{workflow="{wf_name}",status="error"}} 0')
+            lines.append(
+                f'n8n_workflow_execution_total{{workflow="{wf_name}",status="success"}} 0'
+            )
+            lines.append(
+                f'n8n_workflow_execution_total{{workflow="{wf_name}",status="error"}} 0'
+            )
             lines.append(f'n8n_workflow_error_rate{{workflow="{wf_name}"}} 0')
             continue
 
@@ -123,21 +134,37 @@ def compute_workflow_metrics(workflows: list[dict], executions: dict[str, list[d
         error = by_status.get("error", 0)
         error_rate = error / total if total > 0 else 0
 
-        lines.append(f'n8n_workflow_execution_total{{workflow="{wf_name}",status="success"}} {success}')
-        lines.append(f'n8n_workflow_execution_total{{workflow="{wf_name}",status="error"}} {error}')
-        lines.append(f'n8n_workflow_error_rate{{workflow="{wf_name}"}} {error_rate:.4f}')
+        lines.append(
+            f'n8n_workflow_execution_total{{workflow="{wf_name}",status="success"}} {success}'
+        )
+        lines.append(
+            f'n8n_workflow_execution_total{{workflow="{wf_name}",status="error"}} {error}'
+        )
+        lines.append(
+            f'n8n_workflow_error_rate{{workflow="{wf_name}"}} {error_rate:.4f}'
+        )
 
         # Histogram-like (cumulative buckets)
         if durations:
             sorted_d = sorted(durations)
             for bucket in HISTOGRAM_BUCKETS:
                 count = sum(1 for d in sorted_d if d <= bucket)
-                lines.append(f'n8n_workflow_execution_duration_seconds_bucket{{workflow="{wf_name}",le="{bucket}"}} {count}')
-            lines.append(f'n8n_workflow_execution_duration_seconds_bucket{{workflow="{wf_name}",le="+Inf"}} {len(sorted_d)}')
-            lines.append(f'n8n_workflow_execution_duration_seconds_count{{workflow="{wf_name}"}} {len(sorted_d)}')
+                lines.append(
+                    f'n8n_workflow_execution_duration_seconds_bucket{{workflow="{wf_name}",le="{bucket}"}} {count}'
+                )
+            lines.append(
+                f'n8n_workflow_execution_duration_seconds_bucket{{workflow="{wf_name}",le="+Inf"}} {len(sorted_d)}'
+            )
+            lines.append(
+                f'n8n_workflow_execution_duration_seconds_count{{workflow="{wf_name}"}} {len(sorted_d)}'
+            )
             avg = sum(sorted_d) / len(sorted_d)
-            lines.append(f'n8n_workflow_execution_duration_seconds_sum{{workflow="{wf_name}"}} {sum(sorted_d):.3f}')
-            lines.append(f'# n8n_workflow_execution_duration_seconds_avg{{workflow="{wf_name}"}} {avg:.3f}')
+            lines.append(
+                f'n8n_workflow_execution_duration_seconds_sum{{workflow="{wf_name}"}} {sum(sorted_d):.3f}'
+            )
+            lines.append(
+                f'# n8n_workflow_execution_duration_seconds_avg{{workflow="{wf_name}"}} {avg:.3f}'
+            )
 
         lines.append("")
 
@@ -147,8 +174,12 @@ def compute_workflow_metrics(workflows: list[dict], executions: dict[str, list[d
 def main() -> int:
     parser = argparse.ArgumentParser(description="N8N metrics exporter")
     parser.add_argument("--output", type=Path, help="textfile output path")
-    parser.add_argument("--http-port", type=int, help="start HTTP server (prometheus format)")
-    parser.add_argument("--limit", type=int, default=100, help="execucoes por WF (default 100)")
+    parser.add_argument(
+        "--http-port", type=int, help="start HTTP server (prometheus format)"
+    )
+    parser.add_argument(
+        "--limit", type=int, default=100, help="execucoes por WF (default 100)"
+    )
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     args = parser.parse_args()
 

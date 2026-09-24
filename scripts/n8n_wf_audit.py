@@ -154,7 +154,9 @@ def collect_modifications(
         for snapshot in snapshots
         for line in _git_log_cached(str(root), snapshot["path"], head)
     ]
-    entries.sort(key=lambda entry: (entry["timestamp"], entry["workflow"]), reverse=True)
+    entries.sort(
+        key=lambda entry: (entry["timestamp"], entry["workflow"]), reverse=True
+    )
     return snapshots, entries
 
 
@@ -191,7 +193,9 @@ def main(argv: list[str] | None = None, root: Path | None = None) -> int:
         if args.since:
             since = _parse_since(args.since)
             entries = [
-                entry for entry in entries if datetime.fromisoformat(entry["timestamp"]) >= since
+                entry
+                for entry in entries
+                if datetime.fromisoformat(entry["timestamp"]) >= since
             ]
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
         print(f"N8N workflow audit failed: {exc}", file=sys.stderr)

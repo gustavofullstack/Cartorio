@@ -1,6 +1,6 @@
 """Testes do Session Memory Template (BRAIN6)."""
-from __future__ import annotations
 
+from __future__ import annotations
 
 
 from brain.session_memory import (  # noqa: E402

@@ -4,7 +4,9 @@ import sys
 
 import httpx
 
-base = os.environ.get("OPENCLAW_BASE_URL", "http://cartorio_openclaw-gateway:18789").rstrip("/")
+base = os.environ.get(
+    "OPENCLAW_BASE_URL", "http://cartorio_openclaw-gateway:18789"
+).rstrip("/")
 token = os.environ.get("OPENCLAW_API_KEY", "").strip()
 if not token:
     raise SystemExit("OPENCLAW_API_KEY deve ser injetada pelo secret manager")

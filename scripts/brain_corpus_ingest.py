@@ -48,7 +48,9 @@ OCR_MAX_RENDERED_BYTES: Final[int] = 80 * 1024 * 1024
 OCR_RENDER_TIMEOUT_SECONDS: Final[int] = 60
 OCR_PAGE_TIMEOUT_SECONDS: Final[int] = 20
 
-WORD_NAMESPACE: Final[str] = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+WORD_NAMESPACE: Final[str] = (
+    "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+)
 WORD_PARAGRAPH: Final[str] = f"{WORD_NAMESPACE}p"
 WORD_TABLE: Final[str] = f"{WORD_NAMESPACE}tbl"
 WORD_ROW: Final[str] = f"{WORD_NAMESPACE}tr"
@@ -68,16 +70,22 @@ class PatternSpec:
 
 PII_PATTERNS: Final[tuple[PatternSpec, ...]] = (
     PatternSpec("email", re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b")),
-    PatternSpec("cnpj", re.compile(r"(?<!\d)\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}(?!\d)")),
+    PatternSpec(
+        "cnpj", re.compile(r"(?<!\d)\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}(?!\d)")
+    ),
     PatternSpec("cpf", re.compile(r"(?<!\d)\d{3}\.?\d{3}\.?\d{3}-?\d{2}(?!\d)")),
     PatternSpec(
         "phone",
-        re.compile(r"(?<!\d)(?:\+?55[ .-]*)?(?:\(?\d{2}\)?[ .-]*)?9?\d{4,5}[ .-]?\d{4}(?!\d)"),
+        re.compile(
+            r"(?<!\d)(?:\+?55[ .-]*)?(?:\(?\d{2}\)?[ .-]*)?9?\d{4,5}[ .-]?\d{4}(?!\d)"
+        ),
     ),
     PatternSpec("cep", re.compile(r"(?<!\d)\d{5}-?\d{3}(?!\d)")),
     PatternSpec("rg", re.compile(r"(?i)\bR\.?G\.?\s*:?\s*\d{5,14}\b")),
 )
-URL_PATTERN: Final[re.Pattern[str]] = re.compile(r"(?i)\b(?:https?|ftp)://[^\s<>{}\[\]]+")
+URL_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"(?i)\b(?:https?|ftp)://[^\s<>{}\[\]]+"
+)
 RawUnit = tuple[str, str] | tuple[str, str, bool]
 
 
@@ -125,7 +133,9 @@ class IngestionResult:
         }
 
 
-def run_ingestion(source_quarantine: Path, derived_dir: Path | None = None) -> IngestionResult:
+def run_ingestion(
+    source_quarantine: Path, derived_dir: Path | None = None
+) -> IngestionResult:
     """Extract supported local files into sanitized, blocking-on-error private derivatives."""
     source_root = source_quarantine.resolve(strict=True)
     if not source_root.is_dir():
@@ -148,7 +158,9 @@ def run_ingestion(source_quarantine: Path, derived_dir: Path | None = None) -> I
         source_format = extension.removeprefix(".") or "unknown"
         if source_path.is_symlink():
             errors.append(
-                ExtractionError(source_id, source_format, "inventory", "symlink_rejected")
+                ExtractionError(
+                    source_id, source_format, "inventory", "symlink_rejected"
+                )
             )
             sources.append(
                 {
@@ -176,13 +188,17 @@ def run_ingestion(source_quarantine: Path, derived_dir: Path | None = None) -> I
 
         if extension not in ALLOWED_EXTENSIONS:
             errors.append(
-                ExtractionError(source_id, source_format, "inventory", "unsupported_extension")
+                ExtractionError(
+                    source_id, source_format, "inventory", "unsupported_extension"
+                )
             )
             sources.append(source_record)
             continue
         if byte_size > MAX_SOURCE_BYTES:
             errors.append(
-                ExtractionError(source_id, source_format, "inventory", "source_too_large")
+                ExtractionError(
+                    source_id, source_format, "inventory", "source_too_large"
+                )
             )
             sources.append(source_record)
             continue
@@ -192,13 +208,17 @@ def run_ingestion(source_quarantine: Path, derived_dir: Path | None = None) -> I
         try:
             raw_units = _extract_units_with_timeout(source_path, extension, output_root)
         except ExtractionFailure as failure:
-            errors.append(ExtractionError(source_id, source_format, "extract", failure.code))
+            errors.append(
+                ExtractionError(source_id, source_format, "extract", failure.code)
+            )
             sources.append(source_record)
             continue
 
         sanitized_units, pii_counts = _sanitize_units(source_id, raw_units)
         if not sanitized_units:
-            errors.append(ExtractionError(source_id, source_format, "extract", "empty_extraction"))
+            errors.append(
+                ExtractionError(source_id, source_format, "extract", "empty_extraction")
+            )
             sources.append(source_record)
             continue
 
@@ -235,9 +255,13 @@ def _validate_output_location(source_root: Path, output_root: Path) -> None:
     try:
         relative_output = output_root.relative_to(source_root)
     except ValueError as error:
-        raise ValueError("derived output must stay inside the source quarantine") from error
+        raise ValueError(
+            "derived output must stay inside the source quarantine"
+        ) from error
     if not relative_output.parts:
-        raise ValueError("derived output must be a subdirectory of the source quarantine")
+        raise ValueError(
+            "derived output must be a subdirectory of the source quarantine"
+        )
 
 
 def _iter_source_files(source_root: Path, output_root: Path) -> Iterable[Path]:
@@ -322,7 +346,9 @@ def _extract_worker(
 ) -> None:
     """Return only local extraction data or a categorical failure through an in-memory queue."""
     try:
-        result_queue.put(("ok", _extract_units(Path(source_path), extension, Path(scratch_dir))))
+        result_queue.put(
+            ("ok", _extract_units(Path(source_path), extension, Path(scratch_dir)))
+        )
     except ExtractionFailure as failure:
         result_queue.put(("error", failure.code))
     except Exception:
@@ -365,7 +391,9 @@ def _extract_docx(source_path: Path) -> list[tuple[str, str]]:
 
 def _read_docx_auxiliary_parts(source_path: Path) -> list[tuple[str, bytes]]:
     """Read only allowlisted local OOXML text parts after applying archive limits."""
-    allowed = re.compile(r"word/(?:(header|footer)(\d+)\.xml|(footnotes|endnotes|comments)\.xml)")
+    allowed = re.compile(
+        r"word/(?:(header|footer)(\d+)\.xml|(footnotes|endnotes|comments)\.xml)"
+    )
     parts: list[tuple[str, bytes]] = []
     with zipfile.ZipFile(source_path) as archive:
         infos = archive.infolist()
@@ -377,13 +405,17 @@ def _read_docx_auxiliary_parts(source_path: Path) -> list[tuple[str, bytes]]:
             if info.file_size > MAX_ARCHIVE_MEMBER_BYTES:
                 raise ExtractionFailure("archive_member_too_large")
             section = (
-                f"{match.group(1)}:{match.group(2)}" if match.group(1) else str(match.group(3))
+                f"{match.group(1)}:{match.group(2)}"
+                if match.group(1)
+                else str(match.group(3))
             )
             parts.append((section, archive.read(info)))
     return sorted(parts, key=lambda item: item[0])
 
 
-def _docx_structured_units(root: ElementTree.Element, prefix: str) -> list[tuple[str, str]]:
+def _docx_structured_units(
+    root: ElementTree.Element, prefix: str
+) -> list[tuple[str, str]]:
     """Walk OOXML blocks without counting textbox text again in its parent paragraph."""
     units: list[tuple[str, str]] = []
     paragraph_index = 0
@@ -397,11 +429,16 @@ def _docx_structured_units(root: ElementTree.Element, prefix: str) -> list[tuple
             units.append((f"{prefix}{locator}", text))
         for textbox in paragraph.findall(f".//{WORD_TEXTBOX}"):
             textbox_index += 1
-            for inner_index, inner in enumerate(textbox.findall(f".//{WORD_PARAGRAPH}"), start=1):
+            for inner_index, inner in enumerate(
+                textbox.findall(f".//{WORD_PARAGRAPH}"), start=1
+            ):
                 inner_text = _docx_text_without_textboxes(inner)
                 if inner_text:
                     units.append(
-                        (f"{prefix}textbox:{textbox_index}/paragraph:{inner_index}", inner_text)
+                        (
+                            f"{prefix}textbox:{textbox_index}/paragraph:{inner_index}",
+                            inner_text,
+                        )
                     )
 
     def walk(container: ElementTree.Element) -> None:
@@ -413,8 +450,12 @@ def _docx_structured_units(root: ElementTree.Element, prefix: str) -> list[tuple
                 continue
             if child.tag == WORD_TABLE:
                 table_index += 1
-                for row_index, row in enumerate(child.findall(f"./{WORD_ROW}"), start=1):
-                    for cell_index, cell in enumerate(row.findall(f"./{WORD_CELL}"), start=1):
+                for row_index, row in enumerate(
+                    child.findall(f"./{WORD_ROW}"), start=1
+                ):
+                    for cell_index, cell in enumerate(
+                        row.findall(f"./{WORD_CELL}"), start=1
+                    ):
                         for cell_paragraph_index, paragraph in enumerate(
                             cell.findall(f"./{WORD_PARAGRAPH}"), start=1
                         ):
@@ -622,7 +663,9 @@ def _local_ocr_language(tesseract: str) -> str | None:
     return None
 
 
-def _ocr_rendered_pages(tesseract: str, language: str, images: list[Path]) -> list[RawUnit]:
+def _ocr_rendered_pages(
+    tesseract: str, language: str, images: list[Path]
+) -> list[RawUnit]:
     """Extract each rendered page separately so the persisted locator stays page-specific."""
     units: list[RawUnit] = []
     for index, image in enumerate(images, start=1):
@@ -715,7 +758,10 @@ def _write_derivatives(
     _atomic_write_json(output_root / "manifest.sanitized.json", manifest)
     _atomic_write_text(
         output_root / "units.sanitized.jsonl",
-        "".join(json.dumps(unit, ensure_ascii=False, sort_keys=True) + "\n" for unit in units),
+        "".join(
+            json.dumps(unit, ensure_ascii=False, sort_keys=True) + "\n"
+            for unit in units
+        ),
     )
     _atomic_write_json(output_root / "errors.blocking.json", error_report)
 
@@ -745,7 +791,9 @@ def _atomic_write_text(target: Path, content: str) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     """Run the local-only pipeline and print only aggregate, PII-free numerical status."""
-    parser = argparse.ArgumentParser(description="Offline sanitized BRAIN corpus ingestion")
+    parser = argparse.ArgumentParser(
+        description="Offline sanitized BRAIN corpus ingestion"
+    )
     parser.add_argument("--source", type=Path, default=DEFAULT_QUARANTINE)
     parser.add_argument("--derived", type=Path, default=None)
     arguments = parser.parse_args(argv)

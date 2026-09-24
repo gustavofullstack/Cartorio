@@ -22,6 +22,7 @@ Diferenças vs v2:
 
 Setup: ver scripts/LARK_BOT_V3_RUNBOOK.md
 """
+
 import os
 import re
 import json
@@ -47,11 +48,14 @@ INBOX_DIR = Path(os.getenv("LARK_INBOX_DIR", str(Path.home() / "Downloads/lark_i
 DB_PATH = os.getenv("LARK_DB_PATH", str(Path.home() / ".lark_bot_v3.sqlite"))
 PORT = int(os.getenv("LARK_BOT_PORT", "8080"))
 LARK_QUIET_GROUP = os.getenv("LARK_QUIET_GROUP", "true").lower() == "true"
-PIETRA_TELEFONE = os.getenv("PIETRA_TELEFONE", "+5500000000000")  # identidade no cartório
+PIETRA_TELEFONE = os.getenv(
+    "PIETRA_TELEFONE", "+5500000000000"
+)  # identidade no cartório
 
 INBOX_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
+
 
 # === DB local (audit + rate limit) ===
 def db():
@@ -72,52 +76,82 @@ def db():
     """)
     return conn
 
+
 def log_event(chat_id, sender, msg_type, content_in, content_out, model, error=None):
     try:
         c = db()
-        c.execute("INSERT INTO events (chat_id,sender,msg_type,content_in,content_out,pietra_model,error) VALUES (?,?,?,?,?,?,?)",
-                  (chat_id, sender[:32] if sender else "", msg_type, content_in[:500], content_out[:500] if content_out else "", model, error))
+        c.execute(
+            "INSERT INTO events (chat_id,sender,msg_type,content_in,content_out,pietra_model,error) VALUES (?,?,?,?,?,?,?)",
+            (
+                chat_id,
+                sender[:32] if sender else "",
+                msg_type,
+                content_in[:500],
+                content_out[:500] if content_out else "",
+                model,
+                error,
+            ),
+        )
         c.commit()
         c.close()
     except Exception as e:
         print(f"[DB ERR] {e}", flush=True)
+
 
 def rate_ok(chat_id, max_per_min=10):
     """Rate limit simples: max N msgs/min por chat."""
     try:
         now = int(time.time())
         c = db()
-        row = c.execute("SELECT last_msg_ts, count_window FROM rate_limit WHERE chat_id=?", (chat_id,)).fetchone()
+        row = c.execute(
+            "SELECT last_msg_ts, count_window FROM rate_limit WHERE chat_id=?",
+            (chat_id,),
+        ).fetchone()
         if row:
             last, count = row
             if now - last < 60:
                 if count >= max_per_min:
                     c.close()
                     return False
-                c.execute("UPDATE rate_limit SET last_msg_ts=?, count_window=count_window+1 WHERE chat_id=?", (now, chat_id))
+                c.execute(
+                    "UPDATE rate_limit SET last_msg_ts=?, count_window=count_window+1 WHERE chat_id=?",
+                    (now, chat_id),
+                )
             else:
-                c.execute("UPDATE rate_limit SET last_msg_ts=?, count_window=1 WHERE chat_id=?", (now, chat_id))
+                c.execute(
+                    "UPDATE rate_limit SET last_msg_ts=?, count_window=1 WHERE chat_id=?",
+                    (now, chat_id),
+                )
         else:
-            c.execute("INSERT INTO rate_limit (chat_id,last_msg_ts,count_window) VALUES (?,?,1)", (chat_id, now))
+            c.execute(
+                "INSERT INTO rate_limit (chat_id,last_msg_ts,count_window) VALUES (?,?,1)",
+                (chat_id, now),
+            )
         c.commit()
         c.close()
         return True
     except Exception:
         return True  # fail-open
 
+
 def log(level, msg, **kw):
     ts = datetime.now(timezone.utc).isoformat()
     print(f"[{ts}] [{level}] {msg} {kw if kw else ''}", flush=True)
 
+
 # === Lark helpers ===
 _token_cache = {"token": None, "exp": 0}
+
 
 def get_token():
     if _token_cache["token"] and _token_cache["exp"] > time.time():
         return _token_cache["token"]
     try:
-        r = requests.post(f"{LARK_API}/auth/v3/tenant_access_token/internal",
-                          json={"app_id": APP_ID, "app_secret": APP_SECRET}, timeout=5).json()
+        r = requests.post(
+            f"{LARK_API}/auth/v3/tenant_access_token/internal",
+            json={"app_id": APP_ID, "app_secret": APP_SECRET},
+            timeout=5,
+        ).json()
         tok = r.get("tenant_access_token", "")
         if tok:
             _token_cache["token"] = tok
@@ -127,6 +161,7 @@ def get_token():
         log("ERR", "get_token failed", error=str(e))
         return ""
 
+
 def send_text(chat_id, text):
     tok = get_token()
     if not tok:
@@ -134,58 +169,86 @@ def send_text(chat_id, text):
         return False
     # Divide se > 4096 chars (limite Lark)
     for i in range(0, len(text), 4000):
-        chunk = text[i:i+4000]
-        r = requests.post(f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
-            headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"},
-            json={"receive_id": chat_id, "msg_type": "text",
-                  "content": json.dumps({"text": chunk})}, timeout=10).json()
+        chunk = text[i : i + 4000]
+        r = requests.post(
+            f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
+            headers={
+                "Authorization": f"Bearer {tok}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "receive_id": chat_id,
+                "msg_type": "text",
+                "content": json.dumps({"text": chunk}),
+            },
+            timeout=10,
+        ).json()
         if r.get("code") != 0:
             log("ERR", "send failed", code=r.get("code"), msg=r.get("msg"))
             return False
     return True
 
+
 def send_image(chat_id, image_path):
     """Upload + envia imagem (msg_type=image)."""
     tok = get_token()
-    if not tok: return False
+    if not tok:
+        return False
     try:
         # 1) Upload
         with open(image_path, "rb") as f:
-            up = requests.post(f"{LARK_API}/im/v1/images",
+            up = requests.post(
+                f"{LARK_API}/im/v1/images",
                 headers={"Authorization": f"Bearer {tok}"},
                 files={"image": (Path(image_path).name, f, "image/jpeg")},
-                data={"image_type": "message"}, timeout=30).json()
+                data={"image_type": "message"},
+                timeout=30,
+            ).json()
         if up.get("code") != 0:
             log("ERR", "image upload failed", code=up.get("code"))
             return False
         image_key = up.get("data", {}).get("image_key", "")
         # 2) Send
-        r = requests.post(f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
-            headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"},
-            json={"receive_id": chat_id, "msg_type": "image",
-                  "content": json.dumps({"image_key": image_key})}, timeout=10).json()
+        r = requests.post(
+            f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
+            headers={
+                "Authorization": f"Bearer {tok}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "receive_id": chat_id,
+                "msg_type": "image",
+                "content": json.dumps({"image_key": image_key}),
+            },
+            timeout=10,
+        ).json()
         return r.get("code") == 0
     except Exception as e:
         log("ERR", "send_image failed", error=str(e))
         return False
 
+
 def download_resource(media_type, media_key, save_name=None):
     """Baixa imagem/file do CDN do Lark."""
     try:
         tok = get_token()
-        url = f"{LARK_API}/im/v1/{'images' if media_type=='image' else 'files'}/{media_key}"
+        url = f"{LARK_API}/im/v1/{'images' if media_type == 'image' else 'files'}/{media_key}"
         r = requests.get(url, headers={"Authorization": f"Bearer {tok}"}, timeout=30)
         if r.status_code == 200:
             ext = ".jpg"
             if media_type == "file":
                 ext = Path(save_name).suffix if save_name else ".bin"
-            name = save_name or f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{media_key[:8]}{ext}"
+            name = (
+                save_name
+                or f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{media_key[:8]}{ext}"
+            )
             path = INBOX_DIR / name
             path.write_bytes(r.content)
             return str(path)
     except Exception as e:
         log("ERR", "download failed", type=media_type, error=str(e))
     return None
+
 
 # === PIETRA brain ===
 def ask_pietra(user_msg, max_retries=2):
@@ -214,8 +277,13 @@ def ask_pietra(user_msg, max_retries=2):
             time.sleep(1)
         except Exception as e:
             log("ERR", "pietra call failed", error=str(e))
-            return "_(Pietra indisponível no momento. Tenta de novo em 30s.)_", "error", str(e)
+            return (
+                "_(Pietra indisponível no momento. Tenta de novo em 30s.)_",
+                "error",
+                str(e),
+            )
     return "_(Pietra ocupada. Tenta de novo.)_", "timeout", "max_retries"
+
 
 # === Comandos locais (sem chamar PIETRA) ===
 def handle_command(chat_id, text, sender):
@@ -259,6 +327,7 @@ def handle_command(chat_id, text, sender):
             return f"✗ Erro: {e}"
     return None  # não é comando
 
+
 # === Webhook ===
 @app.route("/lark/webhook", methods=["POST"])
 def webhook():
@@ -278,6 +347,7 @@ def webhook():
     except Exception as e:
         log("ERR", "webhook handler failed", error=str(e))
         return jsonify({"code": -1, "msg": str(e)}), 200
+
 
 def handle_message(event):
     msg = event.get("message", {})
@@ -339,6 +409,7 @@ def handle_message(event):
     if file_path and msg_type == "image":
         send_image(chat_id, file_path)
 
+
 # === Health ===
 @app.route("/health", methods=["GET"])
 def health():
@@ -347,16 +418,25 @@ def health():
         pietra_ok = h.get("status") == "ok"
     except Exception:
         pietra_ok = False
-    return jsonify({
-        "bot": "ok",
-        "lark_configured": bool(APP_ID),
-        "pietra_ok": pietra_ok,
-        "quiet_group": LARK_QUIET_GROUP,
-        "inbox": str(INBOX_DIR),
-        "db": DB_PATH,
-    })
+    return jsonify(
+        {
+            "bot": "ok",
+            "lark_configured": bool(APP_ID),
+            "pietra_ok": pietra_ok,
+            "quiet_group": LARK_QUIET_GROUP,
+            "inbox": str(INBOX_DIR),
+            "db": DB_PATH,
+        }
+    )
+
 
 if __name__ == "__main__":
-    log("INFO", "lark bot v3 starting", port=PORT, pietra=PIETRA_BASE,
-        quiet=LARK_QUIET_GROUP, has_app_id=bool(APP_ID))
+    log(
+        "INFO",
+        "lark bot v3 starting",
+        port=PORT,
+        pietra=PIETRA_BASE,
+        quiet=LARK_QUIET_GROUP,
+        has_app_id=bool(APP_ID),
+    )
     app.run(host="0.0.0.0", port=PORT, debug=False)

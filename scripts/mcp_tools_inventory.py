@@ -46,7 +46,9 @@ TOOL_NAME_RE = re.compile(
     re.MULTILINE,
 )
 # Fallback: bare @mcp.tool without name= uses def name
-BARE_TOOL_RE = re.compile(r"@mcp\.tool\s*(?:\([^)]*\))?\s*\n\s*(?:async\s+)?def\s+(\w+)", re.M)
+BARE_TOOL_RE = re.compile(
+    r"@mcp\.tool\s*(?:\([^)]*\))?\s*\n\s*(?:async\s+)?def\s+(\w+)", re.M
+)
 
 
 def inventory_cartorio_mcp() -> dict[str, Any]:
@@ -100,7 +102,8 @@ def inventory_mount_wiring() -> dict[str, Any]:
         "import_mcp_app": "mcp_app" in text and "mcp_server" in text,
         "mount_path_/mcp": 'app.mount("/mcp"' in text or "app.mount('/mcp'" in text,
         "combined_lifespan": "combined_lifespan" in text or "lifespan_context" in text,
-        "mcp_servers_discovery_route": '"/mcp-servers"' in text or "'/mcp-servers'" in text,
+        "mcp_servers_discovery_route": '"/mcp-servers"' in text
+        or "'/mcp-servers'" in text,
     }
     result["checks"] = checks
     result["ok"] = all(checks.values())
@@ -180,7 +183,11 @@ def inventory_coding_vps() -> dict[str, Any]:
     ordered_names = sorted(tools_map.keys())
     if not categories and tools_map:
         for name, info in tools_map.items():
-            cat = (info or {}).get("category", "unknown") if isinstance(info, dict) else "unknown"
+            cat = (
+                (info or {}).get("category", "unknown")
+                if isinstance(info, dict)
+                else "unknown"
+            )
             categories[cat] = categories.get(cat, 0) + 1
 
     return {
@@ -235,7 +242,7 @@ def build_inventory(
                 "curl -sS http://localhost:8000/mcp-servers | head -c 400",
                 "curl -sS -X POST http://localhost:8000/mcp -H 'Content-Type: application/json' "
                 "-H 'Accept: application/json, text/event-stream' "
-                "-d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}' | head -c 800",
+                '-d \'{"jsonrpc":"2.0","id":1,"method":"tools/list"}\' | head -c 800',
                 "make -C backend mcp-server  # standalone :8100",
             ],
             "coding_vps_offline": [
@@ -314,7 +321,9 @@ def main() -> int:
             print(f"  /mcp mount wiring: {'OK' if m.get('ok') else 'FAIL'}")
             for k, ok in (m.get("checks") or {}).items():
                 print(f"    {'OK' if ok else 'MISS'}  {k}")
-        print(f"  gates: cartorio={g['cartorio_ok']} coding_vps={g['coding_vps_ok']} mount={g['mount_ok']}")
+        print(
+            f"  gates: cartorio={g['cartorio_ok']} coding_vps={g['coding_vps_ok']} mount={g['mount_ok']}"
+        )
 
     if inv["verdict"] != "PASS":
         return 1

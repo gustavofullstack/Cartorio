@@ -82,13 +82,17 @@ def reconcile_public_profile(
     # definition even though the canonical profile removed it.
     canonical_gateway = (canonical or {}).get("gateway", {})
     canonical_platforms = (
-        canonical_gateway.get("platforms", {}) if isinstance(canonical_gateway, dict) else {}
+        canonical_gateway.get("platforms", {})
+        if isinstance(canonical_gateway, dict)
+        else {}
     )
     config.setdefault("gateway", {})["platforms"] = {
         "feishu": dict(canonical_platforms.get("feishu", {"enabled": True}))
     }
     canonical_mcp = (canonical or {}).get("mcp_servers", {})
-    if isinstance(canonical_mcp, dict) and isinstance(canonical_mcp.get("cartorio"), dict):
+    if isinstance(canonical_mcp, dict) and isinstance(
+        canonical_mcp.get("cartorio"), dict
+    ):
         config["mcp_servers"] = {"cartorio": dict(canonical_mcp["cartorio"])}
 
     # Enabled plugins are executable policy, not benign persisted metadata.
@@ -98,7 +102,9 @@ def reconcile_public_profile(
 
     # Feishu is a customer surface: enumerate actual installed skills instead
     # of relying on a wildcard that Hermes may not understand.
-    platform_disabled = config.setdefault("skills", {}).setdefault("platform_disabled", {})
+    platform_disabled = config.setdefault("skills", {}).setdefault(
+        "platform_disabled", {}
+    )
     feishu_disabled = platform_disabled.setdefault("feishu", [])
     if not isinstance(feishu_disabled, list):
         feishu_disabled = []

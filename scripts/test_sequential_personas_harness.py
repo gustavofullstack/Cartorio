@@ -31,8 +31,8 @@ PERSONAS = [
         "messages": [
             "Oi, preciso autenticar uns documentos pra faculdade. Como funciona?",
             "Quanto custa por página?",
-            "Onde fica o cartório mesmo?"
-        ]
+            "Onde fica o cartório mesmo?",
+        ],
     },
     {
         "id": "P27_Mariana",
@@ -41,8 +41,8 @@ PERSONAS = [
         "messages": [
             "Olá! Preciso fazer uma procuração pública para meu irmão vender um carro em meu nome.",
             "Qual o valor dessa procuração e quais documentos preciso enviar?",
-            "Consigo agendar para quinta-feira às 14h?"
-        ]
+            "Consigo agendar para quinta-feira às 14h?",
+        ],
     },
     {
         "id": "P35_Carlos",
@@ -51,8 +51,8 @@ PERSONAS = [
         "messages": [
             "Boa tarde. Preciso lavrar uma ata notarial de conteúdo na internet para um processo.",
             "Vocês atendem em alguma unidade complementar ou só na sede?",
-            "Quem são os escreventes substitutos que podem me atender?"
-        ]
+            "Quem são os escreventes substitutos que podem me atender?",
+        ],
     },
     {
         "id": "P42_Fernanda",
@@ -61,8 +61,8 @@ PERSONAS = [
         "messages": [
             "Oi Pietra, tudo bem? Quero saber os emolumentos para uma escritura de compra e venda de imóvel de R$ 300.000,00.",
             "Posso abrir um pré-protocolo por aqui antes de ir ao cartório?",
-            "Quais documentos o comprador e vendedor precisam apresentar?"
-        ]
+            "Quais documentos o comprador e vendedor precisam apresentar?",
+        ],
     },
     {
         "id": "P51_Roberto",
@@ -71,8 +71,8 @@ PERSONAS = [
         "messages": [
             "Bom dia. Gostaria de reconhecer firma por autenticidade em um contrato de locação.",
             "Qual o horário de funcionamento de vocês?",
-            "Qual o telefone de contato oficial?"
-        ]
+            "Qual o telefone de contato oficial?",
+        ],
     },
     {
         "id": "P60_Ana",
@@ -81,8 +81,8 @@ PERSONAS = [
         "messages": [
             "Olá minha filha! Preciso fazer um testamento público. É muito complicado?",
             "Quais são os documentos necessários e como faço para agendar uma pré-análise?",
-            "Vocês cobram consulta jurídica para tirar dúvida?"
-        ]
+            "Vocês cobram consulta jurídica para tirar dúvida?",
+        ],
     },
     {
         "id": "P68_Jose",
@@ -91,8 +91,8 @@ PERSONAS = [
         "messages": [
             "Boa tarde. Quero tirar uma segunda via da minha procuração antiga lavrada em 2024.",
             "Vocês conseguem consultar meu protocolo pelo número 2024-001234?",
-            "Onde fica o endereço exato para eu buscar a certidão?"
-        ]
+            "Onde fica o endereço exato para eu buscar a certidão?",
+        ],
     },
     {
         "id": "P75_DonaClara",
@@ -101,8 +101,8 @@ PERSONAS = [
         "messages": [
             "Oi Pietra, meu filho me falou pra mandar mensagem. Eu preciso dar uma procuração pro meu advogado me representar no INSS.",
             "Quanto custa isso pra mim que sou aposentada?",
-            "Tem estacionamento perto da sede no centro?"
-        ]
+            "Tem estacionamento perto da sede no centro?",
+        ],
     },
     {
         "id": "P82_SeuAntônio",
@@ -111,8 +111,8 @@ PERSONAS = [
         "messages": [
             "Minha jovem, boa tarde. Preciso saber quem é o tabelião responsável do cartório.",
             "O Victor Hugo ainda trabalha aí como substituto?",
-            "Qual o endereço certo do cartório pra eu ir amanhã de manhã?"
-        ]
+            "Qual o endereço certo do cartório pra eu ir amanhã de manhã?",
+        ],
     },
     {
         "id": "P90_DonaBeatriz",
@@ -121,9 +121,9 @@ PERSONAS = [
         "messages": [
             "Boa tarde, gostaria de saber se o cartório faz atendimento em domicílio para idosos.",
             "Vocês atendem de sábado também?",
-            "Muito obrigada pelo carinho e atenção no atendimento!"
-        ]
-    }
+            "Muito obrigada pelo carinho e atenção no atendimento!",
+        ],
+    },
 ]
 
 
@@ -163,55 +163,75 @@ async def run_simulation():
                 # Assertions & Checks
                 has_cjk = bool(cjk_pattern.search(response_text))
                 normalized_response = response_text.lower()
-                denies_extra_unit = "não existe unidade complementar" in normalized_response or "nao existe unidade complementar" in normalized_response
+                denies_extra_unit = (
+                    "não existe unidade complementar" in normalized_response
+                    or "nao existe unidade complementar" in normalized_response
+                )
                 has_unidade_comp = "machado de assis" in normalized_response or (
-                    "unidade complementar" in normalized_response and not denies_extra_unit
+                    "unidade complementar" in normalized_response
+                    and not denies_extra_unit
                 )
                 has_victor_hugo = "victor hugo" in normalized_response and not any(
                     phrase in normalized_response
-                    for phrase in ("não trabalha mais", "nao trabalha mais", "não integra mais", "nao integra mais")
+                    for phrase in (
+                        "não trabalha mais",
+                        "nao trabalha mais",
+                        "não integra mais",
+                        "nao integra mais",
+                    )
                 )
-                has_deflection = "ligue para o cartório" in response_text.lower() and len(response_text) < 100
+                has_deflection = (
+                    "ligue para o cartório" in response_text.lower()
+                    and len(response_text) < 100
+                )
 
                 turn_issues = []
                 if has_cjk:
                     turn_issues.append("Contém caracteres CJK/Chinês")
                 if has_unidade_comp:
-                    turn_issues.append("Mencionou unidade complementar/Machado de Assis inexistente")
+                    turn_issues.append(
+                        "Mencionou unidade complementar/Machado de Assis inexistente"
+                    )
                 if has_victor_hugo:
                     turn_issues.append("Mencionou Victor Hugo (não integra mais)")
                 if has_deflection:
-                    turn_issues.append("Resposta de deflexão passiva ('ligue para o cartório')")
+                    turn_issues.append(
+                        "Resposta de deflexão passiva ('ligue para o cartório')"
+                    )
 
                 if not turn_issues:
                     passed_turns += 1
-                    first_line = response_text.split('\n')[0] if response_text else ""
+                    first_line = response_text.split("\n")[0] if response_text else ""
                     print(f"    ✅ Pietra: '{first_line[:100]}...'")
                 else:
                     print(f"    ❌ Pietra: ISSUES DETECTED: {turn_issues}")
                     print(f"       Full Text: {response_text}")
-                    failures.append({
-                        "persona": p_id,
-                        "turn": turn_idx,
-                        "user": user_msg,
-                        "response": response_text,
-                        "issues": turn_issues
-                    })
+                    failures.append(
+                        {
+                            "persona": p_id,
+                            "turn": turn_idx,
+                            "user": user_msg,
+                            "response": response_text,
+                            "issues": turn_issues,
+                        }
+                    )
 
             except Exception as e:
                 print(f"    ❌ Error invoking agent: {e}")
-                failures.append({
-                    "persona": p_id,
-                    "turn": turn_idx,
-                    "user": user_msg,
-                    "response": None,
-                    "issues": [f"Exception: {str(e)}"]
-                })
+                failures.append(
+                    {
+                        "persona": p_id,
+                        "turn": turn_idx,
+                        "user": user_msg,
+                        "response": None,
+                        "issues": [f"Exception: {str(e)}"],
+                    }
+                )
 
     print("\n" + "=" * 70)
     print(f"📊 RESULTADO DA SIMULAÇÃO:")
     print(f"   Total Turns: {total_turns}")
-    print(f"   Passed Turns: {passed_turns} ({passed_turns/total_turns*100:.1f}%)")
+    print(f"   Passed Turns: {passed_turns} ({passed_turns / total_turns * 100:.1f}%)")
     print(f"   Failures: {len(failures)}")
 
     if failures:

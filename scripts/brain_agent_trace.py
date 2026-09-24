@@ -123,7 +123,10 @@ def append_trace(
         previous_hash = _last_valid_hash(ledger_path)
         record = {
             "schema_version": 2,
-            "ts_utc": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "ts_utc": datetime.now(UTC)
+            .replace(microsecond=0)
+            .isoformat()
+            .replace("+00:00", "Z"),
             "agent": agent_id,
             "action": action_id,
             "gate": _sanitize_field(gate, "gate"),
@@ -136,7 +139,9 @@ def append_trace(
         descriptor = os.open(ledger_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
         try:
             with os.fdopen(descriptor, "a", encoding="utf-8") as handle:
-                handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+                handle.write(
+                    json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
+                )
                 handle.flush()
                 os.fsync(handle.fileno())
         finally:
@@ -146,7 +151,9 @@ def append_trace(
 
 def _record_hash(record: dict[str, object]) -> str:
     unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
-    canonical = json.dumps(unsigned, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    canonical = json.dumps(
+        unsigned, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -165,7 +172,9 @@ def _last_valid_hash(ledger_path: Path) -> str:
             record = json.loads(line)
         except json.JSONDecodeError as error:
             raise ValueError("ledger inválido") from error
-        if not isinstance(record, dict) or record.get("record_sha256") != _record_hash(record):
+        if not isinstance(record, dict) or record.get("record_sha256") != _record_hash(
+            record
+        ):
             raise ValueError("ledger hash inválido")
         stored_previous = record.get("previous_hash")
         if stored_previous is None:

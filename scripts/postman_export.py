@@ -11,6 +11,7 @@ Evita double-prefix /api/v1/api/v1/ (base_url sem path; paths OpenAPI absolutos)
 
 Modified by Gustavo Almeida — G7 Wave 17.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -46,20 +47,36 @@ def openapi_to_postman(openapi: dict, base_url: str) -> dict:
             # Keep OpenAPI path as-is under base_url (no double /api/v1)
             raw = f"{base_url}{path}".replace("{", ":").replace("}", "")
             # Postman path segments without leading empty
-            segs = [s.replace("{", ":").replace("}", "") for s in path.strip("/").split("/") if s]
+            segs = [
+                s.replace("{", ":").replace("}", "")
+                for s in path.strip("/").split("/")
+                if s
+            ]
             req: dict = {
                 "method": method.upper(),
                 "header": [
-                    {"key": "X-API-Key", "value": "{{cartorio_api_key}}", "type": "text"},
-                    {"key": "Content-Type", "value": "application/json", "type": "text"},
+                    {
+                        "key": "X-API-Key",
+                        "value": "{{cartorio_api_key}}",
+                        "type": "text",
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text",
+                    },
                 ],
                 "url": {
                     "raw": raw,
                     "protocol": "https",
-                    "host": base_url.replace("https://", "").replace("http://", "").split("/"),
+                    "host": base_url.replace("https://", "")
+                    .replace("http://", "")
+                    .split("/"),
                     "path": segs,
                 },
-                "description": summary if isinstance(summary, str) else str(summary)[:500],
+                "description": summary
+                if isinstance(summary, str)
+                else str(summary)[:500],
             }
             if method.lower() in {"post", "put", "patch"} and "requestBody" in op:
                 content = op["requestBody"].get("content", {})
@@ -159,7 +176,9 @@ def main() -> int:
     paths_count = len(openapi.get("paths", {}))
     collection = openapi_to_postman(openapi, args.base_url)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(collection, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    args.out.write_text(
+        json.dumps(collection, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     # Sanity: no double prefix
     blob = args.out.read_text(encoding="utf-8")
     if "/api/v1/api/v1/" in blob:

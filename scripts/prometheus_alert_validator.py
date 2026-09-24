@@ -20,6 +20,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-sre — G6 wave 8.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -31,7 +32,9 @@ from pathlib import Path
 try:
     import yaml
 except ImportError:
-    print("[ERROR] PyYAML nao instalado. uv add pyyaml e rode de novo.", file=sys.stderr)
+    print(
+        "[ERROR] PyYAML nao instalado. uv add pyyaml e rode de novo.", file=sys.stderr
+    )
     sys.exit(2)
 
 ALERTS_FILE = Path("infra/prometheus/alerts.yml")
@@ -63,15 +66,21 @@ def validate_alerts() -> tuple[bool, list[str]]:
             total_rules += 1
             for field in REQUIRED_FIELDS:
                 if field not in rule:
-                    problems.append(f"  [{group_name}] rule sem '{field}': {rule.get('alert', '?')}")
+                    problems.append(
+                        f"  [{group_name}] rule sem '{field}': {rule.get('alert', '?')}"
+                    )
             labels = rule.get("labels", {}) or {}
             for field in REQUIRED_LABEL_FIELDS:
                 if field not in labels:
-                    problems.append(f"  [{group_name}] {rule.get('alert', '?')} label '{field}' ausente")
+                    problems.append(
+                        f"  [{group_name}] {rule.get('alert', '?')} label '{field}' ausente"
+                    )
             annotations = rule.get("annotations", {}) or {}
             for field in REQUIRED_ANNOTATION_FIELDS:
                 if field not in annotations:
-                    problems.append(f"  [{group_name}] {rule.get('alert', '?')} annotation '{field}' ausente")
+                    problems.append(
+                        f"  [{group_name}] {rule.get('alert', '?')} annotation '{field}' ausente"
+                    )
 
     if total_rules == 0:
         problems.append("nenhuma rule definida em nenhum group")
@@ -120,7 +129,7 @@ def add_lgpd_alerts() -> int:
         },
         {
             "alert": "CartorioCircuitBreakerAberto",
-            "expr": "circuit_breaker_state{state=\"open\"} > 0",
+            "expr": 'circuit_breaker_state{state="open"} > 0',
             "for": "5m",
             "labels": {
                 "severity": "warning",
@@ -154,7 +163,11 @@ def add_lgpd_alerts() -> int:
         added += 1
 
     if added:
-        ALERTS_FILE.write_text(yaml.safe_dump(data, default_flow_style=False, sort_keys=False, allow_unicode=True))
+        ALERTS_FILE.write_text(
+            yaml.safe_dump(
+                data, default_flow_style=False, sort_keys=False, allow_unicode=True
+            )
+        )
     return added
 
 
@@ -174,13 +187,17 @@ def render_markdown(problems: list[str], total: int) -> str:
     md.append("")
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + cartorio-sre — G6 wave 8 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + cartorio-sre — G6 wave 8 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prometheus alerts validator")
-    parser.add_argument("--add-lgpd-alerts", action="store_true", help="adicionar 3 alerts LGPD/produto")
+    parser.add_argument(
+        "--add-lgpd-alerts", action="store_true", help="adicionar 3 alerts LGPD/produto"
+    )
     parser.add_argument("--report", type=Path, help="gerar report markdown")
     args = parser.parse_args()
 

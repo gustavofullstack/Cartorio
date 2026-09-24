@@ -14,6 +14,7 @@ Usage:
     print(mcp.call("chat_minimax", prompt="hello"))
     mcp.stop()
 """
+
 from __future__ import annotations
 
 import json
@@ -53,7 +54,9 @@ class CodingVPSClient:
 
     def _post(self, url: str, payload: dict) -> dict:
         body = json.dumps(payload).encode()
-        req = urllib.request.Request(url, data=body, method="POST", headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(
+            url, data=body, method="POST", headers={"Content-Type": "application/json"}
+        )
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as r:
                 return json.loads(r.read().decode())
@@ -70,22 +73,33 @@ class CodingVPSMCPClient:
     """MCP stdio client for coding-vps MCP orchestrator."""
 
     def __init__(self, script_path: str = None):
-        self.script_path = script_path or "/Users/gustavoalmeida/projetos/Cartorio/scripts/coding_vps_mcp_orchestrator.py"
+        self.script_path = (
+            script_path
+            or "/Users/gustavoalmeida/projetos/Cartorio/scripts/coding_vps_mcp_orchestrator.py"
+        )
         self.proc = None
 
     def start(self):
         """Start MCP stdio subprocess."""
         self.proc = subprocess.Popen(
             ["python3", self.script_path, "mcp"],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, bufsize=1,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
         )
 
     def call(self, tool_name: str, **kwargs) -> dict:
         """Call a tool via MCP stdio (JSON-RPC 2.0)."""
         if not self.proc:
             self.start()
-        request = {"jsonrpc": "2.0", "method": "tools/call", "params": {"name": tool_name, "arguments": kwargs}, "id": 1}
+        request = {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {"name": tool_name, "arguments": kwargs},
+            "id": 1,
+        }
         self.proc.stdin.write(json.dumps(request) + "\n")
         self.proc.stdin.flush()
         response_line = self.proc.stdout.readline()

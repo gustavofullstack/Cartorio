@@ -21,6 +21,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-llm — G6 wave 22.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -79,8 +80,14 @@ async def connect_and_auth(url: str, password: str, timeout: float) -> bool:
             challenge = json.loads(challenge_raw)
             print(f"[challenge] {challenge}", file=sys.stderr)
 
-            if challenge.get("type") != "event" or challenge.get("event") != "connect.challenge":
-                print(f"[ERROR] esperado connect.challenge, recebeu {challenge.get('event')}", file=sys.stderr)
+            if (
+                challenge.get("type") != "event"
+                or challenge.get("event") != "connect.challenge"
+            ):
+                print(
+                    f"[ERROR] esperado connect.challenge, recebeu {challenge.get('event')}",
+                    file=sys.stderr,
+                )
                 return False
 
             nonce = challenge["payload"]["nonce"]
@@ -90,10 +97,18 @@ async def connect_and_auth(url: str, password: str, timeout: float) -> bool:
             # Envia auth.challenge
             response = {
                 "type": "auth.challenge",
-                "payload": {"nonce": nonce, "ts": ts_ms, "signature": signature, "algo": "sha256"},
+                "payload": {
+                    "nonce": nonce,
+                    "ts": ts_ms,
+                    "signature": signature,
+                    "algo": "sha256",
+                },
             }
             await ws.send(json.dumps(response))
-            print(f"[sent] auth.challenge com signature {signature[:16]}...", file=sys.stderr)
+            print(
+                f"[sent] auth.challenge com signature {signature[:16]}...",
+                file=sys.stderr,
+            )
 
             # Espera auth.ok / auth.failed
             result_raw = await asyncio.wait_for(ws.recv(), timeout=timeout)
@@ -113,9 +128,15 @@ async def connect_and_auth(url: str, password: str, timeout: float) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description="OpenClaw auth.challenge handler")
     parser.add_argument("--url", default=DEFAULT_URL, help="OpenClaw WebSocket URL")
-    parser.add_argument("--password", help="password (default: OPENCLAW_GATEWAY_PASSWORD)")
-    parser.add_argument("--connect", action="store_true", help="conectar real (default: dry-run)")
-    parser.add_argument("--timeout", type=float, default=15.0, help="timeout em segundos")
+    parser.add_argument(
+        "--password", help="password (default: OPENCLAW_GATEWAY_PASSWORD)"
+    )
+    parser.add_argument(
+        "--connect", action="store_true", help="conectar real (default: dry-run)"
+    )
+    parser.add_argument(
+        "--timeout", type=float, default=15.0, help="timeout em segundos"
+    )
     args = parser.parse_args()
 
     password = args.password or get_password()

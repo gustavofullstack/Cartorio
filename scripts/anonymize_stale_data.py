@@ -35,20 +35,24 @@ def export_backup_preventivo(db) -> int:
     clientes = db.query(Cliente).all()
     data = []
     for c in clientes:
-        data.append({
-            "id": c.id,
-            "nome": c.nome,
-            "cpf": c.cpf,
-            "rg": c.rg,
-            "email": c.email,
-            "telefone": c.telefone,
-            "cnh": c.cnh,
-            "cns": c.cns,
-            "created_at": c.created_at.isoformat() if c.created_at else None,
-            "updated_at": c.updated_at.isoformat() if c.updated_at else None,
-            "deleted_at": c.deleted_at.isoformat() if c.deleted_at else None,
-            "motivo_encerramento": c.motivo_encerramento.value if c.motivo_encerramento else None,
-        })
+        data.append(
+            {
+                "id": c.id,
+                "nome": c.nome,
+                "cpf": c.cpf,
+                "rg": c.rg,
+                "email": c.email,
+                "telefone": c.telefone,
+                "cnh": c.cnh,
+                "cns": c.cns,
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+                "updated_at": c.updated_at.isoformat() if c.updated_at else None,
+                "deleted_at": c.deleted_at.isoformat() if c.deleted_at else None,
+                "motivo_encerramento": c.motivo_encerramento.value
+                if c.motivo_encerramento
+                else None,
+            }
+        )
 
     with open(BACKUP_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
@@ -82,7 +86,7 @@ def run_manual_purge():
                 "backup_file": BACKUP_PATH,
                 "trigger": "manual_vps_cli",
             }
-            
+
             AuditService.log_system_action(
                 action="system.manual_purge",
                 payload=audit_payload,
@@ -98,7 +102,10 @@ def run_manual_purge():
                 print(f"    * {err}")
 
     except Exception as e:
-        print(f"[FATAL ERROR] Execução abortada! Aplicado rollback transacional. Motivo: {e}", file=sys.stderr)
+        print(
+            f"[FATAL ERROR] Execução abortada! Aplicado rollback transacional. Motivo: {e}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 

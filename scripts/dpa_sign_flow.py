@@ -17,6 +17,7 @@ Exit codes:
 Ref: docs/lgpd/DPA_INDEX.md, docs/lgpd/dpa_*_template.md.
 Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 7.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -113,14 +114,20 @@ KNOWN_DPAS: dict[str, dict] = {
 def parse_dpa_status(name: str) -> DPAStatus:
     """Parse DPA status do cadastro."""
     cfg = KNOWN_DPAS.get(name, {})
-    template_path = DPA_DIR / cfg["template"] if cfg.get("template") else Path("(no template)")
+    template_path = (
+        DPA_DIR / cfg["template"] if cfg.get("template") else Path("(no template)")
+    )
     signed_date = None
     if cfg.get("signed_date"):
-        signed_date = datetime.fromisoformat(cfg["signed_date"]).replace(tzinfo=timezone.utc)
+        signed_date = datetime.fromisoformat(cfg["signed_date"]).replace(
+            tzinfo=timezone.utc
+        )
     renewal_due = None
     days_to_renewal = None
     if cfg.get("renewal_due"):
-        renewal_due = datetime.fromisoformat(cfg["renewal_due"]).replace(tzinfo=timezone.utc)
+        renewal_due = datetime.fromisoformat(cfg["renewal_due"]).replace(
+            tzinfo=timezone.utc
+        )
         now = datetime.now(timezone.utc)
         days_to_renewal = (renewal_due - now).days
     return DPAStatus(
@@ -158,7 +165,10 @@ def render_markdown(DPAs: list[DPAStatus]) -> str:
     md.append("")
     md.append("| DPA | Status | Assinado | Renewal | Dias | Notes |")
     md.append("|---|---|---|---|---|---|")
-    for d in sorted(DPAs, key=lambda x: x.days_to_renewal if x.days_to_renewal is not None else 99999):
+    for d in sorted(
+        DPAs,
+        key=lambda x: x.days_to_renewal if x.days_to_renewal is not None else 99999,
+    ):
         signed = d.signed_date.date() if d.signed_date else "-"
         renewal = d.renewal_due.date() if d.renewal_due else "-"
         days = f"{d.days_to_renewal}d" if d.days_to_renewal is not None else "-"
@@ -171,20 +181,32 @@ def render_markdown(DPAs: list[DPAStatus]) -> str:
             "missing": "❌",
         }.get(d.status, "?")
         notes = d.notes.replace("|", "\\|")[:60]
-        md.append(f"| {d.name} | {status_emoji} {d.status} | {signed} | {renewal} | {days} | {notes} |")
+        md.append(
+            f"| {d.name} | {status_emoji} {d.status} | {signed} | {renewal} | {days} | {notes} |"
+        )
     md.append("")
 
     # Alertas
     alerts: list[str] = []
     for d in DPAs:
         if d.status == "expired":
-            alerts.append(f"❌ **{d.name}**: EXPIRADO em {d.renewal_due.date() if d.renewal_due else '?'}")
+            alerts.append(
+                f"❌ **{d.name}**: EXPIRADO em {d.renewal_due.date() if d.renewal_due else '?'}"
+            )
         elif d.status == "pending_gustavo":
             alerts.append(f"⏳ **{d.name}**: Pendente Gustavo assinar")
         elif d.status == "pending_provider":
-            alerts.append(f"🚧 **{d.name}**: Aguardando provider (mimo/mistral/openrouter/gemini)")
-        elif d.status == "signed" and d.days_to_renewal is not None and d.days_to_renewal < 90:
-            alerts.append(f"⚠️ **{d.name}**: Renewal em {d.days_to_renewal} dias (renovar antes)")
+            alerts.append(
+                f"🚧 **{d.name}**: Aguardando provider (mimo/mistral/openrouter/gemini)"
+            )
+        elif (
+            d.status == "signed"
+            and d.days_to_renewal is not None
+            and d.days_to_renewal < 90
+        ):
+            alerts.append(
+                f"⚠️ **{d.name}**: Renewal em {d.days_to_renewal} dias (renovar antes)"
+            )
     if alerts:
         md.append("## Alertas")
         md.append("")
@@ -197,7 +219,9 @@ def render_markdown(DPAs: list[DPAStatus]) -> str:
 
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 7 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + cartorio-lgpd — G6 wave 7 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 

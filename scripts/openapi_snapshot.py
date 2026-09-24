@@ -20,6 +20,7 @@ Storage:
 
 Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 6.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -34,7 +35,9 @@ from typing import Any
 SNAPSHOT_DIR = Path("snapshots")
 BASELINE = SNAPSHOT_DIR / "openapi.baseline.json"
 CURRENT = SNAPSHOT_DIR / "openapi.current.json"
-HTTP_METHODS = frozenset({"delete", "get", "head", "options", "patch", "post", "put", "trace"})
+HTTP_METHODS = frozenset(
+    {"delete", "get", "head", "options", "patch", "post", "put", "trace"}
+)
 
 
 @dataclass
@@ -64,12 +67,16 @@ class SemanticDiff:
 def get_openapi_spec() -> dict:
     """Importa app.main e extrai OpenAPI schema."""
     import os
+
     print("Generating OpenAPI spec from app.main:app ...", file=sys.stderr)
     env = os.environ.copy()
     env.setdefault("APP_ENV", "development")
     result = subprocess.run(
         [
-            "uv", "run", "python", "-c",
+            "uv",
+            "run",
+            "python",
+            "-c",
             "from app.main import app; import json; "
             "print(json.dumps(app.openapi(), indent=2, ensure_ascii=False))",
         ],
@@ -121,7 +128,9 @@ def validate_internal_refs(document: dict[str, Any], *, label: str) -> list[str]
     return problems
 
 
-def _operation_parameters(operation: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
+def _operation_parameters(
+    operation: dict[str, Any],
+) -> dict[tuple[str, str], dict[str, Any]]:
     return {
         (str(parameter.get("in", "")), str(parameter.get("name", ""))): parameter
         for parameter in operation.get("parameters", [])
@@ -141,7 +150,9 @@ def semantic_diff(baseline: dict[str, Any], current: dict[str, Any]) -> Semantic
     curr_paths = set(current.get("paths", {}).keys())
     result = SemanticDiff(
         added_paths=sorted(curr_paths - base_paths),
-        removed_paths=[f"path removed: {path}" for path in sorted(base_paths - curr_paths)],
+        removed_paths=[
+            f"path removed: {path}" for path in sorted(base_paths - curr_paths)
+        ],
     )
     base_schemes = baseline.get("components", {}).get("securitySchemes", {})
     curr_schemes = current.get("components", {}).get("securitySchemes", {})
@@ -167,7 +178,9 @@ def semantic_diff(baseline: dict[str, Any], current: dict[str, Any]) -> Semantic
             if _effective_security(baseline, base_operation) != _effective_security(
                 current, current_operation
             ):
-                result.changed_security.append(f"operation security changed: {operation_id}")
+                result.changed_security.append(
+                    f"operation security changed: {operation_id}"
+                )
             base_parameters = _operation_parameters(base_operation)
             current_parameters = _operation_parameters(current_operation)
             for parameter_key, base_parameter in base_parameters.items():
@@ -176,24 +189,36 @@ def semantic_diff(baseline: dict[str, Any], current: dict[str, Any]) -> Semantic
                     result.changed_parameters.append(
                         f"parameter removed: {operation_id} {parameter_key[0]} {parameter_key[1]}"
                     )
-                elif not base_parameter.get("required", False) and current_parameter.get("required", False):
+                elif not base_parameter.get(
+                    "required", False
+                ) and current_parameter.get("required", False):
                     result.changed_parameters.append(
                         f"parameter became required: {operation_id} {parameter_key[0]} {parameter_key[1]}"
                     )
             base_body = base_operation.get("requestBody")
             current_body = current_operation.get("requestBody")
             if isinstance(base_body, dict) and current_body is None:
-                result.changed_request_bodies.append(f"request body removed: {operation_id}")
+                result.changed_request_bodies.append(
+                    f"request body removed: {operation_id}"
+                )
             elif (
                 isinstance(base_body, dict)
                 and isinstance(current_body, dict)
                 and not base_body.get("required", False)
                 and current_body.get("required", False)
             ):
-                result.changed_request_bodies.append(f"request body became required: {operation_id}")
-            base_success = {code for code in base_operation.get("responses", {}) if str(code).startswith("2")}
+                result.changed_request_bodies.append(
+                    f"request body became required: {operation_id}"
+                )
+            base_success = {
+                code
+                for code in base_operation.get("responses", {})
+                if str(code).startswith("2")
+            }
             current_success = {
-                code for code in current_operation.get("responses", {}) if str(code).startswith("2")
+                code
+                for code in current_operation.get("responses", {})
+                if str(code).startswith("2")
             }
             for code in sorted(base_success - current_success):
                 result.removed_success_responses.append(
@@ -229,20 +254,29 @@ def render_markdown(diff: SemanticDiff, current: dict[str, Any]) -> str:
         md.append("")
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 6 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 6 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="OpenAPI snapshot generator")
-    parser.add_argument("--check", action="store_true", help="comparar com baseline e exit 1 se diff")
-    parser.add_argument("--update", action="store_true", help="atualizar baseline com current")
+    parser.add_argument(
+        "--check", action="store_true", help="comparar com baseline e exit 1 se diff"
+    )
+    parser.add_argument(
+        "--update", action="store_true", help="atualizar baseline com current"
+    )
     parser.add_argument("--report", type=Path, help="gerar report markdown")
     args = parser.parse_args()
 
     spec = get_openapi_spec()
     save_snapshot(spec, CURRENT)
-    print(f"Snapshot salvo: {CURRENT} ({len(spec.get('paths', {}))} paths)", file=sys.stderr)
+    print(
+        f"Snapshot salvo: {CURRENT} ({len(spec.get('paths', {}))} paths)",
+        file=sys.stderr,
+    )
 
     if args.update:
         save_snapshot(spec, BASELINE)
@@ -252,12 +286,14 @@ def main() -> int:
     if args.check:
         if not BASELINE.exists():
             print(f"[ERROR] Baseline nao existe: {BASELINE}", file=sys.stderr)
-            print(f"  Rode: python3 scripts/openapi_snapshot.py --update", file=sys.stderr)
+            print(
+                f"  Rode: python3 scripts/openapi_snapshot.py --update", file=sys.stderr
+            )
             return 2
         baseline = json.loads(BASELINE.read_text())
-        invalid_refs = validate_internal_refs(baseline, label="baseline") + validate_internal_refs(
-            spec, label="current"
-        )
+        invalid_refs = validate_internal_refs(
+            baseline, label="baseline"
+        ) + validate_internal_refs(spec, label="current")
         if invalid_refs:
             print(f"[ERROR] {len(invalid_refs)} refs OpenAPI invalidos")
             for problem in invalid_refs[:10]:

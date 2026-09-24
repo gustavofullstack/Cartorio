@@ -166,8 +166,13 @@ def _extract_atomically(
         for member in planned:
             output = scratch.joinpath(*member.target.parts)
             output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-            with source.open(member.info, "r") as input_stream, output.open("xb") as output_stream:
-                digest, written = _copy_bounded(input_stream, output_stream, member.info.file_size)
+            with (
+                source.open(member.info, "r") as input_stream,
+                output.open("xb") as output_stream,
+            ):
+                digest, written = _copy_bounded(
+                    input_stream, output_stream, member.info.file_size
+                )
             os.chmod(output, 0o600)
             manifest_files.append(
                 {
@@ -213,7 +218,9 @@ def _verify_existing_batch(
     if manifest.get("archive_sha256") != archive_sha256:
         raise StagingFailure("existing_archive_hash_mismatch")
 
-    archive_hashes = Counter(_sha256_stream(source.open(member.info)) for member in planned)
+    archive_hashes = Counter(
+        _sha256_stream(source.open(member.info)) for member in planned
+    )
     local_files = [
         path
         for path in target.rglob("*")
@@ -229,7 +236,9 @@ def _verify_existing_batch(
         raise StagingFailure("existing_content_mismatch")
 
 
-def _copy_bounded(source: BinaryIO, target: BinaryIO, declared_size: int) -> tuple[str, int]:
+def _copy_bounded(
+    source: BinaryIO, target: BinaryIO, declared_size: int
+) -> tuple[str, int]:
     digest = hashlib.sha256()
     written = 0
     while chunk := source.read(COPY_CHUNK_BYTES):

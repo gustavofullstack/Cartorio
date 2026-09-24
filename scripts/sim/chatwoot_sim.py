@@ -15,6 +15,7 @@ profundidade). Audit log fica na API via POST /api/v1/atendimentos.
 Uso:
     docker exec -i cartorio_api.XYZ /app/.venv/bin/python - < chatwoot_sim.py
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -46,85 +47,266 @@ if not TOKEN or len(TOKEN) < 16:
 ACCT = int(os.environ.get("CHATWOOT_ACCOUNT_ID", "1"))
 INBOX_NAME = "whatsapp-sim"
 if not TOKEN:
-    raise SystemExit("FATAL: CHATWOOT_API_KEY não definida (env nem /tmp/chatwoot_token)")
+    raise SystemExit(
+        "FATAL: CHATWOOT_API_KEY não definida (env nem /tmp/chatwoot_token)"
+    )
 
 HDR = {"api_access_token": TOKEN, "Content-Type": "application/json"}
 TIMEOUT = 15.0
 
 # 10 personas com perfis linguísticos por idade (20-90)
 PERSONAS: list[dict[str, Any]] = [
-    {"slot": 1, "agent": "TRAE",     "nome": "Maria Silva Santos",   "idade": 67, "telefone": "+5534991001001", "cenario": "certidao_casamento"},
-    {"slot": 2, "agent": "TRAE",     "nome": "José Pereira Souza",   "idade": 28, "telefone": "+5534991001002", "cenario": "procuracao"},
-    {"slot": 3, "agent": "TRAE",     "nome": "Helena Costa Oliveira","idade": 82, "telefone": "+5534991001003", "cenario": "escritura_imovel"},
-    {"slot": 4, "agent": "TRAE",     "nome": "Pedro Almeida Lima",   "idade": 45, "telefone": "+5534991001004", "cenario": "registro_nascimento"},
-    {"slot": 5, "agent": "TRAE",     "nome": "Lucia Ferreira",       "idade": 55, "telefone": "+5534991001005", "cenario": "certidao_obito"},
-    {"slot": 6, "agent": "ANTIGRAV", "nome": "Carlos Mendes",        "idade": 35, "telefone": "+5534991001006", "cenario": "divorcio"},
-    {"slot": 7, "agent": "ANTIGRAV", "nome": "Ana Beatriz Rocha",    "idade": 19, "telefone": "+5534991001007", "cenario": "emancipacao"},
-    {"slot": 8, "agent": "ANTIGRAV", "nome": "Roberto Carlos",       "idade": 71, "telefone": "+5534991001008", "cenario": "testamento"},
-    {"slot": 9, "agent": "ANTIGRAV", "nome": "Sofia Martins",        "idade": 40, "telefone": "+5534991001009", "cenario": "compra_venda_imovel"},
-    {"slot": 10,"agent": "ANTIGRAV", "nome": "Antonio José",         "idade": 90, "telefone": "+5534991001010", "cenario": "inventario"},
+    {
+        "slot": 1,
+        "agent": "TRAE",
+        "nome": "Maria Silva Santos",
+        "idade": 67,
+        "telefone": "+5534991001001",
+        "cenario": "certidao_casamento",
+    },
+    {
+        "slot": 2,
+        "agent": "TRAE",
+        "nome": "José Pereira Souza",
+        "idade": 28,
+        "telefone": "+5534991001002",
+        "cenario": "procuracao",
+    },
+    {
+        "slot": 3,
+        "agent": "TRAE",
+        "nome": "Helena Costa Oliveira",
+        "idade": 82,
+        "telefone": "+5534991001003",
+        "cenario": "escritura_imovel",
+    },
+    {
+        "slot": 4,
+        "agent": "TRAE",
+        "nome": "Pedro Almeida Lima",
+        "idade": 45,
+        "telefone": "+5534991001004",
+        "cenario": "registro_nascimento",
+    },
+    {
+        "slot": 5,
+        "agent": "TRAE",
+        "nome": "Lucia Ferreira",
+        "idade": 55,
+        "telefone": "+5534991001005",
+        "cenario": "certidao_obito",
+    },
+    {
+        "slot": 6,
+        "agent": "ANTIGRAV",
+        "nome": "Carlos Mendes",
+        "idade": 35,
+        "telefone": "+5534991001006",
+        "cenario": "divorcio",
+    },
+    {
+        "slot": 7,
+        "agent": "ANTIGRAV",
+        "nome": "Ana Beatriz Rocha",
+        "idade": 19,
+        "telefone": "+5534991001007",
+        "cenario": "emancipacao",
+    },
+    {
+        "slot": 8,
+        "agent": "ANTIGRAV",
+        "nome": "Roberto Carlos",
+        "idade": 71,
+        "telefone": "+5534991001008",
+        "cenario": "testamento",
+    },
+    {
+        "slot": 9,
+        "agent": "ANTIGRAV",
+        "nome": "Sofia Martins",
+        "idade": 40,
+        "telefone": "+5534991001009",
+        "cenario": "compra_venda_imovel",
+    },
+    {
+        "slot": 10,
+        "agent": "ANTIGRAV",
+        "nome": "Antonio José",
+        "idade": 90,
+        "telefone": "+5534991001010",
+        "cenario": "inventario",
+    },
 ]
+
 
 # Perfis linguísticos por idade
 def perfil_linguagem(idade: int) -> dict[str, Any]:
     if idade >= 70:
-        return {"formal": True, "usa_abrev": False, "emoji": False, "quebra_linha": True, "abreviacao": "senhor/senhora"}
+        return {
+            "formal": True,
+            "usa_abrev": False,
+            "emoji": False,
+            "quebra_linha": True,
+            "abreviacao": "senhor/senhora",
+        }
     if idade >= 50:
-        return {"formal": True, "usa_abrev": False, "emoji": False, "quebra_linha": False, "abreviacao": "senhor/senhora"}
+        return {
+            "formal": True,
+            "usa_abrev": False,
+            "emoji": False,
+            "quebra_linha": False,
+            "abreviacao": "senhor/senhora",
+        }
     if idade >= 30:
-        return {"formal": False, "usa_abrev": True, "emoji": False, "quebra_linha": False, "abreviacao": "você"}
-    return {"formal": False, "usa_abrev": True, "emoji": True, "quebra_linha": False, "abreviacao": "vc"}
+        return {
+            "formal": False,
+            "usa_abrev": True,
+            "emoji": False,
+            "quebra_linha": False,
+            "abreviacao": "você",
+        }
+    return {
+        "formal": False,
+        "usa_abrev": True,
+        "emoji": True,
+        "quebra_linha": False,
+        "abreviacao": "vc",
+    }
 
 
 # Diálogos (3 turnos cliente, 2-3 respostas agente) por cenário
 DIALOGOS: dict[str, list[dict[str, str]]] = {
     "certidao_casamento": [
-        {"client": "bom dia, gostaria de uma informação", "agent": "Olá! Como posso ajudar?"},
-        {"client": "preciso da certidão de casamento, quanto custa e quanto tempo demora?", "agent": "A 2ª via da certidão de casamento custa R$ 105,40 e fica pronta em 5 dias úteis."},
-        {"client": "preciso ir presencialmente?", "agent": "Pode ser presencial ou online pelo site. Online leva 5 dias úteis, presencial é no mesmo dia."},
+        {
+            "client": "bom dia, gostaria de uma informação",
+            "agent": "Olá! Como posso ajudar?",
+        },
+        {
+            "client": "preciso da certidão de casamento, quanto custa e quanto tempo demora?",
+            "agent": "A 2ª via da certidão de casamento custa R$ 105,40 e fica pronta em 5 dias úteis.",
+        },
+        {
+            "client": "preciso ir presencialmente?",
+            "agent": "Pode ser presencial ou online pelo site. Online leva 5 dias úteis, presencial é no mesmo dia.",
+        },
     ],
     "procuracao": [
-        {"client": "oi, queria fazer uma procuração", "agent": "Olá! Procuração para qual finalidade?"},
-        {"client": "pra representar eu num negócio de carro", "agent": "Para procuração de veículo, traga RG, CPF e documento do veículo. Valor: R$ 89,70."},
-        {"client": "tem horário amanhã?", "agent": "Atendemos de segunda a sexta, 8h às 17h. Não precisa agendar."},
+        {
+            "client": "oi, queria fazer uma procuração",
+            "agent": "Olá! Procuração para qual finalidade?",
+        },
+        {
+            "client": "pra representar eu num negócio de carro",
+            "agent": "Para procuração de veículo, traga RG, CPF e documento do veículo. Valor: R$ 89,70.",
+        },
+        {
+            "client": "tem horário amanhã?",
+            "agent": "Atendemos de segunda a sexta, 8h às 17h. Não precisa agendar.",
+        },
     ],
     "escritura_imovel": [
-        {"client": "Boa tarde. Gostaria de informação sobre escritura de imóvel.", "agent": "Boa tarde! Qual o tipo: compra e venda, doação ou permuta?"},
-        {"client": "Compra e venda. É um apartamento no Centro.", "agent": "Para escritura de compra e venda, traga RG, CPF, certidão de matrícula atualizada e o contrato. Valor depende do valor venal."},
-        {"client": "O imóvel está em R$ 450 mil. Posso levar meus documentos amanhã?", "agent": "Pode sim! Traga também o comprovante de residência e certidão de quitação do IPTU. Estaremos abertos das 8h às 17h."},
+        {
+            "client": "Boa tarde. Gostaria de informação sobre escritura de imóvel.",
+            "agent": "Boa tarde! Qual o tipo: compra e venda, doação ou permuta?",
+        },
+        {
+            "client": "Compra e venda. É um apartamento no Centro.",
+            "agent": "Para escritura de compra e venda, traga RG, CPF, certidão de matrícula atualizada e o contrato. Valor depende do valor venal.",
+        },
+        {
+            "client": "O imóvel está em R$ 450 mil. Posso levar meus documentos amanhã?",
+            "agent": "Pode sim! Traga também o comprovante de residência e certidão de quitação do IPTU. Estaremos abertos das 8h às 17h.",
+        },
     ],
     "registro_nascimento": [
-        {"client": "oi, meu bebe nasceu ontem e nao sei o que fazer pra registrar", "agent": "Parabéns! O registro pode ser feito em até 15 dias. Traga: RG/CPF dos pais, certidão de casamento (se houver) e declaração do hospital."},
-        {"client": "nao sou casada", "agent": "Sem problema. Pode ser reconhecida no ato. Compareça com testemunhas (2) e documentos."},
-        {"client": "tem custo?", "agent": "É gratuito diretamente no cartório. Prazo: até 5 dias úteis."},
+        {
+            "client": "oi, meu bebe nasceu ontem e nao sei o que fazer pra registrar",
+            "agent": "Parabéns! O registro pode ser feito em até 15 dias. Traga: RG/CPF dos pais, certidão de casamento (se houver) e declaração do hospital.",
+        },
+        {
+            "client": "nao sou casada",
+            "agent": "Sem problema. Pode ser reconhecida no ato. Compareça com testemunhas (2) e documentos.",
+        },
+        {
+            "client": "tem custo?",
+            "agent": "É gratuito diretamente no cartório. Prazo: até 5 dias úteis.",
+        },
     ],
     "certidao_obito": [
-        {"client": "boa tarde, meu pai faleceu ontem. preciso da certidao de obito", "agent": "Sinto muito pela perda. A certidão é emitida automaticamente pelo cartório de registro civil. Se for aqui da cidade, fica pronta em 2 dias úteis."},
-        {"client": "tem algum custo pra emitir a segunda via depois?", "agent": "A 2ª via custa R$ 46,80. Pode solicitar presencialmente ou pelo site do cartório."},
+        {
+            "client": "boa tarde, meu pai faleceu ontem. preciso da certidao de obito",
+            "agent": "Sinto muito pela perda. A certidão é emitida automaticamente pelo cartório de registro civil. Se for aqui da cidade, fica pronta em 2 dias úteis.",
+        },
+        {
+            "client": "tem algum custo pra emitir a segunda via depois?",
+            "agent": "A 2ª via custa R$ 46,80. Pode solicitar presencialmente ou pelo site do cartório.",
+        },
     ],
     "divorcio": [
-        {"client": "oi, gostaria de informações sobre divorcio", "agent": "Olá! Divórcio consensual (sem menores) pode ser feito em cartório. Precisa de: certidão de casamento atualizada, RG e CPF de ambos, e advogado."},
-        {"client": "tem um filho de 5 anos", "agent": "Com menor envolvido, o processo é judicial (Vara de Família). Posso indicar a documentação inicial se quiser."},
-        {"client": "por enquanto só informação mesmo, obrigada", "agent": "Estamos à disposição. Quando decidir prosseguir, busque orientação de um advogado de família."},
+        {
+            "client": "oi, gostaria de informações sobre divorcio",
+            "agent": "Olá! Divórcio consensual (sem menores) pode ser feito em cartório. Precisa de: certidão de casamento atualizada, RG e CPF de ambos, e advogado.",
+        },
+        {
+            "client": "tem um filho de 5 anos",
+            "agent": "Com menor envolvido, o processo é judicial (Vara de Família). Posso indicar a documentação inicial se quiser.",
+        },
+        {
+            "client": "por enquanto só informação mesmo, obrigada",
+            "agent": "Estamos à disposição. Quando decidir prosseguir, busque orientação de um advogado de família.",
+        },
     ],
     "emancipacao": [
-        {"client": "oi, tenho 19 anos e quero me emancipar", "agent": "Olá! Emancipação para qual finalidade? Trabalho, viagem, estudo?"},
-        {"client": "trabalho, ja tenho emprego fixo", "agent": "Para emancipação por exercício de emprego, traga: RG, CPF, comprovante de renda, carteira de trabalho e certidão de nascimento. Valor: R$ 145,30."},
-        {"client": "posso ir amanha?", "agent": "Pode! Traga também um responsável legal (pai/mãe) como anuente. Sem necessidade de agendamento."},
+        {
+            "client": "oi, tenho 19 anos e quero me emancipar",
+            "agent": "Olá! Emancipação para qual finalidade? Trabalho, viagem, estudo?",
+        },
+        {
+            "client": "trabalho, ja tenho emprego fixo",
+            "agent": "Para emancipação por exercício de emprego, traga: RG, CPF, comprovante de renda, carteira de trabalho e certidão de nascimento. Valor: R$ 145,30.",
+        },
+        {
+            "client": "posso ir amanha?",
+            "agent": "Pode! Traga também um responsável legal (pai/mãe) como anuente. Sem necessidade de agendamento.",
+        },
     ],
     "testamento": [
-        {"client": "Boa tarde. Gostaria de informações sobre testamento.", "agent": "Boa tarde! Testamento pode ser público (em cartório) ou particular. O público custa a partir de R$ 250 e fica arquivado aqui mesmo."},
-        {"client": "Preciso ir presencialmente quantas vezes?", "agent": "Duas vezes: uma para orientação e assinatura da minuta, outra (após 5 dias) para confirmação e assinatura final. Traga RG, CPF e certidão de casamento."},
+        {
+            "client": "Boa tarde. Gostaria de informações sobre testamento.",
+            "agent": "Boa tarde! Testamento pode ser público (em cartório) ou particular. O público custa a partir de R$ 250 e fica arquivado aqui mesmo.",
+        },
+        {
+            "client": "Preciso ir presencialmente quantas vezes?",
+            "agent": "Duas vezes: uma para orientação e assinatura da minuta, outra (após 5 dias) para confirmação e assinatura final. Traga RG, CPF e certidão de casamento.",
+        },
     ],
     "compra_venda_imovel": [
-        {"client": "Boa tarde, estou comprando um apartamento e preciso fazer a escritura", "agent": "Boa tarde! Traga: RG, CPF, certidão de matrícula atualizada (30 dias), contrato e comprovante de pagamento do ITBI."},
-        {"client": "O ITBI eu pago aqui?", "agent": "Não, o ITBI é pago na Prefeitura. Após o pagamento, traga o comprovante aqui para a escritura."},
-        {"client": "Quanto fica a escritura para imóvel de 600 mil?", "agent": "Para imóvel de R$ 600.000,00, os emolumentos ficam em torno de R$ 4.850,00 + ISS. Posso calcular exato se quiser agendar."},
+        {
+            "client": "Boa tarde, estou comprando um apartamento e preciso fazer a escritura",
+            "agent": "Boa tarde! Traga: RG, CPF, certidão de matrícula atualizada (30 dias), contrato e comprovante de pagamento do ITBI.",
+        },
+        {
+            "client": "O ITBI eu pago aqui?",
+            "agent": "Não, o ITBI é pago na Prefeitura. Após o pagamento, traga o comprovante aqui para a escritura.",
+        },
+        {
+            "client": "Quanto fica a escritura para imóvel de 600 mil?",
+            "agent": "Para imóvel de R$ 600.000,00, os emolumentos ficam em torno de R$ 4.850,00 + ISS. Posso calcular exato se quiser agendar.",
+        },
     ],
     "inventario": [
-        {"client": "Bom dia, meu pai faleceu e precisamos fazer inventario", "agent": "Bom dia, sinto muito. Inventário pode ser extrajudicial (em cartório) se todos os herdeiros forem maiores e concordarem, sem testamento."},
-        {"client": "somos 3 irmaos, todos maiores", "agent": "Ótimo. Traga: certidão de óbito, certidão de casamento do falecido, RG/CPF dos herdeiros, certidão negativa de testamento e relação de bens. Prazo: 60-90 dias."},
-        {"client": "tem custo inicial?", "agent": "Custo depende do valor do patrimônio. Para inventário de até R$ 500 mil, fica em torno de R$ 3.200,00. Posso passar valor exato com a relação de bens."},
+        {
+            "client": "Bom dia, meu pai faleceu e precisamos fazer inventario",
+            "agent": "Bom dia, sinto muito. Inventário pode ser extrajudicial (em cartório) se todos os herdeiros forem maiores e concordarem, sem testamento.",
+        },
+        {
+            "client": "somos 3 irmaos, todos maiores",
+            "agent": "Ótimo. Traga: certidão de óbito, certidão de casamento do falecido, RG/CPF dos herdeiros, certidão negativa de testamento e relação de bens. Prazo: 60-90 dias.",
+        },
+        {
+            "client": "tem custo inicial?",
+            "agent": "Custo depende do valor do patrimônio. Para inventário de até R$ 500 mil, fica em torno de R$ 3.200,00. Posso passar valor exato com a relação de bens.",
+        },
     ],
 }
 

@@ -28,6 +28,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 3 (G6.B.T1).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -64,11 +65,22 @@ UNSAFE_NODES = {
 }
 
 # Campos PII que NUNCA devem aparecer em HTTP Request body (LGPD)
-PII_FIELDS = {"cpf", "rg", "cnh", "telefone", "celular", "email", "endereco", "titular_cep"}
+PII_FIELDS = {
+    "cpf",
+    "rg",
+    "cnh",
+    "telefone",
+    "celular",
+    "email",
+    "endereco",
+    "titular_cep",
+}
 
 # Padroes suspeitos de URL (http:// em prod, internal IPs)
 UNSAFE_URL_PATTERNS = [
-    re.compile(r"http://(?!localhost|127\.0\.0\.1|0\.0\.0\.0)"),  # http:// (nao-localhost)
+    re.compile(
+        r"http://(?!localhost|127\.0\.0\.1|0\.0\.0\.0)"
+    ),  # http:// (nao-localhost)
     re.compile(r"https?://10\.\d+\.\d+\.\d+"),  # internal IP leak
     re.compile(r"https?://192\.168\.\d+\.\d+"),  # private IP leak
 ]
@@ -119,17 +131,30 @@ def validate_workflow(wf_path: Path) -> list[Violation]:
         for pat in CRED_PATTERNS:
             if pat.search(params_str):
                 violations.append(
-                    Violation(wf_path.name, "HARDCODED_CRED", "BLOCKER",
-                              f"Credencial hardcoded em node '{node_name}' (pattern: {pat.pattern[:30]})",
-                              node_name)
+                    Violation(
+                        wf_path.name,
+                        "HARDCODED_CRED",
+                        "BLOCKER",
+                        f"Credencial hardcoded em node '{node_name}' (pattern: {pat.pattern[:30]})",
+                        node_name,
+                    )
                 )
         # Verifica credenciais em chaves JSON
         for key, val in _flatten(node.get("parameters", {})):
-            if key.lower() in CRED_KEYS and isinstance(val, str) and val and not val.startswith("{{"):
+            if (
+                key.lower() in CRED_KEYS
+                and isinstance(val, str)
+                and val
+                and not val.startswith("{{")
+            ):
                 violations.append(
-                    Violation(wf_path.name, "HARDCODED_CRED_KEY", "BLOCKER",
-                              f"Key '{key}' com valor literal em node '{node_name}': {val[:20]}...",
-                              node_name)
+                    Violation(
+                        wf_path.name,
+                        "HARDCODED_CRED_KEY",
+                        "BLOCKER",
+                        f"Key '{key}' com valor literal em node '{node_name}': {val[:20]}...",
+                        node_name,
+                    )
                 )
 
     # Regra 2: nodes proibidos
@@ -137,9 +162,13 @@ def validate_workflow(wf_path: Path) -> list[Violation]:
         node_type = node.get("type", "")
         if node_type in UNSAFE_NODES:
             violations.append(
-                Violation(wf_path.name, "UNSAFE_NODE", "BLOCKER",
-                          f"Node proibido '{node_type}' em '{node.get('name')}' — usar alternativa segura",
-                          node.get("name"))
+                Violation(
+                    wf_path.name,
+                    "UNSAFE_NODE",
+                    "BLOCKER",
+                    f"Node proibido '{node_type}' em '{node.get('name')}' — usar alternativa segura",
+                    node.get("name"),
+                )
             )
 
     # Regra 3: PII em HTTP Request body
@@ -149,9 +178,13 @@ def validate_workflow(wf_path: Path) -> list[Violation]:
             for key in _flatten_keys(body):
                 if key.lower() in PII_FIELDS:
                     violations.append(
-                        Violation(wf_path.name, "PII_LEAK_HTTP", "BLOCKER",
-                                  f"Campo PII '{key}' em HTTP Request body (LGPD art. 46) — usar PII Scrub antes",
-                                  node.get("name"))
+                        Violation(
+                            wf_path.name,
+                            "PII_LEAK_HTTP",
+                            "BLOCKER",
+                            f"Campo PII '{key}' em HTTP Request body (LGPD art. 46) — usar PII Scrub antes",
+                            node.get("name"),
+                        )
                     )
 
     # Regra 4: URLs inseguras
@@ -161,23 +194,35 @@ def validate_workflow(wf_path: Path) -> list[Violation]:
             for pat in UNSAFE_URL_PATTERNS:
                 if pat.search(url):
                     violations.append(
-                        Violation(wf_path.name, "UNSAFE_URL", "WARNING",
-                                  f"URL insegura em '{node.get('name')}': {url[:60]}",
-                                  node.get("name"))
+                        Violation(
+                            wf_path.name,
+                            "UNSAFE_URL",
+                            "WARNING",
+                            f"URL insegura em '{node.get('name')}': {url[:60]}",
+                            node.get("name"),
+                        )
                     )
 
     # Regra 5: WF grande demais (>30 nodes) — alerta
     if len(nodes) > 30:
         violations.append(
-            Violation(wf_path.name, "LARGE_WORKFLOW", "WARNING",
-                      f"WF tem {len(nodes)} nodes (>30) — considerar decomposicao")
+            Violation(
+                wf_path.name,
+                "LARGE_WORKFLOW",
+                "WARNING",
+                f"WF tem {len(nodes)} nodes (>30) — considerar decomposicao",
+            )
         )
 
     # Regra 6: WF inativo exportado
     if not data.get("active", False):
         violations.append(
-            Violation(wf_path.name, "INACTIVE_WORKFLOW", "WARNING",
-                      f"WF exportado como inactive")
+            Violation(
+                wf_path.name,
+                "INACTIVE_WORKFLOW",
+                "WARNING",
+                f"WF exportado como inactive",
+            )
         )
 
     # Regra 7: webhook path duplicado (entre todos os WFs — check externo)
@@ -187,8 +232,12 @@ def validate_workflow(wf_path: Path) -> list[Violation]:
     has_correlation = any("correlation" in (n.get("name") or "").lower() for n in nodes)
     if not has_correlation and len(nodes) > 2:
         violations.append(
-            Violation(wf_path.name, "MISSING_CORRELATION", "WARNING",
-                      f"WF sem node 'Init Correlation' (degradacao observabilidade)")
+            Violation(
+                wf_path.name,
+                "MISSING_CORRELATION",
+                "WARNING",
+                f"WF sem node 'Init Correlation' (degradacao observabilidade)",
+            )
         )
 
     return violations
@@ -229,9 +278,13 @@ def validate_all_workflows(strict: bool = False) -> ValidationResult:
                     if path:
                         if path in webhook_paths:
                             violations.append(
-                                Violation(wf.name, "DUPLICATE_WEBHOOK", "BLOCKER",
-                                          f"Webhook path '{path}' DUPLICADO (tambem em {webhook_paths[path]})",
-                                          node.get("name"))
+                                Violation(
+                                    wf.name,
+                                    "DUPLICATE_WEBHOOK",
+                                    "BLOCKER",
+                                    f"Webhook path '{path}' DUPLICADO (tambem em {webhook_paths[path]})",
+                                    node.get("name"),
+                                )
                             )
                         else:
                             webhook_paths[path] = wf.name
@@ -296,13 +349,17 @@ def render_markdown_report(result: ValidationResult) -> str:
     md.append("")
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 3 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + Pietra orquestrador — G6 wave 3 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="N8N workflow validator CI gate")
-    parser.add_argument("--strict", action="store_true", help="exit 1 em qualquer warning")
+    parser.add_argument(
+        "--strict", action="store_true", help="exit 1 em qualquer warning"
+    )
     parser.add_argument("--json", action="store_true", help="output JSON")
     parser.add_argument("--report", type=Path, help="gerar report markdown")
     args = parser.parse_args()
@@ -310,11 +367,17 @@ def main() -> int:
     result = validate_all_workflows(strict=args.strict)
 
     if args.json:
-        print(json.dumps({
-            "total_workflows": result.total_workflows,
-            "blockers": [v.__dict__ for v in result.blockers],
-            "warnings": [v.__dict__ for v in result.warnings],
-        }, indent=2, ensure_ascii=False))
+        print(
+            json.dumps(
+                {
+                    "total_workflows": result.total_workflows,
+                    "blockers": [v.__dict__ for v in result.blockers],
+                    "warnings": [v.__dict__ for v in result.warnings],
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
     else:
         print(f"Workflows: {result.total_workflows}")
         print(f"Blockers:  {len(result.blockers)}")

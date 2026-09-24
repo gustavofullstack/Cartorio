@@ -15,6 +15,7 @@ Diferenças vs v1:
 
 Setup: ver scripts/LARK_BOT_SETUP.md (mesmo path do v1)
 """
+
 import os
 import re
 import json
@@ -33,7 +34,9 @@ VERIFICATION_TOKEN = os.getenv("LARK_VERIFICATION_TOKEN", "")
 ENCRYPT_KEY = os.getenv("LARK_ENCRYPT_KEY", "")
 LARK_API = "https://open.larksuite.com/open-apis"
 PIETRA_MCP = os.getenv("PIETRA_MCP_URL", "https://api.2notasudi.com.br/mcp")
-DIRECT_LLM_URL = os.getenv("DIRECT_LLM_URL", "https://api.minimax.io/v1/chat/completions")
+DIRECT_LLM_URL = os.getenv(
+    "DIRECT_LLM_URL", "https://api.minimax.io/v1/chat/completions"
+)
 DIRECT_LLM_KEY = os.getenv("DIRECT_LLM_KEY", "")  # MiniMax key
 INBOX_DIR = Path(os.getenv("LARK_INBOX_DIR", str(Path.home() / "Downloads/lark_inbox")))
 DB_PATH = os.getenv("LARK_DB_PATH", str(Path.home() / ".lark_bot_memory.sqlite"))
@@ -42,6 +45,7 @@ PORT = int(os.getenv("LARK_BOT_PORT", "8080"))
 INBOX_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
+
 
 # === DB (memória por chat) ===
 def db():
@@ -55,25 +59,32 @@ def db():
         )""")
     return conn
 
+
 def store(chat_id, sender, role, content, msg_type="text", file_path=None):
     try:
         c = db()
-        c.execute("INSERT INTO messages (chat_id,sender,role,content,msg_type,file_path) VALUES (?,?,?,?,?,?)",
-                  (chat_id, sender, role, content, msg_type, file_path))
+        c.execute(
+            "INSERT INTO messages (chat_id,sender,role,content,msg_type,file_path) VALUES (?,?,?,?,?,?)",
+            (chat_id, sender, role, content, msg_type, file_path),
+        )
         c.commit()
         c.close()
     except Exception as e:
         log("ERR", "db store failed", error=str(e))
 
+
 def history(chat_id, limit=20):
     try:
         c = db()
-        rows = c.execute("SELECT role, content FROM messages WHERE chat_id=? ORDER BY id DESC LIMIT ?",
-                         (chat_id, limit)).fetchall()
+        rows = c.execute(
+            "SELECT role, content FROM messages WHERE chat_id=? ORDER BY id DESC LIMIT ?",
+            (chat_id, limit),
+        ).fetchall()
         c.close()
         return list(reversed(rows))
     except Exception:
         return []
+
 
 # === LGPD scrub ===
 PII_PATTERNS = [
@@ -83,38 +94,54 @@ PII_PATTERNS = [
     (re.compile(r"\b[\w.-]+@[\w.-]+\.\w+\b"), "[EMAIL]"),
 ]
 
+
 def scrub(s):
     for pat, repl in PII_PATTERNS:
         s = pat.sub(repl, s)
     return s
+
 
 # === Log ===
 def log(level, msg, **kw):
     ts = datetime.now(timezone.utc).isoformat()
     print(f"[{ts}] [{level}] {msg} {kw if kw else ''}", flush=True)
 
+
 # === Lark helpers ===
 _token_cache = {"token": None, "exp": 0}
+
 
 def get_token():
     if _token_cache["token"] and _token_cache["exp"] > datetime.now().timestamp():
         return _token_cache["token"]
-    r = requests.post(f"{LARK_API}/auth/v3/tenant_access_token/internal",
-                      json={"app_id": APP_ID, "app_secret": APP_SECRET}, timeout=5).json()
+    r = requests.post(
+        f"{LARK_API}/auth/v3/tenant_access_token/internal",
+        json={"app_id": APP_ID, "app_secret": APP_SECRET},
+        timeout=5,
+    ).json()
     tok = r.get("tenant_access_token", "")
     if tok:
         _token_cache["token"] = tok
         _token_cache["exp"] = datetime.now().timestamp() + 7000
     return tok
 
+
 def send_text(chat_id, text):
     tok = get_token()
-    if not tok: return
-    r = requests.post(f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
+    if not tok:
+        return
+    r = requests.post(
+        f"{LARK_API}/im/v1/messages?receive_id_type=chat_id",
         headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"},
-        json={"receive_id": chat_id, "msg_type": "text",
-              "content": json.dumps({"text": text})}, timeout=10).json()
+        json={
+            "receive_id": chat_id,
+            "msg_type": "text",
+            "content": json.dumps({"text": text}),
+        },
+        timeout=10,
+    ).json()
     log("INFO", "sent", code=r.get("code"))
+
 
 def download_resource(url):
     """Baixa arquivo/imagem do CDN do Lark."""
@@ -124,7 +151,9 @@ def download_resource(url):
             ext = ".bin"
             if "image" in r.headers.get("Content-Type", ""):
                 ext = ".jpg" if "jpeg" in r.headers["Content-Type"] else ".png"
-            name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{hash(url) % 10000}{ext}"
+            name = (
+                f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{hash(url) % 10000}{ext}"
+            )
             path = INBOX_DIR / name
             path.write_bytes(r.content)
             return str(path)
@@ -132,30 +161,45 @@ def download_resource(url):
         log("ERR", "download failed", url=url[:60], error=str(e))
     return None
 
+
 # === LLM call (PIETRA via MCP + fallback MiniMax direto) ===
 def call_llm(messages):
     """Tenta PIETRA primeiro, fallback MiniMax direto."""
     # 1) PIETRA via MCP
     try:
-        r = requests.post(f"{PIETRA_MCP}/v1/chat/completions",
-            json={"messages": messages, "max_tokens": 800}, timeout=20)
+        r = requests.post(
+            f"{PIETRA_MCP}/v1/chat/completions",
+            json={"messages": messages, "max_tokens": 800},
+            timeout=20,
+        )
         if r.status_code == 200:
-            return r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+            return (
+                r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+            )
     except Exception as e:
         log("WARN", "pietra mcp failed", error=str(e))
 
     # 2) MiniMax direto
     if DIRECT_LLM_KEY:
         try:
-            r = requests.post(DIRECT_LLM_URL,
+            r = requests.post(
+                DIRECT_LLM_URL,
                 headers={"Authorization": f"Bearer {DIRECT_LLM_KEY}"},
-                json={"model": "MiniMax-M3", "messages": messages, "max_tokens": 800}, timeout=20)
+                json={"model": "MiniMax-M3", "messages": messages, "max_tokens": 800},
+                timeout=20,
+            )
             if r.status_code == 200:
-                return r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+                return (
+                    r.json()
+                    .get("choices", [{}])[0]
+                    .get("message", {})
+                    .get("content", "")
+                )
         except Exception as e:
             log("WARN", "direct llm failed", error=str(e))
 
     return "_(LLM indisponível no momento)_"
+
 
 # === Webhook ===
 @app.route("/lark/webhook", methods=["POST"])
@@ -174,6 +218,7 @@ def webhook():
     except Exception as e:
         log("ERR", "webhook failed", error=str(e))
         return jsonify({"code": -1}), 200
+
 
 def handle_message(event):
     msg = event.get("message", {})
@@ -210,7 +255,14 @@ def handle_message(event):
             extra_context = f"\n[arquivo '{fn}' salvo em: {file_path}]"
 
     text_clean = scrub(text)
-    log("INFO", "msg", chat=chat_type[:1], sender=sender, type=msg_type, text=text_clean[:60])
+    log(
+        "INFO",
+        "msg",
+        chat=chat_type[:1],
+        sender=sender,
+        type=msg_type,
+        text=text_clean[:60],
+    )
 
     # Persiste
     store(chat_id, sender, "user", text or msg_type, msg_type, file_path)
@@ -240,15 +292,19 @@ def handle_message(event):
 
     send_text(chat_id, reply)
 
+
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({
-        "status": "ok",
-        "app_id": bool(APP_ID),
-        "pietra_mcp": PIETRA_MCP,
-        "inbox": str(INBOX_DIR),
-        "history_msgs": len(history("test", limit=1)),
-    })
+    return jsonify(
+        {
+            "status": "ok",
+            "app_id": bool(APP_ID),
+            "pietra_mcp": PIETRA_MCP,
+            "inbox": str(INBOX_DIR),
+            "history_msgs": len(history("test", limit=1)),
+        }
+    )
+
 
 if __name__ == "__main__":
     log("INFO", "lark bot v2 starting", port=PORT, pietra=PIETRA_MCP)

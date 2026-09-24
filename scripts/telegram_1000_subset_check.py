@@ -209,9 +209,7 @@ def check_commands() -> list[CheckResult]:
                 title=f"Handler {cmd}",
                 verdict="WORK" if ok else "FAIL",
                 detail=(
-                    "literal+branch OK"
-                    if ok
-                    else f"literal={found} branch={branch}"
+                    "literal+branch OK" if ok else f"literal={found} branch={branch}"
                 ),
             )
         )
@@ -378,9 +376,7 @@ def render_report(summary: dict[str, Any]) -> str:
         "|----------|------|------|",
     ]
     for cat, counts in sorted(summary["by_category"].items()):
-        lines.append(
-            f"| `{cat}` | {counts.get('WORK', 0)} | {counts.get('FAIL', 0)} |"
-        )
+        lines.append(f"| `{cat}` | {counts.get('WORK', 0)} | {counts.get('FAIL', 0)} |")
     lines.extend(
         [
             "",

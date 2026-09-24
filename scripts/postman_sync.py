@@ -28,6 +28,7 @@ HITL: Collection sincronizada auto; DEV escolhe environment/workspace ao executa
 
 Modified by Gustavo Almeida — G8.17.T1 (Wave 47).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -48,11 +49,15 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OPENAPI_URL = "http://localhost:8000/openapi.json"
 DEFAULT_BASE_URL = "https://api.2notasudi.com.br"
 DEFAULT_OUTPUT = ROOT / "infra" / "postman" / "cartorio-api.postman_collection.json"
-CACHE_DIR = Path(os.environ.get("POSTMAN_SYNC_CACHE", str(ROOT / ".cache" / "postman-sync")))
+CACHE_DIR = Path(
+    os.environ.get("POSTMAN_SYNC_CACHE", str(ROOT / ".cache" / "postman-sync"))
+)
 CACHE_TTL_SECONDS = 300
 COMPRESS_THRESHOLD_BYTES = 1024 * 1024
 SUPPORTED_METHODS = {"get", "post", "put", "delete", "patch", "head", "options"}
-POSTMAN_SCHEMA_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+POSTMAN_SCHEMA_URL = (
+    "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+)
 
 # LGPD: patterns que indicam token bearer LITERAL (NUNCA deve aparecer).
 # 1) "Authorization: Bearer abc..." em header ou config
@@ -73,17 +78,24 @@ def _cache_key(url: str) -> str:
     return hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
 
 
-def fetch_openapi(url: str, *, timeout: float = 10.0, use_cache: bool = True) -> dict[str, Any]:
+def fetch_openapi(
+    url: str, *, timeout: float = 10.0, use_cache: bool = True
+) -> dict[str, Any]:
     """Fetch OpenAPI JSON. Honors CACHE_TTL_SECONDS via .cache/postman-sync/."""
     if use_cache:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         cache_file = CACHE_DIR / f"{_cache_key(url)}.json"
-        if cache_file.is_file() and (_now_ts() - int(cache_file.stat().st_mtime)) < CACHE_TTL_SECONDS:
+        if (
+            cache_file.is_file()
+            and (_now_ts() - int(cache_file.stat().st_mtime)) < CACHE_TTL_SECONDS
+        ):
             try:
                 return json.loads(cache_file.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 cache_file.unlink(missing_ok=True)
-    req = urllib.request.Request(url, headers={"User-Agent": "cartorio-postman-sync/1.0"})
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "cartorio-postman-sync/1.0"}
+    )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = resp.read()
     payload = json.loads(data)
@@ -148,7 +160,9 @@ def _path_to_postman(path: str) -> tuple[str, list[str], list[dict[str, Any]]]:
     return "/" + "/".join(segments), segments, variables
 
 
-def _build_request_body(op: dict[str, Any], openapi: dict[str, Any]) -> dict[str, Any] | None:
+def _build_request_body(
+    op: dict[str, Any], openapi: dict[str, Any]
+) -> dict[str, Any] | None:
     """Extract request body from OpenAPI operation, returning Postman body or None."""
     rb = op.get("requestBody")
     if not isinstance(rb, dict):
@@ -194,13 +208,17 @@ def _build_query_params(op: dict[str, Any]) -> list[dict[str, Any]]:
                 "key": name,
                 "value": str(schema.get("example", schema.get("default", ""))),
                 "type": "string",
-                "description": p.get("description", "")[:200] if p.get("description") else "",
+                "description": p.get("description", "")[:200]
+                if p.get("description")
+                else "",
             }
         )
     return out
 
 
-def build_request(path: str, method: str, op: dict[str, Any], openapi: dict[str, Any], base_url: str) -> dict[str, Any]:
+def build_request(
+    path: str, method: str, op: dict[str, Any], openapi: dict[str, Any], base_url: str
+) -> dict[str, Any]:
     """Build a single Postman v2.1 item (folder entry) from an OpenAPI operation."""
     raw_suffix, segments, path_vars = _path_to_postman(path)
     raw_url = f"{base_url.rstrip('/')}{raw_suffix}"
@@ -345,7 +363,9 @@ def _assert_lgpd_safe(collection: dict[str, Any]) -> None:
                     sensitive_values.append((f"auth.apikey[{i}].value", v["value"]))
     for var in collection.get("variable", []) or []:
         if isinstance(var, dict) and isinstance(var.get("value"), str):
-            sensitive_values.append((f"variable[{var.get('key', '?')}].value", var["value"]))
+            sensitive_values.append(
+                (f"variable[{var.get('key', '?')}].value", var["value"])
+            )
     for path, val in _walk_request_headers(collection.get("item", []) or []):
         sensitive_values.append((path, val))
 
@@ -356,7 +376,12 @@ def _assert_lgpd_safe(collection: dict[str, Any]) -> None:
                 f"LGPD VIOLATION: literal Bearer/Token value at {path}: "
                 f"{value[:50]}... Use {{{{bearer_token}}}} variable instead."
             )
-        if "bearer_token" in path and value and not value.startswith("{{") and len(value) > 8:
+        if (
+            "bearer_token" in path
+            and value
+            and not value.startswith("{{")
+            and len(value) > 8
+        ):
             raise RuntimeError(
                 f"LGPD VIOLATION: bearer_token variable has non-template value at {path}"
             )
@@ -380,7 +405,9 @@ def write_collection(
     """Write collection to disk; returns (actual_output_path, size_bytes)."""
     _assert_lgpd_safe(collection)
     output.parent.mkdir(parents=True, exist_ok=True)
-    blob = json.dumps(collection, indent=2 if pretty else None, ensure_ascii=False).encode("utf-8")
+    blob = json.dumps(
+        collection, indent=2 if pretty else None, ensure_ascii=False
+    ).encode("utf-8")
     output.write_bytes(blob)
     actual = _maybe_compress(output, blob)
     return actual, len(blob)
@@ -409,16 +436,43 @@ def main() -> int:
         description="Sync Postman Collection v2.1 a partir de OpenAPI (G8.17.T1)",
     )
     src = parser.add_mutually_exclusive_group()
-    src.add_argument("--openapi-url", default=DEFAULT_OPENAPI_URL, help="URL do /openapi.json (default: localhost:8000)")
-    src.add_argument("--from-app", action="store_true", help="Carrega de app.main (sem network)")
-    src.add_argument("--bypass-network", action="store_true", help="Le arquivo cached (--cached-openapi)")
-    parser.add_argument("--cached-openapi", type=Path, default=ROOT / "backend" / "docs" / "openapi.json",
-                        help="Path do openapi.json cached (usado com --bypass-network)")
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Path do Postman collection JSON")
-    parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="Origin only (sem /api/v1)")
-    parser.add_argument("--no-cache", action="store_true", help="Desabilita cache de fetch")
-    parser.add_argument("--no-compress", action="store_true", help="Nao comprimir mesmo se >1MB")
-    parser.add_argument("--quiet", action="store_true", help="Suprime output nao-essencial")
+    src.add_argument(
+        "--openapi-url",
+        default=DEFAULT_OPENAPI_URL,
+        help="URL do /openapi.json (default: localhost:8000)",
+    )
+    src.add_argument(
+        "--from-app", action="store_true", help="Carrega de app.main (sem network)"
+    )
+    src.add_argument(
+        "--bypass-network",
+        action="store_true",
+        help="Le arquivo cached (--cached-openapi)",
+    )
+    parser.add_argument(
+        "--cached-openapi",
+        type=Path,
+        default=ROOT / "backend" / "docs" / "openapi.json",
+        help="Path do openapi.json cached (usado com --bypass-network)",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT,
+        help="Path do Postman collection JSON",
+    )
+    parser.add_argument(
+        "--base-url", default=DEFAULT_BASE_URL, help="Origin only (sem /api/v1)"
+    )
+    parser.add_argument(
+        "--no-cache", action="store_true", help="Desabilita cache de fetch"
+    )
+    parser.add_argument(
+        "--no-compress", action="store_true", help="Nao comprimir mesmo se >1MB"
+    )
+    parser.add_argument(
+        "--quiet", action="store_true", help="Suprime output nao-essencial"
+    )
     args = parser.parse_args()
 
     try:

@@ -1,4 +1,5 @@
 """list_inboxes.py — Lista inboxes (helper)."""
+
 import os
 
 import httpx

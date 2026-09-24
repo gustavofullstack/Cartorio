@@ -74,7 +74,9 @@ def main() -> int:
     if args.json:
         print(json.dumps(inv, indent=2, ensure_ascii=False))
     else:
-        print(f"Smoke inventory — {inv.get('verdict')} · {inv.get('total_tests')} tests in {inv.get('total_files')} files")
+        print(
+            f"Smoke inventory — {inv.get('verdict')} · {inv.get('total_tests')} tests in {inv.get('total_files')} files"
+        )
         for f in inv.get("files") or []:
             mark = "smoke" if f["smoke_marker"] else "no-mark"
             print(f"  {f['file']}: {f['count']} tests [{mark}]")

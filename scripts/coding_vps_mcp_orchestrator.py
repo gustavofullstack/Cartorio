@@ -40,6 +40,7 @@ Usage:
   MCP stdio:  python scripts/coding_vps_mcp_orchestrator.py mcp
   HTTP:      uvicorn scripts.coding_vps_mcp_orchestrator:http_app --port 8100
 """
+
 from __future__ import annotations
 
 import json
@@ -56,7 +57,9 @@ from typing import Any, Callable
 # ============================================
 # Config
 # ============================================
-SSH_KEY = os.environ.get("SSH_PRIVATE_KEY", os.path.expanduser("~/.ssh/id_ed25519_cartorio"))
+SSH_KEY = os.environ.get(
+    "SSH_PRIVATE_KEY", os.path.expanduser("~/.ssh/id_ed25519_cartorio")
+)
 SSH_HOST = os.environ.get("SSH_TAILSCALE_HOST", "100.99.172.84")
 SSH_USER = "root"
 LITELLM_API_KEY = os.environ.get("LITELLM_API_KEY", "")
@@ -67,8 +70,14 @@ EASYPANEL_PASSWORD = os.environ.get("EASYPANEL_PASSWORD", "")
 
 # Port mapping for coding agents (FastAPI = 8001-8007,8009; Node = 8004,8008)
 AGENT_PORTS = {
-    "crew-ai": 8001, "goose": 8002, "hermes": 8003, "kilo-org_kilocode": 8004,
-    "langgraph": 8005, "openchamber": 8006, "openclaw": 8007, "opencode": 8008,
+    "crew-ai": 8001,
+    "goose": 8002,
+    "hermes": 8003,
+    "kilo-org_kilocode": 8004,
+    "langgraph": 8005,
+    "openchamber": 8006,
+    "openclaw": 8007,
+    "opencode": 8008,
     "openhands": 8009,
 }
 
@@ -81,7 +90,17 @@ LLM_AGENTS = list(AGENT_PORTS.keys())
 # ============================================
 def ssh(cmd: str, timeout: int = 30) -> dict:
     """Run SSH command on VPS. Returns {stdout, stderr, returncode}."""
-    full = ["ssh", "-i", SSH_KEY, "-o", "ConnectTimeout=8", "-o", "BatchMode=yes", f"{SSH_USER}@{SSH_HOST}", cmd]
+    full = [
+        "ssh",
+        "-i",
+        SSH_KEY,
+        "-o",
+        "ConnectTimeout=8",
+        "-o",
+        "BatchMode=yes",
+        f"{SSH_USER}@{SSH_HOST}",
+        cmd,
+    ]
     try:
         r = subprocess.run(full, capture_output=True, text=True, timeout=timeout)
         return {"stdout": r.stdout, "stderr": r.stderr, "returncode": r.returncode}
@@ -100,12 +119,20 @@ def _is_docker_service_url(url: str) -> bool:
     return bool(parsed.hostname and parsed.hostname.startswith("coding-vps_"))
 
 
-def _http_via_vps(url: str, method: str, data: bytes | None, headers: dict | None, timeout: int) -> dict:
+def _http_via_vps(
+    url: str, method: str, data: bytes | None, headers: dict | None, timeout: int
+) -> dict:
     body_text = data.decode() if data is not None else ""
     request_headers = dict(headers or {})
     parsed = urllib.parse.urlparse(url)
-    if parsed.hostname and parsed.hostname.startswith("coding-vps_") and "Host" not in request_headers:
-        request_headers["Host"] = f"localhost:{parsed.port}" if parsed.port else "localhost"
+    if (
+        parsed.hostname
+        and parsed.hostname.startswith("coding-vps_")
+        and "Host" not in request_headers
+    ):
+        request_headers["Host"] = (
+            f"localhost:{parsed.port}" if parsed.port else "localhost"
+        )
     py = (
         "import json, urllib.error, urllib.request\n"
         f"url={json.dumps(url)}\n"
@@ -146,7 +173,9 @@ def http_get(url: str, headers: dict | None = None, timeout: int = 30) -> dict:
         return {"error": True, "message": str(e)}
 
 
-def http_post(url: str, data: dict, headers: dict | None = None, timeout: int = 60) -> dict:
+def http_post(
+    url: str, data: dict, headers: dict | None = None, timeout: int = 60
+) -> dict:
     body = json.dumps(data).encode()
     request_headers = {"Content-Type": "application/json", **(headers or {})}
     if _is_docker_service_url(url):
@@ -168,7 +197,9 @@ def http_post(url: str, data: dict, headers: dict | None = None, timeout: int = 
 # ============================================
 # LLM Tools (3 exposed; chat_with_agent covers all agents)
 # ============================================
-def chat_minimax(prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL) -> dict:
+def chat_minimax(
+    prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL
+) -> dict:
     """Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy (via docker cp + exec)."""
     if not LITELLM_API_KEY:
         return {"error": "LITELLM_API_KEY deve ser injetada pelo secret manager"}
@@ -186,24 +217,42 @@ def chat_minimax(prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL)
     )
     # Write to local tmp, SCP to VPS, docker cp into container, docker exec
     import tempfile
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(py)
         tmp_local = f.name
     tmp_remote = f"/tmp/chat_minimax_{os.getpid()}.py"
     scp = subprocess.run(
-        ["scp", "-i", SSH_KEY, "-o", "BatchMode=yes", tmp_local, f"{SSH_USER}@{SSH_HOST}:{tmp_remote}"],
-        capture_output=True, text=True,
+        [
+            "scp",
+            "-i",
+            SSH_KEY,
+            "-o",
+            "BatchMode=yes",
+            tmp_local,
+            f"{SSH_USER}@{SSH_HOST}:{tmp_remote}",
+        ],
+        capture_output=True,
+        text=True,
     )
     if scp.returncode != 0:
         os.unlink(tmp_local)
         return {"error": "scp failed", "stderr": scp.stderr}
-    cp = ssh(f"docker cp {tmp_remote} $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1):{tmp_remote}", timeout=10)
+    cp = ssh(
+        f"docker cp {tmp_remote} $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1):{tmp_remote}",
+        timeout=10,
+    )
     if cp["returncode"] != 0:
         ssh(f"rm -f {tmp_remote}")
         os.unlink(tmp_local)
         return {"error": "docker cp failed", "stderr": cp["stderr"]}
-    result = ssh(f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1) python3 {tmp_remote}", timeout=60)
-    ssh(f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1) rm -f {tmp_remote} 2>/dev/null")
+    result = ssh(
+        f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1) python3 {tmp_remote}",
+        timeout=60,
+    )
+    ssh(
+        f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_litellm-app | head -1) rm -f {tmp_remote} 2>/dev/null"
+    )
     ssh(f"rm -f {tmp_remote}")
     os.unlink(tmp_local)
     if result["returncode"] == 0:
@@ -217,21 +266,29 @@ def chat_minimax(prompt: str, max_tokens: int = 500, model: str = MINIMAX_MODEL)
     return {"error": result["stderr"], "raw": result["stdout"]}
 
 
-def chat_with_agent(agent: str, prompt: str, max_tokens: int = 500, stack: str = "auto") -> dict:
+def chat_with_agent(
+    agent: str, prompt: str, max_tokens: int = 500, stack: str = "auto"
+) -> dict:
     """Send chat to a specific agent. Stack='main', 'side' or 'auto'.
 
     Agents are slim images without curl — use python3 urllib inside the container
     (node fetch fallback for opencode when python is missing).
     """
     if agent not in AGENT_PORTS:
-        return {"error": f"unknown agent {agent}", "available": list(AGENT_PORTS.keys())}
+        return {
+            "error": f"unknown agent {agent}",
+            "available": list(AGENT_PORTS.keys()),
+        }
     port = AGENT_PORTS[agent]
     # opencode image is Node-only; kilo was re-patched as FastAPI (python) on :8004
     is_node = agent in ("opencode",)
 
     if stack == "auto":
         # Side-stack removed in optim 2026-07-09 (duplicate MiniMax agents).
-        stacks_to_try = [f"coding-vps_apenas_para_auxilio_{agent}", f"coding-vps-agents_{agent}"]
+        stacks_to_try = [
+            f"coding-vps_apenas_para_auxilio_{agent}",
+            f"coding-vps-agents_{agent}",
+        ]
     elif stack == "main":
         stacks_to_try = [f"coding-vps_apenas_para_auxilio_{agent}"]
     else:
@@ -298,8 +355,10 @@ def list_models() -> dict:
     """List LiteLLM models."""
     if not LITELLM_API_KEY:
         return {"error": "LITELLM_API_KEY deve ser injetada pelo secret manager"}
-    r = docker_exec("coding-vps_apenas_para_auxilio_litellm-app",
-                    f"python3 -c \"import urllib.request,json; r=urllib.request.urlopen(urllib.request.Request('http://localhost:4000/v1/models', headers={{'Authorization':'Bearer {LITELLM_API_KEY}'}}), timeout=10); print(r.read().decode())\"")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_litellm-app",
+        f"python3 -c \"import urllib.request,json; r=urllib.request.urlopen(urllib.request.Request('http://localhost:4000/v1/models', headers={{'Authorization':'Bearer {LITELLM_API_KEY}'}}), timeout=10); print(r.read().decode())\"",
+    )
     try:
         return json.loads(r["stdout"])
     except Exception:
@@ -317,7 +376,9 @@ def list_services(stack: str = "all") -> dict:
         flt = "name=coding-vps_apenas_para_auxilio_"
     else:
         flt = "name=coding-vps"
-    r = ssh(f"docker service ls --filter {flt} --format '{{{{.Name}}}}|{{{{.Replicas}}}}|{{{{.Image}}}}|{{{{.Ports}}}}' | sort")
+    r = ssh(
+        f"docker service ls --filter {flt} --format '{{{{.Name}}}}|{{{{.Replicas}}}}|{{{{.Image}}}}|{{{{.Ports}}}}' | sort"
+    )
     services = []
     up = 0
     for line in r["stdout"].strip().split("\n"):
@@ -327,16 +388,55 @@ def list_services(stack: str = "all") -> dict:
         if len(parts) >= 3:
             name, replicas, image = parts[0], parts[1], parts[2]
             ports = parts[3] if len(parts) > 3 else ""
-            ok = "/" in replicas and replicas.split("/")[0] == replicas.split("/")[1] and replicas != "0/0"
+            ok = (
+                "/" in replicas
+                and replicas.split("/")[0] == replicas.split("/")[1]
+                and replicas != "0/0"
+            )
             if ok:
                 up += 1
-            services.append({"name": name, "replicas": replicas, "image": image, "ports": ports, "up": ok})
-    return {"total": len(services), "up": up, "down": len(services) - up, "services": services}
+            services.append(
+                {
+                    "name": name,
+                    "replicas": replicas,
+                    "image": image,
+                    "ports": ports,
+                    "up": ok,
+                }
+            )
+    return {
+        "total": len(services),
+        "up": up,
+        "down": len(services) - up,
+        "services": services,
+    }
 
 
 def health_check_service(service: str) -> dict:
     """Health check a service via Docker network TCP probe."""
-    ports_to_check = [3000, 3001, 3002, 4000, 5432, 6379, 7860, 8000, 8001, 8002, 8003, 8004, 8005, 8006, 8007, 8008, 8009, 8080, 9000, 11235, 18789]
+    ports_to_check = [
+        3000,
+        3001,
+        3002,
+        4000,
+        5432,
+        6379,
+        7860,
+        8000,
+        8001,
+        8002,
+        8003,
+        8004,
+        8005,
+        8006,
+        8007,
+        8008,
+        8009,
+        8080,
+        9000,
+        11235,
+        18789,
+    ]
     open_ports = []
     py = (
         f"import socket\n"
@@ -346,7 +446,9 @@ def health_check_service(service: str) -> dict:
         f"    s=socket.create_connection((host,p),timeout=1); s.close(); print(p)\n"
         f"  except: pass\n"
     )
-    r = docker_exec("coding-vps_apenas_para_auxilio_litellm-app", f'python3 -c "{py}"', timeout=20)
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_litellm-app", f'python3 -c "{py}"', timeout=20
+    )
     for p in r["stdout"].strip().split("\n"):
         if p.strip().isdigit():
             open_ports.append(int(p.strip()))
@@ -380,7 +482,9 @@ def service_info(service: str) -> dict:
 
 def service_tasks(service: str) -> dict:
     """List Docker Swarm tasks for a service."""
-    r = ssh(f"docker service ps {service} --no-trunc --format '{{{{.Name}}}}|{{{{.CurrentState}}}}|{{{{.Error}}}}' 2>&1 | head -50")
+    r = ssh(
+        f"docker service ps {service} --no-trunc --format '{{{{.Name}}}}|{{{{.CurrentState}}}}|{{{{.Error}}}}' 2>&1 | head -50"
+    )
     tasks = []
     for line in r["stdout"].strip().split("\n"):
         if "|" in line:
@@ -391,30 +495,51 @@ def service_tasks(service: str) -> dict:
 
 def docker_stats() -> dict:
     """Current resource usage of all containers."""
-    r = ssh("docker stats --no-stream --format '{{.Name}}|{{.CPUPerc}}|{{.MemPerc}}|{{.MemUsage}}' 2>/dev/null | grep coding-vps | head -100")
+    r = ssh(
+        "docker stats --no-stream --format '{{.Name}}|{{.CPUPerc}}|{{.MemPerc}}|{{.MemUsage}}' 2>/dev/null | grep coding-vps | head -100"
+    )
     stats = []
     for line in r["stdout"].strip().split("\n"):
         if "|" in line:
             parts = line.split("|")
             if len(parts) == 4:
-                stats.append({"name": parts[0], "cpu": parts[1], "mem_pct": parts[2], "mem_usage": parts[3]})
+                stats.append(
+                    {
+                        "name": parts[0],
+                        "cpu": parts[1],
+                        "mem_pct": parts[2],
+                        "mem_usage": parts[3],
+                    }
+                )
     return {"count": len(stats), "stats": stats}
 
 
 def swarm_info() -> dict:
     """Swarm node + manager info."""
-    r = ssh("docker info 2>/dev/null | grep -E 'Swarm|Node|Managers|Workers' | head -10")
+    r = ssh(
+        "docker info 2>/dev/null | grep -E 'Swarm|Node|Managers|Workers' | head -10"
+    )
     return {"raw": r["stdout"]}
 
 
 def node_list() -> dict:
     """List swarm nodes."""
-    r = ssh("docker node ls --format '{{.ID}}|{{.Hostname}}|{{.Status}}|{{.Availability}}|{{.ManagerStatus}}'")
+    r = ssh(
+        "docker node ls --format '{{.ID}}|{{.Hostname}}|{{.Status}}|{{.Availability}}|{{.ManagerStatus}}'"
+    )
     nodes = []
     for line in r["stdout"].strip().split("\n"):
         if "|" in line:
             parts = line.split("|")
-            nodes.append({"id": parts[0], "hostname": parts[1], "status": parts[2], "availability": parts[3], "manager": parts[4] if len(parts) > 4 else ""})
+            nodes.append(
+                {
+                    "id": parts[0],
+                    "hostname": parts[1],
+                    "status": parts[2],
+                    "availability": parts[3],
+                    "manager": parts[4] if len(parts) > 4 else "",
+                }
+            )
     return {"count": len(nodes), "nodes": nodes}
 
 
@@ -431,7 +556,9 @@ def network_list() -> dict:
 
 def volume_list() -> dict:
     """List Docker volumes."""
-    r = ssh("docker volume ls --format '{{.Name}}|{{.Driver}}' | grep coding-vps | head -50")
+    r = ssh(
+        "docker volume ls --format '{{.Name}}|{{.Driver}}' | grep coding-vps | head -50"
+    )
     vols = []
     for line in r["stdout"].strip().split("\n"):
         if "|" in line:
@@ -469,7 +596,9 @@ def deploy_image(service: str, image: str) -> dict:
 
 def env_get(service: str) -> dict:
     """Get env vars of a service (from container inspect)."""
-    r = ssh(f"docker exec $(docker ps -q -f name={service} | head -1) env 2>&1 | grep -v PATH | head -50")
+    r = ssh(
+        f"docker exec $(docker ps -q -f name={service} | head -1) env 2>&1 | grep -v PATH | head -50"
+    )
     envs = []
     for line in r["stdout"].strip().split("\n"):
         if "=" in line:
@@ -482,7 +611,9 @@ def env_get(service: str) -> dict:
 def env_set(service: str, key: str, value: str) -> dict:
     """Add or update an env var on a service."""
     safe_v = value.replace('"', '\\"')
-    r = ssh(f"docker service update --env-add '{key}={safe_v}' {service} 2>&1 | tail -3")
+    r = ssh(
+        f"docker service update --env-add '{key}={safe_v}' {service} 2>&1 | tail -3"
+    )
     return {"service": service, "key": key, "result": r["stdout"]}
 
 
@@ -493,8 +624,16 @@ def ep_login() -> dict:
     """Login to Easypanel, return JWT token."""
     if not EASYPANEL_PASSWORD:
         return {"error": "EASYPANEL_PASSWORD deve ser injetada pelo secret manager"}
-    r = http_post(f"{EASYPANEL_URL}/api/rpc/auth/login",
-                  {"json": {"email": EASYPANEL_USER, "password": EASYPANEL_PASSWORD, "rememberMe": True}})
+    r = http_post(
+        f"{EASYPANEL_URL}/api/rpc/auth/login",
+        {
+            "json": {
+                "email": EASYPANEL_USER,
+                "password": EASYPANEL_PASSWORD,
+                "rememberMe": True,
+            }
+        },
+    )
     return r
 
 
@@ -505,8 +644,15 @@ def ep_list_projects() -> dict:
         return {"error": "login failed", "response": login}
     token = login["json"]["token"]
     body = json.dumps({"json": {}}).encode()
-    req = urllib.request.Request(f"{EASYPANEL_URL}/api/trpc/projects.listProjectsAndServices", data=body, method="POST",
-                                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    req = urllib.request.Request(
+        f"{EASYPANEL_URL}/api/trpc/projects.listProjectsAndServices",
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+    )
     try:
         return json.loads(urllib.request.urlopen(req, timeout=15).read().decode())
     except Exception as e:
@@ -532,9 +678,18 @@ def ep_deploy(project: str, service: str) -> dict:
     if "json" not in login:
         return login
     token = login["json"]["token"]
-    body = json.dumps({"json": {"projectName": project, "serviceName": service}}).encode()
-    req = urllib.request.Request(f"{EASYPANEL_URL}/api/trpc/services.app.deployService", data=body, method="POST",
-                                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    body = json.dumps(
+        {"json": {"projectName": project, "serviceName": service}}
+    ).encode()
+    req = urllib.request.Request(
+        f"{EASYPANEL_URL}/api/trpc/services.app.deployService",
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+    )
     try:
         res = urllib.request.urlopen(req, timeout=30).read().decode()
         return {"status": "deploying", "result": json.loads(res) if res else {}}
@@ -548,13 +703,27 @@ def ep_destroy_service(project: str, service: str, service_type: str = "app") ->
     if "json" not in login:
         return login
     token = login["json"]["token"]
-    body = json.dumps({"json": {"projectName": project, "serviceName": service}}).encode()
+    body = json.dumps(
+        {"json": {"projectName": project, "serviceName": service}}
+    ).encode()
     route = f"services.{service_type}.destroyService"
-    req = urllib.request.Request(f"{EASYPANEL_URL}/api/trpc/{route}", data=body, method="POST",
-                                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    req = urllib.request.Request(
+        f"{EASYPANEL_URL}/api/trpc/{route}",
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+    )
     try:
         res = urllib.request.urlopen(req, timeout=30).read().decode()
-        return {"status": "destroyed", "service": service, "type": service_type, "result": json.loads(res) if res else {}}
+        return {
+            "status": "destroyed",
+            "service": service,
+            "type": service_type,
+            "result": json.loads(res) if res else {},
+        }
     except Exception as e:
         return {"error": str(e)}
 
@@ -565,23 +734,34 @@ def ep_destroy_service(project: str, service: str, service_type: str = "app") ->
 def postgres_query(db: str, sql: str) -> dict:
     """Run SQL on a Postgres DB (langfuse-db, litellm-db, argilla-db, temporal-db, etc)."""
     safe_sql = sql.replace('"', "'")[:2000]
-    r = docker_exec(f"coding-vps_apenas_para_auxilio_{db}", f'psql -U postgres -d postgres -c "{safe_sql}" 2>&1 | head -100')
+    r = docker_exec(
+        f"coding-vps_apenas_para_auxilio_{db}",
+        f'psql -U postgres -d postgres -c "{safe_sql}" 2>&1 | head -100',
+    )
     return {"db": db, "result": r["stdout"]}
 
 
 def postgres_list_tables(db: str) -> dict:
     """List tables in a Postgres DB."""
-    r = docker_exec(f"coding-vps_apenas_para_auxilio_{db}", "psql -U postgres -d postgres -c '\\dt' 2>&1 | head -100")
+    r = docker_exec(
+        f"coding-vps_apenas_para_auxilio_{db}",
+        "psql -U postgres -d postgres -c '\\dt' 2>&1 | head -100",
+    )
     return {"db": db, "tables": r["stdout"]}
 
 
 def _redis_socket_cmd(redis_service: str, *args) -> dict:
     """Send raw RESP command via socket (works on any container with python3)."""
-    py = """
+    py = (
+        """
 import socket
-host = '""" + redis_service + """'
+host = '"""
+        + redis_service
+        + """'
 port = 6379
-args = """ + str(list(args)) + """
+args = """
+        + str(list(args))
+        + """
 # RESP protocol: array of bulk strings
 cmd = f'*{len(args)}\\r\\n' + ''.join(f'${len(a)}\\r\\n{a}\\r\\n' for a in args)
 s = socket.create_connection((host, port), timeout=5)
@@ -595,15 +775,21 @@ data = s.recv(4096).decode(errors='replace')
 s.close()
 print(data)
 """
-    return docker_exec(f"coding-vps_apenas_para_auxilio_{redis_service}", f"python3 -c \"{py.replace(chr(34), chr(39))}\"")
+    )
+    return docker_exec(
+        f"coding-vps_apenas_para_auxilio_{redis_service}",
+        f'python3 -c "{py.replace(chr(34), chr(39))}"',
+    )
 
 
 def _redis_cmd(redis_service: str, *args) -> str:
     """Run redis-cli with auto-auth (uses $REDIS_PASSWORD env)."""
     arg_str = " ".join(f"'{a}'" for a in args)
     # Use sh -c to expand $REDIS_PASSWORD, then pipe into redis-cli
-    cmd = f'sh -c \'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning {arg_str} 2>&1\''
-    return docker_exec(f"coding-vps_apenas_para_auxilio_{redis_service}", cmd)["stdout"].strip()
+    cmd = f"sh -c 'redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning {arg_str} 2>&1'"
+    return docker_exec(f"coding-vps_apenas_para_auxilio_{redis_service}", cmd)[
+        "stdout"
+    ].strip()
 
 
 def redis_ping(redis_service: str) -> dict:
@@ -627,8 +813,15 @@ def redis_set(redis_service: str, key: str, value: str) -> dict:
 
 def redis_keys(redis_service: str, pattern: str = "*") -> dict:
     """List Redis keys matching pattern."""
-    r = docker_exec(f"coding-vps_apenas_para_auxilio_{redis_service}", f"redis-cli keys '{pattern}' 2>&1 | head -100")
-    return {"service": redis_service, "pattern": pattern, "keys": r["stdout"].strip().split("\n")}
+    r = docker_exec(
+        f"coding-vps_apenas_para_auxilio_{redis_service}",
+        f"redis-cli keys '{pattern}' 2>&1 | head -100",
+    )
+    return {
+        "service": redis_service,
+        "pattern": pattern,
+        "keys": r["stdout"].strip().split("\n"),
+    }
 
 
 def redis_cmd(redis_service: str, command: str) -> dict:
@@ -639,13 +832,18 @@ def redis_cmd(redis_service: str, command: str) -> dict:
 
 def clickhouse_query(sql: str) -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with clickhouse-client."""
-    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_langfuse-clickhouse cmd='clickhouse-client --query \"...\""}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": 'use exec_in_container service=coding-vps_apenas_para_auxilio_langfuse-clickhouse cmd=\'clickhouse-client --query "..."',
+    }
 
 
 def elasticsearch_search(index: str, query: str) -> dict:
     """Search Argilla Elasticsearch."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_argilla-elasticsearch",
-                    f"curl -s 'http://localhost:9200/{index}/_search?q={urllib.parse.quote(query)}&size=5' 2>&1 | head -50")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_argilla-elasticsearch",
+        f"curl -s 'http://localhost:9200/{index}/_search?q={urllib.parse.quote(query)}&size=5' 2>&1 | head -50",
+    )
     try:
         return {"index": index, "result": json.loads(r["stdout"])}
     except Exception:
@@ -654,12 +852,18 @@ def elasticsearch_search(index: str, query: str) -> dict:
 
 def mongo_query(db: str, collection: str, query: dict) -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with mongosh."""
-    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container with mongosh --eval"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use exec_in_container with mongosh --eval",
+    }
 
 
 def minio_list(bucket: str = "langfuse") -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with mc ls."""
-    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_langfuse-minio cmd='mc ls local/<bucket>'"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_langfuse-minio cmd='mc ls local/<bucket>'",
+    }
 
 
 # ============================================
@@ -667,15 +871,19 @@ def minio_list(bucket: str = "langfuse") -> dict:
 # ============================================
 def temporal_list_workflows() -> dict:
     """List Temporal workflows."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_temporal-admin-tools",
-                    "temporal workflow list --limit 20 2>&1 | head -40")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_temporal-admin-tools",
+        "temporal workflow list --limit 20 2>&1 | head -40",
+    )
     return {"workflows": r["stdout"]}
 
 
 def temporal_describe(workflow_id: str, run_id: str) -> dict:
     """Describe a Temporal workflow execution."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_temporal-admin-tools",
-                    f"temporal workflow describe --workflow-id {workflow_id} --run-id {run_id} 2>&1 | head -40")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_temporal-admin-tools",
+        f"temporal workflow describe --workflow-id {workflow_id} --run-id {run_id} 2>&1 | head -40",
+    )
     return {"workflow_id": workflow_id, "info": r["stdout"]}
 
 
@@ -686,8 +894,14 @@ def paperclip_list_tasks() -> dict:
 
 def langflow_run(flow_id: str, inputs: dict) -> dict:
     """Run a LangFlow flow."""
-    return http_post(f"http://coding-vps_apenas_para_auxilio_langflow:7860/api/v1/run/{flow_id}",
-                      {"input_value": json.dumps(inputs), "output_type": "chat", "input_type": "chat"})
+    return http_post(
+        f"http://coding-vps_apenas_para_auxilio_langflow:7860/api/v1/run/{flow_id}",
+        {
+            "input_value": json.dumps(inputs),
+            "output_type": "chat",
+            "input_type": "chat",
+        },
+    )
 
 
 # ============================================
@@ -695,34 +909,46 @@ def langflow_run(flow_id: str, inputs: dict) -> dict:
 # ============================================
 def gerrit_list_changes(query: str = "status:open") -> dict:
     """List Gerrit code review changes."""
-    r = ssh(f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_gerrit | head -1) curl -s 'http://localhost:8080/a/changes/?q={urllib.parse.quote(query)}&O=1' 2>&1 | head -50")
+    r = ssh(
+        f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_gerrit | head -1) curl -s 'http://localhost:8080/a/changes/?q={urllib.parse.quote(query)}&O=1' 2>&1 | head -50"
+    )
     return {"query": query, "result": r["stdout"]}
 
 
 def gerrit_get_change(change_id: str) -> dict:
     """Get Gerrit change details."""
-    r = ssh(f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_gerrit | head -1) curl -s 'http://localhost:8080/a/changes/{change_id}?O=3' 2>&1 | head -50")
+    r = ssh(
+        f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_gerrit | head -1) curl -s 'http://localhost:8080/a/changes/{change_id}?O=3' 2>&1 | head -50"
+    )
     return {"change_id": change_id, "result": r["stdout"]}
 
 
 def sonarqube_projects() -> dict:
     """List SonarQube projects."""
-    return http_get("http://coding-vps_apenas_para_auxilio_sonarqube:9000/api/projects/search")
+    return http_get(
+        "http://coding-vps_apenas_para_auxilio_sonarqube:9000/api/projects/search"
+    )
 
 
 def sonarqube_issues(project_key: str) -> dict:
     """Get SonarQube issues for a project."""
-    return http_get(f"http://coding-vps_apenas_para_auxilio_sonarqube:9000/api/issues/search?componentKeys={project_key}&ps=20")
+    return http_get(
+        f"http://coding-vps_apenas_para_auxilio_sonarqube:9000/api/issues/search?componentKeys={project_key}&ps=20"
+    )
 
 
 def sourcegraph_search(query: str) -> dict:
     """Search code via Sourcegraph."""
-    return http_get(f"http://coding-vps_apenas_para_auxilio_sourcegraph:7080/.api/search/stream?q={urllib.parse.quote(query)}")
+    return http_get(
+        f"http://coding-vps_apenas_para_auxilio_sourcegraph:7080/.api/search/stream?q={urllib.parse.quote(query)}"
+    )
 
 
 def argilla_datasets() -> dict:
     """List Argilla datasets for LLM feedback."""
-    return http_get("http://coding-vps_apenas_para_auxilio_argilla-web:6900/api/v1/datasets")
+    return http_get(
+        "http://coding-vps_apenas_para_auxilio_argilla-web:6900/api/v1/datasets"
+    )
 
 
 # ============================================
@@ -731,43 +957,55 @@ def argilla_datasets() -> dict:
 def centrifugo_publish(channel: str, data: dict) -> dict:
     """Publish a message to a Centrifugo WebSocket channel."""
     body = json.dumps({"channel": channel, "data": data}).replace('"', '\\"')
-    r = docker_exec("coding-vps_apenas_para_auxilio_centrifugo",
-                    f"curl -s -X POST http://localhost:8000/api/v1/publish -H 'Content-Type: application/json' -H \"X-API-Key: \\$CENTRIFUGO_API_KEY\" -d '{body}' 2>&1")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_centrifugo",
+        f"curl -s -X POST http://localhost:8000/api/v1/publish -H 'Content-Type: application/json' -H \"X-API-Key: \\$CENTRIFUGO_API_KEY\" -d '{body}' 2>&1",
+    )
     return {"channel": channel, "result": r["stdout"]}
 
 
 def centrifugo_channels(pattern: str = "*") -> dict:
     """List Centrifugo channels."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_centrifugo",
-                    f"curl -s -X POST http://localhost:8000/api/v1/channels -H 'Content-Type: application/json' -H \"X-API-Key: \\$CENTRIFUGO_API_KEY\" -d '{{\"pattern\":\"{pattern}\"}}' 2>&1")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_centrifugo",
+        f'curl -s -X POST http://localhost:8000/api/v1/channels -H \'Content-Type: application/json\' -H "X-API-Key: \\$CENTRIFUGO_API_KEY" -d \'{{"pattern":"{pattern}"}}\' 2>&1',
+    )
     return {"pattern": pattern, "channels": r["stdout"]}
 
 
 def centrifugo_history(channel: str, limit: int = 10) -> dict:
     """Get Centrifugo channel history."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_centrifugo",
-                    f"curl -s -X POST http://localhost:8000/api/v1/history -H 'Content-Type: application/json' -H \"X-API-Key: \\$CENTRIFUGO_API_KEY\" -d '{{\"channel\":\"{channel}\",\"limit\":{limit}}}' 2>&1")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_centrifugo",
+        f'curl -s -X POST http://localhost:8000/api/v1/history -H \'Content-Type: application/json\' -H "X-API-Key: \\$CENTRIFUGO_API_KEY" -d \'{{"channel":"{channel}","limit":{limit}}}\' 2>&1',
+    )
     return {"channel": channel, "history": r["stdout"]}
 
 
 def mirotalk_create_room() -> dict:
     """Create a MiroTalk video conference room."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_mirotalk",
-                    "curl -s -X POST http://localhost:3000/api/v1/meeting 2>&1 | head -10")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_mirotalk",
+        "curl -s -X POST http://localhost:3000/api/v1/meeting 2>&1 | head -10",
+    )
     return {"room": r["stdout"]}
 
 
 def snapdrop_peers() -> dict:
     """List active Snapdrop peers (P2P file sharing)."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_snapdrop",
-                    "curl -s http://localhost:80/server/peers 2>&1 | head -20")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_snapdrop",
+        "curl -s http://localhost:80/server/peers 2>&1 | head -20",
+    )
     return {"peers": r["stdout"]}
 
 
 def filepizza_create() -> dict:
     """Create a FilePizza P2P file transfer room (WebRTC)."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_filepizza",
-                    "curl -s -X POST http://localhost:80/api/create 2>&1 | head -10")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_filepizza",
+        "curl -s -X POST http://localhost:80/api/create 2>&1 | head -10",
+    )
     return {"room": r["stdout"]}
 
 
@@ -776,26 +1014,43 @@ def filepizza_create() -> dict:
 # ============================================
 def request_basket_create(name: str, forward_url: str = "") -> dict:
     """Create a request-baskets bucket for webhook inspection."""
-    body = json.dumps({"forward_url": forward_url, "insecure_tls": False, "expand_path": True, "capacity": 250})
-    r = ssh(f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_request-baskets | head -1) curl -s -X POST http://localhost:80/api/baskets/{name} -H 'Content-Type: application/json' -d '{body}' 2>&1")
+    body = json.dumps(
+        {
+            "forward_url": forward_url,
+            "insecure_tls": False,
+            "expand_path": True,
+            "capacity": 250,
+        }
+    )
+    r = ssh(
+        f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_request-baskets | head -1) curl -s -X POST http://localhost:80/api/baskets/{name} -H 'Content-Type: application/json' -d '{body}' 2>&1"
+    )
     return {"basket": name, "result": r["stdout"]}
 
 
 def request_basket_list() -> dict:
     """List all request-baskets."""
-    r = ssh("docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_request-baskets | head -1) curl -s http://localhost:80/api/baskets 2>&1 | head -30")
+    r = ssh(
+        "docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_request-baskets | head -1) curl -s http://localhost:80/api/baskets 2>&1 | head -30"
+    )
     return {"baskets": r["stdout"]}
 
 
 def request_basket_get(name: str) -> dict:
     """Get requests captured by a basket."""
-    r = ssh(f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_request-baskets | head -1) curl -s 'http://localhost:80/api/baskets/{name}/requests' 2>&1 | head -50")
+    r = ssh(
+        f"docker exec $(docker ps -q -f name=coding-vps_apenas_para_auxilio_request-baskets | head -1) curl -s 'http://localhost:80/api/baskets/{name}/requests' 2>&1 | head -50"
+    )
     return {"basket": name, "requests": r["stdout"]}
 
 
 def webhook_send(url: str, method: str = "POST", payload: dict = None) -> dict:
     """Send a webhook to a URL."""
-    return http_post(url, payload or {}, timeout=15) if method == "POST" else http_get(url, timeout=15)
+    return (
+        http_post(url, payload or {}, timeout=15)
+        if method == "POST"
+        else http_get(url, timeout=15)
+    )
 
 
 def service_http_get(url: str) -> dict:
@@ -818,25 +1073,34 @@ def langflow_list_flows() -> dict:
 
 def anythingllm_query(workspace: str, query: str) -> dict:
     """Query AnythingLLM workspace."""
-    return http_post(f"http://coding-vps_apenas_para_auxilio_anything-llm:3001/api/v1/workspace/{workspace}/chat",
-                     {"message": query, "mode": "chat"})
+    return http_post(
+        f"http://coding-vps_apenas_para_auxilio_anything-llm:3001/api/v1/workspace/{workspace}/chat",
+        {"message": query, "mode": "chat"},
+    )
 
 
 def argilla_search(dataset: str, query: str) -> dict:
     """Search Argilla dataset."""
-    r = docker_exec("coding-vps_apenas_para_auxilio_argilla-web",
-                    f"python3 -c \"import requests; r=requests.get('http://localhost:6900/api/v1/datasets/{dataset}/records', params={{'query':'{query}'}}); print(r.text[:500])\" 2>&1")
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_argilla-web",
+        f"python3 -c \"import requests; r=requests.get('http://localhost:6900/api/v1/datasets/{dataset}/records', params={{'query':'{query}'}}); print(r.text[:500])\" 2>&1",
+    )
     return {"dataset": dataset, "result": r["stdout"]}
 
 
 def langfuse_traces(limit: int = 10) -> dict:
     """Get recent LangFuse traces (LLM observability)."""
-    return http_get(f"http://coding-vps_apenas_para_auxilio_langfuse-web:3000/api/public/traces?limit={limit}")
+    return http_get(
+        f"http://coding-vps_apenas_para_auxilio_langfuse-web:3000/api/public/traces?limit={limit}"
+    )
 
 
 def evoai_generate(prompt: str) -> dict:
     """Call Evo AI generation endpoint."""
-    return http_post("http://coding-vps_apenas_para_auxilio_evo-ai-api:3000/api/v1/generate", {"prompt": prompt})
+    return http_post(
+        "http://coding-vps_apenas_para_auxilio_evo-ai-api:3000/api/v1/generate",
+        {"prompt": prompt},
+    )
 
 
 # ============================================
@@ -844,25 +1108,38 @@ def evoai_generate(prompt: str) -> dict:
 # ============================================
 def firecrawl_scrape(url: str) -> dict:
     """Scrape a URL via Firecrawl."""
-    return http_post("http://coding-vps_apenas_para_auxilio_firecrawl:3002/v1/scrape",
-                     {"url": url, "formats": ["markdown"]}, timeout=60)
+    return http_post(
+        "http://coding-vps_apenas_para_auxilio_firecrawl:3002/v1/scrape",
+        {"url": url, "formats": ["markdown"]},
+        timeout=60,
+    )
 
 
 def firecrawl_crawl(url: str, limit: int = 5) -> dict:
     """Crawl a website via Firecrawl."""
-    return http_post("http://coding-vps_apenas_para_auxilio_firecrawl:3002/v1/crawl",
-                     {"url": url, "limit": limit}, timeout=120)
+    return http_post(
+        "http://coding-vps_apenas_para_auxilio_firecrawl:3002/v1/crawl",
+        {"url": url, "limit": limit},
+        timeout=120,
+    )
 
 
 def crwal4ai_scrape(url: str) -> dict:
     """Scrape via crwal4ai (LLM-friendly markdown)."""
-    return http_post(f"http://coding-vps_apenas_para_auxilio_crwal4ai:11235/crawl", {"url": url}, timeout=60)
+    return http_post(
+        f"http://coding-vps_apenas_para_auxilio_crwal4ai:11235/crawl",
+        {"url": url},
+        timeout=60,
+    )
 
 
 def flaresolverr_solve(url: str) -> dict:
     """Bypass Cloudflare via FlareSolverr."""
-    return http_post("http://coding-vps_apenas_para_auxilio_flaresolverr:8191/v1",
-                     {"cmd": "request.get", "url": url, "maxTimeout": 60000}, timeout=90)
+    return http_post(
+        "http://coding-vps_apenas_para_auxilio_flaresolverr:8191/v1",
+        {"cmd": "request.get", "url": url, "maxTimeout": 60000},
+        timeout=90,
+    )
 
 
 # ============================================
@@ -870,27 +1147,42 @@ def flaresolverr_solve(url: str) -> dict:
 # ============================================
 def goclaw_list_agents() -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with curl on goclaw:8080."""
-    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_goclaw cmd='curl -s http://localhost:8080/api/agents'"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_goclaw cmd='curl -s http://localhost:8080/api/agents'",
+    }
 
 
 def shm_incidents() -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use status_page_get or exec_in_container on shm:8080."""
-    return {"error": "removed by squad1 dedupe", "migration": "use status_page_get or exec_in_container service=coding-vps_apenas_para_auxilio_shm cmd='curl -s http://localhost:8080/incidents'"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use status_page_get or exec_in_container service=coding-vps_apenas_para_auxilio_shm cmd='curl -s http://localhost:8080/incidents'",
+    }
 
 
 def boltdiy_create(prompt: str) -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use opencode_run or chat_with_agent(opencode)."""
-    return {"error": "removed by squad1 dedupe", "migration": "use opencode_run or chat_opencode for code generation tasks"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use opencode_run or chat_opencode for code generation tasks",
+    }
 
 
 def chartdb_export(db_url: str) -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Schema introspection handled by postgres_list_tables + sqlacodegen."""
-    return {"error": "removed by squad1 dedupe", "migration": "use postgres_list_tables for table inventory; for visualization use sqlacodegen offline"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use postgres_list_tables for table inventory; for visualization use sqlacodegen offline",
+    }
 
 
 def opennotebook_create(title: str, content: str) -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use Notion CLI (ntn) instead."""
-    return {"error": "removed by squad1 dedupe", "migration": "use ntn create-page with workspace=cartorio"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use ntn create-page with workspace=cartorio",
+    }
 
 
 def opencode_run(prompt: str) -> dict:
@@ -903,12 +1195,17 @@ def opencode_run(prompt: str) -> dict:
 # ============================================
 def prometheus_query(query: str) -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use prometheus_metrics or exec_in_container on prometheus:9090."""
-    return {"error": "removed by squad1 dedupe", "migration": "use prometheus_metrics to list names, or exec_in_container service=coding-vps_apenas_para_auxilio_prometheus cmd='wget -qO- http://localhost:9090/api/v1/query?query=...'"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use prometheus_metrics to list names, or exec_in_container service=coding-vps_apenas_para_auxilio_prometheus cmd='wget -qO- http://localhost:9090/api/v1/query?query=...'",
+    }
 
 
 def sentry_list_issues(project: str) -> dict:
     """List Sentry issues (if available)."""
-    return http_get(f"http://coding-vps_apenas_para_auxilio_sentry:9000/api/0/projects/{project}/issues/")
+    return http_get(
+        f"http://coding-vps_apenas_para_auxilio_sentry:9000/api/0/projects/{project}/issues/"
+    )
 
 
 def status_page_get() -> dict:
@@ -926,24 +1223,38 @@ def prometheus_metrics(job: str = "coding-vps") -> dict:
     )
 
 
-def sentry_capture_event(message: str, level: str = "info", tags: str = "coding-vps") -> dict:
+def sentry_capture_event(
+    message: str, level: str = "info", tags: str = "coding-vps"
+) -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use Sentry SDK directly via exec_in_container."""
-    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container with sentry-cli send-event or Python sdk"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use exec_in_container with sentry-cli send-event or Python sdk",
+    }
 
 
 def grafana_dashboards() -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use exec_in_container with curl on grafana:3000."""
-    return {"error": "removed by squad1 dedupe", "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_grafana cmd='curl -s http://localhost:3000/api/search?type=dash-db'"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use exec_in_container service=coding-vps_apenas_para_auxilio_grafana cmd='curl -s http://localhost:3000/api/search?type=dash-db'",
+    }
 
 
 def letsencrypt_list() -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use file_read on /letsencrypt/acme.json."""
-    return {"error": "removed by squad1 dedupe", "migration": "use file_read path=/letsencrypt/acme.json (or run 'docker exec traefik cat /acme.json' via exec_in_container)"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use file_read path=/letsencrypt/acme.json (or run 'docker exec traefik cat /acme.json' via exec_in_container)",
+    }
 
 
 def hostinger_api_status() -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use docker_stats + swarm_info for VPS health."""
-    return {"error": "removed by squad1 dedupe", "migration": "use docker_stats + swarm_info + node_list for in-VPS resource telemetry"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use docker_stats + swarm_info + node_list for in-VPS resource telemetry",
+    }
 
 
 # ============================================
@@ -951,18 +1262,26 @@ def hostinger_api_status() -> dict:
 # ============================================
 def tailscale_status() -> dict:
     """Get Tailscale mesh network status (peers, IPs, online state)."""
-    r = ssh("tailscale status --json 2>/dev/null | head -200 || echo 'TAILSCALE_UNAVAILABLE'")
+    r = ssh(
+        "tailscale status --json 2>/dev/null | head -200 || echo 'TAILSCALE_UNAVAILABLE'"
+    )
     return {"raw": r["stdout"][:3000], "stderr": r["stderr"][:300]}
 
 
 def tailscale_ping(target: str = "100.99.172.84") -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use tailscale_status or exec_in_container."""
-    return {"error": "removed by squad1 dedupe", "migration": "use tailscale_status for peers/online info, or exec_in_container for ICMP probes"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use tailscale_status for peers/online info, or exec_in_container for ICMP probes",
+    }
 
 
 def tailscale_list_devices() -> dict:
     """[DEPRECATED — Squad 1 2026-07-09] Use tailscale_status (already returns devices)."""
-    return {"error": "removed by squad1 dedupe", "migration": "use tailscale_status — already returns peer list including devices"}
+    return {
+        "error": "removed by squad1 dedupe",
+        "migration": "use tailscale_status — already returns peer list including devices",
+    }
 
 
 # ============================================
@@ -970,19 +1289,25 @@ def tailscale_list_devices() -> dict:
 # ============================================
 def exec_in_container(service: str, cmd: str) -> dict:
     """Execute arbitrary command in a running container."""
-    r = ssh(f"docker exec $(docker ps -q -f name={service} | head -1) {cmd} 2>&1 | head -50")
+    r = ssh(
+        f"docker exec $(docker ps -q -f name={service} | head -1) {cmd} 2>&1 | head -50"
+    )
     return {"service": service, "cmd": cmd, "result": r["stdout"]}
 
 
 def backup_volume(volume: str, dest: str) -> dict:
     """Backup a Docker volume to a tar.gz file."""
-    r = ssh(f"docker run --rm -v {volume}:/data -v /tmp:/backup alpine tar czf /backup/{volume}-{dest}.tar.gz /data 2>&1 | tail -3")
+    r = ssh(
+        f"docker run --rm -v {volume}:/data -v /tmp:/backup alpine tar czf /backup/{volume}-{dest}.tar.gz /data 2>&1 | tail -3"
+    )
     return {"volume": volume, "dest": dest, "result": r["stdout"]}
 
 
 def restore_volume(tar_file: str, volume: str) -> dict:
     """Restore a tar.gz to a Docker volume."""
-    r = ssh(f"docker run --rm -v {volume}:/data -v /tmp:/backup alpine sh -c 'cd /data && tar xzf /backup/{tar_file}' 2>&1 | tail -3")
+    r = ssh(
+        f"docker run --rm -v {volume}:/data -v /tmp:/backup alpine sh -c 'cd /data && tar xzf /backup/{tar_file}' 2>&1 | tail -3"
+    )
     return {"tar": tar_file, "volume": volume, "result": r["stdout"]}
 
 
@@ -994,7 +1319,9 @@ def image_pull(image: str) -> dict:
 
 def image_list() -> dict:
     """List Docker images on VPS."""
-    r = ssh("docker images --format '{{.Repository}}|{{.Tag}}|{{.Size}}' | grep -E 'coding-vps|easypanel|sonarqube|langfuse|argilla|crwal4ai' | head -50")
+    r = ssh(
+        "docker images --format '{{.Repository}}|{{.Tag}}|{{.Size}}' | grep -E 'coding-vps|easypanel|sonarqube|langfuse|argilla|crwal4ai' | head -50"
+    )
     images = []
     for line in r["stdout"].strip().split("\n"):
         if "|" in line:
@@ -1003,7 +1330,9 @@ def image_list() -> dict:
     return {"count": len(images), "images": images}
 
 
-def swarm_service_create(name: str, image: str, env: dict = None, port: int = 0) -> dict:
+def swarm_service_create(
+    name: str, image: str, env: dict = None, port: int = 0
+) -> dict:
     """Create a new Docker Swarm service."""
     env_args = " ".join([f"--env {k}='{v}'" for k, v in (env or {}).items()])
     port_args = f"--publish mode=host,published={port},target={port}" if port else ""
@@ -1048,7 +1377,9 @@ def port_scan(host: str, ports: list = None) -> dict:
         f"    s=socket.create_connection((host,p),timeout=1); s.close(); print(f'{{p}} OPEN')\n"
         f"  except: pass\n"
     )
-    r = docker_exec("coding-vps_apenas_para_auxilio_litellm-app", f'python3 -c "{py}"', timeout=20)
+    r = docker_exec(
+        "coding-vps_apenas_para_auxilio_litellm-app", f'python3 -c "{py}"', timeout=20
+    )
     return {"host": host, "result": r["stdout"]}
 
 
@@ -1075,95 +1406,315 @@ def secret_set(name: str, value: str) -> dict:
 # ============================================
 def _register_llm() -> dict:
     return {
-        "chat_minimax": {"func": chat_minimax, "args": ["prompt", "max_tokens?", "model?"], "category": "llm", "desc": "Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy"},
-        "chat_with_agent": {"func": chat_with_agent, "args": ["agent", "prompt", "max_tokens?", "stack?"], "category": "llm", "desc": "Send chat to any registered coding agent"},
-        "list_models": {"func": list_models, "args": [], "category": "llm", "desc": "List all LiteLLM models available"},
+        "chat_minimax": {
+            "func": chat_minimax,
+            "args": ["prompt", "max_tokens?", "model?"],
+            "category": "llm",
+            "desc": "Chat with MiniMax-M3 XMax Thinking via LiteLLM proxy",
+        },
+        "chat_with_agent": {
+            "func": chat_with_agent,
+            "args": ["agent", "prompt", "max_tokens?", "stack?"],
+            "category": "llm",
+            "desc": "Send chat to any registered coding agent",
+        },
+        "list_models": {
+            "func": list_models,
+            "args": [],
+            "category": "llm",
+            "desc": "List all LiteLLM models available",
+        },
     }
 
 
 def _register_status() -> dict:
     return {
-        "list_services": {"func": lambda stack="all": list_services(stack), "args": ["stack?"], "category": "status", "desc": "List all coding-vps services (main/side/all)"},
-        "health_check_service": {"func": health_check_service, "args": ["service"], "category": "status", "desc": "TCP probe open ports of a service"},
-        "health_check_all": {"func": health_check_all, "args": ["stack?"], "category": "status", "desc": "Bulk health summary (list_services wrapper; no per-service TCP)"},
-        "service_info": {"func": service_info, "args": ["service"], "category": "status", "desc": "Get full Docker service spec"},
-        "service_tasks": {"func": service_tasks, "args": ["service"], "category": "status", "desc": "List Docker Swarm tasks for a service"},
-        "docker_stats": {"func": docker_stats, "args": [], "category": "status", "desc": "CPU/Mem usage of all containers"},
-        "swarm_info": {"func": swarm_info, "args": [], "category": "status", "desc": "Swarm manager/node info"},
-        "node_list": {"func": node_list, "args": [], "category": "status", "desc": "List Docker swarm nodes"},
-        "network_list": {"func": network_list, "args": [], "category": "status", "desc": "List Docker networks"},
-        "volume_list": {"func": volume_list, "args": [], "category": "status", "desc": "List coding-vps volumes"},
+        "list_services": {
+            "func": lambda stack="all": list_services(stack),
+            "args": ["stack?"],
+            "category": "status",
+            "desc": "List all coding-vps services (main/side/all)",
+        },
+        "health_check_service": {
+            "func": health_check_service,
+            "args": ["service"],
+            "category": "status",
+            "desc": "TCP probe open ports of a service",
+        },
+        "health_check_all": {
+            "func": health_check_all,
+            "args": ["stack?"],
+            "category": "status",
+            "desc": "Bulk health summary (list_services wrapper; no per-service TCP)",
+        },
+        "service_info": {
+            "func": service_info,
+            "args": ["service"],
+            "category": "status",
+            "desc": "Get full Docker service spec",
+        },
+        "service_tasks": {
+            "func": service_tasks,
+            "args": ["service"],
+            "category": "status",
+            "desc": "List Docker Swarm tasks for a service",
+        },
+        "docker_stats": {
+            "func": docker_stats,
+            "args": [],
+            "category": "status",
+            "desc": "CPU/Mem usage of all containers",
+        },
+        "swarm_info": {
+            "func": swarm_info,
+            "args": [],
+            "category": "status",
+            "desc": "Swarm manager/node info",
+        },
+        "node_list": {
+            "func": node_list,
+            "args": [],
+            "category": "status",
+            "desc": "List Docker swarm nodes",
+        },
+        "network_list": {
+            "func": network_list,
+            "args": [],
+            "category": "status",
+            "desc": "List Docker networks",
+        },
+        "volume_list": {
+            "func": volume_list,
+            "args": [],
+            "category": "status",
+            "desc": "List coding-vps volumes",
+        },
     }
 
 
 def _register_docker() -> dict:
     return {
-        "service_logs": {"func": service_logs, "args": ["service", "tail?"], "category": "docker", "desc": "Get last N log lines from a service"},
-        "restart_service": {"func": restart_service, "args": ["service"], "category": "docker", "desc": "Force-restart a service"},
-        "scale_service": {"func": scale_service, "args": ["service", "replicas"], "category": "docker", "desc": "Scale service to N replicas"},
-        "deploy_image": {"func": deploy_image, "args": ["service", "image"], "category": "docker", "desc": "Rolling update a service to new image"},
-        "env_get": {"func": env_get, "args": ["service"], "category": "docker", "desc": "Get all env vars of a running container"},
-        "env_set": {"func": env_set, "args": ["service", "key", "value"], "category": "docker", "desc": "Add or update an env var"},
+        "service_logs": {
+            "func": service_logs,
+            "args": ["service", "tail?"],
+            "category": "docker",
+            "desc": "Get last N log lines from a service",
+        },
+        "restart_service": {
+            "func": restart_service,
+            "args": ["service"],
+            "category": "docker",
+            "desc": "Force-restart a service",
+        },
+        "scale_service": {
+            "func": scale_service,
+            "args": ["service", "replicas"],
+            "category": "docker",
+            "desc": "Scale service to N replicas",
+        },
+        "deploy_image": {
+            "func": deploy_image,
+            "args": ["service", "image"],
+            "category": "docker",
+            "desc": "Rolling update a service to new image",
+        },
+        "env_get": {
+            "func": env_get,
+            "args": ["service"],
+            "category": "docker",
+            "desc": "Get all env vars of a running container",
+        },
+        "env_set": {
+            "func": env_set,
+            "args": ["service", "key", "value"],
+            "category": "docker",
+            "desc": "Add or update an env var",
+        },
     }
 
 
 def _register_easypanel() -> dict:
     return {
-        "ep_login": {"func": ep_login, "args": [], "category": "easypanel", "desc": "Login to Easypanel API, return JWT"},
-        "ep_list_projects": {"func": ep_list_projects, "args": [], "category": "easypanel", "desc": "List all Easypanel projects"},
-        "ep_list_services": {"func": ep_list_services, "args": ["project?"], "category": "easypanel", "desc": "List services in an Easypanel project"},
-        "ep_deploy": {"func": ep_deploy, "args": ["project", "service"], "category": "easypanel", "desc": "Trigger Easypanel deploy of a service"},
-        "ep_destroy_service": {"func": ep_destroy_service, "args": ["project", "service", "service_type?"], "category": "easypanel", "desc": "Destroy/Delete a service in Easypanel"},
+        "ep_login": {
+            "func": ep_login,
+            "args": [],
+            "category": "easypanel",
+            "desc": "Login to Easypanel API, return JWT",
+        },
+        "ep_list_projects": {
+            "func": ep_list_projects,
+            "args": [],
+            "category": "easypanel",
+            "desc": "List all Easypanel projects",
+        },
+        "ep_list_services": {
+            "func": ep_list_services,
+            "args": ["project?"],
+            "category": "easypanel",
+            "desc": "List services in an Easypanel project",
+        },
+        "ep_deploy": {
+            "func": ep_deploy,
+            "args": ["project", "service"],
+            "category": "easypanel",
+            "desc": "Trigger Easypanel deploy of a service",
+        },
+        "ep_destroy_service": {
+            "func": ep_destroy_service,
+            "args": ["project", "service", "service_type?"],
+            "category": "easypanel",
+            "desc": "Destroy/Delete a service in Easypanel",
+        },
     }
 
 
 def _register_db() -> dict:
     return {
-        "postgres_query": {"func": postgres_query, "args": ["db", "sql"], "category": "db", "desc": "Run SQL on a Postgres DB"},
-        "postgres_list_tables": {"func": postgres_list_tables, "args": ["db"], "category": "db", "desc": "List tables in a Postgres DB"},
-        "redis_cmd": {"func": redis_cmd, "args": ["redis_service", "command"], "category": "db", "desc": "Run a Redis command with auto-auth"},
-        "redis_ping": {"func": redis_ping, "args": ["redis_service"], "category": "db", "desc": "PING Redis (auto-auth via $REDIS_PASSWORD)"},
-        "redis_get": {"func": redis_get, "args": ["redis_service", "key"], "category": "db", "desc": "Get a Redis key value"},
-        "redis_set": {"func": redis_set, "args": ["redis_service", "key", "value"], "category": "db", "desc": "Set a Redis key value"},
-        "redis_keys": {"func": redis_keys, "args": ["redis_service", "pattern?"], "category": "db", "desc": "List Redis keys matching pattern"},
+        "postgres_query": {
+            "func": postgres_query,
+            "args": ["db", "sql"],
+            "category": "db",
+            "desc": "Run SQL on a Postgres DB",
+        },
+        "postgres_list_tables": {
+            "func": postgres_list_tables,
+            "args": ["db"],
+            "category": "db",
+            "desc": "List tables in a Postgres DB",
+        },
+        "redis_cmd": {
+            "func": redis_cmd,
+            "args": ["redis_service", "command"],
+            "category": "db",
+            "desc": "Run a Redis command with auto-auth",
+        },
+        "redis_ping": {
+            "func": redis_ping,
+            "args": ["redis_service"],
+            "category": "db",
+            "desc": "PING Redis (auto-auth via $REDIS_PASSWORD)",
+        },
+        "redis_get": {
+            "func": redis_get,
+            "args": ["redis_service", "key"],
+            "category": "db",
+            "desc": "Get a Redis key value",
+        },
+        "redis_set": {
+            "func": redis_set,
+            "args": ["redis_service", "key", "value"],
+            "category": "db",
+            "desc": "Set a Redis key value",
+        },
+        "redis_keys": {
+            "func": redis_keys,
+            "args": ["redis_service", "pattern?"],
+            "category": "db",
+            "desc": "List Redis keys matching pattern",
+        },
     }
 
 
 def _register_workflow() -> dict:
     return {
-        "temporal_list_workflows": {"func": temporal_list_workflows, "args": [], "category": "workflow", "desc": "List Temporal workflows"},
-        "temporal_describe": {"func": temporal_describe, "args": ["workflow_id", "run_id"], "category": "workflow", "desc": "Describe a Temporal workflow"},
-        "langflow_run": {"func": langflow_run, "args": ["flow_id", "inputs"], "category": "workflow", "desc": "Run a LangFlow flow"},
+        "temporal_list_workflows": {
+            "func": temporal_list_workflows,
+            "args": [],
+            "category": "workflow",
+            "desc": "List Temporal workflows",
+        },
+        "temporal_describe": {
+            "func": temporal_describe,
+            "args": ["workflow_id", "run_id"],
+            "category": "workflow",
+            "desc": "Describe a Temporal workflow",
+        },
+        "langflow_run": {
+            "func": langflow_run,
+            "args": ["flow_id", "inputs"],
+            "category": "workflow",
+            "desc": "Run a LangFlow flow",
+        },
     }
 
 
 def _register_code_review() -> dict:
     return {
-        "sonarqube_projects": {"func": sonarqube_projects, "args": [], "category": "code-review", "desc": "List SonarQube projects"},
-        "sonarqube_issues": {"func": sonarqube_issues, "args": ["project_key"], "category": "code-review", "desc": "Get SonarQube issues for a project"},
+        "sonarqube_projects": {
+            "func": sonarqube_projects,
+            "args": [],
+            "category": "code-review",
+            "desc": "List SonarQube projects",
+        },
+        "sonarqube_issues": {
+            "func": sonarqube_issues,
+            "args": ["project_key"],
+            "category": "code-review",
+            "desc": "Get SonarQube issues for a project",
+        },
     }
 
 
 def _register_websocket() -> dict:
     return {
-        "centrifugo_publish": {"func": centrifugo_publish, "args": ["channel", "data"], "category": "websocket", "desc": "Publish to Centrifugo WebSocket channel"},
-        "centrifugo_channels": {"func": centrifugo_channels, "args": ["pattern?"], "category": "websocket", "desc": "List Centrifugo channels"},
-        "centrifugo_history": {"func": centrifugo_history, "args": ["channel", "limit?"], "category": "websocket", "desc": "Get Centrifugo channel history"},
-        "mirotalk_create_room": {"func": mirotalk_create_room, "args": [], "category": "websocket", "desc": "Create MiroTalk video room (WebRTC)"},
+        "centrifugo_publish": {
+            "func": centrifugo_publish,
+            "args": ["channel", "data"],
+            "category": "websocket",
+            "desc": "Publish to Centrifugo WebSocket channel",
+        },
+        "centrifugo_channels": {
+            "func": centrifugo_channels,
+            "args": ["pattern?"],
+            "category": "websocket",
+            "desc": "List Centrifugo channels",
+        },
+        "centrifugo_history": {
+            "func": centrifugo_history,
+            "args": ["channel", "limit?"],
+            "category": "websocket",
+            "desc": "Get Centrifugo channel history",
+        },
+        "mirotalk_create_room": {
+            "func": mirotalk_create_room,
+            "args": [],
+            "category": "websocket",
+            "desc": "Create MiroTalk video room (WebRTC)",
+        },
     }
 
 
 def _register_webhook() -> dict:
     return {
-        "webhook_send": {"func": webhook_send, "args": ["url", "method?", "payload?"], "category": "webhook", "desc": "Send a webhook to a URL"},
+        "webhook_send": {
+            "func": webhook_send,
+            "args": ["url", "method?", "payload?"],
+            "category": "webhook",
+            "desc": "Send a webhook to a URL",
+        },
     }
 
 
 def _register_rag() -> dict:
     return {
-        "langflow_list_flows": {"func": langflow_list_flows, "args": [], "category": "rag", "desc": "List LangFlow flows"},
-        "anythingllm_query": {"func": anythingllm_query, "args": ["workspace", "query"], "category": "rag", "desc": "Query AnythingLLM workspace"},
-        "langfuse_traces": {"func": langfuse_traces, "args": ["limit?"], "category": "rag", "desc": "Get recent LangFuse LLM traces"},
+        "langflow_list_flows": {
+            "func": langflow_list_flows,
+            "args": [],
+            "category": "rag",
+            "desc": "List LangFlow flows",
+        },
+        "anythingllm_query": {
+            "func": anythingllm_query,
+            "args": ["workspace", "query"],
+            "category": "rag",
+            "desc": "Query AnythingLLM workspace",
+        },
+        "langfuse_traces": {
+            "func": langfuse_traces,
+            "args": ["limit?"],
+            "category": "rag",
+            "desc": "Get recent LangFuse LLM traces",
+        },
     }
 
 
@@ -1175,7 +1726,12 @@ def _register_dev() -> dict:
     # Squad 1 2026-07-09: goclaw_list_agents, shm_incidents, boltdiy_create,
     # chartdb_export, opennotebook_create REMOVED. Kept only opencode_run.
     return {
-        "opencode_run": {"func": opencode_run, "args": ["prompt"], "category": "dev", "desc": "Run OpenCode Node.js coding agent"},
+        "opencode_run": {
+            "func": opencode_run,
+            "args": ["prompt"],
+            "category": "dev",
+            "desc": "Run OpenCode Node.js coding agent",
+        },
     }
 
 
@@ -1186,38 +1742,139 @@ def _register_monitoring() -> dict:
 def _register_networking() -> dict:
     # Squad 1 2026-07-09: tailscale_ping, tailscale_list_devices REMOVED (use tailscale_status).
     return {
-        "tailscale_status": {"func": tailscale_status, "args": [], "category": "networking", "desc": "Tailscale mesh status JSON (peers, IPs, online state)"},
+        "tailscale_status": {
+            "func": tailscale_status,
+            "args": [],
+            "category": "networking",
+            "desc": "Tailscale mesh status JSON (peers, IPs, online state)",
+        },
     }
 
 
 def _register_utility() -> dict:
     return {
-        "exec_in_container": {"func": exec_in_container, "args": ["service", "cmd"], "category": "utility", "desc": "Execute command in a running container"},
-        "service_http_get": {"func": service_http_get, "args": ["url"], "category": "utility", "desc": "GET HTTP endpoint through local/VPS service gateway"},
-        "service_http_post": {"func": service_http_post, "args": ["url", "payload?"], "category": "utility", "desc": "POST JSON through local/VPS service gateway"},
-        "backup_volume": {"func": backup_volume, "args": ["volume", "dest"], "category": "utility", "desc": "Backup a Docker volume to tar.gz"},
-        "restore_volume": {"func": restore_volume, "args": ["tar_file", "volume"], "category": "utility", "desc": "Restore a tar.gz to a Docker volume"},
-        "image_pull": {"func": image_pull, "args": ["image"], "category": "utility", "desc": "Pull a Docker image on VPS"},
-        "image_list": {"func": image_list, "args": [], "category": "utility", "desc": "List Docker images on VPS"},
-        "swarm_service_create": {"func": swarm_service_create, "args": ["name", "image", "env?", "port?"], "category": "utility", "desc": "Create a new Docker Swarm service"},
-        "swarm_service_remove": {"func": swarm_service_remove, "args": ["name"], "category": "utility", "desc": "Remove a Docker Swarm service"},
-        "file_read": {"func": file_read, "args": ["path"], "category": "utility", "desc": "Read a file from the VPS"},
-        "file_write": {"func": file_write, "args": ["path", "content"], "category": "utility", "desc": "Write a file to the VPS"},
-        "tail_file": {"func": tail_file, "args": ["path", "lines?"], "category": "utility", "desc": "Tail a file on the VPS"},
-        "port_scan": {"func": port_scan, "args": ["host", "ports?"], "category": "utility", "desc": "Scan TCP ports on a host inside Docker network"},
-        "network_inspect": {"func": network_inspect, "args": ["network"], "category": "utility", "desc": "Inspect a Docker network"},
-        "secret_get": {"func": secret_get, "args": ["name"], "category": "utility", "desc": "Get a Docker secret"},
-        "secret_set": {"func": secret_set, "args": ["name", "value"], "category": "utility", "desc": "Create a Docker secret from stdin"},
-        "openapi_spec": {"func": lambda: {"openapi": "3.1.0", "tools": len(TOOLS)}, "args": [], "category": "utility", "desc": "Get OpenAPI-like spec of all MCP tools"},
+        "exec_in_container": {
+            "func": exec_in_container,
+            "args": ["service", "cmd"],
+            "category": "utility",
+            "desc": "Execute command in a running container",
+        },
+        "service_http_get": {
+            "func": service_http_get,
+            "args": ["url"],
+            "category": "utility",
+            "desc": "GET HTTP endpoint through local/VPS service gateway",
+        },
+        "service_http_post": {
+            "func": service_http_post,
+            "args": ["url", "payload?"],
+            "category": "utility",
+            "desc": "POST JSON through local/VPS service gateway",
+        },
+        "backup_volume": {
+            "func": backup_volume,
+            "args": ["volume", "dest"],
+            "category": "utility",
+            "desc": "Backup a Docker volume to tar.gz",
+        },
+        "restore_volume": {
+            "func": restore_volume,
+            "args": ["tar_file", "volume"],
+            "category": "utility",
+            "desc": "Restore a tar.gz to a Docker volume",
+        },
+        "image_pull": {
+            "func": image_pull,
+            "args": ["image"],
+            "category": "utility",
+            "desc": "Pull a Docker image on VPS",
+        },
+        "image_list": {
+            "func": image_list,
+            "args": [],
+            "category": "utility",
+            "desc": "List Docker images on VPS",
+        },
+        "swarm_service_create": {
+            "func": swarm_service_create,
+            "args": ["name", "image", "env?", "port?"],
+            "category": "utility",
+            "desc": "Create a new Docker Swarm service",
+        },
+        "swarm_service_remove": {
+            "func": swarm_service_remove,
+            "args": ["name"],
+            "category": "utility",
+            "desc": "Remove a Docker Swarm service",
+        },
+        "file_read": {
+            "func": file_read,
+            "args": ["path"],
+            "category": "utility",
+            "desc": "Read a file from the VPS",
+        },
+        "file_write": {
+            "func": file_write,
+            "args": ["path", "content"],
+            "category": "utility",
+            "desc": "Write a file to the VPS",
+        },
+        "tail_file": {
+            "func": tail_file,
+            "args": ["path", "lines?"],
+            "category": "utility",
+            "desc": "Tail a file on the VPS",
+        },
+        "port_scan": {
+            "func": port_scan,
+            "args": ["host", "ports?"],
+            "category": "utility",
+            "desc": "Scan TCP ports on a host inside Docker network",
+        },
+        "network_inspect": {
+            "func": network_inspect,
+            "args": ["network"],
+            "category": "utility",
+            "desc": "Inspect a Docker network",
+        },
+        "secret_get": {
+            "func": secret_get,
+            "args": ["name"],
+            "category": "utility",
+            "desc": "Get a Docker secret",
+        },
+        "secret_set": {
+            "func": secret_set,
+            "args": ["name", "value"],
+            "category": "utility",
+            "desc": "Create a Docker secret from stdin",
+        },
+        "openapi_spec": {
+            "func": lambda: {"openapi": "3.1.0", "tools": len(TOOLS)},
+            "args": [],
+            "category": "utility",
+            "desc": "Get OpenAPI-like spec of all MCP tools",
+        },
     }
 
 
 TOOLS: dict = {}
 for _reg in [
-    _register_llm, _register_status, _register_docker, _register_easypanel,
-    _register_db, _register_workflow, _register_code_review, _register_websocket,
-    _register_webhook, _register_rag, _register_search, _register_dev,
-    _register_monitoring, _register_networking, _register_utility,
+    _register_llm,
+    _register_status,
+    _register_docker,
+    _register_easypanel,
+    _register_db,
+    _register_workflow,
+    _register_code_review,
+    _register_websocket,
+    _register_webhook,
+    _register_rag,
+    _register_search,
+    _register_dev,
+    _register_monitoring,
+    _register_networking,
+    _register_utility,
 ]:
     TOOLS.update(_reg())
 
@@ -1225,7 +1882,11 @@ for _reg in [
 def call_tool(name: str, **kwargs) -> Any:
     """Dispatch a tool by name with kwargs."""
     if name not in TOOLS:
-        return {"error": f"unknown tool: {name}", "available_count": len(TOOLS), "categories": list({t["category"] for t in TOOLS.values()})}
+        return {
+            "error": f"unknown tool: {name}",
+            "available_count": len(TOOLS),
+            "categories": list({t["category"] for t in TOOLS.values()}),
+        }
     tool = TOOLS[name]
     try:
         return tool["func"](**kwargs)
@@ -1276,7 +1937,9 @@ def main():
         print("Usage:")
         print("  python coding_vps_mcp_orchestrator.py list")
         print("  python coding_vps_mcp_orchestrator.py call <tool> [args...]")
-        print("  python coding_vps_mcp_orchestrator.py mcp    # start MCP server (stdio)")
+        print(
+            "  python coding_vps_mcp_orchestrator.py mcp    # start MCP server (stdio)"
+        )
         return 0
 
     cmd = sys.argv[1]
@@ -1320,11 +1983,14 @@ def _run_mcp_server() -> int:
         except Exception as e:
             failures.append((name, str(e)))
 
-    print(f"MCP orchestrator: {registered}/{len(TOOLS)} tools registered", file=sys.stderr)
+    print(
+        f"MCP orchestrator: {registered}/{len(TOOLS)} tools registered", file=sys.stderr
+    )
     if failures:
         print(f"FAILURES ({len(failures)}):", file=sys.stderr)
         for n, e in failures[:5]:
             print(f"  - {n}: {e}", file=sys.stderr)
+
     # Expose resources too (categories + list)
     @mcp.resource("manifest://tools")
     def manifest_resource() -> str:
@@ -1335,7 +2001,14 @@ def _run_mcp_server() -> int:
                 "version": "2.0.0",
                 "tools_count": len(TOOLS),
                 "categories": sorted({t["category"] for t in TOOLS.values()}),
-                "tools": {n: {"args": t["args"], "category": t["category"], "desc": t.get("desc", "")} for n, t in TOOLS.items()},
+                "tools": {
+                    n: {
+                        "args": t["args"],
+                        "category": t["category"],
+                        "desc": t.get("desc", ""),
+                    }
+                    for n, t in TOOLS.items()
+                },
             },
             indent=2,
         )
@@ -1362,17 +2035,28 @@ def _run_http_server() -> int:
         from fastapi.middleware.cors import CORSMiddleware
         import uvicorn
     except ImportError:
-        print("fastapi/uvicorn not installed. Install: pip install fastapi uvicorn", file=sys.stderr)
+        print(
+            "fastapi/uvicorn not installed. Install: pip install fastapi uvicorn",
+            file=sys.stderr,
+        )
         return 1
 
-    app = FastAPI(title="coding-vps MCP Orchestrator", version="2.0.0",
-                  description=f"{len(TOOLS)} tools across {len({t['category'] for t in TOOLS.values()})} categories")
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    app = FastAPI(
+        title="coding-vps MCP Orchestrator",
+        version="2.0.0",
+        description=f"{len(TOOLS)} tools across {len({t['category'] for t in TOOLS.values()})} categories",
+    )
+    app.add_middleware(
+        CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+    )
 
     @app.get("/")
     def root():
-        return {"name": "coding-vps-orchestrator", "tools": len(TOOLS),
-                "categories": sorted({t["category"] for t in TOOLS.values()})}
+        return {
+            "name": "coding-vps-orchestrator",
+            "tools": len(TOOLS),
+            "categories": sorted({t["category"] for t in TOOLS.values()}),
+        }
 
     @app.get("/tools")
     def list_tools():
@@ -1389,7 +2073,11 @@ def _run_http_server() -> int:
         return app.openapi()
 
     TOOLS_PUBLIC = {
-        name: {"args": info["args"], "category": info["category"], "desc": info.get("desc", "")}
+        name: {
+            "args": info["args"],
+            "category": info["category"],
+            "desc": info.get("desc", ""),
+        }
         for name, info in TOOLS.items()
     }
 

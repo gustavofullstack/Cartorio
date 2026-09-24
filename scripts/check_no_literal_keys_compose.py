@@ -221,8 +221,10 @@ def run_literal_keys(args: argparse.Namespace) -> ScanResult:
     started = time.monotonic()
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
     duration_ms = int((time.monotonic() - started) * 1000)
-    status = "violation" if proc.returncode not in (0, 1) else (
-        "ok" if proc.returncode == 0 else "violation"
+    status = (
+        "violation"
+        if proc.returncode not in (0, 1)
+        else ("ok" if proc.returncode == 0 else "violation")
     )
     # In literal_keys: exit 0 = clean, exit 1 = violations, exit 2 = error.
     if proc.returncode == 0:
@@ -437,7 +439,9 @@ def render_text(results: Sequence[ScanResult]) -> str:
         lines.append(f"❌ {len(failed)} scanner(s) flagged critical findings:")
         for r in failed:
             lines.append(f"--- {r.name} (rc={r.returncode}) ---")
-            lines.append("diagnostics redacted; rerun the scanner locally to inspect findings")
+            lines.append(
+                "diagnostics redacted; rerun the scanner locally to inspect findings"
+            )
     else:
         executed = sum(1 for r in results if r.status != "skipped")
         lines.append(f"✓ All {executed} scanner(s) clean.")

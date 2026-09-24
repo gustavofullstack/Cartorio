@@ -63,7 +63,9 @@ def main() -> int:
         script = ScriptDirectory.from_config(cfg)
         heads = list(script.get_heads())
     except Exception as exc:  # noqa: BLE001 — gate script: report any load failure
-        print(f"[ERROR] failed to load Alembic script directory: {exc}", file=sys.stderr)
+        print(
+            f"[ERROR] failed to load Alembic script directory: {exc}", file=sys.stderr
+        )
         return 2
 
     if len(heads) == 1:

@@ -3,6 +3,7 @@
 
 Used by operators and tests. No network, no secrets, no phone numbers.
 """
+
 from __future__ import annotations
 
 import re

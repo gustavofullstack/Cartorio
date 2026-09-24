@@ -31,7 +31,7 @@ BACKEND_RE = re.compile(
     re.IGNORECASE,
 )
 # Loose CLF-ish status near end of line
-STATUS_RE = re.compile(r'\b(?P<status>[1-5]\d{2})\b')
+STATUS_RE = re.compile(r"\b(?P<status>[1-5]\d{2})\b")
 HOST_RE = re.compile(
     r"(?:RequestHost|Host)[\"']?\s*[:=]\s*[\"']?(?P<host>[\w.-]+\.[\w.-]+)",
     re.IGNORECASE,
@@ -80,12 +80,12 @@ DEMO_LINES = [
     ),
     # Text / mixed line (fallback path)
     (
-        '2026-07-14T13:42:00Z GET https://flow.2notasudi.com.br/ '
-        'http-cartorio_n8n-0@file 502 74ms'
+        "2026-07-14T13:42:00Z GET https://flow.2notasudi.com.br/ "
+        "http-cartorio_n8n-0@file 502 74ms"
     ),
     (
-        '2026-07-14T13:42:01Z GET https://supbase.2notasudi.com.br/ '
-        'https-cartorio_supabase-1@file 404 12ms'
+        "2026-07-14T13:42:01Z GET https://supbase.2notasudi.com.br/ "
+        "https-cartorio_supabase-1@file 404 12ms"
     ),
 ]
 
@@ -137,17 +137,11 @@ def parse_json_line(line: str) -> AccessHit | None:
         backend = m.group("backend") if m else "unknown"
 
     host = str(
-        data.get("RequestHost")
-        or data.get("Host")
-        or data.get("request_Host")
-        or "?"
+        data.get("RequestHost") or data.get("Host") or data.get("request_Host") or "?"
     )
     method = str(data.get("RequestMethod") or data.get("Method") or "?")
     path = str(
-        data.get("RequestPath")
-        or data.get("RequestUri")
-        or data.get("Uri")
-        or "?"
+        data.get("RequestPath") or data.get("RequestUri") or data.get("Uri") or "?"
     )
     status = _as_int(
         data.get("DownstreamStatus")
@@ -282,7 +276,9 @@ def print_summary(hits: list[AccessHit]) -> None:
         if h.status != 502:
             continue
         if "chatwoot" in h.backend:
-            print("  chatwoot 502 → check cartorio_chatwoot replicas + DB env (Lesson 176)")
+            print(
+                "  chatwoot 502 → check cartorio_chatwoot replicas + DB env (Lesson 176)"
+            )
             break
     for h in hits:
         if h.status == 502 and "evolution" in h.backend:
@@ -356,7 +352,9 @@ def main(argv: list[str] | None = None) -> int:
         if " | " in line and line.strip().endswith("}") is False:
             # strip docker log prefix when present
             parts = line.split(" | ", 1)
-            if len(parts) == 2 and (parts[1].lstrip().startswith("{") or "@file" in parts[1]):
+            if len(parts) == 2 and (
+                parts[1].lstrip().startswith("{") or "@file" in parts[1]
+            ):
                 line = parts[1]
         hit = parse_line(line)
         if hit is not None:

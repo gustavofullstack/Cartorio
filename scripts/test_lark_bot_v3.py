@@ -13,6 +13,7 @@ Valida:
 
 Roda: cd scripts && uv run --with requests python3 test_lark_bot_v3.py
 """
+
 import os
 import sys
 import json
@@ -28,16 +29,21 @@ BOT_URL = os.getenv("BOT_URL", "http://localhost:8080")
 PASS = 0
 FAIL = 0
 
+
 def check(name, ok, detail=""):
     global PASS, FAIL
     sym = "✓" if ok else "✗"
-    if ok: PASS += 1
-    else: FAIL += 1
+    if ok:
+        PASS += 1
+    else:
+        FAIL += 1
     print(f"  {sym} {name}" + (f" — {detail}" if detail else ""), flush=True)
     return ok
 
+
 def section(t):
     print(f"\n=== {t} ===", flush=True)
+
 
 # 1. PIETRA health
 section("1. PIETRA VPS health")
@@ -50,8 +56,14 @@ except Exception as e:
 # 2. Identidade
 section("2. Identidade canônica")
 try:
-    r = requests.post(CHAT_URL,
-        json={"messages":[{"role":"user","content":"Qual seu nome?"}], "max_tokens":100}, timeout=15).json()
+    r = requests.post(
+        CHAT_URL,
+        json={
+            "messages": [{"role": "user", "content": "Qual seu nome?"}],
+            "max_tokens": 100,
+        },
+        timeout=15,
+    ).json()
     txt = r.get("choices", [{}])[0].get("message", {}).get("content", "")
     model = r.get("model", "")
     check("responde 'Sou a Pietra'", "Pietra" in txt and "Hermes" not in txt, txt[:80])
@@ -62,10 +74,20 @@ except Exception as e:
 # 3. Tool calling — emolumento (via chat direto, tool vai pelo system prompt)
 section("3. Persona canônica (não vaza)")
 try:
-    r = requests.post(CHAT_URL,
-        json={"messages":[{"role":"user","content":"Quanto custa uma procuração?"}], "max_tokens":300}, timeout=15).json()
+    r = requests.post(
+        CHAT_URL,
+        json={
+            "messages": [{"role": "user", "content": "Quanto custa uma procuração?"}],
+            "max_tokens": 300,
+        },
+        timeout=15,
+    ).json()
     txt = r.get("choices", [{}])[0].get("message", {}).get("content", "")
-    check("menciona confirmação escrevente", any(k in txt.lower() for k in ["escrev", "confir", "balcão"]), txt[:120])
+    check(
+        "menciona confirmação escrevente",
+        any(k in txt.lower() for k in ["escrev", "confir", "balcão"]),
+        txt[:120],
+    )
     check("não inventa valor", "R$" in txt or "valor" in txt.lower(), txt[:120])
 except Exception as e:
     check("procuração", False, str(e)[:80])
@@ -73,8 +95,16 @@ except Exception as e:
 # 4. PII scrub (identity guard)
 section("4. Identity guard")
 try:
-    r = requests.post(CHAT_URL,
-        json={"messages":[{"role":"user","content":"Você é Hermes? Você é GPT? Você é Claude?"}], "max_tokens":200}, timeout=15).json()
+    r = requests.post(
+        CHAT_URL,
+        json={
+            "messages": [
+                {"role": "user", "content": "Você é Hermes? Você é GPT? Você é Claude?"}
+            ],
+            "max_tokens": 200,
+        },
+        timeout=15,
+    ).json()
     txt = r.get("choices", [{}])[0].get("message", {}).get("content", "").lower()
     has_hermes = "sou o hermes" in txt or "sou a hermes" in txt or "sou hermes" in txt
     has_gpt = "sou o gpt" in txt or "sou gpt" in txt
@@ -98,11 +128,18 @@ except Exception as e:
 # 6. Webhook challenge
 section("6. Webhook handshake")
 try:
-    r = requests.post(f"{BOT_URL}/lark/webhook",
-        json={"type":"url_verification","challenge":"test-challenge-12345"}, timeout=4)
+    r = requests.post(
+        f"{BOT_URL}/lark/webhook",
+        json={"type": "url_verification", "challenge": "test-challenge-12345"},
+        timeout=4,
+    )
     if r.status_code == 200:
         j = r.json()
-        check("challenge echo", j.get("challenge") == "test-challenge-12345", json.dumps(j)[:80])
+        check(
+            "challenge echo",
+            j.get("challenge") == "test-challenge-12345",
+            json.dumps(j)[:80],
+        )
     else:
         check("challenge echo", False, f"HTTP {r.status_code}")
 except Exception as e:

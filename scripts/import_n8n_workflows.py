@@ -111,13 +111,13 @@ def main():
         "--login-email",
         default=os.environ.get("N8N_LOGIN_EMAIL", ""),
     )
-    ap.add_argument(
-        "--login-pass", default=os.environ.get("N8N_LOGIN_PASS", "")
-    )
+    ap.add_argument("--login-pass", default=os.environ.get("N8N_LOGIN_PASS", ""))
     args = ap.parse_args()
 
     if not args.login_email or not args.login_pass:
-        ap.error("N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager")
+        ap.error(
+            "N8N_LOGIN_EMAIL e N8N_LOGIN_PASS devem ser injetados pelo secret manager"
+        )
 
     s = login(args.login_email, args.login_pass)
     existing = {w["name"]: w for w in list_workflows(s)}

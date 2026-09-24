@@ -46,16 +46,37 @@ TIMEOUT_S = 90
 POLL_S = 3
 MAX_CONSEC_TIMEOUTS = 3
 
-PREFIXES = ["", "oi, ", "ola, ", "bom dia, ", "boa tarde, ", "boa noite, ",
-            "pietra, ", "ei, ", "por favor, ", "uai, ", "desculpa, ", "opa, "]
+PREFIXES = [
+    "",
+    "oi, ",
+    "ola, ",
+    "bom dia, ",
+    "boa tarde, ",
+    "boa noite, ",
+    "pietra, ",
+    "ei, ",
+    "por favor, ",
+    "uai, ",
+    "desculpa, ",
+    "opa, ",
+]
 SUFFIXES = ["", "?", " por favor", " por gentileza", " pf", "!!", " valeu", " obrigado"]
-CONTEXTS = ["", "sou cliente e ", "preciso de ajuda: ", "me tira uma duvida: ",
-            "primeira vez aqui: ", "to com pressa: "]
+CONTEXTS = [
+    "",
+    "sou cliente e ",
+    "preciso de ajuda: ",
+    "me tira uma duvida: ",
+    "primeira vez aqui: ",
+    "to com pressa: ",
+]
 
 
 def strip_accents(s: str) -> str:
     import unicodedata
-    return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
+
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c)
+    )
 
 
 def swap_typo(s: str, rng: random.Random) -> str:
@@ -76,7 +97,7 @@ def gen_variant(msg: str, rng: random.Random) -> str:
     elif r < 0.35:
         v = swap_typo(v, rng)
     elif r < 0.45:
-        v = v.rstrip("?!.") 
+        v = v.rstrip("?!.")
     elif r < 0.52:
         v = v.upper() if len(v) < 40 else v
     pre = rng.choice(PREFIXES)
@@ -101,21 +122,30 @@ def build_plan() -> list[dict[str, Any]]:
             seen.add(v.lower())
             variants.append(v)
         for n, v in enumerate(variants):
-            plan.append({
-                "id": f"{tc['id']}-V{n:03d}", "base": tc["id"], "cat": tc["cat"],
-                "msg": v, "expected": tc.get("expected", []),
-                "forbidden": tc.get("forbidden", []),
-                "require_identity": tc.get("require_identity", False),
-            })
+            plan.append(
+                {
+                    "id": f"{tc['id']}-V{n:03d}",
+                    "base": tc["id"],
+                    "cat": tc["cat"],
+                    "msg": v,
+                    "expected": tc.get("expected", []),
+                    "forbidden": tc.get("forbidden", []),
+                    "require_identity": tc.get("require_identity", False),
+                }
+            )
     return plan
 
 
 def send_msg(text: str) -> bool:
     safe = text.replace("\\", "\\\\").replace('"', '\\"')
-    script = (f'tell application "Messages" to send "{safe}" to buddy "{BUDDY}" '
-              f'of (1st account whose service type = iMessage)')
+    script = (
+        f'tell application "Messages" to send "{safe}" to buddy "{BUDDY}" '
+        f"of (1st account whose service type = iMessage)"
+    )
     try:
-        r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=60)
+        r = subprocess.run(
+            ["osascript", "-e", script], capture_output=True, text=True, timeout=60
+        )
         return r.returncode == 0
     except Exception:
         return False
@@ -132,7 +162,9 @@ def last_ts() -> float:
     return float(r[0])
 
 
-def wait_reply(since_ts: float, sent_msg: str, timeout_s: int = TIMEOUT_S) -> dict[str, Any] | None:
+def wait_reply(
+    since_ts: float, sent_msg: str, timeout_s: int = TIMEOUT_S
+) -> dict[str, Any] | None:
     token = sent_msg.split()[-1].strip("?!.,")[:20] if sent_msg.split() else ""
     start = time.time()
     while time.time() - start < timeout_s:
@@ -147,7 +179,9 @@ def wait_reply(since_ts: float, sent_msg: str, timeout_s: int = TIMEOUT_S) -> di
             time.sleep(POLL_S)
             continue
         users = [r for r in rows if r[0] == "user"]
-        saw_user = any(token and token.lower() in (r[1] or "").lower() for r in users) or bool(users)
+        saw_user = any(
+            token and token.lower() in (r[1] or "").lower() for r in users
+        ) or bool(users)
         asst = [r for r in rows if r[0] == "assistant" and r[1]]
         if saw_user and asst:
             return {
@@ -190,16 +224,29 @@ def save_checkpoint(cp: dict[str, Any]) -> None:
     (ARTIFACTS / "checkpoint.json").write_text(json.dumps(cp, indent=1))
 
 
-def run_wave(plan: list[dict[str, Any]], cp: dict[str, Any], wave_n: int) -> dict[str, Any]:
+def run_wave(
+    plan: list[dict[str, Any]], cp: dict[str, Any], wave_n: int
+) -> dict[str, Any]:
     start_idx = cp["next_index"]
     end_idx = min(start_idx + WAVE_SIZE, len(plan))
     wave_file = ARTIFACTS / f"wave_{wave_n:02d}.jsonl"
     mem_snap = snapshot_memory()
-    stats: dict[str, Any] = {"wave": wave_n, "start_idx": start_idx, "cases": 0,
-                             "pass": 0, "fail": 0, "timeout": 0, "dups": 0,
-                             "latencies": [], "started": datetime.now().isoformat(timespec="seconds")}
+    stats: dict[str, Any] = {
+        "wave": wave_n,
+        "start_idx": start_idx,
+        "cases": 0,
+        "pass": 0,
+        "fail": 0,
+        "timeout": 0,
+        "dups": 0,
+        "latencies": [],
+        "started": datetime.now().isoformat(timespec="seconds"),
+    }
     consec_timeout = 0
-    print(f"=== WAVE {wave_n} | casos {start_idx}..{end_idx - 1} ({end_idx - start_idx}) ===", flush=True)
+    print(
+        f"=== WAVE {wave_n} | casos {start_idx}..{end_idx - 1} ({end_idx - start_idx}) ===",
+        flush=True,
+    )
     for idx in range(start_idx, end_idx):
         case = plan[idx]
         ts = last_ts()
@@ -210,36 +257,71 @@ def run_wave(plan: list[dict[str, Any]], cp: dict[str, Any], wave_n: int) -> dic
         else:
             reply = wait_reply(ts, case["msg"])
             if reply is None:
-                result = {"id": case["id"], "status": "TIMEOUT", "cat": case["cat"],
-                          "input": case["msg"]}
+                result = {
+                    "id": case["id"],
+                    "status": "TIMEOUT",
+                    "cat": case["cat"],
+                    "input": case["msg"],
+                }
             else:
-                ev = evaluate(case["id"], reply["text"], case["expected"],
-                              case["forbidden"], require_identity=case["require_identity"])
-                ev.update({"id": case["id"], "base": case["base"], "cat": case["cat"],
-                           "input": case["msg"], "response": reply["text"][:600],
-                           "n_assistant": reply["n_assistant"], "latency_s": reply["latency_s"]})
+                ev = evaluate(
+                    case["id"],
+                    reply["text"],
+                    case["expected"],
+                    case["forbidden"],
+                    require_identity=case["require_identity"],
+                )
+                ev.update(
+                    {
+                        "id": case["id"],
+                        "base": case["base"],
+                        "cat": case["cat"],
+                        "input": case["msg"],
+                        "response": reply["text"][:600],
+                        "n_assistant": reply["n_assistant"],
+                        "latency_s": reply["latency_s"],
+                    }
+                )
                 if reply["n_assistant"] > 1:
-                    ev.setdefault("issues", []).append(f"duplicate_response:n={reply['n_assistant']}")
+                    ev.setdefault("issues", []).append(
+                        f"duplicate_response:n={reply['n_assistant']}"
+                    )
                     stats["dups"] += 1
                 result = ev
                 stats["latencies"].append(reply["latency_s"])
         st = result.get("status", "FAIL")
         stats["cases"] += 1
-        stats["pass" if st == "PASS" else "timeout" if st in ("TIMEOUT", "SEND_FAIL") else "fail"] += 1
+        stats[
+            "pass"
+            if st == "PASS"
+            else "timeout"
+            if st in ("TIMEOUT", "SEND_FAIL")
+            else "fail"
+        ] += 1
         consec_timeout = consec_timeout + 1 if st in ("TIMEOUT", "SEND_FAIL") else 0
         with open(wave_file, "a") as f:
             f.write(json.dumps(result, ensure_ascii=False) + "\n")
         cp["next_index"] = idx + 1
         cp["done"] += 1
-        cp["pass" if st == "PASS" else "timeout" if st in ("TIMEOUT", "SEND_FAIL") else "fail"] += 1
+        cp[
+            "pass"
+            if st == "PASS"
+            else "timeout"
+            if st in ("TIMEOUT", "SEND_FAIL")
+            else "fail"
+        ] += 1
         if stats["cases"] % 25 == 0:
             save_checkpoint(cp)
-            print(f"  [{stats['cases']}/{end_idx - start_idx}] "
-                  f"P={stats['pass']} F={stats['fail']} T={stats['timeout']} "
-                  f"({time.time() - t0:.0f}s last)", flush=True)
+            print(
+                f"  [{stats['cases']}/{end_idx - start_idx}] "
+                f"P={stats['pass']} F={stats['fail']} T={stats['timeout']} "
+                f"({time.time() - t0:.0f}s last)",
+                flush=True,
+            )
         if consec_timeout >= MAX_CONSEC_TIMEOUTS:
             (ARTIFACTS / "ALERT").write_text(
-                f"{datetime.now().isoformat()} — {MAX_CONSEC_TIMEOUTS} timeouts seguidos no idx {idx}\n")
+                f"{datetime.now().isoformat()} — {MAX_CONSEC_TIMEOUTS} timeouts seguidos no idx {idx}\n"
+            )
             print("  !! ALERT: timeouts consecutivos — pausando wave", flush=True)
             break
         time.sleep(1.5)
@@ -251,8 +333,11 @@ def run_wave(plan: list[dict[str, Any]], cp: dict[str, Any], wave_n: int) -> dic
     save_checkpoint(cp)
     with open(ARTIFACTS / "summary.jsonl", "a") as f:
         f.write(json.dumps(stats, ensure_ascii=False) + "\n")
-    print(f"=== WAVE {wave_n} FIM: P={stats['pass']} F={stats['fail']} "
-          f"T={stats['timeout']} dups={stats['dups']} lat_avg={stats['latency_avg_s']}s ===", flush=True)
+    print(
+        f"=== WAVE {wave_n} FIM: P={stats['pass']} F={stats['fail']} "
+        f"T={stats['timeout']} dups={stats['dups']} lat_avg={stats['latency_avg_s']}s ===",
+        flush=True,
+    )
     return stats
 
 
@@ -272,9 +357,15 @@ def main() -> int:
         print(json.dumps({"total_plan": total, **cp}, indent=1))
         return 0
 
-    print(f"Plano 10K: {total} casos ({len(TEST_CASES)} base x {VARIANTS_PER_CASE})", flush=True)
-    print(f"Checkpoint: next={cp['next_index']} done={cp['done']} "
-          f"P={cp['pass']} F={cp['fail']} T={cp['timeout']}", flush=True)
+    print(
+        f"Plano 10K: {total} casos ({len(TEST_CASES)} base x {VARIANTS_PER_CASE})",
+        flush=True,
+    )
+    print(
+        f"Checkpoint: next={cp['next_index']} done={cp['done']} "
+        f"P={cp['pass']} F={cp['fail']} T={cp['timeout']}",
+        flush=True,
+    )
 
     if not args.all and args.wave <= 0:
         ap.error("use --wave N ou --all")
@@ -284,12 +375,17 @@ def main() -> int:
         cp["wave"] = wave_n
         run_wave(plan, cp, wave_n)
         if (ARTIFACTS / "ALERT").exists():
-            print("ALERT ativo — encerrando loop. Remova artifacts/imessage/10k/ALERT p/ continuar.")
+            print(
+                "ALERT ativo — encerrando loop. Remova artifacts/imessage/10k/ALERT p/ continuar."
+            )
             return 2
         if not args.all:
             break
-    print(f"=== CAMPANHA: done={cp['done']}/{total} "
-          f"P={cp['pass']} F={cp['fail']} T={cp['timeout']} ===", flush=True)
+    print(
+        f"=== CAMPANHA: done={cp['done']}/{total} "
+        f"P={cp['pass']} F={cp['fail']} T={cp['timeout']} ===",
+        flush=True,
+    )
     return 0
 
 

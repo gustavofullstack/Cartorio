@@ -17,6 +17,7 @@ Exit codes:
 Ref: skill `n8n` + N8N public API.
 Modified by Gustavo Almeida + cartorio-n8n — G6 wave 14.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -73,7 +74,10 @@ def check_wf_health(name: str, webhook_path: str | None) -> dict:
         # POST com payload minimo (a maioria dos WFs nao valida body, so recebe)
         resp = httpx.post(
             url,
-            json={"_health_check": True, "_timestamp": datetime.now(timezone.utc).isoformat()},
+            json={
+                "_health_check": True,
+                "_timestamp": datetime.now(timezone.utc).isoformat(),
+            },
             timeout=TIMEOUT,
         )
         result["status"] = "ok" if resp.status_code < 500 else "error"
@@ -149,7 +153,9 @@ def render_markdown(results: list[dict]) -> str:
     md.append("")
     md.append("---")
     md.append("")
-    md.append("**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 14 (auto-gerado)**")
+    md.append(
+        "**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 14 (auto-gerado)**"
+    )
     return "\n".join(md)
 
 
@@ -157,7 +163,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="N8N workflow health-check CLI")
     parser.add_argument("--wf", help="checar apenas 1 WF (filename sem .json)")
     parser.add_argument("--report", type=Path, help="gerar report markdown")
-    parser.add_argument("--dry-run", action="store_true", help="mostrar URLs sem chamar")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="mostrar URLs sem chamar"
+    )
     args = parser.parse_args()
 
     if not WF_DIR.exists():
@@ -189,7 +197,13 @@ def main() -> int:
             continue
         result = check_wf_health(wf.stem, path)
         results.append(result)
-        emoji = {"ok": "✅", "no_webhook": "ℹ️", "unreachable": "🔌", "timeout": "⏱️", "error": "❌"}.get(result["status"], "?")
+        emoji = {
+            "ok": "✅",
+            "no_webhook": "ℹ️",
+            "unreachable": "🔌",
+            "timeout": "⏱️",
+            "error": "❌",
+        }.get(result["status"], "?")
         print(f"  {emoji} {wf.stem}: {result['status']} ({result['details']})")
 
     problematic = [r for r in results if r["status"] not in ("ok", "no_webhook")]

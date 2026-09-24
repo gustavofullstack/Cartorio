@@ -18,6 +18,7 @@ from typing import Dict, List, Any, Tuple
 # Constante de época do Mac (1 de Jan de 2001 00:00:00 UTC)
 MAC_EPOCH_OFFSET = 978307200
 
+
 def cocoa_to_datetime(cocoa_timestamp: int) -> str:
     """Converte timestamp Cocoa (nanossegundos ou segundos desde 2001-01-01) para string ISO."""
     if not cocoa_timestamp:
@@ -34,52 +35,116 @@ def cocoa_to_datetime(cocoa_timestamp: int) -> str:
     except Exception:
         return "Data Inválida"
 
+
 CATEGORIES_PATTERNS = {
     "reconhecimento_firma_autenticacao": [
-        r"reconhecimento", r"firma", r"autentica", r"reconhecer", r"sinal público", r"cartão de firma"
+        r"reconhecimento",
+        r"firma",
+        r"autentica",
+        r"reconhecer",
+        r"sinal público",
+        r"cartão de firma",
     ],
     "escrituras_publicas": [
-        r"escritura", r"compra e venda", r"doação", r"imóvel", r"permuta", r"usufruto"
+        r"escritura",
+        r"compra e venda",
+        r"doação",
+        r"imóvel",
+        r"permuta",
+        r"usufruto",
     ],
     "procuracoes": [
-        r"procuração", r"procuracao", r"outorgante", r"poderes", r"substabelecimento"
+        r"procuração",
+        r"procuracao",
+        r"outorgante",
+        r"poderes",
+        r"substabelecimento",
     ],
     "certidoes": [
-        r"certidão", r"certidao", r"2ª via", r"segunda via", r"nascimento", r"casamento", r"óbito", r"obito", r"breve relato", r"inteiro teor"
+        r"certidão",
+        r"certidao",
+        r"2ª via",
+        r"segunda via",
+        r"nascimento",
+        r"casamento",
+        r"óbito",
+        r"obito",
+        r"breve relato",
+        r"inteiro teor",
     ],
     "emolumentos_valores": [
-        r"valor", r"quanto", r"custo", r"preço", r"preco", r"emolumento", r"tabela", r"taxa", r"pagamento", r"pix", r"cartão"
+        r"valor",
+        r"quanto",
+        r"custo",
+        r"preço",
+        r"preco",
+        r"emolumento",
+        r"tabela",
+        r"taxa",
+        r"pagamento",
+        r"pix",
+        r"cartão",
     ],
     "horarios_endereco": [
-        r"horário", r"horario", r"endereço", r"endereco", r"onde fica", r"localização", r"localizacao", r"aberto", r"fecha", r"abre", r"estacionamento", r"uberlândia", r"uberlandia"
+        r"horário",
+        r"horario",
+        r"endereço",
+        r"endereco",
+        r"onde fica",
+        r"localização",
+        r"localizacao",
+        r"aberto",
+        r"fecha",
+        r"abre",
+        r"estacionamento",
+        r"uberlândia",
+        r"uberlandia",
     ],
     "divorcio_inventario": [
-        r"divórcio", r"divorcio", r"inventário", r"inventario", r"partilha", r"herança", r"bens"
+        r"divórcio",
+        r"divorcio",
+        r"inventário",
+        r"inventario",
+        r"partilha",
+        r"herança",
+        r"bens",
     ],
     "testamento_apostila": [
-        r"testamento", r"apostila", r"haia", r"internacional", r"tradução"
+        r"testamento",
+        r"apostila",
+        r"haia",
+        r"internacional",
+        r"tradução",
     ],
     "identidade_agente": [
-        r"pietra", r"quem é você", r"atendente", r"humano", r"falar com alguém", r"escrevente", r"robô", r"ia"
-    ]
+        r"pietra",
+        r"quem é você",
+        r"atendente",
+        r"humano",
+        r"falar com alguém",
+        r"escrevente",
+        r"robô",
+        r"ia",
+    ],
 }
 
 COLLOQUIAL_PATTERNS = {
     "uai_regionalismo": r"\buai\b|\bmano\b|\bporra\b|\bbora\b|\bô\b|\be aí\b|\bfala\b",
     "saudacoes": r"\bbom dia\b|\bboa tarde\b|\bboa noite\b|\bolá\b|\boi\b",
     "duvidas_diretas": r"quanto custa|quanto fica|como faz|como faço|qual o valor|tem como|preciso de|onde fica|tá aberto|ta aberto",
-    "urgencia_pedidos": r"urgente|preciso pra hoje|rápido|agora|hoje mesmo|demora"
+    "urgencia_pedidos": r"urgente|preciso pra hoje|rápido|agora|hoje mesmo|demora",
 }
+
 
 def analyze_chat_db(db_path: str) -> Dict[str, Any]:
     """Inspeciona o banco de dados chat.db do iMessage."""
     if not os.path.exists(db_path):
         return {"error": f"Arquivo {db_path} não encontrado.", "accessible": False}
-    
+
     try:
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         cursor = conn.cursor()
-        
+
         # Total de mensagens
         cursor.execute("SELECT count(*) FROM message;")
         total_messages = cursor.fetchone()[0]
@@ -91,7 +156,9 @@ def analyze_chat_db(db_path: str) -> Dict[str, Any]:
         incoming = from_me_counts.get(0, 0)
 
         # Mensagens com texto não nulo
-        cursor.execute("SELECT count(*) FROM message WHERE text IS NOT NULL AND text != '';")
+        cursor.execute(
+            "SELECT count(*) FROM message WHERE text IS NOT NULL AND text != '';"
+        )
         text_messages_count = cursor.fetchone()[0]
 
         # Intervalo de datas
@@ -107,7 +174,9 @@ def analyze_chat_db(db_path: str) -> Dict[str, Any]:
         total_handles = cursor.fetchone()[0]
 
         # Busca todas as mensagens de texto
-        cursor.execute("SELECT text, is_from_me FROM message WHERE text IS NOT NULL AND text != '';")
+        cursor.execute(
+            "SELECT text, is_from_me FROM message WHERE text IS NOT NULL AND text != '';"
+        )
         messages = cursor.fetchall()
 
         category_counts = Counter()
@@ -128,7 +197,7 @@ def analyze_chat_db(db_path: str) -> Dict[str, Any]:
                     if re.search(pat, lower_text):
                         category_counts[cat] += 1
                         break
-            
+
             # Coloquialismos
             for key, pat in COLLOQUIAL_PATTERNS.items():
                 matches = re.findall(pat, lower_text)
@@ -148,16 +217,17 @@ def analyze_chat_db(db_path: str) -> Dict[str, Any]:
             "category_counts": dict(category_counts),
             "colloquial_counts": dict(colloquial_counts),
             "sample_incoming": incoming_texts[:10],
-            "sample_outgoing": outgoing_texts[:10]
+            "sample_outgoing": outgoing_texts[:10],
         }
 
     except Exception as e:
         return {"accessible": False, "error": str(e)}
 
+
 def analyze_artifacts(artifacts_dir: str) -> Dict[str, Any]:
     """Inspeciona os artefatos de mensagens em artifacts/imessage/."""
     results = {}
-    
+
     # 1. Analisar cartorio_bot_history.jsonl
     bot_history_file = os.path.join(artifacts_dir, "cartorio_bot_history.jsonl")
     if os.path.exists(bot_history_file):
@@ -169,29 +239,29 @@ def analyze_artifacts(artifacts_dir: str) -> Dict[str, Any]:
                         lines.append(json.loads(l.strip()))
                     except Exception:
                         pass
-        
+
         bot_cat_counts = Counter()
         bot_incoming = 0
         bot_outgoing = 0
-        
+
         for item in lines:
             if item.get("is_from_me"):
                 bot_outgoing += 1
             else:
                 bot_incoming += 1
-            
+
             text = (item.get("text") or "").lower()
             for cat, patterns in CATEGORIES_PATTERNS.items():
                 for pat in patterns:
                     if re.search(pat, text):
                         bot_cat_counts[cat] += 1
                         break
-                        
+
         results["cartorio_bot_history"] = {
             "total_records": len(lines),
             "incoming": bot_incoming,
             "outgoing": bot_outgoing,
-            "category_distribution": dict(bot_cat_counts)
+            "category_distribution": dict(bot_cat_counts),
         }
 
     # 2. Analisar corpus_10k.jsonl
@@ -209,18 +279,21 @@ def analyze_artifacts(artifacts_dir: str) -> Dict[str, Any]:
                         cat_distribution[cat] += 1
                     except Exception:
                         pass
-        
+
         results["corpus_10k"] = {
             "total_prompts": len(corpus_items),
-            "categories": dict(cat_distribution)
+            "categories": dict(cat_distribution),
         }
 
     return results
 
-def generate_markdown_report(chat_db_stats: Dict[str, Any], artifact_stats: Dict[str, Any], output_path: str):
+
+def generate_markdown_report(
+    chat_db_stats: Dict[str, Any], artifact_stats: Dict[str, Any], output_path: str
+):
     """Gera relatório consolidado em Markdown."""
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     md_content = f"""# 📊 Relatório de Análise do Histórico de Mensagens iMessage / Messages.app
 
 > **Subagente:** Especialista em Análise da Base iMessage (`chat.db`)  
@@ -233,7 +306,7 @@ def generate_markdown_report(chat_db_stats: Dict[str, Any], artifact_stats: Dict
 
 A análise combinou dados diretos do banco SQLite nativo do macOS (`~/Library/Messages/chat.db`) e artefatos de histórico/simulação do iMessage (`artifacts/imessage/`).
 
-- **Banco SQLite local (`chat.db`):** Acessado com sucesso ({chat_db_stats.get('total_messages', 0)} mensagens totais).
+- **Banco SQLite local (`chat.db`):** Acessado com sucesso ({chat_db_stats.get("total_messages", 0)} mensagens totais).
 - **Corpus de Testes & Histórico (`artifacts/imessage/`):** 10.000 prompts de validação do harness (`corpus_10k.jsonl`) + 636 registros históricos de atendimento do bot (`cartorio_bot_history.jsonl`).
 - **Principais Temas de Usuários:** Reconhecimento de firma & autenticações, consulta de emolumentos/preços, localização/horários do cartório, procurações e escrituras públicas.
 
@@ -265,7 +338,7 @@ A análise combinou dados diretos do banco SQLite nativo do macOS (`~/Library/Me
     total_cat = sum(cat_counts.values()) or 1
     for cat, count in sorted(cat_counts.items(), key=lambda x: x[1], reverse=True):
         pct = (count / total_cat) * 100
-        cat_name = cat.replace('_', ' ').title()
+        cat_name = cat.replace("_", " ").title()
         md_content += f"- **{cat_name}:** {count} menções ({pct:.1f}%)\n"
 
     md_content += """
@@ -326,21 +399,26 @@ O banco do iMessage local está totalmente integrado e monitorado. Os dados extr
         f.write(md_content)
     print(f"Relatório salvo com sucesso em: {output_path}")
 
+
 def main():
     chat_db_path = os.path.expanduser("~/Library/Messages/chat.db")
     artifacts_dir = os.path.abspath("artifacts/imessage")
-    report_output_path = os.path.join(artifacts_dir, "ANALISE_MENSAGENS_IMESSAGE_HISTORICO.md")
+    report_output_path = os.path.join(
+        artifacts_dir, "ANALISE_MENSAGENS_IMESSAGE_HISTORICO.md"
+    )
 
     print(f"=== Análise da Base iMessage / Messages.app ===")
     print(f"Analisando chat.db: {chat_db_path}")
     chat_db_stats = analyze_chat_db(chat_db_path)
-    
+
     print(f"Analisando artefatos em: {artifacts_dir}")
     artifact_stats = analyze_artifacts(artifacts_dir)
 
     print("\n--- Resultados chat.db ---")
     print(f"Total de mensagens: {chat_db_stats.get('total_messages')}")
-    print(f"Enviadas: {chat_db_stats.get('outgoing_messages')} | Recebidas: {chat_db_stats.get('incoming_messages')}")
+    print(
+        f"Enviadas: {chat_db_stats.get('outgoing_messages')} | Recebidas: {chat_db_stats.get('incoming_messages')}"
+    )
     print(f"Categorias encontradas: {chat_db_stats.get('category_counts')}")
 
     print("\n--- Resultados Artefatos ---")
@@ -348,6 +426,7 @@ def main():
 
     print("\nGerando relatório final em Markdown...")
     generate_markdown_report(chat_db_stats, artifact_stats, report_output_path)
+
 
 if __name__ == "__main__":
     main()

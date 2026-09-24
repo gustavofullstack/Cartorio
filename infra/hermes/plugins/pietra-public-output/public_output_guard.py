@@ -104,9 +104,7 @@ class SensitiveMessageLogFilter(logging.Filter):
             )
             record.args = (args[0], args[2], len(str(args[6] or "")), args[7])
         elif template.startswith(_GATEWAY_INBOUND_LOG) and len(args) >= 6:
-            record.msg = (
-                "inbound message: platform=%s text_chars=%d reply_chars=%d"
-            )
+            record.msg = "inbound message: platform=%s text_chars=%d reply_chars=%d"
             record.args = (
                 args[0],
                 len(str(args[3] or "")),
@@ -133,7 +131,9 @@ def install_sensitive_log_filter() -> None:
         "agent.turn_context",
     ):
         logger = logging.getLogger(logger_name)
-        if not any(isinstance(item, SensitiveMessageLogFilter) for item in logger.filters):
+        if not any(
+            isinstance(item, SensitiveMessageLogFilter) for item in logger.filters
+        ):
             logger.addFilter(SensitiveMessageLogFilter())
 
 

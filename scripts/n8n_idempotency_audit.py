@@ -18,6 +18,7 @@ Exit codes:
 
 Modified by Gustavo Almeida + cartorio-n8n — G6 wave 12.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -73,10 +74,11 @@ def audit_workflow(wf_path: Path) -> dict:
     # Idempotency check
     nodes_json = json.dumps(data.get("nodes", []))
     has_redis = any(
-        node.get("type") in REDIS_NODE_TYPES
-        for node in data.get("nodes", [])
+        node.get("type") in REDIS_NODE_TYPES for node in data.get("nodes", [])
     )
-    has_idempotency_marker = any(marker.lower() in nodes_json.lower() for marker in IDEMPOTENCY_MARKERS)
+    has_idempotency_marker = any(
+        marker.lower() in nodes_json.lower() for marker in IDEMPOTENCY_MARKERS
+    )
 
     missing = []
     if not (has_redis or has_idempotency_marker):
@@ -144,13 +146,17 @@ def main() -> int:
             if len(f["webhooks"]) > 3:
                 webhooks_str += f" (+{len(f['webhooks']) - 3})"
             missing_str = ", ".join(f["missing"]) if f["missing"] else "nenhum"
-            md.append(f"| `{f['file']}` | {f['name']} | {webhooks_str} | {redis_icon} | {marker_icon} | {missing_str} |")
+            md.append(
+                f"| `{f['file']}` | {f['name']} | {webhooks_str} | {redis_icon} | {marker_icon} | {missing_str} |"
+            )
         md.append("")
         md.append("## Padrao obrigatorio (lesson 22)")
         md.append("")
         md.append("```javascript")
         md.append("// Antes do processing principal:")
-        md.append("const webhookId = $input.item.json.headers['x-webhook-id'] || $input.item.json.body.id;")
+        md.append(
+            "const webhookId = $input.item.json.headers['x-webhook-id'] || $input.item.json.body.id;"
+        )
         md.append("const dedupKey = `webhook:${webhookId}`;")
         md.append("const isNew = await redis.set(dedupKey, '1', 'EX', 86400, 'NX');")
         md.append("if (!isNew) {")
@@ -160,7 +166,9 @@ def main() -> int:
         md.append("")
         md.append("---")
         md.append("")
-        md.append("**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 12 (auto-gerado)**")
+        md.append(
+            "**Modified by Gustavo Almeida + cartorio-n8n — G6 wave 12 (auto-gerado)**"
+        )
         args.report.write_text("\n".join(md))
         print(f"  Report: {args.report}", file=sys.stderr)
 
