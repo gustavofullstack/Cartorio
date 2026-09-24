@@ -282,8 +282,12 @@ def test_traefik_check_detects_warn_404_with_known_content_length() -> None:
     mock_client.__aexit__ = AsyncMock(return_value=None)
     mock_client.head = AsyncMock(return_value=mock_resp)
 
-    with patch("httpx.AsyncClient", return_value=mock_client):
+    with patch("httpx.AsyncClient", return_value=mock_client) as mock_async_client_class:
         result = asyncio.run(_check_traefik("api.2notasudi.com.br"))
+
+        # Verify that AsyncClient was not called with verify=False
+        kwargs = mock_async_client_class.call_args.kwargs
+        assert kwargs.get("verify") is not False
 
     assert result["status"] == "warn"
     assert "router not matched" in result["detail"]
