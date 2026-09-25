@@ -47,11 +47,11 @@
         <p><span class="pill hitl">HITL_REQUIRED</span> escritura, ato composto, urgência, isenção, valor declarado ou documento.</p>
         <p class="note">Extração usa texto sanitizado. O painel não recebe texto, CPF, telefone, documento, conversa ou identificador de cliente.</p>
       </article>
-      <article class="card catalog"><h2>Catálogo publicado</h2><table><thead><tr><th>Ato</th><th>Referência</th><th>Emolumentos</th><th>TFJ</th><th>Valor final</th><th>Decisão</th></tr></thead><tbody id="items"></tbody></table></article>
-      <article class="card extracao"><h2>Extração por IA</h2><dl id="extraction"></dl></article>
-      <article class="card operacao"><h2>Operação</h2><dl id="operation"></dl></article>
+      <article class="card catalog"><h2>Catálogo publicado</h2><table><thead><tr><th>Ato</th><th>Referência</th><th>Emolumentos</th><th>TFJ</th><th>Valor final</th><th>Decisão</th></tr></thead><tbody id="items" aria-live="polite"></tbody></table></article>
+      <article class="card extracao"><h2>Extração por IA</h2><dl id="extraction" aria-live="polite"></dl></article>
+      <article class="card operacao"><h2>Operação</h2><dl id="operation" aria-live="polite"></dl></article>
     </section>
-    <footer id="rule">Carregando regra operacional…</footer>
+    <footer id="rule" aria-live="polite">Carregando regra operacional…</footer>
   </main>
   <script>
     const money = value => value === null || value === undefined ? "—" : `R$ ${Number(value).toLocaleString("pt-BR", {minimumFractionDigits:2})}`;
