@@ -1,0 +1,19 @@
+{
+  "$schema": "https://cartorio.com/schemas/task-bank-v2.json",
+  "version": "2.0.0",
+  "updated_at": "2026-07-28",
+  "project": "cartorio-chatbot-super-100",
+  "purpose": "100 Tasks de melhoria contínua focadas em integração central (API, N8N, Chatwoot, Evolution-API, Supabase, Redis e OpenClaw). Formato compacto.",
+  "stats": {
+    "total_tasks": 100,
+    "done": 0,
+    "pending": 100
+  },
+  "fases": {
+    "Fase1_Supabase": ["Inicializar migrations", "Webhooks N8N", "pg_cron", "Vault", "Realtime", "Storage", "RLS", "GraphQL", "API Integ", "pgaudit", "MCP", "Queue", "Migrar DB", "HMAC PG", "Doc DB", "Backup", "CI Test", "Rate Limit", "Views", "Indexes"],
+    "Fase2_API_Redis": ["Redis Cache", "Idempotencia", "DLQ", "OpenAPI CI", "API.md", "Redlock", "Radar Redis", "Soft Delete", "Rate Limit Views", "Prometheus", "v2 API", "Sentry", "RFC 7807", "E2E API", "N+1", "Middlewares Doc", "Health Integ", "Retention Admin", "PII Logs", "Coverage 90"],
+    "Fase3_N8N": ["Docs Workflows", "Global Error", "HTTP Retry", "Backup N8N", "Fast Reply Test", "JSON Logs", "Metrics Prom", "Telegram Alerts", "Playwright E2E", "Global Env", "Prune Cron", "Redis Dedupe", "HMAC Webhook", "WF LGPD", "WF Sync", "WF DB Backup", "Webhook UI", "KISS Names", "Tailscale SSH", "Scale Runner"],
+    "Fase4_Chatwoot_Evolution": ["Evolution Inbox", "Handoff Bidirecional", "50 Canned Responses", "HMAC Evolution", "DNS Proxy", "WA Meta Fallback", "Custom Attributes", "10 Macros", "Reports API", "Auto Labels", "1-Click Handoff", "UUID Dedupe", "Read/Delivered", "Disable Signup", "Evolution Retries", "Media Handle", "LGPD Polls WA", "JID Rate Limit", "Chatwoot Doc", "Evolution Doc"],
+    "Fase5_OpenClaw": ["1M Context Valid", "Persona Curta/Seria", "N8N MCP Tools", "E2E Telegram Bot", "Thinking Adaptive", "Fix 131k context limit", "7 Skills Registry", "Fallback Providers", "Codex-Bar Tokens", "Prompt Caching", "Isolate Runtime", "Low Latency LLM", "Architecture Doc", "5x Concurrency Test", "PII Scrubbing Gates", "Usage Dashboard", "Jailbreak Guards", "Lessons MD", "Browser Agent UI", "Integration E2E"]
+  }
+}
