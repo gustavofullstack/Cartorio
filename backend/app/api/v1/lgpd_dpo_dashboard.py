@@ -18,7 +18,7 @@ LGPD-by-design:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
@@ -36,28 +36,11 @@ dpo_dashboard_router = APIRouter(tags=["lgpd-dpo-dashboard"], prefix="/lgpd/dpo"
 # ============================================================================
 
 
-def _interval_days_sqlite(days: int) -> str:
-    """Expressao SQL compativel com SQLite test para now - N days."""
-    return f"datetime('now', '-{days} days')"
-
-
-def _interval_days_postgres(days: int) -> str:
-    """Expressao SQL compativel com PostgreSQL prod para now - N days."""
-    return f"NOW() - INTERVAL '{days} days'"
-
-
 def _detect_dialect(db: Session) -> str:
     """Detecta SQLAlchemy dialect do session (sqlite|postgresql)."""
     if db.bind is None:
         return "postgresql"
     return db.bind.dialect.name
-
-
-def _now_minus_days_expr(db: Session, days: int) -> str:
-    """Retorna SQL literal para 'now() - N days' compativel com o dialecto ativo."""
-    if _detect_dialect(db) == "sqlite":
-        return _interval_days_sqlite(days)
-    return _interval_days_postgres(days)
 
 
 # ============================================================================
@@ -89,9 +72,9 @@ def get_dpo_metrics(
     """Dashboard metrics (D25)."""
     from app.models.audit_log import AuditLog
 
-    # Cross-dialect: usa expressoes raw compativeis
-    ts_30d = _now_minus_days_expr(db, 30)
-    ts_1d = _now_minus_days_expr(db, 1)
+    # Cross-dialect: usa datetimes em python via parametro
+    ts_30d = datetime.now(tz=timezone.utc) - timedelta(days=30)
+    ts_1d = datetime.now(tz=timezone.utc) - timedelta(days=1)
 
     # Clientes ativos vs anonimizados
     total_clientes = int(db.execute(text("SELECT COUNT(*) FROM clientes")).scalar() or 0)
@@ -109,30 +92,32 @@ def get_dpo_metrics(
     # Audit entries: total + ultimas 24h
     total_audit = int(db.execute(text("SELECT COUNT(*) FROM audit_log")).scalar() or 0)
     audit_24h = int(
-        db.execute(text(f"SELECT COUNT(*) FROM audit_log WHERE timestamp >= {ts_1d}")).scalar() or 0
+        db.execute(
+            text("SELECT COUNT(*) FROM audit_log WHERE timestamp >= :ts"), {"ts": ts_1d}
+        ).scalar()
+        or 0
     )
 
     # Rights exercised (ultimos 30 dias) — ações LGPD no audit
     rights_30d = int(
         db.execute(
-            text(
-                f"SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' "
-                f"AND timestamp >= {ts_30d}"
-            )
+            text("SELECT COUNT(*) FROM audit_log WHERE action LIKE 'lgpd.%' AND timestamp >= :ts"),
+            {"ts": ts_30d},
         ).scalar()
         or 0
     )
 
     # Retention queue size — clientes com ultimo protocolo >5y atras
-    ts_5y = _now_minus_days_expr(db, 1825)
+    ts_5y = datetime.now(tz=timezone.utc) - timedelta(days=1825)
     retention_queue_size = int(
         db.execute(
             text(
                 "SELECT COUNT(DISTINCT c.id) FROM clientes c "
                 "LEFT JOIN protocolos p ON p.cliente_id = c.id "
                 "WHERE c.deleted_at IS NULL "
-                f"AND (p.created_at IS NULL OR p.created_at < {ts_5y})"
-            )
+                "AND (p.created_at IS NULL OR p.created_at < :ts)"
+            ),
+            {"ts": ts_5y},
         ).scalar()
         or 0
     )
@@ -347,19 +332,20 @@ def get_dpo_retention_queue(
     from app.services.audit import AuditService
     from app.services.audit_context import audit_kwargs
 
-    ts_5y = _now_minus_days_expr(db, 1825)
+    ts_5y = datetime.now(tz=timezone.utc) - timedelta(days=1825)
 
-    # Cross-dialect query — clientes que NAO foram tocados por 5+ anos
-    if _detect_dialect(db) == "sqlite":
+    # Detect dialect
+    dialect_name = db.bind.dialect.name if db.bind is not None else "postgresql"
+    if dialect_name == "sqlite":
         # SQLite eh so pra testes — simplificado
         stmt = text(
             "SELECT c.id, c.nome, c.cpf_hash, c.created_at, "
             "MAX(p.created_at) AS ultimo_protocolo "
             "FROM clientes c "
             "LEFT JOIN protocolos p ON p.cliente_id = c.id "
-            f"WHERE c.deleted_at IS NULL "
-            f"AND (c.created_at < {ts_5y} OR p.created_at < {ts_5y} "
-            f"OR (p.created_at IS NULL AND c.created_at < {ts_5y})) "
+            "WHERE c.deleted_at IS NULL "
+            "AND (c.created_at < :ts OR p.created_at < :ts "
+            "OR (p.created_at IS NULL AND c.created_at < :ts)) "
             "GROUP BY c.id "
             "ORDER BY c.created_at ASC LIMIT :limit"
         )
@@ -371,12 +357,12 @@ def get_dpo_retention_queue(
             "FROM clientes c "
             "LEFT JOIN protocolos p ON p.cliente_id = c.id "
             "WHERE c.deleted_at IS NULL "
-            f"AND (c.created_at < {ts_5y} OR p.created_at < {ts_5y}) "
+            "AND (c.created_at < :ts OR p.created_at < :ts) "
             "GROUP BY c.id "
             "ORDER BY c.created_at ASC LIMIT :limit"
         )
 
-    rows = db.execute(stmt, {"limit": int(limit)}).mappings().all()
+    rows = db.execute(stmt, {"limit": int(limit), "ts": ts_5y}).mappings().all()
 
     # Mascaramento PII (LGPD-by-design)
     def _coerce_dt(value: Any) -> datetime | None:
