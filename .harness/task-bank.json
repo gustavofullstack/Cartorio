@@ -339,5 +339,607 @@
     "branch": "master",
     "commits_session": 25,
     "ahead_origin": 25
-  }
+  },
+  "p2": [
+    {
+      "id": "P2.SQUAD.1",
+      "title": "Ativar Supabase Auth:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.2",
+      "title": "Implementar Supabase RLS (Row Level Security):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.3",
+      "title": "Migrar Cron Jobs:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.4",
+      "title": "Configurar Database Webhooks:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.5",
+      "title": "Integra\u00e7\u00e3o com Supabase Vault:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.6",
+      "title": "Supabase Edge Functions:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.7",
+      "title": "Integra\u00e7\u00e3o Supabase Storage:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.8",
+      "title": "Configurar Supabase Queues:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.9",
+      "title": "Ativar Realtime Subscriptions:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.10",
+      "title": "Explorar Supabase GraphQL:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.11",
+      "title": "Refatorar Modelos SQLAlchemy:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.12",
+      "title": "Sincroniza\u00e7\u00e3o de Cache Redis/Supabase:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.13",
+      "title": "Dashboard de Sa\u00fade do Supabase:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.14",
+      "title": "Rotinas de Backup Integradas:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.15",
+      "title": "Otimiza\u00e7\u00e3o de Consultas de Auditoria:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.16",
+      "title": "Padroniza\u00e7\u00e3o de Retorno (RFC 7807):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.17",
+      "title": "Refatorar `mcp_server.py`:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.18",
+      "title": "Ativar Supabase Vector:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.19",
+      "title": "Testes E2E Supabase Auth:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.20",
+      "title": "Revisar Pol\u00edticas LGPD (RLS):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.21",
+      "title": "Unificar Webhooks Evolution API:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.22",
+      "title": "Retry Mechanism Evolution:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.23",
+      "title": "Gerenciamento de Inst\u00e2ncias Evolution API:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.24",
+      "title": "Monitoramento de Queda de QR Code:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.25",
+      "title": "Sincroniza\u00e7\u00e3o Bidirecional Evolution <-> N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.26",
+      "title": "Documentar Fluxos Ativos no N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.27",
+      "title": "Backup Autom\u00e1tico N8N Workflows:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.28",
+      "title": "Teste E2E de Workflows N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.29",
+      "title": "Revisar Limites de Execu\u00e7\u00e3o (Rate Limit) N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.30",
+      "title": "Padroniza\u00e7\u00e3o de Nomenclatura no N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.31",
+      "title": "Otimiza\u00e7\u00e3o de Contexto no N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.32",
+      "title": "Redu\u00e7\u00e3o de Lat\u00eancia N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.33",
+      "title": "Tratamento Global de Erros (Error Trigger N8N):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.34",
+      "title": "Auditoria de A\u00e7\u00f5es no N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.35",
+      "title": "Integra\u00e7\u00e3o N8N com Telegram Bot:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.36",
+      "title": "Suporte a M\u00eddias Ricas na Evolution API:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.37",
+      "title": "Limpeza de Arquivos Tempor\u00e1rios:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.38",
+      "title": "Cria\u00e7\u00e3o de Templates de WhatsApp (Evolution):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.39",
+      "title": "Atualizar Agentes M\u00faltiplos:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.40",
+      "title": "Revisar *Dead Letter Queue* N8N:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.41",
+      "title": "Pausar IA via Chatwoot (Handoff):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.42",
+      "title": "Status Typings do Chatwoot para Evolution API:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.43",
+      "title": "Integra\u00e7\u00e3o do Hist\u00f3rico do Chatwoot no Supabase:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.44",
+      "title": "Macros de Resposta R\u00e1pida (Canned Responses):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.45",
+      "title": "Autentica\u00e7\u00e3o Unificada Chatwoot:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.46",
+      "title": "Notifica\u00e7\u00f5es Push do Chatwoot:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.47",
+      "title": "Rotulagem Autom\u00e1tica LGPD:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.48",
+      "title": "Reconhecimento de Intent (Chatwoot Webhook):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.49",
+      "title": "Dashboard Customizado no Chatwoot:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.50",
+      "title": "Anonimiza\u00e7\u00e3o no Chatwoot (LGPD):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.51",
+      "title": "Limitar Contexto de Operador:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.52",
+      "title": "Integra\u00e7\u00e3o de Agendamentos (Chatwoot):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.53",
+      "title": "Atualiza\u00e7\u00e3o da Extens\u00e3o `pgvector` no Chatwoot:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.54",
+      "title": "Atalhos (Shortcuts) Integrados:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.55",
+      "title": "Recupera\u00e7\u00e3o de Conversas \u00d3rf\u00e3s:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.56",
+      "title": "M\u00e9tricas de Tempo de Resposta (SLA):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.57",
+      "title": "Gest\u00e3o do Sidekiq Chatwoot:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.58",
+      "title": "Desabilitar CSAT Padr\u00e3o:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.59",
+      "title": "Bot\u00f5es Interativos no Chatwoot:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.60",
+      "title": "Teste de Carga do Webhook Chatwoot:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.61",
+      "title": "Model Switcher Adapt\u00e1vel:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.62",
+      "title": "Context Window Profiler:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.63",
+      "title": "Refinamento do System Prompt (Zero-Shot):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.64",
+      "title": "Ajuste de Par\u00e2metros Cognitivos (Thinkings):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.65",
+      "title": "Otimiza\u00e7\u00e3o de Skills do OpenClaw:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.66",
+      "title": "Suporte de Vis\u00e3o (OCR):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.67",
+      "title": "Otimiza\u00e7\u00e3o de Roteamento de Ferramentas (MCP):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.68",
+      "title": "Auditoria de Chamadas de Ferramentas:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.69",
+      "title": "Gerenciamento de Contexto Eficiente (Summarization):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.70",
+      "title": "Bloqueio de Emojis em Sa\u00edda:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.71",
+      "title": "Monitoramento de Custos de API (Codex-bar CLI):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.72",
+      "title": "Refinamento de Handoff IA:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.73",
+      "title": "Agent Persona Consistency Test:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.74",
+      "title": "Atualiza\u00e7\u00e3o de Chaves API do OpenClaw:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.75",
+      "title": "Avalia\u00e7\u00e3o do OpenCode Zen/Qwen Coder:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.76",
+      "title": "Aprimoramento do PII Scrubber 3-Camadas:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.77",
+      "title": "Suporte a Documentos Estruturados (PDF):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.78",
+      "title": "Gerenciamento Seguro do `agents.json`:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.79",
+      "title": "Revisar Timeout do Provider (CORS/Preflight):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.80",
+      "title": "Automa\u00e7\u00e3o de Dicion\u00e1rio Jur\u00eddico:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.81",
+      "title": "Expans\u00e3o do Cache Redis:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.82",
+      "title": "Pol\u00edtica TTL Din\u00e2mica:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.83",
+      "title": "Centralizar Endpoints Redis:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.84",
+      "title": "Documenta\u00e7\u00e3o Interna do Orquestrador:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.85",
+      "title": "Sincroniza\u00e7\u00e3o de Sess\u00e3o (Browser Agent):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.86",
+      "title": "Pre-cache de Agendamentos Frequentes:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.87",
+      "title": "Padroniza\u00e7\u00e3o das Reuni\u00f5es de Agent Team (Logs):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.88",
+      "title": "Testes do Painel de Dados (Browser AI):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.89",
+      "title": "Cria\u00e7\u00e3o R\u00e1pida de Atividades (SUI):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.90",
+      "title": "Sincronizar Arquivos de Mem\u00f3ria (`AGENTS.md`, `MEMORY.md`):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.91",
+      "title": "Reestruturar Arquitetura de Pastas de Docs:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.92",
+      "title": "Revis\u00e3o de Padr\u00e3o JSON (Task Bank):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.93",
+      "title": "Teste de Integra\u00e7\u00e3o Cont\u00ednua (Pre-commit):",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.94",
+      "title": "Health Check de Mem\u00f3ria de Agentes:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.95",
+      "title": "Otimiza\u00e7\u00e3o de Conex\u00f5es de DB no FastAPI:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.96",
+      "title": "Cria\u00e7\u00e3o de Runbook Central do Pipeline AI:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.97",
+      "title": "Sintetizador Autom\u00e1tico de Sess\u00e3o:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.98",
+      "title": "Simula\u00e7\u00e3o de Alta Disponibilidade:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.99",
+      "title": "Testes Unit\u00e1rios da API de Emolumentos:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    },
+    {
+      "id": "P2.SQUAD.100",
+      "title": "Valida\u00e7\u00e3o Final da Topologia:",
+      "owner": "ORCHESTRATOR",
+      "status": "pending"
+    }
+  ]
 }
